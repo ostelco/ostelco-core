@@ -379,19 +379,7 @@ public final class InnerFbStorage implements Storage {
                 .limitToFirst(1).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(final DataSnapshot snapshot) {
-
-                if (!snapshot.hasChildren()) {
-                    cdl.countDown();
-                    return;
-                } else try {
-                    for (final DataSnapshot snap : snapshot.getChildren()) {
-                        final String key = snap.getKey();
-                        result.add(key);
-                        cdl.countDown();
-                    }
-                } catch (Exception e) {
-                    LOG.error("Something happened while looking for key = " + msisdn, e);
-                }
+                handleDataChange(snapshot, cdl, result, msisdn);
             }
 
             @Override
@@ -422,19 +410,7 @@ public final class InnerFbStorage implements Storage {
                 .limitToFirst(1).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(final DataSnapshot snapshot) {
-
-                if (!snapshot.hasChildren()) {
-                    cdl.countDown();
-                    return;
-                } else try {
-                    for (final DataSnapshot snap : snapshot.getChildren()) {
-                        final String key = snap.getKey();
-                        result.add(key);
-                        cdl.countDown();
-                    }
-                } catch (Exception e) {
-                    LOG.error("Something happened while looking for key = " + msisdn, e);
-                }
+                handleDataChange(snapshot, cdl, result, msisdn);
             }
 
             @Override
@@ -453,6 +429,21 @@ public final class InnerFbStorage implements Storage {
             }
         } catch (InterruptedException e) {
             throw new StorageException("Interrupted", e);
+        }
+    }
+
+    private void handleDataChange(DataSnapshot snapshot, CountDownLatch cdl, Set<String> result, String msisdn) {
+        if (!snapshot.hasChildren()) {
+            cdl.countDown();
+            return;
+        } else try {
+            for (final DataSnapshot snap : snapshot.getChildren()) {
+                final String key = snap.getKey();
+                result.add(key);
+                cdl.countDown();
+            }
+        } catch (Exception e) {
+            LOG.error("Something happened while looking for key = " + msisdn, e);
         }
     }
 
