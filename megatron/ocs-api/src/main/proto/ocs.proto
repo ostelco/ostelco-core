@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.telenordigital.prime.ocs";
+
+// OCS Service
+service OcsService {
+  rpc FetchDataBucket (stream FetchDataBucketInfo) returns (stream FetchDataBucketInfo) {}
+  rpc ReturnUnusedData (stream ReturnUnusedDataRequest) returns (stream ReturnUnusedDataResponse) {}
+  rpc Activate (ActivateRequest) returns (stream ActivateResponse) {}
+}
+
+message FetchDataBucketInfo {
+  string msisdn = 1;
+  uint64 bytes = 2;
+  string requestId = 3;
+}
+
+message ReturnUnusedDataRequest {
+  string msisdn = 1;
+  uint64 bytes = 2;
+}
+
+message ReturnUnusedDataResponse {
+  string msisdn = 1;
+}
+
+message ActivateRequest {
+}
+
+message ActivateResponse {
+  string msisdn = 1;
+}

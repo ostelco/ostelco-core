@@ -1,0 +1,65 @@
+plugins {
+    id "java"
+    id 'com.github.ben-manes.versions' version '0.15.0'
+    id "com.github.johnrengelman.shadow" version "2.0.1"
+}
+
+apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+
+dependencies {
+    implementation project(':ocs-api')
+    implementation 'io.dropwizard:dropwizard-core:1.1.4'
+    implementation 'com.google.firebase:firebase-admin:5.3.1'
+    implementation 'com.lmax:disruptor:3.3.7'
+    implementation 'com.google.guava:guava:21.0'
+    testImplementation 'io.dropwizard:dropwizard-testing:1.1.4'
+    testCompile group: 'org.mockito', name: 'mockito-core', version: '2.10.0'
+}
+
+mainClassName = 'com.telenordigital.prime.PrimeApplication'
+
+allprojects {
+
+    apply plugin: 'maven'
+    apply plugin: 'project-report'
+    apply plugin: 'com.github.ben-manes.versions'
+
+    group = 'com.telenordigital'
+    version = '1.0.0-SNAPSHOT'
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven { url "http://nexus.loltel-works.no:8081/content/repositories/thirdparty" }
+        maven { url "http://nexus.loltel-works.no:8081/content/repositories/snapshots" }
+        maven { url "http://nexus.loltel-works.no:8081/content/repositories/releases" }
+    }
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+shadowJar {
+    mergeServiceFiles()
+    classifier = "uber"
+    version = null
+}
+
+task pack(type: Zip, dependsOn: ':shadowJar') {
+    from ('config/') {
+        into('config')
+    }
+    from ('files/') {
+        into('files')
+    }
+    from ('build/libs/') {
+        into('build/libs/')
+    }
+    from 'Dockerfile'
+    from 'docker-compose.yaml'
+    archiveName 'prime.zip'
+    destinationDir(file('build/deploy/'))
+}
