@@ -56,12 +56,15 @@ public class PrimeEventProducer {
 
         final long sequence = ringBuffer.next();
         final PrimeEvent event = ringBuffer.get(sequence);
+        setEventFields(request, streamId, event);
+        ringBuffer.publish(sequence);
+    }
+
+    private void setEventFields(FetchDataBucketInfo request, String streamId, PrimeEvent event) {
         event.setMessageType(FETCH_DATA_BUCKET);
         event.setMsisdn(request.getMsisdn());
         event.setBucketBytes(request.getBytes());
         event.setOcsgwStreamId(streamId);
         event.setOcsgwRequestId(request.getRequestId());
-
-        ringBuffer.publish(sequence);
     }
 }
