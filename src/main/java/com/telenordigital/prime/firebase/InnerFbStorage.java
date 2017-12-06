@@ -370,11 +370,10 @@ public final class InnerFbStorage implements Storage {
         removeChild(clientRequests, id);
     }
 
-
-    public String getKeyFromPhoneNumber(final DatabaseReference dbref, final String msisdn) throws StorageException {
+    private String getKeyFromLookupKey(DatabaseReference dbref, String msisdn, String lookupKey) throws StorageException {
         final CountDownLatch cdl = new CountDownLatch(1);
         final Set<String> result = new HashSet<>();
-        dbref.orderByChild("phoneNumber")
+        dbref.orderByChild(lookupKey)
                 .equalTo(msisdn)
                 .limitToFirst(1).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -401,35 +400,15 @@ public final class InnerFbStorage implements Storage {
         }
     }
 
+    public String getKeyFromPhoneNumber(final DatabaseReference dbref, final String msisdn) throws StorageException {
+
+        final String lookupKey = "phoneNumber";
+        return getKeyFromLookupKey(dbref, msisdn, lookupKey);
+    }
 
     public String getKeyFromMsisdn(final DatabaseReference dbref, final String msisdn) throws StorageException {
-        final CountDownLatch cdl = new CountDownLatch(1);
-        final Set<String> result = new HashSet<>();
-        dbref.orderByChild("msisdn")
-                .equalTo(msisdn)
-                .limitToFirst(1).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(final DataSnapshot snapshot) {
-                handleDataChange(snapshot, cdl, result, msisdn);
-            }
-
-            @Override
-            public void onCancelled(DatabaseError error) {
-
-            }
-        });
-
-        try {
-            if (!cdl.await(10, TimeUnit.SECONDS)) {
-                throw new StorageException("Query timed out");
-            } else if (result.isEmpty()) {
-                return null;
-            } else {
-                return result.iterator().next();
-            }
-        } catch (InterruptedException e) {
-            throw new StorageException("Interrupted", e);
-        }
+        final String lookupKey = "msisdn";
+        return getKeyFromLookupKey(dbref, msisdn, lookupKey);
     }
 
     private void handleDataChange(DataSnapshot snapshot, CountDownLatch cdl, Set<String> result, String msisdn) {

@@ -35,62 +35,73 @@ public class OcsService
 
         try {
             switch (event.getMessageType()) {
-
                 case FETCH_DATA_BUCKET:
-                    try {
-                        LOG.info("Returning fetchDataBucket response :: for MSISDN: {} of {} bytes with request id: {}",
-                                event.getMsisdn(), event.getBucketBytes(), event.getOcsgwRequestId());
-
-                        final FetchDataBucketInfo fetchDataInfo =
-                                FetchDataBucketInfo.newBuilder()
-                                        .setMsisdn(event.getMsisdn())
-                                        .setBytes(event.getBucketBytes())
-                                        .setRequestId(event.getOcsgwRequestId())
-                                        .build();
-
-                        final StreamObserver<FetchDataBucketInfo> fetchDataBucketResponse
-                                = fetchDataBucketClientMap.get(event.getOcsgwStreamId());
-                        if (fetchDataBucketResponse != null) {
-                            fetchDataBucketResponse.onNext(fetchDataInfo);
-                        }
-                    } catch (Exception e) {
-                        LOG.warn("Exception handling prime event", e);
-                        LOG.warn("Exception returning fetchDataBucket response :: for MSISDN: {} of {} bytes with request id: {}",
-                                event.getMsisdn(), event.getBucketBytes(), event.getOcsgwRequestId());
-                        // unable to send fetchDataBucket response. So, return bucket bytes back to data bundle.
-                        producer.returnUnusedDataBucketEvent(event.getMsisdn(), event.getBucketBytes(), null);
-                    }
+                    handleFetchDataBucket(event);
                     break;
 
                 case RETURN_UNUSED_DATA_BUCKET:
-                    if (event.getOcsgwStreamId() != null) {
-                        LOG.info("Returning returnUnusedData response :: for MSISDN: {}", event.getMsisdn());
-
-                        final ReturnUnusedDataResponse returnDataInfo =
-                                ReturnUnusedDataResponse.newBuilder()
-                                        .setMsisdn(event.getMsisdn())
-                                        .build();
-                        final StreamObserver<ReturnUnusedDataResponse> returnUnusedDataResponse
-                                = returnUnusedDataClientMap.get(event.getOcsgwStreamId());
-                        if (returnUnusedDataResponse != null) {
-                            returnUnusedDataResponse.onNext(returnDataInfo);
-                        }
-                    }
+                    handleReturnUnusedDataBucket(event);
                     break;
 
                 case TOPUP_DATA_BUNDLE_BALANCE:
-                    final ActivateResponse response =
-                            ActivateResponse.newBuilder()
-                                    .setMsisdn(event.getMsisdn())
-                                    .build();
-                    if (activateResponse != null) {
-                        activateResponse.onNext(response);
-                    }
+                    handleTopupDataBundleBalance(event);
                     break;
                 default:
             }
         } catch (Exception e) {
             LOG.warn("Exception handling prime event in OcsService", e);
+        }
+    }
+
+    private void handleTopupDataBundleBalance(PrimeEvent event) {
+        final ActivateResponse response =
+                ActivateResponse.newBuilder()
+                        .setMsisdn(event.getMsisdn())
+                        .build();
+        if (activateResponse != null) {
+            activateResponse.onNext(response);
+        }
+    }
+
+    private void handleReturnUnusedDataBucket(PrimeEvent event) {
+        if (event.getOcsgwStreamId() != null) {
+            LOG.info("Returning returnUnusedData response :: for MSISDN: {}", event.getMsisdn());
+
+            final ReturnUnusedDataResponse returnDataInfo =
+                    ReturnUnusedDataResponse.newBuilder()
+                            .setMsisdn(event.getMsisdn())
+                            .build();
+            final StreamObserver<ReturnUnusedDataResponse> returnUnusedDataResponse
+                    = returnUnusedDataClientMap.get(event.getOcsgwStreamId());
+            if (returnUnusedDataResponse != null) {
+                returnUnusedDataResponse.onNext(returnDataInfo);
+            }
+        }
+    }
+
+    private void handleFetchDataBucket(PrimeEvent event) {
+        try {
+            LOG.info("Returning fetchDataBucket response :: for MSISDN: {} of {} bytes with request id: {}",
+                    event.getMsisdn(), event.getBucketBytes(), event.getOcsgwRequestId());
+
+            final FetchDataBucketInfo fetchDataInfo =
+                    FetchDataBucketInfo.newBuilder()
+                            .setMsisdn(event.getMsisdn())
+                            .setBytes(event.getBucketBytes())
+                            .setRequestId(event.getOcsgwRequestId())
+                            .build();
+
+            final StreamObserver<FetchDataBucketInfo> fetchDataBucketResponse
+                    = fetchDataBucketClientMap.get(event.getOcsgwStreamId());
+            if (fetchDataBucketResponse != null) {
+                fetchDataBucketResponse.onNext(fetchDataInfo);
+            }
+        } catch (Exception e) {
+            LOG.warn("Exception handling prime event", e);
+            LOG.warn("Exception returning fetchDataBucket response :: for MSISDN: {} of {} bytes with request id: {}",
+                    event.getMsisdn(), event.getBucketBytes(), event.getOcsgwRequestId());
+            // unable to send fetchDataBucket response. So, return bucket bytes back to data bundle.
+            producer.returnUnusedDataBucketEvent(event.getMsisdn(), event.getBucketBytes(), null);
         }
     }
 
