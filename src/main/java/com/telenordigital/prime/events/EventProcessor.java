@@ -28,34 +28,51 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
         checkNotNull(pr);
         LOG.info("Handling purchase request = " + pr);
 
-        final String paymentToken = pr.getPaymentToken();
-        if (paymentToken == null) {
-            throw new com.telenordigital.prime.events.EventProcessorException("payment token cannot be null", pr);
-        }
+        validatePaymentToken(pr);
 
+        final String sku = getValidSku(pr);
+        final String msisdn = getValidMsisdn(pr);
+
+        final Product product;
+        final TopUpProduct topup = getValidTopUpProduct(pr, sku);
+        handleTopupProduct(pr, msisdn, topup);
+
+    }
+
+    private TopUpProduct getValidTopUpProduct(PurchaseRequest pr, String sku) throws EventProcessorException {
+        final Product product;
+        product = storage.getProductForSku(sku);
+        if (!product.isTopUpProject()) {
+            throw new EventProcessorException("Unknown product type, must be a topup product " + product.toString(), pr);
+        }
+        return product.asTopupProduct();
+    }
+
+    private String getValidMsisdn(PurchaseRequest pr) throws EventProcessorException {
+        final String msisdn = pr.getMsisdn();
+        if (msisdn == null) {
+            throw new EventProcessorException("MSISDN cannot be null", pr);
+        }
+        return msisdn;
+    }
+
+    private String getValidSku(PurchaseRequest pr) throws EventProcessorException {
         final String sku = pr.getSku();
         if (sku == null) {
-            throw new com.telenordigital.prime.events.EventProcessorException("SKU can't be null", pr);
+            throw new EventProcessorException("SKU can't be null", pr);
         }
 
         if (!storage.isValidSKU(sku)) {
             throw new com.telenordigital.prime.events.EventProcessorException("Not a valid SKU: " + sku, pr);
         }
 
-        final String msisdn = pr.getMsisdn();
-        if (msisdn == null) {
-            throw new com.telenordigital.prime.events.EventProcessorException("MSISDN cannot be null", pr);
-        }
+        return sku;
+    }
 
-        final Product product;
-        product = storage.getProductForSku(sku);
-
-        if (product.isTopUpProject()) {
-            final TopUpProduct topup = product.asTopupProduct();
-
-            handleTopupProduct(pr, msisdn, topup);
-        } else {
-            throw new EventProcessorException("Unknown product type " + product.toString(), pr);
+    private void validatePaymentToken(final PurchaseRequest pr) throws EventProcessorException {
+        final String paymentToken = pr.getPaymentToken();
+        if (paymentToken == null) {
+            throw new EventProcessorException("payment token cannot be null", pr);
         }
     }
 
@@ -128,19 +145,22 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
 
     @Override
     public void start() throws Exception {
-
         if (running.compareAndSet(false, true)) {
-            storage.addPurchaseRequestListener(new PurchaseRequestListener() {
-                @Override
-                public void onPurchaseRequest(final PurchaseRequest request) {
-                    try {
-                        handlePurchaseRequest(request);
-                    } catch (EventProcessorException e) {
-                        LOG.error("Could not handle purchase request " + request, e);
-                    }
-                }
-            });
+            addNewPurchaseRequestListener();
         }
+    }
+
+    private void addNewPurchaseRequestListener() {
+        storage.addPurchaseRequestListener(new PurchaseRequestListener() {
+            @Override
+            public void onPurchaseRequest(final PurchaseRequest request) {
+                try {
+                    handlePurchaseRequest(request);
+                } catch (EventProcessorException e) {
+                    LOG.error("Could not handle purchase request " + request, e);
+                }
+            }
+        });
     }
 
     @Override
