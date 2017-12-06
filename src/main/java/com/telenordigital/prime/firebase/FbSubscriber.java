@@ -9,7 +9,7 @@ import java.util.Map;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 
-public final class FbSubscriber implements AsMappable, Subscriber {
+final class FbSubscriber implements AsMappable, Subscriber {
 
     private  String fbKey;
     private  String msisdn;

@@ -1,5 +1,6 @@
 package com.telenordigital.prime;
 
+import com.telenordigital.prime.config.EventProcessorConfiguration;
 import com.telenordigital.prime.config.PrimeConfiguration;
 import com.telenordigital.prime.disruptor.ClearingEventHandler;
 import com.telenordigital.prime.disruptor.PrimeDisruptor;
@@ -30,18 +31,23 @@ public class PrimeApplication extends Application<PrimeConfiguration> {
             final Environment environment) throws Exception {
 
         final PrimeDisruptor disruptor = new PrimeDisruptor();
+
         // Disruptor provides RingBuffer, which is used by Producer
         final PrimeEventProducer producer = new PrimeEventProducer(disruptor.getDisruptor().getRingBuffer());
+
         // OcsService uses Producer to produce events for incoming requests from PGw
         final OcsService ocsService = new OcsService(producer);
+
         // OcsServer assigns OcsService as handler for gRPC requests
         final OcsServer server = new OcsServer(8082, ocsService);
 
         final OcsState ocsState = new OcsState();
 
+        final EventProcessorConfiguration eventProcessorConfig =
+                primeConfiguration.getEventProcessorConfig();
         final Storage storage = new FbStorage(
-                primeConfiguration.getEventProcessorConfig().getDatabaseName(),
-                primeConfiguration.getEventProcessorConfig().getConfigFile(),
+                eventProcessorConfig.getDatabaseName(),
+                eventProcessorConfig.getConfigFile(),
                 ocsState);
 
         final OcsBalanceUpdater ocsBalanceUpdater = new OcsBalanceUpdaterImpl(producer);

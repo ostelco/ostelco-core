@@ -8,5 +8,4 @@ public interface AsMappable {
      * @return
      */
     public Map<String, Object> asMap();
-
 }
