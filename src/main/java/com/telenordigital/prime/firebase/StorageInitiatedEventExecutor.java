@@ -39,7 +39,7 @@ public final class StorageInitiatedEventExecutor {
 
         @Override
         public Thread newThread(Runnable r) {
-            Thread t = tf.newThread(r);
+            final Thread t = tf.newThread(r);
             t.setName("FbstorageEventHandler");
             return t;
         }
@@ -48,13 +48,19 @@ public final class StorageInitiatedEventExecutor {
     public void onPurchaseRequest(final PurchaseRequest req) {
         synchronized (monitor) {
             for (final PurchaseRequestListener l : purchaseRequestListeners) {
-                executor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        l.onPurchaseRequest(req);
-                    }
-                });
+                applyPurchaseRequestThroughExecutor(req, l);
             }
         }
+    }
+
+    private void applyPurchaseRequestThroughExecutor(
+            final PurchaseRequest req,
+            final PurchaseRequestListener l) {
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                l.onPurchaseRequest(req);
+            }
+        });
     }
 }
