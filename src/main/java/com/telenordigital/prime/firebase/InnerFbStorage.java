@@ -74,33 +74,8 @@ public final class InnerFbStorage implements Storage {
                           final OcsState ocsState) throws StorageException {
         this.configFile = checkNotNull(configFile);
         this.databaseName = checkNotNull(databaseName);
-
-
         this.executor = new StorageInitiatedEventExecutor();
-
-        try (final FileInputStream serviceAccount = new FileInputStream(configFile)) {
-
-            final FirebaseOptions options = new FirebaseOptions.Builder()
-                    .setCredential(FirebaseCredentials.fromCertificate(serviceAccount))
-                    .setDatabaseUrl("https://" + databaseName + ".firebaseio.com/")
-                    .build();
-
-            try {
-                FirebaseApp.getInstance();
-            } catch (Exception e) {
-                FirebaseApp.initializeApp(options);
-            }
-
-            this.firebaseDatabase = FirebaseDatabase.getInstance();
-
-
-            // (un)comment next line to turn on/of extended debugging
-            // from firebase.
-            // this.firebaseDatabase.setLogLevel(com.google.firebase.database.Logger.Level.DEBUG);
-
-        } catch (IOException ex) {
-            throw new StorageException(ex);
-        }
+        this.firebaseDatabase = setupFirebaseInstance(databaseName, configFile);
 
         // XXX Read this, then fix something that reports connectivity status through the
         //     health mechanism.
@@ -114,24 +89,29 @@ public final class InnerFbStorage implements Storage {
 
         // XXX quick-fix
         // Load subscriber balance from firebase to in-memory OcsState
-        LOG.info("Loading initial balance from storage to in-memory OcsState");
-        for (Subscriber subscriber : getAllSubscribers()) {
-            LOG.info("{} - {}", subscriber.getMsisdn(), subscriber.getNoOfBytesLeft());
-            if (subscriber.getNoOfBytesLeft() > 0) {
-                String msisdn = subscriber.getMsisdn();
-                // XXX removing '+'
-                if (msisdn.charAt(0) == '+') {
-                    msisdn = msisdn.substring(1);
-                }
-                ocsState.addDataBytes(msisdn, subscriber.getNoOfBytesLeft());
-            }
-        }
+        loadSubscriberBalanceDataFromFirebaseToInMemoryStructure(ocsState);
 
         // Used to listen in on new products from the Firebase product catalog.
         this.quickBuyProducts = firebaseDatabase.getReference("quick-buy-products");
         this.products = firebaseDatabase.getReference("products");
 
-        final ValueEventListener productCatalogValueEventListener = new ValueEventListener() {
+        // Get listeners for various events
+        final ValueEventListener productCatalogValueEventListener = newCatalogDataChangedEventListner();
+        final ChildEventListener productCatalogListener = newProductDefChangedListener();
+
+
+        // Scoop up products left and right (and don't worry about duplicates, race conditions or
+        // anything else by sending them to the listeners.
+        this.quickBuyProducts.addChildEventListener(productCatalogListener);
+        this.quickBuyProducts.addValueEventListener(productCatalogValueEventListener);
+        this.products.addChildEventListener(productCatalogListener);
+        this.products.addValueEventListener(productCatalogValueEventListener);
+
+        addPurchaseEventListener();
+    }
+
+    private ValueEventListener newCatalogDataChangedEventListner() {
+        return new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
                 LOG.info("onDataChange");
@@ -142,53 +122,9 @@ public final class InnerFbStorage implements Storage {
             public void onCancelled(DatabaseError error) {
             }
         };
+    }
 
-        final ChildEventListener productCatalogListener = new AbstractChildEventListener() {
-            @Override
-            public void onChildAdded(final DataSnapshot snapshot, final String previousChildName) {
-                LOG.info("onChildAdded");
-                addOrUpdateProduct(snapshot);
-            }
-
-            @Override
-            public void onChildChanged(final DataSnapshot snapshot, final String previousChildName) {
-                LOG.info("onChildChanged");
-                addOrUpdateProduct(snapshot);
-            }
-
-            private void addOrUpdateProduct(final DataSnapshot snapshot) {
-                if (snapshot == null) {
-                    LOG.error("dataSnapshot can't be null");
-                    return;
-                }
-
-                if (!snapshot.exists()) {
-                    LOG.error("dataSnapshot must exist");
-                    return;
-                }
-
-                try {
-                    final ProductCatalogItem item =
-                            snapshot.getValue(ProductCatalogItem.class);
-                    if (item.getSku() != null) {
-                        addTopupProduct(item.getSku(), item.getNoOfBytes());
-                    }
-                    LOG.info("Just read a product catalog item: {}", item);
-                } catch (Exception e) {
-                    LOG.error("Couldn't transform req into FbPurchaseRequest", e);
-                }
-            }
-        };
-
-
-
-        // Scoop up products left and right (and don't worry about duplicates, race conditions or
-        // anything else.
-        this.quickBuyProducts.addChildEventListener(productCatalogListener);
-        this.quickBuyProducts.addValueEventListener(productCatalogValueEventListener);
-        this.products.addChildEventListener(productCatalogListener);
-        this.products.addValueEventListener(productCatalogValueEventListener);
-
+    private void addPurchaseEventListener() {
         this.clientRequests.addChildEventListener(
                 new ChildEventListener() {
                     @Override
@@ -235,6 +171,86 @@ public final class InnerFbStorage implements Storage {
                     public void onCancelled(DatabaseError error) {
                     }
                 });
+    }
+
+    private ChildEventListener newProductDefChangedListener() {
+        return new AbstractChildEventListener() {
+                @Override
+                public void onChildAdded(final DataSnapshot snapshot, final String previousChildName) {
+                    LOG.info("onChildAdded");
+                    addOrUpdateProduct(snapshot);
+                }
+
+                @Override
+                public void onChildChanged(final DataSnapshot snapshot, final String previousChildName) {
+                    LOG.info("onChildChanged");
+                    addOrUpdateProduct(snapshot);
+                }
+
+                private void addOrUpdateProduct(final DataSnapshot snapshot) {
+                    if (snapshot == null) {
+                        LOG.error("dataSnapshot can't be null");
+                        return;
+                    }
+
+                    if (!snapshot.exists()) {
+                        LOG.error("dataSnapshot must exist");
+                        return;
+                    }
+
+                    try {
+                        final ProductCatalogItem item =
+                                snapshot.getValue(ProductCatalogItem.class);
+                        if (item.getSku() != null) {
+                            addTopupProduct(item.getSku(), item.getNoOfBytes());
+                        }
+                        LOG.info("Just read a product catalog item: {}", item);
+                    } catch (Exception e) {
+                        LOG.error("Couldn't transform req into FbPurchaseRequest", e);
+                    }
+                }
+            };
+    }
+
+    private void loadSubscriberBalanceDataFromFirebaseToInMemoryStructure(OcsState ocsState) {
+        LOG.info("Loading initial balance from storage to in-memory OcsState");
+        for (Subscriber subscriber : getAllSubscribers()) {
+            LOG.info("{} - {}", subscriber.getMsisdn(), subscriber.getNoOfBytesLeft());
+            if (subscriber.getNoOfBytesLeft() > 0) {
+                String msisdn = subscriber.getMsisdn();
+                // XXX removing '+'
+                if (msisdn.charAt(0) == '+') {
+                    msisdn = msisdn.substring(1);
+                }
+                ocsState.addDataBytes(msisdn, subscriber.getNoOfBytesLeft());
+            }
+        }
+    }
+
+    private FirebaseDatabase setupFirebaseInstance(String databaseName, String configFile) throws StorageException {
+        try (final FileInputStream serviceAccount = new FileInputStream(configFile)) {
+
+            final FirebaseOptions options = new FirebaseOptions.Builder()
+                    .setCredential(FirebaseCredentials.fromCertificate(serviceAccount))
+                    .setDatabaseUrl("https://" + databaseName + ".firebaseio.com/")
+                    .build();
+
+            try {
+                FirebaseApp.getInstance();
+            } catch (Exception e) {
+                FirebaseApp.initializeApp(options);
+            }
+
+            return FirebaseDatabase.getInstance();
+
+
+            // (un)comment next line to turn on/of extended debugging
+            // from firebase.
+            // this.firebaseDatabase.setLogLevel(com.google.firebase.database.Logger.Level.DEBUG);
+
+        } catch (IOException ex) {
+            throw new StorageException(ex);
+        }
     }
 
     private void interpretDataSnapshotAsProductCatalogItem(DataSnapshot snapshot) {
