@@ -1,6 +1,7 @@
 package com.telenordigital.prime.disruptor;
 
 import com.lmax.disruptor.RingBuffer;
+import com.telenordigital.prime.ocs.FetchDataBucketInfo;
 
 import static com.telenordigital.prime.disruptor.PrimeEventMessageType.FETCH_DATA_BUCKET;
 import static com.telenordigital.prime.disruptor.PrimeEventMessageType.RETURN_UNUSED_DATA_BUCKET;
@@ -13,8 +14,7 @@ public class PrimeEventProducer {
 
     private final RingBuffer<PrimeEvent> ringBuffer;
 
-    public PrimeEventProducer(final RingBuffer<PrimeEvent> ringBuffer)
-    {
+    public PrimeEventProducer(final RingBuffer<PrimeEvent> ringBuffer) {
         this.ringBuffer = ringBuffer;
     }
 
@@ -23,15 +23,12 @@ public class PrimeEventProducer {
             final long bytes) {
 
         long sequence = ringBuffer.next();
-        try
-        {
+        try {
             final PrimeEvent event = ringBuffer.get(sequence);
             event.setMessageType(TOPUP_DATA_BUNDLE_BALANCE);
             event.setMsisdn(msisdn);
             event.setBucketBytes(bytes);
-        }
-        finally
-        {
+        } finally {
             ringBuffer.publish(sequence);
         }
     }
@@ -42,38 +39,43 @@ public class PrimeEventProducer {
             final String ocsgwStreamId) {
 
         long sequence = ringBuffer.next();
-        try
-        {
+        try {
             final PrimeEvent event = ringBuffer.get(sequence);
             event.setMessageType(RETURN_UNUSED_DATA_BUCKET);
             event.setMsisdn(msisdn);
             event.setBucketBytes(bytes);
             event.setOcsgwStreamId(ocsgwStreamId);
-        }
-        finally
-        {
+        } finally {
             ringBuffer.publish(sequence);
         }
     }
 
     public void fetchDataBucketEvent(
+            final FetchDataBucketInfo request,
+            final String streamId) {
+        fetchDataBucketEvent(
+                request.getMsisdn(),
+                request.getBytes(),
+                streamId,
+                request.getRequestId());
+
+    }
+
+    private void fetchDataBucketEvent(
             final String msisdn,
             final long bytes,
             final String ocsgwStreamId,
             final String ocsgwRequestId) {
 
         long sequence = ringBuffer.next();
-        try
-        {
+        try {
             final PrimeEvent event = ringBuffer.get(sequence);
             event.setMessageType(FETCH_DATA_BUCKET);
             event.setMsisdn(msisdn);
             event.setBucketBytes(bytes);
             event.setOcsgwStreamId(ocsgwStreamId);
             event.setOcsgwRequestId(ocsgwRequestId);
-        }
-        finally
-        {
+        } finally {
             ringBuffer.publish(sequence);
         }
     }

@@ -114,11 +114,8 @@ public class OcsService
             public void onNext(final FetchDataBucketInfo request) {
                 LOG.info("Received fetchDataBucket request :: for MSISDN: {} of {} bytes with request id: {}",
                         request.getMsisdn(), request.getBytes(), request.getRequestId());
-                producer.fetchDataBucketEvent(
-                        request.getMsisdn(),
-                        request.getBytes(),
-                        streamId,
-                        request.getRequestId());
+
+                producer.fetchDataBucketEvent(request, streamId);
             }
 
             @Override
