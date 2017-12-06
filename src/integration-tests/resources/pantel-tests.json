@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "pantel-tests",
+  "private_key_id": "1da9f050eea9a117239936ea8cd105ba45f18f09",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCSM/n0YiKuzbPn\nz5HsSUfaRpP+sLpXDR/anYFNo2aqkEAVIqnhit6JP5CEN2DvnG3jqjFiYSbjipcv\nYvfDGj7xEEcek+mlSfP0rQk1usv3Wty+iSAHbwpeufAII49XObjjIKSyzJGA29bR\nTld/c5+KLK0sKYEbUWqppFR6mVYYAQA+zCVVv+M+7PG7agfHpWXSn9pSHUHHE1i4\nbbeCKdnhE4eAXndINztfxxul7sOnd92mCJRAeVdyHxUQn2Lu65XD+A2qTM1fFdro\nCyGBB7NX1NjrCAqURmnd7bGIpcfYtg0jFmQFgGdr3YGzlQ5bcn0sARsAcBjq9TA7\n38+RuZKjAgMBAAECggEADPC+HkapXIt8caIfqlL6Icm+w6Y6IrEDXBg2H6cSKTqc\npsJArbkwOo7+aEAhO6lpgzhx0owCzdUFzf3r1sBLSI7w8eCUUjrvdX1IpBF6iCmU\nrDtQMxg9n2YZvBQEVettVT0dwW2ghfqZ/ZX6N0pb7qDxsEekKRorCgTaLVfGalgE\nvUSq02OMs72ylGkB5Zd85/2nsgWl+sg0YqJ+HXkvOFi8O4wQ20izRFaL0VbLvZZ4\ncLnQcjqMN1lpuDQGB5fXgpBMgK7ib58dlZfPLyNzOc3kCtNiUl7Mxx4Yn4wqCrHJ\n9QbvTGeIDHvLPsRXfS/OQ7gqB715AWODdKUU6nO1gQKBgQDHnivYdrnzRz+OSAZB\nVsVyXP1fo/M9ckqbioSvM0n564UpXUghcmbzx9qitn6vAw+NTQc/h/82Fak50uNi\nf+q+7CU+kjuCXxVR01fZuIoMMsF8AEyduSGc6OboDfWyOj1QUj51HOEu0MBlEG+P\nRq72EmAjHcjUAK7UlbvtnZk2oQKBgQC7f4X2qZsaOB+AfEOS9J+zdd/tDrny5PkH\nFFzc4gPTxRIfdLhI+iPIvT0rePVI6HN2qTo9cix3Xa7bupU2ncKmx3ksFS6MPEcn\nVuWdzOfSC6Kf/yWWcKVS3CBduPf69E2Ed1yNhZwrsGSH4oKTdj2BeNk76byRMpIr\noB1INx82wwKBgQCeynbscb2IBcRMBYVcUo8sY0Z23y+uUI2C35Se3fjZ4v2Box+u\n45d8Ex4b03pA8/laGM1MP33H40FDqzuQblspVyZleOP32HVYKvu2SPMfsvxxDLfl\nu5A+hpKwQ/KPvX5qt5HRjZCfshVqD8H+wmaJfqKVLKtF4ekxWI8u/PAVIQKBgQCC\n1BOEronUPK72dz6rbtd0YF50Sd9D9bMx1mqJkYc8H/lqS4Y/HZMUgb8J82erjM7s\nUF6b+2u9inf1R/bP2jq1JuCM+ua04WaAs6iaeByVupqp612t4EHrVD+dRfB6gjcI\npETHVyBGd9ld25ZjEJEQI2Po40o5QkEuAZYNCrFUAwKBgBDqbH4vSO/JI2Ber+Jp\n/B2DqE+bAx20pA2RosxLjCNQ2pX0CvxjhH4dePXKcqyKBfQ2GmZ2Hf2wgwQJJ6Uv\nbvjssys17HzwgMXmFhoMj/f+bQXOIxFeiGyW/OffYArYORaKb5TP4O0AlPovgWXK\nLY98aKuiAmTa59asn0uibhfx\n-----END PRIVATE KEY-----\n",
+  "client_email": "pantel-tests@appspot.gserviceaccount.com",
+  "client_id": "109024314712339599655",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://accounts.google.com/o/oauth2/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/pantel-tests%40appspot.gserviceaccount.com"
+}

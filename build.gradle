@@ -8,6 +8,19 @@ apply plugin: 'java'
 apply plugin: 'application'
 apply plugin: 'com.github.johnrengelman.shadow'
 
+sourceSets {
+  test {
+    java.srcDirs = ['src/test/java']
+  }
+
+  integration {
+    java.srcDirs = ['src/test/java', 'src/integration-tests/java']
+    resources.srcDir 'src/integration-tests/resources'
+    compileClasspath += main.output + test.output
+    runtimeClasspath += main.output + test.output
+  }
+}
+
 
 dependencies {
     implementation project(':ocs-api')
@@ -18,6 +31,19 @@ dependencies {
     testImplementation 'io.dropwizard:dropwizard-testing:1.1.4'
     testCompile group: 'org.mockito', name: 'mockito-core', version: '2.10.0'
 }
+
+configurations {
+  integrationImplementation.extendsFrom testImplementation
+  integrationCompile.extendsFrom testCompile
+  integrationRuntime.extendsFrom testRuntime
+}
+
+task integration(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
+  testClassesDir = sourceSets.integration.output.classesDir
+  classpath = sourceSets.integration.runtimeClasspath
+}
+
+
 
 mainClassName = 'com.telenordigital.prime.PrimeApplication'
 
