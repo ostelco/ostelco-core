@@ -5,7 +5,7 @@
 [![Build Status](https://travis-ci.org/ostelco/ostelco-core.svg?branch=master)](https://travis-ci.org/ostelco/ostelco-core)
 
 
-Automatic code review, let's ty it:
+Automatic code review, let's try it:
 https://www.codacy.com/app/la3lma/ostelco-core/dashboard
 
 

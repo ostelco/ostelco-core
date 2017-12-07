@@ -1,5 +1,7 @@
 package com.telenordigital.prime.events;
 
+import java.util.Collection;
+
 /**
  * Interface that abstracts the interactions that
  * are necessary to get/update customer data and to both
@@ -12,7 +14,7 @@ public interface Storage  extends ProductDescriptionCache {
 
     String injectPurchaseRequest(final PurchaseRequest pr);
 
-    void updatedisplaydatastructure(String msisdn) throws StorageException;
+    void updateDisplayDatastructure(String msisdn) throws StorageException;
 
     void removeDisplayDatastructure(String msisdn) throws StorageException;
 
@@ -32,5 +34,8 @@ public interface Storage  extends ProductDescriptionCache {
     void removePurchaseRequestById(String id);
 
     void removeRecordOfPurchaseById(String id);
-}
+
+    Collection<Subscriber> getAllSubscribers();
+
+    }
 

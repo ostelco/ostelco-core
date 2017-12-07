@@ -82,7 +82,7 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
         try {
             LOG.info("    Handling topup product = " + pr);
 
-            storage.updatedisplaydatastructure(msisdn);
+            storage.updateDisplayDatastructure(msisdn);
             storage.addRecordOfPurchaseByMsisdn(msisdn, pr.getSku(), pr.getMillisSinceEpoch());
             storage.removePurchaseRequestById(pr.getId());
             ocsBalanceUpdater.updateBalance(msisdn, topup.getTopUpInBytes());
@@ -94,7 +94,7 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
     private void setRemainingByMsisdn(final String msisdn, final long noOfBytes) throws EventProcessorException {
         try {
             storage.setRemainingByMsisdn(msisdn, noOfBytes);
-            storage.updatedisplaydatastructure(msisdn);
+            storage.updateDisplayDatastructure(msisdn);
         } catch (StorageException e) {
             throw new EventProcessorException(e);
         }
