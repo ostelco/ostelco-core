@@ -419,32 +419,33 @@ public final class InnerFbStorage implements Storage {
 
         final Query q = authorativeUserData.orderByChild("msisdn").equalTo(msisdn).limitToFirst(1);
 
+        final ValueEventListener listenerThatWillReadSubcriberData = new ValueEventListener() {
+            @Override
+            public void onDataChange(final DataSnapshot snapshot) {
+
+                if (!snapshot.hasChildren()) {
+                    cdl.countDown();
+                    return;
+                } else {
+                    for (final DataSnapshot snap : snapshot.getChildren()) {
+
+                        final FbSubscriber sub =
+                                snap.getValue(FbSubscriber.class);
+                        final String key = snap.getKey();
+
+                        sub.setFbKey(key);
+                        result.add(sub);
+                        cdl.countDown();
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+            }
+        };
         q.addListenerForSingleValueEvent(
-                new ValueEventListener() {
-                    @Override
-                    public void onDataChange(final DataSnapshot snapshot) {
-
-                        if (!snapshot.hasChildren()) {
-                            cdl.countDown();
-                            return;
-                        } else {
-                            for (final DataSnapshot snap : snapshot.getChildren()) {
-
-                                final FbSubscriber sub =
-                                        snap.getValue(FbSubscriber.class);
-                                final String key = snap.getKey();
-
-                                sub.setFbKey(key);
-                                result.add(sub);
-                                cdl.countDown();
-                            }
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError error) {
-                    }
-                });
+                listenerThatWillReadSubcriberData);
 
         try {
             if (!cdl.await(10, TimeUnit.SECONDS)) {

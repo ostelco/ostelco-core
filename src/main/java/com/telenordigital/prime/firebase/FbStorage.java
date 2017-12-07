@@ -11,69 +11,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+/**
+ * Interface towards a firebase implementation of storage.
+ * It's also a very simple cache that will use cached
+ * instances of subscriber records instead of asking the
+ * firebase database for authorative data.
+ *
+ * It will also listen for changes coming from firebase, but
+ * clearly there is room for race conditions in the present
+ * implementation.
+ *
+ * The FbStorage is also not a pure cache, since it makes
+ * the assumption that the backend is an InnerFbStorage instance,
+ * not a generic Storage instance.
+ */
 public final class FbStorage implements Storage {
 
     private final static Logger LOG = LoggerFactory.getLogger(FbStorage.class);
-
-
-    private final static class SubscriberEntry {
-        private final Subscriber subscriber;
-        private final ReentrantLock lock;
-
-        public SubscriberEntry(final Subscriber subscriber) {
-            this.subscriber = checkNotNull(subscriber);
-            this.lock = new ReentrantLock();
-        }
-    }
-
-    private final static class SubscriberCache {
-        private final Set<SubscriberEntry> dirtyEntries;
-
-        private final Map<String, SubscriberEntry> map;
-
-        public SubscriberCache() {
-            this.map = new ConcurrentHashMap<>();
-            this.dirtyEntries = new ConcurrentSkipListSet<>();
-        }
-
-
-        public void primeCache(Collection<Subscriber> allSubscribers) {
-        }
-
-        public void readLock(String msisdn) {
-        }
-
-        public void writeLock(String msisdn) {
-        }
-
-        public boolean containsSubscriber(final String msisdn) {
-            return false;
-        }
-
-        public Subscriber getSubscriber(final String msisdn) {
-            return null;
-        }
-
-        public void removeSubscriber(final String msisdn) {
-
-        }
-
-        public void unlock(final String msisdn) {
-
-        }
-
-         public void insertSubscriber(final Subscriber sub) {
-
-         }
-    }
 
     private final InnerFbStorage innerStorage;
     private final SubscriberCache cache;
