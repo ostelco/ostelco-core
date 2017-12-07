@@ -46,6 +46,52 @@ public final class FbDatabaseFacade {
         this.products = firebaseDatabase.getReference("products");
     }
 
+    private ValueEventListener newCatalogDataChangedEventListener(final Consumer<ProductCatalogItem> consumer) {
+        checkNotNull(consumer);
+        return new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                LOG.info("onDataChange");
+                interpretDataSnapshotAsProductCatalogItem(snapshot,consumer);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+            }
+        };
+    }
+
+
+
+    private static boolean snapshotIsInvalid(final DataSnapshot snapshot) {
+        if (snapshot == null) {
+            LOG.error("dataSnapshot can't be null");
+            return true;
+        }
+
+        if (!snapshot.exists()) {
+            LOG.error("dataSnapshot must exist");
+            return true;
+        }
+        return false;
+    }
+
+    private void interpretDataSnapshotAsProductCatalogItem(final DataSnapshot snapshot, Consumer<ProductCatalogItem> consumer) {
+        checkNotNull(consumer);
+        if (snapshotIsInvalid(snapshot)) return;
+
+        try {
+            final ProductCatalogItem item =
+                    snapshot.getValue(ProductCatalogItem.class);
+            if (item.getSku() != null) {
+                consumer.accept(item);
+            }
+            LOG.info("Just read a product catalog item: " + item);
+        } catch (Exception e) {
+            LOG.error("Couldn't transform req into FbPurchaseRequest", e);
+        }
+    }
+
 
     public void addProductCatalogListener(final Consumer<DataSnapshot> consumer) {
         checkNotNull(consumer);
@@ -60,6 +106,13 @@ public final class FbDatabaseFacade {
         this.quickBuyProducts.addChildEventListener(productCatalogListener);
         this.products.addChildEventListener(productCatalogListener);
     }
+
+    public void addProductCatalogValueListener(final Consumer<ProductCatalogItem> consumer) {
+        checkNotNull(consumer);
+        final ValueEventListener productCatalogValueEventListener = newCatalogDataChangedEventListener(consumer);
+        addProductCatalogValueListener(productCatalogValueEventListener);
+    }
+
 
     public void addProductCatalogValueListener(final ValueEventListener productCatalogValueEventListener) {
         checkNotNull(productCatalogValueEventListener);
