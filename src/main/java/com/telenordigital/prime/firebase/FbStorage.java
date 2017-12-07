@@ -41,15 +41,281 @@ public final class FbStorage implements Storage {
     private static final Logger LOG = LoggerFactory.getLogger(FbStorage.class);
 
     private final ProductDescriptionCache productCache;
-    private final DatabaseReference authorativeUserData;
-    private final DatabaseReference clientRequests;
-    private final DatabaseReference clientVisibleSubscriberRecords;
-    private final DatabaseReference recordsOfPurchase;
-    private final DatabaseReference quickBuyProducts;
-    private final DatabaseReference products;
 
-    private final FirebaseDatabase firebaseDatabase;
 
+    /**
+     * Presenting a fascade for the many and  varied firebase databases
+     * we're using.
+     */
+    public  final static class FbDatabaseFacade {
+
+        private final DatabaseReference authorativeUserData;
+        private final DatabaseReference clientRequests;
+        private final DatabaseReference clientVisibleSubscriberRecords;
+        private final DatabaseReference recordsOfPurchase;
+        private final DatabaseReference quickBuyProducts;
+        private final DatabaseReference products;
+
+        FbDatabaseFacade(FirebaseDatabase firebaseDatabase) {
+            checkNotNull(firebaseDatabase);
+            // XXX Read this, then fix something that reports connectivity status through the
+            //     health mechanism.
+            // https://www.firebase.com/docs/web/guide/offline-capabilities.html#section-connection-state
+            // this.firebaseDatabase.getReference("/.info/connected").addValueEventListener()
+
+            this.authorativeUserData = firebaseDatabase.getReference("authorative-user-storage");
+            this.clientRequests = firebaseDatabase.getReference("client-requests");
+            this.clientVisibleSubscriberRecords = firebaseDatabase.getReference("profiles");
+            this.recordsOfPurchase = firebaseDatabase.getReference("records-of-purchase");
+
+            // Used to listen in on new products from the Firebase product catalog.
+            this.quickBuyProducts = firebaseDatabase.getReference("quick-buy-products");
+            this.products = firebaseDatabase.getReference("products");
+        }
+
+        public void addProductCatalogListener(final ChildEventListener productCatalogListener) {
+            checkNotNull(productCatalogListener);
+            this.quickBuyProducts.addChildEventListener(productCatalogListener);
+            this.products.addChildEventListener(productCatalogListener);
+        }
+
+        public void addProductCatalogValueListener(ValueEventListener productCatalogValueEventListener) {
+            checkNotNull(productCatalogValueEventListener);
+            this.quickBuyProducts.addValueEventListener(productCatalogValueEventListener);
+            this.products.addValueEventListener(productCatalogValueEventListener);
+        }
+
+        public void addPurchaseEventListener(final ChildEventListener cel) {
+            checkNotNull(cel);
+            this.clientRequests.addChildEventListener(cel);
+        }
+
+        public String pushRecordOfPurchaseByMsisdn(Map<String, Object> asMap) {
+
+            final DatabaseReference dbref = recordsOfPurchase.push();
+
+            dbref.updateChildren(asMap);
+            return dbref.getKey();
+        }
+
+        public void updateClientVisibleUsageString(String msisdn, String gbLeft) throws StorageException {
+            final String key = getKeyFromPhoneNumber(clientVisibleSubscriberRecords, msisdn);
+            if (key == null) {
+                LOG.error("Could not find entry for phoneNumber = " + msisdn + " Not updating user visible storage");
+                return;
+            }
+
+            final Map<String, Object> displayRep = new HashMap<>();
+            displayRep.put("phoneNumber", msisdn);
+
+            displayRep.put("usage", gbLeft);
+
+            clientVisibleSubscriberRecords
+                    .child(key)
+                    .updateChildren(displayRep);
+        }
+
+        public void removeSubscriberByMsisdn(String msisdn)  throws StorageException{
+            removeByMsisdn(authorativeUserData, msisdn);
+        }
+
+        private void removeByMsisdn(
+                final DatabaseReference dbref,
+                final String msisdn) throws StorageException {
+            checkNotNull(msisdn);
+            checkNotNull(dbref);
+            final String key = getKeyFromMsisdn(dbref, msisdn);
+            if (key != null) {
+                removeChild(dbref, key);
+            }
+        }
+
+
+        private  String getKeyFromLookupKey(final DatabaseReference dbref, String msisdn, String lookupKey) throws StorageException {
+            final CountDownLatch cdl = new CountDownLatch(1);
+            final Set<String> result = new HashSet<>();
+            dbref.orderByChild(lookupKey)
+                    .equalTo(msisdn)
+                    .limitToFirst(1).addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(final DataSnapshot snapshot) {
+                    handleDataChange(snapshot, cdl, result, msisdn);
+                }
+
+                @Override
+                public void onCancelled(DatabaseError error) {
+
+                }
+            });
+
+            try {
+                if (!cdl.await(10, TimeUnit.SECONDS)) {
+                    throw new StorageException("Query timed out");
+                } else if (result.isEmpty()) {
+                    return null;
+                } else {
+                    return result.iterator().next();
+                }
+            } catch (InterruptedException e) {
+                throw new StorageException("Interrupted", e);
+            }
+        }
+
+        private  String getKeyFromPhoneNumber(final DatabaseReference dbref, final String msisdn) throws StorageException {
+            final String lookupKey = "phoneNumber";
+            return getKeyFromLookupKey(dbref, msisdn, lookupKey);
+        }
+
+        private  String getKeyFromMsisdn(final DatabaseReference dbref, final String msisdn) throws StorageException {
+            final String lookupKey = "msisdn";
+            return getKeyFromLookupKey(dbref, msisdn, lookupKey);
+        }
+
+        public void removeByMsisdn(String msisdn) throws StorageException {
+            removeByMsisdn(clientVisibleSubscriberRecords, msisdn);
+        }
+
+        public String injectPurchaseRequest(PurchaseRequest pr) {
+            final FbPurchaseRequest cr = (FbPurchaseRequest) pr;
+            final DatabaseReference dbref = clientRequests.push();
+            final Map<String, Object> crAsMap = cr.asMap();
+            dbref.setValue(crAsMap);
+            return dbref.getKey();
+        }
+
+        public void removeRecordOfPurchaseById(String id) {
+            removeChild(recordsOfPurchase, id);
+        }
+
+        private void removeChild(final DatabaseReference db, final String childId) {
+            // XXX Removes whole tree, not just the subtree for id.
+            //     how do I fix this?
+            checkNotNull(db);
+            checkNotNull(childId);
+            db.child(childId).getRef().removeValue();
+        }
+
+        public void removePurchaseRequestById(String id) {
+            checkNotNull(id);
+            removeChild(clientRequests, id);
+        }
+
+        public Subscriber getSubscriberFromMsisdn(String msisdn) throws StorageException {
+            final CountDownLatch cdl = new CountDownLatch(1);
+            final Set<Subscriber> result = new HashSet<>();
+
+            final Query q = authorativeUserData.orderByChild("msisdn").equalTo(msisdn).limitToFirst(1);
+
+            final ValueEventListener listenerThatWillReadSubcriberData = new ValueEventListener() {
+                @Override
+                public void onDataChange(final DataSnapshot snapshot) {
+
+                    if (!snapshot.hasChildren()) {
+                        cdl.countDown();
+                        return;
+                    } else {
+                        for (final DataSnapshot snap : snapshot.getChildren()) {
+
+                            final FbSubscriber sub =
+                                    snap.getValue(FbSubscriber.class);
+                            final String key = snap.getKey();
+
+                            sub.setFbKey(key);
+                            result.add(sub);
+                            cdl.countDown();
+                        }
+                    }
+                }
+
+                @Override
+                public void onCancelled(DatabaseError error) {
+                }
+            };
+
+            q.addListenerForSingleValueEvent(
+                    listenerThatWillReadSubcriberData);
+
+            try {
+                if (!cdl.await(10, TimeUnit.SECONDS)) {
+                    LOG.info("authorativeuserdata = '" + authorativeUserData
+                            + "', msisdn = '" + msisdn
+                            + "' => timeout");
+                    throw new StorageException("Query timed out. authorativeuserdata = '" + authorativeUserData + "', msisdn = '" + msisdn + "'");
+                } else if (result.isEmpty()) {
+                    LOG.info("authorativeuserdata = '" + authorativeUserData
+                            + "', msisdn = '" + msisdn
+                            + "' => null");
+                    return null;
+                } else {
+                    final Subscriber r = result.iterator().next();
+                    LOG.info("authorativeuserdata = '" + authorativeUserData + "', msisdn = '" + msisdn + "' => " + r);
+                    return r;
+                }
+            } catch (InterruptedException e) {
+                LOG.info("authorativeuserdata = '" + authorativeUserData + "', msisdn = '" + msisdn + "' => interrupted");
+                throw new StorageException("Interrupted", e);
+            }
+        }
+
+        public void updateAuthorativeUserData(FbSubscriber sub) {
+            final DatabaseReference dbref = authorativeUserData.child(sub.getFbKey());
+            dbref.updateChildren(sub.asMap());
+        }
+
+        public String insertNewSubscriber(FbSubscriber sub) {
+            final DatabaseReference dbref = authorativeUserData.push();
+            sub.setFbKey(dbref.getKey());
+            dbref.updateChildren(sub.asMap());
+            return dbref.getKey();
+        }
+
+        public Collection<Subscriber> getAllSubscribers() {
+            final Query q = authorativeUserData.orderByKey();
+            final Set<Subscriber> subscribers = new LinkedHashSet<>();
+            final CountDownLatch cdl = new CountDownLatch(1);
+            final ValueEventListener collectingVisitor =
+                    newListenerThatWillCollectAllSubscribers(subscribers, cdl);
+
+            q.addListenerForSingleValueEvent(collectingVisitor);
+
+            try {
+                cdl.await(10, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                LOG.error("Failed to get all subscribers");
+            }
+            if (cdl.getCount() > 0) {
+                LOG.error("Failed to get all subscribers");
+            }
+            return subscribers;
+        }
+
+        private  static ValueEventListener newListenerThatWillCollectAllSubscribers(final Set<Subscriber> subscribers, final CountDownLatch cdl) {
+            checkNotNull(subscribers);
+            checkNotNull(cdl);
+            return new ValueEventListener() {
+                @Override
+                public void onDataChange(final DataSnapshot snapshot) {
+                    if (!snapshot.hasChildren()) {
+                        cdl.countDown();
+                        return;
+                    }
+                    for (final DataSnapshot child : snapshot.getChildren()) {
+                        final FbSubscriber subscriber = child.getValue(FbSubscriber.class);
+                        subscriber.setFbKey(child.getKey());
+                        subscribers.add(subscriber);
+                    }
+                    cdl.countDown();
+                }
+                @Override
+                public void onCancelled(DatabaseError error) {
+                    LOG.error(error.getMessage(), error.toException());
+                }
+            };
+        }
+    }
+
+
+    final FbDatabaseFacade facade;
     private final StorageInitiatedEventExecutor executor;
 
     public FbStorage(final String databaseName,
@@ -61,41 +327,45 @@ public final class FbStorage implements Storage {
 
         this.productCache = ProductDescriptionCacheImpl.getInstance();
 
-        this.firebaseDatabase = setupFirebaseInstance(databaseName, configFile);
+        final FirebaseDatabase firebaseDatabase;
+        firebaseDatabase = setupFirebaseInstance(databaseName, configFile);
 
-        // XXX Read this, then fix something that reports connectivity status through the
-        //     health mechanism.
-        // https://www.firebase.com/docs/web/guide/offline-capabilities.html#section-connection-state
-        // this.firebaseDatabase.getReference("/.info/connected").addValueEventListener()
-
-        this.authorativeUserData = firebaseDatabase.getReference("authorative-user-storage");
-        this.clientRequests = firebaseDatabase.getReference("client-requests");
-        this.clientVisibleSubscriberRecords = firebaseDatabase.getReference("profiles");
-        this.recordsOfPurchase = firebaseDatabase.getReference("records-of-purchase");
+        this.facade = new FbDatabaseFacade(firebaseDatabase);
 
         // XXX quick-fix
         // Load subscriber balance from firebase to in-memory OcsState
         loadSubscriberBalanceDataFromFirebaseToInMemoryStructure(ocsState);
 
-        // Used to listen in on new products from the Firebase product catalog.
-        this.quickBuyProducts = firebaseDatabase.getReference("quick-buy-products");
-        this.products = firebaseDatabase.getReference("products");
-
         // Get listeners for various events
         final ValueEventListener productCatalogValueEventListener = newCatalogDataChangedEventListner();
         final ChildEventListener productCatalogListener = newProductDefChangedListener();
 
-
         // Scoop up products left and right (and don't worry about duplicates, race conditions or
         // anything else by sending them to the listeners.
-        this.quickBuyProducts.addChildEventListener(productCatalogListener);
-        this.quickBuyProducts.addValueEventListener(productCatalogValueEventListener);
-        this.products.addChildEventListener(productCatalogListener);
-        this.products.addValueEventListener(productCatalogValueEventListener);
-
-        addPurchaseEventListener();
+        facade.addProductCatalogListener(productCatalogListener);
+        facade.addProductCatalogValueListener(productCatalogValueEventListener);
+        facade.addPurchaseEventListener(newChildListenerThatDispatchesPurchaseRequestToExecutor());
     }
 
+    private AbstractChildEventListener newChildListenerThatDispatchesPurchaseRequestToExecutor() {
+        return new AbstractChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot snapshot, String previousChildName) {
+                LOG.info("onChildAdded");
+                if (snapshotIsInvalid(snapshot)) return;
+
+                try {
+                    final FbPurchaseRequest req =
+                            snapshot.getValue(FbPurchaseRequest.class);
+                    req.setId(snapshot.getKey());
+                    req.setMillisSinceEpoch(getMillisSinceEpoch());
+                    executor.onPurchaseRequest(req);
+                } catch (Exception e) {
+                    LOG.error("Couldn't transform req into FbPurchaseRequest", e);
+                }
+            }
+        };
+    }
 
     @Override
     public void addTopupProduct(final String sku, final long noOfBytes) {
@@ -127,25 +397,8 @@ public final class FbStorage implements Storage {
         };
     }
 
-    private void addPurchaseEventListener() {
-        this.clientRequests.addChildEventListener(
-                new AbstractChildEventListener() {
-                    @Override
-                    public void onChildAdded(DataSnapshot snapshot, String previousChildName) {
-                        LOG.info("onChildAdded");
-                        if (snapshotIsInvalid(snapshot)) return;
-
-                        try {
-                            final FbPurchaseRequest req =
-                                    snapshot.getValue(FbPurchaseRequest.class);
-                            req.setId(snapshot.getKey());
-                            req.setMillisSinceEpoch(Instant.now().toEpochMilli());
-                            executor.onPurchaseRequest(req);
-                        } catch (Exception e) {
-                            LOG.error("Couldn't transform req into FbPurchaseRequest", e);
-                        }
-                    }
-                });
+    private long getMillisSinceEpoch() {
+        return Instant.now().toEpochMilli();
     }
 
     private ChildEventListener newProductDefChangedListener() {
@@ -263,8 +516,6 @@ public final class FbStorage implements Storage {
             throw new StorageException("Unknown MSISDN " + msisdn);
         }
 
-        final Map<String, Object> displayRep = new HashMap<>();
-        displayRep.put("phoneNumber", subscriber.getMsisdn());
 
         // XXX This is both:
         //     a) A layering violation, since it mixes a backend server/information
@@ -275,39 +526,28 @@ public final class FbStorage implements Storage {
         final float noOfGBLeft = noOfBytes / 1.0E09f;
         final String gbLeft = String.format("%.2f GB", noOfGBLeft);
 
-        final String key = getKeyFromPhoneNumber(clientVisibleSubscriberRecords, msisdn);
-        if (key == null) {
-            LOG.error("Could not find entry for phoneNumber = " + msisdn + " Not updating user visible storage");
-            return;
-        }
+        facade.updateClientVisibleUsageString(msisdn, gbLeft);
 
-        displayRep.put("usage", gbLeft);
 
-        clientVisibleSubscriberRecords
-                .child(key)
-                .updateChildren(displayRep);
     }
 
     @Override
     public void removeDisplayDatastructure(String msisdn) throws StorageException {
         checkNotNull(msisdn);
-        removeByMsisdn(clientVisibleSubscriberRecords, msisdn);
+        facade.removeByMsisdn(msisdn);
     }
 
 
     @Override
     public String injectPurchaseRequest(final PurchaseRequest pr) {
         checkNotNull(pr);
-        FbPurchaseRequest cr = (FbPurchaseRequest) pr;
-        final DatabaseReference dbref = clientRequests.push();
-        final Map<String, Object> crAsMap = cr.asMap();
-        dbref.setValue(crAsMap);
-        return dbref.getKey();
+        return facade.injectPurchaseRequest(pr);
+
     }
 
     @Override
      public void removeRecordOfPurchaseById(final String id) {
-        removeChild(recordsOfPurchase, id);
+        facade.removeRecordOfPurchaseById(id);
     }
 
     @Override
@@ -319,89 +559,28 @@ public final class FbStorage implements Storage {
 
         final FbRecordOfPurchase purchase =
                 new FbRecordOfPurchase(msisdn, sku, millisSinceEpoch);
-
-        final DatabaseReference dbref = recordsOfPurchase.push();
         final Map<String, Object> asMap = purchase.asMap();
-        dbref.updateChildren(asMap);
-        return dbref.getKey();
+
+        return facade.pushRecordOfPurchaseByMsisdn(asMap);
     }
 
-    private void removeChild(final DatabaseReference db, final String childId) {
-        // XXX Removes whole tree, not just the subtree for id.
-        //     how do I fix this?
-        checkNotNull(db);
-        checkNotNull(childId);
-        db.child(childId).getRef().removeValue();
-    }
-
-    private void removeByMsisdn(
-            final DatabaseReference dbref,
-            final String msisdn) throws StorageException {
-        checkNotNull(msisdn);
-        checkNotNull(dbref);
-        final String key = getKeyFromMsisdn(dbref, msisdn);
-        if (key != null) {
-            removeChild(dbref, key);
-        }
-    }
 
     @Override
     public void removeSubscriberByMsisdn(final String msisdn) throws StorageException {
         checkNotNull(msisdn);
-        removeByMsisdn(authorativeUserData, msisdn);
+        facade.removeSubscriberByMsisdn(msisdn);
     }
 
 
     @Override
     public void removePurchaseRequestById(final String id) {
         checkNotNull(id);
-        removeChild(clientRequests, id);
+        facade.removePurchaseRequestById(id);
     }
 
-    private  String getKeyFromLookupKey(DatabaseReference dbref, String msisdn, String lookupKey) throws StorageException {
-        final CountDownLatch cdl = new CountDownLatch(1);
-        final Set<String> result = new HashSet<>();
-        dbref.orderByChild(lookupKey)
-                .equalTo(msisdn)
-                .limitToFirst(1).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(final DataSnapshot snapshot) {
-                handleDataChange(snapshot, cdl, result, msisdn);
-            }
-
-            @Override
-            public void onCancelled(DatabaseError error) {
-
-            }
-        });
-
-        try {
-            if (!cdl.await(10, TimeUnit.SECONDS)) {
-                throw new StorageException("Query timed out");
-            } else if (result.isEmpty()) {
-                return null;
-            } else {
-                return result.iterator().next();
-            }
-        } catch (InterruptedException e) {
-            throw new StorageException("Interrupted", e);
-        }
-    }
-
-    private  String getKeyFromPhoneNumber(final DatabaseReference dbref, final String msisdn) throws StorageException {
-        final String lookupKey = "phoneNumber";
-        return getKeyFromLookupKey(dbref, msisdn, lookupKey);
-    }
-
-    private  String getKeyFromMsisdn(final DatabaseReference dbref, final String msisdn) throws StorageException {
-        final String lookupKey = "msisdn";
-        return getKeyFromLookupKey(dbref, msisdn, lookupKey);
-    }
-
-    private void handleDataChange(DataSnapshot snapshot, CountDownLatch cdl, Set<String> result, String msisdn) {
+    private static void handleDataChange(final DataSnapshot snapshot, final CountDownLatch cdl, final Set<String> result, final String msisdn) {
         if (!snapshot.hasChildren()) {
             cdl.countDown();
-            return;
         } else try {
             for (final DataSnapshot snap : snapshot.getChildren()) {
                 final String key = snap.getKey();
@@ -415,62 +594,9 @@ public final class FbStorage implements Storage {
 
     @Override
     public Subscriber getSubscriberFromMsisdn(final String msisdn) throws StorageException {
-        final CountDownLatch cdl = new CountDownLatch(1);
-        final Set<Subscriber> result = new HashSet<>();
-        LOG.info("authorativeuserdata = '" + authorativeUserData + "', msisdn = '" + msisdn + "'");
-
-        final Query q = authorativeUserData.orderByChild("msisdn").equalTo(msisdn).limitToFirst(1);
-
-        final ValueEventListener listenerThatWillReadSubcriberData = new ValueEventListener() {
-            @Override
-            public void onDataChange(final DataSnapshot snapshot) {
-
-                if (!snapshot.hasChildren()) {
-                    cdl.countDown();
-                    return;
-                } else {
-                    for (final DataSnapshot snap : snapshot.getChildren()) {
-
-                        final FbSubscriber sub =
-                                snap.getValue(FbSubscriber.class);
-                        final String key = snap.getKey();
-
-                        sub.setFbKey(key);
-                        result.add(sub);
-                        cdl.countDown();
-                    }
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError error) {
-            }
-        };
-
-        q.addListenerForSingleValueEvent(
-                listenerThatWillReadSubcriberData);
-
-        try {
-            if (!cdl.await(10, TimeUnit.SECONDS)) {
-                LOG.info("authorativeuserdata = '" + authorativeUserData
-                        + "', msisdn = '" + msisdn
-                        + "' => timeout");
-                throw new StorageException("Query timed out. authorativeuserdata = '" + authorativeUserData + "', msisdn = '" + msisdn + "'");
-            } else if (result.isEmpty()) {
-                LOG.info("authorativeuserdata = '" + authorativeUserData
-                        + "', msisdn = '" + msisdn
-                        + "' => null");
-                return null;
-            } else {
-                final Subscriber r = result.iterator().next();
-                LOG.info("authorativeuserdata = '" + authorativeUserData + "', msisdn = '" + msisdn + "' => " + r);
-                return r;
-            }
-        } catch (InterruptedException e) {
-            LOG.info("authorativeuserdata = '" + authorativeUserData + "', msisdn = '" + msisdn + "' => interrupted");
-            throw new StorageException("Interrupted", e);
-        }
+        return facade.getSubscriberFromMsisdn(msisdn);
     }
+
 
     @Override
     public void setRemainingByMsisdn(final String msisdn, final long noOfBytes) throws StorageException {
@@ -488,8 +614,7 @@ public final class FbStorage implements Storage {
 
         sub.setNoOfBytesLeft(noOfBytes);
 
-        final DatabaseReference dbref = authorativeUserData.child(sub.getFbKey());
-        dbref.updateChildren(sub.asMap());
+        facade.updateAuthorativeUserData(sub);
     }
 
     @Override
@@ -497,56 +622,11 @@ public final class FbStorage implements Storage {
         checkNotNull(msisdn);
         final FbSubscriber sub = new FbSubscriber();
         sub.setMsisdn(msisdn);
-        final DatabaseReference dbref = authorativeUserData.push();
-        sub.setFbKey(dbref.getKey());
-        dbref.updateChildren(sub.asMap());
-        return dbref.getKey();
+        return facade.insertNewSubscriber(sub);
     }
-
 
     @Override
     public Collection<Subscriber> getAllSubscribers() {
-
-        final Query q = authorativeUserData.orderByKey();
-        final Set<Subscriber> subscribers = new LinkedHashSet<>();
-        final CountDownLatch cdl = new CountDownLatch(1);
-        final ValueEventListener collectingVisitor =
-                newListenerThatWillCollectAllSubscribers(subscribers, cdl);
-
-        q.addListenerForSingleValueEvent(collectingVisitor);
-
-        try {
-            cdl.await(10, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            LOG.error("Failed to get all subscribers");
-        }
-        if (cdl.getCount() > 0) {
-            LOG.error("Failed to get all subscribers");
-        }
-        return subscribers;
-    }
-
-    private  static ValueEventListener newListenerThatWillCollectAllSubscribers(final Set<Subscriber> subscribers, final CountDownLatch cdl) {
-        checkNotNull(subscribers);
-        checkNotNull(cdl);
-        return new ValueEventListener() {
-            @Override
-            public void onDataChange(final DataSnapshot snapshot) {
-                if (!snapshot.hasChildren()) {
-                    cdl.countDown();
-                    return;
-                }
-                for (final DataSnapshot child : snapshot.getChildren()) {
-                    final FbSubscriber subscriber = child.getValue(FbSubscriber.class);
-                    subscriber.setFbKey(child.getKey());
-                    subscribers.add(subscriber);
-                }
-                cdl.countDown();
-            }
-            @Override
-            public void onCancelled(DatabaseError error) {
-                LOG.error(error.getMessage(), error.toException());
-            }
-        };
+        return facade.getAllSubscribers();
     }
 }
