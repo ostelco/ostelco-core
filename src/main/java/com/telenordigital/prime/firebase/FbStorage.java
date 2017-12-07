@@ -17,6 +17,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.BiFunction;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -53,10 +54,18 @@ public final class FbStorage implements Storage {
         // anything else by sending them to the listeners.
         facade.addProductCatalogItemListener(item ->  addTopupProduct(item.getSku(), item.getNoOfBytes()));
         facade.addProductCatalogValueListener(item ->  addTopupProduct(item.getSku(), item.getNoOfBytes()));
-        facade.addPurchaseEventListener(newChildListenerThatDispatchesPurchaseRequestToExecutor());
+        facade.addPurchaseEventListener(newChildListenerThatDispatchesPurchaseRequestToExecutor(
+                (key, req) -> {
+                    req.setId(key);
+                    req.setMillisSinceEpoch(getMillisSinceEpoch());
+                    executor.onPurchaseRequest(req);
+                    return null; // XXX Hack to satisfy BiFunction's void return type
+                }));
     }
 
-    private AbstractChildEventListener newChildListenerThatDispatchesPurchaseRequestToExecutor() {
+    private  static AbstractChildEventListener newChildListenerThatDispatchesPurchaseRequestToExecutor(
+            final BiFunction<String, FbPurchaseRequest, Void> consumer) {
+        checkNotNull(consumer);
         return new AbstractChildEventListener() {
             @Override
             public void onChildAdded(DataSnapshot snapshot, String previousChildName) {
@@ -66,9 +75,7 @@ public final class FbStorage implements Storage {
                 try {
                     final FbPurchaseRequest req =
                             snapshot.getValue(FbPurchaseRequest.class);
-                    req.setId(snapshot.getKey());
-                    req.setMillisSinceEpoch(getMillisSinceEpoch());
-                    executor.onPurchaseRequest(req);
+                    consumer.apply(snapshot.getKey(), req);
                 } catch (Exception e) {
                     LOG.error("Couldn't transform req into FbPurchaseRequest", e);
                 }
@@ -92,14 +99,9 @@ public final class FbStorage implements Storage {
     }
 
 
-
     private long getMillisSinceEpoch() {
         return Instant.now().toEpochMilli();
     }
-
-
-
-
 
     private static boolean snapshotIsInvalid(final DataSnapshot snapshot) {
         if (snapshot == null) {
@@ -154,9 +156,6 @@ public final class FbStorage implements Storage {
             throw new StorageException(ex);
         }
     }
-
-
-
 
     @Override
     public void addPurchaseRequestListener(final PurchaseRequestListener listener) {
