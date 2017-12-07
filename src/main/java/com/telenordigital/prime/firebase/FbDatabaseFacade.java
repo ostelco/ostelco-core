@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -62,6 +63,26 @@ public final class FbDatabaseFacade {
     }
 
 
+    private  static AbstractChildEventListener newChildListenerThatDispatchesPurchaseRequestToExecutor(
+            final BiFunction<String, FbPurchaseRequest, Void> consumer) {
+        checkNotNull(consumer);
+        return new AbstractChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot snapshot, String previousChildName) {
+                LOG.info("onChildAdded");
+                if (snapshotIsInvalid(snapshot)) return;
+
+                try {
+                    final FbPurchaseRequest req =
+                            snapshot.getValue(FbPurchaseRequest.class);
+                    consumer.apply(snapshot.getKey(), req);
+                } catch (Exception e) {
+                    LOG.error("Couldn't transform req into FbPurchaseRequest", e);
+                }
+            }
+        };
+    }
+
 
     private static boolean snapshotIsInvalid(final DataSnapshot snapshot) {
         if (snapshot == null) {
@@ -109,6 +130,12 @@ public final class FbDatabaseFacade {
         } catch (Exception e) {
             LOG.error("Couldn't transform req into FbPurchaseRequest", e);
         }
+    }
+
+
+
+    public void addPurchaseRequestListener(BiFunction<String, FbPurchaseRequest, Void> consumer) {
+        addPurchaseEventListener(newChildListenerThatDispatchesPurchaseRequestToExecutor(consumer));
     }
 
 

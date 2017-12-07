@@ -17,7 +17,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.function.BiFunction;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -54,34 +53,15 @@ public final class FbStorage implements Storage {
         // anything else by sending them to the listeners.
         facade.addProductCatalogItemListener(item ->  addTopupProduct(item.getSku(), item.getNoOfBytes()));
         facade.addProductCatalogValueListener(item ->  addTopupProduct(item.getSku(), item.getNoOfBytes()));
-        facade.addPurchaseEventListener(newChildListenerThatDispatchesPurchaseRequestToExecutor(
+        facade.addPurchaseRequestListener(
                 (key, req) -> {
                     req.setId(key);
                     req.setMillisSinceEpoch(getMillisSinceEpoch());
                     executor.onPurchaseRequest(req);
                     return null; // XXX Hack to satisfy BiFunction's void return type
-                }));
+                });
     }
 
-    private  static AbstractChildEventListener newChildListenerThatDispatchesPurchaseRequestToExecutor(
-            final BiFunction<String, FbPurchaseRequest, Void> consumer) {
-        checkNotNull(consumer);
-        return new AbstractChildEventListener() {
-            @Override
-            public void onChildAdded(DataSnapshot snapshot, String previousChildName) {
-                LOG.info("onChildAdded");
-                if (snapshotIsInvalid(snapshot)) return;
-
-                try {
-                    final FbPurchaseRequest req =
-                            snapshot.getValue(FbPurchaseRequest.class);
-                    consumer.apply(snapshot.getKey(), req);
-                } catch (Exception e) {
-                    LOG.error("Couldn't transform req into FbPurchaseRequest", e);
-                }
-            }
-        };
-    }
 
     @Override
     public void addTopupProduct(final String sku, final long noOfBytes) {
@@ -115,6 +95,9 @@ public final class FbStorage implements Storage {
         }
         return false;
     }
+
+
+
 
     private void loadSubscriberBalanceDataFromFirebaseToInMemoryStructure(OcsState ocsState) {
         LOG.info("Loading initial balance from storage to in-memory OcsState");
