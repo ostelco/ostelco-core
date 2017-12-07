@@ -51,7 +51,7 @@ public final class FbStorage implements Storage {
 
         // Scoop up products left and right (and don't worry about duplicates, race conditions or
         // anything else by sending them to the listeners.
-        facade.addProductCatalogListener(this::addOrUpdateProduct);
+        facade.addProductCatalogItemListener(item ->  addTopupProduct(item.getSku(), item.getNoOfBytes()));
         facade.addProductCatalogValueListener(item ->  addTopupProduct(item.getSku(), item.getNoOfBytes()));
         facade.addPurchaseEventListener(newChildListenerThatDispatchesPurchaseRequestToExecutor());
     }
@@ -93,27 +93,10 @@ public final class FbStorage implements Storage {
 
 
 
-
-
     private long getMillisSinceEpoch() {
         return Instant.now().toEpochMilli();
     }
 
-    // XXX Too  specific!
-    private void addOrUpdateProduct(final DataSnapshot snapshot) {
-        if (snapshotIsInvalid(snapshot)) return;
-
-        try {
-            final ProductCatalogItem item =
-                    snapshot.getValue(ProductCatalogItem.class);
-            if (item.getSku() != null) {
-                addTopupProduct(item.getSku(), item.getNoOfBytes());
-            }
-            LOG.info("Just read a product catalog item: {}", item);
-        } catch (Exception e) {
-            LOG.error("Couldn't transform req into FbPurchaseRequest", e);
-        }
-    }
 
 
 

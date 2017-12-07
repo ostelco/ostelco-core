@@ -88,10 +88,36 @@ public final class FbDatabaseFacade {
             }
             LOG.info("Just read a product catalog item: " + item);
         } catch (Exception e) {
+            LOG.error("Couldn't transform req into ProductCatalogItem", e);
+        }
+    }
+
+
+    private void addOrUpdateProduct(final DataSnapshot snapshot, final Consumer<ProductCatalogItem> consumer) {
+        checkNotNull(consumer);
+        if (snapshotIsInvalid(snapshot)) {
+            return;
+        }
+
+        try {
+            final ProductCatalogItem item =
+                    snapshot.getValue(ProductCatalogItem.class);
+            if (item.getSku() != null) {
+               consumer.accept(item);
+            }
+            LOG.info("Just read a product catalog item: {}", item);
+        } catch (Exception e) {
             LOG.error("Couldn't transform req into FbPurchaseRequest", e);
         }
     }
 
+
+    public void addProductCatalogItemListener(final Consumer<ProductCatalogItem> consumer) {
+        checkNotNull(consumer);
+        final ChildEventListener productCatalogListener =
+                newProductDefChangedListener(snapshot -> addOrUpdateProduct(snapshot, consumer));
+        addProductCatalogListener(productCatalogListener);
+    }
 
     public void addProductCatalogListener(final Consumer<DataSnapshot> consumer) {
         checkNotNull(consumer);
