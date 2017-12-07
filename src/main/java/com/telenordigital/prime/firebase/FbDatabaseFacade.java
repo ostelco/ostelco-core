@@ -30,7 +30,7 @@ public final class FbDatabaseFacade {
     private final DatabaseReference quickBuyProducts;
     private final DatabaseReference products;
 
-    FbDatabaseFacade(FirebaseDatabase firebaseDatabase) {
+    FbDatabaseFacade(final FirebaseDatabase firebaseDatabase) {
         checkNotNull(firebaseDatabase);
         // XXX Read this, then fix something that reports connectivity status through the
         //     health mechanism.
@@ -132,14 +132,17 @@ public final class FbDatabaseFacade {
         }
     }
 
-
+    public void addProductCatalogItemListener(final Consumer<ProductCatalogItem> consumer) {
+        addProductCatalogItemChildListener(consumer);
+        addProductCatalogValueListener(consumer);
+    }
 
     public void addPurchaseRequestListener(BiFunction<String, FbPurchaseRequest, Void> consumer) {
         addPurchaseEventListener(newChildListenerThatDispatchesPurchaseRequestToExecutor(consumer));
     }
 
 
-    public void addProductCatalogItemListener(final Consumer<ProductCatalogItem> consumer) {
+    public void addProductCatalogItemChildListener(final Consumer<ProductCatalogItem> consumer) {
         checkNotNull(consumer);
         final ChildEventListener productCatalogListener =
                 newProductDefChangedListener(snapshot -> addOrUpdateProduct(snapshot, consumer));

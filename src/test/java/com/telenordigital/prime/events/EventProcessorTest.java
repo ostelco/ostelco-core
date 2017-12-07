@@ -85,7 +85,7 @@ public class EventProcessorTest {
 
         verify(storage).addRecordOfPurchaseByMsisdn(eq(MSISDN), eq(req.getSku()), anyLong());
 
-        verify(storage).updatedisplaydatastructure(eq(MSISDN));
+        verify(storage).updateDisplayDatastructure(eq(MSISDN));
         verify(storage).removePurchaseRequestById(eq(req.getId()));
 
         verify(ocsBalanceUpdater).updateBalance(eq(MSISDN), eq(topupBytes));

@@ -27,7 +27,7 @@ public final class FbStorage implements Storage {
     private final ProductDescriptionCache productCache;
 
 
-    final FbDatabaseFacade facade;
+    private final FbDatabaseFacade facade;
 
     private final StorageInitiatedEventExecutor executor;
 
@@ -45,14 +45,17 @@ public final class FbStorage implements Storage {
 
         this.facade = new FbDatabaseFacade(firebaseDatabase);
 
-        // XXX quick-fix
+
         // Load subscriber balance from firebase to in-memory OcsState
         loadSubscriberBalanceDataFromFirebaseToInMemoryStructure(ocsState);
 
         // Scoop up products left and right (and don't worry about duplicates, race conditions or
         // anything else by sending them to the listeners.
-        facade.addProductCatalogItemListener(item ->  addTopupProduct(item.getSku(), item.getNoOfBytes()));
-        facade.addProductCatalogValueListener(item ->  addTopupProduct(item.getSku(), item.getNoOfBytes()));
+
+        facade.addProductCatalogItemListener(item ->
+                addTopupProduct(item.getSku(), item.getNoOfBytes()));
+
+        // When a purhase request arrives, then send it to the executor.
         facade.addPurchaseRequestListener(
                 (key, req) -> {
                     req.setId(key);
@@ -83,28 +86,14 @@ public final class FbStorage implements Storage {
         return Instant.now().toEpochMilli();
     }
 
-    private static boolean snapshotIsInvalid(final DataSnapshot snapshot) {
-        if (snapshot == null) {
-            LOG.error("dataSnapshot can't be null");
-            return true;
-        }
 
-        if (!snapshot.exists()) {
-            LOG.error("dataSnapshot must exist");
-            return true;
-        }
-        return false;
-    }
-
-
-
-
-    private void loadSubscriberBalanceDataFromFirebaseToInMemoryStructure(OcsState ocsState) {
+    private void loadSubscriberBalanceDataFromFirebaseToInMemoryStructure(final OcsState ocsState) {
         LOG.info("Loading initial balance from storage to in-memory OcsState");
         for (final Subscriber subscriber : getAllSubscribers()) {
             LOG.info("{} - {}", subscriber.getMsisdn(), subscriber.getNoOfBytesLeft());
             if (subscriber.getNoOfBytesLeft() > 0) {
                 String msisdn = subscriber.getMsisdn();
+                // XXX Use string rewriting methods instead.
                 // XXX removing '+'
                 if (msisdn.charAt(0) == '+') {
                     msisdn = msisdn.substring(1);
@@ -114,7 +103,9 @@ public final class FbStorage implements Storage {
         }
     }
 
-    private FirebaseDatabase setupFirebaseInstance(String databaseName, String configFile) throws StorageException {
+    private FirebaseDatabase setupFirebaseInstance(
+            final String databaseName,
+            final String configFile) throws StorageException {
         try (final FileInputStream serviceAccount = new FileInputStream(configFile)) {
 
             final FirebaseOptions options = new FirebaseOptions.Builder()
@@ -147,7 +138,7 @@ public final class FbStorage implements Storage {
     }
 
     @Override
-    public void updatedisplaydatastructure(final String msisdn) throws StorageException {
+    public void updateDisplayDatastructure(final String msisdn) throws StorageException {
         checkNotNull(msisdn);
         final FbSubscriber subscriber = (FbSubscriber) getSubscriberFromMsisdn(msisdn);
         if (subscriber == null) {
@@ -173,12 +164,10 @@ public final class FbStorage implements Storage {
         facade.removeByMsisdn(msisdn);
     }
 
-
     @Override
     public String injectPurchaseRequest(final PurchaseRequest pr) {
         checkNotNull(pr);
         return facade.injectPurchaseRequest(pr);
-
     }
 
     @Override
@@ -195,6 +184,9 @@ public final class FbStorage implements Storage {
 
         final FbRecordOfPurchase purchase =
                 new FbRecordOfPurchase(msisdn, sku, millisSinceEpoch);
+
+        // XXX This is iffy, why not send the purchase object
+        //     directly to the fascade.  Seems bogus, probably is.
         final Map<String, Object> asMap = purchase.asMap();
 
         return facade.pushRecordOfPurchaseByMsisdn(asMap);
@@ -214,7 +206,11 @@ public final class FbStorage implements Storage {
         facade.removePurchaseRequestById(id);
     }
 
-    static void handleDataChange(final DataSnapshot snapshot, final CountDownLatch cdl, final Set<String> result, final String msisdn) {
+    static void handleDataChange(
+            final DataSnapshot snapshot,
+            final CountDownLatch cdl,
+            final Set<String> result,
+            final String msisdn) {
         if (!snapshot.hasChildren()) {
             cdl.countDown();
         } else try {

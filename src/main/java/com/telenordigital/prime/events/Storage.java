@@ -14,7 +14,7 @@ public interface Storage  extends ProductDescriptionCache {
 
     String injectPurchaseRequest(final PurchaseRequest pr);
 
-    void updatedisplaydatastructure(String msisdn) throws StorageException;
+    void updateDisplayDatastructure(String msisdn) throws StorageException;
 
     void removeDisplayDatastructure(String msisdn) throws StorageException;
 
