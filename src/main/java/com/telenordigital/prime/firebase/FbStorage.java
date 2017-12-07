@@ -55,7 +55,8 @@ public final class FbStorage implements Storage {
     }
 
     @Override
-    public String addRecordOfPurchaseByMsisdn(final String msisdn, final String sku, final long now) throws StorageException {
+    public String addRecordOfPurchaseByMsisdn(final String msisdn, final String sku, final long now)
+            throws StorageException {
         checkNotNull(msisdn);
         return innerStorage.addRecordOfPurchaseByMsisdn(msisdn, sku, now);
     }
