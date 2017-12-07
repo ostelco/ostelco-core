@@ -41,20 +41,7 @@ public final class InnerFbStorage implements Storage {
 
     private static final Logger LOG = LoggerFactory.getLogger(InnerFbStorage.class);
 
-    public void addTopupProduct(String sku, long noOfBytes) {
-        productCache.addTopupProduct(sku, noOfBytes);
-    }
-
-    public boolean isValidSKU(String sku) {
-        return productCache.isValidSKU(sku);
-    }
-
-    public Product getProductForSku(String sku) {
-        return productCache.getProductForSku(sku);
-    }
-
-    private ProductDescriptionCache productCache = ProductDescriptionCacheImpl.getInstance(); // XXX
-
+    private final ProductDescriptionCache productCache;
     private final DatabaseReference authorativeUserData;
     private final DatabaseReference clientRequests;
     private final DatabaseReference clientVisibleSubscriberRecords;
@@ -64,17 +51,17 @@ public final class InnerFbStorage implements Storage {
 
     private final FirebaseDatabase firebaseDatabase;
 
-    private final String databaseName;
-    private final String configFile;
-
     private final StorageInitiatedEventExecutor executor;
 
     public InnerFbStorage(final String databaseName,
                           final String configFile,
                           final OcsState ocsState) throws StorageException {
-        this.configFile = checkNotNull(configFile);
-        this.databaseName = checkNotNull(databaseName);
+        checkNotNull(configFile);
+        checkNotNull(databaseName);
         this.executor = new StorageInitiatedEventExecutor();
+
+        this.productCache = ProductDescriptionCacheImpl.getInstance();
+
         this.firebaseDatabase = setupFirebaseInstance(databaseName, configFile);
 
         // XXX Read this, then fix something that reports connectivity status through the
@@ -109,6 +96,20 @@ public final class InnerFbStorage implements Storage {
 
         addPurchaseEventListener();
     }
+
+
+    public void addTopupProduct(String sku, long noOfBytes) {
+        productCache.addTopupProduct(sku, noOfBytes);
+    }
+
+    public boolean isValidSKU(String sku) {
+        return productCache.isValidSKU(sku);
+    }
+
+    public Product getProductForSku(String sku) {
+        return productCache.getProductForSku(sku);
+    }
+
 
     private ValueEventListener newCatalogDataChangedEventListner() {
         return new ValueEventListener() {

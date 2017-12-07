@@ -2,16 +2,18 @@ package com.telenordigital.prime.firebase;
 
 import com.telenordigital.prime.events.Subscriber;
 
-import java.util.concurrent.locks.ReentrantLock;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-
+/**
+ * This class is  NOOP, a leftover from a busy week and the intended
+ * functionality was never implemented.  Either the class should
+ * be completely removed, or it should be given an actual
+ * implementation.
+ */
 final class SubscriberEntry {
-    private final Subscriber subscriber;
-    private final ReentrantLock lock;
+    // private final Subscriber subscriber;
+    // private final ReentrantLock lock;
 
     public SubscriberEntry(final Subscriber subscriber) {
-        this.subscriber = checkNotNull(subscriber);
-        this.lock = new ReentrantLock();
+       // this.subscriber = checkNotNull(subscriber);
+       //  this.lock = new ReentrantLock();
     }
 }

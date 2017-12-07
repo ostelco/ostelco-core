@@ -1,14 +1,7 @@
 package com.telenordigital.prime.firebase;
 
-import com.telenordigital.prime.events.Product;
-import com.telenordigital.prime.events.PurchaseRequest;
-import com.telenordigital.prime.events.PurchaseRequestListener;
-import com.telenordigital.prime.events.Storage;
-import com.telenordigital.prime.events.StorageException;
-import com.telenordigital.prime.events.Subscriber;
+import com.telenordigital.prime.events.*;
 import com.telenordigital.prime.ocs.state.OcsState;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 
@@ -29,8 +22,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * not a generic Storage instance.
  */
 public final class FbStorage implements Storage {
-
-    private static final Logger LOG = LoggerFactory.getLogger(FbStorage.class);
 
     private final InnerFbStorage innerStorage;
 

@@ -17,9 +17,6 @@ public  final class ProductCatalogItem {
     private String sku;
     private long noOfBytes;
 
-    public ProductCatalogItem() {
-    }
-
     public String getBadgeLabel() {
         return badgeLabel;
     }

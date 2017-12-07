@@ -2,8 +2,6 @@ package com.telenordigital.prime.firebase;
 
 import com.telenordigital.prime.events.PurchaseRequest;
 import com.telenordigital.prime.events.PurchaseRequestListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -12,7 +10,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
 public final class StorageInitiatedEventExecutor {
-    private final static Logger LOG = LoggerFactory.getLogger(StorageInitiatedEventExecutor.class);
     private final ThreadFactory tf;
     private ExecutorService executor;
     private final Object monitor = new Object();

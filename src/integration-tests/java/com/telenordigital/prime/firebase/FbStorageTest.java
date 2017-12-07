@@ -1,10 +1,12 @@
 package com.telenordigital.prime.firebase;
 
-import com.telenordigital.prime.events.*;
+import com.telenordigital.prime.events.Storage;
+import com.telenordigital.prime.events.StorageException;
+import com.telenordigital.prime.events.Subscriber;
 import com.telenordigital.prime.ocs.state.OcsState;
-import org.junit.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -12,15 +14,11 @@ import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-
 import static com.telenordigital.prime.events.Products.DATA_TOPUP_3GB;
 import static java.lang.Thread.sleep;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public class FbStorageTest {
-    private static final Logger LOG = LoggerFactory.getLogger(FbStorageTest.class);
 
     private final static String PAYMENT_TOKEN = "thisIsAPaymentToken";
     private final static String EPHERMERAL_MSISDN = "+4747116996";
@@ -94,14 +92,11 @@ public class FbStorageTest {
 
         final CountDownLatch latch = new CountDownLatch(2);
 
-        storage.addPurchaseRequestListener(new PurchaseRequestListener() {
-            @Override
-            public void onPurchaseRequest(final PurchaseRequest req) {
-                assertNotEquals(null, req);
-                assertEquals(PAYMENT_TOKEN, req.getPaymentToken());
-                assertEquals(DATA_TOPUP_3GB.getSku(), req.getSku());
-                latch.countDown();
-            }
+        storage.addPurchaseRequestListener(req -> {
+            assertNotEquals(null, req);
+            assertEquals(PAYMENT_TOKEN, req.getPaymentToken());
+            assertEquals(DATA_TOPUP_3GB.getSku(), req.getSku());
+            latch.countDown();
         });
 
         final FbPurchaseRequest cr =

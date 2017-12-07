@@ -33,12 +33,10 @@ public class FbPurchaseEventRoundtripTest {
     private InnerFbStorage fbStorage;
     private Storage storage;
 
-
     @Mock
-    OcsBalanceUpdater ocsBalanceUpdater;
+    public OcsBalanceUpdater ocsBalanceUpdater;
 
     private Collection<String> prids;
-    private PurchaseRequest req;
 
     @Before
     public void setUp() throws  Exception {
@@ -55,37 +53,6 @@ public class FbPurchaseEventRoundtripTest {
         final EventProcessor processor = new EventProcessor(storage, ocsBalanceUpdater);
         processor.start();
         this.prids = new ArrayList<>();
-
-        newPurchaseRequest();
-    }
-
-    private void newPurchaseRequest() {
-        req = new PurchaseRequest() {
-            @Override
-            public String getSku() {
-                return ProductDescriptionCacheImpl.getInstance().DATA_TOPUP_3GB.getSku();
-            }
-
-            @Override
-            public String getPaymentToken() {
-                return PAYMENT_TOKEN;
-            }
-
-            @Override
-            public String getMsisdn() {
-                return EPHERMERAL_MSISDN;
-            }
-
-            @Override
-            public long getMillisSinceEpoch() {
-                return 0;
-            }
-
-            @Override
-            public String getId() {
-                return "godzilla";
-            }
-        };
     }
 
     @After
@@ -116,13 +83,13 @@ public class FbPurchaseEventRoundtripTest {
 
         storage.addPurchaseRequestListener(req -> latch.countDown());
 
-        final FbPurchaseRequest cr =
+        final FbPurchaseRequest req =
                 new FbPurchaseRequest(DATA_TOPUP_3GB, PAYMENT_TOKEN);
-        cr.setMsisdn(EPHERMERAL_MSISDN);
+        req.setMsisdn(EPHERMERAL_MSISDN);
 
         assertNotEquals(null, storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN));
 
-        final String prid = storage.injectPurchaseRequest(cr);
+        final String prid = storage.injectPurchaseRequest(req);
         prids.add(prid);
         sleep(3000);
 
@@ -132,11 +99,11 @@ public class FbPurchaseEventRoundtripTest {
             fail("Read/react failed");
         }
 
-        final long topupBytes = ProductDescriptionCacheImpl
-                .getInstance()
-                .DATA_TOPUP_3GB
-                .asTopupProduct()
-                .getTopUpInBytes();
+        final long topupBytes = ProductDescriptionCacheImpl.
+                getInstance().
+                DATA_TOPUP_3GB.
+                asTopupProduct().
+                getTopUpInBytes();
 
         // Then verify
         verify(ocsBalanceUpdater).updateBalance(eq(EPHERMERAL_MSISDN), eq(topupBytes));
