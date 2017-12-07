@@ -16,6 +16,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Consumer;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -48,12 +49,18 @@ public final class FbStorage implements Storage {
         // Load subscriber balance from firebase to in-memory OcsState
         loadSubscriberBalanceDataFromFirebaseToInMemoryStructure(ocsState);
 
-        // Get listeners for various events
-        final ValueEventListener productCatalogValueEventListener = newCatalogDataChangedEventListener();
+
 
         // Scoop up products left and right (and don't worry about duplicates, race conditions or
         // anything else by sending them to the listeners.
         facade.addProductCatalogListener(this::addOrUpdateProduct);
+
+
+        final ValueEventListener productCatalogValueEventListener = newCatalogDataChangedEventListener(
+                item ->  addTopupProduct(item.getSku(), item.getNoOfBytes())
+        );
+
+
         facade.addProductCatalogValueListener(productCatalogValueEventListener);
         facade.addPurchaseEventListener(newChildListenerThatDispatchesPurchaseRequestToExecutor());
     }
@@ -94,12 +101,13 @@ public final class FbStorage implements Storage {
     }
 
 
-    private ValueEventListener newCatalogDataChangedEventListener() {
+    private ValueEventListener newCatalogDataChangedEventListener(final Consumer<ProductCatalogItem> consumer) {
+        checkNotNull(consumer);
         return new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
                 LOG.info("onDataChange");
-                interpretDataSnapshotAsProductCatalogItem(snapshot);
+                interpretDataSnapshotAsProductCatalogItem(snapshot,consumer);
             }
 
             @Override
@@ -184,14 +192,15 @@ public final class FbStorage implements Storage {
         }
     }
 
-    private void interpretDataSnapshotAsProductCatalogItem(DataSnapshot snapshot) {
+    private void interpretDataSnapshotAsProductCatalogItem(final DataSnapshot snapshot, Consumer<ProductCatalogItem> consumer) {
+        checkNotNull(consumer);
         if (snapshotIsInvalid(snapshot)) return;
 
         try {
             final ProductCatalogItem item =
                     snapshot.getValue(ProductCatalogItem.class);
             if (item.getSku() != null) {
-                addTopupProduct(item.getSku(), item.getNoOfBytes());
+               consumer.accept(item);
             }
             LOG.info("Just read a product catalog item: " + item);
         } catch (Exception e) {
