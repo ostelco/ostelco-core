@@ -30,9 +30,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public final class FbStorage implements Storage {
 
-    private final static Logger LOG = LoggerFactory.getLogger(FbStorage.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FbStorage.class);
 
     private final InnerFbStorage innerStorage;
+
     private final SubscriberCache cache;
 
     public FbStorage(final String databaseName,
@@ -55,7 +56,10 @@ public final class FbStorage implements Storage {
     }
 
     @Override
-    public String addRecordOfPurchaseByMsisdn(final String msisdn, final String sku, final long now)
+    public String addRecordOfPurchaseByMsisdn(
+            final String msisdn,
+            final String sku,
+            final long now)
             throws StorageException {
         checkNotNull(msisdn);
         return innerStorage.addRecordOfPurchaseByMsisdn(msisdn, sku, now);
@@ -72,7 +76,7 @@ public final class FbStorage implements Storage {
     }
 
     @Override
-    public String injectPurchaseRequest(PurchaseRequest pr) {
+    public String injectPurchaseRequest(final PurchaseRequest pr) {
         return innerStorage.injectPurchaseRequest(pr);
     }
 
@@ -83,18 +87,19 @@ public final class FbStorage implements Storage {
     }
 
     @Override
-    public void removeDisplayDatastructure(String msisdn) throws StorageException {
+    public void removeDisplayDatastructure(final String msisdn) throws StorageException {
         checkNotNull(msisdn);
         innerStorage.removeDisplayDatastructure(msisdn);
     }
 
     @Override
-    public void setRemainingByMsisdn(final String msisdn, final long noOfBytes) throws StorageException {
+    public void setRemainingByMsisdn(final String msisdn, final long noOfBytes)
+            throws StorageException {
         checkNotNull(msisdn);
         cache.writeLock(msisdn);
         try {
 
-            Subscriber sub = cache.getSubscriber(msisdn);
+            // Subscriber sub = cache.getSubscriber(msisdn);
             // XXX TBD
             innerStorage.setRemainingByMsisdn(msisdn, noOfBytes);
         } finally {
@@ -156,17 +161,17 @@ public final class FbStorage implements Storage {
     }
 
     @Override
-    public void addTopupProduct(String sku, long noOfBytes) {
+    public void addTopupProduct(final String sku, final long noOfBytes) {
         innerStorage.addTopupProduct(sku, noOfBytes);
     }
 
     @Override
-    public boolean isValidSKU(String sku) {
+    public boolean isValidSKU(final String sku) {
         return innerStorage.isValidSKU(sku);
     }
 
     @Override
-    public Product getProductForSku(String sku) {
+    public Product getProductForSku(final String sku) {
        return innerStorage.getProductForSku(sku);
     }
 }

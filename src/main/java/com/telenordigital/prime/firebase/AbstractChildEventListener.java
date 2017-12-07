@@ -10,18 +10,18 @@ import com.google.firebase.database.DatabaseError;
  */
 public  abstract class AbstractChildEventListener implements ChildEventListener {
 
-        @Override
-        public void onChildAdded(DataSnapshot dataSnapshot, String prevChildKey) {}
+    @Override
+    public void onChildAdded(final DataSnapshot dataSnapshot, final String prevChildKey) {}
 
-        @Override
-        public void onChildChanged(DataSnapshot snapshot, String previousChildName) {}
+    @Override
+    public void onChildChanged(final DataSnapshot snapshot, final String previousChildName) {}
 
-        @Override
-        public void onChildRemoved(DataSnapshot snapshot) {}
+    @Override
+    public void onChildRemoved(final DataSnapshot snapshot) {}
 
-        @Override
-        public void onChildMoved(DataSnapshot snapshot, String previousChildName) {}
+    @Override
+    public void onChildMoved(final DataSnapshot snapshot, final String previousChildName) {}
 
-        @Override
-        public void onCancelled(DatabaseError error) {}
+    @Override
+    public void onCancelled(final DatabaseError error) {}
 }

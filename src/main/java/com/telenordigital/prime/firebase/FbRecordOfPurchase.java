@@ -5,13 +5,14 @@ import com.telenordigital.prime.events.RecordOfPurchase;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.google.api.client.util.Preconditions.checkArgument;
 import static com.google.api.client.util.Preconditions.checkNotNull;
 
 public final class FbRecordOfPurchase implements RecordOfPurchase, AsMappable {
 
     private  final String msisdn;
+
     private  final String sku;
+
     private  final long millisSinceEpoch;
 
     public FbRecordOfPurchase(

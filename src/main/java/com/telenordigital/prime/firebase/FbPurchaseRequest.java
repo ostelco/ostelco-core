@@ -6,7 +6,6 @@ import com.telenordigital.prime.events.PurchaseRequest;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class FbPurchaseRequest implements PurchaseRequest {
@@ -48,7 +47,7 @@ public final class FbPurchaseRequest implements PurchaseRequest {
         this.paymentToken = checkNotNull(paymentToken);
     }
 
-    public void setMsisdn(String msisdn) {
+    public void setMsisdn(final String msisdn) {
         this.msisdn = msisdn;
     }
 
@@ -57,7 +56,7 @@ public final class FbPurchaseRequest implements PurchaseRequest {
         return millisSinceEpoch;
     }
 
-    public void setMillisSinceEpoch(long millisSinceEpoch) {
+    public void setMillisSinceEpoch(final long millisSinceEpoch) {
         this.millisSinceEpoch = millisSinceEpoch;
     }
 
@@ -82,11 +81,11 @@ public final class FbPurchaseRequest implements PurchaseRequest {
 
     @Override
     public String toString() {
-        return "FbPurchaseRequest{" +
-                "sku='" + sku + '\'' +
-                ", paymentToken='" + paymentToken + '\'' +
-                ", msisdn='" + msisdn + '\'' +
-                ", millisSinceEpoch=" + millisSinceEpoch +
-                '}';
+        return "FbPurchaseRequest{"
+                + "sku='" + sku + '\''
+                + ", paymentToken='" + paymentToken + '\''
+                + ", msisdn='" + msisdn + '\''
+                + ", millisSinceEpoch=" + millisSinceEpoch
+                + '}';
     }
 }
