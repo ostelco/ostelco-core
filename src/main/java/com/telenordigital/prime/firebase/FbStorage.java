@@ -3,19 +3,8 @@ package com.telenordigital.prime.firebase;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseCredentials;
-import com.google.firebase.database.ChildEventListener;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
-import com.telenordigital.prime.events.Product;
-import com.telenordigital.prime.events.ProductDescriptionCache;
-import com.telenordigital.prime.events.ProductDescriptionCacheImpl;
-import com.telenordigital.prime.events.PurchaseRequest;
-import com.telenordigital.prime.events.PurchaseRequestListener;
-import com.telenordigital.prime.events.Storage;
-import com.telenordigital.prime.events.StorageException;
-import com.telenordigital.prime.events.Subscriber;
+import com.google.firebase.database.*;
+import com.telenordigital.prime.events.*;
 import com.telenordigital.prime.ocs.state.OcsState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +27,7 @@ public final class FbStorage implements Storage {
 
 
     final FbDatabaseFacade facade;
+
     private final StorageInitiatedEventExecutor executor;
 
     public FbStorage(final String databaseName,
@@ -59,12 +49,11 @@ public final class FbStorage implements Storage {
         loadSubscriberBalanceDataFromFirebaseToInMemoryStructure(ocsState);
 
         // Get listeners for various events
-        final ValueEventListener productCatalogValueEventListener = newCatalogDataChangedEventListner();
-        final ChildEventListener productCatalogListener = newProductDefChangedListener();
+        final ValueEventListener productCatalogValueEventListener = newCatalogDataChangedEventListener();
 
         // Scoop up products left and right (and don't worry about duplicates, race conditions or
         // anything else by sending them to the listeners.
-        facade.addProductCatalogListener(productCatalogListener);
+        facade.addProductCatalogListener(this::addOrUpdateProduct);
         facade.addProductCatalogValueListener(productCatalogValueEventListener);
         facade.addPurchaseEventListener(newChildListenerThatDispatchesPurchaseRequestToExecutor());
     }
@@ -105,7 +94,7 @@ public final class FbStorage implements Storage {
     }
 
 
-    private ValueEventListener newCatalogDataChangedEventListner() {
+    private ValueEventListener newCatalogDataChangedEventListener() {
         return new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
@@ -123,38 +112,25 @@ public final class FbStorage implements Storage {
         return Instant.now().toEpochMilli();
     }
 
-    private ChildEventListener newProductDefChangedListener() {
-        return new AbstractChildEventListener() {
-                @Override
-                public void onChildAdded(final DataSnapshot snapshot, final String previousChildName) {
-                    LOG.info("onChildAdded");
-                    addOrUpdateProduct(snapshot);
-                }
+    private void addOrUpdateProduct(final DataSnapshot snapshot) {
+        if (snapshotIsInvalid(snapshot)) return;
 
-                @Override
-                public void onChildChanged(final DataSnapshot snapshot, final String previousChildName) {
-                    LOG.info("onChildChanged");
-                    addOrUpdateProduct(snapshot);
-                }
-
-                private void addOrUpdateProduct(final DataSnapshot snapshot) {
-                    if (snapshotIsInvalid(snapshot)) return;
-
-                    try {
-                        final ProductCatalogItem item =
-                                snapshot.getValue(ProductCatalogItem.class);
-                        if (item.getSku() != null) {
-                            addTopupProduct(item.getSku(), item.getNoOfBytes());
-                        }
-                        LOG.info("Just read a product catalog item: {}", item);
-                    } catch (Exception e) {
-                        LOG.error("Couldn't transform req into FbPurchaseRequest", e);
-                    }
-                }
-            };
+        try {
+            final ProductCatalogItem item =
+                    snapshot.getValue(ProductCatalogItem.class);
+            if (item.getSku() != null) {
+                addTopupProduct(item.getSku(), item.getNoOfBytes());
+            }
+            LOG.info("Just read a product catalog item: {}", item);
+        } catch (Exception e) {
+            LOG.error("Couldn't transform req into FbPurchaseRequest", e);
+        }
     }
 
-    private boolean snapshotIsInvalid(DataSnapshot snapshot) {
+
+
+
+    private static boolean snapshotIsInvalid(final DataSnapshot snapshot) {
         if (snapshot == null) {
             LOG.error("dataSnapshot can't be null");
             return true;
@@ -249,8 +225,6 @@ public final class FbStorage implements Storage {
         final String gbLeft = String.format("%.2f GB", noOfGBLeft);
 
         facade.updateClientVisibleUsageString(msisdn, gbLeft);
-
-
     }
 
     @Override

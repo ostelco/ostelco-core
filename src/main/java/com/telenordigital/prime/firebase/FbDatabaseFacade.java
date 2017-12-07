@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -17,7 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Presenting a facade for the many and  varied firebase databases
  * we're using.
  */
-public  final class FbDatabaseFacade {
+public final class FbDatabaseFacade {
 
     private static final Logger LOG = LoggerFactory.getLogger(FbDatabaseFacade.class);
 
@@ -44,6 +45,15 @@ public  final class FbDatabaseFacade {
         this.quickBuyProducts = firebaseDatabase.getReference("quick-buy-products");
         this.products = firebaseDatabase.getReference("products");
     }
+
+
+    public void addProductCatalogListener(final Consumer<DataSnapshot> consumer) {
+        checkNotNull(consumer);
+        final ChildEventListener productCatalogListener =
+                newProductDefChangedListener(consumer);
+        addProductCatalogListener(productCatalogListener);
+    }
+
 
     public void addProductCatalogListener(final ChildEventListener productCatalogListener) {
         checkNotNull(productCatalogListener);
@@ -89,7 +99,7 @@ public  final class FbDatabaseFacade {
                 .updateChildren(displayRep);
     }
 
-    public void removeSubscriberByMsisdn(final String msisdn)  throws StorageException{
+    public void removeSubscriberByMsisdn(final String msisdn) throws StorageException {
         removeByMsisdn(authorativeUserData, msisdn);
     }
 
@@ -105,7 +115,7 @@ public  final class FbDatabaseFacade {
     }
 
 
-    private  String getKeyFromLookupKey(final DatabaseReference dbref, String msisdn, String lookupKey) throws StorageException {
+    private String getKeyFromLookupKey(final DatabaseReference dbref, String msisdn, String lookupKey) throws StorageException {
         final CountDownLatch cdl = new CountDownLatch(1);
         final Set<String> result = new HashSet<>();
         dbref.orderByChild(lookupKey)
@@ -136,12 +146,12 @@ public  final class FbDatabaseFacade {
         }
     }
 
-    private  String getKeyFromPhoneNumber(final DatabaseReference dbref, final String msisdn) throws StorageException {
+    private String getKeyFromPhoneNumber(final DatabaseReference dbref, final String msisdn) throws StorageException {
         final String lookupKey = "phoneNumber";
         return getKeyFromLookupKey(dbref, msisdn, lookupKey);
     }
 
-    private  String getKeyFromMsisdn(final DatabaseReference dbref, final String msisdn) throws StorageException {
+    private String getKeyFromMsisdn(final DatabaseReference dbref, final String msisdn) throws StorageException {
         final String lookupKey = "msisdn";
         return getKeyFromLookupKey(dbref, msisdn, lookupKey);
     }
@@ -264,7 +274,7 @@ public  final class FbDatabaseFacade {
         return subscribers;
     }
 
-    private  static ValueEventListener newListenerThatWillCollectAllSubscribers(final Set<Subscriber> subscribers, final CountDownLatch cdl) {
+    private static ValueEventListener newListenerThatWillCollectAllSubscribers(final Set<Subscriber> subscribers, final CountDownLatch cdl) {
         checkNotNull(subscribers);
         checkNotNull(cdl);
         return new ValueEventListener() {
@@ -281,9 +291,26 @@ public  final class FbDatabaseFacade {
                 }
                 cdl.countDown();
             }
+
             @Override
             public void onCancelled(DatabaseError error) {
                 LOG.error(error.getMessage(), error.toException());
+            }
+        };
+    }
+
+    public ChildEventListener newProductDefChangedListener(Consumer<DataSnapshot> snapshotConsumer) {
+        return new AbstractChildEventListener() {
+            @Override
+            public void onChildAdded(final DataSnapshot snapshot, final String previousChildName) {
+                LOG.info("onChildAdded");
+                snapshotConsumer.accept(snapshot);
+            }
+
+            @Override
+            public void onChildChanged(final DataSnapshot snapshot, final String previousChildName) {
+                LOG.info("onChildChanged");
+                snapshotConsumer.accept(snapshot);
             }
         };
     }
