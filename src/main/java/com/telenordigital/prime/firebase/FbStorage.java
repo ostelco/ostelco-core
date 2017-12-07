@@ -85,7 +85,7 @@ public final class FbStorage implements Storage {
     private long getMillisSinceEpoch() {
         return Instant.now().toEpochMilli();
     }
-    
+
 
     private void loadSubscriberBalanceDataFromFirebaseToInMemoryStructure(final OcsState ocsState) {
         LOG.info("Loading initial balance from storage to in-memory OcsState");
@@ -94,19 +94,6 @@ public final class FbStorage implements Storage {
         }
     }
 
-    // XXX Should this be moved to the OCSState?
-    private void injectSubscriberIntoOCS(final OcsState ocsState, final Subscriber subscriber) {
-        LOG.info("{} - {}", subscriber.getMsisdn(), subscriber.getNoOfBytesLeft());
-        if (subscriber.getNoOfBytesLeft() > 0) {
-            String msisdn = subscriber.getMsisdn();
-            // XXX Use string rewriting methods instead.
-            // XXX removing '+'
-            if (msisdn.charAt(0) == '+') {
-                msisdn = msisdn.substring(1);
-            }
-            ocsState.addDataBytes(msisdn, subscriber.getNoOfBytesLeft());
-        }
-    }
 
     private FirebaseDatabase setupFirebaseInstance(
             final String databaseName,
