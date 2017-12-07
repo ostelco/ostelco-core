@@ -13,4 +13,9 @@ public final class EventProcessorException extends Exception {
         super(str);
         this.pr = pr;
     }
+
+    @Override
+    public String toString() {
+        return super.toString() + ", pr = " + pr.toString();
+    }
 }
