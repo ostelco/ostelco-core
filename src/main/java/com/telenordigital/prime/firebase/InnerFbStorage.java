@@ -38,7 +38,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class InnerFbStorage implements Storage {
 
-
     private static final Logger LOG = LoggerFactory.getLogger(InnerFbStorage.class);
 
     private final ProductDescriptionCache productCache;
@@ -98,15 +97,18 @@ public final class InnerFbStorage implements Storage {
     }
 
 
-    public void addTopupProduct(String sku, long noOfBytes) {
+    @Override
+    public void addTopupProduct(final String sku, final long noOfBytes) {
         productCache.addTopupProduct(sku, noOfBytes);
     }
 
-    public boolean isValidSKU(String sku) {
+    @Override
+    public boolean isValidSKU(final String sku) {
         return productCache.isValidSKU(sku);
     }
 
-    public Product getProductForSku(String sku) {
+    @Override
+    public Product getProductForSku(final String sku) {
         return productCache.getProductForSku(sku);
     }
 
@@ -192,7 +194,7 @@ public final class InnerFbStorage implements Storage {
 
     private void loadSubscriberBalanceDataFromFirebaseToInMemoryStructure(OcsState ocsState) {
         LOG.info("Loading initial balance from storage to in-memory OcsState");
-        for (Subscriber subscriber : getAllSubscribers()) {
+        for (final Subscriber subscriber : getAllSubscribers()) {
             LOG.info("{} - {}", subscriber.getMsisdn(), subscriber.getNoOfBytesLeft());
             if (subscriber.getNoOfBytesLeft() > 0) {
                 String msisdn = subscriber.getMsisdn();
@@ -270,7 +272,7 @@ public final class InnerFbStorage implements Storage {
         //     b) Possibly also a good idea, since it makes it really quick to change
         //        the UI on a  per-user basis if we so desire.
         final long noOfBytes = subscriber.getNoOfBytesLeft();
-        final float noOfGBLeft = noOfBytes / 1000000000.0f;
+        final float noOfGBLeft = noOfBytes / 1.0E09f;
         final String gbLeft = String.format("%.2f GB", noOfGBLeft);
 
         final String key = getKeyFromPhoneNumber(clientVisibleSubscriberRecords, msisdn);
@@ -356,7 +358,7 @@ public final class InnerFbStorage implements Storage {
         removeChild(clientRequests, id);
     }
 
-    private String getKeyFromLookupKey(DatabaseReference dbref, String msisdn, String lookupKey) throws StorageException {
+    private  String getKeyFromLookupKey(DatabaseReference dbref, String msisdn, String lookupKey) throws StorageException {
         final CountDownLatch cdl = new CountDownLatch(1);
         final Set<String> result = new HashSet<>();
         dbref.orderByChild(lookupKey)
@@ -386,13 +388,12 @@ public final class InnerFbStorage implements Storage {
         }
     }
 
-    public String getKeyFromPhoneNumber(final DatabaseReference dbref, final String msisdn) throws StorageException {
-
+    private  String getKeyFromPhoneNumber(final DatabaseReference dbref, final String msisdn) throws StorageException {
         final String lookupKey = "phoneNumber";
         return getKeyFromLookupKey(dbref, msisdn, lookupKey);
     }
 
-    public String getKeyFromMsisdn(final DatabaseReference dbref, final String msisdn) throws StorageException {
+    private  String getKeyFromMsisdn(final DatabaseReference dbref, final String msisdn) throws StorageException {
         final String lookupKey = "msisdn";
         return getKeyFromLookupKey(dbref, msisdn, lookupKey);
     }
@@ -501,16 +502,34 @@ public final class InnerFbStorage implements Storage {
         return dbref.getKey();
     }
 
+    // This is the only public method in this class
+    // that isn't also overriding some superclass
+    // or implementing an interface.
     public Collection<Subscriber> getAllSubscribers() {
 
         final Query q = authorativeUserData.orderByKey();
-
         final Set<Subscriber> subscribers = new LinkedHashSet<>();
-
-
         final CountDownLatch cdl = new CountDownLatch(1);
-        // one time listener
-        final ValueEventListener listener = new ValueEventListener() {
+        final ValueEventListener collectingVisitor =
+                newListenerThatWillCollectAllSubscribers(subscribers, cdl);
+
+        q.addListenerForSingleValueEvent(collectingVisitor);
+
+        try {
+            cdl.await(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            LOG.error("Failed to get all subscribers");
+        }
+        if (cdl.getCount() > 0) {
+            LOG.error("Failed to get all subscribers");
+        }
+        return subscribers;
+    }
+
+    private  static ValueEventListener newListenerThatWillCollectAllSubscribers(final Set<Subscriber> subscribers, final CountDownLatch cdl) {
+        checkNotNull(subscribers);
+        checkNotNull(cdl);
+        return new ValueEventListener() {
             @Override
             public void onDataChange(final DataSnapshot snapshot) {
                 if (!snapshot.hasChildren()) {
@@ -529,15 +548,5 @@ public final class InnerFbStorage implements Storage {
                 LOG.error(error.getMessage(), error.toException());
             }
         };
-        q.addListenerForSingleValueEvent(listener);
-        try {
-            cdl.await(10, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            LOG.error("Failed to get all subscribers");
-        }
-        if (cdl.getCount() > 0) {
-            LOG.error("Failed to get all subscribers");
-        }
-        return subscribers;
     }
 }
