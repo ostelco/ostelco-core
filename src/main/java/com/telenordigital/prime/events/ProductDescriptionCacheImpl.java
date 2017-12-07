@@ -1,4 +1,5 @@
 package com.telenordigital.prime.events;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,17 +12,17 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class ProductDescriptionCacheImpl implements ProductDescriptionCache {
 
-    private final static Logger LOG = LoggerFactory.getLogger(ProductDescriptionCacheImpl.class);
+    private static final  Logger LOG = LoggerFactory.getLogger(ProductDescriptionCacheImpl.class);
 
-    public final Product DATA_TOPUP_3GB =
-            new Product("DataTopup3GB", new TopUpProduct(3000000000l));
+    public static final Product DATA_TOPUP_3GB =
+            new Product("DataTopup3GB", new TopUpProduct(3000000000L));
 
-    private  final Map<String, Product> products;
+    private final Map<String, Product> products;
 
-    private final static ProductDescriptionCacheImpl instance = new ProductDescriptionCacheImpl();
+    private static final ProductDescriptionCacheImpl INSTANCE = new ProductDescriptionCacheImpl();
 
     public static ProductDescriptionCacheImpl getInstance() {
-        return instance;
+        return INSTANCE;
     }
 
     private ProductDescriptionCacheImpl() {
