@@ -3,6 +3,7 @@ package com.telenordigital.prime.ocs.state;
 import com.google.common.base.Preconditions;
 import com.lmax.disruptor.EventHandler;
 import com.telenordigital.prime.disruptor.PrimeEvent;
+import com.telenordigital.prime.events.Subscriber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,5 +94,19 @@ public class OcsState implements EventHandler<PrimeEvent> {
         long consumed = Math.min(existing, bytes);
         dataPackMap.put(msisdn, existing - consumed);
         return consumed;
+    }
+
+
+    public void injectSubscriberIntoOCS(final Subscriber subscriber) {
+        LOG.info("{} - {}", subscriber.getMsisdn(), subscriber.getNoOfBytesLeft());
+        if (subscriber.getNoOfBytesLeft() > 0) {
+            String msisdn = subscriber.getMsisdn();
+            // XXX Use string rewriting methods instead.
+            // XXX removing '+'
+            if (msisdn.charAt(0) == '+') {
+                msisdn = msisdn.substring(1);
+            }
+            addDataBytes(msisdn, subscriber.getNoOfBytesLeft());
+        }
     }
 }
