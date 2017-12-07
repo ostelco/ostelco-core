@@ -16,7 +16,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.telenordigital.prime.events.EventProcessorTest.PAYMENT_TOKEN;
-
 import static com.telenordigital.prime.events.Products.DATA_TOPUP_3GB;
 import static java.lang.Thread.sleep;
 import static org.junit.Assert.assertNotEquals;

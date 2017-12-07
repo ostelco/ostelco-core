@@ -7,6 +7,8 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.junit.Assert.assertTrue;
+
 /**
  * @author Vihang Patil <vihang.patil@telenordigital.com>
  */
@@ -26,11 +28,13 @@ public class TestPrimeConfig {
         SUPPORT.after();
     }
 
+    /**
+     *  Do nothing.
+     *  This test will just start and stop the server.
+     *  It will validate config file in 'src/test/resources/config.yaml'
+     */
     @Test
     public void test() {
-	assert(true);
-        // Do nothing.
-        // This test will just start and stop the server.
-        // It will validate config file in 'src/test/resources/config.yaml'
+	    assertTrue(true);
     }
 }
