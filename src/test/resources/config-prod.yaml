@@ -1,0 +1,8 @@
+logging:
+  level: INFO
+  loggers:
+    com.telenordigital: DEBUG
+
+eventProcessor:
+  databaseName: pantel-2decb
+  configFile: secrets/pantel-d116075c73e8.json

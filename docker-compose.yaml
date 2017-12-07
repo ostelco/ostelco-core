@@ -1,0 +1,21 @@
+version: "3.3"
+
+services:
+  prime:
+    container_name: prime
+    build: .
+    ports:
+      - "8082:8082"
+    networks:
+      net:
+        aliases:
+          - prime
+        ipv4_address: 172.16.238.4
+
+networks:
+  net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.238.0/24

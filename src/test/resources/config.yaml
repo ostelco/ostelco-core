@@ -1,0 +1,8 @@
+logging:
+  level: INFO
+  loggers:
+    com.telenordigital: DEBUG
+
+eventProcessor:
+  databaseName: pantel-tests
+  configFile: src/test/resources/pantel-tests.json

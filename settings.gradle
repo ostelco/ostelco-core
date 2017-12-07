@@ -1,0 +1,5 @@
+rootProject.name = 'prime'
+
+include ':ocs-api'
+
+project(':ocs-api').projectDir = "$rootDir/ocs-api" as File
