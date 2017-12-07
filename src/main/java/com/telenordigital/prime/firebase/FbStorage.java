@@ -37,7 +37,7 @@ public final class FbStorage implements Storage {
     }
 
     public void primeCache() {
-        final Collection<Subscriber> allSubscribers = innerStorage.getAllSubscribers();
+        final Collection<Subscriber> allSubscribers = getAllSubscribers();
         this.cache.primeCache(allSubscribers);
     }
 
@@ -64,6 +64,11 @@ public final class FbStorage implements Storage {
     @Override
     public void removeRecordOfPurchaseById(final String id) {
         innerStorage.removeRecordOfPurchaseById(id);
+    }
+
+    @Override
+    public Collection<Subscriber> getAllSubscribers() {
+        return innerStorage.getAllSubscribers();
     }
 
     @Override

@@ -446,6 +446,7 @@ public final class InnerFbStorage implements Storage {
             public void onCancelled(DatabaseError error) {
             }
         };
+
         q.addListenerForSingleValueEvent(
                 listenerThatWillReadSubcriberData);
 
@@ -502,9 +503,8 @@ public final class InnerFbStorage implements Storage {
         return dbref.getKey();
     }
 
-    // This is the only public method in this class
-    // that isn't also overriding some superclass
-    // or implementing an interface.
+
+    @Override
     public Collection<Subscriber> getAllSubscribers() {
 
         final Query q = authorativeUserData.orderByKey();
