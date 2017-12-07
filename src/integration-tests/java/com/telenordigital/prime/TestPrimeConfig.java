@@ -28,6 +28,7 @@ public class TestPrimeConfig {
 
     @Test
     public void test() {
+	assert(true);
         // Do nothing.
         // This test will just start and stop the server.
         // It will validate config file in 'src/test/resources/config.yaml'
