@@ -126,19 +126,11 @@ public final class InnerFbStorage implements Storage {
 
     private void addPurchaseEventListener() {
         this.clientRequests.addChildEventListener(
-                new ChildEventListener() {
+                new AbstractChildEventListener() {
                     @Override
                     public void onChildAdded(DataSnapshot snapshot, String previousChildName) {
                         LOG.info("onChildAdded");
-                        if (snapshot == null) {
-                            LOG.error("dataSnapshot can't be null");
-                            return;
-                        }
-
-                        if (!snapshot.exists()) {
-                            LOG.error("dataSnapshot must exist");
-                            return;
-                        }
+                        if (snapshotIsInvalid(snapshot)) return;
 
                         try {
                             final FbPurchaseRequest req =
@@ -149,26 +141,6 @@ public final class InnerFbStorage implements Storage {
                         } catch (Exception e) {
                             LOG.error("Couldn't transform req into FbPurchaseRequest", e);
                         }
-                    }
-
-
-                    // The methods below are added just to
-                    // fulfill the interface contract, they don't actually
-                    // do anything.
-                    @Override
-                    public void onChildChanged(DataSnapshot snapshot, String previousChildName) {
-                    }
-
-                    @Override
-                    public void onChildRemoved(DataSnapshot snapshot) {
-                    }
-
-                    @Override
-                    public void onChildMoved(DataSnapshot snapshot, String previousChildName) {
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError error) {
                     }
                 });
     }
@@ -188,15 +160,7 @@ public final class InnerFbStorage implements Storage {
                 }
 
                 private void addOrUpdateProduct(final DataSnapshot snapshot) {
-                    if (snapshot == null) {
-                        LOG.error("dataSnapshot can't be null");
-                        return;
-                    }
-
-                    if (!snapshot.exists()) {
-                        LOG.error("dataSnapshot must exist");
-                        return;
-                    }
+                    if (snapshotIsInvalid(snapshot)) return;
 
                     try {
                         final ProductCatalogItem item =
@@ -210,6 +174,19 @@ public final class InnerFbStorage implements Storage {
                     }
                 }
             };
+    }
+
+    private boolean snapshotIsInvalid(DataSnapshot snapshot) {
+        if (snapshot == null) {
+            LOG.error("dataSnapshot can't be null");
+            return true;
+        }
+
+        if (!snapshot.exists()) {
+            LOG.error("dataSnapshot must exist");
+            return true;
+        }
+        return false;
     }
 
     private void loadSubscriberBalanceDataFromFirebaseToInMemoryStructure(OcsState ocsState) {
@@ -254,15 +231,7 @@ public final class InnerFbStorage implements Storage {
     }
 
     private void interpretDataSnapshotAsProductCatalogItem(DataSnapshot snapshot) {
-        if (snapshot == null) {
-            LOG.error("dataSnapshot can't be null");
-            return;
-        }
-
-        if (!snapshot.exists()) {
-            LOG.error("dataSnapshot must exist");
-            return;
-        }
+        if (snapshotIsInvalid(snapshot)) return;
 
         try {
             final ProductCatalogItem item =
@@ -546,7 +515,7 @@ public final class InnerFbStorage implements Storage {
                     cdl.countDown();
                     return;
                 }
-                for (DataSnapshot child : snapshot.getChildren()) {
+                for (final DataSnapshot child : snapshot.getChildren()) {
                     final FbSubscriber subscriber = child.getValue(FbSubscriber.class);
                     subscriber.setFbKey(child.getKey());
                     subscribers.add(subscriber);
