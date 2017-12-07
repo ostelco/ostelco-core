@@ -9,7 +9,7 @@ import com.telenordigital.prime.events.EventProcessor;
 import com.telenordigital.prime.events.OcsBalanceUpdater;
 import com.telenordigital.prime.events.OcsBalanceUpdaterImpl;
 import com.telenordigital.prime.events.Storage;
-import com.telenordigital.prime.firebase.InnerFbStorage;
+import com.telenordigital.prime.firebase.FbStorage;
 import com.telenordigital.prime.ocs.OcsServer;
 import com.telenordigital.prime.ocs.OcsService;
 import com.telenordigital.prime.ocs.state.OcsState;
@@ -45,7 +45,7 @@ public class PrimeApplication extends Application<PrimeConfiguration> {
 
         final EventProcessorConfiguration eventProcessorConfig =
                 primeConfiguration.getEventProcessorConfig();
-        final Storage storage = new InnerFbStorage(
+        final Storage storage = new FbStorage(
                 eventProcessorConfig.getDatabaseName(),
                 eventProcessorConfig.getConfigFile(),
                 ocsState);

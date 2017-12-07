@@ -30,7 +30,7 @@ public class FbPurchaseEventRoundtripTest {
     @Rule
     public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    private InnerFbStorage fbStorage;
+    private FbStorage fbStorage;
     private Storage storage;
 
     @Mock
@@ -40,7 +40,7 @@ public class FbPurchaseEventRoundtripTest {
 
     @Before
     public void setUp() throws  Exception {
-        this.fbStorage = new InnerFbStorage(
+        this.fbStorage = new FbStorage(
                 "pantel-tests",
                 "src/test/resources/pantel-tests.json" ,
                 new OcsState());

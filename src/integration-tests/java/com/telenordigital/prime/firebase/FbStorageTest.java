@@ -23,13 +23,13 @@ public class FbStorageTest {
     private final static String PAYMENT_TOKEN = "thisIsAPaymentToken";
     private final static String EPHERMERAL_MSISDN = "+4747116996";
 
-    private InnerFbStorage fbStorage;
+    private FbStorage fbStorage;
     private Storage storage;
     private Collection<String> prids;
 
     @Before
     public void setUp() throws StorageException, InterruptedException {
-        this.fbStorage = new InnerFbStorage(
+        this.fbStorage = new FbStorage(
                 "pantel-tests",
                 "src/test/resources/pantel-tests.json" ,
                 new OcsState());

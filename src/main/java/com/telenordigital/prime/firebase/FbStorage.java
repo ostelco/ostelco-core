@@ -36,9 +36,9 @@ import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public final class InnerFbStorage implements Storage {
+public final class FbStorage implements Storage {
 
-    private static final Logger LOG = LoggerFactory.getLogger(InnerFbStorage.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FbStorage.class);
 
     private final ProductDescriptionCache productCache;
     private final DatabaseReference authorativeUserData;
@@ -52,9 +52,9 @@ public final class InnerFbStorage implements Storage {
 
     private final StorageInitiatedEventExecutor executor;
 
-    public InnerFbStorage(final String databaseName,
-                          final String configFile,
-                          final OcsState ocsState) throws StorageException {
+    public FbStorage(final String databaseName,
+                     final String configFile,
+                     final OcsState ocsState) throws StorageException {
         checkNotNull(configFile);
         checkNotNull(databaseName);
         this.executor = new StorageInitiatedEventExecutor();
