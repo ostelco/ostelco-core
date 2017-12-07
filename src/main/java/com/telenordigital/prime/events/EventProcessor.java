@@ -33,7 +33,6 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
         final String sku = getValidSku(pr);
         final String msisdn = getValidMsisdn(pr);
 
-        final Product product;
         final TopUpProduct topup = getValidTopUpProduct(pr, sku);
         handleTopupProduct(pr, msisdn, topup);
 
