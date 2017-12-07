@@ -25,20 +25,12 @@ public final class FbStorage implements Storage {
 
     private final InnerFbStorage innerStorage;
 
-    private final SubscriberCache cache;
-
     public FbStorage(final String databaseName,
                      final String configFile,
                      final OcsState ocsState) throws StorageException {
         checkNotNull(databaseName);
         checkNotNull(configFile);
         this.innerStorage = new InnerFbStorage(databaseName, configFile, ocsState);
-        this.cache = new SubscriberCache();
-    }
-
-    public void primeCache() {
-        final Collection<Subscriber> allSubscribers = getAllSubscribers();
-        this.cache.primeCache(allSubscribers);
     }
 
     @Override
@@ -92,68 +84,25 @@ public final class FbStorage implements Storage {
     public void setRemainingByMsisdn(final String msisdn, final long noOfBytes)
             throws StorageException {
         checkNotNull(msisdn);
-        cache.writeLock(msisdn);
-        try {
-
-            // Subscriber sub = cache.getSubscriber(msisdn);
-            // XXX TBD
-            innerStorage.setRemainingByMsisdn(msisdn, noOfBytes);
-        } finally {
-            cache.unlock(msisdn);
-        }
+        innerStorage.setRemainingByMsisdn(msisdn, noOfBytes);
     }
 
     @Override
     public Subscriber getSubscriberFromMsisdn(final String msisdn) throws StorageException {
         checkNotNull(msisdn);
-        cache.readLock(msisdn);
-        try {
-            if (cache.containsSubscriber(msisdn)) {
-                return cache.getSubscriber(msisdn);
-            } else {
-                cache.readLock(msisdn);
-                final FbSubscriber sub = (FbSubscriber) innerStorage.getSubscriberFromMsisdn(msisdn);
-                cache.insertSubscriber(sub);
-                return sub;
-            }
-        } finally {
-            cache.unlock(msisdn);
-        }
+        return innerStorage.getSubscriberFromMsisdn(msisdn);
     }
 
     @Override
     public String insertNewSubscriber(final String msisdn) throws StorageException {
         checkNotNull(msisdn);
-        cache.writeLock(msisdn);
-        try {
-            if (cache.containsSubscriber(msisdn)) {
-                // Or an error?
-                final FbSubscriber fbsub = (FbSubscriber) cache.getSubscriber(msisdn);
-                return fbsub.getFbKey();
-            } else {
-                // XXX I dislike this  "getKey" nonsense.  It's a layering violation
-                //     I would rather do without.
-                final String key = innerStorage.insertNewSubscriber(msisdn);
-                final Subscriber sub = innerStorage.getSubscriberFromMsisdn(msisdn);
-                cache.insertSubscriber(sub);
-                return key;
-            }
-        } finally {
-            cache.unlock(msisdn);
-        }
+        return innerStorage.insertNewSubscriber(msisdn);
     }
-
 
     @Override
     public void removeSubscriberByMsisdn(final String msisdn) throws StorageException {
         checkNotNull(msisdn);
-        cache.writeLock(msisdn);
-        try {
-            cache.removeSubscriber(msisdn);
-            innerStorage.removeSubscriberByMsisdn(msisdn);
-        } finally {
-            cache.unlock(msisdn);
-        }
+        innerStorage.removeSubscriberByMsisdn(msisdn);
     }
 
     @Override
