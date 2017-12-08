@@ -56,30 +56,32 @@ final class FbSubscriber implements AsMappable, Subscriber {
 
     @Override
     public String toString() {
-        return "FbSubscriber{" +
-                "fbKey='" + fbKey + '\'' +
-                ", msisdn='" + msisdn + '\'' +
-                ", noOfBytesLeft=" + noOfBytesLeft +
-                '}';
+        return "FbSubscriber{"
+                + "fbKey='" + fbKey + '\''
+                + ", msisdn='" + msisdn + '\''
+                + ", noOfBytesLeft=" + noOfBytesLeft
+                + '}';
     }
 
     @Override
     public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {return true;}
+        if (o == null || getClass() != o.getClass()) {return false;}
 
         final FbSubscriber that = (FbSubscriber) o;
 
-        if (getNoOfBytesLeft() != that.getNoOfBytesLeft()) return false;
-        if (!getFbKey().equals(that.getFbKey())) return false;
+        if (getNoOfBytesLeft() != that.getNoOfBytesLeft()) {return false;}
+        if (!getFbKey().equals(that.getFbKey())) {return false;}
         return getMsisdn().equals(that.getMsisdn());
     }
 
     @Override
     public int hashCode() {
         int result = getFbKey().hashCode();
-        result = 31 * result + getMsisdn().hashCode();
-        result = 31 * result + (int) (getNoOfBytesLeft() ^ (getNoOfBytesLeft() >>> 32));
+        final int usefulSmallishPrime = 31;
+        result = usefulSmallishPrime * result + getMsisdn().hashCode();
+        final int noOfBitsInAnInteger = 32;
+        result = usefulSmallishPrime * result + (int) (getNoOfBytesLeft() ^ (getNoOfBytesLeft() >>> noOfBitsInAnInteger));
         return result;
     }
 }
