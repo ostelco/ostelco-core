@@ -119,7 +119,6 @@ public final class FbStorage implements Storage {
 
             return FirebaseDatabase.getInstance();
 
-
             // (un)comment next line to turn on/of extended debugging
             // from firebase.
             // this.firebaseDatabase.setLogLevel(com.google.firebase.database.Logger.Level.DEBUG);

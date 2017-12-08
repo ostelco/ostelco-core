@@ -7,7 +7,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author Vihang Patil <vihang.patil@telenordigital.com>
@@ -35,6 +35,6 @@ public class TestPrimeConfig {
      */
     @Test
     public void test() {
-        assertTrue(true);
+        assertNotNull(SUPPORT);
     }
 }

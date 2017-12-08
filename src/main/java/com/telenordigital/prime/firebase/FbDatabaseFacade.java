@@ -51,17 +51,17 @@ public final class FbDatabaseFacade {
         checkNotNull(consumer);
         return new ValueEventListener() {
             @Override
-            public void onDataChange(DataSnapshot snapshot) {
+            public void onDataChange(final DataSnapshot snapshot) {
                 LOG.info("onDataChange");
                 interpretDataSnapshotAsProductCatalogItem(snapshot, consumer);
             }
 
             @Override
-            public void onCancelled(DatabaseError error) {
+            public void onCancelled(final DatabaseError error) {
+                // Intentionally left blank.
             }
         };
     }
-
 
     private static AbstractChildEventListener
     newChildListenerThatDispatchesPurchaseRequestToExecutor(
@@ -71,8 +71,9 @@ public final class FbDatabaseFacade {
             @Override
             public void onChildAdded(final DataSnapshot snapshot, final String previousChildName) {
                 LOG.info("onChildAdded");
-                if (snapshotIsInvalid(snapshot)) return;
-
+                if (snapshotIsInvalid(snapshot)) {
+                    return;
+                }
                 try {
                     final FbPurchaseRequest req =
                             snapshot.getValue(FbPurchaseRequest.class);
@@ -98,7 +99,8 @@ public final class FbDatabaseFacade {
         return false;
     }
 
-    private void interpretDataSnapshotAsProductCatalogItem(final DataSnapshot snapshot, Consumer<ProductCatalogItem> consumer) {
+    private void interpretDataSnapshotAsProductCatalogItem(
+            final DataSnapshot snapshot, Consumer<ProductCatalogItem> consumer) {
         checkNotNull(consumer);
         if (snapshotIsInvalid(snapshot)) return;
 
@@ -115,7 +117,9 @@ public final class FbDatabaseFacade {
     }
 
 
-    private void addOrUpdateProduct(final DataSnapshot snapshot, final Consumer<ProductCatalogItem> consumer) {
+    private void addOrUpdateProduct(
+            final DataSnapshot snapshot,
+            final Consumer<ProductCatalogItem> consumer) {
         checkNotNull(consumer);
         if (snapshotIsInvalid(snapshot)) {
             return;
@@ -237,15 +241,12 @@ public final class FbDatabaseFacade {
                 addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(final DataSnapshot snapshot) {
-                        // XXX This is unclean, fix!
-                        FbStorage.handleDataChange(snapshot, cdl, result, msisdn);
+                        FbStorage.handleDataChange(snapshot, cdl, result, msisdn);  // XXX This is unclean, fix!
                     }
-
                     @Override
                     public void onCancelled(DatabaseError error) {
                     }
                 });
-
         try {
             if (!cdl.await(10, TimeUnit.SECONDS)) {
                 throw new StorageException("Query timed out");
@@ -259,12 +260,16 @@ public final class FbDatabaseFacade {
         }
     }
 
-    private String getKeyFromPhoneNumber(final DatabaseReference dbref, final String msisdn) throws StorageException {
+    private String getKeyFromPhoneNumber(
+            final DatabaseReference dbref,
+            final String msisdn) throws StorageException {
         final String lookupKey = "phoneNumber";
         return getKeyFromLookupKey(dbref, msisdn, lookupKey);
     }
 
-    private String getKeyFromMsisdn(final DatabaseReference dbref, final String msisdn) throws StorageException {
+    private String getKeyFromMsisdn(
+            final DatabaseReference dbref,
+            final String msisdn) throws StorageException {
         final String lookupKey = "msisdn";
         return getKeyFromLookupKey(dbref, msisdn, lookupKey);
     }
@@ -338,7 +343,10 @@ public final class FbDatabaseFacade {
                 LOG.info("authorativeuserdata = '" + authorativeUserData
                         + "', msisdn = '" + msisdn
                         + "' => timeout");
-                throw new StorageException("Query timed out. authorativeuserdata = '" + authorativeUserData + "', msisdn = '" + msisdn + "'");
+                throw new StorageException("Query timed out. authorativeuserdata = '" +
+                        authorativeUserData +
+                        "', msisdn = '" +
+                        msisdn + "'");
             } else if (result.isEmpty()) {
                 LOG.info("authorativeuserdata = '" + authorativeUserData
                         + "', msisdn = '" + msisdn

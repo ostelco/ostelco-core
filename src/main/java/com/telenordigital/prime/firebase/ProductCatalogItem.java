@@ -22,7 +22,7 @@ public final class ProductCatalogItem {
         return badgeLabel;
     }
 
-    public void setBadgeLabel(String badgeLabel) {
+    public void setBadgeLabel(final String badgeLabel) {
         this.badgeLabel = badgeLabel;
     }
 
@@ -30,7 +30,7 @@ public final class ProductCatalogItem {
         return currencyLabel;
     }
 
-    public void setCurrencyLabel(String currencyLabel) {
+    public void setCurrencyLabel(final String currencyLabel) {
         this.currencyLabel = currencyLabel;
     }
 
@@ -38,7 +38,7 @@ public final class ProductCatalogItem {
         return isVisible;
     }
 
-    public void setIsVisible(boolean visible) {
+    public void setIsVisible(final boolean visible) {
         isVisible = visible;
     }
 
@@ -62,7 +62,7 @@ public final class ProductCatalogItem {
         return priceLabel;
     }
 
-    public void setPriceLabel(String priceLabel) {
+    public void setPriceLabel(final String priceLabel) {
         this.priceLabel = priceLabel;
     }
 
@@ -78,7 +78,7 @@ public final class ProductCatalogItem {
         return sku;
     }
 
-    public void setSku(String sku) {
+    public void setSku(final String sku) {
         this.sku = sku;
     }
 
