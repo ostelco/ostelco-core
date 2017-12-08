@@ -16,6 +16,7 @@ final class FbSubscriber implements AsMappable, Subscriber {
     private long noOfBytesLeft;
 
     FbSubscriber() {
+        noOfBytesLeft = 0;
     }
 
     @Override
