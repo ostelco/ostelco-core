@@ -7,7 +7,9 @@
 
 Automatic code review, let's try it:
 https://www.codacy.com/app/la3lma/ostelco-core/dashboard
-[![Codacy grade](https://img.shields.io/codacy/grade/e27821fb6289410b8f58338c7e0bc686.svg)]()
+
+
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/e7b2ae0440104a5e8ae6fa5e919147dc)](https://www.codacy.com/app/la3lma/ostelco-core?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ostelco/ostelco-core&amp;utm_campaign=Badge_Grade)
 
 
 Core protocols and services
