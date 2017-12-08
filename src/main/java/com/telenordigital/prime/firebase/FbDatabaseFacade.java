@@ -51,13 +51,14 @@ public final class FbDatabaseFacade {
         checkNotNull(consumer);
         return new ValueEventListener() {
             @Override
-            public void onDataChange(DataSnapshot snapshot) {
+            public void onDataChange(final DataSnapshot snapshot) {
                 LOG.info("onDataChange");
                 interpretDataSnapshotAsProductCatalogItem(snapshot, consumer);
             }
 
             @Override
-            public void onCancelled(DatabaseError error) {
+            public void onCancelled(final DatabaseError error) {
+                // Intentionally left blank.
             }
         };
     }

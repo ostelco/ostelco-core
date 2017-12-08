@@ -19,11 +19,12 @@ public final class ProductDescriptionCacheImpl implements ProductDescriptionCach
 
     private static final ProductDescriptionCacheImpl INSTANCE = new ProductDescriptionCacheImpl();
 
+    private final Map<String, Product> products;
+
     public static ProductDescriptionCacheImpl getInstance() {
         return INSTANCE;
     }
 
-    private final Map<String, Product> products;
 
     private ProductDescriptionCacheImpl() {
         products = new TreeMap<>();
@@ -36,9 +37,9 @@ public final class ProductDescriptionCacheImpl implements ProductDescriptionCach
     }
 
     @Override
-    public void  addTopupProduct(final String sku, final long noOfBytes) {
+    public void addTopupProduct(final String sku, final long noOfBytes) {
         checkNotNull(sku);
-        checkArgument(noOfBytes >=  0);
+        checkArgument(noOfBytes >= 0);
         final Product topupProduct = newTopupProduct(sku, noOfBytes);
         LOG.info("Adding topup product  " + topupProduct);
         addProduct(topupProduct);
@@ -46,7 +47,7 @@ public final class ProductDescriptionCacheImpl implements ProductDescriptionCach
 
     private synchronized Product newTopupProduct(final String sku, final long noOfBytes) {
         checkNotNull(sku);
-        checkArgument(noOfBytes >=  0);
+        checkArgument(noOfBytes >= 0);
         return new Product(sku, new TopUpProduct(noOfBytes));
     }
 
@@ -57,7 +58,7 @@ public final class ProductDescriptionCacheImpl implements ProductDescriptionCach
     }
 
     @Override
-    public synchronized  Product getProductForSku(final String sku) {
+    public synchronized Product getProductForSku(final String sku) {
         checkNotNull(sku);
         return products.get(sku);
     }
