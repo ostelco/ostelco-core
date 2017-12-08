@@ -102,10 +102,10 @@ public class OcsTest {
 
         // Set up a channel to be used to communicate as an OCS instance, to an
         // Prime instance.
-        final ManagedChannel channel = ManagedChannelBuilder
-                .forTarget("0.0.0.0:" + PORT)
-                .usePlaintext(true) // disable encryption for testing
-                .build();
+        final ManagedChannel channel = ManagedChannelBuilder.
+                forTarget("0.0.0.0:" + PORT).
+                usePlaintext(true). // disable encryption for testing
+                build();
 
         // Initialize the stub that will be used to actually
         // communicate from the client emulating being the OCS.
@@ -126,18 +126,18 @@ public class OcsTest {
 
     private FetchDataBucketInfo newDefaultFetchDataInfoRecord() {
         LOG.info("Req Id: {}", REQUEST_ID);
-        return FetchDataBucketInfo.newBuilder()
-                .setMsisdn(MSISDN)
-                .setBytes(BYTES)
-                .setRequestId(REQUEST_ID)
-                .build();
+        return FetchDataBucketInfo.newBuilder().
+                setMsisdn(MSISDN).
+                setBytes(BYTES).
+                setRequestId(REQUEST_ID).
+                build();
     }
 
     private ReturnUnusedDataRequest newDefaultReturnUnusedDataRequest() {
-        return ReturnUnusedDataRequest.newBuilder()
-                .setMsisdn(MSISDN)
-                .setBytes(BYTES)
-                .build();
+        return ReturnUnusedDataRequest.newBuilder().
+                setMsisdn(MSISDN).
+                setBytes(BYTES).
+                build();
     }
 
     /**

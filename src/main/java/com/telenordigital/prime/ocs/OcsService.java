@@ -88,11 +88,11 @@ public final class OcsService
                     event.getMsisdn(), event.getBucketBytes(), event.getOcsgwRequestId());
 
             final FetchDataBucketInfo fetchDataInfo =
-                    FetchDataBucketInfo.newBuilder()
-                            .setMsisdn(event.getMsisdn())
-                            .setBytes(event.getBucketBytes())
-                            .setRequestId(event.getOcsgwRequestId())
-                            .build();
+                    FetchDataBucketInfo.newBuilder().
+                            setMsisdn(event.getMsisdn()).
+                            setBytes(event.getBucketBytes()).
+                            setRequestId(event.getOcsgwRequestId()).
+                            build();
 
             final StreamObserver<FetchDataBucketInfo> fetchDataBucketResponse
                     = fetchDataBucketClientMap.get(event.getOcsgwStreamId());

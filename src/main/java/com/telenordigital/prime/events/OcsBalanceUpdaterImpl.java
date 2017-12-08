@@ -13,7 +13,7 @@ public final class OcsBalanceUpdaterImpl implements OcsBalanceUpdater {
 
 
     @Override
-    public final void updateBalance(final String msisdn, long noOfBytesToTopUp) {
+    public void updateBalance(final String msisdn, final long noOfBytesToTopUp) {
         // XXX removing '+' if it exists
         // XXX Use rewriting functions directly
 
