@@ -63,7 +63,6 @@ public final class FbDatabaseFacade {
         };
     }
 
-
     private static AbstractChildEventListener
     newChildListenerThatDispatchesPurchaseRequestToExecutor(
             final BiFunction<String, FbPurchaseRequest, Void> consumer) {
@@ -75,7 +74,6 @@ public final class FbDatabaseFacade {
                 if (snapshotIsInvalid(snapshot)) {
                     return;
                 }
-
                 try {
                     final FbPurchaseRequest req =
                             snapshot.getValue(FbPurchaseRequest.class);
@@ -243,15 +241,12 @@ public final class FbDatabaseFacade {
                 addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(final DataSnapshot snapshot) {
-                        // XXX This is unclean, fix!
-                        FbStorage.handleDataChange(snapshot, cdl, result, msisdn);
+                        FbStorage.handleDataChange(snapshot, cdl, result, msisdn);  // XXX This is unclean, fix!
                     }
-
                     @Override
                     public void onCancelled(DatabaseError error) {
                     }
                 });
-
         try {
             if (!cdl.await(10, TimeUnit.SECONDS)) {
                 throw new StorageException("Query timed out");
