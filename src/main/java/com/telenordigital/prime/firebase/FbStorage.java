@@ -52,6 +52,12 @@ public final class FbStorage implements Storage {
         // Scoop up products left and right (and don't worry about duplicates, race conditions or
         // anything else by sending them to the listeners.
 
+        // XXX The next two invocations represents glue between the FB storage
+        //     and other components.  The code specifying the interface does not
+        //     belong in this class, it should be moved up one level along with
+        //     the executor that's used to facilitate.   Also, it should
+        //     be considered if a disruptor is a better choice than
+        //     an executor (it probably isn't but the reasoning should be made clear).
         facade.addProductCatalogItemListener(item ->
                 addTopupProduct(item.getSku(), item.getNoOfBytes()));
 

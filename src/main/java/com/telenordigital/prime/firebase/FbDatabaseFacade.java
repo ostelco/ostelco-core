@@ -224,12 +224,16 @@ public final class FbDatabaseFacade {
     }
 
 
-    private String getKeyFromLookupKey(final DatabaseReference dbref, String msisdn, String lookupKey) throws StorageException {
+    private String getKeyFromLookupKey(
+            final DatabaseReference dbref,
+            final String msisdn,
+            final String lookupKey) throws StorageException {
         final CountDownLatch cdl = new CountDownLatch(1);
         final Set<String> result = new HashSet<>();
         dbref.orderByChild(lookupKey)
                 .equalTo(msisdn)
-                .limitToFirst(1).addListenerForSingleValueEvent(new ValueEventListener() {
+                .limitToFirst(1)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(final DataSnapshot snapshot) {
                 // XXX This is unclean, fix!
@@ -238,7 +242,6 @@ public final class FbDatabaseFacade {
 
             @Override
             public void onCancelled(DatabaseError error) {
-
             }
         });
 
