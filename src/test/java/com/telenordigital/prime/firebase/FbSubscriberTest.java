@@ -5,9 +5,11 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class FbSubscriberTest {
+
+    final FbSubscriber fbs = new FbSubscriber();
+
     @Test
     public void asMap() throws Exception {
-        final FbSubscriber fbs = new FbSubscriber();
         assertEquals(2, fbs.asMap().size());
         assertTrue(fbs.asMap().containsKey("noOfBytesLeft"));
         assertTrue(fbs.asMap().containsKey("msisdn"));
@@ -17,26 +19,26 @@ public class FbSubscriberTest {
     }
 
     @Test
-    public void getFbKey() throws Exception {
+    public void getAndSetFbKey() throws Exception {
+       assertEquals(null, fbs.getFbKey());
+       final String fbkey = "foobar";
+       fbs.setFbKey(fbkey);
+       assertEquals(fbkey, fbs.getFbKey());
     }
 
     @Test
-    public void getNoOfBytesLeft() throws Exception {
+    public void getAndSetNoOfBytesLeft() throws Exception {
+        assertEquals(0L, fbs.getNoOfBytesLeft());
+        final long noOfBytesLeft = 123823838L;
+        fbs.setNoOfBytesLeft(noOfBytesLeft);
+        assertEquals(noOfBytesLeft, fbs.getNoOfBytesLeft());
     }
 
     @Test
-    public void getMsisdn() throws Exception {
-    }
-
-    @Test
-    public void setFbKey() throws Exception {
-    }
-
-    @Test
-    public void setMsisdn() throws Exception {
-    }
-
-    @Test
-    public void setNoOfBytesLeft() throws Exception {
+    public void getAndSetMsisdn() throws Exception {
+        assertEquals(null, fbs.getMsisdn());
+        final String msisdn = "+47123456";
+        fbs.setMsisdn(msisdn);
+        assertEquals(msisdn, fbs.getMsisdn());
     }
 }
