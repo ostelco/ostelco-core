@@ -4,13 +4,14 @@ package com.telenordigital.prime.firebase;
  * Bean used to use read items from the product catalogs we find
  * in Firebase.
  */
-public  final class ProductCatalogItem {
+public final class ProductCatalogItem {
 
     private String badgeLabel;
     private String currencyLabel;
     private boolean isVisible;
     private String label;
     private int price;
+
     private String priceLabel;
 
     private int amount;
@@ -45,7 +46,7 @@ public  final class ProductCatalogItem {
         return label;
     }
 
-    public void setLabel(String label) {
+    public void setLabel(final String label) {
         this.label = label;
     }
 
@@ -53,7 +54,7 @@ public  final class ProductCatalogItem {
         return price;
     }
 
-    public void setPrice(int price) {
+    public void setPrice(final int price) {
         this.price = price;
     }
 
@@ -69,7 +70,7 @@ public  final class ProductCatalogItem {
         return amount;
     }
 
-    public void setAmount(int amount) {
+    public void setAmount(final int amount) {
         this.amount = amount;
     }
 
@@ -85,22 +86,22 @@ public  final class ProductCatalogItem {
         return noOfBytes;
     }
 
-    public void setNoOfBytes(long noOfBytes) {
+    public void setNoOfBytes(final long noOfBytes) {
         this.noOfBytes = noOfBytes;
     }
 
     @Override
     public String toString() {
-        return "ProductCatalogItem{" +
-                "badgeLabel='" + badgeLabel + '\'' +
-                ", currencyLabel='" + currencyLabel + '\'' +
-                ", isVisible=" + isVisible +
-                ", label='" + label + '\'' +
-                ", price=" + price +
-                ", priceLabel='" + priceLabel + '\'' +
-                ", amount=" + amount +
-                ", sku='" + sku + '\'' +
-                ", noOfBytes=" + noOfBytes +
-                '}';
+        return "ProductCatalogItem{"
+                + "badgeLabel='" + badgeLabel + '\''
+                + ", currencyLabel='" + currencyLabel + '\''
+                + ", isVisible=" + isVisible
+                + ", label='" + label + '\''
+                + ", price=" + price
+                + ", priceLabel='" + priceLabel + '\''
+                + ", amount=" + amount
+                + ", sku='" + sku + '\''
+                + ", noOfBytes=" + noOfBytes
+                + '}';
     }
 }

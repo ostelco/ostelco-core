@@ -53,7 +53,7 @@ public final class FbDatabaseFacade {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
                 LOG.info("onDataChange");
-                interpretDataSnapshotAsProductCatalogItem(snapshot,consumer);
+                interpretDataSnapshotAsProductCatalogItem(snapshot, consumer);
             }
 
             @Override
@@ -63,12 +63,13 @@ public final class FbDatabaseFacade {
     }
 
 
-    private  static AbstractChildEventListener newChildListenerThatDispatchesPurchaseRequestToExecutor(
+    private static AbstractChildEventListener
+    newChildListenerThatDispatchesPurchaseRequestToExecutor(
             final BiFunction<String, FbPurchaseRequest, Void> consumer) {
         checkNotNull(consumer);
         return new AbstractChildEventListener() {
             @Override
-            public void onChildAdded(DataSnapshot snapshot, String previousChildName) {
+            public void onChildAdded(final DataSnapshot snapshot, final String previousChildName) {
                 LOG.info("onChildAdded");
                 if (snapshotIsInvalid(snapshot)) return;
 
@@ -124,7 +125,7 @@ public final class FbDatabaseFacade {
             final ProductCatalogItem item =
                     snapshot.getValue(ProductCatalogItem.class);
             if (item.getSku() != null) {
-               consumer.accept(item);
+                consumer.accept(item);
             }
             LOG.info("Just read a product catalog item: {}", item);
         } catch (Exception e) {
@@ -234,16 +235,16 @@ public final class FbDatabaseFacade {
                 equalTo(msisdn).
                 limitToFirst(1).
                 addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(final DataSnapshot snapshot) {
-                // XXX This is unclean, fix!
-                FbStorage.handleDataChange(snapshot, cdl, result, msisdn);
-            }
+                    @Override
+                    public void onDataChange(final DataSnapshot snapshot) {
+                        // XXX This is unclean, fix!
+                        FbStorage.handleDataChange(snapshot, cdl, result, msisdn);
+                    }
 
-            @Override
-            public void onCancelled(DatabaseError error) {
-            }
-        });
+                    @Override
+                    public void onCancelled(DatabaseError error) {
+                    }
+                });
 
         try {
             if (!cdl.await(10, TimeUnit.SECONDS)) {
@@ -272,7 +273,7 @@ public final class FbDatabaseFacade {
         removeByMsisdn(clientVisibleSubscriberRecords, msisdn);
     }
 
-    public String injectPurchaseRequest(PurchaseRequest pr) {
+    public String injectPurchaseRequest(final PurchaseRequest pr) {
         final FbPurchaseRequest cr = (FbPurchaseRequest) pr;
         final DatabaseReference dbref = clientRequests.push();
         final Map<String, Object> crAsMap = cr.asMap();

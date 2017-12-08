@@ -1,6 +1,5 @@
 package com.telenordigital.prime.firebase;
 
-
 import com.telenordigital.prime.events.Subscriber;
 
 import java.util.HashMap;
@@ -13,6 +12,7 @@ final class FbSubscriber implements AsMappable, Subscriber {
 
     private  String fbKey;
     private  String msisdn;
+
     private  long noOfBytesLeft;
 
     FbSubscriber() {
@@ -41,15 +41,15 @@ final class FbSubscriber implements AsMappable, Subscriber {
     }
 
 
-    public void setFbKey(String fbKey) {
+    public void setFbKey(final String fbKey) {
         this.fbKey = checkNotNull(fbKey);
     }
 
-    public void setMsisdn(String msisdn) {
+    public void setMsisdn(final String msisdn) {
         this.msisdn = checkNotNull(msisdn);
     }
 
-    public void setNoOfBytesLeft(long noOfBytesLeft) {
+    public void setNoOfBytesLeft(final long noOfBytesLeft) {
         this.noOfBytesLeft = checkNotNull(noOfBytesLeft);
     }
 
@@ -64,7 +64,7 @@ final class FbSubscriber implements AsMappable, Subscriber {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 

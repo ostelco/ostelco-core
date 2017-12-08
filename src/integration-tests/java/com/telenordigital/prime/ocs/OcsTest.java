@@ -157,7 +157,7 @@ public class OcsTest {
                 ocsServiceStub.fetchDataBucket(
                         new AbstactObserver<FetchDataBucketInfo>() {
                             @Override
-                            public void onNext(FetchDataBucketInfo response) {
+                            public void onNext(final FetchDataBucketInfo response) {
                                 LOG.info("Received data bucket of {} bytes for {}",
                                         response.getBytes(), response.getMsisdn());
                                 assertEquals(MSISDN, response.getMsisdn());
@@ -184,6 +184,7 @@ public class OcsTest {
 
     /**
      * Test returning data from the OCS to the BSS.
+     *
      * @throws InterruptedException
      */
     @Test
@@ -191,16 +192,17 @@ public class OcsTest {
 
         final CountDownLatch cdl = new CountDownLatch(1);
 
-        final StreamObserver<ReturnUnusedDataRequest> returnUnusedDataRequests = ocsServiceStub.returnUnusedData(
-                new AbstactObserver<ReturnUnusedDataResponse>() {
+        final StreamObserver<ReturnUnusedDataRequest> returnUnusedDataRequests =
+                ocsServiceStub.returnUnusedData(
+                        new AbstactObserver<ReturnUnusedDataResponse>() {
 
-                    @Override
-                    public void onNext(ReturnUnusedDataResponse response) {
-                        LOG.info("Returned unsed data for {}", response.getMsisdn());
-                        assertEquals(MSISDN, response.getMsisdn());
-                        cdl.countDown();
-                    }
-                });
+                            @Override
+                            public void onNext(ReturnUnusedDataResponse response) {
+                                LOG.info("Returned unsed data for {}", response.getMsisdn());
+                                assertEquals(MSISDN, response.getMsisdn());
+                                cdl.countDown();
+                            }
+                        });
 
         // Send a new record  of some amount of data associated with an MSISDN
         // to the receiver at the other end of the stub's connection
@@ -218,6 +220,7 @@ public class OcsTest {
 
     /**
      * Simulate sending a request to activate a subscription.
+     *
      * @throws InterruptedException
      */
     @Test

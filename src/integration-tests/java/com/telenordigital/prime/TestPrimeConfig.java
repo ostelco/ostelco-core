@@ -29,12 +29,12 @@ public class TestPrimeConfig {
     }
 
     /**
-     *  Do nothing.
-     *  This test will just start and stop the server.
-     *  It will validate config file in 'src/test/resources/config.yaml'
+     * Do nothing.
+     * This test will just start and stop the server.
+     * It will validate config file in 'src/test/resources/config.yaml'
      */
     @Test
     public void test() {
-	    assertTrue(true);
+        assertTrue(true);
     }
 }

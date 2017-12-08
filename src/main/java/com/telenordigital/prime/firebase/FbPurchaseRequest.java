@@ -9,6 +9,7 @@ import java.util.Map;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class FbPurchaseRequest implements PurchaseRequest {
+
     private  String sku;
     private  String paymentToken;
     private  String msisdn;
@@ -71,13 +72,12 @@ public final class FbPurchaseRequest implements PurchaseRequest {
 
 
     public Map<String, Object> asMap() {
-       final Map<String, Object> result = new HashMap<>();
-       result.put("msisdn", msisdn);
-       result.put("sku", sku);
-       result.put("paymentToken", paymentToken);
-       return result;
+        final Map<String, Object> result = new HashMap<>();
+        result.put("msisdn", msisdn);
+        result.put("sku", sku);
+        result.put("paymentToken", paymentToken);
+        return result;
     }
-
 
     @Override
     public String toString() {

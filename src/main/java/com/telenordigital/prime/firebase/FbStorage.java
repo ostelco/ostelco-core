@@ -106,10 +106,10 @@ public final class FbStorage implements Storage {
             final String configFile) throws StorageException {
         try (final FileInputStream serviceAccount = new FileInputStream(configFile)) {
 
-            final FirebaseOptions options = new FirebaseOptions.Builder()
-                    .setCredential(FirebaseCredentials.fromCertificate(serviceAccount))
-                    .setDatabaseUrl("https://" + databaseName + ".firebaseio.com/")
-                    .build();
+            final FirebaseOptions options = new FirebaseOptions.Builder().
+                    setCredential(FirebaseCredentials.fromCertificate(serviceAccount)).
+                    setDatabaseUrl("https://" + databaseName + ".firebaseio.com/").
+                    build();
 
             try {
                 FirebaseApp.getInstance();
@@ -169,7 +169,7 @@ public final class FbStorage implements Storage {
     }
 
     @Override
-     public void removeRecordOfPurchaseById(final String id) {
+    public void removeRecordOfPurchaseById(final String id) {
         facade.removeRecordOfPurchaseById(id);
     }
 

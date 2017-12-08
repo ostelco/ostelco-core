@@ -27,10 +27,10 @@ public final  class OcsServer implements Managed {
 
         // may add Transport Security with Certificates if needed.
         // may add executor for control over number of threads
-        server = ServerBuilder
-                .forPort(port)
-                .addService(service)
-                .build();
+        server = ServerBuilder.
+                forPort(port).
+                addService(service).
+                build();
     }
 
     /**

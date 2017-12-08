@@ -1,5 +1,6 @@
 package com.telenordigital.prime.firebase;
 
+
 import com.telenordigital.prime.events.*;
 import com.telenordigital.prime.ocs.state.OcsState;
 import org.junit.After;
@@ -25,12 +26,13 @@ import static org.mockito.Mockito.verify;
 
 public class FbPurchaseEventRoundtripTest {
 
-    private static final  String EPHERMERAL_MSISDN = "+4747116996";
+    private static final String EPHERMERAL_MSISDN = "+4747116996";
 
     @Rule
     public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     private FbStorage fbStorage;
+
     private Storage storage;
 
     @Mock
@@ -39,10 +41,10 @@ public class FbPurchaseEventRoundtripTest {
     private Collection<String> prids;
 
     @Before
-    public void setUp() throws  Exception {
+    public void setUp() throws Exception {
         this.fbStorage = new FbStorage(
                 "pantel-tests",
-                "src/test/resources/pantel-tests.json" ,
+                "src/test/resources/pantel-tests.json",
                 new OcsState());
         this.storage = fbStorage;
         final int millisToSleepDuringStartup = 3000;
@@ -100,7 +102,6 @@ public class FbPurchaseEventRoundtripTest {
         }
 
         final long topupBytes = ProductDescriptionCacheImpl.
-                getInstance().
                 DATA_TOPUP_3GB.
                 asTopupProduct().
                 getTopUpInBytes();

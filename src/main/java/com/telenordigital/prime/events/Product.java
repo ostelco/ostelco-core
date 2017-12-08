@@ -9,17 +9,18 @@ public final class Product {
     private final String sku;
     private final Object productDescription;
 
+
+    public Product(final String sku, final Object productDescription) {
+        this.sku = checkNotNull(sku);
+        this.productDescription = checkNotNull(productDescription);
+    }
+
     public String getSku() {
         return sku;
     }
 
     public Object getProductDescription() {
         return productDescription;
-    }
-
-    public Product(final String sku, final Object productDescription) {
-        this.sku = checkNotNull(sku);
-        this.productDescription = checkNotNull(productDescription);
     }
 
     public TopUpProduct asTopupProduct() {

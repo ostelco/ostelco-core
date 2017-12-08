@@ -62,7 +62,7 @@ public final class PrimeEvent {
         return ocsgwRequestId;
     }
 
-    public void setOcsgwRequestId(String ocsgwRequestId) {
+    public void setOcsgwRequestId(final String ocsgwRequestId) {
         this.ocsgwRequestId = ocsgwRequestId;
     }
 

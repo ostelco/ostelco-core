@@ -22,7 +22,7 @@ public final class StorageInitiatedEventExecutor {
     }
 
 
-    public void addPurchaseRequestListener(PurchaseRequestListener listener) {
+    public void addPurchaseRequestListener(final PurchaseRequestListener listener) {
 
         synchronized (monitor) {
             purchaseRequestListeners.add(listener);
@@ -34,7 +34,7 @@ public final class StorageInitiatedEventExecutor {
         private final ThreadFactory tf = Executors.defaultThreadFactory();
 
         @Override
-        public Thread newThread(Runnable r) {
+        public Thread newThread(final Runnable r) {
             final Thread t = tf.newThread(r);
             t.setName("FbstorageEventHandler");
             return t;
