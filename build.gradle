@@ -7,7 +7,6 @@ plugins {
 apply plugin: 'java'
 apply plugin: 'application'
 apply plugin: 'com.github.johnrengelman.shadow'
-apply plugin: 'jacoco'
 
 sourceSets {
   test {
@@ -21,6 +20,10 @@ sourceSets {
     runtimeClasspath += main.output + test.output
   }
 }
+
+
+
+apply plugin: 'jacoco'
 
 
 dependencies {
@@ -40,6 +43,7 @@ configurations {
 }
 
 task integration(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
+
   testClassesDir = sourceSets.integration.output.classesDir
   classpath = sourceSets.integration.runtimeClasspath
 }
@@ -87,3 +91,15 @@ task pack(type: Zip, dependsOn: ':shadowJar') {
     archiveName 'prime.zip'
     destinationDir(file('build/deploy/'))
 }
+
+jacocoTestReport {
+    group = "Reporting"
+    description = "Generate Jacoco coverage reports after running tests."
+    additionalSourceDirs = files(sourceSets.main.allJava.srcDirs)
+    reports {
+        xml.enabled = true
+        html.enabled = true
+    }
+}
+
+check.dependsOn jacocoTestReport
