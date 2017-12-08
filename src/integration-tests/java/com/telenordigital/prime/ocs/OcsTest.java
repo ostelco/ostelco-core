@@ -75,7 +75,7 @@ public class OcsTest {
     private static OcsServiceStub ocsServiceStub;
 
     @BeforeClass
-    public static void setup() throws IOException {
+    public static void setUp() throws IOException {
 
         // Set up processing pipeline
         disruptor = new PrimeDisruptor();
@@ -197,7 +197,7 @@ public class OcsTest {
                         new AbstactObserver<ReturnUnusedDataResponse>() {
 
                             @Override
-                            public void onNext(ReturnUnusedDataResponse response) {
+                            public void onNext(final ReturnUnusedDataResponse response) {
                                 LOG.info("Returned unsed data for {}", response.getMsisdn());
                                 assertEquals(MSISDN, response.getMsisdn());
                                 cdl.countDown();

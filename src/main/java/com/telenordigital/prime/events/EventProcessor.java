@@ -18,7 +18,7 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
     private final Storage storage;
     private final OcsBalanceUpdater ocsBalanceUpdater;
 
-    public EventProcessor (
+    public EventProcessor(
             final Storage storage,
             final OcsBalanceUpdater ocsBalanceUpdater) {
         this.storage = checkNotNull(storage);
@@ -39,16 +39,19 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
 
     }
 
-    private TopUpProduct getValidTopUpProduct(PurchaseRequest pr, String sku) throws EventProcessorException {
+    private TopUpProduct getValidTopUpProduct(
+            final PurchaseRequest pr,
+            final String sku) throws EventProcessorException {
         final Product product;
         product = storage.getProductForSku(sku);
         if (!product.isTopUpProject()) {
-            throw new EventProcessorException("Unknown product type, must be a topup product " + product.toString(), pr);
+            throw new EventProcessorException("Unknown product type, must be a topup product "
+                    + product.toString(), pr);
         }
         return product.asTopupProduct();
     }
 
-    private String getValidMsisdn(PurchaseRequest pr) throws EventProcessorException {
+    private String getValidMsisdn(final PurchaseRequest pr) throws EventProcessorException {
         final String msisdn = pr.getMsisdn();
         if (msisdn == null) {
             throw new EventProcessorException("MSISDN cannot be null", pr);
@@ -56,7 +59,7 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
         return msisdn;
     }
 
-    private String getValidSku(PurchaseRequest pr) throws EventProcessorException {
+    private String getValidSku(final PurchaseRequest pr) throws EventProcessorException {
         final String sku = pr.getSku();
         if (sku == null) {
             throw new EventProcessorException("SKU can't be null", pr);
@@ -103,11 +106,15 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
 
 
     @Override
-    public void onEvent(PrimeEvent event, long sequence, boolean endOfBatch) throws Exception {
+    public void onEvent(
+            final PrimeEvent event,
+            final long sequence,
+            final boolean endOfBatch) throws Exception {
 
 
-        // FETCH_DATA_BUCKET is a high frequency operation. If we do want to include data balance updates from this
-        // event type, then we can skip 'switch' stmt since we will do 'setRemainingByMsisdn' for all cases.
+        // FETCH_DATA_BUCKET is a high frequency operation. If we do want to
+        // include data balance updates from this event type, then we can
+        // skip 'switch' stmt since we will do 'setRemainingByMsisdn' for all cases.
 
         try {
             // XXX adding '+' prefix
@@ -139,7 +146,6 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
         }
         */
     }
-
 
 
     @Override
