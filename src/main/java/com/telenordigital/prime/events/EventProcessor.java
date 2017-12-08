@@ -14,6 +14,7 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
 
     private static final Logger LOG = LoggerFactory.getLogger(EventProcessor.class);
 
+    private final AtomicBoolean running = new AtomicBoolean(false);
     private final Storage storage;
     private final OcsBalanceUpdater ocsBalanceUpdater;
 
@@ -140,7 +141,6 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
     }
 
 
-    private final AtomicBoolean running = new AtomicBoolean(false);
 
     @Override
     public void start() throws Exception {
@@ -164,6 +164,6 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
 
     @Override
     public void stop() throws Exception {
-
+        // Only for completeness, don't do anything special.
     }
 }

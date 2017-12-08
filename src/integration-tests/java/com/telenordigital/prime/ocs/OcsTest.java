@@ -115,6 +115,7 @@ public class OcsTest {
     public abstract static class AbstactObserver<T> implements StreamObserver<T> {
         @Override
         public final void onError(Throwable t) {
+            // Ignore errors
         }
 
         @Override

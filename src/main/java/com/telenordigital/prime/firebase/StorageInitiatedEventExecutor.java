@@ -10,14 +10,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
 public final class StorageInitiatedEventExecutor {
-    private final ThreadFactory tf;
     private ExecutorService executor;
     private final Object monitor = new Object();
 
     private final Set<PurchaseRequestListener> purchaseRequestListeners;
 
     public StorageInitiatedEventExecutor() {
-        this.tf = new ThreadProducer();
+        final ThreadFactory tf = new ThreadProducer();
         this.executor = Executors.newCachedThreadPool(tf);
         this.purchaseRequestListeners = new HashSet<>();
     }

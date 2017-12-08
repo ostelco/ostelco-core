@@ -26,9 +26,10 @@ public class EventProcessorTest {
     public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock
-    Storage storage;
+    public Storage storage;
 
-    @Mock OcsBalanceUpdater ocsBalanceUpdater;
+    @Mock
+    public OcsBalanceUpdater ocsBalanceUpdater;
 
     private EventProcessor processor;
 

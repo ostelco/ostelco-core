@@ -204,7 +204,8 @@ public final class FbStorage implements Storage {
         facade.removePurchaseRequestById(id);
     }
 
-    static void handleDataChange(
+    // XXX Should this be removed? Doesn't look nice.
+    public static void handleDataChange(
             final DataSnapshot snapshot,
             final CountDownLatch cdl,
             final Set<String> result,
