@@ -15,7 +15,7 @@ import java.io.IOException;
  *
  * @author Vihang Patil <vihang.patil@telenordigital.com>
  */
-public class OcsServer implements Managed {
+public final  class OcsServer implements Managed {
 
     private static final Logger LOG = LoggerFactory.getLogger(OcsServer.class);
 

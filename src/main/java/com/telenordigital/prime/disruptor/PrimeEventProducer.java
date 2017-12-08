@@ -10,7 +10,7 @@ import static com.telenordigital.prime.disruptor.PrimeEventMessageType.TOPUP_DAT
 /**
  * @author Vihang Patil <vihang.patil@telenordigital.com>
  */
-public class PrimeEventProducer {
+public final class PrimeEventProducer {
 
     private final RingBuffer<PrimeEvent> ringBuffer;
 

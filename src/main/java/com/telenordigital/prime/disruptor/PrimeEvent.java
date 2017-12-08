@@ -3,7 +3,7 @@ package com.telenordigital.prime.disruptor;
 /**
  * @author Vihang Patil <vihang.patil@telenordigital.com>
  */
-public class PrimeEvent {
+public final class PrimeEvent {
 
     private String msisdn;
 

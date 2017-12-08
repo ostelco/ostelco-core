@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * @author Vihang Patil <vihang.patil@telenordigital.com>
  */
-public class OcsState implements EventHandler<PrimeEvent> {
+public final class OcsState implements EventHandler<PrimeEvent> {
 
     private static final Logger LOG = LoggerFactory.getLogger(OcsState.class);
 

@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @author Vihang Patil <vihang.patil@telenordigital.com>
  */
-public class OcsService
+public final class OcsService
         extends OcsServiceGrpc.OcsServiceImplBase
         implements EventHandler<PrimeEvent> {
 

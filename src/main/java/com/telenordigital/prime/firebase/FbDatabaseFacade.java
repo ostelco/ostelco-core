@@ -230,10 +230,10 @@ public final class FbDatabaseFacade {
             final String lookupKey) throws StorageException {
         final CountDownLatch cdl = new CountDownLatch(1);
         final Set<String> result = new HashSet<>();
-        dbref.orderByChild(lookupKey)
-                .equalTo(msisdn)
-                .limitToFirst(1)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
+        dbref.orderByChild(lookupKey).
+                equalTo(msisdn).
+                limitToFirst(1).
+                addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(final DataSnapshot snapshot) {
                 // XXX This is unclean, fix!
