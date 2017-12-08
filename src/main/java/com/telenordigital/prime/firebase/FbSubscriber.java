@@ -10,17 +10,17 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 final class FbSubscriber implements AsMappable, Subscriber {
 
-    private  String fbKey;
-    private  String msisdn;
+    private String fbKey;
+    private String msisdn;
 
-    private  long noOfBytesLeft;
+    private long noOfBytesLeft;
 
     FbSubscriber() {
     }
 
     @Override
     public Map<String, Object> asMap() {
-        final Map<String, Object>  result = new HashMap<>();
+        final Map<String, Object> result = new HashMap<>();
         result.put("noOfBytesLeft", noOfBytesLeft);
         result.put("msisdn", msisdn);
         return result;
@@ -37,7 +37,7 @@ final class FbSubscriber implements AsMappable, Subscriber {
 
     @Override
     public String getMsisdn() {
-       return msisdn;
+        return msisdn;
     }
 
 
