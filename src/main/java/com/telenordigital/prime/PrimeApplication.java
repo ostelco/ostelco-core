@@ -19,7 +19,7 @@ import io.dropwizard.setup.Environment;
 /**
  * @author Vihang Patil <vihang.patil@telenordigital.com>
  */
-public class PrimeApplication extends Application<PrimeConfiguration> {
+public final class PrimeApplication extends Application<PrimeConfiguration> {
 
     public static void main(final String[] args) throws Exception {
         new PrimeApplication().run(args);

@@ -7,12 +7,12 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Vihang Patil <vihang.patil@telenordigital.com>
  */
-public class ClearingEventHandler implements EventHandler<PrimeEvent> {
+public final class ClearingEventHandler implements EventHandler<PrimeEvent> {
 
     private static final Logger LOG = LoggerFactory.getLogger(ClearingEventHandler.class);
 
     @Override
-    public void onEvent(PrimeEvent event, long sequence, boolean endOfBatch) throws Exception {
+    public void onEvent(final PrimeEvent event, final long sequence, final boolean endOfBatch) throws Exception {
         try {
             event.clear();
         } catch (Exception e) {

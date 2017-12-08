@@ -13,13 +13,18 @@ public final class OcsBalanceUpdaterImpl implements OcsBalanceUpdater {
 
 
     @Override
-    public final void updateBalance(String msisdn, long noOfBytesToTopUp) {
+    public final void updateBalance(final String msisdn, long noOfBytesToTopUp) {
         // XXX removing '+' if it exists
+        // XXX Use rewriting functions directly
+
+        final String sanitizedMsisdn;
         if (msisdn.charAt(0) == '+') {
-            msisdn = msisdn.substring(1);
+            sanitizedMsisdn = msisdn.substring(1);
+        } else {
+            sanitizedMsisdn = msisdn;
         }
         producer.topupDataBundleBalanceEvent(
-                msisdn,
+                sanitizedMsisdn,
                 noOfBytesToTopUp);
     }
 }

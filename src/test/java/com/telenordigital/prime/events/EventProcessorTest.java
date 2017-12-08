@@ -26,19 +26,20 @@ public class EventProcessorTest {
     public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock
-    Storage storage;
+    public Storage storage;
 
-    @Mock OcsBalanceUpdater ocsBalanceUpdater;
+    @Mock
+    public OcsBalanceUpdater ocsBalanceUpdater;
 
     private EventProcessor processor;
 
     @Before
     public void setUp() throws Exception {
-        when(storage.isValidSKU(DATA_TOPUP_3GB.getSku()))
-                .thenReturn(true);
+        when(storage.isValidSKU(DATA_TOPUP_3GB.getSku())).
+                thenReturn(true);
 
-        when(storage.getProductForSku(DATA_TOPUP_3GB.getSku()))
-                .thenReturn(DATA_TOPUP_3GB);
+        when(storage.getProductForSku(DATA_TOPUP_3GB.getSku())).
+                thenReturn(DATA_TOPUP_3GB);
 
         this.processor = new EventProcessor(storage, ocsBalanceUpdater);
         this.processor.start();

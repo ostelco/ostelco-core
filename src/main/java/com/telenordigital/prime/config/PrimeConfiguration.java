@@ -9,7 +9,7 @@ import javax.validation.constraints.NotNull;
 /**
  * @author Vihang Patil <vihang.patil@telenordigital.com>
  */
-public class PrimeConfiguration extends Configuration {
+public final class PrimeConfiguration extends Configuration {
 
     @Valid
     @NotNull

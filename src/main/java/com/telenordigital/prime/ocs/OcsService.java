@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @author Vihang Patil <vihang.patil@telenordigital.com>
  */
-public class OcsService
+public final class OcsService
         extends OcsServiceGrpc.OcsServiceImplBase
         implements EventHandler<PrimeEvent> {
 
@@ -31,7 +31,10 @@ public class OcsService
     }
 
     @Override
-    public void onEvent(final PrimeEvent event, final long sequence, final boolean endOfBatch) throws Exception {
+    public void onEvent(
+            final PrimeEvent event,
+            final long sequence,
+            final boolean endOfBatch) throws Exception {
 
         try {
             switch (event.getMessageType()) {
@@ -53,17 +56,17 @@ public class OcsService
         }
     }
 
-    private void handleTopupDataBundleBalance(PrimeEvent event) {
+    private void handleTopupDataBundleBalance(final PrimeEvent event) {
         final ActivateResponse response =
-                ActivateResponse.newBuilder()
-                        .setMsisdn(event.getMsisdn())
-                        .build();
+                ActivateResponse.newBuilder().
+                        setMsisdn(event.getMsisdn()).
+                        build();
         if (activateResponse != null) {
             activateResponse.onNext(response);
         }
     }
 
-    private void handleReturnUnusedDataBucket(PrimeEvent event) {
+    private void handleReturnUnusedDataBucket(final PrimeEvent event) {
         if (event.getOcsgwStreamId() != null) {
             LOG.info("Returning returnUnusedData response :: for MSISDN: {}", event.getMsisdn());
 
@@ -200,9 +203,9 @@ public class OcsService
 
         // After the connection, the first response will have empty string as MSISDN.
         // It should to be ignored by OCS gateway.
-        final ActivateResponse response = ActivateResponse.newBuilder()
-                .setMsisdn("")
-                .build();
+        final ActivateResponse response = ActivateResponse.newBuilder().
+                setMsisdn("").
+                build();
 
         activateResponse.onNext(response);
     }

@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Vihang Patil <vihang.patil@telenordigital.com>
  */
-public class PrimeDisruptor implements Managed {
+public final class PrimeDisruptor implements Managed {
 
     private final Disruptor<PrimeEvent> disruptor;
 

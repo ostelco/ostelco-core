@@ -3,7 +3,7 @@ package com.telenordigital.prime.config;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.hibernate.validator.constraints.NotEmpty;
 
-public class EventProcessorConfiguration {
+public final class EventProcessorConfiguration {
     @NotEmpty
     @JsonProperty("databaseName")
     private String databaseName;

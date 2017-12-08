@@ -15,7 +15,7 @@ import java.io.IOException;
  *
  * @author Vihang Patil <vihang.patil@telenordigital.com>
  */
-public class OcsServer implements Managed {
+public final  class OcsServer implements Managed {
 
     private static final Logger LOG = LoggerFactory.getLogger(OcsServer.class);
 
@@ -27,10 +27,10 @@ public class OcsServer implements Managed {
 
         // may add Transport Security with Certificates if needed.
         // may add executor for control over number of threads
-        server = ServerBuilder
-                .forPort(port)
-                .addService(service)
-                .build();
+        server = ServerBuilder.
+                forPort(port).
+                addService(service).
+                build();
     }
 
     /**

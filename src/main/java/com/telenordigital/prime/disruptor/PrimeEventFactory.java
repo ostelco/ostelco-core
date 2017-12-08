@@ -5,7 +5,7 @@ import com.lmax.disruptor.EventFactory;
 /**
  * @author Vihang Patil <vihang.patil@telenordigital.com>
  */
-public class PrimeEventFactory implements EventFactory<PrimeEvent> {
+public final class PrimeEventFactory implements EventFactory<PrimeEvent> {
 
     @Override
     public PrimeEvent newInstance() {

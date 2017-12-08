@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * @author Vihang Patil <vihang.patil@telenordigital.com>
  */
-public class OcsState implements EventHandler<PrimeEvent> {
+public final class OcsState implements EventHandler<PrimeEvent> {
 
     private static final Logger LOG = LoggerFactory.getLogger(OcsState.class);
 
@@ -48,7 +48,7 @@ public class OcsState implements EventHandler<PrimeEvent> {
      * @return bytes
      * data bundle balance in bytes
      */
-    long getDataBytes(final String msisdn) {
+    public long getDataBytes(final String msisdn) {
         return dataPackMap.getOrDefault(msisdn, 0L);
     }
 
@@ -79,7 +79,7 @@ public class OcsState implements EventHandler<PrimeEvent> {
      * @param bytes
      * @return
      */
-    long consumeDataBytes(final String msisdn, final long bytes) {
+    public long consumeDataBytes(final String msisdn, final long bytes) {
         Preconditions.checkNotNull(msisdn);
         Preconditions.checkArgument(bytes > 0, "Non-positive value for bytes");
 

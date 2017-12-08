@@ -20,8 +20,8 @@ import static org.junit.Assert.*;
 
 public class FbStorageTest {
 
-    private final static String PAYMENT_TOKEN = "thisIsAPaymentToken";
-    private final static String EPHERMERAL_MSISDN = "+4747116996";
+    private static final String PAYMENT_TOKEN = "thisIsAPaymentToken";
+    private static final String EPHERMERAL_MSISDN = "+4747116996";
 
     private FbStorage fbStorage;
     private Storage storage;
