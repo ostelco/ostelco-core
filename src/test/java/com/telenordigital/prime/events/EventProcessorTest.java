@@ -19,8 +19,8 @@ import static org.mockito.Mockito.when;
 
 
 public class EventProcessorTest {
-    private static final String MSISDN = "12345678";
     public static final String PAYMENT_TOKEN = "a weird token";
+    private static final String MSISDN = "12345678";
 
     @Rule
     public MockitoRule mockitoRule = MockitoJUnit.rule();

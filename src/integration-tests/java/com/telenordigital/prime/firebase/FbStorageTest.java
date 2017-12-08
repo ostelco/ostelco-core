@@ -22,6 +22,8 @@ public class FbStorageTest {
 
     private static final String PAYMENT_TOKEN = "thisIsAPaymentToken";
     private static final String EPHERMERAL_MSISDN = "+4747116996";
+    public static final int MILLIS_TO_WAIT_WHEN_STARTING_UP = 3000;
+    public static final long RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS = 92l;
 
     private FbStorage fbStorage;
     private Storage storage;
@@ -34,7 +36,7 @@ public class FbStorageTest {
                 "src/test/resources/pantel-tests.json" ,
                 new OcsState());
         this.storage = fbStorage;
-        sleep(3000);
+        sleep(MILLIS_TO_WAIT_WHEN_STARTING_UP);
         storage.removeSubscriberByMsisdn(EPHERMERAL_MSISDN);
         storage.insertNewSubscriber(EPHERMERAL_MSISDN);
         this.prids = new ArrayList<>();
@@ -62,15 +64,16 @@ public class FbStorageTest {
 
     @Test
     public void setRemainingByMsisdnTest() throws StorageException {
-        storage.setRemainingByMsisdn(EPHERMERAL_MSISDN, 92l);
-        assertEquals(92l, storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN).getNoOfBytesLeft());
+        storage.setRemainingByMsisdn(EPHERMERAL_MSISDN, RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS);
+        assertEquals(RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS,
+                storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN).getNoOfBytesLeft());
         storage.setRemainingByMsisdn(EPHERMERAL_MSISDN, 0);
         assertEquals(0l, storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN).getNoOfBytesLeft());
     }
 
     @Test
     public void updateDisplayDatastructureTest() throws StorageException {
-        storage.setRemainingByMsisdn(EPHERMERAL_MSISDN, 92l);
+        storage.setRemainingByMsisdn(EPHERMERAL_MSISDN, RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS);
         storage.updateDisplayDatastructure(EPHERMERAL_MSISDN);
         // XXX  Some verification missing, but it looks like the right thing
     }

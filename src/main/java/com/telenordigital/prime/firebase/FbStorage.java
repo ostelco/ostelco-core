@@ -211,14 +211,16 @@ public final class FbStorage implements Storage {
             final String msisdn) {
         if (!snapshot.hasChildren()) {
             cdl.countDown();
-        } else try {
-            for (final DataSnapshot snap : snapshot.getChildren()) {
-                final String key = snap.getKey();
-                result.add(key);
-                cdl.countDown();
+        } else {
+            try {
+                for (final DataSnapshot snap : snapshot.getChildren()) {
+                    final String key = snap.getKey();
+                    result.add(key);
+                    cdl.countDown();
+                }
+            } catch (Exception e) {
+                LOG.error("Something happened while looking for key = " + msisdn, e);
             }
-        } catch (Exception e) {
-            LOG.error("Something happened while looking for key = " + msisdn, e);
         }
     }
 

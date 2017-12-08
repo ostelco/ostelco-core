@@ -22,6 +22,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public final class FbDatabaseFacade {
 
     private static final Logger LOG = LoggerFactory.getLogger(FbDatabaseFacade.class);
+    public static final String PHONE_NUMBER = "phoneNumber";
+    public static final String MSISDN = "msisdn";
 
     private final DatabaseReference authorativeUserData;
     private final DatabaseReference clientRequests;
@@ -102,7 +104,9 @@ public final class FbDatabaseFacade {
     private void interpretDataSnapshotAsProductCatalogItem(
             final DataSnapshot snapshot, Consumer<ProductCatalogItem> consumer) {
         checkNotNull(consumer);
-        if (snapshotIsInvalid(snapshot)) return;
+        if (snapshotIsInvalid(snapshot)) {
+            return;
+        }
 
         try {
             final ProductCatalogItem item =
@@ -194,23 +198,27 @@ public final class FbDatabaseFacade {
         return dbref.getKey();
     }
 
-    public void updateClientVisibleUsageString(final String msisdn, final String gbLeft) throws StorageException {
+    public void updateClientVisibleUsageString(
+            final String msisdn,
+            final String gbLeft) throws StorageException {
         checkNotNull(msisdn);
         checkNotNull(gbLeft);
         final String key = getKeyFromPhoneNumber(clientVisibleSubscriberRecords, msisdn);
         if (key == null) {
-            LOG.error("Could not find entry for phoneNumber = " + msisdn + " Not updating user visible storage");
+            LOG.error("Could not find entry for phoneNumber = " +
+                    msisdn +
+                    " Not updating user visible storage");
             return;
         }
 
         final Map<String, Object> displayRep = new HashMap<>();
-        displayRep.put("phoneNumber", msisdn);
+        displayRep.put(PHONE_NUMBER, msisdn);
 
         displayRep.put("usage", gbLeft);
 
-        clientVisibleSubscriberRecords
-                .child(key)
-                .updateChildren(displayRep);
+        clientVisibleSubscriberRecords.
+                child(key).
+                updateChildren(displayRep);
     }
 
     public void removeSubscriberByMsisdn(final String msisdn) throws StorageException {
@@ -264,15 +272,13 @@ public final class FbDatabaseFacade {
     private String getKeyFromPhoneNumber(
             final DatabaseReference dbref,
             final String msisdn) throws StorageException {
-        final String lookupKey = "phoneNumber";
-        return getKeyFromLookupKey(dbref, msisdn, lookupKey);
+        return getKeyFromLookupKey(dbref, msisdn, PHONE_NUMBER);
     }
 
     private String getKeyFromMsisdn(
             final DatabaseReference dbref,
             final String msisdn) throws StorageException {
-        final String lookupKey = "msisdn";
-        return getKeyFromLookupKey(dbref, msisdn, lookupKey);
+        return getKeyFromLookupKey(dbref, msisdn, MSISDN);
     }
 
     public void removeByMsisdn(String msisdn) throws StorageException {
@@ -308,7 +314,7 @@ public final class FbDatabaseFacade {
         final CountDownLatch cdl = new CountDownLatch(1);
         final Set<Subscriber> result = new HashSet<>();
 
-        final Query q = authorativeUserData.orderByChild("msisdn").equalTo(msisdn).limitToFirst(1);
+        final Query q = authorativeUserData.orderByChild(MSISDN).equalTo(msisdn).limitToFirst(1);
 
         final ValueEventListener listenerThatWillReadSubcriberData = new ValueEventListener() {
             @Override
@@ -364,12 +370,14 @@ public final class FbDatabaseFacade {
         }
     }
 
-    public void updateAuthorativeUserData(FbSubscriber sub) {
+    public void updateAuthorativeUserData(final FbSubscriber sub) {
+        checkNotNull(sub);
         final DatabaseReference dbref = authorativeUserData.child(sub.getFbKey());
         dbref.updateChildren(sub.asMap());
     }
 
-    public String insertNewSubscriber(FbSubscriber sub) {
+    public String insertNewSubscriber(final FbSubscriber sub) {
+        checkNotNull(sub);
         final DatabaseReference dbref = authorativeUserData.push();
         sub.setFbKey(dbref.getKey());
         dbref.updateChildren(sub.asMap());
@@ -396,7 +404,9 @@ public final class FbDatabaseFacade {
         return subscribers;
     }
 
-    private static ValueEventListener newListenerThatWillCollectAllSubscribers(final Set<Subscriber> subscribers, final CountDownLatch cdl) {
+    private static ValueEventListener newListenerThatWillCollectAllSubscribers(
+            final Set<Subscriber> subscribers,
+            final CountDownLatch cdl) {
         checkNotNull(subscribers);
         checkNotNull(cdl);
         return new ValueEventListener() {

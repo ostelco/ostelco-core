@@ -24,7 +24,10 @@ public final class OcsState implements EventHandler<PrimeEvent> {
         try {
             switch (event.getMessageType()) {
                 case FETCH_DATA_BUCKET:
-                    event.setBucketBytes(consumeDataBytes(event.getMsisdn(), event.getBucketBytes()));
+                    event.setBucketBytes(
+                            consumeDataBytes(
+                                    event.getMsisdn(),
+                                    event.getBucketBytes()));
                     event.setBundleBytes(getDataBytes(event.getMsisdn()));
                     break;
                 case RETURN_UNUSED_DATA_BUCKET:

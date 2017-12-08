@@ -27,6 +27,8 @@ import static org.mockito.Mockito.verify;
 public class FbPurchaseEventRoundtripTest {
 
     private static final String EPHERMERAL_MSISDN = "+4747116996";
+    public static final int MINIMUM_MILLIS_TO_SLEEP_AFTER_MAKING_PURCHASE_REQUEST = 3000;
+    public static final int SECONDS_TO_WAIT_FOR_SUBSCRIPTION_PROCESSING_TO_FINISH = 10;
 
     @Rule
     public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -93,11 +95,11 @@ public class FbPurchaseEventRoundtripTest {
 
         final String prid = storage.injectPurchaseRequest(req);
         prids.add(prid);
-        sleep(3000);
+        sleep(MINIMUM_MILLIS_TO_SLEEP_AFTER_MAKING_PURCHASE_REQUEST);
 
         assertNotEquals(null, storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN));
 
-        if (!latch.await(10, TimeUnit.SECONDS)) {
+        if (!latch.await(SECONDS_TO_WAIT_FOR_SUBSCRIPTION_PROCESSING_TO_FINISH, TimeUnit.SECONDS)) {
             fail("Read/react failed");
         }
 
