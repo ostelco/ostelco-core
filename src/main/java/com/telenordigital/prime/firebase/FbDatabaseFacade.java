@@ -245,6 +245,7 @@ public final class FbDatabaseFacade {
                     }
                     @Override
                     public void onCancelled(DatabaseError error) {
+                        // Empty on purpose.
                     }
                 });
         try {
