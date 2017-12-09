@@ -6,7 +6,7 @@ import static org.junit.Assert.*;
 
 public class FbSubscriberTest {
 
-    final FbSubscriber fbs = new FbSubscriber();
+    private final FbSubscriber fbs = new FbSubscriber();
 
     @Test
     public void asMap() throws Exception {
@@ -20,10 +20,10 @@ public class FbSubscriberTest {
 
     @Test
     public void getAndSetFbKey() throws Exception {
-       assertEquals(null, fbs.getFbKey());
-       final String fbkey = "foobar";
-       fbs.setFbKey(fbkey);
-       assertEquals(fbkey, fbs.getFbKey());
+        assertEquals(null, fbs.getFbKey());
+        final String fbkey = "foobar";
+        fbs.setFbKey(fbkey);
+        assertEquals(fbkey, fbs.getFbKey());
     }
 
     @Test
