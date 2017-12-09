@@ -6,6 +6,7 @@ import com.telenordigital.prime.ocs.state.OcsState;
 import com.telenordigital.prime.storage.ProductDescriptionCacheImpl;
 import com.telenordigital.prime.storage.Storage;
 import com.telenordigital.prime.storage.StorageException;
+import com.telenordigital.prime.storage.entities.NotATopupProductException;
 import com.telenordigital.prime.storage.entities.PurchaseRequestImpl;
 import org.junit.After;
 import org.junit.Before;
@@ -83,7 +84,7 @@ public class FbPurchaseEventRoundtripTest {
 
     @Test
     public void purchaseRequestRoundtripTest()
-            throws EventProcessorException, StorageException, InterruptedException {
+            throws EventProcessorException, StorageException, InterruptedException, NotATopupProductException {
 
         assertNotEquals(null, storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN));
 

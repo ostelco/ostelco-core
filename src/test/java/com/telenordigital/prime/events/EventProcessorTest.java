@@ -4,6 +4,7 @@ import com.telenordigital.prime.disruptor.PrimeEvent;
 import com.telenordigital.prime.storage.PurchaseRequestListener;
 import com.telenordigital.prime.storage.Storage;
 import com.telenordigital.prime.storage.StorageException;
+import com.telenordigital.prime.storage.entities.NotATopupProductException;
 import com.telenordigital.prime.storage.entities.PurchaseRequest;
 import org.junit.Before;
 import org.junit.Rule;
@@ -84,7 +85,12 @@ public class EventProcessorTest {
         processor.handlePurchaseRequest(req);
 
         // Then verify that the appropriate actions has been performed.
-        final long topupBytes = DATA_TOPUP_3GB.asTopupProduct().getTopUpInBytes();
+        final long topupBytes;
+        try {
+            topupBytes = DATA_TOPUP_3GB.asTopupProduct().getTopUpInBytes();
+        } catch (NotATopupProductException ex) {
+            throw new EventProcessorException("Programming error, this shouldn't happen", ex);
+        }
 
         verify(storage).addPurchaseRequestListener(any(PurchaseRequestListener.class));
 

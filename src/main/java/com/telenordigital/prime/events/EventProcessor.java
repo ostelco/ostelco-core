@@ -3,6 +3,7 @@ package com.telenordigital.prime.events;
 import com.lmax.disruptor.EventHandler;
 import com.telenordigital.prime.disruptor.PrimeEvent;
 import com.telenordigital.prime.storage.*;
+import com.telenordigital.prime.storage.entities.NotATopupProductException;
 import com.telenordigital.prime.storage.entities.Product;
 import com.telenordigital.prime.storage.entities.PurchaseRequest;
 import com.telenordigital.prime.storage.entities.TopUpProduct;
@@ -38,14 +39,17 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
         final String sku = getValidSku(pr);
         final String msisdn = getValidMsisdn(pr);
 
-        final TopUpProduct topup = getValidTopUpProduct(pr, sku);
-        handleTopupProduct(pr, msisdn, topup);
-
+        try {
+            final TopUpProduct topup = getValidTopUpProduct(pr, sku);
+            handleTopupProduct(pr, msisdn, topup);
+        } catch (NotATopupProductException ex) {
+            LOG.info("Ignoring non-topup purchase request " + pr);
+        }
     }
 
     private TopUpProduct getValidTopUpProduct(
             final PurchaseRequest pr,
-            final String sku) throws EventProcessorException {
+            final String sku) throws EventProcessorException, NotATopupProductException {
         final Product product;
         product = storage.getProductForSku(sku);
         if (!product.isTopUpProject()) {

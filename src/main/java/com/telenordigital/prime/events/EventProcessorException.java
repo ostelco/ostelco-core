@@ -1,5 +1,6 @@
 package com.telenordigital.prime.events;
 
+import com.telenordigital.prime.storage.entities.NotATopupProductException;
 import com.telenordigital.prime.storage.entities.PurchaseRequest;
 
 public final class EventProcessorException extends Exception {
@@ -14,6 +15,16 @@ public final class EventProcessorException extends Exception {
     public EventProcessorException(final String str, final PurchaseRequest pr) {
         super(str);
         this.pr = pr;
+    }
+
+    public EventProcessorException(String str, final PurchaseRequest pr, final NotATopupProductException ex) {
+        super(str, ex);
+        this.pr = pr;
+    }
+
+    public EventProcessorException(String str, Throwable ex) {
+        super(str, ex);
+        this.pr = null;
     }
 
     @Override

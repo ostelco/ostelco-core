@@ -17,7 +17,6 @@ public final class Product {
      */
     private final Object productDescription;
 
-
     /**
      *
      * @param sku A "Stock Keeping Unit" that is assumed to be a primary key for products.
@@ -36,8 +35,13 @@ public final class Product {
         return productDescription;
     }
 
-    public TopUpProduct asTopupProduct() {
-        return (TopUpProduct) productDescription;
+    public TopUpProduct asTopupProduct() throws NotATopupProductException{
+        try {
+            return (TopUpProduct) productDescription;
+        } catch (ClassCastException ex) {
+            throw new NotATopupProductException(ex);
+        }
+
     }
 
     public boolean isTopUpProject() {
