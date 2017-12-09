@@ -12,7 +12,7 @@ public interface Subscriber extends AsMappable {
     String getMsisdn();
 
     @Override
-    public Map<String, Object> asMap() {
+    default Map<String, Object> asMap() {
         final Map<String, Object> result = new HashMap<>();
         result.put("noOfBytesLeft", getNoOfBytesLeft());
         result.put("msisdn", getMsisdn());
