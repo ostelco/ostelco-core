@@ -47,7 +47,7 @@ public class FbPurchaseEventRoundtripTest {
         this.fbStorage = new FbStorage(
                 "pantel-tests",
                 "src/test/resources/pantel-tests.json",
-                new OcsState());
+                new EventListeners(new OcsState()));
         this.storage = fbStorage;
         final int millisToSleepDuringStartup = 3000;
         sleep(millisToSleepDuringStartup);

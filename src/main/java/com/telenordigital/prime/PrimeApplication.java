@@ -9,6 +9,7 @@ import com.telenordigital.prime.events.EventProcessor;
 import com.telenordigital.prime.events.OcsBalanceUpdater;
 import com.telenordigital.prime.events.OcsBalanceUpdaterImpl;
 import com.telenordigital.prime.events.Storage;
+import com.telenordigital.prime.firebase.EventListeners;
 import com.telenordigital.prime.firebase.FbStorage;
 import com.telenordigital.prime.ocs.OcsServer;
 import com.telenordigital.prime.ocs.OcsService;
@@ -45,10 +46,17 @@ public final class PrimeApplication extends Application<PrimeConfiguration> {
 
         final EventProcessorConfiguration eventProcessorConfig =
                 primeConfiguration.getEventProcessorConfig();
+
+        // XXX Badly named class with less than clarly specified intent.
+        //     What it it's doing is to glue things together and thus
+        //     concentrate coupling between other classes into this
+        //     single class, but that isn't well documented yet.
+        final EventListeners eventListeners = new EventListeners(ocsState);
+
         final Storage storage = new FbStorage(
                 eventProcessorConfig.getDatabaseName(),
                 eventProcessorConfig.getConfigFile(),
-                ocsState);
+                eventListeners);
 
         final OcsBalanceUpdater ocsBalanceUpdater = new OcsBalanceUpdaterImpl(producer);
         final EventProcessor eventProcessor = new EventProcessor(storage, ocsBalanceUpdater);

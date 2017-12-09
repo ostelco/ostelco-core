@@ -34,7 +34,7 @@ public class FbStorageTest {
         this.fbStorage = new FbStorage(
                 "pantel-tests",
                 "src/test/resources/pantel-tests.json" ,
-                new OcsState());
+                new EventListeners(new OcsState()));
         this.storage = fbStorage;
         sleep(MILLIS_TO_WAIT_WHEN_STARTING_UP);
         storage.removeSubscriberByMsisdn(EPHERMERAL_MSISDN);

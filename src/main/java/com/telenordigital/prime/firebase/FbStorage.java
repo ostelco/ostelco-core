@@ -6,13 +6,11 @@ import com.google.firebase.auth.FirebaseCredentials;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.FirebaseDatabase;
 import com.telenordigital.prime.events.*;
-import com.telenordigital.prime.ocs.state.OcsState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -29,14 +27,15 @@ public final class FbStorage implements Storage {
 
     private final FbDatabaseFacade facade;
 
-    private final StorageInitiatedEventExecutor executor;
+    private final EventListeners listeners;
 
     public FbStorage(final String databaseName,
                      final String configFile,
-                     final OcsState ocsState) throws StorageException {
+                     final EventListeners listeners) throws StorageException {
+
         checkNotNull(configFile);
         checkNotNull(databaseName);
-        this.executor = new StorageInitiatedEventExecutor();
+        this.listeners = checkNotNull(listeners);
 
         this.productCache = ProductDescriptionCacheImpl.getInstance();
 
@@ -45,9 +44,8 @@ public final class FbStorage implements Storage {
 
         this.facade = new FbDatabaseFacade(firebaseDatabase);
 
-
         // Load subscriber balance from firebase to in-memory OcsState
-        loadSubscriberBalanceDataFromFirebaseToInMemoryStructure(ocsState);
+        listeners.loadSubscriberBalanceDataFromFirebaseToInMemoryStructure(getAllSubscribers());
 
         // Scoop up products left and right (and don't worry about duplicates, race conditions or
         // anything else by sending them to the listeners.
@@ -58,17 +56,10 @@ public final class FbStorage implements Storage {
         //     the executor that's used to facilitate.   Also, it should
         //     be considered if a disruptor is a better choice than
         //     an executor (it probably isn't but the reasoning should be made clear).
-        facade.addProductCatalogItemListener(item ->
-                addTopupProduct(item.getSku(), item.getNoOfBytes()));
+        facade.addProductCatalogItemListener(listeners::productCatalogItemListener);
 
         // When a purhase request arrives, then send it to the executor.
-        facade.addPurchaseRequestListener(
-                (key, req) -> {
-                    req.setId(key);
-                    req.setMillisSinceEpoch(getMillisSinceEpoch());
-                    executor.onPurchaseRequest(req);
-                    return null; // XXX Hack to satisfy BiFunction's void return type
-                });
+        facade.addPurchaseRequestListener(listeners::purchaseRequestListener);
     }
 
 
@@ -86,20 +77,6 @@ public final class FbStorage implements Storage {
     public Product getProductForSku(final String sku) {
         return productCache.getProductForSku(sku);
     }
-
-
-    private long getMillisSinceEpoch() {
-        return Instant.now().toEpochMilli();
-    }
-
-
-    private void loadSubscriberBalanceDataFromFirebaseToInMemoryStructure(final OcsState ocsState) {
-        LOG.info("Loading initial balance from storage to in-memory OcsState");
-        for (final Subscriber subscriber : getAllSubscribers()) {
-            ocsState.injectSubscriberIntoOCS(subscriber);
-        }
-    }
-
 
     private FirebaseDatabase setupFirebaseInstance(
             final String databaseName,
@@ -128,10 +105,11 @@ public final class FbStorage implements Storage {
         }
     }
 
+    // XXX Very odd
     @Override
     public void addPurchaseRequestListener(final PurchaseRequestListener listener) {
         checkNotNull(listener);
-        executor.addPurchaseRequestListener(listener);
+        listeners.addPurchaseRequestListener(listener);
     }
 
     @Override
@@ -141,7 +119,6 @@ public final class FbStorage implements Storage {
         if (subscriber == null) {
             throw new StorageException("Unknown MSISDN " + msisdn);
         }
-
 
         // XXX This is both:
         //     a) A layering violation, since it mixes a backend server/information
