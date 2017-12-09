@@ -8,9 +8,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class ProductTest {
+public final class ProductTest {
 
     private static final String SKU = "SKU-1";
+
     private static final String DESCRIPTION = "a random description";
 
     private final Product product = new Product(SKU, DESCRIPTION);
@@ -19,7 +20,6 @@ public class ProductTest {
     public void getSku() throws Exception {
         assertEquals(SKU, product.getSku());
     }
-
 
     @Test
     public void getProductDescription() throws Exception {
@@ -31,14 +31,11 @@ public class ProductTest {
         product.asTopupProduct();
     }
 
-
-
     public void asTopupProductTrue() throws Exception, NotATopupProductException {
         // Ghetto, not proper testing.
         assertTrue(Products.getProductForSku("DataTopup3GB").asTopupProduct()
                 instanceof  TopUpProduct);
     }
-
 
     @Test
     public void isTopUpProject() throws Exception {
