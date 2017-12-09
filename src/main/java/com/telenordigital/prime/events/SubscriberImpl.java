@@ -1,7 +1,4 @@
-package com.telenordigital.prime.firebase;
-
-import com.telenordigital.prime.events.AsMappable;
-import com.telenordigital.prime.events.Subscriber;
+package com.telenordigital.prime.events;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -9,14 +6,14 @@ import java.util.Map;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 
-final class SubscriberImpl implements AsMappable, Subscriber {
+public final class SubscriberImpl implements AsMappable, Subscriber {
 
     private String fbKey;
     private String msisdn;
 
     private long noOfBytesLeft;
 
-    SubscriberImpl() {
+    public SubscriberImpl() {
         noOfBytesLeft = 0;
     }
 

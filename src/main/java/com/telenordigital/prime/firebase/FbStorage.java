@@ -154,8 +154,8 @@ public final class FbStorage implements Storage {
             final long millisSinceEpoch) throws StorageException {
         checkNotNull(msisdn);
 
-        final FbRecordOfPurchase purchase =
-                new FbRecordOfPurchase(msisdn, sku, millisSinceEpoch);
+        final RecordOfPurchaseImpl purchase =
+                new RecordOfPurchaseImpl(msisdn, sku, millisSinceEpoch);
 
         // XXX This is iffy, why not send the purchase object
         //     directly to the fascade.  Seems bogus, probably is.
