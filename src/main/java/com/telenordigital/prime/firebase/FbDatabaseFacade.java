@@ -24,22 +24,25 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public final class FbDatabaseFacade {
 
     private static final Logger LOG = LoggerFactory.getLogger(FbDatabaseFacade.class);
+
     public static final String PHONE_NUMBER = "phoneNumber";
+
     public static final String MSISDN = "msisdn";
 
     private final DatabaseReference authorativeUserData;
+
     private final DatabaseReference clientRequests;
+
     private final DatabaseReference clientVisibleSubscriberRecords;
+
     private final DatabaseReference recordsOfPurchase;
+
     private final DatabaseReference quickBuyProducts;
+
     private final DatabaseReference products;
 
     FbDatabaseFacade(final FirebaseDatabase firebaseDatabase) {
         checkNotNull(firebaseDatabase);
-        // XXX Read this, then fix something that reports connectivity status through the
-        //     health mechanism.
-        // https://www.firebase.com/docs/web/guide/offline-capabilities.html#section-connection-state
-        // this.firebaseDatabase.getReference("/.info/connected").addValueEventListener()
 
         this.authorativeUserData = firebaseDatabase.getReference("authorative-user-storage");
         this.clientRequests = firebaseDatabase.getReference("client-requests");
@@ -51,7 +54,8 @@ public final class FbDatabaseFacade {
         this.products = firebaseDatabase.getReference("products");
     }
 
-    private ValueEventListener newCatalogDataChangedEventListener(final Consumer<ProductCatalogItem> consumer) {
+    private ValueEventListener newCatalogDataChangedEventListener(
+            final Consumer<ProductCatalogItem> consumer) {
         checkNotNull(consumer);
         return new ValueEventListener() {
             @Override
@@ -104,7 +108,8 @@ public final class FbDatabaseFacade {
     }
 
     private void interpretDataSnapshotAsProductCatalogItem(
-            final DataSnapshot snapshot, Consumer<ProductCatalogItem> consumer) {
+            final DataSnapshot snapshot,
+            final Consumer<ProductCatalogItem> consumer) {
         checkNotNull(consumer);
         if (snapshotIsInvalid(snapshot)) {
             return;
@@ -148,7 +153,8 @@ public final class FbDatabaseFacade {
         addProductCatalogValueListener(consumer);
     }
 
-    public void addPurchaseRequestListener(BiFunction<String, PurchaseRequestImpl, Void> consumer) {
+    public void addPurchaseRequestListener(
+            final BiFunction<String, PurchaseRequestImpl, Void> consumer) {
         addPurchaseEventListener(newChildListenerThatDispatchesPurchaseRequestToExecutor(consumer));
     }
 
@@ -176,7 +182,8 @@ public final class FbDatabaseFacade {
 
     public void addProductCatalogValueListener(final Consumer<ProductCatalogItem> consumer) {
         checkNotNull(consumer);
-        final ValueEventListener productCatalogValueEventListener = newCatalogDataChangedEventListener(consumer);
+        final ValueEventListener productCatalogValueEventListener =
+                newCatalogDataChangedEventListener(consumer);
         addProductCatalogValueListener(productCatalogValueEventListener);
     }
 
@@ -207,9 +214,9 @@ public final class FbDatabaseFacade {
         checkNotNull(gbLeft);
         final String key = getKeyFromPhoneNumber(clientVisibleSubscriberRecords, msisdn);
         if (key == null) {
-            LOG.error("Could not find entry for phoneNumber = " +
-                    msisdn +
-                    " Not updating user visible storage");
+            LOG.error("Could not find entry for phoneNumber = "
+                    + msisdn
+                    + " Not updating user visible storage");
             return;
         }
 
@@ -251,10 +258,12 @@ public final class FbDatabaseFacade {
                 addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(final DataSnapshot snapshot) {
-                        FbStorage.handleDataChange(snapshot, cdl, result, msisdn);  // XXX This is unclean, fix!
+                        // XXX This is unclean, fix!
+                        FbStorage.handleDataChange(snapshot, cdl, result, msisdn);
                     }
+
                     @Override
-                    public void onCancelled(DatabaseError error) {
+                    public void onCancelled(final DatabaseError error) {
                         // Empty on purpose.
                     }
                 });
@@ -283,7 +292,7 @@ public final class FbDatabaseFacade {
         return getKeyFromLookupKey(dbref, msisdn, MSISDN);
     }
 
-    public void removeByMsisdn(String msisdn) throws StorageException {
+    public void removeByMsisdn(final String msisdn) throws StorageException {
         removeByMsisdn(clientVisibleSubscriberRecords, msisdn);
     }
 
@@ -295,7 +304,7 @@ public final class FbDatabaseFacade {
         return dbref.getKey();
     }
 
-    public void removeRecordOfPurchaseById(String id) {
+    public void removeRecordOfPurchaseById(final String id) {
         removeChild(recordsOfPurchase, id);
     }
 
@@ -307,18 +316,62 @@ public final class FbDatabaseFacade {
         db.child(childId).getRef().removeValue();
     }
 
-    public void removePurchaseRequestById(String id) {
+    public void removePurchaseRequestById(final String id) {
         checkNotNull(id);
         removeChild(clientRequests, id);
     }
 
-    public Subscriber getSubscriberFromMsisdn(String msisdn) throws StorageException {
+    public Subscriber getSubscriberFromMsisdn(final String msisdn) throws StorageException {
         final CountDownLatch cdl = new CountDownLatch(1);
         final Set<Subscriber> result = new HashSet<>();
 
         final Query q = authorativeUserData.orderByChild(MSISDN).equalTo(msisdn).limitToFirst(1);
 
-        final ValueEventListener listenerThatWillReadSubcriberData = new ValueEventListener() {
+        final ValueEventListener listenerThatWillReadSubcriberData =
+                newListenerThatWillReadSubcriberData(cdl, result);
+
+        q.addListenerForSingleValueEvent(
+                listenerThatWillReadSubcriberData);
+
+        return waitForSubscriberData(msisdn, cdl, result);
+    }
+
+    private Subscriber waitForSubscriberData(
+            final String msisdn,
+            final CountDownLatch cdl,
+            final Set<Subscriber> result) throws StorageException {
+        try {
+            if (!cdl.await(10, TimeUnit.SECONDS)) {
+                LOG.info("authorativeuserdata = '" + authorativeUserData
+                        + "', msisdn = '" + msisdn
+                        + "' => timeout");
+                throw new StorageException("Query timed out. authorativeuserdata = '" +
+                        authorativeUserData +
+                        "', msisdn = '" +
+                        msisdn + "'");
+            } else if (result.isEmpty()) {
+                LOG.info("authorativeuserdata = '" + authorativeUserData
+                        + "', msisdn = '" + msisdn
+                        + "' => null");
+                return null;
+            } else {
+                final Subscriber r = result.iterator().next();
+                LOG.info("authorativeuserdata = '"
+                        + authorativeUserData
+                        + "', msisdn = '" + msisdn + "' => " + r);
+                return r;
+            }
+        } catch (InterruptedException e) {
+            LOG.info("authorativeuserdata = '"
+                    + authorativeUserData + "', msisdn = '" + msisdn + "' => interrupted");
+            throw new StorageException("Interrupted", e);
+        }
+    }
+
+    private ValueEventListener newListenerThatWillReadSubcriberData(
+            final CountDownLatch cdl,
+            final Set<Subscriber> result) {
+        return new ValueEventListener() {
             @Override
             public void onDataChange(final DataSnapshot snapshot) {
 
@@ -340,36 +393,10 @@ public final class FbDatabaseFacade {
             }
 
             @Override
-            public void onCancelled(DatabaseError error) {
+            public void onCancelled(final DatabaseError error) {
+                // Intentionally left blank.
             }
         };
-
-        q.addListenerForSingleValueEvent(
-                listenerThatWillReadSubcriberData);
-
-        try {
-            if (!cdl.await(10, TimeUnit.SECONDS)) {
-                LOG.info("authorativeuserdata = '" + authorativeUserData
-                        + "', msisdn = '" + msisdn
-                        + "' => timeout");
-                throw new StorageException("Query timed out. authorativeuserdata = '" +
-                        authorativeUserData +
-                        "', msisdn = '" +
-                        msisdn + "'");
-            } else if (result.isEmpty()) {
-                LOG.info("authorativeuserdata = '" + authorativeUserData
-                        + "', msisdn = '" + msisdn
-                        + "' => null");
-                return null;
-            } else {
-                final Subscriber r = result.iterator().next();
-                LOG.info("authorativeuserdata = '" + authorativeUserData + "', msisdn = '" + msisdn + "' => " + r);
-                return r;
-            }
-        } catch (InterruptedException e) {
-            LOG.info("authorativeuserdata = '" + authorativeUserData + "', msisdn = '" + msisdn + "' => interrupted");
-            throw new StorageException("Interrupted", e);
-        }
     }
 
     public void updateAuthorativeUserData(final SubscriberImpl sub) {

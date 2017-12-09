@@ -20,6 +20,7 @@ public final  class OcsServer implements Managed {
     private static final Logger LOG = LoggerFactory.getLogger(OcsServer.class);
 
     private final int port;
+
     private final Server server;
 
     public OcsServer(final int port, final BindableService service) {
