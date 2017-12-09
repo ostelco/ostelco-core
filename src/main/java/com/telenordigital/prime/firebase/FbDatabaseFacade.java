@@ -345,10 +345,10 @@ public final class FbDatabaseFacade {
                 LOG.info("authorativeuserdata = '" + authorativeUserData
                         + "', msisdn = '" + msisdn
                         + "' => timeout");
-                throw new StorageException("Query timed out. authorativeuserdata = '" +
-                        authorativeUserData +
-                        "', msisdn = '" +
-                        msisdn + "'");
+                throw new StorageException("Query timed out. authorativeuserdata = '"
+                        + authorativeUserData +
+                        "', msisdn = '"
+                        + msisdn + "'");
             } else if (result.isEmpty()) {
                 LOG.info("authorativeuserdata = '" + authorativeUserData
                         + "', msisdn = '" + msisdn
