@@ -3,15 +3,17 @@ package com.telenordigital.prime.storage.entities;
 import com.telenordigital.prime.storage.Products;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class ProductTest {
 
-    private final static String SKU = "SKU-1";
-    private final static String DESCRIPTION = "a random description";
+    private static final String SKU = "SKU-1";
+    private static final String DESCRIPTION = "a random description";
 
     private final Product product = new Product(SKU, DESCRIPTION);
-
 
     @Test
     public void getSku() throws Exception {
@@ -25,13 +27,13 @@ public class ProductTest {
     }
 
     @Test(expected = NotATopupProductException.class)
-    public void asTopupProduct() throws Exception, NotATopupProductException {
+    public void asTopupProductNot() throws Exception, NotATopupProductException {
         product.asTopupProduct();
     }
 
 
 
-    public void asTopupProduct() throws Exception, NotATopupProductException {
+    public void asTopupProductTrue() throws Exception, NotATopupProductException {
         // Ghetto, not proper testing.
         assertTrue(Products.getProductForSku("DataTopup3GB").asTopupProduct()  instanceof  TopUpProduct);
     }

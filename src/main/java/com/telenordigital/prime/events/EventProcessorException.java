@@ -17,12 +17,15 @@ public final class EventProcessorException extends Exception {
         this.pr = pr;
     }
 
-    public EventProcessorException(String str, final PurchaseRequest pr, final NotATopupProductException ex) {
+    public EventProcessorException(
+            final String str,
+            final PurchaseRequest pr,
+            final NotATopupProductException ex) {
         super(str, ex);
         this.pr = pr;
     }
 
-    public EventProcessorException(String str, Throwable ex) {
+    public EventProcessorException(final String str, final Throwable ex) {
         super(str, ex);
         this.pr = null;
     }

@@ -84,7 +84,10 @@ public class FbPurchaseEventRoundtripTest {
 
     @Test
     public void purchaseRequestRoundtripTest()
-            throws EventProcessorException, StorageException, InterruptedException, NotATopupProductException {
+            throws EventProcessorException,
+            StorageException,
+            InterruptedException,
+            NotATopupProductException {
 
         assertNotEquals(null, storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN));
 
