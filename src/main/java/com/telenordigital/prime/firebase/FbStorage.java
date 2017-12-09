@@ -24,7 +24,6 @@ public final class FbStorage implements Storage {
 
     private final ProductDescriptionCache productCache;
 
-
     private final FbDatabaseFacade facade;
 
     private final EventListeners listeners;
@@ -61,7 +60,6 @@ public final class FbStorage implements Storage {
         // When a purhase request arrives, then send it to the executor.
         facade.addPurchaseRequestListener(listeners::purchaseRequestListener);
     }
-
 
     @Override
     public void addTopupProduct(final String sku, final long noOfBytes) {
@@ -166,13 +164,11 @@ public final class FbStorage implements Storage {
         return facade.pushRecordOfPurchaseByMsisdn(asMap);
     }
 
-
     @Override
     public void removeSubscriberByMsisdn(final String msisdn) throws StorageException {
         checkNotNull(msisdn);
         facade.removeSubscriberByMsisdn(msisdn);
     }
-
 
     @Override
     public void removePurchaseRequestById(final String id) {
@@ -205,7 +201,6 @@ public final class FbStorage implements Storage {
     public Subscriber getSubscriberFromMsisdn(final String msisdn) throws StorageException {
         return facade.getSubscriberFromMsisdn(msisdn);
     }
-
 
     @Override
     public void setRemainingByMsisdn(final String msisdn, final long noOfBytes) throws StorageException {
