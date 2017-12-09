@@ -35,7 +35,8 @@ public class ProductTest {
 
     public void asTopupProductTrue() throws Exception, NotATopupProductException {
         // Ghetto, not proper testing.
-        assertTrue(Products.getProductForSku("DataTopup3GB").asTopupProduct()  instanceof  TopUpProduct);
+        assertTrue(Products.getProductForSku("DataTopup3GB").asTopupProduct()
+                instanceof  TopUpProduct);
     }
 
 

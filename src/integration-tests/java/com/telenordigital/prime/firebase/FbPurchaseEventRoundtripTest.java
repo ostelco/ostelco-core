@@ -29,7 +29,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
-public class FbPurchaseEventRoundtripTest {
+public final class FbPurchaseEventRoundtripTest {
 
     private static final String EPHERMERAL_MSISDN = "+4747116996";
     public static final int MINIMUM_MILLIS_TO_SLEEP_AFTER_MAKING_PURCHASE_REQUEST = 3000;
