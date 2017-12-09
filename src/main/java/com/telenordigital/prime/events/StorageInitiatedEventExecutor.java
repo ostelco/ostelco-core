@@ -1,7 +1,4 @@
-package com.telenordigital.prime.firebase;
-
-import com.telenordigital.prime.events.PurchaseRequest;
-import com.telenordigital.prime.events.PurchaseRequestListener;
+package com.telenordigital.prime.events;
 
 import java.util.HashSet;
 import java.util.Set;

@@ -1,6 +1,7 @@
 package com.telenordigital.prime.firebase;
 
 import com.google.firebase.database.*;
+import com.telenordigital.prime.events.ProductCatalogItem;
 import com.telenordigital.prime.events.PurchaseRequest;
 import com.telenordigital.prime.events.StorageException;
 import com.telenordigital.prime.events.Subscriber;

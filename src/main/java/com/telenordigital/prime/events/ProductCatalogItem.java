@@ -1,8 +1,7 @@
-package com.telenordigital.prime.firebase;
+package com.telenordigital.prime.events;
 
 /**
- * Bean used to use read items from the product catalogs we find
- * in Firebase.
+ * Bean used to use read items from the product catalog.
  */
 public final class ProductCatalogItem {
 
