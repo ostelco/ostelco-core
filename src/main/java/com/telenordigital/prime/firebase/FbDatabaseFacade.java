@@ -1,10 +1,7 @@
 package com.telenordigital.prime.firebase;
 
 import com.google.firebase.database.*;
-import com.telenordigital.prime.events.ProductCatalogItem;
-import com.telenordigital.prime.events.PurchaseRequest;
-import com.telenordigital.prime.events.StorageException;
-import com.telenordigital.prime.events.Subscriber;
+import com.telenordigital.prime.events.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,7 +65,7 @@ public final class FbDatabaseFacade {
 
     private static AbstractChildEventListener
     newChildListenerThatDispatchesPurchaseRequestToExecutor(
-            final BiFunction<String, FbPurchaseRequest, Void> consumer) {
+            final BiFunction<String, PurchaseRequestImpl, Void> consumer) {
         checkNotNull(consumer);
         return new AbstractChildEventListener() {
             @Override
@@ -78,11 +75,11 @@ public final class FbDatabaseFacade {
                     return;
                 }
                 try {
-                    final FbPurchaseRequest req =
-                            snapshot.getValue(FbPurchaseRequest.class);
+                    final PurchaseRequestImpl req =
+                            snapshot.getValue(PurchaseRequestImpl.class);
                     consumer.apply(snapshot.getKey(), req);
                 } catch (Exception e) {
-                    LOG.error("Couldn't transform req into FbPurchaseRequest", e);
+                    LOG.error("Couldn't transform req into PurchaseRequestImpl", e);
                 }
             }
         };
@@ -138,7 +135,7 @@ public final class FbDatabaseFacade {
             }
             LOG.info("Just read a product catalog item: {}", item);
         } catch (Exception e) {
-            LOG.error("Couldn't transform req into FbPurchaseRequest", e);
+            LOG.error("Couldn't transform req into PurchaseRequestImpl", e);
         }
     }
 
@@ -147,7 +144,7 @@ public final class FbDatabaseFacade {
         addProductCatalogValueListener(consumer);
     }
 
-    public void addPurchaseRequestListener(BiFunction<String, FbPurchaseRequest, Void> consumer) {
+    public void addPurchaseRequestListener(BiFunction<String, PurchaseRequestImpl, Void> consumer) {
         addPurchaseEventListener(newChildListenerThatDispatchesPurchaseRequestToExecutor(consumer));
     }
 
@@ -287,7 +284,7 @@ public final class FbDatabaseFacade {
     }
 
     public String injectPurchaseRequest(final PurchaseRequest pr) {
-        final FbPurchaseRequest cr = (FbPurchaseRequest) pr;
+        final PurchaseRequestImpl cr = (PurchaseRequestImpl) pr;
         final DatabaseReference dbref = clientRequests.push();
         final Map<String, Object> crAsMap = cr.asMap();
         dbref.setValue(crAsMap);

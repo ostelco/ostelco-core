@@ -1,6 +1,5 @@
 package com.telenordigital.prime.events;
 
-import com.telenordigital.prime.firebase.FbPurchaseRequest;
 import com.telenordigital.prime.ocs.state.OcsState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +34,7 @@ public final class EventListeners {
     }
 
 
-    public Void purchaseRequestListener(final String key, final FbPurchaseRequest req) {
+    public Void purchaseRequestListener(final String key, final PurchaseRequestImpl req) {
         req.setId(key);
         req.setMillisSinceEpoch(getMillisSinceEpoch());
         executor.onPurchaseRequest(req);

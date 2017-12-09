@@ -87,8 +87,8 @@ public class FbPurchaseEventRoundtripTest {
 
         storage.addPurchaseRequestListener(req -> latch.countDown());
 
-        final FbPurchaseRequest req =
-                new FbPurchaseRequest(DATA_TOPUP_3GB, PAYMENT_TOKEN);
+        final PurchaseRequestImpl req =
+                new PurchaseRequestImpl(DATA_TOPUP_3GB, PAYMENT_TOKEN);
         req.setMsisdn(EPHERMERAL_MSISDN);
 
         assertNotEquals(null, storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN));

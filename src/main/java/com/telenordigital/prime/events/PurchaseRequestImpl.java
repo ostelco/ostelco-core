@@ -1,14 +1,11 @@
-package com.telenordigital.prime.firebase;
-
-import com.telenordigital.prime.events.Product;
-import com.telenordigital.prime.events.PurchaseRequest;
+package com.telenordigital.prime.events;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public final class FbPurchaseRequest implements PurchaseRequest {
+public final class PurchaseRequestImpl implements PurchaseRequest {
 
     private  String sku;
     private  String paymentToken;
@@ -16,14 +13,14 @@ public final class FbPurchaseRequest implements PurchaseRequest {
     private  long millisSinceEpoch;
     private  String id;
 
-    public FbPurchaseRequest(
+    public PurchaseRequestImpl(
             final Product product,
             final String paymentToken) {
         this.sku = checkNotNull(product.getSku());
         this.paymentToken = checkNotNull(paymentToken);
     }
 
-    public FbPurchaseRequest(){}
+    public PurchaseRequestImpl(){}
 
     @Override
     public String getMsisdn() {
@@ -81,7 +78,7 @@ public final class FbPurchaseRequest implements PurchaseRequest {
 
     @Override
     public String toString() {
-        return "FbPurchaseRequest{"
+        return "PurchaseRequestImpl{"
                 + "sku='" + sku + '\''
                 + ", paymentToken='" + paymentToken + '\''
                 + ", msisdn='" + msisdn + '\''

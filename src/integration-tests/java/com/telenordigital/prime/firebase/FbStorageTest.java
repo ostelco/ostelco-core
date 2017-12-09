@@ -1,9 +1,6 @@
 package com.telenordigital.prime.firebase;
 
-import com.telenordigital.prime.events.EventListeners;
-import com.telenordigital.prime.events.Storage;
-import com.telenordigital.prime.events.StorageException;
-import com.telenordigital.prime.events.Subscriber;
+import com.telenordigital.prime.events.*;
 import com.telenordigital.prime.ocs.state.OcsState;
 import org.junit.After;
 import org.junit.Before;
@@ -103,8 +100,8 @@ public class FbStorageTest {
             latch.countDown();
         });
 
-        final FbPurchaseRequest cr =
-                new FbPurchaseRequest(DATA_TOPUP_3GB, PAYMENT_TOKEN);
+        final PurchaseRequestImpl cr =
+                new PurchaseRequestImpl(DATA_TOPUP_3GB, PAYMENT_TOKEN);
         final String id = fbStorage.injectPurchaseRequest(cr);
         final String id2 = fbStorage.injectPurchaseRequest(cr);
         prids.add(id);
