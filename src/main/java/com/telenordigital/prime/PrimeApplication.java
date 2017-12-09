@@ -9,7 +9,7 @@ import com.telenordigital.prime.events.EventProcessor;
 import com.telenordigital.prime.events.OcsBalanceUpdater;
 import com.telenordigital.prime.events.OcsBalanceUpdaterImpl;
 import com.telenordigital.prime.events.Storage;
-import com.telenordigital.prime.firebase.EventListeners;
+import com.telenordigital.prime.events.EventListeners;
 import com.telenordigital.prime.firebase.FbStorage;
 import com.telenordigital.prime.ocs.OcsServer;
 import com.telenordigital.prime.ocs.OcsService;
