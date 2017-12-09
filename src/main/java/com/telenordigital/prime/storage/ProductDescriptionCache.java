@@ -1,4 +1,6 @@
-package com.telenordigital.prime.events;
+package com.telenordigital.prime.storage;
+
+import com.telenordigital.prime.storage.entities.Product;
 
 public interface ProductDescriptionCache {
     void  addTopupProduct(String sku, long noOfBytes);

@@ -1,4 +1,4 @@
-package com.telenordigital.prime.events;
+package com.telenordigital.prime.storage.entities;
 
 import static com.google.api.client.util.Preconditions.checkNotNull;
 

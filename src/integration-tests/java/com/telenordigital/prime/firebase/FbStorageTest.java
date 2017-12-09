@@ -2,6 +2,10 @@ package com.telenordigital.prime.firebase;
 
 import com.telenordigital.prime.events.*;
 import com.telenordigital.prime.ocs.state.OcsState;
+import com.telenordigital.prime.storage.Storage;
+import com.telenordigital.prime.storage.StorageException;
+import com.telenordigital.prime.storage.entities.Subscriber;
+import com.telenordigital.prime.storage.entities.PurchaseRequestImpl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -12,7 +16,7 @@ import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.telenordigital.prime.events.Products.DATA_TOPUP_3GB;
+import static com.telenordigital.prime.storage.Products.DATA_TOPUP_3GB;
 import static java.lang.Thread.sleep;
 import static org.junit.Assert.*;
 

@@ -1,4 +1,7 @@
-package com.telenordigital.prime.events;
+package com.telenordigital.prime.storage;
+
+import com.telenordigital.prime.storage.entities.PurchaseRequest;
+import com.telenordigital.prime.storage.entities.Subscriber;
 
 import java.util.Collection;
 

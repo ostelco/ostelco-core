@@ -1,4 +1,4 @@
-package com.telenordigital.prime.events;
+package com.telenordigital.prime.storage;
 
 import java.util.Map;
 

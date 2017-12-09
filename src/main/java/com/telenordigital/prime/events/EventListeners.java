@@ -1,6 +1,9 @@
 package com.telenordigital.prime.events;
 
 import com.telenordigital.prime.ocs.state.OcsState;
+import com.telenordigital.prime.storage.*;
+import com.telenordigital.prime.storage.entities.PurchaseRequestImpl;
+import com.telenordigital.prime.storage.entities.Subscriber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

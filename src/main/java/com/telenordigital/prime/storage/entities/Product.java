@@ -1,4 +1,4 @@
-package com.telenordigital.prime.events;
+package com.telenordigital.prime.storage.entities;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -39,4 +39,5 @@ public final class Product {
                 ", productDescription=" + productDescription +
                 '}';
     }
+
 }

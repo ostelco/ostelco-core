@@ -1,4 +1,6 @@
-package com.telenordigital.prime.events;
+package com.telenordigital.prime.storage.entities;
+
+import com.telenordigital.prime.storage.AsMappable;
 
 import java.util.HashMap;
 import java.util.Map;

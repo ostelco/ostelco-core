@@ -1,4 +1,4 @@
-package com.telenordigital.prime.events;
+package com.telenordigital.prime.storage;
 
 /**
  * Bean used to use read items from the product catalog.

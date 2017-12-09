@@ -2,6 +2,10 @@ package com.telenordigital.prime.events;
 
 import com.lmax.disruptor.EventHandler;
 import com.telenordigital.prime.disruptor.PrimeEvent;
+import com.telenordigital.prime.storage.*;
+import com.telenordigital.prime.storage.entities.Product;
+import com.telenordigital.prime.storage.entities.PurchaseRequest;
+import com.telenordigital.prime.storage.entities.TopUpProduct;
 import io.dropwizard.lifecycle.Managed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -3,7 +3,7 @@ package com.telenordigital.prime.ocs.state;
 import com.google.common.base.Preconditions;
 import com.lmax.disruptor.EventHandler;
 import com.telenordigital.prime.disruptor.PrimeEvent;
-import com.telenordigital.prime.events.Subscriber;
+import com.telenordigital.prime.storage.entities.Subscriber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

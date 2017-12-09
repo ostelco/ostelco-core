@@ -1,5 +1,7 @@
 package com.telenordigital.prime.events;
 
+import com.telenordigital.prime.storage.entities.PurchaseRequest;
+
 public final class EventProcessorException extends Exception {
 
     private final PurchaseRequest pr;

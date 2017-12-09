@@ -6,6 +6,8 @@ import com.google.firebase.auth.FirebaseCredentials;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.FirebaseDatabase;
 import com.telenordigital.prime.events.*;
+import com.telenordigital.prime.storage.*;
+import com.telenordigital.prime.storage.entities.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

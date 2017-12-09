@@ -1,5 +1,7 @@
-package com.telenordigital.prime.events;
+package com.telenordigital.prime.storage;
 
+import com.telenordigital.prime.storage.entities.Product;
+import com.telenordigital.prime.storage.entities.TopUpProduct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,7 +14,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public final class  Products {
     private static final  Logger LOG = LoggerFactory.getLogger(Products.class);
 
-    public static final  Product DATA_TOPUP_3GB =
+    public static final Product DATA_TOPUP_3GB =
             new Product("DataTopup3GB", new TopUpProduct(3000000000L));
 
     private static final Map<String, Product> PRODUCTS;

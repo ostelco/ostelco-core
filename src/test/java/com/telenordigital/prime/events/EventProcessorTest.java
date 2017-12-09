@@ -1,6 +1,10 @@
 package com.telenordigital.prime.events;
 
 import com.telenordigital.prime.disruptor.PrimeEvent;
+import com.telenordigital.prime.storage.PurchaseRequestListener;
+import com.telenordigital.prime.storage.Storage;
+import com.telenordigital.prime.storage.StorageException;
+import com.telenordigital.prime.storage.entities.PurchaseRequest;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -10,7 +14,7 @@ import org.mockito.junit.MockitoRule;
 
 import static com.telenordigital.prime.disruptor.PrimeEventMessageType.GET_DATA_BUNDLE_BALANCE;
 import static com.telenordigital.prime.disruptor.PrimeEventMessageType.RETURN_UNUSED_DATA_BUCKET;
-import static com.telenordigital.prime.events.Products.DATA_TOPUP_3GB;
+import static com.telenordigital.prime.storage.Products.DATA_TOPUP_3GB;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;

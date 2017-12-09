@@ -1,6 +1,6 @@
 package com.telenordigital.prime.firebase;
 
-import com.telenordigital.prime.events.SubscriberImpl;
+import com.telenordigital.prime.storage.entities.SubscriberImpl;
 import org.junit.Test;
 
 import static org.junit.Assert.*;

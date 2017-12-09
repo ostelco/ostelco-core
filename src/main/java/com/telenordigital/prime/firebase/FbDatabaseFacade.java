@@ -1,7 +1,11 @@
 package com.telenordigital.prime.firebase;
 
 import com.google.firebase.database.*;
-import com.telenordigital.prime.events.*;
+import com.telenordigital.prime.storage.*;
+import com.telenordigital.prime.storage.entities.PurchaseRequest;
+import com.telenordigital.prime.storage.entities.PurchaseRequestImpl;
+import com.telenordigital.prime.storage.entities.Subscriber;
+import com.telenordigital.prime.storage.entities.SubscriberImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

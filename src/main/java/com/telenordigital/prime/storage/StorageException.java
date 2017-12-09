@@ -1,4 +1,4 @@
-package com.telenordigital.prime.events;
+package com.telenordigital.prime.storage;
 
 public final class StorageException extends Exception {
     public StorageException(final Throwable t) {

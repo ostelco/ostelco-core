@@ -1,4 +1,6 @@
-package com.telenordigital.prime.events;
+package com.telenordigital.prime.storage;
+
+import com.telenordigital.prime.storage.entities.PurchaseRequest;
 
 import java.util.HashSet;
 import java.util.Set;
