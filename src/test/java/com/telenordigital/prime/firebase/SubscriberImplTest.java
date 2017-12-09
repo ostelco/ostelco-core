@@ -4,9 +4,9 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class FbSubscriberTest {
+public class SubscriberImplTest {
 
-    private final FbSubscriber fbs = new FbSubscriber();
+    private final SubscriberImpl fbs = new SubscriberImpl();
 
     @Test
     public void asMap() throws Exception {

@@ -324,8 +324,8 @@ public final class FbDatabaseFacade {
                 } else {
                     for (final DataSnapshot snap : snapshot.getChildren()) {
 
-                        final FbSubscriber sub =
-                                snap.getValue(FbSubscriber.class);
+                        final SubscriberImpl sub =
+                                snap.getValue(SubscriberImpl.class);
                         final String key = snap.getKey();
 
                         sub.setFbKey(key);
@@ -368,13 +368,13 @@ public final class FbDatabaseFacade {
         }
     }
 
-    public void updateAuthorativeUserData(final FbSubscriber sub) {
+    public void updateAuthorativeUserData(final SubscriberImpl sub) {
         checkNotNull(sub);
         final DatabaseReference dbref = authorativeUserData.child(sub.getFbKey());
         dbref.updateChildren(sub.asMap());
     }
 
-    public String insertNewSubscriber(final FbSubscriber sub) {
+    public String insertNewSubscriber(final SubscriberImpl sub) {
         checkNotNull(sub);
         final DatabaseReference dbref = authorativeUserData.push();
         sub.setFbKey(dbref.getKey());
@@ -415,7 +415,7 @@ public final class FbDatabaseFacade {
                     return;
                 }
                 for (final DataSnapshot child : snapshot.getChildren()) {
-                    final FbSubscriber subscriber = child.getValue(FbSubscriber.class);
+                    final SubscriberImpl subscriber = child.getValue(SubscriberImpl.class);
                     subscriber.setFbKey(child.getKey());
                     subscribers.add(subscriber);
                 }

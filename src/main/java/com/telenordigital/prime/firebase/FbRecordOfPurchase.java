@@ -1,5 +1,6 @@
 package com.telenordigital.prime.firebase;
 
+import com.telenordigital.prime.events.AsMappable;
 import com.telenordigital.prime.events.RecordOfPurchase;
 
 import java.util.HashMap;

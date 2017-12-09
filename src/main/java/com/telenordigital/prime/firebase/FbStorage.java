@@ -113,7 +113,7 @@ public final class FbStorage implements Storage {
     @Override
     public void updateDisplayDatastructure(final String msisdn) throws StorageException {
         checkNotNull(msisdn);
-        final FbSubscriber subscriber = (FbSubscriber) getSubscriberFromMsisdn(msisdn);
+        final SubscriberImpl subscriber = (SubscriberImpl) getSubscriberFromMsisdn(msisdn);
         if (subscriber == null) {
             throw new StorageException("Unknown MSISDN " + msisdn);
         }
@@ -211,7 +211,7 @@ public final class FbStorage implements Storage {
             throw new StorageException("noOfBytes can't be negative");
         }
 
-        final FbSubscriber sub = (FbSubscriber) getSubscriberFromMsisdn(msisdn);
+        final SubscriberImpl sub = (SubscriberImpl) getSubscriberFromMsisdn(msisdn);
         if (sub == null) {
             throw new StorageException("Unknown msisdn " + msisdn);
         }
@@ -224,7 +224,7 @@ public final class FbStorage implements Storage {
     @Override
     public String insertNewSubscriber(final String msisdn) {
         checkNotNull(msisdn);
-        final FbSubscriber sub = new FbSubscriber();
+        final SubscriberImpl sub = new SubscriberImpl();
         sub.setMsisdn(msisdn);
         return facade.insertNewSubscriber(sub);
     }

@@ -1,4 +1,4 @@
-package com.telenordigital.prime.firebase;
+package com.telenordigital.prime.events;
 
 import java.util.Map;
 
