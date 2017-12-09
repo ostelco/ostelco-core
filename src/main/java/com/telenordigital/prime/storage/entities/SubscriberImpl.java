@@ -8,7 +8,7 @@ import java.util.Map;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 
-public final class SubscriberImpl implements AsMappable, Subscriber {
+public final class SubscriberImpl implements Subscriber {
 
     private String fbKey;
     private String msisdn;
@@ -19,13 +19,6 @@ public final class SubscriberImpl implements AsMappable, Subscriber {
         noOfBytesLeft = 0;
     }
 
-    @Override
-    public Map<String, Object> asMap() {
-        final Map<String, Object> result = new HashMap<>();
-        result.put("noOfBytesLeft", noOfBytesLeft);
-        result.put("msisdn", msisdn);
-        return result;
-    }
 
     public String getFbKey() {
         return fbKey;
