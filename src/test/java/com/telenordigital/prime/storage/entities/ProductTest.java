@@ -1,5 +1,6 @@
 package com.telenordigital.prime.storage.entities;
 
+import com.telenordigital.prime.storage.Products;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -28,7 +29,12 @@ public class ProductTest {
         product.asTopupProduct();
     }
 
-    // XXX Should also try to actually get a topop product.
+
+
+    public void asTopupProduct() throws Exception, NotATopupProductException {
+        // Ghetto, not proper testing.
+        assertTrue(Products.getProductForSku("DataTopup3GB").asTopupProduct()  instanceof  TopUpProduct);
+    }
 
 
     @Test
