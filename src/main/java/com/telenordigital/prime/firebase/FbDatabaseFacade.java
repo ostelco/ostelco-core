@@ -371,30 +371,22 @@ public final class FbDatabaseFacade {
     private ValueEventListener newListenerThatWillReadSubcriberData(
             final CountDownLatch cdl,
             final Set<Subscriber> result) {
-        return new ValueEventListener() {
+        return new AbstractValueEventListener() {
             @Override
             public void onDataChange(final DataSnapshot snapshot) {
-
                 if (!snapshot.hasChildren()) {
                     cdl.countDown();
                     return;
                 } else {
                     for (final DataSnapshot snap : snapshot.getChildren()) {
-
                         final SubscriberImpl sub =
                                 snap.getValue(SubscriberImpl.class);
                         final String key = snap.getKey();
-
                         sub.setFbKey(key);
                         result.add(sub);
                         cdl.countDown();
                     }
                 }
-            }
-
-            @Override
-            public void onCancelled(final DatabaseError error) {
-                // Intentionally left blank.
             }
         };
     }
