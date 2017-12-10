@@ -38,9 +38,9 @@ public final class FbDatabaseFacade {
 
     private static final Logger LOG = LoggerFactory.getLogger(FbDatabaseFacade.class);
 
-    public static final String PHONE_NUMBER = "phoneNumber";
+    private static final String PHONE_NUMBER = "phoneNumber";
 
-    public static final String MSISDN = "msisdn";
+    private static final String MSISDN = "msisdn";
 
     private final DatabaseReference authorativeUserData;
 
@@ -85,13 +85,12 @@ public final class FbDatabaseFacade {
     }
 
     private static AbstractChildEventListener
-    newChildListenerThatDispatchesPurchaseRequestToExecutor(
+    newChildListenerThatDispatchesPurchaseRequestToConsumer(
             final BiFunction<String, PurchaseRequestImpl, Void> consumer) {
         checkNotNull(consumer);
         return new AbstractChildEventListener() {
             @Override
             public void onChildAdded(final DataSnapshot snapshot, final String previousChildName) {
-                LOG.info("onChildAdded");
                 if (snapshotIsInvalid(snapshot)) {
                     return;
                 }
@@ -100,7 +99,7 @@ public final class FbDatabaseFacade {
                             snapshot.getValue(PurchaseRequestImpl.class);
                     consumer.apply(snapshot.getKey(), req);
                 } catch (Exception e) {
-                    LOG.error("Couldn't transform req into PurchaseRequestImpl", e);
+                    LOG.error("Couldn't dispatch purchase request to consumer", e);
                 }
             }
         };
@@ -168,7 +167,7 @@ public final class FbDatabaseFacade {
 
     public void addPurchaseRequestListener(
             final BiFunction<String, PurchaseRequestImpl, Void> consumer) {
-        addPurchaseEventListener(newChildListenerThatDispatchesPurchaseRequestToExecutor(consumer));
+        addPurchaseEventListener(newChildListenerThatDispatchesPurchaseRequestToConsumer(consumer));
     }
 
 
@@ -201,7 +200,8 @@ public final class FbDatabaseFacade {
     }
 
 
-    public void addProductCatalogValueListener(final ValueEventListener productCatalogValueEventListener) {
+    public void addProductCatalogValueListener(
+            final ValueEventListener productCatalogValueEventListener) {
         checkNotNull(productCatalogValueEventListener);
         this.quickBuyProducts.addValueEventListener(productCatalogValueEventListener);
         this.products.addValueEventListener(productCatalogValueEventListener);
@@ -289,7 +289,7 @@ public final class FbDatabaseFacade {
                 return result.iterator().next();
             }
         } catch (InterruptedException e) {
-            throw new StorageException("Interrupted", e);
+            throw new StorageException(e);
         }
     }
 
@@ -349,35 +349,35 @@ public final class FbDatabaseFacade {
         return waitForSubscriberData(msisdn, cdl, result);
     }
 
+    private String logSubscriberDataProcessing(final String msisdn, final  String userData, final String result) {
+        final String msg = "authorativeuserdata = '" + userData
+                + "', msisdn = '" + msisdn
+                + "' => " + result;
+        LOG.info(msg);
+        return msg;
+    }
+
     private Subscriber waitForSubscriberData(
             final String msisdn,
             final CountDownLatch cdl,
             final Set<Subscriber> result) throws StorageException {
+        final String userDataString = authorativeUserData.toString();
         try {
             if (!cdl.await(10, TimeUnit.SECONDS)) {
-                LOG.info("authorativeuserdata = '" + authorativeUserData
-                        + "', msisdn = '" + msisdn
-                        + "' => timeout");
-                throw new StorageException("Query timed out. authorativeuserdata = '"
-                        + authorativeUserData +
-                        "', msisdn = '"
-                        + msisdn + "'");
+               final String msg  =  logSubscriberDataProcessing(
+                       msisdn, userDataString, "timeout");
+                throw new StorageException(msg);
             } else if (result.isEmpty()) {
-                LOG.info("authorativeuserdata = '" + authorativeUserData
-                        + "', msisdn = '" + msisdn
-                        + "' => null");
+                logSubscriberDataProcessing(msisdn, userDataString, "null");
                 return null;
             } else {
                 final Subscriber r = result.iterator().next();
-                LOG.info("authorativeuserdata = '"
-                        + authorativeUserData
-                        + "', msisdn = '" + msisdn + "' => " + r);
+                logSubscriberDataProcessing(msisdn, userDataString, r.toString());
                 return r;
             }
         } catch (InterruptedException e) {
-            LOG.info("authorativeuserdata = '"
-                    + authorativeUserData + "', msisdn = '" + msisdn + "' => interrupted");
-            throw new StorageException("Interrupted", e);
+            final String msg = logSubscriberDataProcessing(msisdn, userDataString, "interrupted");
+            throw new StorageException(msg, e);
         }
     }
 
@@ -459,23 +459,22 @@ public final class FbDatabaseFacade {
             }
 
             @Override
-            public void onCancelled(DatabaseError error) {
+            public void onCancelled(final DatabaseError error) {
                 LOG.error(error.getMessage(), error.toException());
             }
         };
     }
 
-    public ChildEventListener newProductDefChangedListener(Consumer<DataSnapshot> snapshotConsumer) {
+    public ChildEventListener newProductDefChangedListener(
+            final Consumer<DataSnapshot> snapshotConsumer) {
         return new AbstractChildEventListener() {
             @Override
             public void onChildAdded(final DataSnapshot snapshot, final String previousChildName) {
-                LOG.info("onChildAdded");
                 snapshotConsumer.accept(snapshot);
             }
 
             @Override
             public void onChildChanged(final DataSnapshot snapshot, final String previousChildName) {
-                LOG.info("onChildChanged");
                 snapshotConsumer.accept(snapshot);
             }
         };
