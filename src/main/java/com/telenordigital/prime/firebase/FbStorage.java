@@ -217,7 +217,7 @@ public final class FbStorage implements Storage {
     public void setRemainingByMsisdn(
             final String msisdn,
             final long noOfBytes) throws StorageException {
-        
+
         if (msisdn == null) {
             throw new StorageException("msisdn can't be null");
         }

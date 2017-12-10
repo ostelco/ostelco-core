@@ -6,15 +6,21 @@ package com.telenordigital.prime.storage;
 public final class ProductCatalogItem {
 
     private String badgeLabel;
+
     private String currencyLabel;
+
     private boolean isVisible;
+
     private String label;
+
     private int price;
 
     private String priceLabel;
 
     private int amount;
+
     private String sku;
+    
     private long noOfBytes;
 
     public String getBadgeLabel() {
