@@ -23,9 +23,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 
-public class EventProcessorTest {
+public final class EventProcessorTest {
     public static final String PAYMENT_TOKEN = "a weird token";
+
     private static final String MSISDN = "12345678";
+    public static final String PLUS_USED_TO_BEGIN_INTERNATIONAL_PREFIX_IN_MSISSDN = "+";
+    public static final long NO_OF_BYTES = 4711L;
 
     @Rule
     public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -50,36 +53,41 @@ public class EventProcessorTest {
         this.processor.start();
     }
 
+
+
+    private final static class DummyPurchaseRequest implements PurchaseRequest {
+
+        @Override
+        public String getSku() {
+            return DATA_TOPUP_3GB.getSku();
+        }
+
+        @Override
+        public String getPaymentToken() {
+            return PAYMENT_TOKEN;
+        }
+
+        @Override
+        public String getMsisdn() {
+            return MSISDN;
+        }
+
+        @Override
+        public long getMillisSinceEpoch() {
+            return 0;
+        }
+
+        @Override
+        public String getId() {
+            return "Sir Tristram, violer d'amores";
+        }
+    }
+
     @Test
     public void handlePurchaseRequestTest() throws EventProcessorException, StorageException {
 
         final PurchaseRequest req;
-        req = new PurchaseRequest() {
-            @Override
-            public String getSku() {
-                return DATA_TOPUP_3GB.getSku();
-            }
-
-            @Override
-            public String getPaymentToken() {
-                return PAYMENT_TOKEN;
-            }
-
-            @Override
-            public String getMsisdn() {
-                return MSISDN;
-            }
-
-            @Override
-            public long getMillisSinceEpoch() {
-                return 0;
-            }
-
-            @Override
-            public String getId() {
-                return "Sir Tristram, violer d'amores";
-            }
-        };
+        req = new DummyPurchaseRequest();
 
         // Process a little
         processor.handlePurchaseRequest(req);
@@ -93,12 +101,9 @@ public class EventProcessorTest {
         }
 
         verify(storage).addPurchaseRequestListener(any(PurchaseRequestListener.class));
-
         verify(storage).addRecordOfPurchaseByMsisdn(eq(MSISDN), eq(req.getSku()), anyLong());
-
         verify(storage).updateDisplayDatastructure(eq(MSISDN));
         verify(storage).removePurchaseRequestById(eq(req.getId()));
-
         verify(ocsBalanceUpdater).updateBalance(eq(MSISDN), eq(topupBytes));
     }
 
@@ -112,21 +117,24 @@ public class EventProcessorTest {
 
         processor.onEvent(primeEvent, 0L, false);
 
-        verify(storage).setRemainingByMsisdn(eq("+" + MSISDN), eq(noOfBytes));
+        verify(storage).setRemainingByMsisdn(eq(PLUS_USED_TO_BEGIN_INTERNATIONAL_PREFIX_IN_MSISSDN + MSISDN), eq(noOfBytes));
     }
 
     @Test
     public void testPrimeEventGetDataBundleBalance() throws Exception {
-        final long noOfBytes = 4711L;
+        final long noOfBytes = NO_OF_BYTES;
         final PrimeEvent primeEvent = new PrimeEvent();
         primeEvent.setMessageType(GET_DATA_BUNDLE_BALANCE);
         primeEvent.setMsisdn(MSISDN);
-        primeEvent.setBundleBytes(4711L);
+        primeEvent.setBundleBytes(NO_OF_BYTES);
 
         processor.onEvent(primeEvent, 0L, false);
 
         // Verify a little.
-        verify(storage).setRemainingByMsisdn(eq("+" + MSISDN), eq(noOfBytes));
+        final String inernationalMsisdn =
+                PLUS_USED_TO_BEGIN_INTERNATIONAL_PREFIX_IN_MSISSDN + MSISDN;
+        verify(storage).setRemainingByMsisdn(eq(inernationalMsisdn),
+                eq(noOfBytes));
     }
 
     // XXX Are we missing an event type here?

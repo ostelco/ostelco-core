@@ -14,7 +14,7 @@ public final class PurchaseRequestImpl implements PurchaseRequest {
     private  String msisdn;
 
     private  long millisSinceEpoch;
-    
+
     private  String id;
 
     public PurchaseRequestImpl(
