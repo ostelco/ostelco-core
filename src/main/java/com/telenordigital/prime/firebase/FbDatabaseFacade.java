@@ -41,7 +41,7 @@ public final class FbDatabaseFacade {
 
     private static final String MSISDN = "msisdn";
 
-    public static final int SECONDS_TO_WAIT_FOR_FIREBASE = 10;
+    private static final int SECONDS_TO_WAIT_FOR_FIREBASE = 10;
 
     private final DatabaseReference authorativeUserData;
 
@@ -432,7 +432,7 @@ public final class FbDatabaseFacade {
         try {
             cdl.await(SECONDS_TO_WAIT_FOR_FIREBASE, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            LOG.error("Failed to get all subscribers");
+            // Ignoring this, not a fatal failure.
         }
         if (cdl.getCount() > 0) {
             LOG.error("Failed to get all subscribers");
