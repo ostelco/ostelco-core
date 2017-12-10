@@ -1,11 +1,11 @@
 package com.telenordigital.prime.firebase;
 
-import com.telenordigital.prime.events.*;
+import com.telenordigital.prime.events.EventListeners;
 import com.telenordigital.prime.ocs.state.OcsState;
 import com.telenordigital.prime.storage.Storage;
 import com.telenordigital.prime.storage.StorageException;
-import com.telenordigital.prime.storage.entities.Subscriber;
 import com.telenordigital.prime.storage.entities.PurchaseRequestImpl;
+import com.telenordigital.prime.storage.entities.Subscriber;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,17 +18,25 @@ import java.util.concurrent.TimeUnit;
 
 import static com.telenordigital.prime.storage.Products.DATA_TOPUP_3GB;
 import static java.lang.Thread.sleep;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.fail;
 
 public class FbStorageTest {
 
     private static final String PAYMENT_TOKEN = "thisIsAPaymentToken";
+
     private static final String EPHERMERAL_MSISDN = "+4747116996";
-    public static final int MILLIS_TO_WAIT_WHEN_STARTING_UP = 3000;
-    public static final long RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS = 92l;
+
+    private static final int MILLIS_TO_WAIT_WHEN_STARTING_UP = 3000;
+
+    private static final long RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS = 92L;
+    public static final int TIMEOUT_IN_SECONDS = 10;
 
     private FbStorage fbStorage;
+
     private Storage storage;
+
     private Collection<String> prids;
 
     @Before
@@ -66,11 +74,14 @@ public class FbStorageTest {
 
     @Test
     public void setRemainingByMsisdnTest() throws StorageException {
-        storage.setRemainingByMsisdn(EPHERMERAL_MSISDN, RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS);
+        storage.setRemainingByMsisdn(
+                EPHERMERAL_MSISDN,
+                RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS);
         assertEquals(RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS,
                 storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN).getNoOfBytesLeft());
         storage.setRemainingByMsisdn(EPHERMERAL_MSISDN, 0);
-        assertEquals(0l, storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN).getNoOfBytesLeft());
+        assertEquals(0L,
+                storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN).getNoOfBytesLeft());
     }
 
     @Test
@@ -111,7 +122,7 @@ public class FbStorageTest {
         prids.add(id);
         prids.add(id2);
 
-        if (!latch.await(10, TimeUnit.SECONDS)) {
+        if (!latch.await(TIMEOUT_IN_SECONDS, TimeUnit.SECONDS)) {
             fail("Read/react failed");
         }
 
