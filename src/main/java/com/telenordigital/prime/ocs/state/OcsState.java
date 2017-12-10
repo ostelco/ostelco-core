@@ -20,7 +20,10 @@ public final class OcsState implements EventHandler<PrimeEvent> {
     private final Map<String, Long> dataPackMap = new HashMap<>();
 
     @Override
-    public void onEvent(PrimeEvent event, long sequence, boolean endOfBatch) {
+    public void onEvent(
+            final PrimeEvent event,
+            final long sequence,
+            final boolean endOfBatch) {
         try {
             switch (event.getMessageType()) {
                 case FETCH_DATA_BUCKET:
@@ -57,16 +60,18 @@ public final class OcsState implements EventHandler<PrimeEvent> {
 
     /**
      * Add to subscriber's data bundle balance in bytes.
-     * This is called when subscriber top ups or, PGw returns unused data after subscriber disconnects data.
+     * This is called when subscriber top ups or, PGw returns
+     * unused data after subscriber disconnects data.
      *
      * @param msisdn
      * @param bytes
      * @return bytes
      * data bundle balance in bytes
      */
-    public long addDataBytes(final String msisdn, long bytes) {
+    public long addDataBytes(final String msisdn, final long bytes) {
         Preconditions.checkNotNull(msisdn);
-        Preconditions.checkArgument(bytes > 0, "Non-positive value for bytes");
+        Preconditions.checkArgument(bytes > 0,
+                "No of bytes must be positive");
 
         dataPackMap.putIfAbsent(msisdn, 0L);
         long newDataSize = dataPackMap.get(msisdn) + bytes;
@@ -86,15 +91,16 @@ public final class OcsState implements EventHandler<PrimeEvent> {
         Preconditions.checkNotNull(msisdn);
         Preconditions.checkArgument(bytes > 0, "Non-positive value for bytes");
 
-        if(!dataPackMap.containsKey(msisdn)) {
+        if (!dataPackMap.containsKey(msisdn)) {
             return 0;
         }
 
         long existing = dataPackMap.get(msisdn);
-        if(existing == 0) {
+        if (existing == 0) {
             return 0;
         }
-        long consumed = Math.min(existing, bytes);
+        
+        final long consumed = Math.min(existing, bytes);
         dataPackMap.put(msisdn, existing - consumed);
         return consumed;
     }
