@@ -12,10 +12,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 
 public final class  Products {
-    private static final  Logger LOG = LoggerFactory.getLogger(Products.class);
 
     public static final Product DATA_TOPUP_3GB =
             new Product("DataTopup3GB", new TopUpProduct(3000000000L));
+
+    private static final  Logger LOG = LoggerFactory.getLogger(Products.class);
 
     private static final Map<String, Product> PRODUCTS;
 
@@ -24,6 +25,11 @@ public final class  Products {
         PRODUCTS.put(DATA_TOPUP_3GB.getSku(), DATA_TOPUP_3GB);
     }
 
+    /**
+     * Utility class shouldn't have public constructor.
+     */
+    private Products() {}
+    
     public static void addProduct(final Product p) {
         checkNotNull(p);
         PRODUCTS.put(p.getSku(), p);

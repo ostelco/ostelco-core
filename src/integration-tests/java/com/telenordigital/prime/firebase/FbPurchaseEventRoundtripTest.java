@@ -1,6 +1,5 @@
 package com.telenordigital.prime.firebase;
 
-
 import com.telenordigital.prime.events.EventListeners;
 import com.telenordigital.prime.events.EventProcessor;
 import com.telenordigital.prime.events.EventProcessorException;

@@ -13,12 +13,19 @@ import java.util.concurrent.TimeUnit;
  */
 public final class PrimeDisruptor implements Managed {
 
+
+    /**
+     * Buffer size defaults to 65536 = 2^16
+     */
+    private static final int BUFFER_SIZE = 65536;
+
+    private static final int TIMEOUT_IN_SECONDS = 10;
+
     private final Disruptor<PrimeEvent> disruptor;
 
     public PrimeDisruptor() {
-        ThreadFactory threadFactory = Executors.privilegedThreadFactory();
-        int bufferSize = 65536;
-        disruptor = new Disruptor<>(PrimeEvent::new, bufferSize, threadFactory);
+        final ThreadFactory threadFactory = Executors.privilegedThreadFactory();
+        this.disruptor = new Disruptor<>(PrimeEvent::new, BUFFER_SIZE, threadFactory);
     }
 
     @Override
@@ -28,7 +35,7 @@ public final class PrimeDisruptor implements Managed {
 
     @Override
     public void stop() throws TimeoutException {
-        disruptor.shutdown(10, TimeUnit.SECONDS);
+        disruptor.shutdown(TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
     }
 
     public Disruptor<PrimeEvent> getDisruptor() {

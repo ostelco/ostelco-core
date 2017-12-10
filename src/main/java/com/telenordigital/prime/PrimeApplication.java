@@ -74,7 +74,7 @@ public final class PrimeApplication extends Application<PrimeConfiguration> {
                 then(new ClearingEventHandler());
 
         // dropwizard starts event processor
-         environment.lifecycle().manage(eventProcessor);
+        environment.lifecycle().manage(eventProcessor);
 
         // dropwizard starts disruptor
         environment.lifecycle().manage(disruptor);

@@ -188,7 +188,7 @@ public final class FbStorage implements Storage {
     }
 
     // XXX Should this be removed? Doesn't look nice.
-    static void handleDataChange(
+    protected static void handleDataChange(
             final DataSnapshot snapshot,
             final CountDownLatch cdl,
             final Set<String> result,

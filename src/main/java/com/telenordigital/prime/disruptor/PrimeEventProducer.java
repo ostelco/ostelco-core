@@ -60,7 +60,10 @@ public final class PrimeEventProducer {
         ringBuffer.publish(sequence);
     }
 
-    private void setEventFields(FetchDataBucketInfo request, String streamId, PrimeEvent event) {
+    private void setEventFields(
+            final FetchDataBucketInfo request,
+            final String streamId,
+            final PrimeEvent event) {
         event.setMessageType(FETCH_DATA_BUCKET);
         event.setMsisdn(request.getMsisdn());
         event.setBucketBytes(request.getBytes());

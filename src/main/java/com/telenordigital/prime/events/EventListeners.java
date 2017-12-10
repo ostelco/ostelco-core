@@ -21,7 +21,7 @@ public final class EventListeners {
     private static final Logger LOG = LoggerFactory.getLogger(EventListeners.class);
 
     private final StorageInitiatedEventExecutor executor;
-    
+
     private final OcsState ocsState;
 
     public EventListeners(final OcsState ocsState) {
