@@ -20,7 +20,7 @@ public final class ProductCatalogItem {
     private int amount;
 
     private String sku;
-    
+
     private long noOfBytes;
 
     public String getBadgeLabel() {

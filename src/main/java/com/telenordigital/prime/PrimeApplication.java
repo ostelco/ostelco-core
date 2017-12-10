@@ -34,7 +34,8 @@ public final class PrimeApplication extends Application<PrimeConfiguration> {
         final PrimeDisruptor disruptor = new PrimeDisruptor();
 
         // Disruptor provides RingBuffer, which is used by Producer
-        final PrimeEventProducer producer = new PrimeEventProducer(disruptor.getDisruptor().getRingBuffer());
+        final PrimeEventProducer producer =
+                new PrimeEventProducer(disruptor.getDisruptor().getRingBuffer());
 
         // OcsService uses Producer to produce events for incoming requests from PGw
         final OcsService ocsService = new OcsService(producer);
@@ -67,10 +68,10 @@ public final class PrimeApplication extends Application<PrimeConfiguration> {
         //          -> Handler:(OcsState)
         //              -> Handler:(OcsService, Subscriber)
         //                  -> Clear
-        disruptor.getDisruptor()
-                .handleEventsWith(ocsState)
-                .then(ocsService, eventProcessor)
-                .then(new ClearingEventHandler());
+        disruptor.getDisruptor().
+                handleEventsWith(ocsState).
+                then(ocsService, eventProcessor).
+                then(new ClearingEventHandler());
 
         // dropwizard starts event processor
          environment.lifecycle().manage(eventProcessor);
