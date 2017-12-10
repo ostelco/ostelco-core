@@ -1,7 +1,15 @@
 package com.telenordigital.prime.firebase;
 
-import com.google.firebase.database.*;
-import com.telenordigital.prime.storage.*;
+
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
+import com.telenordigital.prime.storage.ProductCatalogItem;
+import com.telenordigital.prime.storage.StorageException;
 import com.telenordigital.prime.storage.entities.PurchaseRequest;
 import com.telenordigital.prime.storage.entities.PurchaseRequestImpl;
 import com.telenordigital.prime.storage.entities.Subscriber;
@@ -9,7 +17,12 @@ import com.telenordigital.prime.storage.entities.SubscriberImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
