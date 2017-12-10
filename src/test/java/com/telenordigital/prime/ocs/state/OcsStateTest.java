@@ -14,6 +14,17 @@ public class OcsStateTest {
 
     private static final String MSISDN = "MSISDN";
 
+    private static final int INITIAL_NUMBER_OF_BYTES_TO_ADD = 1000;
+
+
+    private static final int TOPUP_NUMBER_OF_BYTES_TO_ADD = 500;
+
+    private static final int FINAL_NUMBER_OF_BYTES =
+            INITIAL_NUMBER_OF_BYTES_TO_ADD + TOPUP_NUMBER_OF_BYTES_TO_ADD;
+    public static final int INITIAL_NUMBER_OF_BYTES_TO_REQUEST = 700;
+    public static final int SECOND_NUMBER_OF_BYTES_TO_REQUEST = 400;
+
+
     @Test
     public void testAddDataBytes() throws Exception {
 
@@ -21,16 +32,16 @@ public class OcsStateTest {
 
         // Add a thousand, starting from zero. This means that the addDatBytes will
         // return the  new balande (after addition), which is 1000.
-        assertEquals(1000, ocsState.addDataBytes(MSISDN, 1000));
+        assertEquals(INITIAL_NUMBER_OF_BYTES_TO_ADD, ocsState.addDataBytes(MSISDN, INITIAL_NUMBER_OF_BYTES_TO_ADD));
 
         // Just checking that the balance is still 1000.
-        assertEquals(1000, ocsState.getDataBytes(MSISDN));
+        assertEquals(INITIAL_NUMBER_OF_BYTES_TO_ADD, ocsState.getDataBytes(MSISDN));
 
-        // Adding 500, should increase balance up to 50 ;-)
-        assertEquals(1500, ocsState.addDataBytes(MSISDN, 500));
+        // Adding 500, should increase balance up to 1500  ;-)
+        assertEquals(FINAL_NUMBER_OF_BYTES, ocsState.addDataBytes(MSISDN, TOPUP_NUMBER_OF_BYTES_TO_ADD));
 
-        // And we should still hve 1500.
-       assertEquals(1500, ocsState.getDataBytes(MSISDN));
+        // And we should still have FINAL_NUMBER_OF_BYTES (1500).
+       assertEquals(FINAL_NUMBER_OF_BYTES, ocsState.getDataBytes(MSISDN));
     }
 
     @Test
@@ -39,14 +50,15 @@ public class OcsStateTest {
         final OcsState ocsState = new OcsState();
 
         // First store a thousand
-        assertEquals(1000, ocsState.addDataBytes(MSISDN, 1000));
+        assertEquals(INITIAL_NUMBER_OF_BYTES_TO_ADD, ocsState.addDataBytes(MSISDN, INITIAL_NUMBER_OF_BYTES_TO_ADD));
 
         // Then request, and get 700
-        assertEquals(700, ocsState.consumeDataBytes(MSISDN, 700));
+        assertEquals(INITIAL_NUMBER_OF_BYTES_TO_REQUEST, ocsState.consumeDataBytes(MSISDN, INITIAL_NUMBER_OF_BYTES_TO_REQUEST));
 
         // Now request 400, but that's too much, so only 300 is returned, and
         // after this transaction the balance is zero.
-        assertEquals(300, ocsState.consumeDataBytes(MSISDN, 400));
+        final int expectedPermittedReturn = 300;
+        assertEquals(expectedPermittedReturn, ocsState.consumeDataBytes(MSISDN, SECOND_NUMBER_OF_BYTES_TO_REQUEST));
 
         //... so at this point even requesting a single byte will fail.
         assertEquals(0, ocsState.consumeDataBytes(MSISDN, 1));
