@@ -1,7 +1,10 @@
 package com.telenordigital.prime.events;
 
 import com.telenordigital.prime.ocs.state.OcsState;
-import com.telenordigital.prime.storage.*;
+import com.telenordigital.prime.storage.ProductCatalogItem;
+import com.telenordigital.prime.storage.ProductDescriptionCacheImpl;
+import com.telenordigital.prime.storage.PurchaseRequestListener;
+import com.telenordigital.prime.storage.StorageInitiatedEventExecutor;
 import com.telenordigital.prime.storage.entities.PurchaseRequestImpl;
 import com.telenordigital.prime.storage.entities.Subscriber;
 import org.slf4j.Logger;
@@ -18,6 +21,7 @@ public final class EventListeners {
     private static final Logger LOG = LoggerFactory.getLogger(EventListeners.class);
 
     private final StorageInitiatedEventExecutor executor;
+    
     private final OcsState ocsState;
 
     public EventListeners(final OcsState ocsState) {
@@ -25,7 +29,8 @@ public final class EventListeners {
         this.ocsState = checkNotNull(ocsState);
     }
 
-    public void loadSubscriberBalanceDataFromFirebaseToInMemoryStructure(final Collection<Subscriber> subscribers) {
+    public void loadSubscriberBalanceDataFromFirebaseToInMemoryStructure(
+            final Collection<Subscriber> subscribers) {
         LOG.info("Loading initial balance from storage to in-memory OcsState");
         for (final Subscriber subscriber : subscribers) {
             ocsState.injectSubscriberIntoOCS(subscriber);
@@ -51,7 +56,7 @@ public final class EventListeners {
     }
 
     // XXX I don't like this!
-    public void addPurchaseRequestListener(PurchaseRequestListener listener) {
+    public void addPurchaseRequestListener(final PurchaseRequestListener listener) {
         executor.addPurchaseRequestListener(listener);
     }
 }
