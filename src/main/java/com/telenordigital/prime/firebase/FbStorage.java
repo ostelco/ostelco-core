@@ -89,7 +89,7 @@ public final class FbStorage implements Storage {
     private FirebaseDatabase setupFirebaseInstance(
             final String databaseName,
             final String configFile) throws StorageException {
-        try (final FileInputStream serviceAccount = new FileInputStream(configFile)) {
+        try (FileInputStream serviceAccount = new FileInputStream(configFile)) {
 
             final FirebaseOptions options = new FirebaseOptions.Builder().
                     setCredential(FirebaseCredentials.fromCertificate(serviceAccount)).
@@ -142,7 +142,7 @@ public final class FbStorage implements Storage {
     }
 
     @Override
-    public void removeDisplayDatastructure(String msisdn) throws StorageException {
+    public void removeDisplayDatastructure(final String msisdn) throws StorageException {
         checkNotNull(msisdn);
         facade.removeByMsisdn(msisdn);
     }
@@ -214,7 +214,10 @@ public final class FbStorage implements Storage {
     }
 
     @Override
-    public void setRemainingByMsisdn(final String msisdn, final long noOfBytes) throws StorageException {
+    public void setRemainingByMsisdn(
+            final String msisdn,
+            final long noOfBytes) throws StorageException {
+        
         if (msisdn == null) {
             throw new StorageException("msisdn can't be null");
         }
