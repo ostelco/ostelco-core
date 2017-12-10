@@ -26,7 +26,7 @@ import static org.junit.Assert.assertEquals;
  * This class tests the packet gateway's perspective of talking to
  * the OCS over the gRPC-generated wire protocol.
  */
-public class OcsTest {
+public final class OcsTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(OcsTest.class);
 
@@ -46,6 +46,9 @@ public class OcsTest {
 
     // Request ID used by OCS gateway to correlate responses with requests
     private static final String REQUEST_ID = RandomStringUtils.randomAlphanumeric(22);
+    public static final int NO_OF_BYTES_TO_ADD = 10000;
+    public static final int TIMEOUT_IN_SECONDS = 10;
+    public static final int ONE_SECOND_IN_MILLISECONDS = 1000;
 
     /**
      * This is the "disruptor" (processing engine) that will process
@@ -86,9 +89,8 @@ public class OcsTest {
         final OcsService ocsService = new OcsService(producer);
         ocsServer = new OcsServer(PORT, ocsService);
 
-        // We're just adding some bytes to it (1000 as it were since BYTES is 100)
         final OcsState ocsState = new OcsState();
-        ocsState.addDataBytes(MSISDN, 10 * BYTES);
+        ocsState.addDataBytes(MSISDN, NO_OF_BYTES_TO_ADD);
 
         // Events flow:
         //      Producer:(OcsService, Subscriber)
@@ -114,7 +116,7 @@ public class OcsTest {
 
     public abstract static class AbstactObserver<T> implements StreamObserver<T> {
         @Override
-        public final void onError(Throwable t) {
+        public final void onError(final Throwable t) {
             // Ignore errors
         }
 
@@ -174,7 +176,7 @@ public class OcsTest {
 
         // Wait for response (max ten seconds) and the pass the test only
         // if a response was actually generated (and cdl counted down to zero).
-        cdl.await(10, TimeUnit.SECONDS);
+        cdl.await(TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
 
         fetchDataBucketRequests.onCompleted();
 
@@ -229,17 +231,16 @@ public class OcsTest {
         final CountDownLatch cdl = new CountDownLatch(2);
 
         final StreamObserver<ActivateResponse> streamObserver =
-                new AbstactObserver<ActivateResponse>() {
-
-                    @Override
-                    public void onNext(ActivateResponse response) {
-                        if (!response.getMsisdn().isEmpty()) {
-                            LOG.info("Activate {}", response.getMsisdn());
-                            assertEquals(MSISDN, response.getMsisdn());
-                        }
-                        cdl.countDown();
+            new AbstactObserver<ActivateResponse>() {
+                @Override
+                public void onNext(ActivateResponse response) {
+                    if (!response.getMsisdn().isEmpty()) {
+                        LOG.info("Activate {}", response.getMsisdn());
+                        assertEquals(MSISDN, response.getMsisdn());
                     }
-                };
+                    cdl.countDown();
+                }
+            };
 
         // Get the default (singelton) instance of an activation request.
         final ActivateRequest activateRequest = ActivateRequest.getDefaultInstance();
@@ -249,15 +250,15 @@ public class OcsTest {
         ocsServiceStub.activate(activateRequest, streamObserver);
 
         // Wait for a second to let things get through, then move on.
-        Thread.sleep(1000);
+        Thread.sleep(ONE_SECOND_IN_MILLISECONDS);
 
         // Send a report using the producer to the pipeline that will
         // inject a PrimeEvent that will top up the data bundle balance.
-        producer.topupDataBundleBalanceEvent(MSISDN, 10 * BYTES);
+        producer.topupDataBundleBalanceEvent(MSISDN, NO_OF_BYTES_TO_ADD);
 
         // Now wait, again, for the latch to reach zero, and fail the test
         // ff it hasn't.
-        cdl.await(5, TimeUnit.SECONDS);
+        cdl.await(TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
         assertEquals(0, cdl.getCount());
     }
 
