@@ -1,22 +1,24 @@
-package com.telenordigital.prime.firebase;
+package com.telenordigital.prime.storage.entities;
 
-import com.telenordigital.prime.storage.entities.SubscriberImpl;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-public class SubscriberImplTest {
+public final class SubscriberImplTest {
 
+    private static final String NO_OF_BYTES_LEFT_KEY = "noOfBytesLeft";
+    private static final String MSISDN_KEY = "msisdn";
     private final SubscriberImpl fbs = new SubscriberImpl();
 
     @Test
     public void asMap() throws Exception {
         assertEquals(2, fbs.asMap().size());
-        assertTrue(fbs.asMap().containsKey("noOfBytesLeft"));
-        assertTrue(fbs.asMap().containsKey("msisdn"));
+        assertTrue(fbs.asMap().containsKey(NO_OF_BYTES_LEFT_KEY));
+        assertTrue(fbs.asMap().containsKey(MSISDN_KEY));
 
-        assertEquals(0L, fbs.asMap().get("noOfBytesLeft"));
-        assertEquals(null, fbs.asMap().get("msisdn"));
+        assertEquals(0L, fbs.asMap().get(NO_OF_BYTES_LEFT_KEY));
+        assertEquals(null, fbs.asMap().get(MSISDN_KEY));
     }
 
     @Test
