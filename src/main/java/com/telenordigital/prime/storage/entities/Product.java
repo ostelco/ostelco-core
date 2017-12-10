@@ -45,10 +45,9 @@ public final class Product {
     }
 
     public boolean isTopUpProject() {
-        return (productDescription instanceof TopUpProduct);
+        return productDescription instanceof TopUpProduct;
     }
-
-
+    
     @Override
     public String toString() {
         return "Product{"
