@@ -46,9 +46,12 @@ public final class OcsTest {
 
     // Request ID used by OCS gateway to correlate responses with requests
     private static final String REQUEST_ID = RandomStringUtils.randomAlphanumeric(22);
-    public static final int NO_OF_BYTES_TO_ADD = 10000;
-    public static final int TIMEOUT_IN_SECONDS = 10;
-    public static final int ONE_SECOND_IN_MILLISECONDS = 1000;
+
+    private static final int NO_OF_BYTES_TO_ADD = 10000;
+
+    private static final int TIMEOUT_IN_SECONDS = 10;
+
+    private static final int ONE_SECOND_IN_MILLISECONDS = 1000;
 
     /**
      * This is the "disruptor" (processing engine) that will process
@@ -212,7 +215,7 @@ public final class OcsTest {
 
         // Wait for response (max ten seconds) and the pass the test only
         // if a response was actually generated (and cdl counted down to zero).
-        cdl.await(5, TimeUnit.SECONDS);
+        cdl.await(TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
 
         returnUnusedDataRequests.onCompleted();
 
@@ -233,7 +236,7 @@ public final class OcsTest {
         final StreamObserver<ActivateResponse> streamObserver =
             new AbstactObserver<ActivateResponse>() {
                 @Override
-                public void onNext(ActivateResponse response) {
+                public void onNext(final ActivateResponse response) {
                     if (!response.getMsisdn().isEmpty()) {
                         LOG.info("Activate {}", response.getMsisdn());
                         assertEquals(MSISDN, response.getMsisdn());
