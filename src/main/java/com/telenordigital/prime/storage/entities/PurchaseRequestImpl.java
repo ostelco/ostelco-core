@@ -8,9 +8,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public final class PurchaseRequestImpl implements PurchaseRequest {
 
     private  String sku;
+
     private  String paymentToken;
+
     private  String msisdn;
+
     private  long millisSinceEpoch;
+    
     private  String id;
 
     public PurchaseRequestImpl(
