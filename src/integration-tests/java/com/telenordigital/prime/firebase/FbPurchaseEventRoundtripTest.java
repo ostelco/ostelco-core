@@ -1,7 +1,10 @@
 package com.telenordigital.prime.firebase;
 
 
-import com.telenordigital.prime.events.*;
+import com.telenordigital.prime.events.EventListeners;
+import com.telenordigital.prime.events.EventProcessor;
+import com.telenordigital.prime.events.EventProcessorException;
+import com.telenordigital.prime.events.OcsBalanceUpdater;
 import com.telenordigital.prime.ocs.state.OcsState;
 import com.telenordigital.prime.storage.ProductDescriptionCacheImpl;
 import com.telenordigital.prime.storage.Storage;
@@ -32,20 +35,22 @@ import static org.mockito.Mockito.verify;
 public final class FbPurchaseEventRoundtripTest {
 
     private static final String EPHERMERAL_MSISDN = "+4747116996";
-    public static final int MINIMUM_MILLIS_TO_SLEEP_AFTER_MAKING_PURCHASE_REQUEST = 3000;
-    public static final int SECONDS_TO_WAIT_FOR_SUBSCRIPTION_PROCESSING_TO_FINISH = 10;
+
+    private static final int MINIMUM_MILLIS_TO_SLEEP_AFTER_MAKING_PURCHASE_REQUEST = 3000;
+
+    private static final int SECONDS_TO_WAIT_FOR_SUBSCRIPTION_PROCESSING_TO_FINISH = 10;
 
     @Rule
     public MockitoRule mockitoRule = MockitoJUnit.rule();
-
-    private FbStorage fbStorage;
-
-    private Storage storage;
 
     @Mock
     public OcsBalanceUpdater ocsBalanceUpdater;
 
     private Collection<String> prids;
+
+    private FbStorage fbStorage;
+
+    private Storage storage;
 
     @Before
     public void setUp() throws Exception {
