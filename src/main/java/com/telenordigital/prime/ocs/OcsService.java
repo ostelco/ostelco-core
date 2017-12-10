@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * @author Vihang Patil <vihang.patil@telenordigital.com>
  */
@@ -20,14 +22,18 @@ public final class OcsService
 
     private static final Logger LOG = LoggerFactory.getLogger(OcsService.class);
 
-    private ConcurrentMap<String, StreamObserver<FetchDataBucketInfo>> fetchDataBucketClientMap = new ConcurrentHashMap<>();
-    private ConcurrentMap<String, StreamObserver<ReturnUnusedDataResponse>> returnUnusedDataClientMap = new ConcurrentHashMap<>();
+    private ConcurrentMap<String, StreamObserver<FetchDataBucketInfo>> fetchDataBucketClientMap;
+
+    private ConcurrentMap<String, StreamObserver<ReturnUnusedDataResponse>> returnUnusedDataClientMap;
+
     private StreamObserver<ActivateResponse> activateResponse;
 
     private final PrimeEventProducer producer;
 
     public OcsService(final PrimeEventProducer producer) {
-        this.producer = producer;
+        this.producer = checkNotNull(producer);
+        this.fetchDataBucketClientMap = new ConcurrentHashMap<>();
+        this.returnUnusedDataClientMap = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -71,9 +77,9 @@ public final class OcsService
             LOG.info("Returning returnUnusedData response :: for MSISDN: {}", event.getMsisdn());
 
             final ReturnUnusedDataResponse returnDataInfo =
-                    ReturnUnusedDataResponse.newBuilder()
-                            .setMsisdn(event.getMsisdn())
-                            .build();
+                    ReturnUnusedDataResponse.newBuilder().
+                            setMsisdn(event.getMsisdn()).
+                            build();
             final StreamObserver<ReturnUnusedDataResponse> returnUnusedDataResponse
                     = returnUnusedDataClientMap.get(event.getOcsgwStreamId());
             if (returnUnusedDataResponse != null) {
@@ -82,11 +88,16 @@ public final class OcsService
         }
     }
 
-    private void handleFetchDataBucket(PrimeEvent event) {
-        try {
-            LOG.info("Returning fetchDataBucket response :: for MSISDN: {} of {} bytes with request id: {}",
-                    event.getMsisdn(), event.getBucketBytes(), event.getOcsgwRequestId());
+    private void logEventPRocessing(final String msg, final PrimeEvent event) {
+        LOG.info("{} :: for MSISDN: {} of {} bytes with request id: {}",
+                msg, event.getMsisdn(), event.getBucketBytes(), event.getOcsgwRequestId());
+    }
 
+    private void handleFetchDataBucket(final PrimeEvent event) {
+
+        logEventPRocessing("Returning fetchDataBucket response", event);
+
+        try {
             final FetchDataBucketInfo fetchDataInfo =
                     FetchDataBucketInfo.newBuilder().
                             setMsisdn(event.getMsisdn()).
@@ -101,8 +112,7 @@ public final class OcsService
             }
         } catch (Exception e) {
             LOG.warn("Exception handling prime event", e);
-            LOG.warn("Exception returning fetchDataBucket response :: for MSISDN: {} of {} bytes with request id: {}",
-                    event.getMsisdn(), event.getBucketBytes(), event.getOcsgwRequestId());
+            logEventPRocessing("Exception returning fetchDataBucket response", event);
             // unable to send fetchDataBucket response. So, return bucket bytes back to data bundle.
             producer.returnUnusedDataBucketEvent(event.getMsisdn(), event.getBucketBytes(), null);
         }
@@ -126,18 +136,16 @@ public final class OcsService
         return new StreamObserver<FetchDataBucketInfo>() {
             @Override
             public void onNext(final FetchDataBucketInfo request) {
-                LOG.info("Received fetchDataBucket request :: for MSISDN: {} of {} bytes with request id: {}",
+                LOG.info("Received fetchDataBucket request :: "
+                                +  "for MSISDN: {} of {} bytes with request id: {}",
                         request.getMsisdn(), request.getBytes(), request.getRequestId());
 
                 producer.fetchDataBucketEvent(request, streamId);
             }
-
             @Override
             public void onError(final Throwable t) {
                 // TODO vihang: this is important?
-                // LOG.warn("Exception for fetchDataBucket", t);
             }
-
             @Override
             public void onCompleted() {
                 LOG.info("fetchDataBucket with streamId: {} completed", streamId);
