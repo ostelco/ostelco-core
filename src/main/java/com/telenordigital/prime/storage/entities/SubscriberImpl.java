@@ -15,7 +15,6 @@ public final class SubscriberImpl implements Subscriber {
         noOfBytesLeft = 0;
     }
 
-
     public String getFbKey() {
         return fbKey;
     }
@@ -41,7 +40,6 @@ public final class SubscriberImpl implements Subscriber {
     public void setNoOfBytesLeft(final long noOfBytesLeft) {
         this.noOfBytesLeft = noOfBytesLeft;
     }
-
 
     @Override
     public String toString() {
