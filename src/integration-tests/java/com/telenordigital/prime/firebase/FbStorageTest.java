@@ -31,7 +31,8 @@ public class FbStorageTest {
     private static final int MILLIS_TO_WAIT_WHEN_STARTING_UP = 3000;
 
     private static final long RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS = 92L;
-    public static final int TIMEOUT_IN_SECONDS = 10;
+
+    private static final int TIMEOUT_IN_SECONDS = 10;
 
     private FbStorage fbStorage;
 

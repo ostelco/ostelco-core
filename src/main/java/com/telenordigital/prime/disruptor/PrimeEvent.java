@@ -30,7 +30,7 @@ public final class PrimeEvent {
         return msisdn;
     }
 
-    public void setMsisdn(String msisdn) {
+    public void setMsisdn(final String msisdn) {
         this.msisdn = msisdn;
     }
 
@@ -38,7 +38,7 @@ public final class PrimeEvent {
         return bucketBytes;
     }
 
-    public void setBucketBytes(long bucketBytes) {
+    public void setBucketBytes(final long bucketBytes) {
         this.bucketBytes = bucketBytes;
     }
 
@@ -46,7 +46,7 @@ public final class PrimeEvent {
         return bundleBytes;
     }
 
-    public void setBundleBytes(long bundleBytes) {
+    public void setBundleBytes(final long bundleBytes) {
         this.bundleBytes = bundleBytes;
     }
 
@@ -54,7 +54,7 @@ public final class PrimeEvent {
         return ocsgwStreamId;
     }
 
-    public void setOcsgwStreamId(String ocsgwStreamId) {
+    public void setOcsgwStreamId(final String ocsgwStreamId) {
         this.ocsgwStreamId = ocsgwStreamId;
     }
 
@@ -70,7 +70,7 @@ public final class PrimeEvent {
         return messageType;
     }
 
-    public void setMessageType(PrimeEventMessageType messageType) {
+    public void setMessageType(final PrimeEventMessageType messageType) {
         this.messageType = messageType;
     }
 
