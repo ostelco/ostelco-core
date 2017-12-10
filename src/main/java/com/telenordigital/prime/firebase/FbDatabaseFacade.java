@@ -1,6 +1,5 @@
 package com.telenordigital.prime.firebase;
 
-
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -84,8 +83,7 @@ public final class FbDatabaseFacade {
         };
     }
 
-    private static AbstractChildEventListener
-    newChildListenerThatDispatchesPurchaseRequestToConsumer(
+    private static AbstractChildEventListener  listenerForPurchaseRequests(
             final BiFunction<String, PurchaseRequestImpl, Void> consumer) {
         checkNotNull(consumer);
         return new AbstractChildEventListener() {
@@ -167,7 +165,7 @@ public final class FbDatabaseFacade {
 
     public void addPurchaseRequestListener(
             final BiFunction<String, PurchaseRequestImpl, Void> consumer) {
-        addPurchaseEventListener(newChildListenerThatDispatchesPurchaseRequestToConsumer(consumer));
+        addPurchaseEventListener(listenerForPurchaseRequests(consumer));
     }
 
 
