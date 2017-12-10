@@ -5,9 +5,17 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseCredentials;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.FirebaseDatabase;
-import com.telenordigital.prime.events.*;
-import com.telenordigital.prime.storage.*;
-import com.telenordigital.prime.storage.entities.*;
+import com.telenordigital.prime.events.EventListeners;
+import com.telenordigital.prime.storage.ProductDescriptionCache;
+import com.telenordigital.prime.storage.ProductDescriptionCacheImpl;
+import com.telenordigital.prime.storage.PurchaseRequestListener;
+import com.telenordigital.prime.storage.Storage;
+import com.telenordigital.prime.storage.StorageException;
+import com.telenordigital.prime.storage.entities.Product;
+import com.telenordigital.prime.storage.entities.PurchaseRequest;
+import com.telenordigital.prime.storage.entities.RecordOfPurchaseImpl;
+import com.telenordigital.prime.storage.entities.Subscriber;
+import com.telenordigital.prime.storage.entities.SubscriberImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,6 +124,7 @@ public final class FbStorage implements Storage {
     public void updateDisplayDatastructure(final String msisdn) throws StorageException {
         checkNotNull(msisdn);
         final SubscriberImpl subscriber = (SubscriberImpl) getSubscriberFromMsisdn(msisdn);
+
         if (subscriber == null) {
             throw new StorageException("Unknown MSISDN " + msisdn);
         }
@@ -179,7 +188,7 @@ public final class FbStorage implements Storage {
     }
 
     // XXX Should this be removed? Doesn't look nice.
-    public static void handleDataChange(
+    static void handleDataChange(
             final DataSnapshot snapshot,
             final CountDownLatch cdl,
             final Set<String> result,

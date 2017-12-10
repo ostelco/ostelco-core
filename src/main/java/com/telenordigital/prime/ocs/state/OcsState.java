@@ -99,7 +99,7 @@ public final class OcsState implements EventHandler<PrimeEvent> {
         if (existing == 0) {
             return 0;
         }
-        
+
         final long consumed = Math.min(existing, bytes);
         dataPackMap.put(msisdn, existing - consumed);
         return consumed;
