@@ -349,7 +349,10 @@ public final class FbDatabaseFacade {
         return waitForSubscriberData(msisdn, cdl, result);
     }
 
-    private String logSubscriberDataProcessing(final String msisdn, final  String userData, final String result) {
+    private String logSubscriberDataProcessing(
+            final String msisdn,
+            final String userData,
+            final String result) {
         final String msg = "authorativeuserdata = '" + userData
                 + "', msisdn = '" + msisdn
                 + "' => " + result;
@@ -364,8 +367,8 @@ public final class FbDatabaseFacade {
         final String userDataString = authorativeUserData.toString();
         try {
             if (!cdl.await(10, TimeUnit.SECONDS)) {
-               final String msg  =  logSubscriberDataProcessing(
-                       msisdn, userDataString, "timeout");
+                final String msg = logSubscriberDataProcessing(
+                        msisdn, userDataString, "timeout");
                 throw new StorageException(msg);
             } else if (result.isEmpty()) {
                 logSubscriberDataProcessing(msisdn, userDataString, "null");
