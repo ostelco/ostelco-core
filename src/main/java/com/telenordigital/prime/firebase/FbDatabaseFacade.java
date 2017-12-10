@@ -41,6 +41,8 @@ public final class FbDatabaseFacade {
 
     private static final String MSISDN = "msisdn";
 
+    public static final int SECONDS_TO_WAIT_FOR_FIREBASE = 10;
+
     private final DatabaseReference authorativeUserData;
 
     private final DatabaseReference clientRequests;
@@ -241,22 +243,6 @@ public final class FbDatabaseFacade {
                 updateChildren(displayRep);
     }
 
-    public void removeSubscriberByMsisdn(final String msisdn) throws StorageException {
-        removeByMsisdn(authorativeUserData, msisdn);
-    }
-
-    private void removeByMsisdn(
-            final DatabaseReference dbref,
-            final String msisdn) throws StorageException {
-        checkNotNull(msisdn);
-        checkNotNull(dbref);
-        final String key = getKeyFromMsisdn(dbref, msisdn);
-        if (key != null) {
-            removeChild(dbref, key);
-        }
-    }
-
-
     private String getKeyFromLookupKey(
             final DatabaseReference dbref,
             final String msisdn,
@@ -279,7 +265,7 @@ public final class FbDatabaseFacade {
                     }
                 });
         try {
-            if (!cdl.await(10, TimeUnit.SECONDS)) {
+            if (!cdl.await(SECONDS_TO_WAIT_FOR_FIREBASE, TimeUnit.SECONDS)) {
                 throw new StorageException("Query timed out");
             } else if (result.isEmpty()) {
                 return null;
@@ -303,8 +289,23 @@ public final class FbDatabaseFacade {
         return getKeyFromLookupKey(dbref, msisdn, MSISDN);
     }
 
+    private void removeByMsisdn(
+            final DatabaseReference dbref,
+            final String msisdn) throws StorageException {
+        checkNotNull(msisdn);
+        checkNotNull(dbref);
+        final String key = getKeyFromMsisdn(dbref, msisdn);
+        if (key != null) {
+            removeChild(dbref, key);
+        }
+    }
+
     public void removeByMsisdn(final String msisdn) throws StorageException {
         removeByMsisdn(clientVisibleSubscriberRecords, msisdn);
+    }
+
+    public void removeSubscriberByMsisdn(final String msisdn) throws StorageException {
+        removeByMsisdn(authorativeUserData, msisdn);
     }
 
     public String injectPurchaseRequest(final PurchaseRequest pr) {
@@ -364,7 +365,7 @@ public final class FbDatabaseFacade {
             final Set<Subscriber> result) throws StorageException {
         final String userDataString = authorativeUserData.toString();
         try {
-            if (!cdl.await(10, TimeUnit.SECONDS)) {
+            if (!cdl.await(SECONDS_TO_WAIT_FOR_FIREBASE, TimeUnit.SECONDS)) {
                 final String msg = logSubscriberDataProcessing(
                         msisdn, userDataString, "timeout");
                 throw new StorageException(msg);
@@ -429,7 +430,7 @@ public final class FbDatabaseFacade {
         q.addListenerForSingleValueEvent(collectingVisitor);
 
         try {
-            cdl.await(10, TimeUnit.SECONDS);
+            cdl.await(SECONDS_TO_WAIT_FOR_FIREBASE, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             LOG.error("Failed to get all subscribers");
         }
@@ -470,12 +471,14 @@ public final class FbDatabaseFacade {
             final Consumer<DataSnapshot> snapshotConsumer) {
         return new AbstractChildEventListener() {
             @Override
-            public void onChildAdded(final DataSnapshot snapshot, final String previousChildName) {
+            public void onChildAdded(final DataSnapshot snapshot,
+                                     final String previousChildName) {
                 snapshotConsumer.accept(snapshot);
             }
 
             @Override
-            public void onChildChanged(final DataSnapshot snapshot, final String previousChildName) {
+            public void onChildChanged(final DataSnapshot snapshot,
+                                       final String previousChildName) {
                 snapshotConsumer.accept(snapshot);
             }
         };
