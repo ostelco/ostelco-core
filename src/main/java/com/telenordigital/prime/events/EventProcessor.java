@@ -2,7 +2,9 @@ package com.telenordigital.prime.events;
 
 import com.lmax.disruptor.EventHandler;
 import com.telenordigital.prime.disruptor.PrimeEvent;
-import com.telenordigital.prime.storage.*;
+import com.telenordigital.prime.storage.PurchaseRequestListener;
+import com.telenordigital.prime.storage.Storage;
+import com.telenordigital.prime.storage.StorageException;
 import com.telenordigital.prime.storage.entities.NotATopupProductException;
 import com.telenordigital.prime.storage.entities.Product;
 import com.telenordigital.prime.storage.entities.PurchaseRequest;
@@ -20,7 +22,9 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
     private static final Logger LOG = LoggerFactory.getLogger(EventProcessor.class);
 
     private final AtomicBoolean running = new AtomicBoolean(false);
+
     private final Storage storage;
+
     private final OcsBalanceUpdater ocsBalanceUpdater;
 
     public EventProcessor(
@@ -74,7 +78,7 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
         }
 
         if (!storage.isValidSKU(sku)) {
-            throw new com.telenordigital.prime.events.EventProcessorException("Not a valid SKU: " + sku, pr);
+            throw new EventProcessorException("Not a valid SKU: " + sku, pr);
         }
 
         return sku;
@@ -87,7 +91,7 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
         }
     }
 
-    private final void handleTopupProduct(
+    private void handleTopupProduct(
             final PurchaseRequest pr,
             final String msisdn,
             final TopUpProduct topup) throws EventProcessorException {
@@ -103,7 +107,9 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
         }
     }
 
-    private void setRemainingByMsisdn(final String msisdn, final long noOfBytes) throws EventProcessorException {
+    private void setRemainingByMsisdn(
+            final String msisdn,
+            final long noOfBytes) throws EventProcessorException {
         try {
             storage.setRemainingByMsisdn(msisdn, noOfBytes);
             storage.updateDisplayDatastructure(msisdn);
@@ -126,7 +132,8 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
 
         try {
             // XXX adding '+' prefix
-            LOG.info("Updating data bundle balance for {} to {} bytes", event.getMsisdn(), event.getBundleBytes());
+            LOG.info("Updating data bundle balance for {} to {} bytes",
+                    event.getMsisdn(), event.getBundleBytes());
             setRemainingByMsisdn("+" + event.getMsisdn(), event.getBundleBytes());
         } catch (Exception e) {
             LOG.warn("Exception handling prime event in EventProcessor", e);
