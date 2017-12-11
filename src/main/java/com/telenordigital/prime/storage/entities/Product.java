@@ -1,10 +1,8 @@
 package com.telenordigital.prime.storage.entities;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
 
-@Data @ToString @EqualsAndHashCode
+@Data
 public final class Product {
 
     /**
@@ -16,8 +14,7 @@ public final class Product {
      * A description intended to be useful for the consumer.
      */
     private final Object productDescription;
-
-
+    
     /**
      * Return product as an instance of a TopUpProduct, or throw
      * an exception if it can't be cast into a TopUpProduct.
