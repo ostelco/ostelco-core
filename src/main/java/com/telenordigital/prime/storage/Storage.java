@@ -12,10 +12,10 @@ import java.util.Collection;
  * Typically this interface will represent a fascade towards
  * multiple specialized storage solutions.
  */
-public interface Storage  extends ProductDescriptionCache {
+public interface Storage extends ProductDescriptionCache {
     // XXX Shouldn't extend anything I think.
 
-    String injectPurchaseRequest(final PurchaseRequest pr);
+    String injectPurchaseRequest(PurchaseRequest pr);
 
     void updateDisplayDatastructure(String msisdn) throws StorageException;
 
@@ -39,6 +39,5 @@ public interface Storage  extends ProductDescriptionCache {
     void removeRecordOfPurchaseById(String id);
 
     Collection<Subscriber> getAllSubscribers();
-
-    }
+}
 

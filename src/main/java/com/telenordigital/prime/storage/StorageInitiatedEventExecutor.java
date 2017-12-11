@@ -10,6 +10,7 @@ import java.util.concurrent.ThreadFactory;
 
 public final class StorageInitiatedEventExecutor {
     private ExecutorService executor;
+
     private final Object monitor = new Object();
 
     private final Set<PurchaseRequestListener> purchaseRequestListeners;

@@ -21,9 +21,9 @@ public class OcsStateTest {
     private static final int FINAL_NUMBER_OF_BYTES =
             INITIAL_NUMBER_OF_BYTES_TO_ADD + TOPUP_NUMBER_OF_BYTES_TO_ADD;
 
-    public static final int INITIAL_NUMBER_OF_BYTES_TO_REQUEST = 700;
+    private static final int INITIAL_NUMBER_OF_BYTES_TO_REQUEST = 700;
 
-    public static final int SECOND_NUMBER_OF_BYTES_TO_REQUEST = 400;
+    private static final int SECOND_NUMBER_OF_BYTES_TO_REQUEST = 400;
 
 
     @Test

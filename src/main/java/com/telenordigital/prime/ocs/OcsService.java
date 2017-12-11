@@ -178,29 +178,38 @@ public final class OcsService
         LOG.info("Starting returnUnusedData with streamId: {}", streamId);
 
         returnUnusedDataClientMap.put(streamId, returnUnusedDataResponse);
+        return new StreamObserverForReturnedUnusedData(streamId);
+    }
 
-        return new StreamObserver<ReturnUnusedDataRequest>() {
-            @Override
-            public void onNext(final ReturnUnusedDataRequest request) {
-                LOG.info("Received returnUnusedData request :: for MSISDN: {} of {} bytes",
-                        request.getMsisdn(), request.getBytes());
-                producer.returnUnusedDataBucketEvent(
-                        request.getMsisdn(),
-                        request.getBytes(),
-                        streamId);
-            }
+    private final class StreamObserverForReturnedUnusedData
+            implements StreamObserver<ReturnUnusedDataRequest> {
 
-            @Override
-            public void onError(final Throwable t) {
-                LOG.warn("Exception for returnUnusedData", t);
-            }
+        private final String streamId;
 
-            @Override
-            public void onCompleted() {
-                LOG.info("returnUnusedData with streamId: {} completed", streamId);
-                returnUnusedDataClientMap.remove(streamId);
-            }
-        };
+        StreamObserverForReturnedUnusedData(final String streamId) {
+            this.streamId = streamId;
+        }
+
+        @Override
+        public void onNext(final ReturnUnusedDataRequest request) {
+            LOG.info("Received returnUnusedData request :: for MSISDN: {} of {} bytes",
+                    request.getMsisdn(), request.getBytes());
+            producer.returnUnusedDataBucketEvent(
+                    request.getMsisdn(),
+                    request.getBytes(),
+                    streamId);
+        }
+
+        @Override
+        public void onError(final Throwable t) {
+            LOG.warn("Exception for returnUnusedData", t);
+        }
+
+        @Override
+        public void onCompleted() {
+            LOG.info("returnUnusedData with streamId: {} completed", streamId);
+            returnUnusedDataClientMap.remove(streamId);
+        }
     }
 
     /**
