@@ -11,5 +11,4 @@ public final class SubscriberImpl implements Subscriber {
     private String msisdn;
 
     private long noOfBytesLeft;
-    
 }

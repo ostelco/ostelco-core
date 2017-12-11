@@ -97,7 +97,7 @@ public final class EventProcessorTest {
         // Then verify that the appropriate actions has been performed.
         final long topupBytes;
         try {
-            topupBytes = DATA_TOPUP_3GB.asTopupProduct().getTopUpInBytes();
+            topupBytes = DATA_TOPUP_3GB.asTopupProduct().getNoOfBytes();
         } catch (NotATopupProductException ex) {
             throw new EventProcessorException("Programming error, this shouldn't happen", ex);
         }

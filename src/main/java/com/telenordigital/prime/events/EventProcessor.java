@@ -96,12 +96,12 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
             final String msisdn,
             final TopUpProduct topup) throws EventProcessorException {
         try {
-            LOG.info("    Handling topup product = " + pr);
+            LOG.info("Handling topup product = " + pr);
 
             storage.updateDisplayDatastructure(msisdn);
             storage.addRecordOfPurchaseByMsisdn(msisdn, pr.getSku(), pr.getMillisSinceEpoch());
             storage.removePurchaseRequestById(pr.getId());
-            ocsBalanceUpdater.updateBalance(msisdn, topup.getTopUpInBytes());
+            ocsBalanceUpdater.updateBalance(msisdn, topup.getNoOfBytes());
         } catch (StorageException e) {
             throw new EventProcessorException(e);
         }
