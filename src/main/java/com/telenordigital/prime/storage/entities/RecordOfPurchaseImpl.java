@@ -1,14 +1,18 @@
 package com.telenordigital.prime.storage.entities;
 
+import lombok.Data;
+import lombok.Getter;
+
 import static com.google.api.client.util.Preconditions.checkNotNull;
 
+@Data
 public final class RecordOfPurchaseImpl implements RecordOfPurchase {
 
-    private  final String msisdn;
+    @Getter private  final String msisdn;
 
-    private  final String sku;
+    @Getter private  final String sku;
 
-    private  final long millisSinceEpoch;
+    @Getter private  final long millisSinceEpoch;
 
     public RecordOfPurchaseImpl(
             final String msisdn,
@@ -17,20 +21,5 @@ public final class RecordOfPurchaseImpl implements RecordOfPurchase {
         this.msisdn = checkNotNull(msisdn);
         this.sku = checkNotNull(sku);
         this.millisSinceEpoch = millisSinceEpoch;
-    }
-
-    @Override
-    public String getMsisdn() {
-        return msisdn;
-    }
-
-    @Override
-    public long getMillisSinceEpoch() {
-        return millisSinceEpoch;
-    }
-
-    @Override
-    public String getSku() {
-        return sku;
     }
 }
