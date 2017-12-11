@@ -47,4 +47,3 @@ public final class SubscriberImplTest {
         assertEquals(msisdn, fbs.getMsisdn());
     }
 }
-
