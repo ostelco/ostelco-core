@@ -1,6 +1,7 @@
 # TODO
 
 * Start using something other than this file to track tasks.
+* Make Lombok work with unit tests run from IntelliJ.
 * Get rid of the interface/impl pattern that is present in
   the entities package.  Since we simplified the data classes
   with lombok, that separation gives little or no benefit.

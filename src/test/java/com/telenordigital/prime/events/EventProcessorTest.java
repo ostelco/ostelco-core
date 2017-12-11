@@ -24,6 +24,8 @@ import static org.mockito.Mockito.when;
 
 
 public final class EventProcessorTest {
+
+
     public static final String PAYMENT_TOKEN = "a weird token";
 
     private static final String MSISDN = "12345678";
