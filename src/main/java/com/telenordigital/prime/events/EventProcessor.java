@@ -118,7 +118,6 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
         }
     }
 
-
     @Override
     public void onEvent(
             final PrimeEvent event,

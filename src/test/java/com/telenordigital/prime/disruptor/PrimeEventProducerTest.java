@@ -1,6 +1,8 @@
 package com.telenordigital.prime.disruptor;
 
 import com.lmax.disruptor.RingBuffer;
+import com.lmax.disruptor.TimeoutException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -24,6 +26,13 @@ public class PrimeEventProducerTest {
     public void setUp() {
         this.disruptor = new PrimeDisruptor();
         this.pep = new PrimeEventProducer(disruptor.getDisruptor().getRingBuffer());
+        disruptor.getDisruptor();
+        disruptor.start();
+    }
+
+    @After
+    public void shutDown() throws TimeoutException {
+       disruptor.stop();
     }
 
     @Test
@@ -38,6 +47,8 @@ public class PrimeEventProducerTest {
         final String streamId = "xxxx";
 
         pep.returnUnusedDataBucketEvent(msisdn, bytes, streamId);
+
+        // XXX Add some verification for this test to make sense
     }
 
     @Test

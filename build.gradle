@@ -9,7 +9,6 @@ apply plugin: 'java'
 apply plugin: 'application'
 apply plugin: 'com.github.johnrengelman.shadow'
 
-
 sourceSets {
   test {
     java.srcDirs = ['src/test/java']
@@ -23,10 +22,7 @@ sourceSets {
   }
 }
 
-
-
 apply plugin: 'jacoco'
-
 
 dependencies {
     implementation project(':ocs-api')
@@ -36,12 +32,16 @@ dependencies {
     implementation 'com.google.guava:guava:21.0'
     testImplementation 'io.dropwizard:dropwizard-testing:1.1.4'
     testCompile group: 'org.mockito', name: 'mockito-core', version: '2.10.0'
-    compileOnly 'org.projectlombok:lombok:1.16.18'
-    apt "org.projectlombok:lombok:1.16.18"
+
+    // running edge (.19) since stable (.18) doesn't compile on intellij.
+    compileOnly 'org.projectlombok:lombok:1.16.19'
+    apt "org.projectlombok:lombok:1.16.19"
+
+    // compileOnly 'org.projectlombok:lombok:edge'
+    // apt "org.projectlombok:lombok:edge"
+    // https://mvnrepository.com/artifact/org.mockito/mockito-core
+    testCompile group: 'org.mockito', name: 'mockito-core', version: '2.1.0'
 }
-
-
-
 
 configurations {
   integrationImplementation.extendsFrom testImplementation
