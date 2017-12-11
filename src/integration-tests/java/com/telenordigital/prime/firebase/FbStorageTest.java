@@ -87,7 +87,8 @@ public class FbStorageTest {
 
     @Test
     public void updateDisplayDatastructureTest() throws StorageException {
-        storage.setRemainingByMsisdn(EPHERMERAL_MSISDN, RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS);
+        storage.setRemainingByMsisdn(EPHERMERAL_MSISDN,
+                RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS);
         storage.updateDisplayDatastructure(EPHERMERAL_MSISDN);
         // XXX  Some verification missing, but it looks like the right thing
     }

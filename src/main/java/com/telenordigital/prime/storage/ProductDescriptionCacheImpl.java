@@ -14,18 +14,18 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class ProductDescriptionCacheImpl implements ProductDescriptionCache {
 
-    public static ProductDescriptionCacheImpl getInstance() {
-        return INSTANCE;
-    }
-
-    private static final Logger LOG = LoggerFactory.getLogger(ProductDescriptionCacheImpl.class);
-
     public static final Product DATA_TOPUP_3GB =
             new Product("DataTopup3GB", new TopUpProduct(3000000000L));
+
+    private static final Logger LOG = LoggerFactory.getLogger(ProductDescriptionCacheImpl.class);
 
     private static final ProductDescriptionCacheImpl INSTANCE = new ProductDescriptionCacheImpl();
 
     private final Map<String, Product> products;
+
+    public static ProductDescriptionCacheImpl getInstance() {
+        return INSTANCE;
+    }
 
     private ProductDescriptionCacheImpl() {
         products = new TreeMap<>();

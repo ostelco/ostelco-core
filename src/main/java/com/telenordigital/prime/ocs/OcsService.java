@@ -116,7 +116,10 @@ public final class OcsService
             LOG.warn("Exception handling prime event", e);
             logEventPRocessing("Exception returning fetchDataBucket response", event);
             // unable to send fetchDataBucket response. So, return bucket bytes back to data bundle.
-            producer.returnUnusedDataBucketEvent(event.getMsisdn(), event.getBucketBytes(), null);
+            producer.returnUnusedDataBucketEvent(
+                    event.getMsisdn(),
+                    event.getBucketBytes(),
+                    null);
         }
     }
 
@@ -138,10 +141,11 @@ public final class OcsService
         return new StreamObserverForStreamWithId(streamId);
     }
 
-    private final class StreamObserverForStreamWithId implements StreamObserver<FetchDataBucketInfo> {
+    private final class StreamObserverForStreamWithId
+            implements StreamObserver<FetchDataBucketInfo> {
         private final  String streamId;
 
-        public StreamObserverForStreamWithId(final String streamId) {
+        StreamObserverForStreamWithId(final String streamId) {
             this.streamId = checkNotNull(streamId);
         }
 
@@ -153,6 +157,7 @@ public final class OcsService
 
             producer.fetchDataBucketEvent(request, streamId);
         }
+
         @Override
         public void onError(final Throwable t) {
             // TODO vihang: this is important?
