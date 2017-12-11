@@ -22,9 +22,11 @@ public final class OcsService
 
     private static final Logger LOG = LoggerFactory.getLogger(OcsService.class);
 
-    private ConcurrentMap<String, StreamObserver<FetchDataBucketInfo>> fetchDataBucketClientMap;
+    private ConcurrentMap<String, StreamObserver<FetchDataBucketInfo>>
+            fetchDataBucketClientMap;
 
-    private ConcurrentMap<String, StreamObserver<ReturnUnusedDataResponse>> returnUnusedDataClientMap;
+    private ConcurrentMap<String, StreamObserver<ReturnUnusedDataResponse>>
+            returnUnusedDataClientMap;
 
     private StreamObserver<ActivateResponse> activateResponse;
 
@@ -133,25 +135,33 @@ public final class OcsService
 
         fetchDataBucketClientMap.put(streamId, fetchDataBucketResponse);
 
-        return new StreamObserver<FetchDataBucketInfo>() {
-            @Override
-            public void onNext(final FetchDataBucketInfo request) {
-                LOG.info("Received fetchDataBucket request :: "
-                                +  "for MSISDN: {} of {} bytes with request id: {}",
-                        request.getMsisdn(), request.getBytes(), request.getRequestId());
+        return new StreamObserverForStreamWithId(streamId);
+    }
 
-                producer.fetchDataBucketEvent(request, streamId);
-            }
-            @Override
-            public void onError(final Throwable t) {
-                // TODO vihang: this is important?
-            }
-            @Override
-            public void onCompleted() {
-                LOG.info("fetchDataBucket with streamId: {} completed", streamId);
-                fetchDataBucketClientMap.remove(streamId);
-            }
-        };
+    private final class StreamObserverForStreamWithId implements StreamObserver<FetchDataBucketInfo> {
+        private final  String streamId;
+
+        public StreamObserverForStreamWithId(final String streamId) {
+            this.streamId = checkNotNull(streamId);
+        }
+
+        @Override
+        public void onNext(final FetchDataBucketInfo request) {
+            LOG.info("Received fetchDataBucket request :: "
+                            +  "for MSISDN: {} of {} bytes with request id: {}",
+                    request.getMsisdn(), request.getBytes(), request.getRequestId());
+
+            producer.fetchDataBucketEvent(request, streamId);
+        }
+        @Override
+        public void onError(final Throwable t) {
+            // TODO vihang: this is important?
+        }
+        @Override
+        public void onCompleted() {
+            LOG.info("fetchDataBucket with streamId: {} completed", streamId);
+            fetchDataBucketClientMap.remove(streamId);
+        }
     }
 
     /**

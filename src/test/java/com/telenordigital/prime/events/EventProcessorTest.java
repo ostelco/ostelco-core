@@ -27,8 +27,8 @@ public final class EventProcessorTest {
     public static final String PAYMENT_TOKEN = "a weird token";
 
     private static final String MSISDN = "12345678";
-    public static final String PLUS_USED_TO_BEGIN_INTERNATIONAL_PREFIX_IN_MSISSDN = "+";
-    public static final long NO_OF_BYTES = 4711L;
+    private static final String PLUS_USED_TO_BEGIN_INTERNATIONAL_PREFIX_IN_MSISSDN = "+";
+    private static final long NO_OF_BYTES = 4711L;
 
     @Rule
     public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -55,7 +55,7 @@ public final class EventProcessorTest {
 
 
 
-    private final static class DummyPurchaseRequest implements PurchaseRequest {
+    private static final class DummyPurchaseRequest implements PurchaseRequest {
 
         @Override
         public String getSku() {
@@ -117,7 +117,8 @@ public final class EventProcessorTest {
 
         processor.onEvent(primeEvent, 0L, false);
 
-        verify(storage).setRemainingByMsisdn(eq(PLUS_USED_TO_BEGIN_INTERNATIONAL_PREFIX_IN_MSISSDN + MSISDN), eq(noOfBytes));
+        verify(storage).setRemainingByMsisdn(eq(
+                PLUS_USED_TO_BEGIN_INTERNATIONAL_PREFIX_IN_MSISSDN + MSISDN), eq(noOfBytes));
     }
 
     @Test

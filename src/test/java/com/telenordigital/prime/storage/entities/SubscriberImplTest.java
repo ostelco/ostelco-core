@@ -8,7 +8,9 @@ import static org.junit.Assert.assertTrue;
 public final class SubscriberImplTest {
 
     private static final String NO_OF_BYTES_LEFT_KEY = "noOfBytesLeft";
+
     private static final String MSISDN_KEY = "msisdn";
+
     private final SubscriberImpl fbs = new SubscriberImpl();
 
     @Test

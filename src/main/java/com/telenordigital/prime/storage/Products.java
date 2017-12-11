@@ -29,7 +29,7 @@ public final class  Products {
      * Utility class shouldn't have public constructor.
      */
     private Products() {}
-    
+
     public static void addProduct(final Product p) {
         checkNotNull(p);
         PRODUCTS.put(p.getSku(), p);
