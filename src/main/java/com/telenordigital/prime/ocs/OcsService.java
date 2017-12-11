@@ -162,6 +162,7 @@ public final class OcsService
         public void onError(final Throwable t) {
             // TODO vihang: this is important?
         }
+
         @Override
         public void onCompleted() {
             LOG.info("fetchDataBucket with streamId: {} completed", streamId);

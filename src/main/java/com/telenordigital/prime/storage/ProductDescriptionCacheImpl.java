@@ -23,13 +23,13 @@ public final class ProductDescriptionCacheImpl implements ProductDescriptionCach
 
     private final Map<String, Product> products;
 
-    public static ProductDescriptionCacheImpl getInstance() {
-        return INSTANCE;
-    }
-
     private ProductDescriptionCacheImpl() {
         products = new TreeMap<>();
         products.put(DATA_TOPUP_3GB.getSku(), DATA_TOPUP_3GB);
+    }
+
+    public static ProductDescriptionCacheImpl getInstance() {
+        return INSTANCE;
     }
 
     public synchronized void addProduct(final Product p) {

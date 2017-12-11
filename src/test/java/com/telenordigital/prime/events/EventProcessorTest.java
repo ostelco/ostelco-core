@@ -27,7 +27,9 @@ public final class EventProcessorTest {
     public static final String PAYMENT_TOKEN = "a weird token";
 
     private static final String MSISDN = "12345678";
+
     private static final String PLUS_USED_TO_BEGIN_INTERNATIONAL_PREFIX_IN_MSISSDN = "+";
+
     private static final long NO_OF_BYTES = 4711L;
 
     @Rule
