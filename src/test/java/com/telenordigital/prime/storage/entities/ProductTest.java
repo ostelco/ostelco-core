@@ -3,10 +3,8 @@ package com.telenordigital.prime.storage.entities;
 import com.telenordigital.prime.storage.Products;
 import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public final class ProductTest {
 
@@ -16,15 +14,6 @@ public final class ProductTest {
 
     private final Product product = new Product(SKU, DESCRIPTION);
 
-    @Test
-    public void getSku() throws Exception {
-        assertEquals(SKU, product.getSku());
-    }
-
-    @Test
-    public void getProductDescription() throws Exception {
-        assertEquals(DESCRIPTION, product.getProductDescription());
-    }
 
     @Test(expected = NotATopupProductException.class)
     public void asTopupProductNot() throws Exception, NotATopupProductException {
@@ -40,10 +29,5 @@ public final class ProductTest {
     @Test
     public void isTopUpProject() throws Exception {
         assertFalse(product.isTopUpProject());
-    }
-
-    @Test
-    public void toStringTest() throws Exception {
-        assertNotNull(product.toString());
     }
 }
