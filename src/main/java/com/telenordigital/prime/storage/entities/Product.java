@@ -1,10 +1,8 @@
 package com.telenordigital.prime.storage.entities;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import lombok.Data;
 
-
-// XXX Do the singelton thing.  It's ugly, but for now that's ok.
-
+@Data
 public final class Product {
 
     /**
@@ -18,41 +16,20 @@ public final class Product {
     private final Object productDescription;
 
     /**
-     *
-     * @param sku A "Stock Keeping Unit" that is assumed to be a primary key for products.
-     * @param productDescription A description intended to be useful for the consumer.
+     * Return product as an instance of a TopUpProduct, or throw
+     * an exception if it can't be cast into a TopUpProduct.
+     * @return
+     * @throws NotATopupProductException
      */
-    public Product(final String sku, final Object productDescription) {
-        this.sku = checkNotNull(sku);
-        this.productDescription = checkNotNull(productDescription);
-    }
-
-    public String getSku() {
-        return sku;
-    }
-
-    public Object getProductDescription() {
-        return productDescription;
-    }
-
     public TopUpProduct asTopupProduct() throws NotATopupProductException{
         try {
             return (TopUpProduct) productDescription;
         } catch (ClassCastException ex) {
             throw new NotATopupProductException(ex);
         }
-
     }
 
     public boolean isTopUpProject() {
         return productDescription instanceof TopUpProduct;
-    }
-
-    @Override
-    public String toString() {
-        return "Product{"
-                + "sku='" + sku + '\''
-                + ", productDescription=" + productDescription
-                + '}';
     }
 }

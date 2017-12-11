@@ -2,11 +2,13 @@ plugins {
     id "java"
     id 'com.github.ben-manes.versions' version '0.15.0'
     id "com.github.johnrengelman.shadow" version "2.0.1"
+    id 'net.ltgt.apt' version '0.10'
 }
 
 apply plugin: 'java'
 apply plugin: 'application'
 apply plugin: 'com.github.johnrengelman.shadow'
+
 
 sourceSets {
   test {
@@ -34,7 +36,12 @@ dependencies {
     implementation 'com.google.guava:guava:21.0'
     testImplementation 'io.dropwizard:dropwizard-testing:1.1.4'
     testCompile group: 'org.mockito', name: 'mockito-core', version: '2.10.0'
+    compileOnly 'org.projectlombok:lombok:1.16.18'
+    apt "org.projectlombok:lombok:1.16.18"
 }
+
+
+
 
 configurations {
   integrationImplementation.extendsFrom testImplementation

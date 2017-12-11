@@ -118,7 +118,7 @@ public final class FbPurchaseEventRoundtripTest {
         final long topupBytes = ProductDescriptionCacheImpl.
                 DATA_TOPUP_3GB.
                 asTopupProduct().
-                getTopUpInBytes();
+                getNoOfBytes();
 
         // Then verify
         verify(ocsBalanceUpdater).updateBalance(eq(EPHERMERAL_MSISDN), eq(topupBytes));
