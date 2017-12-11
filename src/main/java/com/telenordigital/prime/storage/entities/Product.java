@@ -1,8 +1,10 @@
 package com.telenordigital.prime.storage.entities;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
-@Data
+@Data @ToString @EqualsAndHashCode
 public final class Product {
 
     /**
