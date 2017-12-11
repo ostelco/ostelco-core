@@ -22,7 +22,8 @@ public final class PrimeEventProducer {
             final String msisdn,
             final long bytes) {
 
-        long sequence = ringBuffer.next();
+        // Get index of next sequence in Ring Buffer
+        final long sequence = ringBuffer.next();
         try {
             final PrimeEvent event = ringBuffer.get(sequence);
             event.setMessageType(TOPUP_DATA_BUNDLE_BALANCE);
