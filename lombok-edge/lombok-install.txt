@@ -1,0 +1,1 @@
+mvn install:install-file -Dfile=lombok-edge.jar -DgroupId=org.projectlombok -DartifactId=lombok -Dversion=1.16.19 -Dpackaging=jar
