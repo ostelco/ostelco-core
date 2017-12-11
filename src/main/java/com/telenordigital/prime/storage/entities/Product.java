@@ -27,7 +27,6 @@ public final class Product {
         } catch (ClassCastException ex) {
             throw new NotATopupProductException(ex);
         }
-
     }
 
     public boolean isTopUpProject() {

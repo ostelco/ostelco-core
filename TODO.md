@@ -1,6 +1,9 @@
 # TODO
 
 * Start using something other than this file to track tasks.
+* Get rid of the interface/impl pattern that is present in
+  the entities package.  Since we simplified the data classes
+  with lombok, that separation gives little or no benefit.
 * Remove telenor digital references.
 * Increase unit testability, restructure to make almost everything
   unit testable.
