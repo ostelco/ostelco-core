@@ -41,7 +41,7 @@ public class PrimeEventProducerTest {
     private CountDownLatch cdl;
 
     private Set<PrimeEvent> result;
-    
+
 
     @Before
     public void setUp() {
