@@ -1,6 +1,5 @@
-package com.telenordigital.prime.ocs.state;
+package com.telenordigital.prime.ocs;
 
-import com.telenordigital.prime.ocs.OcsState;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
