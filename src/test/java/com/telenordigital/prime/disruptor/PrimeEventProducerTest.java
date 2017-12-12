@@ -1,6 +1,5 @@
 package com.telenordigital.prime.disruptor;
 
-import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
@@ -28,13 +27,13 @@ public class PrimeEventProducerTest {
 
     private static final long NO_OF_TOPUP_BYTES = 991234L;
 
-    private  static final String MSISDN = "+4711223344";
+    private static final String MSISDN = "+4711223344";
 
     private static final String STREAM_ID = "mySecret stream";
 
-    public static final int RING_BUFFER_SIZE = 256;
-    
-    public static final int TIMEOUT = 10;
+    private static final int RING_BUFFER_SIZE = 256;
+
+    private static final int TIMEOUT = 10;
 
     private  PrimeEventProducer pep;
 
@@ -45,19 +44,14 @@ public class PrimeEventProducerTest {
     private Set<PrimeEvent> result;
 
 
+
     @Before
     public void setUp() {
-        final EventFactory<PrimeEvent> eventFactory =
-                new EventFactory<PrimeEvent>() {
-                    @Override
-                    public PrimeEvent newInstance() {
-                        return new PrimeEvent();
-                    }
-                };
+
 
         final Executor executor = Executors.newCachedThreadPool();
         this.disruptor = new Disruptor<PrimeEvent>(
-                eventFactory,
+                (()-> new PrimeEvent()),
                 RING_BUFFER_SIZE,
                 Executors.defaultThreadFactory() );
         final RingBuffer<PrimeEvent> ringBuffer = disruptor.getRingBuffer();
