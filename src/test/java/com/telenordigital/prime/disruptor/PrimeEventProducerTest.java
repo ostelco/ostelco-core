@@ -38,6 +38,9 @@ public class PrimeEventProducerTest {
 
     private Executor executor;
 
+    private CountDownLatch cdl;
+    private Set<PrimeEvent> result;
+
 
     @Before
     public void setUp() {
@@ -52,6 +55,26 @@ public class PrimeEventProducerTest {
         this.disruptor = new Disruptor<PrimeEvent>(eventFactory, 256,   Executors.defaultThreadFactory() );
         this.ringBuffer = disruptor.getRingBuffer();
         this.pep = new PrimeEventProducer(ringBuffer);
+
+        this.cdl = new CountDownLatch(1);
+        this.result = new HashSet<>();
+        final EventHandler<PrimeEvent> eh = new EventHandler<PrimeEvent>() {
+            @Override
+            public void onEvent(final PrimeEvent event, long sequence, boolean endOfBatch) throws Exception {
+                result.add(event);
+                cdl.countDown();
+            }
+        };
+
+        disruptor.handleEventsWith(eh);
+        disruptor.start();
+    }
+
+    private PrimeEvent getCollectedEvent()  throws InterruptedException {
+        // Wait  wait a short while for the thing to process.
+        assertTrue(cdl.await(10, TimeUnit.SECONDS));
+        final PrimeEvent event = result.iterator().next();
+        return event;
     }
 
     @After
@@ -63,23 +86,11 @@ public class PrimeEventProducerTest {
     @Test
     public void topupDataBundleBalanceEvent() throws Exception {
 
-        final CountDownLatch cdl = new CountDownLatch(1);
-        final Set<PrimeEvent> result = new HashSet<>();
-        final EventHandler<PrimeEvent> eh = new EventHandler<PrimeEvent>() {
-            @Override
-            public void onEvent(final PrimeEvent event, long sequence, boolean endOfBatch) throws Exception {
-                result.add(event);
-                cdl.countDown();
-            }
-        };
-
-        disruptor.handleEventsWith(eh);
-        disruptor.start();
+        // Stimulating a response
         pep.topupDataBundleBalanceEvent(MSISDN, NO_OF_TOPUP_BYTES);
 
-        // Wait  wait a short while for the thing to process.
-        assertTrue(cdl.await(10, TimeUnit.SECONDS));
-        final PrimeEvent event = result.iterator().next();
+        // Collect an event (or fail trying).
+        final PrimeEvent event = getCollectedEvent();
 
         // Verify some behavior
         assertNotNull(event);
