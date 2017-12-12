@@ -9,7 +9,7 @@ import java.util.Collection;
  * Interface that abstracts the interactions that
  * are necessary to get/update customer data and to both
  * with respect to (slow) accounting, and (fast) provisioning.
- * Typically this interface will represent a fascade towards
+ * Typically this interface will represent a facade towards
  * multiple specialized storage solutions.
  */
 public interface Storage extends ProductDescriptionCache {
@@ -40,4 +40,3 @@ public interface Storage extends ProductDescriptionCache {
 
     Collection<Subscriber> getAllSubscribers();
 }
-

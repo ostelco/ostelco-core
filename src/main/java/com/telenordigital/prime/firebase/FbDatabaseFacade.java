@@ -225,7 +225,7 @@ public final class FbDatabaseFacade {
                 new RecordOfPurchaseImpl(msisdn, sku, millisSinceEpoch);
 
         // XXX This is iffy, why not send the purchase object
-        //     directly to the fascade.  Seems bogus, probably is.
+        //     directly to the facade.  Seems bogus, probably is.
         final Map<String, Object> asMap = purchase.asMap();
 
         return pushRecordOfPurchaseByMsisdn(asMap);
