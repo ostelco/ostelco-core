@@ -34,8 +34,8 @@ dependencies {
     testCompile group: 'org.mockito', name: 'mockito-core', version: '2.10.0'
 
     // running edge (.19) since stable (.18) doesn't compile on intellij.
-    compileOnly 'org.projectlombok:lombok:1.16.19'
-    apt "org.projectlombok:lombok:1.16.19"
+    compileOnly 'org.projectlombok:lombok:1.16.18'
+    apt "org.projectlombok:lombok:1.16.18"
 
     // compileOnly 'org.projectlombok:lombok:edge'
     // apt "org.projectlombok:lombok:edge"
