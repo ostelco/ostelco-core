@@ -336,18 +336,20 @@ public final class FbDatabaseFacade {
             final CountDownLatch cdl,
             final Set<String> result,
             final String msisdn) {
+        
         if (!snapshot.hasChildren()) {
             cdl.countDown();
-        } else {
-            try {
-                for (final DataSnapshot snap : snapshot.getChildren()) {
-                    final String key = snap.getKey();
-                    result.add(key);
-                    cdl.countDown();
-                }
-            } catch (Exception e) {
-                LOG.error("Something happened while looking for key = " + msisdn, e);
+            return;
+        }
+
+        try {
+            for (final DataSnapshot snap : snapshot.getChildren()) {
+                final String key = snap.getKey();
+                result.add(key);
+                cdl.countDown();
             }
+        } catch (Exception e) {
+            LOG.error("Something happened while looking for key = " + msisdn, e);
         }
     }
 
