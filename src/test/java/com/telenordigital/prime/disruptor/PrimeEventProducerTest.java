@@ -47,9 +47,9 @@ public class PrimeEventProducerTest {
     @Before
     public void setUp() {
         this.disruptor = new Disruptor<PrimeEvent>(
-                ()-> new PrimeEvent(),
-                RING_BUFFER_SIZE,
-                Executors.defaultThreadFactory() );
+            ()-> new PrimeEvent(),
+            RING_BUFFER_SIZE,
+            Executors.defaultThreadFactory() );
         final RingBuffer<PrimeEvent> ringBuffer = disruptor.getRingBuffer();
         this.pep = new PrimeEventProducer(ringBuffer);
 
