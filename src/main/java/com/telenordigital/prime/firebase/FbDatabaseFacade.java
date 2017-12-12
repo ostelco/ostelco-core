@@ -286,6 +286,14 @@ public final class FbDatabaseFacade {
         }
     }
 
+    public void removeByMsisdn(final String msisdn) throws StorageException {
+        removeByMsisdn(clientVisibleSubscriberRecords, msisdn);
+    }
+
+    public void removeSubscriberByMsisdn(final String msisdn) throws StorageException {
+        removeByMsisdn(authorativeUserData, msisdn);
+    }
+
 
 
     private String getKeyFromLookupKey(
@@ -341,14 +349,6 @@ public final class FbDatabaseFacade {
                 LOG.error("Something happened while looking for key = " + msisdn, e);
             }
         }
-    }
-
-    void removeByMsisdn(final String msisdn) throws StorageException {
-        removeByMsisdn(clientVisibleSubscriberRecords, msisdn);
-    }
-
-    void removeSubscriberByMsisdn(final String msisdn) throws StorageException {
-        removeByMsisdn(authorativeUserData, msisdn);
     }
 
     public String injectPurchaseRequest(final PurchaseRequest pr) {
