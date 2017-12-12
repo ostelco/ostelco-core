@@ -11,7 +11,6 @@ import org.junit.Test;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -47,11 +46,8 @@ public class PrimeEventProducerTest {
 
     @Before
     public void setUp() {
-
-
-        final Executor executor = Executors.newCachedThreadPool();
         this.disruptor = new Disruptor<PrimeEvent>(
-                (()-> new PrimeEvent()),
+                ()-> new PrimeEvent(),
                 RING_BUFFER_SIZE,
                 Executors.defaultThreadFactory() );
         final RingBuffer<PrimeEvent> ringBuffer = disruptor.getRingBuffer();
