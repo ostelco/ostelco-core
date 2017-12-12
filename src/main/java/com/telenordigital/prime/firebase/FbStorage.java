@@ -23,7 +23,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class FbStorage implements Storage {
-    
+
     private final ProductDescriptionCache productCache;
 
     private final FbDatabaseFacade facade;
