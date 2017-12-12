@@ -1,10 +1,24 @@
 package com.telenordigital.prime.disruptor;
 
+import com.lmax.disruptor.EventFactory;
+import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.RingBuffer;
-import com.lmax.disruptor.TimeoutException;
+import com.lmax.disruptor.dsl.Disruptor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import static com.telenordigital.prime.disruptor.PrimeEventMessageType.TOPUP_DATA_BUNDLE_BALANCE;
+import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class PrimeEventProducerTest {
 
@@ -15,29 +29,64 @@ public class PrimeEventProducerTest {
 
     private  PrimeEventProducer pep;
 
+    private Disruptor<PrimeEvent> disruptor;
 
 
     private RingBuffer<PrimeEvent> ringBuffer;
 
-    private PrimeDisruptor disruptor;
+    private EventFactory<PrimeEvent> eventFactory;
+
+    private Executor executor;
 
 
     @Before
     public void setUp() {
-        this.disruptor = new PrimeDisruptor();
-        this.pep = new PrimeEventProducer(disruptor.getDisruptor().getRingBuffer());
-        disruptor.getDisruptor();
-        disruptor.start();
+        this.eventFactory = new EventFactory<PrimeEvent>() {
+            @Override
+            public PrimeEvent newInstance() {
+                return new PrimeEvent();
+            }
+        };
+
+        this.executor = Executors.newCachedThreadPool();
+        this.disruptor = new Disruptor<PrimeEvent>(eventFactory, 256,   Executors.defaultThreadFactory() );
+        this.ringBuffer = disruptor.getRingBuffer();
+        this.pep = new PrimeEventProducer(ringBuffer);
     }
 
     @After
-    public void shutDown() throws TimeoutException {
-       disruptor.stop();
+    public void shutdDown() {
+        disruptor.shutdown();
     }
+    
 
     @Test
     public void topupDataBundleBalanceEvent() throws Exception {
+
+        final CountDownLatch cdl = new CountDownLatch(1);
+        final Set<PrimeEvent> result = new HashSet<>();
+        final EventHandler<PrimeEvent> eh = new EventHandler<PrimeEvent>() {
+            @Override
+            public void onEvent(final PrimeEvent event, long sequence, boolean endOfBatch) throws Exception {
+                result.add(event);
+                cdl.countDown();
+            }
+        };
+
+        disruptor.handleEventsWith(eh);
+        disruptor.start();
         pep.topupDataBundleBalanceEvent(MSISDN, NO_OF_TOPUP_BYTES);
+
+        // Wait  wait a short while for the thing to process.
+        assertTrue(cdl.await(10, TimeUnit.SECONDS));
+        final PrimeEvent event = result.iterator().next();
+
+        // Verify some behavior
+        assertNotNull(event);
+        assertEquals(MSISDN, event.getMsisdn());
+        assertEquals(NO_OF_TOPUP_BYTES, event.getBucketBytes());
+        assertEquals(TOPUP_DATA_BUNDLE_BALANCE, event.getMessageType());
+
     }
 
     @Test
