@@ -25,23 +25,20 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class PrimeEventProducerTest {
-    
+
     private static final long NO_OF_TOPUP_BYTES = 991234L;
 
     private  static final String MSISDN = "+4711223344";
 
     private static final String STREAM_ID = "mySecret stream";
 
+    public static final int RING_BUFFER_SIZE = 256;
+    
+    public static final int TIMEOUT = 10;
+
     private  PrimeEventProducer pep;
 
     private Disruptor<PrimeEvent> disruptor;
-
-
-    private RingBuffer<PrimeEvent> ringBuffer;
-
-    private EventFactory<PrimeEvent> eventFactory;
-
-    private Executor executor;
 
     private CountDownLatch cdl;
 
@@ -50,19 +47,20 @@ public class PrimeEventProducerTest {
 
     @Before
     public void setUp() {
-        this.eventFactory = new EventFactory<PrimeEvent>() {
-            @Override
-            public PrimeEvent newInstance() {
-                return new PrimeEvent();
-            }
-        };
+        final EventFactory<PrimeEvent> eventFactory =
+                new EventFactory<PrimeEvent>() {
+                    @Override
+                    public PrimeEvent newInstance() {
+                        return new PrimeEvent();
+                    }
+                };
 
-        this.executor = Executors.newCachedThreadPool();
+        final Executor executor = Executors.newCachedThreadPool();
         this.disruptor = new Disruptor<PrimeEvent>(
                 eventFactory,
-                256,
+                RING_BUFFER_SIZE,
                 Executors.defaultThreadFactory() );
-        this.ringBuffer = disruptor.getRingBuffer();
+        final RingBuffer<PrimeEvent> ringBuffer = disruptor.getRingBuffer();
         this.pep = new PrimeEventProducer(ringBuffer);
 
         this.cdl = new CountDownLatch(1);
@@ -84,7 +82,7 @@ public class PrimeEventProducerTest {
 
     private PrimeEvent getCollectedEvent()  throws InterruptedException {
         // Wait  wait a short while for the thing to process.
-        assertTrue(cdl.await(10, TimeUnit.SECONDS));
+        assertTrue(cdl.await(TIMEOUT, TimeUnit.SECONDS));
         assertFalse(result.isEmpty());
         final PrimeEvent event = result.iterator().next();
         assertNotNull(event);
