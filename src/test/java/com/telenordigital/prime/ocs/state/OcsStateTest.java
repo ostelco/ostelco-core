@@ -70,4 +70,13 @@ public class OcsStateTest {
         //... so at this point even requesting a single byte will fail.
         assertEquals(0, ocsState.consumeDataBytes(MSISDN, 1));
     }
+
+
+    @Test
+    public void testStripLeadingPlus() {
+        assertEquals("foo", OcsState.stripLeadingPlus("foo"));
+        final String string;
+        string = OcsState.stripLeadingPlus("+foo");
+        assertEquals("foo", string);
+    }
 }
