@@ -24,7 +24,7 @@ public class StorageInitiatedEventExecutorTest {
         executor.addPurchaseRequestListener(new PurchaseRequestListener() {
             @Override
             public void onPurchaseRequest(final PurchaseRequest request) {
-                if (request == req) {
+                if (req.equals(request)) {
                     cdl.countDown();
                 } else {
                     fail("Got the wrong purchase request.  How did that happen?");
