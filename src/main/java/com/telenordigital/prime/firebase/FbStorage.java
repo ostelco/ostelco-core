@@ -14,8 +14,6 @@ import com.telenordigital.prime.storage.entities.Product;
 import com.telenordigital.prime.storage.entities.PurchaseRequest;
 import com.telenordigital.prime.storage.entities.Subscriber;
 import com.telenordigital.prime.storage.entities.SubscriberImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -25,9 +23,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class FbStorage implements Storage {
-
-    private static final Logger LOG = LoggerFactory.getLogger(FbStorage.class);
-
+    
     private final ProductDescriptionCache productCache;
 
     private final FbDatabaseFacade facade;
