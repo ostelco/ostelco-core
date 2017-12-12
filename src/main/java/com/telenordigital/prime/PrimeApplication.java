@@ -13,7 +13,7 @@ import com.telenordigital.prime.events.EventListeners;
 import com.telenordigital.prime.firebase.FbStorage;
 import com.telenordigital.prime.ocs.OcsServer;
 import com.telenordigital.prime.ocs.OcsService;
-import com.telenordigital.prime.ocs.state.OcsState;
+import com.telenordigital.prime.ocs.OcsState;
 import io.dropwizard.Application;
 import io.dropwizard.setup.Environment;
 

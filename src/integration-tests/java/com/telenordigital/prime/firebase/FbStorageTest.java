@@ -1,7 +1,7 @@
 package com.telenordigital.prime.firebase;
 
 import com.telenordigital.prime.events.EventListeners;
-import com.telenordigital.prime.ocs.state.OcsState;
+import com.telenordigital.prime.ocs.OcsState;
 import com.telenordigital.prime.storage.Storage;
 import com.telenordigital.prime.storage.StorageException;
 import com.telenordigital.prime.storage.entities.PurchaseRequestImpl;

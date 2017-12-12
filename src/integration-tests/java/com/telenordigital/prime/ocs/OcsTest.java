@@ -3,7 +3,6 @@ package com.telenordigital.prime.ocs;
 import com.telenordigital.prime.disruptor.PrimeDisruptor;
 import com.telenordigital.prime.disruptor.PrimeEventProducer;
 import com.telenordigital.prime.ocs.OcsServiceGrpc.OcsServiceStub;
-import com.telenordigital.prime.ocs.state.OcsState;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;

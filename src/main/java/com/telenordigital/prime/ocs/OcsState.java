@@ -1,4 +1,4 @@
-package com.telenordigital.prime.ocs.state;
+package com.telenordigital.prime.ocs;
 
 import com.google.common.base.Preconditions;
 import com.lmax.disruptor.EventHandler;

@@ -1,6 +1,6 @@
 package com.telenordigital.prime.events;
 
-import com.telenordigital.prime.ocs.state.OcsState;
+import com.telenordigital.prime.ocs.OcsState;
 import com.telenordigital.prime.storage.ProductCatalogItem;
 import com.telenordigital.prime.storage.ProductDescriptionCacheImpl;
 import com.telenordigital.prime.storage.PurchaseRequestListener;

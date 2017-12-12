@@ -4,7 +4,7 @@ import com.telenordigital.prime.events.EventListeners;
 import com.telenordigital.prime.events.EventProcessor;
 import com.telenordigital.prime.events.EventProcessorException;
 import com.telenordigital.prime.events.OcsBalanceUpdater;
-import com.telenordigital.prime.ocs.state.OcsState;
+import com.telenordigital.prime.ocs.OcsState;
 import com.telenordigital.prime.storage.ProductDescriptionCacheImpl;
 import com.telenordigital.prime.storage.Storage;
 import com.telenordigital.prime.storage.StorageException;
