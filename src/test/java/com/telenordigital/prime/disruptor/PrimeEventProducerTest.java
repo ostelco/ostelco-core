@@ -129,3 +129,4 @@ public class PrimeEventProducerTest {
         assertEquals(FETCH_DATA_BUCKET, event.getMessageType());
     }
 }
+
