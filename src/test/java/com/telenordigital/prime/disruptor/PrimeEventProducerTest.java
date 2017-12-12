@@ -15,7 +15,9 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static com.telenordigital.prime.disruptor.PrimeEventMessageType.RETURN_UNUSED_DATA_BUCKET;
 import static com.telenordigital.prime.disruptor.PrimeEventMessageType.TOPUP_DATA_BUNDLE_BALANCE;
+import static junit.framework.Assert.assertFalse;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -73,12 +75,14 @@ public class PrimeEventProducerTest {
     private PrimeEvent getCollectedEvent()  throws InterruptedException {
         // Wait  wait a short while for the thing to process.
         assertTrue(cdl.await(10, TimeUnit.SECONDS));
+        assertFalse(result.isEmpty());
         final PrimeEvent event = result.iterator().next();
+        assertNotNull(event);
         return event;
     }
 
     @After
-    public void shutdDown() {
+    public void shutDown() {
         disruptor.shutdown();
     }
     
@@ -93,7 +97,6 @@ public class PrimeEventProducerTest {
         final PrimeEvent event = getCollectedEvent();
 
         // Verify some behavior
-        assertNotNull(event);
         assertEquals(MSISDN, event.getMsisdn());
         assertEquals(NO_OF_TOPUP_BYTES, event.getBucketBytes());
         assertEquals(TOPUP_DATA_BUNDLE_BALANCE, event.getMessageType());
@@ -102,13 +105,16 @@ public class PrimeEventProducerTest {
 
     @Test
     public void returnUnusedDataBucketEvent() throws Exception {
-        final String msisdn = "22222";
-        final long bytes = 999L;
         final String streamId = "xxxx";
 
-        pep.returnUnusedDataBucketEvent(msisdn, bytes, streamId);
+        pep.returnUnusedDataBucketEvent(MSISDN, NO_OF_TOPUP_BYTES, streamId);
 
-        // XXX Add some verification for this test to make sense
+        // Collect an event (or fail trying).
+        final PrimeEvent event = getCollectedEvent();
+        assertEquals(MSISDN, event.getMsisdn());
+        assertEquals(NO_OF_TOPUP_BYTES, event.getBucketBytes());
+        assertEquals(streamId, event.getOcsgwStreamId());
+        assertEquals(RETURN_UNUSED_DATA_BUCKET, event.getMessageType());
     }
 
     @Test
