@@ -34,7 +34,7 @@ final class ActivateResponseHolder {
         }
     }
 
-    public void activateOnNextResponse(final ActivateResponse response) {
+    public void onNextResponse(final ActivateResponse response) {
         readLock.lock();
         try {
             if (activateResponse != null) {

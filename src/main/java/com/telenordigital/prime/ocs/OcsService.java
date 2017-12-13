@@ -66,8 +66,7 @@ public final class OcsService  {
     }
 
     protected void activateOnNextResponse(final ActivateResponse response) {
-        this.activateResponseHolder.activateOnNextResponse(response);
-
+        this.activateResponseHolder.onNextResponse(response);
     }
 
     protected void updateActivateResponse(final StreamObserver<ActivateResponse> activateResponse) {
