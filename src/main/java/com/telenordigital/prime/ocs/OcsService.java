@@ -39,8 +39,8 @@ public final class OcsService  {
         this.producer = checkNotNull(producer);
         this.fetchDataBucketClientMap = new ConcurrentHashMap<>();
         this.returnUnusedDataClientMap = new ConcurrentHashMap<>();
-        this.eventHandler = new EventHandlerImpl(this); // activateResponse, returnUnusedDataClientMap, fetchDataBucketClientMap, producer);
-        this.ocsServerImplBaseImpl = new OcsServerImplBaseImpl();
+        this.eventHandler = new EventHandlerImpl(this);
+        this.ocsServerImplBaseImpl = new OcsServerImplBaseImpl(this );
     }
 
     public EventHandler<PrimeEvent> asEventHandler() {
@@ -156,6 +156,7 @@ public final class OcsService  {
 
     private void activateOnNextResponse(ActivateResponse response) {
         // XXX Not threadsafe!
+        // XXX Use AtomicReference
         if (activateResponse != null) {
             activateResponse.onNext(response);
         }
@@ -165,8 +166,45 @@ public final class OcsService  {
         return this.ocsServerImplBaseImpl;
     }
 
+    private void updateActivateResponse(StreamObserver<ActivateResponse> activateResponse) {
+        // XXX Not threadsafe!
+        this.activateResponse = activateResponse;
+    }
 
-    public class OcsServerImplBaseImpl extends OcsServiceGrpc.OcsServiceImplBase {
+    private void removeUnusedDataClient(String streamId) {
+        returnUnusedDataClientMap.remove(streamId);
+    }
+
+    private void returnUnusedDataBucketEvent(String msisdn, long bytes, String streamId) {
+        producer.returnUnusedDataBucketEvent(
+                msisdn, bytes, streamId);
+    }
+
+    private void registerUnusedDataClient(String streamId, StreamObserver<ReturnUnusedDataResponse> returnUnusedDataResponse) {
+        returnUnusedDataClientMap.put(streamId, returnUnusedDataResponse);
+    }
+
+    private void deleteDataBucketClient(String streamId) {
+        fetchDataBucketClientMap.remove(streamId);
+    }
+
+    private  void fetchDataBucketEvent(FetchDataBucketInfo request, String streamId) {
+        producer.fetchDataBucketEvent(request, streamId);
+    }
+
+    private void putDataBucketClient(String streamId, StreamObserver<FetchDataBucketInfo> fetchDataBucketResponse) {
+        fetchDataBucketClientMap.put(streamId, fetchDataBucketResponse);
+    }
+
+    public static class OcsServerImplBaseImpl extends OcsServiceGrpc.OcsServiceImplBase {
+
+
+        private final  OcsService ocsService;
+
+        public OcsServerImplBaseImpl(final OcsService ocsService) {
+            this.ocsService = checkNotNull(ocsService);
+        }
+
         /**
          * Method to fetch data bucket.
          *
@@ -180,7 +218,7 @@ public final class OcsService  {
 
             LOG.info("Starting fetchDataBucket with streamId: {}", streamId);
 
-            fetchDataBucketClientMap.put(streamId, fetchDataBucketResponse);
+            ocsService.putDataBucketClient(streamId, fetchDataBucketResponse);
 
             return new StreamObserverForStreamWithId(streamId);
         }
@@ -199,7 +237,7 @@ public final class OcsService  {
                                 + "for MSISDN: {} of {} bytes with request id: {}",
                         request.getMsisdn(), request.getBytes(), request.getRequestId());
 
-                producer.fetchDataBucketEvent(request, streamId);
+                ocsService.fetchDataBucketEvent(request, streamId);
             }
 
             @Override
@@ -210,7 +248,7 @@ public final class OcsService  {
             @Override
             public void onCompleted() {
                 LOG.info("fetchDataBucket with streamId: {} completed", streamId);
-                fetchDataBucketClientMap.remove(streamId);
+                ocsService.deleteDataBucketClient(streamId);
             }
         }
 
@@ -227,7 +265,7 @@ public final class OcsService  {
 
             LOG.info("Starting returnUnusedData with streamId: {}", streamId);
 
-            returnUnusedDataClientMap.put(streamId, returnUnusedDataResponse);
+            ocsService.registerUnusedDataClient(streamId, returnUnusedDataResponse);
             return new StreamObserverForReturnedUnusedData(streamId);
         }
 
@@ -244,7 +282,7 @@ public final class OcsService  {
             public void onNext(final ReturnUnusedDataRequest request) {
                 LOG.info("Received returnUnusedData request :: for MSISDN: {} of {} bytes",
                         request.getMsisdn(), request.getBytes());
-                producer.returnUnusedDataBucketEvent(
+                ocsService.returnUnusedDataBucketEvent(
                         request.getMsisdn(),
                         request.getBytes(),
                         streamId);
@@ -258,7 +296,7 @@ public final class OcsService  {
             @Override
             public void onCompleted() {
                 LOG.info("returnUnusedData with streamId: {} completed", streamId);
-                returnUnusedDataClientMap.remove(streamId);
+                ocsService.removeUnusedDataClient(streamId);
             }
         }
 
@@ -276,7 +314,7 @@ public final class OcsService  {
             // The `ActivateRequest` does not have any fields, and so it is ignored.
             // In return, the server starts to send "stream" of `ActivateResponse`
             // which is actually a "request".
-            OcsService.this.activateResponse = activateResponse;
+            ocsService.updateActivateResponse(activateResponse);
 
             // After the connection, the first response will have empty string as MSISDN.
             // It should to be ignored by OCS gateway.
