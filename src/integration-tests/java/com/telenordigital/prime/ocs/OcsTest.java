@@ -89,7 +89,7 @@ public final class OcsTest {
         // Set up the gRPC server at a particular port with a particular
         // service, that is connected to the processing pipeline.
         final OcsService ocsService = new OcsService(producer);
-        ocsServer = new OcsServer(PORT, ocsService);
+        ocsServer = new OcsServer(PORT, ocsService.asOcsServiceImplBase());
 
         final OcsState ocsState = new OcsState();
         ocsState.addDataBytes(MSISDN, NO_OF_BYTES_TO_ADD);

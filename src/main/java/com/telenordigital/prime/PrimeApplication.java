@@ -41,7 +41,7 @@ public final class PrimeApplication extends Application<PrimeConfiguration> {
         final OcsService ocsService = new OcsService(producer);
 
         // OcsServer assigns OcsService as handler for gRPC requests
-        final OcsServer server = new OcsServer(8082, ocsService);
+        final OcsServer server = new OcsServer(8082, ocsService.asOcsServiceImplBase());
 
         final OcsState ocsState = new OcsState();
 
