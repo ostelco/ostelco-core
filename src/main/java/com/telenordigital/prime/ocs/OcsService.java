@@ -16,10 +16,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * @author Vihang Patil <vihang.patil@telenordigital.com>
  */
-public final class OcsService
-        // extends OcsServiceGrpc.OcsServiceImplBase
-        // implements EventHandler<PrimeEvent>
-    {
+public final class OcsService  {
 
     private static final Logger LOG = LoggerFactory.getLogger(OcsService.class);
 
@@ -35,7 +32,7 @@ public final class OcsService
 
     private EventHandler<PrimeEvent> eventHandler;
 
-    OcsServiceGrpc.OcsServiceImplBase ocsServerImplBaseImpl;
+    private OcsServiceGrpc.OcsServiceImplBase ocsServerImplBaseImpl;
 
     public OcsService(final PrimeEventProducer producer) {
         this.producer = checkNotNull(producer);
