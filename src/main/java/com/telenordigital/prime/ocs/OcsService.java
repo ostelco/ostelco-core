@@ -20,25 +20,26 @@ public final class OcsService  {
 
     private static final Logger LOG = LoggerFactory.getLogger(OcsService.class);
 
-    private ConcurrentMap<String, StreamObserver<FetchDataBucketInfo>>
+    private final  ConcurrentMap<String, StreamObserver<FetchDataBucketInfo>>
             fetchDataBucketClientMap;
 
-    private ConcurrentMap<String, StreamObserver<ReturnUnusedDataResponse>>
+    private final ConcurrentMap<String, StreamObserver<ReturnUnusedDataResponse>>
             returnUnusedDataClientMap;
 
+    // XXX Mutable!
     private StreamObserver<ActivateResponse> activateResponse;
 
     private final PrimeEventProducer producer;
 
-    private EventHandler<PrimeEvent> eventHandler;
+    private final EventHandler<PrimeEvent> eventHandler;
 
-    private OcsServiceGrpc.OcsServiceImplBase ocsServerImplBaseImpl;
+    private final OcsServiceGrpc.OcsServiceImplBase ocsServerImplBaseImpl;
 
     public OcsService(final PrimeEventProducer producer) {
         this.producer = checkNotNull(producer);
         this.fetchDataBucketClientMap = new ConcurrentHashMap<>();
         this.returnUnusedDataClientMap = new ConcurrentHashMap<>();
-        this.eventHandler = new EventHandlerImpl();
+        this.eventHandler = new EventHandlerImpl(this); // activateResponse, returnUnusedDataClientMap, fetchDataBucketClientMap, producer);
         this.ocsServerImplBaseImpl = new OcsServerImplBaseImpl();
     }
 
@@ -46,7 +47,14 @@ public final class OcsService  {
         return eventHandler;
     }
 
-    public final class EventHandlerImpl implements EventHandler<PrimeEvent> {
+    private  final static  class EventHandlerImpl implements EventHandler<PrimeEvent> {
+
+       private final  OcsService ocsService;
+
+        public EventHandlerImpl(final OcsService ocsService) {
+            this.ocsService = checkNotNull(ocsService);
+        }
+
         @Override
         public void onEvent(
                 final PrimeEvent event,
@@ -78,9 +86,7 @@ public final class OcsService  {
                     ActivateResponse.newBuilder().
                             setMsisdn(event.getMsisdn()).
                             build();
-            if (activateResponse != null) {
-                activateResponse.onNext(response);
-            }
+            ocsService.activateOnNextResponse(response);
         }
 
         private void handleReturnUnusedDataBucket(final PrimeEvent event) {
@@ -92,7 +98,7 @@ public final class OcsService  {
                                 setMsisdn(event.getMsisdn()).
                                 build();
                 final StreamObserver<ReturnUnusedDataResponse> returnUnusedDataResponse
-                        = returnUnusedDataClientMap.get(event.getOcsgwStreamId());
+                       =  ocsService.getUnusedDataClientForStream(event.getOcsgwStreamId());
                 if (returnUnusedDataResponse != null) {
                     returnUnusedDataResponse.onNext(returnDataInfo);
                 }
@@ -117,7 +123,8 @@ public final class OcsService  {
                                 build();
 
                 final StreamObserver<FetchDataBucketInfo> fetchDataBucketResponse
-                        = fetchDataBucketClientMap.get(event.getOcsgwStreamId());
+                = ocsService.getDataBucketClientForStream(event.getOcsgwStreamId());
+
                 if (fetchDataBucketResponse != null) {
                     fetchDataBucketResponse.onNext(fetchDataInfo);
                 }
@@ -125,11 +132,32 @@ public final class OcsService  {
                 LOG.warn("Exception handling prime event", e);
                 logEventPRocessing("Exception returning fetchDataBucket response", event);
                 // unable to send fetchDataBucket response. So, return bucket bytes back to data bundle.
-                producer.returnUnusedDataBucketEvent(
+                ocsService.returnUnusedDataBucketEvent(
                         event.getMsisdn(),
-                        event.getBucketBytes(),
-                        null);
+                        event.getBucketBytes());
             }
+        }
+    }
+
+    private void returnUnusedDataBucketEvent(String msisdn, long bucketBytes) {
+        producer.returnUnusedDataBucketEvent(
+                msisdn,
+                bucketBytes,
+                null);
+    }
+
+    private StreamObserver<FetchDataBucketInfo> getDataBucketClientForStream(String streamId) {
+         return fetchDataBucketClientMap.get(streamId);
+    }
+
+    private StreamObserver<ReturnUnusedDataResponse> getUnusedDataClientForStream(String streamId) {
+         return returnUnusedDataClientMap.get(streamId);
+    }
+
+    private void activateOnNextResponse(ActivateResponse response) {
+        // XXX Not threadsafe!
+        if (activateResponse != null) {
+            activateResponse.onNext(response);
         }
     }
 
