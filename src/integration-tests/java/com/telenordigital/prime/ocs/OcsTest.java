@@ -98,7 +98,7 @@ public final class OcsTest {
         //      Producer:(OcsService, Subscriber)
         //          -> Handler:(OcsState)
         //              -> Handler:(OcsService, Subscriber)
-        disruptor.getDisruptor().handleEventsWith(ocsState).then(ocsService);
+        disruptor.getDisruptor().handleEventsWith(ocsState).then(ocsService.asEventHandler());
 
         // start disruptor and ocs services.
         disruptor.start();

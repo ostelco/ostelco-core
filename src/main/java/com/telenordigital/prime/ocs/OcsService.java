@@ -18,7 +18,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public final class OcsService
         // extends OcsServiceGrpc.OcsServiceImplBase
-        implements EventHandler<PrimeEvent> {
+        // implements EventHandler<PrimeEvent>
+    {
 
     private static final Logger LOG = LoggerFactory.getLogger(OcsService.class);
 
@@ -44,12 +45,8 @@ public final class OcsService
         this.ocsServerImplBaseImpl = new OcsServerImplBaseImpl();
     }
 
-    @Override
-    public void onEvent(
-            final PrimeEvent event,
-            final long sequence,
-            final boolean endOfBatch) throws Exception {
-        eventHandler.onEvent(event, sequence, endOfBatch);
+    public EventHandler<PrimeEvent> asEventHandler() {
+        return eventHandler;
     }
 
     public final class EventHandlerImpl implements EventHandler<PrimeEvent> {

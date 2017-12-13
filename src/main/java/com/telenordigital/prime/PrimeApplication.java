@@ -70,7 +70,7 @@ public final class PrimeApplication extends Application<PrimeConfiguration> {
         //                  -> Clear
         disruptor.getDisruptor().
                 handleEventsWith(ocsState).
-                then(ocsService, eventProcessor).
+                then(ocsService.asEventHandler(), eventProcessor).
                 then(new ClearingEventHandler());
 
         // dropwizard starts event processor
