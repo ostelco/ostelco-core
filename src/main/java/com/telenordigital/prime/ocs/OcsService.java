@@ -4,7 +4,6 @@ import com.lmax.disruptor.EventHandler;
 import com.telenordigital.prime.disruptor.PrimeEvent;
 import com.telenordigital.prime.disruptor.PrimeEventProducer;
 import io.grpc.stub.StreamObserver;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,8 +25,7 @@ public final class OcsService  {
     private final ConcurrentMap<String, StreamObserver<ReturnUnusedDataResponse>>
             returnUnusedDataClientMap;
 
-    // XXX Mutable!
-    private StreamObserver<ActivateResponse> activateResponse;
+    private ActivateResponseHolder activateResponseHolder;
 
     private final PrimeEventProducer producer;
 
@@ -41,288 +39,72 @@ public final class OcsService  {
         this.returnUnusedDataClientMap = new ConcurrentHashMap<>();
         this.eventHandler = new EventHandlerImpl(this);
         this.ocsServerImplBaseImpl = new OcsServerImplBaseImpl(this );
+        this.activateResponseHolder = new ActivateResponseHolder();
     }
 
     public EventHandler<PrimeEvent> asEventHandler() {
         return eventHandler;
     }
 
-    private  final static  class EventHandlerImpl implements EventHandler<PrimeEvent> {
-
-       private final  OcsService ocsService;
-
-        public EventHandlerImpl(final OcsService ocsService) {
-            this.ocsService = checkNotNull(ocsService);
-        }
-
-        @Override
-        public void onEvent(
-                final PrimeEvent event,
-                final long sequence,
-                final boolean endOfBatch) throws Exception {
-
-            try {
-                switch (event.getMessageType()) {
-                    case FETCH_DATA_BUCKET:
-                        handleFetchDataBucket(event);
-                        break;
-
-                    case RETURN_UNUSED_DATA_BUCKET:
-                        handleReturnUnusedDataBucket(event);
-                        break;
-
-                    case TOPUP_DATA_BUNDLE_BALANCE:
-                        handleTopupDataBundleBalance(event);
-                        break;
-                    default:
-                }
-            } catch (Exception e) {
-                LOG.warn("Exception handling prime event in OcsService", e);
-            }
-        }
-
-        private void handleTopupDataBundleBalance(final PrimeEvent event) {
-            final ActivateResponse response =
-                    ActivateResponse.newBuilder().
-                            setMsisdn(event.getMsisdn()).
-                            build();
-            ocsService.activateOnNextResponse(response);
-        }
-
-        private void handleReturnUnusedDataBucket(final PrimeEvent event) {
-            if (event.getOcsgwStreamId() != null) {
-                LOG.info("Returning returnUnusedData response :: for MSISDN: {}", event.getMsisdn());
-
-                final ReturnUnusedDataResponse returnDataInfo =
-                        ReturnUnusedDataResponse.newBuilder().
-                                setMsisdn(event.getMsisdn()).
-                                build();
-                final StreamObserver<ReturnUnusedDataResponse> returnUnusedDataResponse
-                       =  ocsService.getUnusedDataClientForStream(event.getOcsgwStreamId());
-                if (returnUnusedDataResponse != null) {
-                    returnUnusedDataResponse.onNext(returnDataInfo);
-                }
-            }
-        }
-
-        private void logEventPRocessing(final String msg, final PrimeEvent event) {
-            LOG.info("{} :: for MSISDN: {} of {} bytes with request id: {}",
-                    msg, event.getMsisdn(), event.getBucketBytes(), event.getOcsgwRequestId());
-        }
-
-        private void handleFetchDataBucket(final PrimeEvent event) {
-
-            logEventPRocessing("Returning fetchDataBucket response", event);
-
-            try {
-                final FetchDataBucketInfo fetchDataInfo =
-                        FetchDataBucketInfo.newBuilder().
-                                setMsisdn(event.getMsisdn()).
-                                setBytes(event.getBucketBytes()).
-                                setRequestId(event.getOcsgwRequestId()).
-                                build();
-
-                final StreamObserver<FetchDataBucketInfo> fetchDataBucketResponse
-                = ocsService.getDataBucketClientForStream(event.getOcsgwStreamId());
-
-                if (fetchDataBucketResponse != null) {
-                    fetchDataBucketResponse.onNext(fetchDataInfo);
-                }
-            } catch (Exception e) {
-                LOG.warn("Exception handling prime event", e);
-                logEventPRocessing("Exception returning fetchDataBucket response", event);
-                // unable to send fetchDataBucket response. So, return bucket bytes back to data bundle.
-                ocsService.returnUnusedDataBucketEvent(
-                        event.getMsisdn(),
-                        event.getBucketBytes());
-            }
-        }
-    }
-
-    private void returnUnusedDataBucketEvent(String msisdn, long bucketBytes) {
+    protected void returnUnusedDataBucketEvent(final String msisdn, final long bucketBytes) {
         producer.returnUnusedDataBucketEvent(
                 msisdn,
                 bucketBytes,
                 null);
     }
 
-    private StreamObserver<FetchDataBucketInfo> getDataBucketClientForStream(String streamId) {
-         return fetchDataBucketClientMap.get(streamId);
-    }
-
-    private StreamObserver<ReturnUnusedDataResponse> getUnusedDataClientForStream(String streamId) {
-         return returnUnusedDataClientMap.get(streamId);
-    }
-
-    private void activateOnNextResponse(ActivateResponse response) {
-        // XXX Not threadsafe!
-        // XXX Use AtomicReference
-        if (activateResponse != null) {
-            activateResponse.onNext(response);
-        }
-    }
-
     public OcsServiceGrpc.OcsServiceImplBase asOcsServiceImplBase() {
         return this.ocsServerImplBaseImpl;
     }
 
-    private void updateActivateResponse(StreamObserver<ActivateResponse> activateResponse) {
-        // XXX Not threadsafe!
-        this.activateResponse = activateResponse;
+    protected StreamObserver<FetchDataBucketInfo> getDataBucketClientForStream(final String streamId) {
+         return fetchDataBucketClientMap.get(streamId);
     }
 
-    private void removeUnusedDataClient(String streamId) {
-        returnUnusedDataClientMap.remove(streamId);
+    protected StreamObserver<ReturnUnusedDataResponse> getUnusedDataClientForStream(final String streamId) {
+         return returnUnusedDataClientMap.get(streamId);
     }
 
-    private void returnUnusedDataBucketEvent(String msisdn, long bytes, String streamId) {
-        producer.returnUnusedDataBucketEvent(
+    protected void activateOnNextResponse(final ActivateResponse response) {
+        this.activateResponseHolder.activateOnNextResponse(response);
+
+    }
+
+    protected void updateActivateResponse(final StreamObserver<ActivateResponse> activateResponse) {
+        this.activateResponseHolder.setActivateResponse(activateResponse);
+    }
+
+    protected void removeUnusedDataClient(String streamId) {
+        this.returnUnusedDataClientMap.remove(streamId);
+    }
+
+    protected void returnUnusedDataBucketEvent(
+            final String msisdn,
+            final long bytes,
+            final String streamId) {
+        this.producer.returnUnusedDataBucketEvent(
                 msisdn, bytes, streamId);
     }
 
-    private void registerUnusedDataClient(String streamId, StreamObserver<ReturnUnusedDataResponse> returnUnusedDataResponse) {
-        returnUnusedDataClientMap.put(streamId, returnUnusedDataResponse);
+    protected void registerUnusedDataClient(
+            final String streamId,
+            final StreamObserver<ReturnUnusedDataResponse> returnUnusedDataResponse) {
+        this.returnUnusedDataClientMap.put(streamId, returnUnusedDataResponse);
     }
 
-    private void deleteDataBucketClient(String streamId) {
-        fetchDataBucketClientMap.remove(streamId);
+    protected void deleteDataBucketClient(final String streamId) {
+        this.fetchDataBucketClientMap.remove(streamId);
     }
 
-    private  void fetchDataBucketEvent(FetchDataBucketInfo request, String streamId) {
+    protected  void fetchDataBucketEvent(
+            final FetchDataBucketInfo request,
+            final String streamId) {
         producer.fetchDataBucketEvent(request, streamId);
     }
 
-    private void putDataBucketClient(String streamId, StreamObserver<FetchDataBucketInfo> fetchDataBucketResponse) {
+    protected void putDataBucketClient(
+            final String streamId,
+            final StreamObserver<FetchDataBucketInfo> fetchDataBucketResponse) {
         fetchDataBucketClientMap.put(streamId, fetchDataBucketResponse);
-    }
-
-    public static class OcsServerImplBaseImpl extends OcsServiceGrpc.OcsServiceImplBase {
-
-
-        private final  OcsService ocsService;
-
-        public OcsServerImplBaseImpl(final OcsService ocsService) {
-            this.ocsService = checkNotNull(ocsService);
-        }
-
-        /**
-         * Method to fetch data bucket.
-         *
-         * @param fetchDataBucketResponse
-         */
-        @Override
-        public StreamObserver<FetchDataBucketInfo> fetchDataBucket(
-                final StreamObserver<FetchDataBucketInfo> fetchDataBucketResponse) {
-
-            final String streamId = RandomStringUtils.randomAlphanumeric(22);
-
-            LOG.info("Starting fetchDataBucket with streamId: {}", streamId);
-
-            ocsService.putDataBucketClient(streamId, fetchDataBucketResponse);
-
-            return new StreamObserverForStreamWithId(streamId);
-        }
-
-        private final class StreamObserverForStreamWithId
-                implements StreamObserver<FetchDataBucketInfo> {
-            private final String streamId;
-
-            StreamObserverForStreamWithId(final String streamId) {
-                this.streamId = checkNotNull(streamId);
-            }
-
-            @Override
-            public void onNext(final FetchDataBucketInfo request) {
-                LOG.info("Received fetchDataBucket request :: "
-                                + "for MSISDN: {} of {} bytes with request id: {}",
-                        request.getMsisdn(), request.getBytes(), request.getRequestId());
-
-                ocsService.fetchDataBucketEvent(request, streamId);
-            }
-
-            @Override
-            public void onError(final Throwable t) {
-                // TODO vihang: this is important?
-            }
-
-            @Override
-            public void onCompleted() {
-                LOG.info("fetchDataBucket with streamId: {} completed", streamId);
-                ocsService.deleteDataBucketClient(streamId);
-            }
-        }
-
-        /**
-         * Method to return Unused Data.
-         *
-         * @param returnUnusedDataResponse
-         */
-        @Override
-        public StreamObserver<ReturnUnusedDataRequest> returnUnusedData(
-                final StreamObserver<ReturnUnusedDataResponse> returnUnusedDataResponse) {
-
-            final String streamId = RandomStringUtils.randomAlphanumeric(22);
-
-            LOG.info("Starting returnUnusedData with streamId: {}", streamId);
-
-            ocsService.registerUnusedDataClient(streamId, returnUnusedDataResponse);
-            return new StreamObserverForReturnedUnusedData(streamId);
-        }
-
-        private final class StreamObserverForReturnedUnusedData
-                implements StreamObserver<ReturnUnusedDataRequest> {
-
-            private final String streamId;
-
-            StreamObserverForReturnedUnusedData(final String streamId) {
-                this.streamId = streamId;
-            }
-
-            @Override
-            public void onNext(final ReturnUnusedDataRequest request) {
-                LOG.info("Received returnUnusedData request :: for MSISDN: {} of {} bytes",
-                        request.getMsisdn(), request.getBytes());
-                ocsService.returnUnusedDataBucketEvent(
-                        request.getMsisdn(),
-                        request.getBytes(),
-                        streamId);
-            }
-
-            @Override
-            public void onError(final Throwable t) {
-                LOG.warn("Exception for returnUnusedData", t);
-            }
-
-            @Override
-            public void onCompleted() {
-                LOG.info("returnUnusedData with streamId: {} completed", streamId);
-                ocsService.removeUnusedDataClient(streamId);
-            }
-        }
-
-        /**
-         * Method to receive stream of Activate events.
-         *
-         * @param request
-         * @param activateResponse
-         */
-        @Override
-        public void activate(
-                final ActivateRequest request,
-                final StreamObserver<ActivateResponse> activateResponse) {
-
-            // The `ActivateRequest` does not have any fields, and so it is ignored.
-            // In return, the server starts to send "stream" of `ActivateResponse`
-            // which is actually a "request".
-            ocsService.updateActivateResponse(activateResponse);
-
-            // After the connection, the first response will have empty string as MSISDN.
-            // It should to be ignored by OCS gateway.
-            final ActivateResponse response = ActivateResponse.newBuilder().
-                    setMsisdn("").
-                    build();
-
-            activateResponse.onNext(response);
-        }
     }
 }
