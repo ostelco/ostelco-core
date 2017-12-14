@@ -11,7 +11,8 @@ import java.io.IOException;
 
 /**
  * This is OCS Server running on gRPC protocol.
- * Its startup and shutdown are managed by Dropwizard's lifecycle.
+ * Its startup and shutdown are managed by Dropwizard's lifecycle
+ * through the Managed interface.
  *
  * @author Vihang Patil (vihang.patil@telenordigital.com)
  */
@@ -42,7 +43,7 @@ public final  class OcsServer implements Managed {
     @Override
     public void start() throws IOException {
         server.start();
-        LOG.info("Server started, listening on {}", port);
+        LOG.info("OcsServer Server started, listening for incoming GRPC traffic on {}", port);
     }
 
     /**
@@ -53,7 +54,7 @@ public final  class OcsServer implements Managed {
     @Override
     public void stop() throws InterruptedException {
         if (server != null) {
-            LOG.info("Stopping Server running on {}", port);
+            LOG.info("Stopping OcsServer Server  listening for GRPC traffic on  {}", port);
             server.shutdown();
             blockUntilShutdown();
         }
