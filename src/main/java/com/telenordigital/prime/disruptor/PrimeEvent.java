@@ -64,6 +64,5 @@ public final class PrimeEvent {
         this.setBucketBytes(bytes);
         this.setOcsgwStreamId(ocsgwStreamId);
         this.setOcsgwRequestId(ocsgwRequestId);
-        // Should we set requestid to null?
     }
 }
