@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentMap;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * @author Vihang Patil <vihang.patil@telenordigital.com>
+ * @author Vihang Patil (vihang.patil@telenordigital.com)
  */
 public final class OcsService  {
 
@@ -60,7 +60,7 @@ public final class OcsService  {
 
     /**
      * Return a service that can be used to serve incoming GRPC requests.   The service
-     * is typically bound to a service port using the {@link ServerBuilder} mechanism
+     * is typically bound to a service port using the GRPC ServerBuilder mechanism
      * provide by GRPC:
      * <code>
      *     server = ServerBuilder.
@@ -69,7 +69,7 @@ public final class OcsService  {
      *         build();
      * </code>
      *
-     * @return
+     * @return The service that can receive incoming GPRS messages
      */
     public OcsServiceGrpc.OcsServiceImplBase asOcsServiceImplBase() {
         return this.ocsServerImplBaseImpl;

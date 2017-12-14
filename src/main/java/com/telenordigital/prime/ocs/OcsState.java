@@ -13,7 +13,7 @@ import java.util.Map;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * @author Vihang Patil <vihang.patil@telenordigital.com>
+ * @author Vihang Patil (vihang.patil@telenordigital.com)
  */
 public final class OcsState implements EventHandler<PrimeEvent> {
 
@@ -52,8 +52,8 @@ public final class OcsState implements EventHandler<PrimeEvent> {
     /**
      * Get subscriber's data bundle balance in bytes.
      *
-     * @param msisdn
-     * @return bytes
+     * @param msisdn Phone number
+     * @return bytes Number of bytes available to this number
      * data bundle balance in bytes
      */
     public long getDataBytes(final String msisdn) {
@@ -65,10 +65,9 @@ public final class OcsState implements EventHandler<PrimeEvent> {
      * This is called when subscriber top ups or, PGw returns
      * unused data after subscriber disconnects data.
      *
-     * @param msisdn
-     * @param bytes
-     * @return bytes
-     * data bundle balance in bytes
+     * @param msisdn Phone number
+     * @param bytes Number of bytes we want to add
+     * @return bytes data bundle balance in bytes
      */
     public long addDataBytes(final String msisdn, final long bytes) {
         checkNotNull(msisdn);
@@ -85,9 +84,9 @@ public final class OcsState implements EventHandler<PrimeEvent> {
      * Consume from subscriber's data bundle in bytes.
      * This is called when PGw requests for data bucket.
      *
-     * @param msisdn
-     * @param bytes
-     * @return
+     * @param msisdn Phone number
+     * @param bytes Consume a number of bytes
+     * @return Number of bytes actually consumed
      */
     public long consumeDataBytes(final String msisdn, final long bytes) {
         checkNotNull(msisdn);

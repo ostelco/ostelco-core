@@ -3,7 +3,7 @@ package com.telenordigital.prime.disruptor;
 import lombok.Data;
 
 /**
- * @author Vihang Patil <vihang.patil@telenordigital.com>
+ * @author Vihang Patil (vihang.patil@telenordigital.com)
  */
 @Data
 public final class PrimeEvent {

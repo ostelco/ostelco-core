@@ -10,8 +10,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 
 /**
- * A service that can be used to serve incoming GRPC requests.   The service
- * is typically bound to a service port using the {@link ServerBuilder} mechanism
+ * A service that can be used to serve incoming GRPC requests.
+ * is typically bound to a service port using the GRPC ServerBuilder mechanism
  * provide by GRPC:
  *
  * <code>
@@ -50,7 +50,7 @@ public final class OcsGRPCService extends OcsServiceGrpc.OcsServiceImplBase {
     /**
      * Method to fetch data bucket.
      *
-     * @param fetchDataBucketResponse
+     * @param fetchDataBucketResponse Stream used to send responses back to requester
      */
     @Override
     public StreamObserver<FetchDataBucketInfo> fetchDataBucket(
@@ -111,7 +111,7 @@ public final class OcsGRPCService extends OcsServiceGrpc.OcsServiceImplBase {
     /**
      * Method to return Unused Data.
      *
-     * @param returnUnusedDataResponse
+     * @param returnUnusedDataResponse Stream to send unused data to when responding.
      */
     @Override
     public StreamObserver<ReturnUnusedDataRequest> returnUnusedData(

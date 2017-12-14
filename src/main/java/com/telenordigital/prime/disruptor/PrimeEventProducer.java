@@ -13,7 +13,7 @@ import static com.telenordigital.prime.disruptor.PrimeEventMessageType.RETURN_UN
 import static com.telenordigital.prime.disruptor.PrimeEventMessageType.TOPUP_DATA_BUNDLE_BALANCE;
 
 /**
- * @author Vihang Patil <vihang.patil@telenordigital.com>
+ * @author Vihang Patil (vihang.patil@telenordigital.com)
  */
 public final class PrimeEventProducer {
 
