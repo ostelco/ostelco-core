@@ -8,6 +8,9 @@
   the entities package.  Since we simplified the data classes
   with lombok, that separation gives little or no benefit.
 * Remove telenor digital references.
+* The interactions between the various types of messages are
+  confusing.  Consider autogenerating sequence diagrams when
+  running tests to help document what is going on.
 * Increase unit testability, restructure to make almost everything
   unit testable.
 * Refactor firebase database into something that is  integration testable.
