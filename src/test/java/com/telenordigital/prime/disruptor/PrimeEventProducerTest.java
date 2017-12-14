@@ -119,7 +119,7 @@ public class PrimeEventProducerTest {
                         setBytes(NO_OF_TOPUP_BYTES).
                         build();
 
-        pep.fetchDataBucketEvent(request, STREAM_ID);
+        pep.injectFetchDataBucketRequestIntoRingbuffer(request, STREAM_ID);
 
         final PrimeEvent event = getCollectedEvent();
         assertEquals(MSISDN, event.getMsisdn());

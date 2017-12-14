@@ -182,6 +182,8 @@ public final class OcsGRPCService extends OcsServiceGrpc.OcsServiceImplBase {
             final ActivateRequest request,
             final StreamObserver<ActivateResponse> activateResponse) {
 
+        // XXX (rmz) I don't understand the logic of what this thing does.
+        //     Please document the purpose of the line below!
         ocsService.updateActivateResponse(activateResponse);
 
         final ActivateResponse response = ActivateResponse.newBuilder().

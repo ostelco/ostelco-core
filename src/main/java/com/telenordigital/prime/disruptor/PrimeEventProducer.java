@@ -32,13 +32,17 @@ public final class PrimeEventProducer {
         try {
             final PrimeEvent event = ringBuffer.get(sequence);
             if (event == null) {
+                // XXX Actually this is wrong, we're ignoring the topup
+                //     request since we couldn't get something out of the buffer
+                //     altogether different and potentially a lost topup.
                 LOG.info("Ignoring null event");
                 return;
             }
-            event.setMessageType(TOPUP_DATA_BUNDLE_BALANCE);
-            event.setMsisdn(msisdn);
-            event.setBucketBytes(bytes);
+            event.update(TOPUP_DATA_BUNDLE_BALANCE, msisdn, bytes, null, null);
         } finally {
+            // XXX ??? Why put this in finally, why not just ignore publishing if
+            //     anything happens during processing? This probably is a bug, but
+            //     I don't know what the proper fix is.
             ringBuffer.publish(sequence);
         }
     }
@@ -51,33 +55,37 @@ public final class PrimeEventProducer {
         final long sequence = ringBuffer.next();
         try {
             final PrimeEvent event = ringBuffer.get(sequence);
-            event.setMessageType(RETURN_UNUSED_DATA_BUCKET);
-            event.setMsisdn(msisdn);
-            event.setBucketBytes(bytes);
-            event.setOcsgwStreamId(ocsgwStreamId);
+            event.update(RETURN_UNUSED_DATA_BUCKET,
+                    msisdn,
+                    bytes,
+                    ocsgwStreamId,
+                    null);
         } finally {
+            // XXX Same as above, why the finally?
             ringBuffer.publish(sequence);
         }
     }
 
-    public void fetchDataBucketEvent(
+
+    public void injectFetchDataBucketRequestIntoRingbuffer(
             final FetchDataBucketInfo request,
             final String streamId) {
 
+        // Get the next event off the ringbuffer
         final long sequence = ringBuffer.next();
         final PrimeEvent event = ringBuffer.get(sequence);
-        setEventFields(request, streamId, event);
+
+        // Then set all the fields of the event basedn on
+        // info found in the incoming request.
+
+        event.update(FETCH_DATA_BUCKET,
+                request.getMsisdn(),
+                request.getBytes(),
+                streamId,
+                request.getRequestId());
+
+        // Finally publish the updated item to the ring buffer.
         ringBuffer.publish(sequence);
     }
 
-    private void setEventFields(
-            final FetchDataBucketInfo request,
-            final String streamId,
-            final PrimeEvent event) {
-        event.setMessageType(FETCH_DATA_BUCKET);
-        event.setMsisdn(request.getMsisdn());
-        event.setBucketBytes(request.getBytes());
-        event.setOcsgwStreamId(streamId);
-        event.setOcsgwRequestId(request.getRequestId());
-    }
 }

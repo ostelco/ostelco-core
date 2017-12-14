@@ -52,4 +52,18 @@ public final class PrimeEvent {
         ocsgwRequestId = null;
         messageType = null;
     }
+
+    public void update(
+            final PrimeEventMessageType messageType,
+            final String msisdn,
+            final long bytes,
+            final String ocsgwStreamId,
+            final String ocsgwRequestId) {
+        this.setMessageType(messageType);
+        this.setMsisdn(msisdn);
+        this.setBucketBytes(bytes);
+        this.setOcsgwStreamId(ocsgwStreamId);
+        this.setOcsgwRequestId(ocsgwRequestId);
+        // Should we set requestid to null?
+    }
 }

@@ -116,7 +116,7 @@ public final class OcsService  {
     protected  void fetchDataBucketEvent(
             final FetchDataBucketInfo request,
             final String streamId) {
-        producer.fetchDataBucketEvent(request, streamId);
+        producer.injectFetchDataBucketRequestIntoRingbuffer(request, streamId);
     }
 
     protected void putDataBucketClient(
