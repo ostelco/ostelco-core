@@ -35,10 +35,11 @@ public final class PrimeEventProducer {
 
             // XXX If event == null, then we're a bit screwed.
             if (event == null) {
-                // XXX Actually this is wrong, we're ignoring the topup
+                // XXX Actually this is wrong, we're ignoring the update
                 //     request since we couldn't get something out of the buffer
                 //     altogether different and potentially a lost topup.
-                LOG.info("Ignoring null event");
+                LOG.error("Dropping PrimeEvent update "
+                        + "since we couldn't get one off the ringbuffer");
                 return;
             }
 

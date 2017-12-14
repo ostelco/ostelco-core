@@ -25,7 +25,6 @@ public final class OcsService  {
     private final ConcurrentMap<String, StreamObserver<ReturnUnusedDataResponse>>
             returnUnusedDataClientMap;
 
-
     /**
      * A holder for {@link io.grpc.stub.StreamObserver < com.telenordigital.prime.ocs.ActivateResponse>}
      * instances that are somehow used
