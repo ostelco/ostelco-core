@@ -1,17 +1,51 @@
 package com.telenordigital.prime.ocs;
 
 import io.grpc.stub.StreamObserver;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.UUID;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public final class OcsServerImplBaseImpl extends OcsServiceGrpc.OcsServiceImplBase {
 
-    private static final Logger LOG = LoggerFactory.getLogger(OcsServerImplBaseImpl.class);
+/**
+ * A service that can be used to serve incoming GRPC requests.   The service
+ * is typically bound to a service port using the {@link ServerBuilder} mechanism
+ * provide by GRPC:
+ *
+ * <code>
+ *     server = ServerBuilder.
+ *         forPort(port).
+ *         addService(service).
+ *         build();
+ * </code>
+ *
+ * It's implemented as a subclass of {@link  OcsServiceGrpc.OcsServiceImplBase } overriding
+ * three  methods that together implements the protocol described in the  ocs.proto file:
+ *
+ * <code>
+ *     // OCS Service
+ *     service OcsService {
+ *     rpc FetchDataBucket (stream FetchDataBucketInfo) returns (stream FetchDataBucketInfo) {}
+ *     rpc ReturnUnusedData (stream ReturnUnusedDataRequest) returns (stream ReturnUnusedDataResponse) {}
+ *     rpc Activate (ActivateRequest) returns (stream ActivateResponse) {}
+ *     }
+ * </code>
+ *
+ * The "stream" type parameters represents sequences of responses, so typically we will here
+ * see that a client invokes a method, and listens for a stream of information related to
+ * that particular stream.
+ */
+public final class OcsGRPCService extends OcsServiceGrpc.OcsServiceImplBase {
+
+    private static final Logger LOG = LoggerFactory.getLogger(OcsGRPCService.class);
 
     private final  OcsService ocsService;
+
+    public OcsGRPCService(final OcsService ocsService) {
+        this.ocsService = checkNotNull(ocsService);
+    }
 
     /**
      * Method to fetch data bucket.
@@ -22,7 +56,7 @@ public final class OcsServerImplBaseImpl extends OcsServiceGrpc.OcsServiceImplBa
     public StreamObserver<FetchDataBucketInfo> fetchDataBucket(
             final StreamObserver<FetchDataBucketInfo> fetchDataBucketResponse) {
 
-        final String streamId = RandomStringUtils.randomAlphanumeric(22);
+        final String streamId = newUniqueStreamId();
 
         LOG.info("Starting fetchDataBucket with streamId: {}", streamId);
 
@@ -31,10 +65,14 @@ public final class OcsServerImplBaseImpl extends OcsServiceGrpc.OcsServiceImplBa
         return new StreamObserverForStreamWithId(streamId);
     }
 
-    public OcsServerImplBaseImpl(final OcsService ocsService) {
-        this.ocsService = checkNotNull(ocsService);
+    /**
+     * Return an unique ID based on Java's UUID generator that uniquely
+     * identifies a stream of values.
+     * @return A new unique identifier.
+     */
+    private String newUniqueStreamId() {
+        return UUID.randomUUID().toString();
     }
-
 
     private final class StreamObserverForStreamWithId
             implements StreamObserver<FetchDataBucketInfo> {
@@ -44,6 +82,11 @@ public final class OcsServerImplBaseImpl extends OcsServiceGrpc.OcsServiceImplBa
             this.streamId = checkNotNull(streamId);
         }
 
+        /**
+         * This method gets called every time a bucket info is requested
+         * from the OCS.
+         * @param request
+         */
         @Override
         public void onNext(final FetchDataBucketInfo request) {
             LOG.info("Received fetchDataBucket request :: "
@@ -74,7 +117,7 @@ public final class OcsServerImplBaseImpl extends OcsServiceGrpc.OcsServiceImplBa
     public StreamObserver<ReturnUnusedDataRequest> returnUnusedData(
             final StreamObserver<ReturnUnusedDataResponse> returnUnusedDataResponse) {
 
-        final String streamId = RandomStringUtils.randomAlphanumeric(22);
+        final String streamId = newUniqueStreamId();
 
         LOG.info("Starting returnUnusedData with streamId: {}", streamId);
 
@@ -91,6 +134,11 @@ public final class OcsServerImplBaseImpl extends OcsServiceGrpc.OcsServiceImplBa
             this.streamId = streamId;
         }
 
+        /**
+         * Invoked when receiving another request for info on
+         * unused data.  Sent up to the OCS  service.
+         * @param request  An incoming request decoded from the wire protocol.
+         */
         @Override
         public void onNext(final ReturnUnusedDataRequest request) {
             LOG.info("Received returnUnusedData request :: for MSISDN: {} of {} bytes",
@@ -106,6 +154,10 @@ public final class OcsServerImplBaseImpl extends OcsServiceGrpc.OcsServiceImplBa
             LOG.warn("Exception for returnUnusedData", t);
         }
 
+        /**
+         * Orderly shutdown of a possibly long interaction of requesting
+         * and delivering information.
+         */
         @Override
         public void onCompleted() {
             LOG.info("returnUnusedData with streamId: {} completed", streamId);
@@ -114,23 +166,24 @@ public final class OcsServerImplBaseImpl extends OcsServiceGrpc.OcsServiceImplBa
     }
 
     /**
-     * Method to receive stream of Activate events.
+     * The `ActivateRequest` does not have any fields, and so it is ignored.
+     * In return, the server starts to send "stream" of `ActivateResponse`
+     * which is actually a "request".
      *
-     * @param request
-     * @param activateResponse
+     * After the connection, the first response will have empty string as MSISDN.
+     * It should to be ignored by OCS gateway.   This method sends that empty
+     * response back to the invoker.
+     *
+     * @param request  Is ignored.
+     * @param activateResponse the stream observer used to send the response back.
      */
     @Override
     public void activate(
             final ActivateRequest request,
             final StreamObserver<ActivateResponse> activateResponse) {
 
-        // The `ActivateRequest` does not have any fields, and so it is ignored.
-        // In return, the server starts to send "stream" of `ActivateResponse`
-        // which is actually a "request".
         ocsService.updateActivateResponse(activateResponse);
 
-        // After the connection, the first response will have empty string as MSISDN.
-        // It should to be ignored by OCS gateway.
         final ActivateResponse response = ActivateResponse.newBuilder().
                 setMsisdn("").
                 build();

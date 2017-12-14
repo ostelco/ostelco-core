@@ -25,6 +25,11 @@ public final class OcsService  {
     private final ConcurrentMap<String, StreamObserver<ReturnUnusedDataResponse>>
             returnUnusedDataClientMap;
 
+
+    /**
+     * A holder for {@link io.grpc.stub.StreamObserver < com.telenordigital.prime.ocs.ActivateResponse>}
+     * instances that are somehow used
+     */
     private ActivateResponseHolder activateResponseHolder;
 
     private final PrimeEventProducer producer;
@@ -38,7 +43,7 @@ public final class OcsService  {
         this.fetchDataBucketClientMap = new ConcurrentHashMap<>();
         this.returnUnusedDataClientMap = new ConcurrentHashMap<>();
         this.eventHandler = new EventHandlerImpl(this);
-        this.ocsServerImplBaseImpl = new OcsServerImplBaseImpl(this );
+        this.ocsServerImplBaseImpl = new OcsGRPCService(this );
         this.activateResponseHolder = new ActivateResponseHolder();
     }
 
@@ -53,6 +58,19 @@ public final class OcsService  {
                 null);
     }
 
+    /**
+     * Return a service that can be used to serve incoming GRPC requests.   The service
+     * is typically bound to a service port using the {@link ServerBuilder} mechanism
+     * provide by GRPC:
+     * <code>
+     *     server = ServerBuilder.
+     *         forPort(port).
+     *         addService(service).
+     *         build();
+     * </code>
+     *
+     * @return
+     */
     public OcsServiceGrpc.OcsServiceImplBase asOcsServiceImplBase() {
         return this.ocsServerImplBaseImpl;
     }
