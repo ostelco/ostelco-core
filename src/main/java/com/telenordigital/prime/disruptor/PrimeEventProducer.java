@@ -5,6 +5,8 @@ import com.telenordigital.prime.ocs.FetchDataBucketInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.function.Consumer;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.telenordigital.prime.disruptor.PrimeEventMessageType.FETCH_DATA_BUCKET;
 import static com.telenordigital.prime.disruptor.PrimeEventMessageType.RETURN_UNUSED_DATA_BUCKET;
@@ -47,23 +49,35 @@ public final class PrimeEventProducer {
         }
     }
 
+
+    private void pickAndPublish(final Consumer<PrimeEvent> consumer) {
+        checkNotNull(consumer);
+
+        // pick
+        final long sequence = ringBuffer.next();
+        try {
+            final PrimeEvent event = ringBuffer.get(sequence);
+
+            // Modify
+            consumer.accept(event);
+
+            // Publish
+        } finally {  // XXX Why is the "finally" necessary here?
+            ringBuffer.publish(sequence);
+        }
+    }
+
     public void returnUnusedDataBucketEvent(
             final String msisdn,
             final long bytes,
             final String ocsgwStreamId) {
+        pickAndPublish(event ->
+                event.update(RETURN_UNUSED_DATA_BUCKET,
+                        msisdn,
+                        bytes,
+                        ocsgwStreamId,
+                        null));
 
-        final long sequence = ringBuffer.next();
-        try {
-            final PrimeEvent event = ringBuffer.get(sequence);
-            event.update(RETURN_UNUSED_DATA_BUCKET,
-                    msisdn,
-                    bytes,
-                    ocsgwStreamId,
-                    null);
-        } finally {
-            // XXX Same as above, why the finally?
-            ringBuffer.publish(sequence);
-        }
     }
 
 
@@ -75,7 +89,7 @@ public final class PrimeEventProducer {
         final long sequence = ringBuffer.next();
         final PrimeEvent event = ringBuffer.get(sequence);
 
-        // Then set all the fields of the event basedn on
+        // Then set all the fields of the event based on
         // info found in the incoming request.
 
         event.update(FETCH_DATA_BUCKET,
