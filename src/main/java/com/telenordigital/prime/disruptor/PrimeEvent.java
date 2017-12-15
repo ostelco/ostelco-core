@@ -9,6 +9,12 @@ import lombok.Data;
 public final class PrimeEvent {
 
     /**
+     * The type of message this is, closely mirroring the types of messages in
+     * ocs.proto (the GRPC specification file).
+     */
+    private PrimeEventMessageType messageType;
+
+    /**
      * Phone number this event is related to.
      */
     private String msisdn;
@@ -38,11 +44,6 @@ public final class PrimeEvent {
      */
     private String ocsgwRequestId;
 
-    /**
-     * The type of message this is, closely mirroring the types of messages in
-     * ocs.proto (the GRPC specification file).
-     */
-    private PrimeEventMessageType messageType;
 
     public void clear() {
         msisdn = null;

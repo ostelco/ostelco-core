@@ -7,7 +7,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * Helper class to keep track of {@link io.grpc.stub.StreamObserver < com.telenordigital.prime.ocs.ActivateResponse>}
+ * Helper class to keep track of
+ * {@link io.grpc.stub.StreamObserver < com.telenordigital.prime.ocs.ActivateResponse>}
  * instance in a threadsafe manner.
  */
 final class ActivateResponseHolder {
@@ -18,7 +19,7 @@ final class ActivateResponseHolder {
 
     private StreamObserver<ActivateResponse> activateResponse;
 
-    public ActivateResponseHolder() {
+    ActivateResponseHolder() {
         final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
         this.readLock = readWriteLock.readLock();

@@ -20,7 +20,7 @@ import static org.junit.Assert.assertTrue;
 
 public class OcsServiceTest {
 
-    private final static int RING_BUFFER_SIZE = 256;
+    private static final int RING_BUFFER_SIZE = 256;
 
     private static final long TIMEOUT =  10;
 
@@ -37,9 +37,9 @@ public class OcsServiceTest {
     @Before
     public void setUp() {
         this.disruptor = new Disruptor<PrimeEvent>(
-                ()-> new PrimeEvent(),
-                RING_BUFFER_SIZE,
-                Executors.defaultThreadFactory() );
+            ()-> new PrimeEvent(),
+            RING_BUFFER_SIZE,
+            Executors.defaultThreadFactory() );
         final RingBuffer<PrimeEvent> ringBuffer = disruptor.getRingBuffer();
         this.pep = new PrimeEventProducer(ringBuffer);
 
@@ -77,17 +77,22 @@ public class OcsServiceTest {
 
     @Test
     public void onEvent() {
+        // tbd
     }
+
 
     @Test
     public void fetchDataBucket() {
+        // tbd
     }
 
     @Test
     public void returnUnusedData() {
+        // tbd
     }
 
     @Test
     public void activate() {
+        // tbd
     }
 }

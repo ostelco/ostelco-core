@@ -4,8 +4,6 @@ import com.lmax.disruptor.EventHandler;
 import com.telenordigital.prime.disruptor.PrimeEvent;
 import com.telenordigital.prime.disruptor.PrimeEventProducer;
 import io.grpc.stub.StreamObserver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -17,8 +15,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public final class OcsService  {
 
-    private static final Logger LOG = LoggerFactory.getLogger(OcsService.class);
-
     private final  ConcurrentMap<String, StreamObserver<FetchDataBucketInfo>>
             fetchDataBucketClientMap;
 
@@ -26,7 +22,8 @@ public final class OcsService  {
             returnUnusedDataClientMap;
 
     /**
-     * A holder for {@link io.grpc.stub.StreamObserver < com.telenordigital.prime.ocs.ActivateResponse>}
+     * A holder for
+     * {@link io.grpc.stub.StreamObserver < com.telenordigital.prime.ocs.ActivateResponse>}
      * instances that are somehow used
      */
     private ActivateResponseHolder activateResponseHolder;
@@ -50,7 +47,9 @@ public final class OcsService  {
         return eventHandler;
     }
 
-    protected void returnUnusedDataBucketEvent(final String msisdn, final long bucketBytes) {
+    protected void returnUnusedDataBucketEvent(
+            final String msisdn,
+            final long bucketBytes) {
         producer.returnUnusedDataBucketEvent(
                 msisdn,
                 bucketBytes,
@@ -74,11 +73,13 @@ public final class OcsService  {
         return this.ocsServerImplBaseImpl;
     }
 
-    protected StreamObserver<FetchDataBucketInfo> getDataBucketClientForStream(final String streamId) {
+    protected StreamObserver<FetchDataBucketInfo> getDataBucketClientForStream(
+            final String streamId) {
          return fetchDataBucketClientMap.get(streamId);
     }
 
-    protected StreamObserver<ReturnUnusedDataResponse> getUnusedDataClientForStream(final String streamId) {
+    protected StreamObserver<ReturnUnusedDataResponse> getUnusedDataClientForStream(
+            final String streamId) {
          return returnUnusedDataClientMap.get(streamId);
     }
 
@@ -86,7 +87,8 @@ public final class OcsService  {
         this.activateResponseHolder.onNextResponse(response);
     }
 
-    protected void updateActivateResponse(final StreamObserver<ActivateResponse> activateResponse) {
+    protected void updateActivateResponse(
+            final StreamObserver<ActivateResponse> activateResponse) {
         this.activateResponseHolder.setActivateResponse(activateResponse);
     }
 
@@ -104,7 +106,8 @@ public final class OcsService  {
 
     protected void registerUnusedDataClient(
             final String streamId,
-            final StreamObserver<ReturnUnusedDataResponse> returnUnusedDataResponse) {
+            final StreamObserver<ReturnUnusedDataResponse>
+                    returnUnusedDataResponse) {
         this.returnUnusedDataClientMap.put(streamId, returnUnusedDataResponse);
     }
 
@@ -122,5 +125,24 @@ public final class OcsService  {
             final String streamId,
             final StreamObserver<FetchDataBucketInfo> fetchDataBucketResponse) {
         fetchDataBucketClientMap.put(streamId, fetchDataBucketResponse);
+    }
+
+    public void replyWithDataBucketInfo(String streamId, FetchDataBucketInfo info) {
+        final StreamObserver<FetchDataBucketInfo> fetchDataBucketResponse
+                = getDataBucketClientForStream(streamId);
+
+        if (fetchDataBucketResponse != null) {
+            fetchDataBucketResponse.onNext(info);
+        }
+    }
+
+    public void replyWithReturnDataInfo(
+            final String ocsgwStreamId,
+            final ReturnUnusedDataResponse returnDataInfo) {
+        final StreamObserver<ReturnUnusedDataResponse> returnUnusedDataResponse
+                =  getUnusedDataClientForStream(ocsgwStreamId);
+        if (returnUnusedDataResponse != null) {
+            returnUnusedDataResponse.onNext(returnDataInfo);
+        }
     }
 }

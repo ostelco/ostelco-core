@@ -27,8 +27,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * <code>
  *     // OCS Service
  *     service OcsService {
- *     rpc FetchDataBucket (stream FetchDataBucketInfo) returns (stream FetchDataBucketInfo) {}
- *     rpc ReturnUnusedData (stream ReturnUnusedDataRequest) returns (stream ReturnUnusedDataResponse) {}
+ *     rpc FetchDataBucket (stream FetchDataBucketInfo)
+ *         returns (stream FetchDataBucketInfo) {}
+ *     rpc ReturnUnusedData (stream ReturnUnusedDataRequest)
+ *         returns (stream ReturnUnusedDataResponse) {}
  *     rpc Activate (ActivateRequest) returns (stream ActivateResponse) {}
  *     }
  * </code>
@@ -182,8 +184,13 @@ public final class OcsGRPCService extends OcsServiceGrpc.OcsServiceImplBase {
             final ActivateRequest request,
             final StreamObserver<ActivateResponse> activateResponse) {
 
-        // XXX (rmz) I don't understand the logic of what this thing does.
-        //     Please document the purpose of the line below!
+        // The session we have with the OCS will only have one
+        // activation invocation. Thus it makes sense to keep the
+        // return channel (the activateResponse instance) in a
+        // particular place, so that's what we do.  The reason this
+        // code looks brittle is that if we ever get multipe activate
+        // requests, it will break.   The reason it never breaks
+        // is that we never do get more than one.  So yes, it's brittle.
         ocsService.updateActivateResponse(activateResponse);
 
         final ActivateResponse response = ActivateResponse.newBuilder().
