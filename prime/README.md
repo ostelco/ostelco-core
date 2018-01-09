@@ -95,33 +95,6 @@ With unit testing:
     subscriber disables/enables the data connection or until OCS notifies PGw
     toactivate that subscriber again.
 
-
-
-## API
-
-### OCS API
-
-* Fetch Data bucket
-
-
-    fetchDataBucket (String msisdn, long bytes, int ocsgwRequestId) => (String msisdn, long bytes, int ocsgwRequestId)
-
-From PGW to OCS
-
-* Return Unused Data
-
-
-    returnUnusedData (String msisdn, int bytes) => (String msisdn)
-
-From PGW to OCS
-
-* Activate
-
-
-    activate (String msisdn)
-
-From OCS to PGW
-
 ## Event flow
 
 | Message Type              | Producer   | Handler  | Next Handler                      |

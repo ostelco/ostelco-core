@@ -1,66 +1,8 @@
 plugins {
     id "java"
     id 'com.github.ben-manes.versions' version '0.15.0'
-    id "com.github.johnrengelman.shadow" version "2.0.1"
-    id 'net.ltgt.apt' version '0.10'
 }
-
-apply plugin: 'java'
-apply plugin: 'application'
-apply plugin: 'com.github.johnrengelman.shadow'
-
-sourceSets {
-  test {
-    java.srcDirs = ['src/test/java']
-  }
-
-  integration {
-    java.srcDirs = ['src/test/java', 'src/integration-tests/java']
-    resources.srcDir 'src/integration-tests/resources'
-    compileClasspath += main.output + test.output
-    runtimeClasspath += main.output + test.output
-  }
-}
-
-apply plugin: 'jacoco'
-
-dependencies {
-    implementation project(':ocs-api')
-    implementation 'io.dropwizard:dropwizard-core:1.1.4'
-    implementation 'com.google.firebase:firebase-admin:5.3.1'
-    implementation 'com.lmax:disruptor:3.3.7'
-    implementation 'com.google.guava:guava:21.0'
-    testImplementation 'io.dropwizard:dropwizard-testing:1.1.4'
-    testCompile group: 'org.mockito', name: 'mockito-core', version: '2.10.0'
-
-    // running edge (.19) since stable (.18) doesn't compile on intellij.
-    compileOnly 'org.projectlombok:lombok:1.16.19'
-    apt "org.projectlombok:lombok:1.16.19"
-
-    // compileOnly 'org.projectlombok:lombok:edge'
-    // apt "org.projectlombok:lombok:edge"
-    // https://mvnrepository.com/artifact/org.mockito/mockito-core
-    testCompile group: 'org.mockito', name: 'mockito-core', version: '2.1.0'
-}
-
-configurations {
-  integrationImplementation.extendsFrom testImplementation
-  integrationCompile.extendsFrom testCompile
-  integrationRuntime.extendsFrom testRuntime
-}
-
-task integration(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
-
-  testClassesDir = sourceSets.integration.output.classesDir
-  classpath = sourceSets.integration.runtimeClasspath
-}
-
-
-
-mainClassName = 'com.telenordigital.prime.PrimeApplication'
-
 allprojects {
-
     apply plugin: 'maven'
     apply plugin: 'project-report'
     apply plugin: 'com.github.ben-manes.versions'
@@ -74,39 +16,11 @@ allprojects {
     }
 }
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
-shadowJar {
-    mergeServiceFiles()
-    classifier = "uber"
-    version = null
-}
-
-task pack(type: Zip, dependsOn: ':shadowJar') {
-    from ('config/') {
-        into('config')
-    }
-    from ('files/') {
-        into('files')
-    }
-    from ('build/libs/') {
-        into('build/libs/')
-    }
-    from 'Dockerfile'
-    from 'docker-compose.yaml'
-    archiveName 'prime.zip'
-    destinationDir(file('build/deploy/'))
-}
-
-jacocoTestReport {
-    group = "Reporting"
-    description = "Generate Jacoco coverage reports after running tests."
-    additionalSourceDirs = files(sourceSets.main.allJava.srcDirs)
-    reports {
-        xml.enabled = true
-        html.enabled = true
+subprojects {
+    apply plugin: 'java'
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
     }
 }
-
-check.dependsOn jacocoTestReport
