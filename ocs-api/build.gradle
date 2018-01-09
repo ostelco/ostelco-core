@@ -1,4 +1,4 @@
-					buildscript {
+buildscript {
     repositories {
         mavenCentral()
     }
@@ -40,6 +40,3 @@ idea {
 clean {
     delete protobuf.generatedFilesBaseDir
 }
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8

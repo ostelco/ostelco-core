@@ -3,7 +3,7 @@ version: "3.3"
 services:
   prime:
     container_name: prime
-    build: .
+    build: prime
     ports:
       - "8082:8082"
     networks:
