@@ -3,7 +3,6 @@ package com.telenordigital.prime.ocs;
 import com.telenordigital.prime.disruptor.PrimeDisruptor;
 import com.telenordigital.prime.disruptor.PrimeEventProducer;
 import com.telenordigital.prime.ocs.OcsServiceGrpc.OcsServiceStub;
-import com.telenordigital.prime.ocs.state.OcsState;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -90,7 +89,7 @@ public final class OcsTest {
         // Set up the gRPC server at a particular port with a particular
         // service, that is connected to the processing pipeline.
         final OcsService ocsService = new OcsService(producer);
-        ocsServer = new OcsServer(PORT, ocsService);
+        ocsServer = new OcsServer(PORT, ocsService.asOcsServiceImplBase());
 
         final OcsState ocsState = new OcsState();
         ocsState.addDataBytes(MSISDN, NO_OF_BYTES_TO_ADD);
@@ -99,7 +98,7 @@ public final class OcsTest {
         //      Producer:(OcsService, Subscriber)
         //          -> Handler:(OcsState)
         //              -> Handler:(OcsService, Subscriber)
-        disruptor.getDisruptor().handleEventsWith(ocsState).then(ocsService);
+        disruptor.getDisruptor().handleEventsWith(ocsState).then(ocsService.asEventHandler());
 
         // start disruptor and ocs services.
         disruptor.start();

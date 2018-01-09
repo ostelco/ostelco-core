@@ -3,10 +3,16 @@ package com.telenordigital.prime.disruptor;
 import lombok.Data;
 
 /**
- * @author Vihang Patil <vihang.patil@telenordigital.com>
+ * @author Vihang Patil (vihang.patil@telenordigital.com)
  */
 @Data
 public final class PrimeEvent {
+
+    /**
+     * The type of message this is, closely mirroring the types of messages in
+     * ocs.proto (the GRPC specification file).
+     */
+    private PrimeEventMessageType messageType;
 
     /**
      * Phone number this event is related to.
@@ -38,7 +44,6 @@ public final class PrimeEvent {
      */
     private String ocsgwRequestId;
 
-    private PrimeEventMessageType messageType;
 
     public void clear() {
         msisdn = null;
@@ -47,5 +52,18 @@ public final class PrimeEvent {
         ocsgwStreamId = null;
         ocsgwRequestId = null;
         messageType = null;
+    }
+
+    public void update(
+            final PrimeEventMessageType messageType,
+            final String msisdn,
+            final long bytes,
+            final String ocsgwStreamId,
+            final String ocsgwRequestId) {
+        this.setMessageType(messageType);
+        this.setMsisdn(msisdn);
+        this.setBucketBytes(bytes);
+        this.setOcsgwStreamId(ocsgwStreamId);
+        this.setOcsgwRequestId(ocsgwRequestId);
     }
 }

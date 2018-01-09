@@ -22,8 +22,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-
 public final class EventProcessorTest {
+
     public static final String PAYMENT_TOKEN = "a weird token";
 
     private static final String MSISDN = "12345678";
@@ -55,7 +55,13 @@ public final class EventProcessorTest {
         this.processor.start();
     }
 
+    @Test
+    public void handlePurchaseRequest() {
+    }
 
+    @Test
+    public void onEvent() {
+    }
 
     private static final class DummyPurchaseRequest implements PurchaseRequest {
 

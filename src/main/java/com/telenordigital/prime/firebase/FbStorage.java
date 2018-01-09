@@ -3,7 +3,6 @@ package com.telenordigital.prime.firebase;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseCredentials;
-import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.FirebaseDatabase;
 import com.telenordigital.prime.events.EventListeners;
 import com.telenordigital.prime.storage.ProductDescriptionCache;
@@ -13,24 +12,17 @@ import com.telenordigital.prime.storage.Storage;
 import com.telenordigital.prime.storage.StorageException;
 import com.telenordigital.prime.storage.entities.Product;
 import com.telenordigital.prime.storage.entities.PurchaseRequest;
-import com.telenordigital.prime.storage.entities.RecordOfPurchaseImpl;
 import com.telenordigital.prime.storage.entities.Subscriber;
 import com.telenordigital.prime.storage.entities.SubscriberImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class FbStorage implements Storage {
-
-    private static final Logger LOG = LoggerFactory.getLogger(FbStorage.class);
 
     private final ProductDescriptionCache productCache;
 
@@ -53,22 +45,11 @@ public final class FbStorage implements Storage {
 
         this.facade = new FbDatabaseFacade(firebaseDatabase);
 
+        facade.addProductCatalogItemListener(listeners::productCatalogItemListener);
+        facade.addPurchaseRequestListener(listeners::purchaseRequestListener);
+
         // Load subscriber balance from firebase to in-memory OcsState
         listeners.loadSubscriberBalanceDataFromFirebaseToInMemoryStructure(getAllSubscribers());
-
-        // Scoop up products left and right (and don't worry about duplicates, race conditions or
-        // anything else by sending them to the listeners.
-
-        // XXX The next two invocations represents glue between the FB storage
-        //     and other components.  The code specifying the interface does not
-        //     belong in this class, it should be moved up one level along with
-        //     the executor that's used to facilitate.   Also, it should
-        //     be considered if a disruptor is a better choice than
-        //     an executor (it probably isn't but the reasoning should be made clear).
-        facade.addProductCatalogItemListener(listeners::productCatalogItemListener);
-
-        // When a purhase request arrives, then send it to the executor.
-        facade.addPurchaseRequestListener(listeners::purchaseRequestListener);
     }
 
     @Override
@@ -113,7 +94,9 @@ public final class FbStorage implements Storage {
         }
     }
 
-    // XXX Very odd
+
+    // XXX This method represents a bad design decision.  It's too circumspect to
+    //     understand.  Fix!
     @Override
     public void addPurchaseRequestListener(final PurchaseRequestListener listener) {
         checkNotNull(listener);
@@ -129,11 +112,6 @@ public final class FbStorage implements Storage {
             throw new StorageException("Unknown MSISDN " + msisdn);
         }
 
-        // XXX This is both:
-        //     a) A layering violation, since it mixes a backend server/information
-        //        layer with actual text formatting in an frontend/UX layer.
-        //     b) Possibly also a good idea, since it makes it really quick to change
-        //        the UI on a  per-user basis if we so desire.
         final long noOfBytes = subscriber.getNoOfBytesLeft();
         final float noOfGBLeft = noOfBytes / 1.0E09f;
         final String gbLeft = String.format("%.2f GB", noOfGBLeft);
@@ -155,6 +133,7 @@ public final class FbStorage implements Storage {
 
     @Override
     public void removeRecordOfPurchaseById(final String id) {
+        checkNotNull(id);
         facade.removeRecordOfPurchaseById(id);
     }
 
@@ -164,15 +143,10 @@ public final class FbStorage implements Storage {
             final String sku,
             final long millisSinceEpoch) throws StorageException {
         checkNotNull(msisdn);
+        checkNotNull(sku);
+        checkArgument(millisSinceEpoch > 0);
 
-        final RecordOfPurchaseImpl purchase =
-                new RecordOfPurchaseImpl(msisdn, sku, millisSinceEpoch);
-
-        // XXX This is iffy, why not send the purchase object
-        //     directly to the fascade.  Seems bogus, probably is.
-        final Map<String, Object> asMap = purchase.asMap();
-
-        return facade.pushRecordOfPurchaseByMsisdn(asMap);
+        return facade.addRecordOfPurchaseByMsisdn(msisdn, sku, millisSinceEpoch);
     }
 
     @Override
@@ -187,29 +161,9 @@ public final class FbStorage implements Storage {
         facade.removePurchaseRequestById(id);
     }
 
-    // XXX Should this be removed? Doesn't look nice.
-    protected static void handleDataChange(
-            final DataSnapshot snapshot,
-            final CountDownLatch cdl,
-            final Set<String> result,
-            final String msisdn) {
-        if (!snapshot.hasChildren()) {
-            cdl.countDown();
-        } else {
-            try {
-                for (final DataSnapshot snap : snapshot.getChildren()) {
-                    final String key = snap.getKey();
-                    result.add(key);
-                    cdl.countDown();
-                }
-            } catch (Exception e) {
-                LOG.error("Something happened while looking for key = " + msisdn, e);
-            }
-        }
-    }
-
     @Override
     public Subscriber getSubscriberFromMsisdn(final String msisdn) throws StorageException {
+        checkNotNull(msisdn);
         return facade.getSubscriberFromMsisdn(msisdn);
     }
 
@@ -221,11 +175,13 @@ public final class FbStorage implements Storage {
         if (msisdn == null) {
             throw new StorageException("msisdn can't be null");
         }
+
         if (noOfBytes < 0) {
             throw new StorageException("noOfBytes can't be negative");
         }
 
         final SubscriberImpl sub = (SubscriberImpl) getSubscriberFromMsisdn(msisdn);
+
         if (sub == null) {
             throw new StorageException("Unknown msisdn " + msisdn);
         }

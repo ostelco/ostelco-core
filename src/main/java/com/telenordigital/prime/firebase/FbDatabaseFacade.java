@@ -11,6 +11,7 @@ import com.telenordigital.prime.storage.ProductCatalogItem;
 import com.telenordigital.prime.storage.StorageException;
 import com.telenordigital.prime.storage.entities.PurchaseRequest;
 import com.telenordigital.prime.storage.entities.PurchaseRequestImpl;
+import com.telenordigital.prime.storage.entities.RecordOfPurchaseImpl;
 import com.telenordigital.prime.storage.entities.Subscriber;
 import com.telenordigital.prime.storage.entities.SubscriberImpl;
 import org.slf4j.Logger;
@@ -212,6 +213,24 @@ public final class FbDatabaseFacade {
         this.clientRequests.addChildEventListener(cel);
     }
 
+
+
+    public String addRecordOfPurchaseByMsisdn(
+            final String msisdn,
+            final String sku,
+            final long millisSinceEpoch) throws StorageException {
+        checkNotNull(msisdn);
+
+        final RecordOfPurchaseImpl purchase =
+                new RecordOfPurchaseImpl(msisdn, sku, millisSinceEpoch);
+
+        // XXX This is iffy, why not send the purchase object
+        //     directly to the facade.  Seems bogus, probably is.
+        final Map<String, Object> asMap = purchase.asMap();
+
+        return pushRecordOfPurchaseByMsisdn(asMap);
+    }
+
     public String pushRecordOfPurchaseByMsisdn(final Map<String, Object> asMap) {
         checkNotNull(asMap);
         final DatabaseReference dbref = recordsOfPurchase.push();
@@ -243,39 +262,6 @@ public final class FbDatabaseFacade {
                 updateChildren(displayRep);
     }
 
-    private String getKeyFromLookupKey(
-            final DatabaseReference dbref,
-            final String msisdn,
-            final String lookupKey) throws StorageException {
-        final CountDownLatch cdl = new CountDownLatch(1);
-        final Set<String> result = new HashSet<>();
-        dbref.orderByChild(lookupKey).
-                equalTo(msisdn).
-                limitToFirst(1).
-                addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(final DataSnapshot snapshot) {
-                        // XXX This is unclean, fix!
-                        FbStorage.handleDataChange(snapshot, cdl, result, msisdn);
-                    }
-
-                    @Override
-                    public void onCancelled(final DatabaseError error) {
-                        // Empty on purpose.
-                    }
-                });
-        try {
-            if (!cdl.await(SECONDS_TO_WAIT_FOR_FIREBASE, TimeUnit.SECONDS)) {
-                throw new StorageException("Query timed out");
-            } else if (result.isEmpty()) {
-                return null;
-            } else {
-                return result.iterator().next();
-            }
-        } catch (InterruptedException e) {
-            throw new StorageException(e);
-        }
-    }
 
     private String getKeyFromPhoneNumber(
             final DatabaseReference dbref,
@@ -306,6 +292,65 @@ public final class FbDatabaseFacade {
 
     public void removeSubscriberByMsisdn(final String msisdn) throws StorageException {
         removeByMsisdn(authorativeUserData, msisdn);
+    }
+
+
+
+    private String getKeyFromLookupKey(
+            final DatabaseReference dbref,
+            final String msisdn,
+            final String lookupKey) throws StorageException {
+        final CountDownLatch cdl = new CountDownLatch(1);
+        final Set<String> result = new HashSet<>();
+        dbref.orderByChild(lookupKey).
+                equalTo(msisdn).
+                limitToFirst(1).
+                addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(final DataSnapshot snapshot) {
+                        // XXX This is unclean, fix!
+                        handleDataChange(snapshot, cdl, result, msisdn);
+                    }
+
+                    @Override
+                    public void onCancelled(final DatabaseError error) {
+                        // Empty on purpose.
+                    }
+                });
+        try {
+            if (!cdl.await(SECONDS_TO_WAIT_FOR_FIREBASE, TimeUnit.SECONDS)) {
+                throw new StorageException("Query timed out");
+            } else if (result.isEmpty()) {
+                return null;
+            } else {
+                return result.iterator().next();
+            }
+        } catch (InterruptedException e) {
+            throw new StorageException(e);
+        }
+    }
+
+    // XXX Should this be removed? Doesn't look nice.
+    protected static void handleDataChange(
+            final DataSnapshot snapshot,
+            final CountDownLatch cdl,
+            final Set<String> result,
+            final String msisdn) {
+        
+        if (!snapshot.hasChildren()) {
+            cdl.countDown();
+            return;
+        }
+
+        try {
+            for (final DataSnapshot snap : snapshot.getChildren()) {
+                final String key = snap.getKey();
+                result.add(key);
+                cdl.countDown();
+            }
+        } catch (Exception e) {
+            LOG.error("Something happened while looking for key = " + msisdn, e);
+        }
     }
 
     public String injectPurchaseRequest(final PurchaseRequest pr) {

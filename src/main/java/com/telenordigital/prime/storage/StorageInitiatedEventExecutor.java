@@ -21,7 +21,6 @@ public final class StorageInitiatedEventExecutor {
         this.purchaseRequestListeners = new HashSet<>();
     }
 
-
     public void addPurchaseRequestListener(final PurchaseRequestListener listener) {
 
         synchronized (monitor) {

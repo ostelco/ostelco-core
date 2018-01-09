@@ -9,10 +9,9 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author Vihang Patil <vihang.patil@telenordigital.com>
+ * @author Vihang Patil (vihang.patil@telenordigital.com)
  */
 public final class PrimeDisruptor implements Managed {
-
 
     /**
      * Buffer size defaults to 65536 = 2^16

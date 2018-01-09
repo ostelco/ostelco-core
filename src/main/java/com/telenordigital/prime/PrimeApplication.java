@@ -13,12 +13,12 @@ import com.telenordigital.prime.events.EventListeners;
 import com.telenordigital.prime.firebase.FbStorage;
 import com.telenordigital.prime.ocs.OcsServer;
 import com.telenordigital.prime.ocs.OcsService;
-import com.telenordigital.prime.ocs.state.OcsState;
+import com.telenordigital.prime.ocs.OcsState;
 import io.dropwizard.Application;
 import io.dropwizard.setup.Environment;
 
 /**
- * @author Vihang Patil <vihang.patil@telenordigital.com>
+ * @author Vihang Patil (vihang.patil@telenordigital.com)
  */
 public final class PrimeApplication extends Application<PrimeConfiguration> {
 
@@ -41,7 +41,7 @@ public final class PrimeApplication extends Application<PrimeConfiguration> {
         final OcsService ocsService = new OcsService(producer);
 
         // OcsServer assigns OcsService as handler for gRPC requests
-        final OcsServer server = new OcsServer(8082, ocsService);
+        final OcsServer server = new OcsServer(8082, ocsService.asOcsServiceImplBase());
 
         final OcsState ocsState = new OcsState();
 
@@ -70,7 +70,7 @@ public final class PrimeApplication extends Application<PrimeConfiguration> {
         //                  -> Clear
         disruptor.getDisruptor().
                 handleEventsWith(ocsState).
-                then(ocsService, eventProcessor).
+                then(ocsService.asEventHandler(), eventProcessor).
                 then(new ClearingEventHandler());
 
         // dropwizard starts event processor
