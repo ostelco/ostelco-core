@@ -53,7 +53,6 @@ public final class ManagedFirebaseDatabase implements Managed {
         this.firebaseDatabaseMonitor = new Object();
     }
 
-
     /**
      * Create a connection to the database and return that.
      *
@@ -106,10 +105,6 @@ public final class ManagedFirebaseDatabase implements Managed {
                 cdl.countDown();
             }
         }
-    }
-
-    @Override
-    public void stop() {
     }
 
     /**
