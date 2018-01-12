@@ -44,7 +44,7 @@ public class FbStorageTest {
     public void setUp() throws StorageException, InterruptedException {
         this.fbStorage = new FbStorage(
                 "pantel-tests",
-                "src/test/resources/pantel-tests.json" ,
+                "src/integration-tests/resources/pantel-tests.json" ,
                 new EventListeners(new OcsState()));
         this.storage = fbStorage;
         sleep(MILLIS_TO_WAIT_WHEN_STARTING_UP);
