@@ -45,7 +45,7 @@ public class AtomicBooleanHealtcheck extends HealthCheck {
         if (watchedVariable.get()) {
             return Result.healthy();
         } else {
-            return Result.healthy(errorMessage);
+            return Result.unhealthy(errorMessage);
         }
     }
 }
