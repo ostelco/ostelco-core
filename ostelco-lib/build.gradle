@@ -1,9 +1,12 @@
 plugins {
     id "java"
     id "java-library"
+    id 'net.ltgt.apt' version '0.10'
+
+
 //    id 'com.github.ben-manes.versions' version '0.15.0'
 //    id "com.github.johnrengelman.shadow" version "2.0.1"
-    id 'net.ltgt.apt' version '0.10'
+
 }
 
 apply plugin: 'java'
@@ -24,6 +27,11 @@ sourceSets {
 }
 
 apply plugin: 'jacoco'
+
+repositories {
+        mavenLocal()
+        mavenCentral()
+}
 
 dependencies {
     implementation 'io.dropwizard:dropwizard-core:1.2.2'
@@ -47,8 +55,8 @@ dependencies {
     compile group: 'org.jetbrains', name: 'annotations', version: '13.0'
 
     // running edge (.19) since stable (.18) doesn't compile on intellij.
-    compileOnly 'org.projectlombok:lombok:1.16.19'
-    apt "org.projectlombok:lombok:1.16.19"
+    compileOnly 'org.projectlombok:lombok:1.16.20'
+    apt "org.projectlombok:lombok:1.16.20"
 
     // compileOnly 'org.projectlombok:lombok:edge'
     // apt "org.projectlombok:lombok:edge"
@@ -65,4 +73,19 @@ configurations {
 task integration(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
   testClassesDir = sourceSets.integration.output.classesDir
   classpath = sourceSets.integration.runtimeClasspath
+}
+
+
+// repositories {
+//     jcenter()
+// }
+
+
+
+
+jar {
+    manifest {
+        attributes('Implementation-Title': project.name,
+                   'Implementation-Version': project.version)
+    }
 }
