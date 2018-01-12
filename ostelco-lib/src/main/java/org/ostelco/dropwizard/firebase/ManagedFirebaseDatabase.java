@@ -53,8 +53,7 @@ public final class ManagedFirebaseDatabase implements Managed {
         this.firebaseDatabaseMonitor = new Object();
     }
 
-    /// XXX:  Move this to the common library too, it is completely generic and
-    ///       does not add any particular value to the shield project.
+
     /**
      * Create a connection to the database and return that.
      *
