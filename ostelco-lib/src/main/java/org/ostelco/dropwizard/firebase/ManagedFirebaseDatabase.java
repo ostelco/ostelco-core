@@ -94,16 +94,17 @@ public final class ManagedFirebaseDatabase implements Managed {
     @Override
     public void start() throws Exception {
         synchronized(firebaseDatabaseMonitor) {
-            if (this.fdb == null) {
-                this.fdb = setupFirebaseInstance(databaseName, configFile);
-                try {
-                    healthCheckHolder.attachTo(this.fdb);
-                } catch (FirebaseHealthcheckException e) {
-                    throw new FirebaseSetupException("Could not attach to health check holder", e);
-                }
-                for (final CountDownLatch cdl: cdls) {
-                    cdl.countDown();
-                }
+            if (this.fdb != null) {
+                return;
+            }
+            this.fdb = setupFirebaseInstance(databaseName, configFile);
+            try {
+                healthCheckHolder.attachTo(this.fdb);
+            } catch (FirebaseHealthcheckException e) {
+                throw new FirebaseSetupException("Could not attach to health check holder", e);
+            }
+            for (final CountDownLatch cdl : cdls) {
+                cdl.countDown();
             }
         }
     }
