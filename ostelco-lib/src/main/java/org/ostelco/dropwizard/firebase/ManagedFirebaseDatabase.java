@@ -108,6 +108,15 @@ public final class ManagedFirebaseDatabase implements Managed {
     }
 
     /**
+     * Run when service is stopped. Does not do anything, necessary to fulfill
+     * contract for interface {@link io.dropwizard.lifecycle.Managed}.
+     * @throws Exception
+     */
+    @Override
+    public void stop() throws Exception {
+    }
+
+    /**
      * Return a {@link com.codahale.metrics.health.HealthCheck} instance to
      * be used by Dropwizard (and others) to check if the connection to the
      * backend server is up or not.
