@@ -2,8 +2,7 @@ plugins {
     id "java"
     id "java-library"
     id 'net.ltgt.apt' version '0.10'
-
-
+    id 'maven'
 //    id 'com.github.ben-manes.versions' version '0.15.0'
 //    id "com.github.johnrengelman.shadow" version "2.0.1"
 
@@ -11,6 +10,7 @@ plugins {
 
 apply plugin: 'java'
 apply plugin: 'java-library'
+apply plugin: 'maven'
 // apply plugin: 'com.github.johnrengelman.shadow'
 
 sourceSets {
@@ -25,6 +25,7 @@ sourceSets {
     runtimeClasspath += main.output + test.output
   }
 }
+
 
 apply plugin: 'jacoco'
 
