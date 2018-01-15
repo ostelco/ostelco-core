@@ -17,3 +17,5 @@
 * Register ostelco.org or something like that. [done]
 
 * Start using ostelco.org
+
+* Use this to debug the gradle script: https://georgik.rocks/how-to-debug-gradle-script/
