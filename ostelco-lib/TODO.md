@@ -1,4 +1,6 @@
 
+* Follow up gradle disuss thread on https://discuss.gradle.org/t/gradle-install-doesnt-work-what-am-i-doing-wrong/25465
+
 * Make maven repo generate a locally installed library
   https://docs.gradle.org/current/userguide/maven_plugin.html#sub:installing_to_the_local_repository
 
