@@ -8,6 +8,8 @@
 * Write a gradle rule to start committing to maven central, preferably using SSH.
 
   - http://www.sonatype.org/nexus/2015/01/08/deploy-to-maven-central-repository/
+  - https://issues.sonatype.org/browse/OSSRH-37143
+  - Get someone else to register an user and be able to upload.
 
 * Set up the gradle rule.
 
