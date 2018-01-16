@@ -1,18 +1,10 @@
 plugins {
-    id "java"
-    id "java-library"
+     id "java-library"
     id 'net.ltgt.apt' version '0.10'
-//    id 'com.github.ben-manes.versions' version '0.15.0'
-//    id "com.github.johnrengelman.shadow" version "2.0.1"
-
 }
 
-apply plugin: 'java'
 apply plugin: 'java-library'
 apply plugin: 'maven'
-// apply plugin  'maven-publish'
-
-// apply plugin: 'com.github.johnrengelman.shadow'
 
 sourceSets {
   test {
@@ -57,8 +49,8 @@ dependencies {
     compile group: 'org.jetbrains', name: 'annotations', version: '13.0'
 
     // running edge (.19) since stable (.18) doesn't compile on intellij.
-    compileOnly 'org.projectlombok:lombok:1.16.20'
-    apt "org.projectlombok:lombok:1.16.20"
+    compileOnly 'org.projectlombok:lombok:1.16.19'
+    apt "org.projectlombok:lombok:1.16.19"
 
     // compileOnly 'org.projectlombok:lombok:edge'
     // apt "org.projectlombok:lombok:edge"
