@@ -1,7 +1,5 @@
 plugins {
-    id "java"
     id "com.github.johnrengelman.shadow" version "2.0.1"
-    id 'net.ltgt.apt' version '0.10'
 }
 
 apply plugin: 'application'
@@ -24,11 +22,11 @@ apply plugin: 'jacoco'
 
 dependencies {
     implementation project(':ocs-api')
+    implementation project(':ostelco-lib')
     implementation 'io.dropwizard:dropwizard-core:1.1.4'
     implementation 'com.google.firebase:firebase-admin:5.3.1'
     implementation 'com.lmax:disruptor:3.3.7'
     implementation 'com.google.guava:guava:21.0'
-    implementation 'telenordigital.no:ostelco-lib:1.0-SNAPSHOT'
 
     testImplementation 'io.dropwizard:dropwizard-testing:1.1.4'
     testCompile group: 'org.mockito', name: 'mockito-core', version: '2.10.0'
@@ -54,8 +52,6 @@ task integration(type: Test, description: 'Runs the integration tests.', group: 
   testClassesDir = sourceSets.integration.output.classesDir
   classpath = sourceSets.integration.runtimeClasspath
 }
-
-
 
 mainClassName = 'com.telenordigital.prime.PrimeApplication'
 
