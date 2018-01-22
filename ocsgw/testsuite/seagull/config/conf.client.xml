@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<configuration name="Simple IP Client Conf">
+ 
+  <define entity="transport"
+    name="trans-1"
+    file="libtrans_ip.so"
+    create_function="create_cipio_instance"
+    delete_function="delete_cipio_instance"
+    init-args="type=tcp">
+  </define>
+ 
+  <define entity="channel"
+    name="channel-1"
+    protocol="diameter-v1"
+    transport="trans-1"
+    open-args="mode=client;dest=10.6.1.0:3868">
+  </define>
+ 
+  <define entity="traffic-param" name="call-rate" value="5"> </define>
+  <define entity="traffic-param" name="display-period" value="1"> </define>
+  <define entity="traffic-param" name="log-stat-period" value="1"> </define>
+  <define entity="traffic-param" name="log-stat-file" value="../logs/client-stat.csv"> </define>
+  <define entity="traffic-param" name="call-timeout-ms" value="60000"> </define>
+  <define entity="traffic-param" name="display-scenario-stat" value="true"> </define>
+  <define entity="traffic-param" name="display-protocol-stat" value="true"> </define>
+  <define entity="traffic-param" name="log-protocol-stat-period" value="5"> </define>
+  <define entity="traffic-param" name="log-protocol-stat-name" value="all"> </define>
+  <define entity="traffic-param" name="log-protocol-stat-file" value="../logs/client-protocol-stat.csv"> </define>
+
+  <define entity="traffic-param" name="max-send" value="1440000"> </define>
+  <define entity="traffic-param" name="max-receive" value="1440000"> </define>
+  <define entity="traffic-param" name="max-simultaneous-calls" value="5000"> </define>
+  <define entity="traffic-param" name="select-timeout-ms" value="1000"> </define>
+
+  <define entity="traffic-param" name="number-calls" value="10000000"> </define>
+  <define entity="traffic-param" name="external-data-file" value="/config/scenario/msisdn.csv"> </define>
+<!--  <define entity="traffic-param" name="external-data-select" value="random"> </define> -->
+<!--  <define entity="traffic-param" name="model-traffic-select" value="poisson"> </define> -->
+  
+</configuration>

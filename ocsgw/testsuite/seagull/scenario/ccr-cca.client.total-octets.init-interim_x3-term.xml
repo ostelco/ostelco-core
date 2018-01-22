@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<scenario>
+
+  <counter>
+    <counterdef name="HbH-counter" init="91000"> </counterdef>
+    <counterdef name="EtE-counter" init="92000"> </counterdef>
+    <counterdef name="session-counter" init="1000000000"> </counterdef>
+  </counter>
+
+<init>
+    <send channel="channel-1">
+      <command name="CER">
+        <avp name="Origin-Host" value="chacli-01"> </avp>
+        <avp name="Origin-Realm" value="rnd.charging.pt"> </avp>
+        <avp name="Host-IP-Address" value="0x00017F000001"> </avp> <!-- 127.0.0.1 -->
+        <avp name="Vendor-Id" value="000"> </avp>
+        <avp name="Product-Name" value="OURANOS Charging Server Tester"> </avp>
+        <avp name="Origin-State-Id" value="14"> </avp>
+        <avp name="Supported-Vendor-Id" value="10415"> </avp>
+        <avp name="Supported-Vendor-Id" value="12645"> </avp>
+        <avp name="Auth-Application-Id" value="4"> </avp>
+      </command>
+    </send>
+    
+    <receive channel="channel-1">
+      <command name="CEA"> </command>
+    </receive>
+  </init>
+
+<!-- Traffic -->
+  <traffic>
+   
+    <!--  CCR Initial Request -->
+    <send channel="channel-1">
+      <action>
+        <!-- select MSISDN from msisdn.csv file -->
+        <restore-from-external field="0" entity="Subscription-Id-Data"> </restore-from-external>
+   
+        <!-- For each new call, increment the session-ID counter -->
+        <inc-counter name="HbH-counter"> </inc-counter>
+        <inc-counter name="EtE-counter"> </inc-counter>
+        <inc-counter name="session-counter"> </inc-counter>
+          <set-value name="HbH-id" format="$(HbH-counter)"> </set-value>
+          <set-value name="EtE-id" format="$(EtE-counter)"> </set-value>
+          <set-value name="Session-Id" format="chacli-01:28122012:$(session-counter)"> </set-value>
+      </action>
+   
+      <command name="CCR">
+        <avp name="Session-Id" value="value_is_replaced"> </avp>
+
+        <avp name="Origin-Host" value="chacli-01"> </avp>
+        <avp name="Origin-Realm" value="rnd.charging.pt"> </avp>
+
+        <avp name="Destination-Realm" value="mobicents.org"> </avp>
+        <avp name="Destination-Host" value="mob-chaser"> </avp>
+
+        <avp name="Auth-Application-Id" value="4"> </avp>
+
+        <avp name="Service-Context-Id" value="mob.data@mvno.pt" > </avp>
+
+        <avp name="CC-Request-Type" value="1"> </avp>
+        <avp name="CC-Request-Number" value="0"> </avp>
+
+          <avp name="Event-Timestamp" value="0xD472F31C"> </avp>
+        <avp name="Subscription-Id">
+          <avp name="Subscription-Id-Type" value="0"> </avp>
+          <avp name="Subscription-Id-Data" value="+351910123456"> </avp>
+        </avp>
+        <avp name="Multiple-Services-Credit-Control">
+		  <avp name="Service-Identifier" value="17"> </avp>
+          <avp name="Requested-Service-Unit">
+            <avp name="CC-Total-Octets" value="1048576"> </avp>
+          </avp>
+        </avp>
+
+        <avp name="User-Equipment-Info">
+          <avp name="User-Equipment-Info-Type" value="1"> </avp>
+          <avp name="User-Equipment-Info-Value" value="00-10-A4-23-19-C0"> </avp>
+        </avp>
+      </command>
+      
+      <action>
+          <start-timer> </start-timer>
+        <store name="msisdn" entity="Subscription-Id-Data"> </store>
+      </action>
+    </send>
+    
+    <receive channel="channel-1">
+      <command name="CCA">
+        <avp name="Result-Code" value="2001"> </avp>
+      </command>
+      <action>
+          <stop-timer> </stop-timer>
+        <check-value name="Result-Code" behaviour="error"> </check-value>
+        <store name="sid" entity="Session-Id"> </store>
+      </action>  
+    </receive>
+
+      <wait-ms value="2000"> </wait-ms>
+    
+    <!--  CCR Update Request (#1) -->
+    <send channel="channel-1">
+      <action>
+      <!-- For each new call, increment the session-ID counter -->
+          <inc-counter name="HbH-counter"> </inc-counter>
+          <inc-counter name="EtE-counter"> </inc-counter>
+          <restore name="sid" entity="Session-Id"> </restore>
+          <restore name="msisdn" entity="Subscription-Id-Data"> </restore>
+          <set-value name="HbH-id" format="$(HbH-counter)"> </set-value>
+          <set-value name="EtE-id" format="$(EtE-counter)"> </set-value>
+      </action>
+   
+      <command name="CCR">
+        <avp name="Session-Id" value="value_is_replaced"> </avp>
+
+        <avp name="Origin-Host" value="chacli-01"> </avp>
+        <avp name="Origin-Realm" value="rnd.charging.pt"> </avp>
+
+        <avp name="Destination-Realm" value="mobicents.org"> </avp>
+        <avp name="Destination-Host" value="mob-chaser"> </avp>
+
+        <avp name="Auth-Application-Id" value="4"> </avp>
+
+        <avp name="Service-Context-Id" value="mob.data@mvno.pt" > </avp>
+
+        <avp name="CC-Request-Type" value="2"> </avp>
+        <avp name="CC-Request-Number" value="1"> </avp>
+
+          <avp name="Event-Timestamp" value="0xD472F31C"> </avp>
+        <avp name="Subscription-Id">
+          <avp name="Subscription-Id-Type" value="0"> </avp>
+          <avp name="Subscription-Id-Data" value="+351910123456"> </avp>
+        </avp>
+        
+
+        <avp name="Multiple-Services-Credit-Control">
+            <avp name="Service-Identifier" value="17"> </avp>
+		    <avp name="Used-Service-Unit">
+                <avp name="CC-Total-Octets" value="357376"> </avp>
+            </avp>
+
+          <avp name="Requested-Service-Unit">
+            <avp name="CC-Total-Octets" value="1048576"> </avp>
+          </avp>
+        </avp>
+      </command>
+      
+      <action>
+          <start-timer> </start-timer>
+      </action>
+    </send>
+    
+    <receive channel="channel-1">
+      <action>
+          <stop-timer> </stop-timer>
+      </action>
+      <command name="CCA">
+        <avp name="Result-Code" value="2001"> </avp>
+      </command>
+      <action>
+          <check-value name="Result-Code" behaviour="error"> </check-value>
+      </action>
+    </receive>
+
+      <wait-ms value="3000"> </wait-ms>
+   
+    <!--  CCR Update Request (#2) -->
+    <send channel="channel-1">
+      <action>
+      <!-- For each new call, increment the session-ID counter -->
+          <inc-counter name="HbH-counter"> </inc-counter>
+          <inc-counter name="EtE-counter"> </inc-counter>
+          <restore name="sid" entity="Session-Id"> </restore>
+          <restore name="msisdn" entity="Subscription-Id-Data"> </restore>
+          <set-value name="HbH-id" format="$(HbH-counter)"> </set-value>
+          <set-value name="EtE-id" format="$(EtE-counter)"> </set-value>
+      </action>
+   
+      <command name="CCR">
+        <avp name="Session-Id" value="value_is_replaced"> </avp>
+
+        <avp name="Origin-Host" value="chacli-01"> </avp>
+        <avp name="Origin-Realm" value="rnd.charging.pt"> </avp>
+
+        <avp name="Destination-Realm" value="mobicents.org"> </avp>
+        <avp name="Destination-Host" value="mob-chaser"> </avp>
+
+        <avp name="Auth-Application-Id" value="4"> </avp>
+
+        <avp name="Service-Context-Id" value="mob.data@mvno.pt" > </avp>
+
+        <avp name="CC-Request-Type" value="2"> </avp>
+        <avp name="CC-Request-Number" value="2"> </avp>
+
+          <avp name="Event-Timestamp" value="0xD472F31C"> </avp>
+        <avp name="Subscription-Id">
+          <avp name="Subscription-Id-Type" value="0"> </avp>
+          <avp name="Subscription-Id-Data" value="+351910123456"> </avp>
+        </avp>
+        
+
+        <avp name="Multiple-Services-Credit-Control">
+        <avp name="Service-Identifier" value="17"> </avp>
+		<avp name="Used-Service-Unit">
+            <avp name="CC-Total-Octets" value="357376"> </avp>
+          </avp>
+
+          <avp name="Requested-Service-Unit">
+            <avp name="CC-Total-Octets" value="1048576"> </avp>
+          </avp>
+        </avp>
+      </command>
+      
+      <action>
+          <start-timer> </start-timer>
+      </action>
+    </send>
+    
+    <receive channel="channel-1">
+      <action>
+          <stop-timer> </stop-timer>
+      </action>
+      <command name="CCA">
+        <avp name="Result-Code" value="2001"> </avp>
+      </command>
+      <action>
+          <check-value name="Result-Code" behaviour="error"> </check-value>
+      </action>
+    </receive>
+
+      <wait-ms value="3000"> </wait-ms>
+    
+    <!--  CCR Update Request (#3) -->
+    <send channel="channel-1">
+      <action>
+      <!-- For each new call, increment the session-ID counter -->
+          <inc-counter name="HbH-counter"> </inc-counter>
+          <inc-counter name="EtE-counter"> </inc-counter>
+          <restore name="sid" entity="Session-Id"> </restore>
+          <restore name="msisdn" entity="Subscription-Id-Data"> </restore>
+          <set-value name="HbH-id" format="$(HbH-counter)"> </set-value>
+          <set-value name="EtE-id" format="$(EtE-counter)"> </set-value>
+   
+      </action>
+   
+      <command name="CCR">
+        <avp name="Session-Id" value="value_is_replaced"> </avp>
+
+        <avp name="Origin-Host" value="chacli-01"> </avp>
+        <avp name="Origin-Realm" value="rnd.charging.pt"> </avp>
+
+        <avp name="Destination-Realm" value="mobicents.org"> </avp>
+        <avp name="Destination-Host" value="mob-chaser"> </avp>
+
+        <avp name="Auth-Application-Id" value="4"> </avp>
+
+        <avp name="Service-Context-Id" value="mob.data@mvno.pt" > </avp>
+
+        <avp name="CC-Request-Type" value="2"> </avp>
+        <avp name="CC-Request-Number" value="3"> </avp>
+
+          <avp name="Event-Timestamp" value="0xD472F31C"> </avp>
+        <avp name="Subscription-Id">
+          <avp name="Subscription-Id-Type" value="0"> </avp>
+          <avp name="Subscription-Id-Data" value="+351910123456"> </avp>
+        </avp>
+        
+
+        <avp name="Multiple-Services-Credit-Control">
+<avp name="Service-Identifier" value="17"> </avp>        
+		<avp name="Used-Service-Unit">
+            <avp name="CC-Total-Octets" value="357376"> </avp>
+          </avp>
+
+          <avp name="Requested-Service-Unit">
+            <avp name="CC-Total-Octets" value="1048576"> </avp>
+          </avp>
+        </avp>
+      </command>
+      
+      <action>
+          <start-timer> </start-timer>
+      </action>
+    </send>
+    
+    <receive channel="channel-1">
+      <action>
+          <stop-timer> </stop-timer>
+      </action>
+      <command name="CCA">
+        <avp name="Result-Code" value="2001"> </avp>
+      </command>
+      <action>
+          <check-value name="Result-Code" behaviour="error"> </check-value>
+      </action>
+    </receive>
+
+      <wait-ms value="3000"> </wait-ms>
+   
+    <!--  CCR Termination Request -->
+    <send channel="channel-1">
+      <action>
+        <!-- For each new call, increment the session-ID counter -->
+          <inc-counter name="HbH-counter"> </inc-counter>
+          <inc-counter name="EtE-counter"> </inc-counter>
+          <restore name="sid" entity="Session-Id"> </restore>
+          <restore name="msisdn" entity="Subscription-Id-Data"> </restore>
+          <set-value name="HbH-id" format="$(HbH-counter)"> </set-value>
+          <set-value name="EtE-id" format="$(EtE-counter)"> </set-value>
+      </action>
+      
+      <command name="CCR">
+        <avp name="Session-Id" value="value_is_replaced"> </avp>
+
+        <avp name="Origin-Host" value="chacli-01"> </avp>
+        <avp name="Origin-Realm" value="rnd.charging.pt"> </avp>
+
+        <avp name="Destination-Realm" value="mobicents.org"> </avp>
+        <avp name="Destination-Host" value="mob-chaser"> </avp>
+
+        <avp name="Auth-Application-Id" value="4"> </avp>
+
+        <avp name="Service-Context-Id" value="mob.data@mvno.pt" > </avp>
+
+        <avp name="CC-Request-Type" value="3"> </avp>
+        <avp name="CC-Request-Number" value="5"> </avp>
+
+          <avp name="Event-Timestamp" value="0xD472F31C"> </avp>
+        <avp name="Subscription-Id">
+          <avp name="Subscription-Id-Type" value="0"> </avp>
+          <avp name="Subscription-Id-Data" value="+351910123456"> </avp>
+        </avp>
+        
+
+        <avp name="Multiple-Services-Credit-Control">
+<avp name="Service-Identifier" value="17"> </avp>        
+		<avp name="Used-Service-Unit">
+            <avp name="CC-Total-Octets" value="357376"> </avp>
+          </avp>
+        </avp>
+
+        <avp name="Termination-Cause" value="1"> </avp>
+      </command>
+
+      <action>
+          <start-timer> </start-timer>
+      </action>
+    </send>
+    
+    <receive channel="channel-1">
+      <action>
+          <stop-timer> </stop-timer>
+      </action>
+      <command name="CCA">
+        <avp name="Result-Code" value="2001"> </avp>
+      </command>
+      <action>
+          <check-value name="Result-Code" behaviour="error"> </check-value>
+      </action>
+    </receive>
+   
+  </traffic>
+  
+</scenario>
+
