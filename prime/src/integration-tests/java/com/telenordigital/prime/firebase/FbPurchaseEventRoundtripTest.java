@@ -55,7 +55,7 @@ public final class FbPurchaseEventRoundtripTest {
     public void setUp() throws Exception {
         this.fbStorage = new FbStorage(
                 "pantel-tests",
-                "src/test/resources/pantel-tests.json",
+                "src/integration-tests/resources/pantel-tests.json",
                 new EventListeners(new OcsState()));
         this.storage = fbStorage;
         final int millisToSleepDuringStartup = 3000;

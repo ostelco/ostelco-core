@@ -5,4 +5,4 @@ logging:
 
 eventProcessor:
   databaseName: pantel-tests
-  configFile: src/test/resources/pantel-tests.json
+  configFile: src/integration-tests/resources/pantel-tests.json

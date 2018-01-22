@@ -1,0 +1,70 @@
+plugins {
+    id "java-library"
+    // id 'net.ltgt.apt' version '0.10'
+}
+
+apply plugin: 'java-library'
+
+sourceSets {
+    test {
+        java.srcDirs = ['src/test/java']
+    }
+
+    integration {
+        java.srcDirs = ['src/test/java', 'src/integration-tests/java']
+        resources.srcDir 'src/integration-tests/resources'
+        compileClasspath += main.output + test.output
+        runtimeClasspath += main.output + test.output
+    }
+}
+
+apply plugin: 'jacoco'
+
+dependencies {
+    implementation 'io.dropwizard:dropwizard-core:1.2.2'
+    implementation 'io.dropwizard:dropwizard-auth:1.2.2'
+    implementation 'com.google.firebase:firebase-admin:5.6.0'
+    implementation 'com.lmax:disruptor:3.3.7'
+    implementation 'com.google.guava:guava:21.0'
+
+    testImplementation 'io.dropwizard:dropwizard-testing:1.2.2'
+    testCompile group: 'org.mockito', name: 'mockito-core', version: '2.10.0'
+    testCompile 'org.assertj:assertj-core:3.9.0'
+
+    // https://mvnrepository.com/artifact/org.glassfish.jersey.test-framework.providers/jersey-test-framework-provider-grizzly2
+    testCompile(group: 'org.glassfish.jersey.test-framework.providers', name: 'jersey-test-framework-provider-grizzly2', version: '2.25.1') {
+        // 2.26 (latest)
+        exclude group: 'javax.servlet', module: 'javax.servlet-api'
+        exclude group: 'junit', module: 'junit'
+    }
+
+    // https://mvnrepository.com/artifact/org.jetbrains/annotations
+    compile group: 'org.jetbrains', name: 'annotations', version: '13.0'
+
+    // running edge (.19) since stable (.18) doesn't compile on intellij.
+    compileOnly 'org.projectlombok:lombok:1.16.19'
+    // apt "org.projectlombok:lombok:1.16.19"
+
+    // compileOnly 'org.projectlombok:lombok:edge'
+    // apt "org.projectlombok:lombok:edge"
+    // https://mvnrepository.com/artifact/org.mockito/mockito-core
+
+}
+
+configurations {
+    integrationImplementation.extendsFrom testImplementation
+    integrationCompile.extendsFrom testCompile
+    integrationRuntime.extendsFrom testRuntime
+}
+
+task integration(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
+    testClassesDir = sourceSets.integration.output.classesDir
+    classpath = sourceSets.integration.runtimeClasspath
+}
+
+jar {
+    manifest {
+        attributes('Implementation-Title': project.name,
+                'Implementation-Version': project.version)
+    }
+}

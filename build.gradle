@@ -7,7 +7,7 @@ allprojects {
     apply plugin: 'project-report'
     apply plugin: 'com.github.ben-manes.versions'
 
-    group = 'com.telenordigital'
+    group = 'org.ostelco'
     version = '1.0.0-SNAPSHOT'
 
     repositories {
