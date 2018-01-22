@@ -1,19 +1,7 @@
-group 'com.telenordigital'
-version '1.0-SNAPSHOT'
-
-apply plugin: 'java'
 apply plugin: 'application'
 apply plugin: 'org.junit.platform.gradle.plugin'
 
 mainClassName = 'com.telenordigital.ocsgw.OcsApplication'
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
-repositories {
-    mavenLocal()
-    mavenCentral()
-}
 
 dependencies {
     implementation 'org.mobicents.diameter:jdiameter-api:1.7.0.201'
