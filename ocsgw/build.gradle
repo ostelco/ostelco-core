@@ -20,7 +20,7 @@ mainClassName = 'com.telenordigital.ocsgw.OcsApplication'
 dependencies {
     implementation 'org.mobicents.diameter:jdiameter-api:1.7.0.201'
     implementation 'org.mobicents.diameter:jdiameter-impl:1.7.0.201'
-    implementation 'com.telenordigital:ocs-api:1.0.0-SNAPSHOT'
+    implementation project(':ocs-api')
     testCompile 'org.junit.jupiter:junit-jupiter-api:5.0.3'
     testRuntime 'org.junit.jupiter:junit-jupiter-engine:5.0.3'
 }
