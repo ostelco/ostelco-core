@@ -1,9 +1,8 @@
 plugins {
+    id "application"
+    id "jacoco"
     id "com.github.johnrengelman.shadow" version "2.0.1"
 }
-
-apply plugin: 'application'
-apply plugin: 'com.github.johnrengelman.shadow'
 
 sourceSets {
   test {
@@ -17,8 +16,6 @@ sourceSets {
     runtimeClasspath += main.output + test.output
   }
 }
-
-apply plugin: 'jacoco'
 
 dependencies {
     implementation project(':ocs-api')

@@ -1,9 +1,8 @@
 plugins {
     id "java-library"
+    id "jacoco"
     // id 'net.ltgt.apt' version '0.10'
 }
-
-apply plugin: 'java-library'
 
 sourceSets {
     test {
@@ -17,8 +16,6 @@ sourceSets {
         runtimeClasspath += main.output + test.output
     }
 }
-
-apply plugin: 'jacoco'
 
 dependencies {
     implementation 'io.dropwizard:dropwizard-core:1.2.2'

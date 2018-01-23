@@ -1,4 +1,18 @@
-apply plugin: 'application'
+// TODO move the JUnit 5 gradle plugin to new style
+// Ref: https://github.com/junit-team/junit5/issues/768
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.junit.platform:junit-platform-gradle-plugin:1.0.3'
+    }
+}
+
+plugins {
+    id "application"
+}
+
 apply plugin: 'org.junit.platform.gradle.plugin'
 
 mainClassName = 'com.telenordigital.ocsgw.OcsApplication'
@@ -9,15 +23,6 @@ dependencies {
     implementation 'com.telenordigital:ocs-api:1.0.0-SNAPSHOT'
     testCompile 'org.junit.jupiter:junit-jupiter-api:5.0.3'
     testRuntime 'org.junit.jupiter:junit-jupiter-engine:5.0.3'
-}
-
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'org.junit.platform:junit-platform-gradle-plugin:1.0.3'
-    }
 }
 
 jar {
