@@ -1,5 +1,7 @@
 FROM ubuntu:15.04
 
+MAINTAINER CSI "csi@telenordigital.com"
+
 RUN apt-get update
 RUN apt-get -y install build-essential curl git libglib2.0-dev ksh bison flex vim tmux net-tools
 RUN mkdir -p ~/opt/src

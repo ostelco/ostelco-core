@@ -24,10 +24,10 @@ class OcsApplicationTest {
 
     private static final Logger log = Logger.getLogger(OcsApplicationTest.class);
 
-    final String destRealm = "loltel";
-    final String destHost = "ocs";
-    final int commandCode = 272; // Credit-Control
-    final long applicationID = 4L;  // Diameter Credit Control Application (4)
+    private final String destRealm = "loltel";
+    private final String destHost = "ocs";
+    private final int commandCode = 272; // Credit-Control
+    private final long applicationID = 4L;  // Diameter Credit Control Application (4)
 
     private TestClient client;
     private OcsApplication application = new OcsApplication();

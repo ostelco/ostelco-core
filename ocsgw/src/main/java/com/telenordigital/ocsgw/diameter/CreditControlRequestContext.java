@@ -54,7 +54,7 @@ public class CreditControlRequestContext {
         }
     }
 
-    JCreditControlAnswerImpl convertToCCA(CreditControlAnswer creditControlAnswer) {
+    private JCreditControlAnswerImpl convertToCCA(CreditControlAnswer creditControlAnswer) {
 
         JCreditControlAnswerImpl answer = null;
 

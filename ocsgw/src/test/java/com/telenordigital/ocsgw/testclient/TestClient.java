@@ -34,27 +34,34 @@ import org.jdiameter.server.impl.helpers.XMLConfiguration;
 public class TestClient implements EventListener<Request, Answer> {
 
     private static final Logger log = Logger.getLogger(TestClient.class);
+    // The request the test client will send
+    private JCreditControlRequest request;
+    // The result for the request
+    private AvpSet resultAvps;
+    // The resultcode AVP for the request
+    private Avp resultCodeAvp;
+    //configuration files
+    private static final String configFile = "client-jdiameter-config.xml";
+    // definition of codes, IDs
+    private static final long applicationID = 4L;  // Diameter Credit Control Application (4)
+    private ApplicationId authAppId = ApplicationId.createByAuthAppId(applicationID);
+    //stack and session factory
+    private Stack stack;
+    private SessionFactory factory;
+    private Session session;  // session used as handle for communication
+    private boolean finished = true;  //boolean telling if we finished our interaction
+
     static {
         //configure logging.
         configLog4j();
     }
 
-    // The request the test client will send
-    private JCreditControlRequest request;
-
     public AvpSet getResultAvps() {
         return resultAvps;
     }
-
-    // The result for the request
-    private AvpSet resultAvps;
-
     public Avp getResultCodeAvp() {
         return resultCodeAvp;
     }
-
-    // The resultcode AVP for the request
-    private Avp resultCodeAvp;
 
     private static void configLog4j() {
         InputStream inStreamLog4j = TestClient.class.getClassLoader().getResourceAsStream("log4j.properties");
@@ -76,19 +83,6 @@ public class TestClient implements EventListener<Request, Answer> {
         }
         log.debug("log4j configured");
     }
-
-    //configuration files
-    private static final String configFile = "client-jdiameter-config.xml";
-
-    // definition of codes, IDs
-    private static final long applicationID = 4L;  // Diameter Credit Control Application (4)
-    private ApplicationId authAppId = ApplicationId.createByAuthAppId(applicationID);
-    //stack and session factory
-    private Stack stack;
-    private SessionFactory factory;
-
-    private Session session;  // session used as handle for communication
-    private boolean finished = true;  //boolean telling if we finished our interaction
 
     public void initStack() {
         if (log.isInfoEnabled()) {

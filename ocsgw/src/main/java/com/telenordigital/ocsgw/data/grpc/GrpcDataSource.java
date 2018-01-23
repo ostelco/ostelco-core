@@ -30,7 +30,7 @@ public class GrpcDataSource implements DataSource {
      * The ip:port on which the gRPC service will be receiving incoming
      * connections.
      */
-    private static final String SOCKET = "172.16.238.4:8082";
+    private static final String SOCKET = "172.16.238.4:8082";  // ToDo : move to config file
 
     private final OcsServiceGrpc.OcsServiceStub ocsServiceStub;
 

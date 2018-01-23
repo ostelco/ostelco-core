@@ -53,8 +53,8 @@ class OcsApplication extends CCASessionFactoryImpl implements NetworkReqListener
             Set<ApplicationId> appIds = stack.getMetaData().getLocalPeer().getCommonApplications();
 
             logger.info("Diameter Stack  :: Supporting " + appIds.size() + " applications.");
-            for (org.jdiameter.api.ApplicationId x : appIds) {
-                logger.info("Diameter Stack  :: Common :: " + x);
+            for (ApplicationId id : appIds) {
+                logger.info("Diameter Stack  :: Common :: " + id);
             }
 
         } catch (Exception e) {
