@@ -99,11 +99,11 @@ public class TestClient implements EventListener<Request, Answer> {
                 log.info("Client Stack Configuration successfully loaded.");
             }
             //Print info about applicatio
-            Set<org.jdiameter.api.ApplicationId> appIds = stack.getMetaData().getLocalPeer().getCommonApplications();
+            Set<ApplicationId> appIds = stack.getMetaData().getLocalPeer().getCommonApplications();
 
             log.info("Diameter Stack  :: Supporting " + appIds.size() + " applications.");
-            for (org.jdiameter.api.ApplicationId x : appIds) {
-                log.info("Diameter Stack  :: Common :: " + x);
+            for (ApplicationId id : appIds) {
+                log.info("Diameter Stack  :: Common :: " + id);
             }
             is.close();
             //Register network req listener, even though we wont receive requests

@@ -18,7 +18,7 @@ public class LocalDataSource implements DataSource {
 
     @Override
     public void init() {
-
+        // No init needed
     }
 
     @Override
