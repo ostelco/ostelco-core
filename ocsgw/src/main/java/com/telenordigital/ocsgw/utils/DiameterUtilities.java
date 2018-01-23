@@ -20,59 +20,15 @@ public class DiameterUtilities {
 
     private static void printAvps(AvpSet avps, String indentation) {
         for (Avp avp : avps) {
-            AvpRepresentation avpRep = AVP_DICTIONARY.getAvp(avp.getCode(), avp.getVendorId());
-            Object avpValue;
-            boolean isGrouped = false;
-
-            try {
-                String avpType = AVP_DICTIONARY.getAvp(avp.getCode(), avp.getVendorId()).getType();
-
-                switch (avpType) {
-                    case "Integer32":
-                    case "AppId":
-                        avpValue = avp.getInteger32();
-                        break;
-                    case "Unsigned32":
-                    case "VendorId":
-                        avpValue = avp.getUnsigned32();
-                        break;
-                    case "Float64":
-                        avpValue = avp.getFloat64();
-                        break;
-                    case "Integer64":
-                        avpValue = avp.getInteger64();
-                        break;
-                    case "Time":
-                        avpValue = avp.getTime();
-                        break;
-                    case "Unsigned64":
-                        avpValue = avp.getUnsigned64();
-                        break;
-                    case "Grouped":
-                        avpValue = "<Grouped>";
-                        isGrouped = true;
-                        break;
-                    default:
-                        avpValue = avp.getUTF8String().replaceAll("\r", "").replaceAll("\n", "");
-                        break;
-                }
-            } catch (Exception ignore) {
-                try {
-                    avpValue = avp.getUTF8String().replaceAll("\r", "").replaceAll("\n", "");
-                } catch (AvpDataException e) {
-                    avpValue = avp.toString();
-                }
-            }
-
-            StringBuilder avpLine = new StringBuilder(indentation + avp.getCode() + ": " + avpRep.getName());
+            String name = AVP_DICTIONARY.getAvp(avp.getCode(), avp.getVendorId()).getName();
+            Object avpValue = getAvpValue(avp);
+            StringBuilder avpLine = new StringBuilder(indentation + avp.getCode() + ": " + name);
             while (avpLine.length() < 50) {
                 avpLine.append(avpLine.length() % 2 == 0 ? "." : " ");
             }
             avpLine.append(avpValue);
-
             logger.info(avpLine.toString());
-
-            if (isGrouped) {
+            if (isGrouped(avp)) {
                 try {
                     printAvps(avp.getGrouped(), indentation + "  ");
                 } catch (AvpDataException e) {
@@ -80,5 +36,63 @@ public class DiameterUtilities {
                 }
             }
         }
+    }
+
+    private static Object getAvpValue(Avp avp) {
+        Object avpValue = null;
+        try {
+            String avpType = AVP_DICTIONARY.getAvp(avp.getCode(), avp.getVendorId()).getType();
+
+            switch (avpType) {
+                case "Integer32":
+                case "AppId":
+                    avpValue = avp.getInteger32();
+                    break;
+                case "Unsigned32":
+                case "VendorId":
+                    avpValue = avp.getUnsigned32();
+                    break;
+                case "Float64":
+                    avpValue = avp.getFloat64();
+                    break;
+                case "Integer64":
+                    avpValue = avp.getInteger64();
+                    break;
+                case "Time":
+                    avpValue = avp.getTime();
+                    break;
+                case "Unsigned64":
+                    avpValue = avp.getUnsigned64();
+                    break;
+                case "Grouped":
+                    avpValue = "<Grouped>";
+                    break;
+                default:
+                    avpValue = avp.getUTF8String().replaceAll("\r", "").replaceAll("\n", "");
+                    break;
+            }
+        } catch (Exception ignore) {
+            try {
+                avpValue = avp.getUTF8String().replaceAll("\r", "").replaceAll("\n", "");
+            } catch (AvpDataException e) {
+                avpValue = avp.toString();
+            }
+        }
+        return avpValue;
+    }
+
+    private static boolean isGrouped(Avp avp) {
+        boolean grouped = false;
+
+        try {
+            String avpType = AVP_DICTIONARY.getAvp(avp.getCode(), avp.getVendorId()).getType();
+
+            if (avpType == "Grouped") {
+               grouped = true;
+            }
+        } catch (Exception ignore) {
+            // Not grouped
+        }
+        return  grouped;
     }
 }
