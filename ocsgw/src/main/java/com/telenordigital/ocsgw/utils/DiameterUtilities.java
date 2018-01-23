@@ -4,7 +4,6 @@ import org.apache.log4j.Logger;
 import org.jdiameter.api.Avp;
 import org.jdiameter.api.AvpDataException;
 import org.jdiameter.api.AvpSet;
-import org.jdiameter.api.validation.AvpRepresentation;
 import org.jdiameter.api.validation.Dictionary;
 import org.jdiameter.common.impl.validation.DictionaryImpl;
 
@@ -87,7 +86,7 @@ public class DiameterUtilities {
         try {
             String avpType = AVP_DICTIONARY.getAvp(avp.getCode(), avp.getVendorId()).getType();
 
-            if (avpType == "Grouped") {
+            if (avpType.equals("Grouped")) {
                grouped = true;
             }
         } catch (Exception ignore) {
