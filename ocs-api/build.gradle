@@ -26,8 +26,8 @@ protobuf {
 
 idea {
     module {
-        sourceDirs += file("${protobuf.generatedFilesBaseDir}/main/java");
-        sourceDirs += file("${protobuf.generatedFilesBaseDir}/main/grpc");
+        sourceDirs += files("${protobuf.generatedFilesBaseDir}/main/java")
+        sourceDirs += files("${protobuf.generatedFilesBaseDir}/main/grpc")
     }
 }
 

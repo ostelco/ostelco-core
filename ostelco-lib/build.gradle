@@ -1,20 +1,6 @@
 plugins {
     id "java-library"
     id "jacoco"
-    // id 'net.ltgt.apt' version '0.10'
-}
-
-sourceSets {
-    test {
-        java.srcDirs = ['src/test/java']
-    }
-
-    integration {
-        java.srcDirs = ['src/test/java', 'src/integration-tests/java']
-        resources.srcDir 'src/integration-tests/resources'
-        compileClasspath += main.output + test.output
-        runtimeClasspath += main.output + test.output
-    }
 }
 
 dependencies {
@@ -52,11 +38,6 @@ configurations {
     integrationImplementation.extendsFrom testImplementation
     integrationCompile.extendsFrom testCompile
     integrationRuntime.extendsFrom testRuntime
-}
-
-task integration(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
-    testClassesDir = sourceSets.integration.output.classesDir
-    classpath = sourceSets.integration.runtimeClasspath
 }
 
 jar {
