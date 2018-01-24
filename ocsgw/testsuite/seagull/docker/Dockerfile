@@ -2,23 +2,23 @@ FROM ubuntu:15.04
 
 MAINTAINER CSI "csi@telenordigital.com"
 
-RUN apt-get update
-RUN apt-get -y install build-essential curl git libglib2.0-dev ksh bison flex vim tmux net-tools
-RUN mkdir -p ~/opt/src
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends build-essential curl git libglib2.0-dev ksh bison flex vim tmux net-tools \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p root/opt/src
+WORKDIR root/opt/src
 RUN git clone https://github.com/codeghar/Seagull.git ~/opt/src/seagull &&\
-  cd ~/opt/src/seagull &&\
   git branch build master &&\
   git checkout build
-RUN cd ~/opt/src/seagull/seagull/trunk/src &&\
-  curl --create-dirs -o ~/opt/src/seagull/seagull/trunk/src/external-lib-src/sctplib-1.0.15.tar.gz http://www.sctp.de/download/sctplib-1.0.15.tar.gz &&\
+WORKDIR root/opt/src/seagull/seagull/trunk/src
+RUN curl --create-dirs -o ~/opt/src/seagull/seagull/trunk/src/external-lib-src/sctplib-1.0.15.tar.gz http://www.sctp.de/download/sctplib-1.0.15.tar.gz &&\
   curl --create-dirs -o ~/opt/src/seagull/seagull/trunk/src/external-lib-src/socketapi-2.2.8.tar.gz http://www.sctp.de/download/socketapi-2.2.8.tar.gz
-RUN cd ~/opt/src/seagull/seagull/trunk/src &&\
-  curl --create-dirs -o ~/opt/src/seagull/seagull/trunk/src/external-lib-src/openssl-1.0.2e.tar.gz https://www.openssl.org/source/openssl-1.0.2e.tar.gz &&\
+RUN curl --create-dirs -o ~/opt/src/seagull/seagull/trunk/src/external-lib-src/openssl-1.0.2e.tar.gz https://www.openssl.org/source/openssl-1.0.2e.tar.gz &&\
   ksh build-ext-lib.ksh
-RUN cd ~/opt/src/seagull/seagull/trunk/src &&\
-  ksh build.ksh -target clean &&\
+RUN ksh build.ksh -target clean &&\
   ksh build.ksh -target all
-RUN cp ~/opt/src/seagull/seagull/trunk/src/bin/* /usr/local/bin
+RUN cp root/opt/src/seagull/seagull/trunk/src/bin/* /usr/local/bin
 ENV LD_LIBRARY_PATH /usr/local/bin
 RUN mkdir -p /opt/seagull &&\
   cp -r ~/opt/src/seagull/seagull/trunk/src/exe-env/* /opt/seagull
