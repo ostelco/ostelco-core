@@ -174,6 +174,8 @@ public class GrpcDataSource implements DataSource {
             mscc.setGrantedServiceUnit(response.getBytes());
         }
 
+        answer.setMultipleServiceCreditControls(multipleServiceCreditControls);
+
         return answer;
     }
 }
