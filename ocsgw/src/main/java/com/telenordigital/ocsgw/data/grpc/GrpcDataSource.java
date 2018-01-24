@@ -51,6 +51,7 @@ public class GrpcDataSource implements DataSource {
         }
 
         public final void onCompleted() {
+            // Nothing to do here
         }
     }
 
@@ -113,6 +114,7 @@ public class GrpcDataSource implements DataSource {
         switch (context.getOriginalCreditControlRequest().getRequestTypeAVPValue()) {
 
             case RequestType.INITIAL_REQUEST:
+                // CCR-Init is handled in same way as Update
             case RequestType.UPDATE_REQUEST:
                 final String requestId = UUID.randomUUID().toString();
                 ccrMap.put(requestId, context);
@@ -138,6 +140,7 @@ public class GrpcDataSource implements DataSource {
                 break;
             default:
                 logger.info("Unhandled forward request");
+                break;
         }
     }
 

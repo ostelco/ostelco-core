@@ -8,6 +8,7 @@ import org.apache.log4j.Logger;
 import org.jdiameter.api.*;
 import org.jdiameter.api.cca.events.JCreditControlRequest;
 import org.jdiameter.common.impl.app.cca.JCreditControlRequestImpl;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *  actually send Diameter traffic on localhost to the OcsApplication.
  */
 
+@DisplayName("OcsApplicationTest")
 class OcsApplicationTest {
 
     private static final Logger log = Logger.getLogger(OcsApplicationTest.class);
@@ -30,23 +32,24 @@ class OcsApplicationTest {
     private final long applicationID = 4L;  // Diameter Credit Control Application (4)
 
     private TestClient client;
+
+    // The same OcsApplication will be used in all test cases
     private OcsApplication application = new OcsApplication();
 
     @BeforeEach
-    void setUp() {
+    protected void setUp() {
         client = new TestClient();
         client.initStack();
         client.start();
     }
 
     @AfterEach
-    void tearDown() {
+    protected void tearDown() {
         client.shutdown();
         client = null;
     }
 
-    @Test
-    void simpleCreditControlRequestInit() {
+    private void simpleCreditControlRequestInit() {
 
         Request request = client.getSession().createRequest(
                 commandCode,
@@ -97,9 +100,7 @@ class OcsApplicationTest {
         }
     }
 
-    @Test
-    void simpleCreditControlRequestInitAndUpdate() {
-        simpleCreditControlRequestInit();
+    private void simpleCreditControlRequestUpdate() {
 
         Request request = client.getSession().createRequest(
                 commandCode,
@@ -152,8 +153,10 @@ class OcsApplicationTest {
     }
 
     @Test
-    void simpleCreditControlRequestInitUpdateAndTerminate() {
-        simpleCreditControlRequestInitAndUpdate();
+    @DisplayName("Simple Credit-Control-Request Init Update and Terminate")
+    public void simpleCreditControlRequestInitUpdateAndTerminate() {
+        simpleCreditControlRequestInit();
+        simpleCreditControlRequestUpdate();
 
         Request request = client.getSession().createRequest(
                 commandCode,

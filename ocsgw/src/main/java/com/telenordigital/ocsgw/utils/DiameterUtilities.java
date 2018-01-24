@@ -86,7 +86,7 @@ public class DiameterUtilities {
         try {
             String avpType = AVP_DICTIONARY.getAvp(avp.getCode(), avp.getVendorId()).getType();
 
-            if (avpType.equals("Grouped")) {
+            if ("Grouped".equals(avpType)) {
                grouped = true;
             }
         } catch (Exception ignore) {

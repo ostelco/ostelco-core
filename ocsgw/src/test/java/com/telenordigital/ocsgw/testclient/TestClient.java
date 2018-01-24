@@ -85,27 +85,14 @@ public class TestClient implements EventListener<Request, Answer> {
     }
 
     public void initStack() {
-        if (log.isInfoEnabled()) {
-            log.info("Initializing Stack...");
-        }
-        InputStream is = null;
+        log.info("Initializing Stack...");
         try {
             this.stack = new StackImpl();
-            //Parse stack configuration
-            is = this.getClass().getClassLoader().getResourceAsStream(configFile);
-            Configuration config = new XMLConfiguration(is);
+            Configuration config = getConfig();
             factory = stack.init(config);
-            if (log.isInfoEnabled()) {
-                log.info("Client Stack Configuration successfully loaded.");
-            }
-            //Print info about applicatio
-            Set<ApplicationId> appIds = stack.getMetaData().getLocalPeer().getCommonApplications();
 
-            log.info("Diameter Stack  :: Supporting " + appIds.size() + " applications.");
-            for (ApplicationId id : appIds) {
-                log.info("Diameter Stack  :: Common :: " + id);
-            }
-            is.close();
+            printApplicationInfo();
+
             //Register network req listener, even though we wont receive requests
             //this has to be done to inform stack that we support application
             Network network = stack.unwrap(Network.class);
@@ -119,43 +106,50 @@ public class TestClient implements EventListener<Request, Answer> {
             if (this.stack != null) {
                 this.stack.destroy();
             }
-
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException e1) {
-                    log.error("Failed to close InputStream", e);
-                }
-            }
-            return;
-        }
-
-        MetaData metaData = stack.getMetaData();
-        //ignore for now.
-        if (metaData.getStackType() != StackType.TYPE_SERVER || metaData.getMinorVersion() <= 0) {
-            stack.destroy();
-            if (log.isEnabledFor(org.apache.log4j.Level.ERROR)) {
-                log.error("Incorrect driver");
-            }
             return;
         }
 
         try {
-            if (log.isInfoEnabled()) {
-                log.info("Starting stack");
-            }
+            log.info("Starting stack");
             stack.start();
-            if (log.isInfoEnabled()) {
-                log.info("Stack is running.");
-            }
+            log.info("Stack is running.");
         } catch (Exception e) {
             log.error("Failed to start Diameter Stack", e);
             stack.destroy();
             return;
         }
-        if (log.isInfoEnabled()) {
-            log.info("Stack initialization successfully completed.");
+        log.info("Stack initialization successfully completed.");
+    }
+
+    private void printApplicationInfo() {
+        //Print info about application
+        Set<ApplicationId> appIds = stack.getMetaData().getLocalPeer().getCommonApplications();
+
+        log.info("Diameter Stack  :: Supporting " + appIds.size() + " applications.");
+        for (ApplicationId id : appIds) {
+            log.info("Diameter Stack  :: Common :: " + id);
         }
+    }
+
+    private Configuration getConfig() {
+        Configuration config = null;
+        InputStream is = null;
+        //Parse stack configuration
+        is = this.getClass().getClassLoader().getResourceAsStream(configFile);
+        try {
+            config = new XMLConfiguration(is);
+        } catch (Exception e) {
+            log.error("Failed to load configuration", e);
+        }
+
+        try {
+            if (is != null) {
+                is.close();
+            }
+        } catch (IOException e) {
+            log.error("Failed to close InputStream", e);
+        }
+        return config;
     }
 
     public boolean isAnswerReceived() {
@@ -201,11 +195,9 @@ public class TestClient implements EventListener<Request, Answer> {
     }
 
     private void dumpMessage(Message message, boolean sending) {
-        if (log.isInfoEnabled()) {
-            log.info((sending?"Sending ":"Received ") + (message.isRequest() ? "Request: " : "Answer: ") + message.getCommandCode() + "\nE2E:"
-                    + message.getEndToEndIdentifier() + "\nHBH:" + message.getHopByHopIdentifier() + "\nAppID:" + message.getApplicationId());
-            log.info("AVPS["+message.getAvps().size()+"]: \n");
-        }
+        log.info((sending?"Sending ":"Received ") + (message.isRequest() ? "Request: " : "Answer: ") + message.getCommandCode() + "\nE2E:"
+                + message.getEndToEndIdentifier() + "\nHBH:" + message.getHopByHopIdentifier() + "\nAppID:" + message.getApplicationId());
+        log.info("AVPS["+message.getAvps().size()+"]: \n");
     }
     
     public void setRequest(JCreditControlRequest request) {
