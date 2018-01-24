@@ -1,7 +1,7 @@
 package com.telenordigital.ocsgw.data;
 
 
-import com.telenordigital.ocsgw.diameter.CreditControlRequestContext;
+import com.telenordigital.ocsgw.diameter.CreditControlContext;
 
 /**
  * Interface to interact with a datasource.
@@ -19,5 +19,5 @@ public interface DataSource {
      *
      * @param context That holds the request and session
      */
-    void handleRequest(CreditControlRequestContext context);
+    void handleRequest(CreditControlContext context);
 }

@@ -28,7 +28,7 @@ public class OcsServer {
 
     public synchronized void handleRequest(ServerCCASession session, JCreditControlRequest request) {
 
-        final CreditControlRequestContext ccrContext = new CreditControlRequestContext(session, request);
+        final CreditControlContext ccrContext = new CreditControlContext(session, request);
         ccrContext.setOriginHost(stack.getMetaData().getLocalPeer().getUri().getFQDN());
         ccrContext.setOriginRealm(stack.getMetaData().getLocalPeer().getRealmName());
         source.handleRequest(ccrContext);

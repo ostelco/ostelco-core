@@ -10,9 +10,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
 
-public class CreditControlRequestContext {
+public class CreditControlContext {
 
-    private static final Logger logger = LoggerFactory.getLogger(CreditControlRequestContext.class);
+    private static final Logger logger = LoggerFactory.getLogger(CreditControlContext.class);
 
     private final ServerCCASession session;
     private final JCreditControlRequest request;
@@ -21,7 +21,7 @@ public class CreditControlRequestContext {
     private String originHost;
     private String originRealm;
 
-    public CreditControlRequestContext(ServerCCASession session, JCreditControlRequest request) {
+    public CreditControlContext(ServerCCASession session, JCreditControlRequest request) {
         this.session = session;
         this.request = request;
         this.ccr = new CreditControlRequest(request);
@@ -38,13 +38,11 @@ public class CreditControlRequestContext {
     public CreditControlRequest getCreditControlRequest() { return ccr; }
 
     public void setOriginHost(String fqdn) { originHost = fqdn; }
-    public String getOriginHost() { return originHost; }
 
     public void setOriginRealm(String realmName) { originRealm = realmName; }
-    public String getOriginRealm() { return originRealm; }
 
     public void sendCreditControlAnswer(CreditControlAnswer creditControlAnswer) {
-        JCreditControlAnswerImpl cca = convertToCCA(creditControlAnswer);
+        JCreditControlAnswerImpl cca = createCCA(creditControlAnswer);
         if (cca != null) {
             try {
                 session.sendCreditControlAnswer(cca);
@@ -54,7 +52,7 @@ public class CreditControlRequestContext {
         }
     }
 
-    private JCreditControlAnswerImpl convertToCCA(CreditControlAnswer creditControlAnswer) {
+    private JCreditControlAnswerImpl createCCA(CreditControlAnswer creditControlAnswer) {
 
         JCreditControlAnswerImpl answer = null;
 

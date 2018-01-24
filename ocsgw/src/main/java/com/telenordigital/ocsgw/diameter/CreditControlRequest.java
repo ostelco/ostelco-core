@@ -13,7 +13,7 @@ import java.util.Optional;
 
 public class CreditControlRequest {
 
-    private static final Logger logger = LoggerFactory.getLogger(CreditControlRequestContext.class);
+    private static final Logger logger = LoggerFactory.getLogger(CreditControlContext.class);
     private AvpSet ccrAvps;
 
     private final LinkedList<MultipleServiceCreditControl> multipleServiceCreditControls = new LinkedList<>();

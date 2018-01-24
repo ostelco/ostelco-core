@@ -39,8 +39,8 @@ public class GrpcDataSource implements DataSource {
     private StreamObserver<ReturnUnusedDataRequest> returnUnusedDataRequests;
 
     private static final int MAX_ENTRIES = 300;
-    private final LinkedHashMap<String, CreditControlRequestContext> ccrMap = new LinkedHashMap<String, CreditControlRequestContext>(MAX_ENTRIES, .75F) {
-        protected boolean removeEldestEntry(Map.Entry<String, CreditControlRequestContext> eldest) {
+    private final LinkedHashMap<String, CreditControlContext> ccrMap = new LinkedHashMap<String, CreditControlContext>(MAX_ENTRIES, .75F) {
+        protected boolean removeEldestEntry(Map.Entry<String, CreditControlContext> eldest) {
             return size() > MAX_ENTRIES;
         }
     };
@@ -77,7 +77,7 @@ public class GrpcDataSource implements DataSource {
                             public void onNext(FetchDataBucketInfo response) {
                                 try {
                                     logger.info("[<<] Received data bucket of " + response.getBytes() + " bytes for " + response.getMsisdn());
-                                    final CreditControlRequestContext ccrContext = ccrMap.remove(response.getRequestId());
+                                    final CreditControlContext ccrContext = ccrMap.remove(response.getRequestId());
                                     if (ccrContext != null) {
                                         final ServerCCASession session = ccrContext.getSession();
                                         if (session != null) {
@@ -87,7 +87,7 @@ public class GrpcDataSource implements DataSource {
                                             logger.warn("No stored CCR or Session for " + response.getRequestId());
                                         }
                                     } else {
-                                        logger.warn("Missing CreditControlRequestContext for req id " + response.getRequestId());
+                                        logger.warn("Missing CreditControlContext for req id " + response.getRequestId());
                                     }
                                 } catch (Exception e) {
                                     logger.error("fetchDataBucket failed ", e);
@@ -109,7 +109,7 @@ public class GrpcDataSource implements DataSource {
     }
 
     @Override
-    public void handleRequest(CreditControlRequestContext context) {
+    public void handleRequest(CreditControlContext context) {
 
         switch (context.getOriginalCreditControlRequest().getRequestTypeAVPValue()) {
 
@@ -128,12 +128,12 @@ public class GrpcDataSource implements DataSource {
         }
     }
 
-    private void handleInitialRequest(final CreditControlRequestContext context) {
+    private void handleInitialRequest(final CreditControlContext context) {
         // CCR-Init is handled in same way as Update
         handleUpdateRequest(context);
     }
 
-    private void handleUpdateRequest(final CreditControlRequestContext context) {
+    private void handleUpdateRequest(final CreditControlContext context) {
         final String requestId = UUID.randomUUID().toString();
         ccrMap.put(requestId, context);
         logger.info("[>>] Requesting bytes for " + context.getCreditControlRequest().getMsisdn());
@@ -148,7 +148,7 @@ public class GrpcDataSource implements DataSource {
         }
     }
 
-    private void handleTerminationRequest(final CreditControlRequestContext context) {
+    private void handleTerminationRequest(final CreditControlContext context) {
         // For terminate we do not need to send to remote end before we send CCA back (no reservation)
         if (returnUnusedDataRequests != null) {
             returnUnusedDataRequests.onNext(ReturnUnusedDataRequest.newBuilder()
@@ -160,7 +160,7 @@ public class GrpcDataSource implements DataSource {
         }
     }
 
-    private CreditControlAnswer createCreditControlAnswer(CreditControlRequestContext context, FetchDataBucketInfo response) {
+    private CreditControlAnswer createCreditControlAnswer(CreditControlContext context, FetchDataBucketInfo response) {
 
         // ToDo: Update with info in reply, this is just a temporary solution where we threat all
         //       mscc the same.

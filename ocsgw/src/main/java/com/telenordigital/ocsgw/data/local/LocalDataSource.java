@@ -22,13 +22,13 @@ public class LocalDataSource implements DataSource {
     }
 
     @Override
-    public void handleRequest(CreditControlRequestContext context) {
+    public void handleRequest(CreditControlContext context) {
         CreditControlAnswer answer = createCreditControlAnswer(context);
         logger.info("Sending Credit-Control-Answer");
         context.sendCreditControlAnswer(answer);
     }
 
-    private CreditControlAnswer createCreditControlAnswer(CreditControlRequestContext context) {
+    private CreditControlAnswer createCreditControlAnswer(CreditControlContext context) {
         CreditControlAnswer answer = new CreditControlAnswer();
 
         final LinkedList<MultipleServiceCreditControl> multipleServiceCreditControls = context.getCreditControlRequest().getMultipleServiceCreditControls();

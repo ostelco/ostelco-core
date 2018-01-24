@@ -73,6 +73,14 @@ public class MultipleServiceCreditControl {
                 this.requestedUnits = requestedServiceUnits.get().getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64();
             }
 
+            parseUsedServiceUnit(serviceControl);
+        } catch (AvpDataException e) {
+            logger.warn("Failed to parse Multiple-Service-Credit-Control", e);
+        }
+    }
+
+    private void parseUsedServiceUnit(AvpSet serviceControl) {
+        try {
             Optional<AvpSet> usedServiceUnitsSet = Optional.ofNullable(serviceControl.getAvps(Avp.USED_SERVICE_UNIT));
             if (usedServiceUnitsSet.isPresent()) {
                 for (Avp nextUsedServiceUnit : usedServiceUnitsSet.get()) {
@@ -95,7 +103,7 @@ public class MultipleServiceCreditControl {
                 }
             }
         } catch (AvpDataException e) {
-            logger.warn("Failed to parse Multiple-Service-Credit-Control", e);
+            logger.warn("Failed to parse Used-Service-Unit", e);
         }
     }
 
