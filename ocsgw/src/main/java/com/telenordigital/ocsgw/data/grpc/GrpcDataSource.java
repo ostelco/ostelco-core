@@ -114,33 +114,49 @@ public class GrpcDataSource implements DataSource {
         switch (context.getOriginalCreditControlRequest().getRequestTypeAVPValue()) {
 
             case RequestType.INITIAL_REQUEST:
-                // CCR-Init is handled in same way as Update
+                handleInitialRequest(context);
+                break;
             case RequestType.UPDATE_REQUEST:
-                final String requestId = UUID.randomUUID().toString();
-                ccrMap.put(requestId, context);
-                logger.info("[>>] Requesting bytes for " + context.getCreditControlRequest().getMsisdn());
-                if (fetchDataBucketRequests != null) {
-                    fetchDataBucketRequests.onNext(FetchDataBucketInfo.newBuilder()
-                            .setMsisdn(context.getCreditControlRequest().getMsisdn())
-                            .setBytes(context.getCreditControlRequest().getRequestedUnits()) // ToDo: this should correspond to a the correct MSCC
-                            .setRequestId(requestId)
-                            .build());
-                } else {
-                    logger.warn("[!!] fetchDataBucketRequests is null");
-                }
+                handleUpdateRequest(context);
                 break;
             case RequestType.TERMINATION_REQUEST:
-                // For terminate we do not need to send to remote end before we send CCA back (no reservation)
-                if (returnUnusedDataRequests != null) {
-                    returnUnusedDataRequests.onNext(ReturnUnusedDataRequest.newBuilder()
-                            .setMsisdn(context.getCreditControlRequest().getMsisdn())
-                            .setBytes(0) // ToDo : Fix proper
-                            .build());
-                }
+                handleTerminationRequest(context);
                 break;
             default:
                 logger.info("Unhandled forward request");
                 break;
+        }
+    }
+
+    private void handleInitialRequest(final CreditControlRequestContext context) {
+        // CCR-Init is handled in same way as Update
+        handleUpdateRequest(context);
+    }
+
+    private void handleUpdateRequest(final CreditControlRequestContext context) {
+        final String requestId = UUID.randomUUID().toString();
+        ccrMap.put(requestId, context);
+        logger.info("[>>] Requesting bytes for " + context.getCreditControlRequest().getMsisdn());
+        if (fetchDataBucketRequests != null) {
+            fetchDataBucketRequests.onNext(FetchDataBucketInfo.newBuilder()
+                    .setMsisdn(context.getCreditControlRequest().getMsisdn())
+                    .setBytes(context.getCreditControlRequest().getRequestedUnits()) // ToDo: this should correspond to a the correct MSCC
+                    .setRequestId(requestId)
+                    .build());
+        } else {
+            logger.warn("[!!] fetchDataBucketRequests is null");
+        }
+    }
+
+    private void handleTerminationRequest(final CreditControlRequestContext context) {
+        // For terminate we do not need to send to remote end before we send CCA back (no reservation)
+        if (returnUnusedDataRequests != null) {
+            returnUnusedDataRequests.onNext(ReturnUnusedDataRequest.newBuilder()
+                    .setMsisdn(context.getCreditControlRequest().getMsisdn())
+                    .setBytes(0) // ToDo : Fix proper
+                    .build());
+        } else {
+            logger.warn("[!!] fetchDataBucketRequests is null");
         }
     }
 

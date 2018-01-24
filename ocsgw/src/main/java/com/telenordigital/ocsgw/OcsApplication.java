@@ -24,6 +24,7 @@ class OcsApplication extends CCASessionFactoryImpl implements NetworkReqListener
     private static final Logger logger = LoggerFactory.getLogger(OcsApplication.class);
     private static final String diameterConfigFile = "server-jdiameter-config.xml";
     private static final long applicationID = 4L;  // Diameter Credit Control Application (4)
+    private Stack stack = null;
 
     public static void main(String[] args) {
         new OcsApplication();
@@ -36,7 +37,7 @@ class OcsApplication extends CCASessionFactoryImpl implements NetworkReqListener
             InputStream iStream = this.getClass().getClassLoader().getResourceAsStream(diameterConfigFile);
             Configuration diameterConfig = new XMLConfiguration(iStream);
             iStream.close();
-            Stack stack = new StackImpl();
+            stack = new StackImpl();
             stack.init(diameterConfig);
 
             OcsServer.getInstance().init(stack, new AppConfig());
@@ -50,12 +51,7 @@ class OcsApplication extends CCASessionFactoryImpl implements NetworkReqListener
             init(sessionFactory);
             sessionFactory.registerAppFacory(ServerCCASession.class, this);
 
-            Set<ApplicationId> appIds = stack.getMetaData().getLocalPeer().getCommonApplications();
-
-            logger.info("Diameter Stack  :: Supporting " + appIds.size() + " applications.");
-            for (ApplicationId id : appIds) {
-                logger.info("Diameter Stack  :: Common :: " + id);
-            }
+            printAppIds();
 
         } catch (Exception e) {
             logger.error("Failure initializing OcsApplication", e);
@@ -96,6 +92,16 @@ class OcsApplication extends CCASessionFactoryImpl implements NetworkReqListener
                 break;
             default:
                 break;
+        }
+    }
+
+
+    private void printAppIds() {
+        Set<ApplicationId> appIds = stack.getMetaData().getLocalPeer().getCommonApplications();
+
+        logger.info("Diameter Stack  :: Supporting " + appIds.size() + " applications.");
+        for (ApplicationId id : appIds) {
+            logger.info("Diameter Stack  :: Common :: " + id);
         }
     }
 }
