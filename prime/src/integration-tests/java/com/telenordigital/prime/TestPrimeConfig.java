@@ -9,9 +9,6 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
 
-/**
- * @author Vihang Patil <vihang.patil@telenordigital.com>
- */
 public class TestPrimeConfig {
 
     private static final DropwizardTestSupport<PrimeConfiguration> SUPPORT =

@@ -5,7 +5,6 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author Vihang Patil <vihang.patil@telenordigital.com>
  * <p>
  * Test the evolution of the OCS state when adding and consuming
  * bytes through topup, consuming and returning u

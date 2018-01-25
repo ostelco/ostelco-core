@@ -1,6 +1,7 @@
 plugins {
     id "java-library"
     id "jacoco"
+    id 'net.ltgt.apt' version '0.10'
 }
 
 dependencies {
@@ -25,11 +26,7 @@ dependencies {
     compile group: 'org.jetbrains', name: 'annotations', version: '13.0'
 
     compileOnly 'org.projectlombok:lombok:1.16.20'
-
-    // compileOnly 'org.projectlombok:lombok:edge'
-    // apt "org.projectlombok:lombok:edge"
-    // https://mvnrepository.com/artifact/org.mockito/mockito-core
-
+    apt 'org.projectlombok:lombok:1.16.20'
 }
 
 configurations {

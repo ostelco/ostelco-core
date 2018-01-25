@@ -10,9 +10,6 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-/**
- * @author Vihang Patil (vihang.patil@telenordigital.com)
- */
 public final class OcsService  {
 
     private final  ConcurrentMap<String, StreamObserver<FetchDataBucketInfo>>
