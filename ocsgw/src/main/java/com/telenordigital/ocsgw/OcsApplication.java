@@ -27,12 +27,16 @@ class OcsApplication extends CCASessionFactoryImpl implements NetworkReqListener
     private Stack stack = null;
 
     public static void main(String[] args) {
-        new OcsApplication();
+
+        OcsApplication app = new OcsApplication();
+        app.start();
     }
 
     public OcsApplication() {
         super();
+    }
 
+    public void start() {
         try {
             InputStream iStream = this.getClass().getClassLoader().getResourceAsStream(diameterConfigFile);
             Configuration diameterConfig = new XMLConfiguration(iStream);

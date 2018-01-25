@@ -35,9 +35,14 @@ class OcsApplicationTest {
 
     // The same OcsApplication will be used in all test cases
     private OcsApplication application = new OcsApplication();
+    private static boolean applicationStarted = false;
 
     @BeforeEach
     protected void setUp() {
+        if (!applicationStarted) {
+            application.start();
+            applicationStarted = true;
+        }
         client = new TestClient();
         client.initStack();
         client.start();
