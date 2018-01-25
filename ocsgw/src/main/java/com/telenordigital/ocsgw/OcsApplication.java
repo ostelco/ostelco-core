@@ -32,10 +32,6 @@ class OcsApplication extends CCASessionFactoryImpl implements NetworkReqListener
         app.start();
     }
 
-    public OcsApplication() {
-        super();
-    }
-
     public void start() {
         try {
             InputStream iStream = this.getClass().getClassLoader().getResourceAsStream(diameterConfigFile);
