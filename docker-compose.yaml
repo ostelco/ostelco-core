@@ -11,6 +11,16 @@ services:
         aliases:
           - prime
         ipv4_address: 172.16.238.4
+  ocsgw:
+    container_name: ocsgw
+    build: ocsgw
+    ports:
+      - "3868:3868"
+    networks:
+      net:
+        aliases:
+          - ocsgw
+        ipv4_address: 172.16.238.3
 
 networks:
   net:
