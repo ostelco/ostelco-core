@@ -13,7 +13,7 @@
     name="channel-1"
     protocol="diameter-v1"
     transport="trans-1"
-    open-args="mode=client;dest=10.6.1.0:3868">
+    open-args="mode=client;dest=172.16.238.3:3868">
   </define>
  
   <define entity="traffic-param" name="call-rate" value="5"> </define>
