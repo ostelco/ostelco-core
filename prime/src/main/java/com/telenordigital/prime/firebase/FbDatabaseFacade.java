@@ -76,7 +76,8 @@ public final class FbDatabaseFacade {
             @Override
             public void onDataChange(final DataSnapshot snapshot) {
                 LOG.info("onDataChange");
-                interpretDataSnapshotAsProductCatalogItem(snapshot, consumer);
+                // FIXME method below adds change listener to products. The serialization logic is broken.
+                // interpretDataSnapshotAsProductCatalogItem(snapshot, consumer);
             }
 
             @Override
