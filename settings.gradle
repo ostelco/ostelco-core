@@ -2,8 +2,10 @@ rootProject.name = 'ostelco-core'
 
 include ':ocs-api'
 include ':prime'
+include ':ocsgw'
 include ':ostelco-lib'
 
 project(':ocs-api').projectDir = "$rootDir/ocs-api" as File
 project(':prime').projectDir = "$rootDir/prime" as File
+project(':ocsgw').projectDir = "$rootDir/ocsgw" as File
 project(':ostelco-lib').projectDir = "$rootDir/ostelco-lib" as File

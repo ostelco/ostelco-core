@@ -1,9 +1,10 @@
 plugins {
+    id "application"
+    id "jacoco"
     id "com.github.johnrengelman.shadow" version "2.0.1"
+    id 'net.ltgt.apt' version '0.10'
+    id "idea"
 }
-
-apply plugin: 'application'
-apply plugin: 'com.github.johnrengelman.shadow'
 
 sourceSets {
   test {
@@ -18,8 +19,6 @@ sourceSets {
   }
 }
 
-apply plugin: 'jacoco'
-
 dependencies {
     implementation project(':ocs-api')
     implementation project(':ostelco-lib')
@@ -29,16 +28,10 @@ dependencies {
     implementation 'com.google.guava:guava:21.0'
 
     testImplementation 'io.dropwizard:dropwizard-testing:1.1.4'
-    testCompile group: 'org.mockito', name: 'mockito-core', version: '2.10.0'
+    testCompile 'org.mockito:mockito-core:2.10.0'
 
-    // running edge (.19) since stable (.18) doesn't compile on intellij.
-    compileOnly 'org.projectlombok:lombok:1.16.19'
-    // apt "org.projectlombok:lombok:1.16.19"
-
-    // compileOnly 'org.projectlombok:lombok:edge'
-    // apt "org.projectlombok:lombok:edge"
-    // https://mvnrepository.com/artifact/org.mockito/mockito-core
-    testCompile group: 'org.mockito', name: 'mockito-core', version: '2.1.0'
+    compileOnly 'org.projectlombok:lombok:1.16.20'
+    apt 'org.projectlombok:lombok:1.16.20'
 }
 
 configurations {
@@ -49,13 +42,12 @@ configurations {
 
 task integration(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
 
-  testClassesDir = sourceSets.integration.output.classesDir
+  testClassesDirs = sourceSets.integration.output.classesDirs
   classpath = sourceSets.integration.runtimeClasspath
 }
 
-mainClassName = 'com.telenordigital.prime.PrimeApplication'
-
 shadowJar {
+    mainClassName = 'com.telenordigital.prime.PrimeApplication'
     mergeServiceFiles()
     classifier = "uber"
     version = null
@@ -88,3 +80,9 @@ jacocoTestReport {
 }
 
 check.dependsOn jacocoTestReport
+
+idea {
+    module {
+        testSourceDirs += file('src/integration-tests/java')
+    }
+}

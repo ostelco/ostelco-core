@@ -1,14 +1,8 @@
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.3'
-    }
+plugins {
+    id "java-library"
+    id "idea"
+    id "com.google.protobuf" version "0.8.3"
 }
-apply plugin: 'java-library'
-apply plugin: 'com.google.protobuf'
-apply plugin: 'idea'
 
 dependencies {
     api 'io.grpc:grpc-netty:1.6.1'
@@ -32,8 +26,8 @@ protobuf {
 
 idea {
     module {
-        sourceDirs += file("${protobuf.generatedFilesBaseDir}/main/java");
-        sourceDirs += file("${protobuf.generatedFilesBaseDir}/main/grpc");
+        sourceDirs += files("${protobuf.generatedFilesBaseDir}/main/java")
+        sourceDirs += files("${protobuf.generatedFilesBaseDir}/main/grpc")
     }
 }
 

@@ -1,24 +1,7 @@
 plugins {
     id "java-library"
-    // id 'net.ltgt.apt' version '0.10'
+    id "jacoco"
 }
-
-apply plugin: 'java-library'
-
-sourceSets {
-    test {
-        java.srcDirs = ['src/test/java']
-    }
-
-    integration {
-        java.srcDirs = ['src/test/java', 'src/integration-tests/java']
-        resources.srcDir 'src/integration-tests/resources'
-        compileClasspath += main.output + test.output
-        runtimeClasspath += main.output + test.output
-    }
-}
-
-apply plugin: 'jacoco'
 
 dependencies {
     implementation 'io.dropwizard:dropwizard-core:1.2.2'
@@ -41,9 +24,7 @@ dependencies {
     // https://mvnrepository.com/artifact/org.jetbrains/annotations
     compile group: 'org.jetbrains', name: 'annotations', version: '13.0'
 
-    // running edge (.19) since stable (.18) doesn't compile on intellij.
-    compileOnly 'org.projectlombok:lombok:1.16.19'
-    // apt "org.projectlombok:lombok:1.16.19"
+    compileOnly 'org.projectlombok:lombok:1.16.20'
 
     // compileOnly 'org.projectlombok:lombok:edge'
     // apt "org.projectlombok:lombok:edge"
@@ -55,11 +36,6 @@ configurations {
     integrationImplementation.extendsFrom testImplementation
     integrationCompile.extendsFrom testCompile
     integrationRuntime.extendsFrom testRuntime
-}
-
-task integration(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
-    testClassesDir = sourceSets.integration.output.classesDir
-    classpath = sourceSets.integration.runtimeClasspath
 }
 
 jar {
