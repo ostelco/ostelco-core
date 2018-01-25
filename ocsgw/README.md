@@ -2,11 +2,16 @@
 About the project
 =================
 
-This project makes it possible to connect the Gy interface from a GGSN/P-GW to this OCS Gateway.
+This project makes it possible to connect the Gy interface from a GGSN/P-GW to this OCS gateway.
 The gateway will parse the Diameter traffic and pass it through to another component.
-Currently this support a gRPC and a local adapter.
+Currently this support a gRPC or a local adapter.
 
-Note that this project does not is not implement a full Online Charging System.
+The Local adapter will accept all Credit-Control-Requests and send a Credit-Control-Answer that grant
+any service unit requested.
+
+The gRPC adapter will translate the Credit-Control-Request to gRPC and forward this to your gRPC server.
+
+Note that this project does not implement a full Online Charging System.
 
 The project is built on RestComm jDiameter Stack
 
@@ -20,6 +25,11 @@ Run
 ===============
 
 gradle run
+
+
+Test
+=====================
+gradle test
 
 
 Docker
@@ -62,7 +72,3 @@ In Seagull:
 cd /config/logs
 
 seagull -conf /config/config/conf.client.xml -dico /config/config/base_cc.xml -scen /config/scenario/ccr-cca.client.multiple-cc-units.init-term.xml -log /config/logs/log.log -llevel A
-
-**Test With JUnit5**
-
-gradle test
