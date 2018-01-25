@@ -14,7 +14,6 @@ import java.io.IOException;
  * Its startup and shutdown are managed by Dropwizard's lifecycle
  * through the Managed interface.
  *
- * @author Vihang Patil (vihang.patil@telenordigital.com)
  */
 public final  class OcsServer implements Managed {
 

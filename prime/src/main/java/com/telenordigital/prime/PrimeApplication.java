@@ -17,9 +17,6 @@ import com.telenordigital.prime.ocs.OcsState;
 import io.dropwizard.Application;
 import io.dropwizard.setup.Environment;
 
-/**
- * @author Vihang Patil (vihang.patil@telenordigital.com)
- */
 public final class PrimeApplication extends Application<PrimeConfiguration> {
 
     public static void main(final String[] args) throws Exception {

@@ -12,9 +12,6 @@ import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-/**
- * @author Vihang Patil (vihang.patil@telenordigital.com)
- */
 public final class OcsState implements EventHandler<PrimeEvent> {
 
     private static final Logger LOG = LoggerFactory.getLogger(OcsState.class);

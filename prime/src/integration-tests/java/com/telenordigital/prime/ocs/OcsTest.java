@@ -20,7 +20,6 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author Vihang Patil <vihang.patil@telenordigital.com>
  * <p>
  * This class tests the packet gateway's perspective of talking to
  * the OCS over the gRPC-generated wire protocol.

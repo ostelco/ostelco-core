@@ -6,9 +6,6 @@ import io.dropwizard.Configuration;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
-/**
- * @author Vihang Patil (vihang.patil@telenordigital.com
- */
 public final class PrimeConfiguration extends Configuration {
 
     @Valid

@@ -12,9 +12,6 @@ import static com.telenordigital.prime.disruptor.PrimeEventMessageType.FETCH_DAT
 import static com.telenordigital.prime.disruptor.PrimeEventMessageType.RETURN_UNUSED_DATA_BUCKET;
 import static com.telenordigital.prime.disruptor.PrimeEventMessageType.TOPUP_DATA_BUNDLE_BALANCE;
 
-/**
- * @author Vihang Patil (vihang.patil@telenordigital.com)
- */
 public final class PrimeEventProducer {
 
     private static final Logger LOG = LoggerFactory.getLogger(PrimeEventProducer.class);
