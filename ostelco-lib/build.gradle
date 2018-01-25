@@ -24,9 +24,7 @@ dependencies {
     // https://mvnrepository.com/artifact/org.jetbrains/annotations
     compile group: 'org.jetbrains', name: 'annotations', version: '13.0'
 
-    // running edge (.19) since stable (.18) doesn't compile on intellij.
-    compileOnly 'org.projectlombok:lombok:1.16.19'
-    // apt "org.projectlombok:lombok:1.16.19"
+    compileOnly 'org.projectlombok:lombok:1.16.20'
 
     // compileOnly 'org.projectlombok:lombok:edge'
     // apt "org.projectlombok:lombok:edge"
