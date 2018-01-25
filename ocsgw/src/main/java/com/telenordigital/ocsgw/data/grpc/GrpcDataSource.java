@@ -26,12 +26,6 @@ public class GrpcDataSource implements DataSource {
 
     private static final Logger logger = LoggerFactory.getLogger(GrpcDataSource.class);
 
-    /**
-     * The ip:port on which the gRPC service will be receiving incoming
-     * connections.
-     */
-    private static final String SOCKET = "172.16.238.4:8082";  // ToDo : move to config file
-
     private final OcsServiceGrpc.OcsServiceStub ocsServiceStub;
 
     private StreamObserver<FetchDataBucketInfo> fetchDataBucketRequests;
@@ -47,7 +41,7 @@ public class GrpcDataSource implements DataSource {
 
     private abstract class AbstactObserver<T> implements StreamObserver<T> {
         public final void onError(Throwable t) {
-            init();
+            // What to do here?
         }
 
         public final void onCompleted() {
@@ -55,12 +49,12 @@ public class GrpcDataSource implements DataSource {
         }
     }
 
-    public GrpcDataSource() {
-        // Set up a channel to be used to communicate as an OCS instance, to a
-        // grpc instance.
+    public GrpcDataSource(String target, boolean encrypted) {
+        // Set up a channel to be used to communicate as an OCS instance,
+        // to a gRPC instance.
         final ManagedChannel channel = ManagedChannelBuilder
-                .forTarget(SOCKET)
-                .usePlaintext(true) // disable encryption for testing
+                .forTarget(target)
+                .usePlaintext(encrypted)
                 .build();
 
         // Initialize the stub that will be used to actually
@@ -162,8 +156,7 @@ public class GrpcDataSource implements DataSource {
 
     private CreditControlAnswer createCreditControlAnswer(CreditControlContext context, FetchDataBucketInfo response) {
 
-        // ToDo: Update with info in reply, this is just a temporary solution where we threat all
-        //       mscc the same.
+        // ToDo: Update with info in reply, this is just a temporary solution where we threat all mscc the same.
 
         CreditControlRequest request = context.getCreditControlRequest();
         CreditControlAnswer answer = new CreditControlAnswer();

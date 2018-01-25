@@ -17,4 +17,13 @@ public class AppConfig {
     public String getDataStoreType () {
         return prop.getProperty("DataStoreType", "Local");
     }
+
+    public String getGrpcServer() {
+        return prop.getProperty("GrpcServer", "127.0.0.1:8082");
+    }
+
+    public boolean encryptGrpc() {
+        String encrypt = prop.getProperty("GrpcEnryption", "true");
+        return Boolean.getBoolean(encrypt);
+    }
 }
