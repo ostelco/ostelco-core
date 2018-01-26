@@ -78,13 +78,8 @@ public class OcsApplicationTest {
         client.setRequest(ccr);
         client.sendNextRequest();
 
-        while (client.isAnswerReceived()) {
-            try {
-                Thread.currentThread().sleep(1000);
-            } catch (InterruptedException e) {
-                log.error("Start Failed", e);
-            }
-        }
+        waitForAnswer();
+
         try {
             assertEquals(2001L, client.getResultCodeAvp().getInteger32());
             AvpSet resultAvps = client.getResultAvps();
@@ -129,13 +124,8 @@ public class OcsApplicationTest {
         client.setRequest(ccr);
         client.sendNextRequest();
 
-        while (client.isAnswerReceived()) {
-            try {
-                Thread.currentThread().sleep(1000);
-            } catch (InterruptedException e) {
-                log.error("Start Failed", e);
-            }
-        }
+        waitForAnswer();
+
         try {
             assertEquals(2001L, client.getResultCodeAvp().getInteger32());
             AvpSet resultAvps = client.getResultAvps();
@@ -186,13 +176,8 @@ public class OcsApplicationTest {
         client.setRequest(ccr);
         client.sendNextRequest();
 
-        while (client.isAnswerReceived()) {
-            try {
-                Thread.currentThread().sleep(1000);
-            } catch (InterruptedException e) {
-                log.error("Start Failed", e);
-            }
-        }
+        waitForAnswer();
+
         try {
             assertEquals(2001L, client.getResultCodeAvp().getInteger32());
             AvpSet resultAvps = client.getResultAvps();
@@ -206,5 +191,18 @@ public class OcsApplicationTest {
         } catch (AvpDataException e) {
             log.error("Failed to get Result-Code", e);
         }
+    }
+
+    private void waitForAnswer() {
+        int i = 0;
+        while (client.isAnswerReceived() && i<10) {
+            i++;
+            try {
+                Thread.currentThread().sleep(500);
+            } catch (InterruptedException e) {
+                log.error("Start Failed", e);
+            }
+        }
+        assertEquals(true, client.isAnswerReceived());
     }
 }
