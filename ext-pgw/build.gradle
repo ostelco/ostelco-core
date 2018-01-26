@@ -1,11 +1,9 @@
 plugins {
-    id "java-library"
-    id "idea"
+    id "application"
+    id "com.github.johnrengelman.shadow" version "2.0.1"
 }
 
 dependencies {
-
-    implementation project(':ocsgw')
 
     implementation ('org.mobicents.diameter:jdiameter-api:1.7.1-123') {
         exclude module: 'netty-all'
@@ -14,9 +12,11 @@ dependencies {
         exclude module: 'netty-all'
     }
 
-    testCompile 'org.junit.jupiter:junit-jupiter-api:5.0.3'
-    testRuntime 'org.junit.jupiter:junit-jupiter-engine:5.0.3'
+    implementation 'junit:junit:4.12'
+}
 
-    testCompile 'junit:junit:4.12'
-    testRuntime 'org.junit.vintage:junit-vintage-engine:4.12.3'
+shadowJar {
+    mainClassName = ""
+    classifier = "uber"
+    version = null
 }

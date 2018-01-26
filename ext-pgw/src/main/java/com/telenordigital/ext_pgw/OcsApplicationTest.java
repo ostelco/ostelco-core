@@ -1,19 +1,21 @@
-package com.telenordigital.ocsgw;
+package com.telenordigital.ext_pgw;
 
-import com.telenordigital.ocsgw.diameter.FinalUnitAction;
-import com.telenordigital.ocsgw.diameter.RequestType;
-import com.telenordigital.ocsgw.diameter.SubscriptionType;
-import com.telenordigital.ext_pgw.TestClient;
+import com.telenordigital.ext_pgw.diameter.FinalUnitAction;
+import com.telenordigital.ext_pgw.diameter.RequestType;
+import com.telenordigital.ext_pgw.diameter.SubscriptionType;
 import org.apache.log4j.Logger;
-import org.jdiameter.api.*;
+import org.jdiameter.api.ApplicationId;
+import org.jdiameter.api.Avp;
+import org.jdiameter.api.AvpDataException;
+import org.jdiameter.api.AvpSet;
+import org.jdiameter.api.Request;
 import org.jdiameter.api.cca.events.JCreditControlRequest;
 import org.jdiameter.common.impl.app.cca.JCreditControlRequestImpl;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.assertEquals;
 
 
 /**
@@ -21,8 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *  actually send Diameter traffic on localhost to the OcsApplication.
  */
 
-@DisplayName("OcsApplicationTest")
-class OcsApplicationTest {
+public class OcsApplicationTest {
 
     private static final Logger log = Logger.getLogger(OcsApplicationTest.class);
 
@@ -33,23 +34,15 @@ class OcsApplicationTest {
 
     private TestClient client;
 
-    // The same OcsApplication will be used in all test cases
-    private OcsApplication application = new OcsApplication();
-    private static boolean applicationStarted = false;
-
-    @BeforeEach
-    protected void setUp() {
-        if (!applicationStarted) {
-            application.start();
-            applicationStarted = true;
-        }
+    @Before
+    public void setUp() {
         client = new TestClient();
         client.initStack();
         client.start();
     }
 
-    @AfterEach
-    protected void tearDown() {
+    @After
+    public void tearDown() {
         client.shutdown();
         client = null;
     }
@@ -158,7 +151,6 @@ class OcsApplicationTest {
     }
 
     @Test
-    @DisplayName("Simple Credit-Control-Request Init Update and Terminate")
     public void simpleCreditControlRequestInitUpdateAndTerminate() {
         simpleCreditControlRequestInit();
         simpleCreditControlRequestUpdate();

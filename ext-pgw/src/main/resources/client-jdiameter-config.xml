@@ -5,7 +5,7 @@
     <URI value="aaa://testclient" />
 
     <IPAddresses>
-      <IPAddress value="127.0.0.1" />
+      <IPAddress value="172.16.238.2" />
     </IPAddresses>
     <Realm value="loltel" />
     <VendorID value="0" />
@@ -49,7 +49,7 @@
 
   <Network>
     <Peers>
-      <Peer name="ocs" attempt_connect="true" rating="1" ip="127.0.0.1" />
+      <Peer name="ocs" attempt_connect="true" rating="1" ip="172.16.238.3" />
     </Peers>
     <Realms>
       <Realm name="loltel" peers="ocs" local_action="LOCAL" dynamic="false" exp_time="1">

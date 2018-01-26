@@ -22,6 +22,15 @@ services:
           - ocsgw
         ipv4_address: 172.16.238.3
 
+  ext-pgw:
+    container_name: ext-pgw
+    build: ext-pgw
+    networks:
+      net:
+        aliases:
+          - ext-pgw
+        ipv4_address: 172.16.238.2
+
 networks:
   net:
     driver: bridge
