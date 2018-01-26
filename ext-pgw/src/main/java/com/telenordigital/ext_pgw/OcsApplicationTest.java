@@ -195,7 +195,7 @@ public class OcsApplicationTest {
 
     private void waitForAnswer() {
         int i = 0;
-        while (client.isAnswerReceived() && i<10) {
+        while (!client.isAnswerReceived() && i<10) {
             i++;
             try {
                 Thread.currentThread().sleep(500);

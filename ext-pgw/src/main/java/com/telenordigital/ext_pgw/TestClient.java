@@ -31,7 +31,7 @@ public class TestClient implements EventListener<Request, Answer> {
     private Stack stack;
     private SessionFactory factory;
     private Session session;  // session used as handle for communication
-    private boolean finished = true;  //boolean telling if we finished our interaction
+    private boolean finished = false;  //boolean telling if we finished our interaction
 
     static {
         //configure logging.
@@ -135,7 +135,7 @@ public class TestClient implements EventListener<Request, Answer> {
     }
 
     public boolean isAnswerReceived() {
-        return !this.finished;
+        return this.finished;
     }
 
     public Session getSession() {
