@@ -19,7 +19,7 @@ class ServiceInformation {
 
     public void parseApvs(Avp serviceInformationAvp) {
         try {
-            Optional<Avp> psInformationAvp = null;
+            Optional<Avp> psInformationAvp;
             psInformationAvp = Optional.ofNullable(serviceInformationAvp.getGrouped().getAvp(Avp.PS_INFORMATION));
             if (psInformationAvp.isPresent()) {
                 AvpSet psInformationAvps = psInformationAvp.get().getGrouped();

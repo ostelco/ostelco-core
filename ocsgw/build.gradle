@@ -25,8 +25,12 @@ dependencies {
     implementation ('org.mobicents.diameter:jdiameter-impl:1.7.1-123') {
         exclude module: 'netty-all'
     }
+    testImplementation project(':ext-pgw')
     testCompile 'org.junit.jupiter:junit-jupiter-api:5.0.3'
     testRuntime 'org.junit.jupiter:junit-jupiter-engine:5.0.3'
+
+    testCompile 'junit:junit:4.12'
+    testRuntime 'org.junit.vintage:junit-vintage-engine:4.12.3'
 }
 
 jar {
