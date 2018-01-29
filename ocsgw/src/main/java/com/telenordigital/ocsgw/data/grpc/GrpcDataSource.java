@@ -51,6 +51,10 @@ public class GrpcDataSource implements DataSource {
     }
 
     public GrpcDataSource(String target, boolean encrypted) {
+
+        logger.info("Created GrpcDataSource");
+        logger.info("target : " + target);
+        logger.info("encrypted : " + encrypted);
         // Set up a channel to be used to communicate as an OCS instance,
         // to a gRPC instance.
         final ManagedChannel channel = ManagedChannelBuilder
