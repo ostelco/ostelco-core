@@ -87,7 +87,7 @@ class OcsApplicationTest {
         client.sendNextRequest();
 
         waitForAnswer();
-        
+
         try {
             assertEquals(2001L, client.getResultCodeAvp().getInteger32());
             AvpSet resultAvps = client.getResultAvps();

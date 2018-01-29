@@ -41,11 +41,12 @@ public class GrpcDataSource implements DataSource {
 
     private abstract class AbstactObserver<T> implements StreamObserver<T> {
         public final void onError(Throwable t) {
-            // What to do here?
+            logger.error("We got an error", t);
         }
 
         public final void onCompleted() {
             // Nothing to do here
+            logger.info("It seems to be completed") ;
         }
     }
 
@@ -64,6 +65,8 @@ public class GrpcDataSource implements DataSource {
 
     @Override
     public void init() {
+
+        logger.info("Init was called");
 
         fetchDataBucketRequests =
                 ocsServiceStub.fetchDataBucket(
@@ -132,11 +135,15 @@ public class GrpcDataSource implements DataSource {
         ccrMap.put(requestId, context);
         logger.info("[>>] Requesting bytes for " + context.getCreditControlRequest().getMsisdn());
         if (fetchDataBucketRequests != null) {
-            fetchDataBucketRequests.onNext(FetchDataBucketInfo.newBuilder()
-                    .setMsisdn(context.getCreditControlRequest().getMsisdn())
-                    .setBytes(context.getCreditControlRequest().getRequestedUnits()) // ToDo: this should correspond to a the correct MSCC
-                    .setRequestId(requestId)
-                    .build());
+            try {
+                fetchDataBucketRequests.onNext(FetchDataBucketInfo.newBuilder()
+                        .setMsisdn(context.getCreditControlRequest().getMsisdn())
+                        .setBytes(context.getCreditControlRequest().getRequestedUnits()) // ToDo: this should correspond to a the correct MSCC
+                        .setRequestId(requestId)
+                        .build());
+            } catch (Exception e) {
+                logger.error("What just happened", e);
+            }
         } else {
             logger.warn("[!!] fetchDataBucketRequests is null");
         }
