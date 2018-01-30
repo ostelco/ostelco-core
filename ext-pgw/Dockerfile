@@ -3,7 +3,8 @@ FROM openjdk:8u151
 MAINTAINER CSI "csi@telenordigital.com"
 
 RUN apt-get update \
- && apt-get install -y netcat
+ && apt-get install -y --no-install-recommends netcat \
+ && rm -rf /var/lib/apt/lists/*
 
 COPY bin/start.sh /start.sh
 RUN chmod +x /start.sh
