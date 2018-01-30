@@ -18,11 +18,20 @@ apply plugin: 'org.junit.platform.gradle.plugin'
 mainClassName = 'com.telenordigital.ocsgw.OcsApplication'
 
 dependencies {
-    implementation 'org.mobicents.diameter:jdiameter-api:1.7.1-123'
-    implementation 'org.mobicents.diameter:jdiameter-impl:1.7.1-123'
     implementation project(':ocs-api')
+    implementation ('org.mobicents.diameter:jdiameter-api:1.7.1-123') {
+        exclude module: 'netty-all'
+    }
+    implementation ('org.mobicents.diameter:jdiameter-impl:1.7.1-123') {
+        exclude module: 'netty-all'
+    }
+    testImplementation project(':ext-pgw')
     testCompile 'org.junit.jupiter:junit-jupiter-api:5.0.3'
+    testCompile 'org.junit.platform:junit-platform-runner:1.0.3'
     testRuntime 'org.junit.jupiter:junit-jupiter-engine:5.0.3'
+
+    testCompile 'junit:junit:4.12'
+    testRuntime 'org.junit.vintage:junit-vintage-engine:4.12.3'
 }
 
 jar {

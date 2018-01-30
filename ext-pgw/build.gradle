@@ -1,0 +1,24 @@
+plugins {
+    id "application"
+    id "com.github.johnrengelman.shadow" version "2.0.1"
+}
+
+dependencies {
+
+    implementation ('org.mobicents.diameter:jdiameter-api:1.7.1-123') {
+        exclude module: 'netty-all'
+    }
+    implementation ('org.mobicents.diameter:jdiameter-impl:1.7.1-123') {
+        exclude module: 'netty-all'
+    }
+
+    implementation project(':ocsgw')
+
+    implementation 'junit:junit:4.12'
+}
+
+shadowJar {
+    mainClassName = ""
+    classifier = "uber"
+    version = null
+}

@@ -41,20 +41,25 @@ public class GrpcDataSource implements DataSource {
 
     private abstract class AbstactObserver<T> implements StreamObserver<T> {
         public final void onError(Throwable t) {
-            // What to do here?
+            logger.error("We got an error", t);
         }
 
         public final void onCompleted() {
             // Nothing to do here
+            logger.info("It seems to be completed") ;
         }
     }
 
     public GrpcDataSource(String target, boolean encrypted) {
+
+        logger.info("Created GrpcDataSource");
+        logger.info("target : " + target);
+        logger.info("encrypted : " + encrypted);
         // Set up a channel to be used to communicate as an OCS instance,
         // to a gRPC instance.
         final ManagedChannel channel = ManagedChannelBuilder
                 .forTarget(target)
-                .usePlaintext(encrypted)
+                .usePlaintext(!encrypted)
                 .build();
 
         // Initialize the stub that will be used to actually
@@ -64,6 +69,8 @@ public class GrpcDataSource implements DataSource {
 
     @Override
     public void init() {
+
+        logger.info("Init was called");
 
         fetchDataBucketRequests =
                 ocsServiceStub.fetchDataBucket(
@@ -132,26 +139,32 @@ public class GrpcDataSource implements DataSource {
         ccrMap.put(requestId, context);
         logger.info("[>>] Requesting bytes for " + context.getCreditControlRequest().getMsisdn());
         if (fetchDataBucketRequests != null) {
-            fetchDataBucketRequests.onNext(FetchDataBucketInfo.newBuilder()
-                    .setMsisdn(context.getCreditControlRequest().getMsisdn())
-                    .setBytes(context.getCreditControlRequest().getRequestedUnits()) // ToDo: this should correspond to a the correct MSCC
-                    .setRequestId(requestId)
-                    .build());
+            try {
+                fetchDataBucketRequests.onNext(FetchDataBucketInfo.newBuilder()
+                        .setMsisdn(context.getCreditControlRequest().getMsisdn())
+                        .setBytes(context.getCreditControlRequest().getRequestedUnits()) // ToDo: this should correspond to a the correct MSCC
+                        .setRequestId(requestId)
+                        .build());
+            } catch (Exception e) {
+                logger.error("What just happened", e);
+            }
         } else {
             logger.warn("[!!] fetchDataBucketRequests is null");
         }
     }
 
     private void handleTerminationRequest(final CreditControlContext context) {
-        // For terminate we do not need to send to remote end before we send CCA back (no reservation)
+        // For terminate we do not need to wait for remote end before we send CCA back (no reservation)
         if (returnUnusedDataRequests != null) {
             returnUnusedDataRequests.onNext(ReturnUnusedDataRequest.newBuilder()
                     .setMsisdn(context.getCreditControlRequest().getMsisdn())
-                    .setBytes(0) // ToDo : Fix proper
+                    .setBytes(1L) // ToDo : Fix proper
                     .build());
         } else {
             logger.warn("[!!] fetchDataBucketRequests is null");
         }
+
+        context.sendCreditControlAnswer(createCreditControlAnswer(context, null));
     }
 
     private CreditControlAnswer createCreditControlAnswer(CreditControlContext context, FetchDataBucketInfo response) {
@@ -164,7 +177,11 @@ public class GrpcDataSource implements DataSource {
         final LinkedList<MultipleServiceCreditControl> multipleServiceCreditControls = request.getMultipleServiceCreditControls();
 
         for (MultipleServiceCreditControl mscc : multipleServiceCreditControls) {
-            mscc.setGrantedServiceUnit(response.getBytes());
+            if (response != null) {
+                mscc.setGrantedServiceUnit(response.getBytes());
+            } else {
+                mscc.setGrantedServiceUnit(0L);
+            }
         }
 
         answer.setMultipleServiceCreditControls(multipleServiceCreditControls);

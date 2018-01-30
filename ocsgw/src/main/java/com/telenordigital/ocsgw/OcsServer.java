@@ -39,9 +39,11 @@ public class OcsServer {
 
         switch (appConfig.getDataStoreType()) {
             case DataSourceType.GRPC:
+                logger.info("Using GrpcDataSource");
                 source = new GrpcDataSource(appConfig.getGrpcServer(), appConfig.encryptGrpc());
                 break;
             case DataSourceType.LOCAL:
+                logger.info("Using LocalDataSource");
                 source = new LocalDataSource();
                 break;
             default:

@@ -1,4 +1,4 @@
-FROM openjdk:8u141
+FROM openjdk:8u151
 
 MAINTAINER CSI "csi@telenordigital.com"
 

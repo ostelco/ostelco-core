@@ -34,7 +34,7 @@ public final class PrimeApplication extends Application<PrimeConfiguration> {
         final PrimeEventProducer producer =
                 new PrimeEventProducer(disruptor.getDisruptor().getRingBuffer());
 
-        // OcsService uses Producer to produce events for incoming requests from PGw
+        // OcsService uses Producer to produce events for incoming requests from P-GW
         final OcsService ocsService = new OcsService(producer);
 
         // OcsServer assigns OcsService as handler for gRPC requests

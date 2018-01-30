@@ -1,7 +1,16 @@
 package com.telenordigital.ocsgw;
 
+import com.telenordigital.ocsgw.diameter.RequestType;
 import com.telenordigital.ocsgw.utils.AppConfig;
-import org.jdiameter.api.*;
+import org.jdiameter.api.Answer;
+import org.jdiameter.api.ApplicationId;
+import org.jdiameter.api.Configuration;
+import org.jdiameter.api.InternalException;
+import org.jdiameter.api.Mode;
+import org.jdiameter.api.Network;
+import org.jdiameter.api.NetworkReqListener;
+import org.jdiameter.api.Request;
+import org.jdiameter.api.Stack;
 import org.jdiameter.api.cca.ServerCCASession;
 import org.jdiameter.api.cca.events.JCreditControlRequest;
 import org.jdiameter.client.api.ISessionFactory;
@@ -12,14 +21,11 @@ import org.jdiameter.server.impl.helpers.XMLConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 import java.io.InputStream;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import com.telenordigital.ocsgw.diameter.RequestType;
-
-class OcsApplication extends CCASessionFactoryImpl implements NetworkReqListener {
+public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqListener {
 
     private static final Logger logger = LoggerFactory.getLogger(OcsApplication.class);
     private static final String diameterConfigFile = "server-jdiameter-config.xml";

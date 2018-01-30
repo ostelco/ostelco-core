@@ -37,3 +37,4 @@ secrets/*
 ./src/test/resources/pantel-tests.json
 src/main/resources/pantel-tests-1da9f050eea9.json
 src/test/resources/pantel-tests.json
+prime/config/pantel-prod.json

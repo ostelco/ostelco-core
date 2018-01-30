@@ -5,7 +5,7 @@
     <URI value="aaa://ocs:3868" />
 
     <IPAddresses>
-      <IPAddress value="172.16.238.3"/>
+      <IPAddress value="127.0.0.1"/>
     </IPAddresses>
     <Realm value="loltel" />
     <VendorID value="193" />
