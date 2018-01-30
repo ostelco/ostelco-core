@@ -59,7 +59,7 @@ public class GrpcDataSource implements DataSource {
         // to a gRPC instance.
         final ManagedChannel channel = ManagedChannelBuilder
                 .forTarget(target)
-                .usePlaintext(encrypted)
+                .usePlaintext(!encrypted)
                 .build();
 
         // Initialize the stub that will be used to actually
