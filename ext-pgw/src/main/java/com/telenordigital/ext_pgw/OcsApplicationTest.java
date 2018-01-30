@@ -25,12 +25,14 @@ import static org.junit.Assert.assertEquals;
 
 public class OcsApplicationTest {
 
-    private static final Logger log = Logger.getLogger(OcsApplicationTest.class);
+    private static final Logger LOG = Logger.getLogger(OcsApplicationTest.class);
 
-    private final String destRealm = "loltel";
-    private final String destHost = "ocs";
-    private final int commandCode = 272; // Credit-Control
-    private final long applicationID = 4L;  // Diameter Credit Control Application (4)
+    private static final String DEST_REALM = "loltel";
+    private static final String DEST_HOST = "ocs";
+    private static final int COMMAND_CODE = 272; // Credit-Control
+    private static final long APPLICATION_ID = 4L;  // Diameter Credit Control Application (4)
+
+    private static final String MSISDN = "4747900184";
 
     private TestClient client;
 
@@ -50,10 +52,10 @@ public class OcsApplicationTest {
     private void simpleCreditControlRequestInit() {
 
         Request request = client.getSession().createRequest(
-                commandCode,
-                ApplicationId.createByAuthAppId(applicationID),
-                destRealm,
-                destHost
+                COMMAND_CODE,
+                ApplicationId.createByAuthAppId(APPLICATION_ID),
+                DEST_REALM,
+                DEST_HOST
         );
 
         AvpSet ccrAvps = request.getAvps();
@@ -62,7 +64,7 @@ public class OcsApplicationTest {
 
         AvpSet subscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164);
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, "4790300123", false);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, MSISDN, false);
 
         ccrAvps.addAvp(Avp.MULTIPLE_SERVICES_INDICATOR, 1);
 
@@ -89,17 +91,17 @@ public class OcsApplicationTest {
             Avp granted = resultMSCC.getGrouped().getAvp(Avp.GRANTED_SERVICE_UNIT);
             assertEquals(500000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
         } catch (AvpDataException e) {
-            log.error("Failed to get Result-Code", e);
+            LOG.error("Failed to get Result-Code", e);
         }
     }
 
     private void simpleCreditControlRequestUpdate() {
 
         Request request = client.getSession().createRequest(
-                commandCode,
-                ApplicationId.createByAuthAppId(applicationID),
-                destRealm,
-                destHost
+                COMMAND_CODE,
+                ApplicationId.createByAuthAppId(APPLICATION_ID),
+                DEST_REALM,
+                DEST_HOST
         );
 
         AvpSet ccrAvps = request.getAvps();
@@ -108,7 +110,7 @@ public class OcsApplicationTest {
 
         AvpSet subscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164);
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, "4790300123", false);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, MSISDN, false);
 
         ccrAvps.addAvp(Avp.MULTIPLE_SERVICES_INDICATOR, 1);
 
@@ -135,7 +137,7 @@ public class OcsApplicationTest {
             Avp granted = resultMSCC.getGrouped().getAvp(Avp.GRANTED_SERVICE_UNIT);
             assertEquals(400000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
         } catch (AvpDataException e) {
-            log.error("Failed to get Result-Code", e);
+            LOG.error("Failed to get Result-Code", e);
         }
 
     }
@@ -146,10 +148,10 @@ public class OcsApplicationTest {
         simpleCreditControlRequestUpdate();
 
         Request request = client.getSession().createRequest(
-                commandCode,
-                ApplicationId.createByAuthAppId(applicationID),
-                destRealm,
-                destHost
+                COMMAND_CODE,
+                ApplicationId.createByAuthAppId(APPLICATION_ID),
+                DEST_REALM,
+                DEST_HOST
         );
 
         AvpSet ccrAvps = request.getAvps();
@@ -158,7 +160,7 @@ public class OcsApplicationTest {
 
         AvpSet subscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164);
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, "4790300123", false);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, MSISDN, false);
 
         ccrAvps.addAvp(Avp.TERMINATION_CAUSE, 1, true, false); // 1 = DIAMETER_LOGOUT
 
@@ -189,7 +191,7 @@ public class OcsApplicationTest {
             AvpSet finalUnitIndication = resultMSCC.getGrouped().getAvp(Avp.FINAL_UNIT_INDICATION).getGrouped();
             assertEquals(FinalUnitAction.TERMINATE, finalUnitIndication.getAvp(Avp.FINAL_UNIT_ACTION).getInteger32());
         } catch (AvpDataException e) {
-            log.error("Failed to get Result-Code", e);
+            LOG.error("Failed to get Result-Code", e);
         }
     }
 
@@ -200,7 +202,7 @@ public class OcsApplicationTest {
             try {
                 Thread.currentThread().sleep(500);
             } catch (InterruptedException e) {
-                log.error("Start Failed", e);
+                LOG.error("Start Failed", e);
             }
         }
         assertEquals(true, client.isAnswerReceived());
