@@ -155,14 +155,18 @@ public class GrpcDataSource implements DataSource {
 
     private void handleTerminationRequest(final CreditControlContext context) {
         // For terminate we do not need to send to remote end before we send CCA back (no reservation)
+        context.sendCreditControlAnswer(createCreditControlAnswer(context, null));
+
+
         if (returnUnusedDataRequests != null) {
             returnUnusedDataRequests.onNext(ReturnUnusedDataRequest.newBuilder()
                     .setMsisdn(context.getCreditControlRequest().getMsisdn())
-                    .setBytes(1) // ToDo : Fix proper
+                    .setBytes(1L) // ToDo : Fix proper
                     .build());
         } else {
             logger.warn("[!!] fetchDataBucketRequests is null");
         }
+
     }
 
     private CreditControlAnswer createCreditControlAnswer(CreditControlContext context, FetchDataBucketInfo response) {
@@ -175,7 +179,11 @@ public class GrpcDataSource implements DataSource {
         final LinkedList<MultipleServiceCreditControl> multipleServiceCreditControls = request.getMultipleServiceCreditControls();
 
         for (MultipleServiceCreditControl mscc : multipleServiceCreditControls) {
-            mscc.setGrantedServiceUnit(response.getBytes());
+            if (response != null) {
+                mscc.setGrantedServiceUnit(response.getBytes());
+            } else {
+                mscc.setGrantedServiceUnit(0L);
+            }
         }
 
         answer.setMultipleServiceCreditControls(multipleServiceCreditControls);
