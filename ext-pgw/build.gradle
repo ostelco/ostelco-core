@@ -12,6 +12,8 @@ dependencies {
         exclude module: 'netty-all'
     }
 
+    implementation project(':ocsgw')
+
     implementation 'junit:junit:4.12'
 }
 

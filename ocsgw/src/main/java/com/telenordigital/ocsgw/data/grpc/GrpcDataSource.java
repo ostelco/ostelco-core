@@ -154,10 +154,7 @@ public class GrpcDataSource implements DataSource {
     }
 
     private void handleTerminationRequest(final CreditControlContext context) {
-        // For terminate we do not need to send to remote end before we send CCA back (no reservation)
-        context.sendCreditControlAnswer(createCreditControlAnswer(context, null));
-
-
+        // For terminate we do not need to wait for remote end before we send CCA back (no reservation)
         if (returnUnusedDataRequests != null) {
             returnUnusedDataRequests.onNext(ReturnUnusedDataRequest.newBuilder()
                     .setMsisdn(context.getCreditControlRequest().getMsisdn())
@@ -167,6 +164,7 @@ public class GrpcDataSource implements DataSource {
             logger.warn("[!!] fetchDataBucketRequests is null");
         }
 
+        context.sendCreditControlAnswer(createCreditControlAnswer(context, null));
     }
 
     private CreditControlAnswer createCreditControlAnswer(CreditControlContext context, FetchDataBucketInfo response) {

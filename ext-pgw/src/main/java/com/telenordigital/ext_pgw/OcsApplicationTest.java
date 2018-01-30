@@ -1,8 +1,8 @@
 package com.telenordigital.ext_pgw;
 
-import com.telenordigital.ext_pgw.diameter.FinalUnitAction;
-import com.telenordigital.ext_pgw.diameter.RequestType;
-import com.telenordigital.ext_pgw.diameter.SubscriptionType;
+import com.telenordigital.ocsgw.diameter.RequestType;
+import com.telenordigital.ocsgw.diameter.SubscriptionType;
+import com.telenordigital.ocsgw.diameter.FinalUnitAction;
 import org.apache.log4j.Logger;
 import org.jdiameter.api.ApplicationId;
 import org.jdiameter.api.Avp;
