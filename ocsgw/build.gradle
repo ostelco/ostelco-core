@@ -39,3 +39,15 @@ jar {
         attributes 'Main-Class': "OcsApplication"
     }
 }
+
+task pack(type: Zip, dependsOn: ':build') {
+    from ('script/') {
+        into('script')
+    }
+    from ('build/distributions/') {
+        into('build/distributions/')
+    }
+    from 'Dockerfile'
+    archiveName 'ocsgw.zip'
+    destinationDir(file('build/deploy/'))
+}
