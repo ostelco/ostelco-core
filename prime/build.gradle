@@ -53,7 +53,7 @@ shadowJar {
     version = null
 }
 
-task pack(type: Zip, dependsOn: ':shadowJar') {
+task pack(type: Zip, dependsOn: 'shadowJar') {
     from ('config/') {
         into('config')
     }
@@ -64,7 +64,6 @@ task pack(type: Zip, dependsOn: ':shadowJar') {
         into('build/libs/')
     }
     from 'Dockerfile'
-    from 'docker-compose.yaml'
     archiveName 'prime.zip'
     destinationDir(file('build/deploy/'))
 }

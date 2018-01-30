@@ -27,3 +27,15 @@ subprojects {
         options.encoding = 'UTF-8'
     }
 }
+
+task pack(type: Zip, dependsOn: ':ocsgw:pack') {
+    from ('ocsgw/build/deploy/') {
+        into('zip/')
+    }
+    from ('prime/build/deploy/') {
+        into('zip/')
+    }
+    from 'docker-compose.yaml'
+    archiveName 'ostelco-core.zip'
+    destinationDir(file('build/deploy/'))
+}
