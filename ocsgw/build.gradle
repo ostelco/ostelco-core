@@ -40,7 +40,7 @@ jar {
     }
 }
 
-task pack(type: Zip, dependsOn: ':build') {
+task pack(type: Zip, dependsOn: 'build') {
     from ('script/') {
         into('script')
     }
