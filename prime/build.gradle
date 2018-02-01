@@ -60,7 +60,7 @@ task pack(type: Zip, dependsOn: 'shadowJar') {
     from ('files/') {
         into(project.name + '/files')
     }
-    from ('build/libs/') {
+    from ('build/libs/prime-uber.jar') {
         into(project.name + '/build/libs/')
     }
     from 'Dockerfile'
