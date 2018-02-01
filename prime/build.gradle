@@ -55,13 +55,13 @@ shadowJar {
 
 task pack(type: Zip, dependsOn: 'shadowJar') {
     from ('config/') {
-        into('config')
+        into(project.name + '/config')
     }
     from ('files/') {
-        into('files')
+        into(project.name + '/files')
     }
     from ('build/libs/') {
-        into('build/libs/')
+        into(project.name + '/build/libs/')
     }
     from 'Dockerfile'
     archiveName 'prime.zip'

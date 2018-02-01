@@ -28,17 +28,10 @@ subprojects {
     }
 }
 
-task _unpackOcsgw(type: org.gradle.api.tasks.Copy, dependsOn: ':ocsgw:pack') {
-    from zipTree('ocsgw/build/deploy/ocsgw.zip') into 'build/tmp/unpack/ocsgw'
-}
-
-task _unpackPrime(type: org.gradle.api.tasks.Copy, dependsOn: ':prime:pack') {
-    from zipTree('prime/build/deploy/prime.zip') into 'build/tmp/unpack/prime'
-}
-
-task pack(type: Zip, dependsOn: ['_unpackOcsgw', '_unpackPrime']) {
+task pack(type: Zip, dependsOn: [':ocsgw:pack', ':prime:pack']) {
+    from zipTree('ocsgw/build/deploy/ocsgw.zip')
+    from zipTree('prime/build/deploy/prime.zip')
     from 'docker-compose.yaml'
-    from 'build/tmp/unpack'
     archiveName 'ostelco-core.zip'
     destinationDir(file('build/deploy/'))
 }

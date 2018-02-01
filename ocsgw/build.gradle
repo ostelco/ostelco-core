@@ -42,10 +42,10 @@ jar {
 
 task pack(type: Zip, dependsOn: 'build') {
     from ('script/') {
-        into('script')
+        into(project.name + '/script')
     }
     from ('build/distributions/') {
-        into('build/distributions/')
+        into(project.name + '/build/distributions/')
     }
     from 'Dockerfile'
     archiveName 'ocsgw.zip'

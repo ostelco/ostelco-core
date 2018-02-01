@@ -23,7 +23,7 @@ With unit testing:
     ssh -A loltel@10.6.101.1
     scp prime/prime.zip ubuntu@192.168.0.123:.
     ssh ubuntu@192.168.0.123
-    unzip prime.zip -d prime
+    unzip prime.zip
 
 * Run in docker
 
