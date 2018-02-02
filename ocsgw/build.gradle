@@ -45,6 +45,15 @@ task pack(type: Zip, dependsOn: 'shadowJar') {
     from ('script/') {
         into(project.name + '/script')
     }
+    from ('config/dictionary.xml') {
+        into (project.name + '/config/')
+    }
+    from ('config/server-jdiameter-config.prod.xml') {
+        into (project.name + '/config/')
+        rename { String fileName ->
+            fileName.replace('prod.', '')
+        }
+    }
     from ('build/libs/ocsgw-uber.jar') {
         into(project.name + '/build/libs/')
     }

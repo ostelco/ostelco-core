@@ -1,20 +1,23 @@
 package com.telenordigital.ocsgw;
 
+import com.telenordigital.ext_pgw.TestClient;
 import com.telenordigital.ocsgw.diameter.FinalUnitAction;
 import com.telenordigital.ocsgw.diameter.RequestType;
 import com.telenordigital.ocsgw.diameter.SubscriptionType;
-import com.telenordigital.ext_pgw.TestClient;
 import org.apache.log4j.Logger;
-import org.jdiameter.api.*;
+import org.jdiameter.api.ApplicationId;
+import org.jdiameter.api.Avp;
+import org.jdiameter.api.AvpDataException;
+import org.jdiameter.api.AvpSet;
+import org.jdiameter.api.Request;
 import org.jdiameter.api.cca.events.JCreditControlRequest;
 import org.jdiameter.common.impl.app.cca.JCreditControlRequestImpl;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.jupiter.api.Assertions.*;
 
 
 /**
@@ -41,7 +44,7 @@ class OcsApplicationTest {
     @BeforeEach
     protected void setUp() {
         if (!applicationStarted) {
-            application.start();
+            application.start("src/test/resources/");
             applicationStarted = true;
         }
         client = new TestClient();

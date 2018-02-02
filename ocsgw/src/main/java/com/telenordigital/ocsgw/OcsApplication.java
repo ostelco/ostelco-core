@@ -21,7 +21,6 @@ import org.jdiameter.server.impl.helpers.XMLConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.InputStream;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -35,14 +34,12 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
     public static void main(String[] args) {
 
         OcsApplication app = new OcsApplication();
-        app.start();
+        app.start("/config/");
     }
 
-    public void start() {
+    public void start(final String configDir) {
         try {
-            InputStream iStream = this.getClass().getClassLoader().getResourceAsStream(DIAMETER_CONFIG_FILE);
-            Configuration diameterConfig = new XMLConfiguration(iStream);
-            iStream.close();
+            Configuration diameterConfig = new XMLConfiguration(configDir +  DIAMETER_CONFIG_FILE);
             stack = new StackImpl();
             stack.init(diameterConfig);
 

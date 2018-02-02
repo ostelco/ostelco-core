@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<Configuration xmlns="http://www.jdiameter.org/jdiameter-server">
+
+  <LocalPeer>
+    <URI value="aaa://ocs:3868" />
+
+    <IPAddresses>
+      <IPAddress value="10.6.4.67"/>
+    </IPAddresses>
+    <Realm value="loltel" />
+    <VendorID value="193" />
+    <ProductName value="jDiameter" />
+    <FirmwareRevision value="1" />
+    <OverloadMonitor>
+      <Entry index="1" lowThreshold="0.5" highThreshold="0.6">
+        <ApplicationID>
+          <VendorId value="10415" />
+          <AuthApplId value="4" />
+          <AcctApplId value="12645" />
+        </ApplicationID>
+      </Entry>
+    </OverloadMonitor>
+
+  </LocalPeer>
+
+  <Parameters>
+    <!-- set to true, we can safely remove client def in this case -->
+    <AcceptUndefinedPeer value="true" />
+    <DuplicateProtection value="true" />
+    <DuplicateTimer value="240000" />
+    <UseUriAsFqdn value="false" />
+    <QueueSize value="10000" />
+    <MessageTimeOut value="60000" />
+    <StopTimeOut value="10000" />
+    <CeaTimeOut value="10000" />
+    <IacTimeOut value="30000" />
+    <DwaTimeOut value="10000" />
+    <DpaTimeOut value="5000" />
+    <RecTimeOut value="10000" />
+    <Concurrent>
+      <Entity name="ThreadGroup" size="64" />
+      <Entity name="ProcessingMessageTimer" size="1" />
+      <Entity name="DuplicationMessageTimer" size="1" />
+      <Entity name="RedirectMessageTimer" size="1" />
+      <Entity name="PeerOverloadTimer" size="1" />
+      <Entity name="ConnectionTimer" size="1" />
+      <Entity name="StatisticTimer" size="1" />
+    </Concurrent>
+
+  </Parameters>
+
+  <Network>
+    <Peers>
+      <!-- Seagull Peer -->
+      <Peer name="aaa://seagull" attempt_connect="false" rating="1" />
+    </Peers>
+    <Realms>
+      <Realm name="loltel" peers="10.6.4.68" local_action="LOCAL" dynamic="false" exp_time="1">
+        <ApplicationID>
+          <VendorId value="0" />
+          <AuthApplId value="4" />
+          <AcctApplId value="19302" />
+        </ApplicationID>
+      </Realm>
+    </Realms>
+  </Network>
+
+  <Extensions />
+
+</Configuration>
