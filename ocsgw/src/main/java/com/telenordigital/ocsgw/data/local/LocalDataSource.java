@@ -14,7 +14,7 @@ import java.util.LinkedList;
  */
 public class LocalDataSource implements DataSource {
 
-    private static final Logger logger = LoggerFactory.getLogger(LocalDataSource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LocalDataSource.class);
 
     @Override
     public void init() {
@@ -24,7 +24,7 @@ public class LocalDataSource implements DataSource {
     @Override
     public void handleRequest(CreditControlContext context) {
         CreditControlAnswer answer = createCreditControlAnswer(context);
-        logger.info("Sending Credit-Control-Answer");
+        LOG.info("Sending Credit-Control-Answer");
         context.sendCreditControlAnswer(answer);
     }
 

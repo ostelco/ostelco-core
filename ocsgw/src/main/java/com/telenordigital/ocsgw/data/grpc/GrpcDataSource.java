@@ -24,7 +24,7 @@ import java.util.UUID;
  */
 public class GrpcDataSource implements DataSource {
 
-    private static final Logger logger = LoggerFactory.getLogger(GrpcDataSource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(GrpcDataSource.class);
 
     private final OcsServiceGrpc.OcsServiceStub ocsServiceStub;
 
@@ -41,20 +41,20 @@ public class GrpcDataSource implements DataSource {
 
     private abstract class AbstactObserver<T> implements StreamObserver<T> {
         public final void onError(Throwable t) {
-            logger.error("We got an error", t);
+            LOG.error("We got an error", t);
         }
 
         public final void onCompleted() {
             // Nothing to do here
-            logger.info("It seems to be completed") ;
+            LOG.info("It seems to be completed") ;
         }
     }
 
     public GrpcDataSource(String target, boolean encrypted) {
 
-        logger.info("Created GrpcDataSource");
-        logger.info("target : " + target);
-        logger.info("encrypted : " + encrypted);
+        LOG.info("Created GrpcDataSource");
+        LOG.info("target : {}", target);
+        LOG.info("encrypted : {}", encrypted);
         // Set up a channel to be used to communicate as an OCS instance,
         // to a gRPC instance.
         final ManagedChannel channel = ManagedChannelBuilder
@@ -70,14 +70,14 @@ public class GrpcDataSource implements DataSource {
     @Override
     public void init() {
 
-        logger.info("Init was called");
+        LOG.info("Init was called");
 
         fetchDataBucketRequests =
                 ocsServiceStub.fetchDataBucket(
                         new AbstactObserver<FetchDataBucketInfo>() {
                             public void onNext(FetchDataBucketInfo response) {
                                 try {
-                                    logger.info("[<<] Received data bucket of " + response.getBytes() + " bytes for " + response.getMsisdn());
+                                    LOG.info("[<<] Received data bucket of " + response.getBytes() + " bytes for " + response.getMsisdn());
                                     final CreditControlContext ccrContext = ccrMap.remove(response.getRequestId());
                                     if (ccrContext != null) {
                                         final ServerCCASession session = ccrContext.getSession();
@@ -85,13 +85,13 @@ public class GrpcDataSource implements DataSource {
                                             CreditControlAnswer answer = createCreditControlAnswer(ccrContext, response);
                                             ccrContext.sendCreditControlAnswer(answer);
                                         } else {
-                                            logger.warn("No stored CCR or Session for " + response.getRequestId());
+                                            LOG.warn("No stored CCR or Session for " + response.getRequestId());
                                         }
                                     } else {
-                                        logger.warn("Missing CreditControlContext for req id " + response.getRequestId());
+                                        LOG.warn("Missing CreditControlContext for req id " + response.getRequestId());
                                     }
                                 } catch (Exception e) {
-                                    logger.error("fetchDataBucket failed ", e);
+                                    LOG.error("fetchDataBucket failed ", e);
                                 }
                             }
                         });
@@ -102,7 +102,7 @@ public class GrpcDataSource implements DataSource {
                         try {
                             System.out.println("[<<] Returned data bucket for " + response.getMsisdn());
                         } catch (Exception e) {
-                            logger.error("returnUnusedData failed ", e);
+                            LOG.error("returnUnusedData failed ", e);
                         }
                     }
                 });
@@ -124,7 +124,7 @@ public class GrpcDataSource implements DataSource {
                 handleTerminationRequest(context);
                 break;
             default:
-                logger.info("Unhandled forward request");
+                LOG.info("Unhandled forward request");
                 break;
         }
     }
@@ -137,7 +137,7 @@ public class GrpcDataSource implements DataSource {
     private void handleUpdateRequest(final CreditControlContext context) {
         final String requestId = UUID.randomUUID().toString();
         ccrMap.put(requestId, context);
-        logger.info("[>>] Requesting bytes for " + context.getCreditControlRequest().getMsisdn());
+        LOG.info("[>>] Requesting bytes for {}", context.getCreditControlRequest().getMsisdn());
         if (fetchDataBucketRequests != null) {
             try {
                 fetchDataBucketRequests.onNext(FetchDataBucketInfo.newBuilder()
@@ -146,10 +146,10 @@ public class GrpcDataSource implements DataSource {
                         .setRequestId(requestId)
                         .build());
             } catch (Exception e) {
-                logger.error("What just happened", e);
+                LOG.error("What just happened", e);
             }
         } else {
-            logger.warn("[!!] fetchDataBucketRequests is null");
+            LOG.warn("[!!] fetchDataBucketRequests is null");
         }
     }
 
@@ -161,7 +161,7 @@ public class GrpcDataSource implements DataSource {
                     .setBytes(1L) // ToDo : Fix proper
                     .build());
         } else {
-            logger.warn("[!!] fetchDataBucketRequests is null");
+            LOG.warn("[!!] fetchDataBucketRequests is null");
         }
 
         context.sendCreditControlAnswer(createCreditControlAnswer(context, null));

@@ -13,7 +13,7 @@ import java.util.Optional;
 
 public class CreditControlRequest {
 
-    private static final Logger logger = LoggerFactory.getLogger(CreditControlContext.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CreditControlContext.class);
     private AvpSet ccrAvps;
 
     private final LinkedList<MultipleServiceCreditControl> multipleServiceCreditControls = new LinkedList<>();
@@ -54,7 +54,7 @@ public class CreditControlRequest {
             parseServiceInformation();
             parseUserEquipmentInfo();
         } catch (InternalException e) {
-            logger.error("Failed to parse CCR", e);
+            LOG.error("Failed to parse CCR", e);
         }
     }
 
@@ -67,7 +67,7 @@ public class CreditControlRequest {
                 userEquipmentInfo.parseAvp(set);
             }
         } catch (AvpDataException e) {
-            logger.error("Failed to parse User-Equipment-Info", e);
+            LOG.error("Failed to parse User-Equipment-Info", e);
         }
     }
 
@@ -84,7 +84,7 @@ public class CreditControlRequest {
                 multipleServiceCreditControls.add(mscc);
             }
         } catch (AvpDataException e) {
-            logger.error("parseMultipleServiceCreditControl failed ", e);
+            LOG.error("parseMultipleServiceCreditControl failed ", e);
         }
     }
 
@@ -113,7 +113,7 @@ public class CreditControlRequest {
                 }
             }
         } catch (AvpDataException e) {
-            logger.error("parseSubscriptionId failed", e);
+            LOG.error("parseSubscriptionId failed", e);
         }
     }
 
@@ -124,10 +124,10 @@ public class CreditControlRequest {
             if (serviceInformationAvp.isPresent()) {
                 serviceInformation.parseApvs(serviceInformationAvp.get());
             } else {
-                logger.info("No Service-Information");
+                LOG.info("No Service-Information");
             }
         } catch (NullPointerException e) {
-            logger.error("Failed to parse ServiceInformation" , e);
+            LOG.error("Failed to parse ServiceInformation" , e);
         }
     }
 

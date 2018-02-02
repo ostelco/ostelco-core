@@ -12,7 +12,7 @@ import java.util.LinkedList;
 
 public class CreditControlContext {
 
-    private static final Logger logger = LoggerFactory.getLogger(CreditControlContext.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CreditControlContext.class);
 
     private final ServerCCASession session;
     private final JCreditControlRequest request;
@@ -47,7 +47,7 @@ public class CreditControlContext {
             try {
                 session.sendCreditControlAnswer(cca);
             } catch (InternalException | IllegalDiameterStateException | RouteException | OverloadException e) {
-                logger.error("Failed to send Credit-Control-Answer", e);
+                LOG.error("Failed to send Credit-Control-Answer", e);
             }
         }
     }
@@ -84,7 +84,7 @@ public class CreditControlContext {
                 gsuAvp.addAvp(Avp.CC_OUTPUT_OCTETS, 0L, true, false);
 
                 if (request.getRequestTypeAVPValue() == RequestType.TERMINATION_REQUEST) {
-                    logger.info("Terminate");
+                    LOG.info("Terminate");
                     // Since this is a terminate reply no service is granted
                     gsuAvp.addAvp(Avp.CC_TIME, 0, true, false);
                     gsuAvp.addAvp(Avp.CC_TOTAL_OCTETS, 0L, true, false);
@@ -103,11 +103,11 @@ public class CreditControlContext {
                 answerMSCC.addAvp(Avp.VALIDITY_TIME, 86400, true, false);
             }
 
-            logger.info("And this is the cca");
+            LOG.info("And this is the cca");
             DiameterUtilities.printAvps(ccaAvps);
 
         } catch (InternalException e) {
-            logger.error("Failed to convert to Credit-Control-Answer", e);
+            LOG.error("Failed to convert to Credit-Control-Answer", e);
         }
         return answer;
     }

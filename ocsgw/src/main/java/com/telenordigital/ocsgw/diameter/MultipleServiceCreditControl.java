@@ -109,7 +109,7 @@ public class MultipleServiceCreditControl {
 
     @Override
     public String toString() {
-        String s = "MultipleServiceCreditControl[" +
+        return "MultipleServiceCreditControl[" +
                 "; Requested-Service-Unit=" + requestedUnits +
                 "; Reserved-Service-Unit=" + reservedUnits +
                 "; usedUnitsTotal=" + usedUnitsTotal +
@@ -119,7 +119,6 @@ public class MultipleServiceCreditControl {
                 "; Service-Identifier=" + serviceIdentifier +
                 "; Granted-Service-Unit" +
                 "]";
-        return s;
     }
 
     public void setGrantedServiceUnit(long bytes) {

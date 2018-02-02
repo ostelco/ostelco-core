@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Optional;
 
 class ServiceInformation {
-    private static final Logger logger = LoggerFactory.getLogger(ServiceInformation.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ServiceInformation.class);
     private final PsInformation psInformation = new PsInformation();
 
     public PsInformation getPsinformation() {
@@ -25,10 +25,10 @@ class ServiceInformation {
                 AvpSet psInformationAvps = psInformationAvp.get().getGrouped();
                 psInformation.parseAvps(psInformationAvps);
             } else {
-                logger.info("No PS-Information");
+                LOG.info("No PS-Information");
             }
         } catch (AvpDataException e) {
-            logger.error("Failed to parse Service-Information", e);
+            LOG.error("Failed to parse Service-Information", e);
         }
     }
 }

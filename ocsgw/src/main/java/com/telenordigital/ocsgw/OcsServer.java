@@ -47,7 +47,7 @@ public class OcsServer {
                 source = new LocalDataSource();
                 break;
             default:
-                logger.warn("Unknow DataStoreType " + appConfig.getDataStoreType());
+                logger.warn("Unknow DataStoreType {}", appConfig.getDataStoreType());
                 source = new LocalDataSource();
                 break;
         }
