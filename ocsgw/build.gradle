@@ -57,7 +57,9 @@ task pack(type: Zip, dependsOn: 'shadowJar') {
     from ('build/libs/ocsgw-uber.jar') {
         into(project.name + '/build/libs/')
     }
-    from 'Dockerfile'
+    from ('Dockerfile') {
+        into(project.name)
+    }
     archiveName 'ocsgw.zip'
     destinationDir(file('build/deploy/'))
 }
