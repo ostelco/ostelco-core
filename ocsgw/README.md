@@ -39,7 +39,7 @@ Docker
 docker build -t ocsgw .
 
 **Run**
-docker run --rm --name ocsgw -p 3868:3868 oscgw
+docker run --rm --name ocsgw -p 3868:3868 ocsgw
 
 
 Testing with seagull
