@@ -63,7 +63,7 @@ public class MultipleServiceCreditControl {
                 this.ratingGroup = ratingGroup.get().getInteger32();
             }
 
-            Optional<Avp> serviceIdentifier = Optional.ofNullable(serviceControl.getAvp(Avp.SERVICE_IDENTIFIER));
+            Optional<Avp> serviceIdentifier = Optional.ofNullable(serviceControl.getAvp(Avp.SERVICE_IDENTIFIER_CCA));
             if (serviceIdentifier.isPresent()) {
                 this.serviceIdentifier = serviceIdentifier.get().getInteger32();
             }

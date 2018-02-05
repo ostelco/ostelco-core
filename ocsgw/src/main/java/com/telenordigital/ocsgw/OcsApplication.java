@@ -21,6 +21,7 @@ import org.jdiameter.server.impl.helpers.XMLConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -106,5 +107,9 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
         for (ApplicationId id : appIds) {
             LOG.info("Diameter Stack  :: Common :: {}", id);
         }
+
+        LOG.info("Uri : " + stack.getMetaData().getLocalPeer().getUri());
+        LOG.info("Realm : " + stack.getMetaData().getLocalPeer().getRealmName());
+        LOG.info("IP : " + Arrays.toString(stack.getMetaData().getLocalPeer().getIPAddresses()));
     }
 }

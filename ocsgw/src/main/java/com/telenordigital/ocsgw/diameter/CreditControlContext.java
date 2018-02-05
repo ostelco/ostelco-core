@@ -75,7 +75,7 @@ public class CreditControlContext {
                 if (mscc.getRatingGroup() > 0) {
                     answerMSCC.addAvp(Avp.RATING_GROUP, mscc.getRatingGroup(), true, false , true);
                 }
-                if(mscc.getServiceIdentifier() > 0) {
+                if (mscc.getServiceIdentifier() > 0) {
                     answerMSCC.addAvp(Avp.SERVICE_IDENTIFIER_CCA, mscc.getServiceIdentifier(), true, false);
                 }
 

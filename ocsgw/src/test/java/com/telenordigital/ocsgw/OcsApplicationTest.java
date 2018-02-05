@@ -79,6 +79,7 @@ class OcsApplicationTest {
 
         AvpSet mscc = ccrAvps.addGroupedAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
         mscc.addAvp(Avp.RATING_GROUP, 10);
+        mscc.addAvp(Avp.SERVICE_IDENTIFIER_CCA, 1);
         AvpSet requestedServiceUnits = mscc.addGroupedAvp(Avp.REQUESTED_SERVICE_UNIT);
         requestedServiceUnits.addAvp(Avp.CC_TOTAL_OCTETS, 500000L);
         requestedServiceUnits.addAvp(Avp.CC_INPUT_OCTETS, 0L);
@@ -97,6 +98,7 @@ class OcsApplicationTest {
             assertEquals(RequestType.INITIAL_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
             Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
             assertEquals(2001L, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
+            assertEquals(1, resultMSCC.getGrouped().getAvp(Avp.SERVICE_IDENTIFIER_CCA).getInteger32());
             Avp granted = resultMSCC.getGrouped().getAvp(Avp.GRANTED_SERVICE_UNIT);
             assertEquals(500000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
         } catch (AvpDataException e) {
@@ -125,6 +127,7 @@ class OcsApplicationTest {
 
         AvpSet mscc = ccrAvps.addGroupedAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
         mscc.addAvp(Avp.RATING_GROUP, 10);
+        mscc.addAvp(Avp.SERVICE_IDENTIFIER_CCA, 1);
         AvpSet requestedServiceUnits = mscc.addGroupedAvp(Avp.REQUESTED_SERVICE_UNIT);
         requestedServiceUnits.addAvp(Avp.CC_TOTAL_OCTETS, 400000L);
         requestedServiceUnits.addAvp(Avp.CC_INPUT_OCTETS, 0L);
@@ -176,6 +179,7 @@ class OcsApplicationTest {
 
         AvpSet mscc = ccrAvps.addGroupedAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
         mscc.addAvp(Avp.RATING_GROUP, 10);
+        mscc.addAvp(Avp.SERVICE_IDENTIFIER_CCA, 1);
         AvpSet usedServiceUnits = mscc.addGroupedAvp(Avp.USED_SERVICE_UNIT);
         usedServiceUnits.addAvp(Avp.CC_TOTAL_OCTETS, 700000L);
         usedServiceUnits.addAvp(Avp.CC_INPUT_OCTETS, 0L);
