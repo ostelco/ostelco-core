@@ -4,10 +4,10 @@ MAINTAINER CSI "csi@telenordigital.com"
 
 RUN apk update && apk add unzip && apk add netcat-openbsd
 
-COPY build/distributions/ocsgw-1.0.0-SNAPSHOT.zip /ocsgw-1.0.0-SNAPSHOT.zip
-
+COPY script/start.sh /start.sh
 COPY script/wait_for_prime.sh /wait_for_prime.sh
+COPY config /config
 
-RUN unzip ocsgw-1.0.0-SNAPSHOT.zip
+COPY build/libs/ocsgw-uber.jar /ocsgw.jar
 
-CMD ["ocsgw-1.0.0-SNAPSHOT/bin/ocsgw"]
+CMD ["/start.sh"]

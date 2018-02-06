@@ -2,8 +2,7 @@ FROM openjdk:8u151
 
 MAINTAINER CSI "csi@telenordigital.com"
 
-COPY files/start.sh /start.sh
-RUN chmod +x /start.sh
+COPY script/start.sh /start.sh
 
 COPY config /config
 

@@ -11,7 +11,7 @@ import java.util.Optional;
 
 public class PsInformation {
 
-    private static final Logger logger = LoggerFactory.getLogger(PsInformation.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PsInformation.class);
 
     // 3GPP-Charging-Id (Avp 2)
     private byte[] chargingId = null;
@@ -132,7 +132,7 @@ public class PsInformation {
             this.chargingRulebaseName = psInformationAvps.getAvp(Avp.CHARGING_RULE_BASE_NAME).getUTF8String();
             this.ratType = psInformationAvps.getAvp(Avp.TGPP_RAT_TYPE).getOctetString();
         } catch (AvpDataException e) {
-            logger.error("Failed to parse PS-Information", e);
+            LOG.error("Failed to parse PS-Information", e);
         }
     }
 }

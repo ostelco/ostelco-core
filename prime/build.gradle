@@ -55,15 +55,17 @@ shadowJar {
 
 task pack(type: Zip, dependsOn: 'shadowJar') {
     from ('config/') {
-        into('config')
+        into(project.name + '/config')
     }
     from ('files/') {
-        into('files')
+        into(project.name + '/files')
     }
-    from ('build/libs/') {
-        into('build/libs/')
+    from ('build/libs/prime-uber.jar') {
+        into(project.name + '/build/libs/')
     }
-    from 'Dockerfile'
+    from ('Dockerfile') {
+        into(project.name)
+    }
     archiveName 'prime.zip'
     destinationDir(file('build/deploy/'))
 }

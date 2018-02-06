@@ -11,11 +11,11 @@ buildscript {
 
 plugins {
     id "application"
+    id "jacoco"
+    id "com.github.johnrengelman.shadow" version "2.0.1"
 }
 
 apply plugin: 'org.junit.platform.gradle.plugin'
-
-mainClassName = 'com.telenordigital.ocsgw.OcsApplication'
 
 dependencies {
     implementation project(':ocs-api')
@@ -34,20 +34,32 @@ dependencies {
     testRuntime 'org.junit.vintage:junit-vintage-engine:4.12.3'
 }
 
-jar {
-    manifest {
-        attributes 'Main-Class': "OcsApplication"
-    }
+shadowJar {
+    mainClassName = 'com.telenordigital.ocsgw.OcsApplication'
+    mergeServiceFiles()
+    classifier = "uber"
+    version = null
 }
 
-task pack(type: Zip, dependsOn: ':build') {
+task pack(type: Zip, dependsOn: 'shadowJar') {
     from ('script/') {
-        into('script')
+        into(project.name + '/script')
     }
-    from ('build/distributions/') {
-        into('build/distributions/')
+    from ('config/dictionary.xml') {
+        into (project.name + '/config/')
     }
-    from 'Dockerfile'
+    from ('config/server-jdiameter-config.prod.xml') {
+        into (project.name + '/config/')
+        rename { String fileName ->
+            fileName.replace('prod.', '')
+        }
+    }
+    from ('build/libs/ocsgw-uber.jar') {
+        into(project.name + '/build/libs/')
+    }
+    from ('Dockerfile') {
+        into(project.name)
+    }
     archiveName 'ocsgw.zip'
     destinationDir(file('build/deploy/'))
 }

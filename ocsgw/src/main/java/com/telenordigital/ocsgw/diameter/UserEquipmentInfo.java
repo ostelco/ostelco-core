@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 
 class UserEquipmentInfo {
 
-    private static final Logger logger = LoggerFactory.getLogger(UserEquipmentInfo.class);
+    private static final Logger LOG = LoggerFactory.getLogger(UserEquipmentInfo.class);
 
     private int userEquipmentInfoType = UserEquipmentInfoType.IMEISV;
     private byte[] getUserEquipmentInfoValue;
@@ -28,7 +28,7 @@ class UserEquipmentInfo {
             this.userEquipmentInfoType = set.getAvp(Avp.USER_EQUIPMENT_INFO_TYPE).getInteger32();
             this.getUserEquipmentInfoValue = set.getAvp(Avp.USER_EQUIPMENT_INFO_VALUE).getOctetString();
         } catch (AvpDataException e) {
-            logger.error("Failed to parse User-Equipment-Info", e);
+            LOG.error("Failed to parse User-Equipment-Info", e);
         }
     }
 }

@@ -1,20 +1,23 @@
 package com.telenordigital.ocsgw;
 
+import com.telenordigital.ext_pgw.TestClient;
 import com.telenordigital.ocsgw.diameter.FinalUnitAction;
 import com.telenordigital.ocsgw.diameter.RequestType;
 import com.telenordigital.ocsgw.diameter.SubscriptionType;
-import com.telenordigital.ext_pgw.TestClient;
 import org.apache.log4j.Logger;
-import org.jdiameter.api.*;
+import org.jdiameter.api.ApplicationId;
+import org.jdiameter.api.Avp;
+import org.jdiameter.api.AvpDataException;
+import org.jdiameter.api.AvpSet;
+import org.jdiameter.api.Request;
 import org.jdiameter.api.cca.events.JCreditControlRequest;
 import org.jdiameter.common.impl.app.cca.JCreditControlRequestImpl;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.jupiter.api.Assertions.*;
 
 
 /**
@@ -41,7 +44,7 @@ class OcsApplicationTest {
     @BeforeEach
     protected void setUp() {
         if (!applicationStarted) {
-            application.start();
+            application.start("src/test/resources/");
             applicationStarted = true;
         }
         client = new TestClient();
@@ -76,6 +79,7 @@ class OcsApplicationTest {
 
         AvpSet mscc = ccrAvps.addGroupedAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
         mscc.addAvp(Avp.RATING_GROUP, 10);
+        mscc.addAvp(Avp.SERVICE_IDENTIFIER_CCA, 1);
         AvpSet requestedServiceUnits = mscc.addGroupedAvp(Avp.REQUESTED_SERVICE_UNIT);
         requestedServiceUnits.addAvp(Avp.CC_TOTAL_OCTETS, 500000L);
         requestedServiceUnits.addAvp(Avp.CC_INPUT_OCTETS, 0L);
@@ -94,6 +98,7 @@ class OcsApplicationTest {
             assertEquals(RequestType.INITIAL_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
             Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
             assertEquals(2001L, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
+            assertEquals(1, resultMSCC.getGrouped().getAvp(Avp.SERVICE_IDENTIFIER_CCA).getInteger32());
             Avp granted = resultMSCC.getGrouped().getAvp(Avp.GRANTED_SERVICE_UNIT);
             assertEquals(500000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
         } catch (AvpDataException e) {
@@ -122,6 +127,7 @@ class OcsApplicationTest {
 
         AvpSet mscc = ccrAvps.addGroupedAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
         mscc.addAvp(Avp.RATING_GROUP, 10);
+        mscc.addAvp(Avp.SERVICE_IDENTIFIER_CCA, 1);
         AvpSet requestedServiceUnits = mscc.addGroupedAvp(Avp.REQUESTED_SERVICE_UNIT);
         requestedServiceUnits.addAvp(Avp.CC_TOTAL_OCTETS, 400000L);
         requestedServiceUnits.addAvp(Avp.CC_INPUT_OCTETS, 0L);
@@ -173,6 +179,7 @@ class OcsApplicationTest {
 
         AvpSet mscc = ccrAvps.addGroupedAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
         mscc.addAvp(Avp.RATING_GROUP, 10);
+        mscc.addAvp(Avp.SERVICE_IDENTIFIER_CCA, 1);
         AvpSet usedServiceUnits = mscc.addGroupedAvp(Avp.USED_SERVICE_UNIT);
         usedServiceUnits.addAvp(Avp.CC_TOTAL_OCTETS, 700000L);
         usedServiceUnits.addAvp(Avp.CC_INPUT_OCTETS, 0L);
