@@ -3,7 +3,6 @@
 
   <LocalPeer>
     <URI value="aaa://ocs:3868" />
-
     <IPAddresses>
       <IPAddress value="172.16.238.3"/>
     </IPAddresses>
@@ -20,7 +19,6 @@
         </ApplicationID>
       </Entry>
     </OverloadMonitor>
-
   </LocalPeer>
 
   <Parameters>
