@@ -158,7 +158,7 @@ public class GrpcDataSource implements DataSource {
         if (returnUnusedDataRequests != null) {
             returnUnusedDataRequests.onNext(ReturnUnusedDataRequest.newBuilder()
                     .setMsisdn(context.getCreditControlRequest().getMsisdn())
-                    .setBytes(1L) // ToDo : Fix proper
+                    .setBytes(1L) // ToDo : Fix proper. We have Used-Service-Unit not unused.
                     .build());
         } else {
             LOG.warn("[!!] fetchDataBucketRequests is null");

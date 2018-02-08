@@ -119,18 +119,54 @@ public class PsInformation {
             if (pdpType.isPresent()) {
                 this.pdpType = psInformationAvps.getAvp(Avp.TGPP_PDP_TYPE).getInteger32();
             }
-            this.pdpAddress = psInformationAvps.getAvp(Avp.PDP_ADDRESS).getAddress();
-            this.sgsnAddress = psInformationAvps.getAvp(Avp.SGSN_ADDRESS).getAddress();
-            this.ggsnAddress = psInformationAvps.getAvp(Avp.GGSN_ADDRESS).getAddress();
-            this.imsiMccMnc = psInformationAvps.getAvp(Avp.TGPP_IMSI_MCC_MNC).getUTF8String();
-            this.ggsnMccMnc = psInformationAvps.getAvp(Avp.TGPP_GGSN_MCC_MNC).getUTF8String();
-            this.calledStationId = psInformationAvps.getAvp(30).getUTF8String(); // CALLED_STATION_ID (Avp 30)
-            this.selectionMode = psInformationAvps.getAvp(Avp.TGPP_SELECTION_MODE).getUTF8String();
-            this.chargingCharacteristics = psInformationAvps.getAvp(Avp.TGPP_CHARGING_CHARACTERISTICS).getUTF8String();
-            this.sgsnMncMcc = psInformationAvps.getAvp(Avp.GPP_SGSN_MCC_MNC).getUTF8String();
-            this.msTimezone = psInformationAvps.getAvp(Avp.TGPP_MS_TIMEZONE).getOctetString();
-            this.chargingRulebaseName = psInformationAvps.getAvp(Avp.CHARGING_RULE_BASE_NAME).getUTF8String();
-            this.ratType = psInformationAvps.getAvp(Avp.TGPP_RAT_TYPE).getOctetString();
+            Optional<Avp> pdpAddress = Optional.ofNullable(psInformationAvps.getAvp(Avp.PDP_ADDRESS));
+            if (pdpAddress.isPresent()) {
+                this.pdpAddress = psInformationAvps.getAvp(Avp.PDP_ADDRESS).getAddress();
+            }
+            Optional<Avp> sgsnAddress = Optional.ofNullable(psInformationAvps.getAvp(Avp.SGSN_ADDRESS));
+            if (sgsnAddress.isPresent()) {
+                this.sgsnAddress = psInformationAvps.getAvp(Avp.SGSN_ADDRESS).getAddress();
+            }
+            Optional<Avp> ggsnAddress = Optional.ofNullable(psInformationAvps.getAvp(Avp.GGSN_ADDRESS));
+            if (ggsnAddress.isPresent()) {
+                this.ggsnAddress = psInformationAvps.getAvp(Avp.GGSN_ADDRESS).getAddress();
+            }
+            Optional<Avp> imsiMccMnc = Optional.ofNullable(psInformationAvps.getAvp(Avp.TGPP_IMSI_MCC_MNC));
+            if (imsiMccMnc.isPresent()) {
+                this.imsiMccMnc = psInformationAvps.getAvp(Avp.TGPP_IMSI_MCC_MNC).getUTF8String();
+            }
+            Optional<Avp> ggsnMccMnc = Optional.ofNullable(psInformationAvps.getAvp(Avp.TGPP_GGSN_MCC_MNC));
+            if (ggsnMccMnc.isPresent()) {
+                this.ggsnMccMnc = psInformationAvps.getAvp(Avp.TGPP_GGSN_MCC_MNC).getUTF8String();
+            }
+            Optional<Avp> calledStationId = Optional.ofNullable(psInformationAvps.getAvp(30)); // CALLED_STATION_ID (Avp 30)
+            if (calledStationId.isPresent()) {
+                this.calledStationId = psInformationAvps.getAvp(30).getUTF8String();
+            }
+            Optional<Avp> selectionMode = Optional.ofNullable(psInformationAvps.getAvp(Avp.TGPP_SELECTION_MODE));
+            if (selectionMode.isPresent()) {
+                this.selectionMode = psInformationAvps.getAvp(Avp.TGPP_SELECTION_MODE).getUTF8String();
+            }
+            Optional<Avp> chargingCharacteristics = Optional.ofNullable(psInformationAvps.getAvp(Avp.TGPP_CHARGING_CHARACTERISTICS));
+            if (chargingCharacteristics.isPresent()) {
+                this.chargingCharacteristics = psInformationAvps.getAvp(Avp.TGPP_CHARGING_CHARACTERISTICS).getUTF8String();
+            }
+            Optional<Avp> sgsnMncMcc = Optional.ofNullable(psInformationAvps.getAvp(Avp.GPP_SGSN_MCC_MNC));
+            if (sgsnMncMcc.isPresent()) {
+                this.sgsnMncMcc = psInformationAvps.getAvp(Avp.GPP_SGSN_MCC_MNC).getUTF8String();
+            }
+            Optional<Avp> msTimezone = Optional.ofNullable(psInformationAvps.getAvp(Avp.TGPP_MS_TIMEZONE));
+            if (msTimezone.isPresent()) {
+                this.msTimezone = psInformationAvps.getAvp(Avp.TGPP_MS_TIMEZONE).getOctetString();
+            }
+            Optional<Avp> chargingRulebaseName = Optional.ofNullable(psInformationAvps.getAvp(Avp.CHARGING_RULE_BASE_NAME));
+            if (chargingRulebaseName.isPresent()) {
+                this.chargingRulebaseName = psInformationAvps.getAvp(Avp.CHARGING_RULE_BASE_NAME).getUTF8String();
+            }
+            Optional<Avp> ratType = Optional.ofNullable(psInformationAvps.getAvp(Avp.TGPP_RAT_TYPE));
+            if (ratType.isPresent()) {
+                this.ratType = psInformationAvps.getAvp(Avp.TGPP_RAT_TYPE).getOctetString();
+            }
         } catch (AvpDataException e) {
             LOG.error("Failed to parse PS-Information", e);
         }
