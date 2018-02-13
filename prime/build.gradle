@@ -58,8 +58,8 @@ task pack(type: Zip, dependsOn: 'shadowJar') {
     from ('config/') {
         into(project.name + '/config')
     }
-    from ('files/') {
-        into(project.name + '/files')
+    from ('script/') {
+        into(project.name + '/script')
     }
     from ('build/libs/prime-uber.jar') {
         into(project.name + '/build/libs/')
