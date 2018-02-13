@@ -1,5 +1,6 @@
 package com.telenordigital.prime;
 
+import com.telenordigital.prime.analytics.DataConsumptionInfoPublisher;
 import com.telenordigital.prime.config.EventProcessorConfiguration;
 import com.telenordigital.prime.config.PrimeConfiguration;
 import com.telenordigital.prime.disruptor.ClearingEventHandler;
@@ -52,27 +53,31 @@ public final class PrimeApplication extends Application<PrimeConfiguration> {
         final EventListeners eventListeners = new EventListeners(ocsState);
 
         final Storage storage = new FbStorage(
-                eventProcessorConfig.getDatabaseName(),
+                eventProcessorConfig.getProjectId(),
                 eventProcessorConfig.getConfigFile(),
                 eventListeners);
 
         final OcsBalanceUpdater ocsBalanceUpdater = new OcsBalanceUpdaterImpl(producer);
         final EventProcessor eventProcessor = new EventProcessor(storage, ocsBalanceUpdater);
 
+        final DataConsumptionInfoPublisher dataConsumptionInfoPublisher = new DataConsumptionInfoPublisher(
+                eventProcessorConfig.getProjectId(),
+                eventProcessorConfig.getTopicId());
 
         // Events flow:
         //      Producer:(OcsService, Subscriber)
         //          -> Handler:(OcsState)
-        //              -> Handler:(OcsService, Subscriber)
+        //              -> Handler:(OcsService, Subscriber, AnalyticsPublisher)
         //                  -> Clear
         disruptor.getDisruptor().
                 handleEventsWith(ocsState).
-                then(ocsService.asEventHandler(), eventProcessor).
+                then(ocsService.asEventHandler(), eventProcessor, dataConsumptionInfoPublisher).
                 then(new ClearingEventHandler());
 
+        // dropwizard starts Analytics events publisher
+        environment.lifecycle().manage(dataConsumptionInfoPublisher);
         // dropwizard starts event processor
         environment.lifecycle().manage(eventProcessor);
-
         // dropwizard starts disruptor
         environment.lifecycle().manage(disruptor);
         // dropwizard starts server

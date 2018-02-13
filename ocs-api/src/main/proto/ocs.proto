@@ -31,3 +31,11 @@ message ActivateRequest {
 message ActivateResponse {
   string msisdn = 1;
 }
+
+// This is used only to report to Analytics engine by Prime via Google Cloud Pub/Sub.
+// This may be moved to a separate library project, in future.
+message DataTrafficInfo {
+  string msisdn = 1;
+  uint64 bucketBytes = 2;
+  uint64 bundleBytes = 3;
+}
