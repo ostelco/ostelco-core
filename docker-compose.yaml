@@ -6,6 +6,8 @@ services:
     build: prime
     ports:
       - "8082:8082"
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/config/pantel-prod.json
     networks:
       net:
         aliases:

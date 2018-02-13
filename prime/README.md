@@ -2,60 +2,6 @@
 
 
 
-## Deploy to production
-
-### Package
- 
-    gradle clean pack
-
-With unit testing:
-    
-    gradle clean test pack
-    
-* This creates zip file `build/deploy/prime.zip`
-
-### Run
-
-* Upload and unzip `prime.zip` file.
-
-
-    scp build/deploy/prime.zip loltel@10.6.101.1:prime/
-    ssh -A loltel@10.6.101.1
-    scp prime/prime.zip ubuntu@192.168.0.123:.
-    ssh ubuntu@192.168.0.123
-    unzip prime.zip
-
-* Run in docker
-
-
-    cd prime
-    sudo docker-compose up -d --build
-    sudo docker logs -f prime
-
-
-
-## Testing
-
- * Configure firebase project - `pantel-tests` or `pantel-2decb`
- 
-  * Create test subscriber
- 
-  
-     firebase --project pantel-2decb  --data '{"msisdn": "+4747900184", "noOfBytesLeft": 0}' database:push /authorative-user-storage
-
- * Top up test subscriber
- 
- 
-    firebase --project pantel-2decb  --data '{"msisdn": "+4747900184", "sku": "DataTopup3GB", "paymentToken": "xxxx"}' database:push /client-requests
-
- * Start docker-compose for prime
- * Start docker-compose for ocs-gw 
-
-
-    docker-compose up --build
-
-
-
 ## Interfaces
 
 * Subscriber (End-user and/or CRM)

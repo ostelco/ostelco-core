@@ -4,19 +4,28 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.hibernate.validator.constraints.NotEmpty;
 
 public final class EventProcessorConfiguration {
-    @NotEmpty
-    @JsonProperty("databaseName")
-    private String databaseName;
 
     @NotEmpty
     @JsonProperty("configFile")
     private String configFile;
 
-    public String getDatabaseName() {
-        return databaseName;
-    }
+    @NotEmpty
+    @JsonProperty("projectId")
+    private String projectId;
+
+    @NotEmpty
+    @JsonProperty("topicId")
+    private String topicId;
 
     public String getConfigFile() {
         return configFile;
+    }
+
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public String getTopicId() {
+        return topicId;
     }
 }
