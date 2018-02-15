@@ -19,11 +19,7 @@ services:
     build: ocsgw
     ports:
       - "3868:3868"
-    networks:
-      net:
-        aliases:
-          - ocsgw
-        ipv4_address: 172.16.238.3
+    network_mode: "host"
     depends_on:
       - "prime"
     command: ["./wait_for_prime.sh"]
