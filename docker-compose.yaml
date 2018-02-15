@@ -19,7 +19,6 @@ services:
     build: ocsgw
     ports:
       - "3868:3868"
-    network_mode: "host"
     depends_on:
       - "prime"
     command: ["./wait_for_prime.sh"]

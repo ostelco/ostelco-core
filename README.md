@@ -32,7 +32,7 @@ With unit testing:
 
 
     cd prime  
-    sudo docker-compose up -d --build  
+    sudo docker-compose -f docker-compose.yaml -f docker-prod.yaml up -d --build  
     sudo docker logs -f prime  
     sudo docker logs -f ocsgw  
 

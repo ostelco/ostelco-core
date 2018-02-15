@@ -1,6 +1,13 @@
 version: "3.3"
 
 services:
+  ocsgw:
+    networks:
+      net:
+        aliases:
+          - "ocsgw"
+        ipv4_address: 172.16.238.3
+
   ext-pgw:
     container_name: ext-pgw
     build: ext-pgw

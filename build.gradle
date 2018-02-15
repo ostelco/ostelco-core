@@ -32,6 +32,7 @@ task pack(type: Zip, dependsOn: [':ocsgw:pack', ':prime:pack']) {
     from zipTree('ocsgw/build/deploy/ocsgw.zip')
     from zipTree('prime/build/deploy/prime.zip')
     from 'docker-compose.yaml'
+    from 'docker-prod.yaml'
     archiveName 'ostelco-core.zip'
     destinationDir(file('build/deploy/'))
 }
