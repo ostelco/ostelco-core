@@ -1,0 +1,8 @@
+version: "3.3"
+
+services:
+  analytics:
+    container_name: analytics
+    build: .
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/config/pantel-prod.json
