@@ -1,38 +1,39 @@
 plugins {
-    id "java"
-    id "maven"
-    id "project-report"
-    id "com.github.ben-manes.versions" version "0.17.0"
+  id "java"
+  id "maven"
+  id "project-report"
+  id "com.github.ben-manes.versions" version "0.17.0"
 }
 
 allprojects {
 
-    group = 'org.ostelco'
-    version = '1.0.0-SNAPSHOT'
+  group = 'org.ostelco'
+  version = '1.0.0-SNAPSHOT'
 
-    repositories {
-        mavenLocal()
-        mavenCentral()
-        maven {
-            url "https://repository.jboss.org/nexus/content/repositories/releases/"
-        }
-
+  repositories {
+    mavenLocal()
+    mavenCentral()
+    maven {
+      url "https://repository.jboss.org/nexus/content/repositories/releases/"
     }
+
+  }
 }
 
 subprojects {
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
-    tasks.withType(JavaCompile) {
-        options.encoding = 'UTF-8'
-    }
+  sourceCompatibility = 1.8
+  targetCompatibility = 1.8
+  tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+  }
 }
 
 task pack(type: Zip, dependsOn: [':ocsgw:pack', ':prime:pack']) {
-    from zipTree('ocsgw/build/deploy/ocsgw.zip')
-    from zipTree('prime/build/deploy/prime.zip')
-    from 'docker-compose.yaml'
-    from 'docker-prod.yaml'
-    archiveName 'ostelco-core.zip'
-    destinationDir(file('build/deploy/'))
+  from zipTree('ocsgw/build/deploy/ocsgw.zip')
+  from zipTree('prime/build/deploy/prime.zip')
+  from 'docker-compose.yaml'
+  from 'docker-compose.prod.yaml'
+  rename 'docker-compose.prod.yaml','docker-compose.override.yaml'
+  archiveName 'ostelco-core.zip'
+  destinationDir(file('build/deploy/'))
 }
