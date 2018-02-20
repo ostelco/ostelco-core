@@ -60,6 +60,14 @@
           <AcctApplId value="19302" />
         </ApplicationID>
       </Realm>
+      <!-- Ro -->
+      <Realm name="loltel" peers="127.0.0.1" local_action="LOCAL" dynamic="false" exp_time="1">
+        <ApplicationID>
+          <VendorId value="10415" />
+          <AuthApplId value="4" />
+          <AcctApplId value="0" />
+        </ApplicationID>
+      </Realm>
     </Realms>
   </Network>
 

@@ -79,7 +79,7 @@ public class TestClient implements EventListener<Request, Answer> {
             //this has to be done to inform stack that we support application
             Network network = stack.unwrap(Network.class);
             network.addNetworkReqListener(request -> {
-                //this wontbe called.
+                //this wont be called.
                 return null;
             }, this.authAppId); //passing our example app id.
 

@@ -11,6 +11,13 @@
     <VendorID value="193" />
     <ProductName value="jDiameter" />
     <FirmwareRevision value="1" />
+    <Applications>
+      <ApplicationID>
+        <VendorId value="10415"/>
+        <AuthApplId value="4"/>
+        <AcctApplId value="3"/>
+      </ApplicationID>
+    </Applications>
     <OverloadMonitor>
       <Entry index="1" lowThreshold="0.5" highThreshold="0.6">
         <ApplicationID>
@@ -20,7 +27,6 @@
         </ApplicationID>
       </Entry>
     </OverloadMonitor>
-
   </LocalPeer>
 
   <Parameters>
@@ -53,14 +59,17 @@
     <Peers>
       <!-- Seagull Peer -->
       <Peer name="aaa://seagull" attempt_connect="false" rating="1" />
+        <!-- testclient Peer -->
+        <Peer name="aaa://testclient" attempt_connect="false" rating="1" />
     </Peers>
     <Realms>
-      <Realm name="loltel" peers="127.0.0.1" local_action="LOCAL" dynamic="false" exp_time="1">
-        <ApplicationID>
-          <VendorId value="0" />
-          <AuthApplId value="4" />
-          <AcctApplId value="19302" />
-        </ApplicationID>
+      <!-- Gy -->
+      <Realm name="loltel" peers="aaa://testclient" local_action="LOCAL" dynamic="false" exp_time="1">
+      <ApplicationID>
+        <VendorId value="10415" />
+        <AuthApplId value="4" />
+        <AcctApplId value="3" />
+      </ApplicationID>
       </Realm>
     </Realms>
   </Network>

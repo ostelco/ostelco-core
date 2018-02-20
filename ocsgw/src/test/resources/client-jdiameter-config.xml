@@ -7,16 +7,23 @@
     <IPAddresses>
       <IPAddress value="127.0.0.1" />
     </IPAddresses>
-    <Realm value="loltel" />
-    <VendorID value="0" />
-    <ProductName value="jDiameter" />
-    <FirmwareRevision value="1" />
+    <Realm value="loltel"/>
+    <VendorID value="8164"/>
+    <ProductName value="jDiameter"/>
+    <FirmwareRevision value="1"/>
+    <Applications>
+      <ApplicationID>
+        <VendorId value="10415"/>
+        <AuthApplId value="4"/>
+        <AcctApplId value="0"/>
+      </ApplicationID>
+    </Applications>
     <OverloadMonitor>
       <Entry index="1" lowThreshold="0.5" highThreshold="0.6">
         <ApplicationID>
-          <VendorId value="0" />
-          <AuthApplId value="4" />
-          <AcctApplId value="0" />
+          <VendorId value="10415"/>
+          <AuthApplId value="4"/>
+          <AcctApplId value="10415"/>
         </ApplicationID>
       </Entry>
     </OverloadMonitor>
@@ -52,13 +59,20 @@
       <Peer name="ocs" attempt_connect="true" rating="1" ip="127.0.0.1" />
     </Peers>
     <Realms>
-      <Realm name="loltel" peers="ocs" local_action="LOCAL" dynamic="false" exp_time="1">
+      <Realm name="loltel" peers="aaa://127.0.0.1" local_action="LOCAL" dynamic="false" exp_time="1">
         <ApplicationID>
-          <VendorId value="0" />
-          <AuthApplId value="4" />
-          <AcctApplId value="0" />
+            <VendorId value="10415" />
+            <AuthApplId value="4" />
+            <AcctApplId value="10415" />
         </ApplicationID>
-      </Realm>
+        </Realm>
+        <Realm name="loltel" peers="aaa://testclient" local_action="LOCAL" dynamic="false" exp_time="1">
+            <ApplicationID>
+                <VendorId value="10415" />
+                <AuthApplId value="4" />
+                <AcctApplId value="10415" />
+            </ApplicationID>
+        </Realm>
     </Realms>
   </Network>
 
