@@ -83,7 +83,7 @@ public class CreditControlContext {
                 gsuAvp.addAvp(Avp.CC_INPUT_OCTETS, 0L, true, false);
                 gsuAvp.addAvp(Avp.CC_OUTPUT_OCTETS, 0L, true, false);
 
-                if (request.getRequestTypeAVPValue() == RequestType.TERMINATION_REQUEST) {
+                if ((request.getRequestTypeAVPValue() == RequestType.TERMINATION_REQUEST) || (mscc.getGrantedServiceUnit() < 1 )) {
                     LOG.info("Terminate");
                     // Since this is a terminate reply no service is granted
                     gsuAvp.addAvp(Avp.CC_TIME, 0, true, false);
