@@ -6,6 +6,7 @@ import com.google.api.core.ApiFutures;
 import com.google.api.gax.rpc.ApiException;
 import com.google.cloud.pubsub.v1.Publisher;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.util.Timestamps;
 import com.google.pubsub.v1.PubsubMessage;
 import com.google.pubsub.v1.TopicName;
 import com.lmax.disruptor.EventHandler;
@@ -14,6 +15,8 @@ import com.telenordigital.prime.ocs.DataTrafficInfo;
 import io.dropwizard.lifecycle.Managed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.time.Instant;
 
 import static com.telenordigital.prime.disruptor.PrimeEventMessageType.FETCH_DATA_BUCKET;
 
@@ -65,9 +68,9 @@ public class DataConsumptionInfoPublisher implements EventHandler<PrimeEvent>, M
                 .setMsisdn(event.getMsisdn())
                 .setBucketBytes(event.getBucketBytes())
                 .setBundleBytes(event.getBundleBytes())
+                .setTimestamp(Timestamps.fromMillis((Instant.now().toEpochMilli())))
                 .build()
                 .toByteString();
-
 
         final PubsubMessage pubsubMessage = PubsubMessage.newBuilder()
                 .setData(data)
