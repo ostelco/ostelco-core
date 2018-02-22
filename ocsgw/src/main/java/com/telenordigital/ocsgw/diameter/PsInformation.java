@@ -43,9 +43,10 @@ public class PsInformation {
     private String chargingRulebaseName;
     // 3GPP-RAT-Type ( Avp 21 )
     private byte[] ratType;
-
-    // ToDo: Add the following missing AVPs
     // 3GPP-User-Location-Info ( Avp 21 )
+    private byte[] userLocationInfo;
+
+    // ToDo : Add the following AVPs
     // 3GPP-GPRS-Negotiated-QoS-Profile ( Avp 5 )
 
 
@@ -166,6 +167,10 @@ public class PsInformation {
             Optional<Avp> ratType = Optional.ofNullable(psInformationAvps.getAvp(Avp.TGPP_RAT_TYPE));
             if (ratType.isPresent()) {
                 this.ratType = psInformationAvps.getAvp(Avp.TGPP_RAT_TYPE).getOctetString();
+            }
+            Optional<Avp> userLocationInfo = Optional.ofNullable(psInformationAvps.getAvp(Avp.GPP_USER_LOCATION_INFO));
+            if (userLocationInfo.isPresent()) {
+                this.userLocationInfo = psInformationAvps.getAvp(Avp.GPP_USER_LOCATION_INFO).getOctetString();
             }
         } catch (AvpDataException e) {
             LOG.error("Failed to parse PS-Information", e);
