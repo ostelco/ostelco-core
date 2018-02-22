@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -243,28 +244,29 @@ class OcsApplicationTest {
         requestedServiceUnits.addAvp(Avp.CC_INPUT_OCTETS, 0L);
         requestedServiceUnits.addAvp(Avp.CC_OUTPUT_OCTETS, 0L);
 
-        AvpSet serviceInformation = ccrAvps.addGroupedAvp(Avp.SERVICE_INFORMATION);
-        AvpSet psInformation = serviceInformation.addGroupedAvp(Avp.PS_INFORMATION);
+        AvpSet serviceInformation = ccrAvps.addGroupedAvp(Avp.SERVICE_INFORMATION, VENDOR_ID_3GPP, true, false);
+        AvpSet psInformation = serviceInformation.addGroupedAvp(Avp.PS_INFORMATION, VENDOR_ID_3GPP, true, false);
         psInformation.addAvp(Avp.TGPP_CHARGING_ID, "01aaacf" , VENDOR_ID_3GPP, true, false, true);
         psInformation.addAvp(Avp.TGPP_PDP_TYPE, 0, VENDOR_ID_3GPP, true, false); // IPv4
         try {
-            psInformation.addAvp(Avp.PDP_ADDRESS, InetAddress.getByAddress(new byte[]{127, 0, 0, 1}));
-            psInformation.addAvp(Avp.SGSN_ADDRESS, InetAddress.getByAddress(new byte[]{8, 0, 0, 6}));
-            psInformation.addAvp(Avp.GGSN_ADDRESS, InetAddress.getByAddress(new byte[]{2, 0, 0, 6}));
+            psInformation.addAvp(Avp.PDP_ADDRESS, InetAddress.getByAddress(new byte[]{127, 0, 0, 1}), VENDOR_ID_3GPP, true,  false);
+            psInformation.addAvp(Avp.SGSN_ADDRESS, InetAddress.getByAddress(new byte[]{8, 0, 0, 6}), VENDOR_ID_3GPP, true,  false);
+            psInformation.addAvp(Avp.GGSN_ADDRESS, InetAddress.getByAddress(new byte[]{2, 0, 0, 6}), VENDOR_ID_3GPP, true,  false);
         } catch (UnknownHostException e) {
             log.info("Failed to add address");
         }
-        psInformation.addAvp(Avp.TGPP_IMSI_MCC_MNC, "24201", false);
-        psInformation.addAvp(Avp.TGPP_GGSN_MCC_MNC, "24006", false);
-        psInformation.addAvp(Avp.TGPP_NSAPI, "5", VENDOR_ID_3GPP, true, false, true);
+        psInformation.addAvp(Avp.TGPP_IMSI_MCC_MNC, "24201", VENDOR_ID_3GPP, true,  false, false);
+        psInformation.addAvp(Avp.TGPP_GGSN_MCC_MNC, "24006", VENDOR_ID_3GPP, true,  false, false);
+        psInformation.addAvp(Avp.TGPP_NSAPI, "6", VENDOR_ID_3GPP, true, false, true);
         psInformation.addAvp(30, "loltel", false); // Called-Station-Id
         psInformation.addAvp(Avp.TGPP_SESSION_STOP_INDICATOR, "\377", VENDOR_ID_3GPP, true, false, false);
         psInformation.addAvp(Avp.TGPP_SELECTION_MODE, "0", VENDOR_ID_3GPP, true, false, false);
         psInformation.addAvp(Avp.TGPP_CHARGING_CHARACTERISTICS, "0800", VENDOR_ID_3GPP, true, false, true);
         psInformation.addAvp(Avp.GPP_SGSN_MCC_MNC, "24201", false);
-        psInformation.addAvp(Avp.TGPP_MS_TIMEZONE, "8001", VENDOR_ID_3GPP, true, false, true);
+        psInformation.addAvp(Avp.TGPP_MS_TIMEZONE, "4000", VENDOR_ID_3GPP, true, false, true);
         psInformation.addAvp(Avp.CHARGING_RULE_BASE_NAME, "RB1", VENDOR_ID_3GPP, true, false, false);
         psInformation.addAvp(Avp.TGPP_RAT_TYPE, "6", VENDOR_ID_3GPP, true, false, true);
+        psInformation.addAvp(Avp.GPP_USER_LOCATION_INFO, "8242f21078b542f2100103c703",VENDOR_ID_3GPP, true, false, false);
 
         JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
 
