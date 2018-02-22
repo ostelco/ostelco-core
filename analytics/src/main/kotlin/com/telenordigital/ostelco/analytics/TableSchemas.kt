@@ -33,17 +33,10 @@ class TableSchemas {
                 fields.add(TableFieldSchema().setName("timestamp").setType("TIMESTAMP"))
                 TableSchema().setFields(fields)
             }
-            HOURLY_CONSUMPTION -> {
+            HOURLY_CONSUMPTION, DAILY_CONSUMPTION -> {
                 val fields = ArrayList<TableFieldSchema>()
                 fields.add(TableFieldSchema().setName("msisdn").setType("STRING"))
                 fields.add(TableFieldSchema().setName("bytes").setType("INTEGER"))
-                fields.add(TableFieldSchema().setName("timestamp").setType("DATETIME"))
-                TableSchema().setFields(fields)
-            }
-            DAILY_CONSUMPTION -> {
-                val fields = ArrayList<TableFieldSchema>()
-                fields.add(TableFieldSchema().setName("msisdn").setType("STRING"))
-                fields.add(TableFieldSchema().setName("bytes").setType("LONG"))
                 fields.add(TableFieldSchema().setName("timestamp").setType("DATETIME"))
                 TableSchema().setFields(fields)
             }
@@ -56,6 +49,7 @@ class BigQueryIOUtils {
         return BigQueryIO.writeTableRows()
                 .to("%s:%s.%s".format(project, dataset, table.name.toLowerCase()))
                 .withSchema(TableSchemas().getTableSchema(table))
+                .withCreateDisposition(BigQueryIO.Write.CreateDisposition.CREATE_IF_NEEDED)
                 .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_APPEND)
     }
 }
