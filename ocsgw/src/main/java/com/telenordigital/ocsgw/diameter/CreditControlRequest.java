@@ -1,5 +1,6 @@
 package com.telenordigital.ocsgw.diameter;
 
+import com.telenordigital.ocsgw.utils.DiameterUtilities;
 import org.jdiameter.api.Avp;
 import org.jdiameter.api.AvpDataException;
 import org.jdiameter.api.AvpSet;
@@ -47,6 +48,8 @@ public class CreditControlRequest {
     private void parseRequest(JCreditControlRequest request) {
         try {
             ccrAvps = request.getMessage().getAvps();
+            LOG.info("Credit-Control-Request");
+            DiameterUtilities.printAvps(ccrAvps);
             ccRequestType = ccrAvps.getAvp(Avp.CC_REQUEST_TYPE);
             ccRequestNumber = ccrAvps.getAvp(Avp.CC_REQUEST_NUMBER);
             parseMultipleServiceCreditControl();

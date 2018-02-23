@@ -79,7 +79,7 @@ public class CreditControlContext {
                 if (mscc.getServiceIdentifier() > 0) {
                     answerMSCC.addAvp(Avp.SERVICE_IDENTIFIER_CCA, mscc.getServiceIdentifier(), true, false);
                 }
-                if (mscc.getGrantedServiceUnit() < 1) {
+                if ((mscc.getGrantedServiceUnit() < 1) && ((request.getRequestTypeAVPValue() != RequestType.TERMINATION_REQUEST))) {
                     resultCode = CreditControlResultCode.DIAMETER_CREDIT_LIMIT_REACHED;
                 }
 
@@ -106,8 +106,8 @@ public class CreditControlContext {
                 // Validity is set to 24 hours
                 answerMSCC.addAvp(Avp.VALIDITY_TIME, 86400, true, false);
             }
-            //LOG.info("Credit-Control-Answer");
-            //DiameterUtilities.printAvps(ccaAvps);
+            LOG.info("Credit-Control-Answer");
+            DiameterUtilities.printAvps(ccaAvps);
 
         } catch (InternalException e) {
             LOG.error("Failed to convert to Credit-Control-Answer", e);

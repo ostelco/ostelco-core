@@ -195,6 +195,56 @@ public class OcsApplicationTest {
         }
     }
 
+
+    @Test
+    public void creditControlRequestInitNoCredit() {
+
+        Request request = client.getSession().createRequest(
+                COMMAND_CODE,
+                ApplicationId.createByAuthAppId(APPLICATION_ID),
+                DEST_REALM,
+                DEST_HOST
+        );
+
+        AvpSet ccrAvps = request.getAvps();
+        ccrAvps.addAvp(Avp.CC_REQUEST_TYPE, RequestType.INITIAL_REQUEST, true, false);
+        ccrAvps.addAvp(Avp.CC_REQUEST_NUMBER, 0, true, false);
+
+        AvpSet subscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, "4333333333", false);
+
+        ccrAvps.addAvp(Avp.MULTIPLE_SERVICES_INDICATOR, 1);
+
+        AvpSet mscc = ccrAvps.addGroupedAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
+        mscc.addAvp(Avp.RATING_GROUP, 10);
+        mscc.addAvp(Avp.SERVICE_IDENTIFIER_CCA, 1);
+        AvpSet requestedServiceUnits = mscc.addGroupedAvp(Avp.REQUESTED_SERVICE_UNIT);
+        requestedServiceUnits.addAvp(Avp.CC_TOTAL_OCTETS, 500000L);
+        requestedServiceUnits.addAvp(Avp.CC_INPUT_OCTETS, 0L);
+        requestedServiceUnits.addAvp(Avp.CC_OUTPUT_OCTETS, 0L);
+
+        JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
+
+        client.setRequest(ccr);
+        client.sendNextRequest();
+
+        waitForAnswer();
+
+        try {
+            assertEquals(2001L, client.getResultCodeAvp().getInteger32());
+            AvpSet resultAvps = client.getResultAvps();
+            assertEquals(RequestType.INITIAL_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
+            Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
+            assertEquals(4012L, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
+            assertEquals(1, resultMSCC.getGrouped().getAvp(Avp.SERVICE_IDENTIFIER_CCA).getInteger32());
+            Avp granted = resultMSCC.getGrouped().getAvp(Avp.GRANTED_SERVICE_UNIT);
+            assertEquals(0L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
+        } catch (AvpDataException e) {
+            LOG.error("Failed to get Result-Code", e);
+        }
+    }
+
     private void waitForAnswer() {
         int i = 0;
         while (!client.isAnswerReceived() && i<10) {
