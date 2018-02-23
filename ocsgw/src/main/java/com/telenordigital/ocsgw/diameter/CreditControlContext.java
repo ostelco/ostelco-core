@@ -55,6 +55,7 @@ public class CreditControlContext {
     private JCreditControlAnswerImpl createCCA(CreditControlAnswer creditControlAnswer) {
 
         JCreditControlAnswerImpl answer = null;
+        int resultCode = ResultCode.SUCCESS;
 
         try {
             answer = new JCreditControlAnswerImpl((Request) request.getMessage(), ResultCode.SUCCESS);
@@ -78,12 +79,15 @@ public class CreditControlContext {
                 if (mscc.getServiceIdentifier() > 0) {
                     answerMSCC.addAvp(Avp.SERVICE_IDENTIFIER_CCA, mscc.getServiceIdentifier(), true, false);
                 }
+                if (mscc.getGrantedServiceUnit() < 1) {
+                    resultCode = CreditControlResultCode.DIAMETER_CREDIT_LIMIT_REACHED;
+                }
 
                 AvpSet gsuAvp = answerMSCC.addGroupedAvp(Avp.GRANTED_SERVICE_UNIT, true, false);
                 gsuAvp.addAvp(Avp.CC_INPUT_OCTETS, 0L, true, false);
                 gsuAvp.addAvp(Avp.CC_OUTPUT_OCTETS, 0L, true, false);
 
-                if ((request.getRequestTypeAVPValue() == RequestType.TERMINATION_REQUEST) || (mscc.getGrantedServiceUnit() < 1 )) {
+                if ((request.getRequestTypeAVPValue() == RequestType.TERMINATION_REQUEST) || (mscc.getGrantedServiceUnit() < 1)) {
                     LOG.info("Terminate");
                     // Since this is a terminate reply no service is granted
                     gsuAvp.addAvp(Avp.CC_TIME, 0, true, false);
@@ -98,13 +102,12 @@ public class CreditControlContext {
                     gsuAvp.addAvp(Avp.CC_TOTAL_OCTETS, mscc.getGrantedServiceUnit(), true, false);
                 }
 
-                answerMSCC.addAvp(Avp.RESULT_CODE, ResultCode.SUCCESS, true, false);
+                answerMSCC.addAvp(Avp.RESULT_CODE, resultCode, true, false);
                 // Validity is set to 24 hours
                 answerMSCC.addAvp(Avp.VALIDITY_TIME, 86400, true, false);
             }
-
-            LOG.info("And this is the cca");
-            DiameterUtilities.printAvps(ccaAvps);
+            //LOG.info("Credit-Control-Answer");
+            //DiameterUtilities.printAvps(ccaAvps);
 
         } catch (InternalException e) {
             LOG.error("Failed to convert to Credit-Control-Answer", e);
