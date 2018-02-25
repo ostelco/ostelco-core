@@ -47,7 +47,7 @@ class TableSchemas {
 class BigQueryIOUtils {
     fun writeTo(table: Table) : BigQueryIO.Write<TableRow> {
         return BigQueryIO.writeTableRows()
-                .to("%s:%s.%s".format(project, dataset, table.name.toLowerCase()))
+                .to("$project:$dataset.${table.name.toLowerCase()}")
                 .withSchema(TableSchemas().getTableSchema(table))
                 .withCreateDisposition(BigQueryIO.Write.CreateDisposition.CREATE_IF_NEEDED)
                 .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_APPEND)
