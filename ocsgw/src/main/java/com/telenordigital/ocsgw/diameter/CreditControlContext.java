@@ -103,8 +103,7 @@ public class CreditControlContext {
                 }
 
                 answerMSCC.addAvp(Avp.RESULT_CODE, resultCode, true, false);
-                // Validity is set to 24 hours
-                answerMSCC.addAvp(Avp.VALIDITY_TIME, 86400, true, false);
+                answerMSCC.addAvp(Avp.VALIDITY_TIME, mscc.getValidityTime(), true, false);
             }
             LOG.info("Credit-Control-Answer");
             DiameterUtilities.printAvps(ccaAvps);
