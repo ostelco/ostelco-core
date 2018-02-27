@@ -23,6 +23,12 @@ services:
       - "prime"
     command: ["./wait_for_prime.sh"]
 
+  auth-server:
+    container_name: auth-server
+    build: auth-server
+    ports:
+      - "8080:8080"
+
 networks:
   net:
     driver: bridge
