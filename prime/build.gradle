@@ -42,7 +42,6 @@ configurations {
 }
 
 task integration(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
-
   testClassesDirs = sourceSets.integration.output.classesDirs
   classpath = sourceSets.integration.runtimeClasspath
 }

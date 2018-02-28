@@ -6,6 +6,7 @@ import java.util.*
 import javax.ws.rs.GET
 import javax.ws.rs.HeaderParam
 import javax.ws.rs.Path
+import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
 
@@ -20,7 +21,7 @@ class AuthResource {
         val additionalClaims = HashMap<String, String>()
         additionalClaims["msisdn"] = msisdn
         val customToken = FirebaseAuth.getInstance().createCustomTokenAsync(getUid(msisdn)).get()
-        return Response.ok(customToken).build()
+        return Response.ok(customToken, MediaType.TEXT_PLAIN_TYPE).build()
     }
 
     /**

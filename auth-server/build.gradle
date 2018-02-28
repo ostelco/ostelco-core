@@ -3,6 +3,7 @@ plugins {
   id "jacoco"
   id "com.github.johnrengelman.shadow" version "2.0.1"
   id "org.jetbrains.kotlin.jvm" version "1.2.21"
+  id "idea"
 }
 
 dependencies {
@@ -38,6 +39,31 @@ task pack(type: Zip, dependsOn: 'shadowJar') {
   destinationDir(file('build/deploy/'))
 }
 
+sourceSets {
+  integrationTest {
+    kotlin {
+      compileClasspath += main.output + test.output
+      runtimeClasspath += main.output + test.output
+      srcDirs += file('src/integration-test/kotlin')
+    }
+    resources.srcDir file('src/integration-test/resources')
+  }
+}
+
+configurations {
+  integrationTestImplementation.extendsFrom testImplementation
+  integrationTestCompile.extendsFrom testCompile
+  integrationTestRuntime.extendsFrom testRuntime
+}
+
+task integrationTest(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
+  testClassesDir = sourceSets.integrationTest.output.classesDir
+  classpath = sourceSets.integrationTest.runtimeClasspath
+}
+
+check.dependsOn integrationTest
+integrationTest.mustRunAfter test
+
 jacocoTestReport {
   group = "Reporting"
   description = "Generate Jacoco coverage reports after running tests."
@@ -49,3 +75,9 @@ jacocoTestReport {
 }
 
 check.dependsOn jacocoTestReport
+
+idea {
+  module {
+    testSourceDirs += file('src/integration-test/kotlin')
+  }
+}
