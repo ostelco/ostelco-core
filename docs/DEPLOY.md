@@ -28,5 +28,7 @@ With unit testing:
     sudo docker-compose up -d --build
     
     sudo docker-compose logs -f
+    
     sudo docker logs -f prime
     sudo docker logs -f ocsgw
+    sudo docker logs -f auth-server
