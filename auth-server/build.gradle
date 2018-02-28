@@ -1,0 +1,83 @@
+plugins {
+  id "application"
+  id "jacoco"
+  id "com.github.johnrengelman.shadow" version "2.0.1"
+  id "org.jetbrains.kotlin.jvm" version "1.2.21"
+  id "idea"
+}
+
+dependencies {
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+  implementation "io.dropwizard:dropwizard-core:1.2.2"
+  implementation 'com.google.firebase:firebase-admin:5.9.0'
+  testImplementation "io.dropwizard:dropwizard-testing:1.2.2"
+  testImplementation 'org.jetbrains.kotlin:kotlin-test-junit:1.2.21'
+  testRuntime 'org.hamcrest:hamcrest-all:1.3'
+}
+
+shadowJar {
+  mainClassName = 'com.telenordigital.ostelco.auth.AuthServerApplicationKt'
+  mergeServiceFiles()
+  classifier = "uber"
+  version = null
+}
+
+task pack(type: Zip, dependsOn: 'shadowJar') {
+  from('config/') {
+    into(project.name + '/config')
+  }
+  from('script/') {
+    into(project.name + '/script')
+  }
+  from('build/libs/auth-server-uber.jar') {
+    into(project.name + '/build/libs/')
+  }
+  from('Dockerfile') {
+    into(project.name)
+  }
+  archiveName 'auth-server.zip'
+  destinationDir(file('build/deploy/'))
+}
+
+sourceSets {
+  integrationTest {
+    kotlin {
+      compileClasspath += main.output + test.output
+      runtimeClasspath += main.output + test.output
+      srcDirs += file('src/integration-test/kotlin')
+    }
+    resources.srcDir file('src/integration-test/resources')
+  }
+}
+
+configurations {
+  integrationTestImplementation.extendsFrom testImplementation
+  integrationTestCompile.extendsFrom testCompile
+  integrationTestRuntime.extendsFrom testRuntime
+}
+
+task integrationTest(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
+  testClassesDir = sourceSets.integrationTest.output.classesDir
+  classpath = sourceSets.integrationTest.runtimeClasspath
+}
+
+check.dependsOn integrationTest
+integrationTest.mustRunAfter test
+
+jacocoTestReport {
+  group = "Reporting"
+  description = "Generate Jacoco coverage reports after running tests."
+  additionalSourceDirs = files(sourceSets.main.allJava.srcDirs)
+  reports {
+    xml.enabled = true
+    html.enabled = true
+  }
+}
+
+check.dependsOn jacocoTestReport
+
+idea {
+  module {
+    testSourceDirs += file('src/integration-test/kotlin')
+  }
+}
