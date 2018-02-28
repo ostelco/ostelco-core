@@ -8,6 +8,7 @@ import javax.ws.rs.HeaderParam
 import javax.ws.rs.Path
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+import javax.ws.rs.core.Response.Status
 
 
 @Path("/auth")
@@ -17,10 +18,21 @@ class AuthResource {
 
     @GET
     @Path("/token")
-    fun getAuthToken(@HeaderParam("X-MSISDN") msisdn: String): Response {
-        val additionalClaims = HashMap<String, String>()
+    fun getAuthToken(@HeaderParam("X-MSISDN") msisdn: String?): Response {
+
+        if(msisdn == null) {
+            return Response.status(Status.INTERNAL_SERVER_ERROR).build()
+        }
+
+        val additionalClaims = HashMap<String, Any>()
         additionalClaims["msisdn"] = msisdn
-        val customToken = FirebaseAuth.getInstance().createCustomTokenAsync(getUid(msisdn)).get()
+
+        val customToken = FirebaseAuth
+                .getInstance()
+                .createCustomTokenAsync(
+                        getUid(msisdn),
+                        additionalClaims)
+                .get()
         return Response.ok(customToken, MediaType.TEXT_PLAIN_TYPE).build()
     }
 
