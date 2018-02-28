@@ -149,4 +149,8 @@ public class MultipleServiceCreditControl {
     public void setFinalUnitIndication(com.telenordigital.ocsgw.diameter.FinalUnitIndication finalUnitIndication) {
         this.finalUnitIndication = finalUnitIndication;
     }
+
+    public com.telenordigital.ocsgw.diameter.FinalUnitIndication getFinalUnitIndication() {
+        return this.finalUnitIndication;
+    }
 }
