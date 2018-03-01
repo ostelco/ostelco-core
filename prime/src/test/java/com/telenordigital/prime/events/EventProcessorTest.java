@@ -122,7 +122,6 @@ public final class EventProcessorTest {
 
     @Test
     public void testPrimeEventGetDataBundleBalance() {
-        final long noOfBytes = NO_OF_BYTES;
         final PrimeEvent primeEvent = new PrimeEvent();
         primeEvent.setMessageType(GET_DATA_BUNDLE_BALANCE);
         primeEvent.setMsisdn(MSISDN);
@@ -134,7 +133,7 @@ public final class EventProcessorTest {
         final String inernationalMsisdn =
                 PLUS_USED_TO_BEGIN_INTERNATIONAL_PREFIX_IN_MSISSDN + MSISDN;
         verify(storage).setRemainingByMsisdn(eq(inernationalMsisdn),
-                eq(noOfBytes));
+                eq(NO_OF_BYTES));
     }
 
     // XXX Are we missing an event type here?
