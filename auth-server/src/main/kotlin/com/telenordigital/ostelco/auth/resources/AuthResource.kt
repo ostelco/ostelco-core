@@ -9,7 +9,7 @@ import javax.ws.rs.Path
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.Response.Status
-
+import javax.ws.rs.WebApplicationException
 
 /**
  * Resource used to authentiation using an X-MSISDN (injected header)
