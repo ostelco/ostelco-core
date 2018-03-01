@@ -22,11 +22,7 @@ public class OcsServiceTest {
 
     private static final long TIMEOUT =  10;
 
-    private OcsService service;
-
     private Disruptor<PrimeEvent> disruptor;
-
-    private PrimeEventProducer pep;
 
     private CountDownLatch cdl;
 
@@ -39,7 +35,7 @@ public class OcsServiceTest {
             RING_BUFFER_SIZE,
             Executors.defaultThreadFactory() );
         final RingBuffer<PrimeEvent> ringBuffer = disruptor.getRingBuffer();
-        this.pep = new PrimeEventProducer(ringBuffer);
+        PrimeEventProducer pep = new PrimeEventProducer(ringBuffer);
 
         this.cdl = new CountDownLatch(1);
         this.result = new HashSet<>();
@@ -50,7 +46,7 @@ public class OcsServiceTest {
 
         disruptor.handleEventsWith(eh);
         disruptor.start();
-        this.service = new OcsService(pep);
+        OcsService service = new OcsService(pep);
     }
 
     private PrimeEvent getCollectedEvent()  throws InterruptedException {

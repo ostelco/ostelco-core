@@ -134,7 +134,7 @@ public final class FbStorage implements Storage {
     public String addRecordOfPurchaseByMsisdn(
             final String msisdn,
             final String sku,
-            final long millisSinceEpoch) throws StorageException {
+            final long millisSinceEpoch) {
         checkNotNull(msisdn);
         checkNotNull(sku);
         checkArgument(millisSinceEpoch > 0);
