@@ -51,11 +51,6 @@ public final class StorageInitiatedEventExecutor {
     private void applyPurchaseRequestThroughExecutor(
             final PurchaseRequest req,
             final PurchaseRequestListener l) {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                l.onPurchaseRequest(req);
-            }
-        });
+        executor.execute(() -> l.onPurchaseRequest(req));
     }
 }

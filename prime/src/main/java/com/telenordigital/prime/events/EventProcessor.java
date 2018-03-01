@@ -170,14 +170,11 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
     }
 
     private void addNewPurchaseRequestListener() {
-        storage.addPurchaseRequestListener(new PurchaseRequestListener() {
-            @Override
-            public void onPurchaseRequest(final PurchaseRequest request) {
-                try {
-                    handlePurchaseRequest(request);
-                } catch (EventProcessorException e) {
-                    LOG.error("Could not handle purchase request " + request, e);
-                }
+        storage.addPurchaseRequestListener(request -> {
+            try {
+                handlePurchaseRequest(request);
+            } catch (EventProcessorException e) {
+                LOG.error("Could not handle purchase request " + request, e);
             }
         });
     }

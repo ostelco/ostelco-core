@@ -45,15 +45,9 @@ public class OcsServiceTest {
 
         this.cdl = new CountDownLatch(1);
         this.result = new HashSet<>();
-        final EventHandler<PrimeEvent> eh = new EventHandler<PrimeEvent>() {
-            @Override
-            public void onEvent(
-                    final PrimeEvent event,
-                    final long sequence,
-                    final boolean endOfBatch) throws Exception {
-                result.add(event);
-                cdl.countDown();
-            }
+        final EventHandler<PrimeEvent> eh = (event, sequence, endOfBatch) -> {
+            result.add(event);
+            cdl.countDown();
         };
 
         disruptor.handleEventsWith(eh);
