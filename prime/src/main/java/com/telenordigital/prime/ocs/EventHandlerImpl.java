@@ -21,7 +21,7 @@ final class EventHandlerImpl implements EventHandler<PrimeEvent> {
     public void onEvent(
             final PrimeEvent event,
             final long sequence,
-            final boolean endOfBatch) throws Exception {
+            final boolean endOfBatch) {
 
         try {
             dispatchOnEventType(event);

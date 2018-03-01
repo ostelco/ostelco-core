@@ -28,7 +28,7 @@ public class DataConsumptionInfoPublisher implements EventHandler<PrimeEvent>, M
     private Publisher publisher = null;
 
     @Override
-    public void start() throws Exception {
+    public void start() {
 
         TopicName topicName = TopicName.of(projectId, topicId);
 
@@ -37,7 +37,7 @@ public class DataConsumptionInfoPublisher implements EventHandler<PrimeEvent>, M
     }
 
     @Override
-    public void stop() throws Exception {
+    public void stop() {
         if (publisher != null) {
             // When finished with the publisher, shutdown to free up resources.
             publisher.shutdown();
@@ -48,7 +48,7 @@ public class DataConsumptionInfoPublisher implements EventHandler<PrimeEvent>, M
     public void onEvent(
             final PrimeEvent event,
             final long sequence,
-            final boolean endOfBatch) throws Exception {
+            final boolean endOfBatch) {
 
         if (event.getMessageType() != FETCH_DATA_BUCKET) {
             return;

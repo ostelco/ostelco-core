@@ -10,7 +10,7 @@ public final class ClearingEventHandler implements EventHandler<PrimeEvent> {
     public void onEvent(
             final PrimeEvent event,
             final long sequence,
-            final boolean endOfBatch) throws Exception {
+            final boolean endOfBatch) {
         try {
             event.clear();
         } catch (Exception e) {

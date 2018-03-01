@@ -35,7 +35,7 @@ public final class EventProcessorTest {
     private EventProcessor processor;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         when(storage.isValidSKU(DATA_TOPUP_3GB.getSku())).
                 thenReturn(true);
 
@@ -107,7 +107,7 @@ public final class EventProcessorTest {
     }
 
     @Test
-    public void testPrimeEventReturnUnusedDataBucket() throws Exception {
+    public void testPrimeEventReturnUnusedDataBucket() {
         final long noOfBytes = 4711L;
         final PrimeEvent primeEvent = new PrimeEvent();
         primeEvent.setMessageType(RETURN_UNUSED_DATA_BUCKET);
@@ -121,7 +121,7 @@ public final class EventProcessorTest {
     }
 
     @Test
-    public void testPrimeEventGetDataBundleBalance() throws Exception {
+    public void testPrimeEventGetDataBundleBalance() {
         final long noOfBytes = NO_OF_BYTES;
         final PrimeEvent primeEvent = new PrimeEvent();
         primeEvent.setMessageType(GET_DATA_BUNDLE_BALANCE);

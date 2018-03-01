@@ -208,7 +208,7 @@ public final class FbDatabaseFacade {
     public String addRecordOfPurchaseByMsisdn(
             final String msisdn,
             final String sku,
-            final long millisSinceEpoch) throws StorageException {
+            final long millisSinceEpoch) {
         checkNotNull(msisdn);
 
         final RecordOfPurchaseImpl purchase =

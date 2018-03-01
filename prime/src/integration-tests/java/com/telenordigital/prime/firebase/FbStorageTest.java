@@ -53,14 +53,14 @@ public class FbStorageTest {
     }
 
     @Test
-    public void getStorageByMsisdnTest() throws InterruptedException, StorageException {
+    public void getStorageByMsisdnTest() throws StorageException {
         final Subscriber subscriberByMsisdn = storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN);
         assertNotEquals(null, subscriberByMsisdn);
         assertEquals(EPHERMERAL_MSISDN, subscriberByMsisdn.getMsisdn());
     }
 
     @Test
-    public void insertNewSubscriberTest() throws InterruptedException, StorageException {
+    public void insertNewSubscriberTest() throws StorageException {
         assertNotEquals(null, storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN));
     }
 

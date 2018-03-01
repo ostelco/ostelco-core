@@ -74,7 +74,7 @@ public final class OcsTest {
     private static OcsServiceStub ocsServiceStub;
 
     @BeforeClass
-    public static void setUp() throws IOException {
+    public static void setUp() {
 
         // Set up processing pipeline
         disruptor = new PrimeDisruptor();
@@ -259,7 +259,7 @@ public final class OcsTest {
     }
 
     @AfterClass
-    public static void tearDown() throws Exception {
+    public static void tearDown() {
         if (ocsServer != null) {
             ocsServer.stop();
         }

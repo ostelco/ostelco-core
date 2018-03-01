@@ -118,7 +118,7 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
     public void onEvent(
             final PrimeEvent event,
             final long sequence,
-            final boolean endOfBatch) throws Exception {
+            final boolean endOfBatch) {
 
 
         // FETCH_DATA_BUCKET is a high frequency operation. If we do want to
@@ -159,7 +159,7 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
 
 
     @Override
-    public void start() throws Exception {
+    public void start() {
         if (running.compareAndSet(false, true)) {
             addNewPurchaseRequestListener();
         }
@@ -176,7 +176,7 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
     }
 
     @Override
-    public void stop() throws Exception {
+    public void stop() {
         // Only for completeness, don't do anything special.
     }
 }
