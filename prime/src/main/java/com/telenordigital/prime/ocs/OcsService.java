@@ -8,6 +8,8 @@ import io.grpc.stub.StreamObserver;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public final class OcsService  {
 
     private final  ConcurrentMap<String, StreamObserver<FetchDataBucketInfo>>

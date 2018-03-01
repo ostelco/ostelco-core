@@ -2,6 +2,8 @@ package com.telenordigital.prime.storage.entities;
 
 import lombok.Data;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 @Data
 public final class PurchaseRequestImpl implements PurchaseRequest {
 

@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * A simple database used to keep track of heartbeats that are
  * added and received by the process running it.

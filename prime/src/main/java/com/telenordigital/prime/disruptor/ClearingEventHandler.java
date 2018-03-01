@@ -1,6 +1,8 @@
 package com.telenordigital.prime.disruptor;
 
 import com.lmax.disruptor.EventHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class ClearingEventHandler implements EventHandler<PrimeEvent> {
 

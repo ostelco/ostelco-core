@@ -1,12 +1,17 @@
 package com.telenordigital.prime.ocs;
 
+import com.telenordigital.prime.disruptor.PrimeDisruptor;
+import com.telenordigital.prime.disruptor.PrimeEventProducer;
 import com.telenordigital.prime.ocs.OcsServiceGrpc.OcsServiceStub;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;

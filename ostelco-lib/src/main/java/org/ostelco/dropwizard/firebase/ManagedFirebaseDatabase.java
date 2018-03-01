@@ -1,5 +1,6 @@
 package org.ostelco.dropwizard.firebase;
 
+import com.codahale.metrics.health.HealthCheck;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseCredentials;
@@ -12,6 +13,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class ManagedFirebaseDatabase implements Managed {
 

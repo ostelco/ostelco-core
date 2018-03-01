@@ -3,6 +3,8 @@ package com.telenordigital.prime.storage.entities;
 import lombok.Data;
 import lombok.Getter;
 
+import static com.google.api.client.util.Preconditions.checkNotNull;
+
 @Data
 public final class RecordOfPurchaseImpl implements RecordOfPurchase {
 

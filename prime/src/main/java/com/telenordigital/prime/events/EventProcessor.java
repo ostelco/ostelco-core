@@ -10,8 +10,12 @@ import com.telenordigital.prime.storage.entities.Product;
 import com.telenordigital.prime.storage.entities.PurchaseRequest;
 import com.telenordigital.prime.storage.entities.TopUpProduct;
 import io.dropwizard.lifecycle.Managed;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
 

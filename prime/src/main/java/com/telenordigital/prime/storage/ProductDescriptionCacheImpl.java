@@ -2,9 +2,14 @@ package com.telenordigital.prime.storage;
 
 import com.telenordigital.prime.storage.entities.Product;
 import com.telenordigital.prime.storage.entities.TopUpProduct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.TreeMap;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 
 public final class ProductDescriptionCacheImpl implements ProductDescriptionCache {

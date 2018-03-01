@@ -1,8 +1,12 @@
 package com.telenordigital.prime.ocs;
 
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 
 /**

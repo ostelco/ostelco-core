@@ -1,12 +1,16 @@
 package org.ostelco.dropwizard.firebase;
 
+import com.codahale.metrics.health.HealthCheck;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import org.ostelco.dropwizard.healthcheck.AtomicBooleanHealtcheck;
 import org.ostelco.firebase.AbstractValueEventListener;
+import org.slf4j.Logger;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * Helper class that will construct and hold a {@Link HealthCheck} instance

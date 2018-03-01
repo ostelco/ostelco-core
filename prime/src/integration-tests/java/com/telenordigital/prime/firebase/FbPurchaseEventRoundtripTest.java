@@ -1,5 +1,15 @@
 package com.telenordigital.prime.firebase;
 
+import com.telenordigital.prime.events.EventListeners;
+import com.telenordigital.prime.events.EventProcessor;
+import com.telenordigital.prime.events.EventProcessorException;
+import com.telenordigital.prime.events.OcsBalanceUpdater;
+import com.telenordigital.prime.ocs.OcsState;
+import com.telenordigital.prime.storage.ProductDescriptionCacheImpl;
+import com.telenordigital.prime.storage.Storage;
+import com.telenordigital.prime.storage.StorageException;
+import com.telenordigital.prime.storage.entities.NotATopupProductException;
+import com.telenordigital.prime.storage.entities.PurchaseRequestImpl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -13,7 +23,10 @@ import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.telenordigital.prime.events.EventProcessorTest.PAYMENT_TOKEN;
+import static com.telenordigital.prime.storage.Products.DATA_TOPUP_3GB;
 import static java.lang.Thread.sleep;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
