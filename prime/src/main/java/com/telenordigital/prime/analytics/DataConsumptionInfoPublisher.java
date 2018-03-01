@@ -19,13 +19,12 @@ public class DataConsumptionInfoPublisher implements EventHandler<PrimeEvent>, M
 
     private final String projectId;
     private final String topicId;
+    private Publisher publisher = null;
 
     public DataConsumptionInfoPublisher(String projectId, String topicId) {
         this.projectId = projectId;
         this.topicId = topicId;
     }
-
-    private Publisher publisher = null;
 
     @Override
     public void start() {
