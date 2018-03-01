@@ -28,7 +28,7 @@
   "scripts": {
     "build": "npm run tslint && npm run build-ts",
     "build-ts": "tsc",
-    "deploy": "npm run build && gcloud app deploy",
+    "deploy": "npm run build && gcloud app deploy --verbosity=info",
     "prettier": "prettier --parser typescript --write \"./**/*.ts\"",
     "serve": "node dist/server.js",
     "start": "npm run serve",
