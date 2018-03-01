@@ -30,6 +30,8 @@ public class OcsServiceTest {
 
     private HashSet<PrimeEvent> result;
 
+    private OcsService service;
+
     @Before
     public void setUp() {
         this.disruptor = new Disruptor<PrimeEvent>(
@@ -49,7 +51,7 @@ public class OcsServiceTest {
         //noinspection unchecked
         disruptor.handleEventsWith(eh);
         disruptor.start();
-        OcsService service = new OcsService(pep);
+        this.service = new OcsService(pep);
     }
 
     private PrimeEvent getCollectedEvent()  throws InterruptedException {

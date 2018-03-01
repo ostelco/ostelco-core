@@ -2,7 +2,6 @@ package com.telenordigital.prime.events;
 
 import com.lmax.disruptor.EventHandler;
 import com.telenordigital.prime.disruptor.PrimeEvent;
-import com.telenordigital.prime.storage.PurchaseRequestListener;
 import com.telenordigital.prime.storage.Storage;
 import com.telenordigital.prime.storage.StorageException;
 import com.telenordigital.prime.storage.entities.NotATopupProductException;
