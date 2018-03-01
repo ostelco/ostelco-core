@@ -437,7 +437,6 @@ public final class FbDatabaseFacade {
             public void onDataChange(final DataSnapshot snapshot) {
                 if (!snapshot.hasChildren()) {
                     cdl.countDown();
-                    return;
                 } else {
                     for (final DataSnapshot snap : snapshot.getChildren()) {
                         final SubscriberImpl sub =
