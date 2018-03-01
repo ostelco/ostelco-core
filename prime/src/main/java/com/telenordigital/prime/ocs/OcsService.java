@@ -23,7 +23,7 @@ public final class OcsService  {
      * {@link io.grpc.stub.StreamObserver < com.telenordigital.prime.ocs.ActivateResponse>}
      * instances that are somehow used
      */
-    private ActivateResponseHolder activateResponseHolder;
+    private final ActivateResponseHolder activateResponseHolder;
 
     private final PrimeEventProducer producer;
 
