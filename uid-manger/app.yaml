@@ -1,0 +1,11 @@
+service: uid-manager
+runtime: nodejs
+env: flex
+skip_files:
+  package-lock.json
+manual_scaling:
+  instances: 1
+resources:
+  cpu: 4
+  memory_gb: 4
+  disk_size_gb: 30
