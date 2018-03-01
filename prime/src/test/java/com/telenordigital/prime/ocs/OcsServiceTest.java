@@ -44,6 +44,7 @@ public class OcsServiceTest {
             cdl.countDown();
         };
 
+        //noinspection unchecked
         disruptor.handleEventsWith(eh);
         disruptor.start();
         OcsService service = new OcsService(pep);

@@ -39,6 +39,7 @@ public class PrimeEventProducerTest {
     private Set<PrimeEvent> result;
 
 
+    @SuppressWarnings("unchecked")
     @Before
     public void setUp() {
         this.disruptor = new Disruptor<PrimeEvent>(
@@ -55,6 +56,7 @@ public class PrimeEventProducerTest {
             cdl.countDown();
         };
 
+        //noinspection unchecked
         disruptor.handleEventsWith(eh);
         disruptor.start();
     }
