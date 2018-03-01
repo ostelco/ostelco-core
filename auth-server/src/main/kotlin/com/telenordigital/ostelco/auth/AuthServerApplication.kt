@@ -41,6 +41,6 @@ class AuthServerApplication : Application<AuthServerConfig>() {
 
         FirebaseApp.initializeApp(options)
 
-        env.jersey().register(AuthResource())
+            env.jersey().register(AuthResource())
     }
 }
