@@ -32,7 +32,7 @@ class AuthResource {
     fun getAuthToken(@HeaderParam("X-MSISDN") msisdn: String?): Response {
 
         if (msisdn == null) {
-            throw new WebApplicationException(Status.INTERNAL_SERVER_ERROR)
+            throw WebApplicationException(Status.INTERNAL_SERVER_ERROR)
         }
 
         // Construct parameters for the firebase API.
