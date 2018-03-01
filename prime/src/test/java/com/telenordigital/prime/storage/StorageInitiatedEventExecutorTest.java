@@ -1,7 +1,5 @@
 package com.telenordigital.prime.storage;
 
-import com.telenordigital.prime.storage.entities.PurchaseRequest;
-import com.telenordigital.prime.storage.entities.PurchaseRequestImpl;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;

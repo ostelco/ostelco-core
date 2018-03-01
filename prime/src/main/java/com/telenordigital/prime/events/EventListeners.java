@@ -7,13 +7,9 @@ import com.telenordigital.prime.storage.PurchaseRequestListener;
 import com.telenordigital.prime.storage.StorageInitiatedEventExecutor;
 import com.telenordigital.prime.storage.entities.PurchaseRequestImpl;
 import com.telenordigital.prime.storage.entities.Subscriber;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Collection;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 // Badly named class
 public final class EventListeners {

@@ -1,10 +1,6 @@
 package org.ostelco.dropwizard.healthcheck;
 
-import com.codahale.metrics.health.HealthCheck;
-
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * A healtcheck that will check an {@link java.util.concurrent.atomic.AtomicBoolean}

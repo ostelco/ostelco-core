@@ -2,8 +2,6 @@ package com.telenordigital.prime.events;
 
 import com.telenordigital.prime.disruptor.PrimeEventProducer;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 public final class OcsBalanceUpdaterImpl implements OcsBalanceUpdater {
     private final PrimeEventProducer producer;
 

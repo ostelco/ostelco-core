@@ -1,12 +1,6 @@
 package org.ostelco.heartbeats;
 
-import com.codahale.metrics.health.HealthCheck;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.function.Consumer;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Implement a Dropwizard healthcheck based on heartbeats.

@@ -2,10 +2,6 @@ package com.telenordigital.prime.ocs;
 
 import com.lmax.disruptor.EventHandler;
 import com.telenordigital.prime.disruptor.PrimeEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * An event handler, handling the {@link PrimeEvent} messages that

@@ -3,8 +3,6 @@ package com.telenordigital.prime.ocs;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
-import com.telenordigital.prime.disruptor.PrimeEvent;
-import com.telenordigital.prime.disruptor.PrimeEventProducer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

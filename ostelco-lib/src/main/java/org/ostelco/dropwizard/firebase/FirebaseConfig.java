@@ -1,8 +1,5 @@
 package org.ostelco.dropwizard.firebase;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.hibernate.validator.constraints.NotEmpty;
-
 public final class FirebaseConfig  {
     @NotEmpty
     @JsonProperty("databaseName")

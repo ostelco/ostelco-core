@@ -1,8 +1,5 @@
 package com.telenordigital.prime;
 
-import com.telenordigital.prime.config.PrimeConfiguration;
-import io.dropwizard.testing.DropwizardTestSupport;
-import io.dropwizard.testing.ResourceHelpers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;

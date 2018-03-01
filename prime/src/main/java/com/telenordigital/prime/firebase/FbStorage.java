@@ -1,9 +1,5 @@
 package com.telenordigital.prime.firebase;
 
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
-import com.google.firebase.auth.FirebaseCredentials;
-import com.google.firebase.database.FirebaseDatabase;
 import com.telenordigital.prime.events.EventListeners;
 import com.telenordigital.prime.storage.ProductDescriptionCache;
 import com.telenordigital.prime.storage.ProductDescriptionCacheImpl;
@@ -18,9 +14,6 @@ import com.telenordigital.prime.storage.entities.SubscriberImpl;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collection;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class FbStorage implements Storage {
 

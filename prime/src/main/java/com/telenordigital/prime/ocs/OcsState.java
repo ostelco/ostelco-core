@@ -1,16 +1,11 @@
 package com.telenordigital.prime.ocs;
 
-import com.google.common.base.Preconditions;
 import com.lmax.disruptor.EventHandler;
 import com.telenordigital.prime.disruptor.PrimeEvent;
 import com.telenordigital.prime.storage.entities.Subscriber;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class OcsState implements EventHandler<PrimeEvent> {
 
