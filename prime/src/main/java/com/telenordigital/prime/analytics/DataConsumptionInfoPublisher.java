@@ -16,6 +16,7 @@ import io.dropwizard.lifecycle.Managed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.time.Instant;
 
 import static com.telenordigital.prime.disruptor.PrimeEventMessageType.FETCH_DATA_BUCKET;
@@ -37,7 +38,7 @@ public class DataConsumptionInfoPublisher implements EventHandler<PrimeEvent>, M
     }
 
     @Override
-    public void start() {
+    public void start() throws IOException {
 
         TopicName topicName = TopicName.of(projectId, topicId);
 
@@ -46,7 +47,7 @@ public class DataConsumptionInfoPublisher implements EventHandler<PrimeEvent>, M
     }
 
     @Override
-    public void stop() {
+    public void stop() throws Exception {
         if (publisher != null) {
             // When finished with the publisher, shutdown to free up resources.
             publisher.shutdown();

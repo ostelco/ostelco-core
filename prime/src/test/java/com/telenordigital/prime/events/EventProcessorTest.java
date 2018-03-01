@@ -116,7 +116,7 @@ public final class EventProcessorTest {
     }
 
     @Test
-    public void testPrimeEventReturnUnusedDataBucket() {
+    public void testPrimeEventReturnUnusedDataBucket() throws StorageException{
         final long noOfBytes = 4711L;
         final PrimeEvent primeEvent = new PrimeEvent();
         primeEvent.setMessageType(RETURN_UNUSED_DATA_BUCKET);
@@ -130,7 +130,7 @@ public final class EventProcessorTest {
     }
 
     @Test
-    public void testPrimeEventGetDataBundleBalance() {
+    public void testPrimeEventGetDataBundleBalance() throws StorageException{
         final PrimeEvent primeEvent = new PrimeEvent();
         primeEvent.setMessageType(GET_DATA_BUNDLE_BALANCE);
         primeEvent.setMsisdn(MSISDN);
