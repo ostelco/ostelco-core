@@ -19,6 +19,13 @@ app.get("/msisdn/:userId", (req, res) => {
   apiHandler.getMsisdnForUserId(req, res);
 });
 
+// readiness_check request from App Engine
+// configured in app.yaml
+app.get("/readiness_check", (req, res) => {
+  console.log("Health check for UID Manager");
+  res.send(200);
+});
+
 app.enable("trust proxy");
 app.get("/", (req, res, next) => {
   res
