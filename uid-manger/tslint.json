@@ -59,7 +59,8 @@
       "prefer-const": true,
       "jsdoc-format": true,
       "no-submodule-imports": [true, "uuid", "@google-cloud/datastore"],
-      "no-console": [false]
+      "no-console": [false],
+      "interface-name": [true, "never-prefix"]
     },
   "extends": [
     "tslint:latest",

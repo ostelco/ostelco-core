@@ -1,13 +1,25 @@
 "use strict";
 import * as Datastore from "@google-cloud/datastore";
+import { DatastoreKey } from "@google-cloud/datastore/entity";
 import { Request, Response } from "express";
 import * as uuidv4 from "uuid/v4";
+
+const userInfoTypeName = "UserInfo_test";
+
+export interface UserInfo {
+  msisdn: string;
+  userId: string;
+}
+export interface UserInfoEntity {
+  data: UserInfo;
+  key: DatastoreKey;
+}
 
 export class APIHandler {
   private static isString(x) {
     return typeof x === "string";
   }
-  private static isValidMsisdn(msisdn) {
+  private static isValidMsisdn(msisdn: string) {
     if (!APIHandler.isString(msisdn)) {
       return false;
     }
@@ -19,7 +31,7 @@ export class APIHandler {
   constructor(datastore) {
     this.datastore = datastore;
   }
-  public async createNewUserId(request, response) {
+  public async createNewUserId(request: Request, response: Response) {
     const msisdn = request.params.msisdn;
     if (APIHandler.isValidMsisdn(msisdn)) {
       try {
@@ -31,11 +43,11 @@ export class APIHandler {
       response.status(400).send("Invalid parameter");
     }
   }
-  public async getUserId(request: Request, response: Response) {
+  public async getUserIdforMsisdn(request: Request, response: Response) {
     const msisdn = request.params.msisdn;
     if (APIHandler.isValidMsisdn(msisdn)) {
       try {
-        const msisdnKey = this.datastore.key(["UserInfo_test", msisdn]);
+        const msisdnKey = this.datastore.key([userInfoTypeName, msisdn]);
         const result = await this.getUserInfo(msisdnKey);
         if (!result) {
           response.status(404).send("User not found");
@@ -49,8 +61,21 @@ export class APIHandler {
       response.status(400).send("Invalid parameter");
     }
   }
+  public async getMsisdnForUserId(request: Request, response: Response) {
+    const userId = request.params.userId;
+    try {
+      const result = await this.findMsisdn(userId);
+      if (!result) {
+        response.status(404).send("User not found");
+      } else {
+        response.send(JSON.stringify(result, undefined, 2));
+      }
+    } catch (error) {
+      response.status(500).send(error);
+    }
+  }
 
-  private getOrCreate(userEntity) {
+  private getOrCreate(userEntity: UserInfoEntity) {
     const transaction = this.datastore.transaction();
     return transaction
       .run()
@@ -71,8 +96,8 @@ export class APIHandler {
       .then(result => result)
       .catch(() => transaction.rollback());
   }
-  private async getUserEntity(msisdn, response) {
-    const msisdnKey = this.datastore.key(["UserInfo_test", msisdn]);
+  private async getUserEntity(msisdn: string, response: Response) {
+    const msisdnKey = this.datastore.key([userInfoTypeName, msisdn]);
     const newUserId = uuidv4();
     const entity = {
       data: {
@@ -84,10 +109,19 @@ export class APIHandler {
     const result = await this.getOrCreate(entity);
     response.send(JSON.stringify(result, undefined, 2));
   }
-  private getUserInfo(userKey) {
+  private getUserInfo(userKey: DatastoreKey) {
     return this.datastore.get(userKey).then(data => {
       const entities = data[0];
       return entities;
+    });
+  }
+  private findMsisdn(userId: string) {
+    const query = this.datastore
+      .createQuery(userInfoTypeName)
+      .filter("userId", "=", userId)
+      .limit(1);
+    return query.run().then(data => {
+      return data[0];
     });
   }
 }

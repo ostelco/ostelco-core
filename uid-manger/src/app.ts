@@ -13,7 +13,10 @@ app.get("/newuser/:msisdn", (req, res) => {
   apiHandler.createNewUserId(req, res);
 });
 app.get("/user/:msisdn", (req, res) => {
-  apiHandler.getUserId(req, res);
+  apiHandler.getUserIdforMsisdn(req, res);
+});
+app.get("/msisdn/:userId", (req, res) => {
+  apiHandler.getMsisdnForUserId(req, res);
 });
 
 app.enable("trust proxy");
