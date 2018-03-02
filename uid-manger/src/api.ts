@@ -121,7 +121,7 @@ export class APIHandler {
       .filter("userId", "=", userId)
       .limit(1);
     return query.run().then(data => {
-      return data[0];
+      return data[0][0];
     });
   }
 }
