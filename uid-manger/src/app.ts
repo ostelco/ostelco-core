@@ -3,7 +3,6 @@ import express = require("express");
 
 import { APIHandler } from "./api";
 
-
 const datastoreClient = new Datastore({});
 
 const apiHandler = new APIHandler(datastoreClient);
