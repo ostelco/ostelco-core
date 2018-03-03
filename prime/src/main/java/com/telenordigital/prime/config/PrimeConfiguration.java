@@ -11,7 +11,7 @@ public final class PrimeConfiguration extends Configuration {
     @Valid
     @NotNull
     @JsonProperty("eventProcessor")
-    private EventProcessorConfiguration eventProcessor = new EventProcessorConfiguration();
+    private final EventProcessorConfiguration eventProcessor = new EventProcessorConfiguration();
 
     public EventProcessorConfiguration getEventProcessorConfig() {
         return eventProcessor;

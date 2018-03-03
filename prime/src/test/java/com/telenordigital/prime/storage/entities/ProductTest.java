@@ -16,18 +16,18 @@ public final class ProductTest {
 
 
     @Test(expected = NotATopupProductException.class)
-    public void asTopupProductNot() throws Exception, NotATopupProductException {
+    public void asTopupProductNot() throws NotATopupProductException {
         product.asTopupProduct();
     }
 
-    public void asTopupProductTrue() throws Exception, NotATopupProductException {
+    public void asTopupProductTrue() throws NotATopupProductException {
         // Ghetto, not proper testing.
         assertTrue(Products.getProductForSku("DataTopup3GB").asTopupProduct()
                 instanceof  TopUpProduct);
     }
 
     @Test
-    public void isTopUpProject() throws Exception {
+    public void isTopUpProject() {
         assertFalse(product.isTopUpProject());
     }
 }

@@ -82,7 +82,7 @@ public final class FbPurchaseEventRoundtripTest {
     }
 
     @Test
-    public void insertNewSubscriberTest() throws InterruptedException, StorageException {
+    public void insertNewSubscriberTest() throws StorageException {
         assertNotEquals(null, storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN));
     }
 

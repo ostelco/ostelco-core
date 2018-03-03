@@ -14,7 +14,7 @@ public final class SubscriberImplTest {
     private final SubscriberImpl fbs = new SubscriberImpl();
 
     @Test
-    public void asMap() throws Exception {
+    public void asMap() {
         assertEquals(2, fbs.asMap().size());
         assertTrue(fbs.asMap().containsKey(NO_OF_BYTES_LEFT_KEY));
         assertTrue(fbs.asMap().containsKey(MSISDN_KEY));
@@ -24,7 +24,7 @@ public final class SubscriberImplTest {
     }
 
     @Test
-    public void getAndSetFbKey() throws Exception {
+    public void getAndSetFbKey() {
         assertEquals(null, fbs.getFbKey());
         final String fbkey = "foobar";
         fbs.setFbKey(fbkey);
@@ -32,7 +32,7 @@ public final class SubscriberImplTest {
     }
 
     @Test
-    public void getAndSetNoOfBytesLeft() throws Exception {
+    public void getAndSetNoOfBytesLeft() {
         assertEquals(0L, fbs.getNoOfBytesLeft());
         final long noOfBytesLeft = 123823838L;
         fbs.setNoOfBytesLeft(noOfBytesLeft);
@@ -40,7 +40,7 @@ public final class SubscriberImplTest {
     }
 
     @Test
-    public void getAndSetMsisdn() throws Exception {
+    public void getAndSetMsisdn() {
         assertEquals(null, fbs.getMsisdn());
         final String msisdn = "+47123456";
         fbs.setMsisdn(msisdn);

@@ -9,7 +9,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
 public final class StorageInitiatedEventExecutor {
-    private ExecutorService executor;
+    private final ExecutorService executor;
 
     private final Object monitor = new Object();
 
@@ -51,11 +51,6 @@ public final class StorageInitiatedEventExecutor {
     private void applyPurchaseRequestThroughExecutor(
             final PurchaseRequest req,
             final PurchaseRequestListener l) {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                l.onPurchaseRequest(req);
-            }
-        });
+        executor.execute(() -> l.onPurchaseRequest(req));
     }
 }
