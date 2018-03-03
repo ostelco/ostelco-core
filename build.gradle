@@ -25,6 +25,10 @@ subprojects {
   tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
   }
+  ext {
+    kotlinVersion = "1.2.30"
+    dropwizardVersion = "1.2.2"
+  }
 }
 
 task pack(type: Zip, dependsOn: [':ocsgw:pack', ':prime:pack', ':auth-server:pack']) {
