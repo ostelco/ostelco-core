@@ -33,6 +33,7 @@ public class OcsApplicationTest {
     private static final long APPLICATION_ID = 4L;  // Diameter Credit Control Application (4)
 
     private static final String MSISDN = "4747900184";
+    private static final String IMSI = "242017100000228";
 
     private TestClient client;
 
@@ -65,6 +66,8 @@ public class OcsApplicationTest {
         AvpSet subscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164);
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, MSISDN, false);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, IMSI, false);
 
         ccrAvps.addAvp(Avp.MULTIPLE_SERVICES_INDICATOR, 1);
 
@@ -111,6 +114,8 @@ public class OcsApplicationTest {
         AvpSet subscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164);
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, MSISDN, false);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, IMSI, false);
 
         ccrAvps.addAvp(Avp.MULTIPLE_SERVICES_INDICATOR, 1);
 
@@ -161,6 +166,8 @@ public class OcsApplicationTest {
         AvpSet subscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164);
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, MSISDN, false);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, IMSI, false);
 
         ccrAvps.addAvp(Avp.TERMINATION_CAUSE, 1, true, false); // 1 = DIAMETER_LOGOUT
 
@@ -213,6 +220,8 @@ public class OcsApplicationTest {
         AvpSet subscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164);
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, "4333333333", false);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, IMSI, false);
 
         ccrAvps.addAvp(Avp.MULTIPLE_SERVICES_INDICATOR, 1);
 

@@ -100,9 +100,8 @@ public class GrpcDataSource implements DataSource {
             try {
                 CreditControlRequestInfo.Builder builder = CreditControlRequestInfo.newBuilder();
                 builder.setType(getRequestType(context));
-                int index = 0;
                 for (MultipleServiceCreditControl mscc : context.getCreditControlRequest().getMultipleServiceCreditControls()) {
-                    builder.setMscc(index++, com.telenordigital.prime.ocs.MultipleServiceCreditControl.newBuilder()
+                    builder.addMscc(com.telenordigital.prime.ocs.MultipleServiceCreditControl.newBuilder()
                             .setRequested(ReguestedServiceUnit.newBuilder()
                                     .setInputOctets(0L)
                                     .setOutputOctetes(0L)
