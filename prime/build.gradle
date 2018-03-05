@@ -83,6 +83,12 @@ jacocoTestReport {
 
 check.dependsOn jacocoTestReport
 
+test {
+    testLogging {
+        exceptionFormat = 'full'
+    }
+}
+
 idea {
     module {
         testSourceDirs += file('src/integration-tests/java')

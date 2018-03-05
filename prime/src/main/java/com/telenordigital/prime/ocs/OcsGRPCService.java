@@ -22,15 +22,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * </code>
  *
  * It's implemented as a subclass of {@link  OcsServiceGrpc.OcsServiceImplBase } overriding
- * three  methods that together implements the protocol described in the  ocs.proto file:
+ * methods that together implements the protocol described in the  ocs.proto file:
  *
  * <code>
  *     // OCS Service
  *     service OcsService {
- *     rpc FetchDataBucket (stream FetchDataBucketInfo)
- *         returns (stream FetchDataBucketInfo) {}
- *     rpc ReturnUnusedData (stream ReturnUnusedDataRequest)
- *         returns (stream ReturnUnusedDataResponse) {}
+ *     rpc CreditControlRequest (stream CreditControlRequestInfo) returns (stream CreditControlAnswerInfo) {}
  *     rpc Activate (ActivateRequest) returns (stream ActivateResponse) {}
  *     }
  * </code>
@@ -50,19 +47,19 @@ public final class OcsGRPCService extends OcsServiceGrpc.OcsServiceImplBase {
     }
 
     /**
-     * Method to fetch data bucket.
+     * Method to handle Credit-Control-Requests
      *
-     * @param fetchDataBucketResponse Stream used to send responses back to requester
+     * @param creditControlAnswer Stream used to send Credit-Control-Answer back to requester
      */
     @Override
-    public StreamObserver<FetchDataBucketInfo> fetchDataBucket(
-            final StreamObserver<FetchDataBucketInfo> fetchDataBucketResponse) {
+    public StreamObserver<CreditControlRequestInfo> creditControlRequest(
+            final StreamObserver<CreditControlAnswerInfo> creditControlAnswer) {
 
         final String streamId = newUniqueStreamId();
 
-        LOG.info("Starting fetchDataBucket with streamId: {}", streamId);
+        LOG.info("Starting Credit-Control-Request with streamId: {}", streamId);
 
-        ocsService.putDataBucketClient(streamId, fetchDataBucketResponse);
+        ocsService.putCreditControlClient(streamId, creditControlAnswer);
 
         return new StreamObserverForStreamWithId(streamId);
     }
@@ -77,7 +74,7 @@ public final class OcsGRPCService extends OcsServiceGrpc.OcsServiceImplBase {
     }
 
     private final class StreamObserverForStreamWithId
-            implements StreamObserver<FetchDataBucketInfo> {
+            implements StreamObserver<CreditControlRequestInfo> {
         private final String streamId;
 
         StreamObserverForStreamWithId(final String streamId) {
@@ -85,17 +82,17 @@ public final class OcsGRPCService extends OcsServiceGrpc.OcsServiceImplBase {
         }
 
         /**
-         * This method gets called every time a bucket info is requested
+         * This method gets called every time a Credit-Control-Request is received
          * from the OCS.
          * @param request
          */
         @Override
-        public void onNext(final FetchDataBucketInfo request) {
-            LOG.info("Received fetchDataBucket request :: "
-                            + "for MSISDN: {} of {} bytes with request id: {}",
-                    request.getMsisdn(), request.getBytes(), request.getRequestId());
+        public void onNext(final CreditControlRequestInfo request) {
+            LOG.info("Received Credit-Control-Request request :: "
+                            + "for MSISDN: {} with request id: {}",
+                    request.getMsisdn(), request.getRequestId());
 
-            ocsService.fetchDataBucketEvent(request, streamId);
+            ocsService.creditControlRequestEvent(request, streamId);
         }
 
         @Override
@@ -105,65 +102,8 @@ public final class OcsGRPCService extends OcsServiceGrpc.OcsServiceImplBase {
 
         @Override
         public void onCompleted() {
-            LOG.info("fetchDataBucket with streamId: {} completed", streamId);
-            ocsService.deleteDataBucketClient(streamId);
-        }
-    }
-
-    /**
-     * Method to return Unused Data.
-     *
-     * @param returnUnusedDataResponse Stream to send unused data to when responding.
-     */
-    @Override
-    public StreamObserver<ReturnUnusedDataRequest> returnUnusedData(
-            final StreamObserver<ReturnUnusedDataResponse> returnUnusedDataResponse) {
-
-        final String streamId = newUniqueStreamId();
-
-        LOG.info("Starting returnUnusedData with streamId: {}", streamId);
-
-        ocsService.registerUnusedDataClient(streamId, returnUnusedDataResponse);
-        return new StreamObserverForReturnedUnusedData(streamId);
-    }
-
-    private final class StreamObserverForReturnedUnusedData
-            implements StreamObserver<ReturnUnusedDataRequest> {
-
-        private final String streamId;
-
-        StreamObserverForReturnedUnusedData(final String streamId) {
-            this.streamId = streamId;
-        }
-
-        /**
-         * Invoked when receiving another request for info on
-         * unused data.  Sent up to the OCS  service.
-         * @param request  An incoming request decoded from the wire protocol.
-         */
-        @Override
-        public void onNext(final ReturnUnusedDataRequest request) {
-            LOG.info("Received returnUnusedData request :: for MSISDN: {} of {} bytes",
-                    request.getMsisdn(), request.getBytes());
-            ocsService.returnUnusedDataBucketEvent(
-                    request.getMsisdn(),
-                    request.getBytes(),
-                    streamId);
-        }
-
-        @Override
-        public void onError(final Throwable t) {
-            LOG.warn("Exception for returnUnusedData", t);
-        }
-
-        /**
-         * Orderly shutdown of a possibly long interaction of requesting
-         * and delivering information.
-         */
-        @Override
-        public void onCompleted() {
-            LOG.info("returnUnusedData with streamId: {} completed", streamId);
-            ocsService.removeUnusedDataClient(streamId);
+            LOG.info("Credit-Control-Request with streamId: {} completed", streamId);
+            ocsService.deleteCreditControlClient(streamId);
         }
     }
 
@@ -188,7 +128,7 @@ public final class OcsGRPCService extends OcsServiceGrpc.OcsServiceImplBase {
         // activation invocation. Thus it makes sense to keep the
         // return channel (the activateResponse instance) in a
         // particular place, so that's what we do.  The reason this
-        // code looks brittle is that if we ever get multipe activate
+        // code looks brittle is that if we ever get multiple activate
         // requests, it will break.   The reason it never breaks
         // is that we never do get more than one.  So yes, it's brittle.
         ocsService.updateActivateResponse(activateResponse);

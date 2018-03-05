@@ -14,7 +14,7 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
 import static com.telenordigital.prime.disruptor.PrimeEventMessageType.GET_DATA_BUNDLE_BALANCE;
-import static com.telenordigital.prime.disruptor.PrimeEventMessageType.RETURN_UNUSED_DATA_BUCKET;
+import static com.telenordigital.prime.disruptor.PrimeEventMessageType.RELEASE_RESERVED_BUCKET;
 import static com.telenordigital.prime.storage.Products.DATA_TOPUP_3GB;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -116,10 +116,10 @@ public final class EventProcessorTest {
     }
 
     @Test
-    public void testPrimeEventReturnUnusedDataBucket() throws Exception {
+    public void testPrimeEventReleaseReservedDataBucket() throws Exception {
         final long noOfBytes = 4711L;
         final PrimeEvent primeEvent = new PrimeEvent();
-        primeEvent.setMessageType(RETURN_UNUSED_DATA_BUCKET);
+        primeEvent.setMessageType(RELEASE_RESERVED_BUCKET);
         primeEvent.setMsisdn(MSISDN);
         primeEvent.setBundleBytes(noOfBytes);
 

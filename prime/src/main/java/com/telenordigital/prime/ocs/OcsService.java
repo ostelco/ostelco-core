@@ -12,11 +12,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class OcsService  {
 
-    private final  ConcurrentMap<String, StreamObserver<FetchDataBucketInfo>>
-            fetchDataBucketClientMap;
-
-    private final ConcurrentMap<String, StreamObserver<ReturnUnusedDataResponse>>
-            returnUnusedDataClientMap;
+    private final  ConcurrentMap<String, StreamObserver<CreditControlAnswerInfo>>
+            CreditControlClientMap;
 
     /**
      * A holder for
@@ -33,8 +30,7 @@ public final class OcsService  {
 
     public OcsService(final PrimeEventProducer producer) {
         this.producer = checkNotNull(producer);
-        this.fetchDataBucketClientMap = new ConcurrentHashMap<>();
-        this.returnUnusedDataClientMap = new ConcurrentHashMap<>();
+        this.CreditControlClientMap = new ConcurrentHashMap<>();
         this.eventHandler = new EventHandlerImpl(this);
         this.ocsServerImplBaseImpl = new OcsGRPCService(this );
         this.activateResponseHolder = new ActivateResponseHolder();
@@ -47,10 +43,9 @@ public final class OcsService  {
     protected void returnUnusedDataBucketEvent(
             final String msisdn,
             final long bucketBytes) {
-        producer.returnUnusedDataBucketEvent(
+        producer.releaseReservedDataBucketEvent(
                 msisdn,
-                bucketBytes,
-                null);
+                bucketBytes);
     }
 
     /**
@@ -70,14 +65,11 @@ public final class OcsService  {
         return this.ocsServerImplBaseImpl;
     }
 
-    protected StreamObserver<FetchDataBucketInfo> getDataBucketClientForStream(
+    protected StreamObserver<CreditControlAnswerInfo> getCreditControlClientForStream(
             final String streamId) {
-         return fetchDataBucketClientMap.get(streamId);
-    }
-
-    protected StreamObserver<ReturnUnusedDataResponse> getUnusedDataClientForStream(
-            final String streamId) {
-         return returnUnusedDataClientMap.get(streamId);
+            // Here we need to Convert it back to an answer.
+            CreditControlClientMap.get(streamId);
+         return CreditControlClientMap.get(streamId);
     }
 
     protected void activateOnNextResponse(final ActivateResponse response) {
@@ -89,57 +81,28 @@ public final class OcsService  {
         this.activateResponseHolder.setActivateResponse(activateResponse);
     }
 
-    protected void removeUnusedDataClient(String streamId) {
-        this.returnUnusedDataClientMap.remove(streamId);
+    protected void deleteCreditControlClient(final String streamId) {
+        this.CreditControlClientMap.remove(streamId);
     }
 
-    protected void returnUnusedDataBucketEvent(
-            final String msisdn,
-            final long bytes,
+    protected  void creditControlRequestEvent(
+            final CreditControlRequestInfo request,
             final String streamId) {
-        this.producer.returnUnusedDataBucketEvent(
-                msisdn, bytes, streamId);
+        producer.injectCreditControlRequestIntoRingbuffer(request, streamId);
     }
 
-    protected void registerUnusedDataClient(
+    protected void putCreditControlClient(
             final String streamId,
-            final StreamObserver<ReturnUnusedDataResponse>
-                    returnUnusedDataResponse) {
-        this.returnUnusedDataClientMap.put(streamId, returnUnusedDataResponse);
+            final StreamObserver<CreditControlAnswerInfo> creditControlAnswer) {
+        CreditControlClientMap.put(streamId, creditControlAnswer);
     }
 
-    protected void deleteDataBucketClient(final String streamId) {
-        this.fetchDataBucketClientMap.remove(streamId);
-    }
-
-    protected  void fetchDataBucketEvent(
-            final FetchDataBucketInfo request,
-            final String streamId) {
-        producer.injectFetchDataBucketRequestIntoRingbuffer(request, streamId);
-    }
-
-    protected void putDataBucketClient(
-            final String streamId,
-            final StreamObserver<FetchDataBucketInfo> fetchDataBucketResponse) {
-        fetchDataBucketClientMap.put(streamId, fetchDataBucketResponse);
-    }
-
-    public void replyWithDataBucketInfo(String streamId, FetchDataBucketInfo info) {
-        final StreamObserver<FetchDataBucketInfo> fetchDataBucketResponse
-                = getDataBucketClientForStream(streamId);
+    public void sendCreditControlAnswer(String streamId, CreditControlAnswerInfo creditControlAnswerInfo) {
+        final StreamObserver<CreditControlAnswerInfo> fetchDataBucketResponse
+                = getCreditControlClientForStream(streamId);
 
         if (fetchDataBucketResponse != null) {
-            fetchDataBucketResponse.onNext(info);
-        }
-    }
-
-    public void replyWithReturnDataInfo(
-            final String ocsgwStreamId,
-            final ReturnUnusedDataResponse returnDataInfo) {
-        final StreamObserver<ReturnUnusedDataResponse> returnUnusedDataResponse
-                =  getUnusedDataClientForStream(ocsgwStreamId);
-        if (returnUnusedDataResponse != null) {
-            returnUnusedDataResponse.onNext(returnDataInfo);
+            fetchDataBucketResponse.onNext(creditControlAnswerInfo);
         }
     }
 }

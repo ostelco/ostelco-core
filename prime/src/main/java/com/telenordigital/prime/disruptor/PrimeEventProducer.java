@@ -1,15 +1,15 @@
 package com.telenordigital.prime.disruptor;
 
 import com.lmax.disruptor.RingBuffer;
-import com.telenordigital.prime.ocs.FetchDataBucketInfo;
+import com.telenordigital.prime.ocs.CreditControlRequestInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.function.Consumer;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.telenordigital.prime.disruptor.PrimeEventMessageType.FETCH_DATA_BUCKET;
-import static com.telenordigital.prime.disruptor.PrimeEventMessageType.RETURN_UNUSED_DATA_BUCKET;
+import static com.telenordigital.prime.disruptor.PrimeEventMessageType.CREDIT_CONTROL_REQUEST;
+import static com.telenordigital.prime.disruptor.PrimeEventMessageType.RELEASE_RESERVED_BUCKET;
 import static com.telenordigital.prime.disruptor.PrimeEventMessageType.TOPUP_DATA_BUNDLE_BALANCE;
 
 public final class PrimeEventProducer {
@@ -52,13 +52,17 @@ public final class PrimeEventProducer {
     private void injectIntoRingbuffer(
             final PrimeEventMessageType type,
             final String msisdn,
-            final long bytes,
+            final long requestedBytes,
+            final long usedBytes,
+            final long reservedBytes,
             final String streamId,
             final String requestId) {
         processNextEventOnTheRingbuffer(event ->
                 event.update(type,
                         msisdn,
-                        bytes,
+                        requestedBytes,
+                        usedBytes,
+                        reservedBytes,
                         streamId,
                         requestId));
     }
@@ -69,27 +73,34 @@ public final class PrimeEventProducer {
         injectIntoRingbuffer(TOPUP_DATA_BUNDLE_BALANCE,
                 msisdn,
                 bytes,
+                0,
+                0,
                 null,
                 null);
     }
 
-    public void returnUnusedDataBucketEvent(
+    public void releaseReservedDataBucketEvent(
             final String msisdn,
-            final long bytes,
-            final String ocsgwStreamId) {
-        injectIntoRingbuffer(RETURN_UNUSED_DATA_BUCKET,
+            final long bytes) {
+        injectIntoRingbuffer(RELEASE_RESERVED_BUCKET,
                 msisdn,
+                0,
+                0,
                 bytes,
-                ocsgwStreamId,
-                null);
+                null,
+                null
+        );
     }
 
-    public void injectFetchDataBucketRequestIntoRingbuffer(
-            final FetchDataBucketInfo request,
+    // FixMe : For now we assume that there is only 1 MSCC in the Request.
+    public void injectCreditControlRequestIntoRingbuffer(
+            final CreditControlRequestInfo request,
             final String streamId) {
-        injectIntoRingbuffer(FETCH_DATA_BUCKET,
+        injectIntoRingbuffer(CREDIT_CONTROL_REQUEST,
                 request.getMsisdn(),
-                request.getBytes(),
+                request.getMscc(0).getRequested().getTotalOctets(),
+                request.getMscc(0).getUsed().getTotalOctets(),
+                0,
                 streamId,
                 request.getRequestId());
     }

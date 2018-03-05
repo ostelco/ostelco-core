@@ -91,7 +91,7 @@ public final class OcsTest {
         ocsServer = new OcsServer(PORT, ocsService.asOcsServiceImplBase());
 
         final OcsState ocsState = new OcsState();
-        ocsState.addDataBytes(MSISDN, NO_OF_BYTES_TO_ADD);
+        ocsState.addDataBundleBytes(MSISDN, NO_OF_BYTES_TO_ADD);
 
         // Events flow:
         //      Producer:(OcsService, Subscriber)

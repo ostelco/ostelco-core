@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 
-import static com.telenordigital.prime.disruptor.PrimeEventMessageType.FETCH_DATA_BUCKET;
+import static com.telenordigital.prime.disruptor.PrimeEventMessageType.CREDIT_CONTROL_REQUEST;
 
 /**
  * This class publishes the data consumption information events to the Google Cloud Pub/Sub.
@@ -60,13 +60,14 @@ public class DataConsumptionInfoPublisher implements EventHandler<PrimeEvent>, M
             final long sequence,
             final boolean endOfBatch) throws Exception {
 
-        if (event.getMessageType() != FETCH_DATA_BUCKET) {
+        if (event.getMessageType() != CREDIT_CONTROL_REQUEST) {
             return;
         }
 
+        // FiXMe : We only report the requested bucket. Should probably report the Used-Units instead
         final ByteString data = DataTrafficInfo.newBuilder()
                 .setMsisdn(event.getMsisdn())
-                .setBucketBytes(event.getBucketBytes())
+                .setBucketBytes(event.getRequestedBucketBytes())
                 .setBundleBytes(event.getBundleBytes())
                 .setTimestamp(Timestamps.fromMillis((Instant.now().toEpochMilli())))
                 .build()

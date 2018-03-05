@@ -46,8 +46,8 @@ public final class PrimeApplication extends Application<PrimeConfiguration> {
         final EventProcessorConfiguration eventProcessorConfig =
                 primeConfiguration.getEventProcessorConfig();
 
-        // XXX Badly named class with less than clarly specified intent.
-        //     What it it's doing is to glue things together and thus
+        // XXX Badly named class with less than clearly specified intent.
+        //     What it's doing is to glue things together and thus
         //     concentrate coupling between other classes into this
         //     single class, but that isn't well documented yet.
         final EventListeners eventListeners = new EventListeners(ocsState);

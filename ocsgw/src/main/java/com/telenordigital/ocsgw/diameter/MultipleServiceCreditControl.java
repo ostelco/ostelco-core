@@ -2,7 +2,6 @@ package com.telenordigital.ocsgw.diameter;
 
 // https://tools.ietf.org/html/rfc4006#section-8.16
 
-import com.telenordigital.ocsgw.diameter.FinalUnitIndication;
 import org.jdiameter.api.Avp;
 import org.jdiameter.api.AvpDataException;
 import org.jdiameter.api.AvpSet;
@@ -19,7 +18,6 @@ public class MultipleServiceCreditControl {
     private long usedUnitsTotal = 0L;
     private long usedUnitsInput = 0L;
     private long usedUnitsOutput = 0L;
-    private long reservedUnits = 0L;
     private long grantedServiceUnit = 0L;
     private int validityTime = 86400;
     private FinalUnitIndication finalUnitIndication;
@@ -29,10 +27,6 @@ public class MultipleServiceCreditControl {
 
     public long getRequestedUnits() {
         return requestedUnits;
-    }
-
-    public long getReservedUnits() {
-        return reservedUnits;
     }
 
     public long getUsedUnitsTotal() {
@@ -131,7 +125,6 @@ public class MultipleServiceCreditControl {
     public String toString() {
         return "MultipleServiceCreditControl[" +
                 "; Requested-Service-Unit=" + requestedUnits +
-                "; Reserved-Service-Unit=" + reservedUnits +
                 "; usedUnitsTotal=" + usedUnitsTotal +
                 "; usedUnitsInput=" + usedUnitsInput +
                 "; usedUnitsOutput=" + usedUnitsOutput +

@@ -11,12 +11,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.telenordigital.prime.disruptor.PrimeEventMessageType.*;
 
 public final class OcsState implements EventHandler<PrimeEvent> {
 
     private static final Logger LOG = LoggerFactory.getLogger(OcsState.class);
 
     private final Map<String, Long> dataPackMap = new HashMap<>();
+    private final Map<String, Long> bucketReservedMap = new HashMap<>();
 
     @Override
     public void onEvent(
@@ -25,19 +27,22 @@ public final class OcsState implements EventHandler<PrimeEvent> {
             final boolean endOfBatch) {
         try {
             switch (event.getMessageType()) {
-                case FETCH_DATA_BUCKET:
-                    event.setBucketBytes(
-                            consumeDataBytes(
+                case CREDIT_CONTROL_REQUEST:
+                    consumeDataBytes(event.getMsisdn(), event.getUsedBucketBytes());
+                    event.setReservedBucketBytes(
+                            reserveDataBytes(
                                     event.getMsisdn(),
-                                    event.getBucketBytes()));
-                    event.setBundleBytes(getDataBytes(event.getMsisdn()));
+                                    event.getRequestedBucketBytes()));
+                    event.setBundleBytes(getDataBundleBytes(event.getMsisdn()));
                     break;
-                case RETURN_UNUSED_DATA_BUCKET:
                 case TOPUP_DATA_BUNDLE_BALANCE:
-                    event.setBundleBytes(addDataBytes(event.getMsisdn(), event.getBucketBytes()));
+                    event.setBundleBytes(addDataBundleBytes(event.getMsisdn(), event.getRequestedBucketBytes()));
                     break;
                 case GET_DATA_BUNDLE_BALANCE:
-                    event.setBundleBytes(getDataBytes(event.getMsisdn()));
+                    event.setBundleBytes(getDataBundleBytes(event.getMsisdn()));
+                    break;
+                case RELEASE_RESERVED_BUCKET:
+                    releaseReservedBucket(event.getMsisdn());
                     break;
                 default:
             }
@@ -53,20 +58,20 @@ public final class OcsState implements EventHandler<PrimeEvent> {
      * @return bytes Number of bytes available to this number
      * data bundle balance in bytes
      */
-    public long getDataBytes(final String msisdn) {
+    public long getDataBundleBytes(final String msisdn) {
         return dataPackMap.getOrDefault(msisdn, 0L);
     }
 
     /**
      * Add to subscriber's data bundle balance in bytes.
-     * This is called when subscriber top ups or, PGw returns
+     * This is called when subscriber top ups or, P-GW returns
      * unused data after subscriber disconnects data.
      *
      * @param msisdn Phone number
      * @param bytes Number of bytes we want to add
      * @return bytes data bundle balance in bytes
      */
-    public long addDataBytes(final String msisdn, final long bytes) {
+    public long addDataBundleBytes(final String msisdn, final long bytes) {
         checkNotNull(msisdn);
         Preconditions.checkArgument(bytes > 0,
                 "No of bytes must be positive");
@@ -78,16 +83,76 @@ public final class OcsState implements EventHandler<PrimeEvent> {
     }
 
     /**
-     * Consume from subscriber's data bundle in bytes.
-     * This is called when PGw requests for data bucket.
+     * Release any reserved bucket of bytes for this subscriber.
      *
      * @param msisdn Phone number
-     * @param bytes Consume a number of bytes
-     * @return Number of bytes actually consumed
+     * @return released bucket size in bytes
      */
-    public long consumeDataBytes(final String msisdn, final long bytes) {
+    public long releaseReservedBucket(final String msisdn) {
         checkNotNull(msisdn);
-        Preconditions.checkArgument(bytes > 0, "Non-positive value for bytes");
+
+        final Long reserved = bucketReservedMap.remove(msisdn);
+        if (reserved == null || reserved == 0) {
+            return 0;
+        }
+
+        addDataBundleBytes(msisdn, reserved);
+
+        return reserved;
+    }
+
+    /**
+     * Consume from subscriber's data bundle in bytes.
+     * This is called when P-GW has used a data bucket.
+     *
+     * @param msisdn Phone number
+     * @param usedBytes Consume a number of bytes
+     * @return Number of bytes left in bundle
+     */
+    public long consumeDataBytes(final String msisdn, final long usedBytes) {
+        checkNotNull(msisdn);
+        Preconditions.checkArgument(usedBytes > -1, "Non-positive value for bytes");
+
+        final long existing = dataPackMap.get(msisdn);
+
+        if (!dataPackMap.containsKey(msisdn)) {
+            LOG.warn("Used-Units for unknown msisdn : " + msisdn);
+            return 0;
+        }
+
+        if (usedBytes == 0) {
+            return existing;
+        }
+
+        final Long reserved = bucketReservedMap.remove(msisdn);
+        if (reserved == null || reserved == 0) {
+            LOG.warn("Used-Units without reservation");
+            return existing;
+        }
+
+        /* We chose to deduct the amount directly from the total bucket when reserved.
+         * The usedBytes can be more or less then this reserved amount.
+         * So we have to pay back or deduct from the existing amount in the bucket
+         * depending on how much was actually spent.
+         */
+
+        final long consumed = usedBytes - reserved;
+        final long newTotal = existing - consumed;
+        dataPackMap.put(msisdn, newTotal);
+        return newTotal;
+    }
+
+    /**
+     * Reserve from subscriber's data bundle in bytes.
+     * This is called when P-GW has requested a data bucket.
+     *
+     * @param msisdn Phone number
+     * @param bytes Reserve a number of bytes
+     * @return Number of bytes actually reserved
+     */
+    public long reserveDataBytes(final String msisdn, final long bytes) {
+        checkNotNull(msisdn);
+        Preconditions.checkArgument(bytes > -1, "Non-positive value for bytes");
 
         if (!dataPackMap.containsKey(msisdn)) {
             return 0;
@@ -99,6 +164,7 @@ public final class OcsState implements EventHandler<PrimeEvent> {
         }
 
         final long consumed = Math.min(existing, bytes);
+        bucketReservedMap.put(msisdn, consumed);
         dataPackMap.put(msisdn, existing - consumed);
         return consumed;
     }
@@ -112,7 +178,7 @@ public final class OcsState implements EventHandler<PrimeEvent> {
         LOG.info("{} - {}", subscriber.getMsisdn(), subscriber.getNoOfBytesLeft());
         if (subscriber.getNoOfBytesLeft() > 0) {
             final String msisdn = stripLeadingPlus(subscriber.getMsisdn());
-            addDataBytes(msisdn, subscriber.getNoOfBytesLeft());
+            addDataBundleBytes(msisdn, subscriber.getNoOfBytesLeft());
         }
     }
 }
