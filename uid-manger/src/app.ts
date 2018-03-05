@@ -2,6 +2,7 @@ import * as Datastore from "@google-cloud/datastore";
 import express = require("express");
 
 import { APIHandler } from "./api";
+import { createTokenObject } from "./tokens";
 
 const datastoreClient = new Datastore({});
 

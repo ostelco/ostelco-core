@@ -58,7 +58,7 @@
       "no-null-keyword": true,
       "prefer-const": true,
       "jsdoc-format": true,
-      "no-submodule-imports": [true, "uuid", "@google-cloud/datastore"],
+      "no-submodule-imports": [true, "uuid", "@google-cloud/datastore", "date-fns"],
       "no-console": [false],
       "interface-name": [true, "never-prefix"]
     },
