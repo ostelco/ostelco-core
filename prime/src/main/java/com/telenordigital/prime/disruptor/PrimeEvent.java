@@ -51,6 +51,16 @@ public final class PrimeEvent {
     private String ocsgwRequestId;
 
 
+    /**
+     * Service-Identifier is used to classify traffic
+     */
+    private int serviceIdentifier;
+
+    /**
+     * Rating-Group is used to classify traffic
+     */
+    private int ratingGroup;
+
     public void clear() {
         msisdn = null;
         requestedBucketBytes = 0;
@@ -59,6 +69,8 @@ public final class PrimeEvent {
         bundleBytes = 0;
         ocsgwStreamId = null;
         ocsgwRequestId = null;
+        serviceIdentifier = 0;
+        ratingGroup = 0;
         messageType = null;
     }
 
@@ -70,6 +82,8 @@ public final class PrimeEvent {
             final long requestedBytes,
             final long usedBytes,
             final long reservedBucketBytes,
+            final int serviceIdentifier,
+            final int ratingGroup,
             final String ocsgwStreamId,
             final String ocsgwRequestId) {
         this.messageType = messageType;
@@ -77,6 +91,8 @@ public final class PrimeEvent {
         this.requestedBucketBytes = requestedBytes;
         this.usedBucketBytes = usedBytes;
         this.reservedBucketBytes = reservedBucketBytes;
+        this.serviceIdentifier = serviceIdentifier;
+        this.ratingGroup = ratingGroup;
         this.ocsgwStreamId = ocsgwStreamId;
         this.ocsgwRequestId = ocsgwRequestId;
     }

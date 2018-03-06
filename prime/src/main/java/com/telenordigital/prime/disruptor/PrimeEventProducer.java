@@ -55,6 +55,8 @@ public final class PrimeEventProducer {
             final long requestedBytes,
             final long usedBytes,
             final long reservedBytes,
+            final int serviceId,
+            final int ratingGroup,
             final String streamId,
             final String requestId) {
         processNextEventOnTheRingbuffer(event ->
@@ -63,6 +65,8 @@ public final class PrimeEventProducer {
                         requestedBytes,
                         usedBytes,
                         reservedBytes,
+                        serviceId,
+                        ratingGroup,
                         streamId,
                         requestId));
     }
@@ -73,6 +77,8 @@ public final class PrimeEventProducer {
         injectIntoRingbuffer(TOPUP_DATA_BUNDLE_BALANCE,
                 msisdn,
                 bytes,
+                0,
+                0,
                 0,
                 0,
                 null,
@@ -87,6 +93,8 @@ public final class PrimeEventProducer {
                 0,
                 0,
                 bytes,
+                0,
+                0,
                 null,
                 null
         );
@@ -101,6 +109,8 @@ public final class PrimeEventProducer {
                 request.getMscc(0).getRequested().getTotalOctets(),
                 request.getMscc(0).getUsed().getTotalOctets(),
                 0,
+                request.getMscc(0).getServiceIdentifier(),
+                request.getMscc(0).getRatingGroup(),
                 streamId,
                 request.getRequestId());
     }

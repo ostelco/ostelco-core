@@ -113,12 +113,12 @@ public final class OcsState implements EventHandler<PrimeEvent> {
         checkNotNull(msisdn);
         Preconditions.checkArgument(usedBytes > -1, "Non-positive value for bytes");
 
-        final long existing = dataPackMap.get(msisdn);
-
         if (!dataPackMap.containsKey(msisdn)) {
             LOG.warn("Used-Units for unknown msisdn : " + msisdn);
             return 0;
         }
+
+        final long existing = dataPackMap.get(msisdn);
 
         if (usedBytes == 0) {
             return existing;

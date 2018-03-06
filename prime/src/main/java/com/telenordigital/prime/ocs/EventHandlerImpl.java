@@ -71,10 +71,14 @@ final class EventHandlerImpl implements EventHandler<PrimeEvent> {
         try {
             final CreditControlAnswerInfo creditControlAnswer =
                     CreditControlAnswerInfo.newBuilder().
-                    setMsisdn(event.getMsisdn()).
-                    setMscc(0, MultipleServiceCreditControl.newBuilder().setGranted(GrantedServiceUnit.newBuilder().setTotalOctets(event.getReservedBucketBytes()).build()).build()).
-                    setRequestId(event.getOcsgwRequestId()).
-                    build();
+                            setMsisdn(event.getMsisdn()).
+                            addMscc(MultipleServiceCreditControl.newBuilder().setGranted(
+                                    GrantedServiceUnit.newBuilder().setTotalOctets(event.getReservedBucketBytes()).build())
+                                    .setServiceIdentifier(event.getServiceIdentifier())
+                                    .setRatingGroup(event.getRatingGroup())
+                                    .build())
+                            .setRequestId(event.getOcsgwRequestId())
+                            .build();
             ocsService.sendCreditControlAnswer(event.getOcsgwStreamId(), creditControlAnswer);
         } catch (Exception e) {
             LOG.warn("Exception handling prime event", e);
