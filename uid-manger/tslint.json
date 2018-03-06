@@ -1,7 +1,7 @@
 {
   "rulesDirectory": ["tslint-plugin-prettier"],
   "rules": {
-      "prettier": true,
+      "prettier": [true, { "printWidth": 100 }],
       "class-name": true,
       "comment-format": [
           true,

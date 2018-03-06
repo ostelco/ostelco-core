@@ -10,13 +10,14 @@ export interface TokenObject {
   token: string;
   userId: string;
 }
+const tokenObjectTypeName = "TokenObject_test";
 
-export async function createTokenObject(
-  msisdn: string,
-  userId: string,
-  timestamp: number,
-  datastore: Datastore
-) {
+function getKeyForTokenObject(msisdn: string, start: Date, datastore: Datastore) {
+  const keyIdentifier: string = `${msisdn}--${start.getTime()}`;
+  return datastore.key([tokenObjectTypeName, keyIdentifier]);
+}
+
+export function createTokenObject(msisdn: string, userId: string, timestamp: number): TokenObject {
   const hash = crypto.createHash("sha256");
   const start = startOfMonth(timestamp);
   const end = endOfMonth(timestamp);
@@ -29,22 +30,37 @@ export async function createTokenObject(
     token,
     userId
   };
-  const keyIdentifier: string = `${msisdn}--${start.getTime()}`;
-  const tokenEntity = {
-    data: tokenObject,
-    key: datastore.key(["TokenObject", keyIdentifier])
-  };
-  await datastore.upsert(tokenEntity);
-  return token;
+  return tokenObject;
 }
 
-export async function getToken(
+export async function createNewToken(
   msisdn: string,
+  userId: string,
   timestamp: number,
   datastore: Datastore
 ) {
+  const tokenObject = createTokenObject(msisdn, userId, timestamp);
+  const tokenEntity = {
+    data: tokenObject,
+    key: getKeyForTokenObject(msisdn, startOfMonth(timestamp), datastore)
+  };
+  await datastore.upsert(tokenEntity);
+  return tokenObject.token;
+}
+
+export function getToken(msisdn: string, timestamp: number, datastore: Datastore) {
   const start = startOfMonth(timestamp);
-  const keyIdentifier: string = `${msisdn}--${start.getTime()}`;
-  const result = await datastore.get(datastore.key(["TokenObject", keyIdentifier]);
-  return result[0][0];
+  return datastore.get(getKeyForTokenObject(msisdn, start, datastore)).then(data => {
+    return data[0][0];
+  });
+}
+
+export function findUserId(token: string, datastore: Datastore) {
+  const query = datastore
+    .createQuery(tokenObjectTypeName)
+    .filter("token", "=", token)
+    .limit(1);
+  return query.run().then(data => {
+    return data[0][0];
+  });
 }
