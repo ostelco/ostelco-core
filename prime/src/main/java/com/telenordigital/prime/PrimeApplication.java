@@ -69,6 +69,7 @@ public final class PrimeApplication extends Application<PrimeConfiguration> {
         //          -> Handler:(OcsState)
         //              -> Handler:(OcsService, Subscriber, AnalyticsPublisher)
         //                  -> Clear
+        //noinspection unchecked
         disruptor.getDisruptor().
                 handleEventsWith(ocsState).
                 then(ocsService.asEventHandler(), eventProcessor, dataConsumptionInfoPublisher).

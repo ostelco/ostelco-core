@@ -12,7 +12,7 @@ import static junit.framework.TestCase.fail;
 
 public class StorageInitiatedEventExecutorTest {
 
-    private StorageInitiatedEventExecutor executor =
+    private final StorageInitiatedEventExecutor executor =
             new StorageInitiatedEventExecutor();
 
     @Test

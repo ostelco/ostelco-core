@@ -2,7 +2,6 @@ package com.telenordigital.prime.events;
 
 import com.lmax.disruptor.EventHandler;
 import com.telenordigital.prime.disruptor.PrimeEvent;
-import com.telenordigital.prime.storage.PurchaseRequestListener;
 import com.telenordigital.prime.storage.Storage;
 import com.telenordigital.prime.storage.StorageException;
 import com.telenordigital.prime.storage.entities.NotATopupProductException;
@@ -122,7 +121,7 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
     public void onEvent(
             final PrimeEvent event,
             final long sequence,
-            final boolean endOfBatch) throws Exception {
+            final boolean endOfBatch) {
 
 
         // CREDIT_CONTROL_REQUEST is a high frequency operation. If we do want to
@@ -163,27 +162,24 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
 
 
     @Override
-    public void start() throws Exception {
+    public void start() {
         if (running.compareAndSet(false, true)) {
             addNewPurchaseRequestListener();
         }
     }
 
     private void addNewPurchaseRequestListener() {
-        storage.addPurchaseRequestListener(new PurchaseRequestListener() {
-            @Override
-            public void onPurchaseRequest(final PurchaseRequest request) {
-                try {
-                    handlePurchaseRequest(request);
-                } catch (EventProcessorException e) {
-                    LOG.error("Could not handle purchase request " + request, e);
-                }
+        storage.addPurchaseRequestListener(request -> {
+            try {
+                handlePurchaseRequest(request);
+            } catch (EventProcessorException e) {
+                LOG.error("Could not handle purchase request " + request, e);
             }
         });
     }
 
     @Override
-    public void stop() throws Exception {
+    public void stop() {
         // Only for completeness, don't do anything special.
     }
 }

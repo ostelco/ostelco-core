@@ -15,6 +15,11 @@ import java.util.*
 val project = "pantel-2decb"
 val dataset = "data_consumption"
 
+
+/**
+ * Enum containing identifiers for three tables
+ * stored in bigtable.
+ */
 enum class Table {
     RAW_CONSUMPTION,
     HOURLY_CONSUMPTION,
@@ -22,7 +27,16 @@ enum class Table {
 }
 
 // Need to explore if the schema can be expressed in config (like SQL file) instead of code.
+
+/**
+ * Schemas for tables.
+ */
 class TableSchemas {
+
+    /**
+     * Getting a table schema for the tables
+     * listed in the [Table] enum
+     */
     fun getTableSchema(table: Table): TableSchema? {
         return when (table) {
             RAW_CONSUMPTION -> {
@@ -44,10 +58,18 @@ class TableSchemas {
     }
 }
 
+/**
+ * Helpers for accessing BigTable
+ */
 class BigQueryIOUtils {
+
+    /**
+     * Create a [BigQueryIO.Write<TableRow>] query for writing all the
+     * rows in a [Table] - denoted table.
+     */
     fun writeTo(table: Table) : BigQueryIO.Write<TableRow> {
         return BigQueryIO.writeTableRows()
-                .to("%s:%s.%s".format(project, dataset, table.name.toLowerCase()))
+                .to("$project:$dataset.${table.name.toLowerCase()}")
                 .withSchema(TableSchemas().getTableSchema(table))
                 .withCreateDisposition(BigQueryIO.Write.CreateDisposition.CREATE_IF_NEEDED)
                 .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_APPEND)

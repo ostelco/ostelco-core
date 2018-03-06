@@ -4,8 +4,6 @@ services:
   prime:
     container_name: prime
     build: prime
-    ports:
-      - "8082:8082"
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/config/pantel-prod.json
     networks:
@@ -17,11 +15,15 @@ services:
   ocsgw:
     container_name: ocsgw
     build: ocsgw
-    ports:
-      - "3868:3868"
     depends_on:
       - "prime"
     command: ["./wait_for_prime.sh"]
+
+  auth-server:
+    container_name: auth-server
+    build: auth-server
+    ports:
+      - "8080:8080"
 
 networks:
   net:

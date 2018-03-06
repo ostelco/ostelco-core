@@ -26,7 +26,7 @@ public final class FirebaseHealtcheckHolder {
      * True iff the checker is already attached to a firebase instance.
      * If it isn't then the status of the healtcheck will be false.
      */
-    private AtomicBoolean isAttached;
+    private final AtomicBoolean isAttached;
 
     /**
      * The actual healthcheck instance produced by this class.  This healtcheck

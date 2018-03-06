@@ -44,7 +44,7 @@ public final class EventProcessorTest {
     private EventProcessor processor;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         when(storage.isValidSKU(DATA_TOPUP_3GB.getSku())).
                 thenReturn(true);
 
@@ -130,8 +130,7 @@ public final class EventProcessorTest {
     }
 
     @Test
-    public void testPrimeEventGetDataBundleBalance() throws Exception {
-        final long noOfBytes = NO_OF_BYTES;
+    public void testPrimeEventGetDataBundleBalance() throws StorageException{
         final PrimeEvent primeEvent = new PrimeEvent();
         primeEvent.setMessageType(GET_DATA_BUNDLE_BALANCE);
         primeEvent.setMsisdn(MSISDN);
@@ -143,7 +142,7 @@ public final class EventProcessorTest {
         final String inernationalMsisdn =
                 PLUS_USED_TO_BEGIN_INTERNATIONAL_PREFIX_IN_MSISSDN + MSISDN;
         verify(storage).setRemainingByMsisdn(eq(inernationalMsisdn),
-                eq(noOfBytes));
+                eq(NO_OF_BYTES));
     }
 
     // XXX Are we missing an event type here?

@@ -3,6 +3,8 @@ package com.telenordigital.prime.events;
 import com.telenordigital.prime.storage.entities.NotATopupProductException;
 import com.telenordigital.prime.storage.entities.PurchaseRequest;
 
+import java.util.Objects;
+
 public final class EventProcessorException extends Exception {
 
     private final PurchaseRequest pr;
@@ -32,6 +34,6 @@ public final class EventProcessorException extends Exception {
 
     @Override
     public String toString() {
-        return super.toString() + ", pr = " + pr.toString();
+        return super.toString() + ", pr = " + Objects.requireNonNull(pr).toString();
     }
 }

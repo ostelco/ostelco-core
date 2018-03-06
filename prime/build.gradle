@@ -22,13 +22,13 @@ sourceSets {
 dependencies {
     implementation project(':ocs-api')
     implementation project(':ostelco-lib')
-    implementation 'io.dropwizard:dropwizard-core:1.1.4'
+    implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
     implementation 'com.google.firebase:firebase-admin:5.3.1'
     implementation 'com.google.cloud:google-cloud-pubsub:0.32.0-beta'
     implementation 'com.lmax:disruptor:3.3.7'
     implementation 'com.google.guava:guava:21.0'
 
-    testImplementation 'io.dropwizard:dropwizard-testing:1.1.4'
+    testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
     testCompile 'org.mockito:mockito-core:2.10.0'
 
     compileOnly 'org.projectlombok:lombok:1.16.20'
@@ -42,7 +42,6 @@ configurations {
 }
 
 task integration(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
-
   testClassesDirs = sourceSets.integration.output.classesDirs
   classpath = sourceSets.integration.runtimeClasspath
 }
