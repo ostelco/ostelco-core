@@ -1,7 +1,7 @@
 import * as Datastore from "@google-cloud/datastore";
 import express = require("express");
 
-import { createTokenObject } from "./tokens";
+import { createPseudonymObject } from "./pseudonyms";
 import { UserInfoAPIHandler } from "./userinfo";
 
 const datastoreClient = new Datastore({});

@@ -36,7 +36,7 @@
     "prettier": "prettier --parser typescript --print-width 100 --write \"./**/*.ts\"",
     "serve": "node dist/server.js",
     "start": "npm run serve",
-    "test": "jest --forceExit --coverage --verbose",
+    "test": "jest --runInBand --forceExit --coverage --verbose",
     "tslint": "tslint -c tslint.json -p tsconfig.json"
   },
   "author": "Prasanth Ullattil",

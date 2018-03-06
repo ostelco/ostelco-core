@@ -6,9 +6,11 @@ import * as pseudonyms from "../src/pseudonyms";
 
 let emulator;
 process.env.GCLOUD_PROJECT = "test";
+process.env.DATASTORE_EMULATOR_HOST = "localhost:8081";
 
 beforeAll(() => {
   const options = {
+    port: 8081,
     useDocker: true // if you need docker image
   };
   emulator = new Emulator(options);
@@ -19,7 +21,7 @@ afterAll(() => {
   return emulator.stop();
 });
 
-const msisdn = "4792624130";
+const msisdn = "4790300001";
 const userId = "12-23-34-45";
 const timestamp = Date.now();
 
