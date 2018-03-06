@@ -12,7 +12,7 @@ export interface TokenObject {
 }
 const tokenObjectTypeName = "TokenObject_test";
 
-function getKeyForTokenObject(msisdn: string, start: Date, datastore: Datastore) {
+export function getKeyForTokenObject(msisdn: string, start: Date, datastore: Datastore) {
   const keyIdentifier: string = `${msisdn}--${start.getTime()}`;
   return datastore.key([tokenObjectTypeName, keyIdentifier]);
 }
@@ -33,7 +33,7 @@ export function createTokenObject(msisdn: string, userId: string, timestamp: num
   return tokenObject;
 }
 
-export async function createNewToken(
+export async function generateToken(
   msisdn: string,
   userId: string,
   timestamp: number,
@@ -48,19 +48,19 @@ export async function createNewToken(
   return tokenObject.token;
 }
 
-export function getToken(msisdn: string, timestamp: number, datastore: Datastore) {
+export function getToken(msisdn: string, timestamp: number, datastore: Datastore): Promise<string> {
   const start = startOfMonth(timestamp);
   return datastore.get(getKeyForTokenObject(msisdn, start, datastore)).then(data => {
-    return data[0][0];
+    return (data[0] as TokenObject).token;
   });
 }
 
-export function findUserId(token: string, datastore: Datastore) {
+export function findUserId(token: string, datastore: Datastore): Promise<string> {
   const query = datastore
     .createQuery(tokenObjectTypeName)
     .filter("token", "=", token)
     .limit(1);
   return query.run().then(data => {
-    return data[0][0];
+    return (data[0][0] as TokenObject).userId;
   });
 }

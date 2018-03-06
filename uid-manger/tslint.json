@@ -60,7 +60,8 @@
       "jsdoc-format": true,
       "no-submodule-imports": [true, "uuid", "@google-cloud/datastore", "date-fns"],
       "no-console": [false],
-      "interface-name": [true, "never-prefix"]
+      "interface-name": [true, "never-prefix"],
+      "no-implicit-dependencies": [true, "dev"]
     },
   "extends": [
     "tslint:latest",
