@@ -219,7 +219,7 @@ public final class FbDatabaseFacade {
     public String addRecordOfPurchaseByMsisdn(
             final String msisdn,
             final String sku,
-            final long millisSinceEpoch) throws StorageException {
+            final long millisSinceEpoch) {
         checkNotNull(msisdn);
 
         final RecordOfPurchaseImpl purchase =
@@ -437,7 +437,6 @@ public final class FbDatabaseFacade {
             public void onDataChange(final DataSnapshot snapshot) {
                 if (!snapshot.hasChildren()) {
                     cdl.countDown();
-                    return;
                 } else {
                     for (final DataSnapshot snap : snapshot.getChildren()) {
                         final SubscriberImpl sub =

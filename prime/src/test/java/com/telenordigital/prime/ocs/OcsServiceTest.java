@@ -24,15 +24,13 @@ public class OcsServiceTest {
 
     private static final long TIMEOUT =  10;
 
-    private OcsService service;
-
     private Disruptor<PrimeEvent> disruptor;
-
-    private PrimeEventProducer pep;
 
     private CountDownLatch cdl;
 
     private HashSet<PrimeEvent> result;
+
+    private OcsService service;
 
     @Before
     public void setUp() {
@@ -41,21 +39,16 @@ public class OcsServiceTest {
             RING_BUFFER_SIZE,
             Executors.defaultThreadFactory() );
         final RingBuffer<PrimeEvent> ringBuffer = disruptor.getRingBuffer();
-        this.pep = new PrimeEventProducer(ringBuffer);
+        PrimeEventProducer pep = new PrimeEventProducer(ringBuffer);
 
         this.cdl = new CountDownLatch(1);
         this.result = new HashSet<>();
-        final EventHandler<PrimeEvent> eh = new EventHandler<PrimeEvent>() {
-            @Override
-            public void onEvent(
-                    final PrimeEvent event,
-                    final long sequence,
-                    final boolean endOfBatch) throws Exception {
-                result.add(event);
-                cdl.countDown();
-            }
+        final EventHandler<PrimeEvent> eh = (event, sequence, endOfBatch) -> {
+            result.add(event);
+            cdl.countDown();
         };
 
+        //noinspection unchecked
         disruptor.handleEventsWith(eh);
         disruptor.start();
         this.service = new OcsService(pep);

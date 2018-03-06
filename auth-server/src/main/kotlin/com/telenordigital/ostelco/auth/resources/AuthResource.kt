@@ -9,30 +9,47 @@ import javax.ws.rs.Path
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.Response.Status
+import javax.ws.rs.WebApplicationException
 
-
+/**
+ * Resource used to authentiation using an X-MSISDN (injected header)
+ * authentication.  If there is an user registered for that MSISDN in
+ * the firebase databae, then a custom firebase token is generated and
+ * delivered as plain text, with a 200 (OK) return code.
+ */
 @Path("/auth")
 class AuthResource {
 
     private val LOG = LoggerFactory.getLogger(AuthResource::class.java)
 
+
+    /**
+     * If the msisdn can be recognized by firebase, then a custom
+     * token is generated (by firebase) and returned to the caller.
+     */
     @GET
     @Path("/token")
     fun getAuthToken(@HeaderParam("X-MSISDN") msisdn: String?): Response {
 
-        if(msisdn == null) {
-            return Response.status(Status.INTERNAL_SERVER_ERROR).build()
+        if (msisdn == null) {
+            throw WebApplicationException(Status.INTERNAL_SERVER_ERROR)
         }
 
+        // Construct parameters for the firebase API.
         val additionalClaims = HashMap<String, Any>()
         additionalClaims["msisdn"] = msisdn
 
+        // Interrogate Firebase.
         val customToken = FirebaseAuth
                 .getInstance()
                 .createCustomTokenAsync(
                         getUid(msisdn),
                         additionalClaims)
                 .get()
+
+        // TODO: Missing explicit handling of error-situation where
+        //       firebase response gives error, times out or
+        //       something else that shouldn't be interpreted as success.
         return Response.ok(customToken, MediaType.TEXT_PLAIN_TYPE).build()
     }
 

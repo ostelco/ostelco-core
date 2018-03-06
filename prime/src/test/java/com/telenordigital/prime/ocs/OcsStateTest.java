@@ -26,7 +26,7 @@ public class OcsStateTest {
 
 
     @Test
-    public void testAddDataBytes() throws Exception {
+    public void testAddDataBytes() {
 
         final OcsState ocsState = new OcsState();
 
@@ -48,7 +48,7 @@ public class OcsStateTest {
     }
 
     @Test
-    public void testConsumeDataBytes() throws Exception {
+    public void testConsumeDataBytes() {
 
         final OcsState ocsState = new OcsState();
 
