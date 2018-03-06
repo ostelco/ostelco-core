@@ -8,7 +8,10 @@ let emulator;
 process.env.GCLOUD_PROJECT = "test";
 
 beforeAll(() => {
-  emulator = new Emulator();
+  const options = {
+    useDocker: true // if you need docker image
+  };
+  emulator = new Emulator(options);
   return emulator.start();
 });
 
