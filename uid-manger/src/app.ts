@@ -1,12 +1,12 @@
 import * as Datastore from "@google-cloud/datastore";
 import express = require("express");
 
-import { APIHandler } from "./api";
 import { createTokenObject } from "./tokens";
+import { UserInfoAPIHandler } from "./userinfo";
 
 const datastoreClient = new Datastore({});
 
-const apiHandler = new APIHandler(datastoreClient);
+const apiHandler = new UserInfoAPIHandler(datastoreClient);
 // Create Express server
 const app = express();
 app.set("port", process.env.PORT || 3000);

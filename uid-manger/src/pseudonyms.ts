@@ -64,3 +64,11 @@ export function findUserId(token: string, datastore: Datastore): Promise<string>
     return (data[0][0] as TokenObject).userId;
   });
 }
+
+export class TokenAPIHandler {
+  private datastore: Datastore;
+
+  constructor(datastore) {
+    this.datastore = datastore;
+  }
+}
