@@ -10,7 +10,6 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import org.jdiameter.api.cca.ServerCCASession;
-import org.jdiameter.api.cca.events.JCreditControlRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

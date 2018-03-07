@@ -97,7 +97,7 @@ public class PrimeEventProducerTest {
     }
 
     @Test
-    public void CreditControlRequestEvent() throws Exception {
+    public void creditControlRequestEvent() throws Exception {
         final CreditControlRequestInfo request =
                 CreditControlRequestInfo.
                         newBuilder().
