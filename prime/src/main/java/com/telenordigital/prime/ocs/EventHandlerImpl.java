@@ -76,6 +76,7 @@ final class EventHandlerImpl implements EventHandler<PrimeEvent> {
                                     GrantedServiceUnit.newBuilder().setTotalOctets(event.getReservedBucketBytes()).build())
                                     .setServiceIdentifier(event.getServiceIdentifier())
                                     .setRatingGroup(event.getRatingGroup())
+                                    .setValidityTime(86400)
                                     .build())
                             .setRequestId(event.getOcsgwRequestId())
                             .build();

@@ -159,7 +159,6 @@ public class GrpcDataSource implements DataSource {
 
     private CreditControlAnswer createCreditControlAnswer(CreditControlContext context, CreditControlAnswerInfo response) {
 
-        CreditControlRequest request = context.getCreditControlRequest();
         CreditControlAnswer answer = new CreditControlAnswer();
 
         if (response == null) {

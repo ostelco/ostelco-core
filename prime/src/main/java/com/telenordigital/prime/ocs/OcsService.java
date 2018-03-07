@@ -98,11 +98,11 @@ public final class OcsService  {
     }
 
     public void sendCreditControlAnswer(String streamId, CreditControlAnswerInfo creditControlAnswerInfo) {
-        final StreamObserver<CreditControlAnswerInfo> fetchDataBucketResponse
+        final StreamObserver<CreditControlAnswerInfo> creditControlAnswer
                 = getCreditControlClientForStream(streamId);
 
-        if (fetchDataBucketResponse != null) {
-            fetchDataBucketResponse.onNext(creditControlAnswerInfo);
+        if (creditControlAnswer != null) {
+            creditControlAnswer.onNext(creditControlAnswerInfo);
         }
     }
 }
