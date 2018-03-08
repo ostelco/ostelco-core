@@ -6,9 +6,9 @@ skip_files:
 manual_scaling:
   instances: 1
 resources:
-  cpu: 4
-  memory_gb: 4
-  disk_size_gb: 30
+  cpu: 1
+  memory_gb: 0.5
+  disk_size_gb: 10
 readiness_check:
   path: "/readiness_check"
   check_interval_sec: 5
