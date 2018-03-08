@@ -32,8 +32,8 @@ public class OcsStateTest {
 
         final OcsState ocsState = new OcsState();
 
-        // Add a thousand, starting from zero. This means that the addDatBytes will
-        // return the  new balande (after addition), which is 1000.
+        // Add a thousand, starting from zero. This means that the addDataBytes will
+        // return the  new balance (after addition), which is 1000.
         assertEquals(INITIAL_NUMBER_OF_BYTES_TO_ADD,
                 ocsState.addDataBundleBytes(MSISDN, INITIAL_NUMBER_OF_BYTES_TO_ADD));
 
@@ -73,6 +73,29 @@ public class OcsStateTest {
 
         //... so at this point even reserving a single byte will fail.
         assertEquals(0, ocsState.reserveDataBytes(MSISDN, 1));
+    }
+
+    @Test
+    public void testReleaseDataBytes() {
+
+        final OcsState ocsState = new OcsState();
+
+        // First store a thousand
+        assertEquals(INITIAL_NUMBER_OF_BYTES_TO_ADD,
+                ocsState.addDataBundleBytes(MSISDN, INITIAL_NUMBER_OF_BYTES_TO_ADD));
+
+        // Then reserve, and get 700
+        assertEquals(INITIAL_NUMBER_OF_BYTES_TO_REQUEST,
+                ocsState.reserveDataBytes(MSISDN, INITIAL_NUMBER_OF_BYTES_TO_REQUEST));
+
+        // Checking that the balance is 300.
+        assertEquals(REMAINING_BYTES, ocsState.getDataBundleBytes(MSISDN));
+
+        // Then release the reserved bucket, and get 700 as the released size
+        assertEquals(INITIAL_NUMBER_OF_BYTES_TO_REQUEST, ocsState.releaseReservedBucket(MSISDN));
+
+        // Checking that the balance is back to 1000.
+        assertEquals(INITIAL_NUMBER_OF_BYTES_TO_ADD, ocsState.getDataBundleBytes(MSISDN));
     }
 
 

@@ -103,10 +103,12 @@ public class PrimeEventProducerTest {
                         newBuilder().
                         setMsisdn(MSISDN).
                         addMscc(MultipleServiceCreditControl.newBuilder()
-                                .setRequested(
-                                        ReguestedServiceUnit.newBuilder().setTotalOctets(NO_OF_TOPUP_BYTES
-                                        ).build())
+                                .setRequested(ReguestedServiceUnit.newBuilder()
+                                        .setTotalOctets(NO_OF_TOPUP_BYTES)
+                                        .build())
                                 .setUsed(UsedServiceUnit.newBuilder().setTotalOctets(0L).build())
+                                .setRatingGroup(10)
+                                .setServiceIdentifier(1)
                                 .build()
                         ).build();
 
@@ -116,6 +118,8 @@ public class PrimeEventProducerTest {
         assertEquals(MSISDN, event.getMsisdn());
         assertEquals(NO_OF_TOPUP_BYTES, event.getRequestedBucketBytes());
         assertEquals(0L, event.getUsedBucketBytes());
+        assertEquals(10, event.getRatingGroup());
+        assertEquals(1, event.getServiceIdentifier());
         assertEquals(STREAM_ID, event.getOcsgwStreamId());
         assertEquals(CREDIT_CONTROL_REQUEST, event.getMessageType());
     }

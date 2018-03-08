@@ -93,6 +93,7 @@ public final class OcsState implements EventHandler<PrimeEvent> {
 
         final Long reserved = bucketReservedMap.remove(msisdn);
         if (reserved == null || reserved == 0) {
+            LOG.warn("Trying to release not existing reserved bucket for msisdn {}", msisdn);
             return 0;
         }
 
@@ -120,10 +121,6 @@ public final class OcsState implements EventHandler<PrimeEvent> {
 
         final long existing = dataPackMap.get(msisdn);
 
-        if (usedBytes == 0) {
-            return existing;
-        }
-
         final Long reserved = bucketReservedMap.remove(msisdn);
         if (reserved == null || reserved == 0) {
             LOG.warn("Used-Units without reservation");
@@ -134,6 +131,9 @@ public final class OcsState implements EventHandler<PrimeEvent> {
          * The usedBytes can be more or less then this reserved amount.
          * So we have to pay back or deduct from the existing amount in the bucket
          * depending on how much was actually spent.
+         *
+         * One could choose to only deduct from the total bucket when the bytes was actually
+         * spent. But then there will be an issue if multiple msisdns share the same bundle.
          */
 
         final long consumed = usedBytes - reserved;
@@ -155,6 +155,12 @@ public final class OcsState implements EventHandler<PrimeEvent> {
         Preconditions.checkArgument(bytes > -1, "Non-positive value for bytes");
 
         if (!dataPackMap.containsKey(msisdn)) {
+            LOG.warn("Trying to reserve bucket for unknown msisdn {}", msisdn);
+            return 0;
+        }
+
+        if (bucketReservedMap.containsKey(msisdn)) {
+            LOG.warn("Bucket already reserved for {}", msisdn);
             return 0;
         }
 

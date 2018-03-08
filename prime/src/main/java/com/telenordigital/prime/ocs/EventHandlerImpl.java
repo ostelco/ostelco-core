@@ -59,8 +59,8 @@ final class EventHandlerImpl implements EventHandler<PrimeEvent> {
     }
 
     private void logEventPRocessing(final String msg, final PrimeEvent event) {
-        LOG.info("{} :: for MSISDN: {} of {} bytes with request id: {}",
-                msg, event.getMsisdn(), event.getRequestedBucketBytes(), event.getOcsgwRequestId());
+        LOG.info("{} :: for MSISDN: {} of {} requested bytes {} used bytes with request id: {}",
+                msg, event.getMsisdn(), event.getRequestedBucketBytes(), event.getUsedBucketBytes() ,event.getOcsgwRequestId());
     }
 
     private void handleCreditControlRequest(final PrimeEvent event) {
@@ -70,10 +70,12 @@ final class EventHandlerImpl implements EventHandler<PrimeEvent> {
         // FixMe: This assume we only have one MSCC
         try {
             final CreditControlAnswerInfo creditControlAnswer =
-                    CreditControlAnswerInfo.newBuilder().
-                            setMsisdn(event.getMsisdn()).
-                            addMscc(MultipleServiceCreditControl.newBuilder().setGranted(
-                                    GrantedServiceUnit.newBuilder().setTotalOctets(event.getReservedBucketBytes()).build())
+                    CreditControlAnswerInfo.newBuilder()
+                            .setMsisdn(event.getMsisdn())
+                            .addMscc(MultipleServiceCreditControl.newBuilder()
+                                    .setGranted(GrantedServiceUnit.newBuilder()
+                                            .setTotalOctets(event.getReservedBucketBytes())
+                                            .build())
                                     .setServiceIdentifier(event.getServiceIdentifier())
                                     .setRatingGroup(event.getRatingGroup())
                                     .setValidityTime(86400)
