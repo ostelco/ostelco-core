@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
 
 
 /**
- *  Tests for the OcsAppliaction. This will use a TestClient to
+ *  Tests for the OcsApplication. This will use a TestClient to
  *  actually send Diameter traffic on localhost to the OcsApplication.
  */
 
@@ -218,7 +218,7 @@ class OcsApplicationTest {
 
     // Currently not used in testing
     @DisplayName("Service-Information Credit-Control-Request Init")
-    public void serviceInformationCreditControlRequestInit() {
+    public void serviceInformationCreditControlRequestInit() throws UnsupportedEncodingException {
 
         Request request = client.getSession().createRequest(
                 commandCode,
@@ -263,11 +263,20 @@ class OcsApplicationTest {
         psInformation.addAvp(Avp.TGPP_SESSION_STOP_INDICATOR, "\377", VENDOR_ID_3GPP, true, false, false);
         psInformation.addAvp(Avp.TGPP_SELECTION_MODE, "0", VENDOR_ID_3GPP, true, false, false);
         psInformation.addAvp(Avp.TGPP_CHARGING_CHARACTERISTICS, "0800", VENDOR_ID_3GPP, true, false, true);
-        psInformation.addAvp(Avp.GPP_SGSN_MCC_MNC, "24201", false);
-        psInformation.addAvp(Avp.TGPP_MS_TIMEZONE, "4000", VENDOR_ID_3GPP, true, false, true);
+        psInformation.addAvp(Avp.GPP_SGSN_MCC_MNC, "24201", VENDOR_ID_3GPP, true, false, false);
+        byte[] timeZoneBytes = new byte[] {64, 00};
+        String timeZone = new String(timeZoneBytes, "UTF-8");
+        psInformation.addAvp(Avp.TGPP_MS_TIMEZONE, timeZone, VENDOR_ID_3GPP, true, false, true);
         psInformation.addAvp(Avp.CHARGING_RULE_BASE_NAME, "RB1", VENDOR_ID_3GPP, true, false, false);
-        psInformation.addAvp(Avp.TGPP_RAT_TYPE, "6", VENDOR_ID_3GPP, true, false, true);
-        psInformation.addAvp(Avp.GPP_USER_LOCATION_INFO, "8242f21078b542f2100103c703",VENDOR_ID_3GPP, true, false, false);
+        byte[] ratTypeBytes = new byte[] {06};
+        String ratType = new String(ratTypeBytes, "UTF-8");
+        psInformation.addAvp(Avp.TGPP_RAT_TYPE, ratType , VENDOR_ID_3GPP, true, false, true);
+
+        char[] ch = {0x82,0x42,0xf2,0x10,0x78,0xb5,0x42,0xf2,0x10,0x01,0x03,0xc7,0x03};
+
+        String s = "8242f21078b542f2100103c703";
+
+        psInformation.addAvp(Avp.GPP_USER_LOCATION_INFO, new String(s.getBytes(), "UTF-8"), VENDOR_ID_3GPP, true, false, false);
 
         JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
 
