@@ -12,8 +12,8 @@ enum Direction {
 
 
 public class IPFilterRule {
-    Action action;
-    Direction direction;
-    String proto;
-    String host;
+    private Action action;
+    private Direction direction;
+    private String proto;
+    private String host;
 }

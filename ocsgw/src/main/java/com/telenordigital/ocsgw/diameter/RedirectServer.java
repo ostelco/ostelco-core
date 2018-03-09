@@ -11,5 +11,5 @@ enum RedirectAddressType {
 
 public class RedirectServer {
     private RedirectAddressType redirectAddressType;
-    String redirectServerAddress;
+    private String redirectServerAddress;
 }
