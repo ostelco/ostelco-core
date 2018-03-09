@@ -85,6 +85,7 @@ check.dependsOn jacocoTestReport
 test {
     testLogging {
         exceptionFormat = 'full'
+        events "PASSED", "FAILED", "SKIPPED"
     }
 }
 

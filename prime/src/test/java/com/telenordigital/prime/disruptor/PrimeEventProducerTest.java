@@ -28,6 +28,10 @@ public class PrimeEventProducerTest {
 
     private static final long NO_OF_TOPUP_BYTES = 991234L;
 
+    private static final long REQUESTED_BYTES = 500L;
+
+    private static final long USED_BYTES = 300L;
+
     private static final String MSISDN = "+4711223344";
 
     private static final String STREAM_ID = "mySecret stream";
@@ -48,7 +52,7 @@ public class PrimeEventProducerTest {
     @SuppressWarnings("unchecked")
     @Before
     public void setUp() {
-        this.disruptor = new Disruptor<PrimeEvent>(
+        this.disruptor = new Disruptor<>(
             ()-> new PrimeEvent(),
             RING_BUFFER_SIZE,
             Executors.defaultThreadFactory() );
@@ -68,7 +72,7 @@ public class PrimeEventProducerTest {
     }
 
     private PrimeEvent getCollectedEvent()  throws InterruptedException {
-        // Wait  wait a short while for the thing to process.
+        // Wait a short while for the thing to process.
         assertTrue(cdl.await(TIMEOUT, TimeUnit.SECONDS));
         assertFalse(result.isEmpty());
         final PrimeEvent event = result.iterator().next();
@@ -104,9 +108,9 @@ public class PrimeEventProducerTest {
                         setMsisdn(MSISDN).
                         addMscc(MultipleServiceCreditControl.newBuilder()
                                 .setRequested(ReguestedServiceUnit.newBuilder()
-                                        .setTotalOctets(NO_OF_TOPUP_BYTES)
+                                        .setTotalOctets(REQUESTED_BYTES)
                                         .build())
-                                .setUsed(UsedServiceUnit.newBuilder().setTotalOctets(0L).build())
+                                .setUsed(UsedServiceUnit.newBuilder().setTotalOctets(USED_BYTES).build())
                                 .setRatingGroup(10)
                                 .setServiceIdentifier(1)
                                 .build()
@@ -116,8 +120,8 @@ public class PrimeEventProducerTest {
 
         final PrimeEvent event = getCollectedEvent();
         assertEquals(MSISDN, event.getMsisdn());
-        assertEquals(NO_OF_TOPUP_BYTES, event.getRequestedBucketBytes());
-        assertEquals(0L, event.getUsedBucketBytes());
+        assertEquals(REQUESTED_BYTES, event.getRequestedBucketBytes());
+        assertEquals(USED_BYTES, event.getUsedBucketBytes());
         assertEquals(10, event.getRatingGroup());
         assertEquals(1, event.getServiceIdentifier());
         assertEquals(STREAM_ID, event.getOcsgwStreamId());

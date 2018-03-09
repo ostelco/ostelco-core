@@ -44,7 +44,7 @@ class OcsApplicationTest {
     private TestClient client;
 
     // The same OcsApplication will be used in all test cases
-    private OcsApplication application = new OcsApplication();
+    private final OcsApplication application = new OcsApplication();
     private static boolean applicationStarted = false;
 
     @BeforeEach
@@ -271,8 +271,6 @@ class OcsApplicationTest {
         byte[] ratTypeBytes = new byte[] {06};
         String ratType = new String(ratTypeBytes, "UTF-8");
         psInformation.addAvp(Avp.TGPP_RAT_TYPE, ratType , VENDOR_ID_3GPP, true, false, true);
-
-        char[] ch = {0x82,0x42,0xf2,0x10,0x78,0xb5,0x42,0xf2,0x10,0x01,0x03,0xc7,0x03};
 
         String s = "8242f21078b542f2100103c703";
 

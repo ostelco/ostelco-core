@@ -74,7 +74,7 @@ public class GrpcDataSource implements DataSource {
                             if (ccrContext != null) {
                                 final ServerCCASession session = ccrContext.getSession();
                                 if (session != null) {
-                                    CreditControlAnswer cca = createCreditControlAnswer(ccrContext, answer);
+                                    CreditControlAnswer cca = createCreditControlAnswer(answer);
                                     ccrContext.sendCreditControlAnswer(cca);
                                 } else {
                                     LOG.warn("No stored CCR or Session for " + answer.getRequestId());
@@ -156,7 +156,7 @@ public class GrpcDataSource implements DataSource {
         return type;
     }
 
-    private CreditControlAnswer createCreditControlAnswer(CreditControlContext context, CreditControlAnswerInfo response) {
+    private CreditControlAnswer createCreditControlAnswer(CreditControlAnswerInfo response) {
 
         CreditControlAnswer answer = new CreditControlAnswer();
 

@@ -21,8 +21,10 @@ public class OcsStateTest {
             INITIAL_NUMBER_OF_BYTES_TO_ADD + TOPUP_NUMBER_OF_BYTES_TO_ADD;
 
     private static final int INITIAL_NUMBER_OF_BYTES_TO_REQUEST = 700;
+    private static final int OVER_CONSUME_BUCKET = 750;
 
     private static final int REMAINING_BYTES = 300;
+    private static final int OVER_CONSUME_REMAINING_BYTES = 250;
 
     private static final int SECOND_NUMBER_OF_BYTES_TO_REQUEST = 400;
 
@@ -74,6 +76,35 @@ public class OcsStateTest {
         //... so at this point even reserving a single byte will fail.
         assertEquals(0, ocsState.reserveDataBytes(MSISDN, 1));
     }
+
+
+    @Test
+    public void testOverConsumtionDataBytes() {
+
+        final OcsState ocsState = new OcsState();
+
+        // First store a thousand
+        assertEquals(INITIAL_NUMBER_OF_BYTES_TO_ADD,
+                ocsState.addDataBundleBytes(MSISDN, INITIAL_NUMBER_OF_BYTES_TO_ADD));
+
+        // Then reserve, and get 700
+        assertEquals(INITIAL_NUMBER_OF_BYTES_TO_REQUEST,
+                ocsState.reserveDataBytes(MSISDN, INITIAL_NUMBER_OF_BYTES_TO_REQUEST));
+
+        // Then consume 750 from the reserved
+        assertEquals(OVER_CONSUME_REMAINING_BYTES,
+                ocsState.consumeDataBytes(MSISDN, OVER_CONSUME_BUCKET));
+
+        // Now request 400, but that's too much, so only 250 is returned, and
+        // after this transaction the balance is zero.
+        assertEquals(OVER_CONSUME_REMAINING_BYTES,
+                ocsState.reserveDataBytes(MSISDN, SECOND_NUMBER_OF_BYTES_TO_REQUEST));
+
+        //... so at this point even reserving a single byte will fail.
+        assertEquals(0, ocsState.reserveDataBytes(MSISDN, 1));
+    }
+
+
 
     @Test
     public void testReleaseDataBytes() {
