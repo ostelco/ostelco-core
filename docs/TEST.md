@@ -15,5 +15,5 @@
  * Start docker-compose
 
     
-    gradle build  
-    docker-compose up --build  
+    gradle clean build  
+    docker-compose up --build --abort-on-container-exit
