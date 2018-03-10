@@ -3,6 +3,7 @@ import express = require("express");
 import { Request, Response } from "express";
 import * as rp from "request-promise-native";
 
+import { MockProducer } from "./mock/producer";
 import { PseudonymAPIHandler } from "./pseudonyms";
 import { RequestProcessor } from "./pubsubapp";
 import { UserInfoAPIHandler } from "./userinfo";
@@ -12,6 +13,7 @@ const datastoreClient = new Datastore({});
 const userInfoApiHandler = new UserInfoAPIHandler(datastoreClient);
 const pseudonymApiHandler = new PseudonymAPIHandler(datastoreClient);
 const pubsubRequestProcessor = new RequestProcessor();
+const mockProducer = new MockProducer();
 
 const startMode = process.env.START_MODE || "default";
 
@@ -41,8 +43,13 @@ if (startMode === "default") {
   app.get("/userid/:pseudonym", (req, res) => {
     pseudonymApiHandler.rest_getUserIdforPseudonym(req, res);
   });
+} else if (startMode === "generator") {
+  mockProducer.createSubscription();
+  app.get("/generate", (req, res) => {
+    mockProducer.generate();
+    res.status(200).send("Generating fake requests");
+  });
 }
-
 async function testRequest(request: Request, response: Response) {
   try {
     const result = await rp("https://uid-manager-dot-pantel-2decb.appspot.com/");

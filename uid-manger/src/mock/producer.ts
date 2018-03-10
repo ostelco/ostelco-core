@@ -22,4 +22,13 @@ export class MockProducer extends MessageProcessor {
     const data = this.getMessageData(message);
     console.log("Response : ", JSON.stringify(data));
   };
+
+  public generate() {
+    this.createNewUser("4790300030");
+    this.createNewUser("4790300031");
+    this.createNewUser("4790300032");
+    this.getUserIdforMsisdn("4790300031");
+    this.getUserIdforMsisdn("4790300032");
+  }
+
 }
