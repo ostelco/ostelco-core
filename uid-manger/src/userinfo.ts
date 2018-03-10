@@ -72,6 +72,11 @@ export function userInfoForUserId(userId: string, datastore: Datastore) {
   });
 }
 
+export interface ResultObject {
+  status: number;
+  response: string;
+}
+
 export class UserInfoAPIHandler {
   private datastore: Datastore;
 
@@ -79,49 +84,71 @@ export class UserInfoAPIHandler {
     this.datastore = datastore;
   }
 
-  public async createNewUserId(request: Request, response: Response) {
-    const msisdn = request.params.msisdn;
-    if (Utils.isValidMsisdn(msisdn)) {
-      try {
-        const result = await createUserInfo(msisdn, this.datastore);
-        response.send(JSON.stringify(result, undefined, 2));
-      } catch (error) {
-        response.status(500).send(error);
-      }
-    } else {
-      response.status(400).send("Invalid parameter");
-    }
+  public setResponse(result: ResultObject, response: Response) {
+    response.status(result.status).send(result.response);
   }
 
-  public async getUserIdforMsisdn(request: Request, response: Response) {
-    const msisdn = request.params.msisdn;
+  public async createNewUserId(msisdn: string) {
+    let result: ResultObject = { status: 500, response: undefined };
     if (Utils.isValidMsisdn(msisdn)) {
       try {
-        const result = await userInfoForMsisdn(msisdn, this.datastore);
-        if (!result) {
-          response.status(404).send("User not found");
-        } else {
-          response.send(JSON.stringify(result, undefined, 2));
-        }
+        const data = await createUserInfo(msisdn, this.datastore);
+        result = { status: 200, response: JSON.stringify(data, undefined, 2) };
       } catch (error) {
-        response.status(500).send(error);
+        result = { status: 500, response: error };
       }
     } else {
-      response.status(400).send("Invalid parameter");
+      result = { status: 400, response: "Invalid parameter" };
     }
+    return result;
   }
 
-  public async getMsisdnForUserId(request: Request, response: Response) {
-    const userId = request.params.userId;
+  public async rest_createNewUserId(request: Request, response: Response) {
+    const msisdn = request.params.msisdn;
+    const result = await this.createNewUserId(msisdn);
+    this.setResponse(result, response);
+  }
+
+  public async getUserIdforMsisdn(msisdn: string) {
+    let result: ResultObject = { status: 500, response: undefined };
+    if (Utils.isValidMsisdn(msisdn)) {
+      try {
+        const data = await userInfoForMsisdn(msisdn, this.datastore);
+        result = !data
+          ? { status: 404, response: "User not found" }
+          : { status: 200, response: JSON.stringify(data, undefined, 2) };
+      } catch (error) {
+        result = { status: 500, response: error };
+      }
+    } else {
+      result = { status: 400, response: "Invalid parameter" };
+    }
+    return result;
+  }
+
+  public async rest_getUserIdforMsisdn(request: Request, response: Response) {
+    const msisdn = request.params.msisdn;
+    const result = await this.getUserIdforMsisdn(msisdn);
+    this.setResponse(result, response);
+  }
+
+  public async getMsisdnForUserId(userId: string) {
+    let result: ResultObject = { status: 500, response: undefined };
+
     try {
-      const result = await userInfoForUserId(userId, this.datastore);
-      if (!result) {
-        response.status(404).send("User not found");
-      } else {
-        response.send(JSON.stringify(result, undefined, 2));
-      }
+      const data = await userInfoForUserId(userId, this.datastore);
+      result = !data
+        ? { status: 404, response: "User not found" }
+        : { status: 200, response: JSON.stringify(data, undefined, 2) };
     } catch (error) {
-      response.status(500).send(error);
+      result = { status: 500, response: error };
     }
+    return result;
+  }
+
+  public async rest_getMsisdnForUserId(request: Request, response: Response) {
+    const userId = request.params.userId;
+    const result = await this.getMsisdnForUserId(userId);
+    this.setResponse(result, response);
   }
 }

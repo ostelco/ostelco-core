@@ -5,6 +5,7 @@ import * as endOfMonth from "date-fns/end_of_month";
 import * as startOfMonth from "date-fns/start_of_month";
 import { Request, Response } from "express";
 import { isNumber } from "util";
+import { ResultObject } from "./userinfo";
 
 export interface PseudonymObject {
   end: number;
@@ -82,72 +83,93 @@ export class PseudonymAPIHandler {
     this.datastore = datastore;
   }
 
-  public async createNewPseudonym(request: Request, response: Response) {
-    const msisdn = request.params.msisdn;
-    const userId = request.params.userId;
-    const timestamp = Number.parseInt(request.params.timestamp);
+  public setResponse(result: ResultObject, response: Response) {
+    response.status(result.status).send(result.response);
+  }
+
+  public async createNewPseudonym(msisdn: string, userId: string, timestampStr: string) {
+    let result: ResultObject = { status: 500, response: undefined };
+    const timestamp = Number.parseInt(timestampStr);
     if (msisdn && userId && !Number.isNaN(timestamp)) {
       try {
-        const result = await generatePseudonym(msisdn, userId, timestamp, this.datastore);
-        if (!result) {
-          response
-            .status(404)
-            .send(`Can't generate pseudonym for ${msisdn} - ${userId} at ${timestamp}`);
-        } else {
-          response.send(JSON.stringify(result, undefined, 2));
-        }
+        const data = await generatePseudonym(msisdn, userId, timestamp, this.datastore);
+        result = !data
+          ? { status: 404, response: `Can't generate pseudonym for ${msisdn} at ${timestamp}` }
+          : { status: 200, response: JSON.stringify(data, undefined, 2) };
       } catch (error) {
-        response
-          .status(404)
-          .send(`Can't generate pseudonym for ${msisdn} - ${userId} at ${timestamp}`);
+        result = {
+          response: `Can't generate pseudonym for ${msisdn} at ${timestamp}`,
+          status: 404
+        };
       }
     } else {
-      response
-        .status(400)
-        .send(
-          `Invalid parameters ${request.params.msisdn} ${request.params.userId} ${
-            request.params.timestamp
-          }`
-        );
+      result = {
+        response: `Invalid parameters ${msisdn} ${userId} ${timestamp}`,
+        status: 400
+      };
     }
+    return result;
   }
 
-  public async getPseudonymForMsisdn(request: Request, response: Response) {
+  public async rest_createNewPseudonym(request: Request, response: Response) {
     const msisdn = request.params.msisdn;
-    const timestamp = Number.parseInt(request.params.timestamp);
+    const userId = request.params.userId;
+    const timestamp = request.params.timestamp;
+    const result = await this.createNewPseudonym(msisdn, userId, timestamp);
+    this.setResponse(result, response);
+  }
+
+  public async getPseudonymForMsisdn(msisdn: string, timestampStr: string) {
+    let result: ResultObject = { status: 500, response: undefined };
+    const timestamp = Number.parseInt(timestampStr);
     if (msisdn && !Number.isNaN(timestamp)) {
       try {
-        const result = await getPseudonym(msisdn, timestamp, this.datastore);
-        if (!result) {
-          response.status(404).send(`Can't fint pseudonym for ${msisdn} at ${timestamp}`);
-        } else {
-          response.send(JSON.stringify(result, undefined, 2));
-        }
+        const data = await getPseudonym(msisdn, timestamp, this.datastore);
+        result = !data
+          ? { status: 404, response: `Can't find pseudonym for ${msisdn} at ${timestamp}` }
+          : { status: 200, response: JSON.stringify(data, undefined, 2) };
       } catch (error) {
-        response.status(404).send(`Can't fint pseudonym for ${msisdn} at ${timestamp}`);
+        result = {
+          response: `Can't find pseudonym for ${msisdn} at ${timestamp}`,
+          status: 404
+        };
       }
     } else {
-      response
-        .status(400)
-        .send(`Invalid parameters ${request.params.msisdn} at ${request.params.timestamp}`);
+      result = {
+        response: `Invalid parameters ${msisdn}  ${timestamp}`,
+        status: 400
+      };
     }
+    return result;
   }
 
-  public async getUserIdforPseudonym(request: Request, response: Response) {
-    const pseudonym = request.params.pseudonym;
+  public async rest_getPseudonymForMsisdn(request: Request, response: Response) {
+    const msisdn = request.params.msisdn;
+    const timestamp = request.params.timestamp;
+    const result = await this.getPseudonymForMsisdn(msisdn, timestamp);
+    this.setResponse(result, response);
+  }
+
+  public async getUserIdforPseudonym(pseudonym: string) {
+    let result: ResultObject = { status: 500, response: undefined };
     if (pseudonym) {
       try {
-        const result = await findUserId(pseudonym, this.datastore);
-        if (!result) {
-          response.status(404).send("User not found");
-        } else {
-          response.send(JSON.stringify(result, undefined, 2));
-        }
+        const data = await findUserId(pseudonym, this.datastore);
+        result = !data
+          ? { status: 404, response: `User not found for ${pseudonym}` }
+          : { status: 200, response: JSON.stringify(data, undefined, 2) };
       } catch (error) {
-        response.status(500).send(error);
+        result = { status: 500, response: error };
       }
     } else {
-      response.status(400).send("Invalid parameter");
+      result = { status: 400, response: "Invalid parameter" };
     }
+    return result;
+  }
+
+  public async rest_getUserIdforPseudonym(request: Request, response: Response) {
+    const pseudonym = request.params.pseudonym;
+    const result = await this.getUserIdforPseudonym(pseudonym);
+    this.setResponse(result, response);
   }
 }

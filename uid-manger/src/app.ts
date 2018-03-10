@@ -4,12 +4,14 @@ import { Request, Response } from "express";
 import * as rp from "request-promise-native";
 
 import { PseudonymAPIHandler } from "./pseudonyms";
+import { RequestProcessor } from "./pubsubapp";
 import { UserInfoAPIHandler } from "./userinfo";
 
 const datastoreClient = new Datastore({});
 
 const userInfoApiHandler = new UserInfoAPIHandler(datastoreClient);
 const pseudonymApiHandler = new PseudonymAPIHandler(datastoreClient);
+const pubsubRequestProcessor = new RequestProcessor();
 
 const startMode = process.env.START_MODE || "default";
 
@@ -21,23 +23,23 @@ if (startMode === "default") {
 } else if (startMode === "uid-manager") {
   console.log("Starting UID manager");
   app.get("/newuser/:msisdn", (req, res) => {
-    userInfoApiHandler.createNewUserId(req, res);
+    userInfoApiHandler.rest_createNewUserId(req, res);
   });
   app.get("/user/:msisdn", (req, res) => {
-    userInfoApiHandler.getUserIdforMsisdn(req, res);
+    userInfoApiHandler.rest_getUserIdforMsisdn(req, res);
   });
   app.get("/msisdn/:userId", (req, res) => {
-    userInfoApiHandler.getMsisdnForUserId(req, res);
+    userInfoApiHandler.rest_getMsisdnForUserId(req, res);
   });
 
   app.get("/newpseudonym/:msisdn/:userId/:timestamp", (req, res) => {
-    pseudonymApiHandler.createNewPseudonym(req, res);
+    pseudonymApiHandler.rest_createNewPseudonym(req, res);
   });
   app.get("/pseudonym/:msisdn/:timestamp", (req, res) => {
-    pseudonymApiHandler.getPseudonymForMsisdn(req, res);
+    pseudonymApiHandler.rest_getPseudonymForMsisdn(req, res);
   });
   app.get("/userid/:pseudonym", (req, res) => {
-    pseudonymApiHandler.getUserIdforPseudonym(req, res);
+    pseudonymApiHandler.rest_getUserIdforPseudonym(req, res);
   });
 }
 
@@ -69,5 +71,7 @@ app.get("/", (req, res, next) => {
     .send(`Nothing to see here !!!`)
     .end();
 });
+
+pubsubRequestProcessor.createSubscription();
 
 export default app;
