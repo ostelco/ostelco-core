@@ -54,12 +54,12 @@ public final class PrimeEvent {
     /**
      * Service-Identifier is used to classify traffic
      */
-    private int serviceIdentifier;
+    private long serviceIdentifier;
 
     /**
      * Rating-Group is used to classify traffic
      */
-    private int ratingGroup;
+    private long ratingGroup;
 
     public void clear() {
         msisdn = null;
@@ -82,8 +82,8 @@ public final class PrimeEvent {
             final long requestedBytes,
             final long usedBytes,
             final long reservedBucketBytes,
-            final int serviceIdentifier,
-            final int ratingGroup,
+            final long serviceIdentifier,
+            final long ratingGroup,
             final String ocsgwStreamId,
             final String ocsgwRequestId) {
         this.messageType = messageType;

@@ -55,8 +55,8 @@ public final class PrimeEventProducer {
             final long requestedBytes,
             final long usedBytes,
             final long reservedBytes,
-            final int serviceId,
-            final int ratingGroup,
+            final long serviceId,
+            final long ratingGroup,
             final String streamId,
             final String requestId) {
         processNextEventOnTheRingbuffer(event ->
