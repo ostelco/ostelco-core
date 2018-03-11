@@ -1,8 +1,17 @@
 package com.telenordigital.ocsgw;
 
-import com.telenordigital.ocsgw.diameter.RequestType;
 import com.telenordigital.ocsgw.utils.AppConfig;
-import org.jdiameter.api.*;
+import com.telenordigital.ostelco.diameter.model.RequestType;
+import org.jdiameter.api.Answer;
+import org.jdiameter.api.ApplicationId;
+import org.jdiameter.api.Configuration;
+import org.jdiameter.api.IllegalDiameterStateException;
+import org.jdiameter.api.InternalException;
+import org.jdiameter.api.Mode;
+import org.jdiameter.api.Network;
+import org.jdiameter.api.NetworkReqListener;
+import org.jdiameter.api.Request;
+import org.jdiameter.api.Stack;
 import org.jdiameter.api.cca.ServerCCASession;
 import org.jdiameter.api.cca.events.JCreditControlRequest;
 import org.jdiameter.client.api.ISessionFactory;

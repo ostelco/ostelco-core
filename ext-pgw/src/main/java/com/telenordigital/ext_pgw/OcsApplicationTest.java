@@ -1,8 +1,8 @@
 package com.telenordigital.ext_pgw;
 
-import com.telenordigital.ocsgw.diameter.RequestType;
-import com.telenordigital.ocsgw.diameter.SubscriptionType;
-import com.telenordigital.ocsgw.diameter.FinalUnitAction;
+import com.telenordigital.ostelco.diameter.model.FinalUnitAction;
+import com.telenordigital.ostelco.diameter.model.RequestType;
+import com.telenordigital.ostelco.diameter.model.SubscriptionType;
 import org.apache.log4j.Logger;
 import org.jdiameter.api.ApplicationId;
 import org.jdiameter.api.Avp;
@@ -70,9 +70,9 @@ public class OcsApplicationTest {
         ccrAvps.addAvp(Avp.CC_REQUEST_NUMBER, 0, true, false);
 
         AvpSet subscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164.ordinal());
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, MSISDN, false);
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI.ordinal());
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, IMSI, false);
 
         ccrAvps.addAvp(Avp.MULTIPLE_SERVICES_INDICATOR, 1);
@@ -124,9 +124,9 @@ public class OcsApplicationTest {
         ccrAvps.addAvp(Avp.CC_REQUEST_NUMBER, 1, true, false);
 
         AvpSet subscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164.ordinal());
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, MSISDN, false);
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI.ordinal());
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, IMSI, false);
 
         ccrAvps.addAvp(Avp.MULTIPLE_SERVICES_INDICATOR, 1);
@@ -182,9 +182,9 @@ public class OcsApplicationTest {
         ccrAvps.addAvp(Avp.CC_REQUEST_NUMBER, 2, true, false);
 
         AvpSet subscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164.ordinal());
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, MSISDN, false);
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI.ordinal());
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, IMSI, false);
 
         ccrAvps.addAvp(Avp.TERMINATION_CAUSE, 1, true, false); // 1 = DIAMETER_LOGOUT
@@ -220,7 +220,7 @@ public class OcsApplicationTest {
             Avp granted = resultMSCC.getGrouped().getAvp(Avp.GRANTED_SERVICE_UNIT);
             assertEquals(0L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
             AvpSet finalUnitIndication = resultMSCC.getGrouped().getAvp(Avp.FINAL_UNIT_INDICATION).getGrouped();
-            assertEquals(FinalUnitAction.TERMINATE, finalUnitIndication.getAvp(Avp.FINAL_UNIT_ACTION).getInteger32());
+            assertEquals(FinalUnitAction.TERMINATE.ordinal(), finalUnitIndication.getAvp(Avp.FINAL_UNIT_ACTION).getInteger32());
         } catch (AvpDataException e) {
             LOG.error("Failed to get Result-Code", e);
         }
@@ -242,9 +242,9 @@ public class OcsApplicationTest {
         ccrAvps.addAvp(Avp.CC_REQUEST_NUMBER, 0, true, false);
 
         AvpSet subscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164.ordinal());
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, "4333333333", false);
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI.ordinal());
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, IMSI, false);
 
         ccrAvps.addAvp(Avp.MULTIPLE_SERVICES_INDICATOR, 1);

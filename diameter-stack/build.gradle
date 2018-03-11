@@ -1,0 +1,15 @@
+plugins {
+  id "org.jetbrains.kotlin.jvm" version "1.2.30"
+  id "idea"
+  id "java-library"
+}
+
+dependencies {
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+  api ('org.mobicents.diameter:jdiameter-api:1.7.1-123') {
+    exclude module: 'netty-all'
+  }
+  api ('org.mobicents.diameter:jdiameter-impl:1.7.1-123') {
+    exclude module: 'netty-all'
+  }
+}

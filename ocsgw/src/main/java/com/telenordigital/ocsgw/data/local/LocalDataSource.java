@@ -1,12 +1,19 @@
 package com.telenordigital.ocsgw.data.local;
 
-import com.telenordigital.ocsgw.diameter.*;
 import com.telenordigital.ocsgw.data.DataSource;
+import com.telenordigital.ostelco.diameter.CreditControlContext;
+import com.telenordigital.ostelco.diameter.model.CreditControlAnswer;
+import com.telenordigital.ostelco.diameter.model.FinalUnitAction;
+import com.telenordigital.ostelco.diameter.model.FinalUnitIndication;
+import com.telenordigital.ostelco.diameter.model.MultipleServiceCreditControl;
+import com.telenordigital.ostelco.diameter.model.RedirectAddressType;
+import com.telenordigital.ostelco.diameter.model.RedirectServer;
 import com.telenordigital.prime.ocs.CreditControlRequestType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Local DataSource that will accept all Credit Control Requests
@@ -30,22 +37,36 @@ public class LocalDataSource implements DataSource {
     }
 
     private CreditControlAnswer createCreditControlAnswer(CreditControlContext context) {
-        CreditControlAnswer answer = new CreditControlAnswer();
 
-        final LinkedList<MultipleServiceCreditControl> multipleServiceCreditControls = context.getCreditControlRequest().getMultipleServiceCreditControls();
+        final List<MultipleServiceCreditControl> origMultipleServiceCreditControls = context.getCreditControlRequest().getMultipleServiceCreditControls();
+        final List<MultipleServiceCreditControl> newMultipleServiceCreditControls = new ArrayList<>();
 
-        for (MultipleServiceCreditControl mscc : multipleServiceCreditControls) {
+        for (MultipleServiceCreditControl mscc : origMultipleServiceCreditControls) {
 
-            mscc.setGrantedServiceUnit(mscc.getRequestedUnits());
+            FinalUnitIndication finalUnitIndication = null;
 
             if (context.getOriginalCreditControlRequest().getRequestTypeAVPValue() == CreditControlRequestType.TERMINATION_REQUEST.getNumber()) {
-                FinalUnitIndication finalUnitIndication = new FinalUnitIndication();
-                finalUnitIndication.setFinalUnitAction(FinalUnitAction.TERMINATE);
-                mscc.setFinalUnitIndication(finalUnitIndication);
+                finalUnitIndication = new FinalUnitIndication(
+                        FinalUnitAction.TERMINATE,
+                        new ArrayList<>(),
+                        new ArrayList<>(),
+                        new RedirectServer(RedirectAddressType.IPV4_ADDRESS));
             }
+
+            MultipleServiceCreditControl newMscc = new MultipleServiceCreditControl(
+                    mscc.getRatingGroup(),
+                    mscc.getServiceIdentifier(),
+                    mscc.getRequestedUnits(),
+                    mscc.getUsedUnitsTotal(),
+                    mscc.getUsedUnitsInput(),
+                    mscc.getUsedUnitsOutput(),
+                    mscc.getRequestedUnits(), // granted Service Unit
+                    mscc.getValidityTime(),
+                    finalUnitIndication);
+
+            newMultipleServiceCreditControls.add(newMscc);
         }
 
-        answer.setMultipleServiceCreditControls(multipleServiceCreditControls);
-        return answer;
+        return new CreditControlAnswer(newMultipleServiceCreditControls);
     }
 }

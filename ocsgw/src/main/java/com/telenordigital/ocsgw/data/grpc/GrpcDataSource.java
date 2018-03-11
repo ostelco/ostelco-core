@@ -1,11 +1,21 @@
 package com.telenordigital.ocsgw.data.grpc;
 
-import com.telenordigital.ocsgw.diameter.*;
 import com.telenordigital.ocsgw.data.DataSource;
-import com.telenordigital.ocsgw.diameter.CreditControlAnswer;
-import com.telenordigital.ocsgw.diameter.MultipleServiceCreditControl;
-import com.telenordigital.prime.ocs.*;
+import com.telenordigital.ostelco.diameter.CreditControlContext;
+import com.telenordigital.ostelco.diameter.model.CreditControlAnswer;
+import com.telenordigital.ostelco.diameter.model.FinalUnitAction;
+import com.telenordigital.ostelco.diameter.model.FinalUnitIndication;
+import com.telenordigital.ostelco.diameter.model.MultipleServiceCreditControl;
+import com.telenordigital.ostelco.diameter.model.RedirectAddressType;
+import com.telenordigital.ostelco.diameter.model.RedirectServer;
+import com.telenordigital.prime.ocs.CreditControlAnswerInfo;
+import com.telenordigital.prime.ocs.CreditControlRequestInfo;
+import com.telenordigital.prime.ocs.CreditControlRequestType;
+import com.telenordigital.prime.ocs.OcsServiceGrpc;
 import com.telenordigital.prime.ocs.PsInformation;
+import com.telenordigital.prime.ocs.ReguestedServiceUnit;
+import com.telenordigital.prime.ocs.ServiceInfo;
+import com.telenordigital.prime.ocs.UsedServiceUnit;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -13,7 +23,16 @@ import org.jdiameter.api.cca.ServerCCASession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.UUID;
+
+import static com.telenordigital.ostelco.diameter.model.RequestType.EVENT_REQUEST;
+import static com.telenordigital.ostelco.diameter.model.RequestType.INITIAL_REQUEST;
+import static com.telenordigital.ostelco.diameter.model.RequestType.TERMINATION_REQUEST;
+import static com.telenordigital.ostelco.diameter.model.RequestType.UPDATE_REQUEST;
 
 /**
  * Uses Grpc to fetch data remotely
@@ -137,16 +156,16 @@ public class GrpcDataSource implements DataSource {
     private CreditControlRequestType getRequestType(CreditControlContext context) {
         CreditControlRequestType type = CreditControlRequestType.NONE;
         switch (context.getOriginalCreditControlRequest().getRequestTypeAVPValue()) {
-            case RequestType.INITIAL_REQUEST:
+            case INITIAL_REQUEST:
                 type = CreditControlRequestType.INITIAL_REQUEST;
                 break;
-            case RequestType.UPDATE_REQUEST:
+            case UPDATE_REQUEST:
                 type = CreditControlRequestType.UPDATE_REQUEST;
                 break;
-            case RequestType.TERMINATION_REQUEST:
+            case TERMINATION_REQUEST:
                 type = CreditControlRequestType.TERMINATION_REQUEST;
                 break;
-            case RequestType.EVENT_REQUEST:
+            case EVENT_REQUEST:
                 type = CreditControlRequestType.EVENT_REQUEST;
                 break;
             default:
@@ -157,38 +176,36 @@ public class GrpcDataSource implements DataSource {
     }
 
     private CreditControlAnswer createCreditControlAnswer(CreditControlAnswerInfo response) {
-
-        CreditControlAnswer answer = new CreditControlAnswer();
-
         if (response == null) {
             LOG.error("Empty CreditControlAnswerInfo received");
-            return answer;
+            return new CreditControlAnswer(new ArrayList<>());
         }
 
         final LinkedList<MultipleServiceCreditControl> multipleServiceCreditControls = new LinkedList<>();
         for (com.telenordigital.prime.ocs.MultipleServiceCreditControl mscc : response.getMsccList() ) {
             multipleServiceCreditControls.add(convertMSCC(mscc));
         }
-        answer.setMultipleServiceCreditControls(multipleServiceCreditControls);
-
-        return answer;
+        return new CreditControlAnswer(multipleServiceCreditControls);
     }
 
     private MultipleServiceCreditControl convertMSCC(com.telenordigital.prime.ocs.MultipleServiceCreditControl msccGRPC) {
-        MultipleServiceCreditControl mscc = new MultipleServiceCreditControl();
-        mscc.setRatingGroup(msccGRPC.getRatingGroup());
-        mscc.setServiceIdentifier(msccGRPC.getServiceIdentifier());
-        mscc.setGrantedServiceUnit(msccGRPC.getGranted().getTotalOctets());
-        mscc.setValidityTime(msccGRPC.getValidityTime());
-        mscc.setFinalUnitIndication(convertFinalUnitIndication(msccGRPC.getFinalUnitIndication()));
-        return mscc;
+        return new MultipleServiceCreditControl(
+                msccGRPC.getRatingGroup(),
+                msccGRPC.getServiceIdentifier(),
+                0,
+                0,
+                0,
+                0,
+                msccGRPC.getGranted().getTotalOctets(),
+                msccGRPC.getValidityTime(),
+                convertFinalUnitIndication(msccGRPC.getFinalUnitIndication()));
     }
 
-    private com.telenordigital.ocsgw.diameter.FinalUnitIndication convertFinalUnitIndication(com.telenordigital.prime.ocs.FinalUnitIndication fuiGrpc) {
-        com.telenordigital.ocsgw.diameter.FinalUnitIndication finalUnitIndication = new com.telenordigital.ocsgw.diameter.FinalUnitIndication();
-        finalUnitIndication.setFinalUnitAction(fuiGrpc.getFinalUnitAction().getNumber());
-        //finalUnitIndication.setRestrictionFilterRule(); FixMe
-        finalUnitIndication.setFilterId(new LinkedList(Arrays.asList(fuiGrpc.getFilterIdList().toArray())));
-        return finalUnitIndication;
+    private FinalUnitIndication convertFinalUnitIndication(com.telenordigital.prime.ocs.FinalUnitIndication fuiGrpc) {
+        return new FinalUnitIndication(
+                FinalUnitAction.values()[fuiGrpc.getFinalUnitAction().getNumber()],
+                new LinkedList<>(),
+                fuiGrpc.getFilterIdList(),
+                new RedirectServer(RedirectAddressType.IPV4_ADDRESS));
     }
 }
