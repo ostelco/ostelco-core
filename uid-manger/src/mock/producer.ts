@@ -2,7 +2,7 @@ import { MessageProcessor } from "../message_processor";
 
 export class MockProducer extends MessageProcessor {
   constructor() {
-    super("api-response", "api-requests", "response-channel");
+    super("api-responses", "api-requests", "response-channel");
   }
 
   public createNewUser(msisdn) {
@@ -30,5 +30,4 @@ export class MockProducer extends MessageProcessor {
     this.getUserIdforMsisdn("4790300031");
     this.getUserIdforMsisdn("4790300032");
   }
-
 }

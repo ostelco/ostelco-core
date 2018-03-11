@@ -10,7 +10,7 @@ const pseudonymApiHandler = new PseudonymAPIHandler(datastoreClient);
 
 export class RequestProcessor extends MessageProcessor {
   constructor() {
-    super("api-requests", "api-response", "request-channel");
+    super("api-requests", "api-responses", "request-channel");
   }
 
   public async createNewUser(request) {
