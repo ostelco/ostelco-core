@@ -1,4 +1,4 @@
-import { PubSub } from "@google-cloud/pubsub";
+import PubSub = require("@google-cloud/pubsub");
 import * as uuidv4 from "uuid/v4";
 
 export class MessageProcessor {
