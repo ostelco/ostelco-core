@@ -19,11 +19,15 @@ export class MessageProcessor {
   }
 
   public async createSubscription() {
+    console.log(`Check Subscription ${this.subscriptionId}.`);
     const exists: boolean = await this.checkSubscriptionExists();
     if (!exists) {
       // Create the subscription.
       const data = await this.responseTopic.createSubscription(this.subscriptionId);
       this.subscription = data[0];
+      console.log(`Subscription ${this.subscriptionId} created.`);
+    } else {
+      console.log(`Subscription ${this.subscriptionId} exists.`);
     }
     this.subscription.on("message", this.onMessage);
     this.subscription.on("error", this.onError);

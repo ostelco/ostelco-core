@@ -12,8 +12,8 @@ const datastoreClient = new Datastore({});
 
 const userInfoApiHandler = new UserInfoAPIHandler(datastoreClient);
 const pseudonymApiHandler = new PseudonymAPIHandler(datastoreClient);
-const pubsubRequestProcessor = new RequestProcessor();
-const mockProducer = new MockProducer();
+let pubsubRequestProcessor: RequestProcessor;
+let mockProducer: MockProducer;
 
 const startMode = process.env.START_MODE || "default";
 
@@ -24,6 +24,9 @@ if (startMode === "default") {
   console.log("Starting default app server");
 } else if (startMode === "uid-manager") {
   console.log("Starting UID manager");
+  pubsubRequestProcessor = new RequestProcessor();
+  pubsubRequestProcessor.createSubscription();
+
   app.get("/newuser/:msisdn", (req, res) => {
     userInfoApiHandler.rest_createNewUserId(req, res);
   });
@@ -44,6 +47,7 @@ if (startMode === "default") {
     pseudonymApiHandler.rest_getUserIdforPseudonym(req, res);
   });
 } else if (startMode === "generator") {
+  mockProducer = new MockProducer();
   mockProducer.createSubscription();
   app.get("/generate", (req, res) => {
     mockProducer.generate();
@@ -78,7 +82,5 @@ app.get("/", (req, res, next) => {
     .send(`Nothing to see here !!!`)
     .end();
 });
-
-pubsubRequestProcessor.createSubscription();
 
 export default app;
