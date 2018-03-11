@@ -53,6 +53,14 @@ if (startMode === "default") {
     mockProducer.generate();
     res.status(200).send("Generating fake requests");
   });
+  app.get("/gen-pseudonym", (req, res) => {
+    mockProducer.generate_pseudonyms();
+    res.status(200).send("Generating fake pseudonyms");
+  });
+  app.get("/test-pseudonym", (req, res) => {
+    mockProducer.test_pseudonyms();
+    res.status(200).send("Testing fake pseudonyms");
+  });
 }
 async function testRequest(request: Request, response: Response) {
   try {

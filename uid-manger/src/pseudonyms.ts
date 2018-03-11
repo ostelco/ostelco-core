@@ -87,9 +87,11 @@ export class PseudonymAPIHandler {
     response.status(result.status).send(result.response);
   }
 
-  public async createNewPseudonym(msisdn: string, userId: string, timestampStr: string) {
+  public async createNewPseudonym(msisdn: string, userId: string, timestampStr: any) {
     let result: ResultObject = { status: 500, response: undefined };
-    const timestamp = Number.parseInt(timestampStr);
+    const timestamp = Number.isInteger(timestampStr)
+      ? (timestampStr as number)
+      : Number.parseInt(timestampStr);
     if (msisdn && userId && !Number.isNaN(timestamp)) {
       try {
         const data = await generatePseudonym(msisdn, userId, timestamp, this.datastore);
@@ -119,9 +121,11 @@ export class PseudonymAPIHandler {
     this.setResponse(result, response);
   }
 
-  public async getPseudonymForMsisdn(msisdn: string, timestampStr: string) {
+  public async getPseudonymForMsisdn(msisdn: string, timestampStr: any) {
     let result: ResultObject = { status: 500, response: undefined };
-    const timestamp = Number.parseInt(timestampStr);
+    const timestamp = Number.isInteger(timestampStr)
+      ? (timestampStr as number)
+      : Number.parseInt(timestampStr);
     if (msisdn && !Number.isNaN(timestamp)) {
       try {
         const data = await getPseudonym(msisdn, timestamp, this.datastore);
