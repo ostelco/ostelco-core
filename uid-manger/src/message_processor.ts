@@ -1,6 +1,12 @@
 import PubSub = require("@google-cloud/pubsub");
 import * as uuidv4 from "uuid/v4";
 
+interface RequestTracker {
+  requestId: string;
+  resolve: any;
+  reject: any;
+}
+
 export class MessageProcessor {
   private pubsub: PubSub;
   private subscriptionId: string;
@@ -8,6 +14,7 @@ export class MessageProcessor {
   private subscription;
   private requestTopic;
   private responseTopic;
+  private pendingRequests: RequestTracker[];
 
   constructor(requestTopicName: string, responseTopicName: string, subscriptionId: string) {
     this.pubsub = new PubSub();
@@ -16,6 +23,7 @@ export class MessageProcessor {
     this.publisher = this.requestTopic.publisher();
     this.subscriptionId = subscriptionId;
     this.subscription = this.responseTopic.subscription(this.subscriptionId);
+    this.pendingRequests = [];
   }
 
   public async createSubscription() {
@@ -70,6 +78,38 @@ export class MessageProcessor {
     const messageId = await this.publisher.publish(data);
     console.log(`Send Messaged ${messageId}`);
     return messageId;
+  }
+
+  public async sendRequest(request) {
+    const promise = new Promise<any>(async (resolve, reject) => {
+      const data = Buffer.from(JSON.stringify({ request }));
+      const messageId = await this.publisher.publish(data);
+      console.log(`Send Messaged ${messageId}`);
+      const tracker: RequestTracker = {
+        reject,
+        requestId: messageId,
+        resolve
+      };
+      this.pendingRequests.push(tracker);
+    });
+    return promise;
+  }
+  public processResponse(message) {
+    console.log("Processing Response for ", message.id);
+    const data = this.getMessageData(message);
+    if (!data || !data.request || !data.request.id || !data.result) {
+      console.log("Invalid data in Message = ", message);
+      return;
+    }
+    const id = data.request.id;
+    const result = this.pendingRequests.findIndex(tracker => tracker.requestId === id);
+    console.log("RequestId = ", id, result, this.pendingRequests);
+    if (result !== -1) {
+      this.pendingRequests[result].resolve(data);
+      this.pendingRequests.splice(result, 1);
+    } else {
+      console.log(`No requests pending with ${id}`, this.pendingRequests);
+    }
   }
 
   public async deleteResponseSubscription() {
