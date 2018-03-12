@@ -112,9 +112,9 @@ public class PsInformation {
 
     public void parseAvps(AvpSet psInformationAvps) {
         try {
-            Optional<byte[]> chargingId = Optional.ofNullable(psInformationAvps.getAvp(Avp.TGPP_CHARGING_ID).getOctetString());
+            Optional<Avp> chargingId = Optional.ofNullable(psInformationAvps.getAvp(Avp.TGPP_CHARGING_ID));
             if (chargingId.isPresent()) {
-                this.chargingId = chargingId.get();
+                this.chargingId = chargingId.get().getOctetString();
             }
             Optional<Avp> pdpType = Optional.ofNullable(psInformationAvps.getAvp(Avp.TGPP_PDP_TYPE));
             if (pdpType.isPresent()) {

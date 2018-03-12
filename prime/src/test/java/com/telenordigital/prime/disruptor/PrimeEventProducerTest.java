@@ -3,7 +3,10 @@ package com.telenordigital.prime.disruptor;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
-import com.telenordigital.prime.ocs.FetchDataBucketInfo;
+import com.telenordigital.prime.ocs.CreditControlRequestInfo;
+import com.telenordigital.prime.ocs.MultipleServiceCreditControl;
+import com.telenordigital.prime.ocs.ReguestedServiceUnit;
+import com.telenordigital.prime.ocs.UsedServiceUnit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,8 +17,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static com.telenordigital.prime.disruptor.PrimeEventMessageType.FETCH_DATA_BUCKET;
-import static com.telenordigital.prime.disruptor.PrimeEventMessageType.RETURN_UNUSED_DATA_BUCKET;
+import static com.telenordigital.prime.disruptor.PrimeEventMessageType.CREDIT_CONTROL_REQUEST;
 import static com.telenordigital.prime.disruptor.PrimeEventMessageType.TOPUP_DATA_BUNDLE_BALANCE;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.TestCase.assertEquals;
@@ -25,6 +27,10 @@ import static org.junit.Assert.assertTrue;
 public class PrimeEventProducerTest {
 
     private static final long NO_OF_TOPUP_BYTES = 991234L;
+
+    private static final long REQUESTED_BYTES = 500L;
+
+    private static final long USED_BYTES = 300L;
 
     private static final String MSISDN = "+4711223344";
 
@@ -46,7 +52,7 @@ public class PrimeEventProducerTest {
     @SuppressWarnings("unchecked")
     @Before
     public void setUp() {
-        this.disruptor = new Disruptor<PrimeEvent>(
+        this.disruptor = new Disruptor<>(
             ()-> new PrimeEvent(),
             RING_BUFFER_SIZE,
             Executors.defaultThreadFactory() );
@@ -66,7 +72,7 @@ public class PrimeEventProducerTest {
     }
 
     private PrimeEvent getCollectedEvent()  throws InterruptedException {
-        // Wait  wait a short while for the thing to process.
+        // Wait a short while for the thing to process.
         assertTrue(cdl.await(TIMEOUT, TimeUnit.SECONDS));
         assertFalse(result.isEmpty());
         final PrimeEvent event = result.iterator().next();
@@ -90,38 +96,36 @@ public class PrimeEventProducerTest {
 
         // Verify some behavior
         assertEquals(MSISDN, event.getMsisdn());
-        assertEquals(NO_OF_TOPUP_BYTES, event.getBucketBytes());
+        assertEquals(NO_OF_TOPUP_BYTES, event.getRequestedBucketBytes());
         assertEquals(TOPUP_DATA_BUNDLE_BALANCE, event.getMessageType());
     }
 
     @Test
-    public void returnUnusedDataBucketEvent() throws Exception {
-
-        pep.returnUnusedDataBucketEvent(MSISDN, NO_OF_TOPUP_BYTES, STREAM_ID);
-
-        final PrimeEvent event = getCollectedEvent();
-        assertEquals(MSISDN, event.getMsisdn());
-        assertEquals(NO_OF_TOPUP_BYTES, event.getBucketBytes());
-        assertEquals(STREAM_ID, event.getOcsgwStreamId());
-        assertEquals(RETURN_UNUSED_DATA_BUCKET, event.getMessageType());
-    }
-
-    @Test
-    public void fetchDataBucketEvent() throws Exception {
-        final FetchDataBucketInfo request =
-                FetchDataBucketInfo.
+    public void creditControlRequestEvent() throws Exception {
+        final CreditControlRequestInfo request =
+                CreditControlRequestInfo.
                         newBuilder().
                         setMsisdn(MSISDN).
-                        setBytes(NO_OF_TOPUP_BYTES).
-                        build();
+                        addMscc(MultipleServiceCreditControl.newBuilder()
+                                .setRequested(ReguestedServiceUnit.newBuilder()
+                                        .setTotalOctets(REQUESTED_BYTES)
+                                        .build())
+                                .setUsed(UsedServiceUnit.newBuilder().setTotalOctets(USED_BYTES).build())
+                                .setRatingGroup(10)
+                                .setServiceIdentifier(1)
+                                .build()
+                        ).build();
 
-        pep.injectFetchDataBucketRequestIntoRingbuffer(request, STREAM_ID);
+        pep.injectCreditControlRequestIntoRingbuffer(request, STREAM_ID);
 
         final PrimeEvent event = getCollectedEvent();
         assertEquals(MSISDN, event.getMsisdn());
-        assertEquals(NO_OF_TOPUP_BYTES, event.getBucketBytes());
+        assertEquals(REQUESTED_BYTES, event.getRequestedBucketBytes());
+        assertEquals(USED_BYTES, event.getUsedBucketBytes());
+        assertEquals(10, event.getRatingGroup());
+        assertEquals(1, event.getServiceIdentifier());
         assertEquals(STREAM_ID, event.getOcsgwStreamId());
-        assertEquals(FETCH_DATA_BUCKET, event.getMessageType());
+        assertEquals(CREDIT_CONTROL_REQUEST, event.getMessageType());
     }
 }
 

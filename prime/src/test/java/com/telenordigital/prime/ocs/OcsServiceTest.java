@@ -34,7 +34,7 @@ public class OcsServiceTest {
 
     @Before
     public void setUp() {
-        this.disruptor = new Disruptor<PrimeEvent>(
+        this.disruptor = new Disruptor<>(
             ()-> new PrimeEvent(),
             RING_BUFFER_SIZE,
             Executors.defaultThreadFactory() );

@@ -9,11 +9,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
-class ServiceInformation {
+public class ServiceInformation {
     private static final Logger LOG = LoggerFactory.getLogger(ServiceInformation.class);
     private final PsInformation psInformation = new PsInformation();
 
-    public PsInformation getPsinformation() {
+    public PsInformation getPsInformation() {
         return psInformation;
     }
 

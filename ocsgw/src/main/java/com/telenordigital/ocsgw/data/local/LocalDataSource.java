@@ -2,6 +2,7 @@ package com.telenordigital.ocsgw.data.local;
 
 import com.telenordigital.ocsgw.diameter.*;
 import com.telenordigital.ocsgw.data.DataSource;
+import com.telenordigital.prime.ocs.CreditControlRequestType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +35,14 @@ public class LocalDataSource implements DataSource {
         final LinkedList<MultipleServiceCreditControl> multipleServiceCreditControls = context.getCreditControlRequest().getMultipleServiceCreditControls();
 
         for (MultipleServiceCreditControl mscc : multipleServiceCreditControls) {
+
             mscc.setGrantedServiceUnit(mscc.getRequestedUnits());
+
+            if (context.getOriginalCreditControlRequest().getRequestTypeAVPValue() == CreditControlRequestType.TERMINATION_REQUEST.getNumber()) {
+                FinalUnitIndication finalUnitIndication = new FinalUnitIndication();
+                finalUnitIndication.setFinalUnitAction(FinalUnitAction.TERMINATE);
+                mscc.setFinalUnitIndication(finalUnitIndication);
+            }
         }
 
         answer.setMultipleServiceCreditControls(multipleServiceCreditControls);

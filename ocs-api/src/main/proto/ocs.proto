@@ -7,25 +7,116 @@ option java_package = "com.telenordigital.prime.ocs";
 
 // OCS Service
 service OcsService {
-  rpc FetchDataBucket (stream FetchDataBucketInfo) returns (stream FetchDataBucketInfo) {}
-  rpc ReturnUnusedData (stream ReturnUnusedDataRequest) returns (stream ReturnUnusedDataResponse) {}
+  rpc CreditControlRequest (stream CreditControlRequestInfo) returns (stream CreditControlAnswerInfo) {}
   rpc Activate (ActivateRequest) returns (stream ActivateResponse) {}
 }
 
-message FetchDataBucketInfo {
-  string msisdn = 1;
-  uint64 bytes = 2;
-  string requestId = 3;
+message UserEquipmentInfo {
+  string imeisv = 1;
 }
 
-message ReturnUnusedDataRequest {
-  string msisdn = 1;
-  uint64 bytes = 2;
+message ReguestedServiceUnit {
+  uint64 totalOctets = 1;
+  uint64 inputOctets = 2;
+  uint64 outputOctetes = 3;
 }
 
-message ReturnUnusedDataResponse {
-  string msisdn = 1;
+message UsedServiceUnit {
+  uint64 totalOctets = 1;
+  uint64 inputOctets = 2;
+  uint64 outputOctetes = 3;
 }
+
+message GrantedServiceUnit {
+  uint64 totalOctets = 1;
+  uint64 inputOctets = 2;
+  uint64 outputOctetes = 3;
+}
+
+enum FinalUnitAction {
+  TERMINATE = 0;
+  REDIRECT = 1;
+  RESTRICT_ACCESS = 2;
+}
+
+enum Action {
+  PERMIT = 0;
+  DENY = 1;
+}
+
+enum Dir {
+  IN = 0;
+  OUT = 1;
+}
+
+message IPFilererRule {
+  Action action = 1;
+  Dir dir = 2;
+  string proto = 3;
+  string host = 4;
+}
+
+enum RedirectAddressType {
+  IPV4_ADDRESS = 0;
+  IPV6_ADDRESS = 1;
+  URL = 2;
+  SIP_URL = 3;
+}
+
+enum CreditControlRequestType {
+  NONE = 0;
+  INITIAL_REQUEST = 1;
+  UPDATE_REQUEST = 2;
+  TERMINATION_REQUEST = 3;
+  EVENT_REQUEST = 4;
+}
+
+message RedirectServer {
+  RedirectAddressType redirectAddressType = 1;
+  string redirectServerAddress = 2;
+}
+
+message FinalUnitIndication {
+  FinalUnitAction finalUnitAction = 1;
+  repeated IPFilererRule restrictionFilterRule = 2;
+  repeated string filterId = 3;
+  RedirectServer redirectServer = 4;
+}
+
+message MultipleServiceCreditControl {
+    uint32 serviceIdentifier = 1;
+    uint32 ratingGroup = 2;
+    ReguestedServiceUnit requested = 3;
+    UsedServiceUnit used = 4;
+    GrantedServiceUnit granted = 5;
+    FinalUnitIndication finalUnitIndication = 6;
+    uint32 validityTime = 7;
+}
+
+message PsInformation {
+  string calledStationId = 1;
+  string sgsnMccMnc = 2;
+}
+
+message ServiceInfo {
+  PsInformation psInformation = 1;
+}
+
+message CreditControlRequestInfo {
+  CreditControlRequestType type = 1;
+  string requestId = 2;
+  string msisdn = 3;
+  string imsi = 4;
+  repeated MultipleServiceCreditControl mscc = 5;
+  ServiceInfo serviceInformation = 6;
+}
+
+message CreditControlAnswerInfo {
+  string requestId = 1;
+  string msisdn = 2;
+  repeated MultipleServiceCreditControl mscc = 3;
+}
+
 
 message ActivateRequest {
 }

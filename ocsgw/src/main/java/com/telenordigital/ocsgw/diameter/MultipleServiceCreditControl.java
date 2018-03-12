@@ -11,25 +11,22 @@ import org.slf4j.LoggerFactory;
 import java.util.Optional;
 
 public class MultipleServiceCreditControl {
-    private long ratingGroup = -1;
+    private int ratingGroup = -1;
     private int serviceIdentifier = -1;
 
-    private long requestedUnits = 0;
-    private long usedUnitsTotal = 0;
-    private long usedUnitsInput = 0;
-    private long usedUnitsOutput = 0;
-    private long reservedUnits = 0;
-    private long grantedServiceUnit = 0;
+    private long requestedUnits = 0L;
+    private long usedUnitsTotal = 0L;
+    private long usedUnitsInput = 0L;
+    private long usedUnitsOutput = 0L;
+    private long grantedServiceUnit = 0L;
+    private int validityTime = 86400;
+    private FinalUnitIndication finalUnitIndication;
 
-    private static final Logger logger = LoggerFactory.getLogger(MultipleServiceCreditControl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MultipleServiceCreditControl.class);
 
 
     public long getRequestedUnits() {
         return requestedUnits;
-    }
-
-    public long getReservedUnits() {
-        return reservedUnits;
     }
 
     public long getUsedUnitsTotal() {
@@ -44,8 +41,16 @@ public class MultipleServiceCreditControl {
         return usedUnitsOutput;
     }
 
-    public long getRatingGroup() {
+    public int getRatingGroup() {
         return ratingGroup;
+    }
+
+    public void setRatingGroup(int ratingGroup) {
+        this.ratingGroup = ratingGroup;
+    }
+
+    public void setServiceIdentifier(int serviceIdentifier) {
+        this.serviceIdentifier = serviceIdentifier;
     }
 
     public int getServiceIdentifier() {
@@ -55,6 +60,15 @@ public class MultipleServiceCreditControl {
     public long getGrantedServiceUnit() {
         return grantedServiceUnit;
     }
+
+    public int getValidityTime() {
+        return validityTime;
+    }
+
+    public void setValidityTime(int validityTime) {
+        this.validityTime = validityTime;
+    }
+
 
     public void parseAvps(AvpSet serviceControl) {
         try {
@@ -75,7 +89,7 @@ public class MultipleServiceCreditControl {
 
             parseUsedServiceUnit(serviceControl);
         } catch (AvpDataException e) {
-            logger.warn("Failed to parse Multiple-Service-Credit-Control", e);
+            LOG.warn("Failed to parse Multiple-Service-Credit-Control", e);
         }
     }
 
@@ -103,7 +117,7 @@ public class MultipleServiceCreditControl {
                 }
             }
         } catch (AvpDataException e) {
-            logger.warn("Failed to parse Used-Service-Unit", e);
+            LOG.warn("Failed to parse Used-Service-Unit", e);
         }
     }
 
@@ -111,17 +125,25 @@ public class MultipleServiceCreditControl {
     public String toString() {
         return "MultipleServiceCreditControl[" +
                 "; Requested-Service-Unit=" + requestedUnits +
-                "; Reserved-Service-Unit=" + reservedUnits +
                 "; usedUnitsTotal=" + usedUnitsTotal +
                 "; usedUnitsInput=" + usedUnitsInput +
                 "; usedUnitsOutput=" + usedUnitsOutput +
                 "; Rating-Group=" + ratingGroup +
                 "; Service-Identifier=" + serviceIdentifier +
-                "; Granted-Service-Unit" +
+                "; Granted-Service-Unit" + grantedServiceUnit +
+                "; Validity-Time" + validityTime +
                 "]";
     }
 
     public void setGrantedServiceUnit(long bytes) {
         this.grantedServiceUnit = bytes;
+    }
+
+    public void setFinalUnitIndication(com.telenordigital.ocsgw.diameter.FinalUnitIndication finalUnitIndication) {
+        this.finalUnitIndication = finalUnitIndication;
+    }
+
+    public com.telenordigital.ocsgw.diameter.FinalUnitIndication getFinalUnitIndication() {
+        return this.finalUnitIndication;
     }
 }

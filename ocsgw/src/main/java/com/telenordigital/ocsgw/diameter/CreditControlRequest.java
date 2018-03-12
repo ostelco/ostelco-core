@@ -20,8 +20,8 @@ public class CreditControlRequest {
     private final LinkedList<MultipleServiceCreditControl> multipleServiceCreditControls = new LinkedList<>();
     private final ServiceInformation serviceInformation = new ServiceInformation();
     private final UserEquipmentInfo userEquipmentInfo = new UserEquipmentInfo();
-    private String msisdn = null;
-    private String imsi = null;
+    private String msisdn = "";
+    private String imsi = "";
     private Avp ccRequestType;
     private Avp ccRequestNumber;
 

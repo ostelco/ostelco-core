@@ -38,7 +38,7 @@ public class DiameterUtilities {
     }
 
     private static Object getAvpValue(Avp avp) {
-        Object avpValue = null;
+        Object avpValue;
         try {
             String avpType = AVP_DICTIONARY.getAvp(avp.getCode(), avp.getVendorId()).getType();
 

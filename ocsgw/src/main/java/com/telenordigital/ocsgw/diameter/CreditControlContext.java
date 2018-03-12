@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
+import java.util.Optional;
 
 public class CreditControlContext {
 
@@ -94,17 +95,13 @@ public class CreditControlContext {
                     gsuAvp.addAvp(Avp.CC_TOTAL_OCTETS, 0L, true, false);
                     gsuAvp.addAvp(Avp.CC_SERVICE_SPECIFIC_UNITS, 0L, true, false);
 
-                    // There seems to be a possibility to do some whitelisting here by using RESTRICT_ACCESS
-                    // We should have a look at: https://tools.ietf.org/html/rfc4006#section-5.6.3
-                    AvpSet finalUnitIndication = answerMSCC.addGroupedAvp(Avp.FINAL_UNIT_INDICATION, true, false);
-                    finalUnitIndication.addAvp(Avp.FINAL_UNIT_ACTION, FinalUnitAction.TERMINATE, true, false);
+                    addFinalUnitAction(answerMSCC, mscc);
                 } else {
                     gsuAvp.addAvp(Avp.CC_TOTAL_OCTETS, mscc.getGrantedServiceUnit(), true, false);
                 }
 
                 answerMSCC.addAvp(Avp.RESULT_CODE, resultCode, true, false);
-                // Validity is set to 24 hours
-                answerMSCC.addAvp(Avp.VALIDITY_TIME, 86400, true, false);
+                answerMSCC.addAvp(Avp.VALIDITY_TIME, mscc.getValidityTime(), true, false);
             }
             LOG.info("Credit-Control-Answer");
             DiameterUtilities.printAvps(ccaAvps);
@@ -113,5 +110,19 @@ public class CreditControlContext {
             LOG.error("Failed to convert to Credit-Control-Answer", e);
         }
         return answer;
+    }
+
+    private void addFinalUnitAction(AvpSet answerMSCC, MultipleServiceCreditControl mscc) {
+
+        // There seems to be a possibility to do some whitelisting here by using RESTRICT_ACCESS
+        // We should have a look at: https://tools.ietf.org/html/rfc4006#section-5.6.3
+
+        Optional<FinalUnitIndication> finalUnitIndicationReply = Optional.ofNullable(mscc.getFinalUnitIndication());
+        if (finalUnitIndicationReply.isPresent()) {
+            AvpSet finalUnitIndication = answerMSCC.addGroupedAvp(Avp.FINAL_UNIT_INDICATION, true, false);
+            finalUnitIndication.addAvp(Avp.FINAL_UNIT_ACTION, mscc.getFinalUnitIndication().getFinalUnitAction(), true, false);
+        }
+
+        //ToDo : Add support for the rest of the Final-Unit-Action
     }
 }

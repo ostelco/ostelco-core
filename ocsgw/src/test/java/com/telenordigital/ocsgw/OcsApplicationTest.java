@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
 
 
 /**
- *  Tests for the OcsAppliaction. This will use a TestClient to
+ *  Tests for the OcsApplication. This will use a TestClient to
  *  actually send Diameter traffic on localhost to the OcsApplication.
  */
 
@@ -44,7 +44,7 @@ class OcsApplicationTest {
     private TestClient client;
 
     // The same OcsApplication will be used in all test cases
-    private OcsApplication application = new OcsApplication();
+    private final OcsApplication application = new OcsApplication();
     private static boolean applicationStarted = false;
 
     @BeforeEach
@@ -105,6 +105,7 @@ class OcsApplicationTest {
             Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
             assertEquals(2001L, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
             assertEquals(1, resultMSCC.getGrouped().getAvp(Avp.SERVICE_IDENTIFIER_CCA).getInteger32());
+            assertEquals(10, resultMSCC.getGrouped().getAvp(Avp.RATING_GROUP).getInteger32());
             Avp granted = resultMSCC.getGrouped().getAvp(Avp.GRANTED_SERVICE_UNIT);
             assertEquals(500000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
         } catch (AvpDataException e) {
@@ -217,7 +218,7 @@ class OcsApplicationTest {
 
     // Currently not used in testing
     @DisplayName("Service-Information Credit-Control-Request Init")
-    public void serviceInformationCreditControlRequestInit() {
+    public void serviceInformationCreditControlRequestInit() throws UnsupportedEncodingException {
 
         Request request = client.getSession().createRequest(
                 commandCode,
@@ -262,11 +263,18 @@ class OcsApplicationTest {
         psInformation.addAvp(Avp.TGPP_SESSION_STOP_INDICATOR, "\377", VENDOR_ID_3GPP, true, false, false);
         psInformation.addAvp(Avp.TGPP_SELECTION_MODE, "0", VENDOR_ID_3GPP, true, false, false);
         psInformation.addAvp(Avp.TGPP_CHARGING_CHARACTERISTICS, "0800", VENDOR_ID_3GPP, true, false, true);
-        psInformation.addAvp(Avp.GPP_SGSN_MCC_MNC, "24201", false);
-        psInformation.addAvp(Avp.TGPP_MS_TIMEZONE, "4000", VENDOR_ID_3GPP, true, false, true);
+        psInformation.addAvp(Avp.GPP_SGSN_MCC_MNC, "24201", VENDOR_ID_3GPP, true, false, false);
+        byte[] timeZoneBytes = new byte[] {64, 00};
+        String timeZone = new String(timeZoneBytes, "UTF-8");
+        psInformation.addAvp(Avp.TGPP_MS_TIMEZONE, timeZone, VENDOR_ID_3GPP, true, false, true);
         psInformation.addAvp(Avp.CHARGING_RULE_BASE_NAME, "RB1", VENDOR_ID_3GPP, true, false, false);
-        psInformation.addAvp(Avp.TGPP_RAT_TYPE, "6", VENDOR_ID_3GPP, true, false, true);
-        psInformation.addAvp(Avp.GPP_USER_LOCATION_INFO, "8242f21078b542f2100103c703",VENDOR_ID_3GPP, true, false, false);
+        byte[] ratTypeBytes = new byte[] {06};
+        String ratType = new String(ratTypeBytes, "UTF-8");
+        psInformation.addAvp(Avp.TGPP_RAT_TYPE, ratType , VENDOR_ID_3GPP, true, false, true);
+
+        String s = "8242f21078b542f2100103c703";
+
+        psInformation.addAvp(Avp.GPP_USER_LOCATION_INFO, new String(s.getBytes(), "UTF-8"), VENDOR_ID_3GPP, true, false, false);
 
         JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
 
