@@ -1,11 +1,21 @@
 package com.telenordigital.ocsgw.data.grpc;
 
-import com.telenordigital.ocsgw.diameter.*;
 import com.telenordigital.ocsgw.data.DataSource;
-import com.telenordigital.prime.ocs.FetchDataBucketInfo;
+import com.telenordigital.ostelco.diameter.CreditControlContext;
+import com.telenordigital.ostelco.diameter.model.CreditControlAnswer;
+import com.telenordigital.ostelco.diameter.model.FinalUnitAction;
+import com.telenordigital.ostelco.diameter.model.FinalUnitIndication;
+import com.telenordigital.ostelco.diameter.model.MultipleServiceCreditControl;
+import com.telenordigital.ostelco.diameter.model.RedirectAddressType;
+import com.telenordigital.ostelco.diameter.model.RedirectServer;
+import com.telenordigital.prime.ocs.CreditControlAnswerInfo;
+import com.telenordigital.prime.ocs.CreditControlRequestInfo;
+import com.telenordigital.prime.ocs.CreditControlRequestType;
 import com.telenordigital.prime.ocs.OcsServiceGrpc;
-import com.telenordigital.prime.ocs.ReturnUnusedDataRequest;
-import com.telenordigital.prime.ocs.ReturnUnusedDataResponse;
+import com.telenordigital.prime.ocs.PsInformation;
+import com.telenordigital.prime.ocs.ReguestedServiceUnit;
+import com.telenordigital.prime.ocs.ServiceInfo;
+import com.telenordigital.prime.ocs.UsedServiceUnit;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -13,10 +23,16 @@ import org.jdiameter.api.cca.ServerCCASession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.UUID;
+
+import static com.telenordigital.ostelco.diameter.model.RequestType.EVENT_REQUEST;
+import static com.telenordigital.ostelco.diameter.model.RequestType.INITIAL_REQUEST;
+import static com.telenordigital.ostelco.diameter.model.RequestType.TERMINATION_REQUEST;
+import static com.telenordigital.ostelco.diameter.model.RequestType.UPDATE_REQUEST;
 
 /**
  * Uses Grpc to fetch data remotely
@@ -28,9 +44,7 @@ public class GrpcDataSource implements DataSource {
 
     private final OcsServiceGrpc.OcsServiceStub ocsServiceStub;
 
-    private StreamObserver<FetchDataBucketInfo> fetchDataBucketRequests;
-
-    private StreamObserver<ReturnUnusedDataRequest> returnUnusedDataRequests;
+    private StreamObserver<CreditControlRequestInfo> creditControlRequest;
 
     private static final int MAX_ENTRIES = 300;
     private final LinkedHashMap<String, CreditControlContext> ccrMap = new LinkedHashMap<String, CreditControlContext>(MAX_ENTRIES, .75F) {
@@ -70,80 +84,66 @@ public class GrpcDataSource implements DataSource {
     @Override
     public void init() {
 
-        LOG.info("Init was called");
-
-        fetchDataBucketRequests =
-                ocsServiceStub.fetchDataBucket(
-                        new AbstactObserver<FetchDataBucketInfo>() {
-                            public void onNext(FetchDataBucketInfo response) {
-                                try {
-                                    LOG.info("[<<] Received data bucket of " + response.getBytes() + " bytes for " + response.getMsisdn());
-                                    final CreditControlContext ccrContext = ccrMap.remove(response.getRequestId());
-                                    if (ccrContext != null) {
-                                        final ServerCCASession session = ccrContext.getSession();
-                                        if (session != null) {
-                                            CreditControlAnswer answer = createCreditControlAnswer(ccrContext, response);
-                                            ccrContext.sendCreditControlAnswer(answer);
-                                        } else {
-                                            LOG.warn("No stored CCR or Session for " + response.getRequestId());
-                                        }
-                                    } else {
-                                        LOG.warn("Missing CreditControlContext for req id " + response.getRequestId());
-                                    }
-                                } catch (Exception e) {
-                                    LOG.error("fetchDataBucket failed ", e);
-                                }
-                            }
-                        });
-
-        returnUnusedDataRequests = ocsServiceStub.returnUnusedData(
-                new AbstactObserver<ReturnUnusedDataResponse>() {
-                    public void onNext(ReturnUnusedDataResponse response) {
+        creditControlRequest = ocsServiceStub.creditControlRequest(
+                new AbstactObserver<CreditControlAnswerInfo>() {
+                    public void onNext(CreditControlAnswerInfo answer) {
                         try {
-                            System.out.println("[<<] Returned data bucket for " + response.getMsisdn());
+                            LOG.info("[<<] Received data bucket for " + answer.getMsisdn());
+                            final CreditControlContext ccrContext = ccrMap.remove(answer.getRequestId());
+                            if (ccrContext != null) {
+                                final ServerCCASession session = ccrContext.getSession();
+                                if (session != null) {
+                                    CreditControlAnswer cca = createCreditControlAnswer(answer);
+                                    ccrContext.sendCreditControlAnswer(cca);
+                                } else {
+                                    LOG.warn("No stored CCR or Session for " + answer.getRequestId());
+                                }
+                            } else {
+                                LOG.warn("Missing CreditControlContext for req id " + answer.getRequestId());
+                            }
                         } catch (Exception e) {
-                            LOG.error("returnUnusedData failed ", e);
+                            LOG.error("fetchDataBucket failed ", e);
                         }
                     }
                 });
-
     }
 
     @Override
-    public void handleRequest(CreditControlContext context) {
-
-        switch (context.getOriginalCreditControlRequest().getRequestTypeAVPValue()) {
-
-            case RequestType.INITIAL_REQUEST:
-                handleInitialRequest(context);
-                break;
-            case RequestType.UPDATE_REQUEST:
-                handleUpdateRequest(context);
-                break;
-            case RequestType.TERMINATION_REQUEST:
-                handleTerminationRequest(context);
-                break;
-            default:
-                LOG.info("Unhandled forward request");
-                break;
-        }
-    }
-
-    private void handleInitialRequest(final CreditControlContext context) {
-        // CCR-Init is handled in same way as Update
-        handleUpdateRequest(context);
-    }
-
-    private void handleUpdateRequest(final CreditControlContext context) {
+    public void handleRequest(final CreditControlContext context) {
         final String requestId = UUID.randomUUID().toString();
         ccrMap.put(requestId, context);
         LOG.info("[>>] Requesting bytes for {}", context.getCreditControlRequest().getMsisdn());
-        if (fetchDataBucketRequests != null) {
+
+        if (creditControlRequest != null) {
             try {
-                fetchDataBucketRequests.onNext(FetchDataBucketInfo.newBuilder()
-                        .setMsisdn(context.getCreditControlRequest().getMsisdn())
-                        .setBytes(context.getCreditControlRequest().getRequestedUnits()) // ToDo: this should correspond to a the correct MSCC
+                CreditControlRequestInfo.Builder builder = CreditControlRequestInfo.newBuilder();
+                builder.setType(getRequestType(context));
+                for (MultipleServiceCreditControl mscc : context.getCreditControlRequest().getMultipleServiceCreditControls()) {
+                    builder.addMscc(com.telenordigital.prime.ocs.MultipleServiceCreditControl.newBuilder()
+                            .setRequested(ReguestedServiceUnit.newBuilder()
+                                    .setInputOctets(0L)
+                                    .setOutputOctetes(0L)
+                                    .setTotalOctets(mscc.getRequestedUnits())
+                                    .build())
+                            .setUsed(UsedServiceUnit.newBuilder()
+                                    .setInputOctets(mscc.getUsedUnitsInput())
+                                    .setOutputOctetes(mscc.getUsedUnitsOutput())
+                                    .setTotalOctets(mscc.getUsedUnitsTotal())
+                                    .build())
+                            .setRatingGroup(mscc.getRatingGroup())
+                            .setServiceIdentifier(mscc.getServiceIdentifier())
+                    );
+                }
+                creditControlRequest.onNext(builder
                         .setRequestId(requestId)
+                        .setMsisdn(context.getCreditControlRequest().getMsisdn())
+                        .setImsi(context.getCreditControlRequest().getImsi())
+                        .setServiceInformation(
+                                ServiceInfo.newBuilder().setPsInformation(
+                                        PsInformation.newBuilder()
+                                                .setCalledStationId(context.getCreditControlRequest().getServiceInformation().getPsInformation().getCalledStationId())
+                                                .setSgsnMccMnc(context.getCreditControlRequest().getServiceInformation().getPsInformation().getSgsnMncMcc())
+                                ).build())
                         .build());
             } catch (Exception e) {
                 LOG.error("What just happened", e);
@@ -153,39 +153,59 @@ public class GrpcDataSource implements DataSource {
         }
     }
 
-    private void handleTerminationRequest(final CreditControlContext context) {
-        // For terminate we do not need to wait for remote end before we send CCA back (no reservation)
-        if (returnUnusedDataRequests != null) {
-            returnUnusedDataRequests.onNext(ReturnUnusedDataRequest.newBuilder()
-                    .setMsisdn(context.getCreditControlRequest().getMsisdn())
-                    .setBytes(1L) // ToDo : Fix proper. We have Used-Service-Unit not unused.
-                    .build());
-        } else {
-            LOG.warn("[!!] fetchDataBucketRequests is null");
+    private CreditControlRequestType getRequestType(CreditControlContext context) {
+        CreditControlRequestType type = CreditControlRequestType.NONE;
+        switch (context.getOriginalCreditControlRequest().getRequestTypeAVPValue()) {
+            case INITIAL_REQUEST:
+                type = CreditControlRequestType.INITIAL_REQUEST;
+                break;
+            case UPDATE_REQUEST:
+                type = CreditControlRequestType.UPDATE_REQUEST;
+                break;
+            case TERMINATION_REQUEST:
+                type = CreditControlRequestType.TERMINATION_REQUEST;
+                break;
+            case EVENT_REQUEST:
+                type = CreditControlRequestType.EVENT_REQUEST;
+                break;
+            default:
+                LOG.warn("Unknown request type");
+                break;
         }
-
-        context.sendCreditControlAnswer(createCreditControlAnswer(context, null));
+        return type;
     }
 
-    private CreditControlAnswer createCreditControlAnswer(CreditControlContext context, FetchDataBucketInfo response) {
-
-        // ToDo: Update with info in reply, this is just a temporary solution where we threat all mscc the same.
-
-        CreditControlRequest request = context.getCreditControlRequest();
-        CreditControlAnswer answer = new CreditControlAnswer();
-
-        final LinkedList<MultipleServiceCreditControl> multipleServiceCreditControls = request.getMultipleServiceCreditControls();
-
-        for (MultipleServiceCreditControl mscc : multipleServiceCreditControls) {
-            if (response != null) {
-                mscc.setGrantedServiceUnit(response.getBytes());
-            } else {
-                mscc.setGrantedServiceUnit(0L);
-            }
+    private CreditControlAnswer createCreditControlAnswer(CreditControlAnswerInfo response) {
+        if (response == null) {
+            LOG.error("Empty CreditControlAnswerInfo received");
+            return new CreditControlAnswer(new ArrayList<>());
         }
 
-        answer.setMultipleServiceCreditControls(multipleServiceCreditControls);
+        final LinkedList<MultipleServiceCreditControl> multipleServiceCreditControls = new LinkedList<>();
+        for (com.telenordigital.prime.ocs.MultipleServiceCreditControl mscc : response.getMsccList() ) {
+            multipleServiceCreditControls.add(convertMSCC(mscc));
+        }
+        return new CreditControlAnswer(multipleServiceCreditControls);
+    }
 
-        return answer;
+    private MultipleServiceCreditControl convertMSCC(com.telenordigital.prime.ocs.MultipleServiceCreditControl msccGRPC) {
+        return new MultipleServiceCreditControl(
+                msccGRPC.getRatingGroup(),
+                msccGRPC.getServiceIdentifier(),
+                0,
+                0,
+                0,
+                0,
+                msccGRPC.getGranted().getTotalOctets(),
+                msccGRPC.getValidityTime(),
+                convertFinalUnitIndication(msccGRPC.getFinalUnitIndication()));
+    }
+
+    private FinalUnitIndication convertFinalUnitIndication(com.telenordigital.prime.ocs.FinalUnitIndication fuiGrpc) {
+        return new FinalUnitIndication(
+                FinalUnitAction.values()[fuiGrpc.getFinalUnitAction().getNumber()],
+                new LinkedList<>(),
+                fuiGrpc.getFilterIdList(),
+                new RedirectServer(RedirectAddressType.IPV4_ADDRESS));
     }
 }

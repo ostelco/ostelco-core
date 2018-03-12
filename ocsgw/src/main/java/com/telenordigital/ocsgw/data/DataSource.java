@@ -1,7 +1,7 @@
 package com.telenordigital.ocsgw.data;
 
 
-import com.telenordigital.ocsgw.diameter.CreditControlContext;
+import com.telenordigital.ostelco.diameter.CreditControlContext;
 
 /**
  * Interface to interact with a datasource.

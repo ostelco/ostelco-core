@@ -37,12 +37,8 @@ final class EventHandlerImpl implements EventHandler<PrimeEvent> {
 
     private void dispatchOnEventType(final PrimeEvent event) {
         switch (event.getMessageType()) {
-            case FETCH_DATA_BUCKET:
-                handleFetchDataBucket(event);
-                break;
-
-            case RETURN_UNUSED_DATA_BUCKET:
-                handleReturnUnusedDataBucket(event);
+            case CREDIT_CONTROL_REQUEST:
+                handleCreditControlRequest(event);
                 break;
 
             case TOPUP_DATA_BUNDLE_BALANCE:
@@ -62,47 +58,40 @@ final class EventHandlerImpl implements EventHandler<PrimeEvent> {
         ocsService.activateOnNextResponse(response);
     }
 
-    private void handleReturnUnusedDataBucket(final PrimeEvent event) {
-        if (event.getOcsgwStreamId() == null) {
-            LOG.error("Null event, dropping it");
-            return;
-        }
-
-        LOG.info("Returning returnUnusedData response :: for MSISDN: {}", event.getMsisdn());
-
-        final ReturnUnusedDataResponse returnDataInfo =
-                ReturnUnusedDataResponse.newBuilder().
-                        setMsisdn(event.getMsisdn()).
-                        build();
-        ocsService.replyWithReturnDataInfo(event.getOcsgwStreamId(), returnDataInfo);
-    }
-
     private void logEventPRocessing(final String msg, final PrimeEvent event) {
-        LOG.info("{} :: for MSISDN: {} of {} bytes with request id: {}",
-                msg, event.getMsisdn(), event.getBucketBytes(), event.getOcsgwRequestId());
+        LOG.info("{} :: for MSISDN: {} of {} requested bytes {} used bytes with request id: {}",
+                msg, event.getMsisdn(), event.getRequestedBucketBytes(), event.getUsedBucketBytes() ,event.getOcsgwRequestId());
     }
 
-    private void handleFetchDataBucket(final PrimeEvent event) {
+    private void handleCreditControlRequest(final PrimeEvent event) {
 
-        logEventPRocessing("Returning fetchDataBucket response", event);
+        logEventPRocessing("Returning Credit-Control-Answer", event);
 
+        // FixMe: This assume we only have one MSCC
         try {
-            final FetchDataBucketInfo fetchDataInfo =
-                FetchDataBucketInfo.newBuilder().
-                    setMsisdn(event.getMsisdn()).
-                    setBytes(event.getBucketBytes()).
-                    setRequestId(event.getOcsgwRequestId()).
-                    build();
-            ocsService.replyWithDataBucketInfo(event.getOcsgwStreamId(), fetchDataInfo);
+            final CreditControlAnswerInfo creditControlAnswer =
+                    CreditControlAnswerInfo.newBuilder()
+                            .setMsisdn(event.getMsisdn())
+                            .addMscc(MultipleServiceCreditControl.newBuilder()
+                                    .setGranted(GrantedServiceUnit.newBuilder()
+                                            .setTotalOctets(event.getReservedBucketBytes())
+                                            .build())
+                                    .setServiceIdentifier(event.getServiceIdentifier())
+                                    .setRatingGroup(event.getRatingGroup())
+                                    .setValidityTime(86400)
+                                    .build())
+                            .setRequestId(event.getOcsgwRequestId())
+                            .build();
+            ocsService.sendCreditControlAnswer(event.getOcsgwStreamId(), creditControlAnswer);
         } catch (Exception e) {
             LOG.warn("Exception handling prime event", e);
-            logEventPRocessing("Exception returning fetchDataBucket response", event);
+            logEventPRocessing("Exception sending Credit-Control-Answer", event);
 
-            // unable to send fetchDataBucket response.
-            // So, return bucket bytes back to data bundle.
+            // unable to send Credit-Control-Answer.
+            // So, return reserved bucket bytes back to data bundle.
             ocsService.returnUnusedDataBucketEvent(
                     event.getMsisdn(),
-                    event.getBucketBytes());
+                    event.getReservedBucketBytes());
         }
     }
 }

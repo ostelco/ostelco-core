@@ -82,6 +82,13 @@ jacocoTestReport {
 
 check.dependsOn jacocoTestReport
 
+test {
+    testLogging {
+        exceptionFormat = 'full'
+        events "PASSED", "FAILED", "SKIPPED"
+    }
+}
+
 idea {
     module {
         testSourceDirs += file('src/integration-tests/java')

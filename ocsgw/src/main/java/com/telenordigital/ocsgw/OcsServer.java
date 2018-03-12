@@ -1,16 +1,17 @@
 package com.telenordigital.ocsgw;
 
-import com.telenordigital.ocsgw.data.grpc.GrpcDataSource;
-import com.telenordigital.ocsgw.diameter.*;
 import com.telenordigital.ocsgw.data.DataSource;
 import com.telenordigital.ocsgw.data.DataSourceType;
+import com.telenordigital.ocsgw.data.grpc.GrpcDataSource;
 import com.telenordigital.ocsgw.data.local.LocalDataSource;
 import com.telenordigital.ocsgw.utils.AppConfig;
-import org.jdiameter.api.*;
+import com.telenordigital.ostelco.diameter.CreditControlContext;
+import org.jdiameter.api.Stack;
 import org.jdiameter.api.cca.ServerCCASession;
 import org.jdiameter.api.cca.events.JCreditControlRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 public class OcsServer {
 

@@ -1,9 +1,9 @@
 package com.telenordigital.ocsgw;
 
 import com.telenordigital.ext_pgw.TestClient;
-import com.telenordigital.ocsgw.diameter.FinalUnitAction;
-import com.telenordigital.ocsgw.diameter.RequestType;
-import com.telenordigital.ocsgw.diameter.SubscriptionType;
+import com.telenordigital.ostelco.diameter.model.FinalUnitAction;
+import com.telenordigital.ostelco.diameter.model.RequestType;
+import com.telenordigital.ostelco.diameter.model.SubscriptionType;
 import org.apache.log4j.Logger;
 import org.jdiameter.api.ApplicationId;
 import org.jdiameter.api.Avp;
@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
 
 
 /**
- *  Tests for the OcsAppliaction. This will use a TestClient to
+ *  Tests for the OcsApplication. This will use a TestClient to
  *  actually send Diameter traffic on localhost to the OcsApplication.
  */
 
@@ -44,7 +44,7 @@ class OcsApplicationTest {
     private TestClient client;
 
     // The same OcsApplication will be used in all test cases
-    private OcsApplication application = new OcsApplication();
+    private final OcsApplication application = new OcsApplication();
     private static boolean applicationStarted = false;
 
     @BeforeEach
@@ -78,7 +78,7 @@ class OcsApplicationTest {
         ccrAvps.addAvp(Avp.CC_REQUEST_NUMBER, 0, true, false);
 
         AvpSet subscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164.ordinal());
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, "4790300123", false);
 
         ccrAvps.addAvp(Avp.MULTIPLE_SERVICES_INDICATOR, 1);
@@ -105,6 +105,7 @@ class OcsApplicationTest {
             Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
             assertEquals(2001L, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
             assertEquals(1, resultMSCC.getGrouped().getAvp(Avp.SERVICE_IDENTIFIER_CCA).getInteger32());
+            assertEquals(10, resultMSCC.getGrouped().getAvp(Avp.RATING_GROUP).getInteger32());
             Avp granted = resultMSCC.getGrouped().getAvp(Avp.GRANTED_SERVICE_UNIT);
             assertEquals(500000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
         } catch (AvpDataException e) {
@@ -126,7 +127,7 @@ class OcsApplicationTest {
         ccrAvps.addAvp(Avp.CC_REQUEST_NUMBER, 1, true, false);
 
         AvpSet subscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164.ordinal());
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, "4790300123", false);
 
         ccrAvps.addAvp(Avp.MULTIPLE_SERVICES_INDICATOR, 1);
@@ -178,7 +179,7 @@ class OcsApplicationTest {
         ccrAvps.addAvp(Avp.CC_REQUEST_NUMBER, 2, true, false);
 
         AvpSet subscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164.ordinal());
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, "4790300123", false);
 
         ccrAvps.addAvp(Avp.TERMINATION_CAUSE, 1, true, false); // 1 = DIAMETER_LOGOUT
@@ -209,7 +210,7 @@ class OcsApplicationTest {
             Avp granted = resultMSCC.getGrouped().getAvp(Avp.GRANTED_SERVICE_UNIT);
             assertEquals(0L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
             AvpSet finalUnitIndication = resultMSCC.getGrouped().getAvp(Avp.FINAL_UNIT_INDICATION).getGrouped();
-            assertEquals(FinalUnitAction.TERMINATE, finalUnitIndication.getAvp(Avp.FINAL_UNIT_ACTION).getInteger32());
+            assertEquals(FinalUnitAction.TERMINATE.ordinal(), finalUnitIndication.getAvp(Avp.FINAL_UNIT_ACTION).getInteger32());
         } catch (AvpDataException e) {
             log.error("Failed to get Result-Code", e);
         }
@@ -217,7 +218,7 @@ class OcsApplicationTest {
 
     // Currently not used in testing
     @DisplayName("Service-Information Credit-Control-Request Init")
-    public void serviceInformationCreditControlRequestInit() {
+    public void serviceInformationCreditControlRequestInit() throws UnsupportedEncodingException {
 
         Request request = client.getSession().createRequest(
                 commandCode,
@@ -231,7 +232,7 @@ class OcsApplicationTest {
         ccrAvps.addAvp(Avp.CC_REQUEST_NUMBER, 0, true, false);
 
         AvpSet subscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164.ordinal());
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, "4790300123", false);
 
         ccrAvps.addAvp(Avp.MULTIPLE_SERVICES_INDICATOR, 1);
@@ -262,11 +263,18 @@ class OcsApplicationTest {
         psInformation.addAvp(Avp.TGPP_SESSION_STOP_INDICATOR, "\377", VENDOR_ID_3GPP, true, false, false);
         psInformation.addAvp(Avp.TGPP_SELECTION_MODE, "0", VENDOR_ID_3GPP, true, false, false);
         psInformation.addAvp(Avp.TGPP_CHARGING_CHARACTERISTICS, "0800", VENDOR_ID_3GPP, true, false, true);
-        psInformation.addAvp(Avp.GPP_SGSN_MCC_MNC, "24201", false);
-        psInformation.addAvp(Avp.TGPP_MS_TIMEZONE, "4000", VENDOR_ID_3GPP, true, false, true);
+        psInformation.addAvp(Avp.GPP_SGSN_MCC_MNC, "24201", VENDOR_ID_3GPP, true, false, false);
+        byte[] timeZoneBytes = new byte[] {64, 00};
+        String timeZone = new String(timeZoneBytes, "UTF-8");
+        psInformation.addAvp(Avp.TGPP_MS_TIMEZONE, timeZone, VENDOR_ID_3GPP, true, false, true);
         psInformation.addAvp(Avp.CHARGING_RULE_BASE_NAME, "RB1", VENDOR_ID_3GPP, true, false, false);
-        psInformation.addAvp(Avp.TGPP_RAT_TYPE, "6", VENDOR_ID_3GPP, true, false, true);
-        psInformation.addAvp(Avp.GPP_USER_LOCATION_INFO, "8242f21078b542f2100103c703",VENDOR_ID_3GPP, true, false, false);
+        byte[] ratTypeBytes = new byte[] {06};
+        String ratType = new String(ratTypeBytes, "UTF-8");
+        psInformation.addAvp(Avp.TGPP_RAT_TYPE, ratType , VENDOR_ID_3GPP, true, false, true);
+
+        String s = "8242f21078b542f2100103c703";
+
+        psInformation.addAvp(Avp.GPP_USER_LOCATION_INFO, new String(s.getBytes(), "UTF-8"), VENDOR_ID_3GPP, true, false, false);
 
         JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
 

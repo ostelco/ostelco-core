@@ -5,14 +5,7 @@ plugins {
 
 dependencies {
 
-    implementation ('org.mobicents.diameter:jdiameter-api:1.7.1-123') {
-        exclude module: 'netty-all'
-    }
-    implementation ('org.mobicents.diameter:jdiameter-impl:1.7.1-123') {
-        exclude module: 'netty-all'
-    }
-
-    implementation project(':ocsgw')
+    implementation project(':diameter-stack')
 
     implementation 'junit:junit:4.12'
 }

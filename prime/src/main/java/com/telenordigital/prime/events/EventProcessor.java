@@ -124,7 +124,7 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
             final boolean endOfBatch) {
 
 
-        // FETCH_DATA_BUCKET is a high frequency operation. If we do want to
+        // CREDIT_CONTROL_REQUEST is a high frequency operation. If we do want to
         // include data balance updates from this event type, then we can
         // skip 'switch' stmt since we will do 'setRemainingByMsisdn' for all cases.
 
@@ -141,7 +141,7 @@ public final class EventProcessor implements EventHandler<PrimeEvent>, Managed {
         switch (event.getMessageType()) {
 
             // Continuous updates of data consumption. High frequency!
-            case FETCH_DATA_BUCKET:
+            case CREDIT_CONTROL_REQUEST:
 
             // response to my request, this is the new balance.
             case TOPUP_DATA_BUNDLE_BALANCE:

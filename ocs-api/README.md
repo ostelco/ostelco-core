@@ -1,21 +1,20 @@
 # OCS API
 
-* Fetch Data bucket
+**From P-GW to OCS**
+
+This is a translation from the DIAMETER Credit-Control-Request [RFC 4006](https://tools.ietf.org/html/rfc4006#page-9) to gRPC. Not all elements in the Credit-Control-Request is translated. Only the one we are currently using.
+
+* CreditControlRequest
+
+    CreditControlRequestInfo ( CreditControlRequestType, String requestId, String msisdn, String imsi, MultipleServiceCreditControl[], ServiceInfo serviceInformation) 
+                                
+                                => 
+                                
+                                CreditControlAnswerInfo ( String requestId, String msisdn, MultipleServiceCreditControl[] mscc)
 
 
-    fetchDataBucket (String msisdn, long bytes, int ocsgwRequestId) => (String msisdn, long bytes, int ocsgwRequestId)
 
-From PGW to OCS
-
-
-
-* Return Unused Data
-
-
-    returnUnusedData (String msisdn, int bytes) => (String msisdn)
-
-From PGW to OCS
-
+**From OCS to P-GW**
 
 
 * Activate
@@ -23,4 +22,3 @@ From PGW to OCS
 
     activate (String msisdn)
 
-From OCS to PGW

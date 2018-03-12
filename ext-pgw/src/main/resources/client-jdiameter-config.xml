@@ -7,16 +7,23 @@
     <IPAddresses>
       <IPAddress value="172.16.238.2" />
     </IPAddresses>
-    <Realm value="loltel" />
-    <VendorID value="0" />
-    <ProductName value="jDiameter" />
-    <FirmwareRevision value="1" />
+    <Realm value="loltel"/>
+    <VendorID value="8164"/>
+    <ProductName value="jDiameter"/>
+    <FirmwareRevision value="1"/>
+    <Applications>
+      <ApplicationID>
+        <VendorId value="10415"/>
+        <AuthApplId value="4"/>
+        <AcctApplId value="0"/>
+      </ApplicationID>
+    </Applications>
     <OverloadMonitor>
       <Entry index="1" lowThreshold="0.5" highThreshold="0.6">
         <ApplicationID>
-          <VendorId value="0" />
-          <AuthApplId value="4" />
-          <AcctApplId value="0" />
+          <VendorId value="10415"/>
+          <AuthApplId value="4"/>
+          <AcctApplId value="10415"/>
         </ApplicationID>
       </Entry>
     </OverloadMonitor>
