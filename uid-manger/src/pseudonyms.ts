@@ -11,7 +11,7 @@ export interface PseudonymObject {
   end: number;
   start: number;
   pseudonym: string;
-  userId: string;
+  userId?: string;
 }
 const pseudonymObjectTypeName = "PseudonymObject_test";
 
@@ -59,10 +59,15 @@ export function getPseudonym(
   msisdn: string,
   timestamp: number,
   datastore: Datastore
-): Promise<string> {
+): Promise<PseudonymObject> {
   const start = startOfMonth(timestamp);
   return datastore.get(getKeyForPseudonymObject(msisdn, start, datastore)).then(data => {
-    return (data[0] as PseudonymObject).pseudonym;
+    const result: PseudonymObject = data[0] as PseudonymObject;
+    return {
+      end: result.end,
+      pseudonym: result.pseudonym,
+      start: result.start
+    };
   });
 }
 
@@ -84,7 +89,7 @@ export class PseudonymAPIHandler {
   }
 
   public setResponse(result: ResultObject, response: Response) {
-    response.status(result.status).send(result.response);
+    response.status(result.status).send(JSON.stringify(result.response, undefined, 2));
   }
 
   public async createNewPseudonym(msisdn: string, userId: string, timestampStr: any) {
@@ -97,7 +102,7 @@ export class PseudonymAPIHandler {
         const data = await generatePseudonym(msisdn, userId, timestamp, this.datastore);
         result = !data
           ? { status: 404, response: `Can't generate pseudonym for ${msisdn} at ${timestamp}` }
-          : { status: 200, response: JSON.stringify(data, undefined, 2) };
+          : { status: 200, response: data };
       } catch (error) {
         result = {
           response: `Can't generate pseudonym for ${msisdn} at ${timestamp}`,
@@ -131,7 +136,7 @@ export class PseudonymAPIHandler {
         const data = await getPseudonym(msisdn, timestamp, this.datastore);
         result = !data
           ? { status: 404, response: `Can't find pseudonym for ${msisdn} at ${timestamp}` }
-          : { status: 200, response: JSON.stringify(data, undefined, 2) };
+          : { status: 200, response: data };
       } catch (error) {
         result = {
           response: `Can't find pseudonym for ${msisdn} at ${timestamp}`,
@@ -161,7 +166,7 @@ export class PseudonymAPIHandler {
         const data = await findUserId(pseudonym, this.datastore);
         result = !data
           ? { status: 404, response: `User not found for ${pseudonym}` }
-          : { status: 200, response: JSON.stringify(data, undefined, 2) };
+          : { status: 200, response: data };
       } catch (error) {
         result = { status: 500, response: error };
       }

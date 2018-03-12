@@ -60,7 +60,6 @@ export class MessageProcessor {
   public getMessageData(message) {
     if (Buffer.isBuffer(message.data)) {
       const data: Buffer = message.data as Buffer;
-      console.log("Buffer = ", data.toString());
       return JSON.parse(data.toString());
     }
     return undefined;
@@ -69,6 +68,7 @@ export class MessageProcessor {
   public async sendMessage(message) {
     const data = Buffer.from(JSON.stringify(message));
     const messageId = await this.publisher.publish(data);
+    console.log(`Send Messaged ${messageId}`);
     return messageId;
   }
 

@@ -49,7 +49,7 @@ if (startMode === "default") {
 } else if (startMode === "generator") {
   mockProducer = new MockProducer();
   mockProducer.createSubscription();
-  app.get("/generate", (req, res) => {
+  app.get("/gen-users", (req, res) => {
     mockProducer.generate();
     res.status(200).send("Generating fake requests");
   });

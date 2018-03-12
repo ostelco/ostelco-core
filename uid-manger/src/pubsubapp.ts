@@ -57,7 +57,7 @@ export class RequestProcessor extends MessageProcessor {
       console.log("Invalid data in Message = ", message);
       return;
     }
-    const { request } = data;
+    const request = { ...data.request, id: message.id };
     switch (request.query) {
       case "newuser":
         this.createNewUser(request);

@@ -74,7 +74,7 @@ export function userInfoForUserId(userId: string, datastore: Datastore) {
 
 export interface ResultObject {
   status: number;
-  response: string;
+  response: any;
 }
 
 export class UserInfoAPIHandler {
@@ -85,7 +85,7 @@ export class UserInfoAPIHandler {
   }
 
   public setResponse(result: ResultObject, response: Response) {
-    response.status(result.status).send(result.response);
+    response.status(result.status).send(JSON.stringify(result.response, undefined, 2));
   }
 
   public async createNewUserId(msisdn: string) {
@@ -93,7 +93,7 @@ export class UserInfoAPIHandler {
     if (Utils.isValidMsisdn(msisdn)) {
       try {
         const data = await createUserInfo(msisdn, this.datastore);
-        result = { status: 200, response: JSON.stringify(data, undefined, 2) };
+        result = { status: 200, response: data };
       } catch (error) {
         result = { status: 500, response: error };
       }
@@ -116,7 +116,7 @@ export class UserInfoAPIHandler {
         const data = await userInfoForMsisdn(msisdn, this.datastore);
         result = !data
           ? { status: 404, response: "User not found" }
-          : { status: 200, response: JSON.stringify(data, undefined, 2) };
+          : { status: 200, response: data };
       } catch (error) {
         result = { status: 500, response: error };
       }
@@ -139,7 +139,7 @@ export class UserInfoAPIHandler {
       const data = await userInfoForUserId(userId, this.datastore);
       result = !data
         ? { status: 404, response: "User not found" }
-        : { status: 200, response: JSON.stringify(data, undefined, 2) };
+        : { status: 200, response: data };
     } catch (error) {
       result = { status: 500, response: error };
     }

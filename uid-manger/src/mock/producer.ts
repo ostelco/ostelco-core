@@ -31,8 +31,9 @@ export class MockProducer extends MessageProcessor {
   }
 
   public onMessage = message => {
+    console.log("Processing Message ", message.id);
     const data = this.getMessageData(message);
-    console.log("Response : ", JSON.stringify(data));
+    console.log("Response : ", JSON.stringify(data, undefined, 2));
     message.ack();
   };
 
