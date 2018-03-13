@@ -4,5 +4,6 @@ logging:
     com.telenordigital: DEBUG
 
 eventProcessor:
-  databaseName: pantel-tests
   configFile: src/integration-tests/resources/pantel-tests.json
+  projectId: pantel-tests
+  topicId: data-traffic

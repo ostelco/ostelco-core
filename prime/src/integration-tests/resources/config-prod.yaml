@@ -4,5 +4,6 @@ logging:
     com.telenordigital: DEBUG
 
 eventProcessor:
-  databaseName: pantel-2decb
-  configFile: secrets/pantel-d116075c73e8.json
+  configFile: secrets/pantel-json.json
+  projectId: pantel-2decb
+  topicId: data-traffic

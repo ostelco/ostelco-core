@@ -1,6 +1,11 @@
 version: "3.3"
 
 services:
+  prime:
+    environment:
+      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
+      - PUBSUB_PROJECT_ID=pantel-2decb
+
   ocsgw:
     networks:
       net:
@@ -19,3 +24,6 @@ services:
     depends_on:
       - "ocsgw"
     command: ["./wait_for_ocsgw.sh"]
+
+  pubsub-emulator:
+    image: knarz/pubsub-emulator

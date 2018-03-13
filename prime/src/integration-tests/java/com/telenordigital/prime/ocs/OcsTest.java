@@ -1,5 +1,6 @@
 package com.telenordigital.prime.ocs;
 
+import com.lmax.disruptor.TimeoutException;
 import com.telenordigital.prime.disruptor.PrimeDisruptor;
 import com.telenordigital.prime.disruptor.PrimeEventProducer;
 import com.telenordigital.prime.ocs.OcsServiceGrpc.OcsServiceStub;
@@ -13,6 +14,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -78,7 +80,7 @@ public final class OcsTest {
     private static OcsServiceStub ocsServiceStub;
 
     @BeforeClass
-    public static void setUp() {
+    public static void setUp() throws IOException {
 
         // Set up processing pipeline
         disruptor = new PrimeDisruptor();
@@ -126,20 +128,12 @@ public final class OcsTest {
         }
     }
 
-    private FetchDataBucketInfo newDefaultFetchDataInfoRecord() {
+    private CreditControlRequestInfo newDefaultCreditControlRequestInfo() {
         LOG.info("Req Id: {}", REQUEST_ID);
-        return FetchDataBucketInfo.newBuilder().
-                setMsisdn(MSISDN).
-                setBytes(BYTES).
-                setRequestId(REQUEST_ID).
-                build();
-    }
-
-    private ReturnUnusedDataRequest newDefaultReturnUnusedDataRequest() {
-        return ReturnUnusedDataRequest.newBuilder().
-                setMsisdn(MSISDN).
-                setBytes(BYTES).
-                build();
+        return CreditControlRequestInfo.newBuilder()
+                .setMsisdn(MSISDN)
+                .setRequestId(REQUEST_ID)
+                .build();
     }
 
     /**
@@ -155,15 +149,16 @@ public final class OcsTest {
         // Simulate being the OCS receiving a packet containing
         // information about a data bucket containing a number
         // of bytes for some MSISDN.
-        final StreamObserver<FetchDataBucketInfo> fetchDataBucketRequests =
-                ocsServiceStub.fetchDataBucket(
-                        new AbstactObserver<FetchDataBucketInfo>() {
+        final StreamObserver<CreditControlRequestInfo> requests =
+                ocsServiceStub.creditControlRequest(
+                        new AbstactObserver<CreditControlAnswerInfo>() {
                             @Override
-                            public void onNext(final FetchDataBucketInfo response) {
+                            public void onNext(final CreditControlAnswerInfo response) {
                                 LOG.info("Received data bucket of {} bytes for {}",
-                                        response.getBytes(), response.getMsisdn());
+                                        response.getMsccOrBuilderList().get(0).getGranted().getTotalOctets(),
+                                        response.getMsisdn());
                                 assertEquals(MSISDN, response.getMsisdn());
-                                assertEquals(BYTES, response.getBytes());
+                                assertEquals(BYTES, response.getMsccOrBuilderList().get(0).getGranted().getTotalOctets());
                                 assertEquals(REQUEST_ID, response.getRequestId());
                                 cdl.countDown();
                             }
@@ -172,53 +167,16 @@ public final class OcsTest {
         // Simulate packet gateway requesting a new bucket of data by
         // injecting a packet of data into the "onNext" method declared
         // above.
-        fetchDataBucketRequests.onNext(newDefaultFetchDataInfoRecord());
+        requests.onNext(newDefaultCreditControlRequestInfo());
 
         // Wait for response (max ten seconds) and the pass the test only
         // if a response was actually generated (and cdl counted down to zero).
         cdl.await(TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
 
-        fetchDataBucketRequests.onCompleted();
+        requests.onCompleted();
 
         assertEquals(0, cdl.getCount());
     }
-
-
-    /**
-     * Test returning data from the OCS to the BSS.
-     *
-     * @throws InterruptedException
-     */
-    @Test
-    public void testReturnUnusedData() throws InterruptedException {
-
-        final CountDownLatch cdl = new CountDownLatch(1);
-
-        final StreamObserver<ReturnUnusedDataRequest> returnUnusedDataRequests =
-                ocsServiceStub.returnUnusedData(
-                        new AbstactObserver<ReturnUnusedDataResponse>() {
-
-                            @Override
-                            public void onNext(final ReturnUnusedDataResponse response) {
-                                LOG.info("Returned unsed data for {}", response.getMsisdn());
-                                assertEquals(MSISDN, response.getMsisdn());
-                                cdl.countDown();
-                            }
-                        });
-
-        // Send a new record  of some amount of data associated with an MSISDN
-        // to the receiver at the other end of the stub's connection
-        returnUnusedDataRequests.onNext(newDefaultReturnUnusedDataRequest());
-
-        // Wait for response (max ten seconds) and the pass the test only
-        // if a response was actually generated (and cdl counted down to zero).
-        cdl.await(TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
-
-        returnUnusedDataRequests.onCompleted();
-
-        assertEquals(0, cdl.getCount());
-    }
-
 
     /**
      * Simulate sending a request to activate a subscription.
@@ -263,7 +221,7 @@ public final class OcsTest {
     }
 
     @AfterClass
-    public static void tearDown() {
+    public static void tearDown() throws InterruptedException, TimeoutException {
         if (ocsServer != null) {
             ocsServer.stop();
         }
