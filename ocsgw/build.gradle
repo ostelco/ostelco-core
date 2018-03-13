@@ -19,12 +19,8 @@ apply plugin: 'org.junit.platform.gradle.plugin'
 
 dependencies {
     implementation project(':ocs-api')
-    implementation ('org.mobicents.diameter:jdiameter-api:1.7.1-123') {
-        exclude module: 'netty-all'
-    }
-    implementation ('org.mobicents.diameter:jdiameter-impl:1.7.1-123') {
-        exclude module: 'netty-all'
-    }
+    implementation project(':diameter-stack')
+
     testImplementation project(':ext-pgw')
     testCompile 'org.junit.jupiter:junit-jupiter-api:5.0.3'
     testCompile 'org.junit.platform:junit-platform-runner:1.0.3'
@@ -32,6 +28,13 @@ dependencies {
 
     testCompile 'junit:junit:4.12'
     testRuntime 'org.junit.vintage:junit-vintage-engine:4.12.3'
+}
+
+test {
+    testLogging {
+        exceptionFormat = 'full'
+        events "PASSED", "FAILED", "SKIPPED"
+    }
 }
 
 shadowJar {

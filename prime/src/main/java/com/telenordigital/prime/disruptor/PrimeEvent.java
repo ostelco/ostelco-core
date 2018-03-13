@@ -17,13 +17,22 @@ public final class PrimeEvent {
     private String msisdn;
 
     /**
-     *  Origin of word 'bucket' - PGw consumes data in `buckets` of 10 MB ~ 100 MB at a time
-     *  This field is used in...
-     *  1. Request to fetch bucket
-     *  2. Response of actual allowed bucket
-     *  3. Request to return unused bucket
+     *  Origin of word 'bucket' - P-GW consumes data in `buckets` of 10 MB ~ 100 MB at a time
+     *  This field is used in.
+     *  Request to reserve a new bucket of bytes
      */
-    private long bucketBytes;
+    private long requestedBucketBytes;
+
+    /**
+     *  Bytes that has been used from the bucket (previously reserved).
+     */
+    private long usedBucketBytes;
+
+
+    /**
+     *  Buckets that has been reserved from the bundle.
+     */
+    private long reservedBucketBytes;
 
     /**
      *  Origin of word 'bundle' - Subscriber buys a 'bundle' of units of data/airtime/validity etc.
@@ -42,25 +51,49 @@ public final class PrimeEvent {
     private String ocsgwRequestId;
 
 
+    /**
+     * Service-Identifier is used to classify traffic
+     */
+    private int serviceIdentifier;
+
+    /**
+     * Rating-Group is used to classify traffic
+     */
+    private int ratingGroup;
+
     public void clear() {
         msisdn = null;
-        bucketBytes = 0;
+        requestedBucketBytes = 0;
+        usedBucketBytes = 0;
+        reservedBucketBytes = 0;
         bundleBytes = 0;
         ocsgwStreamId = null;
         ocsgwRequestId = null;
+        serviceIdentifier = 0;
+        ratingGroup = 0;
         messageType = null;
     }
+
+    //FixMe : We need to think about roaming!!!
 
     public void update(
             final PrimeEventMessageType messageType,
             final String msisdn,
-            final long bytes,
+            final long requestedBytes,
+            final long usedBytes,
+            final long reservedBucketBytes,
+            final int serviceIdentifier,
+            final int ratingGroup,
             final String ocsgwStreamId,
             final String ocsgwRequestId) {
-        this.setMessageType(messageType);
-        this.setMsisdn(msisdn);
-        this.setBucketBytes(bytes);
-        this.setOcsgwStreamId(ocsgwStreamId);
-        this.setOcsgwRequestId(ocsgwRequestId);
+        this.messageType = messageType;
+        this.msisdn = msisdn;
+        this.requestedBucketBytes = requestedBytes;
+        this.usedBucketBytes = usedBytes;
+        this.reservedBucketBytes = reservedBucketBytes;
+        this.serviceIdentifier = serviceIdentifier;
+        this.ratingGroup = ratingGroup;
+        this.ocsgwStreamId = ocsgwStreamId;
+        this.ocsgwRequestId = ocsgwRequestId;
     }
 }

@@ -1,4 +1,4 @@
-package com.telenordigital.ocsgw.diameter;
+package com.telenordigital.ostelco.diameter.model;
 
 public class RequestType {
     public static final int INITIAL_REQUEST = 1;
@@ -28,4 +28,5 @@ public class RequestType {
         }
         return typeString;
     }
+
 }

@@ -1,10 +1,11 @@
 package com.telenordigital.ocsgw;
 
-import com.telenordigital.ocsgw.diameter.RequestType;
 import com.telenordigital.ocsgw.utils.AppConfig;
+import com.telenordigital.ostelco.diameter.model.RequestType;
 import org.jdiameter.api.Answer;
 import org.jdiameter.api.ApplicationId;
 import org.jdiameter.api.Configuration;
+import org.jdiameter.api.IllegalDiameterStateException;
 import org.jdiameter.api.InternalException;
 import org.jdiameter.api.Mode;
 import org.jdiameter.api.Network;
@@ -30,9 +31,24 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
     private static final Logger LOG = LoggerFactory.getLogger(OcsApplication.class);
     private static final String DIAMETER_CONFIG_FILE = "server-jdiameter-config.xml";
     private static final long APPLICATION_ID = 4L;  // Diameter Credit Control Application (4)
-    private Stack stack = null;
+    private static Stack stack = null;
 
     public static void main(String[] args) {
+
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                LOG.info("Shutting down OcsApplication...");
+                if (stack != null) {
+                    try {
+                        stack.stop(0, TimeUnit.MILLISECONDS ,0);
+                    } catch (IllegalDiameterStateException | InternalException e) {
+                        LOG.error("Failed to gracefully shutdown OcsApplication", e);
+                    }
+                    stack.destroy();
+                }
+            }
+        });
 
         OcsApplication app = new OcsApplication();
         app.start("/config/");

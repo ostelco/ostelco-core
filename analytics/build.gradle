@@ -8,7 +8,7 @@ plugins {
 
 dependencies {
   implementation project(':ocs-api')
-  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
   implementation 'com.google.cloud:google-cloud-pubsub:0.32.0-beta'
   implementation 'com.google.cloud.dataflow:google-cloud-dataflow-java-sdk-all:2.2.0'
   runtime 'org.apache.beam:beam-runners-google-cloud-dataflow-java:2.2.0'
