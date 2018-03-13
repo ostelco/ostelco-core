@@ -14,7 +14,7 @@ export class MockProducer extends MessageProcessor {
     const timeDiff = distanceInWordsStrict(timeResponse, timeRequest);
     console.log(
       `Answer for ${result.request.id} came in ${timeDiff}`,
-      JSON.stringify(request, undefined, 0)
+      JSON.stringify(result, undefined, 0)
     );
   }
 

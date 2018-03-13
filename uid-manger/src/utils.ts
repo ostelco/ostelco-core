@@ -8,3 +8,13 @@ export function isValidMsisdn(msisdn: string) {
   const msisdnPattern = /^[1-9]\d*$/;
   return msisdnPattern.test(msisdn);
 }
+
+export function splitPathComponents(urlPath: string) {
+  if (!isString(urlPath)) {
+    return [];
+  }
+  if (urlPath.charAt(0) === "/") {
+    urlPath = urlPath.slice(1);
+  }
+  return urlPath.split("/");
+}

@@ -2,7 +2,7 @@
   "name": "uid-manger",
   "version": "0.0.1",
   "description": "UserId manager for panacea",
-  "main": "dist/server.js",
+  "main": "dist/index.js",
   "engines": {
     "node": ">=9.6",
     "npm": ">=5.6"
