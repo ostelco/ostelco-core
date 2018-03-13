@@ -34,7 +34,6 @@ class DiameterUtilities {
                 } catch (e: AvpDataException) {
                     // Failed to ungroup... ignore then...
                 }
-
             }
         }
     }
