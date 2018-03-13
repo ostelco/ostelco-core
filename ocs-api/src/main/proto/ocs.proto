@@ -15,19 +15,7 @@ message UserEquipmentInfo {
   string imeisv = 1;
 }
 
-message ReguestedServiceUnit {
-  uint64 totalOctets = 1;
-  uint64 inputOctets = 2;
-  uint64 outputOctetes = 3;
-}
-
-message UsedServiceUnit {
-  uint64 totalOctets = 1;
-  uint64 inputOctets = 2;
-  uint64 outputOctetes = 3;
-}
-
-message GrantedServiceUnit {
+message ServiceUnit {
   uint64 totalOctets = 1;
   uint64 inputOctets = 2;
   uint64 outputOctetes = 3;
@@ -86,9 +74,9 @@ message FinalUnitIndication {
 message MultipleServiceCreditControl {
     uint32 serviceIdentifier = 1;
     uint32 ratingGroup = 2;
-    ReguestedServiceUnit requested = 3;
-    UsedServiceUnit used = 4;
-    GrantedServiceUnit granted = 5;
+    ServiceUnit requested = 3;
+    ServiceUnit used = 4;
+    ServiceUnit granted = 5;
     FinalUnitIndication finalUnitIndication = 6;
     uint32 validityTime = 7;
 }
