@@ -13,9 +13,8 @@ import com.telenordigital.prime.ocs.CreditControlRequestInfo;
 import com.telenordigital.prime.ocs.CreditControlRequestType;
 import com.telenordigital.prime.ocs.OcsServiceGrpc;
 import com.telenordigital.prime.ocs.PsInformation;
-import com.telenordigital.prime.ocs.ReguestedServiceUnit;
+import com.telenordigital.prime.ocs.ServiceUnit;
 import com.telenordigital.prime.ocs.ServiceInfo;
-import com.telenordigital.prime.ocs.UsedServiceUnit;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -120,12 +119,12 @@ public class GrpcDataSource implements DataSource {
                 builder.setType(getRequestType(context));
                 for (MultipleServiceCreditControl mscc : context.getCreditControlRequest().getMultipleServiceCreditControls()) {
                     builder.addMscc(com.telenordigital.prime.ocs.MultipleServiceCreditControl.newBuilder()
-                            .setRequested(ReguestedServiceUnit.newBuilder()
+                            .setRequested(ServiceUnit.newBuilder()
                                     .setInputOctets(0L)
                                     .setOutputOctetes(0L)
                                     .setTotalOctets(mscc.getRequestedUnits())
                                     .build())
-                            .setUsed(UsedServiceUnit.newBuilder()
+                            .setUsed(ServiceUnit.newBuilder()
                                     .setInputOctets(mscc.getUsedUnitsInput())
                                     .setOutputOctetes(mscc.getUsedUnitsOutput())
                                     .setTotalOctets(mscc.getUsedUnitsTotal())

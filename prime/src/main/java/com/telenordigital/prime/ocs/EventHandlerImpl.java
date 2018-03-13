@@ -73,7 +73,7 @@ final class EventHandlerImpl implements EventHandler<PrimeEvent> {
                     CreditControlAnswerInfo.newBuilder()
                             .setMsisdn(event.getMsisdn())
                             .addMscc(MultipleServiceCreditControl.newBuilder()
-                                    .setGranted(GrantedServiceUnit.newBuilder()
+                                    .setGranted(ServiceUnit.newBuilder()
                                             .setTotalOctets(event.getReservedBucketBytes())
                                             .build())
                                     .setServiceIdentifier(event.getServiceIdentifier())

@@ -5,8 +5,7 @@ import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.telenordigital.prime.ocs.CreditControlRequestInfo;
 import com.telenordigital.prime.ocs.MultipleServiceCreditControl;
-import com.telenordigital.prime.ocs.ReguestedServiceUnit;
-import com.telenordigital.prime.ocs.UsedServiceUnit;
+import com.telenordigital.prime.ocs.ServiceUnit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -107,10 +106,10 @@ public class PrimeEventProducerTest {
                         newBuilder().
                         setMsisdn(MSISDN).
                         addMscc(MultipleServiceCreditControl.newBuilder()
-                                .setRequested(ReguestedServiceUnit.newBuilder()
+                                .setRequested(ServiceUnit.newBuilder()
                                         .setTotalOctets(REQUESTED_BYTES)
                                         .build())
-                                .setUsed(UsedServiceUnit.newBuilder().setTotalOctets(USED_BYTES).build())
+                                .setUsed(ServiceUnit.newBuilder().setTotalOctets(USED_BYTES).build())
                                 .setRatingGroup(10)
                                 .setServiceIdentifier(1)
                                 .build()
