@@ -1,3 +1,5 @@
+# Deploy Command, for the default service.
+# gcloud app deploy --verbosity=info
 service: default
 runtime: nodejs
 env: flex

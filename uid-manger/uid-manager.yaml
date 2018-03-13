@@ -1,3 +1,5 @@
+# Deploy Command
+# gcloud app deploy uid-manager.yaml --verbosity=info
 service: uid-manager
 runtime: nodejs
 env: flex
