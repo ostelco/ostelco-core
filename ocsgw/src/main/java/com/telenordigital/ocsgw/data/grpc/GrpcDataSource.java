@@ -8,14 +8,7 @@ import com.telenordigital.ostelco.diameter.model.FinalUnitIndication;
 import com.telenordigital.ostelco.diameter.model.MultipleServiceCreditControl;
 import com.telenordigital.ostelco.diameter.model.RedirectAddressType;
 import com.telenordigital.ostelco.diameter.model.RedirectServer;
-import com.telenordigital.prime.ocs.CreditControlAnswerInfo;
-import com.telenordigital.prime.ocs.CreditControlRequestInfo;
-import com.telenordigital.prime.ocs.CreditControlRequestType;
-import com.telenordigital.prime.ocs.OcsServiceGrpc;
-import com.telenordigital.prime.ocs.PsInformation;
-import com.telenordigital.prime.ocs.ReguestedServiceUnit;
-import com.telenordigital.prime.ocs.ServiceInfo;
-import com.telenordigital.prime.ocs.UsedServiceUnit;
+import com.telenordigital.prime.ocs.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -35,7 +28,7 @@ import static com.telenordigital.ostelco.diameter.model.RequestType.TERMINATION_
 import static com.telenordigital.ostelco.diameter.model.RequestType.UPDATE_REQUEST;
 
 /**
- * Uses Grpc to fetch data remotely
+ * Uses gRPC to fetch data remotely
  *
  */
 public class GrpcDataSource implements DataSource {
@@ -106,6 +99,14 @@ public class GrpcDataSource implements DataSource {
                         }
                     }
                 });
+
+        ActivateRequest dummyActivate = ActivateRequest.newBuilder().build();
+        ocsServiceStub.activate(dummyActivate, new AbstactObserver<ActivateResponse>() {
+            @Override
+            public void onNext(ActivateResponse activateResponse) {
+                LOG.info("Active user {}", activateResponse.getMsisdn());
+            }
+        });
     }
 
     @Override

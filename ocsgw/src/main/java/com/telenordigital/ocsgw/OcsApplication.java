@@ -12,11 +12,15 @@ import org.jdiameter.api.Network;
 import org.jdiameter.api.NetworkReqListener;
 import org.jdiameter.api.Request;
 import org.jdiameter.api.Stack;
+import org.jdiameter.api.auth.ClientAuthSession;
+import org.jdiameter.api.auth.ServerAuthSession;
 import org.jdiameter.api.cca.ServerCCASession;
 import org.jdiameter.api.cca.events.JCreditControlRequest;
 import org.jdiameter.client.api.ISessionFactory;
+import org.jdiameter.client.impl.app.auth.ClientAuthSessionImpl;
 import org.jdiameter.common.impl.app.cca.CCASessionFactoryImpl;
 import org.jdiameter.server.impl.StackImpl;
+import org.jdiameter.server.impl.app.auth.ServerAuthSessionImpl;
 import org.jdiameter.server.impl.app.cca.ServerCCASessionImpl;
 import org.jdiameter.server.impl.helpers.XMLConfiguration;
 import org.slf4j.Logger;
@@ -70,7 +74,6 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
             sessionFactory = (ISessionFactory) stack.getSessionFactory();
             init(sessionFactory);
             sessionFactory.registerAppFacory(ServerCCASession.class, this);
-
             printAppIds();
 
         } catch (Exception e) {
@@ -127,5 +130,11 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
         LOG.info("Uri : " + stack.getMetaData().getLocalPeer().getUri());
         LOG.info("Realm : " + stack.getMetaData().getLocalPeer().getRealmName());
         LOG.info("IP : " + Arrays.toString(stack.getMetaData().getLocalPeer().getIPAddresses()));
+    }
+
+    public void testReAuthRequest() {
+        LOG.info("Before testReAuthRequest");
+        OcsServer.getInstance().sendReAuthRequest("+4790300158");
+        LOG.info("After testReAuthRequest");
     }
 }

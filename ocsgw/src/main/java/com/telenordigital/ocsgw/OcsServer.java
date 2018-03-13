@@ -6,16 +6,21 @@ import com.telenordigital.ocsgw.data.grpc.GrpcDataSource;
 import com.telenordigital.ocsgw.data.local.LocalDataSource;
 import com.telenordigital.ocsgw.utils.AppConfig;
 import com.telenordigital.ostelco.diameter.CreditControlContext;
-import org.jdiameter.api.Stack;
+import org.jdiameter.api.*;
+import org.jdiameter.api.auth.ServerAuthSession;
+import org.jdiameter.api.auth.events.ReAuthRequest;
 import org.jdiameter.api.cca.ServerCCASession;
 import org.jdiameter.api.cca.events.JCreditControlRequest;
+import org.jdiameter.client.api.ISessionFactory;
+import org.jdiameter.common.impl.app.auth.AuthSessionFactoryImpl;
+import org.jdiameter.common.impl.app.auth.ReAuthRequestImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
 public class OcsServer {
 
-    private static final Logger logger = LoggerFactory.getLogger(OcsApplication.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OcsApplication.class);
     private static final OcsServer INSTANCE = new OcsServer();
     private Stack stack;
     private DataSource source;
@@ -35,20 +40,36 @@ public class OcsServer {
         source.handleRequest(ccrContext);
     }
 
+    public void sendReAuthRequest(final String msisdn) {
+        ISessionFactory sessionFactory = null;
+        try {
+            sessionFactory = (ISessionFactory) stack.getSessionFactory();
+            ((ISessionFactory) sessionFactory).registerAppFacory(ServerAuthSession.class, new AuthSessionFactoryImpl(sessionFactory));
+            ServerAuthSession authSession = sessionFactory.getNewAppSession("BadCustomSessionId;YesWeCanPassId;" + System.currentTimeMillis(),ApplicationId.createByAuthAppId(4L), ServerAuthSession.class);
+            Request request = sessionFactory.getNewSession().createRequest(258, ApplicationId.createByAuthAppId(4L), stack.getMetaData().getLocalPeer().getRealmName());
+            ReAuthRequest reAuthRequest = new ReAuthRequestImpl(request);
+            LOG.info("fixed ? " + authSession);
+            authSession.sendReAuthRequest(reAuthRequest);
+            LOG.info("return");
+        } catch (IllegalDiameterStateException | InternalException | RouteException | OverloadException e) {
+            LOG.warn("Failed to send Re-Auth Request");
+        }
+    }
+
     public void init(Stack stack, AppConfig appConfig) {
         this.stack = stack;
 
         switch (appConfig.getDataStoreType()) {
             case DataSourceType.GRPC:
-                logger.info("Using GrpcDataSource");
+                LOG.info("Using GrpcDataSource");
                 source = new GrpcDataSource(appConfig.getGrpcServer(), appConfig.encryptGrpc());
                 break;
             case DataSourceType.LOCAL:
-                logger.info("Using LocalDataSource");
+                LOG.info("Using LocalDataSource");
                 source = new LocalDataSource();
                 break;
             default:
-                logger.warn("Unknow DataStoreType {}", appConfig.getDataStoreType());
+                LOG.warn("Unknow DataStoreType {}", appConfig.getDataStoreType());
                 source = new LocalDataSource();
                 break;
         }

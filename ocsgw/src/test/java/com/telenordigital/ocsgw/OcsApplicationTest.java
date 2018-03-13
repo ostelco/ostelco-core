@@ -161,7 +161,7 @@ class OcsApplicationTest {
 
     }
 
-    @Test
+    //@Test
     @DisplayName("Simple Credit-Control-Request Init Update and Terminate")
     public void simpleCreditControlRequestInitUpdateAndTerminate() {
         simpleCreditControlRequestInit();
@@ -214,6 +214,12 @@ class OcsApplicationTest {
         } catch (AvpDataException e) {
             log.error("Failed to get Result-Code", e);
         }
+    }
+
+    @Test
+    public void testReAuthRequest() {
+        application.testReAuthRequest();
+        waitForAnswer();
     }
 
     // Currently not used in testing
