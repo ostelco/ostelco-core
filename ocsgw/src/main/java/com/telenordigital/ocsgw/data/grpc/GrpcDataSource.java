@@ -34,7 +34,7 @@ import static com.telenordigital.ostelco.diameter.model.RequestType.TERMINATION_
 import static com.telenordigital.ostelco.diameter.model.RequestType.UPDATE_REQUEST;
 
 /**
- * Uses Grpc to fetch data remotely
+ * Uses gRPC to fetch data remotely
  *
  */
 public class GrpcDataSource implements DataSource {
@@ -101,7 +101,7 @@ public class GrpcDataSource implements DataSource {
                                 LOG.warn("Missing CreditControlContext for req id " + answer.getRequestId());
                             }
                         } catch (Exception e) {
-                            LOG.error("fetchDataBucket failed ", e);
+                            LOG.error("Credit-Control-Request failed ", e);
                         }
                     }
                 });
@@ -206,5 +206,12 @@ public class GrpcDataSource implements DataSource {
                 new LinkedList<>(),
                 fuiGrpc.getFilterIdList(),
                 new RedirectServer(RedirectAddressType.IPV4_ADDRESS));
+    }
+
+    @Override
+    public boolean isBlocked(final String msisdn) {
+        //ToDo: when we get a deny back the user is blocked and should be added to local map.
+        //      user gets unblocked when next request succeeds
+        return false;
     }
 }
