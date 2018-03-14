@@ -1,4 +1,4 @@
-package com.telenordigital.ocsgw.data.hybrid;
+package com.telenordigital.ocsgw.data.proxy;
 
 import com.telenordigital.ocsgw.data.DataSource;
 import com.telenordigital.ocsgw.data.local.LocalDataSource;
@@ -8,24 +8,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Hybrid DataSource is a combination of the Local datasource and any other
+ * Proxy DataSource is a combination of the Local DataSource and any other
  * DataSource.
  *
- * With the hybrid approach the CCR-I request will not use the LocalDataStore. If the
+ * With the proxy approach the CCR-I request will not use the LocalDataStore. If the
  * reply for the CCR-I is accepted the following CCR-U requests will use the LocalDataSource
  * to quickly reply and accept the query. But it will also send the same request on using the
  * secondary DataSource. When the secondary DataSource deny a CCR-U then the next request will be denied.
  *
+ * The DataSource will keep a block list of msisdns that has failed to query new buckets when doing CCR.
  */
-public class HybridDataSource implements DataSource {
+public class ProxyDataSource implements DataSource {
 
-    private static final Logger LOG = LoggerFactory.getLogger(HybridDataSource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ProxyDataSource.class);
 
     private final DataSource local = new LocalDataSource();
 
     private DataSource secondary;
 
-    public void setSecondaryDataSource(DataSource dataSource) {
+    public ProxyDataSource(DataSource dataSource) {
         secondary = dataSource;
     }
 
@@ -36,12 +37,14 @@ public class HybridDataSource implements DataSource {
 
     @Override
     public void handleRequest(CreditControlContext context) {
+        // CCR-I and CCR-T will always be handled by the secondary DataSource
         if (context.getOriginalCreditControlRequest().getRequestTypeAVPValue() != CreditControlRequestType.UPDATE_REQUEST.getNumber()) {
-            local.handleRequest(context);
             secondary.handleRequest(context);
         } else {
+            // For CCR-U we will send all requests to both Local and Secondary until the secondary has blocked the msisdn
             if (!secondary.isBlocked(context.getCreditControlRequest().getMsisdn())) {
                 local.handleRequest(context);
+                secondary.handleRequest(context);
             } else {
                 secondary.handleRequest(context);
             }

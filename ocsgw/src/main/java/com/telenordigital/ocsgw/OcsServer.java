@@ -4,6 +4,7 @@ import com.telenordigital.ocsgw.data.DataSource;
 import com.telenordigital.ocsgw.data.DataSourceType;
 import com.telenordigital.ocsgw.data.grpc.GrpcDataSource;
 import com.telenordigital.ocsgw.data.local.LocalDataSource;
+import com.telenordigital.ocsgw.data.proxy.ProxyDataSource;
 import com.telenordigital.ocsgw.utils.AppConfig;
 import com.telenordigital.ostelco.diameter.CreditControlContext;
 import org.jdiameter.api.Stack;
@@ -15,7 +16,7 @@ import org.slf4j.LoggerFactory;
 
 public class OcsServer {
 
-    private static final Logger logger = LoggerFactory.getLogger(OcsApplication.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OcsApplication.class);
     private static final OcsServer INSTANCE = new OcsServer();
     private Stack stack;
     private DataSource source;
@@ -40,15 +41,21 @@ public class OcsServer {
 
         switch (appConfig.getDataStoreType()) {
             case DataSourceType.GRPC:
-                logger.info("Using GrpcDataSource");
+                LOG.info("Using GrpcDataSource");
                 source = new GrpcDataSource(appConfig.getGrpcServer(), appConfig.encryptGrpc());
                 break;
             case DataSourceType.LOCAL:
-                logger.info("Using LocalDataSource");
+                LOG.info("Using LocalDataSource");
                 source = new LocalDataSource();
                 break;
+            case DataSourceType.PROXY:
+                LOG.info("Using ProxyDataSource");
+                GrpcDataSource secondary = new GrpcDataSource(appConfig.getGrpcServer(), appConfig.encryptGrpc());
+                secondary.init();
+                source = new ProxyDataSource(secondary);
+                break;
             default:
-                logger.warn("Unknown DataStoreType {}", appConfig.getDataStoreType());
+                LOG.warn("Unknown DataStoreType {}", appConfig.getDataStoreType());
                 source = new LocalDataSource();
                 break;
         }
