@@ -6,7 +6,8 @@ Based on https://github.com/codeghar/Seagull
 
 The working directory is `/opt/seagull`.
 
-Start it with `docker run --rm -it -p --net=host <seagull-img>` and then use the `diameter-env/run` scripts for testing.
+
+Start it with `docker run --rm -it -p --net=host -v ./seagull/:/config -h ocs <seagull-img>` and then use the `diameter-env/run` scripts for testing.
 
 For example:
 
