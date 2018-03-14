@@ -40,6 +40,7 @@ public class OcsServer {
         source.handleRequest(ccrContext);
     }
 
+    //https://tools.ietf.org/html/rfc4006#page-30
     public void sendReAuthRequest(final String msisdn) {
         ISessionFactory sessionFactory = null;
         try {
@@ -48,9 +49,7 @@ public class OcsServer {
             ServerAuthSession authSession = sessionFactory.getNewAppSession("BadCustomSessionId;YesWeCanPassId;" + System.currentTimeMillis(),ApplicationId.createByAuthAppId(4L), ServerAuthSession.class);
             Request request = sessionFactory.getNewSession().createRequest(258, ApplicationId.createByAuthAppId(4L), stack.getMetaData().getLocalPeer().getRealmName());
             ReAuthRequest reAuthRequest = new ReAuthRequestImpl(request);
-            LOG.info("fixed ? " + authSession);
             authSession.sendReAuthRequest(reAuthRequest);
-            LOG.info("return");
         } catch (IllegalDiameterStateException | InternalException | RouteException | OverloadException e) {
             LOG.warn("Failed to send Re-Auth Request");
         }
