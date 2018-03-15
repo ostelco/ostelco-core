@@ -77,7 +77,6 @@ class CreditControlRequestParser(val request: JCreditControlRequest) : Parser<Cr
         } catch (e: AvpDataException) {
             LOG.error("Failed to parse User-Equipment-Info", e)
         }
-
     }
 
     // Multiple-Service-Credit-Control (AVP 456)
