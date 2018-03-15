@@ -41,7 +41,7 @@ it("Get pseudonym for msisdn", async () => {
   const datastore = new Datastore({});
   const pseudonym = await pseudonyms.generatePseudonym(msisdn, userId, timestamp, datastore);
   const data = await pseudonyms.getPseudonym(msisdn, timestamp, datastore);
-  expect(data).toEqual(pseudonym);
+  expect(data.pseudonym).toEqual(pseudonym);
 });
 
 it("Get userId from pseudonym", async () => {
