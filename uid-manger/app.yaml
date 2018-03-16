@@ -20,3 +20,5 @@ readiness_check:
   app_start_timeout_sec: 300
 env_variables:
   START_MODE: "default"
+network:
+  instance_tag: "pantel-service"

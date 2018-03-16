@@ -20,3 +20,5 @@ readiness_check:
   app_start_timeout_sec: 300
 env_variables:
   START_MODE: "uid-manager"
+network:
+  instance_tag: "uid-manager"
