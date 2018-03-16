@@ -72,8 +72,8 @@ message FinalUnitIndication {
 }
 
 message MultipleServiceCreditControl {
-    uint32 serviceIdentifier = 1;
-    uint32 ratingGroup = 2;
+    uint64 serviceIdentifier = 1;
+    uint64 ratingGroup = 2;
     ServiceUnit requested = 3;
     ServiceUnit used = 4;
     ServiceUnit granted = 5;

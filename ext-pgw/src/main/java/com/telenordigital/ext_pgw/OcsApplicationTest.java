@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 
 
 /**
- *  Tests for the OcsAppliaction. This will use a TestClient to
+ *  Tests for the OcsApplication. This will use a TestClient to
  *  actually send Diameter traffic on localhost to the OcsApplication.
  */
 
@@ -27,7 +27,7 @@ public class OcsApplicationTest {
 
     private static final Logger LOG = Logger.getLogger(OcsApplicationTest.class);
 
-    private final int VENDOR_ID_3GPP = 10415;
+    private static final int VENDOR_ID_3GPP = 10415;
 
     private static final String DEST_REALM = "loltel";
     private static final String DEST_HOST = "ocs";
@@ -103,6 +103,8 @@ public class OcsApplicationTest {
             assertEquals(RequestType.INITIAL_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
             Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
             assertEquals(2001L, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
+            assertEquals(1, resultMSCC.getGrouped().getAvp(Avp.SERVICE_IDENTIFIER_CCA).getUnsigned32());
+            assertEquals(10, resultMSCC.getGrouped().getAvp(Avp.RATING_GROUP).getUnsigned32());
             Avp granted = resultMSCC.getGrouped().getAvp(Avp.GRANTED_SERVICE_UNIT);
             assertEquals(BUCKET_SIZE, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
         } catch (AvpDataException e) {
@@ -197,7 +199,7 @@ public class OcsApplicationTest {
         usedServiceUnits.addAvp(Avp.CC_INPUT_OCTETS, 0L);
         usedServiceUnits.addAvp(Avp.CC_OUTPUT_OCTETS, 0L);
         usedServiceUnits.addAvp(Avp.CC_SERVICE_SPECIFIC_UNITS, 0L);
-        mscc.addAvp(Avp.REPORTING_REASON, 2, 10415, true, false); // 2 = FINAL , 10415 = 3GPP
+        mscc.addAvp(Avp.REPORTING_REASON, 2, VENDOR_ID_3GPP, true, false); // 2 = FINAL
 
         AvpSet serviceInformation = ccrAvps.addGroupedAvp(Avp.SERVICE_INFORMATION, VENDOR_ID_3GPP, true, false);
         AvpSet psInformation = serviceInformation.addGroupedAvp(Avp.PS_INFORMATION, VENDOR_ID_3GPP, true, false);

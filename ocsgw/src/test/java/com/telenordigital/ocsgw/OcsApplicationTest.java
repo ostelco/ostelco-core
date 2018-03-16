@@ -32,14 +32,20 @@ import static org.junit.Assert.assertEquals;
 @DisplayName("OcsApplicationTest")
 class OcsApplicationTest {
 
-    private final int VENDOR_ID_3GPP = 10415;
+    private static final Logger LOG = Logger.getLogger(OcsApplicationTest.class);
 
-    private static final Logger log = Logger.getLogger(OcsApplicationTest.class);
+    private static final int VENDOR_ID_3GPP = 10415;
 
-    private final String destRealm = "loltel";
-    private final String destHost = "ocs";
-    private final int commandCode = 272; // Credit-Control
-    private final long applicationID = 4L;  // Diameter Credit Control Application (4)
+    private static final String DEST_REALM = "loltel";
+    private static final String DEST_HOST = "ocs";
+    private static final int COMMAND_CODE = 272; // Credit-Control
+    private static final long APPLICATION_ID = 4L;  // Diameter Credit Control Application (4)
+
+    private static final String MSISDN = "4790300123";
+    private static final String IMSI = "242017100000228";
+    private static final String APN = "panacea";
+    private static final String SGSN_MCC_MNC = "24201";
+    private static final int CALLED_STATION_ID = 30;
 
     private TestClient client;
 
@@ -67,10 +73,10 @@ class OcsApplicationTest {
     private void simpleCreditControlRequestInit() {
 
         Request request = client.getSession().createRequest(
-                commandCode,
-                ApplicationId.createByAuthAppId(applicationID),
-                destRealm,
-                destHost
+                COMMAND_CODE,
+                ApplicationId.createByAuthAppId(APPLICATION_ID),
+                DEST_REALM,
+                DEST_HOST
         );
 
         AvpSet ccrAvps = request.getAvps();
@@ -79,7 +85,9 @@ class OcsApplicationTest {
 
         AvpSet subscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164.ordinal());
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, "4790300123", false);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, MSISDN, false);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI.ordinal());
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, IMSI, false);
 
         ccrAvps.addAvp(Avp.MULTIPLE_SERVICES_INDICATOR, 1);
 
@@ -90,6 +98,11 @@ class OcsApplicationTest {
         requestedServiceUnits.addAvp(Avp.CC_TOTAL_OCTETS, 500000L);
         requestedServiceUnits.addAvp(Avp.CC_INPUT_OCTETS, 0L);
         requestedServiceUnits.addAvp(Avp.CC_OUTPUT_OCTETS, 0L);
+
+        AvpSet serviceInformation = ccrAvps.addGroupedAvp(Avp.SERVICE_INFORMATION, VENDOR_ID_3GPP, true, false);
+        AvpSet psInformation = serviceInformation.addGroupedAvp(Avp.PS_INFORMATION, VENDOR_ID_3GPP, true, false);
+        psInformation.addAvp(CALLED_STATION_ID, APN, false);
+        psInformation.addAvp(Avp.GPP_SGSN_MCC_MNC, SGSN_MCC_MNC, VENDOR_ID_3GPP, true, false, true);
 
         JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
 
@@ -104,22 +117,23 @@ class OcsApplicationTest {
             assertEquals(RequestType.INITIAL_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
             Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
             assertEquals(2001L, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
-            assertEquals(1, resultMSCC.getGrouped().getAvp(Avp.SERVICE_IDENTIFIER_CCA).getInteger32());
-            assertEquals(10, resultMSCC.getGrouped().getAvp(Avp.RATING_GROUP).getInteger32());
+            assertEquals(1, resultMSCC.getGrouped().getAvp(Avp.SERVICE_IDENTIFIER_CCA).getUnsigned32());
+
+            assertEquals(10, resultMSCC.getGrouped().getAvp(Avp.RATING_GROUP).getUnsigned32());
             Avp granted = resultMSCC.getGrouped().getAvp(Avp.GRANTED_SERVICE_UNIT);
             assertEquals(500000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
         } catch (AvpDataException e) {
-            log.error("Failed to get Result-Code", e);
+            LOG.error("Failed to get Result-Code", e);
         }
     }
 
     private void simpleCreditControlRequestUpdate() {
 
         Request request = client.getSession().createRequest(
-                commandCode,
-                ApplicationId.createByAuthAppId(applicationID),
-                destRealm,
-                destHost
+                COMMAND_CODE,
+                ApplicationId.createByAuthAppId(APPLICATION_ID),
+                DEST_REALM,
+                DEST_HOST
         );
 
         AvpSet ccrAvps = request.getAvps();
@@ -128,7 +142,9 @@ class OcsApplicationTest {
 
         AvpSet subscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164.ordinal());
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, "4790300123", false);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, MSISDN, false);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI.ordinal());
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, IMSI, false);
 
         ccrAvps.addAvp(Avp.MULTIPLE_SERVICES_INDICATOR, 1);
 
@@ -139,6 +155,11 @@ class OcsApplicationTest {
         requestedServiceUnits.addAvp(Avp.CC_TOTAL_OCTETS, 400000L);
         requestedServiceUnits.addAvp(Avp.CC_INPUT_OCTETS, 0L);
         requestedServiceUnits.addAvp(Avp.CC_OUTPUT_OCTETS, 0L);
+
+        AvpSet serviceInformation = ccrAvps.addGroupedAvp(Avp.SERVICE_INFORMATION, VENDOR_ID_3GPP, true, false);
+        AvpSet psInformation = serviceInformation.addGroupedAvp(Avp.PS_INFORMATION, VENDOR_ID_3GPP, true, false);
+        psInformation.addAvp(CALLED_STATION_ID, APN, false);
+        psInformation.addAvp(Avp.GPP_SGSN_MCC_MNC, SGSN_MCC_MNC, VENDOR_ID_3GPP, true, false, true);
 
         JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
 
@@ -156,7 +177,7 @@ class OcsApplicationTest {
             Avp granted = resultMSCC.getGrouped().getAvp(Avp.GRANTED_SERVICE_UNIT);
             assertEquals(400000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
         } catch (AvpDataException e) {
-            log.error("Failed to get Result-Code", e);
+            LOG.error("Failed to get Result-Code", e);
         }
 
     }
@@ -168,10 +189,10 @@ class OcsApplicationTest {
         simpleCreditControlRequestUpdate();
 
         Request request = client.getSession().createRequest(
-                commandCode,
-                ApplicationId.createByAuthAppId(applicationID),
-                destRealm,
-                destHost
+                COMMAND_CODE,
+                ApplicationId.createByAuthAppId(APPLICATION_ID),
+                DEST_REALM,
+                DEST_HOST
         );
 
         AvpSet ccrAvps = request.getAvps();
@@ -180,7 +201,9 @@ class OcsApplicationTest {
 
         AvpSet subscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164.ordinal());
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, "4790300123", false);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, MSISDN, false);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI.ordinal());
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, IMSI, false);
 
         ccrAvps.addAvp(Avp.TERMINATION_CAUSE, 1, true, false); // 1 = DIAMETER_LOGOUT
 
@@ -193,6 +216,11 @@ class OcsApplicationTest {
         usedServiceUnits.addAvp(Avp.CC_OUTPUT_OCTETS, 0L);
         usedServiceUnits.addAvp(Avp.CC_SERVICE_SPECIFIC_UNITS, 0L);
         mscc.addAvp(Avp.REPORTING_REASON, 2, VENDOR_ID_3GPP, true, false); // 2 = FINAL
+
+        AvpSet serviceInformation = ccrAvps.addGroupedAvp(Avp.SERVICE_INFORMATION, VENDOR_ID_3GPP, true, false);
+        AvpSet psInformation = serviceInformation.addGroupedAvp(Avp.PS_INFORMATION, VENDOR_ID_3GPP, true, false);
+        psInformation.addAvp(CALLED_STATION_ID, APN, false);
+        psInformation.addAvp(Avp.GPP_SGSN_MCC_MNC, SGSN_MCC_MNC, VENDOR_ID_3GPP, true, false, true);
 
         JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
 
@@ -212,7 +240,7 @@ class OcsApplicationTest {
             AvpSet finalUnitIndication = resultMSCC.getGrouped().getAvp(Avp.FINAL_UNIT_INDICATION).getGrouped();
             assertEquals(FinalUnitAction.TERMINATE.ordinal(), finalUnitIndication.getAvp(Avp.FINAL_UNIT_ACTION).getInteger32());
         } catch (AvpDataException e) {
-            log.error("Failed to get Result-Code", e);
+            LOG.error("Failed to get Result-Code", e);
         }
     }
 
@@ -221,10 +249,10 @@ class OcsApplicationTest {
     public void serviceInformationCreditControlRequestInit() throws UnsupportedEncodingException {
 
         Request request = client.getSession().createRequest(
-                commandCode,
-                ApplicationId.createByAuthAppId(applicationID),
-                destRealm,
-                destHost
+                COMMAND_CODE,
+                ApplicationId.createByAuthAppId(APPLICATION_ID),
+                DEST_REALM,
+                DEST_HOST
         );
 
         AvpSet ccrAvps = request.getAvps();
@@ -234,6 +262,8 @@ class OcsApplicationTest {
         AvpSet subscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164.ordinal());
         subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, "4790300123", false);
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI.ordinal());
+        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, IMSI, false);
 
         ccrAvps.addAvp(Avp.MULTIPLE_SERVICES_INDICATOR, 1);
 
@@ -254,7 +284,7 @@ class OcsApplicationTest {
             psInformation.addAvp(Avp.SGSN_ADDRESS, InetAddress.getByAddress(new byte[]{8, 0, 0, 6}), VENDOR_ID_3GPP, true,  false);
             psInformation.addAvp(Avp.GGSN_ADDRESS, InetAddress.getByAddress(new byte[]{2, 0, 0, 6}), VENDOR_ID_3GPP, true,  false);
         } catch (UnknownHostException e) {
-            log.info("Failed to add address");
+            LOG.info("Failed to add address");
         }
         psInformation.addAvp(Avp.TGPP_IMSI_MCC_MNC, "24201", VENDOR_ID_3GPP, true,  false, false);
         psInformation.addAvp(Avp.TGPP_GGSN_MCC_MNC, "24006", VENDOR_ID_3GPP, true,  false, false);
@@ -285,11 +315,17 @@ class OcsApplicationTest {
 
         try {
             assertEquals(2001L, client.getResultCodeAvp().getInteger32());
+            AvpSet resultAvps = client.getResultAvps();
+            assertEquals(RequestType.INITIAL_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
+            Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
+            assertEquals(4012L, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
+            assertEquals(1, resultMSCC.getGrouped().getAvp(Avp.SERVICE_IDENTIFIER_CCA).getInteger32());
+            Avp granted = resultMSCC.getGrouped().getAvp(Avp.GRANTED_SERVICE_UNIT);
+            assertEquals(0L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
         } catch (AvpDataException e) {
-            log.error("Failed to get Result-Code", e);
+            LOG.error("Failed to get Result-Code", e);
         }
     }
-
 
     private void waitForAnswer() {
         int i = 0;
@@ -298,7 +334,7 @@ class OcsApplicationTest {
             try {
                 Thread.currentThread().sleep(500);
             } catch (InterruptedException e) {
-                log.error("Start Failed", e);
+                LOG.error("Start Failed", e);
             }
         }
         assertEquals(true, client.isAnswerReceived());
