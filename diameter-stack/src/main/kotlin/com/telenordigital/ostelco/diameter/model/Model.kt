@@ -1,5 +1,8 @@
 package com.telenordigital.ostelco.diameter.model
 
+import com.telenordigital.ostelco.diameter.parser.AvpField
+import org.jdiameter.api.Avp
+
 data class CreditControlAnswer(val multipleServiceCreditControls: List<MultipleServiceCreditControl>)
 
 enum class CreditControlResultCode(val value: Int) {
@@ -18,10 +21,10 @@ enum class FinalUnitAction {
 }
 
 data class FinalUnitIndication(
-        val finalUnitAction: FinalUnitAction,
-        val restrictionFilterRule: List<IPFilterRule>,
-        val filterId: List<String>,
-        val redirectServer: RedirectServer)
+    val finalUnitAction: FinalUnitAction,
+    val restrictionFilterRule: List<IPFilterRule>,
+    val filterId: List<String>,
+    val redirectServer: RedirectServer?)
 
 enum class Action {
     PERMIT,
@@ -39,17 +42,56 @@ data class IPFilterRule(
         val proto: String,
         val host: String)
 
+class ServiceUnit() {
+
+    @AvpField(Avp.CC_TOTAL_OCTETS)
+    var total: Long = 0
+
+    @AvpField(Avp.CC_INPUT_OCTETS)
+    var input: Long = 0
+
+    @AvpField(Avp.CC_OUTPUT_OCTETS)
+    var output: Long = 0
+
+    constructor(total: Long, input: Long, output: Long) : this() {
+        this.total = total
+        this.input = input
+        this.output = output
+    }
+}
+
 // https://tools.ietf.org/html/rfc4006#section-8.16
-data class MultipleServiceCreditControl(
-        val ratingGroup: Int,
-        val serviceIdentifier: Int,
-        val requestedUnits: Long,
-        val usedUnitsTotal: Long,
-        val usedUnitsInput: Long,
-        val usedUnitsOutput: Long,
-        val grantedServiceUnit: Long,
-        val validityTime: Int,
-        val finalUnitIndication: FinalUnitIndication?)
+class MultipleServiceCreditControl() {
+
+    @AvpField(Avp.RATING_GROUP)
+    var ratingGroup: Long = -1
+
+    @AvpField(Avp.SERVICE_IDENTIFIER_CCA)
+    var serviceIdentifier: Long = -1
+
+    @AvpField(Avp.REQUESTED_SERVICE_UNIT)
+    var requested = ServiceUnit()
+
+    @AvpField(Avp.USED_SERVICE_UNIT)
+    var used = ServiceUnit()
+
+    @AvpField(Avp.GRANTED_SERVICE_UNIT)
+    var granted = ServiceUnit()
+
+    var validityTime = 86400
+
+    var finalUnitIndication: FinalUnitIndication? = null
+
+    constructor(ratingGroup: Long, serviceIdentifier: Long, requested: ServiceUnit, used: ServiceUnit, granted: ServiceUnit, validityTime: Int, finalUnitIndication: FinalUnitIndication?) : this() {
+        this.ratingGroup = ratingGroup
+        this.serviceIdentifier = serviceIdentifier
+        this.requested = requested
+        this.used = used
+        this.granted = granted
+        this.validityTime = validityTime
+        this.finalUnitIndication = finalUnitIndication
+    }
+}
 
 enum class RedirectAddressType {
     IPV4_ADDRESS,
@@ -60,7 +102,11 @@ enum class RedirectAddressType {
 
 data class RedirectServer(val redirectAddressType: RedirectAddressType)
 
-data class ServiceInformation(val psInformation: PsInformation?)
+class ServiceInformation() {
+
+    @AvpField(Avp.PS_INFORMATION)
+    var psInformation: PsInformation? = null
+}
 
 // https://tools.ietf.org/html/rfc4006#section-8.47
 enum class SubscriptionType {
@@ -71,10 +117,24 @@ enum class SubscriptionType {
     END_USER_PRIVATE
 }
 
+class SubscriptionId() {
+
+    @AvpField(Avp.SUBSCRIPTION_ID_TYPE)
+    var idType:SubscriptionType? = null
+
+    @AvpField(Avp.SUBSCRIPTION_ID_DATA)
+    var idData:String? = ""
+}
+
 // https://tools.ietf.org/html/rfc4006#page-78
-data class UserEquipmentInfo(
-        val userEquipmentInfoType: UserEquipmentInfoType,
-        val getUserEquipmentInfoValue: ByteArray?)
+class UserEquipmentInfo() {
+
+    @AvpField(Avp.USER_EQUIPMENT_INFO_TYPE)
+    var userEquipmentInfoType: UserEquipmentInfoType? = null
+
+    @AvpField(Avp.USER_EQUIPMENT_INFO_VALUE)
+    var getUserEquipmentInfoValue: ByteArray? = null
+}
 
 enum class UserEquipmentInfoType {
     IMEISV,

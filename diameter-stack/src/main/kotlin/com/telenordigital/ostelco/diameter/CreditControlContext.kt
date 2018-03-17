@@ -3,9 +3,10 @@ package com.telenordigital.ostelco.diameter
 import com.telenordigital.ostelco.diameter.model.CreditControlAnswer
 import com.telenordigital.ostelco.diameter.model.CreditControlRequest
 import com.telenordigital.ostelco.diameter.model.CreditControlResultCode
+import com.telenordigital.ostelco.diameter.model.FinalUnitIndication
 import com.telenordigital.ostelco.diameter.model.MultipleServiceCreditControl
 import com.telenordigital.ostelco.diameter.model.RequestType
-import com.telenordigital.ostelco.diameter.parser.CreditControlRequestParser
+import com.telenordigital.ostelco.diameter.parser.AvpParser
 import com.telenordigital.ostelco.diameter.util.DiameterUtilities
 import org.jdiameter.api.Avp
 import org.jdiameter.api.AvpSet
@@ -25,18 +26,15 @@ class CreditControlContext(
 
     private val LOG by logger()
 
-    val creditControlRequest: CreditControlRequest = CreditControlRequestParser(originalCreditControlRequest).parse()
+    val creditControlRequest: CreditControlRequest = AvpParser().parse(
+            CreditControlRequest::class,
+            originalCreditControlRequest.message.avps)
 
-    private var originHost: String? = null
-    private var originRealm: String? = null
-
-    fun setOriginHost(fqdn: String) {
-        originHost = fqdn
+    init {
+        DiameterUtilities().printAvps(originalCreditControlRequest.message.avps)
     }
-
-    fun setOriginRealm(realmName: String) {
-        originRealm = realmName
-    }
+    var originHost: String? = null
+    var originRealm: String? = null
 
     fun sendCreditControlAnswer(creditControlAnswer: CreditControlAnswer) {
         val cca = createCCA(creditControlAnswer)
@@ -77,12 +75,14 @@ class CreditControlContext(
 
                 val answerMSCC = ccaAvps.addGroupedAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL, true, false)
                 if (mscc.ratingGroup > 0) {
-                    answerMSCC.addAvp(Avp.RATING_GROUP, mscc.ratingGroup.toLong(), true, false, true)
+                    answerMSCC.addAvp(Avp.RATING_GROUP, mscc.ratingGroup, true, false, true)
                 }
+
                 if (mscc.serviceIdentifier > 0) {
-                    answerMSCC.addAvp(Avp.SERVICE_IDENTIFIER_CCA, mscc.serviceIdentifier, true, false)
+                    // This is a bug in jDiameter due to which this unsigned32 field has to be set as Int and not Long.
+                    answerMSCC.addAvp(Avp.SERVICE_IDENTIFIER_CCA, mscc.serviceIdentifier.toInt(), true, false)
                 }
-                if (mscc.grantedServiceUnit < 1 && originalCreditControlRequest.requestTypeAVPValue != RequestType.TERMINATION_REQUEST) {
+                if (mscc.granted.total < 1 && originalCreditControlRequest.requestTypeAVPValue != RequestType.TERMINATION_REQUEST) {
                     resultCode = CreditControlResultCode.DIAMETER_CREDIT_LIMIT_REACHED.value
                 }
 
@@ -90,7 +90,7 @@ class CreditControlContext(
                 gsuAvp.addAvp(Avp.CC_INPUT_OCTETS, 0L, true, false)
                 gsuAvp.addAvp(Avp.CC_OUTPUT_OCTETS, 0L, true, false)
 
-                if (originalCreditControlRequest.requestTypeAVPValue == RequestType.TERMINATION_REQUEST || mscc.grantedServiceUnit < 1) {
+                if (originalCreditControlRequest.requestTypeAVPValue == RequestType.TERMINATION_REQUEST || mscc.granted.total < 1) {
                     LOG.info("Terminate")
                     // Since this is a terminate reply no service is granted
                     gsuAvp.addAvp(Avp.CC_TIME, 0, true, false)
@@ -99,7 +99,7 @@ class CreditControlContext(
 
                     addFinalUnitAction(answerMSCC, mscc)
                 } else {
-                    gsuAvp.addAvp(Avp.CC_TOTAL_OCTETS, mscc.grantedServiceUnit, true, false)
+                    gsuAvp.addAvp(Avp.CC_TOTAL_OCTETS, mscc.granted.total, true, false)
                 }
 
                 answerMSCC.addAvp(Avp.RESULT_CODE, resultCode, true, false)
@@ -120,9 +120,10 @@ class CreditControlContext(
         // There seems to be a possibility to do some whitelisting here by using RESTRICT_ACCESS
         // We should have a look at: https://tools.ietf.org/html/rfc4006#section-5.6.3
 
-        if (mscc.finalUnitIndication != null) {
+        val origFinalUnitIndication: FinalUnitIndication? = mscc.finalUnitIndication
+        if (origFinalUnitIndication != null) {
             val finalUnitIndication = answerMSCC.addGroupedAvp(Avp.FINAL_UNIT_INDICATION, true, false)
-            finalUnitIndication.addAvp(Avp.FINAL_UNIT_ACTION, mscc.finalUnitIndication.finalUnitAction.ordinal, true, false)
+            finalUnitIndication.addAvp(Avp.FINAL_UNIT_ACTION, origFinalUnitIndication.finalUnitAction.ordinal, true, false)
         }
 
         //ToDo : Add support for the rest of the Final-Unit-Action

@@ -26,4 +26,14 @@ services:
     command: ["./wait_for_ocsgw.sh"]
 
   pubsub-emulator:
+    container_name: pubsub-emulator
     image: knarz/pubsub-emulator
+#    image: google/cloud-sdk
+#    command: ["gcloud", "beta", "emulators", "pubsub", "start"]
+
+#  datastore-emulator:
+#    container_name: datastore-emulator
+#    image: google/cloud-sdk
+#    environment:
+#      - GCLOUD_PROJECT=test
+#    command: ["gcloud", "beta", "emulators", "datastore", "start"]

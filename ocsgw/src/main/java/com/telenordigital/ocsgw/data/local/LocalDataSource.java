@@ -8,6 +8,7 @@ import com.telenordigital.ostelco.diameter.model.FinalUnitIndication;
 import com.telenordigital.ostelco.diameter.model.MultipleServiceCreditControl;
 import com.telenordigital.ostelco.diameter.model.RedirectAddressType;
 import com.telenordigital.ostelco.diameter.model.RedirectServer;
+import com.telenordigital.ostelco.diameter.model.ServiceUnit;
 import com.telenordigital.prime.ocs.CreditControlRequestType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,11 +57,9 @@ public class LocalDataSource implements DataSource {
             MultipleServiceCreditControl newMscc = new MultipleServiceCreditControl(
                     mscc.getRatingGroup(),
                     mscc.getServiceIdentifier(),
-                    mscc.getRequestedUnits(),
-                    mscc.getUsedUnitsTotal(),
-                    mscc.getUsedUnitsInput(),
-                    mscc.getUsedUnitsOutput(),
-                    mscc.getRequestedUnits(), // granted Service Unit
+                    new ServiceUnit(mscc.getRequested().getTotal(),0,0),
+                    new ServiceUnit(mscc.getUsed().getTotal(),mscc.getUsed().getInput(),mscc.getUsed().getOutput()),
+                    new ServiceUnit(mscc.getRequested().getTotal(),0,0), // granted Service Unit
                     mscc.getValidityTime(),
                     finalUnitIndication);
 

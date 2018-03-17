@@ -20,9 +20,9 @@ class DiameterUtilities {
 
     private fun printAvps(avps: AvpSet, indentation: String) {
         for (avp in avps) {
-            val name = AVP_DICTIONARY.getAvp(avp.code, avp.vendorId).name
+            val avpRep = AVP_DICTIONARY.getAvp(avp.code, avp.vendorId)
             val avpValue = getAvpValue(avp)
-            val avpLine = StringBuilder(indentation + avp.code + ": " + name)
+            val avpLine = StringBuilder("$indentation${avp.code} : ${avpRep.name} (${avpRep.type})")
             while (avpLine.length < 50) {
                 avpLine.append(if (avpLine.length % 2 == 0) "." else " ")
             }
