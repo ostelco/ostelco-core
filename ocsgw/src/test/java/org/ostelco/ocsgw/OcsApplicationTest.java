@@ -38,6 +38,8 @@ class OcsApplicationTest {
 
     private static final String DEST_REALM = "loltel";
     private static final String DEST_HOST = "ocs";
+    private static final String ORIGIN_HOST = "testclient";
+    private static final String ORIGIN_REALM = "loltel";
     private static final int COMMAND_CODE = 272; // Credit-Control
     private static final long APPLICATION_ID = 4L;  // Diameter Credit Control Application (4)
 
@@ -242,6 +244,14 @@ class OcsApplicationTest {
         } catch (AvpDataException e) {
             LOG.error("Failed to get Result-Code", e);
         }
+    }
+
+    //ToDo : Make this a real test case
+    @Test
+    public void testReAuthRequest() {
+        simpleCreditControlRequestInit();
+        OcsServer.getInstance().sendReAuthRequest(client.getSession().getSessionId(), ORIGIN_HOST, ORIGIN_REALM);
+        waitForAnswer();
     }
 
     // Currently not used in testing

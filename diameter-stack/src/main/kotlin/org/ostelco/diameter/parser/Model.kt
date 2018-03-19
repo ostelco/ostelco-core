@@ -1,7 +1,7 @@
 package org.ostelco.diameter.model
 
-import org.ostelco.diameter.parser.AvpField
 import org.jdiameter.api.Avp
+import org.ostelco.diameter.parser.AvpField
 
 data class CreditControlAnswer(val multipleServiceCreditControls: List<MultipleServiceCreditControl>)
 
@@ -11,6 +11,11 @@ enum class CreditControlResultCode(val value: Int) {
     DIAMETER_CREDIT_LIMIT_REACHED(4012),
     DIAMETER_RATING_FAILED(5031),
     DIAMETER_USER_UNKNOWN(5030)
+}
+
+enum class ReAuthRequestType {
+    AUTHORIZE_ONLY,
+    AUTHORIZE_AUTHENTICATE
 }
 
 // https://tools.ietf.org/html/rfc4006#page-71

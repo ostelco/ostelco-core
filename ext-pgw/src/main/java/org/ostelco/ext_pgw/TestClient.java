@@ -146,7 +146,7 @@ public class TestClient implements EventListener<Request, Answer> {
         try {
             //wait for connection to peer
             Thread.currentThread().sleep(5000);
-            this.session = this.factory.getNewSession("BadCustomSessionId;YesWeCanPassId;" + System.currentTimeMillis());
+            this.session = this.factory.getNewSession("BadCustomSessionId;" + System.currentTimeMillis() + ";0");
         } catch (InternalException | InterruptedException e) {
             log.error("Start Failed", e);
         }

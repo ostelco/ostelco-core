@@ -1,6 +1,10 @@
 package org.ostelco.ocsgw.data.local;
 
-import org.ostelco.ocsgw.data.DataSource;
+import org.jdiameter.api.IllegalDiameterStateException;
+import org.jdiameter.api.InternalException;
+import org.jdiameter.api.OverloadException;
+import org.jdiameter.api.RouteException;
+import org.jdiameter.api.cca.ServerCCASession;
 import org.ostelco.diameter.CreditControlContext;
 import org.ostelco.diameter.model.CreditControlAnswer;
 import org.ostelco.diameter.model.FinalUnitAction;
@@ -10,11 +14,14 @@ import org.ostelco.diameter.model.RedirectAddressType;
 import org.ostelco.diameter.model.RedirectServer;
 import org.ostelco.diameter.model.ServiceUnit;
 import org.ostelco.ocs.api.CreditControlRequestType;
+import org.ostelco.ocsgw.OcsServer;
+import org.ostelco.ocsgw.data.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+
 
 /**
  * Local DataSource that will accept all Credit Control Requests
@@ -34,7 +41,12 @@ public class LocalDataSource implements DataSource {
     public void handleRequest(CreditControlContext context) {
         CreditControlAnswer answer = createCreditControlAnswer(context);
         LOG.info("Sending Credit-Control-Answer");
-        context.sendCreditControlAnswer(answer);
+        try {
+            final ServerCCASession session = OcsServer.getInstance().getStack().getSession(context.getSessionId(), ServerCCASession.class);
+            session.sendCreditControlAnswer(context.createCCA(answer));
+        } catch (InternalException | IllegalDiameterStateException | RouteException | OverloadException e) {
+            LOG.error("Failed to send Credit-Control-Answer. SessionId : {}", context.getSessionId());
+        }
     }
 
     public CreditControlAnswer createCreditControlAnswer(CreditControlContext context) {

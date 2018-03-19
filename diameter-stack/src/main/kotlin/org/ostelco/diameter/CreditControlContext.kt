@@ -1,5 +1,12 @@
 package org.ostelco.diameter
 
+import org.jdiameter.api.Avp
+import org.jdiameter.api.AvpSet
+import org.jdiameter.api.InternalException
+import org.jdiameter.api.Request
+import org.jdiameter.api.ResultCode
+import org.jdiameter.api.cca.events.JCreditControlRequest
+import org.jdiameter.common.impl.app.cca.JCreditControlAnswerImpl
 import org.ostelco.diameter.model.CreditControlAnswer
 import org.ostelco.diameter.model.CreditControlRequest
 import org.ostelco.diameter.model.CreditControlResultCode
@@ -8,25 +15,19 @@ import org.ostelco.diameter.model.MultipleServiceCreditControl
 import org.ostelco.diameter.model.RequestType
 import org.ostelco.diameter.parser.AvpParser
 import org.ostelco.diameter.util.DiameterUtilities
-import org.jdiameter.api.Avp
-import org.jdiameter.api.AvpSet
-import org.jdiameter.api.IllegalDiameterStateException
-import org.jdiameter.api.InternalException
-import org.jdiameter.api.OverloadException
-import org.jdiameter.api.Request
-import org.jdiameter.api.ResultCode
-import org.jdiameter.api.RouteException
-import org.jdiameter.api.cca.ServerCCASession
-import org.jdiameter.api.cca.events.JCreditControlRequest
-import org.jdiameter.common.impl.app.cca.JCreditControlAnswerImpl
 
 class CreditControlContext(
-        val session: ServerCCASession,
+        val sessionId: String,
         val originalCreditControlRequest: JCreditControlRequest) {
 
     private val LOG by logger()
 
     private var sent: Boolean = false
+
+    val originHost:String = originalCreditControlRequest.originHost
+    val originRealm:String = originalCreditControlRequest.originRealm
+    val destinationHost:String = originalCreditControlRequest.destinationHost
+    val destinationRealm:String = originalCreditControlRequest.destinationRealm
 
     val creditControlRequest: CreditControlRequest = AvpParser().parse(
             CreditControlRequest::class,
@@ -35,30 +36,8 @@ class CreditControlContext(
     init {
         DiameterUtilities().printAvps(originalCreditControlRequest.message.avps)
     }
-    var originHost: String? = null
-    var originRealm: String? = null
 
-    fun sendCreditControlAnswer(creditControlAnswer: CreditControlAnswer) {
-        if (!sent) {
-            sent = true;
-            val cca = createCCA(creditControlAnswer)
-            if (cca != null) {
-                try {
-                    session.sendCreditControlAnswer(cca)
-                } catch (e: InternalException) {
-                    LOG.error("Failed to send Credit-Control-Answer", e)
-                } catch (e: IllegalDiameterStateException) {
-                    LOG.error("Failed to send Credit-Control-Answer", e)
-                } catch (e: RouteException) {
-                    LOG.error("Failed to send Credit-Control-Answer", e)
-                } catch (e: OverloadException) {
-                    LOG.error("Failed to send Credit-Control-Answer", e)
-                }
-            }
-        }
-    }
-
-    private fun createCCA(creditControlAnswer: CreditControlAnswer): JCreditControlAnswerImpl? {
+    fun createCCA(creditControlAnswer: CreditControlAnswer): JCreditControlAnswerImpl? {
 
         var answer: JCreditControlAnswerImpl? = null
         var resultCode = ResultCode.SUCCESS
@@ -71,8 +50,9 @@ class CreditControlContext(
             ccaAvps.addAvp(creditControlRequest.ccRequestType)
             ccaAvps.addAvp(creditControlRequest.ccRequestNumber)
 
-            ccaAvps.addAvp(Avp.ORIGIN_HOST, originHost, true, false, true)
-            ccaAvps.addAvp(Avp.ORIGIN_REALM, originRealm, true, false, true)
+            // We where the destination host/realm in the original request so in answer we switch
+            ccaAvps.addAvp(Avp.ORIGIN_HOST, originalCreditControlRequest.destinationHost, true, false, true)
+            ccaAvps.addAvp(Avp.ORIGIN_REALM, originalCreditControlRequest.destinationRealm, true, false, true)
 
             val multipleServiceCreditControls = creditControlAnswer.multipleServiceCreditControls
 
