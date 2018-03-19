@@ -13,9 +13,9 @@ enum class CreditControlResultCode(val value: Int) {
     DIAMETER_USER_UNKNOWN(5030)
 }
 
-enum class ReAuthRequestType(val value: Int) {
-    AUTHORIZE_ONLY(0),
-    AUTHORIZE_AUTHENTICATE(1)
+enum class ReAuthRequestType {
+    AUTHORIZE_ONLY,
+    AUTHORIZE_AUTHENTICATE
 }
 
 // https://tools.ietf.org/html/rfc4006#page-71

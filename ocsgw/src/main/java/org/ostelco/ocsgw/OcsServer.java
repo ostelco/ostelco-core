@@ -60,7 +60,7 @@ public class OcsServer {
                 for (Session session : ccaSession.getSessions() ) {
                     Request request = session.createRequest(258, ApplicationId.createByAuthAppId(4L), destinationRealm, destinationHost);
                     AvpSet avps = request.getAvps();
-                    avps.addAvp(Avp.RE_AUTH_REQUEST_TYPE, ReAuthRequestType.AUTHORIZE_ONLY.getValue(), true, false);
+                    avps.addAvp(Avp.RE_AUTH_REQUEST_TYPE, ReAuthRequestType.AUTHORIZE_ONLY.ordinal(), true, false);
                     //avps.addAvp(Avp.DESTINATION_HOST, destinationHost, true, false, true);
                     ReAuthRequest reAuthRequest = new ReAuthRequestImpl(request);
                     ccaSession.sendReAuthRequest(reAuthRequest);
