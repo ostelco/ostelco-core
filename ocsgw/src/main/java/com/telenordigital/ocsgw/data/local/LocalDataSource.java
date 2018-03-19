@@ -37,7 +37,7 @@ public class LocalDataSource implements DataSource {
         context.sendCreditControlAnswer(answer);
     }
 
-    private CreditControlAnswer createCreditControlAnswer(CreditControlContext context) {
+    public CreditControlAnswer createCreditControlAnswer(CreditControlContext context) {
 
         final List<MultipleServiceCreditControl> origMultipleServiceCreditControls = context.getCreditControlRequest().getMultipleServiceCreditControls();
         final List<MultipleServiceCreditControl> newMultipleServiceCreditControls = new ArrayList<>();
@@ -67,5 +67,9 @@ public class LocalDataSource implements DataSource {
         }
 
         return new CreditControlAnswer(newMultipleServiceCreditControls);
+    }
+
+    public boolean isBlocked(final String msisdn) {
+        return false;
     }
 }

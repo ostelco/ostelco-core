@@ -20,4 +20,11 @@ public interface DataSource {
      * @param context That holds the request and session
      */
     void handleRequest(CreditControlContext context);
+
+    /**
+     * Check if a subscriber is on the blockedlist
+     *
+     * @param msisdn Subscriber msisdn to check
+     */
+    boolean isBlocked(final String msisdn);
 }

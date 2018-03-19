@@ -26,6 +26,8 @@ class CreditControlContext(
 
     private val LOG by logger()
 
+    private var sent: Boolean = false
+
     val creditControlRequest: CreditControlRequest = AvpParser().parse(
             CreditControlRequest::class,
             originalCreditControlRequest.message.avps)
@@ -37,18 +39,21 @@ class CreditControlContext(
     var originRealm: String? = null
 
     fun sendCreditControlAnswer(creditControlAnswer: CreditControlAnswer) {
-        val cca = createCCA(creditControlAnswer)
-        if (cca != null) {
-            try {
-                session.sendCreditControlAnswer(cca)
-            } catch (e: InternalException) {
-                LOG.error("Failed to send Credit-Control-Answer", e)
-            } catch (e: IllegalDiameterStateException) {
-                LOG.error("Failed to send Credit-Control-Answer", e)
-            } catch (e: RouteException) {
-                LOG.error("Failed to send Credit-Control-Answer", e)
-            } catch (e: OverloadException) {
-                LOG.error("Failed to send Credit-Control-Answer", e)
+        if (!sent) {
+            sent = true;
+            val cca = createCCA(creditControlAnswer)
+            if (cca != null) {
+                try {
+                    session.sendCreditControlAnswer(cca)
+                } catch (e: InternalException) {
+                    LOG.error("Failed to send Credit-Control-Answer", e)
+                } catch (e: IllegalDiameterStateException) {
+                    LOG.error("Failed to send Credit-Control-Answer", e)
+                } catch (e: RouteException) {
+                    LOG.error("Failed to send Credit-Control-Answer", e)
+                } catch (e: OverloadException) {
+                    LOG.error("Failed to send Credit-Control-Answer", e)
+                }
             }
         }
     }

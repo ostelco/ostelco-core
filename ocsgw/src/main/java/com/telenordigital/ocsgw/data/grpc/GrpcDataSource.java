@@ -22,11 +22,7 @@ import org.jdiameter.api.cca.ServerCCASession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static com.telenordigital.ostelco.diameter.model.RequestType.EVENT_REQUEST;
 import static com.telenordigital.ostelco.diameter.model.RequestType.INITIAL_REQUEST;
@@ -34,13 +30,16 @@ import static com.telenordigital.ostelco.diameter.model.RequestType.TERMINATION_
 import static com.telenordigital.ostelco.diameter.model.RequestType.UPDATE_REQUEST;
 
 /**
- * Uses Grpc to fetch data remotely
+ * Uses gRPC to fetch data remotely
+ *
  */
 public class GrpcDataSource implements DataSource {
 
     private static final Logger LOG = LoggerFactory.getLogger(GrpcDataSource.class);
 
     private final OcsServiceGrpc.OcsServiceStub ocsServiceStub;
+
+    private final Set<String> blocked = new HashSet<>();
 
     private StreamObserver<CreditControlRequestInfo> creditControlRequest;
 
@@ -100,7 +99,7 @@ public class GrpcDataSource implements DataSource {
                                 LOG.warn("Missing CreditControlContext for req id " + answer.getRequestId());
                             }
                         } catch (Exception e) {
-                            LOG.error("fetchDataBucket failed ", e);
+                            LOG.error("Credit-Control-Request failed ", e);
                         }
                     }
                 });
@@ -159,7 +158,7 @@ public class GrpcDataSource implements DataSource {
                 LOG.error("What just happened", e);
             }
         } else {
-            LOG.warn("[!!] fetchDataBucketRequests is null");
+            LOG.warn("[!!] creditControlRequest is null");
         }
     }
 
@@ -194,8 +193,20 @@ public class GrpcDataSource implements DataSource {
         final LinkedList<MultipleServiceCreditControl> multipleServiceCreditControls = new LinkedList<>();
         for (com.telenordigital.prime.ocs.MultipleServiceCreditControl mscc : response.getMsccList()) {
             multipleServiceCreditControls.add(convertMSCC(mscc));
+            updateBlockedList(mscc, response.getMsisdn());
         }
         return new CreditControlAnswer(multipleServiceCreditControls);
+    }
+
+    private void updateBlockedList(com.telenordigital.prime.ocs.MultipleServiceCreditControl msccGRPC, String msisdn) {
+        // This suffers from the fact that one Credit-Control-Request can have multiple MSCC
+        if (msccGRPC != null && msisdn != null) {
+            if (msccGRPC.getGranted().getTotalOctets() < msccGRPC.getRequested().getTotalOctets()) {
+                blocked.add(msisdn);
+            } else {
+                blocked.remove(msisdn);
+            }
+        }
     }
 
     private MultipleServiceCreditControl convertMSCC(com.telenordigital.prime.ocs.MultipleServiceCreditControl msccGRPC) {
@@ -215,5 +226,10 @@ public class GrpcDataSource implements DataSource {
                 new LinkedList<>(),
                 fuiGrpc.getFilterIdList(),
                 new RedirectServer(RedirectAddressType.IPV4_ADDRESS));
+    }
+
+    @Override
+    public boolean isBlocked(final String msisdn) {
+        return blocked.contains(msisdn);
     }
 }
