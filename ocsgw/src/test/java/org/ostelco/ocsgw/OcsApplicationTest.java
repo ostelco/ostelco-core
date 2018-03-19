@@ -184,7 +184,7 @@ class OcsApplicationTest {
 
     }
 
-    //@Test
+    @Test
     @DisplayName("Simple Credit-Control-Request Init Update and Terminate")
     public void simpleCreditControlRequestInitUpdateAndTerminate() {
         simpleCreditControlRequestInit();
@@ -246,6 +246,7 @@ class OcsApplicationTest {
         }
     }
 
+    //ToDo : Make this a real test case
     @Test
     public void testReAuthRequest() {
         simpleCreditControlRequestInit();
