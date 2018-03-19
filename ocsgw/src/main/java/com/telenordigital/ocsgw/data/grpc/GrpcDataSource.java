@@ -201,7 +201,7 @@ public class GrpcDataSource implements DataSource {
     private void updateBlockedList(com.telenordigital.prime.ocs.MultipleServiceCreditControl msccGRPC, String msisdn) {
         // This suffers from the fact that one Credit-Control-Request can have multiple MSCC
         if (msccGRPC != null && msisdn != null) {
-            if (msccGRPC.getGranted().getTotalOctets() == 0) {
+            if (msccGRPC.getGranted().getTotalOctets() < msccGRPC.getRequested().getTotalOctets()) {
                 blocked.add(msisdn);
             } else {
                 blocked.remove(msisdn);
