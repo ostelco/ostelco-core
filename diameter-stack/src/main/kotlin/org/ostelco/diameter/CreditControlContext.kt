@@ -50,8 +50,9 @@ class CreditControlContext(
             ccaAvps.addAvp(creditControlRequest.ccRequestType)
             ccaAvps.addAvp(creditControlRequest.ccRequestNumber)
 
-            ccaAvps.addAvp(Avp.ORIGIN_HOST, originalCreditControlRequest.originHost, true, false, true)
-            ccaAvps.addAvp(Avp.ORIGIN_REALM, originalCreditControlRequest.originRealm, true, false, true)
+            // We where the destination host/realm in the original request so in answer we switch
+            ccaAvps.addAvp(Avp.ORIGIN_HOST, originalCreditControlRequest.destinationHost, true, false, true)
+            ccaAvps.addAvp(Avp.ORIGIN_REALM, originalCreditControlRequest.destinationRealm, true, false, true)
 
             val multipleServiceCreditControls = creditControlAnswer.multipleServiceCreditControls
 

@@ -14,9 +14,8 @@ enum class CreditControlResultCode(val value: Int) {
 }
 
 enum class ReAuthRequestType(val value: Int) {
-    AUTHENTICATE_ONLY(1),
-    AUTHORIZE_ONLY(2),
-    AUTHORIZE_AUTHENTICATE(3)
+    AUTHORIZE_ONLY(0),
+    AUTHORIZE_AUTHENTICATE(1)
 }
 
 // https://tools.ietf.org/html/rfc4006#page-71

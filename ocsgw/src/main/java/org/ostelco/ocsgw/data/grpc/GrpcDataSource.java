@@ -136,7 +136,7 @@ public class GrpcDataSource implements DataSource {
                     final String sessionId = sessionIdMap.get(activateResponse.getMsisdn());
                     if (ccrMap.containsKey(sessionId)) {
                         CreditControlContext context = ccrMap.get(sessionId);
-                        OcsServer.getInstance().sendReAuthRequest(sessionId, context.getOriginHost(), context.getOriginRealm(), context.getDestinationHost(), context.getDestinationRealm());
+                        OcsServer.getInstance().sendReAuthRequest(sessionId, context.getOriginHost(), context.getOriginRealm());
                     } else {
                         LOG.info("No context stored for sessionId {}", sessionId);
                     }

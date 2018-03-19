@@ -53,16 +53,15 @@ public class OcsServer {
 
     //https://tools.ietf.org/html/rfc4006#page-30
     //https://tools.ietf.org/html/rfc3588#page-101
-    public void sendReAuthRequest(final String sessionId, final String originHost, final String originRealm, final String destinationHost, final String destinationRealm) {
+    public void sendReAuthRequest(final String sessionId, final String destinationHost, final String destinationRealm) {
         try {
             ServerCCASessionImpl ccaSession = stack.getSession(sessionId, ServerCCASessionImpl.class);
             if (ccaSession != null && ccaSession.isValid()) {
                 for (Session session : ccaSession.getSessions() ) {
                     Request request = session.createRequest(258, ApplicationId.createByAuthAppId(4L), destinationRealm, destinationHost);
                     AvpSet avps = request.getAvps();
-                    avps.addAvp(Avp.RE_AUTH_REQUEST_TYPE, ReAuthRequestType.AUTHORIZE_ONLY.getValue());
-                    avps.addAvp(Avp.ORIGIN_HOST, originHost, true, false, true);
-                    avps.addAvp(Avp.ORIGIN_REALM, originRealm, true, false, true);
+                    avps.addAvp(Avp.RE_AUTH_REQUEST_TYPE, ReAuthRequestType.AUTHORIZE_ONLY.getValue(), true, false);
+                    //avps.addAvp(Avp.DESTINATION_HOST, destinationHost, true, false, true);
                     ReAuthRequest reAuthRequest = new ReAuthRequestImpl(request);
                     ccaSession.sendReAuthRequest(reAuthRequest);
                 }

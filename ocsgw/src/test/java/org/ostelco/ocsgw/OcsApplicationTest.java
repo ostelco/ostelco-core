@@ -249,7 +249,7 @@ class OcsApplicationTest {
     @Test
     public void testReAuthRequest() {
         simpleCreditControlRequestInit();
-        OcsServer.getInstance().sendReAuthRequest("MyCustomSessionId;529702405;0", ORIGIN_HOST, ORIGIN_REALM, DEST_HOST, DEST_REALM);
+        OcsServer.getInstance().sendReAuthRequest(client.getSession().getSessionId(), ORIGIN_HOST, ORIGIN_REALM);
         waitForAnswer();
     }
 
