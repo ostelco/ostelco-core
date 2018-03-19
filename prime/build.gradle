@@ -47,7 +47,7 @@ task integration(type: Test, description: 'Runs the integration tests.', group: 
 }
 
 shadowJar {
-    mainClassName = 'com.telenordigital.prime.PrimeApplication'
+    mainClassName = 'org.ostelco.prime.PrimeApplication'
     mergeServiceFiles()
     classifier = "uber"
     version = null
