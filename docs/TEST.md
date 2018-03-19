@@ -17,3 +17,18 @@
     
     gradle clean build  
     docker-compose up --build --abort-on-container-exit
+
+ * Testing with Google Cloud PubSub Emulator
+ 
+    * Install `gcloud` cli tool & basic components.
+    * Install `pubsub beta` emulator using `gcloud`.
+    * Init emulator and set ENV variable.
+    * Start emulator.
+    
+    
+    gcloud components list
+    gcloud components install pubsub-emulator
+    gcloud beta emulators pubsub env-init
+    gcloud beta emulators pubsub start
+
+

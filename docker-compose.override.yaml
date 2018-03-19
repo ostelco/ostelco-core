@@ -1,6 +1,11 @@
 version: "3.3"
 
 services:
+  prime:
+    environment:
+      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
+      - PUBSUB_PROJECT_ID=pantel-2decb
+
   ocsgw:
     networks:
       net:
@@ -19,3 +24,16 @@ services:
     depends_on:
       - "ocsgw"
     command: ["./wait_for_ocsgw.sh"]
+
+  pubsub-emulator:
+    container_name: pubsub-emulator
+    image: knarz/pubsub-emulator
+#    image: google/cloud-sdk
+#    command: ["gcloud", "beta", "emulators", "pubsub", "start"]
+
+#  datastore-emulator:
+#    container_name: datastore-emulator
+#    image: google/cloud-sdk
+#    environment:
+#      - GCLOUD_PROJECT=test
+#    command: ["gcloud", "beta", "emulators", "datastore", "start"]
