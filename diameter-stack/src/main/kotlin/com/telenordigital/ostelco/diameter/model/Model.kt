@@ -17,6 +17,12 @@ enum class FinalUnitAction {
     RESTRICT_ACCESS
 }
 
+enum class ReAuthRequestType(val value: Int) {
+    AUTHENTICATE_ONLY(1),
+    AUTHORIZE_ONLY(2),
+    AUTHORIZE_AUTHENTICATE(3)
+}
+
 data class FinalUnitIndication(
         val finalUnitAction: FinalUnitAction,
         val restrictionFilterRule: List<IPFilterRule>,

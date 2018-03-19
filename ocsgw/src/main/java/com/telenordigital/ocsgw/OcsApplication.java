@@ -131,10 +131,4 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
         LOG.info("Realm : " + stack.getMetaData().getLocalPeer().getRealmName());
         LOG.info("IP : " + Arrays.toString(stack.getMetaData().getLocalPeer().getIPAddresses()));
     }
-
-    public void testReAuthRequest() {
-        LOG.info("Before testReAuthRequest");
-        OcsServer.getInstance().sendReAuthRequest("+4790300158");
-        LOG.info("After testReAuthRequest");
-    }
 }

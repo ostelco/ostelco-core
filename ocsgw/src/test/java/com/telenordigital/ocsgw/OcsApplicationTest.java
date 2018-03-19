@@ -38,6 +38,8 @@ class OcsApplicationTest {
 
     private final String destRealm = "loltel";
     private final String destHost = "ocs";
+    private final String originHost = "testclient";
+    private final String originRealm = "loltel";
     private final int commandCode = 272; // Credit-Control
     private final long applicationID = 4L;  // Diameter Credit Control Application (4)
 
@@ -218,7 +220,8 @@ class OcsApplicationTest {
 
     @Test
     public void testReAuthRequest() {
-        application.testReAuthRequest();
+        simpleCreditControlRequestInit();
+        OcsServer.getInstance().sendReAuthRequest("MyCustomSessionId;529702405;0", originHost, originRealm, destHost, destRealm);
         waitForAnswer();
     }
 

@@ -1,5 +1,6 @@
 package com.telenordigital.ocsgw.data.grpc;
 
+import com.telenordigital.ocsgw.OcsServer;
 import com.telenordigital.ocsgw.data.DataSource;
 import com.telenordigital.ostelco.diameter.CreditControlContext;
 import com.telenordigital.ostelco.diameter.model.CreditControlAnswer;
@@ -12,6 +13,10 @@ import com.telenordigital.prime.ocs.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
+import org.jdiameter.api.IllegalDiameterStateException;
+import org.jdiameter.api.InternalException;
+import org.jdiameter.api.OverloadException;
+import org.jdiameter.api.RouteException;
 import org.jdiameter.api.cca.ServerCCASession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,12 +44,19 @@ public class GrpcDataSource implements DataSource {
 
     private StreamObserver<CreditControlRequestInfo> creditControlRequest;
 
-    private static final int MAX_ENTRIES = 300;
+    private static final int MAX_ENTRIES = 3000;
     private final LinkedHashMap<String, CreditControlContext> ccrMap = new LinkedHashMap<String, CreditControlContext>(MAX_ENTRIES, .75F) {
         protected boolean removeEldestEntry(Map.Entry<String, CreditControlContext> eldest) {
             return size() > MAX_ENTRIES;
         }
     };
+
+    private final LinkedHashMap<String, String> sessionIdMap = new LinkedHashMap<String, String>(MAX_ENTRIES, .75F) {
+        protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+            return size() > MAX_ENTRIES;
+        }
+    };
+
 
     private abstract class AbstactObserver<T> implements StreamObserver<T> {
         public final void onError(Throwable t) {
@@ -84,10 +96,14 @@ public class GrpcDataSource implements DataSource {
                             LOG.info("[<<] Received data bucket for " + answer.getMsisdn());
                             final CreditControlContext ccrContext = ccrMap.remove(answer.getRequestId());
                             if (ccrContext != null) {
-                                final ServerCCASession session = ccrContext.getSession();
-                                if (session != null) {
+                                final ServerCCASession session = OcsServer.getInstance().getStack().getSession(ccrContext.getSessionId(), ServerCCASession.class);
+                                if (session != null && session.isValid()) {
                                     CreditControlAnswer cca = createCreditControlAnswer(answer);
-                                    ccrContext.sendCreditControlAnswer(cca);
+                                    try {
+                                        session.sendCreditControlAnswer(ccrContext.createCCA(cca));
+                                    } catch (InternalException | IllegalDiameterStateException | RouteException | OverloadException e) {
+                                        LOG.error("Failed to send Credit-Control-Answer", e);
+                                    }
                                 } else {
                                     LOG.warn("No stored CCR or Session for " + answer.getRequestId());
                                 }
@@ -105,14 +121,25 @@ public class GrpcDataSource implements DataSource {
             @Override
             public void onNext(ActivateResponse activateResponse) {
                 LOG.info("Active user {}", activateResponse.getMsisdn());
+                if (sessionIdMap.containsKey(activateResponse.getMsisdn())) {
+                    final String sessionId = sessionIdMap.get(activateResponse.getMsisdn());
+                    if (ccrMap.containsKey(sessionId)) {
+                        CreditControlContext context = ccrMap.get(sessionId);
+                        OcsServer.getInstance().sendReAuthRequest(sessionId, context.getOriginHost(), context.getOriginRealm(), context.getDestinationHost(), context.getDestinationRealm());
+                    } else {
+                        LOG.info("No context stored for sessionId {}", sessionId);
+                    }
+                } else {
+                    LOG.info("No sessionId stored for msisdn : {}", activateResponse.getMsisdn());
+                }
             }
         });
     }
 
     @Override
     public void handleRequest(final CreditControlContext context) {
-        final String requestId = UUID.randomUUID().toString();
-        ccrMap.put(requestId, context);
+        ccrMap.put(context.getSessionId(), context);
+        sessionIdMap.put(context.getCreditControlRequest().getMsisdn(), context.getSessionId());
         LOG.info("[>>] Requesting bytes for {}", context.getCreditControlRequest().getMsisdn());
 
         if (creditControlRequest != null) {
@@ -136,7 +163,7 @@ public class GrpcDataSource implements DataSource {
                     );
                 }
                 creditControlRequest.onNext(builder
-                        .setRequestId(requestId)
+                        .setRequestId(context.getSessionId())
                         .setMsisdn(context.getCreditControlRequest().getMsisdn())
                         .setImsi(context.getCreditControlRequest().getImsi())
                         .setServiceInformation(
