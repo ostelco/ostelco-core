@@ -16,7 +16,7 @@ dependencies {
 }
 
 shadowJar {
-  mainClassName = 'com.telenordigital.ostelco.auth.AuthServerApplicationKt'
+  mainClassName = 'org.ostelco.auth.AuthServerApplicationKt'
   mergeServiceFiles()
   classifier = "uber"
   version = null

@@ -38,7 +38,7 @@ test {
 }
 
 shadowJar {
-    mainClassName = 'com.telenordigital.ocsgw.OcsApplication'
+    mainClassName = 'org.ostelco.ocsgw.OcsApplication'
     mergeServiceFiles()
     classifier = "uber"
     version = null
