@@ -13,8 +13,8 @@ import com.telenordigital.prime.ocs.CreditControlRequestInfo;
 import com.telenordigital.prime.ocs.CreditControlRequestType;
 import com.telenordigital.prime.ocs.OcsServiceGrpc;
 import com.telenordigital.prime.ocs.PsInformation;
-import com.telenordigital.prime.ocs.ServiceUnit;
 import com.telenordigital.prime.ocs.ServiceInfo;
+import com.telenordigital.prime.ocs.ServiceUnit;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -57,7 +57,7 @@ public class GrpcDataSource implements DataSource {
 
         public final void onCompleted() {
             // Nothing to do here
-            LOG.info("It seems to be completed") ;
+            LOG.info("It seems to be completed");
         }
     }
 
@@ -113,35 +113,47 @@ public class GrpcDataSource implements DataSource {
 
         if (creditControlRequest != null) {
             try {
-                CreditControlRequestInfo.Builder builder = CreditControlRequestInfo.newBuilder();
-                builder.setType(getRequestType(context));
+                CreditControlRequestInfo.Builder builder = CreditControlRequestInfo
+                        .newBuilder()
+                        .setType(getRequestType(context));
                 for (MultipleServiceCreditControl mscc : context.getCreditControlRequest().getMultipleServiceCreditControls()) {
                     builder.addMscc(com.telenordigital.prime.ocs.MultipleServiceCreditControl.newBuilder()
                             .setRequested(ServiceUnit.newBuilder()
                                     .setInputOctets(0L)
                                     .setOutputOctetes(0L)
-                                    .setTotalOctets(mscc.getRequestedUnits())
+                                    .setTotalOctets(mscc.getRequested().getTotal())
                                     .build())
                             .setUsed(ServiceUnit.newBuilder()
-                                    .setInputOctets(mscc.getUsedUnitsInput())
-                                    .setOutputOctetes(mscc.getUsedUnitsOutput())
-                                    .setTotalOctets(mscc.getUsedUnitsTotal())
+                                    .setInputOctets(mscc.getRequested().getInput())
+                                    .setOutputOctetes(mscc.getRequested().getOutput())
+                                    .setTotalOctets(mscc.getRequested().getTotal())
                                     .build())
                             .setRatingGroup(mscc.getRatingGroup())
                             .setServiceIdentifier(mscc.getServiceIdentifier())
                     );
                 }
-                creditControlRequest.onNext(builder
-                        .setRequestId(requestId)
+                builder.setRequestId(requestId)
                         .setMsisdn(context.getCreditControlRequest().getMsisdn())
-                        .setImsi(context.getCreditControlRequest().getImsi())
-                        .setServiceInformation(
-                                ServiceInfo.newBuilder().setPsInformation(
-                                        PsInformation.newBuilder()
-                                                .setCalledStationId(context.getCreditControlRequest().getServiceInformation().getPsInformation().getCalledStationId())
-                                                .setSgsnMccMnc(context.getCreditControlRequest().getServiceInformation().getPsInformation().getSgsnMncMcc())
-                                ).build())
-                        .build());
+                        .setImsi(context.getCreditControlRequest().getImsi());
+
+                if (context.getCreditControlRequest().getServiceInformation() != null) {
+                    final com.telenordigital.ostelco.diameter.model.PsInformation psInformation
+                            = context.getCreditControlRequest().getServiceInformation().getPsInformation();
+
+                    if (psInformation != null
+                            && psInformation.getCalledStationId() != null
+                            && psInformation.getSgsnMncMcc() != null) {
+
+                        builder.setServiceInformation(
+                                ServiceInfo.newBuilder()
+                                        .setPsInformation(PsInformation.newBuilder()
+                                                .setCalledStationId(psInformation.getCalledStationId())
+                                                .setSgsnMccMnc(psInformation.getSgsnMncMcc())
+                                                .build()).build());
+                    }
+                }
+                creditControlRequest.onNext(builder.build());
+
             } catch (Exception e) {
                 LOG.error("What just happened", e);
             }
@@ -179,7 +191,7 @@ public class GrpcDataSource implements DataSource {
         }
 
         final LinkedList<MultipleServiceCreditControl> multipleServiceCreditControls = new LinkedList<>();
-        for (com.telenordigital.prime.ocs.MultipleServiceCreditControl mscc : response.getMsccList() ) {
+        for (com.telenordigital.prime.ocs.MultipleServiceCreditControl mscc : response.getMsccList()) {
             multipleServiceCreditControls.add(convertMSCC(mscc));
             updateBlockedList(mscc, response.getMsisdn());
         }
@@ -200,12 +212,10 @@ public class GrpcDataSource implements DataSource {
     private MultipleServiceCreditControl convertMSCC(com.telenordigital.prime.ocs.MultipleServiceCreditControl msccGRPC) {
         return new MultipleServiceCreditControl(
                 msccGRPC.getRatingGroup(),
-                msccGRPC.getServiceIdentifier(),
-                0,
-                0,
-                0,
-                0,
-                msccGRPC.getGranted().getTotalOctets(),
+                (int) msccGRPC.getServiceIdentifier(),
+                new com.telenordigital.ostelco.diameter.model.ServiceUnit(),
+                new com.telenordigital.ostelco.diameter.model.ServiceUnit(),
+                new com.telenordigital.ostelco.diameter.model.ServiceUnit(msccGRPC.getGranted().getTotalOctets(), 0, 0),
                 msccGRPC.getValidityTime(),
                 convertFinalUnitIndication(msccGRPC.getFinalUnitIndication()));
     }

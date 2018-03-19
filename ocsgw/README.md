@@ -57,7 +57,7 @@ Check your local IP.
 
 Update /config/conf.client with your local IP
 
-docker run --rm -it --net=host -v ./testsuite/seagull/:/config -h ocs seagull
+docker run --rm -it --net=host -v ./seagull/:/config -h ocs seagull
 
 **Start OCSgw**
 
