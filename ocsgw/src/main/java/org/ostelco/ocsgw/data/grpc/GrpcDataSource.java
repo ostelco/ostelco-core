@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -44,7 +45,6 @@ import static org.ostelco.diameter.model.RequestType.UPDATE_REQUEST;
 
 /**
  * Uses gRPC to fetch data remotely
- *
  */
 public class GrpcDataSource implements DataSource {
 
@@ -154,21 +154,37 @@ public class GrpcDataSource implements DataSource {
                 CreditControlRequestInfo.Builder builder = CreditControlRequestInfo
                         .newBuilder()
                         .setType(getRequestType(context));
+
                 for (MultipleServiceCreditControl mscc : context.getCreditControlRequest().getMultipleServiceCreditControls()) {
-                    builder.addMscc(org.ostelco.ocs.api.MultipleServiceCreditControl.newBuilder()
-                            .setRequested(ServiceUnit.newBuilder()
-                                    .setInputOctets(0L)
-                                    .setOutputOctetes(0L)
-                                    .setTotalOctets(mscc.getRequested().get(0).getTotal())
-                                    .build())
-                            .setUsed(ServiceUnit.newBuilder()
-                                    .setInputOctets(mscc.getRequested().get(0).getInput())
-                                    .setOutputOctetes(mscc.getRequested().get(0).getOutput())
-                                    .setTotalOctets(mscc.getRequested().get(0).getTotal())
-                                    .build())
-                            .setRatingGroup(mscc.getRatingGroup())
-                            .setServiceIdentifier(mscc.getServiceIdentifier())
-                    );
+
+                    org.ostelco.ocs.api.MultipleServiceCreditControl.Builder protoMscc = org.ostelco.ocs.api.MultipleServiceCreditControl.newBuilder();
+
+                    if (!mscc.getRequested().isEmpty()) {
+
+                        org.ostelco.diameter.model.ServiceUnit requested = mscc.getRequested().get(0);
+
+                        protoMscc
+                                .setRequested(
+                                        ServiceUnit.newBuilder()
+                                                .setInputOctets(0L)
+                                                .setOutputOctetes(0L)
+                                                .setTotalOctets(requested.getTotal())
+                                                .build());
+                    }
+
+
+                    org.ostelco.diameter.model.ServiceUnit used = mscc.getUsed();
+
+                    builder.addMscc(
+                            protoMscc
+                                    .setUsed(
+                                            ServiceUnit.newBuilder()
+                                                    .setInputOctets(used.getInput())
+                                                    .setOutputOctetes(used.getOutput())
+                                                    .setTotalOctets(used.getTotal())
+                                                    .build())
+                                    .setRatingGroup(mscc.getRatingGroup())
+                                    .setServiceIdentifier(mscc.getServiceIdentifier()));
                 }
 
                 builder.setRequestId(context.getSessionId())
@@ -252,7 +268,7 @@ public class GrpcDataSource implements DataSource {
         return new MultipleServiceCreditControl(
                 msccGRPC.getRatingGroup(),
                 (int) msccGRPC.getServiceIdentifier(),
-                new org.ostelco.diameter.model.ServiceUnit(),
+                Collections.singletonList(new org.ostelco.diameter.model.ServiceUnit()),
                 new org.ostelco.diameter.model.ServiceUnit(),
                 new org.ostelco.diameter.model.ServiceUnit(msccGRPC.getGranted().getTotalOctets(), 0, 0),
                 msccGRPC.getValidityTime(),

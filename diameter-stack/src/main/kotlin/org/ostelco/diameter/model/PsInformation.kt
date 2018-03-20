@@ -1,7 +1,7 @@
 package org.ostelco.diameter.model
 
-import org.ostelco.diameter.parser.AvpField
 import org.jdiameter.api.Avp
+import org.ostelco.diameter.parser.AvpField
 import java.net.InetAddress
 
 // ToDo : Add the following AVPs
@@ -14,7 +14,7 @@ class PsInformation() {
 
     // 3GPP-PDP-Type ( Avp 3 )
     @AvpField(Avp.TGPP_PDP_TYPE)
-    var pdpType: Int? = null
+    var pdpType: ByteArray? = null
 
     // PDP-Address ( Avp 1227 )
     @AvpField(Avp.PDP_ADDRESS)
@@ -38,7 +38,7 @@ class PsInformation() {
 
     // 3GPP-NSAPI ( Avp 10 )
     @AvpField(10)
-    var nsapi: Int = 0
+    var nsapi: ByteArray? = null
 
     // Called-Station-Id ( Avp 30 ) - Absent in dictionary
     @AvpField(30)

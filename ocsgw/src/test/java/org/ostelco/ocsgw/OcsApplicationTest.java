@@ -1,12 +1,5 @@
 package org.ostelco.ocsgw;
 
-import org.ostelco.diameter.SessionContext;
-import org.ostelco.diameter.model.ReAuthRequestType;
-import org.ostelco.diameter.util.DiameterUtilities;
-import org.ostelco.ext_pgw.TestClient;
-import org.ostelco.diameter.model.FinalUnitAction;
-import org.ostelco.diameter.model.RequestType;
-import org.ostelco.diameter.model.SubscriptionType;
 import org.apache.log4j.Logger;
 import org.jdiameter.api.ApplicationId;
 import org.jdiameter.api.Avp;
@@ -19,6 +12,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.ostelco.diameter.SessionContext;
+import org.ostelco.diameter.model.FinalUnitAction;
+import org.ostelco.diameter.model.ReAuthRequestType;
+import org.ostelco.diameter.model.RequestType;
+import org.ostelco.diameter.model.SubscriptionType;
+import org.ostelco.ext_pgw.TestClient;
 
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
@@ -88,11 +87,13 @@ class OcsApplicationTest {
         ccrAvps.addAvp(Avp.CC_REQUEST_TYPE, RequestType.INITIAL_REQUEST, true, false);
         ccrAvps.addAvp(Avp.CC_REQUEST_NUMBER, 0, true, false);
 
-        AvpSet subscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164.ordinal());
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, MSISDN, false);
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI.ordinal());
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, IMSI, false);
+        AvpSet msisdnSubscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
+        msisdnSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164.ordinal());
+        msisdnSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, MSISDN, false);
+
+        AvpSet imsiSubscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
+        imsiSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI.ordinal());
+        imsiSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, IMSI, false);
 
         ccrAvps.addAvp(Avp.MULTIPLE_SERVICES_INDICATOR, 1);
 
@@ -145,11 +146,13 @@ class OcsApplicationTest {
         ccrAvps.addAvp(Avp.CC_REQUEST_TYPE, RequestType.UPDATE_REQUEST, true, false);
         ccrAvps.addAvp(Avp.CC_REQUEST_NUMBER, 1, true, false);
 
-        AvpSet subscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164.ordinal());
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, MSISDN, false);
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI.ordinal());
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, IMSI, false);
+        AvpSet msisdnSubscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
+        msisdnSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164.ordinal());
+        msisdnSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, MSISDN, false);
+
+        AvpSet imsiSubscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
+        imsiSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI.ordinal());
+        imsiSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, IMSI, false);
 
         ccrAvps.addAvp(Avp.MULTIPLE_SERVICES_INDICATOR, 1);
 
@@ -204,11 +207,13 @@ class OcsApplicationTest {
         ccrAvps.addAvp(Avp.CC_REQUEST_TYPE, RequestType.TERMINATION_REQUEST, true, false);
         ccrAvps.addAvp(Avp.CC_REQUEST_NUMBER, 2, true, false);
 
-        AvpSet subscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164.ordinal());
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, MSISDN, false);
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI.ordinal());
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, IMSI, false);
+        AvpSet msisdnSubscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
+        msisdnSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164.ordinal());
+        msisdnSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, MSISDN, false);
+
+        AvpSet imsiSubscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
+        imsiSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI.ordinal());
+        imsiSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, IMSI, false);
 
         ccrAvps.addAvp(Avp.TERMINATION_CAUSE, 1, true, false); // 1 = DIAMETER_LOGOUT
 
@@ -283,11 +288,13 @@ class OcsApplicationTest {
         ccrAvps.addAvp(Avp.CC_REQUEST_TYPE, RequestType.INITIAL_REQUEST, true, false);
         ccrAvps.addAvp(Avp.CC_REQUEST_NUMBER, 0, true, false);
 
-        AvpSet subscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164.ordinal());
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, "4790300123", false);
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI.ordinal());
-        subscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, IMSI, false);
+        AvpSet msisdnSubscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
+        msisdnSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164.ordinal());
+        msisdnSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, MSISDN, false);
+
+        AvpSet imsiSubscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
+        imsiSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI.ordinal());
+        imsiSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, IMSI, false);
 
         ccrAvps.addAvp(Avp.MULTIPLE_SERVICES_INDICATOR, 1);
 

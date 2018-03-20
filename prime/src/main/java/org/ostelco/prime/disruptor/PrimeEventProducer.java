@@ -104,6 +104,12 @@ public final class PrimeEventProducer {
     public void injectCreditControlRequestIntoRingbuffer(
             final CreditControlRequestInfo request,
             final String streamId) {
+
+        if (request.getMsccList().isEmpty()) {
+            LOG.error("Received empty list");
+            return;
+        }
+
         injectIntoRingbuffer(CREDIT_CONTROL_REQUEST,
                 request.getMsisdn(),
                 request.getMscc(0).getRequested().getTotalOctets(),

@@ -88,10 +88,10 @@ class MultipleServiceCreditControl() {
 
     var finalUnitIndication: FinalUnitIndication? = null
 
-    constructor(ratingGroup: Long, serviceIdentifier: Long, requested: ServiceUnit, used: ServiceUnit, granted: ServiceUnit, validityTime: Int, finalUnitIndication: FinalUnitIndication?) : this() {
+    constructor(ratingGroup: Long, serviceIdentifier: Long, requested: List<ServiceUnit>, used: ServiceUnit, granted: ServiceUnit, validityTime: Int, finalUnitIndication: FinalUnitIndication?) : this() {
         this.ratingGroup = ratingGroup
         this.serviceIdentifier = serviceIdentifier
-        this.requested = listOf(requested)
+        this.requested = requested
         this.used = used
         this.granted = granted
         this.validityTime = validityTime
