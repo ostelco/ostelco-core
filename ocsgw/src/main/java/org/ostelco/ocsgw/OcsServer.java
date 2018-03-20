@@ -16,6 +16,7 @@ import org.jdiameter.api.cca.events.JCreditControlRequest;
 import org.jdiameter.common.impl.app.auth.ReAuthRequestImpl;
 import org.jdiameter.server.impl.app.cca.ServerCCASessionImpl;
 import org.ostelco.diameter.CreditControlContext;
+import org.ostelco.diameter.SessionContext;
 import org.ostelco.diameter.model.ReAuthRequestType;
 import org.ostelco.ocsgw.data.DataSource;
 import org.ostelco.ocsgw.data.DataSourceType;
@@ -53,20 +54,24 @@ public class OcsServer {
 
     //https://tools.ietf.org/html/rfc4006#page-30
     //https://tools.ietf.org/html/rfc3588#page-101
-    public void sendReAuthRequest(final String sessionId, final String destinationHost, final String destinationRealm) {
+    public void sendReAuthRequest(final SessionContext sessionContext) {
         try {
-            ServerCCASessionImpl ccaSession = stack.getSession(sessionId, ServerCCASessionImpl.class);
+            ServerCCASessionImpl ccaSession = stack.getSession(sessionContext.getSessionId(), ServerCCASessionImpl.class);
             if (ccaSession != null && ccaSession.isValid()) {
                 // ToDo: Not sure why there are multiple sessions for one session Id.
                 for (Session session : ccaSession.getSessions()) {
-                    Request request = session.createRequest(258, ApplicationId.createByAuthAppId(4L), destinationRealm, destinationHost);
+                    Request request = session.createRequest(258,
+                            ApplicationId.createByAuthAppId(4L),
+                            sessionContext.getOriginRealm(),
+                            sessionContext.getOriginHost()
+                    );
                     AvpSet avps = request.getAvps();
                     avps.addAvp(Avp.RE_AUTH_REQUEST_TYPE, ReAuthRequestType.AUTHORIZE_ONLY.ordinal(), true, false);
                     ReAuthRequest reAuthRequest = new ReAuthRequestImpl(request);
                     ccaSession.sendReAuthRequest(reAuthRequest);
                 }
             } else {
-                LOG.info("No session with ID {}", sessionId);
+                LOG.info("No session with ID {}", sessionContext.getSessionId());
             }
         } catch (InternalException | IllegalDiameterStateException | RouteException | OverloadException e) {
             LOG.warn("Failed to send Re-Auth Request", e);

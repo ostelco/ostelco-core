@@ -1,5 +1,6 @@
 package org.ostelco.ocsgw;
 
+import org.ostelco.diameter.SessionContext;
 import org.ostelco.ext_pgw.TestClient;
 import org.ostelco.diameter.model.FinalUnitAction;
 import org.ostelco.diameter.model.RequestType;
@@ -250,7 +251,7 @@ class OcsApplicationTest {
     @Test
     public void testReAuthRequest() {
         simpleCreditControlRequestInit();
-        OcsServer.getInstance().sendReAuthRequest(client.getSession().getSessionId(), ORIGIN_HOST, ORIGIN_REALM);
+        OcsServer.getInstance().sendReAuthRequest(new SessionContext(client.getSession().getSessionId(), ORIGIN_HOST, ORIGIN_REALM));
         waitForAnswer();
     }
 

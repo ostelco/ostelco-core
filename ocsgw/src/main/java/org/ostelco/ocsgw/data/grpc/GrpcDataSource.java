@@ -9,6 +9,7 @@ import org.jdiameter.api.OverloadException;
 import org.jdiameter.api.RouteException;
 import org.jdiameter.api.cca.ServerCCASession;
 import org.ostelco.diameter.CreditControlContext;
+import org.ostelco.diameter.SessionContext;
 import org.ostelco.diameter.model.CreditControlAnswer;
 import org.ostelco.diameter.model.FinalUnitAction;
 import org.ostelco.diameter.model.FinalUnitIndication;
@@ -62,8 +63,8 @@ public class GrpcDataSource implements DataSource {
         }
     };
 
-    private final LinkedHashMap<String, String> sessionIdMap = new LinkedHashMap<String, String>(MAX_ENTRIES, .75F) {
-        protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+    private final LinkedHashMap<String, SessionContext> sessionIdMap = new LinkedHashMap<String, SessionContext>(MAX_ENTRIES, .75F) {
+        protected boolean removeEldestEntry(Map.Entry<String, SessionContext> eldest) {
             return size() > MAX_ENTRIES;
         }
     };
@@ -133,15 +134,10 @@ public class GrpcDataSource implements DataSource {
             public void onNext(ActivateResponse activateResponse) {
                 LOG.info("Active user {}", activateResponse.getMsisdn());
                 if (sessionIdMap.containsKey(activateResponse.getMsisdn())) {
-                    final String sessionId = sessionIdMap.get(activateResponse.getMsisdn());
-                    if (ccrMap.containsKey(sessionId)) {
-                        CreditControlContext context = ccrMap.get(sessionId);
-                        OcsServer.getInstance().sendReAuthRequest(sessionId, context.getOriginHost(), context.getOriginRealm());
-                    } else {
-                        LOG.info("No context stored for sessionId {}", sessionId);
-                    }
+                    final SessionContext sessionContext = sessionIdMap.get(activateResponse.getMsisdn());
+                    OcsServer.getInstance().sendReAuthRequest(sessionContext);
                 } else {
-                    LOG.info("No sessionId stored for msisdn : {}", activateResponse.getMsisdn());
+                    LOG.info("No session context stored for msisdn : {}", activateResponse.getMsisdn());
                 }
             }
         });
@@ -150,7 +146,7 @@ public class GrpcDataSource implements DataSource {
     @Override
     public void handleRequest(final CreditControlContext context) {
         ccrMap.put(context.getSessionId(), context);
-        sessionIdMap.put(context.getCreditControlRequest().getMsisdn(), context.getSessionId());
+        sessionIdMap.put(context.getCreditControlRequest().getMsisdn(), new SessionContext(context.getSessionId(), context.getOriginHost(), context.getOriginRealm()));
         LOG.info("[>>] Requesting bytes for {}", context.getCreditControlRequest().getMsisdn());
 
         if (creditControlRequest != null) {
