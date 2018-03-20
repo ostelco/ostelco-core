@@ -1,10 +1,26 @@
 package org.ostelco.diameter.parser
 
-import org.ostelco.diameter.logger
 import org.jdiameter.api.Avp
 import org.jdiameter.api.AvpSet
-import org.mobicents.diameter.dictionary.AvpDictionary
-import org.mobicents.diameter.dictionary.AvpRepresentation
+import org.ostelco.diameter.logger
+import org.ostelco.diameter.util.AvpDictionary
+import org.ostelco.diameter.util.AvpType.ADDRESS
+import org.ostelco.diameter.util.AvpType.APP_ID
+import org.ostelco.diameter.util.AvpType.FLOAT32
+import org.ostelco.diameter.util.AvpType.FLOAT64
+import org.ostelco.diameter.util.AvpType.GROUPED
+import org.ostelco.diameter.util.AvpType.IDENTITY
+import org.ostelco.diameter.util.AvpType.INTEGER32
+import org.ostelco.diameter.util.AvpType.INTEGER64
+import org.ostelco.diameter.util.AvpType.OCTET_STRING
+import org.ostelco.diameter.util.AvpType.RAW
+import org.ostelco.diameter.util.AvpType.RAW_DATA
+import org.ostelco.diameter.util.AvpType.TIME
+import org.ostelco.diameter.util.AvpType.UNSIGNED32
+import org.ostelco.diameter.util.AvpType.UNSIGNED64
+import org.ostelco.diameter.util.AvpType.URI
+import org.ostelco.diameter.util.AvpType.UTF8STRING
+import org.ostelco.diameter.util.AvpType.VENDOR_ID
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.full.createInstance
@@ -13,10 +29,6 @@ import kotlin.reflect.full.declaredMemberProperties
 class AvpParser {
 
     private val LOG by logger()
-
-    init {
-        AvpDictionary.INSTANCE.parseDictionary("config/dictionary.xml")
-    }
 
     /**
      * @param kclazz Kotlin class representing the data type of the AVP set getting parsed.
@@ -46,18 +58,18 @@ class AvpParser {
                 // filter out fields which are not annotated
                 .filter {
                     it.isAnnotationPresent(AvpField::class.java)
-                            || it.isAnnotationPresent(AvpGroup::class.java)
+                            || it.isAnnotationPresent(AvpList::class.java)
                 }
                 .forEach {
                     // Get numeric Avp ID from annotation on the field
                     val avpId: Int? = it.getAnnotation(AvpField::class.java)?.avpId
-                            ?: it.getAnnotation(AvpGroup::class.java)?.avpId
+                            ?: it.getAnnotation(AvpList::class.java)?.avpId
 
                     LOG.trace("${it.name} id: ($avpId)")
                     if (avpId != null) {
 
                         // Check the data type of the field
-                        val collectionType: KClass<*>? = it.getAnnotation(AvpGroup::class.java)?.kclass
+                        val collectionType: KClass<*>? = it.getAnnotation(AvpList::class.java)?.kclass
 
                         // Get Avp Object from the Set.
                         // Avp object has AvpCode, Vendor ID, and a value which will be set on object field.
@@ -154,41 +166,30 @@ class AvpParser {
 
     private fun getAvpValue(kclazz: KClass<*>, avp: Avp): Any? {
 
-        // We need to know the data type of the given AVP so that we call right method to fetch the value.
-        // Metadata about AVP is lookup into a dictionary.
-        var avpRep: AvpRepresentation? = AvpDictionary.INSTANCE.getAvp(avp.code, avp.vendorId)
-        // If the lookup returns null,
-        if (avpRep == null) {
-            avpRep = AvpDictionary.INSTANCE.getAvp(avp.code)
-        }
-        if (avpRep == null) {
-            LOG.error("AVP ${avp.code} missing in dictionary")
-            return null
-        }
-
-        val type = avpRep.type
+        val type = AvpDictionary.getType(avp)
 
         LOG.trace("Type: $type")
+
+        if (type == null) {
+            LOG.error("Unknown type: $type for avpCode: ${avp.code}")
+            return avp.utF8String
+        }
         return when (type) {
-            "Address" -> avp.address
-            "Identity" -> avp.diameterIdentity
-            "URI" -> avp.diameterURI
-            "Float32" -> avp.float32
-            "Float64" -> avp.float64
-            "Grouped" -> parse(kclazz, avp.grouped)
-            "Integer32" -> avp.integer32
-            "Integer64" -> avp.integer64
-            "OctetString" -> avp.octetString
-            "Raw" -> avp.raw
-            "RawData" -> avp.rawData
-            "Time" -> avp.time
-            "Unsigned32" -> avp.unsigned32
-            "Unsigned64" -> avp.unsigned64
-            "UTF8String" -> avp.utF8String
-            else -> {
-                LOG.error("Unknown type: $type for avpCode: ${avp.code}")
-                avp.utF8String
-            }
+            ADDRESS -> avp.address
+            IDENTITY -> avp.diameterIdentity
+            URI -> avp.diameterURI
+            FLOAT32 -> avp.float32
+            FLOAT64 -> avp.float64
+            GROUPED -> parse(kclazz, avp.grouped)
+            INTEGER32, APP_ID -> avp.integer32
+            INTEGER64 -> avp.integer64
+            OCTET_STRING -> avp.octetString
+            RAW -> avp.raw
+            RAW_DATA -> avp.rawData
+            TIME -> avp.time
+            UNSIGNED32, VENDOR_ID -> avp.unsigned32
+            UNSIGNED64 -> avp.unsigned64
+            UTF8STRING -> avp.utF8String
         }
     }
 }

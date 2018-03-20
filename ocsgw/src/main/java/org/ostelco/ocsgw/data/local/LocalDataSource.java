@@ -66,12 +66,24 @@ public class LocalDataSource implements DataSource {
                         new RedirectServer(RedirectAddressType.IPV4_ADDRESS));
             }
 
+            final List<ServiceUnit> newRequested = new ArrayList<>();
+            for (ServiceUnit requested : mscc.getRequested()) {
+                newRequested.add(new ServiceUnit(requested.getTotal(), 0, 0));
+            }
+
+            final ServiceUnit granted;
+            if (!newRequested.isEmpty()) {
+                granted = newRequested.get(0);
+            } else {
+                granted = new ServiceUnit(0, 0, 0);
+            }
+
             MultipleServiceCreditControl newMscc = new MultipleServiceCreditControl(
                     mscc.getRatingGroup(),
                     mscc.getServiceIdentifier(),
-                    new ServiceUnit(mscc.getRequested().getTotal(),0,0),
-                    new ServiceUnit(mscc.getUsed().getTotal(),mscc.getUsed().getInput(),mscc.getUsed().getOutput()),
-                    new ServiceUnit(mscc.getRequested().getTotal(),0,0), // granted Service Unit
+                    newRequested,
+                    new ServiceUnit(mscc.getUsed().getTotal(), mscc.getUsed().getInput(), mscc.getUsed().getOutput()),
+                    granted,
                     mscc.getValidityTime(),
                     finalUnitIndication);
 
