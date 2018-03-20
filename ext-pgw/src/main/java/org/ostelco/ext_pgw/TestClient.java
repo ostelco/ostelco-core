@@ -6,6 +6,7 @@ import org.jdiameter.api.*;
 import org.jdiameter.api.cca.events.JCreditControlRequest;
 import org.jdiameter.server.impl.StackImpl;
 import org.jdiameter.server.impl.helpers.XMLConfiguration;
+import org.ostelco.diameter.util.DiameterUtilities;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,7 +32,8 @@ public class TestClient implements EventListener<Request, Answer> {
     private Stack stack;
     private SessionFactory factory;
     private Session session;  // session used as handle for communication
-    private boolean finished = false;  //boolean telling if we finished our interaction
+    private boolean receivedAnswer = false;  //boolean telling if we received an answer
+    private boolean receivedRequest = false;  //boolean telling if we received an answer
 
     static {
         //configure logging.
@@ -75,11 +77,13 @@ public class TestClient implements EventListener<Request, Answer> {
 
             printApplicationInfo();
 
-            //Register network req listener, even though we wont receive requests
-            //this has to be done to inform stack that we support application
+            //Register network req listener for Re-Auth-Requests
             Network network = stack.unwrap(Network.class);
             network.addNetworkReqListener(request -> {
-                //this wont be called.
+                LOG.info("Got a request");
+                resultAvps = request.getAvps();
+                new DiameterUtilities().printAvps(resultAvps);
+                receivedRequest = true;
                 return null;
             }, this.authAppId); //passing our example app id.
 
@@ -135,7 +139,15 @@ public class TestClient implements EventListener<Request, Answer> {
     }
 
     public boolean isAnswerReceived() {
-        return this.finished;
+        return this.receivedAnswer;
+    }
+
+    public void initRequestTest() {
+        this.receivedRequest = false;
+    }
+
+    public boolean isRequestReceived() {
+        return this.receivedRequest;
     }
 
     public Session getSession() {
@@ -153,13 +165,13 @@ public class TestClient implements EventListener<Request, Answer> {
     }
 
     public void sendNextRequest() {
-        finished = false;
+        receivedAnswer = false;
         try {
             this.session.send(request.getMessage(), this);
             dumpMessage(request.getMessage(), true); //dump info on console
         } catch (InternalException | IllegalDiameterStateException | RouteException| OverloadException e) {
             LOG.error("Failed to send request", e);
-            finished = true;
+            receivedAnswer = true;
         }
     }
 
@@ -168,7 +180,7 @@ public class TestClient implements EventListener<Request, Answer> {
         dumpMessage(answer,false);
         resultAvps = answer.getAvps();
         resultCodeAvp = answer.getResultCode();
-        this.finished = true;
+        this.receivedAnswer = true;
     }
 
     @Override

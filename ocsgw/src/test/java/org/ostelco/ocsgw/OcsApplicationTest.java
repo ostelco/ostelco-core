@@ -1,6 +1,8 @@
 package org.ostelco.ocsgw;
 
 import org.ostelco.diameter.SessionContext;
+import org.ostelco.diameter.model.ReAuthRequestType;
+import org.ostelco.diameter.util.DiameterUtilities;
 import org.ostelco.ext_pgw.TestClient;
 import org.ostelco.diameter.model.FinalUnitAction;
 import org.ostelco.diameter.model.RequestType;
@@ -37,10 +39,10 @@ class OcsApplicationTest {
 
     private static final int VENDOR_ID_3GPP = 10415;
 
-    private static final String DEST_REALM = "loltel";
-    private static final String DEST_HOST = "ocs";
-    private static final String ORIGIN_HOST = "testclient";
-    private static final String ORIGIN_REALM = "loltel";
+    private static final String OCS_REALM = "loltel";
+    private static final String OCS_HOST = "ocs";
+    private static final String PGW_HOST = "testclient";
+    private static final String PGW_REALM = "loltel";
     private static final int COMMAND_CODE = 272; // Credit-Control
     private static final long APPLICATION_ID = 4L;  // Diameter Credit Control Application (4)
 
@@ -78,8 +80,8 @@ class OcsApplicationTest {
         Request request = client.getSession().createRequest(
                 COMMAND_CODE,
                 ApplicationId.createByAuthAppId(APPLICATION_ID),
-                DEST_REALM,
-                DEST_HOST
+                OCS_REALM,
+                OCS_HOST
         );
 
         AvpSet ccrAvps = request.getAvps();
@@ -135,8 +137,8 @@ class OcsApplicationTest {
         Request request = client.getSession().createRequest(
                 COMMAND_CODE,
                 ApplicationId.createByAuthAppId(APPLICATION_ID),
-                DEST_REALM,
-                DEST_HOST
+                OCS_REALM,
+                OCS_HOST
         );
 
         AvpSet ccrAvps = request.getAvps();
@@ -194,8 +196,8 @@ class OcsApplicationTest {
         Request request = client.getSession().createRequest(
                 COMMAND_CODE,
                 ApplicationId.createByAuthAppId(APPLICATION_ID),
-                DEST_REALM,
-                DEST_HOST
+                OCS_REALM,
+                OCS_HOST
         );
 
         AvpSet ccrAvps = request.getAvps();
@@ -247,12 +249,23 @@ class OcsApplicationTest {
         }
     }
 
-    //ToDo : Make this a real test case
     @Test
     public void testReAuthRequest() {
         simpleCreditControlRequestInit();
-        OcsServer.getInstance().sendReAuthRequest(new SessionContext(client.getSession().getSessionId(), ORIGIN_HOST, ORIGIN_REALM));
-        waitForAnswer();
+        client.initRequestTest();
+        OcsServer.getInstance().sendReAuthRequest(new SessionContext(client.getSession().getSessionId(), PGW_HOST, PGW_REALM));
+        waitForRequest();
+        try {
+            AvpSet resultAvps = client.getResultAvps();
+            assertEquals(ReAuthRequestType.AUTHORIZE_ONLY.ordinal(), resultAvps.getAvp(Avp.RE_AUTH_REQUEST_TYPE).getInteger32());
+            assertEquals(PGW_HOST, resultAvps.getAvp(Avp.DESTINATION_HOST).getUTF8String());
+            assertEquals(PGW_REALM, resultAvps.getAvp(Avp.DESTINATION_REALM).getUTF8String());
+            assertEquals(OCS_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String());
+            assertEquals(OCS_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String());
+
+        } catch (AvpDataException e) {
+            LOG.error("Failed to get Avp", e);
+        }
     }
 
     // Currently not used in testing
@@ -262,8 +275,8 @@ class OcsApplicationTest {
         Request request = client.getSession().createRequest(
                 COMMAND_CODE,
                 ApplicationId.createByAuthAppId(APPLICATION_ID),
-                DEST_REALM,
-                DEST_HOST
+                OCS_REALM,
+                OCS_HOST
         );
 
         AvpSet ccrAvps = request.getAvps();
@@ -349,5 +362,18 @@ class OcsApplicationTest {
             }
         }
         assertEquals(true, client.isAnswerReceived());
+    }
+
+    private void waitForRequest() {
+        int i = 0;
+        while (!client.isRequestReceived() && i<10) {
+            i++;
+            try {
+                Thread.currentThread().sleep(500);
+            } catch (InterruptedException e) {
+                LOG.error("Start Failed", e);
+            }
+        }
+        assertEquals(true, client.isRequestReceived());
     }
 }
