@@ -1,0 +1,13 @@
+dispatch:
+  # Default service serves the typical web resources and all static resources.
+  - url: "*/favicon.ico"
+    service: default
+  - url: "pantel-2decb.appspot.com/testRequest"
+    service: default
+  - url: "pantel-2decb.appspot.com/"
+    service: default
+
+  # Default service serves simple hostname request.
+  - url: "pantel-2decb.appspot.com/*"
+    service: uid-manager
+
