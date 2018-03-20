@@ -18,7 +18,8 @@ import org.ostelco.diameter.util.DiameterUtilities
 
 class CreditControlContext(
         val sessionId: String,
-        val originalCreditControlRequest: JCreditControlRequest) {
+        val originalCreditControlRequest: JCreditControlRequest
+        ) {
 
     private val LOG by logger()
 
@@ -26,8 +27,6 @@ class CreditControlContext(
 
     val originHost:String = originalCreditControlRequest.originHost
     val originRealm:String = originalCreditControlRequest.originRealm
-    val destinationHost:String = originalCreditControlRequest.destinationHost
-    val destinationRealm:String = originalCreditControlRequest.destinationRealm
 
     val creditControlRequest: CreditControlRequest = AvpParser().parse(
             CreditControlRequest::class,
@@ -50,9 +49,8 @@ class CreditControlContext(
             ccaAvps.addAvp(creditControlRequest.ccRequestType)
             ccaAvps.addAvp(creditControlRequest.ccRequestNumber)
 
-            // We where the destination host/realm in the original request so in answer we switch
-            ccaAvps.addAvp(Avp.ORIGIN_HOST, originalCreditControlRequest.destinationHost, true, false, true)
-            ccaAvps.addAvp(Avp.ORIGIN_REALM, originalCreditControlRequest.destinationRealm, true, false, true)
+            ccaAvps.addAvp(Avp.ORIGIN_HOST, originHost, true, false, true)
+            ccaAvps.addAvp(Avp.ORIGIN_REALM, originRealm, true, false, true)
 
             val multipleServiceCreditControls = creditControlAnswer.multipleServiceCreditControls
 
