@@ -57,11 +57,11 @@ public class OcsServer {
         try {
             ServerCCASessionImpl ccaSession = stack.getSession(sessionId, ServerCCASessionImpl.class);
             if (ccaSession != null && ccaSession.isValid()) {
-                for (Session session : ccaSession.getSessions() ) {
+                // ToDo: Not sure why there are multiple sessions for one session Id.
+                for (Session session : ccaSession.getSessions()) {
                     Request request = session.createRequest(258, ApplicationId.createByAuthAppId(4L), destinationRealm, destinationHost);
                     AvpSet avps = request.getAvps();
                     avps.addAvp(Avp.RE_AUTH_REQUEST_TYPE, ReAuthRequestType.AUTHORIZE_ONLY.ordinal(), true, false);
-                    //avps.addAvp(Avp.DESTINATION_HOST, destinationHost, true, false, true);
                     ReAuthRequest reAuthRequest = new ReAuthRequestImpl(request);
                     ccaSession.sendReAuthRequest(reAuthRequest);
                 }
@@ -69,7 +69,7 @@ public class OcsServer {
                 LOG.info("No session with ID {}", sessionId);
             }
         } catch (InternalException | IllegalDiameterStateException | RouteException | OverloadException e) {
-            LOG.warn("Failed to send Re-Auth Request");
+            LOG.warn("Failed to send Re-Auth Request", e);
         }
     }
 

@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 public class TestClient implements EventListener<Request, Answer> {
 
-    private static final Logger log = Logger.getLogger(TestClient.class);
+    private static final Logger LOG = Logger.getLogger(TestClient.class);
     // The request the test client will send
     private JCreditControlRequest request;
     // The result for the request
@@ -52,22 +52,22 @@ public class TestClient implements EventListener<Request, Answer> {
             propertiesLog4j.load(inStreamLog4j);
             PropertyConfigurator.configure(propertiesLog4j);
         } catch (Exception e) {
-            log.error("Failed to configure Log4j", e);
+            LOG.error("Failed to configure Log4j", e);
         } finally {
             if(inStreamLog4j!=null)
             {
                 try {
                     inStreamLog4j.close();
                 } catch (IOException e) {
-                    log.error("Failed to close InputStream", e);
+                    LOG.error("Failed to close InputStream", e);
                 }
             }
         }
-        log.debug("log4j configured");
+        LOG.debug("log4j configured");
     }
 
     public void initStack() {
-        log.info("Initializing Stack...");
+        LOG.info("Initializing Stack...");
         try {
             this.stack = new StackImpl();
             Configuration config = getConfig();
@@ -84,7 +84,7 @@ public class TestClient implements EventListener<Request, Answer> {
             }, this.authAppId); //passing our example app id.
 
         } catch (Exception e) {
-            log.error("Failed to init Diameter Stack", e);
+            LOG.error("Failed to init Diameter Stack", e);
             if (this.stack != null) {
                 this.stack.destroy();
             }
@@ -92,24 +92,24 @@ public class TestClient implements EventListener<Request, Answer> {
         }
 
         try {
-            log.info("Starting stack");
+            LOG.info("Starting stack");
             stack.start();
-            log.info("Stack is running.");
+            LOG.info("Stack is running.");
         } catch (Exception e) {
-            log.error("Failed to start Diameter Stack", e);
+            LOG.error("Failed to start Diameter Stack", e);
             stack.destroy();
             return;
         }
-        log.info("Stack initialization successfully completed.");
+        LOG.info("Stack initialization successfully completed.");
     }
 
     private void printApplicationInfo() {
         //Print info about application
         Set<ApplicationId> appIds = stack.getMetaData().getLocalPeer().getCommonApplications();
 
-        log.info("Diameter Stack  :: Supporting " + appIds.size() + " applications.");
+        LOG.info("Diameter Stack  :: Supporting " + appIds.size() + " applications.");
         for (ApplicationId id : appIds) {
-            log.info("Diameter Stack  :: Common :: " + id);
+            LOG.info("Diameter Stack  :: Common :: " + id);
         }
     }
 
@@ -121,7 +121,7 @@ public class TestClient implements EventListener<Request, Answer> {
         try {
             config = new XMLConfiguration(is);
         } catch (Exception e) {
-            log.error("Failed to load configuration", e);
+            LOG.error("Failed to load configuration", e);
         }
 
         try {
@@ -129,7 +129,7 @@ public class TestClient implements EventListener<Request, Answer> {
                 is.close();
             }
         } catch (IOException e) {
-            log.error("Failed to close InputStream", e);
+            LOG.error("Failed to close InputStream", e);
         }
         return config;
     }
@@ -148,7 +148,7 @@ public class TestClient implements EventListener<Request, Answer> {
             Thread.currentThread().sleep(5000);
             this.session = this.factory.getNewSession("BadCustomSessionId;" + System.currentTimeMillis() + ";0");
         } catch (InternalException | InterruptedException e) {
-            log.error("Start Failed", e);
+            LOG.error("Start Failed", e);
         }
     }
 
@@ -158,7 +158,7 @@ public class TestClient implements EventListener<Request, Answer> {
             this.session.send(request.getMessage(), this);
             dumpMessage(request.getMessage(), true); //dump info on console
         } catch (InternalException | IllegalDiameterStateException | RouteException| OverloadException e) {
-            log.error("Failed to send request", e);
+            LOG.error("Failed to send request", e);
             finished = true;
         }
     }
@@ -173,13 +173,13 @@ public class TestClient implements EventListener<Request, Answer> {
 
     @Override
     public void timeoutExpired(Request request) {
-        log.info("Timeout expired" + request);
+        LOG.info("Timeout expired" + request);
     }
 
     private void dumpMessage(Message message, boolean sending) {
-        log.info((sending?"Sending ":"Received ") + (message.isRequest() ? "Request: " : "Answer: ") + message.getCommandCode() + "\nE2E:"
+        LOG.info((sending?"Sending ":"Received ") + (message.isRequest() ? "Request: " : "Answer: ") + message.getCommandCode() + "\nE2E:"
                 + message.getEndToEndIdentifier() + "\nHBH:" + message.getHopByHopIdentifier() + "\nAppID:" + message.getApplicationId());
-        log.info("AVPS["+message.getAvps().size()+"]: \n");
+        LOG.info("AVPS["+message.getAvps().size()+"]: \n");
     }
     
     public void setRequest(JCreditControlRequest request) {
@@ -195,7 +195,7 @@ public class TestClient implements EventListener<Request, Answer> {
             try {
                 Thread.currentThread().sleep(1000);
             } catch (InterruptedException e) {
-                log.error("Application Interrupted", e);
+                LOG.error("Application Interrupted", e);
             }
         }
     }
@@ -204,7 +204,7 @@ public class TestClient implements EventListener<Request, Answer> {
         try {
             stack.stop(0, TimeUnit.MILLISECONDS ,0);
         } catch (IllegalDiameterStateException | InternalException e) {
-            log.error("Failed to shutdown", e);
+            LOG.error("Failed to shutdown", e);
         }
         stack.destroy();
     }
