@@ -10,6 +10,6 @@ annotation class AvpField(val avpId: Int)
 
 @Target(FIELD)
 @Retention(RUNTIME)
-annotation class AvpGroup(
+annotation class AvpList(
         val avpId: Int,
         val kclass: KClass<*>)

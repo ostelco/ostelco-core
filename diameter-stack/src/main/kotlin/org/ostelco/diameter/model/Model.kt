@@ -2,6 +2,7 @@ package org.ostelco.diameter.model
 
 import org.jdiameter.api.Avp
 import org.ostelco.diameter.parser.AvpField
+import org.ostelco.diameter.parser.AvpList
 
 data class CreditControlAnswer(val multipleServiceCreditControls: List<MultipleServiceCreditControl>)
 
@@ -74,8 +75,8 @@ class MultipleServiceCreditControl() {
     @AvpField(Avp.SERVICE_IDENTIFIER_CCA)
     var serviceIdentifier: Long = -1
 
-    @AvpField(Avp.REQUESTED_SERVICE_UNIT)
-    var requested = ServiceUnit()
+    @AvpList(Avp.REQUESTED_SERVICE_UNIT, ServiceUnit::class)
+    var requested: List<ServiceUnit> = emptyList()
 
     @AvpField(Avp.USED_SERVICE_UNIT)
     var used = ServiceUnit()
@@ -90,7 +91,7 @@ class MultipleServiceCreditControl() {
     constructor(ratingGroup: Long, serviceIdentifier: Long, requested: ServiceUnit, used: ServiceUnit, granted: ServiceUnit, validityTime: Int, finalUnitIndication: FinalUnitIndication?) : this() {
         this.ratingGroup = ratingGroup
         this.serviceIdentifier = serviceIdentifier
-        this.requested = requested
+        this.requested = listOf(requested)
         this.used = used
         this.granted = granted
         this.validityTime = validityTime
@@ -109,8 +110,8 @@ data class RedirectServer(val redirectAddressType: RedirectAddressType)
 
 class ServiceInformation() {
 
-    @AvpField(Avp.PS_INFORMATION)
-    var psInformation: PsInformation? = null
+    @AvpList(Avp.PS_INFORMATION, PsInformation::class)
+    var psInformation: List<PsInformation> = emptyList()
 }
 
 // https://tools.ietf.org/html/rfc4006#section-8.47

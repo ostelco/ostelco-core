@@ -159,12 +159,12 @@ public class GrpcDataSource implements DataSource {
                             .setRequested(ServiceUnit.newBuilder()
                                     .setInputOctets(0L)
                                     .setOutputOctetes(0L)
-                                    .setTotalOctets(mscc.getRequested().getTotal())
+                                    .setTotalOctets(mscc.getRequested().get(0).getTotal())
                                     .build())
                             .setUsed(ServiceUnit.newBuilder()
-                                    .setInputOctets(mscc.getRequested().getInput())
-                                    .setOutputOctetes(mscc.getRequested().getOutput())
-                                    .setTotalOctets(mscc.getRequested().getTotal())
+                                    .setInputOctets(mscc.getRequested().get(0).getInput())
+                                    .setOutputOctetes(mscc.getRequested().get(0).getOutput())
+                                    .setTotalOctets(mscc.getRequested().get(0).getTotal())
                                     .build())
                             .setRatingGroup(mscc.getRatingGroup())
                             .setServiceIdentifier(mscc.getServiceIdentifier())
@@ -177,7 +177,7 @@ public class GrpcDataSource implements DataSource {
 
                 if (context.getCreditControlRequest().getServiceInformation() != null) {
                     final org.ostelco.diameter.model.PsInformation psInformation
-                            = context.getCreditControlRequest().getServiceInformation().getPsInformation();
+                            = context.getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0);
 
                     if (psInformation != null
                             && psInformation.getCalledStationId() != null

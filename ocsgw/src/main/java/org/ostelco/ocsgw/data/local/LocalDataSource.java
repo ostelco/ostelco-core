@@ -69,9 +69,9 @@ public class LocalDataSource implements DataSource {
             MultipleServiceCreditControl newMscc = new MultipleServiceCreditControl(
                     mscc.getRatingGroup(),
                     mscc.getServiceIdentifier(),
-                    new ServiceUnit(mscc.getRequested().getTotal(),0,0),
+                    new ServiceUnit(mscc.getRequested().get(0).getTotal(),0,0),
                     new ServiceUnit(mscc.getUsed().getTotal(),mscc.getUsed().getInput(),mscc.getUsed().getOutput()),
-                    new ServiceUnit(mscc.getRequested().getTotal(),0,0), // granted Service Unit
+                    new ServiceUnit(mscc.getRequested().get(0).getTotal(),0,0), // granted Service Unit
                     mscc.getValidityTime(),
                     finalUnitIndication);
 

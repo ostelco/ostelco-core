@@ -1,10 +1,10 @@
 package org.ostelco.diameter.parser
 
-import org.ostelco.diameter.logger
 import org.jdiameter.api.Avp
 import org.jdiameter.api.AvpSet
 import org.mobicents.diameter.dictionary.AvpDictionary
 import org.mobicents.diameter.dictionary.AvpRepresentation
+import org.ostelco.diameter.logger
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.full.createInstance
@@ -46,18 +46,18 @@ class AvpParser {
                 // filter out fields which are not annotated
                 .filter {
                     it.isAnnotationPresent(AvpField::class.java)
-                            || it.isAnnotationPresent(AvpGroup::class.java)
+                            || it.isAnnotationPresent(AvpList::class.java)
                 }
                 .forEach {
                     // Get numeric Avp ID from annotation on the field
                     val avpId: Int? = it.getAnnotation(AvpField::class.java)?.avpId
-                            ?: it.getAnnotation(AvpGroup::class.java)?.avpId
+                            ?: it.getAnnotation(AvpList::class.java)?.avpId
 
                     LOG.trace("${it.name} id: ($avpId)")
                     if (avpId != null) {
 
                         // Check the data type of the field
-                        val collectionType: KClass<*>? = it.getAnnotation(AvpGroup::class.java)?.kclass
+                        val collectionType: KClass<*>? = it.getAnnotation(AvpList::class.java)?.kclass
 
                         // Get Avp Object from the Set.
                         // Avp object has AvpCode, Vendor ID, and a value which will be set on object field.
