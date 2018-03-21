@@ -1,6 +1,5 @@
 package org.ostelco.prime.ocs
 
-import com.google.common.base.Preconditions.checkNotNull
 import io.grpc.stub.StreamObserver
 import org.ostelco.ocs.api.ActivateRequest
 import org.ostelco.ocs.api.ActivateResponse
@@ -38,15 +37,9 @@ import java.util.*
  * see that a client invokes a method, and listens for a stream of information related to
  * that particular stream.
  */
-class OcsGRPCService(ocsService: OcsService) : OcsServiceGrpc.OcsServiceImplBase() {
+class OcsGRPCService(private val ocsService: OcsService) : OcsServiceGrpc.OcsServiceImplBase() {
 
     private val LOG by logger()
-
-    private val ocsService: OcsService
-
-    init {
-        this.ocsService = checkNotNull(ocsService)
-    }
 
     /**
      * Method to handle Credit-Control-Requests
@@ -74,12 +67,7 @@ class OcsGRPCService(ocsService: OcsService) : OcsServiceGrpc.OcsServiceImplBase
         return UUID.randomUUID().toString()
     }
 
-    private inner class StreamObserverForStreamWithId internal constructor(streamId: String) : StreamObserver<CreditControlRequestInfo> {
-        private val streamId: String
-
-        init {
-            this.streamId = checkNotNull(streamId)
-        }
+    private inner class StreamObserverForStreamWithId internal constructor(private val streamId: String) : StreamObserver<CreditControlRequestInfo> {
 
         /**
          * This method gets called every time a Credit-Control-Request is received

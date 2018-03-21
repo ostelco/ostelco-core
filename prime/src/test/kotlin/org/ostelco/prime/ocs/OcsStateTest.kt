@@ -1,8 +1,7 @@
 package org.ostelco.prime.ocs
 
-import org.junit.Test
-
 import org.junit.Assert.assertEquals
+import org.junit.Test
 
 /**
  *
@@ -116,27 +115,26 @@ class OcsStateTest {
     @Test
     fun testStripLeadingPlus() {
         assertEquals("foo", OcsState.stripLeadingPlus("foo"))
-        val string: String
-        string = OcsState.stripLeadingPlus("+foo")
+        val string = OcsState.stripLeadingPlus("+foo")
         assertEquals("foo", string)
     }
 
     companion object {
 
-        private val MSISDN = "MSISDN"
+        private const val MSISDN = "MSISDN"
 
-        private val INITIAL_NUMBER_OF_BYTES_TO_ADD = 1000
+        private const val INITIAL_NUMBER_OF_BYTES_TO_ADD = 1000
 
-        private val TOPUP_NUMBER_OF_BYTES_TO_ADD = 500
+        private const val TOPUP_NUMBER_OF_BYTES_TO_ADD = 500
 
-        private val FINAL_NUMBER_OF_BYTES = INITIAL_NUMBER_OF_BYTES_TO_ADD + TOPUP_NUMBER_OF_BYTES_TO_ADD
+        private const val FINAL_NUMBER_OF_BYTES = INITIAL_NUMBER_OF_BYTES_TO_ADD + TOPUP_NUMBER_OF_BYTES_TO_ADD
 
-        private val INITIAL_NUMBER_OF_BYTES_TO_REQUEST = 700
-        private val OVER_CONSUME_BUCKET = 750
+        private const val INITIAL_NUMBER_OF_BYTES_TO_REQUEST = 700
+        private const val OVER_CONSUME_BUCKET = 750
 
-        private val REMAINING_BYTES = 300
-        private val OVER_CONSUME_REMAINING_BYTES = 250
+        private const val REMAINING_BYTES = 300
+        private const val OVER_CONSUME_REMAINING_BYTES = 250
 
-        private val SECOND_NUMBER_OF_BYTES_TO_REQUEST = 400
+        private const val SECOND_NUMBER_OF_BYTES_TO_REQUEST = 400
     }
 }

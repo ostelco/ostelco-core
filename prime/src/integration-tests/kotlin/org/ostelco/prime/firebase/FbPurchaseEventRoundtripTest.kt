@@ -10,6 +10,7 @@ import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mock
 import org.mockito.Mockito.verify
 import org.mockito.junit.MockitoJUnit
+import org.mockito.junit.MockitoRule
 import org.ostelco.prime.events.EventListeners
 import org.ostelco.prime.events.EventProcessor
 import org.ostelco.prime.events.EventProcessorException
@@ -32,7 +33,7 @@ import java.util.concurrent.TimeUnit
 class FbPurchaseEventRoundtripTest {
 
     @Rule
-    var mockitoRule = MockitoJUnit.rule()
+    var mockitoRule: MockitoRule = MockitoJUnit.rule()
 
     @Mock
     var ocsBalanceUpdater: OcsBalanceUpdater? = null
@@ -120,10 +121,10 @@ class FbPurchaseEventRoundtripTest {
 
     companion object {
 
-        private val EPHERMERAL_MSISDN = "+4747116996"
+        private const val EPHERMERAL_MSISDN = "+4747116996"
 
-        private val MINIMUM_MILLIS_TO_SLEEP_AFTER_MAKING_PURCHASE_REQUEST = 3000
+        private const val MINIMUM_MILLIS_TO_SLEEP_AFTER_MAKING_PURCHASE_REQUEST = 3000
 
-        private val SECONDS_TO_WAIT_FOR_SUBSCRIPTION_PROCESSING_TO_FINISH = 10
+        private const val SECONDS_TO_WAIT_FOR_SUBSCRIPTION_PROCESSING_TO_FINISH = 10
     }
 }

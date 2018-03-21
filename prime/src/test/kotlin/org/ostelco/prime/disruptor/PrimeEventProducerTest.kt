@@ -51,11 +51,9 @@ class PrimeEventProducerTest {
 
         this.cdl = CountDownLatch(1)
         this.result = HashSet()
-        val eh = object: EventHandler<PrimeEvent> {
-            override fun onEvent(event: PrimeEvent, sequence: Long, endOfBatch: Boolean) {
-                result!!.add(event)
-                cdl!!.countDown()
-            }
+        val eh = EventHandler<PrimeEvent> { event, sequence, endOfBatch ->
+            result!!.add(event)
+            cdl!!.countDown()
         }
 
         disruptor!!.handleEventsWith(eh)
@@ -110,19 +108,19 @@ class PrimeEventProducerTest {
 
     companion object {
 
-        private val NO_OF_TOPUP_BYTES = 991234L
+        private const val NO_OF_TOPUP_BYTES = 991234L
 
-        private val REQUESTED_BYTES = 500L
+        private const val REQUESTED_BYTES = 500L
 
-        private val USED_BYTES = 300L
+        private const val USED_BYTES = 300L
 
-        private val MSISDN = "+4711223344"
+        private const val MSISDN = "+4711223344"
 
-        private val STREAM_ID = "mySecret stream"
+        private const val STREAM_ID = "mySecret stream"
 
-        private val RING_BUFFER_SIZE = 256
+        private const val RING_BUFFER_SIZE = 256
 
-        private val TIMEOUT = 10
+        private const val TIMEOUT = 10
     }
 }
 

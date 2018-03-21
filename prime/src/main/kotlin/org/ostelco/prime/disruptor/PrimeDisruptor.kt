@@ -12,9 +12,11 @@ class PrimeDisruptor : Managed {
     /**
      * Buffer size defaults to 65536 = 2^16
      */
-    private val BUFFER_SIZE = 65536
+    companion object {
+        private const val BUFFER_SIZE = 65536
+        private const val TIMEOUT_IN_SECONDS = 10
+    }
 
-    private val TIMEOUT_IN_SECONDS = 10
 
     val disruptor: Disruptor<PrimeEvent>
 

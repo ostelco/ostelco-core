@@ -11,6 +11,7 @@ import org.mockito.Mock
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.verify
 import org.mockito.junit.MockitoJUnit
+import org.mockito.junit.MockitoRule
 import org.ostelco.prime.disruptor.PrimeEvent
 import org.ostelco.prime.disruptor.PrimeEventMessageType.GET_DATA_BUNDLE_BALANCE
 import org.ostelco.prime.disruptor.PrimeEventMessageType.RELEASE_RESERVED_BUCKET
@@ -26,7 +27,7 @@ class EventProcessorTest {
 
     @Rule
     @JvmField
-    var mockitoRule = MockitoJUnit.rule()
+    var mockitoRule: MockitoRule = MockitoJUnit.rule()
 
     @Mock
     lateinit var storage: Storage
@@ -127,13 +128,13 @@ class EventProcessorTest {
 
     companion object {
 
-        val PAYMENT_TOKEN = "a weird token"
+        const val PAYMENT_TOKEN = "a weird token"
 
-        private val MSISDN = "12345678"
+        private const val MSISDN = "12345678"
 
-        private val PLUS_USED_TO_BEGIN_INTERNATIONAL_PREFIX_IN_MSISSDN = "+"
+        private const val PLUS_USED_TO_BEGIN_INTERNATIONAL_PREFIX_IN_MSISSDN = "+"
 
-        private val NO_OF_BYTES = 4711L
+        private const val NO_OF_BYTES = 4711L
     }
 
     // XXX Are we missing an event type here?

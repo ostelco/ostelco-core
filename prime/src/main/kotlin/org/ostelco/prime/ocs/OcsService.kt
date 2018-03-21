@@ -1,6 +1,5 @@
 package org.ostelco.prime.ocs
 
-import com.google.common.base.Preconditions.checkNotNull
 import com.lmax.disruptor.EventHandler
 import io.grpc.stub.StreamObserver
 import org.ostelco.ocs.api.ActivateResponse
@@ -12,9 +11,9 @@ import org.ostelco.prime.disruptor.PrimeEventProducer
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
-class OcsService(producer: PrimeEventProducer) {
+class OcsService(private val producer: PrimeEventProducer) {
 
-    private val CreditControlClientMap: ConcurrentMap<String, StreamObserver<CreditControlAnswerInfo>>
+    private val creditControlClientMap: ConcurrentMap<String, StreamObserver<CreditControlAnswerInfo>>
 
     /**
      * A holder for
@@ -23,15 +22,12 @@ class OcsService(producer: PrimeEventProducer) {
      */
     private val activateResponseHolder: ActivateResponseHolder
 
-    private val producer: PrimeEventProducer
-
     private val eventHandler: EventHandler<PrimeEvent>
 
     private val ocsServerImplBaseImpl: OcsServiceGrpc.OcsServiceImplBase
 
     init {
-        this.producer = checkNotNull(producer)
-        this.CreditControlClientMap = ConcurrentHashMap()
+        this.creditControlClientMap = ConcurrentHashMap()
         this.eventHandler = EventHandlerImpl(this)
         this.ocsServerImplBaseImpl = OcsGRPCService(this)
         this.activateResponseHolder = ActivateResponseHolder()
@@ -66,11 +62,11 @@ class OcsService(producer: PrimeEventProducer) {
         return this.ocsServerImplBaseImpl
     }
 
-    protected fun getCreditControlClientForStream(
+    private fun getCreditControlClientForStream(
             streamId: String): StreamObserver<CreditControlAnswerInfo>? {
         // Here we need to Convert it back to an answer.
-        CreditControlClientMap[streamId]
-        return CreditControlClientMap[streamId]
+        creditControlClientMap[streamId]
+        return creditControlClientMap[streamId]
     }
 
     fun activateOnNextResponse(response: ActivateResponse) {
@@ -83,7 +79,7 @@ class OcsService(producer: PrimeEventProducer) {
     }
 
     fun deleteCreditControlClient(streamId: String) {
-        this.CreditControlClientMap.remove(streamId)
+        this.creditControlClientMap.remove(streamId)
     }
 
     fun creditControlRequestEvent(
@@ -95,7 +91,7 @@ class OcsService(producer: PrimeEventProducer) {
     fun putCreditControlClient(
             streamId: String,
             creditControlAnswer: StreamObserver<CreditControlAnswerInfo>) {
-        CreditControlClientMap[streamId] = creditControlAnswer
+        creditControlClientMap[streamId] = creditControlAnswer
     }
 
     fun sendCreditControlAnswer(streamId: String, creditControlAnswerInfo: CreditControlAnswerInfo) {

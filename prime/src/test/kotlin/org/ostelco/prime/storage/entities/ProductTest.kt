@@ -1,10 +1,9 @@
 package org.ostelco.prime.storage.entities
 
-import org.junit.Test
-import org.ostelco.prime.storage.Products
-
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Test
+import org.ostelco.prime.storage.Products
 
 class ProductTest {
 
@@ -30,8 +29,8 @@ class ProductTest {
 
     companion object {
 
-        private val SKU = "SKU-1"
+        private const val SKU = "SKU-1"
 
-        private val DESCRIPTION = "a random description"
+        private const val DESCRIPTION = "a random description"
     }
 }

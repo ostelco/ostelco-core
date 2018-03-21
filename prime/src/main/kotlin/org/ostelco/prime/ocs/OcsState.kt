@@ -69,7 +69,7 @@ class OcsState : EventHandler<PrimeEvent> {
                 "No of bytes must be positive")
 
         dataPackMap.putIfAbsent(msisdn, 0L)
-        val newDataSize = dataPackMap.get(msisdn)!! + bytes
+        val newDataSize = dataPackMap[msisdn]!! + bytes
         dataPackMap[msisdn] = newDataSize
         return newDataSize
     }
@@ -117,7 +117,7 @@ class OcsState : EventHandler<PrimeEvent> {
             // If there was usedBytes but no reservation, this indicates an error.
             // usedBytes = 0 and reserved = 0 is normal in CCR-I
             if (usedBytes > 0) {
-                LOG.warn("Used-Units without reservation");
+                LOG.warn("Used-Units without reservation")
             }
             return existing
         }

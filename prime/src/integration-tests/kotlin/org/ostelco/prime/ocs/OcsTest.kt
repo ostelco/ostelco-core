@@ -1,11 +1,11 @@
 package org.ostelco.prime.ocs
 
 import com.lmax.disruptor.TimeoutException
-import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.stub.StreamObserver
 import org.apache.commons.lang3.RandomStringUtils
 import org.junit.AfterClass
+import org.junit.Assert.assertEquals
 import org.junit.BeforeClass
 import org.junit.Test
 import org.ostelco.ocs.api.ActivateRequest
@@ -16,14 +16,10 @@ import org.ostelco.ocs.api.OcsServiceGrpc
 import org.ostelco.ocs.api.OcsServiceGrpc.OcsServiceStub
 import org.ostelco.prime.disruptor.PrimeDisruptor
 import org.ostelco.prime.disruptor.PrimeEventProducer
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-
 import java.io.IOException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-
-import org.junit.Assert.assertEquals
 
 /**
  *
@@ -141,24 +137,24 @@ class OcsTest {
          * The port on which the gRPC service will be receiving incoming
          * connections.
          */
-        private val PORT = 8082
+        private const val PORT = 8082
 
         /**
          * The phone numbe for which we're faking data consumption during this test.
          */
-        private val MSISDN = "4790300017"
+        private const val MSISDN = "4790300017"
 
         // Default chunk of byte used in various test cases
-        private val BYTES = 100
+        private const val BYTES = 100
 
         // Request ID used by OCS gateway to correlate responses with requests
         private val REQUEST_ID = RandomStringUtils.randomAlphanumeric(22)
 
-        private val NO_OF_BYTES_TO_ADD = 10000
+        private const val NO_OF_BYTES_TO_ADD = 10000
 
-        private val TIMEOUT_IN_SECONDS = 10
+        private const val TIMEOUT_IN_SECONDS = 10
 
-        private val ONE_SECOND_IN_MILLISECONDS = 1000
+        private const val ONE_SECOND_IN_MILLISECONDS = 1000
 
         /**
          * This is the "disruptor" (processing engine) that will process

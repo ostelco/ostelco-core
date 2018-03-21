@@ -51,7 +51,7 @@ class PrimeEventProducer(private val ringBuffer: RingBuffer<PrimeEvent>) {
             requestId: String? = null) {
 
         processNextEventOnTheRingbuffer(
-                Consumer<PrimeEvent> { event ->
+                Consumer { event ->
                     event.update(type,
                             msisdn,
                             requestedBytes,

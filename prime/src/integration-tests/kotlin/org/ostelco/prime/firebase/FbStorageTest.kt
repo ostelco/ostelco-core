@@ -91,8 +91,7 @@ class FbStorageTest {
     @Test
     @Throws(StorageException::class)
     fun addRecordOfPurchaseByMsisdnTest() {
-        val now: Long
-        now = Instant.now().toEpochMilli()
+        val now = Instant.now().toEpochMilli()
         val id = storage!!.addRecordOfPurchaseByMsisdn(
                 EPHERMERAL_MSISDN,
                 DATA_TOPUP_3GB.sku,
@@ -132,14 +131,14 @@ class FbStorageTest {
 
     companion object {
 
-        private val PAYMENT_TOKEN = "thisIsAPaymentToken"
+        private const val PAYMENT_TOKEN = "thisIsAPaymentToken"
 
-        private val EPHERMERAL_MSISDN = "+4747116996"
+        private const val EPHERMERAL_MSISDN = "+4747116996"
 
-        private val MILLIS_TO_WAIT_WHEN_STARTING_UP = 3000
+        private const val MILLIS_TO_WAIT_WHEN_STARTING_UP = 3000
 
-        private val RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS = 92L
+        private const val RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS = 92L
 
-        private val TIMEOUT_IN_SECONDS = 10
+        private const val TIMEOUT_IN_SECONDS = 10
     }
 }

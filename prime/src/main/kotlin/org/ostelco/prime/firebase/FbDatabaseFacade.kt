@@ -145,7 +145,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
 
     fun addProductCatalogItemChildListener(consumer: Consumer<ProductCatalogItem>) {
         checkNotNull(consumer)
-        val productCatalogListener = newProductDefChangedListener(Consumer <DataSnapshot>{ snapshot -> addOrUpdateProduct(snapshot, consumer) })
+        val productCatalogListener = newProductDefChangedListener(Consumer { snapshot -> addOrUpdateProduct(snapshot, consumer) })
         addProductCatalogListener(productCatalogListener)
     }
 
@@ -354,17 +354,17 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
             result: Set<Subscriber>): Subscriber? {
         val userDataString = authorativeUserData.toString()
         try {
-            if (!cdl.await(SECONDS_TO_WAIT_FOR_FIREBASE.toLong(), TimeUnit.SECONDS)) {
+            return if (!cdl.await(SECONDS_TO_WAIT_FOR_FIREBASE.toLong(), TimeUnit.SECONDS)) {
                 val msg = logSubscriberDataProcessing(
                         msisdn, userDataString, "timeout")
                 throw StorageException(msg)
             } else if (result.isEmpty()) {
                 logSubscriberDataProcessing(msisdn, userDataString, "null")
-                return null
+                null
             } else {
                 val r = result.iterator().next()
                 logSubscriberDataProcessing(msisdn, userDataString, r.toString())
-                return r
+                r
             }
         } catch (e: InterruptedException) {
             val msg = logSubscriberDataProcessing(msisdn, userDataString, "interrupted")
@@ -426,11 +426,11 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
 
         private val LOG by logger()
 
-        private val PHONE_NUMBER = "phoneNumber"
+        private const val PHONE_NUMBER = "phoneNumber"
 
-        private val MSISDN = "msisdn"
+        private const val MSISDN = "msisdn"
 
-        private val SECONDS_TO_WAIT_FOR_FIREBASE = 10
+        private const val SECONDS_TO_WAIT_FOR_FIREBASE = 10
 
         private fun listenerForPurchaseRequests(
                 consumer: BiFunction<String, PurchaseRequestImpl, Unit>): AbstractChildEventListener {
@@ -466,7 +466,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         }
 
         // XXX Should this be removed? Doesn't look nice.
-        protected fun handleDataChange(
+        private fun handleDataChange(
                 snapshot: DataSnapshot,
                 cdl: CountDownLatch,
                 result: MutableSet<String>,

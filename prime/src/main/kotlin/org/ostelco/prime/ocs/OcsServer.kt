@@ -17,14 +17,9 @@ class OcsServer(private val port: Int, service: BindableService) : Managed {
 
     private val LOG by logger()
 
-    private val server: Server?
-
-    init {
-
-        // may add Transport Security with Certificates if needed.
-        // may add executor for control over number of threads
-        server = ServerBuilder.forPort(port).addService(service).build()
-    }
+    // may add Transport Security with Certificates if needed.
+    // may add executor for control over number of threads
+    private val server: Server? = ServerBuilder.forPort(port).addService(service).build()
 
     /**
      * Startup is managed by Dropwizard's lifecycle.

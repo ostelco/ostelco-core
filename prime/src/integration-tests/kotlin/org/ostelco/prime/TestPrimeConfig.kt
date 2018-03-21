@@ -3,11 +3,9 @@ package org.ostelco.prime
 import io.dropwizard.testing.DropwizardTestSupport
 import io.dropwizard.testing.ResourceHelpers
 import org.junit.AfterClass
+import org.junit.Assert.assertNotNull
 import org.junit.BeforeClass
 import org.junit.Test
-import org.ostelco.prime.config.PrimeConfiguration
-
-import org.junit.Assert.assertNotNull
 
 class TestPrimeConfig {
 

@@ -1,14 +1,12 @@
 package org.ostelco.prime.storage
 
+import junit.framework.TestCase.assertTrue
+import junit.framework.TestCase.fail
 import org.junit.Test
 import org.ostelco.prime.storage.entities.PurchaseRequest
 import org.ostelco.prime.storage.entities.PurchaseRequestImpl
-
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-
-import junit.framework.TestCase.assertTrue
-import junit.framework.TestCase.fail
 
 class StorageInitiatedEventExecutorTest {
 

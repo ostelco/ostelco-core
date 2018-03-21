@@ -43,8 +43,7 @@ constructor(databaseName: String,
 
         this.productCache = ProductDescriptionCacheImpl
 
-        val firebaseDatabase: FirebaseDatabase
-        firebaseDatabase = setupFirebaseInstance(databaseName, configFile)
+        val firebaseDatabase = setupFirebaseInstance(databaseName, configFile)
 
         this.facade = FbDatabaseFacade(firebaseDatabase)
 

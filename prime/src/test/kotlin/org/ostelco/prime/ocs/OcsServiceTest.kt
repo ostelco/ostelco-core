@@ -48,11 +48,9 @@ class OcsServiceTest {
 
         this.cdl = CountDownLatch(1)
         this.result = HashSet()
-        val eh = object : EventHandler<PrimeEvent> {
-            override fun onEvent(event: PrimeEvent, sequence: Long, endOfBatch: Boolean) {
-                result!!.add(event)
-                cdl!!.countDown()
-            }
+        val eh = EventHandler<PrimeEvent> { event, sequence, endOfBatch ->
+            result!!.add(event)
+            cdl!!.countDown()
         }
 
         disruptor!!.handleEventsWith(eh)
@@ -88,8 +86,8 @@ class OcsServiceTest {
 
     companion object {
 
-        private val RING_BUFFER_SIZE = 256
+        private const val RING_BUFFER_SIZE = 256
 
-        private val TIMEOUT: Long = 10
+        private const val TIMEOUT: Long = 10
     }
 }

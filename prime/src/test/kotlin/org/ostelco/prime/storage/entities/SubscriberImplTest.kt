@@ -6,8 +6,10 @@ import org.junit.Test
 
 class SubscriberImplTest {
 
-    private val NO_OF_BYTES_LEFT_KEY = "noOfBytesLeft"
-    private val MSISDN_KEY = "msisdn"
+    companion object {
+        private const val NO_OF_BYTES_LEFT_KEY = "noOfBytesLeft"
+        private const val MSISDN_KEY = "msisdn"
+    }
 
     private val fbs = SubscriberImpl()
 
