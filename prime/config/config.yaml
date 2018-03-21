@@ -1,7 +1,7 @@
 logging:
   level: INFO
   loggers:
-    com.telenordigital: DEBUG
+    org.ostelco: DEBUG
 
 eventProcessor:
   configFile: /config/pantel-prod.json

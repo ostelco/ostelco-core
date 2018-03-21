@@ -113,7 +113,7 @@ public final class ManagedFirebaseDatabase implements Managed {
      * @throws Exception
      */
     @Override
-    public void stop() throws Exception {
+    public void stop() {
     }
 
     /**

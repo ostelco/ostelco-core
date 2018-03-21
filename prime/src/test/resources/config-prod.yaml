@@ -1,8 +1,9 @@
 logging:
   level: INFO
   loggers:
-    com.telenordigital: DEBUG
+    org.ostelco: DEBUG
 
 eventProcessor:
-  databaseName: pantel-2decb
-  configFile: secrets/pantel-d116075c73e8.json
+  configFile: secrets/pantel-json.json
+  projectId: pantel-2decb
+  topicId: data-traffic

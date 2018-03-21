@@ -13,9 +13,9 @@ allprojects {
   repositories {
     mavenLocal()
     mavenCentral()
-    maven {
-      url "https://repository.jboss.org/nexus/content/repositories/releases/"
-    }
+    maven { url "https://repository.jboss.org/nexus/content/repositories/releases/" }
+    maven { url "https://maven.repository.redhat.com/ga/" }
+    maven { url "http://clojars.org/repo/" }
   }
 }
 
@@ -24,6 +24,10 @@ subprojects {
   targetCompatibility = 1.8
   tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
+  }
+  ext {
+    kotlinVersion = "1.2.30"
+    dropwizardVersion = "1.2.2"
   }
 }
 
