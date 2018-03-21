@@ -4,4 +4,4 @@ databaseName: pantel-2decb
 logging:
   level: INFO
   loggers:
-    com.telenordigital: DEBUG
+    org.ostelco: DEBUG

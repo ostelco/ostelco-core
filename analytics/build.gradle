@@ -18,7 +18,7 @@ dependencies {
 }
 
 shadowJar {
-  mainClassName = 'com.telenordigital.ostelco.analytics.DataConsumptionPipelineKt'
+  mainClassName = 'org.ostelco.analytics.DataConsumptionPipelineKt'
   mergeServiceFiles()
   classifier = "uber"
   version = null
