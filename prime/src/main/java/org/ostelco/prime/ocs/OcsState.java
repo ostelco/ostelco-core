@@ -122,7 +122,11 @@ public final class OcsState implements EventHandler<PrimeEvent> {
 
         final Long reserved = bucketReservedMap.remove(msisdn);
         if (reserved == null || reserved == 0) {
-            LOG.warn("Used-Units without reservation");
+            // If there was usedBytes but no reservation, this indicates an error.
+            // usedBytes = 0 and reserved = 0 is normal in CCR-I
+            if (usedBytes > 0) {
+                LOG.warn("Used-Units without reservation");
+            }
             return existing;
         }
 
