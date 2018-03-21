@@ -19,6 +19,7 @@ import org.ostelco.diameter.model.RequestType;
 import org.ostelco.diameter.model.SubscriptionType;
 import org.ostelco.ext_pgw.TestClient;
 
+import javax.xml.bind.DatatypeConverter;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -334,8 +335,7 @@ class OcsApplicationTest {
         psInformation.addAvp(Avp.TGPP_RAT_TYPE, ratType , VENDOR_ID_3GPP, true, false, true);
 
         String s = "8242f21078b542f2100103c703";
-
-        psInformation.addAvp(Avp.GPP_USER_LOCATION_INFO, new String(s.getBytes(), "UTF-8"), VENDOR_ID_3GPP, true, false, false);
+        psInformation.addAvp(Avp.GPP_USER_LOCATION_INFO, DatatypeConverter.parseHexBinary(s), VENDOR_ID_3GPP, true, false);
 
         JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
 
