@@ -4,9 +4,6 @@ import org.ostelco.ocsgw.data.DataSource;
 import org.ostelco.ocsgw.data.local.LocalDataSource;
 import org.ostelco.diameter.CreditControlContext;
 import org.ostelco.ocs.api.CreditControlRequestType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * Proxy DataSource is a combination of the Local DataSource and any other
  * DataSource.
@@ -20,11 +17,9 @@ import org.slf4j.LoggerFactory;
  */
 public class ProxyDataSource implements DataSource {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ProxyDataSource.class);
-
     private final DataSource local = new LocalDataSource();
 
-    private DataSource secondary;
+    private final DataSource secondary;
 
     public ProxyDataSource(DataSource dataSource) {
         secondary = dataSource;
