@@ -38,18 +38,17 @@ artifacts {
   archives javadocJar, sourcesJar
 }
 
-// FIXME.   Breaks signing for people who haven't installed
-//          it, which are most people.
-//signing {
-//  sign configurations.archives
-//}
+signing {
+  sign configurations.archives
+}
 
 // For developers not responsible for uploadArchives,
 // and for CI server, until is it not setup to do so.
-if (! hasProperty("ossrhUsername")){
+signArchives.enabled = hasProperty("ossrhUsername")
+if (! hasProperty("ossrhUsername")) {
   ext.ossrhUsername=""
 }
-if (! hasProperty("ossrhPassword")){
+if (! hasProperty("ossrhPassword")) {
   ext.ossrhPassword=""
 }
 
