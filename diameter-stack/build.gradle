@@ -38,7 +38,8 @@ artifacts {
   archives javadocJar, sourcesJar
 }
 
-// FIXME
+// FIXME.   Breaks signing for people who haven't installed
+//          it, which are most people.
 //signing {
 //  sign configurations.archives
 //}
