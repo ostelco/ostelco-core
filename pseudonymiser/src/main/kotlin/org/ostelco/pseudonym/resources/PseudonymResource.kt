@@ -1,24 +1,32 @@
 package org.ostelco.pseudonym.resources
 
+import com.google.cloud.Tuple
 import com.google.cloud.datastore.Datastore
 import org.hibernate.validator.constraints.NotBlank
 import org.slf4j.LoggerFactory
 import java.time.Instant
+import java.util.*
 import javax.ws.rs.GET
 import javax.ws.rs.Path
 import javax.ws.rs.PathParam
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+import java.util.TimeZone
 
+
+interface DateBounds {
+    fun getBounds(timestamp: Long): Pair<Long, Long>
+}
 
 @Path("/pseudonym")
-class PseudonymResource(val datastore: Datastore) {
+class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
 
     private val LOG = LoggerFactory.getLogger(PseudonymResource::class.java)
-
+    private val timeZone = TimeZone.getTimeZone("UTC")
     /**
-     * If the msisdn can be recognized by firebase, then a custom
-     * token is generated (by firebase) and returned to the caller.
+     * Get the pseudonym which is valid at the timestamp for the given
+     * msisdn. In case pseudonym doesn't exist, a new one will be created
+     * for the period. Timestamps are in UTC
      */
     @GET
     @Path("/get/{msisdn}/{timestamp}")
@@ -26,12 +34,15 @@ class PseudonymResource(val datastore: Datastore) {
                      @NotBlank @PathParam("timestamp") timestamp: String?): Response {
 
         LOG.info("Msisdn = ${msisdn} timestamp =${timestamp}")
+        val bounds = dateBounds.getBounds(timestamp!!.toLong())
+        LOG.info("timestamp = ${timestamp} Bounds (${bounds.first} - ${bounds.second})")
         return Response.ok("Msisdn = ${msisdn} timestamp =${timestamp}", MediaType.TEXT_PLAIN_TYPE).build()
     }
 
     /**
-     * If the msisdn can be recognized by firebase, then a custom
-     * token is generated (by firebase) and returned to the caller.
+     * Get the pseudonym which is valid at the time of the call for the given
+     * msisdn. In case pseudonym doesn't exist, a new one will be created
+     * for the period
      */
     @GET
     @Path("/current/{msisdn}")
@@ -39,6 +50,8 @@ class PseudonymResource(val datastore: Datastore) {
 
         val timestamp = Instant.now().toEpochMilli()
         LOG.info("Msisdn = ${msisdn} timestamp =${timestamp}")
+        val bounds = dateBounds.getBounds(timestamp)
+        LOG.info("timestamp = ${timestamp} Bounds (${bounds.first} - ${bounds.second})")
         return Response.ok("Msisdn = ${msisdn} timestamp =${timestamp}", MediaType.TEXT_PLAIN_TYPE).build()
     }
 }

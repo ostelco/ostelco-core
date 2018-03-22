@@ -14,6 +14,7 @@ import com.google.cloud.datastore.Datastore
 import com.google.cloud.datastore.DatastoreOptions
 import com.google.cloud.datastore.Entity
 import com.google.cloud.datastore.Key
+import org.ostelco.pseudonym.utils.WeeklyBounds
 
 /**
  * Entry point for running the authentiation server application
@@ -60,6 +61,6 @@ class PseudonymServerApplication : Application<PseudonymServerConfig>() {
 //
 //        System.out.printf("Retrieved %s: %s%n", taskKey.name, retrieved.getString("description"))
 
-        env.jersey().register(PseudonymResource(datastore))
+        env.jersey().register(PseudonymResource(datastore, WeeklyBounds()))
     }
 }
