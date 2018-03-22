@@ -17,7 +17,7 @@ import org.ostelco.diameter.model.FinalUnitAction;
 import org.ostelco.diameter.model.ReAuthRequestType;
 import org.ostelco.diameter.model.RequestType;
 import org.ostelco.diameter.model.SubscriptionType;
-import org.ostelco.ext_pgw.TestClient;
+import org.ostelco.diameter.test.TestClient;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.UnsupportedEncodingException;
@@ -65,7 +65,7 @@ class OcsApplicationTest {
             applicationStarted = true;
         }
         client = new TestClient();
-        client.initStack();
+        client.initStack("src/test/resources/");
         client.start();
     }
 

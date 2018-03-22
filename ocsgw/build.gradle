@@ -21,7 +21,7 @@ dependencies {
     implementation project(':ocs-api')
     implementation project(':diameter-stack')
 
-    testImplementation project(':ext-pgw')
+    testImplementation project(':diameter-test')
     testCompile 'org.junit.jupiter:junit-jupiter-api:5.0.3'
     testCompile 'org.junit.platform:junit-platform-runner:1.0.3'
     testRuntime 'org.junit.jupiter:junit-jupiter-engine:5.0.3'

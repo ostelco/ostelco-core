@@ -1,8 +1,5 @@
 package org.ostelco.ext_pgw;
 
-import org.ostelco.diameter.model.FinalUnitAction;
-import org.ostelco.diameter.model.RequestType;
-import org.ostelco.diameter.model.SubscriptionType;
 import org.apache.log4j.Logger;
 import org.jdiameter.api.ApplicationId;
 import org.jdiameter.api.Avp;
@@ -14,6 +11,10 @@ import org.jdiameter.common.impl.app.cca.JCreditControlRequestImpl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.ostelco.diameter.model.FinalUnitAction;
+import org.ostelco.diameter.model.RequestType;
+import org.ostelco.diameter.model.SubscriptionType;
+import org.ostelco.diameter.test.TestClient;
 
 import static org.junit.Assert.assertEquals;
 
@@ -46,7 +47,7 @@ public class OcsApplicationTest {
     @Before
     public void setUp() {
         client = new TestClient();
-        client.initStack();
+        client.initStack("/");
         client.start();
     }
 
