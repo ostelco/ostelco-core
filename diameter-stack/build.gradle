@@ -44,6 +44,15 @@ artifacts {
 //  sign configurations.archives
 //}
 
+// For developers not responsible for uploadArchives,
+// and for CI server, until is it not setup to do so.
+if(! hasProperty("ossrhUsername")){
+  ext.ossrhUsername=""
+}
+if(! hasProperty("ossrhPassword")){
+  ext.ossrhPassword=""
+}
+
 uploadArchives.repositories.mavenDeployer {
   beforeDeployment { deployment -> signing.signPom(deployment) }
 
