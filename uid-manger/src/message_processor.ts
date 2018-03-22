@@ -1,0 +1,128 @@
+import PubSub = require("@google-cloud/pubsub");
+import * as uuidv4 from "uuid/v4";
+
+interface RequestTracker {
+  requestId: string;
+  resolve: any;
+  reject: any;
+}
+
+export class MessageProcessor {
+  private pubsub: PubSub;
+  private subscriptionId: string;
+  private publisher;
+  private subscription;
+  private requestTopic;
+  private responseTopic;
+  private pendingRequests: RequestTracker[];
+
+  constructor(requestTopicName: string, responseTopicName: string, subscriptionId: string) {
+    this.pubsub = new PubSub();
+    this.requestTopic = this.pubsub.topic(requestTopicName);
+    this.responseTopic = this.pubsub.topic(responseTopicName);
+    this.publisher = this.requestTopic.publisher();
+    this.subscriptionId = subscriptionId;
+    this.subscription = this.responseTopic.subscription(this.subscriptionId);
+    this.pendingRequests = [];
+  }
+
+  public async createSubscription() {
+    console.log(`Check Subscription ${this.subscriptionId}.`);
+    const exists: boolean = await this.checkSubscriptionExists();
+    if (!exists) {
+      // Create the subscription.
+      const data = await this.responseTopic.createSubscription(this.subscriptionId);
+      this.subscription = data[0];
+      console.log(`Subscription ${this.subscriptionId} created.`);
+    } else {
+      console.log(`Subscription ${this.subscriptionId} exists.`);
+    }
+    this.subscription.on("message", this.onMessage);
+    this.subscription.on("error", this.onError);
+  }
+
+  public onError = err => {
+    console.log("Error = ", err);
+  };
+
+  // Register a listener for `message` events.
+  public onMessage = message => {
+    console.log("Message = ", message);
+    // Called every time a message is received.
+    // message.id = ID of the message.
+    // message.ackId = ID used to acknowledge the message receival.
+    // message.data = Contents of the message.
+    // message.attributes = Attributes of the message.
+    // message.timestamp = Timestamp when Pub/Sub received the message.
+    if (Buffer.isBuffer(message.data)) {
+      const data: Buffer = message.data as Buffer;
+      console.log("Buffer = ", data.toString());
+    }
+    // Ack the message:
+    message.ack();
+    // This doesn't ack the message, but allows more messages to be retrieved
+    // if your limit was hit or if you don't want to ack the message.
+    // message.nack();
+  };
+
+  public getMessageData(message) {
+    if (Buffer.isBuffer(message.data)) {
+      const data: Buffer = message.data as Buffer;
+      return JSON.parse(data.toString());
+    }
+    return undefined;
+  }
+
+  public async sendMessage(message) {
+    const data = Buffer.from(JSON.stringify(message));
+    const messageId = await this.publisher.publish(data);
+    console.log(`Send Messaged ${messageId}`);
+    return messageId;
+  }
+
+  public async sendRequest(request) {
+    const promise = new Promise<any>(async (resolve, reject) => {
+      const data = Buffer.from(JSON.stringify({ request }));
+      const messageId = await this.publisher.publish(data);
+      console.log(`Send Messaged ${messageId}`);
+      const tracker: RequestTracker = {
+        reject,
+        requestId: messageId,
+        resolve
+      };
+      this.pendingRequests.push(tracker);
+    });
+    return promise;
+  }
+  public processResponse(message) {
+    console.log("Processing Response for ", message.id);
+    const data = this.getMessageData(message);
+    if (!data || !data.request || !data.request.id || !data.result) {
+      console.log("Invalid data in Message = ", message);
+      return;
+    }
+    const id = data.request.id;
+    const result = this.pendingRequests.findIndex(tracker => tracker.requestId === id);
+    console.log("RequestId = ", id, result, this.pendingRequests);
+    if (result !== -1) {
+      this.pendingRequests[result].resolve(data);
+      this.pendingRequests.splice(result, 1);
+    } else {
+      console.log(`No requests pending with ${id}`, this.pendingRequests);
+    }
+  }
+
+  public async deleteResponseSubscription() {
+    // Remove the listener from receiving `message` events.
+    this.subscription.removeListener("message", this.onMessage);
+    this.subscription.removeListener("error", this.onError);
+    const data = await this.subscription.delete();
+    const apiResponse = data[0];
+    return apiResponse;
+  }
+
+  private async checkSubscriptionExists() {
+    const data = await this.subscription.exists();
+    return data[0];
+  }
+}
