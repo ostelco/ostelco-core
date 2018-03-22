@@ -4,9 +4,7 @@ plugins {
 }
 
 dependencies {
-
-    implementation project(':diameter-stack')
-
+    implementation project(':diameter-test')
     implementation 'junit:junit:4.12'
 }
 
