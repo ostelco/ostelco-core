@@ -3,10 +3,10 @@ package org.ostelco.auth
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
-import org.ostelco.auth.config.AuthServerConfig
-import org.ostelco.auth.resources.AuthResource
 import io.dropwizard.Application
 import io.dropwizard.setup.Environment
+import org.ostelco.auth.config.AuthServerConfig
+import org.ostelco.auth.resources.AuthResource
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
 
@@ -24,6 +24,8 @@ fun main(args: Array<String>) {
 class AuthServerApplication : Application<AuthServerConfig>() {
 
     private val LOG = LoggerFactory.getLogger(AuthServerApplication::class.java)
+
+    override fun getName(): String = "AuthServer"
 
     /**
      * Run the dropwizard application (called by the kotlin [main] wrapper).

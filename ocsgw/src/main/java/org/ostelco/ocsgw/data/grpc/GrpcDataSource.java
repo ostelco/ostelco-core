@@ -191,7 +191,7 @@ public class GrpcDataSource implements DataSource {
                         .setMsisdn(context.getCreditControlRequest().getMsisdn())
                         .setImsi(context.getCreditControlRequest().getImsi());
 
-                if (context.getCreditControlRequest().getServiceInformation() != null) {
+                if (!context.getCreditControlRequest().getServiceInformation().isEmpty()) {
                     final org.ostelco.diameter.model.PsInformation psInformation
                             = context.getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0);
 
