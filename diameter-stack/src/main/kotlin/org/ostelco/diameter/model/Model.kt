@@ -148,3 +148,8 @@ enum class UserEquipmentInfoType {
     EUI64,
     MODIFIED_EUI64
 }
+
+data class SessionContext(
+        val sessionId: String,
+        val originHost: String,
+        val originRealm: String)

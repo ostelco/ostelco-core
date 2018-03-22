@@ -12,7 +12,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.ostelco.diameter.SessionContext;
+import org.ostelco.diameter.model.SessionContext;
 import org.ostelco.diameter.model.FinalUnitAction;
 import org.ostelco.diameter.model.ReAuthRequestType;
 import org.ostelco.diameter.model.RequestType;
