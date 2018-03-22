@@ -49,7 +49,7 @@ public class LocalDataSource implements DataSource {
         }
     }
 
-    public CreditControlAnswer createCreditControlAnswer(CreditControlContext context) {
+    private CreditControlAnswer createCreditControlAnswer(CreditControlContext context) {
 
         final List<MultipleServiceCreditControl> origMultipleServiceCreditControls = context.getCreditControlRequest().getMultipleServiceCreditControls();
         final List<MultipleServiceCreditControl> newMultipleServiceCreditControls = new ArrayList<>();

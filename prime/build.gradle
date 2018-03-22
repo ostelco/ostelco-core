@@ -2,17 +2,17 @@ plugins {
     id "application"
     id "jacoco"
     id "com.github.johnrengelman.shadow" version "2.0.1"
-    id 'net.ltgt.apt' version '0.10'
+    id "org.jetbrains.kotlin.jvm" version "1.2.30"
     id "idea"
 }
 
 sourceSets {
   test {
-    java.srcDirs = ['src/test/java']
+    java.srcDirs = ['src/test/kotlin']
   }
 
   integration {
-    java.srcDirs = ['src/test/java', 'src/integration-tests/java']
+    java.srcDirs = ['src/test/kotlin', 'src/integration-tests/kotlin']
     resources.srcDir 'src/integration-tests/resources'
     compileClasspath += main.output + test.output
     runtimeClasspath += main.output + test.output
@@ -20,6 +20,7 @@ sourceSets {
 }
 
 dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
     implementation project(':ocs-api')
     implementation project(':ostelco-lib')
     implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
@@ -30,9 +31,6 @@ dependencies {
 
     testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
     testCompile 'org.mockito:mockito-core:2.10.0'
-
-    compileOnly 'org.projectlombok:lombok:1.16.20'
-    apt 'org.projectlombok:lombok:1.16.20'
 }
 
 configurations {
@@ -91,6 +89,6 @@ test {
 
 idea {
     module {
-        testSourceDirs += file('src/integration-tests/java')
+        testSourceDirs += file('src/integration-tests/kotlin')
     }
 }
