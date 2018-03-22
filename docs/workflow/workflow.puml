@@ -1,0 +1,13 @@
+@startuml
+(*) --> "Make feature branch \n feature/something from develop"
+-->"Add features until satisfied"
+-->"Create pull request\n towards 'develop' branch"
+-->"Amend until static \n checks in github indicate\n PR looks ok"
+-->"Make a request for someone to review the code"
+-->"Pass code review"
+-->"Merge into develop"
+-->"Push snapshot releases (optional)"
+-->"Merge into master (optional)"
+-->"Promote selected snapshots into major releases"
+-->(*)
+@enduml
