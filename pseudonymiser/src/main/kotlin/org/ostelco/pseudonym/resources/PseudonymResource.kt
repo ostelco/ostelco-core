@@ -3,12 +3,19 @@ package org.ostelco.pseudonym.resources
 import com.google.cloud.datastore.Datastore
 import com.google.firebase.auth.FirebaseAuth
 import org.slf4j.LoggerFactory
+import sun.util.locale.LocaleUtils
 import java.time.Instant
 import java.util.*
 import javax.ws.rs.*
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.Response.Status
+import java.util.Calendar
+import java.text.SimpleDateFormat
+
+
+
+
 
 /**
  * Resource used to authentiation using an X-MSISDN (injected header)
@@ -90,4 +97,5 @@ class PseudonymResource(val datastore: Datastore) {
     private fun getUid(msisdn: String): String {
         return msisdn;
     }
+
 }
