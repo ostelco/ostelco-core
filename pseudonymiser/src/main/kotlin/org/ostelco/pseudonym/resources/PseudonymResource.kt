@@ -1,7 +1,8 @@
 package org.ostelco.pseudonym.resources
 
-import com.google.cloud.Tuple
 import com.google.cloud.datastore.Datastore
+import com.google.cloud.datastore.Entity
+import com.google.cloud.datastore.Key
 import org.hibernate.validator.constraints.NotBlank
 import org.slf4j.LoggerFactory
 import java.time.Instant
@@ -11,18 +12,21 @@ import javax.ws.rs.Path
 import javax.ws.rs.PathParam
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+import javax.ws.rs.core.Response.Status
 import java.util.TimeZone
-
 
 interface DateBounds {
     fun getBounds(timestamp: Long): Pair<Long, Long>
 }
+
+class PseudonymEntity(val msisdn: String, val pseudonym: String, val start: Long, val end: Long)
 
 @Path("/pseudonym")
 class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
 
     private val LOG = LoggerFactory.getLogger(PseudonymResource::class.java)
     private val timeZone = TimeZone.getTimeZone("UTC")
+    private val dataType = "Pseudonym"
     /**
      * Get the pseudonym which is valid at the timestamp for the given
      * msisdn. In case pseudonym doesn't exist, a new one will be created
@@ -35,8 +39,11 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
 
         LOG.info("Msisdn = ${msisdn} timestamp =${timestamp}")
         val bounds = dateBounds.getBounds(timestamp!!.toLong())
-        LOG.info("timestamp = ${timestamp} Bounds (${bounds.first} - ${bounds.second})")
-        return Response.ok("Msisdn = ${msisdn} timestamp =${timestamp}", MediaType.TEXT_PLAIN_TYPE).build()
+        var entity = getPseudonymEntity(msisdn!!, bounds.first)
+        if (entity == null) {
+            entity = createPseudonym(msisdn, bounds)
+        }
+        return Response.ok(entity, MediaType.APPLICATION_JSON).build()
     }
 
     /**
@@ -53,5 +60,40 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
         val bounds = dateBounds.getBounds(timestamp)
         LOG.info("timestamp = ${timestamp} Bounds (${bounds.first} - ${bounds.second})")
         return Response.ok("Msisdn = ${msisdn} timestamp =${timestamp}", MediaType.TEXT_PLAIN_TYPE).build()
+    }
+
+    private fun getPseudonymKey(msisdn: String, start: Long): Key {
+        val keyName = "${msisdn}-${start}"
+        return datastore.newKeyFactory().setKind(dataType).newKey(keyName)
+    }
+
+    private fun getPseudonymEntity(msisdn: String, start: Long): PseudonymEntity? {
+        val pseudonymKey = getPseudonymKey(msisdn, start)
+        val value = datastore.get(pseudonymKey)
+        if (value != null) {
+            return PseudonymEntity(
+                    value.getString("msisdn"),
+                    value.getString("pseudonym"),
+                    value.getLong("start"),
+                    value.getLong("end"))
+        }
+        return null
+    }
+
+    private fun createPseudonym(msisdn: String, bounds: Pair<Long, Long>): PseudonymEntity {
+        val uuid = UUID.randomUUID().toString();
+        val entity = PseudonymEntity(msisdn, uuid, bounds.first, bounds.second)
+        val pseudonymKey = getPseudonymKey(entity.msisdn, entity.start)
+
+        // Prepare the new entity
+        val pseudonym = Entity.newBuilder(pseudonymKey)
+                .set("msisdn", entity.msisdn)
+                .set("pseudonym", entity.pseudonym)
+                .set("start", entity.start)
+                .set("end", entity.end)
+                .build()
+
+        datastore.put(pseudonym)
+        return entity
     }
 }
