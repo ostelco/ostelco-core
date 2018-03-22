@@ -46,10 +46,10 @@ artifacts {
 
 // For developers not responsible for uploadArchives,
 // and for CI server, until is it not setup to do so.
-if(! hasProperty("ossrhUsername")){
+if (! hasProperty("ossrhUsername")){
   ext.ossrhUsername=""
 }
-if(! hasProperty("ossrhPassword")){
+if (! hasProperty("ossrhPassword")){
   ext.ossrhPassword=""
 }
 
