@@ -9,7 +9,7 @@ import org.jdiameter.api.OverloadException;
 import org.jdiameter.api.RouteException;
 import org.jdiameter.api.cca.ServerCCASession;
 import org.ostelco.diameter.CreditControlContext;
-import org.ostelco.diameter.SessionContext;
+import org.ostelco.diameter.model.SessionContext;
 import org.ostelco.diameter.model.CreditControlAnswer;
 import org.ostelco.diameter.model.FinalUnitAction;
 import org.ostelco.diameter.model.FinalUnitIndication;

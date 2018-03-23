@@ -12,12 +12,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.ostelco.diameter.SessionContext;
+import org.ostelco.diameter.model.SessionContext;
 import org.ostelco.diameter.model.FinalUnitAction;
 import org.ostelco.diameter.model.ReAuthRequestType;
 import org.ostelco.diameter.model.RequestType;
 import org.ostelco.diameter.model.SubscriptionType;
-import org.ostelco.ext_pgw.TestClient;
+import org.ostelco.diameter.test.TestClient;
+import org.ostelco.diameter.test.TestHelper;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.UnsupportedEncodingException;
@@ -48,9 +49,6 @@ class OcsApplicationTest {
 
     private static final String MSISDN = "4790300123";
     private static final String IMSI = "242017100000228";
-    private static final String APN = "panacea";
-    private static final String SGSN_MCC_MNC = "24201";
-    private static final int CALLED_STATION_ID = 30;
 
     private TestClient client;
 
@@ -65,7 +63,7 @@ class OcsApplicationTest {
             applicationStarted = true;
         }
         client = new TestClient();
-        client.initStack();
+        client.initStack("src/test/resources/");
         client.start();
     }
 
@@ -85,31 +83,8 @@ class OcsApplicationTest {
         );
 
         AvpSet ccrAvps = request.getAvps();
-        ccrAvps.addAvp(Avp.CC_REQUEST_TYPE, RequestType.INITIAL_REQUEST, true, false);
-        ccrAvps.addAvp(Avp.CC_REQUEST_NUMBER, 0, true, false);
 
-        AvpSet msisdnSubscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
-        msisdnSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164.ordinal());
-        msisdnSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, MSISDN, false);
-
-        AvpSet imsiSubscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
-        imsiSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI.ordinal());
-        imsiSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, IMSI, false);
-
-        ccrAvps.addAvp(Avp.MULTIPLE_SERVICES_INDICATOR, 1);
-
-        AvpSet mscc = ccrAvps.addGroupedAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
-        mscc.addAvp(Avp.RATING_GROUP, 10);
-        mscc.addAvp(Avp.SERVICE_IDENTIFIER_CCA, 1);
-        AvpSet requestedServiceUnits = mscc.addGroupedAvp(Avp.REQUESTED_SERVICE_UNIT);
-        requestedServiceUnits.addAvp(Avp.CC_TOTAL_OCTETS, 500000L);
-        requestedServiceUnits.addAvp(Avp.CC_INPUT_OCTETS, 0L);
-        requestedServiceUnits.addAvp(Avp.CC_OUTPUT_OCTETS, 0L);
-
-        AvpSet serviceInformation = ccrAvps.addGroupedAvp(Avp.SERVICE_INFORMATION, VENDOR_ID_3GPP, true, false);
-        AvpSet psInformation = serviceInformation.addGroupedAvp(Avp.PS_INFORMATION, VENDOR_ID_3GPP, true, false);
-        psInformation.addAvp(CALLED_STATION_ID, APN, false);
-        psInformation.addAvp(Avp.GPP_SGSN_MCC_MNC, SGSN_MCC_MNC, VENDOR_ID_3GPP, true, false, true);
+        TestHelper.INSTANCE.init(ccrAvps, MSISDN, 500000L);
 
         JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
 
@@ -143,32 +118,9 @@ class OcsApplicationTest {
                 OCS_HOST
         );
 
+
         AvpSet ccrAvps = request.getAvps();
-        ccrAvps.addAvp(Avp.CC_REQUEST_TYPE, RequestType.UPDATE_REQUEST, true, false);
-        ccrAvps.addAvp(Avp.CC_REQUEST_NUMBER, 1, true, false);
-
-        AvpSet msisdnSubscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
-        msisdnSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164.ordinal());
-        msisdnSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, MSISDN, false);
-
-        AvpSet imsiSubscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
-        imsiSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI.ordinal());
-        imsiSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, IMSI, false);
-
-        ccrAvps.addAvp(Avp.MULTIPLE_SERVICES_INDICATOR, 1);
-
-        AvpSet mscc = ccrAvps.addGroupedAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
-        mscc.addAvp(Avp.RATING_GROUP, 10);
-        mscc.addAvp(Avp.SERVICE_IDENTIFIER_CCA, 1);
-        AvpSet requestedServiceUnits = mscc.addGroupedAvp(Avp.REQUESTED_SERVICE_UNIT);
-        requestedServiceUnits.addAvp(Avp.CC_TOTAL_OCTETS, 400000L);
-        requestedServiceUnits.addAvp(Avp.CC_INPUT_OCTETS, 0L);
-        requestedServiceUnits.addAvp(Avp.CC_OUTPUT_OCTETS, 0L);
-
-        AvpSet serviceInformation = ccrAvps.addGroupedAvp(Avp.SERVICE_INFORMATION, VENDOR_ID_3GPP, true, false);
-        AvpSet psInformation = serviceInformation.addGroupedAvp(Avp.PS_INFORMATION, VENDOR_ID_3GPP, true, false);
-        psInformation.addAvp(CALLED_STATION_ID, APN, false);
-        psInformation.addAvp(Avp.GPP_SGSN_MCC_MNC, SGSN_MCC_MNC, VENDOR_ID_3GPP, true, false, true);
+        TestHelper.INSTANCE.update(ccrAvps, MSISDN, 400000L);
 
         JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
 
@@ -205,33 +157,7 @@ class OcsApplicationTest {
         );
 
         AvpSet ccrAvps = request.getAvps();
-        ccrAvps.addAvp(Avp.CC_REQUEST_TYPE, RequestType.TERMINATION_REQUEST, true, false);
-        ccrAvps.addAvp(Avp.CC_REQUEST_NUMBER, 2, true, false);
-
-        AvpSet msisdnSubscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
-        msisdnSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164.ordinal());
-        msisdnSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, MSISDN, false);
-
-        AvpSet imsiSubscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
-        imsiSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI.ordinal());
-        imsiSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, IMSI, false);
-
-        ccrAvps.addAvp(Avp.TERMINATION_CAUSE, 1, true, false); // 1 = DIAMETER_LOGOUT
-
-        AvpSet mscc = ccrAvps.addGroupedAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
-        mscc.addAvp(Avp.RATING_GROUP, 10);
-        mscc.addAvp(Avp.SERVICE_IDENTIFIER_CCA, 1);
-        AvpSet usedServiceUnits = mscc.addGroupedAvp(Avp.USED_SERVICE_UNIT);
-        usedServiceUnits.addAvp(Avp.CC_TOTAL_OCTETS, 700000L);
-        usedServiceUnits.addAvp(Avp.CC_INPUT_OCTETS, 0L);
-        usedServiceUnits.addAvp(Avp.CC_OUTPUT_OCTETS, 0L);
-        usedServiceUnits.addAvp(Avp.CC_SERVICE_SPECIFIC_UNITS, 0L);
-        mscc.addAvp(Avp.REPORTING_REASON, 2, VENDOR_ID_3GPP, true, false); // 2 = FINAL
-
-        AvpSet serviceInformation = ccrAvps.addGroupedAvp(Avp.SERVICE_INFORMATION, VENDOR_ID_3GPP, true, false);
-        AvpSet psInformation = serviceInformation.addGroupedAvp(Avp.PS_INFORMATION, VENDOR_ID_3GPP, true, false);
-        psInformation.addAvp(CALLED_STATION_ID, APN, false);
-        psInformation.addAvp(Avp.GPP_SGSN_MCC_MNC, SGSN_MCC_MNC, VENDOR_ID_3GPP, true, false, true);
+        TestHelper.INSTANCE.terminate(ccrAvps, MSISDN, 700000L);
 
         JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
 
