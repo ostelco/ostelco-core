@@ -25,6 +25,12 @@ services:
     ports:
       - "8080:8080"
 
+  pseudonymiser:
+    container_name: pseudonymiser
+    build: pseudonymiser
+    ports:
+      - "8085:8080"
+
 networks:
   net:
     driver: bridge
