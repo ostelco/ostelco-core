@@ -2,7 +2,10 @@ package org.ostelco.pseudonym.utils
 
 import org.ostelco.pseudonym.resources.DateBounds
 import java.util.*
-
+/**
+ * Implements DateBounds interface which provides boundary timestamps
+ * for a week.
+ */
 class WeeklyBounds: DateBounds {
     private val timeZone = TimeZone.getTimeZone("UTC")
 

@@ -15,11 +15,21 @@ import javax.ws.rs.core.Response
 import javax.ws.rs.core.Response.Status
 import java.util.TimeZone
 
+/**
+ * Interface which provides the method to retrieve the boundary timestamps.
+ */
 interface DateBounds {
     fun getBounds(timestamp: Long): Pair<Long, Long>
 }
 
+/**
+ * Class representing the Pseudonym entity in Datastore.
+ */
 class PseudonymEntity(val msisdn: String, val pseudonym: String, val start: Long, val end: Long)
+
+/**
+ * Resource used to handle the pseudonym related REST calls.
+ */
 
 @Path("/pseudonym")
 class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
@@ -34,12 +44,11 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
      */
     @GET
     @Path("/get/{msisdn}/{timestamp}")
-    fun getPseudonym(@NotBlank @PathParam("msisdn") msisdn: String?,
-                     @NotBlank @PathParam("timestamp") timestamp: String?): Response {
-
-        LOG.info("Msisdn = ${msisdn} timestamp =${timestamp}")
-        val bounds = dateBounds.getBounds(timestamp!!.toLong())
-        var entity = getPseudonymEntity(msisdn!!, bounds.first)
+    fun getPseudonym(@NotBlank @PathParam("msisdn") msisdn: String,
+                     @NotBlank @PathParam("timestamp") timestamp: String): Response {
+        LOG.info("pseudonym for Msisdn = ${msisdn} at timestamp =${timestamp}")
+        val bounds = dateBounds.getBounds(timestamp.toLong())
+        var entity = getPseudonymEntity(msisdn, bounds.first)
         if (entity == null) {
             entity = createPseudonym(msisdn, bounds)
         }
@@ -54,23 +63,34 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
     @GET
     @Path("/current/{msisdn}")
     fun getPseudonym(@NotBlank @PathParam("msisdn") msisdn: String): Response {
-
         val timestamp = Instant.now().toEpochMilli()
-        LOG.info("Msisdn = ${msisdn} timestamp =${timestamp}")
+        LOG.info("pseudonym for Msisdn = ${msisdn} at current time, timestamp =${timestamp}")
         val bounds = dateBounds.getBounds(timestamp)
-        LOG.info("timestamp = ${timestamp} Bounds (${bounds.first} - ${bounds.second})")
-        return Response.ok("Msisdn = ${msisdn} timestamp =${timestamp}", MediaType.TEXT_PLAIN_TYPE).build()
+        var entity = getPseudonymEntity(msisdn, bounds.first)
+        if (entity == null) {
+            entity = createPseudonym(msisdn, bounds)
+        }
+        return Response.ok(entity, MediaType.APPLICATION_JSON).build()
     }
 
+    /**
+     * Generates the key for a pseudonym entity. The configurable portion
+     * of the key is "<msisdn>-<start timestamp ms>".
+     */
     private fun getPseudonymKey(msisdn: String, start: Long): Key {
         val keyName = "${msisdn}-${start}"
         return datastore.newKeyFactory().setKind(dataType).newKey(keyName)
     }
 
+    /**
+     * Retrieves the pseudonym for the given msisdn with starting timestamp.
+     * If the entity is not found in the datastore , it returns null.
+     */
     private fun getPseudonymEntity(msisdn: String, start: Long): PseudonymEntity? {
         val pseudonymKey = getPseudonymKey(msisdn, start)
         val value = datastore.get(pseudonymKey)
         if (value != null) {
+            // Create the object from datastore entity
             return PseudonymEntity(
                     value.getString("msisdn"),
                     value.getString("pseudonym"),
@@ -80,12 +100,16 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
         return null
     }
 
+    /**
+     * Create a new pseudonym entity for a msisdn with given bounds.
+     * This won't check for duplicates.
+     */
     private fun createPseudonym(msisdn: String, bounds: Pair<Long, Long>): PseudonymEntity {
         val uuid = UUID.randomUUID().toString();
         val entity = PseudonymEntity(msisdn, uuid, bounds.first, bounds.second)
         val pseudonymKey = getPseudonymKey(entity.msisdn, entity.start)
 
-        // Prepare the new entity
+        // Prepare the new datastore entity
         val pseudonym = Entity.newBuilder(pseudonymKey)
                 .set("msisdn", entity.msisdn)
                 .set("pseudonym", entity.pseudonym)
