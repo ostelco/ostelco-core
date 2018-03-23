@@ -28,9 +28,9 @@ interface DateBounds {
 class PseudonymEntity(val msisdn: String, val pseudonym: String, val start: Long, val end: Long)
 
 /**
- * Resource used to handle the pseudonym related REST calls.
+ * Resource used to handle the pseudonym related REST calls. The map of pseudonym objects
+ * are store in datastore. The key for the object is made from "<msisdn>-<start timestamp ms>.
  */
-
 @Path("/pseudonym")
 class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
 
