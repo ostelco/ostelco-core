@@ -44,4 +44,16 @@ class PseudonymResourceTest {
 
         assertEquals(Status.NOT_FOUND.statusCode, statusCode)
     }
+    @Test
+    fun testPseudonymResource() {
+        System.out.println("testPseudonymResource")
+
+        val statusCode = resources
+                ?.target("/pseudonym/current/4790303333")
+                ?.request()
+                ?.get()
+                ?.status ?: -1
+
+        assertEquals(Status.OK.statusCode, statusCode)
+    }
 }

@@ -13,6 +13,10 @@ done
 
 echo "Datastore emulator launched"
 
+# Forward the local port 9090 to datastore-emulator:8081
+# The
+socat TCP-LISTEN:9090,fork TCP:datastore-emulator:8081 &
+
 # TODO call start.sh from here. For some reason, it is not working
 # ./start.sh
 
