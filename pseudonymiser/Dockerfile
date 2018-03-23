@@ -3,6 +3,7 @@ FROM openjdk:8u151
 MAINTAINER CSI "csi@telenordigital.com"
 
 COPY script/start.sh /start.sh
+COPY script/wait_for_dsemulator.sh /wait_for_dsemulator.sh
 
 COPY config /config
 

@@ -27,12 +27,12 @@ class PseudonymServerTest {
     @Test
     fun testPseudonymServer() {
 
+        println("testPseudonymServer")
         val response = JerseyClientBuilder().build()
                 ?.target("http://0.0.0.0:${RULE.getLocalPort()}/pseudonym/current/${msisdn}")
                 ?.request()
                 ?.get()
-
-        assertEquals(200, response?.status)
+        assertEquals(300, response?.status)
 
 //        val customToken = String(response?.readEntity(java.lang.String::class.java)?.toCharArray() ?: CharArray(0)).split(".")
 //

@@ -25,15 +25,40 @@ services:
       - "ocsgw"
     command: ["./wait_for_ocsgw.sh"]
 
+#  pseudonymiser:
+#    environment:
+#      - GCLOUD_PROJECT=test
+#      - CLOUDSDK_CORE_PROJECT=test
+#      - DATASTORE_EMULATOR_HOST=datastore-emulator:8081
+#    command: ["/bin/bash", "./wait_for_dsemulator.sh"]
+
+  pseudonymiser:
+    environment:
+      - GCLOUD_PROJECT==project-test
+#      - DATASTORE_PROJECT_ID=project-test
+      - DATASTORE_EMULATOR_HOST=datastore-emulator:8081
+    command: ["/bin/bash", "./wait_for_dsemulator.sh"]
+
   pubsub-emulator:
     container_name: pubsub-emulator
     image: knarz/pubsub-emulator
 #    image: google/cloud-sdk
 #    command: ["gcloud", "beta", "emulators", "pubsub", "start"]
 
+#  datastore-emulator2:
+#    container_name: datastore-emulator2
+#    image: google/cloud-sdk
+#    expose:
+#      - "8081"
+#    environment:
+#      - GCLOUD_PROJECT=test
+#      - CLOUDSDK_CORE_PROJECT=test
+#    command: ["gcloud", "beta", "emulators", "datastore", "start", "--host-port=datastore-emulator:8081"]
   datastore-emulator:
     container_name: datastore-emulator
-    image: google/cloud-sdk
+    image: singularities/datastore-emulator
     environment:
-      - GCLOUD_PROJECT=test
-    command: ["gcloud", "beta", "emulators", "datastore", "start"]
+      - DATASTORE_PROJECT_ID=project-test
+      - DATASTORE_LISTEN_ADDRESS=datastore-emulator:8081
+    expose:
+      - "8081"
