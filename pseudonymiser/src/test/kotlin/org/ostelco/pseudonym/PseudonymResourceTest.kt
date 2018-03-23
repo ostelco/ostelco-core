@@ -32,8 +32,11 @@ class PseudonymResourceTest {
                 .build()
     }
 
+    /**
+     * Test what happens when parameter is not given
+     */
     @Test
-    fun testPseudonymResourceForMissingHeader() {
+    fun testPseudonymResourceForMissingParameter() {
         System.out.println("testPseudonymResourceForMissingHeader")
 
         val statusCode = resources
@@ -44,6 +47,9 @@ class PseudonymResourceTest {
 
         assertEquals(Status.NOT_FOUND.statusCode, statusCode)
     }
+    /**
+     * Test a normal request will all parameters
+     */
     @Test
     fun testPseudonymResource() {
         System.out.println("testPseudonymResource")

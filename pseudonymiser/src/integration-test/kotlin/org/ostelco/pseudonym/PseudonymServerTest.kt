@@ -24,6 +24,9 @@ class PseudonymServerTest {
                 ResourceHelpers.resourceFilePath("config.yaml"))
     }
 
+    /**
+     * Test a normal request
+     */
     @Test
     fun testPseudonymServer() {
 
