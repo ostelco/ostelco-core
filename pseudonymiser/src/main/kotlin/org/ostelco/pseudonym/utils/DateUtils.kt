@@ -8,7 +8,9 @@ import java.util.*
  */
 class WeeklyBounds: DateBounds {
     private val timeZone = TimeZone.getTimeZone("UTC")
-
+    /**
+     * Returns the boundaries for the week of the given timestamp.
+     */
     override fun getBounds(timestamp: Long): Pair<Long, Long> {
         val cal = Calendar.getInstance(timeZone)
         cal.timeInMillis = timestamp

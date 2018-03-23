@@ -19,6 +19,10 @@ import java.util.TimeZone
  * Interface which provides the method to retrieve the boundary timestamps.
  */
 interface DateBounds {
+    /**
+     * Returns the boundaries for the period of the given timestamp.
+     * (start <= timestamp <= end). Timestamps are in UTC
+     */
     fun getBounds(timestamp: Long): Pair<Long, Long>
 }
 
@@ -73,19 +77,11 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
         return Response.ok(entity, MediaType.APPLICATION_JSON).build()
     }
 
-    /**
-     * Generates the key for a pseudonym entity. The configurable portion
-     * of the key is "<msisdn>-<start timestamp ms>".
-     */
     private fun getPseudonymKey(msisdn: String, start: Long): Key {
         val keyName = "${msisdn}-${start}"
         return datastore.newKeyFactory().setKind(dataType).newKey(keyName)
     }
 
-    /**
-     * Retrieves the pseudonym for the given msisdn with starting timestamp.
-     * If the entity is not found in the datastore , it returns null.
-     */
     private fun getPseudonymEntity(msisdn: String, start: Long): PseudonymEntity? {
         val pseudonymKey = getPseudonymKey(msisdn, start)
         val value = datastore.get(pseudonymKey)
@@ -100,10 +96,6 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
         return null
     }
 
-    /**
-     * Create a new pseudonym entity for a msisdn with given bounds.
-     * This won't check for duplicates.
-     */
     private fun createPseudonym(msisdn: String, bounds: Pair<Long, Long>): PseudonymEntity {
         val uuid = UUID.randomUUID().toString();
         val entity = PseudonymEntity(msisdn, uuid, bounds.first, bounds.second)

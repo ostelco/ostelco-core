@@ -9,7 +9,9 @@ import org.junit.Test
 import java.util.*
 import kotlin.test.assertEquals
 
-
+/**
+ * Class to do integration testing of  pseudonymiser.
+ */
 class PseudonymServerTest {
 
     private val msisdn = "MSISDN"

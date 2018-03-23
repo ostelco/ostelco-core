@@ -10,8 +10,9 @@ import org.ostelco.pseudonym.utils.WeeklyBounds
 import javax.ws.rs.core.Response.Status
 import kotlin.test.assertEquals
 
-
-
+/**
+ * Class for unit testing PseudonymResource.
+ */
 class PseudonymResourceTest {
 
     companion object {
