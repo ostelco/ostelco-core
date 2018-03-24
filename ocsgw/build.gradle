@@ -5,14 +5,14 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'org.junit.platform:junit-platform-gradle-plugin:1.0.3'
+        classpath 'org.junit.platform:junit-platform-gradle-plugin:1.1.0'
     }
 }
 
 plugins {
     id "application"
     id "jacoco"
-    id "com.github.johnrengelman.shadow" version "2.0.1"
+    id "com.github.johnrengelman.shadow" version "2.0.2"
 }
 
 apply plugin: 'org.junit.platform.gradle.plugin'
@@ -22,12 +22,12 @@ dependencies {
     implementation project(':diameter-stack')
 
     testImplementation project(':diameter-test')
-    testCompile 'org.junit.jupiter:junit-jupiter-api:5.0.3'
-    testCompile 'org.junit.platform:junit-platform-runner:1.0.3'
-    testRuntime 'org.junit.jupiter:junit-jupiter-engine:5.0.3'
+    testCompile 'org.junit.jupiter:junit-jupiter-api:5.1.0'
+    testCompile 'org.junit.platform:junit-platform-runner:1.1.0'
+    testRuntime 'org.junit.jupiter:junit-jupiter-engine:5.1.0'
 
     testCompile 'junit:junit:4.12'
-    testRuntime 'org.junit.vintage:junit-vintage-engine:4.12.3'
+    testRuntime 'org.junit.vintage:junit-vintage-engine:5.1.0'
 }
 
 test {

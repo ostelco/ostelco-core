@@ -1,9 +1,9 @@
 plugins {
-    id "application"
-    id "jacoco"
-    id "com.github.johnrengelman.shadow" version "2.0.1"
-    id "org.jetbrains.kotlin.jvm" version "1.2.30"
-    id "idea"
+  id "application"
+  id "jacoco"
+  id "com.github.johnrengelman.shadow" version "2.0.2"
+  id "org.jetbrains.kotlin.jvm" version "1.2.31"
+  id "idea"
 }
 
 sourceSets {
@@ -20,17 +20,17 @@ sourceSets {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
-    implementation project(':ocs-api')
-    implementation project(':ostelco-lib')
-    implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
-    implementation 'com.google.firebase:firebase-admin:5.3.1'
-    implementation 'com.google.cloud:google-cloud-pubsub:0.32.0-beta'
-    implementation 'com.lmax:disruptor:3.3.7'
-    implementation 'com.google.guava:guava:21.0'
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+  implementation project(':ocs-api')
+  implementation project(':ostelco-lib')
+  implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
+  implementation 'com.google.firebase:firebase-admin:5.9.0'
+  implementation 'com.google.cloud:google-cloud-pubsub:0.41.0-beta'
+  implementation 'com.lmax:disruptor:3.4.1'
+  implementation 'com.google.guava:guava:24.1-jre'
 
-    testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
-    testCompile 'org.mockito:mockito-core:2.10.0'
+  testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+  testImplementation 'org.mockito:mockito-core:2.16.0'
 }
 
 configurations {
@@ -45,50 +45,50 @@ task integration(type: Test, description: 'Runs the integration tests.', group: 
 }
 
 shadowJar {
-    mainClassName = 'org.ostelco.prime.PrimeApplication'
-    mergeServiceFiles()
-    classifier = "uber"
-    version = null
+  mainClassName = 'org.ostelco.prime.PrimeApplication'
+  mergeServiceFiles()
+  classifier = "uber"
+  version = null
 }
 
 task pack(type: Zip, dependsOn: 'shadowJar') {
-    from ('config/') {
-        into(project.name + '/config')
-    }
-    from ('script/') {
-        into(project.name + '/script')
-    }
-    from ('build/libs/prime-uber.jar') {
-        into(project.name + '/build/libs/')
-    }
-    from ('Dockerfile') {
-        into(project.name)
-    }
-    archiveName 'prime.zip'
-    destinationDir(file('build/deploy/'))
+  from('config/') {
+    into(project.name + '/config')
+  }
+  from('script/') {
+    into(project.name + '/script')
+  }
+  from('build/libs/prime-uber.jar') {
+    into(project.name + '/build/libs/')
+  }
+  from('Dockerfile') {
+    into(project.name)
+  }
+  archiveName 'prime.zip'
+  destinationDir(file('build/deploy/'))
 }
 
 jacocoTestReport {
-    group = "Reporting"
-    description = "Generate Jacoco coverage reports after running tests."
-    additionalSourceDirs = files(sourceSets.main.allJava.srcDirs)
-    reports {
-        xml.enabled = true
-        html.enabled = true
-    }
+  group = "Reporting"
+  description = "Generate Jacoco coverage reports after running tests."
+  additionalSourceDirs = files(sourceSets.main.allJava.srcDirs)
+  reports {
+    xml.enabled = true
+    html.enabled = true
+  }
 }
 
 check.dependsOn jacocoTestReport
 
 test {
-    testLogging {
-        exceptionFormat = 'full'
-        events "PASSED", "FAILED", "SKIPPED"
-    }
+  testLogging {
+    exceptionFormat = 'full'
+    events "PASSED", "FAILED", "SKIPPED"
+  }
 }
 
 idea {
-    module {
-        testSourceDirs += file('src/integration-tests/kotlin')
-    }
+  module {
+    testSourceDirs += file('src/integration-tests/kotlin')
+  }
 }
