@@ -15,6 +15,8 @@ import javax.ws.rs.core.Response
 import javax.ws.rs.core.Response.Status
 import java.util.TimeZone
 
+
+
 /**
  * Interface which provides the method to retrieve the boundary timestamps.
  */
@@ -87,29 +89,47 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
         val value = datastore.get(pseudonymKey)
         if (value != null) {
             // Create the object from datastore entity
-            return PseudonymEntity(
-                    value.getString("msisdn"),
-                    value.getString("pseudonym"),
-                    value.getLong("start"),
-                    value.getLong("end"))
+            return convertToPseudonymEntity(value)
         }
         return null
     }
 
+    private fun convertToPseudonymEntity(entity: Entity): PseudonymEntity {
+        return PseudonymEntity(
+                entity.getString("msisdn"),
+                entity.getString("pseudonym"),
+                entity.getLong("start"),
+                entity.getLong("end"))
+    }
+
     private fun createPseudonym(msisdn: String, bounds: Pair<Long, Long>): PseudonymEntity {
         val uuid = UUID.randomUUID().toString();
-        val entity = PseudonymEntity(msisdn, uuid, bounds.first, bounds.second)
+        var entity = PseudonymEntity(msisdn, uuid, bounds.first, bounds.second)
         val pseudonymKey = getPseudonymKey(entity.msisdn, entity.start)
 
-        // Prepare the new datastore entity
-        val pseudonym = Entity.newBuilder(pseudonymKey)
-                .set("msisdn", entity.msisdn)
-                .set("pseudonym", entity.pseudonym)
-                .set("start", entity.start)
-                .set("end", entity.end)
-                .build()
-
-        datastore.put(pseudonym)
+        val transaction = datastore.newTransaction()
+        try {
+            // Verify before writing a new value.
+            val currentEntity = transaction.get(pseudonymKey);
+            if (currentEntity == null) {
+                // Prepare the new datastore entity
+                val pseudonym = Entity.newBuilder(pseudonymKey)
+                        .set("msisdn", entity.msisdn)
+                        .set("pseudonym", entity.pseudonym)
+                        .set("start", entity.start)
+                        .set("end", entity.end)
+                        .build()
+                transaction.put(pseudonym)
+                transaction.commit()
+            } else {
+                // Use the existing one
+                entity = convertToPseudonymEntity(currentEntity)
+            }
+        } finally {
+            if (transaction.isActive) {
+                transaction.rollback()
+            }
+        }
         return entity
     }
 }
