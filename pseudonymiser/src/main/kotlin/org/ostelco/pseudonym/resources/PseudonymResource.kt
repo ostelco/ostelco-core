@@ -29,7 +29,7 @@ interface DateBounds {
 /**
  * Class representing the Pseudonym entity in Datastore.
  */
-class PseudonymEntity(val msisdn: String, val pseudonym: String, val start: Long, val end: Long)
+data class PseudonymEntity(val msisdn: String, val pseudonym: String, val start: Long, val end: Long)
 
 /**
  * Resource used to handle the pseudonym related REST calls. The map of pseudonym objects
@@ -93,7 +93,7 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
         val results = datastore.run(query)
         if (results.hasNext()) {
             val entity = results.next()
-            return Response.ok(entity, MediaType.APPLICATION_JSON).build()
+            return Response.ok(convertToPseudonymEntity(entity), MediaType.APPLICATION_JSON).build()
         }
         LOG.info("Couldn't find, pseudonym = ${pseudonym}")
         return Response.status(Status.NOT_FOUND).build()

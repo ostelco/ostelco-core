@@ -11,6 +11,7 @@ dependencies {
   implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
   implementation 'com.google.firebase:firebase-admin:5.9.0'
   implementation 'com.google.cloud:google-cloud-datastore:1.22.0'
+  compile group: 'com.fasterxml.jackson.module', name: 'jackson-module-kotlin', version: '2.9.4.1'
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
   testRuntime 'org.hamcrest:hamcrest-all:1.3'
