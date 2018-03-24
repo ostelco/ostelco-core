@@ -9,12 +9,14 @@ import org.hibernate.validator.constraints.NotBlank
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.*
+import javax.ws.rs.DELETE
 import javax.ws.rs.GET
 import javax.ws.rs.Path
 import javax.ws.rs.PathParam
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.Response.Status
+import kotlin.collections.HashMap
 
 
 /**
@@ -99,6 +101,34 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
         }
         LOG.info("Couldn't find, pseudonym = ${pseudonym}")
         return Response.status(Status.NOT_FOUND).build()
+    }
+
+    /**
+     * Delete all pseudonym entities for the given msisdn
+     * Returns a json object with no of records deleted.
+     *  { count : <no. of entities deleted> }
+     */
+    @DELETE
+    @Path("/delete/{msisdn}")
+    fun deleteAllPseudonyms(@NotBlank @PathParam("msisdn") msisdn: String): Response {
+        LOG.info("delete all pseudonyms for Msisdn = ${msisdn}")
+        val query = Query.newEntityQueryBuilder()
+                .setKind(dataType)
+                .setFilter(PropertyFilter.eq("msisdn", msisdn))
+                .setLimit(1)
+                .build()
+        val results = datastore.run(query)
+        var count = 0;
+        while (results.hasNext()) {
+            val entity = results.next()
+            datastore.delete(entity.key)
+            count++
+        }
+        // Return a Json object with number of records deleted.
+        val countMap = HashMap<String, Int>()
+        countMap["count"] = count
+        LOG.info("deleted $count records for Msisdn = $msisdn")
+        return Response.ok(countMap, MediaType.APPLICATION_JSON).build()
     }
 
     private fun getPseudonymKey(msisdn: String, start: Long): Key {

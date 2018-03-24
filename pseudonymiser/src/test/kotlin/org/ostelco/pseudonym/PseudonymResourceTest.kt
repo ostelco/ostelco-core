@@ -13,6 +13,7 @@ import org.ostelco.pseudonym.utils.WeeklyBounds
 import javax.ws.rs.core.Response.Status
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 /**
  * Class for unit testing PseudonymResource.
@@ -121,5 +122,43 @@ class PseudonymResourceTest {
         json = result.readEntity(String::class.java)
         pseudonymEntity = mapper.readValue<PseudonymEntity>(json)
         assertEquals(pseudonymEntity.msisdn, "4790303333")
+    }
+
+    /**
+     * Test deleting all pseudonyms for a msisdn
+     */
+    @Test
+    fun testDeletePseudonym() {
+        val testMsisdn = "4790309999"
+        var result = resources
+                ?.target("/pseudonym/current/$testMsisdn")
+                ?.request()
+                ?.get()
+        assertNotNull(result)
+        if (result == null) return
+        assertEquals(Status.OK.statusCode, result.status)
+        var json = result.readEntity(String::class.java)
+        var pseudonymEntity = mapper.readValue<PseudonymEntity>(json)
+        assertEquals(pseudonymEntity.msisdn, testMsisdn)
+
+        result = resources
+                ?.target("/pseudonym/delete/$testMsisdn")
+                ?.request()
+                ?.delete()
+        assertNotNull(result)
+        if (result == null) return
+        assertEquals(Status.OK.statusCode, result.status)
+        json = result.readEntity(String::class.java)
+        val countMap = mapper.readValue<Map<String, Int>>(json)
+        val count = countMap["count"] ?: -1
+        assertTrue(count >= 1)
+
+        result = resources
+                ?.target("/pseudonym/find/${pseudonymEntity.pseudonym}")
+                ?.request()
+                ?.get()
+        assertNotNull(result)
+        if (result == null) return
+        assertEquals(Status.NOT_FOUND.statusCode, result.status)
     }
 }
