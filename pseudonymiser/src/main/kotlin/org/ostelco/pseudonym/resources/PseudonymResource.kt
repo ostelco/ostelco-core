@@ -1,6 +1,9 @@
 package org.ostelco.pseudonym.resources
 
-import com.google.cloud.datastore.*
+import com.google.cloud.datastore.Datastore
+import com.google.cloud.datastore.Entity
+import com.google.cloud.datastore.Key
+import com.google.cloud.datastore.Query
 import com.google.cloud.datastore.StructuredQuery.PropertyFilter
 import org.hibernate.validator.constraints.NotBlank
 import org.slf4j.LoggerFactory
@@ -12,7 +15,6 @@ import javax.ws.rs.PathParam
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.Response.Status
-import java.util.TimeZone
 
 
 /**

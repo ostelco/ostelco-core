@@ -1,5 +1,7 @@
 package org.ostelco.pseudonym
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.cloud.datastore.Datastore
 import com.google.cloud.datastore.testing.LocalDatastoreHelper
 import io.dropwizard.testing.junit.ResourceTestRule
@@ -11,7 +13,6 @@ import org.ostelco.pseudonym.utils.WeeklyBounds
 import javax.ws.rs.core.Response.Status
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import com.fasterxml.jackson.module.kotlin.*
 
 /**
  * Class for unit testing PseudonymResource.
@@ -75,8 +76,9 @@ class PseudonymResourceTest {
                 ?.request()
                 ?.get()
         assertNotNull(result)
-        assertEquals(Status.OK.statusCode, result?.status ?: -1)
-        var json = result!!.readEntity(String::class.java)
+        if (result == null) return
+        assertEquals(Status.OK.statusCode, result.status)
+        var json = result.readEntity(String::class.java)
         var pseudonymEntity = mapper.readValue<PseudonymEntity>(json)
         assertEquals(pseudonymEntity.msisdn, "4790303333")
 
@@ -85,8 +87,9 @@ class PseudonymResourceTest {
                 ?.request()
                 ?.get()
         assertNotNull(result)
-        assertEquals(Status.OK.statusCode, result?.status ?: -1)
-        json = result!!.readEntity(String::class.java)
+        if (result == null) return
+        assertEquals(Status.OK.statusCode, result.status)
+        json = result.readEntity(String::class.java)
         val pseudonymEntity2 = mapper.readValue<PseudonymEntity>(json)
         assertEquals(pseudonymEntity2.pseudonym, pseudonymEntity.pseudonym)
     }
@@ -102,8 +105,9 @@ class PseudonymResourceTest {
                 ?.request()
                 ?.get()
         assertNotNull(result)
-        assertEquals(Status.OK.statusCode, result?.status ?: -1)
-        var json = result!!.readEntity(String::class.java)
+        if (result == null) return
+        assertEquals(Status.OK.statusCode, result.status)
+        var json = result.readEntity(String::class.java)
         var pseudonymEntity = mapper.readValue<PseudonymEntity>(json)
         assertEquals(pseudonymEntity.msisdn, "4790303333")
 
@@ -112,8 +116,9 @@ class PseudonymResourceTest {
                 ?.request()
                 ?.get()
         assertNotNull(result)
-        assertEquals(Status.OK.statusCode, result?.status ?: -1)
-        json = result!!.readEntity(String::class.java)
+        if (result == null) return
+        assertEquals(Status.OK.statusCode, result.status)
+        json = result.readEntity(String::class.java)
         pseudonymEntity = mapper.readValue<PseudonymEntity>(json)
         assertEquals(pseudonymEntity.msisdn, "4790303333")
     }
