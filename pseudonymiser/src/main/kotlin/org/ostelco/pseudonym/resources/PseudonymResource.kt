@@ -1,8 +1,7 @@
 package org.ostelco.pseudonym.resources
 
-import com.google.cloud.datastore.Datastore
-import com.google.cloud.datastore.Entity
-import com.google.cloud.datastore.Key
+import com.google.cloud.datastore.*
+import com.google.cloud.datastore.StructuredQuery.PropertyFilter
 import org.hibernate.validator.constraints.NotBlank
 import org.slf4j.LoggerFactory
 import java.time.Instant
@@ -14,7 +13,6 @@ import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.Response.Status
 import java.util.TimeZone
-
 
 
 /**
@@ -77,6 +75,28 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
             entity = createPseudonym(msisdn, bounds)
         }
         return Response.ok(entity, MediaType.APPLICATION_JSON).build()
+    }
+
+    /**
+     * Find the msisdn and other details about the given pseudonym.
+     * In case pseudonym doesn't exist, it returns 404
+     */
+    @GET
+    @Path("/find/{pseudonym}")
+    fun findPseudonym(@NotBlank @PathParam("pseudonym") pseudonym: String): Response {
+        LOG.info("Find details for pseudonym = ${pseudonym}")
+        val query = Query.newEntityQueryBuilder()
+                .setKind(dataType)
+                .setFilter(PropertyFilter.eq("pseudonym", pseudonym))
+                .setLimit(1)
+                .build()
+        val results = datastore.run(query)
+        if (results.hasNext()) {
+            val entity = results.next()
+            return Response.ok(entity, MediaType.APPLICATION_JSON).build()
+        }
+        LOG.info("Couldn't find, pseudonym = ${pseudonym}")
+        return Response.status(Status.NOT_FOUND).build()
     }
 
     private fun getPseudonymKey(msisdn: String, start: Long): Key {
