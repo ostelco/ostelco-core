@@ -26,8 +26,8 @@ subprojects {
     options.encoding = 'UTF-8'
   }
   ext {
-    kotlinVersion = "1.2.30"
-    dropwizardVersion = "1.2.2"
+    kotlinVersion = "1.2.31"
+    dropwizardVersion = "1.3.0"
   }
 }
 
