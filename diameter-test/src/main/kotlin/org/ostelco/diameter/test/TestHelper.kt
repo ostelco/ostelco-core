@@ -52,18 +52,22 @@ object TestHelper {
         }
     }
 
+    @JvmStatic
     fun init(ccrAvps: AvpSet, msisdn: String, bucketSize: Long) {
         build(ccrAvps, RequestType.INITIAL_REQUEST, requestNumber = 0, msisdn = msisdn, bucketSize = bucketSize)
     }
 
+    @JvmStatic
     fun initNoCredit(ccrAvps: AvpSet, bucketSize: Long) {
         build(ccrAvps, RequestType.INITIAL_REQUEST, requestNumber = 0, msisdn = "4333333333", bucketSize = bucketSize)
     }
 
+    @JvmStatic
     fun update(ccrAvps: AvpSet, msisdn: String, bucketSize: Long) {
         build(ccrAvps, RequestType.UPDATE_REQUEST, requestNumber = 1, msisdn = msisdn, bucketSize = bucketSize)
     }
 
+    @JvmStatic
     fun terminate(ccrAvps: AvpSet, msisdn: String, bucketSize: Long) {
 
         set(ccrAvps) {
