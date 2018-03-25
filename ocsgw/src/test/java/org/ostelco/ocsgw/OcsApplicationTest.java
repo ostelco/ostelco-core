@@ -84,7 +84,7 @@ class OcsApplicationTest {
 
         AvpSet ccrAvps = request.getAvps();
 
-        TestHelper.INSTANCE.init(ccrAvps, MSISDN, 500000L);
+        TestHelper.init(ccrAvps, MSISDN, 500000L);
 
         JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
 
@@ -120,7 +120,7 @@ class OcsApplicationTest {
 
 
         AvpSet ccrAvps = request.getAvps();
-        TestHelper.INSTANCE.update(ccrAvps, MSISDN, 400000L);
+        TestHelper.update(ccrAvps, MSISDN, 400000L);
 
         JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
 
@@ -157,7 +157,7 @@ class OcsApplicationTest {
         );
 
         AvpSet ccrAvps = request.getAvps();
-        TestHelper.INSTANCE.terminate(ccrAvps, MSISDN, 700000L);
+        TestHelper.terminate(ccrAvps, MSISDN, 700000L);
 
         JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
 

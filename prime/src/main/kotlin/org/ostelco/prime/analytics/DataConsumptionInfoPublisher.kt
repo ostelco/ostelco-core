@@ -5,8 +5,8 @@ import com.google.api.core.ApiFutures
 import com.google.api.gax.rpc.ApiException
 import com.google.cloud.pubsub.v1.Publisher
 import com.google.protobuf.util.Timestamps
+import com.google.pubsub.v1.ProjectTopicName
 import com.google.pubsub.v1.PubsubMessage
-import com.google.pubsub.v1.TopicName
 import com.lmax.disruptor.EventHandler
 import io.dropwizard.lifecycle.Managed
 import org.ostelco.ocs.api.DataTrafficInfo
@@ -28,7 +28,7 @@ class DataConsumptionInfoPublisher(private val projectId: String, private val to
     @Throws(IOException::class)
     override fun start() {
 
-        val topicName = TopicName.of(projectId, topicId)
+        val topicName = ProjectTopicName.of(projectId, topicId)
 
         // Create a publisher instance with default settings bound to the topic
         publisher = Publisher.newBuilder(topicName).build()

@@ -1,36 +1,42 @@
 plugins {
-    id "java-library"
-    id "idea"
-    id "com.google.protobuf" version "0.8.3"
+  id "java-library"
+  id "idea"
+  id "com.google.protobuf" version "0.8.5"
 }
 
+// FIXME
+// Updating to 1.10.* causes ClassNotFound exception at runtime
+// Keeping it version 1.9.0 to be consistent with grpc via PubSub client lib
+ext.grpcVersion = "1.9.0"
+
 dependencies {
-    api 'io.grpc:grpc-netty:1.6.1'
-    api 'io.grpc:grpc-protobuf:1.6.1'
-    api 'io.grpc:grpc-stub:1.6.1'
+  api "io.grpc:grpc-netty:$grpcVersion"
+  api "io.grpc:grpc-protobuf:$grpcVersion"
+  api "io.grpc:grpc-stub:$grpcVersion"
+  api "io.grpc:grpc-core:$grpcVersion"
 }
 
 protobuf {
-    plugins {
-        grpc {
-            artifact = 'io.grpc:protoc-gen-grpc-java:1.6.1'
-        }
+  plugins {
+    grpc {
+      artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"
     }
-    protoc { artifact = 'com.google.protobuf:protoc:3.0.0' }
-    generateProtoTasks {
-        all()*.plugins {
-            grpc {}
-        }
+  }
+  protoc { artifact = 'com.google.protobuf:protoc:3.5.1-1' }
+  generateProtoTasks {
+    all()*.plugins {
+      grpc {}
     }
+  }
 }
 
 idea {
-    module {
-        sourceDirs += files("${protobuf.generatedFilesBaseDir}/main/java")
-        sourceDirs += files("${protobuf.generatedFilesBaseDir}/main/grpc")
-    }
+  module {
+    sourceDirs += files("${protobuf.generatedFilesBaseDir}/main/java")
+    sourceDirs += files("${protobuf.generatedFilesBaseDir}/main/grpc")
+  }
 }
 
 clean {
-    delete protobuf.generatedFilesBaseDir
+  delete protobuf.generatedFilesBaseDir
 }

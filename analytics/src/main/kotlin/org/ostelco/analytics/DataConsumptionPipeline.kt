@@ -133,8 +133,8 @@ fun appendTransformations(inCollection: PCollection<DataTrafficInfo>): PCollecti
 
     val kvToSingleObject = transform<KV<AggregatedDataTrafficInfo, Long>, AggregatedDataTrafficInfo> {
         AggregatedDataTrafficInfo.newBuilder()
-                .setMsisdn(it.key.msisdn)
-                .setDateTime(it.key.dateTime)
+                .setMsisdn(it.key?.msisdn)
+                .setDateTime(it.key?.dateTime)
                 .setDataBytes(it.value)
                 .build()
     }

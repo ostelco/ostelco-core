@@ -4,6 +4,24 @@ import org.jdiameter.api.Avp
 import org.ostelco.diameter.parser.AvpField
 import org.ostelco.diameter.parser.AvpList
 
+object RequestType {
+    const val INITIAL_REQUEST = 1
+    const val UPDATE_REQUEST = 2
+    const val TERMINATION_REQUEST = 3
+    const val EVENT_REQUEST = 4
+
+    @JvmStatic
+    fun getTypeAsString(type: Int): String {
+        return when (type) {
+            RequestType.INITIAL_REQUEST -> "INITIAL"
+            RequestType.UPDATE_REQUEST -> "UPDATE"
+            RequestType.TERMINATION_REQUEST -> "TERMINATE"
+            RequestType.EVENT_REQUEST -> "EVENT"
+            else -> Integer.toString(type)
+        }
+    }
+}
+
 data class CreditControlAnswer(val multipleServiceCreditControls: List<MultipleServiceCreditControl>)
 
 enum class CreditControlResultCode(val value: Int) {
