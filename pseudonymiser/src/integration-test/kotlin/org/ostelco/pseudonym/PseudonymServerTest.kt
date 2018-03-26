@@ -1,6 +1,7 @@
 package org.ostelco.pseudonym
 
 import com.google.gson.JsonParser
+import io.dropwizard.testing.ConfigOverride
 import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
 import org.glassfish.jersey.client.JerseyClientBuilder
@@ -21,7 +22,8 @@ class PseudonymServerTest {
         @ClassRule
         val RULE = DropwizardAppRule(
                 PseudonymServerApplication::class.java,
-                ResourceHelpers.resourceFilePath("config.yaml"))
+                ResourceHelpers.resourceFilePath("config.yaml"),
+                ConfigOverride.config("datastoreType", "emulator"))
     }
 
     /**
@@ -35,7 +37,7 @@ class PseudonymServerTest {
                 ?.target("http://0.0.0.0:${RULE.getLocalPort()}/pseudonym/current/${msisdn}")
                 ?.request()
                 ?.get()
-        assertEquals(300, response?.status)
+        assertEquals(200, response?.status)
 
 //        val customToken = String(response?.readEntity(java.lang.String::class.java)?.toCharArray() ?: CharArray(0)).split(".")
 //

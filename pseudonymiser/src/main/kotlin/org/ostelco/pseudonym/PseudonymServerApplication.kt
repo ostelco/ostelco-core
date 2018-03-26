@@ -1,6 +1,8 @@
 package org.ostelco.pseudonym
 
+import com.google.cloud.datastore.Datastore
 import com.google.cloud.datastore.DatastoreOptions
+import com.google.cloud.datastore.testing.LocalDatastoreHelper
 import io.dropwizard.Application
 import io.dropwizard.setup.Environment
 import org.ostelco.pseudonym.config.PseudonymServerConfig
@@ -30,7 +32,15 @@ class PseudonymServerApplication : Application<PseudonymServerConfig>() {
     override fun run(
             config: PseudonymServerConfig,
             env: Environment) {
-        val datastore = DatastoreOptions.getDefaultInstance().service
+        var datastore :Datastore? = null
+        if (config.datastoreType == "emulator") {
+            LOG.info("Starting local datastore emulator...")
+            val helper: LocalDatastoreHelper = LocalDatastoreHelper.create(1.0)
+            helper.start()
+            datastore = helper.options.service
+        } else {
+            datastore = DatastoreOptions.getDefaultInstance().service
+        }
         env.jersey().register(PseudonymResource(datastore, WeeklyBounds()))
     }
 }

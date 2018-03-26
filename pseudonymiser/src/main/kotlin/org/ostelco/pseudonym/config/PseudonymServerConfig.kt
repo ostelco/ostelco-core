@@ -8,6 +8,6 @@ import io.dropwizard.Configuration
 class PseudonymServerConfig : Configuration() {
 
     var serviceAccountKey = ""
-
     var databaseName = ""
+    var datastoreType = "default"
 }
