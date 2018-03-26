@@ -32,7 +32,7 @@ class PseudonymServerApplication : Application<PseudonymServerConfig>() {
     override fun run(
             config: PseudonymServerConfig,
             env: Environment) {
-        var datastore :Datastore? = null
+        var datastore :Datastore?
         if (config.datastoreType == "emulator") {
             LOG.info("Starting local datastore emulator...")
             val helper: LocalDatastoreHelper = LocalDatastoreHelper.create(1.0)
