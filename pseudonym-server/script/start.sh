@@ -3,4 +3,4 @@
 # Start app
 exec java \
     -Dfile.encoding=UTF-8 \
-    -jar /pseudonymiser.jar server /config/config.yaml
+    -jar /pseudonym-server.jar server /config/config.yaml

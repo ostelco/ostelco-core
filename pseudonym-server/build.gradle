@@ -31,13 +31,13 @@ task pack(type: Zip, dependsOn: 'shadowJar') {
   from('script/') {
     into(project.name + '/script')
   }
-  from('build/libs/pseudonymiser-uber.jar') {
+  from('build/libs/pseudonym-server-uber.jar') {
     into(project.name + '/build/libs/')
   }
   from('Dockerfile') {
     into(project.name)
   }
-  archiveName 'pseudonymiser.zip'
+  archiveName 'pseudonym-server.zip'
   destinationDir(file('build/deploy/'))
 }
 

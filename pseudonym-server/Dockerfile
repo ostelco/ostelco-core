@@ -11,7 +11,7 @@ COPY script/wait_for_dsemulator.sh /wait_for_dsemulator.sh
 
 COPY config /config
 
-COPY build/libs/pseudonymiser-uber.jar /pseudonymiser.jar
+COPY build/libs/pseudonym-server-uber.jar /pseudonym-server.jar
 
 EXPOSE 8080
 EXPOSE 8081

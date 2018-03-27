@@ -2,7 +2,7 @@
 
 set -e
 
-echo "pseudonymiser waiting Datastore emulator to launch on datastore-emulator:8081..."
+echo "pseudonym-server waiting Datastore emulator to launch on datastore-emulator:8081..."
 
 ds=$(curl --silent  http://datastore-emulator:8081  | head -n1)
 until [[ $ds == 'Ok' ]] ; do
@@ -23,5 +23,5 @@ socat TCP-LISTEN:9090,fork TCP:datastore-emulator:8081 &
 # Start app
 exec java \
     -Dfile.encoding=UTF-8 \
-    -jar /pseudonymiser.jar server /config/config.yaml
+    -jar /pseudonym-server.jar server /config/config.yaml
 
