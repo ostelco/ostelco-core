@@ -1,10 +1,5 @@
 package org.ostelco.pseudonymiser.resources
 
-import com.google.cloud.datastore.Datastore
-import com.google.cloud.datastore.Entity
-import com.google.cloud.datastore.Key
-import com.google.cloud.datastore.Query
-import com.google.cloud.datastore.StructuredQuery.PropertyFilter
 import org.hibernate.validator.constraints.NotBlank
 import org.slf4j.LoggerFactory
 import java.time.Instant
@@ -17,11 +12,6 @@ import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.Response.Status
 import kotlin.collections.HashMap
-
-/**
- * Class representing the Pseudonym entity in Datastore.
- */
-data class PseudonymEntity(val msisdn: String, val pseudonym: String, val start: Long, val end: Long)
 
 /**
  * Resource used to handle the pseudonymiser REST calls.

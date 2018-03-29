@@ -2,8 +2,6 @@ package org.ostelco.pseudonymiser
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.google.cloud.datastore.Datastore
-import com.google.cloud.datastore.testing.LocalDatastoreHelper
 import io.dropwizard.testing.junit.ResourceTestRule
 import org.junit.ClassRule
 import org.junit.Test
@@ -20,14 +18,6 @@ import kotlin.test.assertTrue
 class PseudonymiserResourceTest {
 
     companion object {
-
-        private var datastore: Datastore
-
-        init {
-            val helper: LocalDatastoreHelper = LocalDatastoreHelper.create(1.0)
-            helper.start()
-            datastore = helper.options.service
-        }
 
         @ClassRule
         @JvmField
