@@ -74,14 +74,14 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
         val url = getPseudonymUrl(trafficInfo.msisdn, trafficInfo.timestamp)
         val target = client.target(url)
         val response = target.request().get()
-        if (response.getStatus() !== 200) {
+        if (response.getStatus() != 200) {
             val unexpectedResponse = response.readEntity(String::class.java)
             LOG.warn("$url returned ${response.getStatus()} Response: ${unexpectedResponse}")
             consumer.nack()
             return
         }
-        var json = response.readEntity(String::class.java)
-        var pseudonymEntity = mapper.readValue<PseudonymEntity>(json)
+        val json = response.readEntity(String::class.java)
+        val pseudonymEntity = mapper.readValue<PseudonymEntity>(json)
 
         // New message with pseudonym msisdn
         val data = DataTrafficInfo.newBuilder()

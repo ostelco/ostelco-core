@@ -5,7 +5,6 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import io.dropwizard.testing.junit.ResourceTestRule
 import org.junit.ClassRule
 import org.junit.Test
-import org.ostelco.pseudonymiser.resources.PseudonymEntity
 import org.ostelco.pseudonymiser.resources.PseudonymiserResource
 import javax.ws.rs.core.Response.Status
 import kotlin.test.assertEquals
