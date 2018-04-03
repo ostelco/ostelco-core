@@ -43,7 +43,6 @@ data class PseudonymEntity(val msisdn: String, val pseudonym: String, val start:
 class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
 
     private val LOG = LoggerFactory.getLogger(PseudonymResource::class.java)
-    private val timeZone = TimeZone.getTimeZone("UTC")
     private val dataType = "Pseudonym"
     /**
      * Get the pseudonym which is valid at the timestamp for the given
@@ -54,7 +53,7 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
     @Path("/get/{msisdn}/{timestamp}")
     fun getPseudonym(@NotBlank @PathParam("msisdn") msisdn: String,
                      @NotBlank @PathParam("timestamp") timestamp: String): Response {
-        LOG.info("pseudonym for Msisdn = ${msisdn} at timestamp =${timestamp}")
+        LOG.info("GET pseudonym for Msisdn = $msisdn at timestamp = $timestamp")
         val bounds = dateBounds.getBounds(timestamp.toLong())
         var entity = getPseudonymEntity(msisdn, bounds.first)
         if (entity == null) {
@@ -72,7 +71,7 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
     @Path("/current/{msisdn}")
     fun getPseudonym(@NotBlank @PathParam("msisdn") msisdn: String): Response {
         val timestamp = Instant.now().toEpochMilli()
-        LOG.info("pseudonym for Msisdn = ${msisdn} at current time, timestamp =${timestamp}")
+        LOG.info("GET pseudonym for Msisdn = $msisdn at current time, timestamp = $timestamp")
         val bounds = dateBounds.getBounds(timestamp)
         var entity = getPseudonymEntity(msisdn, bounds.first)
         if (entity == null) {
@@ -88,7 +87,7 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
     @GET
     @Path("/find/{pseudonym}")
     fun findPseudonym(@NotBlank @PathParam("pseudonym") pseudonym: String): Response {
-        LOG.info("Find details for pseudonym = ${pseudonym}")
+        LOG.info("Find details for pseudonym = $pseudonym")
         val query = Query.newEntityQueryBuilder()
                 .setKind(dataType)
                 .setFilter(PropertyFilter.eq("pseudonym", pseudonym))
@@ -111,7 +110,7 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
     @DELETE
     @Path("/delete/{msisdn}")
     fun deleteAllPseudonyms(@NotBlank @PathParam("msisdn") msisdn: String): Response {
-        LOG.info("delete all pseudonyms for Msisdn = ${msisdn}")
+        LOG.info("delete all pseudonyms for Msisdn = $msisdn")
         val query = Query.newEntityQueryBuilder()
                 .setKind(dataType)
                 .setFilter(PropertyFilter.eq("msisdn", msisdn))
