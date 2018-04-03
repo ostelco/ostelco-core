@@ -66,7 +66,7 @@ class OcsState : EventHandler<PrimeEvent> {
     fun addDataBundleBytes(msisdn: String, bytes: Long): Long {
 
         Preconditions.checkArgument(bytes > 0,
-                "No of bytes must be positive")
+                "Number of bytes must be positive")
 
         dataPackMap.putIfAbsent(msisdn, 0L)
         val newDataSize = dataPackMap[msisdn]!! + bytes

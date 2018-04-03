@@ -20,9 +20,11 @@ import static org.junit.Assert.assertEquals;
 
 
 /**
- *  Tests for the OcsApplication. This will use a TestClient to
- *  actually send Diameter traffic on localhost to the OcsApplication.
+ *  Tests for the OcsApplication. This test uses the diameter-test lib to setup a test P-GW to
+ *  actually send Diameter traffic on the selected DataSource to the OcsApplication. The
+ *  DataSource used is the one in the configuration file for this resources.
  */
+
 
 public class OcsApplicationTest {
 
