@@ -75,9 +75,7 @@ public class OcsApplicationTest {
                 OCS_HOST
         );
 
-        AvpSet ccrAvps = request.getAvps();
-
-        TestHelper.init(ccrAvps, MSISDN, 500000L);
+        TestHelper.init(request.getAvps(), MSISDN, 500000L);
 
         client.sendNextRequest(request);
 
@@ -106,9 +104,7 @@ public class OcsApplicationTest {
                 OCS_HOST
         );
 
-
-        AvpSet ccrAvps = request.getAvps();
-        TestHelper.update(ccrAvps, MSISDN, 400000L);
+        TestHelper.update(request.getAvps(), MSISDN, 400000L);
 
         client.sendNextRequest(request);
 
@@ -139,8 +135,7 @@ public class OcsApplicationTest {
                 OCS_HOST
         );
 
-        AvpSet ccrAvps = request.getAvps();
-        TestHelper.terminate(ccrAvps, MSISDN, 700000L);
+        TestHelper.terminate(request.getAvps(), MSISDN, 700000L);
 
         client.sendNextRequest(request);
 
