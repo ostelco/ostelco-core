@@ -1,7 +1,6 @@
 package org.ostelco.ext_pgw;
 
 import org.apache.log4j.Logger;
-import org.jdiameter.api.ApplicationId;
 import org.jdiameter.api.Avp;
 import org.jdiameter.api.AvpDataException;
 import org.jdiameter.api.AvpSet;
@@ -32,8 +31,6 @@ public class OcsApplicationTest {
 
     private static final String DEST_REALM = "loltel";
     private static final String DEST_HOST = "ocs";
-    private static final int COMMAND_CODE = 272; // Credit-Control
-    private static final long APPLICATION_ID = 4L;  // Diameter Credit Control Application (4)
 
     private static final String MSISDN = "4747900184";
     private static final String IMSI = "242017100000228";
@@ -59,9 +56,7 @@ public class OcsApplicationTest {
 
     private void simpleCreditControlRequestInit() {
 
-        Request request = client.getSession().createRequest(
-                COMMAND_CODE,
-                ApplicationId.createByAuthAppId(APPLICATION_ID),
+        Request request = client.createRequest(
                 DEST_REALM,
                 DEST_HOST
         );
@@ -112,9 +107,7 @@ public class OcsApplicationTest {
 
     private void simpleCreditControlRequestUpdate() {
 
-        Request request = client.getSession().createRequest(
-                COMMAND_CODE,
-                ApplicationId.createByAuthAppId(APPLICATION_ID),
+        Request request = client.createRequest(
                 DEST_REALM,
                 DEST_HOST
         );
@@ -167,9 +160,7 @@ public class OcsApplicationTest {
         simpleCreditControlRequestInit();
         simpleCreditControlRequestUpdate();
 
-        Request request = client.getSession().createRequest(
-                COMMAND_CODE,
-                ApplicationId.createByAuthAppId(APPLICATION_ID),
+        Request request = client.createRequest(
                 DEST_REALM,
                 DEST_HOST
         );
@@ -224,9 +215,7 @@ public class OcsApplicationTest {
     @Test
     public void creditControlRequestInitNoCredit() {
 
-        Request request = client.getSession().createRequest(
-                COMMAND_CODE,
-                ApplicationId.createByAuthAppId(APPLICATION_ID),
+        Request request = client.createRequest(
                 DEST_REALM,
                 DEST_HOST
         );

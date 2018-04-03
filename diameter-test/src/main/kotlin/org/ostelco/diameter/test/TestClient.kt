@@ -17,7 +17,6 @@ import org.jdiameter.api.RouteException
 import org.jdiameter.api.Session
 import org.jdiameter.api.SessionFactory
 import org.jdiameter.api.Stack
-import org.jdiameter.api.cca.events.JCreditControlRequest
 import org.jdiameter.common.impl.app.cca.JCreditControlRequestImpl
 import org.jdiameter.server.impl.StackImpl
 import org.jdiameter.server.impl.helpers.XMLConfiguration
@@ -51,6 +50,8 @@ class TestClient : EventListener<Request, Answer> {
 
         // definition of codes, IDs
         private const val applicationID = 4L  // Diameter Credit Control Application (4)
+
+        private const val commandCode = 272 // Credit-Control
     }
 
     // The result for the request
@@ -140,6 +141,15 @@ class TestClient : EventListener<Request, Answer> {
 
     fun initRequestTest() {
         this.isRequestReceived = false
+    }
+
+    fun createRequest(realm : String, host : String): Request? {
+        return session?.createRequest(
+                commandCode,
+                ApplicationId.createByAuthAppId(applicationID),
+                realm,
+                host
+        );
     }
 
     fun start() {
