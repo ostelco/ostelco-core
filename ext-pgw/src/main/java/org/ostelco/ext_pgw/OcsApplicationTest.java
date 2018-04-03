@@ -95,8 +95,7 @@ public class OcsApplicationTest {
 
         JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
 
-        client.setRequest(ccr);
-        client.sendNextRequest();
+        client.sendNextRequest(ccr);
 
         waitForAnswer();
 
@@ -151,8 +150,7 @@ public class OcsApplicationTest {
 
         JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
 
-        client.setRequest(ccr);
-        client.sendNextRequest();
+        client.sendNextRequest(ccr);
 
         waitForAnswer();
 
@@ -211,8 +209,7 @@ public class OcsApplicationTest {
 
         JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
 
-        client.setRequest(ccr);
-        client.sendNextRequest();
+        client.sendNextRequest(ccr);
 
         waitForAnswer();
 
@@ -269,8 +266,7 @@ public class OcsApplicationTest {
 
         JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
 
-        client.setRequest(ccr);
-        client.sendNextRequest();
+        client.sendNextRequest(ccr);
 
         waitForAnswer();
 

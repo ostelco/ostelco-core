@@ -52,9 +52,6 @@ class TestClient : EventListener<Request, Answer> {
         private const val applicationID = 4L  // Diameter Credit Control Application (4)
     }
 
-    // The request the test client will send
-    private var request: JCreditControlRequest? = null
-
     // The result for the request
     var resultAvps: AvpSet? = null
         private set
@@ -157,11 +154,11 @@ class TestClient : EventListener<Request, Answer> {
 
     }
 
-    fun sendNextRequest() {
+    fun sendNextRequest(request: JCreditControlRequest) {
         isAnswerReceived = false
         try {
-            this.session!!.send(request!!.message, this)
-            dumpMessage(request!!.message, true) //dump info on console
+            this.session!!.send(request.message, this)
+            dumpMessage(request.message, true) //dump info on console
         } catch (e: InternalException) {
             LOG.error("Failed to send request", e)
             isAnswerReceived = true
@@ -197,10 +194,6 @@ class TestClient : EventListener<Request, Answer> {
                 + "\nAppID:" + message.applicationId)
 
         LOG.info("AVPS[" + message.avps.size() + "]: \n")
-    }
-
-    fun setRequest(request: JCreditControlRequest) {
-        this.request = request
     }
 
     fun shutdown() {

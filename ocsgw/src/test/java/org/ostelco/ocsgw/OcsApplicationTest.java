@@ -34,7 +34,7 @@ import static org.junit.Assert.assertEquals;
  */
 
 @DisplayName("OcsApplicationTest")
-class OcsApplicationTest {
+public class OcsApplicationTest {
 
     private static final Logger LOG = Logger.getLogger(OcsApplicationTest.class);
 
@@ -88,8 +88,7 @@ class OcsApplicationTest {
 
         JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
 
-        client.setRequest(ccr);
-        client.sendNextRequest();
+        client.sendNextRequest(ccr);
 
         waitForAnswer();
 
@@ -124,8 +123,7 @@ class OcsApplicationTest {
 
         JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
 
-        client.setRequest(ccr);
-        client.sendNextRequest();
+        client.sendNextRequest(ccr);
 
         waitForAnswer();
 
@@ -161,8 +159,7 @@ class OcsApplicationTest {
 
         JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
 
-        client.setRequest(ccr);
-        client.sendNextRequest();
+        client.sendNextRequest(ccr);
 
         waitForAnswer();
 
@@ -265,8 +262,7 @@ class OcsApplicationTest {
 
         JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
 
-        client.setRequest(ccr);
-        client.sendNextRequest();
+        client.sendNextRequest(ccr);
 
         waitForAnswer();
 
