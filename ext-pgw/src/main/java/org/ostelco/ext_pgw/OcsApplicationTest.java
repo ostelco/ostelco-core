@@ -6,8 +6,6 @@ import org.jdiameter.api.Avp;
 import org.jdiameter.api.AvpDataException;
 import org.jdiameter.api.AvpSet;
 import org.jdiameter.api.Request;
-import org.jdiameter.api.cca.events.JCreditControlRequest;
-import org.jdiameter.common.impl.app.cca.JCreditControlRequestImpl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -93,9 +91,7 @@ public class OcsApplicationTest {
         psInformation.addAvp(CALLED_STATION_ID, APN, false);
         psInformation.addAvp(Avp.GPP_SGSN_MCC_MNC, SGSN_MCC_MNC, VENDOR_ID_3GPP, true, false, true);
 
-        JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
-
-        client.sendNextRequest(ccr);
+        client.sendNextRequest(request);
 
         waitForAnswer();
 
@@ -148,9 +144,7 @@ public class OcsApplicationTest {
         psInformation.addAvp(CALLED_STATION_ID, APN, false);
         psInformation.addAvp(Avp.GPP_SGSN_MCC_MNC, SGSN_MCC_MNC, VENDOR_ID_3GPP, true, false, true);
 
-        JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
-
-        client.sendNextRequest(ccr);
+        client.sendNextRequest(request);
 
         waitForAnswer();
 
@@ -207,9 +201,7 @@ public class OcsApplicationTest {
         psInformation.addAvp(CALLED_STATION_ID, APN, false);
         psInformation.addAvp(Avp.GPP_SGSN_MCC_MNC, SGSN_MCC_MNC, VENDOR_ID_3GPP, true, false, true);
 
-        JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
-
-        client.sendNextRequest(ccr);
+        client.sendNextRequest(request);
 
         waitForAnswer();
 
@@ -264,9 +256,7 @@ public class OcsApplicationTest {
         psInformation.addAvp(CALLED_STATION_ID, APN, false);
         psInformation.addAvp(Avp.GPP_SGSN_MCC_MNC, SGSN_MCC_MNC, VENDOR_ID_3GPP, true, false, true);
 
-        JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
-
-        client.sendNextRequest(ccr);
+        client.sendNextRequest(request);
 
         waitForAnswer();
 

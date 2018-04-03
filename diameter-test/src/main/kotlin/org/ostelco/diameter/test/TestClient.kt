@@ -18,6 +18,7 @@ import org.jdiameter.api.Session
 import org.jdiameter.api.SessionFactory
 import org.jdiameter.api.Stack
 import org.jdiameter.api.cca.events.JCreditControlRequest
+import org.jdiameter.common.impl.app.cca.JCreditControlRequestImpl
 import org.jdiameter.server.impl.StackImpl
 import org.jdiameter.server.impl.helpers.XMLConfiguration
 import org.ostelco.diameter.logger
@@ -154,11 +155,12 @@ class TestClient : EventListener<Request, Answer> {
 
     }
 
-    fun sendNextRequest(request: JCreditControlRequest) {
+    fun sendNextRequest(request: Request) {
+        val ccr = JCreditControlRequestImpl(request)
         isAnswerReceived = false
         try {
-            this.session!!.send(request.message, this)
-            dumpMessage(request.message, true) //dump info on console
+            this.session!!.send(ccr.message, this)
+            dumpMessage(ccr.message, true) //dump info on console
         } catch (e: InternalException) {
             LOG.error("Failed to send request", e)
             isAnswerReceived = true
@@ -172,7 +174,6 @@ class TestClient : EventListener<Request, Answer> {
             LOG.error("Failed to send request", e)
             isAnswerReceived = true
         }
-
     }
 
     override fun receivedSuccessMessage(request: Request, answer: Answer) {

@@ -6,8 +6,6 @@ import org.jdiameter.api.Avp;
 import org.jdiameter.api.AvpDataException;
 import org.jdiameter.api.AvpSet;
 import org.jdiameter.api.Request;
-import org.jdiameter.api.cca.events.JCreditControlRequest;
-import org.jdiameter.common.impl.app.cca.JCreditControlRequestImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -86,9 +84,7 @@ public class OcsApplicationTest {
 
         TestHelper.init(ccrAvps, MSISDN, 500000L);
 
-        JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
-
-        client.sendNextRequest(ccr);
+        client.sendNextRequest(request);
 
         waitForAnswer();
 
@@ -121,9 +117,7 @@ public class OcsApplicationTest {
         AvpSet ccrAvps = request.getAvps();
         TestHelper.update(ccrAvps, MSISDN, 400000L);
 
-        JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
-
-        client.sendNextRequest(ccr);
+        client.sendNextRequest(request);
 
         waitForAnswer();
 
@@ -157,9 +151,7 @@ public class OcsApplicationTest {
         AvpSet ccrAvps = request.getAvps();
         TestHelper.terminate(ccrAvps, MSISDN, 700000L);
 
-        JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
-
-        client.sendNextRequest(ccr);
+        client.sendNextRequest(request);
 
         waitForAnswer();
 
@@ -260,9 +252,7 @@ public class OcsApplicationTest {
         String s = "8242f21078b542f2100103c703";
         psInformation.addAvp(Avp.GPP_USER_LOCATION_INFO, DatatypeConverter.parseHexBinary(s), VENDOR_ID_3GPP, true, false);
 
-        JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
-
-        client.sendNextRequest(ccr);
+        client.sendNextRequest(request);
 
         waitForAnswer();
 
