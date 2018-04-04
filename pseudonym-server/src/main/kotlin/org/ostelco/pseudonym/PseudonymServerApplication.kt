@@ -50,23 +50,22 @@ class PseudonymServerApplication : Application<PseudonymServerConfig>() {
         } else {
             datastore = DatastoreOptions.getDefaultInstance().service
         }
-        val client: Client = JerseyClientBuilder(env).using(config.jerseyClient)
-                .build(name);
+        val client: Client = JerseyClientBuilder(env).using(config.jerseyClient).build(name);
         client.property(ClientProperties.CONNECT_TIMEOUT, 2000)
         client.property(ClientProperties.READ_TIMEOUT, 2000)
         val subscriptionName = ProjectSubscriptionName.of(config.projectName, config.subscriptionName)
         val publisherTopicName = ProjectTopicName.of(config.projectName, config.publisherTopic)
         var endpoint = config.pseudonymEndpoint
         if (endpoint.isEmpty()) {
-            var httpPort = 8080 // Default http port
+            var httpPort: Int? = null
             val serverFactory = config.getServerFactory() as DefaultServerFactory
             for (connector in serverFactory.applicationConnectors) {
                 if (connector.javaClass.isAssignableFrom(HttpConnectorFactory::class.java)) {
-                    httpPort = (connector as HttpConnectorFactory).port
+                    httpPort = (connector as? HttpConnectorFactory)?.port
                     break
                 }
             }
-            endpoint = "http://localhost:$httpPort"
+            endpoint = "http://localhost:${httpPort?:8080}"
         }
         LOG.info("Pseudonym endpoint = $endpoint")
         val messageProcessor = MessageProcessor(subscriptionName,

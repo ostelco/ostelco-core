@@ -24,7 +24,7 @@ import org.ostelco.pseudonym.resources.PseudonymEntity
 import org.slf4j.LoggerFactory
 import io.grpc.ManagedChannelBuilder
 import io.grpc.ManagedChannel
-
+import java.io.IOException
 
 
 /**
@@ -42,7 +42,7 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
     private var publisher: Publisher? = null
     val mapper = jacksonObjectMapper()
     // Testing helpers.
-    val hostport = System.getenv("PUBSUB_EMULATOR_HOST")
+    val hostport: String? = System.getenv("PUBSUB_EMULATOR_HOST")
     var channel: ManagedChannel? = null
 
     init {
@@ -54,7 +54,7 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
     @Throws(Exception::class)
     override fun start() {
         LOG.info("Starting MessageProcessor...")
-        if (!hostport.isEmpty()) {
+        if (hostport != null && !hostport.isEmpty()) {
             // Setup for picking up emulator settings
             // https://cloud.google.com/pubsub/docs/emulator#pubsub-emulator-java
             channel = ManagedChannelBuilder.forTarget(hostport).usePlaintext(true).build()
@@ -74,21 +74,15 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
             publisher = Publisher.newBuilder(publisherTopicName).build();
             subscriber = Subscriber.newBuilder(subscriptionName, receiver).build();
         }
-        subscriber!!.startAsync()
+        subscriber?.startAsync()
     }
 
     @Throws(Exception::class)
     override fun stop() {
         LOG.info("Stopping MessageProcessor...")
-        if (!hostport.isEmpty()) {
-            channel?.shutdown()
-        }
-        if (subscriber != null) {
-            subscriber!!.stopAsync()
-        }
-        if (publisher != null) {
-            publisher!!.shutdown()
-        }
+        channel?.shutdown()
+        subscriber?.stopAsync()
+        publisher?.shutdown()
     }
 
     private fun getPseudonymUrl(msisdn: String, timestamp: Timestamp): String {
@@ -126,7 +120,7 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
                     .build()
 
             //schedule a message to be published, messages are automatically batched
-            val future = publisher!!.publish(pubsubMessage)
+            val future = publisher?.publish(pubsubMessage)
             // add an asynchronous callback to handle success / failure
             ApiFutures.addCallback(future, object : ApiFutureCallback<String> {
 
@@ -148,7 +142,7 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
                 }
             })
         }
-        catch (e: Exception) {
+        catch (e: javax.ws.rs.ProcessingException) {
             LOG.error("Error converting DataTrafficInfo message ${message.messageId}, ${e.toString()}")
             consumer.nack()
         }
