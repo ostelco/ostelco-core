@@ -22,12 +22,15 @@ import kotlin.collections.HashMap
 /**
  * Interface which provides the method to retrieve the boundary timestamps.
  */
+data class Bounds(val start: Long, val end: Long)
 interface DateBounds {
     /**
      * Returns the boundaries for the period of the given timestamp.
      * (start <= timestamp <= end). Timestamps are in UTC
+     * Also returns the key prefix
      */
-    fun getBounds(timestamp: Long): Pair<Long, Long>
+    fun getBoundsNKeyPrefix(msisdn: String, timestamp: Long): Pair<Bounds, String>
+
 }
 
 /**
@@ -58,10 +61,10 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
     fun getPseudonym(@NotBlank @PathParam("msisdn") msisdn: String,
                      @NotBlank @PathParam("timestamp") timestamp: String): Response {
         LOG.info("GET pseudonym for Msisdn = $msisdn at timestamp = $timestamp")
-        val bounds = dateBounds.getBounds(timestamp.toLong())
-        var entity = getPseudonymEntity(msisdn, bounds.first)
+        val (bounds, keyPrefix) = dateBounds.getBoundsNKeyPrefix(msisdn, timestamp.toLong())
+        var entity = getPseudonymEntity(keyPrefix)
         if (entity == null) {
-            entity = createPseudonym(msisdn, bounds)
+            entity = createPseudonym(msisdn, bounds, keyPrefix)
         }
         return Response.ok(entity, MediaType.APPLICATION_JSON).build()
     }
@@ -76,10 +79,10 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
     fun getPseudonym(@NotBlank @PathParam("msisdn") msisdn: String): Response {
         val timestamp = Instant.now().toEpochMilli()
         LOG.info("GET pseudonym for Msisdn = $msisdn at current time, timestamp = $timestamp")
-        val bounds = dateBounds.getBounds(timestamp)
-        var entity = getPseudonymEntity(msisdn, bounds.first)
+        val (bounds, keyPrefix) = dateBounds.getBoundsNKeyPrefix(msisdn, timestamp)
+        var entity = getPseudonymEntity(keyPrefix)
         if (entity == null) {
-            entity = createPseudonym(msisdn, bounds)
+            entity = createPseudonym(msisdn, bounds, keyPrefix)
         }
         return Response.ok(entity, MediaType.APPLICATION_JSON).build()
     }
@@ -134,13 +137,12 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
         return Response.ok(countMap, MediaType.APPLICATION_JSON).build()
     }
 
-    private fun getPseudonymKey(msisdn: String, start: Long): Key {
-        val keyName = "${msisdn}-${start}"
-        return datastore.newKeyFactory().setKind(dataType).newKey(keyName)
+    private fun getPseudonymKey(keyPrefix: String): Key {
+        return datastore.newKeyFactory().setKind(dataType).newKey(keyPrefix)
     }
 
-    private fun getPseudonymEntity(msisdn: String, start: Long): PseudonymEntity? {
-        val pseudonymKey = getPseudonymKey(msisdn, start)
+    private fun getPseudonymEntity(keyPrefix: String): PseudonymEntity? {
+        val pseudonymKey = getPseudonymKey(keyPrefix)
         val value = datastore.get(pseudonymKey)
         if (value != null) {
             // Create the object from datastore entity
@@ -157,10 +159,10 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
                 entity.getLong(endPropertyName))
     }
 
-    private fun createPseudonym(msisdn: String, bounds: Pair<Long, Long>): PseudonymEntity {
+    private fun createPseudonym(msisdn: String, bounds: Bounds, keyPrefix: String): PseudonymEntity {
         val uuid = UUID.randomUUID().toString();
-        var entity = PseudonymEntity(msisdn, uuid, bounds.first, bounds.second)
-        val pseudonymKey = getPseudonymKey(entity.msisdn, entity.start)
+        var entity = PseudonymEntity(msisdn, uuid, bounds.start, bounds.end)
+        val pseudonymKey = getPseudonymKey(keyPrefix)
 
         val transaction = datastore.newTransaction()
         try {
