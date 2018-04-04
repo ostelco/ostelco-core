@@ -29,8 +29,6 @@ public class OcsIntegrationTest {
 
     private static final Logger LOG = Logger.getLogger(OcsIntegrationTest.class);
 
-    private static final int VENDOR_ID_3GPP = 10415;
-
     private static final String DEST_REALM = "loltel";
     private static final String DEST_HOST = "ocs";
 
