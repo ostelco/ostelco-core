@@ -18,13 +18,12 @@ import com.google.pubsub.v1.ProjectSubscriptionName
 import com.google.pubsub.v1.ProjectTopicName
 import com.google.pubsub.v1.PubsubMessage
 import io.dropwizard.lifecycle.Managed
-import javax.ws.rs.client.Client
+import io.grpc.ManagedChannel
+import io.grpc.ManagedChannelBuilder
 import org.ostelco.ocs.api.DataTrafficInfo
 import org.ostelco.pseudonym.resources.PseudonymEntity
 import org.slf4j.LoggerFactory
-import io.grpc.ManagedChannelBuilder
-import io.grpc.ManagedChannel
-import java.io.IOException
+import javax.ws.rs.client.Client
 
 
 /**

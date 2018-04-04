@@ -7,17 +7,16 @@ import com.google.pubsub.v1.ProjectSubscriptionName
 import com.google.pubsub.v1.ProjectTopicName
 import io.dropwizard.Application
 import io.dropwizard.client.JerseyClientBuilder
+import io.dropwizard.jetty.HttpConnectorFactory
+import io.dropwizard.server.DefaultServerFactory
 import io.dropwizard.setup.Environment
+import org.glassfish.jersey.client.ClientProperties
 import org.ostelco.pseudonym.config.PseudonymServerConfig
 import org.ostelco.pseudonym.managed.MessageProcessor
 import org.ostelco.pseudonym.resources.PseudonymResource
 import org.ostelco.pseudonym.utils.WeeklyBounds
 import org.slf4j.LoggerFactory
 import javax.ws.rs.client.Client
-import io.dropwizard.jetty.HttpConnectorFactory
-import io.dropwizard.jetty.ConnectorFactory
-import io.dropwizard.server.DefaultServerFactory
-import org.glassfish.jersey.client.ClientProperties
 
 
 /**
