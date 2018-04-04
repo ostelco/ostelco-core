@@ -4,7 +4,10 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.api.core.ApiFutureCallback
 import com.google.api.core.ApiFutures
+import com.google.api.gax.core.NoCredentialsProvider
+import com.google.api.gax.grpc.GrpcTransportChannel
 import com.google.api.gax.rpc.ApiException
+import com.google.api.gax.rpc.FixedTransportChannelProvider
 import com.google.cloud.pubsub.v1.AckReplyConsumer
 import com.google.cloud.pubsub.v1.MessageReceiver
 import com.google.cloud.pubsub.v1.Publisher
@@ -19,6 +22,10 @@ import javax.ws.rs.client.Client
 import org.ostelco.ocs.api.DataTrafficInfo
 import org.ostelco.pseudonym.resources.PseudonymEntity
 import org.slf4j.LoggerFactory
+import io.grpc.ManagedChannelBuilder
+import io.grpc.ManagedChannel
+
+
 
 /**
  * Class representing the Pseudonym entity.
@@ -34,6 +41,9 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
     private var subscriber: Subscriber? = null
     private var publisher: Publisher? = null
     val mapper = jacksonObjectMapper()
+    // Testing helpers.
+    val hostport = System.getenv("PUBSUB_EMULATOR_HOST")
+    var channel: ManagedChannel? = null
 
     init {
         receiver = MessageReceiver { message, consumer ->
@@ -44,14 +54,35 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
     @Throws(Exception::class)
     override fun start() {
         LOG.info("Starting MessageProcessor...")
-        publisher = Publisher.newBuilder(publisherTopicName).build();
-        subscriber = Subscriber.newBuilder(subscriptionName, receiver).build();
+        if (!hostport.isEmpty()) {
+            // Setup for picking up emulator settings
+            // https://cloud.google.com/pubsub/docs/emulator#pubsub-emulator-java
+            channel = ManagedChannelBuilder.forTarget(hostport).usePlaintext(true).build()
+            val channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel))
+            val credentialsProvider = NoCredentialsProvider.create()
+            publisher = Publisher.newBuilder(publisherTopicName)
+                    .setChannelProvider(channelProvider)
+                    .setCredentialsProvider(credentialsProvider)
+                    .build();
+            subscriber = Subscriber.newBuilder(subscriptionName, receiver)
+                    .setChannelProvider(channelProvider)
+                    .setCredentialsProvider(credentialsProvider)
+                    .build();
+
+        } else {
+            // Production, connect to real pubsub host
+            publisher = Publisher.newBuilder(publisherTopicName).build();
+            subscriber = Subscriber.newBuilder(subscriptionName, receiver).build();
+        }
         subscriber!!.startAsync()
     }
 
     @Throws(Exception::class)
     override fun stop() {
         LOG.info("Stopping MessageProcessor...")
+        if (!hostport.isEmpty()) {
+            channel?.shutdown()
+        }
         if (subscriber != null) {
             subscriber!!.stopAsync()
         }
@@ -78,6 +109,7 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
                 return
             }
             val json = response.readEntity(String::class.java)
+            response.close()
             val pseudonymEntity = mapper.readValue<PseudonymEntity>(json)
 
             // New message with pseudonym msisdn

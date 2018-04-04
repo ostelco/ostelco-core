@@ -13,7 +13,7 @@ dependencies {
   implementation project(':ocs-api')
   implementation 'com.google.firebase:firebase-admin:5.9.0'
   implementation 'com.google.cloud:google-cloud-datastore:1.22.0'
-  implementation 'com.google.cloud:google-cloud-pubsub:0.41.0-beta'
+  implementation 'com.google.cloud:google-cloud-pubsub:0.42.0-beta'
   compile group: 'com.fasterxml.jackson.module', name: 'jackson-module-kotlin', version: '2.9.4.1'
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"

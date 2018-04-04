@@ -29,13 +29,20 @@ services:
     environment:
       - DATASTORE_EMULATOR_HOST=localhost:9090
       - DATASTORE_PROJECT_ID=pantel-2decb
-    command: ["/bin/bash", "./wait_for_dsemulator.sh"]
+      - PUBSUB_EMULATOR_HOST=localhost:9080
+      - PUBSUB_PROJECT_ID=pantel-2decb
+    command: ["/bin/bash", "./wait_for_emulators.sh"]
 
   pubsub-emulator:
     container_name: pubsub-emulator
     image: knarz/pubsub-emulator
 #    image: google/cloud-sdk
 #    command: ["gcloud", "beta", "emulators", "pubsub", "start"]
+
+  gpubsub-emulator:
+    container_name: gpubsub-emulator
+    image: google/cloud-sdk
+    command: ["gcloud", "beta", "emulators", "pubsub", "start", "--host-port=0.0.0.0:8085"]
 
   datastore-emulator:
     container_name: datastore-emulator
