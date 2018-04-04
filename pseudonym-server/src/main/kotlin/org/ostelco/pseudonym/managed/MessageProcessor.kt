@@ -41,7 +41,7 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
     private var publisher: Publisher? = null
     val mapper = jacksonObjectMapper()
     // Testing helpers.
-    val hostport: String? = System.getenv("PUBSUB_EMULATOR_HOST")
+    val emulatorHost: String? = System.getenv("PUBSUB_EMULATOR_HOST")
     var channel: ManagedChannel? = null
 
     init {
@@ -53,10 +53,10 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
     @Throws(Exception::class)
     override fun start() {
         LOG.info("Starting MessageProcessor...")
-        if (hostport != null && !hostport.isEmpty()) {
+        if (emulatorHost != null && !emulatorHost.isEmpty()) {
             // Setup for picking up emulator settings
             // https://cloud.google.com/pubsub/docs/emulator#pubsub-emulator-java
-            channel = ManagedChannelBuilder.forTarget(hostport).usePlaintext(true).build()
+            channel = ManagedChannelBuilder.forTarget(emulatorHost).usePlaintext(true).build()
             val channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel))
             val credentialsProvider = NoCredentialsProvider.create()
             publisher = Publisher.newBuilder(publisherTopicName)

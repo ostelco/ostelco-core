@@ -41,19 +41,24 @@ class PseudonymServerApplication : Application<PseudonymServerConfig>() {
             config: PseudonymServerConfig,
             env: Environment) {
         var datastore :Datastore?
-        if (config.datastoreType == "emulator") {
-            LOG.info("Starting local datastore emulator...")
+
+        // Integration testing helper for Datastore.
+        if (config.datastoreType == "inmemory-emulator") {
+            LOG.info("Starting with in-memory datastore emulator...")
             val helper: LocalDatastoreHelper = LocalDatastoreHelper.create(1.0)
             helper.start()
             datastore = helper.options.service
         } else {
             datastore = DatastoreOptions.getDefaultInstance().service
         }
+
         val client: Client = JerseyClientBuilder(env).using(config.jerseyClient).build(name);
+        // Increase HTTP timeout values
         client.property(ClientProperties.CONNECT_TIMEOUT, 2000)
         client.property(ClientProperties.READ_TIMEOUT, 2000)
         val subscriptionName = ProjectSubscriptionName.of(config.projectName, config.subscriptionName)
         val publisherTopicName = ProjectTopicName.of(config.projectName, config.publisherTopic)
+        // Find port for the local REST endpoint
         var endpoint = config.pseudonymEndpoint
         if (endpoint.isEmpty()) {
             var httpPort: Int? = null

@@ -23,7 +23,7 @@ class PseudonymServerTest {
         val RULE = DropwizardAppRule(
                 PseudonymServerApplication::class.java,
                 ResourceHelpers.resourceFilePath("config.yaml"),
-                ConfigOverride.config("datastoreType", "emulator"))
+                ConfigOverride.config("datastoreType", "inmemory-emulator"))
     }
 
     /**
