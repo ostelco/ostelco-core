@@ -50,7 +50,7 @@ class TestClient : EventListener<Request, Answer> {
 
     private val authAppId = ApplicationId.createByAuthAppId(applicationID)
 
-    //stack
+    // Diameter stack
     private lateinit var stack: Stack
 
     // session factory
@@ -60,17 +60,22 @@ class TestClient : EventListener<Request, Answer> {
     var session: Session? = null
         private set
 
-    //boolean telling if we received an answer
+    // set if an answer to a Request has been received
     var isAnswerReceived = false
         private set
 
-    //boolean telling if we received a request
+    // set if a request has been received
     var isRequestReceived = false
         private set
 
-    //Parse stack configuration
+    // Parse stack configuration
     private lateinit var config: Configuration
 
+    /**
+     * Setup Diameter Stack
+     *
+     * @param configPath path to the jDiameter configuration file
+     */
     fun initStack(configPath: String) {
         try {
             config = XMLConfiguration(configPath + configFile)
@@ -116,7 +121,9 @@ class TestClient : EventListener<Request, Answer> {
         LOG.info("Stack initialization successfully completed.")
     }
 
-    //Print info about application
+    /**
+     * Output debug information for the Diameter Stack configuration
+     */
     private fun printApplicationInfo() {
         val appIds = stack.metaData.localPeer.commonApplications
 
@@ -126,10 +133,19 @@ class TestClient : EventListener<Request, Answer> {
         }
     }
 
+    /**
+     * Reset Request test
+     */
     fun initRequestTest() {
         this.isRequestReceived = false
     }
 
+    /**
+     * Create a new Request for the current Session
+     *
+     * @param realm Destination Realm
+     * @param host Destination Host
+     */
     fun createRequest(realm : String, host : String): Request? {
         return session?.createRequest(
                 commandCode,
@@ -139,6 +155,9 @@ class TestClient : EventListener<Request, Answer> {
         );
     }
 
+    /**
+     * Setup a new Session to the remote Diameter Peer
+     */
     fun start() {
         try {
             //wait for connection to peer
@@ -149,28 +168,35 @@ class TestClient : EventListener<Request, Answer> {
         } catch (e: InterruptedException) {
             LOG.error("Start Failed", e)
         }
-
     }
 
-    fun sendNextRequest(request: Request) {
+    /**
+     * Sends the next request using the current Session.
+     *
+     * @param request Request to send
+     * @return false if send failed
+     */
+    fun sendNextRequest(request: Request): Boolean {
         isAnswerReceived = false
-        if (session == null) {
+        if (session != null) {
+            val ccr = JCreditControlRequestImpl(request)
+            try {
+                this.session?.send(ccr.message, this)
+                dumpMessage(ccr.message, true) //dump info on console
+                return true
+            } catch (e: InternalException) {
+                LOG.error("Failed to send request", e)
+            } catch (e: IllegalDiameterStateException) {
+                LOG.error("Failed to send request", e)
+            } catch (e: RouteException) {
+                LOG.error("Failed to send request", e)
+            } catch (e: OverloadException) {
+                LOG.error("Failed to send request", e)
+            }
+        } else {
             LOG.error("Failed to send request. No session")
-            return
         }
-        val ccr = JCreditControlRequestImpl(request)
-        try {
-            this.session?.send(ccr.message, this)
-            dumpMessage(ccr.message, true) //dump info on console
-        } catch (e: InternalException) {
-            LOG.error("Failed to send request", e)
-        } catch (e: IllegalDiameterStateException) {
-            LOG.error("Failed to send request", e)
-        } catch (e: RouteException) {
-            LOG.error("Failed to send request", e)
-        } catch (e: OverloadException) {
-            LOG.error("Failed to send request", e)
-        }
+        return false
     }
 
     override fun receivedSuccessMessage(request: Request, answer: Answer) {
@@ -184,6 +210,7 @@ class TestClient : EventListener<Request, Answer> {
         LOG.info("Timeout expired $request")
     }
 
+
     private fun dumpMessage(message: Message, sending: Boolean) {
         LOG.info((if (sending) "Sending " else "Received ")
                 + (if (message.isRequest) "Request: " else "Answer: ") + message.commandCode
@@ -194,6 +221,9 @@ class TestClient : EventListener<Request, Answer> {
         LOG.info("AVPS[" + message.avps.size() + "]: \n")
     }
 
+    /**
+     * Shut down the Diameter Stack
+     */
     fun shutdown() {
         try {
             stack.stop(0, TimeUnit.MILLISECONDS, 0)
