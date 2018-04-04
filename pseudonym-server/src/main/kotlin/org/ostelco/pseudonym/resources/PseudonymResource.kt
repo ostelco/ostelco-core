@@ -44,6 +44,10 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
 
     private val LOG = LoggerFactory.getLogger(PseudonymResource::class.java)
     private val dataType = "Pseudonym"
+    private val msisdnPropertyName = "msisdn"
+    private val pseudonymPropertyName = "pseudonym"
+    private val startPropertyName = "start"
+    private val endPropertyName = "end"
     /**
      * Get the pseudonym which is valid at the timestamp for the given
      * msisdn. In case pseudonym doesn't exist, a new one will be created
@@ -90,7 +94,7 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
         LOG.info("Find details for pseudonym = $pseudonym")
         val query = Query.newEntityQueryBuilder()
                 .setKind(dataType)
-                .setFilter(PropertyFilter.eq("pseudonym", pseudonym))
+                .setFilter(PropertyFilter.eq(pseudonymPropertyName, pseudonym))
                 .setLimit(1)
                 .build()
         val results = datastore.run(query)
@@ -113,7 +117,7 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
         LOG.info("delete all pseudonyms for Msisdn = $msisdn")
         val query = Query.newEntityQueryBuilder()
                 .setKind(dataType)
-                .setFilter(PropertyFilter.eq("msisdn", msisdn))
+                .setFilter(PropertyFilter.eq(msisdnPropertyName, msisdn))
                 .setLimit(1)
                 .build()
         val results = datastore.run(query)
@@ -147,10 +151,10 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
 
     private fun convertToPseudonymEntity(entity: Entity): PseudonymEntity {
         return PseudonymEntity(
-                entity.getString("msisdn"),
-                entity.getString("pseudonym"),
-                entity.getLong("start"),
-                entity.getLong("end"))
+                entity.getString(msisdnPropertyName),
+                entity.getString(pseudonymPropertyName),
+                entity.getLong(startPropertyName),
+                entity.getLong(endPropertyName))
     }
 
     private fun createPseudonym(msisdn: String, bounds: Pair<Long, Long>): PseudonymEntity {
@@ -165,10 +169,10 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
             if (currentEntity == null) {
                 // Prepare the new datastore entity
                 val pseudonym = Entity.newBuilder(pseudonymKey)
-                        .set("msisdn", entity.msisdn)
-                        .set("pseudonym", entity.pseudonym)
-                        .set("start", entity.start)
-                        .set("end", entity.end)
+                        .set(msisdnPropertyName, entity.msisdn)
+                        .set(pseudonymPropertyName, entity.pseudonym)
+                        .set(startPropertyName, entity.start)
+                        .set(endPropertyName, entity.end)
                         .build()
                 transaction.put(pseudonym)
                 transaction.commit()
