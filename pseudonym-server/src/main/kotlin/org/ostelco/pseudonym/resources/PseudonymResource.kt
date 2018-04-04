@@ -20,9 +20,18 @@ import kotlin.collections.HashMap
 
 
 /**
- * Interface which provides the method to retrieve the boundary timestamps.
+ * Class representing the Pseudonym entity in Datastore.
+ */
+data class PseudonymEntity(val msisdn: String, val pseudonym: String, val start: Long, val end: Long)
+
+/**
+ * Class representing the boundary timestamps.
  */
 data class Bounds(val start: Long, val end: Long)
+
+/**
+ * Interface which provides the method to retrieve the boundary timestamps.
+ */
 interface DateBounds {
     /**
      * Returns the boundaries for the period of the given timestamp.
@@ -30,13 +39,7 @@ interface DateBounds {
      * Also returns the key prefix
      */
     fun getBoundsNKeyPrefix(msisdn: String, timestamp: Long): Pair<Bounds, String>
-
 }
-
-/**
- * Class representing the Pseudonym entity in Datastore.
- */
-data class PseudonymEntity(val msisdn: String, val pseudonym: String, val start: Long, val end: Long)
 
 /**
  * Resource used to handle the pseudonym related REST calls. The map of pseudonym objects
