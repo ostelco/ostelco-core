@@ -11,16 +11,17 @@
 SOURCE_ACCOUNT=pantel-2decb
 SOURCE_DATASET=data_consumption
 SOURCE_TABLE=hourly_consumption
-SOURCE_COORDINATE="${SOURCE_ACCOUNT}:${SOURCE_DATASET}.${SOURCE_TABLE}"
+SOURCE_COORDINATE="${SOURCE_DATASET}.${SOURCE_TABLE}"
 
 # Doing queries of various kinds, internal to the database
 DESTINATION_TABLE="todays_consumption"
-DESTINATION_COORDINATE="${SOURCE_ACCOUNT}:${SOURCE_DATASET}.${DESTINATION_TABLE}"
+DESTINATION_COORDINATE="${SOURCE_DATASET}.${DESTINATION_TABLE}"
 
 
-
+bq rm -f "$DESTINATION_COORDINATE"
+# XXX Can't figure out how to interpolate using variable in next l inee
 QUERY='select * from data_consumption.hourly_consumption'
-bq query  --destination_table data_consumption.todays_consumption "$QUERY" limit 1000
+bq query  --destination_table "$DESTINATION_COORDNATE" "$QUERY" limit 1000
 
 
 # # Setting up the destination coordinate
