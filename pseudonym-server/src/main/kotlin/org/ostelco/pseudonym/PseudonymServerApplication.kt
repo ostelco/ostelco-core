@@ -35,7 +35,7 @@ class PseudonymServerApplication : Application<PseudonymServerConfig>() {
     private val LOG = LoggerFactory.getLogger(PseudonymServerApplication::class.java)
 
     // Find port for the local REST endpoint
-    fun getPseudonymEndpoint(config: PseudonymServerConfig): String {
+    private fun getPseudonymEndpoint(config: PseudonymServerConfig): String {
         var endpoint = config.pseudonymEndpoint
         if (!endpoint.isEmpty()) {
             return endpoint
@@ -54,7 +54,7 @@ class PseudonymServerApplication : Application<PseudonymServerConfig>() {
     }
 
     // Integration testing helper for Datastore.
-    fun getDatastore(config: PseudonymServerConfig): Datastore {
+    private fun getDatastore(config: PseudonymServerConfig): Datastore {
         var datastore :Datastore?
         if (config.datastoreType == "inmemory-emulator") {
             LOG.info("Starting with in-memory datastore emulator...")
