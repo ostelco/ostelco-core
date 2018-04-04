@@ -17,27 +17,13 @@ import org.jdiameter.api.RouteException
 import org.jdiameter.api.Session
 import org.jdiameter.api.SessionFactory
 import org.jdiameter.api.Stack
-import org.jdiameter.api.cca.events.JCreditControlRequest
+import org.jdiameter.common.impl.app.cca.JCreditControlRequestImpl
 import org.jdiameter.server.impl.StackImpl
 import org.jdiameter.server.impl.helpers.XMLConfiguration
 import org.ostelco.diameter.logger
 import org.ostelco.diameter.util.DiameterUtilities
 import java.util.concurrent.TimeUnit
 
-fun main(args: Array<String>) {
-    val ec = TestClient()
-    ec.initStack("src/main/resources/")
-    ec.start()
-
-    while (ec.isAnswerReceived) {
-        try {
-            Thread.sleep(1000)
-        } catch (e: InterruptedException) {
-            e.printStackTrace()
-        }
-
-    }
-}
 
 class TestClient : EventListener<Request, Answer> {
 
@@ -50,10 +36,9 @@ class TestClient : EventListener<Request, Answer> {
 
         // definition of codes, IDs
         private const val applicationID = 4L  // Diameter Credit Control Application (4)
-    }
 
-    // The request the test client will send
-    private var request: JCreditControlRequest? = null
+        private const val commandCode = 272 // Credit-Control
+    }
 
     // The result for the request
     var resultAvps: AvpSet? = null
@@ -65,26 +50,32 @@ class TestClient : EventListener<Request, Answer> {
 
     private val authAppId = ApplicationId.createByAuthAppId(applicationID)
 
-    //stack and session factory
+    // Diameter stack
     private lateinit var stack: Stack
 
+    // session factory
     private lateinit var factory: SessionFactory
 
     // session used as handle for communication
     var session: Session? = null
         private set
 
-    //boolean telling if we received an answer
+    // set if an answer to a Request has been received
     var isAnswerReceived = false
         private set
 
-    //boolean telling if we received an answer
+    // set if a request has been received
     var isRequestReceived = false
         private set
 
-    //Parse stack configuration
+    // Parse stack configuration
     private lateinit var config: Configuration
 
+    /**
+     * Setup Diameter Stack
+     *
+     * @param configPath path to the jDiameter configuration file
+     */
     fun initStack(configPath: String) {
         try {
             config = XMLConfiguration(configPath + configFile)
@@ -121,6 +112,7 @@ class TestClient : EventListener<Request, Answer> {
             LOG.info("Starting stack")
             stack.start()
             LOG.info("Stack is running.")
+            createSession()
         } catch (e: Exception) {
             LOG.error("Failed to start Diameter Stack", e)
             stack.destroy()
@@ -131,7 +123,6 @@ class TestClient : EventListener<Request, Answer> {
     }
 
     private fun printApplicationInfo() {
-        //Print info about application
         val appIds = stack.metaData.localPeer.commonApplications
 
         LOG.info("Diameter Stack  :: Supporting " + appIds.size + " applications.")
@@ -140,11 +131,29 @@ class TestClient : EventListener<Request, Answer> {
         }
     }
 
+    /**
+     * Reset Request test
+     */
     fun initRequestTest() {
         this.isRequestReceived = false
     }
 
-    fun start() {
+    /**
+     * Create a new Request for the current Session
+     *
+     * @param destinationRealm Destination Realm
+     * @param destinationHost Destination Host
+     */
+    fun createRequest(destinationRealm : String, destinationHost : String): Request? {
+        return session?.createRequest(
+                commandCode,
+                ApplicationId.createByAuthAppId(applicationID),
+                destinationRealm,
+                destinationHost
+        );
+    }
+
+    private fun createSession() {
         try {
             //wait for connection to peer
             Thread.sleep(5000)
@@ -154,28 +163,35 @@ class TestClient : EventListener<Request, Answer> {
         } catch (e: InterruptedException) {
             LOG.error("Start Failed", e)
         }
-
     }
 
-    fun sendNextRequest() {
+    /**
+     * Sends the next request using the current Session.
+     *
+     * @param request Request to send
+     * @return false if send failed
+     */
+    fun sendNextRequest(request: Request): Boolean {
         isAnswerReceived = false
-        try {
-            this.session!!.send(request!!.message, this)
-            dumpMessage(request!!.message, true) //dump info on console
-        } catch (e: InternalException) {
-            LOG.error("Failed to send request", e)
-            isAnswerReceived = true
-        } catch (e: IllegalDiameterStateException) {
-            LOG.error("Failed to send request", e)
-            isAnswerReceived = true
-        } catch (e: RouteException) {
-            LOG.error("Failed to send request", e)
-            isAnswerReceived = true
-        } catch (e: OverloadException) {
-            LOG.error("Failed to send request", e)
-            isAnswerReceived = true
+        if (session != null) {
+            val ccr = JCreditControlRequestImpl(request)
+            try {
+                this.session?.send(ccr.message, this)
+                dumpMessage(ccr.message, true) //dump info on console
+                return true
+            } catch (e: InternalException) {
+                LOG.error("Failed to send request", e)
+            } catch (e: IllegalDiameterStateException) {
+                LOG.error("Failed to send request", e)
+            } catch (e: RouteException) {
+                LOG.error("Failed to send request", e)
+            } catch (e: OverloadException) {
+                LOG.error("Failed to send request", e)
+            }
+        } else {
+            LOG.error("Failed to send request. No session")
         }
-
+        return false
     }
 
     override fun receivedSuccessMessage(request: Request, answer: Answer) {
@@ -189,6 +205,7 @@ class TestClient : EventListener<Request, Answer> {
         LOG.info("Timeout expired $request")
     }
 
+
     private fun dumpMessage(message: Message, sending: Boolean) {
         LOG.info((if (sending) "Sending " else "Received ")
                 + (if (message.isRequest) "Request: " else "Answer: ") + message.commandCode
@@ -199,10 +216,9 @@ class TestClient : EventListener<Request, Answer> {
         LOG.info("AVPS[" + message.avps.size() + "]: \n")
     }
 
-    fun setRequest(request: JCreditControlRequest) {
-        this.request = request
-    }
-
+    /**
+     * Shut down the Diameter Stack
+     */
     fun shutdown() {
         try {
             stack.stop(0, TimeUnit.MILLISECONDS, 0)
@@ -211,7 +227,6 @@ class TestClient : EventListener<Request, Answer> {
         } catch (e: InternalException) {
             LOG.error("Failed to shutdown", e)
         }
-
         stack.destroy()
     }
 }
