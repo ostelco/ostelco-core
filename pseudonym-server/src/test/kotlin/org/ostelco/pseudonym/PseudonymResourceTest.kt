@@ -19,6 +19,12 @@ import kotlin.test.assertTrue
  * Class for unit testing PseudonymResource.
  */
 class PseudonymResourceTest {
+    private val pathForGet = "/pseudonym/get"
+    private val pathForCurrent = "/pseudonym/current"
+    private val pathForFind= "/pseudonym/find"
+    private val pathForDelete= "/pseudonym/delete"
+    private val testMsisdn1 = "4790303333"
+    private val testMsisdn2 = "4790309999"
 
     companion object {
 
@@ -42,10 +48,9 @@ class PseudonymResourceTest {
      */
     @Test
     fun testPseudonymResourceForMissingParameter() {
-        System.out.println("testPseudonymResourceForMissingHeader")
 
         val statusCode = resources
-                ?.target("/pseudonym/current/")
+                ?.target("$pathForCurrent/")
                 ?.request()
                 ?.get()
                 ?.status ?: -1
@@ -58,7 +63,7 @@ class PseudonymResourceTest {
     @Test
     fun testCurrentPseudonym() {
         val statusCode = resources
-                ?.target("/pseudonym/current/4790303333")
+                ?.target("$pathForCurrent/$testMsisdn1")
                 ?.request()
                 ?.get()
                 ?.status ?: -1
@@ -73,7 +78,7 @@ class PseudonymResourceTest {
     fun testGetPseudonym() {
 
         var result = resources
-                ?.target("/pseudonym/current/4790303333")
+                ?.target("$pathForCurrent/$testMsisdn1")
                 ?.request()
                 ?.get()
         assertNotNull(result)
@@ -81,10 +86,10 @@ class PseudonymResourceTest {
         assertEquals(Status.OK.statusCode, result.status)
         var json = result.readEntity(String::class.java)
         var pseudonymEntity = mapper.readValue<PseudonymEntity>(json)
-        assertEquals(pseudonymEntity.msisdn, "4790303333")
+        assertEquals(pseudonymEntity.msisdn, testMsisdn1)
 
         result = resources
-                ?.target("/pseudonym/get/4790303333/${pseudonymEntity.start}")
+                ?.target("$pathForGet/$testMsisdn1/${pseudonymEntity.start}")
                 ?.request()
                 ?.get()
         assertNotNull(result)
@@ -102,7 +107,7 @@ class PseudonymResourceTest {
     fun testFindPseudonym() {
 
         var result = resources
-                ?.target("/pseudonym/current/4790303333")
+                ?.target("$pathForCurrent/$testMsisdn1")
                 ?.request()
                 ?.get()
         assertNotNull(result)
@@ -110,10 +115,10 @@ class PseudonymResourceTest {
         assertEquals(Status.OK.statusCode, result.status)
         var json = result.readEntity(String::class.java)
         var pseudonymEntity = mapper.readValue<PseudonymEntity>(json)
-        assertEquals(pseudonymEntity.msisdn, "4790303333")
+        assertEquals(pseudonymEntity.msisdn, testMsisdn1)
 
         result = resources
-                ?.target("/pseudonym/find/${pseudonymEntity.pseudonym}")
+                ?.target("$pathForFind/${pseudonymEntity.pseudonym}")
                 ?.request()
                 ?.get()
         assertNotNull(result)
@@ -121,7 +126,7 @@ class PseudonymResourceTest {
         assertEquals(Status.OK.statusCode, result.status)
         json = result.readEntity(String::class.java)
         pseudonymEntity = mapper.readValue<PseudonymEntity>(json)
-        assertEquals(pseudonymEntity.msisdn, "4790303333")
+        assertEquals(pseudonymEntity.msisdn, testMsisdn1)
     }
 
     /**
@@ -129,9 +134,8 @@ class PseudonymResourceTest {
      */
     @Test
     fun testDeletePseudonym() {
-        val testMsisdn = "4790309999"
         var result = resources
-                ?.target("/pseudonym/current/$testMsisdn")
+                ?.target("$pathForCurrent/$testMsisdn2")
                 ?.request()
                 ?.get()
         assertNotNull(result)
@@ -139,10 +143,10 @@ class PseudonymResourceTest {
         assertEquals(Status.OK.statusCode, result.status)
         var json = result.readEntity(String::class.java)
         var pseudonymEntity = mapper.readValue<PseudonymEntity>(json)
-        assertEquals(pseudonymEntity.msisdn, testMsisdn)
+        assertEquals(pseudonymEntity.msisdn, testMsisdn2)
 
         result = resources
-                ?.target("/pseudonym/delete/$testMsisdn")
+                ?.target("$pathForDelete/$testMsisdn2")
                 ?.request()
                 ?.delete()
         assertNotNull(result)
@@ -154,7 +158,7 @@ class PseudonymResourceTest {
         assertTrue(count >= 1)
 
         result = resources
-                ?.target("/pseudonym/find/${pseudonymEntity.pseudonym}")
+                ?.target("$pathForFind/${pseudonymEntity.pseudonym}")
                 ?.request()
                 ?.get()
         assertNotNull(result)
