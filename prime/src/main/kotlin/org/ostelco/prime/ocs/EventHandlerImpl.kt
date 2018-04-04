@@ -1,10 +1,7 @@
 package org.ostelco.prime.ocs
 
 import com.lmax.disruptor.EventHandler
-import org.ostelco.ocs.api.ActivateResponse
-import org.ostelco.ocs.api.CreditControlAnswerInfo
-import org.ostelco.ocs.api.MultipleServiceCreditControl
-import org.ostelco.ocs.api.ServiceUnit
+import org.ostelco.ocs.api.*
 import org.ostelco.prime.disruptor.PrimeEvent
 import org.ostelco.prime.disruptor.PrimeEventMessageType
 import org.ostelco.prime.logger
@@ -55,18 +52,25 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
 
         logEventProcessing("Returning Credit-Control-Answer", event)
 
-        // FixMe: This assume we only have one MSCC
+        // FixMe : This assume we only have one MSCC
+        // ToDo : In case of zero balance we should add appropriate FinalUnitAction
         try {
+            val finalUnitIndication = FinalUnitIndication.newBuilder()
+                    .setFinalUnitAction(FinalUnitAction.TERMINATE)
+                    .build()
+            val mscc = MultipleServiceCreditControl.newBuilder()
+                    .setGranted(ServiceUnit.newBuilder()
+                            .setTotalOctets(event.reservedBucketBytes)
+                            .build())
+                    .setServiceIdentifier(event.serviceIdentifier)
+                    .setRatingGroup(event.ratingGroup)
+                    .setValidityTime(86400)
+                    .setFinalUnitIndication(finalUnitIndication)
+                    .build()
+
             val creditControlAnswer = CreditControlAnswerInfo.newBuilder()
                     .setMsisdn(event.msisdn)
-                    .addMscc(MultipleServiceCreditControl.newBuilder()
-                            .setGranted(ServiceUnit.newBuilder()
-                                    .setTotalOctets(event.reservedBucketBytes)
-                                    .build())
-                            .setServiceIdentifier(event.serviceIdentifier)
-                            .setRatingGroup(event.ratingGroup)
-                            .setValidityTime(86400)
-                            .build())
+                    .addMscc(mscc)
                     .setRequestId(event.ocsgwRequestId)
                     .build()
             ocsService.sendCreditControlAnswer(event.ocsgwStreamId ?: "", creditControlAnswer)
