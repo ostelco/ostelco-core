@@ -1,13 +1,10 @@
 package org.ostelco.ocsgw;
 
 import org.apache.log4j.Logger;
-import org.jdiameter.api.ApplicationId;
 import org.jdiameter.api.Avp;
 import org.jdiameter.api.AvpDataException;
 import org.jdiameter.api.AvpSet;
 import org.jdiameter.api.Request;
-import org.jdiameter.api.cca.events.JCreditControlRequest;
-import org.jdiameter.common.impl.app.cca.JCreditControlRequestImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -34,7 +31,7 @@ import static org.junit.Assert.assertEquals;
  */
 
 @DisplayName("OcsApplicationTest")
-class OcsApplicationTest {
+public class OcsApplicationTest {
 
     private static final Logger LOG = Logger.getLogger(OcsApplicationTest.class);
 
@@ -44,8 +41,6 @@ class OcsApplicationTest {
     private static final String OCS_HOST = "ocs";
     private static final String PGW_HOST = "testclient";
     private static final String PGW_REALM = "loltel";
-    private static final int COMMAND_CODE = 272; // Credit-Control
-    private static final long APPLICATION_ID = 4L;  // Diameter Credit Control Application (4)
 
     private static final String MSISDN = "4790300123";
     private static final String IMSI = "242017100000228";
@@ -64,7 +59,6 @@ class OcsApplicationTest {
         }
         client = new TestClient();
         client.initStack("src/test/resources/");
-        client.start();
     }
 
     @AfterEach
@@ -75,21 +69,14 @@ class OcsApplicationTest {
 
     private void simpleCreditControlRequestInit() {
 
-        Request request = client.getSession().createRequest(
-                COMMAND_CODE,
-                ApplicationId.createByAuthAppId(APPLICATION_ID),
+        Request request = client.createRequest(
                 OCS_REALM,
                 OCS_HOST
         );
 
-        AvpSet ccrAvps = request.getAvps();
+        TestHelper.createInitRequest(request.getAvps(), MSISDN, 500000L);
 
-        TestHelper.init(ccrAvps, MSISDN, 500000L);
-
-        JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
-
-        client.setRequest(ccr);
-        client.sendNextRequest();
+        client.sendNextRequest(request);
 
         waitForAnswer();
 
@@ -111,21 +98,14 @@ class OcsApplicationTest {
 
     private void simpleCreditControlRequestUpdate() {
 
-        Request request = client.getSession().createRequest(
-                COMMAND_CODE,
-                ApplicationId.createByAuthAppId(APPLICATION_ID),
+        Request request = client.createRequest(
                 OCS_REALM,
                 OCS_HOST
         );
 
+        TestHelper.creatUpdateRequest(request.getAvps(), MSISDN, 400000L);
 
-        AvpSet ccrAvps = request.getAvps();
-        TestHelper.update(ccrAvps, MSISDN, 400000L);
-
-        JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
-
-        client.setRequest(ccr);
-        client.sendNextRequest();
+        client.sendNextRequest(request);
 
         waitForAnswer();
 
@@ -149,20 +129,14 @@ class OcsApplicationTest {
         simpleCreditControlRequestInit();
         simpleCreditControlRequestUpdate();
 
-        Request request = client.getSession().createRequest(
-                COMMAND_CODE,
-                ApplicationId.createByAuthAppId(APPLICATION_ID),
+        Request request = client.createRequest(
                 OCS_REALM,
                 OCS_HOST
         );
 
-        AvpSet ccrAvps = request.getAvps();
-        TestHelper.terminate(ccrAvps, MSISDN, 700000L);
+        TestHelper.createTerminateRequest(request.getAvps(), MSISDN, 700000L);
 
-        JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
-
-        client.setRequest(ccr);
-        client.sendNextRequest();
+        client.sendNextRequest(request);
 
         waitForAnswer();
 
@@ -204,9 +178,7 @@ class OcsApplicationTest {
     @DisplayName("Service-Information Credit-Control-Request Init")
     public void serviceInformationCreditControlRequestInit() throws UnsupportedEncodingException {
 
-        Request request = client.getSession().createRequest(
-                COMMAND_CODE,
-                ApplicationId.createByAuthAppId(APPLICATION_ID),
+        Request request = client.createRequest(
                 OCS_REALM,
                 OCS_HOST
         );
@@ -263,10 +235,7 @@ class OcsApplicationTest {
         String s = "8242f21078b542f2100103c703";
         psInformation.addAvp(Avp.GPP_USER_LOCATION_INFO, DatatypeConverter.parseHexBinary(s), VENDOR_ID_3GPP, true, false);
 
-        JCreditControlRequest ccr = new JCreditControlRequestImpl(request);
-
-        client.setRequest(ccr);
-        client.sendNextRequest();
+        client.sendNextRequest(request);
 
         waitForAnswer();
 
