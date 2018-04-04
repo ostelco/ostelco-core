@@ -24,20 +24,6 @@ import org.ostelco.diameter.logger
 import org.ostelco.diameter.util.DiameterUtilities
 import java.util.concurrent.TimeUnit
 
-fun main(args: Array<String>) {
-    val ec = TestClient()
-    ec.initStack("src/main/resources/")
-    ec.start()
-
-    while (ec.isAnswerReceived) {
-        try {
-            Thread.sleep(1000)
-        } catch (e: InterruptedException) {
-            e.printStackTrace()
-        }
-
-    }
-}
 
 class TestClient : EventListener<Request, Answer> {
 
@@ -64,9 +50,10 @@ class TestClient : EventListener<Request, Answer> {
 
     private val authAppId = ApplicationId.createByAuthAppId(applicationID)
 
-    //stack and session factory
+    //stack
     private lateinit var stack: Stack
 
+    // session factory
     private lateinit var factory: SessionFactory
 
     // session used as handle for communication
@@ -77,7 +64,7 @@ class TestClient : EventListener<Request, Answer> {
     var isAnswerReceived = false
         private set
 
-    //boolean telling if we received an answer
+    //boolean telling if we received a request
     var isRequestReceived = false
         private set
 
@@ -129,8 +116,8 @@ class TestClient : EventListener<Request, Answer> {
         LOG.info("Stack initialization successfully completed.")
     }
 
+    //Print info about application
     private fun printApplicationInfo() {
-        //Print info about application
         val appIds = stack.metaData.localPeer.commonApplications
 
         LOG.info("Diameter Stack  :: Supporting " + appIds.size + " applications.")
@@ -166,23 +153,23 @@ class TestClient : EventListener<Request, Answer> {
     }
 
     fun sendNextRequest(request: Request) {
-        val ccr = JCreditControlRequestImpl(request)
         isAnswerReceived = false
+        if (session == null) {
+            LOG.error("Failed to send request. No session")
+            return
+        }
+        val ccr = JCreditControlRequestImpl(request)
         try {
-            this.session!!.send(ccr.message, this)
+            this.session?.send(ccr.message, this)
             dumpMessage(ccr.message, true) //dump info on console
         } catch (e: InternalException) {
             LOG.error("Failed to send request", e)
-            isAnswerReceived = true
         } catch (e: IllegalDiameterStateException) {
             LOG.error("Failed to send request", e)
-            isAnswerReceived = true
         } catch (e: RouteException) {
             LOG.error("Failed to send request", e)
-            isAnswerReceived = true
         } catch (e: OverloadException) {
             LOG.error("Failed to send request", e)
-            isAnswerReceived = true
         }
     }
 
@@ -215,7 +202,6 @@ class TestClient : EventListener<Request, Answer> {
         } catch (e: InternalException) {
             LOG.error("Failed to shutdown", e)
         }
-
         stack.destroy()
     }
 }
