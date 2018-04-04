@@ -62,11 +62,13 @@ class PseudonymServerApplication : Application<PseudonymServerConfig>() {
         var endpoint = config.pseudonymEndpoint
         if (endpoint.isEmpty()) {
             var httpPort: Int? = null
-            val serverFactory = config.getServerFactory() as DefaultServerFactory
-            for (connector in serverFactory.applicationConnectors) {
-                if (connector.javaClass.isAssignableFrom(HttpConnectorFactory::class.java)) {
-                    httpPort = (connector as? HttpConnectorFactory)?.port
-                    break
+            val serverFactory = config.getServerFactory() as? DefaultServerFactory
+            if (serverFactory != null) {
+                for (connector in serverFactory.applicationConnectors) {
+                    if (connector.javaClass.isAssignableFrom(HttpConnectorFactory::class.java)) {
+                        httpPort = (connector as? HttpConnectorFactory)?.port
+                        break
+                    }
                 }
             }
             endpoint = "http://localhost:${httpPort?:8080}"
