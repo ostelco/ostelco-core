@@ -34,13 +34,28 @@ class PseudonymServerApplication : Application<PseudonymServerConfig>() {
 
     private val LOG = LoggerFactory.getLogger(PseudonymServerApplication::class.java)
 
-    // Run the dropwizard application (called by the kotlin [main] wrapper).
-    override fun run(
-            config: PseudonymServerConfig,
-            env: Environment) {
-        var datastore :Datastore?
+    // Find port for the local REST endpoint
+    fun getPseudonymEndpoint(config: PseudonymServerConfig): String {
+        var endpoint = config.pseudonymEndpoint
+        if (!endpoint.isEmpty()) {
+            return endpoint
+        }
+        var httpPort: Int? = null
+        val serverFactory = config.getServerFactory() as? DefaultServerFactory
+        if (serverFactory != null) {
+            for (connector in serverFactory.applicationConnectors) {
+                if (connector.javaClass.isAssignableFrom(HttpConnectorFactory::class.java)) {
+                    httpPort = (connector as? HttpConnectorFactory)?.port
+                    break
+                }
+            }
+        }
+        return "http://localhost:${httpPort?:8080}"
+    }
 
-        // Integration testing helper for Datastore.
+    // Integration testing helper for Datastore.
+    fun getDatastore(config: PseudonymServerConfig): Datastore {
+        var datastore :Datastore?
         if (config.datastoreType == "inmemory-emulator") {
             LOG.info("Starting with in-memory datastore emulator...")
             val helper: LocalDatastoreHelper = LocalDatastoreHelper.create(1.0)
@@ -49,28 +64,21 @@ class PseudonymServerApplication : Application<PseudonymServerConfig>() {
         } else {
             datastore = DatastoreOptions.getDefaultInstance().service
         }
+        return datastore
+    }
 
+    // Run the dropwizard application (called by the kotlin [main] wrapper).
+    override fun run(
+            config: PseudonymServerConfig,
+            env: Environment) {
+        val datastore = getDatastore(config)
         val client: Client = JerseyClientBuilder(env).using(config.jerseyClient).build(name);
         // Increase HTTP timeout values
         client.property(ClientProperties.CONNECT_TIMEOUT, 2000)
         client.property(ClientProperties.READ_TIMEOUT, 2000)
         val subscriptionName = ProjectSubscriptionName.of(config.projectName, config.subscriptionName)
         val publisherTopicName = ProjectTopicName.of(config.projectName, config.publisherTopic)
-        // Find port for the local REST endpoint
-        var endpoint = config.pseudonymEndpoint
-        if (endpoint.isEmpty()) {
-            var httpPort: Int? = null
-            val serverFactory = config.getServerFactory() as? DefaultServerFactory
-            if (serverFactory != null) {
-                for (connector in serverFactory.applicationConnectors) {
-                    if (connector.javaClass.isAssignableFrom(HttpConnectorFactory::class.java)) {
-                        httpPort = (connector as? HttpConnectorFactory)?.port
-                        break
-                    }
-                }
-            }
-            endpoint = "http://localhost:${httpPort?:8080}"
-        }
+        val endpoint = getPseudonymEndpoint(config)
         LOG.info("Pseudonym endpoint = $endpoint")
         val messageProcessor = MessageProcessor(subscriptionName,
                 publisherTopicName,
