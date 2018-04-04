@@ -20,23 +20,21 @@ import javax.ws.rs.client.Client
 
 
 /**
- * Entry point for running the authentiation server application
+ * Entry point for running the server
  */
 fun main(args: Array<String>) {
     PseudonymServerApplication().run(*args)
 }
 
 /**
- * A Dropwizard application for running an authentication service that
- * uses Firebase to authenticate users.
+ * Dropwizard application for running pseudonymiser service that
+ * converts Data-Traffic PubSub message to a pseudonymised version.
  */
 class PseudonymServerApplication : Application<PseudonymServerConfig>() {
 
     private val LOG = LoggerFactory.getLogger(PseudonymServerApplication::class.java)
 
-    /**
-     * Run the dropwizard application (called by the kotlin [main] wrapper).
-     */
+    // Run the dropwizard application (called by the kotlin [main] wrapper).
     override fun run(
             config: PseudonymServerConfig,
             env: Environment) {
