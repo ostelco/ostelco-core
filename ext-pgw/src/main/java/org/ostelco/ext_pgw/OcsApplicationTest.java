@@ -45,7 +45,6 @@ public class OcsApplicationTest {
     public void setUp() {
         client = new TestClient();
         client.initStack("/");
-        client.start();
     }
 
     @After

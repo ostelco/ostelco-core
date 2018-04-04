@@ -112,6 +112,7 @@ class TestClient : EventListener<Request, Answer> {
             LOG.info("Starting stack")
             stack.start()
             LOG.info("Stack is running.")
+            createSession()
         } catch (e: Exception) {
             LOG.error("Failed to start Diameter Stack", e)
             stack.destroy()
@@ -121,9 +122,6 @@ class TestClient : EventListener<Request, Answer> {
         LOG.info("Stack initialization successfully completed.")
     }
 
-    /**
-     * Output debug information for the Diameter Stack configuration
-     */
     private fun printApplicationInfo() {
         val appIds = stack.metaData.localPeer.commonApplications
 
@@ -155,10 +153,7 @@ class TestClient : EventListener<Request, Answer> {
         );
     }
 
-    /**
-     * Setup a new Session to the remote Diameter Peer
-     */
-    fun start() {
+    private fun createSession() {
         try {
             //wait for connection to peer
             Thread.sleep(5000)

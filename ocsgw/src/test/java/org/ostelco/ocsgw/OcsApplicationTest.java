@@ -59,7 +59,6 @@ public class OcsApplicationTest {
         }
         client = new TestClient();
         client.initStack("src/test/resources/");
-        client.start();
     }
 
     @AfterEach
