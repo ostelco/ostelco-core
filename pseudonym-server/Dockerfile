@@ -3,11 +3,11 @@ FROM openjdk:8u151
 MAINTAINER CSI "csi@telenordigital.com"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-		socat \
+		socat=1.7.3.1-2+deb9u1 \
 	&& rm -rf /var/lib/apt/lists/*
 
 COPY script/start.sh /start.sh
-COPY script/wait_for_dsemulator.sh /wait_for_dsemulator.sh
+COPY script/wait_for_emulators.sh /wait_for_emulators.sh
 
 COPY config /config
 
