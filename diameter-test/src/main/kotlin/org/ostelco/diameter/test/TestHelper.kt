@@ -93,7 +93,7 @@ object TestHelper {
 
 
     @JvmStatic
-    fun init(ccrAvps: AvpSet, msisdn: String, bucketSize: Long) {
+    fun createInitRequest(ccrAvps: AvpSet, msisdn: String, bucketSize: Long) {
         buildBasicRequest(ccrAvps, RequestType.INITIAL_REQUEST, requestNumber = 0)
         addUser(ccrAvps, msisdn = msisdn, imsi = IMSI)
         addBucketRequest(ccrAvps, ratingGroup = 10, serviceIdentifier = 1, bucketSize = bucketSize)
@@ -101,15 +101,7 @@ object TestHelper {
     }
 
     @JvmStatic
-    fun initNoCredit(ccrAvps: AvpSet, bucketSize: Long) {
-        buildBasicRequest(ccrAvps, RequestType.INITIAL_REQUEST, requestNumber = 0)
-        addUser(ccrAvps, msisdn = "4333333333", imsi = IMSI)
-        addBucketRequest(ccrAvps, ratingGroup = 10, serviceIdentifier = 1, bucketSize = bucketSize)
-        addServiceInformation(ccrAvps, apn = APN, sgsnMncMcc = SGSN_MCC_MNC)
-    }
-
-    @JvmStatic
-    fun update(ccrAvps: AvpSet, msisdn: String, bucketSize: Long) {
+    fun creatUpdateRequest(ccrAvps: AvpSet, msisdn: String, bucketSize: Long) {
         buildBasicRequest(ccrAvps, RequestType.UPDATE_REQUEST, requestNumber = 1)
         addUser(ccrAvps, msisdn = msisdn, imsi = IMSI)
         addBucketRequest(ccrAvps, ratingGroup = 10, serviceIdentifier = 1, bucketSize = bucketSize)
@@ -117,7 +109,7 @@ object TestHelper {
     }
 
     @JvmStatic
-    fun terminate(ccrAvps: AvpSet, msisdn: String, bucketSize: Long) {
+    fun createTerminateRequest(ccrAvps: AvpSet, msisdn: String, bucketSize: Long) {
         buildBasicRequest(ccrAvps, RequestType.TERMINATION_REQUEST, requestNumber = 2)
         addUser(ccrAvps, msisdn = msisdn, imsi = IMSI)
         addTerminateRequest(ccrAvps, ratingGroup = 10, serviceIdentifier = 1, bucketSize = bucketSize)

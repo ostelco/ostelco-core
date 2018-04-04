@@ -74,7 +74,7 @@ public class OcsApplicationTest {
                 OCS_HOST
         );
 
-        TestHelper.init(request.getAvps(), MSISDN, 500000L);
+        TestHelper.createInitRequest(request.getAvps(), MSISDN, 500000L);
 
         client.sendNextRequest(request);
 
@@ -103,7 +103,7 @@ public class OcsApplicationTest {
                 OCS_HOST
         );
 
-        TestHelper.update(request.getAvps(), MSISDN, 400000L);
+        TestHelper.creatUpdateRequest(request.getAvps(), MSISDN, 400000L);
 
         client.sendNextRequest(request);
 
@@ -134,7 +134,7 @@ public class OcsApplicationTest {
                 OCS_HOST
         );
 
-        TestHelper.terminate(request.getAvps(), MSISDN, 700000L);
+        TestHelper.createTerminateRequest(request.getAvps(), MSISDN, 700000L);
 
         client.sendNextRequest(request);
 

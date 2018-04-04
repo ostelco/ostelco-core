@@ -141,15 +141,15 @@ class TestClient : EventListener<Request, Answer> {
     /**
      * Create a new Request for the current Session
      *
-     * @param realm Destination Realm
-     * @param host Destination Host
+     * @param destinationRealm Destination Realm
+     * @param destinationHost Destination Host
      */
-    fun createRequest(realm : String, host : String): Request? {
+    fun createRequest(destinationRealm : String, destinationHost : String): Request? {
         return session?.createRequest(
                 commandCode,
                 ApplicationId.createByAuthAppId(applicationID),
-                realm,
-                host
+                destinationRealm,
+                destinationHost
         );
     }
 
