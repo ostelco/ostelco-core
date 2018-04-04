@@ -46,14 +46,14 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
         ocsService.activateOnNextResponse(response)
     }
 
-    private fun logEventPRocessing(msg: String, event: PrimeEvent) {
+    private fun logEventProcessing(msg: String, event: PrimeEvent) {
         LOG.info("{} :: for MSISDN: {} of {} requested bytes {} used bytes with request id: {}",
                 msg, event.msisdn, event.requestedBucketBytes, event.usedBucketBytes, event.ocsgwRequestId)
     }
 
     private fun handleCreditControlRequest(event: PrimeEvent) {
 
-        logEventPRocessing("Returning Credit-Control-Answer", event)
+        logEventProcessing("Returning Credit-Control-Answer", event)
 
         // FixMe: This assume we only have one MSCC
         try {
@@ -72,7 +72,7 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
             ocsService.sendCreditControlAnswer(event.ocsgwStreamId ?: "", creditControlAnswer)
         } catch (e: Exception) {
             LOG.warn("Exception handling prime event", e)
-            logEventPRocessing("Exception sending Credit-Control-Answer", event)
+            logEventProcessing("Exception sending Credit-Control-Answer", event)
 
             // unable to send Credit-Control-Answer.
             // So, return reserved bucket bytes back to data bundle.

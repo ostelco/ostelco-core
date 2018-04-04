@@ -46,7 +46,7 @@ enum class FinalUnitAction {
 
 data class FinalUnitIndication(
         val finalUnitAction: FinalUnitAction,
-        val restrictionFilterRule: List<IPFilterRule>,
+        val restrictionFilterRule: List<String>,
         val filterId: List<String>,
         val redirectServer: RedirectServer?)
 
@@ -59,12 +59,6 @@ enum class Direction {
     IN,
     OUT
 }
-
-data class IPFilterRule(
-        val action: Action,
-        val direction: Direction,
-        val proto: String,
-        val host: String)
 
 class ServiceUnit() {
 
@@ -104,6 +98,7 @@ class MultipleServiceCreditControl() {
 
     var validityTime = 86400
 
+    // https://tools.ietf.org/html/rfc4006#section-8.34
     var finalUnitIndication: FinalUnitIndication? = null
 
     constructor(ratingGroup: Long, serviceIdentifier: Long, requested: List<ServiceUnit>, used: ServiceUnit, granted: ServiceUnit, validityTime: Int, finalUnitIndication: FinalUnitIndication?) : this() {
@@ -124,7 +119,10 @@ enum class RedirectAddressType {
     SIP_URL
 }
 
-data class RedirectServer(val redirectAddressType: RedirectAddressType)
+data class RedirectServer(
+        var redirectAddressType: RedirectAddressType,
+        var redirectServerAddress: String
+)
 
 class ServiceInformation() {
 

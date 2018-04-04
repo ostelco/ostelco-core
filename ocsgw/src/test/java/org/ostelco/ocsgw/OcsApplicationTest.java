@@ -184,26 +184,7 @@ public class OcsApplicationTest {
         );
 
         AvpSet ccrAvps = request.getAvps();
-        ccrAvps.addAvp(Avp.CC_REQUEST_TYPE, RequestType.INITIAL_REQUEST, true, false);
-        ccrAvps.addAvp(Avp.CC_REQUEST_NUMBER, 0, true, false);
-
-        AvpSet msisdnSubscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
-        msisdnSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_E164.ordinal());
-        msisdnSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, MSISDN, false);
-
-        AvpSet imsiSubscriptionId = ccrAvps.addGroupedAvp(Avp.SUBSCRIPTION_ID);
-        imsiSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_TYPE, SubscriptionType.END_USER_IMSI.ordinal());
-        imsiSubscriptionId.addAvp(Avp.SUBSCRIPTION_ID_DATA, IMSI, false);
-
-        ccrAvps.addAvp(Avp.MULTIPLE_SERVICES_INDICATOR, 1);
-
-        AvpSet mscc = ccrAvps.addGroupedAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
-        mscc.addAvp(Avp.RATING_GROUP, 10);
-        mscc.addAvp(Avp.SERVICE_IDENTIFIER_CCA, 1);
-        AvpSet requestedServiceUnits = mscc.addGroupedAvp(Avp.REQUESTED_SERVICE_UNIT);
-        requestedServiceUnits.addAvp(Avp.CC_TOTAL_OCTETS, 500000L);
-        requestedServiceUnits.addAvp(Avp.CC_INPUT_OCTETS, 0L);
-        requestedServiceUnits.addAvp(Avp.CC_OUTPUT_OCTETS, 0L);
+        TestHelper.createInitRequest(ccrAvps, MSISDN, 500000L);
 
         AvpSet serviceInformation = ccrAvps.addGroupedAvp(Avp.SERVICE_INFORMATION, VENDOR_ID_3GPP, true, false);
         AvpSet psInformation = serviceInformation.addGroupedAvp(Avp.PS_INFORMATION, VENDOR_ID_3GPP, true, false);
@@ -260,7 +241,7 @@ public class OcsApplicationTest {
             try {
                 Thread.currentThread().sleep(500);
             } catch (InterruptedException e) {
-                LOG.error("Start Failed", e);
+                // continue
             }
         }
         assertEquals(true, client.isAnswerReceived());
@@ -273,7 +254,7 @@ public class OcsApplicationTest {
             try {
                 Thread.currentThread().sleep(500);
             } catch (InterruptedException e) {
-                LOG.error("Start Failed", e);
+                // continue
             }
         }
         assertEquals(true, client.isRequestReceived());

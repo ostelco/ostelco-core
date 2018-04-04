@@ -63,7 +63,11 @@ public class LocalDataSource implements DataSource {
                         FinalUnitAction.TERMINATE,
                         new ArrayList<>(),
                         new ArrayList<>(),
-                        new RedirectServer(RedirectAddressType.IPV4_ADDRESS));
+                        new RedirectServer(
+                                RedirectAddressType.IPV4_ADDRESS,
+                                ""
+                                )
+                );
             }
 
             final List<ServiceUnit> newRequested = new ArrayList<>();
