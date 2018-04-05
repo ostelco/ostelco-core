@@ -16,10 +16,14 @@ producing-agent:
   name: Simple agent
   version: 1.0
 
-
 segment:
    type: agent-specific-segment
    members:
+
+     # The decryption key is what the de-anonymizer will use to
+     # make proper  identifiers out of the members listed below.
+     # The special purpose key "none" indicatest that the member list
+     # is in clear text.
      decryptionKey: none
      members:
         - 4790300157
