@@ -278,9 +278,13 @@ public class GrpcDataSource implements DataSource {
     private FinalUnitIndication convertFinalUnitIndication(org.ostelco.ocs.api.FinalUnitIndication fuiGrpc) {
         return new FinalUnitIndication(
                 FinalUnitAction.values()[fuiGrpc.getFinalUnitAction().getNumber()],
-                new LinkedList<>(),
+                fuiGrpc.getRestrictionFilterRuleList(),
                 fuiGrpc.getFilterIdList(),
-                new RedirectServer(RedirectAddressType.IPV4_ADDRESS));
+                new RedirectServer(
+                        RedirectAddressType.values()[fuiGrpc.getRedirectServer().getRedirectAddressType().getNumber()],
+                        fuiGrpc.getRedirectServer().getRedirectServerAddress()
+                )
+        );
     }
 
     @Override
