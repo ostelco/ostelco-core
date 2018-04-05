@@ -40,6 +40,10 @@ bq rm -f "$DESTINATION_COORDINATE"
 # 'select * from data_consumption.hourly_consumption'
 # EOF
 
+
+# now() returns microseconds since epoch.
+# 604800000 is number of milliseconds in a week, and
+# msec_to_timestamp converts from millliseconds since epoch to timestamp.
 QUERY='
 SELECT msisdn, bytes, tstamp 
 FROM  data_consumption.hourly_consumption_timestamped
