@@ -31,6 +31,7 @@ segment:
         - 4333333333
 
 offer:
+    noOfBytes: 3000000000
     badgeLabel: "mbop"
     currencyLabel: "NOK"
     description: "Best offer you will get today"
