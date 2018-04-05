@@ -1,0 +1,29 @@
+#
+# This is a sample YAML format to be used by
+# agents that produce offers.  The general idea
+# is that an offer has a set of parameters,
+# and also a set of selected subscribers that will
+# get it.
+#
+# YAML was chosen since it's more human readable than
+# e.g. json or protobuffers, while still being
+# easy to produce by an agent, and relatively compact,
+# in particular when gzipped.
+#
+
+
+producing-agent:
+  name: Simple agent
+  version: 1.0
+
+
+segment:
+   type: agent-specific-segment
+   members:
+	- 4790300157
+	- 4790300144
+	- 4333333333
+
+offer:
+    
+   
