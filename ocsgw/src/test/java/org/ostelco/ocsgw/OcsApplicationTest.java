@@ -13,7 +13,6 @@ import org.ostelco.diameter.model.SessionContext;
 import org.ostelco.diameter.model.FinalUnitAction;
 import org.ostelco.diameter.model.ReAuthRequestType;
 import org.ostelco.diameter.model.RequestType;
-import org.ostelco.diameter.model.SubscriptionType;
 import org.ostelco.diameter.test.TestClient;
 import org.ostelco.diameter.test.TestHelper;
 
@@ -43,7 +42,6 @@ public class OcsApplicationTest {
     private static final String PGW_REALM = "loltel";
 
     private static final String MSISDN = "4790300123";
-    private static final String IMSI = "242017100000228";
 
     private TestClient client;
 
