@@ -1,0 +1,17 @@
+Some questions about the bigquery structure:
+
+* We should use timestamps I think, since it's simpler to work with.
+
+* We should also considere using ingestion-time partitioned tables
+
+   https://cloud.google.com/bigquery/docs/creating-partitioned-tables
+
+   - Most of our time-dependent queries will overlap reasonably
+      sized shards (days, weeks, months), so that we don't have to
+      table-scan _all_ of the potentially very large datasets we will
+      accumulate.
+
+* Don't name any field 'timestamp'. It leads to endless confusion
+   with the datatype named 'timestamp', and the function called
+   'timestamp'.
+   
