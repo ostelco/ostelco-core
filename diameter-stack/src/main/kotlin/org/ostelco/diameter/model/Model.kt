@@ -37,14 +37,18 @@ enum class ReAuthRequestType {
     AUTHORIZE_AUTHENTICATE
 }
 
-// https://tools.ietf.org/html/rfc4006#page-71
+/**
+ * https://tools.ietf.org/html/rfc4006#page-71
+ */
 enum class FinalUnitAction {
     TERMINATE,
     REDIRECT,
     RESTRICT_ACCESS
 }
 
-// https://tools.ietf.org/html/rfc4006#section-8.34
+/**
+ * https://tools.ietf.org/html/rfc4006#section-8.34
+ */
 data class FinalUnitIndication(
         val finalUnitAction: FinalUnitAction,
         val restrictionFilterRule: List<String>,
@@ -70,7 +74,9 @@ class ServiceUnit() {
     }
 }
 
-// https://tools.ietf.org/html/rfc4006#section-8.16
+/**
+ * https://tools.ietf.org/html/rfc4006#section-8.16
+ */
 class MultipleServiceCreditControl() {
 
     @AvpField(Avp.RATING_GROUP)
@@ -111,7 +117,9 @@ enum class RedirectAddressType {
     SIP_URL
 }
 
-// https://tools.ietf.org/html/rfc4006#section-8.37
+/**
+ * https://tools.ietf.org/html/rfc4006#section-8.37
+ */
 data class RedirectServer(
         var redirectAddressType: RedirectAddressType,
         var redirectServerAddress: String
@@ -123,7 +131,9 @@ class ServiceInformation() {
     var psInformation: List<PsInformation> = emptyList()
 }
 
-// https://tools.ietf.org/html/rfc4006#section-8.47
+/**
+ * https://tools.ietf.org/html/rfc4006#section-8.47
+ */
 enum class SubscriptionType {
     END_USER_E164,
     END_USER_IMSI,
@@ -141,7 +151,9 @@ class SubscriptionId() {
     var idData:String? = ""
 }
 
-// https://tools.ietf.org/html/rfc4006#page-78
+/**
+ * https://tools.ietf.org/html/rfc4006#page-78
+ */
 class UserEquipmentInfo() {
 
     @AvpField(Avp.USER_EQUIPMENT_INFO_TYPE)
