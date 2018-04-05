@@ -14,4 +14,7 @@ Some questions about the bigquery structure:
 * Don't name any field 'timestamp'. It leads to endless confusion
    with the datatype named 'timestamp', and the function called
    'timestamp'.
-   
+
+* We should decide if we will use camel case or snake case in
+   offer descriptions. The current firebase/firestore structure uses
+   both, and that is confusing.
