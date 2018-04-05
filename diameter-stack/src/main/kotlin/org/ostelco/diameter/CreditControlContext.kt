@@ -103,9 +103,11 @@ class CreditControlContext(
             finalUnitIndication.addAvp(Avp.FINAL_UNIT_ACTION, originalFinalUnitIndication.finalUnitAction.ordinal, true, false)
             if (originalFinalUnitIndication.finalUnitAction == FinalUnitAction.REDIRECT) {
                 val originalRedirectServer = originalFinalUnitIndication.redirectServer
-                val redirectServer = finalUnitIndication.addGroupedAvp(Avp.REDIRECT_SERVER, true, false)
-                redirectServer.addAvp(Avp.REDIRECT_ADDRESS_TYPE, originalRedirectServer!!.redirectAddressType.ordinal, true, false)
-                redirectServer.addAvp(Avp.REDIRECT_ADDRESS, originalRedirectServer.redirectServerAddress, true, false, false)
+                if (originalRedirectServer != null) {
+                    val redirectServer = finalUnitIndication.addGroupedAvp(Avp.REDIRECT_SERVER, true, false)
+                    redirectServer.addAvp(Avp.REDIRECT_ADDRESS_TYPE, originalRedirectServer.redirectAddressType.ordinal, true, false)
+                    redirectServer.addAvp(Avp.REDIRECT_ADDRESS, originalRedirectServer.redirectServerAddress, true, false, false)
+                }
             } else if (originalFinalUnitIndication.finalUnitAction == FinalUnitAction.RESTRICT_ACCESS) {
                 for (restrictionFilerRule in originalFinalUnitIndication.restrictionFilterRule) {
                     finalUnitIndication.addAvp(Avp.RESTRICTION_FILTER_RULE, restrictionFilerRule, true, false, true)

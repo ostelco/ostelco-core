@@ -44,21 +44,13 @@ enum class FinalUnitAction {
     RESTRICT_ACCESS
 }
 
+// https://tools.ietf.org/html/rfc4006#section-8.34
 data class FinalUnitIndication(
         val finalUnitAction: FinalUnitAction,
         val restrictionFilterRule: List<String>,
         val filterId: List<String>,
         val redirectServer: RedirectServer?)
 
-enum class Action {
-    PERMIT,
-    DENY
-}
-
-enum class Direction {
-    IN,
-    OUT
-}
 
 class ServiceUnit() {
 
@@ -119,6 +111,7 @@ enum class RedirectAddressType {
     SIP_URL
 }
 
+// https://tools.ietf.org/html/rfc4006#section-8.37
 data class RedirectServer(
         var redirectAddressType: RedirectAddressType,
         var redirectServerAddress: String
