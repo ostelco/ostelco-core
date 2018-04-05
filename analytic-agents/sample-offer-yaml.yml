@@ -63,6 +63,3 @@ offer:
 	# that may pop up later. Deal with them then.
 	noOfBytes: 3000000000
 
-    # What is this. Someone who knows please explain.
-    value: 1000
-
