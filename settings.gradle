@@ -9,6 +9,8 @@ include ':ocs-api'
 include ':ocsgw'
 include ':ostelco-lib'
 include ':prime'
+include ':pseudonym-server'
+include ':pseudonymiser'
 include ':rule-engine'
 
 project(':analytics').projectDir = "$rootDir/analytics" as File
@@ -20,4 +22,5 @@ project(':ocs-api').projectDir = "$rootDir/ocs-api" as File
 project(':ocsgw').projectDir = "$rootDir/ocsgw" as File
 project(':ostelco-lib').projectDir = "$rootDir/ostelco-lib" as File
 project(':prime').projectDir = "$rootDir/prime" as File
+project(':pseudonym-server').projectDir = "$rootDir/pseudonym-server" as File
 project(':rule-engine').projectDir = "$rootDir/rule-engine" as File
