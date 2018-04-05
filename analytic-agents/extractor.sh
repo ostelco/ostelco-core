@@ -11,7 +11,7 @@
 SOURCE_ACCOUNT=pantel-2decb
 SOURCE_DATASET=data_consumption
 SOURCE_TABLE=hourly_consumption
-SOURCE_COORDINATE="${SOURCE_DATASET}.${SOURCE_TABLE}"
+SOURCE_TABLE="${SOURCE_DATASET}.${SOURCE_TABLE}"
 
 
 # The hourly_consumption table contains data where the
@@ -31,21 +31,22 @@ fi
 
 # Doing queries of various kinds, internal to the database
 DESTINATION_TABLE="todays_consumption"
-DESTINATION_COORDINATE="${SOURCE_DATASET}.${DESTINATION_TABLE}"
+DESTINATION_TABLE="${SOURCE_DATASET}.${DESTINATION_TABLE}"
 
 
-bq rm -f "$DESTINATION_COORDINATE"
+# Don't do this while experimenting  with getting exports.
+
+bq rm -f "$DESTINATION_TABLE"
 # # XXX Can't figure out how to interpolate using variable in next l inee
 # read -r -d '' QUERY <<'EOF'
 # 'select * from data_consumption.hourly_consumption'
 # EOF
 
-
 # now() returns microseconds since epoch.
 # 604800000 is number of milliseconds in a week, and
 # msec_to_timestamp converts from millliseconds since epoch to timestamp.
 QUERY='
-SELECT msisdn, bytes, tstamp 
+SELECT msisdn, bytes, tstamp, timestamp_to_sec(tstamp) as secsSinceEpoch 
 FROM  data_consumption.hourly_consumption_timestamped
 WHERE
   tstamp BETWEEN msec_to_timestamp((now()/1000)-604800000)
@@ -53,12 +54,12 @@ WHERE
   ORDER BY msisdn,tstamp
 '
 echo "Query is $QUERY"
-bq query  --destination_table "$DESTINATION_COORDNATE" "$QUERY"
+bq query  --destination_table "$DESTINATION_TABLE" "$QUERY"
 
 
-# # Setting up the destination coordinate
-# BUCKET_NAME=rmz-test-bucket
-# FILENAME=hourly-consumption.csv
-# DESTINATION_COORDINATE="gs://${BUCKET_NAME}/${FILENAME}"
-# bq extract $SOURCE_COORDINATE $DESTINATION_COORDINATE
+# Setting up the destination coordinate
+BUCKET_NAME=rmz-test-bucket
+FILENAME=hourly-consumption.csv
+DESTINATION_BUCKET="gs://${BUCKET_NAME}/${FILENAME}"
+bq extract  $DESTINATION_TABLE $DESTINATION_BUCKET
 
