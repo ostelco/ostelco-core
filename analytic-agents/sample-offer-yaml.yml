@@ -20,9 +20,11 @@ producing-agent:
 segment:
    type: agent-specific-segment
    members:
-	- 4790300157
-	- 4790300144
-	- 4333333333
+     decryptionKey: none
+     members:
+        - 4790300157
+        - 4790300144
+        - 4333333333
 
 offer:
     - ....
