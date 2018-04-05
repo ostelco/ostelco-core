@@ -1,10 +1,7 @@
 package org.ostelco.prime.ocs
 
 import com.lmax.disruptor.EventHandler
-import org.ostelco.ocs.api.ActivateResponse
-import org.ostelco.ocs.api.CreditControlAnswerInfo
-import org.ostelco.ocs.api.MultipleServiceCreditControl
-import org.ostelco.ocs.api.ServiceUnit
+import org.ostelco.ocs.api.*
 import org.ostelco.prime.disruptor.PrimeEvent
 import org.ostelco.prime.disruptor.PrimeEventMessageType
 import org.ostelco.prime.logger
@@ -46,33 +43,40 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
         ocsService.activateOnNextResponse(response)
     }
 
-    private fun logEventPRocessing(msg: String, event: PrimeEvent) {
+    private fun logEventProcessing(msg: String, event: PrimeEvent) {
         LOG.info("{} :: for MSISDN: {} of {} requested bytes {} used bytes with request id: {}",
                 msg, event.msisdn, event.requestedBucketBytes, event.usedBucketBytes, event.ocsgwRequestId)
     }
 
     private fun handleCreditControlRequest(event: PrimeEvent) {
 
-        logEventPRocessing("Returning Credit-Control-Answer", event)
+        logEventProcessing("Returning Credit-Control-Answer", event)
 
-        // FixMe: This assume we only have one MSCC
+        // FixMe : This assume we only have one MSCC
+        // ToDo : In case of zero balance we should add appropriate FinalUnitAction
         try {
+            val finalUnitIndication = FinalUnitIndication.newBuilder()
+                    .setFinalUnitAction(FinalUnitAction.TERMINATE)
+                    .build()
+            val mscc = MultipleServiceCreditControl.newBuilder()
+                    .setGranted(ServiceUnit.newBuilder()
+                            .setTotalOctets(event.reservedBucketBytes)
+                            .build())
+                    .setServiceIdentifier(event.serviceIdentifier)
+                    .setRatingGroup(event.ratingGroup)
+                    .setValidityTime(86400)
+                    .setFinalUnitIndication(finalUnitIndication)
+                    .build()
+
             val creditControlAnswer = CreditControlAnswerInfo.newBuilder()
                     .setMsisdn(event.msisdn)
-                    .addMscc(MultipleServiceCreditControl.newBuilder()
-                            .setGranted(ServiceUnit.newBuilder()
-                                    .setTotalOctets(event.reservedBucketBytes)
-                                    .build())
-                            .setServiceIdentifier(event.serviceIdentifier)
-                            .setRatingGroup(event.ratingGroup)
-                            .setValidityTime(86400)
-                            .build())
+                    .addMscc(mscc)
                     .setRequestId(event.ocsgwRequestId)
                     .build()
             ocsService.sendCreditControlAnswer(event.ocsgwStreamId ?: "", creditControlAnswer)
         } catch (e: Exception) {
             LOG.warn("Exception handling prime event", e)
-            logEventPRocessing("Exception sending Credit-Control-Answer", event)
+            logEventProcessing("Exception sending Credit-Control-Answer", event)
 
             // unable to send Credit-Control-Answer.
             // So, return reserved bucket bytes back to data bundle.
