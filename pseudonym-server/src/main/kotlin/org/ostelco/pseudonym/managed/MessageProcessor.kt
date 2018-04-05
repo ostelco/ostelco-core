@@ -68,7 +68,7 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
         if (emulatorHost != null && !emulatorHost.isEmpty()) {
             // Setup for picking up emulator settings
             // https://cloud.google.com/pubsub/docs/emulator#pubsub-emulator-java
-            channel = ManagedChannelBuilder.forTarget(emulatorHost).usePlaintext(true).build()
+            channel = ManagedChannelBuilder.forTarget(emulatorHost).usePlaintext().build()
             val channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel))
             val credentialsProvider = NoCredentialsProvider.create()
             publisher = Publisher.newBuilder(publisherTopicName)
@@ -101,7 +101,7 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
     }
 
     private fun getPseudonymEntity(msisdn : String, timestamp: Long): PseudonymEntity? {
-        val (bounds, keyPrefix) = dateBounds.getBoundsNKeyPrefix(msisdn, timestamp)
+        val (_, keyPrefix) = dateBounds.getBoundsNKeyPrefix(msisdn, timestamp)
         try {
             // Retrieves the element from cache.
             // Incase of cache miss, get the entity via a REST call
