@@ -4,8 +4,12 @@ import org.jdiameter.api.Avp
 import org.ostelco.diameter.parser.AvpField
 import java.net.InetAddress
 
-// ToDo : Add the following AVPs
-// 3GPP-GPRS-Negotiated-QoS-Profile ( Avp 5 )
+/**
+ * PS-Information ( Avp 874 )
+ * http://www.3gpp.org/ftp/Specs/html-info/32299.htm
+ *
+ * ToDo : Add 3GPP-GPRS-Negotiated-QoS-Profile ( Avp 5 )
+ */
 class PsInformation() {
 
     // 3GPP-Charging-Id (Avp 2)

@@ -36,10 +36,8 @@ class DataConsumptionInfoPublisher(private val projectId: String, private val to
 
     @Throws(Exception::class)
     override fun stop() {
-        if (publisher != null) {
-            // When finished with the publisher, shutdown to free up resources.
-            publisher!!.shutdown()
-        }
+        // When finished with the publisher, shutdown to free up resources.
+        publisher?.shutdown()
     }
 
     override fun onEvent(

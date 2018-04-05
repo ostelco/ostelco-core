@@ -7,6 +7,10 @@ import org.ostelco.diameter.builder.set
 import org.ostelco.diameter.model.RequestType
 import org.ostelco.diameter.model.SubscriptionType
 
+/**
+ * Helper class to create the most common AVP combinations
+ * for a Diameter Credit-Control Application.
+ */
 object TestHelper {
 
     private const val VENDOR_ID_3GPP = 10415L
