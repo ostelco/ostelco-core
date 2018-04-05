@@ -83,6 +83,7 @@ class PseudonymServerApplication : Application<PseudonymServerConfig>() {
         val messageProcessor = MessageProcessor(subscriptionName,
                 publisherTopicName,
                 endpoint,
+                WeeklyBounds(),
                 client)
         env.lifecycle().manage(messageProcessor)
         env.jersey().register(PseudonymResource(datastore, WeeklyBounds()))
