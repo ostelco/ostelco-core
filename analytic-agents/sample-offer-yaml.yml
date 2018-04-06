@@ -16,19 +16,6 @@ producing-agent:
   name: Simple agent
   version: 1.0
 
-segment:
-   type: agent-specific-segment
-   members:
-
-     # The decryption key is what the de-anonymizer will use to
-     # make proper  identifiers out of the members listed below.
-     # The special purpose key "none" indicatest that the member list
-     # is in clear text.
-     decryptionKey: none
-     members:
-        - 4790300157
-        - 4790300144
-        - 4333333333
 
 # All of the parameters below are just copied from the firebasr
 # realtime database we used in the demo, converted to
@@ -63,3 +50,20 @@ offer:
 	# that may pop up later. Deal with them then.
 	noOfBytes: 3000000000
 
+# We put the segment last, since it may have a long list of 
+# members in it. We want that list to be last, since it contains
+# little information that humans are interested in, and we want
+# humans to start reading the file at the top.
+
+segment:
+   type: agent-specific-segment
+   members:
+     # The decryption key is what the de-anonymizer will use to
+     # make proper  identifiers out of the members listed below.
+     # The special purpose key "none" indicatest that the member list
+     # is in clear text.
+     decryptionKey: none
+     members:
+        - 4790300157
+        - 4790300144
+        - 4333333333
