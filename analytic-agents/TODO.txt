@@ -19,3 +19,8 @@ offers based on user demographics and behavior.
 
 4. Figure out how to get data from analytics about the users
     and then feed that to the agent in an orderly manner.
+
+5. Think about making the agents as dropwizard agents
+    rather than python.  If/when it's known how to run the agents
+    as kubernetes loads, then it's time to step up to kotlin/dropwizard
+    to do some heavy lifting.
