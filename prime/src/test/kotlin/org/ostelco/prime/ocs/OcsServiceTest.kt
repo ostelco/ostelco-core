@@ -20,7 +20,7 @@ class OcsServiceTest {
 
     private var disruptor: Disruptor<PrimeEvent>? = null
 
-    private var cdl: CountDownLatch? = null
+    private var countDownLatch: CountDownLatch? = null
 
     private var result: HashSet<PrimeEvent>? = null
 
@@ -30,7 +30,7 @@ class OcsServiceTest {
     val collectedEvent: PrimeEvent
         @Throws(InterruptedException::class)
         get() {
-            assertTrue(cdl!!.await(TIMEOUT, TimeUnit.SECONDS))
+            assertTrue(countDownLatch!!.await(TIMEOUT, TimeUnit.SECONDS))
             assertFalse(result!!.isEmpty())
             val event = result!!.iterator().next()
             assertNotNull(event)
@@ -46,11 +46,11 @@ class OcsServiceTest {
         val ringBuffer = disruptor!!.ringBuffer
         val pep = PrimeEventProducer(ringBuffer)
 
-        this.cdl = CountDownLatch(1)
+        this.countDownLatch = CountDownLatch(1)
         this.result = HashSet()
         val eh = EventHandler<PrimeEvent> { event, sequence, endOfBatch ->
             result!!.add(event)
-            cdl!!.countDown()
+            countDownLatch!!.countDown()
         }
 
         disruptor!!.handleEventsWith(eh)
@@ -60,7 +60,7 @@ class OcsServiceTest {
 
     @After
     fun shutDown() {
-        disruptor!!.shutdown()
+        disruptor?.shutdown()
     }
 
     @Test

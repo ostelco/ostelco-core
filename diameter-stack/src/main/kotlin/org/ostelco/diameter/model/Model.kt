@@ -22,6 +22,9 @@ object RequestType {
     }
 }
 
+/**
+ * Internal representation of the Credit-Control-Answer
+ */
 data class CreditControlAnswer(val multipleServiceCreditControls: List<MultipleServiceCreditControl>)
 
 enum class CreditControlResultCode(val value: Int) {
@@ -55,7 +58,12 @@ data class FinalUnitIndication(
         val filterId: List<String>,
         val redirectServer: RedirectServer?)
 
-
+/**
+ * We treat Granted/Requested/Used Service-Unit the same
+ * as we only care about data buckets.
+ *
+ * https://tools.ietf.org/html/rfc4006#section-8.17
+ */
 class ServiceUnit() {
 
     @AvpField(Avp.CC_TOTAL_OCTETS)
@@ -125,6 +133,10 @@ data class RedirectServer(
         var redirectServerAddress: String
 )
 
+/**
+ * Service-Information  AVP ( 873 )
+ * http://www.3gpp.org/ftp/Specs/html-info/32299.htm
+ */
 class ServiceInformation() {
 
     @AvpList(Avp.PS_INFORMATION, PsInformation::class)
@@ -142,6 +154,9 @@ enum class SubscriptionType {
     END_USER_PRIVATE
 }
 
+/**
+ * https://tools.ietf.org/html/rfc4006#section-8.46
+ */
 class SubscriptionId() {
 
     @AvpField(Avp.SUBSCRIPTION_ID_TYPE)

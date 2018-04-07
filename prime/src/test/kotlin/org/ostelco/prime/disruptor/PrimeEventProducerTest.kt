@@ -20,11 +20,11 @@ import java.util.concurrent.TimeUnit
 
 class PrimeEventProducerTest {
 
-    private var pep: PrimeEventProducer? = null
+    private var primeEventProducer: PrimeEventProducer? = null
 
     private var disruptor: Disruptor<PrimeEvent>? = null
 
-    private var cdl: CountDownLatch? = null
+    private var countDownLatch: CountDownLatch? = null
 
     private var result: MutableSet<PrimeEvent>? = null
 
@@ -32,7 +32,7 @@ class PrimeEventProducerTest {
     val collectedEvent: PrimeEvent
         @Throws(InterruptedException::class)
         get() {
-            assertTrue(cdl!!.await(TIMEOUT.toLong(), TimeUnit.SECONDS))
+            assertTrue(countDownLatch!!.await(TIMEOUT.toLong(), TimeUnit.SECONDS))
             assertFalse(result!!.isEmpty())
             val event = result!!.iterator().next()
             assertNotNull(event)
@@ -47,13 +47,13 @@ class PrimeEventProducerTest {
                 RING_BUFFER_SIZE,
                 Executors.defaultThreadFactory())
         val ringBuffer = disruptor!!.ringBuffer
-        this.pep = PrimeEventProducer(ringBuffer)
+        this.primeEventProducer = PrimeEventProducer(ringBuffer)
 
-        this.cdl = CountDownLatch(1)
+        this.countDownLatch = CountDownLatch(1)
         this.result = HashSet()
         val eh = EventHandler<PrimeEvent> { event, sequence, endOfBatch ->
             result!!.add(event)
-            cdl!!.countDown()
+            countDownLatch?.countDown()
         }
 
         disruptor!!.handleEventsWith(eh)
@@ -62,7 +62,7 @@ class PrimeEventProducerTest {
 
     @After
     fun shutDown() {
-        disruptor!!.shutdown()
+        disruptor?.shutdown()
     }
 
     @Test
@@ -70,7 +70,7 @@ class PrimeEventProducerTest {
     fun topupDataBundleBalanceEvent() {
 
         // Stimulating a response
-        pep!!.topupDataBundleBalanceEvent(MSISDN, NO_OF_TOPUP_BYTES)
+        primeEventProducer!!.topupDataBundleBalanceEvent(MSISDN, NO_OF_TOPUP_BYTES)
 
         // Collect an event (or fail trying).
         val event = collectedEvent
@@ -94,7 +94,7 @@ class PrimeEventProducerTest {
                 .build()
         ).build()
 
-        pep!!.injectCreditControlRequestIntoRingbuffer(request, STREAM_ID)
+        primeEventProducer!!.injectCreditControlRequestIntoRingbuffer(request, STREAM_ID)
 
         val event = collectedEvent
         assertEquals(MSISDN, event.msisdn)
