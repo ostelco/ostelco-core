@@ -25,12 +25,6 @@ services:
     ports:
       - "8080:8080"
 
-  pseudonym-server:
-    container_name: pseudonym-server
-    build: pseudonym-server
-    ports:
-      - "8090:8080"
-
 networks:
   net:
     driver: bridge
