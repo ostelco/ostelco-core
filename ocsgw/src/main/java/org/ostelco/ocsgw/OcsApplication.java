@@ -12,15 +12,11 @@ import org.jdiameter.api.Network;
 import org.jdiameter.api.NetworkReqListener;
 import org.jdiameter.api.Request;
 import org.jdiameter.api.Stack;
-import org.jdiameter.api.auth.ClientAuthSession;
-import org.jdiameter.api.auth.ServerAuthSession;
 import org.jdiameter.api.cca.ServerCCASession;
 import org.jdiameter.api.cca.events.JCreditControlRequest;
 import org.jdiameter.client.api.ISessionFactory;
-import org.jdiameter.client.impl.app.auth.ClientAuthSessionImpl;
 import org.jdiameter.common.impl.app.cca.CCASessionFactoryImpl;
 import org.jdiameter.server.impl.StackImpl;
-import org.jdiameter.server.impl.app.auth.ServerAuthSessionImpl;
 import org.jdiameter.server.impl.app.cca.ServerCCASessionImpl;
 import org.jdiameter.server.impl.helpers.XMLConfiguration;
 import org.slf4j.Logger;
@@ -39,20 +35,17 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
 
     public static void main(String[] args) {
 
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                LOG.info("Shutting down OcsApplication...");
-                if (stack != null) {
-                    try {
-                        stack.stop(0, TimeUnit.MILLISECONDS ,0);
-                    } catch (IllegalDiameterStateException | InternalException e) {
-                        LOG.error("Failed to gracefully shutdown OcsApplication", e);
-                    }
-                    stack.destroy();
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            LOG.info("Shutting down OcsApplication...");
+            if (stack != null) {
+                try {
+                    stack.stop(0, TimeUnit.MILLISECONDS ,0);
+                } catch (IllegalDiameterStateException | InternalException e) {
+                    LOG.error("Failed to gracefully shutdown OcsApplication", e);
                 }
+                stack.destroy();
             }
-        });
+        }));
 
         OcsApplication app = new OcsApplication();
         app.start("/config/");

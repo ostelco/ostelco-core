@@ -16,7 +16,7 @@ import org.jdiameter.api.cca.events.JCreditControlRequest;
 import org.jdiameter.common.impl.app.auth.ReAuthRequestImpl;
 import org.jdiameter.server.impl.app.cca.ServerCCASessionImpl;
 import org.ostelco.diameter.CreditControlContext;
-import org.ostelco.diameter.SessionContext;
+import org.ostelco.diameter.model.SessionContext;
 import org.ostelco.diameter.model.ReAuthRequestType;
 import org.ostelco.ocsgw.data.DataSource;
 import org.ostelco.ocsgw.data.DataSourceType;

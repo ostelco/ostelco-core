@@ -7,19 +7,13 @@ import org.jdiameter.api.Request
 import org.jdiameter.api.ResultCode
 import org.jdiameter.api.cca.events.JCreditControlRequest
 import org.jdiameter.common.impl.app.cca.JCreditControlAnswerImpl
-import org.ostelco.diameter.model.CreditControlAnswer
-import org.ostelco.diameter.model.CreditControlRequest
-import org.ostelco.diameter.model.CreditControlResultCode
-import org.ostelco.diameter.model.FinalUnitIndication
-import org.ostelco.diameter.model.MultipleServiceCreditControl
-import org.ostelco.diameter.model.RequestType
+import org.ostelco.diameter.model.*
 import org.ostelco.diameter.parser.AvpParser
 import org.ostelco.diameter.util.DiameterUtilities
 
 class CreditControlContext(
         val sessionId: String,
-        val originalCreditControlRequest: JCreditControlRequest
-        ) {
+        val originalCreditControlRequest: JCreditControlRequest) {
 
     private val LOG by logger()
 
@@ -103,12 +97,22 @@ class CreditControlContext(
         // There seems to be a possibility to do some whitelisting here by using RESTRICT_ACCESS
         // We should have a look at: https://tools.ietf.org/html/rfc4006#section-5.6.3
 
-        val origFinalUnitIndication: FinalUnitIndication? = mscc.finalUnitIndication
-        if (origFinalUnitIndication != null) {
+        val originalFinalUnitIndication: FinalUnitIndication? = mscc.finalUnitIndication
+        if (originalFinalUnitIndication != null) {
             val finalUnitIndication = answerMSCC.addGroupedAvp(Avp.FINAL_UNIT_INDICATION, true, false)
-            finalUnitIndication.addAvp(Avp.FINAL_UNIT_ACTION, origFinalUnitIndication.finalUnitAction.ordinal, true, false)
+            finalUnitIndication.addAvp(Avp.FINAL_UNIT_ACTION, originalFinalUnitIndication.finalUnitAction.ordinal, true, false)
+            if (originalFinalUnitIndication.finalUnitAction == FinalUnitAction.REDIRECT) {
+                val originalRedirectServer = originalFinalUnitIndication.redirectServer
+                if (originalRedirectServer != null) {
+                    val redirectServer = finalUnitIndication.addGroupedAvp(Avp.REDIRECT_SERVER, true, false)
+                    redirectServer.addAvp(Avp.REDIRECT_ADDRESS_TYPE, originalRedirectServer.redirectAddressType.ordinal, true, false)
+                    redirectServer.addAvp(Avp.REDIRECT_ADDRESS, originalRedirectServer.redirectServerAddress, true, false, false)
+                }
+            } else if (originalFinalUnitIndication.finalUnitAction == FinalUnitAction.RESTRICT_ACCESS) {
+                for (restrictionFilerRule in originalFinalUnitIndication.restrictionFilterRule) {
+                    finalUnitIndication.addAvp(Avp.RESTRICTION_FILTER_RULE, restrictionFilerRule, true, false, true)
+                }
+            }
         }
-
-        //ToDo : Add support for the rest of the Final-Unit-Action
     }
 }

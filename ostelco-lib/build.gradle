@@ -1,29 +1,29 @@
 plugins {
     id "java-library"
     id "jacoco"
-    id 'net.ltgt.apt' version '0.10'
+    id 'net.ltgt.apt' version '0.15'
 }
 
 dependencies {
     implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
     implementation "io.dropwizard:dropwizard-auth:$dropwizardVersion"
-    implementation 'com.google.firebase:firebase-admin:5.6.0'
-    implementation 'com.lmax:disruptor:3.3.7'
-    implementation 'com.google.guava:guava:21.0'
+    implementation 'com.google.firebase:firebase-admin:5.9.0'
+    implementation 'com.lmax:disruptor:3.4.1'
+    implementation 'com.google.guava:guava:24.1-jre'
 
     testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
-    testCompile group: 'org.mockito', name: 'mockito-core', version: '2.10.0'
-    testCompile 'org.assertj:assertj-core:3.9.0'
+    testImplementation "org.mockito:mockito-core:2.16.0"
+    testImplementation 'org.assertj:assertj-core:3.9.1'
 
     // https://mvnrepository.com/artifact/org.glassfish.jersey.test-framework.providers/jersey-test-framework-provider-grizzly2
-    testCompile(group: 'org.glassfish.jersey.test-framework.providers', name: 'jersey-test-framework-provider-grizzly2', version: '2.25.1') {
+    testCompile("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2:2.26") {
         // 2.26 (latest)
         exclude group: 'javax.servlet', module: 'javax.servlet-api'
         exclude group: 'junit', module: 'junit'
     }
 
     // https://mvnrepository.com/artifact/org.jetbrains/annotations
-    compile group: 'org.jetbrains', name: 'annotations', version: '13.0'
+    implementation 'org.jetbrains:annotations:16.0.1'
 
     compileOnly 'org.projectlombok:lombok:1.16.20'
     apt 'org.projectlombok:lombok:1.16.20'

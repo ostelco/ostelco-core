@@ -71,11 +71,11 @@ class PipelineTest {
 
 
         if (pipeline != null) {
-            pipeline.coderRegistry.registerCoderForClass(AggregatedDataTrafficInfo::class.java, ProtoCoder.of(AggregatedDataTrafficInfo::class.java))
-
             val currentHourDateTime = getCurrentHourDateTime()
 
             val out: PCollection<AggregatedDataTrafficInfo> = appendTransformations(pipeline.apply(testStream))
+                    .setCoder(ProtoCoder.of(AggregatedDataTrafficInfo::class.java))
+
             PAssert.that(out).containsInAnyOrder(
                     AggregatedDataTrafficInfo.newBuilder().setMsisdn("123").setDataBytes(300).setDateTime(currentHourDateTime).build(),
                     AggregatedDataTrafficInfo.newBuilder().setMsisdn("456").setDataBytes(200).setDateTime(currentHourDateTime).build(),

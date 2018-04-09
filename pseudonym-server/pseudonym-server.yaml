@@ -1,0 +1,20 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: pseudonym-server
+  labels:
+    app: pseudonym
+    tier: backend
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: pseudonym
+        tier: backend
+    spec:
+      containers:
+      - name: pseudonym-server
+        image: gcr.io/pantel-2decb/pseudonym-server:v1
+        ports:
+        - containerPort: 8080

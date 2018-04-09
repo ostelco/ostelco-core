@@ -12,10 +12,8 @@ import org.apache.beam.sdk.extensions.protobuf.ProtoCoder
 import org.apache.beam.sdk.io.gcp.pubsub.PubsubIO
 import org.apache.beam.sdk.options.PipelineOptionsFactory
 import org.apache.beam.sdk.transforms.Combine
-import org.apache.beam.sdk.transforms.DoFn
 import org.apache.beam.sdk.transforms.Filter
 import org.apache.beam.sdk.transforms.GroupByKey
-import org.apache.beam.sdk.transforms.ParDo
 import org.apache.beam.sdk.transforms.SerializableFunction
 import org.apache.beam.sdk.transforms.Sum
 import org.apache.beam.sdk.transforms.WithTimestamps
@@ -25,6 +23,7 @@ import org.apache.beam.sdk.values.KV
 import org.apache.beam.sdk.values.PCollection
 import org.joda.time.Duration
 import org.joda.time.Instant
+import org.ostelco.analytics.ParDoFn.transform
 import org.ostelco.analytics.Table.HOURLY_CONSUMPTION
 import org.ostelco.analytics.Table.RAW_CONSUMPTION
 import org.ostelco.ocs.api.AggregatedDataTrafficInfo
@@ -69,30 +68,22 @@ fun main(args: Array<String>) {
 
     val saveToBigQueryGroupedByHour = BigQueryIOUtils().writeTo(HOURLY_CONSUMPTION)
 
-    val convertToRawTableRows = ParDo.of(object : DoFn<DataTrafficInfo, TableRow>() {
-        @ProcessElement
-        fun processElement(c: ProcessContext) {
-            val dataTrafficInfo = c.element()
-            c.output(TableRow()
-                    .set("msisdn", dataTrafficInfo.msisdn)
-                    .set("bucketBytes", dataTrafficInfo.bucketBytes)
-                    .set("bundleBytes", dataTrafficInfo.bundleBytes)
-                    .set("timestamp", ZonedDateTime.ofInstant(
-                            java.time.Instant.ofEpochMilli(Timestamps.toMillis(dataTrafficInfo.timestamp)),
-                            ZoneOffset.UTC).toString()))
-        }
-    })
+    val convertToRawTableRows = transform<DataTrafficInfo, TableRow> {
+        TableRow()
+                .set("msisdn", it.msisdn)
+                .set("bucketBytes", it.bucketBytes)
+                .set("bundleBytes", it.bundleBytes)
+                .set("timestamp", ZonedDateTime.ofInstant(
+                        java.time.Instant.ofEpochMilli(Timestamps.toMillis(it.timestamp)),
+                        ZoneOffset.UTC).toString())
+    }
 
-    val convertToHourlyTableRows = ParDo.of(object : DoFn<AggregatedDataTrafficInfo, TableRow>() {
-        @ProcessElement
-        fun processElement(c: ProcessContext) {
-            val value = c.element()
-            c.output(TableRow()
-                    .set("msisdn", value.msisdn)
-                    .set("bytes", value.dataBytes)
-                    .set("timestamp", value.dateTime))
-        }
-    })
+    val convertToHourlyTableRows = transform<AggregatedDataTrafficInfo, TableRow> {
+        TableRow()
+                .set("msisdn", it.msisdn)
+                .set("bytes", it.dataBytes)
+                .set("timestamp", it.dateTime)
+    }
 
     // PubSubEvents -> raw_consumption big-query
     dataTrafficInfoEvents
@@ -122,52 +113,44 @@ fun appendTransformations(inCollection: PCollection<DataTrafficInfo>): PCollecti
             .withAllowedLateness(Duration.standardMinutes(1L))
             .discardingFiredPanes()
 
-    val toKeyValuePair = ParDo.of(object : DoFn<DataTrafficInfo, KV<AggregatedDataTrafficInfo, Long>>() {
-        @ProcessElement
-        fun processElement(c: ProcessContext) {
-            val dataTrafficInfo = c.element()
-            val zonedDateTime = ZonedDateTime
-                    .ofInstant(java.time.Instant.ofEpochMilli(Timestamps.toMillis(dataTrafficInfo.timestamp)), ZoneOffset.UTC)
-                    .withMinute(0)
-                    .withSecond(0)
-                    .withNano(0)
-            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:SS")
-            c.output(KV.of(
-                    AggregatedDataTrafficInfo.newBuilder()
-                            .setMsisdn(dataTrafficInfo.msisdn)
-                            .setDateTime(formatter.format(zonedDateTime))
-                            .setDataBytes(0)
-                            .build(),
-                    dataTrafficInfo.bucketBytes))
-        }
-    })
+    val toKeyValuePair = transform<DataTrafficInfo, KV<AggregatedDataTrafficInfo, Long>> {
+        val zonedDateTime = ZonedDateTime
+                .ofInstant(java.time.Instant.ofEpochMilli(Timestamps.toMillis(it.timestamp)), ZoneOffset.UTC)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0)
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:SS")
+        KV.of(
+                AggregatedDataTrafficInfo.newBuilder()
+                        .setMsisdn(it.msisdn)
+                        .setDateTime(formatter.format(zonedDateTime))
+                        .setDataBytes(0)
+                        .build(),
+                it.bucketBytes)
+    }
 
-    val reduceToSumOfBucketBytes = Combine.groupedValues<AggregatedDataTrafficInfo,Long,Long>(Sum.ofLongs())
+    val reduceToSumOfBucketBytes = Combine.groupedValues<AggregatedDataTrafficInfo, Long, Long>(Sum.ofLongs())
 
-    val kvToSingleObject = ParDo.of(object : DoFn<KV<AggregatedDataTrafficInfo, Long>, AggregatedDataTrafficInfo>() {
-        @ProcessElement
-        fun processElement(c: ProcessContext) {
-            val kv = c.element()
-            c.output(AggregatedDataTrafficInfo.newBuilder()
-                            .setMsisdn(kv.key.msisdn)
-                            .setDateTime(kv.key.dateTime)
-                            .setDataBytes(kv.value)
-                            .build())
-        }
-    })
+    val kvToSingleObject = transform<KV<AggregatedDataTrafficInfo, Long>, AggregatedDataTrafficInfo> {
+        AggregatedDataTrafficInfo.newBuilder()
+                .setMsisdn(it.key?.msisdn)
+                .setDateTime(it.key?.dateTime)
+                .setDataBytes(it.value)
+                .build()
+    }
 
     // In this method, the code above is declaring all transformations.
     // Whereas the code below is chaining them into a pipeline.
 
     return inCollection
             // In order to use timestamp in the event object instead of timestamp when event was registered to PubSub
-            .apply(linkTimestamps)
-            .apply(groupByHour)
+            .apply("linkTimestamps", linkTimestamps)
+            .apply("groupByHour", groupByHour)
             // change to KV and then group by Key
-            .apply(toKeyValuePair)
-            .apply(GroupByKey.create())
-            // sum for each group
-            .apply(reduceToSumOfBucketBytes)
+            .apply("toKeyValuePair", toKeyValuePair)
             .setCoder(KvCoder.of(ProtoCoder.of(AggregatedDataTrafficInfo::class.java), VarLongCoder.of()))
-            .apply(kvToSingleObject)
+            .apply("groupByKey", GroupByKey.create())
+            // sum for each group
+            .apply("reduceToSumOfBucketBytes", reduceToSumOfBucketBytes)
+            .apply("kvToSingleObject", kvToSingleObject)
 }

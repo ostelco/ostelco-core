@@ -9,7 +9,7 @@ import org.jdiameter.api.OverloadException;
 import org.jdiameter.api.RouteException;
 import org.jdiameter.api.cca.ServerCCASession;
 import org.ostelco.diameter.CreditControlContext;
-import org.ostelco.diameter.SessionContext;
+import org.ostelco.diameter.model.SessionContext;
 import org.ostelco.diameter.model.CreditControlAnswer;
 import org.ostelco.diameter.model.FinalUnitAction;
 import org.ostelco.diameter.model.FinalUnitIndication;
@@ -191,7 +191,7 @@ public class GrpcDataSource implements DataSource {
                         .setMsisdn(context.getCreditControlRequest().getMsisdn())
                         .setImsi(context.getCreditControlRequest().getImsi());
 
-                if (context.getCreditControlRequest().getServiceInformation() != null) {
+                if (!context.getCreditControlRequest().getServiceInformation().isEmpty()) {
                     final org.ostelco.diameter.model.PsInformation psInformation
                             = context.getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0);
 
@@ -278,9 +278,13 @@ public class GrpcDataSource implements DataSource {
     private FinalUnitIndication convertFinalUnitIndication(org.ostelco.ocs.api.FinalUnitIndication fuiGrpc) {
         return new FinalUnitIndication(
                 FinalUnitAction.values()[fuiGrpc.getFinalUnitAction().getNumber()],
-                new LinkedList<>(),
+                fuiGrpc.getRestrictionFilterRuleList(),
                 fuiGrpc.getFilterIdList(),
-                new RedirectServer(RedirectAddressType.IPV4_ADDRESS));
+                new RedirectServer(
+                        RedirectAddressType.values()[fuiGrpc.getRedirectServer().getRedirectAddressType().getNumber()],
+                        fuiGrpc.getRedirectServer().getRedirectServerAddress()
+                )
+        );
     }
 
     @Override
