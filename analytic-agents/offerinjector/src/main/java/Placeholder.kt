@@ -15,6 +15,10 @@ import java.nio.channels.Channels.newOutputStream
 object Placeholder {
 
 
+    // Me way want to listen to changes in buckets:
+    //  -- https://cloud.google.com/storage/docs/object-change-notification
+    // Listening for changes (not implemented) https://cloud.google.com/storage/docs/object-change-notification
+
     @JvmStatic
     fun main(argv: Array<String>) {
 

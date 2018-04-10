@@ -54,11 +54,13 @@ def get(self):
                                app_identity.get_default_gcs_bucket_name())
 
   self.response.headers['Content-Type'] = 'text/plain'
-  self.response.write('Demo GCS Application running from Version: '
+  
                       + os.environ['CURRENT_VERSION_ID'] + '\n')
   self.response.write('Using bucket name: ' + bucket_name + '\n\n')
 
 print (resultTemplate)
+
+get("foo")
 
 
 
