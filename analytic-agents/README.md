@@ -49,30 +49,32 @@ it could be something else.  With that caveat in mind, here goes:
 
 We set up a processing cycle with these steps and formats.
  
- * Continously collect data using whatever means necessary, and dump
- them into bigquery.  Data is stored pseudoanonymized.  The bigquery dumps should contain at least:
- ** Data consumption data.
- **  Behavior data fra analytics.
- * Periodically, every hour or so, run a kubernetes cron job that does this:
- **  Run predefined queries from the data stored in bigquery, extract tables for demoraphics, etc. that makes sense for the analytics agents to work with.  Not too much, not too little, subject to change and the models must allow for this (e.g. require that columns must be allowed to appear without consumers breaking).  Put the results into temporary bigquery tables.
- ** Translate from pseudoanonymized data into consistent pseudoanonymized datasets.
+* Continously collect data using whatever means necessary, and dump
+ them into bigquery.  Data is stored pseudoanonymized.  The bigquery dumps should contain at least: Data consumption data and   behavior data fra analytics.
+ 
+Periodically, every hour or so, run a kubernetes cron job that does this:
 
-** Dump the translated & consistent dataset into one or more cloud
+*  Run predefined queries from the data stored in bigquery, extract tables for demoraphics, etc. that makes sense for the analytics agents to work with.  Not too much, not too little, subject to change and the models must allow for this (e.g. require that columns must be allowed to appear without consumers breaking).  Put the results into temporary bigquery tables.
+* Translate from pseudoanonymized data into consistent pseudoanonymized datasets.
+
+* Dump the translated & consistent dataset into one or more cloud
    storage buckets, for consumption by agents.
 
-** Agents can then either
-*** Read the data directly from the bucket programmatically
-*** Read the data form the bucket via the web inteface, and then
+Agents can then either
+
+* Read the data directly from the bucket programmatically
+* Read the data form the bucket via the web inteface, and then
 process it from local file storage.
-*** Use FUSE filesystem to read data from bucket, but present it
+* Use FUSE filesystem to read data from bucket, but present it
 as a local file system.
 
  * Agents will then take the input, process it, produce instructions for offers to be made. Do this in the form of yaml files (or perhaps a single yaml file, see sample format in this directory).  The output is written back into a cloud storage bucket.
- * The output from the agent is then picked up by a job listening for input into buckets (either by running periodically, or by active listening for changes).  The offers are then translated into internal format offers, written into the appropriate databases, possibly signalled through messaging services and immediately picked up by the subscribers.
+
+The output from the agent is then picked up by a job listening for input into buckets (either by running periodically, or by active listening for changes).  The offers are then translated into internal format offers, written into the appropriate databases, possibly signalled through messaging services and immediately picked up by the subscribers.
 
 This completes the cycle.
  
- ### Components
+### Components
 
 A kubernetes program running either continously, or as a kubernets
 batch job that exports and imports datasets via google cloud storage.
