@@ -4,20 +4,24 @@ include ':analytics'
 include ':auth-server'
 include ':diameter-stack'
 include ':diameter-test'
+include ':exporter'
 include ':ext-pgw'
 include ':ocs-api'
 include ':ocsgw'
 include ':ostelco-lib'
 include ':prime'
+include ':pseudonym-server'
 include ':rule-engine'
 
 project(':analytics').projectDir = "$rootDir/analytics" as File
 project(':auth-server').projectDir = "$rootDir/auth-server" as File
 project(':diameter-stack').projectDir = "$rootDir/diameter-stack" as File
 project(':diameter-test').projectDir = "$rootDir/diameter-test" as File
+project(':exporter').projectDir = "$rootDir/exporter" as File
 project(':ext-pgw').projectDir = "$rootDir/ext-pgw" as File
 project(':ocs-api').projectDir = "$rootDir/ocs-api" as File
 project(':ocsgw').projectDir = "$rootDir/ocsgw" as File
 project(':ostelco-lib').projectDir = "$rootDir/ostelco-lib" as File
 project(':prime').projectDir = "$rootDir/prime" as File
+project(':pseudonym-server').projectDir = "$rootDir/pseudonym-server" as File
 project(':rule-engine').projectDir = "$rootDir/rule-engine" as File

@@ -25,15 +25,35 @@ services:
       - "ocsgw"
     command: ["./wait_for_ocsgw.sh"]
 
+  pseudonym-server:
+    container_name: pseudonym-server
+    build: pseudonym-server
+    ports:
+      - "8090:8080"
+    environment:
+      - DATASTORE_EMULATOR_HOST=localhost:9090
+      - DATASTORE_PROJECT_ID=pantel-2decb
+      - PUBSUB_EMULATOR_HOST=localhost:9080
+      - PUBSUB_PROJECT_ID=pantel-2decb
+    command: ["/bin/bash", "./wait_for_emulators.sh"]
+
   pubsub-emulator:
     container_name: pubsub-emulator
     image: knarz/pubsub-emulator
 #    image: google/cloud-sdk
 #    command: ["gcloud", "beta", "emulators", "pubsub", "start"]
 
-#  datastore-emulator:
-#    container_name: datastore-emulator
-#    image: google/cloud-sdk
-#    environment:
-#      - GCLOUD_PROJECT=test
-#    command: ["gcloud", "beta", "emulators", "datastore", "start"]
+  gpubsub-emulator:
+    container_name: gpubsub-emulator
+    image: google/cloud-sdk
+    command: ["gcloud", "beta", "emulators", "pubsub", "start", "--host-port=0.0.0.0:8085"]
+
+  datastore-emulator:
+    container_name: datastore-emulator
+    image: google/cloud-sdk
+    expose:
+      - "8081"
+    environment:
+      - CLOUDSDK_CORE_PROJECT=pantel-2decb
+      - DATASTORE_DATASET=pantel-2decb
+    command: ["gcloud", "beta", "emulators", "datastore", "start", "--host-port=0.0.0.0:8081"]

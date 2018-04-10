@@ -27,23 +27,6 @@ enum FinalUnitAction {
   RESTRICT_ACCESS = 2;
 }
 
-enum Action {
-  PERMIT = 0;
-  DENY = 1;
-}
-
-enum Dir {
-  IN = 0;
-  OUT = 1;
-}
-
-message IPFilererRule {
-  Action action = 1;
-  Dir dir = 2;
-  string proto = 3;
-  string host = 4;
-}
-
 enum RedirectAddressType {
   IPV4_ADDRESS = 0;
   IPV6_ADDRESS = 1;
@@ -66,7 +49,7 @@ message RedirectServer {
 
 message FinalUnitIndication {
   FinalUnitAction finalUnitAction = 1;
-  repeated IPFilererRule restrictionFilterRule = 2;
+  repeated string restrictionFilterRule = 2;
   repeated string filterId = 3;
   RedirectServer redirectServer = 4;
 }

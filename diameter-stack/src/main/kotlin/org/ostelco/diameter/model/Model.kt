@@ -22,6 +22,9 @@ object RequestType {
     }
 }
 
+/**
+ * Internal representation of the Credit-Control-Answer
+ */
 data class CreditControlAnswer(val multipleServiceCreditControls: List<MultipleServiceCreditControl>)
 
 enum class CreditControlResultCode(val value: Int) {
@@ -37,35 +40,30 @@ enum class ReAuthRequestType {
     AUTHORIZE_AUTHENTICATE
 }
 
-// https://tools.ietf.org/html/rfc4006#page-71
+/**
+ * https://tools.ietf.org/html/rfc4006#page-71
+ */
 enum class FinalUnitAction {
     TERMINATE,
     REDIRECT,
     RESTRICT_ACCESS
 }
 
+/**
+ * https://tools.ietf.org/html/rfc4006#section-8.34
+ */
 data class FinalUnitIndication(
         val finalUnitAction: FinalUnitAction,
-        val restrictionFilterRule: List<IPFilterRule>,
+        val restrictionFilterRule: List<String>,
         val filterId: List<String>,
         val redirectServer: RedirectServer?)
 
-enum class Action {
-    PERMIT,
-    DENY
-}
-
-enum class Direction {
-    IN,
-    OUT
-}
-
-data class IPFilterRule(
-        val action: Action,
-        val direction: Direction,
-        val proto: String,
-        val host: String)
-
+/**
+ * We treat Granted/Requested/Used Service-Unit the same
+ * as we only care about data buckets.
+ *
+ * https://tools.ietf.org/html/rfc4006#section-8.17
+ */
 class ServiceUnit() {
 
     @AvpField(Avp.CC_TOTAL_OCTETS)
@@ -84,7 +82,9 @@ class ServiceUnit() {
     }
 }
 
-// https://tools.ietf.org/html/rfc4006#section-8.16
+/**
+ * https://tools.ietf.org/html/rfc4006#section-8.16
+ */
 class MultipleServiceCreditControl() {
 
     @AvpField(Avp.RATING_GROUP)
@@ -104,6 +104,7 @@ class MultipleServiceCreditControl() {
 
     var validityTime = 86400
 
+    // https://tools.ietf.org/html/rfc4006#section-8.34
     var finalUnitIndication: FinalUnitIndication? = null
 
     constructor(ratingGroup: Long, serviceIdentifier: Long, requested: List<ServiceUnit>, used: ServiceUnit, granted: ServiceUnit, validityTime: Int, finalUnitIndication: FinalUnitIndication?) : this() {
@@ -124,15 +125,27 @@ enum class RedirectAddressType {
     SIP_URL
 }
 
-data class RedirectServer(val redirectAddressType: RedirectAddressType)
+/**
+ * https://tools.ietf.org/html/rfc4006#section-8.37
+ */
+data class RedirectServer(
+        var redirectAddressType: RedirectAddressType,
+        var redirectServerAddress: String
+)
 
+/**
+ * Service-Information  AVP ( 873 )
+ * http://www.3gpp.org/ftp/Specs/html-info/32299.htm
+ */
 class ServiceInformation() {
 
     @AvpList(Avp.PS_INFORMATION, PsInformation::class)
     var psInformation: List<PsInformation> = emptyList()
 }
 
-// https://tools.ietf.org/html/rfc4006#section-8.47
+/**
+ * https://tools.ietf.org/html/rfc4006#section-8.47
+ */
 enum class SubscriptionType {
     END_USER_E164,
     END_USER_IMSI,
@@ -141,6 +154,9 @@ enum class SubscriptionType {
     END_USER_PRIVATE
 }
 
+/**
+ * https://tools.ietf.org/html/rfc4006#section-8.46
+ */
 class SubscriptionId() {
 
     @AvpField(Avp.SUBSCRIPTION_ID_TYPE)
@@ -150,7 +166,9 @@ class SubscriptionId() {
     var idData:String? = ""
 }
 
-// https://tools.ietf.org/html/rfc4006#page-78
+/**
+ * https://tools.ietf.org/html/rfc4006#page-78
+ */
 class UserEquipmentInfo() {
 
     @AvpField(Avp.USER_EQUIPMENT_INFO_TYPE)
