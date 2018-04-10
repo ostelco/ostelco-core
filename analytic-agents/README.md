@@ -87,6 +87,82 @@ it unecessary to deploy the comonent to a production-like environment
 to run it in an environment that is _almost_ production like but
 runs on a workstation.
 
+### Example yaml file describing offer (work in progress)
+
+
+This version is based on the data we used in a previous version of the "prime" component's internal schema, to which is added some fields that are assumed to make sense when describing offers.  This proposal has not been made as minimal as possible, and it has not been critisized to death (a.k.a. "code reviewed" :) ) to ensure that it is the best possible format we can make today.  That should happen before we commit to using it, or write even a single line o code to parse or produce it!
+
+
+	#
+	# This is a sample YAML format to be used by
+	# agents that produce offers.  The general idea
+	# is that an offer has a set of parameters,
+	# and also a set of selected subscribers that will
+	# get it.
+	#
+	# YAML was chosen since it's more human readable than
+	# e.g. json or protobuffers, while still being
+	# easy to produce by an agent, and relatively compact,
+	# in particular when gzipped.
+	#
+
+	producing-agent:
+	  name: Simple agent
+	  version: 1.0
+
+	# All of the parameters below are just copied from the firebasr
+	# realtime database we used in the demo, converted to
+	# camel case.  All the fields should be documented
+	# in this document, and we should think through if this is
+	# the best set of parameters we weant.
+
+	offer:
+		history:
+		   createdAt: "2018-02-22T12:41:49.871Z"
+		   updatedAt: "2018-02-22T12:41:49.871Z"
+		   visibleFrom: "2018-02-22T12:41:49.871Z"
+		   expiresOn: "2018-02-22T12:41:49.871Z"
+		presentation:
+		   badgeLabel: "mbop"
+		   description: "Best offer you will get today"
+		   shortDescription: "Best offer!"
+		   label: "3 GB"
+		   name: "3 GB"
+		   priceLabel: "49 NOK"
+		   hidden: false
+		   image: https://www.ft-associates.com/wp-content/uploads/2015/08/Best-Offer.jpg
+		financial:
+		   repurchability:1
+		   currencyLabel: "NOK"
+		   price: 4900
+		   taxRate: 10
+		product:
+		   SKU: 2
+		   # A possibly very long list of product parameters that are all
+		   # dependent on the SKU's requirement.   Details ignored here,
+		   # that may pop up later. Deal with them then.
+		   noOfBytes: 3000000000
+
+	# We put the segment last, since it may have a long list of 
+	# members in it. We want that list to be last, since it contains
+	# little information that humans are interested in, and we want
+	# humans to start reading the file at the top.
+
+	segment:
+	   type: agent-specific-segment
+	   members:
+		 # The decryption key is what the de-anonymizer will use to
+		 # make proper  identifiers out of the members listed below.
+		 # The special purpose key "none" indicatest that the member list
+		 # is in clear text.
+		 decryptionKey: none
+		 members:
+			- 4790300157
+			- 4790300144
+			- 4333333333
+        
+
+
 
 Notes
 ---
