@@ -34,7 +34,7 @@ using external analytics tools, and to use the same terms as the
 tools we are working in concert with.  This means that we need
 to solve a coordination problem with respect to whatever analytics
 system we choose to use.   Our current working hypothesis is that we
-will be using Firebase Analytics, 
+will be using Firebase Analytics,
 
 
 Current overall design
@@ -48,10 +48,10 @@ architecture to aim for.    This is a moving target, tomorrow
 it could be something else.  With that caveat in mind, here goes:
 
 We set up a processing cycle with these steps and formats.
- 
+
 * Continously collect data using whatever means necessary, and dump
  them into bigquery.  Data is stored pseudoanonymized.  The bigquery dumps should contain at least: Data consumption data and   behavior data fra analytics.
- 
+
 Periodically, every hour or so, run a kubernetes cron job that does this:
 
 *  Run predefined queries from the data stored in bigquery, extract tables for demoraphics, etc. that makes sense for the analytics agents to work with.  Not too much, not too little, subject to change and the models must allow for this (e.g. require that columns must be allowed to appear without consumers breaking).  Put the results into temporary bigquery tables.
@@ -73,7 +73,7 @@ as a local file system.
 The output from the agent is then picked up by a job listening for input into buckets (either by running periodically, or by active listening for changes).  The offers are then translated into internal format offers, written into the appropriate databases, possibly signalled through messaging services and immediately picked up by the subscribers.
 
 This completes the cycle.
- 
+
 ### Components
 
 A kubernetes program running either continously, or as a kubernets
@@ -143,7 +143,7 @@ This version is based on the data we used in a previous version of the "prime" c
 		   # that may pop up later. Deal with them then.
 		   noOfBytes: 3000000000
 
-	# We put the segment last, since it may have a long list of 
+	# We put the segment last, since it may have a long list of
 	# members in it. We want that list to be last, since it contains
 	# little information that humans are interested in, and we want
 	# humans to start reading the file at the top.
@@ -160,7 +160,7 @@ This version is based on the data we used in a previous version of the "prime" c
 			- 4790300157
 			- 4790300144
 			- 4333333333
-        
+
 
 
 
@@ -213,6 +213,33 @@ To authenticate
 then
 
     gcsfuse rmz-test-bucket /tmp/aaas
+
+
+
+## Installing google cloud comman dline interface
+
+https://cloud.google.com/sdk/docs/
+
+To authenticvate Authenticate
+
+   gcloud auth login
+
+(will use the browser to do actual authentication)
+
+
+Set your project:
+
+   gcloud config set project pantel
+
+.. or some other project
+
+Run a script to get some data, e.g.
+
+
+    bq head -n 10 pantel-2decb:data_consumption.hourly_consumption
+
+to get ten lines of consumption data displayed.
+
 
 TODO
 ===
