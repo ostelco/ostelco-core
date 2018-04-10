@@ -14,6 +14,6 @@ class ExporterConfig : Configuration() {
     var projectName = "pantel-2decb"
     var subscriptionName = "test-pseudo"
     var publisherTopic = "pseudo-traffic"
-    var pseudonymEndpoint = ""
+    var pseudonymEndpoint = "http://pseudonym-server-service:80"
     var jerseyClient = JerseyClientConfiguration()
 }

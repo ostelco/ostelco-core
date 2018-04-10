@@ -11,9 +11,8 @@ dependencies {
   implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
   implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
   implementation project(':ocs-api')
-  implementation 'com.google.guava:guava:24.1-jre'
   compile 'com.google.cloud:google-cloud-bigquery:1.24.1'
-  compile group: 'io.grpc', name: 'grpc-netty-shaded', version: '1.11.0'
+  compile 'com.google.cloud:google-cloud-storage:1.24.1'
   compile group: 'com.fasterxml.jackson.module', name: 'jackson-module-kotlin', version: '2.9.4.1'
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
@@ -21,7 +20,7 @@ dependencies {
 }
 
 shadowJar {
-  mainClassName = 'org.ostelco.pseudonym.PseudonymServerApplicationKt'
+  mainClassName = 'org.ostelco.exporter.ExporterApplicationKt'
   mergeServiceFiles()
   classifier = "uber"
   version = null
