@@ -78,6 +78,14 @@ A kubernetes program running either continously, or as a kubernets
 batch job that exports and imports datasets via google cloud storage.
 Written in Kotlin, running as a dropwizard job.
 
+The component should use a pubsub channel to listen to changes in the
+actual changes in the bucket. The reason for favoring pubsub, is that
+it is possible to run tests of the component on a workstation making
+it unecessary to deploy the comonent to a production-like environment
+to run it in an environment that is _almost_ production like but
+runs on a workstation.
+
+
 Notes
 ---
 
