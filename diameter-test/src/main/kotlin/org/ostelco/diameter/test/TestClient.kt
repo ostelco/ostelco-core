@@ -56,10 +56,6 @@ class TestClient : EventListener<Request, Answer> {
     // session factory
     private lateinit var factory: SessionFactory
 
-    // session used as handle for communication
-    var session: Session? = null
-        private set
-
     // set if an answer to a Request has been received
     var isAnswerReceived = false
         private set
@@ -144,8 +140,8 @@ class TestClient : EventListener<Request, Answer> {
      * @param destinationRealm Destination Realm
      * @param destinationHost Destination Host
      */
-    fun createRequest(destinationRealm : String, destinationHost : String): Request? {
-        return session?.createRequest(
+    fun createRequest(destinationRealm : String, destinationHost : String, session : Session): Request? {
+        return session.createRequest(
                 commandCode,
                 ApplicationId.createByAuthAppId(applicationID),
                 destinationRealm,
@@ -153,16 +149,18 @@ class TestClient : EventListener<Request, Answer> {
         );
     }
 
-    private fun createSession() {
+    fun createSession() : Session? {
         try {
+            // FixMe : Need better way to make sure the session can be created
             //wait for connection to peer
             Thread.sleep(5000)
-            this.session = this.factory.getNewSession("BadCustomSessionId;" + System.currentTimeMillis() + ";0")
+            return this.factory.getNewSession("BadCustomSessionId;" + System.currentTimeMillis() + ";0")
         } catch (e: InternalException) {
             LOG.error("Start Failed", e)
         } catch (e: InterruptedException) {
             LOG.error("Start Failed", e)
         }
+        return null
     }
 
     /**
@@ -171,12 +169,12 @@ class TestClient : EventListener<Request, Answer> {
      * @param request Request to send
      * @return false if send failed
      */
-    fun sendNextRequest(request: Request): Boolean {
+    fun sendNextRequest(request: Request, session: Session?): Boolean {
         isAnswerReceived = false
         if (session != null) {
             val ccr = JCreditControlRequestImpl(request)
             try {
-                this.session?.send(ccr.message, this)
+                session.send(ccr.message, this)
                 dumpMessage(ccr.message, true) //dump info on console
                 return true
             } catch (e: InternalException) {

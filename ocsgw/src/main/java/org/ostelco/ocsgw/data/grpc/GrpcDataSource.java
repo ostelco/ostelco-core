@@ -185,6 +185,10 @@ public class GrpcDataSource implements DataSource {
                                                     .build())
                                     .setRatingGroup(mscc.getRatingGroup())
                                     .setServiceIdentifier(mscc.getServiceIdentifier()));
+
+                    if (mscc.getReportingReason() != null) {
+                        protoMscc.setReportingReasonValue(mscc.getReportingReason().ordinal());
+                    }
                 }
 
                 builder.setRequestId(context.getSessionId())
@@ -276,6 +280,10 @@ public class GrpcDataSource implements DataSource {
     }
 
     private FinalUnitIndication convertFinalUnitIndication(org.ostelco.ocs.api.FinalUnitIndication fuiGrpc) {
+        if (fuiGrpc == null) {
+            LOG.info("No FinalUnitIndication");
+            return null;
+        }
         return new FinalUnitIndication(
                 FinalUnitAction.values()[fuiGrpc.getFinalUnitAction().getNumber()],
                 fuiGrpc.getRestrictionFilterRuleList(),

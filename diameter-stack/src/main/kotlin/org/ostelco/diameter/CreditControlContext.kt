@@ -59,6 +59,29 @@ class CreditControlContext(
                     // This is a bug in jDiameter due to which this unsigned32 field has to be set as Int and not Long.
                     answerMSCC.addAvp(Avp.SERVICE_IDENTIFIER_CCA, mscc.serviceIdentifier.toInt(), true, false)
                 }
+
+                if (mscc.finalUnitIndication != null) {
+                    LOG.info("Adding FinalUnitIndication")
+                    if (originalCreditControlRequest.requestTypeAVPValue != RequestType.TERMINATION_REQUEST) {
+                        resultCode = CreditControlResultCode.DIAMETER_CREDIT_LIMIT_REACHED.value
+                    }
+
+                    // Since this is a terminate reply no service is granted
+                    val gsuAvp = answerMSCC.addGroupedAvp(Avp.GRANTED_SERVICE_UNIT, true, false)
+                    gsuAvp.addAvp(Avp.CC_INPUT_OCTETS, 0L, true, false)
+                    gsuAvp.addAvp(Avp.CC_OUTPUT_OCTETS, 0L, true, false)
+                    gsuAvp.addAvp(Avp.CC_TIME, 0, true, false)
+                    gsuAvp.addAvp(Avp.CC_TOTAL_OCTETS, 0L, true, false)
+                    gsuAvp.addAvp(Avp.CC_SERVICE_SPECIFIC_UNITS, 0L, true, false)
+
+                    addFinalUnitAction(answerMSCC, mscc)
+                } else if (mscc.granted.total > 1 ){
+                    val gsuAvp = answerMSCC.addGroupedAvp(Avp.GRANTED_SERVICE_UNIT, true, false)
+                    gsuAvp.addAvp(Avp.CC_INPUT_OCTETS, 0L, true, false)
+                    gsuAvp.addAvp(Avp.CC_OUTPUT_OCTETS, 0L, true, false)
+                    gsuAvp.addAvp(Avp.CC_TOTAL_OCTETS, mscc.granted.total, true, false)
+                }
+                /*
                 if (mscc.granted.total < 1 && originalCreditControlRequest.requestTypeAVPValue != RequestType.TERMINATION_REQUEST) {
                     resultCode = CreditControlResultCode.DIAMETER_CREDIT_LIMIT_REACHED.value
                 }
@@ -78,6 +101,7 @@ class CreditControlContext(
                 } else {
                     gsuAvp.addAvp(Avp.CC_TOTAL_OCTETS, mscc.granted.total, true, false)
                 }
+                */
 
                 answerMSCC.addAvp(Avp.RESULT_CODE, resultCode, true, false)
                 answerMSCC.addAvp(Avp.VALIDITY_TIME, mscc.validityTime, true, false)

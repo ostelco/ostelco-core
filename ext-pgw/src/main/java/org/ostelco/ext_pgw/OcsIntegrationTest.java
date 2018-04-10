@@ -1,10 +1,7 @@
 package org.ostelco.ext_pgw;
 
 import org.apache.log4j.Logger;
-import org.jdiameter.api.Avp;
-import org.jdiameter.api.AvpDataException;
-import org.jdiameter.api.AvpSet;
-import org.jdiameter.api.Request;
+import org.jdiameter.api.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,16 +46,17 @@ public class OcsIntegrationTest {
         client = null;
     }
 
-    private void simpleCreditControlRequestInit() {
+    private void simpleCreditControlRequestInit(Session session) {
 
         Request request = client.createRequest(
                 DEST_REALM,
-                DEST_HOST
+                DEST_HOST,
+                session
         );
 
         TestHelper.createInitRequest(request.getAvps(), MSISDN, BUCKET_SIZE);
 
-        client.sendNextRequest(request);
+        client.sendNextRequest(request, session);
 
         waitForAnswer();
 
@@ -77,16 +75,17 @@ public class OcsIntegrationTest {
         }
     }
 
-    private void simpleCreditControlRequestUpdate() {
+    private void simpleCreditControlRequestUpdate(Session session) {
 
         Request request = client.createRequest(
                 DEST_REALM,
-                DEST_HOST
+                DEST_HOST,
+                session
         );
 
-        TestHelper.creatUpdateRequest(request.getAvps(), MSISDN, BUCKET_SIZE);
+        TestHelper.createUpdateRequest(request.getAvps(), MSISDN, BUCKET_SIZE);
 
-        client.sendNextRequest(request);
+        client.sendNextRequest(request, session);
 
         waitForAnswer();
 
@@ -106,17 +105,19 @@ public class OcsIntegrationTest {
 
     @Test
     public void simpleCreditControlRequestInitUpdateAndTerminate() {
-        simpleCreditControlRequestInit();
-        simpleCreditControlRequestUpdate();
+        Session session = client.createSession();
+        simpleCreditControlRequestInit(session);
+        simpleCreditControlRequestUpdate(session);
 
         Request request = client.createRequest(
                 DEST_REALM,
-                DEST_HOST
+                DEST_HOST,
+                session
         );
 
         TestHelper.createTerminateRequest(request.getAvps(), MSISDN, BUCKET_SIZE);
 
-        client.sendNextRequest(request);
+        client.sendNextRequest(request, session);
 
         waitForAnswer();
 
@@ -139,14 +140,16 @@ public class OcsIntegrationTest {
     @Test
     public void creditControlRequestInitNoCredit() {
 
+        Session session = client.createSession();
         Request request = client.createRequest(
                 DEST_REALM,
-                DEST_HOST
+                DEST_HOST,
+                session
         );
 
-        TestHelper.createInitRequest(request.getAvps(), "4333333333", 500000L);
+        TestHelper.createInitRequest(request.getAvps(), "4333333333", BUCKET_SIZE);
 
-        client.sendNextRequest(request);
+        client.sendNextRequest(request, session);
 
         waitForAnswer();
 
@@ -162,7 +165,35 @@ public class OcsIntegrationTest {
         } catch (AvpDataException e) {
             LOG.error("Failed to get Result-Code", e);
         }
+
+        // There is 2 step in graceful shutdown. First OCS send terminate, then P-GW report used units in a final update
+
+        Request updateRequest = client.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        );
+
+        TestHelper.createUpdateRequestFinal(updateRequest.getAvps(), "4333333333");
+
+        client.sendNextRequest(updateRequest, session);
+
+        waitForAnswer();
+
+        try {
+            assertEquals(2001L, client.getResultCodeAvp().getInteger32());
+            AvpSet resultAvps = client.getResultAvps();
+            assertEquals(RequestType.UPDATE_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
+            Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
+            assertEquals(2001L, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
+            assertEquals(1, resultMSCC.getGrouped().getAvp(Avp.SERVICE_IDENTIFIER_CCA).getInteger32());
+            Avp validTime = resultMSCC.getGrouped().getAvp(Avp.VALIDITY_TIME);
+            assertEquals(0L, validTime.getUnsigned64());
+        } catch (AvpDataException e) {
+            LOG.error("Failed to get Result-Code", e);
+        }
     }
+
 
     private void waitForAnswer() {
         int i = 0;

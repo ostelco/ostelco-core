@@ -75,6 +75,9 @@ class ServiceUnit() {
     @AvpField(Avp.CC_OUTPUT_OCTETS)
     var output: Long = 0
 
+    @AvpField(Avp.REPORTING_REASON)
+    var reportingReason: ReportingReason? = null
+
     constructor(total: Long, input: Long, output: Long) : this() {
         this.total = total
         this.input = input
@@ -102,6 +105,9 @@ class MultipleServiceCreditControl() {
     @AvpField(Avp.GRANTED_SERVICE_UNIT)
     var granted = ServiceUnit()
 
+    @AvpField(Avp.REPORTING_REASON)
+    var reportingReason: ReportingReason? = null
+
     var validityTime = 86400
 
     // https://tools.ietf.org/html/rfc4006#section-8.34
@@ -123,6 +129,19 @@ enum class RedirectAddressType {
     IPV6_ADDRESS,
     URL,
     SIP_URL
+}
+
+enum class ReportingReason {
+    THRESHOLD,
+    QHT,
+    FINAL,
+    QUOTA_EXHAUSTED,
+    VALIDITY_TIME,
+    OTHER_QUOTA_TYPE,
+    RATING_CONDITION_CHANGE,
+    FORCED_REAUTHORISATION ,
+    POOL_EXHAUSTED,
+    UNUSED_QUOTA_TIMER
 }
 
 /**

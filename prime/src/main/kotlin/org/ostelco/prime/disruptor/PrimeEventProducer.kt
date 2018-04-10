@@ -3,6 +3,7 @@ package org.ostelco.prime.disruptor
 import com.google.common.base.Preconditions.checkNotNull
 import com.lmax.disruptor.RingBuffer
 import org.ostelco.ocs.api.CreditControlRequestInfo
+import org.ostelco.ocs.api.ReportingReason
 import org.ostelco.prime.disruptor.PrimeEventMessageType.CREDIT_CONTROL_REQUEST
 import org.ostelco.prime.disruptor.PrimeEventMessageType.RELEASE_RESERVED_BUCKET
 import org.ostelco.prime.disruptor.PrimeEventMessageType.TOPUP_DATA_BUNDLE_BALANCE
@@ -47,6 +48,7 @@ class PrimeEventProducer(private val ringBuffer: RingBuffer<PrimeEvent>) {
             reservedBytes: Long = 0,
             serviceId: Long = 0,
             ratingGroup: Long = 0,
+            reportingReason: ReportingReason? = null,
             streamId: String? = null,
             requestId: String? = null) {
 
@@ -59,6 +61,7 @@ class PrimeEventProducer(private val ringBuffer: RingBuffer<PrimeEvent>) {
                             reservedBytes,
                             serviceId,
                             ratingGroup,
+                            reportingReason,
                             streamId,
                             requestId)
                 })
@@ -90,6 +93,7 @@ class PrimeEventProducer(private val ringBuffer: RingBuffer<PrimeEvent>) {
             streamId: String) {
 
         if (request.msccList.isEmpty()) {
+            // ToDo: We should return something I guess?
             LOG.error("Received empty list")
             return
         }
@@ -101,6 +105,7 @@ class PrimeEventProducer(private val ringBuffer: RingBuffer<PrimeEvent>) {
                 0,
                 request.getMscc(0).serviceIdentifier,
                 request.getMscc(0).ratingGroup,
+                request.getMscc(0).reportingReason,
                 streamId,
                 request.requestId)
     }

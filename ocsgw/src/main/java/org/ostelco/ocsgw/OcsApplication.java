@@ -1,5 +1,6 @@
 package org.ostelco.ocsgw;
 
+import org.ostelco.diameter.util.DiameterUtilities;
 import org.ostelco.ocsgw.utils.AppConfig;
 import org.ostelco.diameter.model.RequestType;
 import org.jdiameter.api.Answer;

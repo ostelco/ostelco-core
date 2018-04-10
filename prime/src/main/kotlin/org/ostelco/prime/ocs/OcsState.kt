@@ -2,6 +2,7 @@ package org.ostelco.prime.ocs
 
 import com.google.common.base.Preconditions
 import com.lmax.disruptor.EventHandler
+import org.ostelco.ocs.api.ReportingReason
 import org.ostelco.prime.disruptor.PrimeEvent
 import org.ostelco.prime.disruptor.PrimeEventMessageType
 import org.ostelco.prime.logger
@@ -28,6 +29,11 @@ class OcsState : EventHandler<PrimeEvent> {
             when (event.messageType) {
                 PrimeEventMessageType.CREDIT_CONTROL_REQUEST -> {
                     consumeDataBytes(msisdn, event.usedBucketBytes)
+                    // ToDo : Trigger push notification on low balance
+                    if (event.reportingReason != null && event.reportingReason == ReportingReason.FINAL) {
+                        // For final request we do not make any new reservations
+                        return
+                    }
                     event.reservedBucketBytes = reserveDataBytes(
                             msisdn,
                             event.requestedBucketBytes)

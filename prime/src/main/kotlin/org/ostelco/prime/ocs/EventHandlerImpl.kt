@@ -44,7 +44,7 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
     }
 
     private fun logEventProcessing(msg: String, event: PrimeEvent) {
-        LOG.info("{} :: for MSISDN: {} of {} requested bytes {} used bytes with request id: {}",
+        LOG.info("{} :: MSISDN: {} requested bytes: {} used bytes: {} request id: {} ",
                 msg, event.msisdn, event.requestedBucketBytes, event.usedBucketBytes, event.ocsgwRequestId)
     }
 
@@ -54,25 +54,30 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
 
         // FixMe : This assume we only have one MSCC
         // ToDo : In case of zero balance we should add appropriate FinalUnitAction
+
         try {
-            val finalUnitIndication = FinalUnitIndication.newBuilder()
-                    .setFinalUnitAction(FinalUnitAction.TERMINATE)
-                    .build()
-            val mscc = MultipleServiceCreditControl.newBuilder()
-                    .setGranted(ServiceUnit.newBuilder()
-                            .setTotalOctets(event.reservedBucketBytes)
-                            .build())
-                    .setServiceIdentifier(event.serviceIdentifier)
+            val msccBulder = MultipleServiceCreditControl.newBuilder()
+            msccBulder.setServiceIdentifier(event.serviceIdentifier)
                     .setRatingGroup(event.ratingGroup)
                     .setValidityTime(86400)
-                    .setFinalUnitIndication(finalUnitIndication)
-                    .build()
+
+            if (event.reportingReason != ReportingReason.FINAL) {
+                msccBulder.setGranted(ServiceUnit.newBuilder()
+                        .setTotalOctets(event.reservedBucketBytes)
+                        .build())
+                if (event.reservedBucketBytes == 0L) {
+                    msccBulder.setFinalUnitIndication(FinalUnitIndication.newBuilder()
+                            .setFinalUnitAction(FinalUnitAction.TERMINATE)
+                            .build())
+                }
+            }
 
             val creditControlAnswer = CreditControlAnswerInfo.newBuilder()
                     .setMsisdn(event.msisdn)
-                    .addMscc(mscc)
+                    .addMscc(msccBulder.build())
                     .setRequestId(event.ocsgwRequestId)
                     .build()
+
             ocsService.sendCreditControlAnswer(event.ocsgwStreamId ?: "", creditControlAnswer)
         } catch (e: Exception) {
             LOG.warn("Exception handling prime event", e)
