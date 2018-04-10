@@ -66,8 +66,10 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
                         .setTotalOctets(event.reservedBucketBytes)
                         .build())
                 if (event.reservedBucketBytes == 0L) {
+                    LOG.info("Adding FinalUnitIndication")
                     msccBulder.setFinalUnitIndication(FinalUnitIndication.newBuilder()
                             .setFinalUnitAction(FinalUnitAction.TERMINATE)
+                            .setIsSet(true)
                             .build())
                 }
             }

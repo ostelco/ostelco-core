@@ -30,8 +30,9 @@ class OcsState : EventHandler<PrimeEvent> {
                 PrimeEventMessageType.CREDIT_CONTROL_REQUEST -> {
                     consumeDataBytes(msisdn, event.usedBucketBytes)
                     // ToDo : Trigger push notification on low balance
-                    if (event.reportingReason != null && event.reportingReason == ReportingReason.FINAL) {
+                    if (event.reportingReason == ReportingReason.FINAL) {
                         // For final request we do not make any new reservations
+                        // FixMe : Is this correct?
                         return
                     }
                     event.reservedBucketBytes = reserveDataBytes(

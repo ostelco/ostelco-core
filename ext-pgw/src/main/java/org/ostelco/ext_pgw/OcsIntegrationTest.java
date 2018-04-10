@@ -188,7 +188,7 @@ public class OcsIntegrationTest {
             assertEquals(2001L, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
             assertEquals(1, resultMSCC.getGrouped().getAvp(Avp.SERVICE_IDENTIFIER_CCA).getInteger32());
             Avp validTime = resultMSCC.getGrouped().getAvp(Avp.VALIDITY_TIME);
-            assertEquals(0L, validTime.getUnsigned64());
+            assertEquals(86400L, validTime.getUnsigned32());
         } catch (AvpDataException e) {
             LOG.error("Failed to get Result-Code", e);
         }

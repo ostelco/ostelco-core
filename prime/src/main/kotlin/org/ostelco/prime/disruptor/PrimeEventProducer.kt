@@ -48,7 +48,7 @@ class PrimeEventProducer(private val ringBuffer: RingBuffer<PrimeEvent>) {
             reservedBytes: Long = 0,
             serviceId: Long = 0,
             ratingGroup: Long = 0,
-            reportingReason: ReportingReason? = null,
+            reportingReason: ReportingReason = ReportingReason.UNRECOGNIZED,
             streamId: String? = null,
             requestId: String? = null) {
 

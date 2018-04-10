@@ -64,7 +64,7 @@ class PrimeEvent {
      * Reporting-Reason
      * // FixMe: This is the Reporting-Reason for the MSCC. The PrimeEvent might be to generic since there is also Reporting-Reason used on ServiceUnit level
      */
-    var reportingReason: ReportingReason? = null
+    var reportingReason: ReportingReason = ReportingReason.UNRECOGNIZED
 
     fun clear() {
         msisdn = null
@@ -77,7 +77,7 @@ class PrimeEvent {
         serviceIdentifier = 0
         ratingGroup = 0
         messageType = null
-        reportingReason = null
+        reportingReason = ReportingReason.UNRECOGNIZED
     }
 
     //FixMe : We need to think about roaming!!!
@@ -90,7 +90,7 @@ class PrimeEvent {
             reservedBucketBytes: Long,
             serviceIdentifier: Long,
             ratingGroup: Long,
-            reportingReason: ReportingReason?,
+            reportingReason: ReportingReason,
             ocsgwStreamId: String?,
             ocsgwRequestId: String?) {
         this.messageType = messageType

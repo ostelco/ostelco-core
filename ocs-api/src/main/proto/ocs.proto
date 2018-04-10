@@ -66,6 +66,7 @@ message FinalUnitIndication {
   repeated string restrictionFilterRule = 2;
   repeated string filterId = 3;
   RedirectServer redirectServer = 4;
+  bool isSet = 5; // Since no optional valued in proto3 this is used to detect if element is set
 }
 
 message MultipleServiceCreditControl {
