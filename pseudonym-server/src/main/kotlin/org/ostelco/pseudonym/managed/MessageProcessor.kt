@@ -31,8 +31,8 @@ import javax.ws.rs.client.Client
 
 
 /**
- * This calss converts the Plain DataTrafficInfo message to
- * a pseudonymised version. Pushes the new message
+ * This class converts the Plain DataTrafficInfo message to
+ * a pseudonymous version. Pushes the new message
  * to different PubSub topic.
  */
 
