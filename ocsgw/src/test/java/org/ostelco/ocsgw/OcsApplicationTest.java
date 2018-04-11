@@ -157,8 +157,6 @@ public class OcsApplicationTest {
     @Test
     public void testReAuthRequest() {
         Session session = client.createSession();
-        LOG.info("Sesssion is valid " + session.isValid());
-        LOG.info("Session ID " + session.getSessionId());
         simpleCreditControlRequestInit(session);
 
 

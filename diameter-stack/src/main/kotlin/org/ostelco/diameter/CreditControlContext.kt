@@ -61,7 +61,6 @@ class CreditControlContext(
                 }
 
                 if (mscc.finalUnitIndication != null) {
-                    LOG.info("Adding FinalUnitIndication")
                     if (originalCreditControlRequest.requestTypeAVPValue != RequestType.TERMINATION_REQUEST) {
                         resultCode = CreditControlResultCode.DIAMETER_CREDIT_LIMIT_REACHED.value
                     }

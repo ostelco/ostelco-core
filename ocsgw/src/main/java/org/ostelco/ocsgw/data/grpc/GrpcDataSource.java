@@ -175,10 +175,8 @@ public class GrpcDataSource implements DataSource {
                     protoMscc.setServiceIdentifier(mscc.getServiceIdentifier());
 
                     if (mscc.getReportingReason() != null) {
-                        LOG.info("Reporting reason is set " + mscc.getReportingReason().ordinal());
                         protoMscc.setReportingReasonValue(mscc.getReportingReason().ordinal());
                     } else {
-                        LOG.info("Reporting reason is not set for this one!");
                         protoMscc.setReportingReasonValue(ReportingReason.UNRECOGNIZED.ordinal());
                     }
                     builder.addMscc(protoMscc.build());
@@ -274,7 +272,6 @@ public class GrpcDataSource implements DataSource {
 
     private FinalUnitIndication convertFinalUnitIndication(org.ostelco.ocs.api.FinalUnitIndication fuiGrpc) {
         if (!fuiGrpc.getIsSet()) {
-            LOG.info("No FinalUnitIndication");
             return null;
         }
         return new FinalUnitIndication(
