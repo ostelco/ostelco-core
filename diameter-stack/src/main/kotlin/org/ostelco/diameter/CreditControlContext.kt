@@ -13,11 +13,11 @@ import org.ostelco.diameter.util.DiameterUtilities
 
 class CreditControlContext(
         val sessionId: String,
-        val originalCreditControlRequest: JCreditControlRequest) {
+        val originalCreditControlRequest: JCreditControlRequest,
+        val originHost: String) {
 
     private val LOG by logger()
 
-    val originHost:String = originalCreditControlRequest.destinationHost
     val originRealm:String = originalCreditControlRequest.destinationRealm
 
     val creditControlRequest: CreditControlRequest = AvpParser().parse(
