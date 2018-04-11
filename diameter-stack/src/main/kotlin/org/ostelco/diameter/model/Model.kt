@@ -131,6 +131,9 @@ enum class RedirectAddressType {
     SIP_URL
 }
 
+/**
+ *   http://www.3gpp.org/ftp/Specs/html-info/32299.htm
+ */
 enum class ReportingReason {
     THRESHOLD,
     QHT,

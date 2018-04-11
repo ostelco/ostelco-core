@@ -133,6 +133,9 @@ class TestClient : EventListener<Request, Answer> {
         );
     }
 
+    /**
+     * Create a new DIAMETER session
+     */
     fun createSession() : Session? {
         try {
             // FixMe : Need better way to make sure the session can be created
