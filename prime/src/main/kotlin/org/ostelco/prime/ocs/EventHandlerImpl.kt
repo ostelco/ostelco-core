@@ -56,31 +56,34 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
         // ToDo : In case of zero balance we should add appropriate FinalUnitAction
 
         try {
-            val msccBulder = MultipleServiceCreditControl.newBuilder()
-            msccBulder.setServiceIdentifier(event.serviceIdentifier)
-                    .setRatingGroup(event.ratingGroup)
-                    .setValidityTime(86400)
-
-            if (event.reportingReason != ReportingReason.FINAL) {
-                msccBulder.setGranted(ServiceUnit.newBuilder()
-                        .setTotalOctets(event.reservedBucketBytes)
-                        .build())
-                if (event.reservedBucketBytes == 0L) {
-                    LOG.info("Adding FinalUnitIndication")
-                    msccBulder.setFinalUnitIndication(FinalUnitIndication.newBuilder()
-                            .setFinalUnitAction(FinalUnitAction.TERMINATE)
-                            .setIsSet(true)
-                            .build())
-                }
-            }
-
             val creditControlAnswer = CreditControlAnswerInfo.newBuilder()
                     .setMsisdn(event.msisdn)
-                    .addMscc(msccBulder.build())
                     .setRequestId(event.ocsgwRequestId)
-                    .build()
 
-            ocsService.sendCreditControlAnswer(event.ocsgwStreamId ?: "", creditControlAnswer)
+            // This is a hack to know when we have received an MSCC in the request or not.
+            // For Terminate request we might not have any MSCC and therefore no serviceIdentifier.
+            if (event.serviceIdentifier > 0) {
+                val msccBulder = MultipleServiceCreditControl.newBuilder()
+                msccBulder.setServiceIdentifier(event.serviceIdentifier)
+                        .setRatingGroup(event.ratingGroup)
+                        .setValidityTime(86400)
+
+                if (event.reportingReason != ReportingReason.FINAL) {
+                    msccBulder.setGranted(ServiceUnit.newBuilder()
+                            .setTotalOctets(event.reservedBucketBytes)
+                            .build())
+                    if (event.reservedBucketBytes == 0L) {
+                        LOG.info("Adding FinalUnitIndication")
+                        msccBulder.setFinalUnitIndication(FinalUnitIndication.newBuilder()
+                                .setFinalUnitAction(FinalUnitAction.TERMINATE)
+                                .setIsSet(true)
+                                .build())
+                    }
+                }
+                creditControlAnswer.addMscc(msccBulder.build())
+            }
+
+            ocsService.sendCreditControlAnswer(event.ocsgwStreamId ?: "", creditControlAnswer.build())
         } catch (e: Exception) {
             LOG.warn("Exception handling prime event", e)
             logEventProcessing("Exception sending Credit-Control-Answer", event)

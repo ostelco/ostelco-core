@@ -3,6 +3,7 @@ package org.ostelco.prime.disruptor
 import com.google.common.base.Preconditions.checkNotNull
 import com.lmax.disruptor.RingBuffer
 import org.ostelco.ocs.api.CreditControlRequestInfo
+import org.ostelco.ocs.api.MultipleServiceCreditControl
 import org.ostelco.ocs.api.ReportingReason
 import org.ostelco.prime.disruptor.PrimeEventMessageType.CREDIT_CONTROL_REQUEST
 import org.ostelco.prime.disruptor.PrimeEventMessageType.RELEASE_RESERVED_BUCKET
@@ -93,20 +94,21 @@ class PrimeEventProducer(private val ringBuffer: RingBuffer<PrimeEvent>) {
             streamId: String) {
 
         if (request.msccList.isEmpty()) {
-            // ToDo: We should return something I guess?
-            LOG.error("Received empty list")
-            return
+            injectIntoRingbuffer(CREDIT_CONTROL_REQUEST,
+                    request.msisdn,
+                    streamId = streamId,
+                    requestId = request.requestId)
+        } else {
+            injectIntoRingbuffer(CREDIT_CONTROL_REQUEST,
+                    request.msisdn,
+                    request.getMscc(0).requested.totalOctets,
+                    request.getMscc(0).used.totalOctets,
+                    0,
+                    request.getMscc(0).serviceIdentifier,
+                    request.getMscc(0).ratingGroup,
+                    request.getMscc(0).reportingReason,
+                    streamId,
+                    request.requestId)
         }
-
-        injectIntoRingbuffer(CREDIT_CONTROL_REQUEST,
-                request.msisdn,
-                request.getMscc(0).requested.totalOctets,
-                request.getMscc(0).used.totalOctets,
-                0,
-                request.getMscc(0).serviceIdentifier,
-                request.getMscc(0).ratingGroup,
-                request.getMscc(0).reportingReason,
-                streamId,
-                request.requestId)
     }
 }

@@ -30,11 +30,6 @@ class OcsState : EventHandler<PrimeEvent> {
                 PrimeEventMessageType.CREDIT_CONTROL_REQUEST -> {
                     consumeDataBytes(msisdn, event.usedBucketBytes)
                     // ToDo : Trigger push notification on low balance
-                    if (event.reportingReason == ReportingReason.FINAL) {
-                        // For final request we do not make any new reservations
-                        // FixMe : Is this correct?
-                        return
-                    }
                     event.reservedBucketBytes = reserveDataBytes(
                             msisdn,
                             event.requestedBucketBytes)
@@ -47,7 +42,6 @@ class OcsState : EventHandler<PrimeEvent> {
         } catch (e: Exception) {
             LOG.warn("Exception handling prime event in OcsState", e)
         }
-
     }
 
     /**
@@ -155,6 +149,10 @@ class OcsState : EventHandler<PrimeEvent> {
     fun reserveDataBytes(msisdn: String, bytes: Long): Long {
 
         Preconditions.checkArgument(bytes > -1, "Non-positive value for bytes")
+
+        if (bytes == 0L) {
+            return 0
+        }
 
         if (!dataPackMap.containsKey(msisdn)) {
             LOG.warn("Trying to reserve bucket for unknown msisdn {}", msisdn)
