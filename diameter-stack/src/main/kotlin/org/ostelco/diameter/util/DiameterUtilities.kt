@@ -5,14 +5,22 @@ import org.jdiameter.api.AvpDataException
 import org.jdiameter.api.AvpSet
 import org.jdiameter.common.impl.validation.DictionaryImpl
 import org.ostelco.diameter.logger
+import org.ostelco.diameter.util.AvpType.ADDRESS
 import org.ostelco.diameter.util.AvpType.APP_ID
+import org.ostelco.diameter.util.AvpType.FLOAT32
 import org.ostelco.diameter.util.AvpType.FLOAT64
 import org.ostelco.diameter.util.AvpType.GROUPED
+import org.ostelco.diameter.util.AvpType.IDENTITY
 import org.ostelco.diameter.util.AvpType.INTEGER32
 import org.ostelco.diameter.util.AvpType.INTEGER64
+import org.ostelco.diameter.util.AvpType.OCTET_STRING
+import org.ostelco.diameter.util.AvpType.RAW
+import org.ostelco.diameter.util.AvpType.RAW_DATA
 import org.ostelco.diameter.util.AvpType.TIME
 import org.ostelco.diameter.util.AvpType.UNSIGNED32
 import org.ostelco.diameter.util.AvpType.UNSIGNED64
+import org.ostelco.diameter.util.AvpType.URI
+import org.ostelco.diameter.util.AvpType.UTF8STRING
 import org.ostelco.diameter.util.AvpType.VENDOR_ID
 
 class DiameterUtilities {
@@ -48,33 +56,25 @@ class DiameterUtilities {
     }
 
     private fun getAvpValue(avp: Avp): Any {
-        var avpValue: Any
-        try {
-            val avpType = AvpDictionary.getType(avp)
-
-            when (avpType) {
-                INTEGER32, APP_ID -> avpValue = avp.integer32
-                UNSIGNED32, VENDOR_ID -> avpValue = avp.unsigned32
-                FLOAT64 -> avpValue = avp.float64
-                INTEGER64 -> avpValue = avp.integer64
-                TIME -> avpValue = avp.time
-                UNSIGNED64 -> avpValue = avp.unsigned64
-                GROUPED -> avpValue = "<Grouped>"
-                else -> avpValue = (avp.utF8String as String)
-                        .replace("\r", "")
-                        .replace("\n", "")
-            }
-        } catch (ignore: Exception) {
-            try {
-                avpValue = avp.utF8String
-                        .replace("\r", "")
-                        .replace("\n", "")
-            } catch (e: AvpDataException) {
-                avpValue = avp.toString()
-            }
-
+        val avpType = AvpDictionary.getType(avp)
+        return when (avpType) {
+            ADDRESS -> avp.address
+            IDENTITY -> avp.diameterIdentity
+            URI -> avp.diameterURI
+            FLOAT32 -> avp.float32
+            FLOAT64 -> avp.float64
+            GROUPED -> "<Grouped>"
+            INTEGER32, APP_ID -> avp.integer32
+            INTEGER64 -> avp.integer64
+            OCTET_STRING -> avp.octetString
+            RAW -> avp.raw
+            RAW_DATA -> avp.rawData
+            TIME -> avp.time
+            UNSIGNED32, VENDOR_ID -> avp.unsigned32
+            UNSIGNED64 -> avp.unsigned64
+            UTF8STRING -> avp.utF8String
+            null -> "<null>"
         }
-        return avpValue
     }
 
     // TODO for missing Avp, is code and vendorId as 0 okay?
