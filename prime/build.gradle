@@ -1,7 +1,7 @@
 plugins {
   id "application"
   id "jacoco"
-  id "com.github.johnrengelman.shadow" version "2.0.2"
+  id "com.github.johnrengelman.shadow" version "2.0.3"
   id "org.jetbrains.kotlin.jvm" version "1.2.31"
   id "idea"
 }
@@ -25,12 +25,12 @@ dependencies {
   implementation project(':ostelco-lib')
   implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
   implementation 'com.google.firebase:firebase-admin:5.9.0'
-  implementation 'com.google.cloud:google-cloud-pubsub:0.41.0-beta'
-  implementation 'com.lmax:disruptor:3.4.1'
+  implementation 'com.google.cloud:google-cloud-pubsub:0.43.0-beta'
+  implementation 'com.lmax:disruptor:3.4.2'
   implementation 'com.google.guava:guava:24.1-jre'
 
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
-  testImplementation 'org.mockito:mockito-core:2.16.0'
+  testImplementation 'org.mockito:mockito-core:2.18.0'
 }
 
 configurations {
