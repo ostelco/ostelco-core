@@ -66,7 +66,7 @@ class DiameterUtilities {
             GROUPED -> "<Grouped>"
             INTEGER32, APP_ID -> avp.integer32
             INTEGER64 -> avp.integer64
-            OCTET_STRING -> avp.octetString
+            OCTET_STRING -> String(avp.octetString)
             RAW -> avp.raw
             RAW_DATA -> avp.rawData
             TIME -> avp.time
