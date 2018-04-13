@@ -12,7 +12,7 @@ buildscript {
 plugins {
     id "application"
     id "jacoco"
-    id "com.github.johnrengelman.shadow" version "2.0.2"
+    id "com.github.johnrengelman.shadow" version "2.0.3"
 }
 
 apply plugin: 'org.junit.platform.gradle.plugin'
@@ -22,12 +22,12 @@ dependencies {
     implementation project(':diameter-stack')
 
     testImplementation project(':diameter-test')
-    testCompile 'org.junit.jupiter:junit-jupiter-api:5.1.0'
-    testCompile 'org.junit.platform:junit-platform-runner:1.1.0'
-    testRuntime 'org.junit.jupiter:junit-jupiter-engine:5.1.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.1.1'
+    testImplementation 'org.junit.platform:junit-platform-runner:1.1.1'
+    testRuntime 'org.junit.jupiter:junit-jupiter-engine:5.1.1'
 
-    testCompile 'junit:junit:4.12'
-    testRuntime 'org.junit.vintage:junit-vintage-engine:5.1.0'
+    testImplementation 'junit:junit:4.12'
+    testRuntime 'org.junit.vintage:junit-vintage-engine:5.1.1'
 }
 
 test {
@@ -63,6 +63,6 @@ task pack(type: Zip, dependsOn: 'shadowJar') {
     from ('Dockerfile') {
         into(project.name)
     }
-    archiveName 'ocsgw.zip'
-    destinationDir(file('build/deploy/'))
+    archiveName = 'ocsgw.zip'
+    destinationDir = file('build/deploy/')
 }

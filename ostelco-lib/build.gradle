@@ -8,15 +8,15 @@ dependencies {
     implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
     implementation "io.dropwizard:dropwizard-auth:$dropwizardVersion"
     implementation 'com.google.firebase:firebase-admin:5.9.0'
-    implementation 'com.lmax:disruptor:3.4.1'
+    implementation 'com.lmax:disruptor:3.4.2'
     implementation 'com.google.guava:guava:24.1-jre'
 
     testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
-    testImplementation "org.mockito:mockito-core:2.16.0"
+    testImplementation "org.mockito:mockito-core:2.18.0"
     testImplementation 'org.assertj:assertj-core:3.9.1'
 
     // https://mvnrepository.com/artifact/org.glassfish.jersey.test-framework.providers/jersey-test-framework-provider-grizzly2
-    testCompile("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2:2.26") {
+    testCompile("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2:2.27") {
         // 2.26 (latest)
         exclude group: 'javax.servlet', module: 'javax.servlet-api'
         exclude group: 'junit', module: 'junit'

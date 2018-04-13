@@ -52,10 +52,10 @@ uploadArchives.repositories.mavenDeployer {
   }
 
   pom.project {
-    name 'ostelco diameter test'
+    name = 'ostelco diameter test'
     packaging 'jar'
     // optionally artifactId can be defined here
-    description 'A library for testing over the Diameter protocol.'
+    description = 'A library for testing over the Diameter protocol.'
     url 'https://github.com/ostelco/ostelco-core/tree/develop/diameter-test'
 
     scm {
@@ -66,7 +66,7 @@ uploadArchives.repositories.mavenDeployer {
 
     licenses {
       license {
-        name 'The Apache License, Version 2.0'
+        name = 'The Apache License, Version 2.0'
         url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
       }
     }
@@ -74,7 +74,7 @@ uploadArchives.repositories.mavenDeployer {
     developers {
       developer {
         id 'la3lma'
-        name 'Bjørn Remseth'
+        name = 'Bjørn Remseth'
         email 'la3lma@gmail.com'
       }
     }
