@@ -28,23 +28,6 @@ shadowJar {
   version = null
 }
 
-task pack(type: Zip, dependsOn: 'shadowJar') {
-  from('config/') {
-    into(project.name + '/config')
-  }
-  from('script/') {
-    into(project.name + '/script')
-  }
-  from('build/libs/pseudonym-server-uber.jar') {
-    into(project.name + '/build/libs/')
-  }
-  from('Dockerfile') {
-    into(project.name)
-  }
-  archiveName 'pseudonym-server.zip'
-  destinationDir(file('build/deploy/'))
-}
-
 sourceSets {
   integrationTest {
     kotlin {

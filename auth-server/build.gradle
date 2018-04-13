@@ -35,8 +35,8 @@ task pack(type: Zip, dependsOn: 'shadowJar') {
   from('Dockerfile') {
     into(project.name)
   }
-  archiveName 'auth-server.zip'
-  destinationDir(file('build/deploy/'))
+  archiveName = "auth-server.zip"
+  destinationDir = file('build/deploy/')
 }
 
 sourceSets {

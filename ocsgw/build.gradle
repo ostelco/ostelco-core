@@ -63,6 +63,6 @@ task pack(type: Zip, dependsOn: 'shadowJar') {
     from ('Dockerfile') {
         into(project.name)
     }
-    archiveName 'ocsgw.zip'
-    destinationDir(file('build/deploy/'))
+    archiveName = 'ocsgw.zip'
+    destinationDir = file('build/deploy/')
 }

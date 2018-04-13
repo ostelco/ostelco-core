@@ -64,8 +64,8 @@ task pack(type: Zip, dependsOn: 'shadowJar') {
   from('Dockerfile') {
     into(project.name)
   }
-  archiveName 'prime.zip'
-  destinationDir(file('build/deploy/'))
+  archiveName = 'prime.zip'
+  destinationDir = file('build/deploy/')
 }
 
 jacocoTestReport {
