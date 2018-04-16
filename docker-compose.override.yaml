@@ -40,8 +40,6 @@ services:
   pubsub-emulator:
     container_name: pubsub-emulator
     image: knarz/pubsub-emulator
-#    image: google/cloud-sdk
-#    command: ["gcloud", "beta", "emulators", "pubsub", "start"]
 
   gpubsub-emulator:
     container_name: gpubsub-emulator

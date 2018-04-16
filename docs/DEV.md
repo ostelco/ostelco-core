@@ -1,5 +1,9 @@
 # Developer guidelines
 
+## Checking for dependency updates
+
+    gradle dependencyUpdates -Drevision=release
+
 ## Package / Namespace naming convention
 
 ### Format
