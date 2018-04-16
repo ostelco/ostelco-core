@@ -85,7 +85,7 @@ public class OcsIntegrationTest {
                 session
         );
 
-        TestHelper.createUpdateRequest(request.getAvps(), MSISDN, BUCKET_SIZE);
+        TestHelper.createUpdateRequest(request.getAvps(), MSISDN, BUCKET_SIZE, BUCKET_SIZE);
 
         client.sendNextRequest(request, session);
 

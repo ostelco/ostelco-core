@@ -44,8 +44,15 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
     }
 
     private fun logEventProcessing(msg: String, event: PrimeEvent) {
-        LOG.info("{} :: MSISDN: {} requested bytes: {} used bytes: {} request id: {} ",
-                msg, event.msisdn, event.requestedBucketBytes, event.usedBucketBytes, event.ocsgwRequestId)
+        LOG.info("{}", msg);
+        LOG.info("MSISDN: {}", event.msisdn);
+        LOG.info("requested bytes: {}", event.requestedBucketBytes);
+        LOG.info("reserved bytes: {}", event.reservedBucketBytes);
+        LOG.info("used bytes: {}", event.usedBucketBytes);
+        LOG.info("bundle bytes: {}", event.bundleBytes);
+        LOG.info("Reporting reason: {}", event.reportingReason);
+        LOG.info("request id: {} ",event.ocsgwRequestId);
+
     }
 
     private fun handleCreditControlRequest(event: PrimeEvent) {
@@ -68,7 +75,7 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
                         .setRatingGroup(event.ratingGroup)
                         .setValidityTime(86400)
 
-                if (event.reportingReason != ReportingReason.FINAL) {
+                if ((event.reportingReason != ReportingReason.FINAL) && (event.requestedBucketBytes > 0)) {
                     msccBulder.setGranted(ServiceUnit.newBuilder()
                             .setTotalOctets(event.reservedBucketBytes)
                             .build())

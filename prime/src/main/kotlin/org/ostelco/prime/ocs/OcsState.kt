@@ -133,7 +133,13 @@ class OcsState : EventHandler<PrimeEvent> {
          */
 
         val consumed = usedBytes - reserved
-        val newTotal = existing - consumed
+        var newTotal = existing - consumed
+
+        // P-GW is allowed to overconsume a small amount.
+        if (newTotal < 0) {
+            newTotal = 0;
+        }
+
         dataPackMap[msisdn] = newTotal
         return newTotal
     }

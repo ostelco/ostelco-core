@@ -101,7 +101,7 @@ public class OcsApplicationTest {
                 session
         );
 
-        TestHelper.createUpdateRequest(request.getAvps(), MSISDN, 400000L);
+        TestHelper.createUpdateRequest(request.getAvps(), MSISDN, 400000L, 500000L);
 
         client.sendNextRequest(request, session);
 
