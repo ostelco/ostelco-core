@@ -26,6 +26,7 @@ import kotlin.collections.HashMap
  * Class representing the Pseudonym entity in Datastore.
  */
 data class PseudonymEntity(val msisdn: String, val pseudonym: String, val start: Long, val end: Long)
+
 const val PseudonymEntityKind = "Pseudonym"
 const val msisdnPropertyName = "msisdn"
 const val pseudonymPropertyName = "pseudonym"
@@ -33,6 +34,7 @@ const val startPropertyName = "start"
 const val endPropertyName = "end"
 
 data class ExportTask(val exportId: String, val status: String, val error: String)
+
 const val ExportTaskKind = "ExportTask"
 const val exportIdPropertyName = "exportId"
 const val statusPropertyName = "status"
@@ -64,7 +66,7 @@ interface DateBounds {
 class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
 
     private val LOG = LoggerFactory.getLogger(PseudonymResource::class.java)
-    private val bigquery =  BigQueryOptions.getDefaultInstance().getService();
+    private val bigquery = BigQueryOptions.getDefaultInstance().getService();
     private val executor = Executors.newFixedThreadPool(3)
 
     /**
