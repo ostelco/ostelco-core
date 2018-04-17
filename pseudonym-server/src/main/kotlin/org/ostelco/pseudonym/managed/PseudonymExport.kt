@@ -13,14 +13,7 @@ import java.util.concurrent.Callable
 
 /**
  * Exports all pseudonyms to a bigquery Table
- *  SELECT
-        hc.bytes, ps.msisdnid, hc.timestamp
-    FROM
-        [pantel-2decb:data_consumption.hourly_consumption] as hc
-    JOIN
-        [pantel-2decb:exported_pseudonyms.3ebcdc4a7ecc4cd385e82087e49b7b7b] as ps
-    ON  ps.msisdn = hc.msisdn
-  */
+ */
 
 class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastore: Datastore) {
     private val LOG = LoggerFactory.getLogger(PseudonymExport::class.java)
