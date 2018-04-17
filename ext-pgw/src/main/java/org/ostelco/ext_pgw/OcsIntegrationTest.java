@@ -5,7 +5,6 @@ import org.jdiameter.api.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.ostelco.diameter.model.FinalUnitAction;
 import org.ostelco.diameter.model.RequestType;
 import org.ostelco.diameter.test.TestClient;
 import org.ostelco.diameter.test.TestHelper;
