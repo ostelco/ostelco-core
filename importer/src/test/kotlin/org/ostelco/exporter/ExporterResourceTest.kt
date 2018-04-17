@@ -10,7 +10,7 @@ import kotlin.test.assertEquals
 import javax.ws.rs.core.Response.Status
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-
+import javax.xml.ws.Response
 
 
 /**
@@ -51,16 +51,13 @@ class ImporterResourceTest {
 
         assertEquals(Status.OK.statusCode, statusCode)
     }
-/*
 
-    */
 
     /**
      *  Testing reading a yaml file.
      */
     @Test
     fun testPostingConfig() {
-
 
         val text: String =
                 this::class.java.classLoader.getResource("sample-offer-yaml.yaml").readText(Charsets.UTF_8)
