@@ -1,6 +1,7 @@
 package org.ostelco.pseudonym.managed
 
 import com.google.cloud.bigquery.*
+import com.google.cloud.bigquery.InsertAllRequest.RowToInsert
 import com.google.cloud.datastore.*
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
@@ -8,8 +9,6 @@ import org.ostelco.pseudonym.resources.*
 import org.slf4j.LoggerFactory
 import java.util.*
 import java.util.concurrent.Callable
-import com.google.cloud.bigquery.InsertAllRequest.RowToInsert
-import java.util.ArrayList
 
 
 /**
@@ -23,22 +22,36 @@ import java.util.ArrayList
     ON  ps.msisdn = hc.msisdn
   */
 
-class PseudonymExport(val exportUUID: String, val bigquery: BigQuery, val datastore: Datastore) {
+class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastore: Datastore) {
     private val LOG = LoggerFactory.getLogger(PseudonymExport::class.java)
 
+    enum class Status {
+        INITIAL, RUNNING, FINISHED, ERROR
+    }
+
+    private val datasetName = "exported_pseudonyms"
+    private val tableName:String
     private val msisdnFieldName = "msisdn"
     private val pseudonymFiledName = "pseudonym"
     private val idFieldName = "msisdnid"
     val idCache: Cache<String, String>
+    var status = Status.INITIAL
+    var error: String = ""
 
     init {
+        tableName = exportId.replace("-","")
         idCache = CacheBuilder.newBuilder()
                 .maximumSize(5000)
                 .build()
     }
 
-    private fun createTable(datasetName: String, tableName: String): Table {
-        val tableId = TableId.of(datasetName, tableName.replace("-",""))
+    private fun createTable(): Table {
+        // Delete existing table
+        val deleted = bigquery.delete(datasetName, tableName)
+        if (deleted) {
+            LOG.info("Existing table deleted.")
+        }
+        val tableId = TableId.of(datasetName, tableName)
         // Table field definition
         val id = Field.of(idFieldName, LegacySQLTypeName.STRING)
         val pseudonym = Field.of(pseudonymFiledName, LegacySQLTypeName.STRING)
@@ -61,6 +74,7 @@ class PseudonymExport(val exportUUID: String, val bigquery: BigQuery, val datast
     private fun createTablePage(pageSize: Int, cursor: Cursor?, table: Table): Cursor? {
         val queryBuilder = Query.newEntityQueryBuilder()
                 .setKind(PseudonymEntityKind)
+                .setOrderBy(StructuredQuery.OrderBy.asc(msisdnPropertyName))
                 .setLimit(pageSize)
         if (cursor != null) {
             queryBuilder.setStartCursor(cursor)
@@ -81,6 +95,7 @@ class PseudonymExport(val exportUUID: String, val bigquery: BigQuery, val datast
             val response = table.insert(rows, true, true)
             if(response.hasErrors()) {
                 LOG.error("Failed to insert Records", response.insertErrors)
+                error = "$error${response.insertErrors.toString()}\n"
             }
         }
         if(results < pageSize) {
@@ -90,13 +105,52 @@ class PseudonymExport(val exportUUID: String, val bigquery: BigQuery, val datast
         }
     }
 
-    fun start() {
-        val table = createTable("exported_pseudonyms", exportUUID)
+    private fun start() {
+        status = Status.RUNNING
+        upsertTaskStatus()
+        val table = createTable()
         var cursor: Cursor? = null
         do {
             cursor = createTablePage(100, cursor, table)
         } while(cursor != null)
-        LOG.info("Exported Pseudonyms for ${exportUUID}")
+        if (status == Status.RUNNING) {
+            status = Status.FINISHED
+            upsertTaskStatus()
+        }
+        LOG.info("Exported Pseudonyms for ${exportId}")
+    }
+
+    fun getRunnable(): Runnable {
+        return Runnable {
+            start()
+        }
+    }
+
+    private fun upsertTaskStatus() {
+        val exportKey = datastore.newKeyFactory().setKind(ExportTaskKind).newKey(exportId)
+        val transaction = datastore.newTransaction()
+        try {
+            // Verify before writing a new value.
+            val currentEntity = transaction.get(exportKey);
+            var builder:Entity.Builder?
+            if (currentEntity == null) {
+                builder = Entity.newBuilder(exportKey)
+            } else {
+                builder = Entity.newBuilder(currentEntity)
+            }
+            // Prepare the new datastore entity
+            val exportTask = builder
+                    .set(exportIdPropertyName, exportId)
+                    .set(statusPropertyName, status.toString())
+                    .set(errorPropertyName, error)
+                    .build()
+            transaction.put(exportTask)
+            transaction.commit()
+        } finally {
+            if (transaction.isActive) {
+                transaction.rollback()
+            }
+        }
     }
 
 }

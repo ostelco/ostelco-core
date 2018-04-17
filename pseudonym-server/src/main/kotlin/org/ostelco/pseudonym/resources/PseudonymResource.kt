@@ -1,6 +1,5 @@
 package org.ostelco.pseudonym.resources
 
-import com.google.cloud.bigquery.BigQuery
 import com.google.cloud.bigquery.BigQueryOptions
 import com.google.cloud.datastore.Datastore
 import com.google.cloud.datastore.Entity
@@ -12,6 +11,7 @@ import org.ostelco.pseudonym.managed.PseudonymExport
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.*
+import java.util.concurrent.Executors
 import javax.ws.rs.DELETE
 import javax.ws.rs.GET
 import javax.ws.rs.Path
@@ -31,6 +31,13 @@ const val msisdnPropertyName = "msisdn"
 const val pseudonymPropertyName = "pseudonym"
 const val startPropertyName = "start"
 const val endPropertyName = "end"
+
+data class ExportTask(val exportId: String, val status: String, val error: String)
+const val ExportTaskKind = "ExportTask"
+const val exportIdPropertyName = "exportId"
+const val statusPropertyName = "status"
+const val errorPropertyName = "error"
+
 
 /**
  * Class representing the boundary timestamps.
@@ -58,6 +65,7 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
 
     private val LOG = LoggerFactory.getLogger(PseudonymResource::class.java)
     private val bigquery =  BigQueryOptions.getDefaultInstance().getService();
+    private val executor = Executors.newFixedThreadPool(3)
 
     /**
      * Get the pseudonym which is valid at the timestamp for the given
@@ -146,17 +154,44 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
     }
 
     /**
-     * Get the pseudonym which is valid at the timestamp for the given
-     * msisdn. In case pseudonym doesn't exist, a new one will be created
-     * for the period. Timestamps are in UTC
+     * Exports all pseudonyms to a bigquery table. the name is generated from the exportId
+     * parameter. The exportId is expected to be a UUIDV4. The '-' are removed from the name.
+     * Return Ok when the process has started, used /exportstatus to get the result.
      */
     @GET
-    @Path("/exportall/{exportId}")
-    fun exportAllPseudonyms(@NotBlank @PathParam("exportId") exportId: String): Response {
+    @Path("/export/{exportId}")
+    fun exportPseudonyms(@NotBlank @PathParam("exportId") exportId: String): Response {
         LOG.info("GET export all pseudonyms to the table $exportId")
         val exporter = PseudonymExport(exportId, bigquery, datastore)
-        exporter.start()
-        return Response.ok("Done Exporting", MediaType.APPLICATION_JSON).build()
+        executor.execute(exporter.getRunnable())
+        return Response.ok("Started Exporting", MediaType.TEXT_PLAIN).build()
+    }
+
+    /**
+     * Returns the result of the export. Return 404 if exportId id not found in the system
+     */
+    @GET
+    @Path("/exportstatus/{exportId}")
+    fun getExportStatus(@NotBlank @PathParam("exportId") exportId: String): Response {
+        LOG.info("GET status of export $exportId")
+        val exportTask = getExportTask(exportId)
+        if (exportTask != null) {
+            return Response.ok(exportTask, MediaType.APPLICATION_JSON).build()
+        }
+        return Response.status(Status.NOT_FOUND).build()
+    }
+
+    private fun getExportTask(exportId: String): ExportTask? {
+        val exportKey = datastore.newKeyFactory().setKind(ExportTaskKind).newKey(exportId)
+        val value = datastore.get(exportKey)
+        if (value != null) {
+            // Create the object from datastore entity
+            return ExportTask(
+                    value.getString(exportIdPropertyName),
+                    value.getString(statusPropertyName),
+                    value.getString(errorPropertyName))
+        }
+        return null
     }
 
     private fun getPseudonymKey(keyPrefix: String): Key {
