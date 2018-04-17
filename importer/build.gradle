@@ -20,7 +20,7 @@ dependencies {
 }
 
 shadowJar {
-  mainClassName = 'org.ostelco.exporter.ExporterApplicationKt'
+  mainClassName = 'org.ostelco.importr.ImporterApplicationKt'
   mergeServiceFiles()
   classifier = "uber"
   version = null
@@ -33,13 +33,13 @@ task pack(type: Zip, dependsOn: 'shadowJar') {
   from('script/') {
     into(project.name + '/script')
   }
-  from('build/libs/exporter-uber.jar') {
+  from('build/libs/importer-uber.jar') {
     into(project.name + '/build/libs/')
   }
   from('Dockerfile') {
     into(project.name)
   }
-  archiveName 'exporter.zip'
+  archiveName 'importer.zip'
   destinationDir(file('build/deploy/'))
 }
 
