@@ -69,7 +69,7 @@ foo: bar
                 ?.target("importer")
                 ?.request("text/vnd.yaml")
                 ?.post(Entity.entity(yamlText, "text/vnd.yaml"))!!
-        assertEquals(Status.OK.statusCode, response.status)
+        assertEquals(Status.OK.statusCode, response.status) 
         assertEquals("bar", importedResource?.foo)
     }
 }
