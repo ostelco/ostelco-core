@@ -72,6 +72,7 @@ class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastor
         if (cursor != null) {
             queryBuilder.setStartCursor(cursor)
         }
+        val rows = ArrayList<RowToInsert>()
         val pseudonyms = datastore.run(queryBuilder.build())
         var results = 0
         while(pseudonyms.hasNext()) {
@@ -81,10 +82,10 @@ class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastor
                     msisdnFieldName to entity.getString(msisdnPropertyName),
                     pseudonymFiledName to entity.getString(pseudonymPropertyName),
                     idFieldName to getIdForMsisdn(entity.getString(msisdnPropertyName)))
-            LOG.info("Row = ${row.toString()}")
             val rowId = "rowId${results}"
-            val rows = ArrayList<RowToInsert>()
             rows.add(RowToInsert.of(rowId, row))
+        }
+        if (results != 0) {
             val response = table.insert(rows, true, true)
             if(response.hasErrors()) {
                 LOG.error("Failed to insert Records", response.insertErrors)
@@ -99,13 +100,14 @@ class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastor
     }
 
     private fun start() {
+        LOG.info("Starting to export Pseudonyms for ${exportId}")
         status = Status.RUNNING
         upsertTaskStatus()
         val table = createTable()
         var cursor: Cursor? = null
         do {
             cursor = createTablePage(100, cursor, table)
-        } while(cursor != null)
+        } while (cursor != null)
         if (status == Status.RUNNING) {
             status = Status.FINISHED
             upsertTaskStatus()
