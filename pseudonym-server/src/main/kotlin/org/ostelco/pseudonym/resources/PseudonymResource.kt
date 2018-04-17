@@ -1,11 +1,14 @@
 package org.ostelco.pseudonym.resources
 
+import com.google.cloud.bigquery.BigQuery
+import com.google.cloud.bigquery.BigQueryOptions
 import com.google.cloud.datastore.Datastore
 import com.google.cloud.datastore.Entity
 import com.google.cloud.datastore.Key
 import com.google.cloud.datastore.Query
 import com.google.cloud.datastore.StructuredQuery.PropertyFilter
 import org.hibernate.validator.constraints.NotBlank
+import org.ostelco.pseudonym.managed.PseudonymExport
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.*
@@ -23,6 +26,11 @@ import kotlin.collections.HashMap
  * Class representing the Pseudonym entity in Datastore.
  */
 data class PseudonymEntity(val msisdn: String, val pseudonym: String, val start: Long, val end: Long)
+const val PseudonymEntityKind = "Pseudonym"
+const val msisdnPropertyName = "msisdn"
+const val pseudonymPropertyName = "pseudonym"
+const val startPropertyName = "start"
+const val endPropertyName = "end"
 
 /**
  * Class representing the boundary timestamps.
@@ -49,11 +57,8 @@ interface DateBounds {
 class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
 
     private val LOG = LoggerFactory.getLogger(PseudonymResource::class.java)
-    private val dataType = "Pseudonym"
-    private val msisdnPropertyName = "msisdn"
-    private val pseudonymPropertyName = "pseudonym"
-    private val startPropertyName = "start"
-    private val endPropertyName = "end"
+    private val bigquery =  BigQueryOptions.getDefaultInstance().getService();
+
     /**
      * Get the pseudonym which is valid at the timestamp for the given
      * msisdn. In case pseudonym doesn't exist, a new one will be created
@@ -99,7 +104,7 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
     fun findPseudonym(@NotBlank @PathParam("pseudonym") pseudonym: String): Response {
         LOG.info("Find details for pseudonym = $pseudonym")
         val query = Query.newEntityQueryBuilder()
-                .setKind(dataType)
+                .setKind(PseudonymEntityKind)
                 .setFilter(PropertyFilter.eq(pseudonymPropertyName, pseudonym))
                 .setLimit(1)
                 .build()
@@ -122,7 +127,7 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
     fun deleteAllPseudonyms(@NotBlank @PathParam("msisdn") msisdn: String): Response {
         LOG.info("delete all pseudonyms for Msisdn = $msisdn")
         val query = Query.newEntityQueryBuilder()
-                .setKind(dataType)
+                .setKind(PseudonymEntityKind)
                 .setFilter(PropertyFilter.eq(msisdnPropertyName, msisdn))
                 .setLimit(1)
                 .build()
@@ -140,8 +145,22 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
         return Response.ok(countMap, MediaType.APPLICATION_JSON).build()
     }
 
+    /**
+     * Get the pseudonym which is valid at the timestamp for the given
+     * msisdn. In case pseudonym doesn't exist, a new one will be created
+     * for the period. Timestamps are in UTC
+     */
+    @GET
+    @Path("/exportall/{exportId}")
+    fun exportAllPseudonyms(@NotBlank @PathParam("exportId") exportId: String): Response {
+        LOG.info("GET export all pseudonyms to the table $exportId")
+        val exporter = PseudonymExport(exportId, bigquery, datastore)
+        exporter.start()
+        return Response.ok("Done Exporting", MediaType.APPLICATION_JSON).build()
+    }
+
     private fun getPseudonymKey(keyPrefix: String): Key {
-        return datastore.newKeyFactory().setKind(dataType).newKey(keyPrefix)
+        return datastore.newKeyFactory().setKind(PseudonymEntityKind).newKey(keyPrefix)
     }
 
     private fun getPseudonymEntity(keyPrefix: String): PseudonymEntity? {
