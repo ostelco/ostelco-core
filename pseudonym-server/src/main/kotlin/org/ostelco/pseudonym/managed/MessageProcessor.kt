@@ -68,7 +68,7 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
         if (emulatorHost != null && !emulatorHost.isEmpty()) {
             // Setup for picking up emulator settings
             // https://cloud.google.com/pubsub/docs/emulator#pubsub-emulator-java
-            channel = ManagedChannelBuilder.forTarget(emulatorHost).usePlaintext().build()
+            channel = ManagedChannelBuilder.forTarget(emulatorHost).usePlaintext(true).build()
             val channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel))
             val credentialsProvider = NoCredentialsProvider.create()
             publisher = Publisher.newBuilder(publisherTopicName)

@@ -1,7 +1,7 @@
 plugins {
   id "application"
   id "jacoco"
-  id "com.github.johnrengelman.shadow" version "2.0.2"
+  id "com.github.johnrengelman.shadow" version "2.0.3"
   id "org.jetbrains.kotlin.jvm" version "1.2.31"
   id "idea"
 }
@@ -35,8 +35,8 @@ task pack(type: Zip, dependsOn: 'shadowJar') {
   from('Dockerfile') {
     into(project.name)
   }
-  archiveName 'auth-server.zip'
-  destinationDir(file('build/deploy/'))
+  archiveName = "auth-server.zip"
+  destinationDir = file('build/deploy/')
 }
 
 sourceSets {
