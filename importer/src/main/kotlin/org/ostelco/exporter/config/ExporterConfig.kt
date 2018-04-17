@@ -1,12 +1,12 @@
-package org.ostelco.exporter.config
+package org.ostelco.importer.config
 
 import io.dropwizard.Configuration
 import io.dropwizard.client.JerseyClientConfiguration
 
 /**
- * The configuration for Exporter.
+ * The configuration for Importer.
  */
-class ExporterConfig : Configuration() {
+class ImporterConfig : Configuration() {
 
     var serviceAccountKey = ""
     var databaseName = ""

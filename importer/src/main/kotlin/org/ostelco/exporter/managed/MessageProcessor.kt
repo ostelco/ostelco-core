@@ -1,4 +1,4 @@
-package org.ostelco.exporter.managed
+package org.ostelco.importer.managed
 
 import io.dropwizard.lifecycle.Managed
 import org.slf4j.LoggerFactory
@@ -27,4 +27,3 @@ class MessageProcessor(private val pseudonymEndpoint: String,
     }
 
 }
-

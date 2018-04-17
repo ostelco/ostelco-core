@@ -1,4 +1,4 @@
-package org.ostelco.exporter
+package org.ostelco.importer
 
 import io.dropwizard.Application
 import io.dropwizard.client.JerseyClientBuilder
@@ -6,9 +6,9 @@ import io.dropwizard.jetty.HttpConnectorFactory
 import io.dropwizard.server.DefaultServerFactory
 import io.dropwizard.setup.Environment
 import org.glassfish.jersey.client.ClientProperties
-import org.ostelco.exporter.config.ExporterConfig
-import org.ostelco.exporter.managed.MessageProcessor
-import org.ostelco.exporter.resources.ExporterResource
+import org.ostelco.importer.config.ImporterConfig
+import org.ostelco.importer.managed.MessageProcessor
+import org.ostelco.importer.resources.ImporterResource
 import org.slf4j.LoggerFactory
 import javax.ws.rs.client.Client
 
@@ -17,19 +17,19 @@ import javax.ws.rs.client.Client
  * Entry point for running the server
  */
 fun main(args: Array<String>) {
-    ExporterApplication().run(*args)
+    ImporterApplication().run(*args)
 }
 
 /**
  * Dropwizard application for running pseudonymiser service that
  * converts Data-Traffic PubSub message to a pseudonymised version.
  */
-class ExporterApplication : Application<ExporterConfig>() {
+class ImporterApplication : Application<ImporterConfig>() {
 
-    private val LOG = LoggerFactory.getLogger(ExporterApplication::class.java)
+    private val LOG = LoggerFactory.getLogger(ImporterApplication::class.java)
 
     // Find port for the local REST endpoint
-    private fun getPseudonymEndpoint(config: ExporterConfig): String {
+    private fun getPseudonymEndpoint(config: ImporterConfig): String {
         var endpoint = config.pseudonymEndpoint
         if (!endpoint.isEmpty()) {
             return endpoint
@@ -49,7 +49,7 @@ class ExporterApplication : Application<ExporterConfig>() {
 
     // Run the dropwizard application (called by the kotlin [main] wrapper).
     override fun run(
-            config: ExporterConfig,
+            config: ImporterConfig,
             env: Environment) {
         val client: Client = JerseyClientBuilder(env).using(config.jerseyClient).build(name);
         // Increase HTTP timeout values
@@ -59,6 +59,6 @@ class ExporterApplication : Application<ExporterConfig>() {
         LOG.info("Pseudonym endpoint = $endpoint")
         val messageProcessor = MessageProcessor(endpoint, client)
         env.lifecycle().manage(messageProcessor)
-        env.jersey().register(ExporterResource())
+        env.jersey().register(ImporterResource())
     }
 }

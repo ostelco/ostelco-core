@@ -1,4 +1,4 @@
-package org.ostelco.exporter
+package org.ostelco.importer
 
 import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
@@ -18,7 +18,7 @@ class PseudonymServerTest {
         @JvmField
         @ClassRule
         val RULE = DropwizardAppRule(
-                ExporterApplication::class.java,
+                ImporterApplication::class.java,
                 ResourceHelpers.resourceFilePath("config.yaml"))
     }
 
@@ -26,10 +26,10 @@ class PseudonymServerTest {
      * Test a normal request
      */
     @Test
-    fun testExporter() {
+    fun testImporter() {
 
         val response = JerseyClientBuilder().build()
-                ?.target("http://0.0.0.0:${RULE.getLocalPort()}/exporter/status")
+                ?.target("http://0.0.0.0:${RULE.getLocalPort()}/importer/status")
                 ?.request()
                 ?.get()
         assertEquals(200, response?.status)

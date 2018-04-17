@@ -1,4 +1,4 @@
-package org.ostelco.exporter.resources
+package org.ostelco.importer.resources
 
 import org.slf4j.LoggerFactory
 import javax.ws.rs.GET
@@ -7,12 +7,12 @@ import javax.ws.rs.core.Response
 
 
 /**
- * Resource used to handle the exporter related REST calls.
+ * Resource used to handle the importer related REST calls.
  */
-@Path("/exporter")
-class ExporterResource() {
+@Path("/importer")
+class ImporterResource() {
 
-    private val LOG = LoggerFactory.getLogger(ExporterResource::class.java)
+    private val LOG = LoggerFactory.getLogger(ImporterResource::class.java)
 
     /**
      * Get the status
@@ -20,7 +20,7 @@ class ExporterResource() {
     @GET
     @Path("/get/status")
     fun getStatus(): Response {
-        LOG.info("GET status for exporter")
+        LOG.info("GET status for importer")
         return Response.ok().build()
     }
 }
