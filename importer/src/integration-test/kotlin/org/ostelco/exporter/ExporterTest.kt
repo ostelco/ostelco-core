@@ -12,7 +12,6 @@ import kotlin.test.assertEquals
  */
 class PseudonymServerTest {
 
-    private val msisdn = "4790303333"
     companion object {
 
         @JvmField
@@ -23,16 +22,14 @@ class PseudonymServerTest {
     }
 
     /**
-     * Test a normal request
+     * Test a status query.
      */
     @Test
     fun testImporter() {
-
         val response = JerseyClientBuilder().build()
                 ?.target("http://0.0.0.0:${RULE.getLocalPort()}/importer/status")
                 ?.request()
                 ?.get()
         assertEquals(200, response?.status)
-
     }
 }
