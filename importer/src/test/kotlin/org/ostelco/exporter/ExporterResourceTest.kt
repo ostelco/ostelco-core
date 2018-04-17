@@ -3,7 +3,7 @@ package org.ostelco.importer
 import io.dropwizard.testing.junit.ResourceTestRule
 import org.junit.ClassRule
 import org.junit.Test
-import org.ostelco.importer.resources.ImporterResource
+import org.ostelco.importer.ImporterResource
 import javax.ws.rs.core.Response.Status
 import kotlin.test.assertEquals
 
