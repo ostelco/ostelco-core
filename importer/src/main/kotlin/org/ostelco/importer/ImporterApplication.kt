@@ -3,6 +3,8 @@ package org.ostelco.importer
 import io.dropwizard.Application
 import io.dropwizard.Configuration
 import javax.ws.rs.GET
+import javax.ws.rs.POST
+import javax.ws.rs.Consumes
 import javax.ws.rs.Path
 import javax.ws.rs.core.Response
 import io.dropwizard.jetty.HttpConnectorFactory
@@ -11,6 +13,8 @@ import io.dropwizard.setup.Environment
 import org.glassfish.jersey.client.ClientProperties
 import org.slf4j.LoggerFactory
 import javax.ws.rs.client.Client
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 
 
 /**
@@ -19,6 +23,9 @@ import javax.ws.rs.client.Client
 class ImporterConfig : Configuration() {
 }
 
+class ImportDeclaration {
+    var foo:String = ""
+}
 
 /**
  * Resource used to handle the importer related REST calls.
@@ -35,6 +42,23 @@ class ImporterResource() {
     @Path("/get/status")
     fun getStatus(): Response {
         LOG.info("GET status for importer")
+        return Response.ok().build()
+    }
+
+
+    /**
+     * Upload a new import specification
+     */
+    @POST
+    @Consumes("text/vnd.yaml")
+    @Path("")
+    fun getStatus(yaml: String): Response {
+        LOG.info("POST status for importer")
+
+        val mapper = ObjectMapper(YAMLFactory())
+        val readValue: ImportDeclaration =
+                mapper.readValue(yaml, ImportDeclaration::class.java)
+
         return Response.ok().build()
     }
 }
