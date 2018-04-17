@@ -38,7 +38,6 @@ class EventProcessor(
         } catch (ex: NotATopupProductException) {
             LOG.info("Ignoring non-topup purchase request " + pr)
         }
-
     }
 
     @Throws(EventProcessorException::class, NotATopupProductException::class)
@@ -157,9 +156,9 @@ class EventProcessor(
             override fun onPurchaseRequest(request: PurchaseRequest) {
                 try {
                 handlePurchaseRequest(request)
-            } catch (e: EventProcessorException) {
-                LOG.error("Could not handle purchase request " + request, e)
-            }
+                } catch (e: EventProcessorException) {
+                    LOG.error("Could not handle purchase request " + request, e)
+                }
             }
         })
     }

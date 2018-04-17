@@ -16,15 +16,7 @@ import org.ostelco.diameter.model.FinalUnitIndication;
 import org.ostelco.diameter.model.MultipleServiceCreditControl;
 import org.ostelco.diameter.model.RedirectAddressType;
 import org.ostelco.diameter.model.RedirectServer;
-import org.ostelco.ocs.api.ActivateRequest;
-import org.ostelco.ocs.api.ActivateResponse;
-import org.ostelco.ocs.api.CreditControlAnswerInfo;
-import org.ostelco.ocs.api.CreditControlRequestInfo;
-import org.ostelco.ocs.api.CreditControlRequestType;
-import org.ostelco.ocs.api.OcsServiceGrpc;
-import org.ostelco.ocs.api.PsInformation;
-import org.ostelco.ocs.api.ServiceInfo;
-import org.ostelco.ocs.api.ServiceUnit;
+import org.ostelco.ocs.api.*;
 import org.ostelco.ocsgw.OcsServer;
 import org.ostelco.ocsgw.data.DataSource;
 import org.slf4j.Logger;
@@ -163,9 +155,7 @@ public class GrpcDataSource implements DataSource {
 
                         org.ostelco.diameter.model.ServiceUnit requested = mscc.getRequested().get(0);
 
-                        protoMscc
-                                .setRequested(
-                                        ServiceUnit.newBuilder()
+                        protoMscc.setRequested(ServiceUnit.newBuilder()
                                                 .setInputOctets(0L)
                                                 .setOutputOctetes(0L)
                                                 .setTotalOctets(requested.getTotal())
@@ -175,16 +165,21 @@ public class GrpcDataSource implements DataSource {
 
                     org.ostelco.diameter.model.ServiceUnit used = mscc.getUsed();
 
-                    builder.addMscc(
-                            protoMscc
-                                    .setUsed(
-                                            ServiceUnit.newBuilder()
-                                                    .setInputOctets(used.getInput())
-                                                    .setOutputOctetes(used.getOutput())
-                                                    .setTotalOctets(used.getTotal())
-                                                    .build())
-                                    .setRatingGroup(mscc.getRatingGroup())
-                                    .setServiceIdentifier(mscc.getServiceIdentifier()));
+                    protoMscc.setUsed(ServiceUnit.newBuilder()
+                                .setInputOctets(used.getInput())
+                                .setOutputOctetes(used.getOutput())
+                                .setTotalOctets(used.getTotal())
+                                .build());
+
+                    protoMscc.setRatingGroup(mscc.getRatingGroup());
+                    protoMscc.setServiceIdentifier(mscc.getServiceIdentifier());
+
+                    if (mscc.getReportingReason() != null) {
+                        protoMscc.setReportingReasonValue(mscc.getReportingReason().ordinal());
+                    } else {
+                        protoMscc.setReportingReasonValue(ReportingReason.UNRECOGNIZED.ordinal());
+                    }
+                    builder.addMscc(protoMscc.build());
                 }
 
                 builder.setRequestId(context.getSessionId())
@@ -276,6 +271,9 @@ public class GrpcDataSource implements DataSource {
     }
 
     private FinalUnitIndication convertFinalUnitIndication(org.ostelco.ocs.api.FinalUnitIndication fuiGrpc) {
+        if (!fuiGrpc.getIsSet()) {
+            return null;
+        }
         return new FinalUnitIndication(
                 FinalUnitAction.values()[fuiGrpc.getFinalUnitAction().getNumber()],
                 fuiGrpc.getRestrictionFilterRuleList(),

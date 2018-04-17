@@ -1,5 +1,7 @@
 package org.ostelco.prime.disruptor
 
+import org.ostelco.ocs.api.ReportingReason
+
 class PrimeEvent {
 
     /**
@@ -58,6 +60,12 @@ class PrimeEvent {
      */
     var ratingGroup: Long = 0
 
+    /**
+     * Reporting-Reason
+     * // FixMe: This is the Reporting-Reason for the MSCC. The PrimeEvent might be to generic since there is also Reporting-Reason used on ServiceUnit level
+     */
+    var reportingReason: ReportingReason = ReportingReason.UNRECOGNIZED
+
     fun clear() {
         msisdn = null
         requestedBucketBytes = 0
@@ -69,6 +77,7 @@ class PrimeEvent {
         serviceIdentifier = 0
         ratingGroup = 0
         messageType = null
+        reportingReason = ReportingReason.UNRECOGNIZED
     }
 
     //FixMe : We need to think about roaming!!!
@@ -81,6 +90,7 @@ class PrimeEvent {
             reservedBucketBytes: Long,
             serviceIdentifier: Long,
             ratingGroup: Long,
+            reportingReason: ReportingReason,
             ocsgwStreamId: String?,
             ocsgwRequestId: String?) {
         this.messageType = messageType
@@ -90,6 +100,7 @@ class PrimeEvent {
         this.reservedBucketBytes = reservedBucketBytes
         this.serviceIdentifier = serviceIdentifier
         this.ratingGroup = ratingGroup
+        this.reportingReason = reportingReason
         this.ocsgwStreamId = ocsgwStreamId
         this.ocsgwRequestId = ocsgwRequestId
     }

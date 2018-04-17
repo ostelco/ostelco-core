@@ -3,6 +3,8 @@ package org.ostelco.prime.disruptor
 import com.google.common.base.Preconditions.checkNotNull
 import com.lmax.disruptor.RingBuffer
 import org.ostelco.ocs.api.CreditControlRequestInfo
+import org.ostelco.ocs.api.MultipleServiceCreditControl
+import org.ostelco.ocs.api.ReportingReason
 import org.ostelco.prime.disruptor.PrimeEventMessageType.CREDIT_CONTROL_REQUEST
 import org.ostelco.prime.disruptor.PrimeEventMessageType.RELEASE_RESERVED_BUCKET
 import org.ostelco.prime.disruptor.PrimeEventMessageType.TOPUP_DATA_BUNDLE_BALANCE
@@ -47,6 +49,7 @@ class PrimeEventProducer(private val ringBuffer: RingBuffer<PrimeEvent>) {
             reservedBytes: Long = 0,
             serviceId: Long = 0,
             ratingGroup: Long = 0,
+            reportingReason: ReportingReason = ReportingReason.UNRECOGNIZED,
             streamId: String? = null,
             requestId: String? = null) {
 
@@ -59,6 +62,7 @@ class PrimeEventProducer(private val ringBuffer: RingBuffer<PrimeEvent>) {
                             reservedBytes,
                             serviceId,
                             ratingGroup,
+                            reportingReason,
                             streamId,
                             requestId)
                 })
@@ -90,18 +94,21 @@ class PrimeEventProducer(private val ringBuffer: RingBuffer<PrimeEvent>) {
             streamId: String) {
 
         if (request.msccList.isEmpty()) {
-            LOG.error("Received empty list")
-            return
+            injectIntoRingbuffer(CREDIT_CONTROL_REQUEST,
+                    request.msisdn,
+                    streamId = streamId,
+                    requestId = request.requestId)
+        } else {
+            injectIntoRingbuffer(CREDIT_CONTROL_REQUEST,
+                    request.msisdn,
+                    request.getMscc(0).requested.totalOctets,
+                    request.getMscc(0).used.totalOctets,
+                    0,
+                    request.getMscc(0).serviceIdentifier,
+                    request.getMscc(0).ratingGroup,
+                    request.getMscc(0).reportingReason,
+                    streamId,
+                    request.requestId)
         }
-
-        injectIntoRingbuffer(CREDIT_CONTROL_REQUEST,
-                request.msisdn,
-                request.getMscc(0).requested.totalOctets,
-                request.getMscc(0).used.totalOctets,
-                0,
-                request.getMscc(0).serviceIdentifier,
-                request.getMscc(0).ratingGroup,
-                streamId,
-                request.requestId)
     }
 }

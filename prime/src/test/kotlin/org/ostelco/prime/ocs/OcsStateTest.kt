@@ -56,6 +56,11 @@ class OcsStateTest {
         assertEquals(REMAINING_BYTES.toLong(),
                 ocsState.reserveDataBytes(MSISDN, SECOND_NUMBER_OF_BYTES_TO_REQUEST.toLong()))
 
+        // Now consume a bit more then resumed (P-GW is allowed to overconsume small amount)
+        // Balance should now be 0
+        assertEquals(0,
+                ocsState.consumeDataBytes(MSISDN, SECOND_NUMBER_OF_BYTES_TO_REQUEST.toLong() + 45))
+
         //... so at this point even reserving a single byte will fail.
         assertEquals(0, ocsState.reserveDataBytes(MSISDN, 1))
     }
