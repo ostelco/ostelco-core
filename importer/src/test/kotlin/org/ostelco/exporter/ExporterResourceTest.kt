@@ -52,8 +52,7 @@ class ImporterResourceTest {
         assertEquals(Status.OK.statusCode, statusCode)
     }
 /*
-    val classLoader = getClass().getClassLoader()
-    val file = File(classLoader.getResource("deals.yaml").getFile())
+
     */
 
     /**
@@ -62,14 +61,15 @@ class ImporterResourceTest {
     @Test
     fun testPostingConfig() {
 
-        val yamlText:String = """
-foo: bar
-            """
+
+        val text: String =
+                this::class.java.classLoader.getResource("sample-offer-yaml.yaml").readText(Charsets.UTF_8)
+
         val response: Response = resources
                 ?.target("importer")
                 ?.request("text/vnd.yaml")
-                ?.post(Entity.entity(yamlText, "text/vnd.yaml"))!!
-        assertEquals(Status.OK.statusCode, response.status) 
-        assertEquals("bar", importedResource?.foo)
+                ?.post(Entity.entity(text, "text/vnd.yaml"))!!
+        assertEquals(Status.OK.statusCode, response.status)
+        // assertEquals("bar", importedResource?.foo)
     }
 }

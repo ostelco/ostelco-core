@@ -23,9 +23,11 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 class ImporterConfig : Configuration() {
 }
 
-class ImportDeclaration {
-    var foo:String = ""
-}
+
+class ProducingAgent(var name: String, var version: String){}
+
+class ImportDeclaration(
+    var producingAgent: ProducingAgent){}
 
 /**
  * Resource used to handle the importer related REST calls.
