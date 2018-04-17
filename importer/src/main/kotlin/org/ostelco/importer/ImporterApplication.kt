@@ -31,7 +31,7 @@ class ImportDeclaration {
  * Resource used to handle the importer related REST calls.
  */
 @Path("/importer")
-class ImporterResource() {
+class ImporterResource(val processor: ImportProcessor) {
 
     private val LOG = LoggerFactory.getLogger(ImporterResource::class.java)
 
@@ -56,10 +56,15 @@ class ImporterResource() {
         LOG.info("POST status for importer")
 
         val mapper = ObjectMapper(YAMLFactory())
-        val readValue: ImportDeclaration =
+        val declaration: ImportDeclaration =
                 mapper.readValue(yaml, ImportDeclaration::class.java)
+        val result: Boolean = processor.import(declaration)
 
-        return Response.ok().build()
+        if (result) {
+            return Response.ok().build()
+        } else {
+            return Response.ok().build() // Shouldn't be ok, but completion won't work.
+        }
     }
 }
 
@@ -68,6 +73,10 @@ class ImporterResource() {
  */
 fun main(args: Array<String>) {
     ImporterApplication().run(*args)
+}
+
+interface ImportProcessor {
+    fun import(decl: ImportDeclaration) : Boolean
 }
 
 /**
@@ -82,6 +91,11 @@ class ImporterApplication : Application<ImporterConfig>() {
     override fun run(
             config: ImporterConfig,
             env: Environment) {
-        env.jersey().register(ImporterResource())
+        val processor: ImportProcessor = object : ImportProcessor {
+            public override fun import(decl: ImportDeclaration) : Boolean {
+                return true
+            }
+        }
+        env.jersey().register(ImporterResource(processor))
     }
 }

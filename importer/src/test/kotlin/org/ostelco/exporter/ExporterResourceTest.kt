@@ -20,10 +20,20 @@ class ImporterResourceTest {
     private val pathForGetStatus = "/importer/get/status"
 
     companion object {
+
+        var importedResource: ImportDeclaration? = null
+
+        val processor: ImportProcessor = object : ImportProcessor {
+            public override fun import(decl: ImportDeclaration) : Boolean {
+                importedResource = decl
+                return true
+            }
+        }
+
         @ClassRule
         @JvmField
         val resources = ResourceTestRule.builder()
-                .addResource(ImporterResource())
+                .addResource(ImporterResource(processor))
                 .build()
     }
 
@@ -59,7 +69,7 @@ foo: bar
                 ?.target("importer")
                 ?.request("text/vnd.yaml")
                 ?.post(Entity.entity(yamlText, "text/vnd.yaml"))!!
-
         assertEquals(Status.OK.statusCode, response.status)
+        assertEquals("bar", importedResource?.foo)
     }
 }
