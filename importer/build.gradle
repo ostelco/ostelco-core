@@ -7,14 +7,12 @@ plugins {
 }
 
 
-
-
 repositories {
     jcenter()
 }
 
-ext.kotlinVersion = '1.2.31'
-ext.dropwizardVersion = '1.3.1'
+kotlinVersion = '1.2.31'
+dropwizardVersion = '1.3.1'
 
 dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
@@ -29,6 +27,7 @@ dependencies {
   compile group: 'com.fasterxml.jackson.module', name: 'jackson-module-kotlin', version: '2.9.4.1'
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
+  testCompile 'junit:junit:4.12'
   testRuntime 'org.hamcrest:hamcrest-all:1.3'
 }
 
