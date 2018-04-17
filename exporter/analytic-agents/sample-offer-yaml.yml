@@ -23,8 +23,6 @@ producing-agent:
 
 offer:
     history:
-       createdAt: "2018-02-22T12:41:49.871Z"
-       updatedAt: "2018-02-22T12:41:49.871Z"
        visibleFrom: "2018-02-22T12:41:49.871Z"
        expiresOn: "2018-02-22T12:41:49.871Z"
     presentation:
@@ -37,7 +35,7 @@ offer:
        hidden: false
        image: https://www.ft-associates.com/wp-content/uploads/2015/08/Best-Offer.jpg
     financial:
-       repurchability:1
+       repurchability: 1
        currencyLabel: "NOK"
        price: 4900
        taxRate: 10
@@ -55,6 +53,7 @@ offer:
 
 segment:
    type: agent-specific-segment
+   description: "This is how this segment should be described"
    members:
      # The decryption key is what the de-anonymizer will use to
      # make proper  identifiers out of the members listed below.
@@ -65,4 +64,3 @@ segment:
         - 4790300157
         - 4790300144
         - 4333333333
-        
