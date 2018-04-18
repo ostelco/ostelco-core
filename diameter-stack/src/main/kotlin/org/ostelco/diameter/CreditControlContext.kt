@@ -61,12 +61,10 @@ class CreditControlContext(
                 if (originalCreditControlRequest.requestTypeAVPValue != RequestType.TERMINATION_REQUEST) {
 
                     if (mscc.finalUnitIndication != null) {
-                        val gsuAvp = answerMSCC.addGroupedAvp(Avp.GRANTED_SERVICE_UNIT, true, false)
-                        gsuAvp.addAvp(Avp.CC_TOTAL_OCTETS, 0L, true, false)
                         addFinalUnitAction(answerMSCC, mscc)
                     }
 
-                    if (mscc.granted.total > 1) {
+                    if (mscc.granted.total > -1) {
                         val gsuAvp = answerMSCC.addGroupedAvp(Avp.GRANTED_SERVICE_UNIT, true, false)
                         gsuAvp.addAvp(Avp.CC_INPUT_OCTETS, 0L, true, false)
                         gsuAvp.addAvp(Avp.CC_OUTPUT_OCTETS, 0L, true, false)
