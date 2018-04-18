@@ -1,0 +1,4 @@
+/bin/
+*.orig.*
+*.toc.*
+pom.xml
