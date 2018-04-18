@@ -51,16 +51,16 @@ offer:
 # # little information that humans are interested in, and we want
 # # humans to start reading the file at the top.
 
-# segment:
-#    type: agent-specific-segment
-#    description: "This is how this segment should be described"
-#    members:
-#      # The decryption key is what the de-anonymizer will use to
-#      # make proper  identifiers out of the members listed below.
-#      # The special purpose key "none" indicatest that the member list
-#      # is in clear text.
-#      decryptionKey: none
-#      members:
-#         - 4790300157
-#         - 4790300144
-#         - 4333333333
+segment:
+   type: agent-specific-segment
+   description: "This is how this segment should be described"
+   members:
+     # The decryption key is what the de-anonymizer will use to
+     # make proper  identifiers out of the members listed below.
+     # The special purpose key "none" indicatest that the member list
+     # is in clear text.
+     decryptionKey: none
+     members:
+        - 4790300157
+        - 4790300144
+        - 4333333333

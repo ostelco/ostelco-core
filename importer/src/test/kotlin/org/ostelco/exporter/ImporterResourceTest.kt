@@ -74,7 +74,8 @@ class ImporterResourceTest {
         assertEquals("2018-02-22T12:41:49.871Z", importedResource?.offer?.visibility?.from)
         assertEquals("2018-02-22T12:41:49.871Z", importedResource?.offer?.visibility?.to)
 
-        // Missing tests for presentation, financials, product within offer.
+        // Missing tests for presentation, financials, product within offer, and everything within segment.
 
+        System.out.println("members = " + importedResource?.segment?.members?.members)
     }
 }

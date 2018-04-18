@@ -34,7 +34,8 @@ class ProducingAgent(var name: String? = null, var version: String? = null)
 
 class ImportDeclaration(
         var producingAgent: ProducingAgent? = null,
-        var offer: Offer? = null
+        var offer: Offer? = null,
+        var segment: Segment? = null
 )
 
 class TimeInterval(var from: String?= null, var to: String? = null)
@@ -57,7 +58,19 @@ class OfferFinancials(
         var taxRate: BigDecimal? = null
 )
 
-// XXX Shoul perhaps, apart from SKU, be a
+class SubscriberIdCollection(
+        var decryptionKey: String? = null,
+        var members : MutableList<String>? = null
+)
+
+
+class Segment(
+        var type: String? = null,
+        var description: String? = null,
+        var members: SubscriberIdCollection? = null
+)
+
+// XXX Should perhaps, apart from SKU, be a
 //     a keyword/value map, to be interpreted by
 //     something, somewhere that knows something about
 //     technical product parameters?
