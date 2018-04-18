@@ -30,7 +30,6 @@ class ImportDeclaration(
 
     // var producingAgent: ProducingAgent
 ){
-    var foo: String = ""
     var producingAgent : ProducingAgent? = null
 }
 

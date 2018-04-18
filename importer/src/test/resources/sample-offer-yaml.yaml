@@ -11,8 +11,6 @@
 # in particular when gzipped.
 #
 
-foo: bar
-
 producingAgent:
   name: Simple agent
   version: 1.0
