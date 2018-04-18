@@ -24,9 +24,23 @@ class ImporterConfig : Configuration() {
 }
 
 
+/**
+ * The input classes being parsed (as yaml).
+ */
+
 class ProducingAgent(var name: String? = null, var version: String? = null)
 
-class ImportDeclaration(var producingAgent : ProducingAgent? = null)
+class ImportDeclaration(
+        var producingAgent: ProducingAgent? = null,
+        var offer: Offer? = null
+)
+
+class TimeInterval(var from: String?= null, var to: String? = null)
+
+class Offer(
+    var visibility: TimeInterval? = null
+)
+
 
 /**
  * Resource used to handle the importer related REST calls.
@@ -56,20 +70,20 @@ class ImporterResource(val processor: ImportProcessor) {
     fun getStatus(yaml: String): Response {
         LOG.info("POST status for importer")
 
-        try {
+        return try {
             val mapper = ObjectMapper(YAMLFactory())
             val declaration: ImportDeclaration =
                     mapper.readValue(yaml, ImportDeclaration::class.java)
             val result: Boolean = processor.import(declaration)
 
             if (result) {
-                return Response.ok().build()
+                Response.ok().build()
             } else {
-                return Response.serverError().build()// Shouldn't be ok, but completion won't work.
+                Response.serverError().build()// Shouldn't be ok, but completion won't work.
             }
         } catch (e: Exception) {
             System.out.println("Cought exception" + e.toString())
-            return Response.serverError().build()
+            Response.serverError().build()
         }
     }
 }

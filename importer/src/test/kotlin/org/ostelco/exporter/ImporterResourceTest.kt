@@ -54,7 +54,6 @@ class ImporterResourceTest {
         assertEquals(Status.OK.statusCode, statusCode)
     }
 
-// https://craftsmen.nl/kotlin-create-rest-services-using-jersey-and-jackson/   Deserialisation is fucked up.
     /**
      *  Testing reading a yaml file.
      */
@@ -69,7 +68,10 @@ class ImporterResourceTest {
                 ?.request("text/vnd.yaml")
                 ?.post(Entity.entity(text, "text/vnd.yaml"))
 
-        System.out.println("hello" + importedResource.toString())
-
+        assertEquals(Status.OK.statusCode, response?.status)
+        assertEquals("Simple agent", importedResource?.producingAgent?.name)
+        assertEquals("1.0", importedResource?.producingAgent?.version)
+        assertEquals("2018-02-22T12:41:49.871Z", importedResource?.offer?.visibility?.from)
+        assertEquals("2018-02-22T12:41:49.871Z", importedResource?.offer?.visibility?.to)
     }
 }

@@ -21,10 +21,10 @@ producingAgent:
 # # in this document, and we should think through if this is
 # # the best set of parameters we weant.
 
-# offer:
-#     history:
-#        visibleFrom: "2018-02-22T12:41:49.871Z"
-#        expiresOn: "2018-02-22T12:41:49.871Z"
+offer:
+     visibility:
+        from: "2018-02-22T12:41:49.871Z"
+        to: "2018-02-22T12:41:49.871Z"
 #     presentation:
 #        badgeLabel: "mbop"
 #        description: "Best offer you will get today"
