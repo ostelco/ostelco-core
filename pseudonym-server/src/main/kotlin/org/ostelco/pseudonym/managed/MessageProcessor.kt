@@ -47,7 +47,7 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
     private var subscriber: Subscriber? = null
     private var publisher: Publisher? = null
     val mapper = jacksonObjectMapper()
-    val pseudonymCache : Cache<String, PseudonymEntity>
+    val pseudonymCache: Cache<String, PseudonymEntity>
 
     // Testing helpers.
     val emulatorHost: String? = System.getenv("PUBSUB_EMULATOR_HOST")
@@ -100,7 +100,7 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
         return "${pseudonymEndpoint}/pseudonym/get/$msisdn/$timestamp"
     }
 
-    private fun getPseudonymEntity(msisdn : String, timestamp: Long): PseudonymEntity? {
+    private fun getPseudonymEntity(msisdn: String, timestamp: Long): PseudonymEntity? {
         val (_, keyPrefix) = dateBounds.getBoundsNKeyPrefix(msisdn, timestamp)
         try {
             // Retrieves the element from cache.
@@ -119,7 +119,7 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
                 response.close()
                 mapper.readValue<PseudonymEntity>(json)
             })
-        }  catch (e: ExecutionException) {
+        } catch (e: ExecutionException) {
             LOG.warn("getPseudonymEntity failed, ${e.toString()}")
         }
         return null;

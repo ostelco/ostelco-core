@@ -23,7 +23,7 @@ class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastor
     }
 
     private val datasetName = "exported_pseudonyms"
-    private val tableName:String
+    private val tableName: String
     private val msisdnFieldName = "msisdn"
     private val pseudonymFiledName = "pseudonym"
     private val idFieldName = "msisdnid"
@@ -32,7 +32,7 @@ class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastor
     var error: String = ""
 
     init {
-        tableName = exportId.replace("-","")
+        tableName = exportId.replace("-", "")
         idCache = CacheBuilder.newBuilder()
                 .maximumSize(5000)
                 .build()
@@ -56,7 +56,7 @@ class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastor
         return bigquery.create(tableInfo)
     }
 
-    private fun getIdForMsisdn(msisdn : String): String {
+    private fun getIdForMsisdn(msisdn: String): String {
         // Retrieves the element from cache.
         // Incase of cache miss, generate a new UUID
         return idCache.get(msisdn, Callable {
@@ -65,6 +65,8 @@ class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastor
     }
 
     private fun createTablePage(pageSize: Int, cursor: Cursor?, table: Table): Cursor? {
+        // Dump pseudonyms to BQ, one page at a time. Since all records in a
+        // page are inserted at once, use a small page size
         val queryBuilder = Query.newEntityQueryBuilder()
                 .setKind(PseudonymEntityKind)
                 .setOrderBy(StructuredQuery.OrderBy.asc(msisdnPropertyName))
@@ -74,25 +76,25 @@ class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastor
         }
         val rows = ArrayList<RowToInsert>()
         val pseudonyms = datastore.run(queryBuilder.build())
-        var results = 0
-        while(pseudonyms.hasNext()) {
+        var totalPseudonyms = 0
+        while (pseudonyms.hasNext()) {
             val entity = pseudonyms.next()
-            results++
+            totalPseudonyms++
             val row = hashMapOf(
                     msisdnFieldName to entity.getString(msisdnPropertyName),
                     pseudonymFiledName to entity.getString(pseudonymPropertyName),
                     idFieldName to getIdForMsisdn(entity.getString(msisdnPropertyName)))
-            val rowId = "rowId${results}"
+            val rowId = "rowId${totalPseudonyms}"
             rows.add(RowToInsert.of(rowId, row))
         }
-        if (results != 0) {
+        if (totalPseudonyms != 0) {
             val response = table.insert(rows, true, true)
-            if(response.hasErrors()) {
+            if (response.hasErrors()) {
                 LOG.error("Failed to insert Records", response.insertErrors)
                 error = "$error${response.insertErrors.toString()}\n"
             }
         }
-        if(results < pageSize) {
+        if (totalPseudonyms < pageSize) {
             return null
         } else {
             return pseudonyms.getCursorAfter()
@@ -127,7 +129,7 @@ class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastor
         try {
             // Verify before writing a new value.
             val currentEntity = transaction.get(exportKey);
-            var builder:Entity.Builder?
+            var builder: Entity.Builder?
             if (currentEntity == null) {
                 builder = Entity.newBuilder(exportKey)
             } else {
