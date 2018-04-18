@@ -34,11 +34,11 @@ offer:
         priceLabel: "49 NOK"
         hidden: false
         imageUrl: https://www.ft-associates.com/wp-content/uploads/2015/08/Best-Offer.jpg
-#     financial:
-#        repurchability: 1
-#        currencyLabel: "NOK"
-#        price: 4900
-#        taxRate: 10
+     financial:
+        repurchability: 1
+        currencyLabel: "NOK"
+        price: 4900
+        taxRate: 10.0
 #     product:
 #        SKU: 2
 #        # A possibly very long list of product parameters that are all

@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory
 import javax.ws.rs.client.Client
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import java.math.BigDecimal
 
 
 /**
@@ -48,12 +49,18 @@ class Presentation(
         var imageUrl: String? = null
 )
 
+class OfferFinancials(
+        var repurchability: String? = null,
+        var currencyLabel: String? = null,
+        var price: Int? = null,
+        var taxRate: BigDecimal? = null
+)
 
 class Offer(
     var visibility: TimeInterval? = null,
-    var presentation: Presentation? = null
+    var presentation: Presentation? = null,
+    var financial: OfferFinancials? = null
 )
-
 
 /**
  * Resource used to handle the importer related REST calls.
@@ -72,7 +79,6 @@ class ImporterResource(val processor: ImportProcessor) {
         LOG.info("GET status for importer")
         return Response.ok().build()
     }
-
 
     /**
      * Upload a new import specification

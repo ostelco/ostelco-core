@@ -73,5 +73,8 @@ class ImporterResourceTest {
         assertEquals("1.0", importedResource?.producingAgent?.version)
         assertEquals("2018-02-22T12:41:49.871Z", importedResource?.offer?.visibility?.from)
         assertEquals("2018-02-22T12:41:49.871Z", importedResource?.offer?.visibility?.to)
+
+        // Missing tests for presentation, financials, product within offer.
+
     }
 }
