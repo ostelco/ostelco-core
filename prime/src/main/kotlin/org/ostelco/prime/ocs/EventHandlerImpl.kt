@@ -79,7 +79,7 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
                     msccBulder.setGranted(ServiceUnit.newBuilder()
                             .setTotalOctets(event.reservedBucketBytes)
                             .build())
-                    if (event.reservedBucketBytes == 0L) {
+                    if (event.reservedBucketBytes < event.requestedBucketBytes) {
                         msccBulder.setFinalUnitIndication(FinalUnitIndication.newBuilder()
                                 .setFinalUnitAction(FinalUnitAction.TERMINATE)
                                 .setIsSet(true)
