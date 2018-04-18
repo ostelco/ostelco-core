@@ -25,15 +25,15 @@ offer:
      visibility:
         from: "2018-02-22T12:41:49.871Z"
         to: "2018-02-22T12:41:49.871Z"
-#     presentation:
-#        badgeLabel: "mbop"
-#        description: "Best offer you will get today"
-#        shortDescription: "Best offer!"
-#        label: "3 GB"
-#        name: "3 GB"
-#        priceLabel: "49 NOK"
-#        hidden: false
-#        image: https://www.ft-associates.com/wp-content/uploads/2015/08/Best-Offer.jpg
+     presentation:
+        badgeLabel: "mbop"
+        description: "Best offer you will get today"
+        shortDescription: "Best offer!"
+        label: "3 GB"
+        name: "3 GB"
+        priceLabel: "49 NOK"
+        hidden: false
+        imageUrl: https://www.ft-associates.com/wp-content/uploads/2015/08/Best-Offer.jpg
 #     financial:
 #        repurchability: 1
 #        currencyLabel: "NOK"

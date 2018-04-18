@@ -37,8 +37,21 @@ class ImportDeclaration(
 
 class TimeInterval(var from: String?= null, var to: String? = null)
 
+class Presentation(
+        var badgeLabel: String? = null,
+        var description: String? = null,
+        var shortDescription: String? = null,
+        var label: String? = null,
+        var name: String? = null,
+        var priceLabel: String? = null,
+        var hidden: Boolean? = null,
+        var imageUrl: String? = null
+)
+
+
 class Offer(
-    var visibility: TimeInterval? = null
+    var visibility: TimeInterval? = null,
+    var presentation: Presentation? = null
 )
 
 
