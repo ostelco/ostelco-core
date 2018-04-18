@@ -13,9 +13,9 @@
 
 foo: bar
 
-# producing-agent:
-#   name: Simple agent
-#   version: 1.0
+producingAgent:
+  name: Simple agent
+  version: 1.0
 
 # # All of the parameters below are just copied from the firebasr
 # # realtime database we used in the demo, converted to

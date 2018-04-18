@@ -24,13 +24,14 @@ class ImporterConfig : Configuration() {
 }
 
 
-// class ProducingAgent(var name: String, var version: String){}
+class ProducingAgent(var name: String? = null, var version: String? = null){}
 
 class ImportDeclaration(
 
     // var producingAgent: ProducingAgent
 ){
     var foo: String = ""
+    var producingAgent : ProducingAgent? = null
 }
 
 /**
@@ -61,15 +62,20 @@ class ImporterResource(val processor: ImportProcessor) {
     fun getStatus(yaml: String): Response {
         LOG.info("POST status for importer")
 
-        val mapper = ObjectMapper(YAMLFactory())
-        val declaration: ImportDeclaration =
-                mapper.readValue(yaml, ImportDeclaration::class.java)
-        val result: Boolean = processor.import(declaration)
+        try {
+            val mapper = ObjectMapper(YAMLFactory())
+            val declaration: ImportDeclaration =
+                    mapper.readValue(yaml, ImportDeclaration::class.java)
+            val result: Boolean = processor.import(declaration)
 
-        if (result) {
-            return Response.ok().build()
-        } else {
-            return Response.ok().build() // Shouldn't be ok, but completion won't work.
+            if (result) {
+                return Response.ok().build()
+            } else {
+                return Response.serverError().build()// Shouldn't be ok, but completion won't work.
+            }
+        } catch (e: Exception) {
+            System.out.println("Cought exception" + e.toString())
+            return Response.serverError().build()
         }
     }
 }
