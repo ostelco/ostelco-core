@@ -24,10 +24,14 @@ class ImporterConfig : Configuration() {
 }
 
 
-class ProducingAgent(var name: String, var version: String){}
+// class ProducingAgent(var name: String, var version: String){}
 
 class ImportDeclaration(
-    var producingAgent: ProducingAgent){}
+
+    // var producingAgent: ProducingAgent
+){
+    var foo: String = ""
+}
 
 /**
  * Resource used to handle the importer related REST calls.

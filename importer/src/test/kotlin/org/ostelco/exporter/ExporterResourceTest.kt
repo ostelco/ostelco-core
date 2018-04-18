@@ -3,14 +3,10 @@ package org.ostelco.importer
 import io.dropwizard.testing.junit.ResourceTestRule
 import org.junit.ClassRule
 import org.junit.Test
-import org.ostelco.importer.ImporterResource
-import javax.ws.rs.core.Response
 import javax.ws.rs.client.Entity
-import kotlin.test.assertEquals
 import javax.ws.rs.core.Response.Status
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import javax.xml.ws.Response
+import kotlin.test.assertEquals
 
 
 /**
@@ -62,7 +58,7 @@ class ImporterResourceTest {
         val text: String =
                 this::class.java.classLoader.getResource("sample-offer-yaml.yaml").readText(Charsets.UTF_8)
 
-        val response: Response = resources
+        val response = resources
                 ?.target("importer")
                 ?.request("text/vnd.yaml")
                 ?.post(Entity.entity(text, "text/vnd.yaml"))!!
