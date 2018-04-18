@@ -1,22 +1,18 @@
 version: "3.3"
 
 services:
-  prime:
-    container_name: prime
-    build: prime
-    environment:
-      - GOOGLE_APPLICATION_CREDENTIALS=/config/pantel-prod.json
-    networks:
-      net:
-        aliases:
-          - prime
-        ipv4_address: 172.16.238.4
-
   ocsgw:
     container_name: ocsgw
     build: ocsgw
     depends_on:
       - "prime"
+    # This env variable is for connecting to Prime in GCP.
+    # Remove/comment it once testing is done.
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/config/pantel-prod.json
+      # This is external IP from "kubectl get service"
+      - GRPC_SERVER=35.195.49.238
+      - GRPC_ENCRYPTION=true
     command: ["./wait_for_prime.sh"]
 
   auth-server:

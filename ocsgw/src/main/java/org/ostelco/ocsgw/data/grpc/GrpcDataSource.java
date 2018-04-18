@@ -1,7 +1,9 @@
 package org.ostelco.ocsgw.data.grpc;
 
+import com.google.auth.oauth2.GoogleCredentials;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.auth.MoreCallCredentials;
 import io.grpc.stub.StreamObserver;
 import org.jdiameter.api.IllegalDiameterStateException;
 import org.jdiameter.api.InternalException;
@@ -9,19 +11,29 @@ import org.jdiameter.api.OverloadException;
 import org.jdiameter.api.RouteException;
 import org.jdiameter.api.cca.ServerCCASession;
 import org.ostelco.diameter.CreditControlContext;
-import org.ostelco.diameter.model.SessionContext;
 import org.ostelco.diameter.model.CreditControlAnswer;
 import org.ostelco.diameter.model.FinalUnitAction;
 import org.ostelco.diameter.model.FinalUnitIndication;
 import org.ostelco.diameter.model.MultipleServiceCreditControl;
 import org.ostelco.diameter.model.RedirectAddressType;
 import org.ostelco.diameter.model.RedirectServer;
-import org.ostelco.ocs.api.*;
+import org.ostelco.diameter.model.SessionContext;
+import org.ostelco.ocs.api.ActivateRequest;
+import org.ostelco.ocs.api.ActivateResponse;
+import org.ostelco.ocs.api.CreditControlAnswerInfo;
+import org.ostelco.ocs.api.CreditControlRequestInfo;
+import org.ostelco.ocs.api.CreditControlRequestType;
+import org.ostelco.ocs.api.OcsServiceGrpc;
+import org.ostelco.ocs.api.PsInformation;
+import org.ostelco.ocs.api.ReportingReason;
+import org.ostelco.ocs.api.ServiceInfo;
+import org.ostelco.ocs.api.ServiceUnit;
 import org.ostelco.ocsgw.OcsServer;
 import org.ostelco.ocsgw.data.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -73,7 +85,7 @@ public class GrpcDataSource implements DataSource {
         }
     }
 
-    public GrpcDataSource(String target, boolean encrypted) {
+    public GrpcDataSource(final String target, final boolean encrypted) throws IOException {
 
         LOG.info("Created GrpcDataSource");
         LOG.info("target : {}", target);
@@ -84,10 +96,15 @@ public class GrpcDataSource implements DataSource {
                 .forTarget(target)
                 .usePlaintext(!encrypted)
                 .build();
-
         // Initialize the stub that will be used to actually
         // communicate from the client emulating being the OCS.
-        ocsServiceStub = OcsServiceGrpc.newStub(channel);
+        if (encrypted) {
+            GoogleCredentials credentials = GoogleCredentials.getApplicationDefault();
+            ocsServiceStub = OcsServiceGrpc.newStub(channel)
+                    .withCallCredentials(MoreCallCredentials.from(credentials));
+        } else {
+            ocsServiceStub = OcsServiceGrpc.newStub(channel);
+        }
     }
 
     @Override

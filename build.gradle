@@ -31,7 +31,7 @@ subprojects {
   }
 }
 
-task pack(type: Zip, dependsOn: [':ocsgw:pack', ':prime:pack', ':auth-server:pack']) {
+task pack(type: Zip, dependsOn: [':ocsgw:pack', ':auth-server:pack']) {
   from zipTree('ocsgw/build/deploy/ocsgw.zip')
   from zipTree('prime/build/deploy/prime.zip')
   from zipTree('auth-server/build/deploy/auth-server.zip')

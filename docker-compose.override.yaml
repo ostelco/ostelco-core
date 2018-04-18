@@ -2,9 +2,19 @@ version: "3.3"
 
 services:
   prime:
+    container_name: prime
+    build:
+      context: prime
+      dockerfile: Dockerfile.test
     environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/secret/pantel-prod.json
       - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
       - PUBSUB_PROJECT_ID=pantel-2decb
+    networks:
+      net:
+        aliases:
+          - prime
+        ipv4_address: 172.16.238.4
 
   ocsgw:
     networks:

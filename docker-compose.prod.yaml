@@ -2,4 +2,9 @@ version: "3.3"
 
 services:
   ocsgw:
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/config/pantel-prod.json
+      # This is external IP from "kubectl get service"
+      - GRPC_SERVER=35.195.49.238
+      - GRPC_ENCRYPTION=true
     network_mode: "host"
