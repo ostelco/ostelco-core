@@ -39,12 +39,12 @@ offer:
         currencyLabel: "NOK"
         price: 4900
         taxRate: 10.0
-#     product:
-#        SKU: 2
-#        # A possibly very long list of product parameters that are all
-#        # dependent on the SKU's requirement.   Details ignored here,
-#        # that may pop up later. Deal with them then.
-#        noOfBytes: 3000000000
+     product:
+        sku: 2
+        # A possibly very long list of product parameters that are all
+        # dependent on the SKU's requirement.   Details ignored here,
+        # that may pop up later. Deal with them then.
+        noOfBytes: 3000000000
 
 # # We put the segment last, since it may have a long list of
 # # members in it. We want that list to be last, since it contains

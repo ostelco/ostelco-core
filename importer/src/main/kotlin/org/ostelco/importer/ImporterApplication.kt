@@ -16,6 +16,7 @@ import javax.ws.rs.client.Client
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import java.math.BigDecimal
+import java.math.BigInteger
 
 
 /**
@@ -56,10 +57,21 @@ class OfferFinancials(
         var taxRate: BigDecimal? = null
 )
 
+// XXX Shoul perhaps, apart from SKU, be a
+//     a keyword/value map, to be interpreted by
+//     something, somewhere that knows something about
+//     technical product parameters?
+class Product(
+        var sku: String? = null,
+        var noOfBytes: BigInteger? = null
+)
+
+
 class Offer(
     var visibility: TimeInterval? = null,
     var presentation: Presentation? = null,
-    var financial: OfferFinancials? = null
+    var financial: OfferFinancials? = null,
+    var product: Product? = null
 )
 
 /**
