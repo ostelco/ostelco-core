@@ -14,7 +14,7 @@ dependencies {
   implementation 'com.google.guava:guava:24.1-jre'
   implementation 'io.grpc:grpc-netty-shaded:1.11.0'
   implementation 'com.google.cloud:google-cloud-datastore:1.25.0'
-  implementation 'com.google.cloud:google-cloud-pubsub:0.43.0-beta'
+  implementation 'com.google.cloud:google-cloud-pubsub:0.44.0-beta'
   implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.9.5'
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"

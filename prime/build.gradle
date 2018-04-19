@@ -24,8 +24,8 @@ dependencies {
   implementation project(':ocs-api')
   implementation project(':ostelco-lib')
   implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
-  implementation 'com.google.firebase:firebase-admin:5.9.0'
-  implementation 'com.google.cloud:google-cloud-pubsub:0.43.0-beta'
+  implementation 'com.google.firebase:firebase-admin:5.10.0'
+  implementation 'com.google.cloud:google-cloud-pubsub:0.44.0-beta'
   implementation 'com.lmax:disruptor:3.4.2'
   implementation 'com.google.guava:guava:24.1-jre'
 
