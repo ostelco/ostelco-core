@@ -34,3 +34,20 @@ done
 
 echo "Exported table for $exportId"
 
+echo "Creating table pantel-2decb.exported_data_consumption.$exportId"
+read -r -d '' sqlForJoin << EOM
+SELECT
+   hc.bytes, ps.msisdnid, hc.timestamp
+FROM
+   \`pantel-2decb.data_consumption.hourly_consumption\` as hc
+JOIN
+  \`pantel-2decb.exported_pseudonyms.$exportId\` as ps
+ON  ps.msisdn = hc.msisdn
+EOM
+bq --location=EU query --destination_table exported_data_consumption.$exportId --use_legacy_sql=false $sqlForJoin
+echo "Table pantel-2decb.exported_data_consumption.$exportId created."
+
+echo "Exporting data to csv"
+csvfile=pantel-2decb-dataconsumption-export/$exportId.csv
+bq --location=EU extract --destination_format=CSV exported_data_consumption.$exportId gs://$csvfile
+echo "exported data to gs://$csvfile"

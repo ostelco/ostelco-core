@@ -23,7 +23,10 @@ kubectl describe deployment exporter
 kubectl get pods
 
 # Login to the pod
-kubectl exec -it <exporter> -- /bin/bash
+kubectl exec -it <exporter pod name> -- /bin/bash
+
+# Run exporter from the above shell
+/export_data.sh
 
 # Delete deployment
 kubectl delete  deployment exporter
