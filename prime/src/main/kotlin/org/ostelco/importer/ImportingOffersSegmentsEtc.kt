@@ -118,12 +118,13 @@ class ImporterResource(val processor: ImportProcessor) {
             val mapper = ObjectMapper(YAMLFactory())
             val declaration: ImportDeclaration =
                     mapper.readValue(yaml, ImportDeclaration::class.java)
+            
             val result: Boolean = processor.import(declaration)
 
             if (result) {
                 Response.ok().build()
             } else {
-                Response.serverError().build()// Shouldn't be ok, but completion won't work.
+                Response.status(Response.Status.BAD_REQUEST).build()
             }
         } catch (e: Exception) {
             System.out.println("Cought exception" + e.toString())
