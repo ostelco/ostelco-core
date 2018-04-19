@@ -12,12 +12,15 @@ import java.util.concurrent.Callable
 
 
 /**
- * Exports all pseudonyms to a bigquery Table
+ * Exports pseudonym objects to a bigquery Table
  */
 
 class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastore: Datastore) {
     private val LOG = LoggerFactory.getLogger(PseudonymExport::class.java)
 
+    /**
+     * Status of the export operation in progress.
+     */
     enum class Status {
         INITIAL, RUNNING, FINISHED, ERROR
     }
@@ -118,6 +121,10 @@ class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastor
         LOG.info("Exported Pseudonyms for ${exportId}")
     }
 
+    /**
+     * Returns a runnable that can be passed to executor. It starts the
+     * export operation.
+     */
     fun getRunnable(): Runnable {
         return Runnable {
             start()
