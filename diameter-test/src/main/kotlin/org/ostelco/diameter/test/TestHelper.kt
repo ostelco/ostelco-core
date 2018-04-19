@@ -4,6 +4,7 @@ import org.jdiameter.api.Avp
 import org.jdiameter.api.Avp.PS_INFORMATION
 import org.jdiameter.api.AvpSet
 import org.ostelco.diameter.builder.set
+import org.ostelco.diameter.model.ReportingReason
 import org.ostelco.diameter.model.RequestType
 import org.ostelco.diameter.model.SubscriptionType
 
@@ -41,7 +42,7 @@ object TestHelper {
         }
     }
 
-    private fun addBucketRequest(ccrAvps: AvpSet, ratingGroup: Int, serviceIdentifier: Int, bucketSize: Long) {
+    private fun addBucketRequest(ccrAvps: AvpSet, ratingGroup: Int, serviceIdentifier: Int, bucketSize: Long, usedBucketSize: Long = 0) {
 
         set(ccrAvps) {
 
@@ -56,6 +57,31 @@ object TestHelper {
                     avp(Avp.CC_INPUT_OCTETS, 0L, pFlag = true)
                     avp(Avp.CC_OUTPUT_OCTETS, 0L, pFlag = true)
                 }
+
+                if (usedBucketSize > 0) {
+                    group(Avp.USED_SERVICE_UNIT) {
+                        avp(Avp.CC_TOTAL_OCTETS, usedBucketSize, pFlag = true)
+                        avp(Avp.REPORTING_REASON, ReportingReason.QUOTA_EXHAUSTED.ordinal, VENDOR_ID_3GPP, mFlag = true, pFlag = true)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun addFinalBucketRequest(ccrAvps: AvpSet, ratingGroup: Int, serviceIdentifier: Int) {
+
+        set(ccrAvps) {
+
+            avp(Avp.MULTIPLE_SERVICES_INDICATOR, 1, pFlag = true)
+
+            group(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL) {
+                group(Avp.USED_SERVICE_UNIT) {
+                    avp(Avp.CC_TIME, 0, pFlag = true)
+                    avp(Avp.CC_SERVICE_SPECIFIC_UNITS, 0L, pFlag = true)
+                }
+                avp(Avp.RATING_GROUP, ratingGroup, pFlag = true)
+                avp(Avp.SERVICE_IDENTIFIER_CCA, serviceIdentifier, pFlag = true)
+                avp(Avp.REPORTING_REASON, ReportingReason.FINAL, VENDOR_ID_3GPP, pFlag = true)
             }
         }
     }
@@ -70,7 +96,7 @@ object TestHelper {
                 avp(Avp.RATING_GROUP, ratingGroup, pFlag = true)
                 avp(Avp.SERVICE_IDENTIFIER_CCA, serviceIdentifier, pFlag = true)
 
-                group(Avp.REQUESTED_SERVICE_UNIT) {
+                group(Avp.USED_SERVICE_UNIT) {
                     avp(Avp.CC_TOTAL_OCTETS, bucketSize, pFlag = true)
                     avp(Avp.CC_INPUT_OCTETS, 0L, pFlag = true)
                     avp(Avp.CC_OUTPUT_OCTETS, 0L, pFlag = true)
@@ -105,10 +131,18 @@ object TestHelper {
     }
 
     @JvmStatic
-    fun creatUpdateRequest(ccrAvps: AvpSet, msisdn: String, bucketSize: Long) {
+    fun createUpdateRequest(ccrAvps: AvpSet, msisdn: String, bucketSize: Long, usedBucketSize: Long) {
         buildBasicRequest(ccrAvps, RequestType.UPDATE_REQUEST, requestNumber = 1)
         addUser(ccrAvps, msisdn = msisdn, imsi = IMSI)
-        addBucketRequest(ccrAvps, ratingGroup = 10, serviceIdentifier = 1, bucketSize = bucketSize)
+        addBucketRequest(ccrAvps, ratingGroup = 10, serviceIdentifier = 1, bucketSize = bucketSize, usedBucketSize = usedBucketSize)
+        addServiceInformation(ccrAvps, apn = APN, sgsnMncMcc = SGSN_MCC_MNC)
+    }
+
+    @JvmStatic
+    fun createUpdateRequestFinal(ccrAvps: AvpSet, msisdn: String) {
+        buildBasicRequest(ccrAvps, RequestType.UPDATE_REQUEST, requestNumber = 1)
+        addUser(ccrAvps, msisdn = msisdn, imsi = IMSI)
+        addFinalBucketRequest(ccrAvps, ratingGroup = 10, serviceIdentifier = 1)
         addServiceInformation(ccrAvps, apn = APN, sgsnMncMcc = SGSN_MCC_MNC)
     }
 

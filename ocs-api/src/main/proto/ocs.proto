@@ -19,6 +19,7 @@ message ServiceUnit {
   uint64 totalOctets = 1;
   uint64 inputOctets = 2;
   uint64 outputOctetes = 3;
+  ReportingReason reportingReason = 4;
 }
 
 enum FinalUnitAction {
@@ -42,6 +43,19 @@ enum CreditControlRequestType {
   EVENT_REQUEST = 4;
 }
 
+enum ReportingReason {
+  THRESHOLD = 0;
+  QHT = 1;
+  FINAL = 2;
+  QUOTA_EXHAUSTED = 3;
+  VALIDITY_TIME = 4;
+  OTHER_QUOTA_TYPE = 5;
+  RATING_CONDITION_CHANGE = 6;
+  FORCED_REAUTHORISATION = 7;
+  POOL_EXHAUSTED = 8;
+  UNUSED_QUOTA_TIMER = 9;
+}
+
 message RedirectServer {
   RedirectAddressType redirectAddressType = 1;
   string redirectServerAddress = 2;
@@ -52,6 +66,7 @@ message FinalUnitIndication {
   repeated string restrictionFilterRule = 2;
   repeated string filterId = 3;
   RedirectServer redirectServer = 4;
+  bool isSet = 5; // Since no optional valued in proto3 this is used to detect if element is set
 }
 
 message MultipleServiceCreditControl {
@@ -62,6 +77,7 @@ message MultipleServiceCreditControl {
     ServiceUnit granted = 5;
     FinalUnitIndication finalUnitIndication = 6;
     uint32 validityTime = 7;
+    ReportingReason reportingReason = 8;
 }
 
 message PsInformation {

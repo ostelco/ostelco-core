@@ -22,7 +22,7 @@ import java.util.function.BiFunction
 import java.util.function.Consumer
 
 /**
- * Presenting a facade for the many and  varied firebase databases
+ * Presenting a facade for the many and varied firebase databases
  * we're using.
  */
 class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) {

@@ -1,7 +1,7 @@
 plugins {
   id "application"
   id "jacoco"
-  id "com.github.johnrengelman.shadow" version "2.0.2"
+  id "com.github.johnrengelman.shadow" version "2.0.3"
   id "org.jetbrains.kotlin.jvm" version "1.2.31"
   id "idea"
 }
@@ -9,8 +9,8 @@ plugins {
 dependencies {
   implementation project(':ocs-api')
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
-  implementation 'com.google.cloud:google-cloud-pubsub:0.41.0-beta'
-  implementation 'com.google.cloud.dataflow:google-cloud-dataflow-java-sdk-all:2.3.0'
+  implementation 'com.google.cloud:google-cloud-pubsub:0.43.0-beta'
+  implementation 'com.google.cloud.dataflow:google-cloud-dataflow-java-sdk-all:2.4.0'
   runtime 'org.apache.beam:beam-runners-google-cloud-dataflow-java:2.4.0'
   implementation 'ch.qos.logback:logback-classic:1.2.3'
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"

@@ -26,6 +26,10 @@ services:
     command: ["./wait_for_ocsgw.sh"]
 
   pseudonym-server:
+    container_name: pseudonym-server
+    build: pseudonym-server
+    ports:
+      - "8090:8080"
     environment:
       - DATASTORE_EMULATOR_HOST=localhost:9090
       - DATASTORE_PROJECT_ID=pantel-2decb
@@ -36,8 +40,6 @@ services:
   pubsub-emulator:
     container_name: pubsub-emulator
     image: knarz/pubsub-emulator
-#    image: google/cloud-sdk
-#    command: ["gcloud", "beta", "emulators", "pubsub", "start"]
 
   gpubsub-emulator:
     container_name: gpubsub-emulator
