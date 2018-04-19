@@ -13,14 +13,12 @@ import org.ostelco.diameter.util.DiameterUtilities
 
 class CreditControlContext(
         val sessionId: String,
-        val originalCreditControlRequest: JCreditControlRequest) {
+        val originalCreditControlRequest: JCreditControlRequest,
+        val originHost: String) {
 
     private val LOG by logger()
 
-    private var sent: Boolean = false
-
-    val originHost:String = originalCreditControlRequest.originHost
-    val originRealm:String = originalCreditControlRequest.originRealm
+    val originRealm:String = originalCreditControlRequest.destinationRealm
 
     val creditControlRequest: CreditControlRequest = AvpParser().parse(
             CreditControlRequest::class,
@@ -59,26 +57,20 @@ class CreditControlContext(
                     // This is a bug in jDiameter due to which this unsigned32 field has to be set as Int and not Long.
                     answerMSCC.addAvp(Avp.SERVICE_IDENTIFIER_CCA, mscc.serviceIdentifier.toInt(), true, false)
                 }
-                if (mscc.granted.total < 1 && originalCreditControlRequest.requestTypeAVPValue != RequestType.TERMINATION_REQUEST) {
-                    resultCode = CreditControlResultCode.DIAMETER_CREDIT_LIMIT_REACHED.value
+
+                if (originalCreditControlRequest.requestTypeAVPValue != RequestType.TERMINATION_REQUEST) {
+
+                    if (mscc.finalUnitIndication != null) {
+                        addFinalUnitAction(answerMSCC, mscc)
+                    }
+
+                    if (mscc.granted.total > -1) {
+                        val gsuAvp = answerMSCC.addGroupedAvp(Avp.GRANTED_SERVICE_UNIT, true, false)
+                        gsuAvp.addAvp(Avp.CC_INPUT_OCTETS, 0L, true, false)
+                        gsuAvp.addAvp(Avp.CC_OUTPUT_OCTETS, 0L, true, false)
+                        gsuAvp.addAvp(Avp.CC_TOTAL_OCTETS, mscc.granted.total, true, false)
+                    }
                 }
-
-                val gsuAvp = answerMSCC.addGroupedAvp(Avp.GRANTED_SERVICE_UNIT, true, false)
-                gsuAvp.addAvp(Avp.CC_INPUT_OCTETS, 0L, true, false)
-                gsuAvp.addAvp(Avp.CC_OUTPUT_OCTETS, 0L, true, false)
-
-                if (originalCreditControlRequest.requestTypeAVPValue == RequestType.TERMINATION_REQUEST || mscc.granted.total < 1) {
-                    LOG.info("Terminate")
-                    // Since this is a terminate reply no service is granted
-                    gsuAvp.addAvp(Avp.CC_TIME, 0, true, false)
-                    gsuAvp.addAvp(Avp.CC_TOTAL_OCTETS, 0L, true, false)
-                    gsuAvp.addAvp(Avp.CC_SERVICE_SPECIFIC_UNITS, 0L, true, false)
-
-                    addFinalUnitAction(answerMSCC, mscc)
-                } else {
-                    gsuAvp.addAvp(Avp.CC_TOTAL_OCTETS, mscc.granted.total, true, false)
-                }
-
                 answerMSCC.addAvp(Avp.RESULT_CODE, resultCode, true, false)
                 answerMSCC.addAvp(Avp.VALIDITY_TIME, mscc.validityTime, true, false)
             }
