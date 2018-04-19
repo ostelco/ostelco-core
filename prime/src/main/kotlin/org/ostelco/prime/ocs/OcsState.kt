@@ -2,6 +2,7 @@ package org.ostelco.prime.ocs
 
 import com.google.common.base.Preconditions
 import com.lmax.disruptor.EventHandler
+import org.ostelco.ocs.api.ReportingReason
 import org.ostelco.prime.disruptor.PrimeEvent
 import org.ostelco.prime.disruptor.PrimeEventMessageType
 import org.ostelco.prime.logger
@@ -28,6 +29,7 @@ class OcsState : EventHandler<PrimeEvent> {
             when (event.messageType) {
                 PrimeEventMessageType.CREDIT_CONTROL_REQUEST -> {
                     consumeDataBytes(msisdn, event.usedBucketBytes)
+                    // ToDo : Trigger push notification on low balance
                     event.reservedBucketBytes = reserveDataBytes(
                             msisdn,
                             event.requestedBucketBytes)
@@ -40,7 +42,6 @@ class OcsState : EventHandler<PrimeEvent> {
         } catch (e: Exception) {
             LOG.warn("Exception handling prime event in OcsState", e)
         }
-
     }
 
     /**
@@ -132,7 +133,13 @@ class OcsState : EventHandler<PrimeEvent> {
          */
 
         val consumed = usedBytes - reserved
-        val newTotal = existing - consumed
+        var newTotal = existing - consumed
+
+        // P-GW is allowed to overconsume a small amount.
+        if (newTotal < 0) {
+            newTotal = 0;
+        }
+
         dataPackMap[msisdn] = newTotal
         return newTotal
     }
@@ -148,6 +155,10 @@ class OcsState : EventHandler<PrimeEvent> {
     fun reserveDataBytes(msisdn: String, bytes: Long): Long {
 
         Preconditions.checkArgument(bytes > -1, "Non-positive value for bytes")
+
+        if (bytes == 0L) {
+            return 0
+        }
 
         if (!dataPackMap.containsKey(msisdn)) {
             LOG.warn("Trying to reserve bucket for unknown msisdn {}", msisdn)
