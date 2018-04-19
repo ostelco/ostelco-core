@@ -36,6 +36,7 @@ class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastor
         idCache = CacheBuilder.newBuilder()
                 .maximumSize(5000)
                 .build()
+        upsertTaskStatus()
     }
 
     private fun createTable(): Table {
