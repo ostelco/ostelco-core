@@ -79,12 +79,17 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
                     msccBulder.setGranted(ServiceUnit.newBuilder()
                             .setTotalOctets(event.reservedBucketBytes)
                             .build())
-                    if (event.reservedBucketBytes == 0L) {
+                    if (event.reservedBucketBytes < event.requestedBucketBytes) {
                         msccBulder.setFinalUnitIndication(FinalUnitIndication.newBuilder()
                                 .setFinalUnitAction(FinalUnitAction.TERMINATE)
                                 .setIsSet(true)
                                 .build())
                     }
+                } else {
+                    // Use -1 to indicate no granted service unit should be included in the answer
+                    msccBulder.setGranted(ServiceUnit.newBuilder()
+                            .setTotalOctets(-1)
+                            .build())
                 }
                 creditControlAnswer.addMscc(msccBulder.build())
             }
