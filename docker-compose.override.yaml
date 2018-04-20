@@ -25,17 +25,17 @@ services:
       - "ocsgw"
     command: ["./wait_for_ocsgw.sh"]
 
-  pseudonym-server:
-    container_name: pseudonym-server
-    build: pseudonym-server
-    ports:
-      - "8090:8080"
-    environment:
-      - DATASTORE_EMULATOR_HOST=localhost:9090
-      - DATASTORE_PROJECT_ID=pantel-2decb
-      - PUBSUB_EMULATOR_HOST=localhost:9080
-      - PUBSUB_PROJECT_ID=pantel-2decb
-    command: ["/bin/bash", "./wait_for_emulators.sh"]
+#  pseudonym-server:
+#    container_name: pseudonym-server
+#    build: pseudonym-server
+#    ports:
+#      - "8090:8080"
+#    environment:
+#      - DATASTORE_EMULATOR_HOST=localhost:9090
+#      - DATASTORE_PROJECT_ID=pantel-2decb
+#      - PUBSUB_EMULATOR_HOST=localhost:9080
+#      - PUBSUB_PROJECT_ID=pantel-2decb
+#    command: ["/bin/bash", "./wait_for_emulators.sh"]
 
   pubsub-emulator:
     container_name: pubsub-emulator
