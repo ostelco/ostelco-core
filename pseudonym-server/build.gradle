@@ -12,7 +12,8 @@ dependencies {
   implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
   implementation project(':ocs-api')
   implementation 'com.google.guava:guava:24.1-jre'
-  implementation 'io.grpc:grpc-netty-shaded:1.11.0'
+  implementation 'io.grpc:grpc-netty-shaded:1.10.1'
+  implementation 'com.google.cloud:google-cloud-bigquery:1.25.0'
   implementation 'com.google.cloud:google-cloud-datastore:1.25.0'
   implementation 'com.google.cloud:google-cloud-pubsub:0.44.0-beta'
   implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.9.5'
