@@ -2,6 +2,9 @@ package org.ostelco.prime
 
 import io.dropwizard.Application
 import io.dropwizard.setup.Environment
+import org.ostelco.importer.ImportDeclaration
+import org.ostelco.importer.ImportProcessor
+import org.ostelco.importer.ImporterResource
 import org.ostelco.prime.analytics.DataConsumptionInfoPublisher
 import org.ostelco.prime.config.PrimeConfiguration
 import org.ostelco.prime.disruptor.ClearingEventHandler
@@ -65,14 +68,29 @@ class PrimeApplication : Application<PrimeConfiguration>() {
 
         disruptor.disruptor.handleEventsWith(ocsState).then(ocsService.asEventHandler(), eventProcessor, dataConsumptionInfoPublisher).then(ClearingEventHandler())
 
+
+        // Add the importer and an import processor
+        val importProcessor = object: ImportProcessor {
+            override fun import(decl: ImportDeclaration) : Boolean {
+                LOG.info("Imported declaration..")
+                return true
+            }
+        }
+
+        val importer  = ImporterResource(importProcessor)
+
+        // Wire up the importer web resource
+        environment.jersey().register(importer)
+
+        val lifecycle = environment.lifecycle()
         // dropwizard starts Analytics events publisher
-        environment.lifecycle().manage(dataConsumptionInfoPublisher)
+        lifecycle.manage(dataConsumptionInfoPublisher)
         // dropwizard starts event processor
-        environment.lifecycle().manage(eventProcessor)
+        lifecycle.manage(eventProcessor)
         // dropwizard starts disruptor
-        environment.lifecycle().manage(disruptor)
+        lifecycle.manage(disruptor)
         // dropwizard starts server
-        environment.lifecycle().manage(server)
+        lifecycle.manage(server)
     }
 
     companion object {

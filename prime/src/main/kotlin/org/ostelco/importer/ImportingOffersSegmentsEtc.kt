@@ -118,7 +118,7 @@ class ImporterResource(val processor: ImportProcessor) {
             val mapper = ObjectMapper(YAMLFactory())
             val declaration: ImportDeclaration =
                     mapper.readValue(yaml, ImportDeclaration::class.java)
-            
+
             val result: Boolean = processor.import(declaration)
 
             if (result) {
