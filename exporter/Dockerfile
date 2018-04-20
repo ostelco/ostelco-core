@@ -15,8 +15,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY script/idle.sh /idle.sh
 COPY script/export_data.sh /export_data.sh
+COPY script/delete_export_data.sh /delete_export_data.sh
 
 RUN chmod +x /idle.sh
 RUN chmod +x /export_data.sh
+RUN chmod +x /delete_export_data.sh
 
 CMD ["/idle.sh"]
