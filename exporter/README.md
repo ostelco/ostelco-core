@@ -1,6 +1,19 @@
 # Exporter
 
-How to deploy this in kubernetes cluster
+This contains a set of scripts to generate the data for analayis. The export script
+`export_data.sh` creates a new big query table with a new uuid which maps the pseudonyms to
+msisdn. This table is then used to join the hourly data consumption to create a new
+pseudonymised version of hourly consumption. The output doesn't contain msisdns. The output
+table is then exported as a csv file in google cloud storage. There is also a script
+`delete_export_data.sh` to delete these tables & files.
+
+Currently this is deployed as a pod. The commands can be run by logging into the container.
+
+Tables created:
+1) exported_pseudonyms.<exportId> : The pseudonyms table, which can be used to reverse lookup msisdns
+2) exported_data_consumption.<exportId> : The output hourly consumption table, used to export data to csv
+
+How to deploy/use this in kubernetes cluster
 
 ```
 #PROJECT_ID=pantel-2decb
