@@ -50,12 +50,12 @@ class PseudonymServerApplication : Application<PseudonymServerConfig>() {
                 }
             }
         }
-        return "http://localhost:${httpPort?:8080}"
+        return "http://localhost:${httpPort ?: 8080}"
     }
 
     // Integration testing helper for Datastore.
     private fun getDatastore(config: PseudonymServerConfig): Datastore {
-        var datastore :Datastore?
+        var datastore: Datastore?
         if (config.datastoreType == "inmemory-emulator") {
             LOG.info("Starting with in-memory datastore emulator...")
             val helper: LocalDatastoreHelper = LocalDatastoreHelper.create(1.0)
