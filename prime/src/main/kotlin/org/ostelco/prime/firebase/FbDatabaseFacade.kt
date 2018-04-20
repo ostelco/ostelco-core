@@ -411,12 +411,12 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
             snapshotConsumer: Consumer<DataSnapshot>): ChildEventListener {
         return object : AbstractChildEventListener() {
             override fun onChildAdded(snapshot: DataSnapshot,
-                                      previousChildName: String) {
+                                      previousChildName: String?) {
                 snapshotConsumer.accept(snapshot)
             }
 
             override fun onChildChanged(snapshot: DataSnapshot,
-                                        previousChildName: String) {
+                                        previousChildName: String?) {
                 snapshotConsumer.accept(snapshot)
             }
         }
@@ -436,7 +436,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
                 consumer: BiFunction<String, PurchaseRequestImpl, Unit>): AbstractChildEventListener {
             checkNotNull(consumer)
             return object : AbstractChildEventListener() {
-                override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String) {
+                override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                     if (snapshotIsInvalid(snapshot)) {
                         return
                     }
