@@ -121,7 +121,6 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         }
 
         try {
-            LOG.info(snapshot.toString());
             val item = snapshot.getValue(ProductCatalogItem::class.java)
             if (item.sku != null) {
                 consumer.accept(item)

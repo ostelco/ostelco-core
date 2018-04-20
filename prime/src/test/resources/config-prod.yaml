@@ -1,9 +1,0 @@
-logging:
-  level: INFO
-  loggers:
-    org.ostelco: DEBUG
-
-eventProcessor:
-  configFile: secrets/pantel-json.json
-  projectId: pantel-2decb
-  topicId: data-traffic
