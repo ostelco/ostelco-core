@@ -10,11 +10,11 @@ import com.google.firebase.database.DatabaseError
  */
 abstract class AbstractChildEventListener : ChildEventListener {
 
-    override fun onChildAdded(dataSnapshot: DataSnapshot, prevChildKey: String) {
+    override fun onChildAdded(dataSnapshot: DataSnapshot, prevChildKey: String?) {
         // Intended to be overridden in by subclass. Default is to do nothing.
     }
 
-    override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String) {
+    override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
         // Intended to be overridden in by subclass. Default is to do nothing.
     }
 
@@ -22,7 +22,7 @@ abstract class AbstractChildEventListener : ChildEventListener {
         // Intended to be overridden in by subclass. Default is to do nothing.
     }
 
-    override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String) {
+    override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
         // Intended to be overridden in by subclass. Default is to do nothing.
     }
 

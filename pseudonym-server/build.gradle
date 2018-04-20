@@ -15,7 +15,7 @@ dependencies {
   implementation 'io.grpc:grpc-netty-shaded:1.10.1'
   implementation 'com.google.cloud:google-cloud-bigquery:1.25.0'
   implementation 'com.google.cloud:google-cloud-datastore:1.25.0'
-  implementation 'com.google.cloud:google-cloud-pubsub:0.43.0-beta'
+  implementation 'com.google.cloud:google-cloud-pubsub:0.44.0-beta'
   implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.9.5'
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"

@@ -7,7 +7,7 @@ plugins {
 dependencies {
     implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
     implementation "io.dropwizard:dropwizard-auth:$dropwizardVersion"
-    implementation 'com.google.firebase:firebase-admin:5.9.0'
+    implementation 'com.google.firebase:firebase-admin:5.10.0'
     implementation 'com.lmax:disruptor:3.4.2'
     implementation 'com.google.guava:guava:24.1-jre'
 
