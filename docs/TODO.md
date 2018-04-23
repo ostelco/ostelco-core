@@ -18,3 +18,7 @@
 * Look into making a healthcheck for firebase/firestore
        - https://www.firebase.com/docs/web/guide/offline-capabilities.html#section-connection-state
          this.firebaseDatabase.getReference("/.info/connected").addValueEventListener()
+
+* This looks like a good writeup of best (&worst) practices for testing
+  http://blog.codepipes.com/testing/software-testing-antipatterns.html   We should
+  absorb this and adapt and institutionalise the practices we want to use.
