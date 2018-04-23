@@ -33,6 +33,9 @@ const val pseudonymPropertyName = "pseudonym"
 const val startPropertyName = "start"
 const val endPropertyName = "end"
 
+/**
+ * Class representing the Export task entity in Datastore.
+ */
 data class ExportTask(val exportId: String, val status: String, val error: String)
 
 const val ExportTaskKind = "ExportTask"

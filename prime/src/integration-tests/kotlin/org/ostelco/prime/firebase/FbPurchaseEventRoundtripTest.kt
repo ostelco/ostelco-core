@@ -96,8 +96,7 @@ class FbPurchaseEventRoundtripTest {
             }
         })
 
-        val req = PurchaseRequestImpl(DATA_TOPUP_3GB, EventProcessorTest.PAYMENT_TOKEN)
-        req.setMsisdn(EPHERMERAL_MSISDN)
+        val req = PurchaseRequestImpl(DATA_TOPUP_3GB, EventProcessorTest.PAYMENT_TOKEN, EPHERMERAL_MSISDN)
 
         Assert.assertNotEquals(null, storage!!.getSubscriberFromMsisdn(EPHERMERAL_MSISDN))
 

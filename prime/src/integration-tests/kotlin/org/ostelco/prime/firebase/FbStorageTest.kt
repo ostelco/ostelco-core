@@ -115,7 +115,7 @@ class FbStorageTest {
                     }
                 })
 
-        val cr = PurchaseRequestImpl(DATA_TOPUP_3GB, PAYMENT_TOKEN)
+        val cr = PurchaseRequestImpl(DATA_TOPUP_3GB, PAYMENT_TOKEN, EPHERMERAL_MSISDN)
         val id = fbStorage!!.injectPurchaseRequest(cr)
         val id2 = fbStorage!!.injectPurchaseRequest(cr)
         prids!!.add(id)

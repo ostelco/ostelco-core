@@ -1,19 +1,24 @@
-FROM openjdk:8u151
+FROM ubuntu:17.10
 
 MAINTAINER CSI "csi@telenordigital.com"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-		socat=1.7.3.1-2+deb9u1 \
+		curl=7.55.1-1ubuntu2.4 \
+		uuid-runtime=2.30.1-0ubuntu4.1 \
+		lsb-release=9.20160110ubuntu5 \
+		ca-certificates=20170717 \
+    && echo "deb http://packages.cloud.google.com/apt cloud-sdk-artful main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list \
+    && curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - \
+    && apt-get update && apt-get install -y --no-install-recommends \
+        google-cloud-sdk=198.0.0-0 \
 	&& rm -rf /var/lib/apt/lists/*
 
-COPY script/start.sh /start.sh
-COPY script/wait_for_emulators.sh /wait_for_emulators.sh
+COPY script/idle.sh /idle.sh
+COPY script/export_data.sh /export_data.sh
+COPY script/delete_export_data.sh /delete_export_data.sh
 
-COPY config /config
+RUN chmod +x /idle.sh
+RUN chmod +x /export_data.sh
+RUN chmod +x /delete_export_data.sh
 
-COPY build/libs/exporter-uber.jar /exporter.jar
-
-EXPOSE 8080
-EXPOSE 8081
-
-CMD ["/start.sh"]
+CMD ["/idle.sh"]

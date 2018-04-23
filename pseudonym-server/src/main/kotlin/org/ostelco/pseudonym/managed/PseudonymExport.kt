@@ -10,32 +10,36 @@ import org.slf4j.LoggerFactory
 import java.util.*
 import java.util.concurrent.Callable
 
+const val datasetName = "exported_pseudonyms"
+const val msisdnFieldName = "msisdn"
+const val pseudonymFiledName = "pseudonym"
+const val idFieldName = "msisdnid"
 
 /**
- * Exports all pseudonyms to a bigquery Table
+ * Exports pseudonym objects to a bigquery Table
  */
 
 class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastore: Datastore) {
     private val LOG = LoggerFactory.getLogger(PseudonymExport::class.java)
 
+    /**
+     * Status of the export operation in progress.
+     */
     enum class Status {
         INITIAL, RUNNING, FINISHED, ERROR
     }
 
-    private val datasetName = "exported_pseudonyms"
     private val tableName: String
-    private val msisdnFieldName = "msisdn"
-    private val pseudonymFiledName = "pseudonym"
-    private val idFieldName = "msisdnid"
-    val idCache: Cache<String, String>
-    var status = Status.INITIAL
-    var error: String = ""
+    private val idCache: Cache<String, String>
+    private var status = Status.INITIAL
+    private var error: String = ""
 
     init {
         tableName = exportId.replace("-", "")
         idCache = CacheBuilder.newBuilder()
                 .maximumSize(5000)
                 .build()
+        upsertTaskStatus()
     }
 
     private fun createTable(): Table {
@@ -117,6 +121,10 @@ class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastor
         LOG.info("Exported Pseudonyms for ${exportId}")
     }
 
+    /**
+     * Returns a runnable that can be passed to executor. It starts the
+     * export operation.
+     */
     fun getRunnable(): Runnable {
         return Runnable {
             start()
