@@ -99,7 +99,7 @@ class ImporterResource(val processor: ImportProcessor) {
      * Get the status
      */
     @GET
-    @Path("/get/status")
+    @Path(status")
     fun getStatus(): Response {
         LOG.info("GET status for importer")
         return Response.ok().build()
