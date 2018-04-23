@@ -11,7 +11,7 @@ swagger: "2.0"
       "/import/status":
         get:
           description: "If the status service is available, then return 200."
-          operationId: "airportName"
+          operationId: "getStatus"
           responses:
             200:
               description: "Success."
