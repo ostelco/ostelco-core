@@ -2,11 +2,13 @@ package org.ostelco.pseudonym
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.google.cloud.bigquery.BigQuery
 import com.google.cloud.datastore.Datastore
 import com.google.cloud.datastore.testing.LocalDatastoreHelper
 import io.dropwizard.testing.junit.ResourceTestRule
 import org.junit.ClassRule
 import org.junit.Test
+import org.mockito.Mockito.mock
 import org.ostelco.pseudonym.resources.PseudonymEntity
 import org.ostelco.pseudonym.resources.PseudonymResource
 import org.ostelco.pseudonym.utils.WeeklyBounds
@@ -39,7 +41,7 @@ class PseudonymResourceTest {
         @ClassRule
         @JvmField
         val resources = ResourceTestRule.builder()
-                .addResource(PseudonymResource(datastore, WeeklyBounds()))
+                .addResource(PseudonymResource(datastore, WeeklyBounds(), mock(BigQuery::class.java)))
                 .build()
     }
     val mapper = jacksonObjectMapper()
