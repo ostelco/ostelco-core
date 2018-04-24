@@ -1,5 +1,6 @@
 package org.ostelco.pseudonym.resources
 
+import com.google.cloud.bigquery.BigQuery
 import com.google.cloud.bigquery.BigQueryOptions
 import com.google.cloud.datastore.Datastore
 import com.google.cloud.datastore.Entity
@@ -66,10 +67,9 @@ interface DateBounds {
  * are store in datastore. The key for the object is made from "<msisdn>-<start timestamp ms>.
  */
 @Path("/pseudonym")
-class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds) {
+class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, val bigquery: BigQuery) {
 
     private val LOG = LoggerFactory.getLogger(PseudonymResource::class.java)
-    private val bigquery = BigQueryOptions.getDefaultInstance().getService();
     private val executor = Executors.newFixedThreadPool(3)
 
     /**

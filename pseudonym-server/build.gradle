@@ -19,6 +19,7 @@ dependencies {
   implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.9.5'
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
+  testCompile group: 'org.mockito', name: 'mockito-all', version: '1.8.4'
   testRuntime 'org.hamcrest:hamcrest-all:1.3'
 }
 
