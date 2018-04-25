@@ -24,14 +24,6 @@ class SubscriberImplTest {
     }
 
     @Test
-    fun getAndSetFbKey() {
-        assertEquals(null, fbs.fbKey)
-        val fbkey = "foobar"
-        fbs.fbKey = fbkey
-        assertEquals(fbkey, fbs.fbKey)
-    }
-
-    @Test
     fun getAndSetNoOfBytesLeft() {
         assertEquals(0L, fbs.noOfBytesLeft)
         val noOfBytesLeft = 123823838L

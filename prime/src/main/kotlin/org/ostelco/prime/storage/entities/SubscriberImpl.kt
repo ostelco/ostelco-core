@@ -2,8 +2,6 @@ package org.ostelco.prime.storage.entities
 
 
 class SubscriberImpl : Subscriber {
-
-    var fbKey: String? = null
     private var _msisdn: String? = null
     private var _noOfBytesLeft: Long = 0
 

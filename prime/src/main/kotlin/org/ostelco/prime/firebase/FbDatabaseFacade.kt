@@ -29,7 +29,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
 
     private val LOG by logger()
 
-    private val authorativeUserData: DatabaseReference
+    private val authorativeUserBalance: DatabaseReference
 
     private val clientRequests: DatabaseReference
 
@@ -44,12 +44,11 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
     // Ignoring this, not a fatal failure.
     val allSubscribers: Collection<Subscriber>
         get() {
-            val q = authorativeUserData.orderByKey()
             val subscribers = LinkedHashSet<Subscriber>()
             val cdl = CountDownLatch(1)
             val collectingVisitor = newListenerThatWillCollectAllSubscribers(subscribers, cdl)
 
-            q.addListenerForSingleValueEvent(collectingVisitor)
+            authorativeUserBalance.addListenerForSingleValueEvent(collectingVisitor)
 
             try {
                 cdl.await(SECONDS_TO_WAIT_FOR_FIREBASE.toLong(), TimeUnit.SECONDS)
@@ -65,7 +64,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
     init {
         checkNotNull(firebaseDatabase)
 
-        this.authorativeUserData = firebaseDatabase.getReference("authorative-user-storage")
+        this.authorativeUserBalance = firebaseDatabase.getReference("authorative-user-balance")
         this.clientRequests = firebaseDatabase.getReference("client-requests")
         this.clientVisibleSubscriberRecords = firebaseDatabase.getReference("profiles")
         this.recordsOfPurchase = firebaseDatabase.getReference("records-of-purchase")
@@ -104,7 +103,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
             if (item.sku != null) {
                 consumer.accept(item)
             }
-            LOG.info("Just read a product catalog item: " + item)
+            LOG.info("Fetched product catalog item: " + item.sku)
         } catch (e: Exception) {
             LOG.error("Couldn't transform req into ProductCatalogItem", e)
         }
@@ -125,7 +124,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
             if (item.sku != null) {
                 consumer.accept(item)
             }
-            LOG.info("Just read a product catalog item: {}", item)
+            LOG.info("Fetched product catalog item: {}", item.sku)
         } catch (e: Exception) {
             LOG.error("Couldn't transform req into PurchaseRequestImpl", e)
         }
@@ -201,7 +200,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         checkNotNull(asMap)
         val dbref = recordsOfPurchase.push()
 
-        dbref.updateChildren(asMap)
+        dbref.updateChildrenAsync(asMap)
         return dbref.key
     }
 
@@ -224,7 +223,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
 
         displayRep["usage"] = gbLeft
 
-        clientVisibleSubscriberRecords.child(key).updateChildren(displayRep)
+        clientVisibleSubscriberRecords.child(key).updateChildrenAsync(displayRep)
     }
 
 
@@ -247,11 +246,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
             dbref: DatabaseReference,
             msisdn: String) {
         checkNotNull(msisdn)
-        checkNotNull(dbref)
-        val key = getKeyFromMsisdn(dbref, msisdn)
-        if (key != null) {
-            removeChild(dbref, key)
-        }
+        removeChild(dbref, msisdn)
     }
 
     @Throws(StorageException::class)
@@ -261,7 +256,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
 
     @Throws(StorageException::class)
     fun removeSubscriberByMsisdn(msisdn: String) {
-        removeByMsisdn(authorativeUserData, msisdn)
+        removeByMsisdn(authorativeUserBalance, msisdn)
     }
 
 
@@ -300,7 +295,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         val cr = pr as PurchaseRequestImpl
         val dbref = clientRequests.push()
         val crAsMap = cr.asMap()
-        dbref.setValue(crAsMap)
+        dbref.setValueAsync(crAsMap)
         return dbref.key
     }
 
@@ -313,7 +308,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         //     how do I fix this?
         checkNotNull(db)
         checkNotNull(childId)
-        db.child(childId).ref.removeValue()
+        db.child(childId).removeValueAsync()
     }
 
     fun removePurchaseRequestById(id: String) {
@@ -323,10 +318,11 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
 
     @Throws(StorageException::class)
     fun getSubscriberFromMsisdn(msisdn: String): Subscriber? {
+
         val cdl = CountDownLatch(1)
         val result = HashSet<Subscriber>()
 
-        val q = authorativeUserData.orderByChild(MSISDN).equalTo(msisdn).limitToFirst(1)
+        val q = authorativeUserBalance.child(MSISDN)
 
         val listenerThatWillReadSubcriberData = newListenerThatWillReadSubcriberData(cdl, result)
 
@@ -352,7 +348,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
             msisdn: String,
             cdl: CountDownLatch,
             result: Set<Subscriber>): Subscriber? {
-        val userDataString = authorativeUserData.toString()
+        val userDataString = authorativeUserBalance.toString()
         try {
             return if (!cdl.await(SECONDS_TO_WAIT_FOR_FIREBASE.toLong(), TimeUnit.SECONDS)) {
                 val msg = logSubscriberDataProcessing(
@@ -383,8 +379,6 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
                 } else {
                     for (snap in snapshot.children) {
                         val sub = snap.getValue(SubscriberImpl::class.java)
-                        val key = snap.key
-                        sub.fbKey = key
                         result.add(sub)
                         cdl.countDown()
                     }
@@ -395,24 +389,21 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
 
     fun updateAuthorativeUserData(sub: SubscriberImpl) {
         checkNotNull(sub)
-        val dbref = authorativeUserData.child(sub.fbKey!!)
-        dbref.updateChildren(sub.asMap())
+        val dbref = authorativeUserBalance.child(sub.msisdn)
+        dbref.updateChildrenAsync(sub.asMap())
     }
 
-    fun insertNewSubscriber(sub: SubscriberImpl): String {
+    fun insertNewSubscriber(sub: SubscriberImpl) {
         checkNotNull(sub)
-        val dbref = authorativeUserData.push()
-        sub.fbKey = dbref.key
-        dbref.updateChildren(sub.asMap())
-        return dbref.key
+        authorativeUserBalance.child(sub.msisdn).setValueAsync(sub.asMap())
     }
 
     fun newProductDefChangedListener(
             snapshotConsumer: Consumer<DataSnapshot>): ChildEventListener {
         return object : AbstractChildEventListener() {
-            override fun onChildAdded(snapshot: DataSnapshot,
-                                      previousChildName: String?) {
-                snapshotConsumer.accept(snapshot)
+            override fun onChildAdded(dataSnapshot: DataSnapshot,
+                                      prevChildKey: String?) {
+                snapshotConsumer.accept(dataSnapshot)
             }
 
             override fun onChildChanged(snapshot: DataSnapshot,
@@ -436,13 +427,13 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
                 consumer: BiFunction<String, PurchaseRequestImpl, Unit>): AbstractChildEventListener {
             checkNotNull(consumer)
             return object : AbstractChildEventListener() {
-                override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
-                    if (snapshotIsInvalid(snapshot)) {
+                override fun onChildAdded(dataSnapshot: DataSnapshot, prevChildKey: String?) {
+                    if (snapshotIsInvalid(dataSnapshot)) {
                         return
                     }
                     try {
-                        val req = snapshot.getValue(PurchaseRequestImpl::class.java)
-                        consumer.apply(snapshot.key, req)
+                        val req = dataSnapshot.getValue(PurchaseRequestImpl::class.java)
+                        consumer.apply(dataSnapshot.key, req)
                     } catch (e: Exception) {
                         LOG.error("Couldn't dispatch purchase request to consumer", e)
                     }
@@ -502,7 +493,6 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
                     }
                     for (child in snapshot.children) {
                         val subscriber = child.getValue(SubscriberImpl::class.java)
-                        subscriber.fbKey = child.key
                         subscribers.add(subscriber)
                     }
                     cdl.countDown()

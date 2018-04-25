@@ -132,14 +132,14 @@ constructor(databaseName: String,
     }
 
     override fun addRecordOfPurchaseByMsisdn(
-            msisdn: String,
+            ephermeralMsisdn: String,
             sku: String,
-            millisSinceEpoch: Long): String {
-        checkNotNull(msisdn)
+            now: Long): String {
+        checkNotNull(ephermeralMsisdn)
         checkNotNull(sku)
-        checkArgument(millisSinceEpoch > 0)
+        checkArgument(now > 0)
 
-        return facade.addRecordOfPurchaseByMsisdn(msisdn, sku, millisSinceEpoch)
+        return facade.addRecordOfPurchaseByMsisdn(ephermeralMsisdn, sku, now)
     }
 
     @Throws(StorageException::class)
@@ -172,15 +172,14 @@ constructor(databaseName: String,
             throw StorageException("noOfBytes can't be negative")
         }
 
-        val sub = getSubscriberFromMsisdn(msisdn) as SubscriberImpl?
-                ?: throw StorageException("Unknown msisdn " + msisdn)
-
+        val sub = SubscriberImpl()
+        sub.setMsisdn(msisdn)
         sub.setNoOfBytesLeft(noOfBytes)
 
         facade.updateAuthorativeUserData(sub)
     }
 
-    override fun insertNewSubscriber(msisdn: String): String {
+    override fun insertNewSubscriber(msisdn: String) {
         checkNotNull(msisdn)
         val sub = SubscriberImpl()
         sub.setMsisdn(msisdn)
