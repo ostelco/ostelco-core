@@ -60,15 +60,19 @@ public class OcsServer {
             if (ccaSession != null && ccaSession.isValid()) {
                 // ToDo: Not sure why there are multiple sessions for one session Id.
                 for (Session session : ccaSession.getSessions()) {
-                    Request request = session.createRequest(258,
-                            ApplicationId.createByAuthAppId(4L),
-                            sessionContext.getOriginRealm(),
-                            sessionContext.getOriginHost()
-                    );
-                    AvpSet avps = request.getAvps();
-                    avps.addAvp(Avp.RE_AUTH_REQUEST_TYPE, ReAuthRequestType.AUTHORIZE_ONLY.ordinal(), true, false);
-                    ReAuthRequest reAuthRequest = new ReAuthRequestImpl(request);
-                    ccaSession.sendReAuthRequest(reAuthRequest);
+                    if (session.isValid()) {
+                        Request request = session.createRequest(258,
+                                ApplicationId.createByAuthAppId(4L),
+                                sessionContext.getOriginRealm(),
+                                sessionContext.getOriginHost()
+                        );
+                        AvpSet avps = request.getAvps();
+                        avps.addAvp(Avp.RE_AUTH_REQUEST_TYPE, ReAuthRequestType.AUTHORIZE_ONLY.ordinal(), true, false);
+                        ReAuthRequest reAuthRequest = new ReAuthRequestImpl(request);
+                        ccaSession.sendReAuthRequest(reAuthRequest);
+                    } else {
+                        LOG.info("Invalid session");
+                    }
                 }
             } else {
                 LOG.info("No session with ID {}", sessionContext.getSessionId());

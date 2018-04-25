@@ -1,5 +1,6 @@
 package org.ostelco.pseudonym
 
+import com.google.cloud.bigquery.BigQueryOptions
 import com.google.cloud.datastore.Datastore
 import com.google.cloud.datastore.DatastoreOptions
 import com.google.cloud.datastore.testing.LocalDatastoreHelper
@@ -50,12 +51,12 @@ class PseudonymServerApplication : Application<PseudonymServerConfig>() {
                 }
             }
         }
-        return "http://localhost:${httpPort?:8080}"
+        return "http://localhost:${httpPort ?: 8080}"
     }
 
     // Integration testing helper for Datastore.
     private fun getDatastore(config: PseudonymServerConfig): Datastore {
-        var datastore :Datastore?
+        var datastore: Datastore?
         if (config.datastoreType == "inmemory-emulator") {
             LOG.info("Starting with in-memory datastore emulator...")
             val helper: LocalDatastoreHelper = LocalDatastoreHelper.create(1.0)
@@ -86,6 +87,7 @@ class PseudonymServerApplication : Application<PseudonymServerConfig>() {
                 WeeklyBounds(),
                 client)
         env.lifecycle().manage(messageProcessor)
-        env.jersey().register(PseudonymResource(datastore, WeeklyBounds()))
+        val bigquery = BigQueryOptions.getDefaultInstance().getService();
+        env.jersey().register(PseudonymResource(datastore, WeeklyBounds(), bigquery))
     }
 }

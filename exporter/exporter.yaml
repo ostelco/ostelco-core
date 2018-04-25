@@ -1,20 +1,20 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: pseudonym-server
+  name: exporter
   labels:
-    app: pseudonym
+    app: exporter
     tier: backend
 spec:
-  replicas: 2
+  replicas: 1
   template:
     metadata:
       labels:
-        app: pseudonym
+        app: exporter
         tier: backend
     spec:
       containers:
-      - name: pseudonym-server
-        image: gcr.io/pantel-2decb/pseudonym-server:v1.2
+      - name: exporter
+        image: gcr.io/pantel-2decb/exporter:v2.1
         ports:
         - containerPort: 8080

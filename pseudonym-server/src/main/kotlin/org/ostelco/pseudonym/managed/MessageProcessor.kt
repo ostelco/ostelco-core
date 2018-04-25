@@ -31,8 +31,8 @@ import javax.ws.rs.client.Client
 
 
 /**
- * This calss converts the Plain DataTrafficInfo message to
- * a pseudonymised version. Pushes the new message
+ * This class converts the Plain DataTrafficInfo message to
+ * a pseudonymous version. Pushes the new message
  * to different PubSub topic.
  */
 
@@ -47,7 +47,7 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
     private var subscriber: Subscriber? = null
     private var publisher: Publisher? = null
     val mapper = jacksonObjectMapper()
-    val pseudonymCache : Cache<String, PseudonymEntity>
+    val pseudonymCache: Cache<String, PseudonymEntity>
 
     // Testing helpers.
     val emulatorHost: String? = System.getenv("PUBSUB_EMULATOR_HOST")
@@ -68,7 +68,7 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
         if (emulatorHost != null && !emulatorHost.isEmpty()) {
             // Setup for picking up emulator settings
             // https://cloud.google.com/pubsub/docs/emulator#pubsub-emulator-java
-            channel = ManagedChannelBuilder.forTarget(emulatorHost).usePlaintext().build()
+            channel = ManagedChannelBuilder.forTarget(emulatorHost).usePlaintext(true).build()
             val channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel))
             val credentialsProvider = NoCredentialsProvider.create()
             publisher = Publisher.newBuilder(publisherTopicName)
@@ -100,7 +100,7 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
         return "${pseudonymEndpoint}/pseudonym/get/$msisdn/$timestamp"
     }
 
-    private fun getPseudonymEntity(msisdn : String, timestamp: Long): PseudonymEntity? {
+    private fun getPseudonymEntity(msisdn: String, timestamp: Long): PseudonymEntity? {
         val (_, keyPrefix) = dateBounds.getBoundsNKeyPrefix(msisdn, timestamp)
         try {
             // Retrieves the element from cache.
@@ -119,7 +119,7 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
                 response.close()
                 mapper.readValue<PseudonymEntity>(json)
             })
-        }  catch (e: ExecutionException) {
+        } catch (e: ExecutionException) {
             LOG.warn("getPseudonymEntity failed, ${e.toString()}")
         }
         return null;

@@ -12,9 +12,11 @@ class PurchaseRequestImpl() : PurchaseRequest {
 
     constructor(
             product: Product,
-            paymentToken: String) : this() {
+            paymentToken: String,
+            msisdn: String?) : this() {
         this._sku = checkNotNull(product.sku)
         this._paymentToken = checkNotNull(paymentToken)
+        this._msisdn = msisdn
     }
 
     override val sku: String
@@ -30,6 +32,14 @@ class PurchaseRequestImpl() : PurchaseRequest {
 
     fun setMsisdn(msisdn: String) {
         this._msisdn = msisdn
+    }
+
+    fun setSku(sku: String) {
+        this._sku = sku
+    }
+
+    fun setPaymentToken(paymentToken: String) {
+        this._paymentToken = paymentToken
     }
 
     fun setMillisSinceEpoch(millisSinceEpoch: Long) {
