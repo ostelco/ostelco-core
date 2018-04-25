@@ -322,7 +322,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         val cdl = CountDownLatch(1)
         val result = HashSet<Subscriber>()
 
-        val q = authorativeUserBalance.child(MSISDN)
+        val q = authorativeUserBalance.child(msisdn)
 
         val listenerThatWillReadSubcriberData = newListenerThatWillReadSubcriberData(cdl, result)
 
@@ -437,7 +437,6 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
                     } catch (e: Exception) {
                         LOG.error("Couldn't dispatch purchase request to consumer", e)
                     }
-
                 }
             }
         }
