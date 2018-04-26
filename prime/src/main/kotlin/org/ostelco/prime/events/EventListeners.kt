@@ -5,7 +5,7 @@ import org.ostelco.prime.logger
 import org.ostelco.prime.ocs.OcsState
 import org.ostelco.prime.storage.ProductCatalogItem
 import org.ostelco.prime.storage.ProductDescriptionCacheImpl
-import org.ostelco.prime.storage.PurchaseRequestListener
+import org.ostelco.prime.storage.PurchaseRequestHandler
 import org.ostelco.prime.storage.StorageInitiatedEventExecutor
 import org.ostelco.prime.storage.entities.PurchaseRequestImpl
 import org.ostelco.prime.storage.entities.Subscriber
@@ -49,7 +49,7 @@ class EventListeners(ocsState: OcsState) {
     }
 
     // XXX I don't like this!
-    fun addPurchaseRequestListener(listener: PurchaseRequestListener) {
-        executor.addPurchaseRequestListener(listener)
+    fun addPurchaseRequestHandler(handler: PurchaseRequestHandler) {
+        executor.addPurchaseRequestHandler(handler)
     }
 }

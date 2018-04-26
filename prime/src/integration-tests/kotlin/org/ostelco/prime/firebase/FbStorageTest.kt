@@ -10,7 +10,7 @@ import org.junit.Test
 import org.ostelco.prime.events.EventListeners
 import org.ostelco.prime.ocs.OcsState
 import org.ostelco.prime.storage.Products.DATA_TOPUP_3GB
-import org.ostelco.prime.storage.PurchaseRequestListener
+import org.ostelco.prime.storage.PurchaseRequestHandler
 import org.ostelco.prime.storage.Storage
 import org.ostelco.prime.storage.StorageException
 import org.ostelco.prime.storage.entities.PurchaseRequest
@@ -105,8 +105,8 @@ class FbStorageTest {
 
         val latch = CountDownLatch(2)
 
-        storage!!.addPurchaseRequestListener(
-                object : PurchaseRequestListener {
+        storage!!.addPurchaseRequestHandler(
+                object : PurchaseRequestHandler {
                     override fun onPurchaseRequest(req: PurchaseRequest) {
                         assertNotEquals(null, req)
                         assertEquals(PAYMENT_TOKEN, req.paymentToken)

@@ -11,18 +11,18 @@ class StorageInitiatedEventExecutor {
 
     private val monitor = Any()
 
-    private val purchaseRequestListeners: MutableSet<PurchaseRequestListener>
+    private val purchaseRequestHandlers: MutableSet<PurchaseRequestHandler>
 
     init {
         val tf = ThreadProducer()
         this.executor = Executors.newCachedThreadPool(tf)
-        this.purchaseRequestListeners = HashSet()
+        this.purchaseRequestHandlers = HashSet()
     }
 
-    fun addPurchaseRequestListener(listener: PurchaseRequestListener) {
+    fun addPurchaseRequestHandler(handler: PurchaseRequestHandler) {
 
         synchronized(monitor) {
-            purchaseRequestListeners.add(listener)
+            purchaseRequestHandlers.add(handler)
         }
     }
 
@@ -39,15 +39,15 @@ class StorageInitiatedEventExecutor {
 
     fun onPurchaseRequest(req: PurchaseRequest) {
         synchronized(monitor) {
-            for (l in purchaseRequestListeners) {
-                applyPurchaseRequestThroughExecutor(req, l)
+            for (handler in purchaseRequestHandlers) {
+                applyPurchaseRequestThroughExecutor(req, handler)
             }
         }
     }
 
     private fun applyPurchaseRequestThroughExecutor(
             req: PurchaseRequest,
-            l: PurchaseRequestListener) {
-        executor.execute { l.onPurchaseRequest(req) }
+            handler: PurchaseRequestHandler) {
+        executor.execute { handler.onPurchaseRequest(req) }
     }
 }

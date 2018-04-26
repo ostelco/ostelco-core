@@ -9,7 +9,7 @@ import com.google.firebase.database.FirebaseDatabase
 import org.ostelco.prime.events.EventListeners
 import org.ostelco.prime.storage.ProductDescriptionCache
 import org.ostelco.prime.storage.ProductDescriptionCacheImpl
-import org.ostelco.prime.storage.PurchaseRequestListener
+import org.ostelco.prime.storage.PurchaseRequestHandler
 import org.ostelco.prime.storage.Storage
 import org.ostelco.prime.storage.StorageException
 import org.ostelco.prime.storage.entities.Product
@@ -96,9 +96,9 @@ constructor(databaseName: String,
 
     // XXX This method represents a bad design decision.  It's too circumspect to
     //     understand.  Fix!
-    override fun addPurchaseRequestListener(listener: PurchaseRequestListener) {
-        checkNotNull(listener)
-        listeners.addPurchaseRequestListener(listener)
+    override fun addPurchaseRequestHandler(handler: PurchaseRequestHandler) {
+        checkNotNull(handler)
+        listeners.addPurchaseRequestHandler(handler)
         facade.addPurchaseRequestListener(BiFunction { key, req -> listeners.purchaseRequestListener(key, req) })
     }
 

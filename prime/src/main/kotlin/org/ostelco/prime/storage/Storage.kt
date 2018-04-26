@@ -36,7 +36,7 @@ interface Storage : ProductDescriptionCache {
     @Throws(StorageException::class)
     fun removeSubscriberByMsisdn(msisdn: String)
 
-    fun addPurchaseRequestListener(listener: PurchaseRequestListener)
+    fun addPurchaseRequestHandler(handler: PurchaseRequestHandler)
 
     @Throws(StorageException::class)
     fun addRecordOfPurchaseByMsisdn(ephermeralMsisdn: String, sku: String, now: Long): String

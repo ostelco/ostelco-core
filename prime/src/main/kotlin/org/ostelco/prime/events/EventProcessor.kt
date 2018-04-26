@@ -5,7 +5,7 @@ import com.lmax.disruptor.EventHandler
 import io.dropwizard.lifecycle.Managed
 import org.ostelco.prime.disruptor.PrimeEvent
 import org.ostelco.prime.logger
-import org.ostelco.prime.storage.PurchaseRequestListener
+import org.ostelco.prime.storage.PurchaseRequestHandler
 import org.ostelco.prime.storage.Storage
 import org.ostelco.prime.storage.StorageException
 import org.ostelco.prime.storage.entities.NotATopupProductException
@@ -148,12 +148,12 @@ class EventProcessor(
     override fun start() {
         // Called by DropWizard on startup
         if (running.compareAndSet(false, true)) {
-            addNewPurchaseRequestListener()
+            addNewPurchaseRequestHandler()
         }
     }
 
-    private fun addNewPurchaseRequestListener() {
-        storage.addPurchaseRequestListener(object : PurchaseRequestListener {
+    private fun addNewPurchaseRequestHandler() {
+        storage.addPurchaseRequestHandler(object : PurchaseRequestHandler {
             override fun onPurchaseRequest(request: PurchaseRequest) {
                 try {
                     handlePurchaseRequest(request)

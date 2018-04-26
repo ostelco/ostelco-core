@@ -19,7 +19,7 @@ import org.ostelco.prime.events.OcsBalanceUpdater
 import org.ostelco.prime.ocs.OcsState
 import org.ostelco.prime.storage.ProductDescriptionCacheImpl
 import org.ostelco.prime.storage.Products.DATA_TOPUP_3GB
-import org.ostelco.prime.storage.PurchaseRequestListener
+import org.ostelco.prime.storage.PurchaseRequestHandler
 import org.ostelco.prime.storage.Storage
 import org.ostelco.prime.storage.StorageException
 import org.ostelco.prime.storage.entities.NotATopupProductException
@@ -90,7 +90,7 @@ class FbPurchaseEventRoundtripTest {
 
         val latch = CountDownLatch(1)
 
-        storage!!.addPurchaseRequestListener(object : PurchaseRequestListener {
+        storage!!.addPurchaseRequestHandler(object : PurchaseRequestHandler {
             override fun onPurchaseRequest(request: PurchaseRequest) {
                 latch.countDown()
             }
