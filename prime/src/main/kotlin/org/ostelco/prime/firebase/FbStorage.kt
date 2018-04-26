@@ -48,7 +48,6 @@ constructor(databaseName: String,
         this.facade = FbDatabaseFacade(firebaseDatabase)
 
         facade.addProductCatalogItemListener(Consumer { listeners.productCatalogItemListener(it) })
-        facade.addPurchaseRequestListener(BiFunction { key, req -> listeners.purchaseRequestListener(key, req) })
 
         // Load subscriber balance from firebase to in-memory OcsState
         listeners.loadSubscriberBalanceDataFromFirebaseToInMemoryStructure(allSubscribers)
@@ -100,6 +99,7 @@ constructor(databaseName: String,
     override fun addPurchaseRequestListener(listener: PurchaseRequestListener) {
         checkNotNull(listener)
         listeners.addPurchaseRequestListener(listener)
+        facade.addPurchaseRequestListener(BiFunction { key, req -> listeners.purchaseRequestListener(key, req) })
     }
 
     @Throws(StorageException::class)

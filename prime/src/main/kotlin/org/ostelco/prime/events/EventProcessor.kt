@@ -25,7 +25,7 @@ class EventProcessor(
     @Throws(EventProcessorException::class)
     fun handlePurchaseRequest(pr: PurchaseRequest) {
         checkNotNull(pr)
-        LOG.info("Handling purchase request = " + pr)
+        LOG.info("Handling purchase request = " + pr.asMap().toString())
 
         validatePaymentToken(pr)
 
@@ -78,7 +78,7 @@ class EventProcessor(
             msisdn: String,
             topup: TopUpProduct) {
         try {
-            LOG.info("Handling topup product = " + pr)
+            LOG.info("Handling topup product = " + pr.asMap().toString())
             storage.updateDisplayDatastructure(msisdn)
             storage.addRecordOfPurchaseByMsisdn(msisdn, pr.sku, pr.millisSinceEpoch)
             storage.removePurchaseRequestById(pr.id)
@@ -146,6 +146,7 @@ class EventProcessor(
 
 
     override fun start() {
+        // Called by DropWizard on startup
         if (running.compareAndSet(false, true)) {
             addNewPurchaseRequestListener()
         }
@@ -155,7 +156,7 @@ class EventProcessor(
         storage.addPurchaseRequestListener(object : PurchaseRequestListener {
             override fun onPurchaseRequest(request: PurchaseRequest) {
                 try {
-                handlePurchaseRequest(request)
+                    handlePurchaseRequest(request)
                 } catch (e: EventProcessorException) {
                     LOG.error("Could not handle purchase request " + request, e)
                 }
