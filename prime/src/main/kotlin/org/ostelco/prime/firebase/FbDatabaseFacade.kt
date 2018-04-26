@@ -210,43 +210,22 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
             gbLeft: String) {
         checkNotNull(msisdn)
         checkNotNull(gbLeft)
-        val key = getKeyFromPhoneNumber(clientVisibleSubscriberRecords, msisdn)
-        if (key == null) {
-            LOG.error("Could not find entry for phoneNumber = "
-                    + msisdn
-                    + " Not updating user visible storage")
-            return
-        }
 
         val displayRep = HashMap<String, Any>()
         displayRep[PHONE_NUMBER] = msisdn
 
         displayRep["usage"] = gbLeft
 
-        clientVisibleSubscriberRecords.child(key).updateChildrenAsync(displayRep)
+        clientVisibleSubscriberRecords.child(stripLeadingPlus(msisdn)).updateChildrenAsync(displayRep)
     }
 
-
-    @Throws(StorageException::class)
-    private fun getKeyFromPhoneNumber(
-            dbref: DatabaseReference,
-            msisdn: String): String? {
-        return getKeyFromLookupKey(dbref, msisdn, PHONE_NUMBER)
-    }
-
-    @Throws(StorageException::class)
-    private fun getKeyFromMsisdn(
-            dbref: DatabaseReference,
-            msisdn: String): String? {
-        return getKeyFromLookupKey(dbref, msisdn, MSISDN)
-    }
 
     @Throws(StorageException::class)
     private fun removeByMsisdn(
             dbref: DatabaseReference,
             msisdn: String) {
         checkNotNull(msisdn)
-        removeChild(dbref, msisdn)
+        removeChild(dbref, stripLeadingPlus(msisdn))
     }
 
     @Throws(StorageException::class)
@@ -259,37 +238,6 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         removeByMsisdn(authorativeUserBalance, msisdn)
     }
 
-
-    @Throws(StorageException::class)
-    private fun getKeyFromLookupKey(
-            dbref: DatabaseReference,
-            msisdn: String,
-            lookupKey: String): String? {
-        val cdl = CountDownLatch(1)
-        val result = HashSet<String>()
-        dbref.orderByChild(lookupKey).equalTo(msisdn).limitToFirst(1).addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                // XXX This is unclean, fix!
-                handleDataChange(snapshot, cdl, result, msisdn)
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                // Empty on purpose.
-            }
-        })
-        try {
-            return if (!cdl.await(SECONDS_TO_WAIT_FOR_FIREBASE.toLong(), TimeUnit.SECONDS)) {
-                throw StorageException("Query timed out")
-            } else if (result.isEmpty()) {
-                null
-            } else {
-                result.iterator().next()
-            }
-        } catch (e: InterruptedException) {
-            throw StorageException(e)
-        }
-
-    }
 
     fun injectPurchaseRequest(pr: PurchaseRequest): String {
         val cr = pr as PurchaseRequestImpl
@@ -322,12 +270,9 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         val cdl = CountDownLatch(1)
         val result = HashSet<Subscriber>()
 
-        val q = authorativeUserBalance.child(msisdn)
+        val q = authorativeUserBalance.child(stripLeadingPlus(msisdn))
 
-        val listenerThatWillReadSubcriberData = newListenerThatWillReadSubcriberData(cdl, result)
-
-        q.addListenerForSingleValueEvent(
-                listenerThatWillReadSubcriberData)
+        q.addListenerForSingleValueEvent(newListenerThatWillReadSubcriberData(cdl, result))
 
         return waitForSubscriberData(msisdn, cdl, result)
     }
@@ -374,14 +319,12 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
             result: MutableSet<Subscriber>): ValueEventListener {
         return object : AbstractValueEventListener() {
             override fun onDataChange(snapshot: DataSnapshot) {
-                if (!snapshot.hasChildren()) {
+                if (!snapshot.exists()) {
                     cdl.countDown()
                 } else {
-                    for (snap in snapshot.children) {
-                        val sub = snap.getValue(SubscriberImpl::class.java)
-                        result.add(sub)
-                        cdl.countDown()
-                    }
+                    val sub = snapshot.getValue(SubscriberImpl::class.java)
+                    result.add(sub)
+                    cdl.countDown()
                 }
             }
         }
@@ -389,13 +332,17 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
 
     fun updateAuthorativeUserData(sub: SubscriberImpl) {
         checkNotNull(sub)
-        val dbref = authorativeUserBalance.child(sub.msisdn)
+        checkNotNull(sub.msisdn)
+
+        val dbref = authorativeUserBalance.child(stripLeadingPlus(sub.msisdn!!))
         dbref.updateChildrenAsync(sub.asMap())
     }
 
     fun insertNewSubscriber(sub: SubscriberImpl) {
         checkNotNull(sub)
-        authorativeUserBalance.child(sub.msisdn).setValueAsync(sub.asMap())
+        checkNotNull(sub.msisdn)
+
+        authorativeUserBalance.child(stripLeadingPlus(sub.msisdn!!)).setValueAsync(sub.asMap())
     }
 
     fun newProductDefChangedListener(
@@ -418,8 +365,6 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         private val LOG by logger()
 
         private const val PHONE_NUMBER = "phoneNumber"
-
-        private const val MSISDN = "msisdn"
 
         private const val SECONDS_TO_WAIT_FOR_FIREBASE = 10
 
@@ -501,6 +446,10 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
                     LOG.error(error.message, error.toException())
                 }
             }
+        }
+
+        fun stripLeadingPlus(str: String): String {
+            return str.replaceFirst("^\\+".toRegex(), "")
         }
     }
 }

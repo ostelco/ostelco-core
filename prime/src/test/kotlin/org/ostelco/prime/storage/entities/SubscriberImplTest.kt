@@ -6,12 +6,14 @@ import org.junit.Test
 
 class SubscriberImplTest {
 
+    val MSISDN = "+47123456"
+
     companion object {
         private const val NO_OF_BYTES_LEFT_KEY = "noOfBytesLeft"
         private const val MSISDN_KEY = "msisdn"
     }
 
-    private val fbs = SubscriberImpl()
+    private val fbs = SubscriberImpl(MSISDN)
 
     @Test
     fun asMap() {
@@ -20,7 +22,7 @@ class SubscriberImplTest {
         assertTrue(fbs.asMap().containsKey(MSISDN_KEY))
 
         assertEquals(0L, fbs.asMap()[NO_OF_BYTES_LEFT_KEY])
-        assertEquals(null, fbs.asMap()[MSISDN_KEY])
+        assertEquals(MSISDN, fbs.asMap()[MSISDN_KEY])
     }
 
     @Test
@@ -33,8 +35,8 @@ class SubscriberImplTest {
 
     @Test
     fun getAndSetMsisdn() {
-        assertEquals(null, fbs.msisdn)
-        val msisdn = "+47123456"
+        assertEquals(MSISDN, fbs.msisdn)
+        val msisdn = "+4712345678"
         fbs.setMsisdn(msisdn)
         assertEquals(msisdn, fbs.msisdn)
     }

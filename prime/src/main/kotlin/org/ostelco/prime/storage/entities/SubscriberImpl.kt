@@ -1,7 +1,12 @@
 package org.ostelco.prime.storage.entities
 
 
-class SubscriberImpl : Subscriber {
+class SubscriberImpl() : Subscriber {
+
+    constructor(msisdn: String) : this() {
+        _msisdn = msisdn
+    }
+
     private var _msisdn: String? = null
     private var _noOfBytesLeft: Long = 0
 

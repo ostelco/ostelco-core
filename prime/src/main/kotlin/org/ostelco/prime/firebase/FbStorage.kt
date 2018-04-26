@@ -172,8 +172,7 @@ constructor(databaseName: String,
             throw StorageException("noOfBytes can't be negative")
         }
 
-        val sub = SubscriberImpl()
-        sub.setMsisdn(msisdn)
+        val sub = SubscriberImpl(msisdn)
         sub.setNoOfBytesLeft(noOfBytes)
 
         facade.updateAuthorativeUserData(sub)
@@ -181,8 +180,7 @@ constructor(databaseName: String,
 
     override fun insertNewSubscriber(msisdn: String) {
         checkNotNull(msisdn)
-        val sub = SubscriberImpl()
-        sub.setMsisdn(msisdn)
+        val sub = SubscriberImpl(msisdn)
         return facade.insertNewSubscriber(sub)
     }
 }
