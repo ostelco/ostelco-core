@@ -50,7 +50,7 @@ class FbPurchaseEventRoundtripTest {
         this.fbStorage = FbStorage(
                 "pantel-tests",
                 "src/integration-tests/resources/pantel-tests.json",
-                EventHandler(OcsState()))
+                EventHandler())
         this.storage = fbStorage
         val millisToSleepDuringStartup = 3000
         sleep(millisToSleepDuringStartup.toLong())

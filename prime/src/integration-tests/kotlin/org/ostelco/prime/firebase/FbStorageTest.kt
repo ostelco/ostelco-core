@@ -8,7 +8,6 @@ import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.ostelco.prime.events.EventHandler
-import org.ostelco.prime.ocs.OcsState
 import org.ostelco.prime.storage.Products.DATA_TOPUP_3GB
 import org.ostelco.prime.storage.PurchaseRequestHandler
 import org.ostelco.prime.storage.Storage
@@ -35,7 +34,7 @@ class FbStorageTest {
         this.fbStorage = FbStorage(
                 "pantel-tests",
                 "src/integration-tests/resources/pantel-tests.json",
-                EventHandler(OcsState()))
+                EventHandler())
         this.storage = fbStorage
         sleep(MILLIS_TO_WAIT_WHEN_STARTING_UP.toLong())
         storage!!.removeSubscriberByMsisdn(EPHERMERAL_MSISDN)
