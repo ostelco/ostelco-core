@@ -11,7 +11,7 @@ import org.mockito.Mock
 import org.mockito.Mockito.verify
 import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
-import org.ostelco.prime.events.EventListeners
+import org.ostelco.prime.events.EventHandler
 import org.ostelco.prime.events.EventProcessor
 import org.ostelco.prime.events.EventProcessorException
 import org.ostelco.prime.events.EventProcessorTest
@@ -50,7 +50,7 @@ class FbPurchaseEventRoundtripTest {
         this.fbStorage = FbStorage(
                 "pantel-tests",
                 "src/integration-tests/resources/pantel-tests.json",
-                EventListeners(OcsState()))
+                EventHandler(OcsState()))
         this.storage = fbStorage
         val millisToSleepDuringStartup = 3000
         sleep(millisToSleepDuringStartup.toLong())
