@@ -1,9 +1,15 @@
 package org.ostelco.prime.storage.entities
 
+/**
+ * The subscriber information that is stored
+ * in the DB.
+ */
+class SubscriberImpl() : Subscriber {
 
-class SubscriberImpl : Subscriber {
+    constructor(msisdn: String) : this() {
+        _msisdn = msisdn
+    }
 
-    var fbKey: String? = null
     private var _msisdn: String? = null
     private var _noOfBytesLeft: Long = 0
 
