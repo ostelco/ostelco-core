@@ -31,7 +31,7 @@ interface Storage : ProductDescriptionCache {
     fun getSubscriberFromMsisdn(msisdn: String): Subscriber?
 
     @Throws(StorageException::class)
-    fun insertNewSubscriber(msisdn: String): String
+    fun insertNewSubscriber(msisdn: String)
 
     @Throws(StorageException::class)
     fun removeSubscriberByMsisdn(msisdn: String)
