@@ -110,7 +110,6 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
 
     }
 
-
     private fun addOrUpdateProduct(
             snapshot: DataSnapshot,
             consumer: Consumer<ProductCatalogItem>) {
@@ -128,12 +127,11 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         } catch (e: Exception) {
             LOG.error("Couldn't transform req into PurchaseRequestImpl", e)
         }
-
     }
 
-    fun addProductCatalogItemListener(consumer: Consumer<ProductCatalogItem>) {
-        addProductCatalogItemChildListener(consumer)
-        addProductCatalogValueListener(consumer)
+    fun addProductCatalogItemHandler(consumer: Consumer<ProductCatalogItem>) {
+        addProductCatalogItemChildHandler(consumer)
+        addProductCatalogValueHandler(consumer)
     }
 
     fun addPurchaseRequestListener(
@@ -142,7 +140,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
     }
 
 
-    fun addProductCatalogItemChildListener(consumer: Consumer<ProductCatalogItem>) {
+    fun addProductCatalogItemChildHandler(consumer: Consumer<ProductCatalogItem>) {
         checkNotNull(consumer)
         val productCatalogListener = newProductDefChangedListener(Consumer { snapshot -> addOrUpdateProduct(snapshot, consumer) })
         addProductCatalogListener(productCatalogListener)
@@ -161,15 +159,14 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         this.products.addChildEventListener(productCatalogListener)
     }
 
-    fun addProductCatalogValueListener(consumer: Consumer<ProductCatalogItem>) {
+    fun addProductCatalogValueHandler(consumer: Consumer<ProductCatalogItem>) {
         checkNotNull(consumer)
         val productCatalogValueEventListener = newCatalogDataChangedEventListener(consumer)
         addProductCatalogValueListener(productCatalogValueEventListener)
     }
 
 
-    fun addProductCatalogValueListener(
-            productCatalogValueEventListener: ValueEventListener) {
+    fun addProductCatalogValueListener(productCatalogValueEventListener: ValueEventListener) {
         checkNotNull(productCatalogValueEventListener)
         this.quickBuyProducts.addValueEventListener(productCatalogValueEventListener)
         this.products.addValueEventListener(productCatalogValueEventListener)
