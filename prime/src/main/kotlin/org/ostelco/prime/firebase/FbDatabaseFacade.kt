@@ -448,7 +448,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
             }
         }
 
-        fun stripLeadingPlus(str: String): String {
+        private fun stripLeadingPlus(str: String): String {
             return str.replaceFirst("^\\+".toRegex(), "")
         }
     }
