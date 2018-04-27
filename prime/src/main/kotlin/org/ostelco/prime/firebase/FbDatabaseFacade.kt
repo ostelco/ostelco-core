@@ -10,11 +10,7 @@ import com.google.firebase.database.ValueEventListener
 import org.ostelco.prime.logger
 import org.ostelco.prime.storage.ProductCatalogItem
 import org.ostelco.prime.storage.StorageException
-import org.ostelco.prime.storage.entities.PurchaseRequest
-import org.ostelco.prime.storage.entities.PurchaseRequestImpl
-import org.ostelco.prime.storage.entities.RecordOfPurchaseImpl
-import org.ostelco.prime.storage.entities.Subscriber
-import org.ostelco.prime.storage.entities.SubscriberImpl
+import org.ostelco.prime.storage.entities.*
 import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -136,16 +132,10 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         addProductCatalogValueListener(consumer)
     }
 
-    fun addPurchaseRequestListener(
-            consumer: BiFunction<String, PurchaseRequestImpl, Unit>) {
-        addPurchaseEventListener(listenerForPurchaseRequests(consumer))
-    }
-
-
-    fun addProductCatalogItemChildListener(consumer: Consumer<ProductCatalogItem>) {
-        checkNotNull(consumer)
-        val productCatalogListener = newProductDefChangedListener(Consumer { snapshot -> addOrUpdateProduct(snapshot, consumer) })
-        addProductCatalogListener(productCatalogListener)
+    fun addPurchaseRequestListener(consumer: BiFunction<String, PurchaseRequestImpl, Unit>) {
+        val childEventListener = listenerForPurchaseRequests(consumer)
+        checkNotNull(childEventListener)
+        this.clientRequests.addChildEventListener(childEventListener)
     }
 
     fun addProductCatalogListener(consumer: Consumer<DataSnapshot>) {
@@ -155,48 +145,35 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
     }
 
 
-    fun addProductCatalogListener(productCatalogListener: ChildEventListener) {
+    private fun addProductCatalogItemChildListener(consumer: Consumer<ProductCatalogItem>) {
+        checkNotNull(consumer)
+        val productCatalogListener = newProductDefChangedListener(Consumer { snapshot -> addOrUpdateProduct(snapshot, consumer) })
+        addProductCatalogListener(productCatalogListener)
+    }
+
+    private fun addProductCatalogListener(productCatalogListener: ChildEventListener) {
         checkNotNull(productCatalogListener)
         this.quickBuyProducts.addChildEventListener(productCatalogListener)
         this.products.addChildEventListener(productCatalogListener)
     }
 
-    fun addProductCatalogValueListener(consumer: Consumer<ProductCatalogItem>) {
+    private fun addProductCatalogValueListener(consumer: Consumer<ProductCatalogItem>) {
         checkNotNull(consumer)
         val productCatalogValueEventListener = newCatalogDataChangedEventListener(consumer)
         addProductCatalogValueListener(productCatalogValueEventListener)
     }
 
 
-    fun addProductCatalogValueListener(
-            productCatalogValueEventListener: ValueEventListener) {
+    private fun addProductCatalogValueListener(productCatalogValueEventListener: ValueEventListener) {
         checkNotNull(productCatalogValueEventListener)
         this.quickBuyProducts.addValueEventListener(productCatalogValueEventListener)
         this.products.addValueEventListener(productCatalogValueEventListener)
     }
 
-    fun addPurchaseEventListener(cel: ChildEventListener) {
-        checkNotNull(cel)
-        this.clientRequests.addChildEventListener(cel)
-    }
 
-
-    fun addRecordOfPurchaseByMsisdn(
-            msisdn: String,
-            sku: String,
-            millisSinceEpoch: Long): String {
-        checkNotNull(msisdn)
-
-        val purchase = RecordOfPurchaseImpl(msisdn, sku, millisSinceEpoch)
-
-        // XXX This is iffy, why not send the purchase object
-        //     directly to the facade.  Seems bogus, probably is.
+    fun addRecordOfPurchase(purchase: RecordOfPurchase): String {
+        checkNotNull(purchase)
         val asMap = purchase.asMap()
-
-        return pushRecordOfPurchaseByMsisdn(asMap)
-    }
-
-    fun pushRecordOfPurchaseByMsisdn(asMap: Map<String, Any>): String {
         checkNotNull(asMap)
         val dbref = recordsOfPurchase.push()
 
@@ -229,7 +206,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
     }
 
     @Throws(StorageException::class)
-    fun removeByMsisdn(msisdn: String) {
+    fun removeDisplayDatastructureByMsisdn(msisdn: String) {
         removeByMsisdn(clientVisibleSubscriberRecords, msisdn)
     }
 
@@ -251,17 +228,18 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         removeChild(recordsOfPurchase, id)
     }
 
+
+    fun removePurchaseRequestById(id: String) {
+        checkNotNull(id)
+        removeChild(clientRequests, id)
+    }
+
     private fun removeChild(db: DatabaseReference, childId: String) {
         // XXX Removes whole tree, not just the subtree for id.
         //     how do I fix this?
         checkNotNull(db)
         checkNotNull(childId)
         db.child(childId).removeValueAsync()
-    }
-
-    fun removePurchaseRequestById(id: String) {
-        checkNotNull(id)
-        removeChild(clientRequests, id)
     }
 
     @Throws(StorageException::class)
@@ -345,7 +323,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         authorativeUserBalance.child(stripLeadingPlus(sub.msisdn!!)).setValueAsync(sub.asMap())
     }
 
-    fun newProductDefChangedListener(
+    private fun newProductDefChangedListener(
             snapshotConsumer: Consumer<DataSnapshot>): ChildEventListener {
         return object : AbstractChildEventListener() {
             override fun onChildAdded(dataSnapshot: DataSnapshot,
@@ -358,6 +336,10 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
                 snapshotConsumer.accept(snapshot)
             }
         }
+    }
+    
+    private fun stripLeadingPlus(str: String): String {
+        return str.replaceFirst("^\\+".toRegex(), "")
     }
 
     companion object {
@@ -446,10 +428,6 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
                     LOG.error(error.message, error.toException())
                 }
             }
-        }
-
-        private fun stripLeadingPlus(str: String): String {
-            return str.replaceFirst("^\\+".toRegex(), "")
         }
     }
 }

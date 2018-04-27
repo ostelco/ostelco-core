@@ -8,10 +8,7 @@ import org.ostelco.prime.logger
 import org.ostelco.prime.storage.PurchaseRequestListener
 import org.ostelco.prime.storage.Storage
 import org.ostelco.prime.storage.StorageException
-import org.ostelco.prime.storage.entities.NotATopupProductException
-import org.ostelco.prime.storage.entities.Product
-import org.ostelco.prime.storage.entities.PurchaseRequest
-import org.ostelco.prime.storage.entities.TopUpProduct
+import org.ostelco.prime.storage.entities.*
 import java.util.concurrent.atomic.AtomicBoolean
 
 class EventProcessor(
@@ -80,7 +77,8 @@ class EventProcessor(
         try {
             LOG.info("Handling topup product = " + pr)
             storage.updateDisplayDatastructure(msisdn)
-            storage.addRecordOfPurchaseByMsisdn(msisdn, pr.sku, pr.millisSinceEpoch)
+            val purchase = RecordOfPurchaseImpl( msisdn, pr.sku, pr.millisSinceEpoch)
+            storage.addRecordOfPurchase(purchase)
             storage.removePurchaseRequestById(pr.id)
             ocsBalanceUpdater.updateBalance(msisdn, topup.noOfBytes)
         } catch (e: StorageException) {

@@ -12,10 +12,7 @@ import org.ostelco.prime.storage.ProductDescriptionCacheImpl
 import org.ostelco.prime.storage.PurchaseRequestListener
 import org.ostelco.prime.storage.Storage
 import org.ostelco.prime.storage.StorageException
-import org.ostelco.prime.storage.entities.Product
-import org.ostelco.prime.storage.entities.PurchaseRequest
-import org.ostelco.prime.storage.entities.Subscriber
-import org.ostelco.prime.storage.entities.SubscriberImpl
+import org.ostelco.prime.storage.entities.*
 import java.io.FileInputStream
 import java.io.IOException
 import java.util.function.BiFunction
@@ -118,7 +115,7 @@ constructor(databaseName: String,
     @Throws(StorageException::class)
     override fun removeDisplayDatastructure(msisdn: String) {
         checkNotNull(msisdn)
-        facade.removeByMsisdn(msisdn)
+        facade.removeDisplayDatastructureByMsisdn(msisdn)
     }
 
     override fun injectPurchaseRequest(pr: PurchaseRequest): String {
@@ -131,15 +128,12 @@ constructor(databaseName: String,
         facade.removeRecordOfPurchaseById(id)
     }
 
-    override fun addRecordOfPurchaseByMsisdn(
-            ephermeralMsisdn: String,
-            sku: String,
-            now: Long): String {
-        checkNotNull(ephermeralMsisdn)
-        checkNotNull(sku)
-        checkArgument(now > 0)
+    override fun addRecordOfPurchase(purchase: RecordOfPurchase): String {
+        checkNotNull(purchase.msisdn)
+        checkNotNull(purchase.sku)
+        checkArgument(purchase.millisSinceEpoch > 0)
 
-        return facade.addRecordOfPurchaseByMsisdn(ephermeralMsisdn, sku, now)
+        return facade.addRecordOfPurchase(purchase)
     }
 
     @Throws(StorageException::class)

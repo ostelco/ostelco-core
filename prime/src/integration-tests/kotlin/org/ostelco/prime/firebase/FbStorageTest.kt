@@ -15,6 +15,7 @@ import org.ostelco.prime.storage.Storage
 import org.ostelco.prime.storage.StorageException
 import org.ostelco.prime.storage.entities.PurchaseRequest
 import org.ostelco.prime.storage.entities.PurchaseRequestImpl
+import org.ostelco.prime.storage.entities.RecordOfPurchaseImpl
 import java.lang.Thread.sleep
 import java.time.Instant
 import java.util.*
@@ -90,12 +91,10 @@ class FbStorageTest {
 
     @Test
     @Throws(StorageException::class)
-    fun addRecordOfPurchaseByMsisdnTest() {
+    fun addRecordOfPurchaseTest() {
         val now = Instant.now().toEpochMilli()
-        val id = storage!!.addRecordOfPurchaseByMsisdn(
-                EPHERMERAL_MSISDN,
-                DATA_TOPUP_3GB.sku,
-                now)
+        val purchase = RecordOfPurchaseImpl(EPHERMERAL_MSISDN, DATA_TOPUP_3GB.sku, now)
+        val id = storage!!.addRecordOfPurchase(purchase)
         storage!!.removeRecordOfPurchaseById(id)
     }
 
