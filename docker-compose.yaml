@@ -11,8 +11,10 @@ services:
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/config/pantel-prod.json
       # This is external IP from "kubectl get service"
-      - GRPC_SERVER=35.195.49.238
+      - GRPC_SERVER=ocs.endpoints.pantel-2decb.cloud.goog
       - GRPC_ENCRYPTION=true
+    extra_hosts:
+      - "ocs.endpoints.pantel-2decb.cloud.goog:35.195.49.238"
     command: ["./wait_for_prime.sh"]
 
   auth-server:

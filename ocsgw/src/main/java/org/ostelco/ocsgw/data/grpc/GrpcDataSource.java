@@ -1,6 +1,6 @@
 package org.ostelco.ocsgw.data.grpc;
 
-import com.google.auth.oauth2.GoogleCredentials;
+import com.google.auth.oauth2.ServiceAccountJwtAccessCredentials;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.auth.MoreCallCredentials;
@@ -33,6 +33,7 @@ import org.ostelco.ocsgw.data.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -94,12 +95,14 @@ public class GrpcDataSource implements DataSource {
         // to a gRPC instance.
         final ManagedChannel channel = ManagedChannelBuilder
                 .forTarget(target)
-                .usePlaintext(!encrypted)
+                .usePlaintext(true)
                 .build();
         // Initialize the stub that will be used to actually
         // communicate from the client emulating being the OCS.
         if (encrypted) {
-            GoogleCredentials credentials = GoogleCredentials.getApplicationDefault();
+            final String serviceAccountFile = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
+            final ServiceAccountJwtAccessCredentials credentials =
+                    ServiceAccountJwtAccessCredentials.fromStream(new FileInputStream(serviceAccountFile));
             ocsServiceStub = OcsServiceGrpc.newStub(channel)
                     .withCallCredentials(MoreCallCredentials.from(credentials));
         } else {
