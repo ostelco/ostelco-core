@@ -36,19 +36,24 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
     public static void main(String[] args) {
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            LOG.info("Shutting down OcsApplication...");
-            if (stack != null) {
-                try {
-                    stack.stop(0, TimeUnit.MILLISECONDS ,0);
-                } catch (IllegalDiameterStateException | InternalException e) {
-                    LOG.error("Failed to gracefully shutdown OcsApplication", e);
-                }
-                stack.destroy();
-            }
+            OcsApplication.shutdown();
         }));
 
         OcsApplication app = new OcsApplication();
         app.start("/config/");
+    }
+
+
+    public static void shutdown() {
+        LOG.info("Shutting down OcsApplication...");
+        if (stack != null) {
+            try {
+                stack.stop(30000, TimeUnit.MILLISECONDS ,0);
+            } catch (IllegalDiameterStateException | InternalException e) {
+                LOG.error("Failed to gracefully shutdown OcsApplication", e);
+            }
+            stack.destroy();
+        }
     }
 
     public void start(final String configDir) {
