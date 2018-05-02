@@ -92,7 +92,6 @@ class TestClient : EventListener<Request, Answer> {
             LOG.info("Starting stack")
             stack.start(Mode.ANY_PEER, 30000, TimeUnit.MILLISECONDS)
             LOG.info("Stack is running.")
-            createSession()
         } catch (e: Exception) {
             LOG.error("Failed to start Diameter Stack", e)
             stack.destroy()
