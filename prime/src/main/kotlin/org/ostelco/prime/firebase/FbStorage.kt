@@ -1,10 +1,10 @@
 package org.ostelco.prime.firebase
 
+import com.google.auth.oauth2.GoogleCredentials
 import com.google.common.base.Preconditions.checkArgument
 import com.google.common.base.Preconditions.checkNotNull
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
-import com.google.firebase.auth.FirebaseCredentials
 import com.google.firebase.database.FirebaseDatabase
 import org.ostelco.prime.events.EventHandler
 import org.ostelco.prime.storage.ProductDescriptionCache
@@ -18,6 +18,8 @@ import org.ostelco.prime.storage.entities.Subscriber
 import org.ostelco.prime.storage.entities.SubscriberImpl
 import java.io.FileInputStream
 import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.util.function.BiFunction
 import java.util.function.Consumer
 
@@ -66,28 +68,33 @@ constructor(databaseName: String,
     private fun setupFirebaseInstance(
             databaseName: String,
             configFile: String): FirebaseDatabase {
+
         try {
-            FileInputStream(configFile).use { serviceAccount ->
 
-                val options = FirebaseOptions.Builder().setCredential(FirebaseCredentials.fromCertificate(serviceAccount)).setDatabaseUrl("https://$databaseName.firebaseio.com/").build()
-
-                try {
-                    FirebaseApp.getInstance()
-                } catch (e: Exception) {
-                    FirebaseApp.initializeApp(options)
-                }
-
-                return FirebaseDatabase.getInstance()
-
-                // (un)comment next line to turn on/of extended debugging
-                // from firebase.
-                // this.firebaseDatabase.setLogLevel(com.google.firebase.database.Logger.Level.DEBUG);
-
+            val credentials: GoogleCredentials = if (Files.exists(Paths.get(configFile))) {
+                FileInputStream(configFile).use { serviceAccount -> GoogleCredentials.fromStream(serviceAccount) }
+            } else {
+                GoogleCredentials.getApplicationDefault()
             }
+
+            val options = FirebaseOptions.Builder()
+                    .setCredentials(credentials)
+                    .setDatabaseUrl("https://$databaseName.firebaseio.com/")
+                    .build()
+            try {
+                FirebaseApp.getInstance()
+            } catch (e: Exception) {
+                FirebaseApp.initializeApp(options)
+            }
+
+            return FirebaseDatabase.getInstance()
+
+            // (un)comment next line to turn on/of extended debugging
+            // from firebase.
+            // this.firebaseDatabase.setLogLevel(com.google.firebase.database.Logger.Level.DEBUG);
         } catch (ex: IOException) {
             throw StorageException(ex)
         }
-
     }
 
 
