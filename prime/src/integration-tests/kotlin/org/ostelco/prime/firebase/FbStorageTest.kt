@@ -7,10 +7,9 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
-import org.ostelco.prime.events.EventListeners
-import org.ostelco.prime.ocs.OcsState
+import org.ostelco.prime.events.EventHandler
 import org.ostelco.prime.storage.Products.DATA_TOPUP_3GB
-import org.ostelco.prime.storage.PurchaseRequestListener
+import org.ostelco.prime.storage.PurchaseRequestHandler
 import org.ostelco.prime.storage.Storage
 import org.ostelco.prime.storage.StorageException
 import org.ostelco.prime.storage.entities.PurchaseRequest
@@ -35,7 +34,7 @@ class FbStorageTest {
         this.fbStorage = FbStorage(
                 "pantel-tests",
                 "src/integration-tests/resources/pantel-tests.json",
-                EventListeners(OcsState()))
+                EventHandler())
         this.storage = fbStorage
         sleep(MILLIS_TO_WAIT_WHEN_STARTING_UP.toLong())
         storage!!.removeSubscriberByMsisdn(EPHERMERAL_MSISDN)
@@ -105,8 +104,8 @@ class FbStorageTest {
 
         val latch = CountDownLatch(2)
 
-        storage!!.addPurchaseRequestListener(
-                object : PurchaseRequestListener {
+        storage!!.addPurchaseRequestHandler(
+                object : PurchaseRequestHandler {
                     override fun onPurchaseRequest(req: PurchaseRequest) {
                         assertNotEquals(null, req)
                         assertEquals(PAYMENT_TOKEN, req.paymentToken)

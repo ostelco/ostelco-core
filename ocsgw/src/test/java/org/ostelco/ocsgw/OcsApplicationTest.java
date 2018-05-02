@@ -44,14 +44,11 @@ public class OcsApplicationTest {
 
     // The same OcsApplication will be used in all test cases
     private final OcsApplication application = new OcsApplication();
-    private static boolean applicationStarted = false;
 
     @BeforeEach
     protected void setUp() {
-        if (!applicationStarted) {
-            application.start("src/test/resources/");
-            applicationStarted = true;
-        }
+        application.start("src/test/resources/");
+
         client = new TestClient();
         client.initStack("src/test/resources/");
     }
@@ -60,6 +57,8 @@ public class OcsApplicationTest {
     protected void tearDown() {
         client.shutdown();
         client = null;
+
+        application.shutdown();
     }
 
     private void simpleCreditControlRequestInit(Session session) {
@@ -149,6 +148,7 @@ public class OcsApplicationTest {
         } catch (AvpDataException e) {
             LOG.error("Failed to get Result-Code", e);
         }
+        session.release();
     }
 
     @Test
@@ -171,6 +171,7 @@ public class OcsApplicationTest {
         } catch (AvpDataException e) {
             LOG.error("Failed to get Avp", e);
         }
+        session.release();
     }
 
     // Currently not used in testing

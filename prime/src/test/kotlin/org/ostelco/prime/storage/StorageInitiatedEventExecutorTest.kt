@@ -19,7 +19,7 @@ class StorageInitiatedEventExecutorTest {
         val cdl = CountDownLatch(1)
         val req = PurchaseRequestImpl()
 
-        executor.addPurchaseRequestListener(object : PurchaseRequestListener {
+        executor.addPurchaseRequestHandler(object : PurchaseRequestHandler {
             override fun onPurchaseRequest(request: PurchaseRequest) {
                 if (req == request) {
                     cdl.countDown()

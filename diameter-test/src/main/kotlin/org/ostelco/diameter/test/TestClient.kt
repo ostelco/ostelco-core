@@ -92,7 +92,6 @@ class TestClient : EventListener<Request, Answer> {
             LOG.info("Starting stack")
             stack.start(Mode.ANY_PEER, 30000, TimeUnit.MILLISECONDS)
             LOG.info("Stack is running.")
-            createSession()
         } catch (e: Exception) {
             LOG.error("Failed to start Diameter Stack", e)
             stack.destroy()
@@ -207,7 +206,7 @@ class TestClient : EventListener<Request, Answer> {
      */
     fun shutdown() {
         try {
-            stack.stop(0, TimeUnit.MILLISECONDS, 0)
+            stack.stop(30000, TimeUnit.MILLISECONDS, 0)
         } catch (e: IllegalDiameterStateException) {
             LOG.error("Failed to shutdown", e)
         } catch (e: InternalException) {
