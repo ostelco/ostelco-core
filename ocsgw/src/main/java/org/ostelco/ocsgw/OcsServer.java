@@ -27,6 +27,8 @@ import org.ostelco.ocsgw.utils.AppConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+
 
 public class OcsServer {
 
@@ -82,7 +84,7 @@ public class OcsServer {
         }
     }
 
-    public void init(Stack stack, AppConfig appConfig) {
+    public void init(Stack stack, AppConfig appConfig) throws IOException {
         this.stack = stack;
 
         switch (appConfig.getDataStoreType()) {
