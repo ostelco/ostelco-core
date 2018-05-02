@@ -11,7 +11,7 @@ import org.mockito.Mock
 import org.mockito.Mockito.verify
 import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
-import org.ostelco.prime.events.EventListeners
+import org.ostelco.prime.events.EventHandler
 import org.ostelco.prime.events.EventProcessor
 import org.ostelco.prime.events.EventProcessorException
 import org.ostelco.prime.events.EventProcessorTest
@@ -19,7 +19,7 @@ import org.ostelco.prime.events.OcsBalanceUpdater
 import org.ostelco.prime.ocs.OcsState
 import org.ostelco.prime.storage.ProductDescriptionCacheImpl
 import org.ostelco.prime.storage.Products.DATA_TOPUP_3GB
-import org.ostelco.prime.storage.PurchaseRequestListener
+import org.ostelco.prime.storage.PurchaseRequestHandler
 import org.ostelco.prime.storage.Storage
 import org.ostelco.prime.storage.StorageException
 import org.ostelco.prime.storage.entities.NotATopupProductException
@@ -50,7 +50,7 @@ class FbPurchaseEventRoundtripTest {
         this.fbStorage = FbStorage(
                 "pantel-tests",
                 "src/integration-tests/resources/pantel-tests.json",
-                EventListeners(OcsState()))
+                EventHandler())
         this.storage = fbStorage
         val millisToSleepDuringStartup = 3000
         sleep(millisToSleepDuringStartup.toLong())
@@ -90,7 +90,7 @@ class FbPurchaseEventRoundtripTest {
 
         val latch = CountDownLatch(1)
 
-        storage!!.addPurchaseRequestListener(object : PurchaseRequestListener {
+        storage!!.addPurchaseRequestHandler(object : PurchaseRequestHandler {
             override fun onPurchaseRequest(request: PurchaseRequest) {
                 latch.countDown()
             }
