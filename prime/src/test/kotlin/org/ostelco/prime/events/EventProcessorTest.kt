@@ -90,7 +90,7 @@ class EventProcessorTest {
         }
 
         verify<Storage>(storage).addPurchaseRequestHandler(any(PurchaseRequestHandler::class.java))
-        verify<Storage>(storage).addRecordOfPurchaseByMsisdn(RecordOfPurchaseImpl(eq(MSISDN), eq(req.sku), anyLong()))
+        verify<Storage>(storage).addRecordOfPurchase(RecordOfPurchaseImpl(eq(MSISDN), eq(req.sku), anyLong()))
         verify<Storage>(storage).updateDisplayDatastructure(eq(MSISDN))
         verify<Storage>(storage).removePurchaseRequestById(eq(req.id))
         verify<OcsBalanceUpdater>(ocsBalanceUpdater).updateBalance(eq(MSISDN), eq(topupBytes))

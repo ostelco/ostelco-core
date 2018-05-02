@@ -138,7 +138,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
 
     fun addProductCatalogItemChildHandler(consumer: Consumer<ProductCatalogItem>) {
         checkNotNull(consumer)
-        val productCatalogListener = newProductDefChangedListener(consumer)
+        val productCatalogListener = newProductDefChangedListener(Consumer { snapshot -> addOrUpdateProduct(snapshot, consumer) })
         addProductCatalogListener(productCatalogListener)
     }
 
