@@ -17,7 +17,9 @@ dependencies {
   api('org.mobicents.diameter:jdiameter-impl:1.7.1-123') {
     exclude module: 'netty-all'
   }
-  implementation 'org.mobicents.diameter:mobicents-diameter-mux-jar:1.7.0.74'
+  implementation('org.mobicents.diameter:mobicents-diameter-mux-jar:1.7.0.74') {
+    exclude module: 'netty-all'
+  }
 
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
   testRuntime 'org.hamcrest:hamcrest-all:1.3'

@@ -24,6 +24,6 @@ public class AppConfig {
 
     public boolean encryptGrpc() {
         String encrypt = prop.getProperty("GrpcEnryption", "true");
-        return Boolean.getBoolean(encrypt);
+        return Boolean.valueOf(encrypt);
     }
 }
