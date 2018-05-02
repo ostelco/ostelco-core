@@ -17,6 +17,9 @@ services:
         ipv4_address: 172.16.238.4
 
   ocsgw:
+    depends_on:
+      - "prime"
+    command: ["./wait_for_prime.sh"]
     networks:
       net:
         aliases:
@@ -65,3 +68,11 @@ services:
       - CLOUDSDK_CORE_PROJECT=pantel-2decb
       - DATASTORE_DATASET=pantel-2decb
     command: ["gcloud", "beta", "emulators", "datastore", "start", "--host-port=0.0.0.0:8081"]
+
+networks:
+  net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.238.0/24
