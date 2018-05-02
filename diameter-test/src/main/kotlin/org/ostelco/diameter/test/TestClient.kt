@@ -206,7 +206,7 @@ class TestClient : EventListener<Request, Answer> {
      */
     fun shutdown() {
         try {
-            stack.stop(0, TimeUnit.MILLISECONDS, 0)
+            stack.stop(30000, TimeUnit.MILLISECONDS, 0)
         } catch (e: IllegalDiameterStateException) {
             LOG.error("Failed to shutdown", e)
         } catch (e: InternalException) {
