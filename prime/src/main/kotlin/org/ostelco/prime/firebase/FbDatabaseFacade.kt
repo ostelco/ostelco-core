@@ -106,7 +106,6 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
 
     }
 
-
     private fun addOrUpdateProduct(
             snapshot: DataSnapshot,
             consumer: Consumer<ProductCatalogItem>) {
@@ -124,12 +123,11 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         } catch (e: Exception) {
             LOG.error("Couldn't transform req into PurchaseRequestImpl", e)
         }
-
     }
 
-    fun addProductCatalogItemListener(consumer: Consumer<ProductCatalogItem>) {
-        addProductCatalogItemChildListener(consumer)
-        addProductCatalogValueListener(consumer)
+    fun addProductCatalogItemHandler(consumer: Consumer<ProductCatalogItem>) {
+        addProductCatalogItemChildHandler(consumer)
+        addProductCatalogValueHandler(consumer)
     }
 
     fun addPurchaseRequestListener(consumer: BiFunction<String, PurchaseRequestImpl, Unit>) {
@@ -138,7 +136,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         this.clientRequests.addChildEventListener(childEventListener)
     }
 
-    fun addProductCatalogListener(consumer: Consumer<DataSnapshot>) {
+    fun addProductCatalogItemChildHandler(consumer: Consumer<ProductCatalogItem>) {
         checkNotNull(consumer)
         val productCatalogListener = newProductDefChangedListener(consumer)
         addProductCatalogListener(productCatalogListener)
@@ -157,7 +155,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         this.products.addChildEventListener(productCatalogListener)
     }
 
-    private fun addProductCatalogValueListener(consumer: Consumer<ProductCatalogItem>) {
+    private fun addProductCatalogValueHandler(consumer: Consumer<ProductCatalogItem>) {
         checkNotNull(consumer)
         val productCatalogValueEventListener = newCatalogDataChangedEventListener(consumer)
         addProductCatalogValueListener(productCatalogValueEventListener)

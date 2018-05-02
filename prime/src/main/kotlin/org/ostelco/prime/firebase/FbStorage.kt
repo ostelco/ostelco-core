@@ -6,10 +6,10 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.auth.FirebaseCredentials
 import com.google.firebase.database.FirebaseDatabase
-import org.ostelco.prime.events.EventListeners
+import org.ostelco.prime.events.EventHandler
 import org.ostelco.prime.storage.ProductDescriptionCache
 import org.ostelco.prime.storage.ProductDescriptionCacheImpl
-import org.ostelco.prime.storage.PurchaseRequestListener
+import org.ostelco.prime.storage.PurchaseRequestHandler
 import org.ostelco.prime.storage.Storage
 import org.ostelco.prime.storage.StorageException
 import org.ostelco.prime.storage.entities.*
@@ -21,13 +21,13 @@ import java.util.function.Consumer
 class FbStorage @Throws(StorageException::class)
 constructor(databaseName: String,
             configFile: String,
-            listeners: EventListeners) : Storage {
+            eventHandler: EventHandler) : Storage {
 
     private val productCache: ProductDescriptionCache
 
     private val facade: FbDatabaseFacade
 
-    private val listeners: EventListeners
+    private val eventHandler: EventHandler
 
     override val allSubscribers: Collection<Subscriber>
         get() = facade.allSubscribers
@@ -36,7 +36,7 @@ constructor(databaseName: String,
 
         checkNotNull(configFile)
         checkNotNull(databaseName)
-        this.listeners = checkNotNull(listeners)
+        this.eventHandler = checkNotNull(eventHandler)
 
         this.productCache = ProductDescriptionCacheImpl
 
@@ -44,11 +44,7 @@ constructor(databaseName: String,
 
         this.facade = FbDatabaseFacade(firebaseDatabase)
 
-        facade.addProductCatalogItemListener(Consumer { listeners.productCatalogItemListener(it) })
-        facade.addPurchaseRequestListener(BiFunction { key, req -> listeners.purchaseRequestListener(key, req) })
-
-        // Load subscriber balance from firebase to in-memory OcsState
-        listeners.loadSubscriberBalanceDataFromFirebaseToInMemoryStructure(allSubscribers)
+        facade.addProductCatalogItemHandler(Consumer { eventHandler.productCatalogItemHandler(it) })
     }
 
     override fun addTopupProduct(sku: String, noOfBytes: Long) {
@@ -94,9 +90,10 @@ constructor(databaseName: String,
 
     // XXX This method represents a bad design decision.  It's too circumspect to
     //     understand.  Fix!
-    override fun addPurchaseRequestListener(listener: PurchaseRequestListener) {
-        checkNotNull(listener)
-        listeners.addPurchaseRequestListener(listener)
+    override fun addPurchaseRequestHandler(handler: PurchaseRequestHandler) {
+        checkNotNull(handler)
+        eventHandler.addPurchaseRequestHandler(handler)
+        facade.addPurchaseRequestListener(BiFunction { key, req -> eventHandler.purchaseRequestHandler(key, req) })
     }
 
     @Throws(StorageException::class)

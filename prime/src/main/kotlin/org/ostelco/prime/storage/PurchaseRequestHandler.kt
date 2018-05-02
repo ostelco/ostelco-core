@@ -2,6 +2,6 @@ package org.ostelco.prime.storage
 
 import org.ostelco.prime.storage.entities.PurchaseRequest
 
-interface PurchaseRequestListener {
+interface PurchaseRequestHandler {
     fun onPurchaseRequest(request: PurchaseRequest)
 }

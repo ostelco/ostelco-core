@@ -5,7 +5,7 @@ import com.lmax.disruptor.EventHandler
 import io.dropwizard.lifecycle.Managed
 import org.ostelco.prime.disruptor.PrimeEvent
 import org.ostelco.prime.logger
-import org.ostelco.prime.storage.PurchaseRequestListener
+import org.ostelco.prime.storage.PurchaseRequestHandler
 import org.ostelco.prime.storage.Storage
 import org.ostelco.prime.storage.StorageException
 import org.ostelco.prime.storage.entities.*
@@ -22,7 +22,7 @@ class EventProcessor(
     @Throws(EventProcessorException::class)
     fun handlePurchaseRequest(pr: PurchaseRequest) {
         checkNotNull(pr)
-        LOG.info("Handling purchase request = " + pr)
+        LOG.info("Handling purchase request = " + pr.asMap().toString())
 
         validatePaymentToken(pr)
 
@@ -75,7 +75,7 @@ class EventProcessor(
             msisdn: String,
             topup: TopUpProduct) {
         try {
-            LOG.info("Handling topup product = " + pr)
+            LOG.info("Handling topup product = " + pr.asMap().toString())
             storage.updateDisplayDatastructure(msisdn)
             val purchase = RecordOfPurchaseImpl( msisdn, pr.sku, pr.millisSinceEpoch)
             storage.addRecordOfPurchase(purchase)
@@ -144,16 +144,17 @@ class EventProcessor(
 
 
     override fun start() {
+        // Called by DropWizard on startup
         if (running.compareAndSet(false, true)) {
-            addNewPurchaseRequestListener()
+            addNewPurchaseRequestHandler()
         }
     }
 
-    private fun addNewPurchaseRequestListener() {
-        storage.addPurchaseRequestListener(object : PurchaseRequestListener {
+    private fun addNewPurchaseRequestHandler() {
+        storage.addPurchaseRequestHandler(object : PurchaseRequestHandler {
             override fun onPurchaseRequest(request: PurchaseRequest) {
                 try {
-                handlePurchaseRequest(request)
+                    handlePurchaseRequest(request)
                 } catch (e: EventProcessorException) {
                     LOG.error("Could not handle purchase request " + request, e)
                 }
