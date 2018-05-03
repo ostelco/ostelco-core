@@ -1,0 +1,19 @@
+# This Dockerfile is used when running locally using docker-compose for Acceptance Testing.
+
+FROM openjdk:8u151
+
+MAINTAINER CSI "csi@telenordigital.com"
+
+COPY script/start.sh /start.sh
+
+# test.yaml is copied as config.yaml for AT.
+COPY config/test.yaml /config/config.yaml
+COPY config/pantel-prod.json /secret/
+
+COPY build/libs/prime-uber.jar /prime.jar
+
+EXPOSE 8080
+EXPOSE 8081
+EXPOSE 8082
+
+CMD ["/start.sh"]

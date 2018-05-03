@@ -1,34 +1,12 @@
 version: "3.3"
 
 services:
-  prime:
-    container_name: prime
-    build: prime
-    environment:
-      - GOOGLE_APPLICATION_CREDENTIALS=/config/pantel-prod.json
-    networks:
-      net:
-        aliases:
-          - prime
-        ipv4_address: 172.16.238.4
-
   ocsgw:
     container_name: ocsgw
     build: ocsgw
-    depends_on:
-      - "prime"
-    command: ["./wait_for_prime.sh"]
 
   auth-server:
     container_name: auth-server
     build: auth-server
     ports:
       - "8080:8080"
-
-networks:
-  net:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.16.238.0/24
