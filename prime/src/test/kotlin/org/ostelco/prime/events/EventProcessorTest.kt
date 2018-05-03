@@ -22,6 +22,7 @@ import org.ostelco.prime.storage.StorageException
 import org.ostelco.prime.storage.entities.NotATopupProductException
 import org.ostelco.prime.storage.entities.Product
 import org.ostelco.prime.storage.entities.PurchaseRequest
+import org.ostelco.prime.storage.entities.RecordOfPurchaseImpl
 
 class EventProcessorTest {
 
@@ -89,7 +90,7 @@ class EventProcessorTest {
         }
 
         verify<Storage>(storage).addPurchaseRequestHandler(any(PurchaseRequestHandler::class.java))
-        verify<Storage>(storage).addRecordOfPurchaseByMsisdn(eq(MSISDN), eq(req.sku), anyLong())
+        verify<Storage>(storage).addRecordOfPurchase(RecordOfPurchaseImpl(eq(MSISDN), eq(req.sku), anyLong()))
         verify<Storage>(storage).updateDisplayDatastructure(eq(MSISDN))
         verify<Storage>(storage).removePurchaseRequestById(eq(req.id))
         verify<OcsBalanceUpdater>(ocsBalanceUpdater).updateBalance(eq(MSISDN), eq(topupBytes))
