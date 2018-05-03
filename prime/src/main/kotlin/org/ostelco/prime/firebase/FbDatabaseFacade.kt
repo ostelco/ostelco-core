@@ -130,6 +130,9 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         addProductCatalogValueHandler(consumer)
     }
 
+    /**
+     * Add a listener for Purchase Request
+     */
     fun addPurchaseRequestListener(consumer: BiFunction<String, PurchaseRequestImpl, Unit>) {
         val childEventListener = listenerForPurchaseRequests(consumer)
         checkNotNull(childEventListener)
@@ -169,6 +172,9 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
     }
 
 
+    /**
+     * Store a record of purchase to the db
+     */
     fun addRecordOfPurchase(purchase: RecordOfPurchase): String {
         checkNotNull(purchase)
         val asMap = purchase.asMap()
