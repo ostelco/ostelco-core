@@ -185,6 +185,7 @@ class OcsTest {
         private var ocsServiceStub: OcsServiceStub? = null
 
         @BeforeClass
+        @JvmStatic
         @Throws(IOException::class)
         fun setUp() {
 
@@ -221,6 +222,7 @@ class OcsTest {
         }
 
         @AfterClass
+        @JvmStatic
         @Throws(InterruptedException::class, TimeoutException::class)
         fun tearDown() {
             if (ocsServer != null) {

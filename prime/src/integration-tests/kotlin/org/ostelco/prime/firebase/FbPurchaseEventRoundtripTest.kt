@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit
 
 class FbPurchaseEventRoundtripTest {
 
-    @Rule
+    @get:Rule
     var mockitoRule: MockitoRule = MockitoJUnit.rule()
 
     @Mock
