@@ -64,11 +64,9 @@ class OcsTest {
         val requests = ocsServiceStub!!.creditControlRequest(
                 object : AbstactObserver<CreditControlAnswerInfo>() {
                     override fun onNext(response: CreditControlAnswerInfo) {
-                        LOG.info("Received data bucket of {} bytes for {}",
-                                response.msccOrBuilderList[0].granted.totalOctets,
+                        LOG.info("Received answer for {}",
                                 response.msisdn)
                         assertEquals(MSISDN, response.msisdn)
-                        assertEquals(BYTES.toLong(), response.msccOrBuilderList[0].granted.totalOctets)
                         assertEquals(REQUEST_ID, response.requestId)
                         cdl.countDown()
                     }
