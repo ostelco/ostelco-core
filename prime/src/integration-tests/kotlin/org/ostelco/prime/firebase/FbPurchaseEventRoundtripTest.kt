@@ -8,6 +8,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mock
+import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
@@ -112,7 +113,7 @@ class FbPurchaseEventRoundtripTest {
         val topupBytes = ProductDescriptionCacheImpl.DATA_TOPUP_3GB.asTopupProduct()!!.noOfBytes
 
         // Then verify
-        verify<OcsBalanceUpdater>(ocsBalanceUpdater).updateBalance(safeEq(EPHERMERAL_MSISDN), safeEq(topupBytes))
+        verify<OcsBalanceUpdater>(ocsBalanceUpdater, times(2)).updateBalance(safeEq(EPHERMERAL_MSISDN), safeEq(topupBytes))
 
         // XXX Verification of data stored in firebase not verified.
     }
