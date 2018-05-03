@@ -44,7 +44,7 @@ spec:
         ports:
         - containerPort: 9000
       - name: prime
-        image: gcr.io/pantel-2decb/prime:1.0.2
+        image: gcr.io/pantel-2decb/prime:1.0.5
         volumeMounts:
         - name: secret-config
           mountPath: "/secret"
