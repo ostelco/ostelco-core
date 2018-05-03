@@ -30,7 +30,6 @@ dependencies {
   implementation 'com.google.cloud:google-cloud-pubsub:0.44.0-beta'
   implementation 'com.lmax:disruptor:3.4.2'
   implementation 'com.google.guava:guava:24.1-jre'
-  implementation project(':dropwizard-gcp-stackdriver-logging')
 
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation 'org.mockito:mockito-core:2.18.0'
