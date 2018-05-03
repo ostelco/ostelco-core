@@ -278,7 +278,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
             msisdn: String,
             userData: String,
             result: String): String {
-        val msg = ("authorativeuserdata = '" + userData
+        val msg = ("authorativeUserBalance = '" + userData
                 + "', msisdn = '" + msisdn
                 + "' => " + result)
         LOG.info(msg)
@@ -301,7 +301,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
                 null
             } else {
                 val r = result.iterator().next()
-                logSubscriberDataProcessing(msisdn, userDataString, r.toString())
+                logSubscriberDataProcessing(msisdn, userDataString, r.asMap().toString())
                 r
             }
         } catch (e: InterruptedException) {
