@@ -52,23 +52,6 @@ shadowJar {
   version = null
 }
 
-task pack(type: Zip, dependsOn: 'shadowJar') {
-  from('config/') {
-    into(project.name + '/config')
-  }
-  from('script/') {
-    into(project.name + '/script')
-  }
-  from('build/libs/prime-uber.jar') {
-    into(project.name + '/build/libs/')
-  }
-  from('Dockerfile') {
-    into(project.name)
-  }
-  archiveName = 'prime.zip'
-  destinationDir = file('build/deploy/')
-}
-
 jacocoTestReport {
   group = "Reporting"
   description = "Generate Jacoco coverage reports after running tests."

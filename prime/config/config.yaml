@@ -4,6 +4,6 @@ logging:
     org.ostelco: DEBUG
 
 eventProcessor:
-  configFile: /config/pantel-prod.json
+  configFile: /secret/pantel-prod.json
   projectId: pantel-2decb
   topicId: data-traffic
