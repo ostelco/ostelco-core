@@ -8,6 +8,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mock
+import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
@@ -16,7 +17,6 @@ import org.ostelco.prime.events.EventProcessor
 import org.ostelco.prime.events.EventProcessorException
 import org.ostelco.prime.events.EventProcessorTest
 import org.ostelco.prime.events.OcsBalanceUpdater
-import org.ostelco.prime.ocs.OcsState
 import org.ostelco.prime.storage.ProductDescriptionCacheImpl
 import org.ostelco.prime.storage.Products.DATA_TOPUP_3GB
 import org.ostelco.prime.storage.PurchaseRequestHandler
@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit
 
 class FbPurchaseEventRoundtripTest {
 
-    @Rule
+    @get:Rule
     var mockitoRule: MockitoRule = MockitoJUnit.rule()
 
     @Mock
@@ -113,10 +113,13 @@ class FbPurchaseEventRoundtripTest {
         val topupBytes = ProductDescriptionCacheImpl.DATA_TOPUP_3GB.asTopupProduct()!!.noOfBytes
 
         // Then verify
-        verify<OcsBalanceUpdater>(ocsBalanceUpdater).updateBalance(eq(EPHERMERAL_MSISDN), eq(topupBytes))
+        verify<OcsBalanceUpdater>(ocsBalanceUpdater, times(2)).updateBalance(safeEq(EPHERMERAL_MSISDN), safeEq(topupBytes))
 
         // XXX Verification of data stored in firebase not verified.
     }
+
+    // https://github.com/mockito/mockito/issues/1255
+    fun <T : Any> safeEq(value: T): T = eq(value) ?: value
 
     companion object {
 
