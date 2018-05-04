@@ -12,6 +12,7 @@ import org.ostelco.ocs.api.ActivateRequest
 import org.ostelco.ocs.api.ActivateResponse
 import org.ostelco.ocs.api.CreditControlAnswerInfo
 import org.ostelco.ocs.api.CreditControlRequestInfo
+import org.ostelco.ocs.api.CreditControlRequestType.INITIAL_REQUEST
 import org.ostelco.ocs.api.OcsServiceGrpc
 import org.ostelco.ocs.api.OcsServiceGrpc.OcsServiceStub
 import org.ostelco.prime.disruptor.PrimeDisruptor
@@ -42,6 +43,7 @@ class OcsTest {
     private fun newDefaultCreditControlRequestInfo(): CreditControlRequestInfo {
         LOG.info("Req Id: {}", REQUEST_ID)
         return CreditControlRequestInfo.newBuilder()
+                .setType(INITIAL_REQUEST)
                 .setMsisdn(MSISDN)
                 .setRequestId(REQUEST_ID)
                 .build()

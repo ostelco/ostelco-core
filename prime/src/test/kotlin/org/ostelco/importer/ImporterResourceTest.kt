@@ -13,7 +13,7 @@ import javax.ws.rs.core.Response.Status
  * Class for unit testing ImporterResource.
  */
 class ImporterResourceTest {
-    private val pathForGetStatus = "/importer/get/status"
+    private val pathForGetStatus = "/importer/status"
 
     companion object {
 
@@ -63,7 +63,7 @@ class ImporterResourceTest {
                 this::class.java.classLoader.getResource("sample-offer-yaml.yaml").readText(Charsets.UTF_8)
 
         val response = resources
-                ?.target("importer")
+                ?.target("/importer")
                 ?.request("text/vnd.yaml")
                 ?.post(Entity.entity(text, "text/vnd.yaml"))
 
