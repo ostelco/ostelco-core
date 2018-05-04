@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit
 
 class PrimeEventProducerTest {
 
-    private var primeEventProducer: PrimeEventProducer? = null
+    private var primeEventProducer: PrimeEventProducerImpl? = null
 
     private var disruptor: Disruptor<PrimeEvent>? = null
 
@@ -47,7 +47,7 @@ class PrimeEventProducerTest {
                 RING_BUFFER_SIZE,
                 Executors.defaultThreadFactory())
         val ringBuffer = disruptor!!.ringBuffer
-        this.primeEventProducer = PrimeEventProducer(ringBuffer)
+        this.primeEventProducer = PrimeEventProducerImpl(ringBuffer)
 
         this.countDownLatch = CountDownLatch(1)
         this.result = HashSet()

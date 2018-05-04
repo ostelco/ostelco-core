@@ -12,16 +12,16 @@ With unit testing:
     
 * This creates zip file `build/deploy/ostelco-core.zip`
 
-### Run
+### Deploy on host
 
 * Upload and unzip `ostelco-core.zip` file.
 
 
-    scp build/deploy/ostelco-core.zip loltel@10.6.101.1:ostelco-core/
-    ssh -A loltel@10.6.101.1
-    scp ostelco-core/ostelco-core.zip ubuntu@192.168.0.123:.
-    ssh ubuntu@192.168.0.123
-    unzip ostelco-core.zip -d ostelco-core
+    scp build/deploy/ostelco-core.zip loltel@10.6.101.1:ostelco-core/  
+    ssh -A loltel@10.6.101.1  
+    scp ostelco-core/ostelco-core.zip ubuntu@192.168.0.123:.  
+    ssh ubuntu@192.168.0.123  
+    unzip ostelco-core.zip -d ostelco-core  
 
 * Run in docker
 
@@ -82,7 +82,7 @@ Details of service
     
     kubectl describe service <service>
 
-### Cleanup
+### Cleanup kubernetes
 
 Delete service
 
