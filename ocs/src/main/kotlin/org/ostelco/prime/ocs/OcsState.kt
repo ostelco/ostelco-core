@@ -2,11 +2,9 @@ package org.ostelco.prime.ocs
 
 import com.google.common.base.Preconditions
 import com.lmax.disruptor.EventHandler
-import org.ostelco.ocs.api.ReportingReason
 import org.ostelco.prime.disruptor.PrimeEvent
 import org.ostelco.prime.disruptor.PrimeEventMessageType
 import org.ostelco.prime.logger
-import org.ostelco.prime.storage.entities.Subscriber
 import java.util.*
 
 class OcsState : EventHandler<PrimeEvent> {
@@ -181,12 +179,11 @@ class OcsState : EventHandler<PrimeEvent> {
         return consumed
     }
 
-    fun injectSubscriberIntoOCS(subscriber: Subscriber) {
-        val msisdn = subscriber.msisdn
-        LOG.info("{} - {}", msisdn, subscriber.noOfBytesLeft)
-        if (msisdn != null && subscriber.noOfBytesLeft > 0) {
+    fun injectSubscriberIntoOCS(msisdn: String, noOfBytesLeft: Long) {
+        LOG.info("{} - {}", msisdn, noOfBytesLeft)
+        if (noOfBytesLeft > 0) {
             val newMsisdn = stripLeadingPlus(msisdn)
-            addDataBundleBytes(newMsisdn, subscriber.noOfBytesLeft)
+            addDataBundleBytes(newMsisdn, noOfBytesLeft)
         }
     }
 

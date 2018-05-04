@@ -15,7 +15,7 @@ import org.ostelco.ocs.api.CreditControlRequestInfo
 import org.ostelco.ocs.api.OcsServiceGrpc
 import org.ostelco.ocs.api.OcsServiceGrpc.OcsServiceStub
 import org.ostelco.prime.disruptor.PrimeDisruptor
-import org.ostelco.prime.disruptor.PrimeEventProducer
+import org.ostelco.prime.disruptor.PrimeEventProducerImpl
 import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.util.concurrent.CountDownLatch
@@ -167,7 +167,7 @@ class OcsTest {
         /**
          *
          */
-        private var producer: PrimeEventProducer? = null
+        private var producer: PrimeEventProducerImpl? = null
 
         /**
          * The gRPC service that will produce incoming events from the
@@ -189,7 +189,7 @@ class OcsTest {
 
             // Set up processing pipeline
             disruptor = PrimeDisruptor()
-            producer = PrimeEventProducer(disruptor!!.disruptor.ringBuffer)
+            producer = PrimeEventProducerImpl(disruptor!!.disruptor.ringBuffer)
 
             // Set up the gRPC server at a particular port with a particular
             // service, that is connected to the processing pipeline.

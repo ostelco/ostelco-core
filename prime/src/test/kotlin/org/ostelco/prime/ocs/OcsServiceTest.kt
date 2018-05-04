@@ -10,7 +10,7 @@ import org.junit.Before
 import org.junit.Test
 import org.ostelco.prime.disruptor.PrimeEvent
 import org.ostelco.prime.disruptor.PrimeEventFactory
-import org.ostelco.prime.disruptor.PrimeEventProducer
+import org.ostelco.prime.disruptor.PrimeEventProducerImpl
 import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -44,7 +44,7 @@ class OcsServiceTest {
                 RING_BUFFER_SIZE,
                 Executors.defaultThreadFactory())
         val ringBuffer = disruptor!!.ringBuffer
-        val pep = PrimeEventProducer(ringBuffer)
+        val pep = PrimeEventProducerImpl(ringBuffer)
 
         this.countDownLatch = CountDownLatch(1)
         this.result = HashSet()

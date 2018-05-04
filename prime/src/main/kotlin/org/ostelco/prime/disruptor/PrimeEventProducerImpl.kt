@@ -3,7 +3,6 @@ package org.ostelco.prime.disruptor
 import com.google.common.base.Preconditions.checkNotNull
 import com.lmax.disruptor.RingBuffer
 import org.ostelco.ocs.api.CreditControlRequestInfo
-import org.ostelco.ocs.api.MultipleServiceCreditControl
 import org.ostelco.ocs.api.ReportingReason
 import org.ostelco.prime.disruptor.PrimeEventMessageType.CREDIT_CONTROL_REQUEST
 import org.ostelco.prime.disruptor.PrimeEventMessageType.RELEASE_RESERVED_BUCKET
@@ -11,7 +10,7 @@ import org.ostelco.prime.disruptor.PrimeEventMessageType.TOPUP_DATA_BUNDLE_BALAN
 import org.ostelco.prime.logger
 import java.util.function.Consumer
 
-class PrimeEventProducer(private val ringBuffer: RingBuffer<PrimeEvent>) {
+class PrimeEventProducerImpl(private val ringBuffer: RingBuffer<PrimeEvent>) : PrimeEventProducer {
 
     private val LOG by logger()
 
@@ -68,7 +67,7 @@ class PrimeEventProducer(private val ringBuffer: RingBuffer<PrimeEvent>) {
                 })
     }
 
-    fun topupDataBundleBalanceEvent(
+    override fun topupDataBundleBalanceEvent(
             msisdn: String,
             bytes: Long) {
 
@@ -78,7 +77,7 @@ class PrimeEventProducer(private val ringBuffer: RingBuffer<PrimeEvent>) {
                 requestedBytes = bytes)
     }
 
-    fun releaseReservedDataBucketEvent(
+    override fun releaseReservedDataBucketEvent(
             msisdn: String,
             bytes: Long) {
 
@@ -89,7 +88,7 @@ class PrimeEventProducer(private val ringBuffer: RingBuffer<PrimeEvent>) {
     }
 
     // FixMe : For now we assume that there is only 1 MSCC in the Request.
-    fun injectCreditControlRequestIntoRingbuffer(
+    override fun injectCreditControlRequestIntoRingbuffer(
             request: CreditControlRequestInfo,
             streamId: String) {
 
