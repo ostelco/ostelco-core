@@ -6,7 +6,7 @@ import org.ostelco.prime.analytics.DataConsumptionInfoPublisher
 import org.ostelco.prime.config.PrimeConfiguration
 import org.ostelco.prime.disruptor.ClearingEventHandler
 import org.ostelco.prime.disruptor.PrimeDisruptor
-import org.ostelco.prime.disruptor.PrimeEventProducer
+import org.ostelco.prime.disruptor.PrimeEventProducerImpl
 import org.ostelco.prime.events.EventHandler
 import org.ostelco.prime.events.EventProcessor
 import org.ostelco.prime.events.OcsBalanceUpdaterImpl
@@ -28,7 +28,7 @@ class PrimeApplication : Application<PrimeConfiguration>() {
         val disruptor = PrimeDisruptor()
 
         // Disruptor provides RingBuffer, which is used by Producer
-        val producer = PrimeEventProducer(disruptor.disruptor.ringBuffer)
+        val producer = PrimeEventProducerImpl(disruptor.disruptor.ringBuffer)
 
         // OcsService uses Producer to produce events for incoming requests from P-GW
         val ocsService = OcsService(producer)
@@ -79,7 +79,9 @@ class PrimeApplication : Application<PrimeConfiguration>() {
             ocsState: OcsState) {
         LOG.info("Loading initial balance from storage to in-memory OcsState")
         for (subscriber in subscribers) {
-            ocsState.injectSubscriberIntoOCS(subscriber)
+            if (subscriber.msisdn != null) {
+                ocsState.injectSubscriberIntoOCS(subscriber.msisdn!!, subscriber.noOfBytesLeft)
+            }
         }
     }
 
