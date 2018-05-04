@@ -11,10 +11,10 @@ import org.ostelco.prime.events.EventHandler
 import org.ostelco.prime.events.EventProcessor
 import org.ostelco.prime.events.OcsBalanceUpdaterImpl
 import org.ostelco.prime.firebase.FbStorage
+import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.ocs.OcsServer
 import org.ostelco.prime.ocs.OcsService
 import org.ostelco.prime.ocs.OcsState
-import org.ostelco.prime.storage.entities.Subscriber
 
 class PrimeApplication : Application<PrimeConfiguration>() {
 
@@ -62,7 +62,10 @@ class PrimeApplication : Application<PrimeConfiguration>() {
         //              -> Handler:(OcsService, Subscriber, AnalyticsPublisher)
         //                  -> Clear
 
-        disruptor.disruptor.handleEventsWith(ocsState).then(ocsService.asEventHandler(), eventProcessor, dataConsumptionInfoPublisher).then(ClearingEventHandler())
+        disruptor.disruptor
+                .handleEventsWith(ocsState)
+                .then(ocsService.asEventHandler(), eventProcessor, dataConsumptionInfoPublisher)
+                .then(ClearingEventHandler())
 
         // dropwizard starts Analytics events publisher
         environment.lifecycle().manage(dataConsumptionInfoPublisher)
@@ -79,9 +82,7 @@ class PrimeApplication : Application<PrimeConfiguration>() {
             ocsState: OcsState) {
         LOG.info("Loading initial balance from storage to in-memory OcsState")
         for (subscriber in subscribers) {
-            if (subscriber.msisdn != null) {
-                ocsState.injectSubscriberIntoOCS(subscriber.msisdn!!, subscriber.noOfBytesLeft)
-            }
+            ocsState.injectSubscriberIntoOCS(subscriber.msisdn, subscriber.noOfBytesLeft)
         }
     }
 

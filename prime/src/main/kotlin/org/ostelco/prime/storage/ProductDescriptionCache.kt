@@ -1,7 +1,7 @@
 package org.ostelco.prime.storage
 
 
-import org.ostelco.prime.storage.entities.Product
+import org.ostelco.prime.model.Product
 
 interface ProductDescriptionCache {
 

@@ -1,10 +1,10 @@
 package org.ostelco.prime.events
 
-import org.ostelco.prime.storage.ProductCatalogItem
+import org.ostelco.prime.model.ProductCatalogItem
+import org.ostelco.prime.model.PurchaseRequest
 import org.ostelco.prime.storage.ProductDescriptionCacheImpl
 import org.ostelco.prime.storage.PurchaseRequestHandler
 import org.ostelco.prime.storage.StorageInitiatedEventExecutor
-import org.ostelco.prime.storage.entities.PurchaseRequestImpl
 import java.time.Instant
 
 class EventHandler {
@@ -15,9 +15,9 @@ class EventHandler {
         get() = Instant.now().toEpochMilli()
 
 
-    fun purchaseRequestHandler(key: String, req: PurchaseRequestImpl) {
-        req.setId(key)
-        req.setMillisSinceEpoch(millisSinceEpoch)
+    fun purchaseRequestHandler(key: String, req: PurchaseRequest) {
+        req.id = key
+        req.millisSinceEpoch = millisSinceEpoch
         executor.onPurchaseRequest(req)
         // return null // XXX Hack to satisfy BiFunction's void return type
     }

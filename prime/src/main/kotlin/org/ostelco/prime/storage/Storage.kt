@@ -1,9 +1,9 @@
 package org.ostelco.prime.storage
 
 
-import org.ostelco.prime.storage.entities.PurchaseRequest
-import org.ostelco.prime.storage.entities.RecordOfPurchase
-import org.ostelco.prime.storage.entities.Subscriber
+import org.ostelco.prime.model.PurchaseRequest
+import org.ostelco.prime.model.RecordOfPurchase
+import org.ostelco.prime.model.Subscriber
 
 /**
  * Interface that abstracts the interactions that

@@ -1,4 +1,4 @@
-package org.ostelco.prime.storage
+package org.ostelco.prime.model
 
 /**
  * Bean used to use read items from the product catalog.

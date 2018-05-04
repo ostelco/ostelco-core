@@ -7,10 +7,15 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import org.ostelco.prime.firebase.entities.FbPurchaseRequest
+import org.ostelco.prime.firebase.entities.FbSubscriber
+import org.ostelco.prime.firebase.entities.asMap
 import org.ostelco.prime.logger
-import org.ostelco.prime.storage.ProductCatalogItem
+import org.ostelco.prime.model.ProductCatalogItem
+import org.ostelco.prime.model.PurchaseRequest
+import org.ostelco.prime.model.RecordOfPurchase
+import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.storage.StorageException
-import org.ostelco.prime.storage.entities.*
 import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -133,7 +138,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
     /**
      * Add a listener for Purchase Request
      */
-    fun addPurchaseRequestListener(consumer: BiFunction<String, PurchaseRequestImpl, Unit>) {
+    fun addPurchaseRequestListener(consumer: BiFunction<String, PurchaseRequest, Unit>) {
         val childEventListener = listenerForPurchaseRequests(consumer)
         checkNotNull(childEventListener)
         this.clientRequests.addChildEventListener(childEventListener)
@@ -221,9 +226,8 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
 
 
     fun injectPurchaseRequest(pr: PurchaseRequest): String {
-        val cr = pr as PurchaseRequestImpl
         val dbref = clientRequests.push()
-        val crAsMap = cr.asMap()
+        val crAsMap = pr.asMap()
         dbref.setValueAsync(crAsMap)
         return dbref.key
     }
@@ -304,27 +308,30 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
                 if (!snapshot.exists()) {
                     cdl.countDown()
                 } else {
-                    val sub = snapshot.getValue(SubscriberImpl::class.java)
-                    result.add(sub)
+                    val sub = snapshot.getValue(FbSubscriber::class.java)
+                    val msisdn = sub.msisdn
+                    if (msisdn != null) {
+                        result.add(Subscriber(msisdn, sub.noOfBytesLeft))
+                    }
                     cdl.countDown()
                 }
             }
         }
     }
 
-    fun updateAuthorativeUserData(sub: SubscriberImpl) {
+    fun updateAuthorativeUserData(sub: Subscriber) {
         checkNotNull(sub)
         checkNotNull(sub.msisdn)
 
-        val dbref = authorativeUserBalance.child(stripLeadingPlus(sub.msisdn!!))
+        val dbref = authorativeUserBalance.child(stripLeadingPlus(sub.msisdn))
         dbref.updateChildrenAsync(sub.asMap())
     }
 
-    fun insertNewSubscriber(sub: SubscriberImpl) {
+    fun insertNewSubscriber(sub: Subscriber) {
         checkNotNull(sub)
         checkNotNull(sub.msisdn)
 
-        authorativeUserBalance.child(stripLeadingPlus(sub.msisdn!!)).setValueAsync(sub.asMap())
+        authorativeUserBalance.child(stripLeadingPlus(sub.msisdn)).setValueAsync(sub.asMap())
     }
 
     private fun newProductDefChangedListener(
@@ -355,7 +362,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         private const val SECONDS_TO_WAIT_FOR_FIREBASE = 10
 
         private fun listenerForPurchaseRequests(
-                consumer: BiFunction<String, PurchaseRequestImpl, Unit>): AbstractChildEventListener {
+                consumer: BiFunction<String, PurchaseRequest, Unit>): AbstractChildEventListener {
             checkNotNull(consumer)
             return object : AbstractChildEventListener() {
                 override fun onChildAdded(dataSnapshot: DataSnapshot, prevChildKey: String?) {
@@ -363,8 +370,13 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
                         return
                     }
                     try {
-                        val req = dataSnapshot.getValue(PurchaseRequestImpl::class.java)
-                        consumer.apply(dataSnapshot.key, req)
+                        val req = dataSnapshot.getValue(FbPurchaseRequest::class.java)
+                        consumer.apply(dataSnapshot.key,
+                                PurchaseRequest(req.sku,
+                                        req.paymentToken,
+                                        req.msisdn,
+                                        req.millisSinceEpoch,
+                                        req.id))
                     } catch (e: Exception) {
                         LOG.error("Couldn't dispatch purchase request to consumer", e)
                     }
@@ -422,8 +434,11 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
                         return
                     }
                     for (child in snapshot.children) {
-                        val subscriber = child.getValue(SubscriberImpl::class.java)
-                        subscribers.add(subscriber)
+                        val subscriber = child.getValue(FbSubscriber::class.java)
+                        val msisdn = subscriber.msisdn;
+                        if (msisdn != null) {
+                            subscribers.add(Subscriber(msisdn, subscriber.noOfBytesLeft))
+                        }
                     }
                     cdl.countDown()
                 }

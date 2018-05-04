@@ -105,7 +105,7 @@ class OcsState : EventHandler<PrimeEvent> {
         Preconditions.checkArgument(usedBytes > -1, "Non-positive value for bytes")
 
         if (!dataPackMap.containsKey(msisdn)) {
-            LOG.warn("Used-Units for unknown msisdn : " + msisdn)
+            LOG.warn("Used-Units for unknown msisdn : {}", msisdn)
             return 0
         }
 
