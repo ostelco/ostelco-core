@@ -1,6 +1,7 @@
 package org.ostelco.topup.api.resources;
 
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
+import org.ostelco.topup.api.core.EndpointUserInfo;
 import org.ostelco.topup.api.core.Error;
 import org.ostelco.topup.api.core.Offer;
 import org.ostelco.topup.api.db.SubscriberDAO;
@@ -10,8 +11,10 @@ import io.vavr.control.Either;
 import io.vavr.control.Option;
 import java.util.List;
 import javax.validation.constraints.NotNull;
+import javax.validation.Valid;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -34,7 +37,8 @@ public class OffersResource extends ResourceHelpers {
 
     @GET
     @Produces({"application/json"})
-    public Response getOffers(@Auth AccessTokenPrincipal token) {
+    public Response getOffers(@Auth AccessTokenPrincipal token,
+            @Valid @HeaderParam("X-Endpoint-API-UserInfo") EndpointUserInfo userInfo) {
 
         Either<Error, List<Offer>> result = dao.getOffers(token.getName());
 
@@ -51,6 +55,7 @@ public class OffersResource extends ResourceHelpers {
     @Path("{offer-id}")
     @Produces({"application/json"})
     public Response updateOffer(@Auth AccessTokenPrincipal token,
+            @Valid @HeaderParam("X-Endpoint-API-UserInfo") EndpointUserInfo userInfo,
             @NotNull
             @PathParam("offer-id") String offerId,
             @DefaultValue("true") @QueryParam("accepted") boolean accepted) {

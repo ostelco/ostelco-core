@@ -14,6 +14,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
+import java.util.Base64;
 import java.util.List;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.GenericType;
@@ -46,6 +47,12 @@ public class OffersResourceTest {
             new Offer("2", "Big time!", 5.00F, 5, 0L),
             new Offer("3", "Ultimate package!", 20.00F, 50, 0L))
         .toJavaList();
+    private final String userInfo = Base64.getEncoder()
+        .encodeToString((new String("{\n" +
+                                    "     \"issuer\": \"someone\",\n" +
+                                    "     \"email\": \"mw@internet.org\"\n" +
+                                    "}\n"))
+                .getBytes());
 
     @ClassRule
     public static final ResourceTestRule RULE = ResourceTestRule.builder()
@@ -68,6 +75,7 @@ public class OffersResourceTest {
         Response resp = RULE.target("/offers")
             .request()
             .header("Authorization", String.format("Bearer %s", accessToken))
+            .header("X-Endpoint-API-UserInfo", userInfo)
             .get(Response.class);
 
         assertThat(resp.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
@@ -90,6 +98,7 @@ public class OffersResourceTest {
             .queryParam("accepted", true)
             .request()
             .header("Authorization", String.format("Bearer %s", accessToken))
+            .header("X-Endpoint-API-UserInfo", userInfo)
             .put(Entity.text(""));
 
         assertThat(resp.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
@@ -111,6 +120,7 @@ public class OffersResourceTest {
             .queryParam("accepted", false)
             .request()
             .header("Authorization", String.format("Bearer %s", accessToken))
+            .header("X-Endpoint-API-UserInfo", userInfo)
             .put(Entity.text(""));
 
         assertThat(resp.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
