@@ -7,6 +7,7 @@ plugins {
 // FIXME
 // Updating to 1.11.* causes ClassNotFound exception at runtime
 // Keeping it version 1.10.1 to be consistent with grpc via PubSub client lib
+// Keeping it version 1.10.1 to be consistent with netty via Firebase lib
 ext.grpcVersion = "1.10.1"
 
 dependencies {

@@ -3,7 +3,6 @@ logging:
   loggers:
     org.ostelco: DEBUG
   appenders:
-    - type: gcp
     - type: console
       layout:
         type: json
