@@ -1,6 +1,7 @@
 package org.ostelco.topup.api.resources;
 
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
+import org.ostelco.topup.api.core.EndpointUserInfo;
 import org.ostelco.topup.api.core.Error;
 import org.ostelco.topup.api.core.Profile;
 import org.ostelco.topup.api.db.SubscriberDAO;
@@ -8,7 +9,9 @@ import org.ostelco.topup.api.db.SubscriberDAO;
 import io.dropwizard.auth.Auth;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
+import javax.validation.Valid;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -29,7 +32,8 @@ public class ProfileResource extends ResourceHelpers {
 
     @GET
     @Produces({"application/json"})
-    public Response getProfile(@Auth AccessTokenPrincipal token) {
+    public Response getProfile(@Auth AccessTokenPrincipal token,
+            @Valid @HeaderParam("X-Endpoint-API-UserInfo") EndpointUserInfo userInfo) {
 
         Either<Error, Profile> result = dao.getProfile(token.getName());
 
@@ -43,7 +47,8 @@ public class ProfileResource extends ResourceHelpers {
 
     @PUT
     public Response updateProfile(@Auth AccessTokenPrincipal token,
-                                  final Profile profile) {
+            @Valid @HeaderParam("X-Endpoint-API-UserInfo") EndpointUserInfo userInfo,
+            final Profile profile) {
 
         Option<Error> error = dao.updateProfile(token.getName(), profile);
 

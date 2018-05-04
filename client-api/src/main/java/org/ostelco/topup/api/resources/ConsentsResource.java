@@ -1,6 +1,7 @@
 package org.ostelco.topup.api.resources;
 
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
+import org.ostelco.topup.api.core.EndpointUserInfo;
 import org.ostelco.topup.api.core.Error;
 import org.ostelco.topup.api.core.Consent;
 import org.ostelco.topup.api.db.SubscriberDAO;
@@ -9,9 +10,11 @@ import io.dropwizard.auth.Auth;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
 import java.util.List;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -34,7 +37,8 @@ public class ConsentsResource extends ResourceHelpers {
 
     @GET
     @Produces({"application/json"})
-    public Response getConsents(@Auth AccessTokenPrincipal token) {
+    public Response getConsents(@Auth AccessTokenPrincipal token,
+            @Valid @HeaderParam("X-Endpoint-API-UserInfo") EndpointUserInfo userInfo) {
 
         Either<Error, List<Consent>> result = dao.getConsents(token.getName());
 
@@ -51,6 +55,7 @@ public class ConsentsResource extends ResourceHelpers {
     @Path("{consent-id}")
     @Produces({"application/json"})
     public Response updateConsent(@Auth AccessTokenPrincipal token,
+            @Valid @HeaderParam("X-Endpoint-API-UserInfo") EndpointUserInfo userInfo,
             @NotNull
             @PathParam("consent-id") String consentId,
             @DefaultValue("true") @QueryParam("accepted") boolean accepted) {
