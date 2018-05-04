@@ -10,11 +10,7 @@ import com.google.firebase.database.ValueEventListener
 import org.ostelco.prime.logger
 import org.ostelco.prime.storage.ProductCatalogItem
 import org.ostelco.prime.storage.StorageException
-import org.ostelco.prime.storage.entities.PurchaseRequest
-import org.ostelco.prime.storage.entities.PurchaseRequestImpl
-import org.ostelco.prime.storage.entities.RecordOfPurchaseImpl
-import org.ostelco.prime.storage.entities.Subscriber
-import org.ostelco.prime.storage.entities.SubscriberImpl
+import org.ostelco.prime.storage.entities.*
 import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -29,7 +25,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
 
     private val LOG by logger()
 
-    private val authorativeUserData: DatabaseReference
+    private val authorativeUserBalance: DatabaseReference
 
     private val clientRequests: DatabaseReference
 
@@ -44,12 +40,11 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
     // Ignoring this, not a fatal failure.
     val allSubscribers: Collection<Subscriber>
         get() {
-            val q = authorativeUserData.orderByKey()
             val subscribers = LinkedHashSet<Subscriber>()
             val cdl = CountDownLatch(1)
             val collectingVisitor = newListenerThatWillCollectAllSubscribers(subscribers, cdl)
 
-            q.addListenerForSingleValueEvent(collectingVisitor)
+            authorativeUserBalance.addListenerForSingleValueEvent(collectingVisitor)
 
             try {
                 cdl.await(SECONDS_TO_WAIT_FOR_FIREBASE.toLong(), TimeUnit.SECONDS)
@@ -65,7 +60,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
     init {
         checkNotNull(firebaseDatabase)
 
-        this.authorativeUserData = firebaseDatabase.getReference("authorative-user-storage")
+        this.authorativeUserBalance = firebaseDatabase.getReference("authorative-user-balance")
         this.clientRequests = firebaseDatabase.getReference("client-requests")
         this.clientVisibleSubscriberRecords = firebaseDatabase.getReference("profiles")
         this.recordsOfPurchase = firebaseDatabase.getReference("records-of-purchase")
@@ -104,13 +99,12 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
             if (item.sku != null) {
                 consumer.accept(item)
             }
-            LOG.info("Just read a product catalog item: " + item)
+            LOG.info("Fetched product catalog item: " + item.sku)
         } catch (e: Exception) {
             LOG.error("Couldn't transform req into ProductCatalogItem", e)
         }
 
     }
-
 
     private fun addOrUpdateProduct(
             snapshot: DataSnapshot,
@@ -125,83 +119,69 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
             if (item.sku != null) {
                 consumer.accept(item)
             }
-            LOG.info("Just read a product catalog item: {}", item)
+            LOG.info("Fetched product catalog item: {}", item.sku)
         } catch (e: Exception) {
             LOG.error("Couldn't transform req into PurchaseRequestImpl", e)
         }
-
     }
 
-    fun addProductCatalogItemListener(consumer: Consumer<ProductCatalogItem>) {
-        addProductCatalogItemChildListener(consumer)
-        addProductCatalogValueListener(consumer)
+    fun addProductCatalogItemHandler(consumer: Consumer<ProductCatalogItem>) {
+        addProductCatalogItemChildHandler(consumer)
+        addProductCatalogValueHandler(consumer)
     }
 
-    fun addPurchaseRequestListener(
-            consumer: BiFunction<String, PurchaseRequestImpl, Unit>) {
-        addPurchaseEventListener(listenerForPurchaseRequests(consumer))
+    /**
+     * Add a listener for Purchase Request
+     */
+    fun addPurchaseRequestListener(consumer: BiFunction<String, PurchaseRequestImpl, Unit>) {
+        val childEventListener = listenerForPurchaseRequests(consumer)
+        checkNotNull(childEventListener)
+        this.clientRequests.addChildEventListener(childEventListener)
     }
 
-
-    fun addProductCatalogItemChildListener(consumer: Consumer<ProductCatalogItem>) {
+    fun addProductCatalogItemChildHandler(consumer: Consumer<ProductCatalogItem>) {
         checkNotNull(consumer)
         val productCatalogListener = newProductDefChangedListener(Consumer { snapshot -> addOrUpdateProduct(snapshot, consumer) })
         addProductCatalogListener(productCatalogListener)
     }
 
-    fun addProductCatalogListener(consumer: Consumer<DataSnapshot>) {
+
+    private fun addProductCatalogItemChildListener(consumer: Consumer<ProductCatalogItem>) {
         checkNotNull(consumer)
-        val productCatalogListener = newProductDefChangedListener(consumer)
+        val productCatalogListener = newProductDefChangedListener(Consumer { snapshot -> addOrUpdateProduct(snapshot, consumer) })
         addProductCatalogListener(productCatalogListener)
     }
 
-
-    fun addProductCatalogListener(productCatalogListener: ChildEventListener) {
+    private fun addProductCatalogListener(productCatalogListener: ChildEventListener) {
         checkNotNull(productCatalogListener)
         this.quickBuyProducts.addChildEventListener(productCatalogListener)
         this.products.addChildEventListener(productCatalogListener)
     }
 
-    fun addProductCatalogValueListener(consumer: Consumer<ProductCatalogItem>) {
+    private fun addProductCatalogValueHandler(consumer: Consumer<ProductCatalogItem>) {
         checkNotNull(consumer)
         val productCatalogValueEventListener = newCatalogDataChangedEventListener(consumer)
         addProductCatalogValueListener(productCatalogValueEventListener)
     }
 
 
-    fun addProductCatalogValueListener(
-            productCatalogValueEventListener: ValueEventListener) {
+    private fun addProductCatalogValueListener(productCatalogValueEventListener: ValueEventListener) {
         checkNotNull(productCatalogValueEventListener)
         this.quickBuyProducts.addValueEventListener(productCatalogValueEventListener)
         this.products.addValueEventListener(productCatalogValueEventListener)
     }
 
-    fun addPurchaseEventListener(cel: ChildEventListener) {
-        checkNotNull(cel)
-        this.clientRequests.addChildEventListener(cel)
-    }
 
-
-    fun addRecordOfPurchaseByMsisdn(
-            msisdn: String,
-            sku: String,
-            millisSinceEpoch: Long): String {
-        checkNotNull(msisdn)
-
-        val purchase = RecordOfPurchaseImpl(msisdn, sku, millisSinceEpoch)
-
-        // XXX This is iffy, why not send the purchase object
-        //     directly to the facade.  Seems bogus, probably is.
+    /**
+     * Store a record of purchase to the db
+     */
+    fun addRecordOfPurchase(purchase: RecordOfPurchase): String {
+        checkNotNull(purchase)
         val asMap = purchase.asMap()
-
-        return pushRecordOfPurchaseByMsisdn(asMap)
-    }
-
-    fun pushRecordOfPurchaseByMsisdn(asMap: Map<String, Any>): String {
         checkNotNull(asMap)
         val dbref = recordsOfPurchase.push()
 
-        dbref.updateChildren(asMap)
+        dbref.updateChildrenAsync(asMap)
         return dbref.key
     }
 
@@ -211,96 +191,40 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
             gbLeft: String) {
         checkNotNull(msisdn)
         checkNotNull(gbLeft)
-        val key = getKeyFromPhoneNumber(clientVisibleSubscriberRecords, msisdn)
-        if (key == null) {
-            LOG.error("Could not find entry for phoneNumber = "
-                    + msisdn
-                    + " Not updating user visible storage")
-            return
-        }
 
         val displayRep = HashMap<String, Any>()
         displayRep[PHONE_NUMBER] = msisdn
 
         displayRep["usage"] = gbLeft
 
-        clientVisibleSubscriberRecords.child(key).updateChildren(displayRep)
+        clientVisibleSubscriberRecords.child(stripLeadingPlus(msisdn)).updateChildrenAsync(displayRep)
     }
 
-
-    @Throws(StorageException::class)
-    private fun getKeyFromPhoneNumber(
-            dbref: DatabaseReference,
-            msisdn: String): String? {
-        return getKeyFromLookupKey(dbref, msisdn, PHONE_NUMBER)
-    }
-
-    @Throws(StorageException::class)
-    private fun getKeyFromMsisdn(
-            dbref: DatabaseReference,
-            msisdn: String): String? {
-        return getKeyFromLookupKey(dbref, msisdn, MSISDN)
-    }
 
     @Throws(StorageException::class)
     private fun removeByMsisdn(
             dbref: DatabaseReference,
             msisdn: String) {
         checkNotNull(msisdn)
-        checkNotNull(dbref)
-        val key = getKeyFromMsisdn(dbref, msisdn)
-        if (key != null) {
-            removeChild(dbref, key)
-        }
+        removeChild(dbref, stripLeadingPlus(msisdn))
     }
 
     @Throws(StorageException::class)
-    fun removeByMsisdn(msisdn: String) {
+    fun removeDisplayDatastructureByMsisdn(msisdn: String) {
         removeByMsisdn(clientVisibleSubscriberRecords, msisdn)
     }
 
     @Throws(StorageException::class)
     fun removeSubscriberByMsisdn(msisdn: String) {
-        removeByMsisdn(authorativeUserData, msisdn)
+        removeByMsisdn(authorativeUserBalance, msisdn)
     }
 
-
-    @Throws(StorageException::class)
-    private fun getKeyFromLookupKey(
-            dbref: DatabaseReference,
-            msisdn: String,
-            lookupKey: String): String? {
-        val cdl = CountDownLatch(1)
-        val result = HashSet<String>()
-        dbref.orderByChild(lookupKey).equalTo(msisdn).limitToFirst(1).addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                // XXX This is unclean, fix!
-                handleDataChange(snapshot, cdl, result, msisdn)
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                // Empty on purpose.
-            }
-        })
-        try {
-            return if (!cdl.await(SECONDS_TO_WAIT_FOR_FIREBASE.toLong(), TimeUnit.SECONDS)) {
-                throw StorageException("Query timed out")
-            } else if (result.isEmpty()) {
-                null
-            } else {
-                result.iterator().next()
-            }
-        } catch (e: InterruptedException) {
-            throw StorageException(e)
-        }
-
-    }
 
     fun injectPurchaseRequest(pr: PurchaseRequest): String {
         val cr = pr as PurchaseRequestImpl
         val dbref = clientRequests.push()
         val crAsMap = cr.asMap()
-        dbref.setValue(crAsMap)
+        dbref.setValueAsync(crAsMap)
         return dbref.key
     }
 
@@ -308,30 +232,29 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         removeChild(recordsOfPurchase, id)
     }
 
-    private fun removeChild(db: DatabaseReference, childId: String) {
-        // XXX Removes whole tree, not just the subtree for id.
-        //     how do I fix this?
-        checkNotNull(db)
-        checkNotNull(childId)
-        db.child(childId).ref.removeValue()
-    }
 
     fun removePurchaseRequestById(id: String) {
         checkNotNull(id)
         removeChild(clientRequests, id)
     }
 
+    private fun removeChild(db: DatabaseReference, childId: String) {
+        // XXX Removes whole tree, not just the subtree for id.
+        //     how do I fix this?
+        checkNotNull(db)
+        checkNotNull(childId)
+        db.child(childId).removeValueAsync()
+    }
+
     @Throws(StorageException::class)
     fun getSubscriberFromMsisdn(msisdn: String): Subscriber? {
+
         val cdl = CountDownLatch(1)
         val result = HashSet<Subscriber>()
 
-        val q = authorativeUserData.orderByChild(MSISDN).equalTo(msisdn).limitToFirst(1)
+        val q = authorativeUserBalance.child(stripLeadingPlus(msisdn))
 
-        val listenerThatWillReadSubcriberData = newListenerThatWillReadSubcriberData(cdl, result)
-
-        q.addListenerForSingleValueEvent(
-                listenerThatWillReadSubcriberData)
+        q.addListenerForSingleValueEvent(newListenerThatWillReadSubcriberData(cdl, result))
 
         return waitForSubscriberData(msisdn, cdl, result)
     }
@@ -340,7 +263,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
             msisdn: String,
             userData: String,
             result: String): String {
-        val msg = ("authorativeuserdata = '" + userData
+        val msg = ("authorativeUserBalance = '" + userData
                 + "', msisdn = '" + msisdn
                 + "' => " + result)
         LOG.info(msg)
@@ -352,7 +275,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
             msisdn: String,
             cdl: CountDownLatch,
             result: Set<Subscriber>): Subscriber? {
-        val userDataString = authorativeUserData.toString()
+        val userDataString = authorativeUserBalance.toString()
         try {
             return if (!cdl.await(SECONDS_TO_WAIT_FOR_FIREBASE.toLong(), TimeUnit.SECONDS)) {
                 val msg = logSubscriberDataProcessing(
@@ -363,7 +286,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
                 null
             } else {
                 val r = result.iterator().next()
-                logSubscriberDataProcessing(msisdn, userDataString, r.toString())
+                logSubscriberDataProcessing(msisdn, userDataString, r.asMap().toString())
                 r
             }
         } catch (e: InterruptedException) {
@@ -378,16 +301,12 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
             result: MutableSet<Subscriber>): ValueEventListener {
         return object : AbstractValueEventListener() {
             override fun onDataChange(snapshot: DataSnapshot) {
-                if (!snapshot.hasChildren()) {
+                if (!snapshot.exists()) {
                     cdl.countDown()
                 } else {
-                    for (snap in snapshot.children) {
-                        val sub = snap.getValue(SubscriberImpl::class.java)
-                        val key = snap.key
-                        sub.fbKey = key
-                        result.add(sub)
-                        cdl.countDown()
-                    }
+                    val sub = snapshot.getValue(SubscriberImpl::class.java)
+                    result.add(sub)
+                    cdl.countDown()
                 }
             }
         }
@@ -395,24 +314,25 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
 
     fun updateAuthorativeUserData(sub: SubscriberImpl) {
         checkNotNull(sub)
-        val dbref = authorativeUserData.child(sub.fbKey!!)
-        dbref.updateChildren(sub.asMap())
+        checkNotNull(sub.msisdn)
+
+        val dbref = authorativeUserBalance.child(stripLeadingPlus(sub.msisdn!!))
+        dbref.updateChildrenAsync(sub.asMap())
     }
 
-    fun insertNewSubscriber(sub: SubscriberImpl): String {
+    fun insertNewSubscriber(sub: SubscriberImpl) {
         checkNotNull(sub)
-        val dbref = authorativeUserData.push()
-        sub.fbKey = dbref.key
-        dbref.updateChildren(sub.asMap())
-        return dbref.key
+        checkNotNull(sub.msisdn)
+
+        authorativeUserBalance.child(stripLeadingPlus(sub.msisdn!!)).setValueAsync(sub.asMap())
     }
 
-    fun newProductDefChangedListener(
+    private fun newProductDefChangedListener(
             snapshotConsumer: Consumer<DataSnapshot>): ChildEventListener {
         return object : AbstractChildEventListener() {
-            override fun onChildAdded(snapshot: DataSnapshot,
-                                      previousChildName: String?) {
-                snapshotConsumer.accept(snapshot)
+            override fun onChildAdded(dataSnapshot: DataSnapshot,
+                                      prevChildKey: String?) {
+                snapshotConsumer.accept(dataSnapshot)
             }
 
             override fun onChildChanged(snapshot: DataSnapshot,
@@ -421,6 +341,10 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
             }
         }
     }
+    
+    private fun stripLeadingPlus(str: String): String {
+        return str.replaceFirst("^\\+".toRegex(), "")
+    }
 
     companion object {
 
@@ -428,25 +352,22 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
 
         private const val PHONE_NUMBER = "phoneNumber"
 
-        private const val MSISDN = "msisdn"
-
         private const val SECONDS_TO_WAIT_FOR_FIREBASE = 10
 
         private fun listenerForPurchaseRequests(
                 consumer: BiFunction<String, PurchaseRequestImpl, Unit>): AbstractChildEventListener {
             checkNotNull(consumer)
             return object : AbstractChildEventListener() {
-                override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
-                    if (snapshotIsInvalid(snapshot)) {
+                override fun onChildAdded(dataSnapshot: DataSnapshot, prevChildKey: String?) {
+                    if (snapshotIsInvalid(dataSnapshot)) {
                         return
                     }
                     try {
-                        val req = snapshot.getValue(PurchaseRequestImpl::class.java)
-                        consumer.apply(snapshot.key, req)
+                        val req = dataSnapshot.getValue(PurchaseRequestImpl::class.java)
+                        consumer.apply(dataSnapshot.key, req)
                     } catch (e: Exception) {
                         LOG.error("Couldn't dispatch purchase request to consumer", e)
                     }
-
                 }
             }
         }
@@ -502,7 +423,6 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
                     }
                     for (child in snapshot.children) {
                         val subscriber = child.getValue(SubscriberImpl::class.java)
-                        subscriber.fbKey = child.key
                         subscribers.add(subscriber)
                     }
                     cdl.countDown()

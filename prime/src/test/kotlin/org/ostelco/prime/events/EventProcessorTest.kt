@@ -16,12 +16,13 @@ import org.ostelco.prime.disruptor.PrimeEvent
 import org.ostelco.prime.disruptor.PrimeEventMessageType.GET_DATA_BUNDLE_BALANCE
 import org.ostelco.prime.disruptor.PrimeEventMessageType.RELEASE_RESERVED_BUCKET
 import org.ostelco.prime.storage.Products.DATA_TOPUP_3GB
-import org.ostelco.prime.storage.PurchaseRequestListener
+import org.ostelco.prime.storage.PurchaseRequestHandler
 import org.ostelco.prime.storage.Storage
 import org.ostelco.prime.storage.StorageException
 import org.ostelco.prime.storage.entities.NotATopupProductException
 import org.ostelco.prime.storage.entities.Product
 import org.ostelco.prime.storage.entities.PurchaseRequest
+import org.ostelco.prime.storage.entities.RecordOfPurchaseImpl
 
 class EventProcessorTest {
 
@@ -88,8 +89,8 @@ class EventProcessorTest {
             throw EventProcessorException("Programming error, this shouldn't happen", ex)
         }
 
-        verify<Storage>(storage).addPurchaseRequestListener(any(PurchaseRequestListener::class.java))
-        verify<Storage>(storage).addRecordOfPurchaseByMsisdn(eq(MSISDN), eq(req.sku), anyLong())
+        verify<Storage>(storage).addPurchaseRequestHandler(any(PurchaseRequestHandler::class.java))
+        verify<Storage>(storage).addRecordOfPurchase(RecordOfPurchaseImpl(eq(MSISDN), eq(req.sku), anyLong()))
         verify<Storage>(storage).updateDisplayDatastructure(eq(MSISDN))
         verify<Storage>(storage).removePurchaseRequestById(eq(req.id))
         verify<OcsBalanceUpdater>(ocsBalanceUpdater).updateBalance(eq(MSISDN), eq(topupBytes))

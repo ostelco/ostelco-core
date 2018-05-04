@@ -1,8 +1,8 @@
 plugins {
   id "application"
   id "jacoco"
-  id "com.github.johnrengelman.shadow" version "2.0.3"
-  id "org.jetbrains.kotlin.jvm" version "1.2.31"
+  id "com.github.johnrengelman.shadow" version "2.0.4"
+  id "org.jetbrains.kotlin.jvm" version "1.2.41"
   id "idea"
   id "project-report"
 }
@@ -25,13 +25,15 @@ dependencies {
   implementation project(':ocs-api')
   implementation project(':ostelco-lib')
   implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
+  implementation "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
+  // Keep it to 5.10.0 to match netty via ocs-api
   implementation 'com.google.firebase:firebase-admin:5.10.0'
-  implementation 'com.google.cloud:google-cloud-pubsub:0.44.0-beta'
+  implementation 'com.google.cloud:google-cloud-pubsub:0.46.0-beta'
   implementation 'com.lmax:disruptor:3.4.2'
   implementation 'com.google.guava:guava:24.1-jre'
 
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
-  testImplementation 'org.mockito:mockito-core:2.18.0'
+  testImplementation 'org.mockito:mockito-core:2.18.3'
 }
 
 configurations {
@@ -50,23 +52,6 @@ shadowJar {
   mergeServiceFiles()
   classifier = "uber"
   version = null
-}
-
-task pack(type: Zip, dependsOn: 'shadowJar') {
-  from('config/') {
-    into(project.name + '/config')
-  }
-  from('script/') {
-    into(project.name + '/script')
-  }
-  from('build/libs/prime-uber.jar') {
-    into(project.name + '/build/libs/')
-  }
-  from('Dockerfile') {
-    into(project.name)
-  }
-  archiveName = 'prime.zip'
-  destinationDir = file('build/deploy/')
 }
 
 jacocoTestReport {

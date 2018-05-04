@@ -1,7 +1,9 @@
 package org.ostelco.ocsgw.data.grpc;
 
+import com.google.auth.oauth2.ServiceAccountJwtAccessCredentials;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.auth.MoreCallCredentials;
 import io.grpc.stub.StreamObserver;
 import org.jdiameter.api.IllegalDiameterStateException;
 import org.jdiameter.api.InternalException;
@@ -9,19 +11,30 @@ import org.jdiameter.api.OverloadException;
 import org.jdiameter.api.RouteException;
 import org.jdiameter.api.cca.ServerCCASession;
 import org.ostelco.diameter.CreditControlContext;
-import org.ostelco.diameter.model.SessionContext;
 import org.ostelco.diameter.model.CreditControlAnswer;
 import org.ostelco.diameter.model.FinalUnitAction;
 import org.ostelco.diameter.model.FinalUnitIndication;
 import org.ostelco.diameter.model.MultipleServiceCreditControl;
 import org.ostelco.diameter.model.RedirectAddressType;
 import org.ostelco.diameter.model.RedirectServer;
-import org.ostelco.ocs.api.*;
+import org.ostelco.diameter.model.SessionContext;
+import org.ostelco.ocs.api.ActivateRequest;
+import org.ostelco.ocs.api.ActivateResponse;
+import org.ostelco.ocs.api.CreditControlAnswerInfo;
+import org.ostelco.ocs.api.CreditControlRequestInfo;
+import org.ostelco.ocs.api.CreditControlRequestType;
+import org.ostelco.ocs.api.OcsServiceGrpc;
+import org.ostelco.ocs.api.PsInformation;
+import org.ostelco.ocs.api.ReportingReason;
+import org.ostelco.ocs.api.ServiceInfo;
+import org.ostelco.ocs.api.ServiceUnit;
 import org.ostelco.ocsgw.OcsServer;
 import org.ostelco.ocsgw.data.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -29,6 +42,9 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static org.ostelco.diameter.model.RequestType.EVENT_REQUEST;
 import static org.ostelco.diameter.model.RequestType.INITIAL_REQUEST;
@@ -47,6 +63,8 @@ public class GrpcDataSource implements DataSource {
     private final Set<String> blocked = new HashSet<>();
 
     private StreamObserver<CreditControlRequestInfo> creditControlRequest;
+
+    private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
     private static final int MAX_ENTRIES = 3000;
     private final LinkedHashMap<String, CreditControlContext> ccrMap = new LinkedHashMap<String, CreditControlContext>(MAX_ENTRIES, .75F) {
@@ -73,21 +91,36 @@ public class GrpcDataSource implements DataSource {
         }
     }
 
-    public GrpcDataSource(String target, boolean encrypted) {
+    public GrpcDataSource(final String target, final boolean encrypted) throws IOException {
 
         LOG.info("Created GrpcDataSource");
         LOG.info("target : {}", target);
         LOG.info("encrypted : {}", encrypted);
         // Set up a channel to be used to communicate as an OCS instance,
         // to a gRPC instance.
-        final ManagedChannel channel = ManagedChannelBuilder
+        final ManagedChannelBuilder channelBuilder = ManagedChannelBuilder
                 .forTarget(target)
-                .usePlaintext(!encrypted)
-                .build();
+                .keepAliveWithoutCalls(true)
+                .keepAliveTimeout(1, TimeUnit.MINUTES)
+                .keepAliveTime(50, TimeUnit.SECONDS);
 
         // Initialize the stub that will be used to actually
         // communicate from the client emulating being the OCS.
-        ocsServiceStub = OcsServiceGrpc.newStub(channel);
+        if (encrypted) {
+            final String serviceAccountFile = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
+            final ServiceAccountJwtAccessCredentials credentials =
+                    ServiceAccountJwtAccessCredentials.fromStream(new FileInputStream(serviceAccountFile));
+            final ManagedChannel channel = channelBuilder
+                    .usePlaintext(true) // FIXME enable TLS and then remove this
+                    .build();
+            ocsServiceStub = OcsServiceGrpc.newStub(channel)
+                    .withCallCredentials(MoreCallCredentials.from(credentials));
+        } else {
+            final ManagedChannel channel = channelBuilder
+                    .usePlaintext(true)
+                    .build();
+            ocsServiceStub = OcsServiceGrpc.newStub(channel);
+        }
     }
 
     @Override
@@ -133,6 +166,17 @@ public class GrpcDataSource implements DataSource {
                 }
             }
         });
+
+        // this is just to keep connection alive
+        executorService.scheduleWithFixedDelay(() -> {
+                    final CreditControlRequestInfo ccr = CreditControlRequestInfo.newBuilder()
+                            .setType(CreditControlRequestType.NONE)
+                            .build();
+                    creditControlRequest.onNext(ccr);
+                },
+                15,
+                50,
+                TimeUnit.SECONDS);
     }
 
     @Override
@@ -156,20 +200,20 @@ public class GrpcDataSource implements DataSource {
                         org.ostelco.diameter.model.ServiceUnit requested = mscc.getRequested().get(0);
 
                         protoMscc.setRequested(ServiceUnit.newBuilder()
-                                                .setInputOctets(0L)
-                                                .setOutputOctetes(0L)
-                                                .setTotalOctets(requested.getTotal())
-                                                .build());
+                                .setInputOctets(0L)
+                                .setOutputOctetes(0L)
+                                .setTotalOctets(requested.getTotal())
+                                .build());
                     }
 
 
                     org.ostelco.diameter.model.ServiceUnit used = mscc.getUsed();
 
                     protoMscc.setUsed(ServiceUnit.newBuilder()
-                                .setInputOctets(used.getInput())
-                                .setOutputOctetes(used.getOutput())
-                                .setTotalOctets(used.getTotal())
-                                .build());
+                            .setInputOctets(used.getInput())
+                            .setOutputOctetes(used.getOutput())
+                            .setTotalOctets(used.getTotal())
+                            .build());
 
                     protoMscc.setRatingGroup(mscc.getRatingGroup());
                     protoMscc.setServiceIdentifier(mscc.getServiceIdentifier());

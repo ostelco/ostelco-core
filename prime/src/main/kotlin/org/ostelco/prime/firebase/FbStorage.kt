@@ -1,36 +1,35 @@
 package org.ostelco.prime.firebase
 
+import com.google.auth.oauth2.GoogleCredentials
 import com.google.common.base.Preconditions.checkArgument
 import com.google.common.base.Preconditions.checkNotNull
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
-import com.google.firebase.auth.FirebaseCredentials
 import com.google.firebase.database.FirebaseDatabase
-import org.ostelco.prime.events.EventListeners
+import org.ostelco.prime.events.EventHandler
 import org.ostelco.prime.storage.ProductDescriptionCache
 import org.ostelco.prime.storage.ProductDescriptionCacheImpl
-import org.ostelco.prime.storage.PurchaseRequestListener
+import org.ostelco.prime.storage.PurchaseRequestHandler
 import org.ostelco.prime.storage.Storage
 import org.ostelco.prime.storage.StorageException
-import org.ostelco.prime.storage.entities.Product
-import org.ostelco.prime.storage.entities.PurchaseRequest
-import org.ostelco.prime.storage.entities.Subscriber
-import org.ostelco.prime.storage.entities.SubscriberImpl
+import org.ostelco.prime.storage.entities.*
 import java.io.FileInputStream
 import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.util.function.BiFunction
 import java.util.function.Consumer
 
 class FbStorage @Throws(StorageException::class)
 constructor(databaseName: String,
             configFile: String,
-            listeners: EventListeners) : Storage {
+            eventHandler: EventHandler) : Storage {
 
     private val productCache: ProductDescriptionCache
 
     private val facade: FbDatabaseFacade
 
-    private val listeners: EventListeners
+    private val eventHandler: EventHandler
 
     override val allSubscribers: Collection<Subscriber>
         get() = facade.allSubscribers
@@ -39,7 +38,7 @@ constructor(databaseName: String,
 
         checkNotNull(configFile)
         checkNotNull(databaseName)
-        this.listeners = checkNotNull(listeners)
+        this.eventHandler = checkNotNull(eventHandler)
 
         this.productCache = ProductDescriptionCacheImpl
 
@@ -47,11 +46,7 @@ constructor(databaseName: String,
 
         this.facade = FbDatabaseFacade(firebaseDatabase)
 
-        facade.addProductCatalogItemListener(Consumer { listeners.productCatalogItemListener(it) })
-        facade.addPurchaseRequestListener(BiFunction { key, req -> listeners.purchaseRequestListener(key, req) })
-
-        // Load subscriber balance from firebase to in-memory OcsState
-        listeners.loadSubscriberBalanceDataFromFirebaseToInMemoryStructure(allSubscribers)
+        facade.addProductCatalogItemHandler(Consumer { eventHandler.productCatalogItemHandler(it) })
     }
 
     override fun addTopupProduct(sku: String, noOfBytes: Long) {
@@ -70,36 +65,42 @@ constructor(databaseName: String,
     private fun setupFirebaseInstance(
             databaseName: String,
             configFile: String): FirebaseDatabase {
+
         try {
-            FileInputStream(configFile).use { serviceAccount ->
 
-                val options = FirebaseOptions.Builder().setCredential(FirebaseCredentials.fromCertificate(serviceAccount)).setDatabaseUrl("https://$databaseName.firebaseio.com/").build()
-
-                try {
-                    FirebaseApp.getInstance()
-                } catch (e: Exception) {
-                    FirebaseApp.initializeApp(options)
-                }
-
-                return FirebaseDatabase.getInstance()
-
-                // (un)comment next line to turn on/of extended debugging
-                // from firebase.
-                // this.firebaseDatabase.setLogLevel(com.google.firebase.database.Logger.Level.DEBUG);
-
+            val credentials: GoogleCredentials = if (Files.exists(Paths.get(configFile))) {
+                FileInputStream(configFile).use { serviceAccount -> GoogleCredentials.fromStream(serviceAccount) }
+            } else {
+                GoogleCredentials.getApplicationDefault()
             }
+
+            val options = FirebaseOptions.Builder()
+                    .setCredentials(credentials)
+                    .setDatabaseUrl("https://$databaseName.firebaseio.com/")
+                    .build()
+            try {
+                FirebaseApp.getInstance()
+            } catch (e: Exception) {
+                FirebaseApp.initializeApp(options)
+            }
+
+            return FirebaseDatabase.getInstance()
+
+            // (un)comment next line to turn on/of extended debugging
+            // from firebase.
+            // this.firebaseDatabase.setLogLevel(com.google.firebase.database.Logger.Level.DEBUG);
         } catch (ex: IOException) {
             throw StorageException(ex)
         }
-
     }
 
 
     // XXX This method represents a bad design decision.  It's too circumspect to
     //     understand.  Fix!
-    override fun addPurchaseRequestListener(listener: PurchaseRequestListener) {
-        checkNotNull(listener)
-        listeners.addPurchaseRequestListener(listener)
+    override fun addPurchaseRequestHandler(handler: PurchaseRequestHandler) {
+        checkNotNull(handler)
+        eventHandler.addPurchaseRequestHandler(handler)
+        facade.addPurchaseRequestListener(BiFunction { key, req -> eventHandler.purchaseRequestHandler(key, req) })
     }
 
     @Throws(StorageException::class)
@@ -118,7 +119,7 @@ constructor(databaseName: String,
     @Throws(StorageException::class)
     override fun removeDisplayDatastructure(msisdn: String) {
         checkNotNull(msisdn)
-        facade.removeByMsisdn(msisdn)
+        facade.removeDisplayDatastructureByMsisdn(msisdn)
     }
 
     override fun injectPurchaseRequest(pr: PurchaseRequest): String {
@@ -131,15 +132,12 @@ constructor(databaseName: String,
         facade.removeRecordOfPurchaseById(id)
     }
 
-    override fun addRecordOfPurchaseByMsisdn(
-            msisdn: String,
-            sku: String,
-            millisSinceEpoch: Long): String {
-        checkNotNull(msisdn)
-        checkNotNull(sku)
-        checkArgument(millisSinceEpoch > 0)
+    override fun addRecordOfPurchase(purchase: RecordOfPurchase): String {
+        checkNotNull(purchase.msisdn)
+        checkNotNull(purchase.sku)
+        checkArgument(purchase.millisSinceEpoch > 0)
 
-        return facade.addRecordOfPurchaseByMsisdn(msisdn, sku, millisSinceEpoch)
+        return facade.addRecordOfPurchase(purchase)
     }
 
     @Throws(StorageException::class)
@@ -172,18 +170,15 @@ constructor(databaseName: String,
             throw StorageException("noOfBytes can't be negative")
         }
 
-        val sub = getSubscriberFromMsisdn(msisdn) as SubscriberImpl?
-                ?: throw StorageException("Unknown msisdn " + msisdn)
-
+        val sub = SubscriberImpl(msisdn)
         sub.setNoOfBytesLeft(noOfBytes)
 
         facade.updateAuthorativeUserData(sub)
     }
 
-    override fun insertNewSubscriber(msisdn: String): String {
+    override fun insertNewSubscriber(msisdn: String) {
         checkNotNull(msisdn)
-        val sub = SubscriberImpl()
-        sub.setMsisdn(msisdn)
+        val sub = SubscriberImpl(msisdn)
         return facade.insertNewSubscriber(sub)
     }
 }

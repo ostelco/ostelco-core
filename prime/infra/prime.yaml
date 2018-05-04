@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: prime-service
+  labels:
+    app: prime
+    tier: backend
+spec:
+  ports:
+  - name: grpc
+    port: 80
+    targetPort: 9000
+    protocol: TCP
+    name: http2
+  selector:
+    app: prime
+    tier: backend
+  type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: prime
+  labels:
+    app: prime
+    tier: backend
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: prime
+        tier: backend
+    spec:
+      containers:
+      - name: esp
+        image: gcr.io/endpoints-release/endpoints-runtime:1
+        args: [
+          "--http2_port=9000",
+          "--service=ocs.endpoints.pantel-2decb.cloud.goog",
+          "--rollout_strategy=managed",
+          "--backend=grpc://127.0.0.1:8082"
+        ]
+        ports:
+        - containerPort: 9000
+      - name: prime
+        image: gcr.io/pantel-2decb/prime:1.0.6
+        volumeMounts:
+        - name: secret-config
+          mountPath: "/secret"
+          readOnly: true
+        ports:
+        - containerPort: 8080
+        - containerPort: 8081
+        - containerPort: 8082
+      volumes:
+      - name: secret-config
+        secret:
+          secretName: pantel-prod.json

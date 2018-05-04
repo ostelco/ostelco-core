@@ -2,6 +2,7 @@ package org.ostelco.prime.storage
 
 
 import org.ostelco.prime.storage.entities.PurchaseRequest
+import org.ostelco.prime.storage.entities.RecordOfPurchase
 import org.ostelco.prime.storage.entities.Subscriber
 
 /**
@@ -31,15 +32,15 @@ interface Storage : ProductDescriptionCache {
     fun getSubscriberFromMsisdn(msisdn: String): Subscriber?
 
     @Throws(StorageException::class)
-    fun insertNewSubscriber(msisdn: String): String
+    fun insertNewSubscriber(msisdn: String)
 
     @Throws(StorageException::class)
     fun removeSubscriberByMsisdn(msisdn: String)
 
-    fun addPurchaseRequestListener(listener: PurchaseRequestListener)
+    fun addPurchaseRequestHandler(handler: PurchaseRequestHandler)
 
     @Throws(StorageException::class)
-    fun addRecordOfPurchaseByMsisdn(ephermeralMsisdn: String, sku: String, now: Long): String
+    fun addRecordOfPurchase(purchase: RecordOfPurchase): String
 
     fun removePurchaseRequestById(id: String)
 

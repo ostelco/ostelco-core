@@ -1,5 +1,6 @@
 package org.ostelco.pseudonym
 
+import com.google.cloud.bigquery.BigQueryOptions
 import com.google.cloud.datastore.Datastore
 import com.google.cloud.datastore.DatastoreOptions
 import com.google.cloud.datastore.testing.LocalDatastoreHelper
@@ -86,6 +87,7 @@ class PseudonymServerApplication : Application<PseudonymServerConfig>() {
                 WeeklyBounds(),
                 client)
         env.lifecycle().manage(messageProcessor)
-        env.jersey().register(PseudonymResource(datastore, WeeklyBounds()))
+        val bigquery = BigQueryOptions.getDefaultInstance().getService();
+        env.jersey().register(PseudonymResource(datastore, WeeklyBounds(), bigquery))
     }
 }

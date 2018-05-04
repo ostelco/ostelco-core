@@ -12,7 +12,8 @@ buildscript {
 plugins {
     id "application"
     id "jacoco"
-    id "com.github.johnrengelman.shadow" version "2.0.3"
+    id "com.github.johnrengelman.shadow" version "2.0.4"
+    id "project-report"
 }
 
 apply plugin: 'org.junit.platform.gradle.plugin'
@@ -20,6 +21,7 @@ apply plugin: 'org.junit.platform.gradle.plugin'
 dependencies {
     implementation project(':ocs-api')
     implementation project(':diameter-stack')
+    implementation "com.google.cloud:google-cloud-core-grpc:1.28.0"
 
     testImplementation project(':diameter-test')
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.1.1'
@@ -56,6 +58,9 @@ task pack(type: Zip, dependsOn: 'shadowJar') {
         rename { String fileName ->
             fileName.replace('prod.', '')
         }
+    }
+    from ('config/pantel-prod.json') {
+        into (project.name + '/config/')
     }
     from ('build/libs/ocsgw-uber.jar') {
         into(project.name + '/build/libs/')

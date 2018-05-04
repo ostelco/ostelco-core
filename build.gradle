@@ -26,14 +26,13 @@ subprojects {
     options.encoding = 'UTF-8'
   }
   ext {
-    kotlinVersion = "1.2.31"
+    kotlinVersion = "1.2.41"
     dropwizardVersion = "1.3.1"
   }
 }
 
-task pack(type: Zip, dependsOn: [':ocsgw:pack', ':prime:pack', ':auth-server:pack']) {
+task pack(type: Zip, dependsOn: [':ocsgw:pack', ':auth-server:pack']) {
   from zipTree('ocsgw/build/deploy/ocsgw.zip')
-  from zipTree('prime/build/deploy/prime.zip')
   from zipTree('auth-server/build/deploy/auth-server.zip')
   from 'docker-compose.yaml'
   from 'docker-compose.prod.yaml'

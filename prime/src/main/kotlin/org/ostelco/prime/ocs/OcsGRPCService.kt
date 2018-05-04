@@ -5,6 +5,7 @@ import org.ostelco.ocs.api.ActivateRequest
 import org.ostelco.ocs.api.ActivateResponse
 import org.ostelco.ocs.api.CreditControlAnswerInfo
 import org.ostelco.ocs.api.CreditControlRequestInfo
+import org.ostelco.ocs.api.CreditControlRequestType.NONE
 import org.ostelco.ocs.api.OcsServiceGrpc
 import org.ostelco.prime.logger
 import java.util.*
@@ -75,6 +76,10 @@ class OcsGRPCService(private val ocsService: OcsService) : OcsServiceGrpc.OcsSer
          * @param request
          */
         override fun onNext(request: CreditControlRequestInfo) {
+            if(request.type == NONE) {
+                // this request is just to keep connection alive
+                return
+            }
             LOG.info("Received Credit-Control-Request request :: " + "for MSISDN: {} with request id: {}",
                     request.msisdn, request.requestId)
 

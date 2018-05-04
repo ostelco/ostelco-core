@@ -1,11 +1,9 @@
+# This config is used as config.yaml when prime is running using docker-compose for Acceptance Testing
+
 logging:
   level: INFO
   loggers:
     org.ostelco: DEBUG
-  appenders:
-    - type: console
-      layout:
-        type: json
 
 eventProcessor:
   configFile: /secret/pantel-prod.json
