@@ -23,7 +23,7 @@ class DataConsumptionInfoPublisher(private val projectId: String, private val to
 
     private val LOG by logger()
 
-    private var publisher: Publisher? = null
+    private lateinit var publisher: Publisher
 
     @Throws(IOException::class)
     override fun start() {
@@ -37,7 +37,7 @@ class DataConsumptionInfoPublisher(private val projectId: String, private val to
     @Throws(Exception::class)
     override fun stop() {
         // When finished with the publisher, shutdown to free up resources.
-        publisher?.shutdown()
+        publisher.shutdown()
     }
 
     override fun onEvent(
@@ -63,7 +63,7 @@ class DataConsumptionInfoPublisher(private val projectId: String, private val to
                 .build()
 
         //schedule a message to be published, messages are automatically batched
-        val future = publisher!!.publish(pubsubMessage)
+        val future = publisher.publish(pubsubMessage)
 
         // add an asynchronous callback to handle success / failure
         ApiFutures.addCallback(future, object : ApiFutureCallback<String> {

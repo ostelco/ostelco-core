@@ -1,7 +1,7 @@
 package org.ostelco.prime.events
 
+import org.ostelco.prime.model.PurchaseRequest
 import org.ostelco.prime.storage.entities.NotATopupProductException
-import org.ostelco.prime.storage.entities.PurchaseRequest
 import java.util.*
 
 class EventProcessorException : Exception {

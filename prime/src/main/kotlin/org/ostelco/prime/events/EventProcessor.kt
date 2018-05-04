@@ -4,11 +4,19 @@ import com.google.common.base.Preconditions.checkNotNull
 import com.lmax.disruptor.EventHandler
 import io.dropwizard.lifecycle.Managed
 import org.ostelco.prime.disruptor.PrimeEvent
+import org.ostelco.prime.firebase.entities.asMap
 import org.ostelco.prime.logger
+import org.ostelco.prime.model.Product
+import org.ostelco.prime.model.PurchaseRequest
+import org.ostelco.prime.model.RecordOfPurchase
+import org.ostelco.prime.model.TopUpProduct
 import org.ostelco.prime.storage.PurchaseRequestHandler
 import org.ostelco.prime.storage.Storage
 import org.ostelco.prime.storage.StorageException
-import org.ostelco.prime.storage.entities.*
+import org.ostelco.prime.storage.entities.NotATopupProductException
+import org.ostelco.prime.storage.entities.asTopupProduct
+import org.ostelco.prime.storage.entities.isTopUpProject
+
 import java.util.concurrent.atomic.AtomicBoolean
 
 class EventProcessor(
@@ -31,7 +39,9 @@ class EventProcessor(
 
         try {
             val topup = getValidTopUpProduct(pr, sku)
-            handleTopupProduct(pr, msisdn, topup!!)
+            if (topup != null) {
+                handleTopupProduct(pr, msisdn, topup)
+            }
         } catch (ex: NotATopupProductException) {
             LOG.info("Ignoring non-topup purchase request " + pr)
         }
@@ -77,7 +87,10 @@ class EventProcessor(
         try {
             LOG.info("Handling topup product = " + pr.asMap().toString())
             storage.updateDisplayDatastructure(msisdn)
-            val purchase = RecordOfPurchaseImpl( msisdn, pr.sku, pr.millisSinceEpoch)
+            val purchase = RecordOfPurchase(
+                    msisdn = msisdn,
+                    sku = pr.sku,
+                    millisSinceEpoch = pr.millisSinceEpoch)
             storage.addRecordOfPurchase(purchase)
             storage.removePurchaseRequestById(pr.id)
             ocsBalanceUpdater.updateBalance(msisdn, topup.noOfBytes)
@@ -114,7 +127,10 @@ class EventProcessor(
             // XXX adding '+' prefix
             LOG.info("Updating data bundle balance for {} to {} bytes",
                     event.msisdn, event.bundleBytes)
-            setRemainingByMsisdn("+" + event.msisdn!!, event.bundleBytes)
+            val msisdn = event.msisdn
+            if (msisdn != null) {
+                setRemainingByMsisdn("+$msisdn", event.bundleBytes)
+            }
         } catch (e: Exception) {
             LOG.warn("Exception handling prime event in EventProcessor", e)
         }
@@ -156,7 +172,7 @@ class EventProcessor(
                 try {
                     handlePurchaseRequest(request)
                 } catch (e: EventProcessorException) {
-                    LOG.error("Could not handle purchase request " + request, e)
+                    LOG.error("Could not handle purchase request $request", e)
                 }
             }
         })

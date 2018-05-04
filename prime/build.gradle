@@ -24,6 +24,7 @@ dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
   implementation project(':ocs')
   implementation project(':prime-api')
+  implementation project(':model')
   implementation project(':ostelco-lib')
   implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
   implementation "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"

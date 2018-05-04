@@ -17,15 +17,16 @@ import org.ostelco.prime.events.EventProcessor
 import org.ostelco.prime.events.EventProcessorException
 import org.ostelco.prime.events.EventProcessorTest
 import org.ostelco.prime.events.OcsBalanceUpdater
+import org.ostelco.prime.model.PurchaseRequest
 import org.ostelco.prime.storage.ProductDescriptionCacheImpl
 import org.ostelco.prime.storage.Products.DATA_TOPUP_3GB
 import org.ostelco.prime.storage.PurchaseRequestHandler
 import org.ostelco.prime.storage.Storage
 import org.ostelco.prime.storage.StorageException
 import org.ostelco.prime.storage.entities.NotATopupProductException
-import org.ostelco.prime.storage.entities.PurchaseRequest
-import org.ostelco.prime.storage.entities.PurchaseRequestImpl
+import org.ostelco.prime.storage.entities.asTopupProduct
 import java.lang.Thread.sleep
+import java.time.Instant
 import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -96,7 +97,12 @@ class FbPurchaseEventRoundtripTest {
             }
         })
 
-        val req = PurchaseRequestImpl(DATA_TOPUP_3GB, EventProcessorTest.PAYMENT_TOKEN, EPHERMERAL_MSISDN)
+        val req = PurchaseRequest(
+                sku = DATA_TOPUP_3GB.sku,
+                paymentToken = EventProcessorTest.PAYMENT_TOKEN,
+                msisdn = EPHERMERAL_MSISDN,
+                id = EPHERMERAL_MSISDN,
+                millisSinceEpoch = Instant.now().toEpochMilli())
 
         Assert.assertNotEquals(null, storage!!.getSubscriberFromMsisdn(EPHERMERAL_MSISDN))
 
