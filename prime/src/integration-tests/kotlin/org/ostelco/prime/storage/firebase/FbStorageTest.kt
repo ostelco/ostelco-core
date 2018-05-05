@@ -2,22 +2,17 @@ package org.ostelco.prime.storage.firebase
 
 import org.junit.After
 import org.junit.Assert
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
-import org.junit.Assert.fail
+import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Test
-import org.ostelco.prime.model.PurchaseRequest
-import org.ostelco.prime.model.RecordOfPurchase
+import org.ostelco.prime.model.PurchaseRecord
+import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.storage.legacy.Products.DATA_TOPUP_3GB
-import org.ostelco.prime.storage.legacy.PurchaseRequestHandler
 import org.ostelco.prime.storage.legacy.Storage
 import org.ostelco.prime.storage.legacy.StorageException
 import java.lang.Thread.sleep
 import java.time.Instant
 import java.util.*
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 class FbStorageTest {
 
@@ -29,116 +24,57 @@ class FbStorageTest {
     @Throws(StorageException::class, InterruptedException::class)
     fun setUp() {
         initFirebaseConfigRegistry()
-        this.storage = FbStorage()
+        this.storage = FirebaseStorage()
 
         sleep(MILLIS_TO_WAIT_WHEN_STARTING_UP.toLong())
-        storage.removeSubscriberByMsisdn(EPHERMERAL_MSISDN)
-        storage.insertNewSubscriber(EPHERMERAL_MSISDN)
+        storage.removeSubscriber(EPHERMERAL_EMAIL)
+        storage.addSubscriber(EPHERMERAL_EMAIL, Subscriber(EPHERMERAL_EMAIL))
+        storage.addSubscription(EPHERMERAL_EMAIL, MSISDN)
         this.prids = ArrayList()
     }
 
     @After
     @Throws(StorageException::class)
     fun cleanUp() {
-        storage.removeSubscriberByMsisdn(EPHERMERAL_MSISDN)
-        for (prid in prids) {
-            storage.removePurchaseRequestById(prid)
-        }
+        storage.removeSubscriber(EPHERMERAL_EMAIL)
     }
 
     @Test
     @Throws(StorageException::class)
-    fun getStorageByMsisdnTest() {
-        val subscriberByMsisdn = storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN)
-        assertNotEquals(null, subscriberByMsisdn)
-        assertEquals(EPHERMERAL_MSISDN, subscriberByMsisdn!!.msisdn)
+    fun createReadDeleteSubscriber() {
+        assertNotNull(storage.getSubscriber(EPHERMERAL_EMAIL))
     }
 
     @Test
     @Throws(StorageException::class)
-    fun insertNewSubscriberTest() {
-        Assert.assertNotEquals(null, storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN))
-    }
-
-    @Test
-    @Throws(StorageException::class)
-    fun setRemainingByMsisdnTest() {
-        storage.setRemainingByMsisdn(
-                EPHERMERAL_MSISDN,
+    fun setBalance() {
+        storage.setBalance(
+                MSISDN,
                 RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS)
-        Assert.assertEquals(RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS,
-                storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN)!!.noOfBytesLeft)
-        storage.setRemainingByMsisdn(EPHERMERAL_MSISDN, 0)
-        Assert.assertEquals(0L, storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN)!!.noOfBytesLeft)
-    }
-
-    @Test
-    @Throws(StorageException::class)
-    fun updateDisplayDatastructureTest() {
-        storage.setRemainingByMsisdn(EPHERMERAL_MSISDN,
-                RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS)
-        storage.updateDisplayDatastructure(EPHERMERAL_MSISDN)
-        // XXX  Some verification missing, but it looks like the right thing
+        Assert.assertEquals(RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS, storage.balances[MSISDN])
+        storage.setBalance(MSISDN, 0)
+        Assert.assertEquals(0L, storage.balances[MSISDN])
     }
 
     @Test
     @Throws(StorageException::class)
     fun addRecordOfPurchaseTest() {
         val now = Instant.now().toEpochMilli()
-        val purchase = RecordOfPurchase(
-                msisdn = EPHERMERAL_MSISDN,
+        val purchase = PurchaseRecord(
+                msisdn = MSISDN,
                 sku = DATA_TOPUP_3GB.sku,
                 millisSinceEpoch = now)
-        val id = storage.addRecordOfPurchase(purchase)
-        storage.removeRecordOfPurchaseById(purchase.msisdn, id)
-    }
-
-    @Test
-    @Throws(InterruptedException::class)
-    fun testWriteThenReactToUpdateRequest() {
-
-        val latch = CountDownLatch(2)
-
-        storage.addPurchaseRequestHandler(
-                object : PurchaseRequestHandler {
-                    override fun onPurchaseRequest(request: PurchaseRequest) {
-                        assertNotEquals(null, request)
-                        assertEquals(PAYMENT_TOKEN, request.paymentToken)
-                        assertEquals(DATA_TOPUP_3GB.sku, request.sku)
-                        latch.countDown()
-                    }
-                })
-
-        val cr = PurchaseRequest(
-                sku = DATA_TOPUP_3GB.sku,
-                paymentToken = PAYMENT_TOKEN,
-                msisdn = EPHERMERAL_MSISDN,
-                millisSinceEpoch = Instant.now().toEpochMilli(),
-                id = EPHERMERAL_MSISDN)
-
-        val id = storage.injectPurchaseRequest(cr)
-        val id2 = storage.injectPurchaseRequest(cr)
-        prids.add(id)
-        prids.add(id2)
-
-        if (!latch.await(TIMEOUT_IN_SECONDS.toLong(), TimeUnit.SECONDS)) {
-            fail("Read/react failed")
-        }
-
-        storage.removePurchaseRequestById(id)
-        storage.removePurchaseRequestById(id2)
+        storage.addPurchaseRecord(purchase)
     }
 
     companion object {
 
-        private const val PAYMENT_TOKEN = "thisIsAPaymentToken"
+        private const val EPHERMERAL_EMAIL = "foo@bar.com"
 
-        private const val EPHERMERAL_MSISDN = "+4747116996"
+        private const val MSISDN = "+4747116996"
 
         private const val MILLIS_TO_WAIT_WHEN_STARTING_UP = 3000
 
         private const val RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS = 92L
-
-        private const val TIMEOUT_IN_SECONDS = 10
     }
 }

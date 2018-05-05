@@ -174,7 +174,7 @@ class OcsTest {
 
         /**
          * The gRPC service that will produce incoming events from the
-         * simulated packet gateway, contains an [OcsService] instance bound
+         * simulated packet gateway, contains an [OcsSubscriberService] instance bound
          * to a particular port (in our case 8082).
          */
         private lateinit var ocsServer: OcsServer

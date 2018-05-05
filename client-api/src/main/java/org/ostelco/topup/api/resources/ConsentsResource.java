@@ -3,11 +3,9 @@ package org.ostelco.topup.api.resources;
 import io.dropwizard.auth.Auth;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
-import lombok.AllArgsConstructor;
-import lombok.NonNull;
 import org.ostelco.prime.client.api.model.Consent;
-import org.ostelco.topup.api.core.Error;
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
+import org.ostelco.topup.api.core.Error;
 import org.ostelco.topup.api.db.SubscriberDAO;
 
 import javax.validation.constraints.NotNull;
@@ -19,18 +17,20 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
-import java.util.List;
+import java.util.Collection;
 
 /**
  * Consents API.
  *
  */
-@AllArgsConstructor
 @Path("/consents")
 public class ConsentsResource extends ResourceHelpers {
 
-    @NonNull
     private final SubscriberDAO dao;
+
+    public ConsentsResource(SubscriberDAO dao) {
+        this.dao = dao;
+    }
 
     @GET
     @Produces({"application/json"})
@@ -40,14 +40,14 @@ public class ConsentsResource extends ResourceHelpers {
                 .build();
         }
 
-        Either<Error, List<Consent>> result = dao.getConsents(token.getName());
+        Either<Error, Collection<Consent>> result = dao.getConsents(token.getName());
 
         return result.isRight()
             ? Response.status(Response.Status.OK)
-                 .entity(getConsentsAsJson(result.right().get()))
+                 .entity(asJson(result.right().get()))
                  .build()
             : Response.status(Response.Status.NOT_FOUND)
-                 .entity(getErrorAsJson(result.left().get()))
+                 .entity(asJson(result.left().get()))
                  .build();
     }
 
@@ -71,7 +71,7 @@ public class ConsentsResource extends ResourceHelpers {
             ? Response.status(Response.Status.OK)
                  .build()
             : Response.status(Response.Status.NOT_FOUND)
-                 .entity(getErrorAsJson(error.get()))
+                 .entity(asJson(error.get()))
                  .build();
     }
 }

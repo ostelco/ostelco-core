@@ -3,11 +3,9 @@ package org.ostelco.topup.api.resources;
 import io.dropwizard.auth.Auth;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
-import lombok.AllArgsConstructor;
-import lombok.NonNull;
-import org.ostelco.prime.client.api.model.Product;
-import org.ostelco.topup.api.core.Error;
+import org.ostelco.prime.model.Product;
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
+import org.ostelco.topup.api.core.Error;
 import org.ostelco.topup.api.db.SubscriberDAO;
 
 import javax.validation.constraints.NotNull;
@@ -17,18 +15,20 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
-import java.util.List;
+import java.util.Collection;
 
 /**
  * Products API.
  *
  */
-@AllArgsConstructor
 @Path("/products")
 public class ProductsResource extends ResourceHelpers {
 
-    @NonNull
     private final SubscriberDAO dao;
+
+    public ProductsResource(SubscriberDAO dao) {
+        this.dao = dao;
+    }
 
     @GET
     @Produces({"application/json"})
@@ -38,14 +38,14 @@ public class ProductsResource extends ResourceHelpers {
                 .build();
         }
 
-        Either<Error, List<Product>> result = dao.getProducts(token.getName());
+        Either<Error, Collection<Product>> result = dao.getProducts(token.getName());
 
         return result.isRight()
             ? Response.status(Response.Status.OK)
-                 .entity(getProductsAsJson(result.right().get()))
+                 .entity(asJson(result.right().get()))
                  .build()
             : Response.status(Response.Status.NOT_FOUND)
-                 .entity(getErrorAsJson(result.left().get()))
+                 .entity(asJson(result.left().get()))
                  .build();
     }
 
@@ -66,7 +66,7 @@ public class ProductsResource extends ResourceHelpers {
             ? Response.status(Response.Status.CREATED)
                  .build()
             : Response.status(Response.Status.NOT_FOUND)
-                 .entity(getErrorAsJson(error.get()))
+                 .entity(asJson(error.get()))
                  .build();
     }
 }

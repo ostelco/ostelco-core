@@ -1,11 +1,11 @@
 package org.ostelco.prime.storage
 
-import org.ostelco.prime.model.AdminProduct
+import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.Entity
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.ProductClass
 import org.ostelco.prime.model.Segment
-import org.ostelco.prime.model.SubscriberV2
+import org.ostelco.prime.model.Subscriber
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
@@ -19,8 +19,8 @@ object InMemorySingletonDataStore : DataStore {
 
     private val offers = ConcurrentHashMap<String, Offer>()
     private val segments = ConcurrentHashMap<String, Segment>()
-    private val subscribers = ConcurrentHashMap<String, SubscriberV2>()
-    private val products = ConcurrentHashMap<String, AdminProduct>()
+    private val subscribers = ConcurrentHashMap<String, Subscriber>()
+    private val products = ConcurrentHashMap<String, Product>()
     private val productClasses = ConcurrentHashMap<String, ProductClass>()
 
     private val offerStore = EntityStore(offers)
@@ -31,14 +31,14 @@ object InMemorySingletonDataStore : DataStore {
 
     override fun createOffer(offer: Offer): String = offerStore.create(offer)
     override fun createSegment(segment: Segment): String = segmentStore.create(segment)
-    override fun createSubscriber(subscriber: SubscriberV2): String = subscriberStore.create(subscriber)
-    override fun createProduct(product: AdminProduct): String = productStore.create(product)
+    override fun createSubscriber(subscriber: Subscriber): String = subscriberStore.create(subscriber)
+    override fun createProduct(product: Product): String = productStore.create(product)
     override fun createProductClass(productClass: ProductClass): String = productClassStore.create(productClass)
 
     override fun getOffers(): Collection<Offer> = offerStore.getAll()
     override fun getSegments(): Collection<Segment> = segmentStore.getAll()
-    override fun getSubscribers(): Collection<SubscriberV2> = subscriberStore.getAll()
-    override fun getProducts(): Collection<AdminProduct> = productStore.getAll()
+    override fun getSubscribers(): Collection<Subscriber> = subscriberStore.getAll()
+    override fun getProducts(): Collection<Product> = productStore.getAll()
     override fun getProductClasses(): Collection<ProductClass> = productClassStore.getAll()
 
     override fun getOffer(id: String) = offers[id]
@@ -48,7 +48,7 @@ object InMemorySingletonDataStore : DataStore {
     override fun getProductClass(id: String) = productClasses[id]
 
     override fun updateSegment(segment: Segment): Boolean = segmentStore.update(segment)
-    override fun updateSubscriber(subscriber: SubscriberV2): Boolean = subscriberStore.update(subscriber)
+    override fun updateSubscriber(subscriber: Subscriber): Boolean = subscriberStore.update(subscriber)
     override fun updateProductClass(productClass: ProductClass): Boolean = productClassStore.update(productClass)
 
     class EntityStore<E: Entity>(val map: ConcurrentHashMap<String, E>)

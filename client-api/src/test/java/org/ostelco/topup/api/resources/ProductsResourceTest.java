@@ -8,8 +8,8 @@ import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.ostelco.prime.client.api.model.Price;
-import org.ostelco.prime.client.api.model.Product;
+import org.ostelco.prime.model.Price;
+import org.ostelco.prime.model.Product;
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
 import org.ostelco.topup.api.db.SubscriberDAO;
 import org.ostelco.topup.api.util.AccessToken;
@@ -22,6 +22,7 @@ import javax.ws.rs.core.Response;
 import java.util.Base64;
 import java.util.List;
 
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -39,9 +40,9 @@ public class ProductsResourceTest {
     private final String email = "mw@internet.org";
 
     private final List<Product> products = io.vavr.collection.List.of(
-            new Product("1", new Price(10, "NOK")),
-            new Product("2", new Price(5, "NOK")),
-            new Product("3", new Price(20, "NOK")))
+            new Product("1", new Price(10, "NOK"), emptyMap(), emptyMap()),
+            new Product("2", new Price(5, "NOK"), emptyMap(), emptyMap()),
+            new Product("3", new Price(20, "NOK"), emptyMap(), emptyMap()))
             .toJavaList();
     private final String userInfo = Base64.getEncoder()
             .encodeToString((new String("{\n" +
@@ -74,8 +75,7 @@ public class ProductsResourceTest {
         assertThat(resp.getMediaType().toString()).isEqualTo(MediaType.APPLICATION_JSON);
 
         // assertThat and assertEquals is not working
-        assertTrue(products.equals(resp.readEntity(new GenericType<List<Product>>() {
-        })));
+        assertTrue(products.equals(resp.readEntity(new GenericType<List<Product>>() {})));
         assertThat(arg.getValue()).isEqualTo(email);
     }
 

@@ -5,8 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
-import lombok.AllArgsConstructor;
-import lombok.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,18 +15,20 @@ import java.util.Optional;
 /**
  *
  */
-@AllArgsConstructor
 public class OAuthAuthenticator implements Authenticator<String, AccessTokenPrincipal> {
 
     private static final Logger LOG = LoggerFactory.getLogger(OAuthAuthenticator.class);
 
     private final ObjectMapper MAPPER = new ObjectMapper();
 
-    @NonNull
     private String namespace;
 
-    @NonNull
     private String key;
+
+    public OAuthAuthenticator(String namespace, String key) {
+        this.namespace = namespace;
+        this.key = key;
+    }
 
     @Override
     public Optional<AccessTokenPrincipal> authenticate(String accessToken)

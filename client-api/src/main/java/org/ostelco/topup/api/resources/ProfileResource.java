@@ -3,11 +3,9 @@ package org.ostelco.topup.api.resources;
 import io.dropwizard.auth.Auth;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
-import lombok.AllArgsConstructor;
-import lombok.NonNull;
-import org.ostelco.prime.client.api.model.Profile;
-import org.ostelco.topup.api.core.Error;
+import org.ostelco.prime.model.Subscriber;
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
+import org.ostelco.topup.api.core.Error;
 import org.ostelco.topup.api.db.SubscriberDAO;
 
 import javax.validation.constraints.NotNull;
@@ -23,12 +21,14 @@ import javax.ws.rs.core.Response;
  * Profile API.
  *
  */
-@AllArgsConstructor
 @Path("/profile")
 public class ProfileResource extends ResourceHelpers {
 
-    @NonNull
     private final SubscriberDAO dao;
+
+    public ProfileResource(SubscriberDAO dao) {
+        this.dao = dao;
+    }
 
     @GET
     @Produces({"application/json"})
@@ -38,11 +38,11 @@ public class ProfileResource extends ResourceHelpers {
                 .build();
         }
 
-        Either<Error, Profile> result = dao.getProfile(token.getName());
+        Either<Error, Subscriber> result = dao.getProfile(token.getName());
 
         return result.isRight()
             ? Response.status(Response.Status.OK)
-                 .entity(getProfileAsJson(result.right().get()))
+                 .entity(asJson(result.right().get()))
                  .build()
             : Response.status(Response.Status.NOT_FOUND)
                  .build();
@@ -51,7 +51,7 @@ public class ProfileResource extends ResourceHelpers {
     @POST
     @Consumes({"application/json"})
     public Response createProfile(@Auth AccessTokenPrincipal token,
-            @NotNull final Profile profile) {
+            @NotNull final Subscriber profile) {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                 .build();
@@ -63,14 +63,14 @@ public class ProfileResource extends ResourceHelpers {
             ? Response.status(Response.Status.CREATED)
                  .build()
             : Response.status(Response.Status.FORBIDDEN)
-                 .entity(getErrorAsJson(error.get()))
+                 .entity(asJson(error.get()))
                  .build();
     }
 
     @PUT
     @Consumes({"application/json"})
     public Response updateProfile(@Auth AccessTokenPrincipal token,
-            @NotNull final Profile profile) {
+            @NotNull final Subscriber profile) {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                 .build();
@@ -82,7 +82,7 @@ public class ProfileResource extends ResourceHelpers {
             ? Response.status(Response.Status.OK)
                  .build()
             : Response.status(Response.Status.NOT_FOUND)
-                 .entity(getErrorAsJson(error.get()))
+                 .entity(asJson(error.get()))
                  .build();
     }
 }

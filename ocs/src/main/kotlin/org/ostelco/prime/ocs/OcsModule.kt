@@ -9,7 +9,6 @@ import org.ostelco.prime.disruptor.ClearingEventHandler
 import org.ostelco.prime.disruptor.PrimeDisruptor
 import org.ostelco.prime.disruptor.PrimeEventProducerImpl
 import org.ostelco.prime.events.EventProcessor
-import org.ostelco.prime.events.OcsBalanceUpdaterImpl
 import org.ostelco.prime.module.PrimeModule
 
 @JsonTypeName("ocs")
@@ -25,16 +24,18 @@ class OcsModule : PrimeModule {
         // Disruptor provides RingBuffer, which is used by Producer
         val producer = PrimeEventProducerImpl(disruptor.disruptor.ringBuffer)
 
+        // Maybe this is bad idea to directly call OcsState.
+        // Get Balance requets should also go via Disruptor instead.
+        val ocsState = OcsState()
+
+        // OcsSubscriberServiceSingleton uses Producer to produce events for incoming requests from Client App
+        OcsSubscriberServiceSingleton.init(producer, ocsState)
+
         // OcsService uses Producer to produce events for incoming requests from P-GW
         val ocsService = OcsService(producer)
 
         // OcsServer assigns OcsService as handler for gRPC requests
         val server = OcsServer(8082, ocsService.asOcsServiceImplBase())
-
-        val ocsState = OcsState()
-
-        val ocsBalanceUpdater = OcsBalanceUpdaterImpl(producer)
-        val eventProcessor = EventProcessor(ocsBalanceUpdater)
 
         val dataConsumptionInfoPublisher = DataConsumptionInfoPublisher(
                 config.projectId,
@@ -48,13 +49,11 @@ class OcsModule : PrimeModule {
 
         disruptor.disruptor
                 .handleEventsWith(ocsState)
-                .then(ocsService.asEventHandler(), eventProcessor, dataConsumptionInfoPublisher)
+                .then(ocsService.asEventHandler(), EventProcessor(), dataConsumptionInfoPublisher)
                 .then(ClearingEventHandler())
 
         // dropwizard starts Analytics events publisher
         env.lifecycle().manage(dataConsumptionInfoPublisher)
-        // dropwizard starts event processor
-        env.lifecycle().manage(eventProcessor)
         // dropwizard starts disruptor
         env.lifecycle().manage(disruptor)
         // dropwizard starts server

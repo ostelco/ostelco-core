@@ -1,9 +1,14 @@
 package org.ostelco.topup.api.core;
 
-import lombok.Data;
-import lombok.NonNull;
-
-@Data
 public class Error {
-    @NonNull final private String description;
+
+    private final String description;
+
+    public Error(String description) {
+        this.description = description;
+    }
+
+    public String getDescription() {
+        return description;
+    }
 }

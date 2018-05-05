@@ -27,4 +27,8 @@ class FirebaseConfig {
     @NotEmpty
     @JsonProperty("configFile")
     lateinit var configFile: String
+
+    @NotEmpty
+    @JsonProperty("rootPath")
+    lateinit var rootPath: String
 }

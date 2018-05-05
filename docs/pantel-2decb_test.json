@@ -1,0 +1,60 @@
+{
+  "balance": {
+    "4747900184": 29918959910
+  },
+  "products": {
+    "1GB_249NOK": {
+      "price": {
+        "amount": 24900,
+        "currency": "NOK"
+      },
+      "properties": {
+        "noOfBytes": "1073741824"
+      },
+      "presentation": {}
+    },
+    "2GB_299NOK": {
+      "price": {
+        "amount": 29900,
+        "currency": "NOK"
+      },
+      "properties": {
+        "noOfBytes": "2147483648"
+      },
+      "presentation": {}
+    },
+    "3GB_349NOK": {
+      "price": {
+        "amount": 34900,
+        "currency": "NOK"
+      },
+      "properties": {
+        "noOfBytes": "3221225472"
+      },
+      "presentation": {}
+    },
+    "5GB_399NOK": {
+      "price": {
+        "amount": 39900,
+        "currency": "NOK"
+      },
+      "properties": {
+        "noOfBytes": "5368709120"
+      },
+      "presentation": {}
+    }
+  },
+  "subscriptions": {
+    "foo%40bar%2Ecom": "4747900184"
+  },
+  "subscribers": {
+    "foo%40bar%2Ecom": {
+      "name": "Test User",
+      "address": "",
+      "postcode": "",
+      "city": ""
+    }
+  },
+  "purchaseHistory": {
+  }
+}
