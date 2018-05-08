@@ -3,60 +3,33 @@ plugins {
     id 'net.ltgt.apt' version '0.15'
 }
 
-def dropwizardVersion = "1.3.1"
-
-allprojects {
-
-  group = 'org.ostelco'
-  version = '1.0.0-SNAPSHOT'
-
-  repositories {
-    mavenLocal()
-    mavenCentral()
-    maven { url = "https://repository.jboss.org/nexus/content/repositories/releases/" }
-    maven { url = "https://maven.repository.redhat.com/ga/" }
-    maven { url = "http://clojars.org/repo/" }
-  }
-}
-
 dependencies {
+
+    implementation project(":prime-api")
     implementation "io.dropwizard:dropwizard-auth:$dropwizardVersion"
     implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
     implementation 'com.google.guava:guava:24.1-jre'
 
     implementation 'com.google.cloud:google-cloud-datastore:1.25.0'
 
-    testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
-    testImplementation "org.mockito:mockito-core:2.18.0"
-    testImplementation 'org.assertj:assertj-core:3.9.1'
-
     // https://mvnrepository.com/artifact/org.jetbrains/annotations
     implementation 'org.jetbrains:annotations:16.0.1'
 
-    // from filter
-    // https://mvnrepository.com/artifact/org.glassfish.jersey.test-framework.providers/jersey-test-framework-provider-grizzly2
-    testCompile (group: 'org.glassfish.jersey.test-framework.providers', name: 'jersey-test-framework-provider-grizzly2', version: '2.25.1') {
-    // 2.26 (latest)
-     exclude group: 'javax.servlet',  module: 'javax.servlet-api'
-     exclude group: 'junit',  module: 'junit'
-    }
+    implementation 'io.jsonwebtoken:jjwt:0.9.0'
+    implementation "io.vavr:vavr:0.9.0"
 
     compileOnly 'org.projectlombok:lombok:1.16.20'
     annotationProcessor 'org.projectlombok:lombok:1.16.20'
 
-    compile 'io.jsonwebtoken:jjwt:0.9.0'
-    compile "io.vavr:vavr:0.9.0"
-}
+    testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+    testImplementation "org.mockito:mockito-core:2.18.0"
+    testImplementation 'org.assertj:assertj-core:3.9.1'
 
-configurations {
-    integrationImplementation.extendsFrom testImplementation
-    integrationCompile.extendsFrom testCompile
-    integrationRuntime.extendsFrom testRuntime
-}
-
-jar {
-    manifest {
-        attributes('Implementation-Title': project.name,
-                'Implementation-Version': project.version)
+    // from filter
+    // https://mvnrepository.com/artifact/org.glassfish.jersey.test-framework.providers/jersey-test-framework-provider-grizzly2
+    testCompile (group: 'org.glassfish.jersey.test-framework.providers', name: 'jersey-test-framework-provider-grizzly2', version: '2.25.1') {
+        // 2.26 (latest)
+        exclude group: 'javax.servlet',  module: 'javax.servlet-api'
+        exclude group: 'junit',  module: 'junit'
     }
 }

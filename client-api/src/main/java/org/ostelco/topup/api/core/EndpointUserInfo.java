@@ -3,13 +3,13 @@ package org.ostelco.topup.api.core;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.Optional;
-import javax.validation.constraints.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 /**
@@ -41,11 +41,9 @@ public class EndpointUserInfo {
         try {
             obj = MAPPER.readTree(decode(enc));
         } catch (JsonParseException e) {
-            LOG.error(String.format("Parsing of the provided json doc %s failed: %s"),
-                    enc, e);
+            LOG.error("Parsing of the provided json doc {} failed: {}", enc, e);
         } catch (IOException e) {
-            LOG.error(String.format("Unexpected error when parsing the json doc %s: %s"),
-                    enc, e);
+            LOG.error("Unexpected error when parsing the json doc {}: {}", enc, e);
         }
         this.obj = obj;
     }
@@ -75,7 +73,7 @@ public class EndpointUserInfo {
     }
 
     private boolean has(final String key) {
-        return obj != null && obj.has(key) ? true : false;
+        return obj != null && obj.has(key);
     }
 
     private Optional<String> get(final String key) {
