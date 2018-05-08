@@ -12,11 +12,12 @@ import org.ostelco.ocs.api.ActivateRequest
 import org.ostelco.ocs.api.ActivateResponse
 import org.ostelco.ocs.api.CreditControlAnswerInfo
 import org.ostelco.ocs.api.CreditControlRequestInfo
+import org.ostelco.ocs.api.CreditControlRequestType.INITIAL_REQUEST
 import org.ostelco.ocs.api.OcsServiceGrpc
 import org.ostelco.ocs.api.OcsServiceGrpc.OcsServiceStub
 import org.ostelco.prime.disruptor.PrimeDisruptor
 import org.ostelco.prime.disruptor.PrimeEventProducerImpl
-import org.slf4j.LoggerFactory
+import org.ostelco.prime.logger
 import java.io.IOException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -42,6 +43,7 @@ class OcsTest {
     private fun newDefaultCreditControlRequestInfo(): CreditControlRequestInfo {
         LOG.info("Req Id: {}", REQUEST_ID)
         return CreditControlRequestInfo.newBuilder()
+                .setType(INITIAL_REQUEST)
                 .setMsisdn(MSISDN)
                 .setRequestId(REQUEST_ID)
                 .build()
@@ -61,7 +63,7 @@ class OcsTest {
         // Simulate being the OCS receiving a packet containing
         // information about a data bucket containing a number
         // of bytes for some MSISDN.
-        val requests = ocsServiceStub!!.creditControlRequest(
+        val requests = ocsServiceStub.creditControlRequest(
                 object : AbstactObserver<CreditControlAnswerInfo>() {
                     override fun onNext(response: CreditControlAnswerInfo) {
                         LOG.info("Received answer for {}",
@@ -112,14 +114,14 @@ class OcsTest {
 
         // Send it over the wire, but also send  stream observer that will be
         // invoked when a reply comes back.
-        ocsServiceStub!!.activate(activateRequest, streamObserver)
+        ocsServiceStub.activate(activateRequest, streamObserver)
 
         // Wait for a second to let things get through, then move on.
         Thread.sleep(ONE_SECOND_IN_MILLISECONDS.toLong())
 
         // Send a report using the producer to the pipeline that will
         // inject a PrimeEvent that will top up the data bundle balance.
-        producer!!.topupDataBundleBalanceEvent(MSISDN, NO_OF_BYTES_TO_ADD.toLong())
+        producer.topupDataBundleBalanceEvent(MSISDN, NO_OF_BYTES_TO_ADD.toLong())
 
         // Now wait, again, for the latch to reach zero, and fail the test
         // ff it hasn't.
@@ -129,7 +131,7 @@ class OcsTest {
 
     companion object {
 
-        private val LOG = LoggerFactory.getLogger(OcsTest::class.java)
+        private val LOG by logger()
 
         /**
          * The port on which the gRPC service will be receiving incoming
@@ -162,25 +164,25 @@ class OcsTest {
          *
          * Disruptor also provides RingBuffer, which is used by Producer
          */
-        private var disruptor: PrimeDisruptor? = null
+        private lateinit var disruptor: PrimeDisruptor
 
         /**
          *
          */
-        private var producer: PrimeEventProducerImpl? = null
+        private lateinit var producer: PrimeEventProducerImpl
 
         /**
          * The gRPC service that will produce incoming events from the
          * simulated packet gateway, contains an [OcsService] instance bound
          * to a particular port (in our case 8082).
          */
-        private var ocsServer: OcsServer? = null
+        private lateinit var ocsServer: OcsServer
 
         /**
          * The "sub" that will mediate access to the GRPC channel,
          * providing an API to send / receive data to/from it.
          */
-        private var ocsServiceStub: OcsServiceStub? = null
+        private lateinit var ocsServiceStub: OcsServiceStub
 
         @BeforeClass
         @JvmStatic
@@ -189,11 +191,11 @@ class OcsTest {
 
             // Set up processing pipeline
             disruptor = PrimeDisruptor()
-            producer = PrimeEventProducerImpl(disruptor!!.disruptor.ringBuffer)
+            producer = PrimeEventProducerImpl(disruptor.disruptor.ringBuffer)
 
             // Set up the gRPC server at a particular port with a particular
             // service, that is connected to the processing pipeline.
-            val ocsService = OcsService(producer!!)
+            val ocsService = OcsService(producer)
             ocsServer = OcsServer(PORT, ocsService.asOcsServiceImplBase())
 
             val ocsState = OcsState()
@@ -203,11 +205,11 @@ class OcsTest {
             //      Producer:(OcsService, Subscriber)
             //          -> Handler:(OcsState)
             //              -> Handler:(OcsService, Subscriber)
-            disruptor!!.disruptor.handleEventsWith(ocsState).then(ocsService.asEventHandler())
+            disruptor.disruptor.handleEventsWith(ocsState).then(ocsService.asEventHandler())
 
             // start disruptor and ocs services.
-            disruptor!!.start()
-            ocsServer!!.start()
+            disruptor.start()
+            ocsServer.start()
 
             // Set up a channel to be used to communicate as an OCS instance, to an
             // Prime instance.
@@ -223,12 +225,8 @@ class OcsTest {
         @JvmStatic
         @Throws(InterruptedException::class, TimeoutException::class)
         fun tearDown() {
-            if (ocsServer != null) {
-                ocsServer!!.stop()
-            }
-            if (disruptor != null) {
-                disruptor!!.stop()
-            }
+            disruptor.stop()
+            ocsServer.stop()
         }
     }
 }

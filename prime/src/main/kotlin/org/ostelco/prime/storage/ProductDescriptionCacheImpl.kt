@@ -3,8 +3,8 @@ package org.ostelco.prime.storage
 import com.google.common.base.Preconditions.checkArgument
 import com.google.common.base.Preconditions.checkNotNull
 import org.ostelco.prime.logger
-import org.ostelco.prime.storage.entities.Product
-import org.ostelco.prime.storage.entities.TopUpProduct
+import org.ostelco.prime.model.Product
+import org.ostelco.prime.model.TopUpProduct
 import java.util.*
 
 

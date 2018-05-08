@@ -7,12 +7,15 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.database.FirebaseDatabase
 import org.ostelco.prime.events.EventHandler
+import org.ostelco.prime.model.Product
+import org.ostelco.prime.model.PurchaseRequest
+import org.ostelco.prime.model.RecordOfPurchase
+import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.storage.ProductDescriptionCache
 import org.ostelco.prime.storage.ProductDescriptionCacheImpl
 import org.ostelco.prime.storage.PurchaseRequestHandler
 import org.ostelco.prime.storage.Storage
 import org.ostelco.prime.storage.StorageException
-import org.ostelco.prime.storage.entities.*
 import java.io.FileInputStream
 import java.io.IOException
 import java.nio.file.Files
@@ -106,7 +109,7 @@ constructor(databaseName: String,
     @Throws(StorageException::class)
     override fun updateDisplayDatastructure(msisdn: String) {
         checkNotNull(msisdn)
-        val subscriber = getSubscriberFromMsisdn(msisdn) as SubscriberImpl?
+        val subscriber = getSubscriberFromMsisdn(msisdn)
                 ?: throw StorageException("Unknown MSISDN " + msisdn)
 
         val noOfBytes = subscriber.noOfBytesLeft
@@ -170,15 +173,14 @@ constructor(databaseName: String,
             throw StorageException("noOfBytes can't be negative")
         }
 
-        val sub = SubscriberImpl(msisdn)
-        sub.setNoOfBytesLeft(noOfBytes)
+        val sub = Subscriber(msisdn, noOfBytes)
 
         facade.updateAuthorativeUserData(sub)
     }
 
     override fun insertNewSubscriber(msisdn: String) {
         checkNotNull(msisdn)
-        val sub = SubscriberImpl(msisdn)
+        val sub = Subscriber(msisdn, 0)
         return facade.insertNewSubscriber(sub)
     }
 }

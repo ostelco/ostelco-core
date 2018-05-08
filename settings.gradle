@@ -5,6 +5,7 @@ include ':auth-server'
 include ':diameter-stack'
 include ':diameter-test'
 include ':ext-pgw'
+include ':model'
 include ':ocs'
 include ':ocs-api'
 include ':ocsgw'
@@ -18,6 +19,7 @@ project(':auth-server').projectDir = "$rootDir/auth-server" as File
 project(':diameter-stack').projectDir = "$rootDir/diameter-stack" as File
 project(':diameter-test').projectDir = "$rootDir/diameter-test" as File
 project(':ext-pgw').projectDir = "$rootDir/ext-pgw" as File
+project(':model').projectDir = "$rootDir/model" as File
 project(':ocs').projectDir = "$rootDir/ocs" as File
 project(':ocs-api').projectDir = "$rootDir/ocs-api" as File
 project(':ocsgw').projectDir = "$rootDir/ocsgw" as File

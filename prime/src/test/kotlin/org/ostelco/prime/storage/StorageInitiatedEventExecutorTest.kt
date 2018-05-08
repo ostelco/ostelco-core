@@ -3,8 +3,8 @@ package org.ostelco.prime.storage
 import junit.framework.TestCase.assertTrue
 import junit.framework.TestCase.fail
 import org.junit.Test
-import org.ostelco.prime.storage.entities.PurchaseRequest
-import org.ostelco.prime.storage.entities.PurchaseRequestImpl
+import org.ostelco.prime.model.PurchaseRequest
+import java.time.Instant
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -17,7 +17,11 @@ class StorageInitiatedEventExecutorTest {
     fun testRoundtrip() {
 
         val cdl = CountDownLatch(1)
-        val req = PurchaseRequestImpl()
+        val req = PurchaseRequest("sku",
+                "paymentToken",
+                "msisdn",
+                Instant.now().toEpochMilli(),
+                "id")
 
         executor.addPurchaseRequestHandler(object : PurchaseRequestHandler {
             override fun onPurchaseRequest(request: PurchaseRequest) {
