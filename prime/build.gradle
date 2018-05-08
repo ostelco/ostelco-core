@@ -25,6 +25,7 @@ dependencies {
   implementation project(':ocs')
   implementation project(':prime-api')
   implementation project(':model')
+  runtime project(':client-api')
   implementation project(':ostelco-lib')
   implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
   implementation "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
