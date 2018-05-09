@@ -39,6 +39,10 @@ public class ConsentsResource extends ResourceHelpers {
     @Produces({"application/json"})
     public Response getConsents(@Auth AccessTokenPrincipal token,
             @Valid @HeaderParam("X-Endpoint-API-UserInfo") EndpointUserInfo userInfo) {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                .build();
+        }
 
         Either<Error, List<Consent>> result = dao.getConsents(token.getName());
 
@@ -59,6 +63,10 @@ public class ConsentsResource extends ResourceHelpers {
             @NotNull
             @PathParam("consent-id") String consentId,
             @DefaultValue("true") @QueryParam("accepted") boolean accepted) {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                .build();
+        }
 
         Option<Error> error = accepted
             ? dao.acceptConsent(token.getName(), consentId)

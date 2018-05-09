@@ -39,6 +39,10 @@ public class OffersResource extends ResourceHelpers {
     @Produces({"application/json"})
     public Response getOffers(@Auth AccessTokenPrincipal token,
             @Valid @HeaderParam("X-Endpoint-API-UserInfo") EndpointUserInfo userInfo) {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                .build();
+        }
 
         Either<Error, List<Offer>> result = dao.getOffers(token.getName());
 
@@ -59,6 +63,10 @@ public class OffersResource extends ResourceHelpers {
             @NotNull
             @PathParam("offer-id") String offerId,
             @DefaultValue("true") @QueryParam("accepted") boolean accepted) {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                .build();
+        }
 
         Option<Error> error = accepted
             ? dao.acceptOffer(token.getName(), offerId)

@@ -47,6 +47,11 @@ public class AnalyticsResourceTest {
             .setSubject(subscriptionId)
             .signWith(SignatureAlgorithm.HS512, key)
             .compact();
+    private final String accessTokenIssuerMissing = Jwts.builder()
+            .setIssuer(issuer)
+            .setSubject(subscriptionId)
+            .signWith(SignatureAlgorithm.HS512, key)
+            .compact();
 
     @ClassRule
     public static final ResourceTestRule RULE = ResourceTestRule.builder()
@@ -89,6 +94,33 @@ public class AnalyticsResourceTest {
         assertThat(arg1.getValue()).isEqualTo(email);
         assertThat(isValidJson(events)).isTrue();
         assertThat(isValidJson(arg2.getValue())).isTrue();
+    }
+
+    @Test
+    public void reportAnalyticsWithIncorrectToken() throws Exception {
+        ArgumentCaptor<String> arg1 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> arg2 = ArgumentCaptor.forClass(String.class);
+
+        when(DAO.reportAnalytics(arg1.capture(), arg2.capture()))
+            .thenReturn(Option.of(null));
+
+        final String events = "[{\n" +
+                              "    \"eventType\": \"REMOVES_AN_OFFER\",\n" +
+                              "    \"offerId\": \"1\",\n" +
+                              "    \"time\": \"1524734549\"\n" +
+                              "},{\n" +
+                              "    \"eventType\": \"EXITS_APPLICATION\",\n" +
+                              "    \"time\": \"1524742549\"\n" +
+                              "}]\n";
+
+        assertThat(isValidJson(events)).isTrue();
+
+        Response resp = RULE.target("/analytics")
+            .request(MediaType.APPLICATION_JSON)
+            .header("Authorization", String.format("Bearer %s", accessTokenIssuerMissing))
+            .post(Entity.json(events));
+
+        assertThat(resp.getStatus()).isEqualTo(Response.Status.UNAUTHORIZED.getStatusCode());
     }
 
     /* https://stackoverflow.com/questions/10226897/how-to-validate-json-with-jackson-json */

@@ -33,6 +33,10 @@ public class SubscriptionResource extends ResourceHelpers {
     @Produces({"application/json"})
     public Response getSubscription(@Auth AccessTokenPrincipal token,
             @Valid @HeaderParam("X-Endpoint-API-UserInfo") EndpointUserInfo userInfo) {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                .build();
+        }
 
         Either<Error, SubscriptionStatus> result = dao.getSubscriptionStatus(token.getName());
 
