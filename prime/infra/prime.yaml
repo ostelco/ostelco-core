@@ -26,11 +26,15 @@ metadata:
     tier: backend
 spec:
   type: LoadBalancer
+  loadBalancerIP: 35.233.36.235
   ports:
   - port: 80
     targetPort: 9002
     protocol: TCP
     name: http
+  - port: 443
+    protocol: TCP
+    name: https
   selector:
     app: prime
     tier: backend
@@ -65,6 +69,7 @@ spec:
         image: gcr.io/endpoints-release/endpoints-runtime:1
         args: [
           "--http_port=9002",
+          "--ssl_port", "443",
           "--status_port=8092",
           "--service=api.endpoints.pantel-2decb.cloud.goog",
           "--rollout_strategy=managed",
@@ -72,6 +77,11 @@ spec:
         ]
         ports:
         - containerPort: 9002
+        - containerPort: 443
+        volumeMounts:
+        - mountPath: /etc/nginx/ssl
+          name: nginx-ssl
+          readOnly: true
       - name: prime
         image: gcr.io/pantel-2decb/prime:1.0.7
         volumeMounts:
@@ -86,3 +96,6 @@ spec:
       - name: secret-config
         secret:
           secretName: pantel-prod.json
+      - name: nginx-ssl
+        secret:
+          secretName: nginx-ssl
