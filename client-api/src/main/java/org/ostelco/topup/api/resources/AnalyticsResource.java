@@ -30,8 +30,11 @@ public class AnalyticsResource extends ResourceHelpers {
     @POST
     @Consumes({"application/json"})
     public Response report(@Auth AccessTokenPrincipal token,
-            @Valid @HeaderParam("X-Endpoint-API-UserInfo") EndpointUserInfo userInfo,
             final String events) {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                .build();
+        }
 
         Option<Error> error = dao.reportAnalytics(token.getName(), events);
 

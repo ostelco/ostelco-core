@@ -34,6 +34,10 @@ public class ProfileResource extends ResourceHelpers {
     @Produces({"application/json"})
     public Response getProfile(@Auth AccessTokenPrincipal token,
             @Valid @HeaderParam("X-Endpoint-API-UserInfo") EndpointUserInfo userInfo) {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                .build();
+        }
 
         Either<Error, Profile> result = dao.getProfile(token.getName());
 
@@ -49,6 +53,10 @@ public class ProfileResource extends ResourceHelpers {
     public Response updateProfile(@Auth AccessTokenPrincipal token,
             @Valid @HeaderParam("X-Endpoint-API-UserInfo") EndpointUserInfo userInfo,
             final Profile profile) {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                .build();
+        }
 
         Option<Error> error = dao.updateProfile(token.getName(), profile);
 
