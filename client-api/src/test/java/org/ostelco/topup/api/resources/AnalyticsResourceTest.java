@@ -13,16 +13,15 @@ import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
 import io.dropwizard.testing.junit.ResourceTestRule;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.vavr.collection.HashMap;
 import io.vavr.control.Option;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
-import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -40,19 +39,14 @@ public class AnalyticsResourceTest {
     private final String subscriptionId = "007";
     private final String issuer = "http://ostelco.org/";
     private final String email = "mw@internet.org";
-    private String accessToken;
-
-    @Before
-    public void setUp() {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put(issuer + "email", email);
-        accessToken = Jwts.builder()
+    private final Map<String, Object> claims = HashMap.of(issuer + "email", (Object) email)
+            .toJavaMap();
+    private final String accessToken = Jwts.builder()
             .setClaims(claims)
             .setIssuer(issuer)
             .setSubject(subscriptionId)
             .signWith(SignatureAlgorithm.HS512, key)
             .compact();
-    }
 
     @ClassRule
     public static final ResourceTestRule RULE = ResourceTestRule.builder()
