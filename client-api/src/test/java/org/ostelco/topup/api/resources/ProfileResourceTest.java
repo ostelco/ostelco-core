@@ -11,9 +11,9 @@ import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
 import io.dropwizard.testing.junit.ResourceTestRule;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.vavr.collection.HashMap;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
-import java.util.HashMap;
 import java.util.Map;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
@@ -40,20 +40,15 @@ public class ProfileResourceTest {
     private final String name = "Boaty McBoatface";
     private final String subscriptionId = "007";
     private final String issuer = "http://ostelco.org/";
-    private String accessToken;
-    private final Profile profile = new Profile(name, email);
-
-    @Before
-    public void setUp() {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put(issuer + "email", email);
-        accessToken = Jwts.builder()
+    private final Map<String, Object> claims = HashMap.of(issuer + "email", (Object) email)
+            .toJavaMap();
+    private final String accessToken = Jwts.builder()
             .setClaims(claims)
             .setIssuer(issuer)
             .setSubject(subscriptionId)
             .signWith(SignatureAlgorithm.HS512, key)
             .compact();
-    }
+    private final Profile profile = new Profile(name, email);
 
     @ClassRule
     public static final ResourceTestRule RULE = ResourceTestRule.builder()
