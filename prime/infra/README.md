@@ -53,3 +53,6 @@ Details of service
 
     kubectl describe service prime-service
 
+## API Endpoint
+
+    gcloud endpoints services deploy prime-api.yaml

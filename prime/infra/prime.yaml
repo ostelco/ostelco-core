@@ -17,6 +17,24 @@ spec:
     tier: backend
   type: LoadBalancer
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prime-api
+  labels:
+    app: prime
+    tier: backend
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 9002
+    protocol: TCP
+    name: http
+  selector:
+    app: prime
+    tier: backend
+---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -43,6 +61,17 @@ spec:
         ]
         ports:
         - containerPort: 9000
+      - name: api-esp
+        image: gcr.io/endpoints-release/endpoints-runtime:1
+        args: [
+          "--http_port=9002",
+          "--status_port=8092",
+          "--service=api.endpoints.pantel-2decb.cloud.goog",
+          "--rollout_strategy=managed",
+          "--backend=127.0.0.1:8080"
+        ]
+        ports:
+        - containerPort: 9002
       - name: prime
         image: gcr.io/pantel-2decb/prime:1.0.6
         volumeMounts:
