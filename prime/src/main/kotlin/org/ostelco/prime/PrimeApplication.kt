@@ -36,9 +36,13 @@ class PrimeApplication : Application<PrimeConfiguration>() {
         // OcsServer assigns OcsService as handler for gRPC requests
         val server = OcsServer(8082, ocsService.asOcsServiceImplBase())
 
+        val ocsConfiguration = primeConfiguration.ocsConfiguration
+
         val ocsState = OcsState()
+        ocsState.lowBalanceThreshold = ocsConfiguration.lowBalanceThreshold;
 
         val eventProcessorConfig = primeConfiguration.eventProcessorConfig
+
 
         val eventHandler = EventHandler()
 

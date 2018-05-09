@@ -184,7 +184,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         checkNotNull(purchase)
         val asMap = purchase.asMap()
         checkNotNull(asMap)
-        val dbref = recordsOfPurchase.push()
+        val dbref = recordsOfPurchase.child(stripLeadingPlus(purchase.msisdn)).push()
 
         dbref.updateChildrenAsync(asMap)
         return dbref.key
@@ -211,7 +211,8 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
             dbref: DatabaseReference,
             msisdn: String) {
         checkNotNull(msisdn)
-        removeChild(dbref, stripLeadingPlus(msisdn))
+        checkNotNull(dbref)
+        dbref.child(stripLeadingPlus(msisdn)).removeValueAsync()
     }
 
     @Throws(StorageException::class)
@@ -232,22 +233,18 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         return dbref.key
     }
 
-    fun removeRecordOfPurchaseById(id: String) {
-        removeChild(recordsOfPurchase, id)
+    fun removeRecordOfPurchaseById(purchase: RecordOfPurchase, id: String) {
+        checkNotNull(id)
+        checkNotNull(purchase)
+        checkNotNull(recordsOfPurchase)
+        clientRequests.child(stripLeadingPlus(purchase.msisdn)).child(id).removeValueAsync()
     }
 
 
     fun removePurchaseRequestById(id: String) {
         checkNotNull(id)
-        removeChild(clientRequests, id)
-    }
-
-    private fun removeChild(db: DatabaseReference, childId: String) {
-        // XXX Removes whole tree, not just the subtree for id.
-        //     how do I fix this?
-        checkNotNull(db)
-        checkNotNull(childId)
-        db.child(childId).removeValueAsync()
+        checkNotNull(clientRequests)
+        clientRequests.child(id).removeValueAsync()
     }
 
     @Throws(StorageException::class)

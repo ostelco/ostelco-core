@@ -12,4 +12,9 @@ class PrimeConfiguration : Configuration() {
     @NotNull
     @JsonProperty("eventProcessor")
     lateinit var eventProcessorConfig: EventProcessorConfiguration
+
+    @Valid
+    @NotNull
+    @JsonProperty("ocs")
+    lateinit var ocsConfiguration: OcsConfig
 }

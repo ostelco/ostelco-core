@@ -130,9 +130,10 @@ constructor(databaseName: String,
         return facade.injectPurchaseRequest(pr)
     }
 
-    override fun removeRecordOfPurchaseById(id: String) {
+    override fun removeRecordOfPurchaseById(purchase: RecordOfPurchase, id: String) {
         checkNotNull(id)
-        facade.removeRecordOfPurchaseById(id)
+        checkNotNull(purchase)
+        facade.removeRecordOfPurchaseById(purchase, id)
     }
 
     override fun addRecordOfPurchase(purchase: RecordOfPurchase): String {

@@ -14,6 +14,8 @@ class OcsState : EventHandler<PrimeEvent> {
     private val dataPackMap = HashMap<String, Long>()
     private val bucketReservedMap = HashMap<String, Long>()
 
+    var lowBalanceThreshold = 0L;
+
     override fun onEvent(
             event: PrimeEvent,
             sequence: Long,
@@ -27,11 +29,11 @@ class OcsState : EventHandler<PrimeEvent> {
             when (event.messageType) {
                 PrimeEventMessageType.CREDIT_CONTROL_REQUEST -> {
                     consumeDataBytes(msisdn, event.usedBucketBytes)
-                    // ToDo : Trigger push notification on low balance
                     event.reservedBucketBytes = reserveDataBytes(
                             msisdn,
                             event.requestedBucketBytes)
                     event.bundleBytes = getDataBundleBytes(msisdn)
+                    checkThresholds(event)
                 }
                 PrimeEventMessageType.TOPUP_DATA_BUNDLE_BALANCE -> event.bundleBytes = addDataBundleBytes(msisdn, event.requestedBucketBytes)
                 PrimeEventMessageType.GET_DATA_BUNDLE_BALANCE -> event.bundleBytes = getDataBundleBytes(msisdn)
@@ -39,6 +41,15 @@ class OcsState : EventHandler<PrimeEvent> {
             }
         } catch (e: Exception) {
             LOG.warn("Exception handling prime event in OcsState", e)
+        }
+    }
+
+    private fun checkThresholds(event: PrimeEvent) {
+        if (event.bundleBytes < lowBalanceThreshold) {
+            // Did we just cross the threshold
+            if (event.bundleBytes + event.reservedBucketBytes > lowBalanceThreshold) {
+                //sendPushNotification()
+            }
         }
     }
 

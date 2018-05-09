@@ -95,7 +95,7 @@ class FbStorageTest {
                 sku = DATA_TOPUP_3GB.sku,
                 millisSinceEpoch = now)
         val id = storage.addRecordOfPurchase(purchase)
-        storage.removeRecordOfPurchaseById(id)
+        storage.removeRecordOfPurchaseById(purchase, id)
     }
 
     @Test
