@@ -35,10 +35,10 @@ Deploy endpoints
 
 Build the Docker image (In the folder with Dockerfile)
     
-    docker build -t gcr.io/${PROJECT_ID}/prime:1.0.6 .
+    docker build -t gcr.io/${PROJECT_ID}/prime:1.0.7 .
 Push to the registry
     
-    gcloud docker -- push gcr.io/${PROJECT_ID}/prime:1.0.6
+    gcloud docker -- push gcr.io/${PROJECT_ID}/prime:1.0.7
 
 Apply the deployment & service
     
