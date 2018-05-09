@@ -1,7 +1,6 @@
 package org.ostelco.topup.api.resources;
 
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
-import org.ostelco.topup.api.core.EndpointUserInfo;
 import org.ostelco.topup.api.core.Error;
 import org.ostelco.topup.api.core.Consent;
 import org.ostelco.topup.api.db.SubscriberDAO;
@@ -37,8 +36,7 @@ public class ConsentsResource extends ResourceHelpers {
 
     @GET
     @Produces({"application/json"})
-    public Response getConsents(@Auth AccessTokenPrincipal token,
-            @Valid @HeaderParam("X-Endpoint-API-UserInfo") EndpointUserInfo userInfo) {
+    public Response getConsents(@Auth AccessTokenPrincipal token) {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                 .build();
@@ -59,7 +57,6 @@ public class ConsentsResource extends ResourceHelpers {
     @Path("{consent-id}")
     @Produces({"application/json"})
     public Response updateConsent(@Auth AccessTokenPrincipal token,
-            @Valid @HeaderParam("X-Endpoint-API-UserInfo") EndpointUserInfo userInfo,
             @NotNull
             @PathParam("consent-id") String consentId,
             @DefaultValue("true") @QueryParam("accepted") boolean accepted) {

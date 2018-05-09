@@ -1,7 +1,6 @@
 package org.ostelco.topup.api.resources;
 
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
-import org.ostelco.topup.api.core.EndpointUserInfo;
 import org.ostelco.topup.api.core.Error;
 import org.ostelco.topup.api.core.SubscriptionStatus;
 import org.ostelco.topup.api.db.SubscriberDAO;
@@ -31,8 +30,7 @@ public class SubscriptionResource extends ResourceHelpers {
     @GET
     @Path("status")
     @Produces({"application/json"})
-    public Response getSubscription(@Auth AccessTokenPrincipal token,
-            @Valid @HeaderParam("X-Endpoint-API-UserInfo") EndpointUserInfo userInfo) {
+    public Response getSubscription(@Auth AccessTokenPrincipal token) {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                 .build();

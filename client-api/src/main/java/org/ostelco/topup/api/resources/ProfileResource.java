@@ -1,7 +1,6 @@
 package org.ostelco.topup.api.resources;
 
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
-import org.ostelco.topup.api.core.EndpointUserInfo;
 import org.ostelco.topup.api.core.Error;
 import org.ostelco.topup.api.core.Profile;
 import org.ostelco.topup.api.db.SubscriberDAO;
@@ -32,8 +31,7 @@ public class ProfileResource extends ResourceHelpers {
 
     @GET
     @Produces({"application/json"})
-    public Response getProfile(@Auth AccessTokenPrincipal token,
-            @Valid @HeaderParam("X-Endpoint-API-UserInfo") EndpointUserInfo userInfo) {
+    public Response getProfile(@Auth AccessTokenPrincipal token) {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                 .build();
@@ -51,7 +49,6 @@ public class ProfileResource extends ResourceHelpers {
 
     @PUT
     public Response updateProfile(@Auth AccessTokenPrincipal token,
-            @Valid @HeaderParam("X-Endpoint-API-UserInfo") EndpointUserInfo userInfo,
             final Profile profile) {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)

@@ -1,7 +1,6 @@
 package org.ostelco.topup.api.resources;
 
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
-import org.ostelco.topup.api.core.EndpointUserInfo;
 import org.ostelco.topup.api.core.Error;
 import org.ostelco.topup.api.core.Offer;
 import org.ostelco.topup.api.db.SubscriberDAO;
@@ -37,8 +36,7 @@ public class OffersResource extends ResourceHelpers {
 
     @GET
     @Produces({"application/json"})
-    public Response getOffers(@Auth AccessTokenPrincipal token,
-            @Valid @HeaderParam("X-Endpoint-API-UserInfo") EndpointUserInfo userInfo) {
+    public Response getOffers(@Auth AccessTokenPrincipal token) {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                 .build();
@@ -59,7 +57,6 @@ public class OffersResource extends ResourceHelpers {
     @Path("{offer-id}")
     @Produces({"application/json"})
     public Response updateOffer(@Auth AccessTokenPrincipal token,
-            @Valid @HeaderParam("X-Endpoint-API-UserInfo") EndpointUserInfo userInfo,
             @NotNull
             @PathParam("offer-id") String offerId,
             @DefaultValue("true") @QueryParam("accepted") boolean accepted) {
