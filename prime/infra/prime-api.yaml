@@ -4,8 +4,12 @@ info:
   description: "The client API for Panacea."
   version: "1.0.0"
 host: "api.endpoints.pantel-2decb.cloud.goog"
+x-google-endpoints:
+    - name: "api.endpoints.pantel-2decb.cloud.goog"
+      target: "35.233.36.235"
 schemes:
   - "http"
+  - "https"
 paths:
   "/offers":
     get:
