@@ -2,6 +2,7 @@ package org.ostelco.topup.api.auth;
 
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import java.security.Key;
@@ -22,15 +23,16 @@ public class OAuthAuthenticator implements Authenticator<String, AccessTokenPrin
     public Optional<AccessTokenPrincipal> authenticate(String accessToken)
         throws AuthenticationException {
 
-        String subject = Jwts.parser()
+        Claims claims = Jwts.parser()
             .setSigningKey(key)
             .parseClaimsJws(accessToken)
-            .getBody()
-            .getSubject();
+            .getBody();
+        String email = claims.get(claims.getIssuer() + "email",
+                String.class);
 
-        if (subject == null || subject.isEmpty()) {
+        if (email == null || email.isEmpty()) {
             throw new AuthenticationException("Invalid accesss token");
         }
-        return Optional.of(new AccessTokenPrincipal(subject));
+        return Optional.of(new AccessTokenPrincipal(email));
     }
 }
