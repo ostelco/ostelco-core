@@ -13,10 +13,13 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
+import java.util.HashMap;
+import java.util.Map;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -36,11 +39,21 @@ public class ProfileResourceTest {
     private static final String key = "secret";
     private final String name = "Boaty McBoatface";
     private final String subscriptionId = "007";
-    private final String accessToken = Jwts.builder()
-        .setSubject(subscriptionId)
-        .signWith(SignatureAlgorithm.HS512, key)
-        .compact();
+    private final String issuer = "http://ostelco.org/";
+    private String accessToken;
     private final Profile profile = new Profile(name, email);
+
+    @Before
+    public void setUp() {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(issuer + "email", email);
+        accessToken = Jwts.builder()
+            .setClaims(claims)
+            .setIssuer(issuer)
+            .setSubject(subscriptionId)
+            .signWith(SignatureAlgorithm.HS512, key)
+            .compact();
+    }
 
     @ClassRule
     public static final ResourceTestRule RULE = ResourceTestRule.builder()
@@ -73,7 +86,7 @@ public class ProfileResourceTest {
            is added to the lombok config file ('lombok.config').
            Ref.: lombok changelog for ver. 1.16.20. */
         assertThat(resp.readEntity(Profile.class)).isEqualTo(profile);
-        assertThat(arg.getValue()).isEqualTo(subscriptionId);
+        assertThat(arg.getValue()).isEqualTo(email);
     }
 
     @Test
@@ -94,7 +107,7 @@ public class ProfileResourceTest {
 
         assertThat(resp.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
         assertThat(resp.getMediaType()).isNull();
-        assertThat(arg1.getValue()).isEqualTo(subscriptionId);
+        assertThat(arg1.getValue()).isEqualTo(email);
         assertThat((arg2.getValue()).getEmail()).isEqualTo(email);
         assertThat((arg2.getValue()).getName()).isEqualTo(name);
     }

@@ -14,12 +14,15 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -37,14 +40,25 @@ public class ConsentsResourceTest {
 
     private static final String key = "secret";
     private final String subscriptionId = "007";
-    private final String accessToken = Jwts.builder()
-        .setSubject(subscriptionId)
-        .signWith(SignatureAlgorithm.HS512, key)
-        .compact();
+    private final String issuer = "http://ostelco.org/";
+    private final String email = "mw@internet.org";
+    private String accessToken;
     private final List<Consent> consents = io.vavr.collection.List.of(
             new Consent("1", "blabla", false),
             new Consent("2", "blabla", true))
         .toJavaList();
+
+    @Before
+    public void setUp() {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(issuer + "email", email);
+        accessToken = Jwts.builder()
+            .setClaims(claims)
+            .setIssuer(issuer)
+            .setSubject(subscriptionId)
+            .signWith(SignatureAlgorithm.HS512, key)
+            .compact();
+    }
 
     @ClassRule
     public static final ResourceTestRule RULE = ResourceTestRule.builder()
@@ -72,7 +86,7 @@ public class ConsentsResourceTest {
         assertThat(resp.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
         assertThat(resp.getMediaType().toString()).isEqualTo(MediaType.APPLICATION_JSON);
         assertThat(resp.readEntity(new GenericType<List<Consent>>() {})).isEqualTo(consents);
-        assertThat(arg.getValue()).isEqualTo(subscriptionId);
+        assertThat(arg.getValue()).isEqualTo(email);
     }
 
     @Test
@@ -92,7 +106,7 @@ public class ConsentsResourceTest {
             .put(Entity.text(""));
 
         assertThat(resp.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
-        assertThat(arg1.getValue()).isEqualTo(subscriptionId);
+        assertThat(arg1.getValue()).isEqualTo(email);
         assertThat(arg2.getValue()).isEqualTo(consentId);
     }
 
@@ -113,7 +127,7 @@ public class ConsentsResourceTest {
             .put(Entity.text(""));
 
         assertThat(resp.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
-        assertThat(arg1.getValue()).isEqualTo(subscriptionId);
+        assertThat(arg1.getValue()).isEqualTo(email);
         assertThat(arg2.getValue()).isEqualTo(consentId);
     }
 }
