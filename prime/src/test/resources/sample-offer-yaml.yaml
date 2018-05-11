@@ -19,9 +19,20 @@ producingAgent:
 # # realtime database we used in the demo, converted to
 # # camel case.  All the fields should be documented
 # # in this document, and we should think through if this is
-# # the best set of parameters we weant.
+# # the best set of parameters we went.
 
 offer:
+     # XXX This offer does not have an ID, but if we were just
+     #     updating the list of members of the segment, it would
+     #     make sense to have an OfferID, or something that refers
+     #     to a previously created offer.  That id should be created
+     #     by the importer, and used by the agent when updating
+     #     membership.   If any other parameters are going to be
+     #     changed, it is necessary to produce a new offer.
+     #     It may make sense to put the ID in the url when
+     #     when we update (PUT method) changes, but then the
+     #     ID in the yaml will be redundant.   Figure out how to
+     #     do this one way or another and just do it.
      visibility:
         from: "2018-02-22T12:41:49.871Z"
         to: "2018-02-22T12:41:49.871Z"
