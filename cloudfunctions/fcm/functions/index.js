@@ -8,7 +8,7 @@ admin.initializeApp()
 /**
  * Triggers when a user balance get below a threshold and sends a notification.
  */
-exports.sendUserNotification = functions.database.ref('/fcm-test/{msisdn}')
+exports.sendUserNotification = functions.database.ref('/fcm-requests/{msisdn}')
     .onCreate(event => {
 
         const userObject = event.val()
