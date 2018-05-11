@@ -183,4 +183,8 @@ constructor(databaseName: String,
         val sub = Subscriber(msisdn, 0)
         return facade.insertNewSubscriber(sub)
     }
+
+    override fun addNotification(subscriber: Subscriber) {
+        facade.addNotification(subscriber)
+    }
 }

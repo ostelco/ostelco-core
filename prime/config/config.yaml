@@ -11,3 +11,6 @@ eventProcessor:
   configFile: /secret/pantel-prod.json
   projectId: pantel-2decb
   topicId: data-traffic
+
+ocs:
+  lowBalanceThreshold: 30000000

@@ -40,6 +40,8 @@ class PrimeApplication : Application<PrimeConfiguration>() {
 
         val eventProcessorConfig = primeConfiguration.eventProcessorConfig
 
+        val ocsConfig = primeConfiguration.ocsConfig
+
         val eventHandler = EventHandler()
 
         val storage = FbStorage(
@@ -50,7 +52,7 @@ class PrimeApplication : Application<PrimeConfiguration>() {
         loadSubscriberBalanceFromDatabaseToInMemoryStructure(storage.allSubscribers, ocsState);
 
         val ocsBalanceUpdater = OcsBalanceUpdaterImpl(producer)
-        val eventProcessor = EventProcessor(storage, ocsBalanceUpdater)
+        val eventProcessor = EventProcessor(storage, ocsBalanceUpdater, ocsConfig.lowBalanceThreshold)
 
         val dataConsumptionInfoPublisher = DataConsumptionInfoPublisher(
                 eventProcessorConfig.projectId,

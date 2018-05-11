@@ -6,10 +6,7 @@ import io.dropwizard.lifecycle.Managed
 import org.ostelco.prime.disruptor.PrimeEvent
 import org.ostelco.prime.firebase.entities.asMap
 import org.ostelco.prime.logger
-import org.ostelco.prime.model.Product
-import org.ostelco.prime.model.PurchaseRequest
-import org.ostelco.prime.model.RecordOfPurchase
-import org.ostelco.prime.model.TopUpProduct
+import org.ostelco.prime.model.*
 import org.ostelco.prime.storage.PurchaseRequestHandler
 import org.ostelco.prime.storage.Storage
 import org.ostelco.prime.storage.StorageException
@@ -21,7 +18,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class EventProcessor(
         val storage: Storage,
-        val ocsBalanceUpdater: OcsBalanceUpdater) : EventHandler<PrimeEvent>, Managed {
+        val ocsBalanceUpdater: OcsBalanceUpdater,
+        val lowBalanceThreshold: Long) : EventHandler<PrimeEvent>, Managed {
 
     private val LOG by logger()
 
@@ -110,7 +108,6 @@ class EventProcessor(
         } catch (e: StorageException) {
             throw EventProcessorException(e)
         }
-
     }
 
     override fun onEvent(
@@ -131,6 +128,7 @@ class EventProcessor(
             if (msisdn != null) {
                 setRemainingByMsisdn("+$msisdn", event.bundleBytes)
             }
+            checkThreshold(event)
         } catch (e: Exception) {
             LOG.warn("Exception handling prime event in EventProcessor", e)
         }
@@ -156,6 +154,15 @@ class EventProcessor(
                 break;
         }
         */
+    }
+
+    private fun checkThreshold(event: PrimeEvent) {
+        if (event.bundleBytes < lowBalanceThreshold) {
+            // Only send when just crossed the threshold
+            if ((event.bundleBytes + event.reservedBucketBytes) > lowBalanceThreshold) {
+                storage.addNotification(Subscriber(event.msisdn!!, event.bundleBytes))
+            }
+        }
     }
 
 

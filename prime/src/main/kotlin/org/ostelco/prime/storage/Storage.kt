@@ -45,4 +45,6 @@ interface Storage : ProductDescriptionCache {
     fun removePurchaseRequestById(id: String)
 
     fun removeRecordOfPurchaseById(id: String)
+
+    fun addNotification(subscriber: Subscriber)
 }

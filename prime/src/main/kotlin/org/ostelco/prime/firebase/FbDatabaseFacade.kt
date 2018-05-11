@@ -42,6 +42,8 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
 
     private val products: DatabaseReference
 
+    private val notifications: DatabaseReference
+
     // Ignoring this, not a fatal failure.
     val allSubscribers: Collection<Subscriber>
         get() {
@@ -73,6 +75,8 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         // Used to listen in on new products from the Firebase product catalog.
         this.quickBuyProducts = firebaseDatabase.getReference("quick-buy-products")
         this.products = firebaseDatabase.getReference("products")
+
+        this.notifications = firebaseDatabase.getReference("fcm-requests")
     }
 
     private fun newCatalogDataChangedEventListener(
@@ -188,6 +192,11 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
 
         dbref.updateChildrenAsync(asMap)
         return dbref.key
+    }
+
+    fun addNotification(subscriber: Subscriber) {
+        checkNotNull(subscriber)
+        notifications.child(stripLeadingPlus(subscriber.msisdn)).setValueAsync(subscriber.asMap())
     }
 
     @Throws(StorageException::class)

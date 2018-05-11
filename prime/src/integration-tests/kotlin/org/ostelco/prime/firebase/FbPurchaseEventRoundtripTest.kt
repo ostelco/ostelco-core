@@ -58,7 +58,7 @@ class FbPurchaseEventRoundtripTest {
         storage!!.removeSubscriberByMsisdn(EPHERMERAL_MSISDN)
         storage!!.insertNewSubscriber(EPHERMERAL_MSISDN)
 
-        val processor = EventProcessor(storage!!, ocsBalanceUpdater!!)
+        val processor = EventProcessor(storage!!, ocsBalanceUpdater!!, 0L)
         processor.start()
         this.prids = ArrayList()
     }
