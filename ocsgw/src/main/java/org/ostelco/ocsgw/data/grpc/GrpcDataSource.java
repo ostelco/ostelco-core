@@ -10,6 +10,7 @@ import org.jdiameter.api.InternalException;
 import org.jdiameter.api.OverloadException;
 import org.jdiameter.api.RouteException;
 import org.jdiameter.api.cca.ServerCCASession;
+import org.jdiameter.api.cca.events.JCreditControlAnswer;
 import org.ostelco.diameter.CreditControlContext;
 import org.ostelco.diameter.model.CreditControlAnswer;
 import org.ostelco.diameter.model.FinalUnitAction;
@@ -137,7 +138,10 @@ public class GrpcDataSource implements DataSource {
                                 if (session != null && session.isValid()) {
                                     CreditControlAnswer cca = createCreditControlAnswer(answer);
                                     try {
-                                        session.sendCreditControlAnswer(ccrContext.createCCA(cca));
+                                        JCreditControlAnswer diameterCCA = ccrContext.createCCA(cca);
+                                        if (diameterCCA != null) {
+                                            session.sendCreditControlAnswer(ccrContext.createCCA(cca));
+                                        }
                                     } catch (InternalException | IllegalDiameterStateException | RouteException | OverloadException e) {
                                         LOG.error("Failed to send Credit-Control-Answer", e);
                                     }
