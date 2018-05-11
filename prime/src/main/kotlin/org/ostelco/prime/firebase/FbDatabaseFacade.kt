@@ -233,11 +233,14 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         return dbref.key
     }
 
-    fun removeRecordOfPurchaseById(purchase: RecordOfPurchase, id: String) {
+    /**
+     * Removes a purchase record by the Firebase ref ID.
+     */
+    fun removeRecordOfPurchaseById(msisdn: String, id: String) {
         checkNotNull(id)
-        checkNotNull(purchase)
+        checkNotNull(msisdn)
         checkNotNull(recordsOfPurchase)
-        clientRequests.child(stripLeadingPlus(purchase.msisdn)).child(id).removeValueAsync()
+        clientRequests.child(stripLeadingPlus(msisdn)).child(id).removeValueAsync()
     }
 
 

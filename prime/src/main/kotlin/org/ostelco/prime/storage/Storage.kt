@@ -44,5 +44,5 @@ interface Storage : ProductDescriptionCache {
 
     fun removePurchaseRequestById(id: String)
 
-    fun removeRecordOfPurchaseById(purchase: RecordOfPurchase, id: String)
+    fun removeRecordOfPurchaseById(msisdn: String, id: String)
 }
