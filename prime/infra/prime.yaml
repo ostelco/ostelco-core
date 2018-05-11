@@ -71,7 +71,7 @@ spec:
           "--http_port=9002",
           "--ssl_port", "443",
           "--status_port=8092",
-          "--service=api.endpoints.pantel-2decb.cloud.goog",
+          "--service=api.ostelco.org",
           "--rollout_strategy=managed",
           "--backend=127.0.0.1:8080"
         ]
@@ -80,7 +80,7 @@ spec:
         - containerPort: 443
         volumeMounts:
         - mountPath: /etc/nginx/ssl
-          name: nginx-ssl
+          name: api-ostelco-ssl
           readOnly: true
       - name: prime
         image: gcr.io/pantel-2decb/prime:1.0.7
@@ -96,6 +96,6 @@ spec:
       - name: secret-config
         secret:
           secretName: pantel-prod.json
-      - name: nginx-ssl
+      - name: api-ostelco-ssl
         secret:
-          secretName: nginx-ssl
+          secretName: api-ostelco-ssl
