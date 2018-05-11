@@ -7,14 +7,26 @@ import org.jdiameter.api.Request
 import org.jdiameter.api.ResultCode
 import org.jdiameter.api.cca.events.JCreditControlRequest
 import org.jdiameter.common.impl.app.cca.JCreditControlAnswerImpl
-import org.ostelco.diameter.model.*
+import org.ostelco.diameter.model.CreditControlAnswer
+import org.ostelco.diameter.model.CreditControlRequest
+import org.ostelco.diameter.model.FinalUnitAction
+import org.ostelco.diameter.model.FinalUnitIndication
+import org.ostelco.diameter.model.MultipleServiceCreditControl
+import org.ostelco.diameter.model.RequestType
 import org.ostelco.diameter.parser.AvpParser
 import org.ostelco.diameter.util.DiameterUtilities
 
+/**
+ * @param sessionId
+ * @param originalCreditControlRequest
+ * @param originHost
+ * @param skipAnswer Set to true, when answer to not to be sent to PGw. Default value is false.
+ */
 class CreditControlContext(
         val sessionId: String,
         val originalCreditControlRequest: JCreditControlRequest,
-        val originHost: String) {
+        val originHost: String,
+        var skipAnswer: Boolean = false) {
 
     private val LOG by logger()
 

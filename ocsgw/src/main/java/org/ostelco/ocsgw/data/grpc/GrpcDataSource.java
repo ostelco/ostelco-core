@@ -68,12 +68,14 @@ public class GrpcDataSource implements DataSource {
 
     private static final int MAX_ENTRIES = 3000;
     private final LinkedHashMap<String, CreditControlContext> ccrMap = new LinkedHashMap<String, CreditControlContext>(MAX_ENTRIES, .75F) {
+        @Override
         protected boolean removeEldestEntry(Map.Entry<String, CreditControlContext> eldest) {
             return size() > MAX_ENTRIES;
         }
     };
 
     private final LinkedHashMap<String, SessionContext> sessionIdMap = new LinkedHashMap<String, SessionContext>(MAX_ENTRIES, .75F) {
+        @Override
         protected boolean removeEldestEntry(Map.Entry<String, SessionContext> eldest) {
             return size() > MAX_ENTRIES;
         }
@@ -130,22 +132,26 @@ public class GrpcDataSource implements DataSource {
                 new AbstactObserver<CreditControlAnswerInfo>() {
                     public void onNext(CreditControlAnswerInfo answer) {
                         try {
-                            LOG.info("[<<] Received data bucket for " + answer.getMsisdn());
+                            LOG.info("[<<] Received data bucket for {}", answer.getMsisdn());
                             final CreditControlContext ccrContext = ccrMap.remove(answer.getRequestId());
                             if (ccrContext != null) {
                                 final ServerCCASession session = OcsServer.getInstance().getStack().getSession(ccrContext.getSessionId(), ServerCCASession.class);
                                 if (session != null && session.isValid()) {
                                     CreditControlAnswer cca = createCreditControlAnswer(answer);
-                                    try {
-                                        session.sendCreditControlAnswer(ccrContext.createCCA(cca));
-                                    } catch (InternalException | IllegalDiameterStateException | RouteException | OverloadException e) {
-                                        LOG.error("Failed to send Credit-Control-Answer", e);
+                                    // Skip sending answer if skipAnswer == true.
+                                    // Still 'createCreditControlAnswer(answer)' should be invoked because it updates the msisdn blocklist.
+                                    if (!ccrContext.getSkipAnswer()) {
+                                        try {
+                                            session.sendCreditControlAnswer(ccrContext.createCCA(cca));
+                                        } catch (InternalException | IllegalDiameterStateException | RouteException | OverloadException e) {
+                                            LOG.error("Failed to send Credit-Control-Answer", e);
+                                        }
                                     }
                                 } else {
-                                    LOG.warn("No stored CCR or Session for " + answer.getRequestId());
+                                    LOG.warn("No stored CCR or Session for {}", answer.getRequestId());
                                 }
                             } else {
-                                LOG.warn("Missing CreditControlContext for req id " + answer.getRequestId());
+                                LOG.warn("Missing CreditControlContext for req id {}", answer.getRequestId());
                             }
                         } catch (Exception e) {
                             LOG.error("Credit-Control-Request failed ", e);
