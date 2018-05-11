@@ -194,6 +194,11 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         return dbref.key
     }
 
+    /**
+     * Uses Firebase as an API for sending notifications to the subscriber.
+     * A cloud function will listen to the key and send push notification to the client
+     * with the cureent balance. Used for low balance notifications
+     */
     fun addNotification(subscriber: Subscriber) {
         checkNotNull(subscriber)
         notifications.child(stripLeadingPlus(subscriber.msisdn)).setValueAsync(subscriber.asMap())
