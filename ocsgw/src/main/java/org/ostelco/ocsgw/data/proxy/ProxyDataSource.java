@@ -37,6 +37,7 @@ public class ProxyDataSource implements DataSource {
             secondary.handleRequest(context);
         } else {
             // For CCR-U we will send all requests to both Local and Secondary until the secondary has blocked the msisdn
+            // Only one Datasource is allowed to create an answer so only one reply is sent to P-GW
             if (!secondary.isBlocked(context.getCreditControlRequest().getMsisdn())) {
                 local.handleRequest(context);
                 secondary.handleRequest(context);

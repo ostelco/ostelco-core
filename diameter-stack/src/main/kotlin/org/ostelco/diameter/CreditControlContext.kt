@@ -18,6 +18,8 @@ class CreditControlContext(
 
     private val LOG by logger()
 
+    private var created: Boolean = false
+
     val originRealm:String = originalCreditControlRequest.destinationRealm
 
     val creditControlRequest: CreditControlRequest = AvpParser().parse(
@@ -32,6 +34,13 @@ class CreditControlContext(
 
         var answer: JCreditControlAnswerImpl? = null
         var resultCode = ResultCode.SUCCESS
+
+        // This guard to make sure only one DataSource is able to create an answer
+        if (!created) {
+            created = true
+        } else {
+            return answer
+        }
 
         try {
             answer = JCreditControlAnswerImpl(originalCreditControlRequest.message as Request, ResultCode.SUCCESS.toLong())
