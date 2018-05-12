@@ -25,10 +25,11 @@ import org.ostelco.diameter.util.DiameterUtilities
 class CreditControlContext(
         val sessionId: String,
         val originalCreditControlRequest: JCreditControlRequest,
-        val originHost: String,
-        var skipAnswer: Boolean = false) {
+        val originHost: String) {
 
     private val LOG by logger()
+
+    var skipAnswer: Boolean = false
 
     val originRealm:String = originalCreditControlRequest.destinationRealm
 

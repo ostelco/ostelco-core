@@ -49,8 +49,7 @@ public class OcsServer {
         final CreditControlContext ccrContext = new CreditControlContext(
                 session.getSessionId(),
                 request,
-                stack.getMetaData().getLocalPeer().getUri().getFQDN(),
-                false); // by default, do send Answer back to PGw, ie skipAnswer = false.
+                stack.getMetaData().getLocalPeer().getUri().getFQDN());
         source.handleRequest(ccrContext);
     }
 
