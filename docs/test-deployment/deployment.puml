@@ -5,10 +5,14 @@ package "Docker" {
  [Ocsgw]
  [ESP]
  [Prime]
+ database DB
 }
 
-[Acceptance Test Runner] -> [Ext-pgw]
-[Ext-pgw] -> [ocsgw]
-[ocsgw] -> [ESP]
-[ocsgw] -> [Prime]
+[Acceptance Test Runner] -> [Ext-pgw] : http
+[Ext-pgw] -> [Ocsgw] : diameter
+[Ocsgw] -> [ESP] : gRPC
+[Ocsgw] -> [Prime] : 8082
+[ESP] -> [Prime] : 8080
+[Prime] ->  DB
+
 @enduml
