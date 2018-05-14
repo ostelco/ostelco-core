@@ -1,0 +1,14 @@
+@startuml
+package "Docker" {
+ [Acceptance Test Runner]
+ [Ext-pgw]
+ [Ocsgw]
+ [ESP]
+ [Prime]
+}
+
+[Acceptance Test Runner] -> [Ext-pgw]
+[Ext-pgw] -> [ocsgw]
+[ocsgw] -> [ESP]
+[ocsgw] -> [Prime]
+@enduml
