@@ -1,6 +1,6 @@
 package org.ostelco.topup.api.resources;
 
-import org.ostelco.topup.api.core.SignUp;
+import org.ostelco.topup.api.core.Profile;
 import org.ostelco.topup.api.core.Error;
 import org.ostelco.topup.api.db.SubscriberDAO;
 
@@ -27,9 +27,9 @@ public class SignUpResource extends ResourceHelpers {
     @POST
     @Consumes({"application/json"})
     @Produces({"application/json"})
-    public Response signUp(final SignUp signUp) {
+    public Response signUp(final Profile profile) {
 
-        Option<Error> error = dao.signUp(signUp);
+        Option<Error> error = dao.signUp(profile);
 
         return error.isEmpty()
             ? Response.status(Response.Status.CREATED)

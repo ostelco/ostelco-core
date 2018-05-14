@@ -5,7 +5,6 @@ import org.ostelco.topup.api.core.Grant;
 import org.ostelco.topup.api.core.Product;
 import org.ostelco.topup.api.core.Profile;
 import org.ostelco.topup.api.core.Consent;
-import org.ostelco.topup.api.core.SignUp;
 import org.ostelco.topup.api.core.SubscriptionStatus;
 
 import io.vavr.control.Either;
@@ -17,7 +16,7 @@ import java.util.List;
  */
 public interface SubscriberDAO {
 
-    public Option<Error> signUp(final SignUp signUp);
+    public Option<Error> signUp(final Profile profile);
 
     public Either<Error, String> handleGrant(final Grant grant);
 
