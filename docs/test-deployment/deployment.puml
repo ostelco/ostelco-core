@@ -9,6 +9,7 @@ package "Docker" {
 }
 
 [Acceptance Test Runner] -> [Ext-pgw] : http
+[Acceptance Test Runner] -> [Prime] : http
 [Ext-pgw] -> [Ocsgw] : diameter
 [Ocsgw] -> [ESP] : gRPC
 [Ocsgw] -> [Prime] : 8082
