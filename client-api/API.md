@@ -51,7 +51,7 @@ Furthermore:
  - The API is a REST API.
  - Assumes that some OAuth2 or similar based service is used for authentication.
  - All client interactions goes through the backend, including handling of authentication, payment etc.
- - Subscriptions as such has already been activated through the CRM systemm including registration of email
+ - Subscriptions as such has already been activated through the CRM system including registration of email
    address etc.
 
 ## Data model
@@ -77,7 +77,7 @@ is used up first and then the next etc.
 
  1. The preferred language is indicated in every request from client.
  2. The client can indicate request for one or more languages.
- 3. Text strings in reponses to the client should be in all languages indicated in the request. This
+ 3. Text strings in responses to the client should be in all languages indicated in the request. This
     will allow the client to switch between languages without connecting to backend.
  4. If a language that is not supported is indicated in a request, it should be ignored.
  5. Text strings in the default language should always be included in a response.
@@ -112,8 +112,8 @@ is used up first and then the next etc.
                  "text": "en feil"
               }]
 
-The `en` (english) language is the default langauge and is always included. Sections for additional languages
-are added according to the langauge specification included in the request if available.
+The `en` (english) language is the default language and is always included. Sections for additional languages
+are added according to the language specification included in the request if available.
 
 ### HTTP status codes and error reporting
 
@@ -251,7 +251,7 @@ user registers the following information:
  - Name
  - Email address (previously registered as part of the subscription activation)
 
-An email with a verification code is then sent to the registred email address. The verification code is then
+An email with a verification code is then sent to the registered email address. The verification code is then
 entered into the client and the sign up procedure has been completed.
 
 #### Register personal information
@@ -435,10 +435,10 @@ On error a HTTP `400` status code is returned.
 
 ### Subscriptions
 
- 1. An user can (with the simplified data model) only have one or no _subscription_.
+ 1. A user can (with the simplified data model) only have one or no _subscription_.
  2. A _subscription_ is identified with an `subscription-id`.
  3. The `subscription-id` is included in requests.
- 4. If an user has a _subscription_ the user also has a handset (where the client is running).
+ 4. If a user has a _subscription_ the user also has a handset (where the client is running).
  5. An offer might be to one _subscription_ (a particular user) or to multiple subscriptions (more than one user).
 
 #### Get info for one subscription
