@@ -4,7 +4,7 @@ This description of the domain model is based on UML, and should be
 merged with and be treated as a step towards implementation of the
 text-based domain model:
 
-![UML class diagram][classes.png]
+![UML class diagram](classes.png)
 
 The diagram should be interpreted like this:
 
