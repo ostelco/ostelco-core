@@ -2,7 +2,7 @@ package org.ostelco.topup.api.resources;
 
 import org.ostelco.topup.api.core.Consent;
 import org.ostelco.topup.api.core.Error;
-import org.ostelco.topup.api.core.Offer;
+import org.ostelco.topup.api.core.Product;
 import org.ostelco.topup.api.core.Profile;
 import org.ostelco.topup.api.core.SubscriptionStatus;
 
@@ -42,9 +42,9 @@ public abstract class ResourceHelpers {
     }
 
     /* Offers POJO to JSON. */
-    protected String getOffersAsJson(final List<Offer> offers) {
+    protected String getProductsAsJson(final List<Product> products) {
         try {
-            return MAPPER.writeValueAsString(offers);
+            return MAPPER.writeValueAsString(products);
         } catch (JsonProcessingException e) {
             LOG.error("Error in json response {}", e);
         }

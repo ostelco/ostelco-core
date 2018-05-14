@@ -3,7 +3,7 @@ package org.ostelco.topup.api.db;
 import org.ostelco.topup.api.core.Consent;
 import org.ostelco.topup.api.core.Error;
 import org.ostelco.topup.api.core.Grant;
-import org.ostelco.topup.api.core.Offer;
+import org.ostelco.topup.api.core.Product;
 import org.ostelco.topup.api.core.Profile;
 import org.ostelco.topup.api.core.SignUp;
 import org.ostelco.topup.api.core.SubscriptionStatus;
@@ -50,17 +50,17 @@ public class SubscriberDAOImpl implements SubscriberDAO {
     }
 
     @Override
-    public Either<Error, List<Offer>> getOffers(final String subscriptionId) {
+    public Either<Error, List<Product>> getProducts(final String subscriptionId) {
         return Either.left(new Error());
     }
 
     @Override
-    public Option<Error> acceptOffer(final String subscriptionId, final String offerId) {
+    public Option<Error> acceptProduct(final String subscriptionId, final String productId) {
         return Option.of(null);
     }
 
     @Override
-    public Option<Error> rejectOffer(final String subscriptionId, final String offerId) {
+    public Option<Error> rejectProduct(final String subscriptionId, final String productId) {
         return Option.of(null);
     }
 

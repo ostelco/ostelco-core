@@ -2,7 +2,7 @@ package org.ostelco.topup.api.db;
 
 import org.ostelco.topup.api.core.Error;
 import org.ostelco.topup.api.core.Grant;
-import org.ostelco.topup.api.core.Offer;
+import org.ostelco.topup.api.core.Product;
 import org.ostelco.topup.api.core.Profile;
 import org.ostelco.topup.api.core.Consent;
 import org.ostelco.topup.api.core.SignUp;
@@ -27,11 +27,11 @@ public interface SubscriberDAO {
 
     public Either<Error, SubscriptionStatus> getSubscriptionStatus(final String subscriptionId);
 
-    public Either<Error, List<Offer>> getOffers(final String subscriptionId);
+    public Either<Error, List<Product>> getProducts(final String subscriptionId);
 
-    public Option<Error> acceptOffer(final String subscriptionId, final String offerId);
+    public Option<Error> acceptProduct(final String subscriptionId, final String productId);
 
-    public Option<Error> rejectOffer(final String subscriptionId, final String offerId);
+    public Option<Error> rejectProduct(final String subscriptionId, final String productId);
 
     public Either<Error, List<Consent>> getConsents(final String subscriptionId);
 
