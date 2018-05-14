@@ -40,6 +40,7 @@ class PrimeApplication : Application<PrimeConfiguration>() {
 
         val eventProcessorConfig = primeConfiguration.eventProcessorConfig
 
+
         val eventHandler = EventHandler()
 
         val storage = FbStorage(
