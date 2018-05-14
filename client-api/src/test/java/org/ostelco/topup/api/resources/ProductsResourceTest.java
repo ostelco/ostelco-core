@@ -3,7 +3,7 @@ package org.ostelco.topup.api.resources;
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
 import org.ostelco.topup.api.auth.OAuthAuthenticator;
 import org.ostelco.topup.api.core.Error;
-import org.ostelco.topup.api.core.Offer;
+import org.ostelco.topup.api.core.Product;
 import org.ostelco.topup.api.db.SubscriberDAO;
 
 import io.dropwizard.auth.AuthDynamicFeature;
@@ -32,10 +32,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Offers API tests.
+ * Products API tests.
  *
  */
-public class OffersResourceTest {
+public class ProductsResourceTest {
 
     private static final SubscriberDAO DAO = mock(SubscriberDAO.class);
 
@@ -51,10 +51,10 @@ public class OffersResourceTest {
             .setSubject(subscriptionId)
             .signWith(SignatureAlgorithm.HS512, key)
             .compact();
-    private final List<Offer> offers = io.vavr.collection.List.of(
-            new Offer("1", "Great offer!", 10.00F, 5, 0L),
-            new Offer("2", "Big time!", 5.00F, 5, 0L),
-            new Offer("3", "Ultimate package!", 20.00F, 50, 0L))
+    private final List<Product> products = io.vavr.collection.List.of(
+            new Product("1", 10.00F),
+            new Product("2", 5.00F),
+            new Product("3", 20.00F))
         .toJavaList();
     private final String userInfo = Base64.getEncoder()
         .encodeToString((new String("{\n" +
@@ -71,17 +71,17 @@ public class OffersResourceTest {
                         .setPrefix("Bearer")
                         .buildAuthFilter()))
         .addResource(new AuthValueFactoryProvider.Binder<>(AccessTokenPrincipal.class))
-        .addResource(new OffersResource(DAO))
+        .addResource(new ProductsResource(DAO))
         .setTestContainerFactory(new GrizzlyWebTestContainerFactory())
         .build();
 
     @Test
-    public void getOffers() throws Exception {
+    public void getProducts() throws Exception {
         ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
 
-        when(DAO.getOffers(arg.capture())).thenReturn(Either.right(offers));
+        when(DAO.getProducts(arg.capture())).thenReturn(Either.right(products));
 
-        Response resp = RULE.target("/offers")
+        Response resp = RULE.target("/products")
             .request()
             .header("Authorization", String.format("Bearer %s", accessToken))
             .header("X-Endpoint-API-UserInfo", userInfo)
@@ -89,21 +89,21 @@ public class OffersResourceTest {
 
         assertThat(resp.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
         assertThat(resp.getMediaType().toString()).isEqualTo(MediaType.APPLICATION_JSON);
-        assertThat(resp.readEntity(new GenericType<List<Offer>>() {})).isEqualTo(offers);
+        assertThat(resp.readEntity(new GenericType<List<Product>>() {})).isEqualTo(products);
         assertThat(arg.getValue()).isEqualTo(email);
     }
 
     @Test
-    public void acceptOffer() throws Exception {
+    public void acceptProduct() throws Exception {
         ArgumentCaptor<String> arg1 = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> arg2 = ArgumentCaptor.forClass(String.class);
 
-        final String offerId = offers.get(0).getOfferId();
+        final String productId = products.get(0).getProductId();
 
-        when(DAO.acceptOffer(arg1.capture(), arg2.capture())).thenReturn(Option.of(null));
-        when(DAO.rejectOffer(arg1.capture(), arg2.capture())).thenReturn(Option.of(new Error()));
+        when(DAO.acceptProduct(arg1.capture(), arg2.capture())).thenReturn(Option.of(null));
+        when(DAO.rejectProduct(arg1.capture(), arg2.capture())).thenReturn(Option.of(new Error()));
 
-        Response resp = RULE.target(String.format("/offers/%s", offerId))
+        Response resp = RULE.target(String.format("/products/%s", productId))
             .queryParam("accepted", true)
             .request()
             .header("Authorization", String.format("Bearer %s", accessToken))
@@ -112,20 +112,20 @@ public class OffersResourceTest {
 
         assertThat(resp.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
         assertThat(arg1.getValue()).isEqualTo(email);
-        assertThat(arg2.getValue()).isEqualTo(offerId);
+        assertThat(arg2.getValue()).isEqualTo(productId);
     }
 
     @Test
-    public void rejectOffer() throws Exception {
+    public void rejectProduct() throws Exception {
         ArgumentCaptor<String> arg1 = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> arg2 = ArgumentCaptor.forClass(String.class);
 
-        final String offerId = offers.get(0).getOfferId();
+        final String productId = products.get(0).getProductId();
 
-        when(DAO.acceptOffer(arg1.capture(), arg2.capture())).thenReturn(Option.of(new Error()));
-        when(DAO.rejectOffer(arg1.capture(), arg2.capture())).thenReturn(Option.of(null));
+        when(DAO.acceptProduct(arg1.capture(), arg2.capture())).thenReturn(Option.of(new Error()));
+        when(DAO.rejectProduct(arg1.capture(), arg2.capture())).thenReturn(Option.of(null));
 
-        Response resp = RULE.target(String.format("/offers/%s", offerId))
+        Response resp = RULE.target(String.format("/products/%s", productId))
             .queryParam("accepted", false)
             .request()
             .header("Authorization", String.format("Bearer %s", accessToken))
@@ -134,6 +134,6 @@ public class OffersResourceTest {
 
         assertThat(resp.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
         assertThat(arg1.getValue()).isEqualTo(email);
-        assertThat(arg2.getValue()).isEqualTo(offerId);
+        assertThat(arg2.getValue()).isEqualTo(productId);
     }
 }

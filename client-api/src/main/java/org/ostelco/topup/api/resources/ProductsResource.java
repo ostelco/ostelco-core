@@ -2,7 +2,7 @@ package org.ostelco.topup.api.resources;
 
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
 import org.ostelco.topup.api.core.Error;
-import org.ostelco.topup.api.core.Offer;
+import org.ostelco.topup.api.core.Product;
 import org.ostelco.topup.api.db.SubscriberDAO;
 
 import io.dropwizard.auth.Auth;
@@ -24,29 +24,29 @@ import lombok.AllArgsConstructor;
 import lombok.NonNull;
 
 /**
- * Offers API.
+ * Products API.
  *
  */
 @AllArgsConstructor
-@Path("/offers")
-public class OffersResource extends ResourceHelpers {
+@Path("/products")
+public class ProductsResource extends ResourceHelpers {
 
     @NonNull
     private final SubscriberDAO dao;
 
     @GET
     @Produces({"application/json"})
-    public Response getOffers(@Auth AccessTokenPrincipal token) {
+    public Response getProducts(@Auth AccessTokenPrincipal token) {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                 .build();
         }
 
-        Either<Error, List<Offer>> result = dao.getOffers(token.getName());
+        Either<Error, List<Product>> result = dao.getProducts(token.getName());
 
         return result.isRight()
             ? Response.status(Response.Status.OK)
-                 .entity(getOffersAsJson(result.right().get()))
+                 .entity(getProductsAsJson(result.right().get()))
                  .build()
             : Response.status(Response.Status.NOT_FOUND)
                  .entity(getErrorAsJson(result.left().get()))
@@ -54,11 +54,11 @@ public class OffersResource extends ResourceHelpers {
     }
 
     @PUT
-    @Path("{offer-id}")
+    @Path("{product-id}")
     @Produces({"application/json"})
-    public Response updateOffer(@Auth AccessTokenPrincipal token,
+    public Response updateProduct(@Auth AccessTokenPrincipal token,
             @NotNull
-            @PathParam("offer-id") String offerId,
+            @PathParam("product-id") String productId,
             @DefaultValue("true") @QueryParam("accepted") boolean accepted) {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
@@ -66,8 +66,8 @@ public class OffersResource extends ResourceHelpers {
         }
 
         Option<Error> error = accepted
-            ? dao.acceptOffer(token.getName(), offerId)
-            : dao.rejectOffer(token.getName(), offerId);
+            ? dao.acceptProduct(token.getName(), productId)
+            : dao.rejectProduct(token.getName(), productId);
 
         return error.isEmpty()
             ? Response.status(Response.Status.OK)
