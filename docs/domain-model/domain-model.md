@@ -8,7 +8,8 @@ text-based domain model:
 
 The diagram should be interpreted like this:
 
-* The classes may or may not be implemented as java/kotlin classes.
+* The classes may or may not be implemented as java/kotlin classes, they may
+  equally well be interfaces
 * The classes marked as "navigable" are intended to have a namespace
   that makes it possible to address them using their unique names, using
   a REST like syntax.  So for instance to find  a subscriber's simcards,
