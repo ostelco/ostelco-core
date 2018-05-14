@@ -1,6 +1,6 @@
 package org.ostelco.topup.api.resources;
 
-import org.ostelco.topup.api.core.SignUp;
+import org.ostelco.topup.api.core.Profile;
 import org.ostelco.topup.api.db.SubscriberDAO;
 
 import com.google.cloud.datastore.Datastore;
@@ -80,7 +80,7 @@ public class SignUpResourceTest {
 
     @Test
     public void signUp() throws Exception {
-        ArgumentCaptor<SignUp> arg = ArgumentCaptor.forClass(SignUp.class);
+        ArgumentCaptor<Profile> arg = ArgumentCaptor.forClass(Profile.class);
 
         when(DAO.signUp(arg.capture())).thenReturn(Option.of(null));
 

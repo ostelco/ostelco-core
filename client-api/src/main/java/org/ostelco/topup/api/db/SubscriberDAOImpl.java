@@ -5,7 +5,6 @@ import org.ostelco.topup.api.core.Error;
 import org.ostelco.topup.api.core.Grant;
 import org.ostelco.topup.api.core.Product;
 import org.ostelco.topup.api.core.Profile;
-import org.ostelco.topup.api.core.SignUp;
 import org.ostelco.topup.api.core.SubscriptionStatus;
 
 import com.google.cloud.datastore.Datastore;
@@ -25,7 +24,7 @@ public class SubscriberDAOImpl implements SubscriberDAO {
     private Datastore store;
 
     @Override
-    public Option<Error> signUp(final SignUp signUp) {
+    public Option<Error> signUp(final Profile profile) {
         return Option.of(null);
     }
 
