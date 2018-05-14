@@ -40,7 +40,7 @@ class Price {
 class Product {
  + SKU: UUID
  --
- getPresentation()
+ getPresentation():Presentation
 }
 note left: Navigable
 
@@ -51,7 +51,7 @@ class Validity {
 
 class Subscriber {
 --
-  getAvailableProducts()
+  getAvailableProducts():[ProductID]
 }
 note left: Navigable
 
@@ -64,22 +64,19 @@ note left: Navigable
 
 
 
-Simcard -- Subscription
-Subscription -- Subscriber
-Subscriber -- Purchase
-Subscriber -- Segment
-Segment -- Offer
-Segmeht  -- Offer
-Purchase -- Product
-Purchase -- Payment
-Offer -- Validity
-Offer -- Presentation
-Offer -- Product
-Product -- Price
-Product -- ProductClass
-ProductClass -- ProductParameters
-ProductClass -- ParameterDescription
-ProductParameters -- ParameterInstance
-ParameterDescription -- ParameterType
-ParameterInstance -- ParameterType
+Simcard "*" -- "1" Subscription
+Subscription "1" -- "1" Subscriber
+Subscriber "1" -- "*" Purchase
+Subscriber "*" -- "*" Segment
+Segment "1" -- "*" Offer
+Purchase "1" -- "*" Product
+Purchase "1"  -- "1" Payment
+Offer "1" -- Validity
+Offer "1" -- Presentation
+Offer -- "1" Product
+Product -- "1" Price
+Product -- "1" ProductClass
+ProductClass "1" -- "*" ParameterType
+Product -- "*" ParameterInstance
+ParameterType "1" -- "1" ParameterInstance
 @enduml
