@@ -1,0 +1,18 @@
+@startuml
+Simcard -- Subscription
+Subscription -- Subscriber
+Subscriber -- Purchase
+Subscriber -- Segment
+Segmeht  -- Offer
+Purchase -- Product
+Purchase -- Payment
+Offer -- Validity
+Offer -- Presentation
+Offer -- Product
+Product -- Price
+Product -- ProductClass
+ProductClass -- ProductParameters
+ProductClass -- ParameterDescription
+ProductParameters -- ParameterInstance
+ParameterDescription -- ParameterType
+@enduml
