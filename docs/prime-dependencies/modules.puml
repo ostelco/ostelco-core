@@ -1,0 +1,28 @@
+@startuml
+
+[prime]
+note left of prime
+    Aggregates modules
+    into a single
+    deployable component.
+end note
+
+interface "prime-api" as primeApi
+[prime] --> primeApi
+
+note left of primeApi
+    Code needed by modules
+    for themto be aggregated
+    into prime.
+end note
+
+note right of primeApi
+    Interfaces which are
+    implemented by the
+    modules.
+end note
+
+[module(s)] ..> primeApi : <<implements>>
+[module(s)] ..> primeApi : <<consumes>>
+
+@enduml

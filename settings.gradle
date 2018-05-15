@@ -1,11 +1,13 @@
 rootProject.name = 'ostelco-core'
 
+include ':admin-api'
 include ':analytics'
 include ':auth-server'
 include ':client-api'
 include ':diameter-stack'
 include ':diameter-test'
 include ':ext-pgw'
+include ':in-memory-store'
 include ':model'
 include ':ocs'
 include ':ocs-api'
@@ -15,6 +17,7 @@ include ':prime'
 include ':prime-api'
 include ':pseudonym-server'
 
+project(':admin-api').projectDir = "$rootDir/admin-api" as File
 project(':analytics').projectDir = "$rootDir/analytics" as File
 project(':auth-server').projectDir = "$rootDir/auth-server" as File
 project(':client-api').projectDir = "$rootDir/client-api" as File
@@ -29,3 +32,4 @@ project(':ostelco-lib').projectDir = "$rootDir/ostelco-lib" as File
 project(':prime').projectDir = "$rootDir/prime" as File
 project(':prime-api').projectDir = "$rootDir/prime-api" as File
 project(':pseudonym-server').projectDir = "$rootDir/pseudonym-server" as File
+project(':in-memory-store').projectDir = "$rootDir/in-memory-store" as File

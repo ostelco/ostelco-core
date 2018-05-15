@@ -1,13 +1,14 @@
 plugins {
     id "java-library"
+    id "org.jetbrains.kotlin.jvm" version "1.2.41"
     id 'net.ltgt.apt' version '0.15'
 }
 
 dependencies {
 
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
     implementation project(":prime-api")
     implementation "io.dropwizard:dropwizard-auth:$dropwizardVersion"
-    implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
     implementation 'com.google.guava:guava:24.1-jre'
 
     implementation 'com.google.cloud:google-cloud-datastore:1.25.0'

@@ -1,0 +1,23 @@
+@startuml
+
+[prime]
+note left of prime
+    Aggregates modules into a single
+    deployable component.
+    Components talk with each
+    other via disruptor api.
+end note
+
+interface "prime-api" as primeApi
+[prime] --> primeApi : <<compile-time>>
+
+note left of primeApi
+    Code needed by modules for them
+    to be aggregated into prime.
+end note
+
+[module(s)] --> primeApi : <<compile-time>>
+[module(s)] ..> [module(s)] : <<runtime>>
+[prime] ..> [module(s)] : <<runtime>>
+
+@enduml
