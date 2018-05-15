@@ -10,7 +10,6 @@ import com.google.cloud.datastore.testing.LocalDatastoreHelper;
 import io.dropwizard.testing.junit.ResourceTestRule;
 import io.vavr.control.Option;
 import java.io.IOException;
-import java.lang.InterruptedException;
 import java.util.concurrent.TimeoutException;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;

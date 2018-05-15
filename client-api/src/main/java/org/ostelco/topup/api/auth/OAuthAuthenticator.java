@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
 import java.io.IOException;
-import java.security.Key;
 import java.util.Base64;
 import java.util.Optional;
 import lombok.AllArgsConstructor;

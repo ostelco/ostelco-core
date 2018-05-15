@@ -16,7 +16,6 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.vavr.collection.HashMap;
 import io.vavr.control.Option;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;

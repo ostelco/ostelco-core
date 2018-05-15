@@ -2,7 +2,6 @@ package org.ostelco.topup.api.resources;
 
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
 import org.ostelco.topup.api.auth.OAuthAuthenticator;
-import org.ostelco.topup.api.core.Error;
 import org.ostelco.topup.api.core.Product;
 import org.ostelco.topup.api.db.SubscriberDAO;
 
@@ -23,7 +22,6 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
-import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
