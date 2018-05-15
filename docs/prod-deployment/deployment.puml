@@ -1,0 +1,44 @@
+@startuml
+
+package "Handset" {
+  [App]
+  [Mobile data]
+}
+
+
+package "Host Operator" {
+  [PGW]
+}
+
+package "On Premise (MVNE)" {
+ [Ocsgw]
+}
+
+
+package "GCP" {
+
+ package "Cloud endpoints"{
+   [CEP1]
+   [CEP2]
+ }
+
+ database DB
+  node "Pod" {
+   [ESP1]
+   [ESP2]
+   [Prime]
+ }
+}
+
+
+[Mobile data] -- [PGW] : gtp
+[App] - [CEP1] : https
+[CEP1] - [ESP1] : http
+[CEP2] - [ESP2]: gRPCf
+[PGW] - [Ocsgw]: diameter
+[Ocsgw] - [CEP2] : gRPC
+[ESP1] - [Prime] : http
+[ESP2] - [Prime] : gRPC
+[Prime] -  DB
+
+@enduml
