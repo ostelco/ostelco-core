@@ -38,6 +38,9 @@ public class ProfileResourceTest {
     private final String email = "boaty@internet.org";
     private static final String key = "secret";
     private final String name = "Boaty McBoatface";
+    private final String address = "Storvej 10";
+    private final String postCode = "132 23";
+    private final String city = "Oslo";
     private final String subscriptionId = "007";
     private final String issuer = "http://ostelco.org/";
     private final Map<String, Object> claims = HashMap.of(issuer + "email", (Object) email)
@@ -48,7 +51,7 @@ public class ProfileResourceTest {
             .setSubject(subscriptionId)
             .signWith(SignatureAlgorithm.HS512, key)
             .compact();
-    private final Profile profile = new Profile(name, email);
+    private final Profile profile = new Profile(email);
 
     @ClassRule
     public static final ResourceTestRule RULE = ResourceTestRule.builder()
@@ -85,9 +88,41 @@ public class ProfileResourceTest {
     }
 
     @Test
+    public void createProfile() throws Exception {
+        ArgumentCaptor<String> arg1 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Profile> arg2 = ArgumentCaptor.forClass(Profile.class);
+
+        when(DAO.createProfile(arg1.capture(), arg2.capture()))
+            .thenReturn(Option.none());
+
+        Response resp = RULE.target("/profile")
+            .request(MediaType.APPLICATION_JSON)
+            .header("Authorization", String.format("Bearer %s", accessToken))
+            .post(Entity.json("{\n" +
+                              "    \"name\": \"" + name + "\",\n" +
+                              "    \"address\": \"" + address + "\",\n" +
+                              "    \"postCode\": \"" + postCode + "\",\n" +
+                              "    \"city\": \"" + city + "\",\n" +
+                              "    \"email\": \"" + email + "\"\n" +
+                              "}\n"));
+
+        assertThat(resp.getStatus()).isEqualTo(Response.Status.CREATED.getStatusCode());
+        assertThat(resp.getMediaType()).isNull();
+        assertThat(arg1.getValue()).isEqualTo(email);
+        assertThat((arg2.getValue()).getEmail()).isEqualTo(email);
+        assertThat((arg2.getValue()).getName()).isEqualTo(name);
+        assertThat((arg2.getValue()).getAddress()).isEqualTo(address);
+        assertThat((arg2.getValue()).getPostCode()).isEqualTo(postCode);
+        assertThat((arg2.getValue()).getCity()).isEqualTo(city);
+    }
+
+    @Test
     public void updateProfile() throws Exception {
         ArgumentCaptor<String> arg1 = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Profile> arg2 = ArgumentCaptor.forClass(Profile.class);
+
+        String newAddress = "Storvej 10";
+        String newPostCode = "132 23";
 
         when(DAO.updateProfile(arg1.capture(), arg2.capture()))
             .thenReturn(Option.none());
@@ -97,6 +132,9 @@ public class ProfileResourceTest {
             .header("Authorization", String.format("Bearer %s", accessToken))
             .put(Entity.json("{\n" +
                              "    \"name\": \"" + name + "\",\n" +
+                             "    \"address\": \"" + newAddress + "\",\n" +
+                             "    \"postCode\": \"" + newPostCode + "\",\n" +
+                             "    \"city\": \"" + city + "\",\n" +
                              "    \"email\": \"" + email + "\"\n" +
                              "}\n"));
 
@@ -105,6 +143,9 @@ public class ProfileResourceTest {
         assertThat(arg1.getValue()).isEqualTo(email);
         assertThat((arg2.getValue()).getEmail()).isEqualTo(email);
         assertThat((arg2.getValue()).getName()).isEqualTo(name);
+        assertThat((arg2.getValue()).getAddress()).isEqualTo(newAddress);
+        assertThat((arg2.getValue()).getPostCode()).isEqualTo(newPostCode);
+        assertThat((arg2.getValue()).getCity()).isEqualTo(city);
     }
 
     @Test

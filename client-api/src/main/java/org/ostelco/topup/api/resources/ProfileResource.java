@@ -10,6 +10,7 @@ import io.vavr.control.Either;
 import io.vavr.control.Option;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -43,6 +44,24 @@ public class ProfileResource extends ResourceHelpers {
                  .entity(getProfileAsJson(result.right().get()))
                  .build()
             : Response.status(Response.Status.NOT_FOUND)
+                 .build();
+    }
+
+    @POST
+    public Response createProfile(@Auth AccessTokenPrincipal token,
+            @NotNull final Profile profile) {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                .build();
+        }
+
+        Option<Error> error = dao.createProfile(token.getName(), profile);
+
+        return error.isEmpty()
+            ? Response.status(Response.Status.CREATED)
+                 .build()
+            : Response.status(Response.Status.FORBIDDEN)
+                 .entity(getErrorAsJson(error.get()))
                  .build();
     }
 
