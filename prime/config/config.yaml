@@ -1,3 +1,11 @@
+services:
+  - type: api
+
+eventProcessor:
+  configFile: /secret/pantel-prod.json
+  projectId: pantel-2decb
+  topicId: data-traffic
+
 logging:
   level: INFO
   loggers:
@@ -7,7 +15,3 @@ logging:
       layout:
         type: json
 
-eventProcessor:
-  configFile: /secret/pantel-prod.json
-  projectId: pantel-2decb
-  topicId: data-traffic

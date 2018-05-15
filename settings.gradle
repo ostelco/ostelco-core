@@ -2,6 +2,7 @@ rootProject.name = 'ostelco-core'
 
 include ':analytics'
 include ':auth-server'
+include ':client-api'
 include ':diameter-stack'
 include ':diameter-test'
 include ':ext-pgw'
@@ -16,6 +17,7 @@ include ':pseudonym-server'
 
 project(':analytics').projectDir = "$rootDir/analytics" as File
 project(':auth-server').projectDir = "$rootDir/auth-server" as File
+project(':client-api').projectDir = "$rootDir/client-api" as File
 project(':diameter-stack').projectDir = "$rootDir/diameter-stack" as File
 project(':diameter-test').projectDir = "$rootDir/diameter-test" as File
 project(':ext-pgw').projectDir = "$rootDir/ext-pgw" as File

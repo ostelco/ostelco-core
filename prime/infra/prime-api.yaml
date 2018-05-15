@@ -1,0 +1,31 @@
+swagger: "2.0"
+info:
+  title: "Ostelco API"
+  description: "The client API for Panacea."
+  version: "1.0.0"
+host: "api.ostelco.org"
+schemes:
+  - "http"
+  - "https"
+paths:
+  "/offers":
+    get:
+      description: "Get the airport name for a given IATA code."
+      operationId: "offers"
+      responses:
+        200:
+          description: "Success."
+          schema:
+            type: string
+        400:
+          description: "Can't find offers."
+      security:
+        - auth0_jwt: []
+securityDefinitions:
+  auth0_jwt:
+    authorizationUrl: "https://ostelco.eu.auth0.com/authorize"
+    flow: "implicit"
+    type: "oauth2"
+    x-google-issuer: "https://ostelco.eu.auth0.com/"
+    x-google-jwks_uri: "https://ostelco.eu.auth0.com/.well-known/jwks.json"
+    x-google-audiences: "http://google_api,bK0nRNtJHXk20O4wLFv6XJKm1FkU4Dv_"

@@ -1,0 +1,37 @@
+[
+    {
+        "subscriptionId": "sub01",
+        "name": "Boaty McBoatface",
+        "email": "boaty@internet.org",
+        "msisdn": "447201007551",
+        "imsi": "234574010007001"
+    },
+    {
+        "subscriptionId": "sub10",
+        "name": "Kari Olsen",
+        "email": "kari@internet.no",
+        "msisdn": "4798700002",
+        "imsi": "242017100003001"
+    },
+    {
+        "subscriptionId": "sub11",
+        "name": "Tom Hansen",
+        "email": "tom@internet.no",
+        "msisdn": "4798700003",
+        "imsi": "242017100003002"
+    },
+    {
+        "subscriptionId": "sub12",
+        "name": "Jørgen Pettersen",
+        "email": "jorgen@internet.no",
+        "msisdn": "4798700004",
+        "imsi": "242017100003003"
+    },
+    {
+        "subscriptionId": "sub13",
+        "name": "Ola Nordmann",
+        "email": "ola@internet.no",
+        "msisdn": "4798700005",
+        "imsi": "242017100003004"
+    }
+]
