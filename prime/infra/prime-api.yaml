@@ -8,19 +8,70 @@ schemes:
   - "http"
   - "https"
 paths:
-  "/offers":
+  "/products":
     get:
-      description: "Get the airport name for a given IATA code."
-      operationId: "offers"
+      description: "Get all products for the user."
+      produces:
+        - application/json
+      operationId: "getAllProducts"
       responses:
         200:
-          description: "Success."
+          description: "List of products."
           schema:
-            type: string
-        400:
-          description: "Can't find offers."
+            type: array
+            items:
+              $ref: '#/definitions/Product'
+        404:
+          description: "No products found for the user."
       security:
         - auth0_jwt: []
+  "/products/{sku}":
+    post:
+      description: "Buy the product specified in sku parameter."
+      produces:
+        - application/json
+        - text/plain
+      operationId: "buyProduct"
+      responses:
+        201:
+          description: "Successfully purchased the product."
+          schema:
+              $ref: '#/definitions/Product'
+        404:
+          description: "Product not found."
+      security:
+        - auth0_jwt: []
+      parameters:
+      - name: sku
+        in: path
+        description: SKU to be purchased
+        required: true
+        type: string
+definitions:
+  Product:
+    type: object
+    properties:
+      sku:
+        description: "A unique Id representing a SKU"
+        type: string
+      price:
+        $ref: '#/definitions/Currency'
+    required:
+      - sku
+      - price
+  Currency:
+    type: object
+    properties:
+      amount:
+        description: "A positive integer in the smallest currency unit"
+        type: integer
+        minimum: 0
+      code:
+        description: "ISO 4217 currency code (three letter alphabetic code)"
+        type: string
+    required:
+      - amount
+      - code
 securityDefinitions:
   auth0_jwt:
     authorizationUrl: "https://ostelco.eu.auth0.com/authorize"
