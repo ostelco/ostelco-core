@@ -41,14 +41,12 @@ public class ProfileResourceTest {
     private final String address = "Storvej 10";
     private final String postCode = "132 23";
     private final String city = "Oslo";
-    private final String subscriptionId = "007";
     private final String issuer = "http://ostelco.org/";
     private final Map<String, Object> claims = HashMap.of(issuer + "email", (Object) email)
             .toJavaMap();
     private final String accessToken = Jwts.builder()
             .setClaims(claims)
             .setIssuer(issuer)
-            .setSubject(subscriptionId)
             .signWith(SignatureAlgorithm.HS512, key)
             .compact();
     private final Profile profile = new Profile(email);
