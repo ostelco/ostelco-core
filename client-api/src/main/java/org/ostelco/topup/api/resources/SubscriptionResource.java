@@ -7,9 +7,7 @@ import org.ostelco.topup.api.db.SubscriberDAO;
 
 import io.dropwizard.auth.Auth;
 import io.vavr.control.Either;
-import javax.validation.Valid;
 import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;

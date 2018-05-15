@@ -5,6 +5,7 @@ import org.ostelco.topup.api.core.Error;
 import org.ostelco.topup.api.db.SubscriberDAO;
 
 import io.vavr.control.Option;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -27,7 +28,7 @@ public class SignUpResource extends ResourceHelpers {
     @POST
     @Consumes({"application/json"})
     @Produces({"application/json"})
-    public Response signUp(final Profile profile) {
+    public Response signUp(@NotNull final Profile profile) {
 
         Option<Error> error = dao.signUp(profile);
 

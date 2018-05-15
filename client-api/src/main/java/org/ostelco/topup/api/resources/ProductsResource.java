@@ -67,7 +67,7 @@ public class ProductsResource extends ResourceHelpers {
         Option<Error> error = dao.purchaseProduct(token.getName(), sku);
 
         return error.isEmpty()
-            ? Response.status(Response.Status.OK)
+            ? Response.status(Response.Status.CREATED)
                  .build()
             : Response.status(Response.Status.NOT_FOUND)
                  .entity(getErrorAsJson(error.get()))

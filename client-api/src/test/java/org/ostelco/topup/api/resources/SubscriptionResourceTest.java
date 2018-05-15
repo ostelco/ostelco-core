@@ -2,7 +2,7 @@ package org.ostelco.topup.api.resources;
 
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
 import org.ostelco.topup.api.auth.OAuthAuthenticator;
-import org.ostelco.topup.api.core.AcceptedOffer;
+import org.ostelco.topup.api.core.Product;
 import org.ostelco.topup.api.core.SubscriptionStatus;
 import org.ostelco.topup.api.db.SubscriberDAO;
 
@@ -42,12 +42,12 @@ public class SubscriptionResourceTest {
             .setSubject(subscriptionId)
             .signWith(SignatureAlgorithm.HS512, key)
             .compact();
-    private final List<AcceptedOffer> acceptedOffers = io.vavr.collection.List.of(
-            new AcceptedOffer("1", 5, 1, 0L),
-            new AcceptedOffer("2", 10, 7, 0L),
-            new AcceptedOffer("3", 15, 0, 0L))
+    private final List<Product> acceptedProducts = io.vavr.collection.List.of(
+            new Product("1", 10.00F, "NOK"),
+            new Product("2", 5.00F, "NOK"),
+            new Product("3", 20.00F, "NOK"))
         .toJavaList();
-    private final SubscriptionStatus subscriptionStatus = new SubscriptionStatus(5, acceptedOffers);
+    private final SubscriptionStatus subscriptionStatus = new SubscriptionStatus(5, acceptedProducts);
 
     @ClassRule
     public static final ResourceTestRule RULE = ResourceTestRule.builder()

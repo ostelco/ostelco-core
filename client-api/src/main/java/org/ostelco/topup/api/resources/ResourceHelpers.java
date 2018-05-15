@@ -41,7 +41,7 @@ public abstract class ResourceHelpers {
         return "";
     }
 
-    /* Offers POJO to JSON. */
+    /* Product POJO to JSON. */
     protected String getProductsAsJson(final List<Product> products) {
         try {
             return MAPPER.writeValueAsString(products);
@@ -51,7 +51,7 @@ public abstract class ResourceHelpers {
         return "";
     }
 
-    /* Consents POJO to JSON. */
+    /* Consent POJO to JSON. */
     protected String getConsentsAsJson(final List<Consent> consents) {
         try {
             return MAPPER.writeValueAsString(consents);

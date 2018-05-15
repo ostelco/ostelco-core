@@ -100,7 +100,7 @@ public class ProductsResourceTest {
 
         final String sku = products.get(0).getSku();
 
-        when(DAO.purchaseProduct(arg1.capture(), arg2.capture())).thenReturn(Option.of(null));
+        when(DAO.purchaseProduct(arg1.capture(), arg2.capture())).thenReturn(Option.none());
 
         Response resp = RULE.target(String.format("/products/%s", sku))
             .request()
@@ -108,7 +108,7 @@ public class ProductsResourceTest {
             .header("X-Endpoint-API-UserInfo", userInfo)
             .post(Entity.text(""));
 
-        assertThat(resp.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
+        assertThat(resp.getStatus()).isEqualTo(Response.Status.CREATED.getStatusCode());
         assertThat(arg1.getValue()).isEqualTo(email);
         assertThat(arg2.getValue()).isEqualTo(sku);
     }

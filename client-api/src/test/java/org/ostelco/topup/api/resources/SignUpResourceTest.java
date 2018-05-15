@@ -5,7 +5,6 @@ import org.ostelco.topup.api.db.SubscriberDAO;
 
 import com.google.cloud.datastore.Datastore;
 import com.google.cloud.datastore.DatastoreOptions;
-//import com.google.cloud.datastore.Entity;
 import com.google.cloud.datastore.KeyFactory;
 import com.google.cloud.datastore.testing.LocalDatastoreHelper;
 import io.dropwizard.testing.junit.ResourceTestRule;
@@ -82,7 +81,7 @@ public class SignUpResourceTest {
     public void signUp() throws Exception {
         ArgumentCaptor<Profile> arg = ArgumentCaptor.forClass(Profile.class);
 
-        when(DAO.signUp(arg.capture())).thenReturn(Option.of(null));
+        when(DAO.signUp(arg.capture())).thenReturn(Option.none());
 
         Response resp = RULE.target("/register")
             .request(MediaType.APPLICATION_JSON)

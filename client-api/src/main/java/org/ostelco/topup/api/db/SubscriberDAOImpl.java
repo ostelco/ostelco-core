@@ -25,7 +25,7 @@ public class SubscriberDAOImpl implements SubscriberDAO {
 
     @Override
     public Option<Error> signUp(final Profile profile) {
-        return Option.of(null);
+        return Option.none();
     }
 
     @Override
@@ -35,46 +35,49 @@ public class SubscriberDAOImpl implements SubscriberDAO {
 
     @Override
     public Either<Error, Profile> getProfile(final String subscriptionId) {
-        return Either.left(new Error());
+        return Either.left(new Error("Incomplete profile description"));
     }
 
     @Override
     public Option<Error> updateProfile(final String subscriptionId, final Profile profile) {
-        return Option.of(null);
+        if (!profile.isValid()) {
+            return Option.of(new Error("Incomplete profile description"));
+        }
+        return Option.none();
     }
 
     @Override
     public Either<Error, SubscriptionStatus> getSubscriptionStatus(final String subscriptionId) {
-        return Either.left(new Error());
+        return Either.left(new Error("No subscription data found"));
     }
 
     @Override
     public Either<Error, List<Product>> getProducts(final String subscriptionId) {
-        return Either.left(new Error());
+        return Either.left(new Error("No products found"));
     }
 
     @Override
     public Option<Error> purchaseProduct(final String subscriptionId, final String sku) {
-        return Option.of(null);
+        return Option.none();
     }
 
     @Override
     public Either<Error, List<Consent>> getConsents(final String subscriptionId) {
-        return Either.left(new Error());
+        return Either.left(new Error("No consents found"));
     }
 
     @Override
     public Option<Error> acceptConsent(final String subscriptionId, final String consentId) {
-        return Option.of(null);
+        return Option.none();
     }
 
     @Override
     public Option<Error> rejectConsent(final String subscriptionId, final String consentId) {
-        return Option.of(null);
+        return Option.none();
     }
 
     @Override
     public Option<Error> reportAnalytics(final String subscriptionId, final String events) {
-        return Option.of(null);
+        return Option.none();
     }
 }

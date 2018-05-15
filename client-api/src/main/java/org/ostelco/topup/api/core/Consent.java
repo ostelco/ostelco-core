@@ -1,9 +1,7 @@
 package org.ostelco.topup.api.core;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 
-@AllArgsConstructor
 @Data
 public class Consent {
     private final String consentId;

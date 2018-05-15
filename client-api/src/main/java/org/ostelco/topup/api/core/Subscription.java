@@ -1,9 +1,8 @@
 package org.ostelco.topup.api.core;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NonNull;
 
-@AllArgsConstructor
 @Data
 public class Subscription {
     private final String subscriptionId;
