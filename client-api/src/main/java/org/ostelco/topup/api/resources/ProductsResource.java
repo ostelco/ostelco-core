@@ -9,12 +9,12 @@ import io.dropwizard.auth.Auth;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
 import java.util.List;
-import javax.validation.constraints.NotNull;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
-import javax.ws.rs.PUT;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -53,21 +53,18 @@ public class ProductsResource extends ResourceHelpers {
                  .build();
     }
 
-    @PUT
-    @Path("{product-id}")
+    @POST
+    @Path("{sku}")
     @Produces({"application/json"})
-    public Response updateProduct(@Auth AccessTokenPrincipal token,
+    public Response purchaseProduct(@Auth AccessTokenPrincipal token,
             @NotNull
-            @PathParam("product-id") String productId,
-            @DefaultValue("true") @QueryParam("accepted") boolean accepted) {
+            @PathParam("sku") String sku) {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                 .build();
         }
 
-        Option<Error> error = accepted
-            ? dao.acceptProduct(token.getName(), productId)
-            : dao.rejectProduct(token.getName(), productId);
+        Option<Error> error = dao.purchaseProduct(token.getName(), sku);
 
         return error.isEmpty()
             ? Response.status(Response.Status.OK)
