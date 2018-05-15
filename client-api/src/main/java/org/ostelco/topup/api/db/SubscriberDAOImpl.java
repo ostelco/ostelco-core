@@ -54,12 +54,7 @@ public class SubscriberDAOImpl implements SubscriberDAO {
     }
 
     @Override
-    public Option<Error> acceptProduct(final String subscriptionId, final String productId) {
-        return Option.of(null);
-    }
-
-    @Override
-    public Option<Error> rejectProduct(final String subscriptionId, final String productId) {
+    public Option<Error> purchaseProduct(final String subscriptionId, final String sku) {
         return Option.of(null);
     }
 

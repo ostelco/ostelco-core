@@ -52,9 +52,9 @@ public class ProductsResourceTest {
             .signWith(SignatureAlgorithm.HS512, key)
             .compact();
     private final List<Product> products = io.vavr.collection.List.of(
-            new Product("1", 10.00F),
-            new Product("2", 5.00F),
-            new Product("3", 20.00F))
+            new Product("1", 10.00F, "NOK"),
+            new Product("2", 5.00F, "NOK"),
+            new Product("3", 20.00F, "NOK"))
         .toJavaList();
     private final String userInfo = Base64.getEncoder()
         .encodeToString((new String("{\n" +
@@ -94,46 +94,22 @@ public class ProductsResourceTest {
     }
 
     @Test
-    public void acceptProduct() throws Exception {
+    public void purchaseProduct() throws Exception {
         ArgumentCaptor<String> arg1 = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> arg2 = ArgumentCaptor.forClass(String.class);
 
-        final String productId = products.get(0).getProductId();
+        final String sku = products.get(0).getSku();
 
-        when(DAO.acceptProduct(arg1.capture(), arg2.capture())).thenReturn(Option.of(null));
-        when(DAO.rejectProduct(arg1.capture(), arg2.capture())).thenReturn(Option.of(new Error()));
+        when(DAO.purchaseProduct(arg1.capture(), arg2.capture())).thenReturn(Option.of(null));
 
-        Response resp = RULE.target(String.format("/products/%s", productId))
-            .queryParam("accepted", true)
+        Response resp = RULE.target(String.format("/products/%s", sku))
             .request()
             .header("Authorization", String.format("Bearer %s", accessToken))
             .header("X-Endpoint-API-UserInfo", userInfo)
-            .put(Entity.text(""));
+            .post(Entity.text(""));
 
         assertThat(resp.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
         assertThat(arg1.getValue()).isEqualTo(email);
-        assertThat(arg2.getValue()).isEqualTo(productId);
-    }
-
-    @Test
-    public void rejectProduct() throws Exception {
-        ArgumentCaptor<String> arg1 = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> arg2 = ArgumentCaptor.forClass(String.class);
-
-        final String productId = products.get(0).getProductId();
-
-        when(DAO.acceptProduct(arg1.capture(), arg2.capture())).thenReturn(Option.of(new Error()));
-        when(DAO.rejectProduct(arg1.capture(), arg2.capture())).thenReturn(Option.of(null));
-
-        Response resp = RULE.target(String.format("/products/%s", productId))
-            .queryParam("accepted", false)
-            .request()
-            .header("Authorization", String.format("Bearer %s", accessToken))
-            .header("X-Endpoint-API-UserInfo", userInfo)
-            .put(Entity.text(""));
-
-        assertThat(resp.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
-        assertThat(arg1.getValue()).isEqualTo(email);
-        assertThat(arg2.getValue()).isEqualTo(productId);
+        assertThat(arg2.getValue()).isEqualTo(sku);
     }
 }

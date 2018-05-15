@@ -28,9 +28,7 @@ public interface SubscriberDAO {
 
     public Either<Error, List<Product>> getProducts(final String subscriptionId);
 
-    public Option<Error> acceptProduct(final String subscriptionId, final String productId);
-
-    public Option<Error> rejectProduct(final String subscriptionId, final String productId);
+    public Option<Error> purchaseProduct(final String subscriptionId, final String sku);
 
     public Either<Error, List<Consent>> getConsents(final String subscriptionId);
 
