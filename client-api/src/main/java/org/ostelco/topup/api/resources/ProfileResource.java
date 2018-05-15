@@ -9,6 +9,7 @@ import io.dropwizard.auth.Auth;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -48,6 +49,7 @@ public class ProfileResource extends ResourceHelpers {
     }
 
     @POST
+    @Consumes({"application/json"})
     public Response createProfile(@Auth AccessTokenPrincipal token,
             @NotNull final Profile profile) {
         if (token == null) {
@@ -66,6 +68,7 @@ public class ProfileResource extends ResourceHelpers {
     }
 
     @PUT
+    @Consumes({"application/json"})
     public Response updateProfile(@Auth AccessTokenPrincipal token,
             @NotNull final Profile profile) {
         if (token == null) {
