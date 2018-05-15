@@ -8,6 +8,63 @@ schemes:
   - "http"
   - "https"
 paths:
+  "/profile":
+    get:
+      description: "Get profile for the user (email-id present in the bearer token)."
+      produces:
+        - application/json
+      operationId: "getProfile"
+      responses:
+        200:
+          description: "Get the profile for this user."
+          schema:
+            $ref: '#/definitions/Profile'
+        404:
+          description: "Profile not found."
+      security:
+        - auth0_jwt: []
+    post:
+      description: "Create a new profile."
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      operationId: "createProfile"
+      parameters:
+        - in: body
+          name: profile
+          description: The profile to create.
+          schema:
+            $ref: '#/definitions/Profile'
+      responses:
+        201:
+          description: "Successfully created the profile."
+          schema:
+              $ref: '#/definitions/Profile'
+      security:
+        - auth0_jwt: []
+    put:
+      description: "Update an existing profile."
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      operationId: "updateProfile"
+      parameters:
+        - in: body
+          name: profile
+          description: The updated profile.
+          schema:
+            $ref: '#/definitions/Profile'
+      responses:
+        200:
+          description: "Successfully updated the profile."
+          schema:
+              $ref: '#/definitions/Profile'
+        404:
+          description: "Profile not found."
+      security:
+        - auth0_jwt: []
   "/products":
     get:
       description: "Get all products for the user."
@@ -48,6 +105,22 @@ paths:
         required: true
         type: string
 definitions:
+  Profile:
+    type: object
+    properties:
+      name:
+        type: string
+      address:
+        type: string
+      postCode:
+        type: string
+      city:
+        type: string
+      email:
+        type: string
+        format: email
+    required:
+      - email
   Product:
     type: object
     properties:
