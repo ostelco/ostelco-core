@@ -6,9 +6,8 @@ import org.ostelco.topup.api.db.SubscriberDAO;
 
 import io.dropwizard.auth.Auth;
 import io.vavr.control.Option;
-import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
@@ -29,13 +28,13 @@ public class AnalyticsResource extends ResourceHelpers {
     @POST
     @Consumes({"application/json"})
     public Response report(@Auth AccessTokenPrincipal token,
-            final String events) {
+            @NotNull final String event) {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                 .build();
         }
 
-        Option<Error> error = dao.reportAnalytics(token.getName(), events);
+        Option<Error> error = dao.reportAnalytics(token.getName(), event);
 
         return error.isEmpty()
             ? Response.status(Response.Status.CREATED)

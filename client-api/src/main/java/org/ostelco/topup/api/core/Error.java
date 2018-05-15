@@ -1,9 +1,9 @@
 package org.ostelco.topup.api.core;
 
+import lombok.Data;
+import lombok.NonNull;
 
-/**
- * POJO for interal error reporting.
- *
- */
+@Data
 public class Error {
+    @NonNull final private String description;
 }

@@ -90,8 +90,9 @@ public class ConsentsResourceTest {
 
         final String consentId = consents.get(0).getConsentId();
 
-        when(DAO.acceptConsent(arg1.capture(), arg2.capture())).thenReturn(Option.of(null));
-        when(DAO.rejectConsent(arg1.capture(), arg2.capture())).thenReturn(Option.of(new Error()));
+        when(DAO.acceptConsent(arg1.capture(), arg2.capture())).thenReturn(Option.none());
+        when(DAO.rejectConsent(arg1.capture(), arg2.capture())).thenReturn(Option.of(
+                        new Error("No consents found")));
 
         Response resp = RULE.target(String.format("/consents/%s", consentId))
             .queryParam("accepted", true)
@@ -111,8 +112,9 @@ public class ConsentsResourceTest {
 
         final String consentId = consents.get(0).getConsentId();
 
-        when(DAO.acceptConsent(arg1.capture(), arg2.capture())).thenReturn(Option.of(new Error()));
-        when(DAO.rejectConsent(arg1.capture(), arg2.capture())).thenReturn(Option.of(null));
+        when(DAO.acceptConsent(arg1.capture(), arg2.capture())).thenReturn(Option.of(
+                        new Error("No consents found")));
+        when(DAO.rejectConsent(arg1.capture(), arg2.capture())).thenReturn(Option.none());
 
         Response resp = RULE.target(String.format("/consents/%s", consentId))
             .queryParam("accepted", false)

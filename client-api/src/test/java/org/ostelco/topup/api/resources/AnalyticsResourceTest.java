@@ -71,11 +71,11 @@ public class AnalyticsResourceTest {
         ArgumentCaptor<String> arg2 = ArgumentCaptor.forClass(String.class);
 
         when(DAO.reportAnalytics(arg1.capture(), arg2.capture()))
-            .thenReturn(Option.of(null));
+            .thenReturn(Option.none());
 
         final String events = "[{\n" +
-                              "    \"eventType\": \"REMOVES_AN_OFFER\",\n" +
-                              "    \"offerId\": \"1\",\n" +
+                              "    \"eventType\": \"PURCHASES_A_PRODUCT\",\n" +
+                              "    \"sku\": \"1\",\n" +
                               "    \"time\": \"1524734549\"\n" +
                               "},{\n" +
                               "    \"eventType\": \"EXITS_APPLICATION\",\n" +
@@ -102,11 +102,11 @@ public class AnalyticsResourceTest {
         ArgumentCaptor<String> arg2 = ArgumentCaptor.forClass(String.class);
 
         when(DAO.reportAnalytics(arg1.capture(), arg2.capture()))
-            .thenReturn(Option.of(null));
+            .thenReturn(Option.none());
 
         final String events = "[{\n" +
-                              "    \"eventType\": \"REMOVES_AN_OFFER\",\n" +
-                              "    \"offerId\": \"1\",\n" +
+                              "    \"eventType\": \"PURCHASES_A_PRODUCT\",\n" +
+                              "    \"sku\": \"1\",\n" +
                               "    \"time\": \"1524734549\"\n" +
                               "},{\n" +
                               "    \"eventType\": \"EXITS_APPLICATION\",\n" +

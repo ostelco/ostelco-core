@@ -50,10 +50,10 @@ public class OAuthAuthenticator implements Authenticator<String, AccessTokenPrin
         String issuer = getIssuer(claims);
 
         if (issuer != null && claims.has(issuer + "email")) {
-            LOG.error("Missing '{}email' field in claims part of JWT token {}",
-                    issuer, claims);
             return claims.get(issuer + "email").textValue();
         } else {
+            LOG.error("Missing '{}email' field in claims part of JWT token {}",
+                    issuer, claims);
             return null;
         }
     }

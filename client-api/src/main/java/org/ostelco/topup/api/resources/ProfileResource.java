@@ -8,9 +8,8 @@ import org.ostelco.topup.api.db.SubscriberDAO;
 import io.dropwizard.auth.Auth;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
-import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -49,7 +48,7 @@ public class ProfileResource extends ResourceHelpers {
 
     @PUT
     public Response updateProfile(@Auth AccessTokenPrincipal token,
-            final Profile profile) {
+            @NotNull final Profile profile) {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                 .build();

@@ -1,10 +1,11 @@
 package org.ostelco.topup.api.core;
 
 import lombok.Data;
+import lombok.NonNull;
 
 @Data
 public class Product {
-    private final String sku;
+    @NonNull private final String sku;
     private final float amount;
-    private final String currency;
+    @NonNull private final String currency;
 }
