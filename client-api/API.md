@@ -245,6 +245,10 @@ When the service is down for maintenance or similar.
 
 ### Sign up and authentication
 
+
+![Signin flow sequence diagram](/diagrams/signin-flow.svg)
+
+
 The first time the users starts the client, a _sign up_ procedure should be done. As part of the sign up, the
 user registers the following information:
 

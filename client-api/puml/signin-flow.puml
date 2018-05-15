@@ -1,58 +1,9 @@
 @startuml
 
-package "Handset" {
-  [App]
-  [Mobile data]
-}
-
-
-package "Payment service" {
- [Payment]
-}
-
-package "Authentication service" {
- [AUTH]
-}
-
-
-
-package "Host Operator" {
-  [PGW]
-}
-
-package "On Premise (MVNE)" {
- [Ocsgw]
-}
-
-
-package "GCP" {
-
- package "Cloud endpoints"{
-   [CEP1]
-   [CEP2]
- }
-
- database DB
-  node "Pod" {
-   [ESP1]
-   [ESP2]
-   [Prime]
- }
-}
-
-[App] -- [AUTH]
-[Payment] -- [App]
-[Payment] -- [Prime]
-[Mobile data] -- [PGW] : gtp
-[App] - [CEP1] : https
-[CEP1] - [ESP1] : http
-[CEP2] - [ESP2]: gRPC
-
-
-[PGW] - [Ocsgw]: diameter
-[Ocsgw] - [CEP2] : gRPC
-[ESP1] - [Prime] : http
-[ESP2] - [Prime] : gRPC
-[Prime] -  DB
+Client -> Auth0 : Auth
+Auth0 -> Client: Tokens (ID (with email), Access)
+Client -> CloudEP: GET /profile (https, with access token)
+CloudEP -> Prime: GET /profile (http, with access token)
+Prime -> Client: User profile (email, address, etc.)
 
 @enduml
