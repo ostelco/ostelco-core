@@ -40,7 +40,7 @@ class OcsServer(private val port: Int, service: BindableService) : Managed {
     @Throws(InterruptedException::class)
     override fun stop() {
         if (server != null) {
-            LOG.info("Stopping OcsServer Server  listening for gRPC traffic on  {}", port)
+            LOG.info("Stopping OcsServer Server listening for gRPC traffic on  {}", port)
             server.shutdown()
             blockUntilShutdown()
         }

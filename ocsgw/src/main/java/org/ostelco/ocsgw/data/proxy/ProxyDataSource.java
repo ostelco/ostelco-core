@@ -33,12 +33,15 @@ public class ProxyDataSource implements DataSource {
     @Override
     public void handleRequest(CreditControlContext context) {
         // CCR-I and CCR-T will always be handled by the secondary DataSource
-        if (context.getOriginalCreditControlRequest().getRequestTypeAVPValue() != CreditControlRequestType.UPDATE_REQUEST.getNumber()) {
+        if (context.getOriginalCreditControlRequest().getRequestTypeAVPValue()
+                != CreditControlRequestType.UPDATE_REQUEST.getNumber()) {
             secondary.handleRequest(context);
         } else {
             // For CCR-U we will send all requests to both Local and Secondary until the secondary has blocked the msisdn
             if (!secondary.isBlocked(context.getCreditControlRequest().getMsisdn())) {
                 local.handleRequest(context);
+                // When local datasource will be responding with Answer, gRPC datasource should skip to send Answer to PGw.
+                context.setSkipAnswer(true);
                 secondary.handleRequest(context);
             } else {
                 secondary.handleRequest(context);
