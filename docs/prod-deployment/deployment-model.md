@@ -9,8 +9,8 @@ text-based domain model:
 The diagram should be interpreted like this:
 
 * The handset contains a self service app, and a mobile data stack.
-** The mobile data stack talks to the packet gateway of the host operator
-** The self service app talks to the "prime" component to facilitate
+..* The mobile data stack talks to the packet gateway of the host operator
+..* The self service app talks to the "prime" component to facilitate
    purchases and status updates.  It does so via a cloud endpoint, that
    terminates HTTPS connections, and sends an authenticated http
    connections to the Extensible Service Proxy (ESP) which runs
@@ -19,7 +19,7 @@ The diagram should be interpreted like this:
 * On the premises of the mobile network enabler (MVNE) we run
   an "ocsgw", "online charging server gateway", that implements the
   ambassador pattern for an OCS.
-** The ocsgw connects to  the "prime" component via a cloud endpoint
+..* The ocsgw connects to  the "prime" component via a cloud endpoint
    and an ESP, but does so using a service certificate-authenticated
    gRPC connecdtion
 
