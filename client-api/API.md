@@ -245,15 +245,26 @@ When the service is down for maintenance or similar.
 
 ### Sign up and authentication
 
-
 ![Signin flow sequence diagram](diagrams/signin-flow.svg)
 
+The client will intiate the login by contacting the [Auth0](http://auth0.com) service that helps us interface with
+identity providers.  What's returned by auth0 is a combination of an ID token and an access token. 
+The ID token can contain many types of information, including email, address etc.   The access token
+is simply used to authenticate the user.    We use only the access token from Auth0 and ignore the ID token.
 
-The first time the users starts the client, a _sign up_ procedure should be done. As part of the sign up, the
-user registers the following information:
+The authentication token a [JSON web token](https://jwt.io/introduction/), that is used as 
+a [http bearer token](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication) when authenticating the
+client towards the Prime component.
 
- - Name
- - Email address (previously registered as part of the subscription activation)
+The client then asks for a user profile.  The request is sent to a cloud endpoint, that will use the AWT token to 
+authenticate the user.  The web endpoint terminates the https connection and sends it on, with a header
+that indicates that it has been authenticted, to the Prime component.  The authentication process will include
+a conversation between the cloud endpoint and the identity provider.  That conversation is not described
+in this document.
+
+The user profile is then displayed.  If it is empty, as it will be the first time,  then the client will ask for information to be filled in and
+uploaded.  Populating the user profile is part of the _sign up_ procedure.   During sign up the user will be asked about
+name and email address.  The email address will be previously registred as part of the subscription activation. - Email address (previously registered as part of the subscription activation)
 
 An email with a verification code is then sent to the registered email address. The verification code is then
 entered into the client and the sign up procedure has been completed.
