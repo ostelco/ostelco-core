@@ -9,6 +9,9 @@ text-based domain model:
 The diagram should be interpreted like this:
 
 * The handset contains a self service app, and a mobile data stack.
+* The self service app talks to a payment provider to pay for purchases.
+  The payment provider talks to the Prime application to confirm that
+  payment has taken place.
 * The mobile data stack talks to the packet gateway of the host operator
 * The self service app talks to the "prime" component to facilitate
    purchases and status updates.  It does so via a cloud endpoint, that

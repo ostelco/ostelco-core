@@ -6,6 +6,10 @@ package "Handset" {
 }
 
 
+package "Payment service" {
+ [Payment]
+}
+
 package "Host Operator" {
   [PGW]
 }
@@ -30,11 +34,14 @@ package "GCP" {
  }
 }
 
-
+[Payment] -- [App]
+[Payment] -- [Prime]
 [Mobile data] -- [PGW] : gtp
 [App] - [CEP1] : https
 [CEP1] - [ESP1] : http
 [CEP2] - [ESP2]: gRPC
+
+
 [PGW] - [Ocsgw]: diameter
 [Ocsgw] - [CEP2] : gRPC
 [ESP1] - [Prime] : http
