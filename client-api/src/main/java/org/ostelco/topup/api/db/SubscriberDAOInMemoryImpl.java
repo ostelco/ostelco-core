@@ -8,9 +8,8 @@ import org.ostelco.topup.api.core.SubscriptionStatus;
 
 import io.vavr.control.Either;
 import io.vavr.control.Option;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.NonNull;
 
 /**
@@ -20,7 +19,7 @@ import lombok.NonNull;
 public class SubscriberDAOInMemoryImpl implements SubscriberDAO {
 
     /* Table for 'profiles'. */
-    private final Map<String, Profile> profileTable = new HashMap<>();
+    private final ConcurrentHashMap<String, Profile> profileTable = new ConcurrentHashMap<>();
 
     @Override
     public Either<Error, Profile> getProfile(final String subscriptionId) {
