@@ -42,9 +42,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static org.ostelco.diameter.model.RequestType.EVENT_REQUEST;
 import static org.ostelco.diameter.model.RequestType.INITIAL_REQUEST;
@@ -66,6 +64,12 @@ public class GrpcDataSource implements DataSource {
 
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
+    private ScheduledFuture keepAliveFuture = null;
+
+    private ScheduledFuture initActivateFuture = null;
+
+    private ScheduledFuture initCCRFuture = null;
+
     private static final int MAX_ENTRIES = 3000;
     private final LinkedHashMap<String, CreditControlContext> ccrMap = new LinkedHashMap<String, CreditControlContext>(MAX_ENTRIES, .75F) {
         @Override
@@ -82,14 +86,60 @@ public class GrpcDataSource implements DataSource {
     };
 
 
-    private abstract class AbstactObserver<T> implements StreamObserver<T> {
+    private abstract class CreditControlRequestObserver<T> implements StreamObserver<T> {
         public final void onError(Throwable t) {
             LOG.error("We got an error", t);
+            reconnectCreditControlRequest();
         }
 
         public final void onCompleted() {
             // Nothing to do here
             LOG.info("It seems to be completed");
+        }
+    }
+
+    private abstract class ActivateObserver<T> implements StreamObserver<T> {
+        public final void onError(Throwable t) {
+            LOG.error("We got an error", t);
+            reconnectActivate();
+        }
+
+        public final void onCompleted() {
+            // Nothing to do here
+            LOG.info("It seems to be completed");
+        }
+    }
+
+    private void reconnectActivate() {
+        LOG.info("reconnectActivate called");
+
+        if (initActivateFuture == null || initActivateFuture.isDone()) {
+            LOG.info("Schedule new Callable initActivate");
+            initActivateFuture = executorService.schedule((Callable<Object>) () -> {
+                        LOG.info("Calling initActivate");
+                        initActivate();
+                        return "Called!";
+                    },
+                    5,
+                    TimeUnit.SECONDS);
+        }
+    }
+
+    private void reconnectCreditControlRequest() {
+        LOG.info("reconnectCreditControlRequest called");
+        if (keepAliveFuture != null) {
+            keepAliveFuture.cancel(true);
+        }
+
+        if (initCCRFuture == null || initCCRFuture.isDone()) {
+            LOG.info("Schedule new Callable initCreditControlRequest");
+            initCCRFuture = executorService.schedule((Callable<Object>) () -> {
+                        LOG.info("Calling initCreditControlRequest");
+                        initCreditControlRequest();
+                        return "Called!";
+                    },
+                    5,
+                    TimeUnit.SECONDS);
         }
     }
 
@@ -128,8 +178,16 @@ public class GrpcDataSource implements DataSource {
     @Override
     public void init() {
 
+        initCreditControlRequest();
+
+        initActivate();
+
+        initKeepAlive();
+    }
+
+    private void initCreditControlRequest() {
         creditControlRequest = ocsServiceStub.creditControlRequest(
-                new AbstactObserver<CreditControlAnswerInfo>() {
+                new CreditControlRequestObserver<CreditControlAnswerInfo>() {
                     public void onNext(CreditControlAnswerInfo answer) {
                         try {
                             LOG.info("[<<] Received data bucket for {}", answer.getMsisdn());
@@ -158,9 +216,11 @@ public class GrpcDataSource implements DataSource {
                         }
                     }
                 });
+    }
 
+    private void initActivate() {
         ActivateRequest dummyActivate = ActivateRequest.newBuilder().build();
-        ocsServiceStub.activate(dummyActivate, new AbstactObserver<ActivateResponse>() {
+        ocsServiceStub.activate(dummyActivate, new ActivateObserver<ActivateResponse>() {
             @Override
             public void onNext(ActivateResponse activateResponse) {
                 LOG.info("Active user {}", activateResponse.getMsisdn());
@@ -172,9 +232,11 @@ public class GrpcDataSource implements DataSource {
                 }
             }
         });
+    }
 
+    private void initKeepAlive() {
         // this is just to keep connection alive
-        executorService.scheduleWithFixedDelay(() -> {
+        keepAliveFuture = executorService.scheduleWithFixedDelay(() -> {
                     final CreditControlRequestInfo ccr = CreditControlRequestInfo.newBuilder()
                             .setType(CreditControlRequestType.NONE)
                             .build();
