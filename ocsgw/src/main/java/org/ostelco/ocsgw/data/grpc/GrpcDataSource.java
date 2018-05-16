@@ -84,7 +84,7 @@ public class GrpcDataSource implements DataSource {
 
     private abstract class CreditControlRequestObserver<T> implements StreamObserver<T> {
         public final void onError(Throwable t) {
-            LOG.error("We got an error", t);
+            LOG.error("CreditControlRequestObserver error", t);
             if (t instanceof StatusRuntimeException) {
                 reconnectCreditControlRequest();
             }
@@ -92,13 +92,12 @@ public class GrpcDataSource implements DataSource {
 
         public final void onCompleted() {
             // Nothing to do here
-            LOG.info("It seems to be completed");
         }
     }
 
     private abstract class ActivateObserver<T> implements StreamObserver<T> {
         public final void onError(Throwable t) {
-            LOG.error("We got an error", t);
+            LOG.error("ActivateObserver error", t);
             if (t instanceof StatusRuntimeException) {
                 reconnectActivate();
             }
@@ -106,7 +105,6 @@ public class GrpcDataSource implements DataSource {
 
         public final void onCompleted() {
             // Nothing to do here
-            LOG.info("It seems to be completed");
         }
     }
 
