@@ -93,7 +93,7 @@ paths:
         201:
           description: "Successfully purchased the product."
           schema:
-              $ref: '#/definitions/Product'
+            $ref: '#/definitions/Product'
         404:
           description: "Product not found."
       security:
@@ -104,6 +104,60 @@ paths:
         description: SKU to be purchased
         required: true
         type: string
+  "/subscription":
+    get:
+      description: "Get subscription status for the user (identified by bearer token)."
+      produces:
+        - application/json
+      operationId: "getSubscription"
+      responses:
+        200:
+          description: "Get the subscription status for this user."
+          schema:
+            $ref: '#/definitions/SubscriptionStatus'
+        404:
+          description: "No subscription found for this user."
+      security:
+        - auth0_jwt: []
+  "/consents":
+    get:
+      description: "Get all consents for the user."
+      produces:
+        - application/json
+      operationId: "getConsents"
+      responses:
+        200:
+          description: "List of consents."
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Consent'
+        404:
+          description: "No consents found for the user."
+      security:
+        - auth0_jwt: []
+  "/consents/{consent-id}":
+    put:
+      description: "Change the value for the specified consent."
+      operationId: "updateConsent"
+      responses:
+        200:
+          description: "Successfully updated the consent."
+        404:
+          description: "Consent not found."
+      security:
+        - auth0_jwt: []
+      parameters:
+      - name: consent-id
+        in: path
+        description: Id of the consent to be changed
+        required: true
+        type: string
+      - name: accepted
+        in: query
+        description: Whether user accepted the consent (default = true)
+        required: false
+        type: boolean
 definitions:
   Profile:
     type: object
@@ -121,6 +175,17 @@ definitions:
         format: email
     required:
       - email
+  SubscriptionStatus:
+    type: object
+    properties:
+      remaining:
+        description: "Remaining data"
+        type: integer
+      acceptedProducts:
+        description: "List of products"
+        type: array
+        items:
+          $ref: '#/definitions/Product'
   Product:
     type: object
     properties:
@@ -132,6 +197,18 @@ definitions:
     required:
       - sku
       - price
+  Consent:
+    type: object
+    properties:
+      consentId:
+        description: "The identifier of the consent"
+        type: string
+      description:
+        description: "A description of the consent"
+        type: string
+      accepted:
+        description: "Whether user has accepted the consent or not"
+        type: boolean
   Currency:
     type: object
     properties:
