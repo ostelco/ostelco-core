@@ -22,12 +22,16 @@ sourceSets {
 
 dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
-  implementation project(':ocs')
+  // interface module between prime and prime-modules
   implementation project(':prime-api')
+  // prime-modules
+  implementation project(':ocs')
   implementation project(':model')
   runtime project(':client-api')
+  runtime project(':admin-api')
+  runtime project(':in-memory-store')
+
   implementation project(':ostelco-lib')
-  implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
   implementation "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
   // Keep it to 5.10.0 to match netty via ocs-api
   implementation 'com.google.firebase:firebase-admin:5.10.0'

@@ -2,6 +2,7 @@
 
 services:
   - type: api
+  - type: admin
 
 eventProcessor:
   configFile: /secret/pantel-prod.json
