@@ -25,6 +25,8 @@ class PrimeApplication : Application<PrimeConfiguration>() {
             primeConfiguration: PrimeConfiguration,
             environment: Environment) {
 
+        primeConfiguration.services.forEach { it.init(environment) }
+
         val disruptor = PrimeDisruptor()
 
         // Disruptor provides RingBuffer, which is used by Producer

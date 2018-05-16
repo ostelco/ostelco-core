@@ -1,0 +1,35 @@
+plugins {
+    id "java-library"
+    id 'net.ltgt.apt' version '0.15'
+}
+
+dependencies {
+
+    implementation project(":prime-api")
+    implementation "io.dropwizard:dropwizard-auth:$dropwizardVersion"
+    implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
+    implementation 'com.google.guava:guava:24.1-jre'
+
+    implementation 'com.google.cloud:google-cloud-datastore:1.25.0'
+
+    // https://mvnrepository.com/artifact/org.jetbrains/annotations
+    implementation 'org.jetbrains:annotations:16.0.1'
+
+    implementation 'io.jsonwebtoken:jjwt:0.9.0'
+    implementation "io.vavr:vavr:0.9.0"
+
+    compileOnly 'org.projectlombok:lombok:1.16.20'
+    annotationProcessor 'org.projectlombok:lombok:1.16.20'
+
+    testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+    testImplementation "org.mockito:mockito-core:2.18.0"
+    testImplementation 'org.assertj:assertj-core:3.9.1'
+
+    // from filter
+    // https://mvnrepository.com/artifact/org.glassfish.jersey.test-framework.providers/jersey-test-framework-provider-grizzly2
+    testCompile (group: 'org.glassfish.jersey.test-framework.providers', name: 'jersey-test-framework-provider-grizzly2', version: '2.25.1') {
+        // 2.26 (latest)
+        exclude group: 'javax.servlet',  module: 'javax.servlet-api'
+        exclude group: 'junit',  module: 'junit'
+    }
+}
