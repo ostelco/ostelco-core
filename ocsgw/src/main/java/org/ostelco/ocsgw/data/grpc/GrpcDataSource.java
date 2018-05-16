@@ -3,6 +3,7 @@ package org.ostelco.ocsgw.data.grpc;
 import com.google.auth.oauth2.ServiceAccountJwtAccessCredentials;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.StatusRuntimeException;
 import io.grpc.auth.MoreCallCredentials;
 import io.grpc.stub.StreamObserver;
 import org.jdiameter.api.IllegalDiameterStateException;
@@ -84,7 +85,9 @@ public class GrpcDataSource implements DataSource {
     private abstract class CreditControlRequestObserver<T> implements StreamObserver<T> {
         public final void onError(Throwable t) {
             LOG.error("We got an error", t);
-            reconnectCreditControlRequest();
+            if (t instanceof StatusRuntimeException) {
+                reconnectCreditControlRequest();
+            }
         }
 
         public final void onCompleted() {
@@ -96,7 +99,9 @@ public class GrpcDataSource implements DataSource {
     private abstract class ActivateObserver<T> implements StreamObserver<T> {
         public final void onError(Throwable t) {
             LOG.error("We got an error", t);
-            reconnectActivate();
+            if (t instanceof StatusRuntimeException) {
+                reconnectActivate();
+            }
         }
 
         public final void onCompleted() {
