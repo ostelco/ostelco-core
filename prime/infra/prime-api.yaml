@@ -5,7 +5,6 @@ info:
   version: "1.0.0"
 host: "api.ostelco.org"
 schemes:
-  - "http"
   - "https"
 paths:
   "/profile":
@@ -75,9 +74,7 @@ paths:
         200:
           description: "List of products."
           schema:
-            type: array
-            items:
-              $ref: '#/definitions/Product'
+            $ref: '#/definitions/ProductList'
         404:
           description: "No products found for the user."
       security:
@@ -129,9 +126,7 @@ paths:
         200:
           description: "List of consents."
           schema:
-            type: array
-            items:
-              $ref: '#/definitions/Consent'
+            $ref: '#/definitions/ConsentList'
         404:
           description: "No consents found for the user."
       security:
@@ -186,6 +181,10 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/Product'
+  ProductList:
+    type: array
+    items:
+        $ref: '#/definitions/Product'
   Product:
     type: object
     properties:
@@ -197,6 +196,10 @@ definitions:
     required:
       - sku
       - price
+  ConsentList:
+    type: array
+    items:
+        $ref: '#/definitions/Consent'
   Consent:
     type: object
     properties:
