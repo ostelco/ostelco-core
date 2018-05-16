@@ -152,4 +152,4 @@ securityDefinitions:
     type: "oauth2"
     x-google-issuer: "https://ostelco.eu.auth0.com/"
     x-google-jwks_uri: "https://ostelco.eu.auth0.com/.well-known/jwks.json"
-    x-google-audiences: "http://google_api,bK0nRNtJHXk20O4wLFv6XJKm1FkU4Dv_"
+    x-google-audiences: "http://google_api"
