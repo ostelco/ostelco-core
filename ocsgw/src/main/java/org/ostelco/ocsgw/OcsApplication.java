@@ -101,7 +101,7 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
             case RequestType.INITIAL_REQUEST:
             case RequestType.UPDATE_REQUEST:
             case RequestType.TERMINATION_REQUEST:
-                LOG.info("<< Received Credit-Control-Request [ {} ]", RequestType.getTypeAsString(request.getRequestTypeAVPValue()));
+                LOG.info("<< Received Credit-Control-Request from P-GW [ {} ]", RequestType.getTypeAsString(request.getRequestTypeAVPValue()));
                 try {
                     OcsServer.getInstance().handleRequest(session, request);
                 } catch (Exception e) {
