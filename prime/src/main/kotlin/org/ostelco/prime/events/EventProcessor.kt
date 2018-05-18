@@ -4,12 +4,12 @@ import com.google.common.base.Preconditions.checkNotNull
 import com.lmax.disruptor.EventHandler
 import io.dropwizard.lifecycle.Managed
 import org.ostelco.prime.disruptor.PrimeEvent
+import org.ostelco.prime.getResource
 import org.ostelco.prime.logger
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRequest
 import org.ostelco.prime.model.RecordOfPurchase
 import org.ostelco.prime.model.TopUpProduct
-import org.ostelco.prime.storage.firebase.entity.asMap
 import org.ostelco.prime.storage.legacy.PurchaseRequestHandler
 import org.ostelco.prime.storage.legacy.Storage
 import org.ostelco.prime.storage.legacy.StorageException
@@ -17,8 +17,8 @@ import org.ostelco.prime.storage.legacy.entities.NotATopupProductException
 import java.util.concurrent.atomic.AtomicBoolean
 
 class EventProcessor(
-        val storage: Storage,
-        val ocsBalanceUpdater: OcsBalanceUpdater) : EventHandler<PrimeEvent>, Managed {
+        private val ocsBalanceUpdater: OcsBalanceUpdater,
+        private val storage: Storage = getResource()) : EventHandler<PrimeEvent>, Managed {
 
     private val LOG by logger()
 
@@ -27,7 +27,7 @@ class EventProcessor(
     @Throws(EventProcessorException::class)
     fun handlePurchaseRequest(pr: PurchaseRequest) {
         checkNotNull(pr)
-        LOG.info("Handling purchase request = " + pr.asMap().toString())
+        LOG.info("Handling purchase request = " + pr.toString())
 
         validatePaymentToken(pr)
 
@@ -82,7 +82,7 @@ class EventProcessor(
             msisdn: String,
             topup: TopUpProduct) {
         try {
-            LOG.info("Handling topup product = " + pr.asMap().toString())
+            LOG.info("Handling topup product = " + pr.toString())
             storage.updateDisplayDatastructure(msisdn)
             val purchase = RecordOfPurchase(
                     msisdn = msisdn,

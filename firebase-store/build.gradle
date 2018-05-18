@@ -13,4 +13,6 @@ dependencies {
   // Keep it to 5.10.0 to match netty via ocs-api
   implementation 'com.google.firebase:firebase-admin:5.10.0'
   implementation "org.slf4j:slf4j-api:1.7.25"
+
+  testImplementation "junit:junit:4.12"
 }

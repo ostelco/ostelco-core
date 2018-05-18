@@ -1,11 +1,10 @@
-package org.ostelco.prime.storage
+package org.ostelco.prime.storage.firebase
 
 import junit.framework.TestCase.assertTrue
 import junit.framework.TestCase.fail
 import org.junit.Test
 import org.ostelco.prime.model.PurchaseRequest
 import org.ostelco.prime.storage.legacy.PurchaseRequestHandler
-import org.ostelco.prime.storage.firebase.StorageInitiatedEventExecutor
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit

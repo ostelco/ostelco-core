@@ -21,9 +21,9 @@ import java.nio.file.Paths
 import java.util.function.BiFunction
 import java.util.function.Consumer
 
-class FbStorage @Throws(StorageException::class)
-constructor(databaseName: String,
-            configFile: String) : Storage {
+class FbStorage : Storage by FbStorageSingleton
+
+object FbStorageSingleton : Storage {
 
     private val productCache: ProductDescriptionCache
 
@@ -36,11 +36,13 @@ constructor(databaseName: String,
 
     init {
 
-        this.productCache = ProductDescriptionCacheImpl
+        val config = FirebaseConfigRegistry.firebaseConfig
 
-        val firebaseDatabase = setupFirebaseInstance(databaseName, configFile)
+        productCache = ProductDescriptionCacheImpl
 
-        this.facade = FbDatabaseFacade(firebaseDatabase)
+        val firebaseDatabase = setupFirebaseInstance(config.databaseName, config.configFile)
+
+        facade = FbDatabaseFacade(firebaseDatabase)
 
         facade.addProductCatalogItemHandler(Consumer { eventHandler.productCatalogItemHandler(it) })
     }

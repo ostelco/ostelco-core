@@ -44,7 +44,7 @@ class EventProcessorTest {
 
         `when`<Product>(storage.getProductForSku(DATA_TOPUP_3GB.sku)).thenReturn(DATA_TOPUP_3GB)
 
-        this.processor = EventProcessor(storage, ocsBalanceUpdater)
+        this.processor = EventProcessor(ocsBalanceUpdater, storage)
         this.processor.start()
     }
 

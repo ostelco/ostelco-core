@@ -9,11 +9,9 @@ import org.ostelco.prime.disruptor.PrimeDisruptor
 import org.ostelco.prime.disruptor.PrimeEventProducerImpl
 import org.ostelco.prime.events.EventProcessor
 import org.ostelco.prime.events.OcsBalanceUpdaterImpl
-import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.ocs.OcsServer
 import org.ostelco.prime.ocs.OcsService
 import org.ostelco.prime.ocs.OcsState
-import org.ostelco.prime.storage.firebase.FbStorage
 
 class PrimeApplication : Application<PrimeConfiguration>() {
 
@@ -41,15 +39,8 @@ class PrimeApplication : Application<PrimeConfiguration>() {
 
         val eventProcessorConfig = primeConfiguration.eventProcessorConfig
 
-
-        val storage = FbStorage(
-                eventProcessorConfig.projectId,
-                eventProcessorConfig.configFile)
-
-        loadSubscriberBalanceFromDatabaseToInMemoryStructure(storage.allSubscribers, ocsState);
-
         val ocsBalanceUpdater = OcsBalanceUpdaterImpl(producer)
-        val eventProcessor = EventProcessor(storage, ocsBalanceUpdater)
+        val eventProcessor = EventProcessor(ocsBalanceUpdater)
 
         val dataConsumptionInfoPublisher = DataConsumptionInfoPublisher(
                 eventProcessorConfig.projectId,
@@ -74,15 +65,6 @@ class PrimeApplication : Application<PrimeConfiguration>() {
         environment.lifecycle().manage(disruptor)
         // dropwizard starts server
         environment.lifecycle().manage(server)
-    }
-
-    private fun loadSubscriberBalanceFromDatabaseToInMemoryStructure(
-            subscribers: Collection<Subscriber>,
-            ocsState: OcsState) {
-        LOG.info("Loading initial balance from storage to in-memory OcsState")
-        for (subscriber in subscribers) {
-            ocsState.injectSubscriberIntoOCS(subscriber.msisdn, subscriber.noOfBytesLeft)
-        }
     }
 
     companion object {

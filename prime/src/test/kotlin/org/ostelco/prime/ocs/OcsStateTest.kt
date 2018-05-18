@@ -11,11 +11,10 @@ import org.junit.Test
  */
 class OcsStateTest {
 
-
     @Test
     fun testAddDataBytes() {
 
-        val ocsState = OcsState()
+        val ocsState = OcsState(loadSubscriberInfo = false)
 
         // Add a thousand, starting from zero. This means that the addDataBytes will
         // return the  new balance (after addition), which is 1000.
@@ -37,7 +36,7 @@ class OcsStateTest {
     @Test
     fun testConsumeDataBytes() {
 
-        val ocsState = OcsState()
+        val ocsState = OcsState(loadSubscriberInfo = false)
 
         // First store a thousand
         assertEquals(INITIAL_NUMBER_OF_BYTES_TO_ADD.toLong(),
@@ -69,7 +68,7 @@ class OcsStateTest {
     @Test
     fun testOverConsumtionDataBytes() {
 
-        val ocsState = OcsState()
+        val ocsState = OcsState(loadSubscriberInfo = false)
 
         // First store a thousand
         assertEquals(INITIAL_NUMBER_OF_BYTES_TO_ADD.toLong(),
@@ -96,7 +95,7 @@ class OcsStateTest {
     @Test
     fun testReleaseDataBytes() {
 
-        val ocsState = OcsState()
+        val ocsState = OcsState(loadSubscriberInfo = false)
 
         // First store a thousand
         assertEquals(INITIAL_NUMBER_OF_BYTES_TO_ADD.toLong(),

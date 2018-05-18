@@ -1,4 +1,8 @@
 services:
+  - type: firebase
+    config:
+      configFile: src/integration-tests/resources/pantel-tests.json
+      databaseName: pantel-tests
   - type: api
   - type: admin
 
