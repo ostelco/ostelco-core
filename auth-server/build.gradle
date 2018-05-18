@@ -1,15 +1,15 @@
 plugins {
   id "application"
   id "jacoco"
-  id "com.github.johnrengelman.shadow" version "2.0.3"
-  id "org.jetbrains.kotlin.jvm" version "1.2.31"
+  id "com.github.johnrengelman.shadow" version "2.0.4"
+  id "org.jetbrains.kotlin.jvm" version "1.2.41"
   id "idea"
 }
 
 dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
   implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
-  implementation 'com.google.firebase:firebase-admin:5.10.0'
+  implementation 'com.google.firebase:firebase-admin:5.11.0'
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
   testRuntime 'org.hamcrest:hamcrest-all:1.3'

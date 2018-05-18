@@ -7,14 +7,15 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import org.ostelco.prime.firebase.entities.FbPurchaseRequest
+import org.ostelco.prime.firebase.entities.FbSubscriber
+import org.ostelco.prime.firebase.entities.asMap
 import org.ostelco.prime.logger
-import org.ostelco.prime.storage.ProductCatalogItem
+import org.ostelco.prime.model.ProductCatalogItem
+import org.ostelco.prime.model.PurchaseRequest
+import org.ostelco.prime.model.RecordOfPurchase
+import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.storage.StorageException
-import org.ostelco.prime.storage.entities.PurchaseRequest
-import org.ostelco.prime.storage.entities.PurchaseRequestImpl
-import org.ostelco.prime.storage.entities.RecordOfPurchaseImpl
-import org.ostelco.prime.storage.entities.Subscriber
-import org.ostelco.prime.storage.entities.SubscriberImpl
 import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -134,11 +135,14 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         addProductCatalogValueHandler(consumer)
     }
 
-    fun addPurchaseRequestListener(
-            consumer: BiFunction<String, PurchaseRequestImpl, Unit>) {
-        addPurchaseEventListener(listenerForPurchaseRequests(consumer))
+    /**
+     * Add a listener for Purchase Request
+     */
+    fun addPurchaseRequestListener(consumer: BiFunction<String, PurchaseRequest, Unit>) {
+        val childEventListener = listenerForPurchaseRequests(consumer)
+        checkNotNull(childEventListener)
+        this.clientRequests.addChildEventListener(childEventListener)
     }
-
 
     fun addProductCatalogItemChildHandler(consumer: Consumer<ProductCatalogItem>) {
         checkNotNull(consumer)
@@ -146,56 +150,41 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         addProductCatalogListener(productCatalogListener)
     }
 
-    fun addProductCatalogListener(consumer: Consumer<DataSnapshot>) {
+
+    private fun addProductCatalogItemChildListener(consumer: Consumer<ProductCatalogItem>) {
         checkNotNull(consumer)
-        val productCatalogListener = newProductDefChangedListener(consumer)
+        val productCatalogListener = newProductDefChangedListener(Consumer { snapshot -> addOrUpdateProduct(snapshot, consumer) })
         addProductCatalogListener(productCatalogListener)
     }
 
-
-    fun addProductCatalogListener(productCatalogListener: ChildEventListener) {
+    private fun addProductCatalogListener(productCatalogListener: ChildEventListener) {
         checkNotNull(productCatalogListener)
         this.quickBuyProducts.addChildEventListener(productCatalogListener)
         this.products.addChildEventListener(productCatalogListener)
     }
 
-    fun addProductCatalogValueHandler(consumer: Consumer<ProductCatalogItem>) {
+    private fun addProductCatalogValueHandler(consumer: Consumer<ProductCatalogItem>) {
         checkNotNull(consumer)
         val productCatalogValueEventListener = newCatalogDataChangedEventListener(consumer)
         addProductCatalogValueListener(productCatalogValueEventListener)
     }
 
 
-    fun addProductCatalogValueListener(productCatalogValueEventListener: ValueEventListener) {
+    private fun addProductCatalogValueListener(productCatalogValueEventListener: ValueEventListener) {
         checkNotNull(productCatalogValueEventListener)
         this.quickBuyProducts.addValueEventListener(productCatalogValueEventListener)
         this.products.addValueEventListener(productCatalogValueEventListener)
     }
 
-    fun addPurchaseEventListener(cel: ChildEventListener) {
-        checkNotNull(cel)
-        this.clientRequests.addChildEventListener(cel)
-    }
 
-
-    fun addRecordOfPurchaseByMsisdn(
-            msisdn: String,
-            sku: String,
-            millisSinceEpoch: Long): String {
-        checkNotNull(msisdn)
-
-        val purchase = RecordOfPurchaseImpl(msisdn, sku, millisSinceEpoch)
-
-        // XXX This is iffy, why not send the purchase object
-        //     directly to the facade.  Seems bogus, probably is.
+    /**
+     * Store a record of purchase to the db
+     */
+    fun addRecordOfPurchase(purchase: RecordOfPurchase): String {
+        checkNotNull(purchase)
         val asMap = purchase.asMap()
-
-        return pushRecordOfPurchaseByMsisdn(asMap)
-    }
-
-    fun pushRecordOfPurchaseByMsisdn(asMap: Map<String, Any>): String {
         checkNotNull(asMap)
-        val dbref = recordsOfPurchase.push()
+        val dbref = recordsOfPurchase.child(stripLeadingPlus(purchase.msisdn)).push()
 
         dbref.updateChildrenAsync(asMap)
         return dbref.key
@@ -222,11 +211,12 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
             dbref: DatabaseReference,
             msisdn: String) {
         checkNotNull(msisdn)
-        removeChild(dbref, stripLeadingPlus(msisdn))
+        checkNotNull(dbref)
+        dbref.child(stripLeadingPlus(msisdn)).removeValueAsync()
     }
 
     @Throws(StorageException::class)
-    fun removeByMsisdn(msisdn: String) {
+    fun removeDisplayDatastructureByMsisdn(msisdn: String) {
         removeByMsisdn(clientVisibleSubscriberRecords, msisdn)
     }
 
@@ -237,28 +227,27 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
 
 
     fun injectPurchaseRequest(pr: PurchaseRequest): String {
-        val cr = pr as PurchaseRequestImpl
         val dbref = clientRequests.push()
-        val crAsMap = cr.asMap()
+        val crAsMap = pr.asMap()
         dbref.setValueAsync(crAsMap)
         return dbref.key
     }
 
-    fun removeRecordOfPurchaseById(id: String) {
-        removeChild(recordsOfPurchase, id)
+    /**
+     * Removes a purchase record by the Firebase ref ID.
+     */
+    fun removeRecordOfPurchaseById(msisdn: String, id: String) {
+        checkNotNull(id)
+        checkNotNull(msisdn)
+        checkNotNull(recordsOfPurchase)
+        clientRequests.child(stripLeadingPlus(msisdn)).child(id).removeValueAsync()
     }
 
-    private fun removeChild(db: DatabaseReference, childId: String) {
-        // XXX Removes whole tree, not just the subtree for id.
-        //     how do I fix this?
-        checkNotNull(db)
-        checkNotNull(childId)
-        db.child(childId).removeValueAsync()
-    }
 
     fun removePurchaseRequestById(id: String) {
         checkNotNull(id)
-        removeChild(clientRequests, id)
+        checkNotNull(clientRequests)
+        clientRequests.child(id).removeValueAsync()
     }
 
     @Throws(StorageException::class)
@@ -278,7 +267,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
             msisdn: String,
             userData: String,
             result: String): String {
-        val msg = ("authorativeuserdata = '" + userData
+        val msg = ("authorativeUserBalance = '" + userData
                 + "', msisdn = '" + msisdn
                 + "' => " + result)
         LOG.info(msg)
@@ -301,7 +290,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
                 null
             } else {
                 val r = result.iterator().next()
-                logSubscriberDataProcessing(msisdn, userDataString, r.toString())
+                logSubscriberDataProcessing(msisdn, userDataString, r.asMap().toString())
                 r
             }
         } catch (e: InterruptedException) {
@@ -319,30 +308,33 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
                 if (!snapshot.exists()) {
                     cdl.countDown()
                 } else {
-                    val sub = snapshot.getValue(SubscriberImpl::class.java)
-                    result.add(sub)
+                    val sub = snapshot.getValue(FbSubscriber::class.java)
+                    val msisdn = sub.msisdn
+                    if (msisdn != null) {
+                        result.add(Subscriber(msisdn, sub.noOfBytesLeft))
+                    }
                     cdl.countDown()
                 }
             }
         }
     }
 
-    fun updateAuthorativeUserData(sub: SubscriberImpl) {
+    fun updateAuthorativeUserData(sub: Subscriber) {
         checkNotNull(sub)
         checkNotNull(sub.msisdn)
 
-        val dbref = authorativeUserBalance.child(stripLeadingPlus(sub.msisdn!!))
+        val dbref = authorativeUserBalance.child(stripLeadingPlus(sub.msisdn))
         dbref.updateChildrenAsync(sub.asMap())
     }
 
-    fun insertNewSubscriber(sub: SubscriberImpl) {
+    fun insertNewSubscriber(sub: Subscriber) {
         checkNotNull(sub)
         checkNotNull(sub.msisdn)
 
-        authorativeUserBalance.child(stripLeadingPlus(sub.msisdn!!)).setValueAsync(sub.asMap())
+        authorativeUserBalance.child(stripLeadingPlus(sub.msisdn)).setValueAsync(sub.asMap())
     }
 
-    fun newProductDefChangedListener(
+    private fun newProductDefChangedListener(
             snapshotConsumer: Consumer<DataSnapshot>): ChildEventListener {
         return object : AbstractChildEventListener() {
             override fun onChildAdded(dataSnapshot: DataSnapshot,
@@ -356,6 +348,10 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
             }
         }
     }
+    
+    private fun stripLeadingPlus(str: String): String {
+        return str.replaceFirst("^\\+".toRegex(), "")
+    }
 
     companion object {
 
@@ -366,7 +362,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
         private const val SECONDS_TO_WAIT_FOR_FIREBASE = 10
 
         private fun listenerForPurchaseRequests(
-                consumer: BiFunction<String, PurchaseRequestImpl, Unit>): AbstractChildEventListener {
+                consumer: BiFunction<String, PurchaseRequest, Unit>): AbstractChildEventListener {
             checkNotNull(consumer)
             return object : AbstractChildEventListener() {
                 override fun onChildAdded(dataSnapshot: DataSnapshot, prevChildKey: String?) {
@@ -374,8 +370,13 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
                         return
                     }
                     try {
-                        val req = dataSnapshot.getValue(PurchaseRequestImpl::class.java)
-                        consumer.apply(dataSnapshot.key, req)
+                        val req = dataSnapshot.getValue(FbPurchaseRequest::class.java)
+                        consumer.apply(dataSnapshot.key,
+                                PurchaseRequest(req.sku,
+                                        req.paymentToken,
+                                        req.msisdn,
+                                        req.millisSinceEpoch,
+                                        req.id))
                     } catch (e: Exception) {
                         LOG.error("Couldn't dispatch purchase request to consumer", e)
                     }
@@ -433,8 +434,11 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
                         return
                     }
                     for (child in snapshot.children) {
-                        val subscriber = child.getValue(SubscriberImpl::class.java)
-                        subscribers.add(subscriber)
+                        val subscriber = child.getValue(FbSubscriber::class.java)
+                        val msisdn = subscriber.msisdn;
+                        if (msisdn != null) {
+                            subscribers.add(Subscriber(msisdn, subscriber.noOfBytesLeft))
+                        }
                     }
                     cdl.countDown()
                 }
@@ -443,10 +447,6 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
                     LOG.error(error.message, error.toException())
                 }
             }
-        }
-
-        private fun stripLeadingPlus(str: String): String {
-            return str.replaceFirst("^\\+".toRegex(), "")
         }
     }
 }

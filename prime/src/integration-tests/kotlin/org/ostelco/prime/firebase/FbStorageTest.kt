@@ -8,12 +8,12 @@ import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.ostelco.prime.events.EventHandler
+import org.ostelco.prime.model.PurchaseRequest
+import org.ostelco.prime.model.RecordOfPurchase
 import org.ostelco.prime.storage.Products.DATA_TOPUP_3GB
 import org.ostelco.prime.storage.PurchaseRequestHandler
 import org.ostelco.prime.storage.Storage
 import org.ostelco.prime.storage.StorageException
-import org.ostelco.prime.storage.entities.PurchaseRequest
-import org.ostelco.prime.storage.entities.PurchaseRequestImpl
 import java.lang.Thread.sleep
 import java.time.Instant
 import java.util.*
@@ -22,11 +22,11 @@ import java.util.concurrent.TimeUnit
 
 class FbStorageTest {
 
-    private var fbStorage: FbStorage? = null
+    private lateinit var fbStorage: FbStorage
 
-    private var storage: Storage? = null
+    private lateinit var storage: Storage
 
-    private var prids: MutableCollection<String>? = null
+    private lateinit var prids: MutableCollection<String>
 
     @Before
     @Throws(StorageException::class, InterruptedException::class)
@@ -37,24 +37,24 @@ class FbStorageTest {
                 EventHandler())
         this.storage = fbStorage
         sleep(MILLIS_TO_WAIT_WHEN_STARTING_UP.toLong())
-        storage!!.removeSubscriberByMsisdn(EPHERMERAL_MSISDN)
-        storage!!.insertNewSubscriber(EPHERMERAL_MSISDN)
+        storage.removeSubscriberByMsisdn(EPHERMERAL_MSISDN)
+        storage.insertNewSubscriber(EPHERMERAL_MSISDN)
         this.prids = ArrayList()
     }
 
     @After
     @Throws(StorageException::class)
     fun cleanUp() {
-        storage!!.removeSubscriberByMsisdn(EPHERMERAL_MSISDN)
-        for (prid in prids!!) {
-            storage!!.removePurchaseRequestById(prid)
+        storage.removeSubscriberByMsisdn(EPHERMERAL_MSISDN)
+        for (prid in prids) {
+            storage.removePurchaseRequestById(prid)
         }
     }
 
     @Test
     @Throws(StorageException::class)
     fun getStorageByMsisdnTest() {
-        val subscriberByMsisdn = storage!!.getSubscriberFromMsisdn(EPHERMERAL_MSISDN)
+        val subscriberByMsisdn = storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN)
         assertNotEquals(null, subscriberByMsisdn)
         assertEquals(EPHERMERAL_MSISDN, subscriberByMsisdn!!.msisdn)
     }
@@ -62,40 +62,40 @@ class FbStorageTest {
     @Test
     @Throws(StorageException::class)
     fun insertNewSubscriberTest() {
-        Assert.assertNotEquals(null, storage!!.getSubscriberFromMsisdn(EPHERMERAL_MSISDN))
+        Assert.assertNotEquals(null, storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN))
     }
 
     @Test
     @Throws(StorageException::class)
     fun setRemainingByMsisdnTest() {
-        storage!!.setRemainingByMsisdn(
+        storage.setRemainingByMsisdn(
                 EPHERMERAL_MSISDN,
                 RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS)
         Assert.assertEquals(RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS,
-                storage!!.getSubscriberFromMsisdn(EPHERMERAL_MSISDN)!!.noOfBytesLeft)
-        storage!!.setRemainingByMsisdn(EPHERMERAL_MSISDN, 0)
-        Assert.assertEquals(0L,
-                storage!!.getSubscriberFromMsisdn(EPHERMERAL_MSISDN)!!.noOfBytesLeft)
+                storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN)!!.noOfBytesLeft)
+        storage.setRemainingByMsisdn(EPHERMERAL_MSISDN, 0)
+        Assert.assertEquals(0L, storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN)!!.noOfBytesLeft)
     }
 
     @Test
     @Throws(StorageException::class)
     fun updateDisplayDatastructureTest() {
-        storage!!.setRemainingByMsisdn(EPHERMERAL_MSISDN,
+        storage.setRemainingByMsisdn(EPHERMERAL_MSISDN,
                 RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS)
-        storage!!.updateDisplayDatastructure(EPHERMERAL_MSISDN)
+        storage.updateDisplayDatastructure(EPHERMERAL_MSISDN)
         // XXX  Some verification missing, but it looks like the right thing
     }
 
     @Test
     @Throws(StorageException::class)
-    fun addRecordOfPurchaseByMsisdnTest() {
+    fun addRecordOfPurchaseTest() {
         val now = Instant.now().toEpochMilli()
-        val id = storage!!.addRecordOfPurchaseByMsisdn(
-                EPHERMERAL_MSISDN,
-                DATA_TOPUP_3GB.sku,
-                now)
-        storage!!.removeRecordOfPurchaseById(id)
+        val purchase = RecordOfPurchase(
+                msisdn = EPHERMERAL_MSISDN,
+                sku = DATA_TOPUP_3GB.sku,
+                millisSinceEpoch = now)
+        val id = storage.addRecordOfPurchase(purchase)
+        storage.removeRecordOfPurchaseById(purchase.msisdn, id)
     }
 
     @Test
@@ -104,28 +104,34 @@ class FbStorageTest {
 
         val latch = CountDownLatch(2)
 
-        storage!!.addPurchaseRequestHandler(
+        storage.addPurchaseRequestHandler(
                 object : PurchaseRequestHandler {
-                    override fun onPurchaseRequest(req: PurchaseRequest) {
-                        assertNotEquals(null, req)
-                        assertEquals(PAYMENT_TOKEN, req.paymentToken)
-                        assertEquals(DATA_TOPUP_3GB.sku, req.sku)
+                    override fun onPurchaseRequest(request: PurchaseRequest) {
+                        assertNotEquals(null, request)
+                        assertEquals(PAYMENT_TOKEN, request.paymentToken)
+                        assertEquals(DATA_TOPUP_3GB.sku, request.sku)
                         latch.countDown()
                     }
                 })
 
-        val cr = PurchaseRequestImpl(DATA_TOPUP_3GB, PAYMENT_TOKEN, EPHERMERAL_MSISDN)
-        val id = fbStorage!!.injectPurchaseRequest(cr)
-        val id2 = fbStorage!!.injectPurchaseRequest(cr)
-        prids!!.add(id)
-        prids!!.add(id2)
+        val cr = PurchaseRequest(
+                sku = DATA_TOPUP_3GB.sku,
+                paymentToken = PAYMENT_TOKEN,
+                msisdn = EPHERMERAL_MSISDN,
+                millisSinceEpoch = Instant.now().toEpochMilli(),
+                id = EPHERMERAL_MSISDN)
+
+        val id = fbStorage.injectPurchaseRequest(cr)
+        val id2 = fbStorage.injectPurchaseRequest(cr)
+        prids.add(id)
+        prids.add(id2)
 
         if (!latch.await(TIMEOUT_IN_SECONDS.toLong(), TimeUnit.SECONDS)) {
             fail("Read/react failed")
         }
 
-        storage!!.removePurchaseRequestById(id)
-        storage!!.removePurchaseRequestById(id2)
+        storage.removePurchaseRequestById(id)
+        storage.removePurchaseRequestById(id2)
     }
 
     companion object {

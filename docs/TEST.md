@@ -9,19 +9,19 @@
  * Create test subscriber
   
   
-    firebase --project pantel-2decb  --data '{"msisdn": "+4747900184", "noOfBytesLeft": 0}' database:push /authorative-user-storage
+    firebase --project pantel-2decb  --data '{"msisdn": "+4747900184", "noOfBytesLeft": 0}' database:set /authorative-user-balance/4747900184
 
  * Top up test subscriber
  
- 
+
     firebase --project pantel-2decb  --data '{"msisdn": "+4747900184", "sku": "DataTopup3GB", "paymentToken": "xxxx"}' database:push /client-requests
 
-### Start docker-compose
-
- * Test ext-pgw -- ocsgw -- prime --firebase
+### Test ext-pgw -- ocsgw -- prime --firebase
     
     gradle clean build  
     docker-compose up --build --abort-on-container-exit
+    
+    gradle prime:integration
  
  * Test pubsub -- pseudonymiser(--datastore) -- pubsub
  

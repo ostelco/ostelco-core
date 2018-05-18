@@ -1,14 +1,18 @@
-logging:
-  level: INFO
-  loggers:
-    org.ostelco: DEBUG
-  appenders:
-    - type: gcp
-    - type: console
-      layout:
-        type: json
+services:
+  - type: api
+  - type: admin
 
 eventProcessor:
   configFile: /secret/pantel-prod.json
   projectId: pantel-2decb
   topicId: data-traffic
+
+logging:
+  level: INFO
+  loggers:
+    org.ostelco: DEBUG
+  appenders:
+    - type: console
+      layout:
+        type: json
+

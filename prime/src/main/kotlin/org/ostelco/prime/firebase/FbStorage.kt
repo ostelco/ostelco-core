@@ -7,15 +7,15 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.database.FirebaseDatabase
 import org.ostelco.prime.events.EventHandler
+import org.ostelco.prime.model.Product
+import org.ostelco.prime.model.PurchaseRequest
+import org.ostelco.prime.model.RecordOfPurchase
+import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.storage.ProductDescriptionCache
 import org.ostelco.prime.storage.ProductDescriptionCacheImpl
 import org.ostelco.prime.storage.PurchaseRequestHandler
 import org.ostelco.prime.storage.Storage
 import org.ostelco.prime.storage.StorageException
-import org.ostelco.prime.storage.entities.Product
-import org.ostelco.prime.storage.entities.PurchaseRequest
-import org.ostelco.prime.storage.entities.Subscriber
-import org.ostelco.prime.storage.entities.SubscriberImpl
 import java.io.FileInputStream
 import java.io.IOException
 import java.nio.file.Files
@@ -109,7 +109,7 @@ constructor(databaseName: String,
     @Throws(StorageException::class)
     override fun updateDisplayDatastructure(msisdn: String) {
         checkNotNull(msisdn)
-        val subscriber = getSubscriberFromMsisdn(msisdn) as SubscriberImpl?
+        val subscriber = getSubscriberFromMsisdn(msisdn)
                 ?: throw StorageException("Unknown MSISDN " + msisdn)
 
         val noOfBytes = subscriber.noOfBytesLeft
@@ -122,7 +122,7 @@ constructor(databaseName: String,
     @Throws(StorageException::class)
     override fun removeDisplayDatastructure(msisdn: String) {
         checkNotNull(msisdn)
-        facade.removeByMsisdn(msisdn)
+        facade.removeDisplayDatastructureByMsisdn(msisdn)
     }
 
     override fun injectPurchaseRequest(pr: PurchaseRequest): String {
@@ -130,20 +130,18 @@ constructor(databaseName: String,
         return facade.injectPurchaseRequest(pr)
     }
 
-    override fun removeRecordOfPurchaseById(id: String) {
+    override fun removeRecordOfPurchaseById(msisdn: String, id: String) {
         checkNotNull(id)
-        facade.removeRecordOfPurchaseById(id)
+        checkNotNull(msisdn)
+        facade.removeRecordOfPurchaseById(msisdn, id)
     }
 
-    override fun addRecordOfPurchaseByMsisdn(
-            ephermeralMsisdn: String,
-            sku: String,
-            now: Long): String {
-        checkNotNull(ephermeralMsisdn)
-        checkNotNull(sku)
-        checkArgument(now > 0)
+    override fun addRecordOfPurchase(purchase: RecordOfPurchase): String {
+        checkNotNull(purchase.msisdn)
+        checkNotNull(purchase.sku)
+        checkArgument(purchase.millisSinceEpoch > 0)
 
-        return facade.addRecordOfPurchaseByMsisdn(ephermeralMsisdn, sku, now)
+        return facade.addRecordOfPurchase(purchase)
     }
 
     @Throws(StorageException::class)
@@ -176,15 +174,14 @@ constructor(databaseName: String,
             throw StorageException("noOfBytes can't be negative")
         }
 
-        val sub = SubscriberImpl(msisdn)
-        sub.setNoOfBytesLeft(noOfBytes)
+        val sub = Subscriber(msisdn, noOfBytes)
 
         facade.updateAuthorativeUserData(sub)
     }
 
     override fun insertNewSubscriber(msisdn: String) {
         checkNotNull(msisdn)
-        val sub = SubscriberImpl(msisdn)
+        val sub = Subscriber(msisdn, 0)
         return facade.insertNewSubscriber(sub)
     }
 }

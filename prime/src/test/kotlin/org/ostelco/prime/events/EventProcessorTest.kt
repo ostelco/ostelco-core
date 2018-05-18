@@ -15,13 +15,15 @@ import org.mockito.junit.MockitoRule
 import org.ostelco.prime.disruptor.PrimeEvent
 import org.ostelco.prime.disruptor.PrimeEventMessageType.GET_DATA_BUNDLE_BALANCE
 import org.ostelco.prime.disruptor.PrimeEventMessageType.RELEASE_RESERVED_BUCKET
+import org.ostelco.prime.model.Product
+import org.ostelco.prime.model.PurchaseRequest
+import org.ostelco.prime.model.RecordOfPurchase
 import org.ostelco.prime.storage.Products.DATA_TOPUP_3GB
 import org.ostelco.prime.storage.PurchaseRequestHandler
 import org.ostelco.prime.storage.Storage
 import org.ostelco.prime.storage.StorageException
 import org.ostelco.prime.storage.entities.NotATopupProductException
-import org.ostelco.prime.storage.entities.Product
-import org.ostelco.prime.storage.entities.PurchaseRequest
+import org.ostelco.prime.storage.entities.asTopupProduct
 
 class EventProcessorTest {
 
@@ -47,35 +49,18 @@ class EventProcessorTest {
         this.processor.start()
     }
 
-    private class DummyPurchaseRequest : PurchaseRequest {
-
-        override val sku: String
-            get() = DATA_TOPUP_3GB.sku
-
-        override val paymentToken: String
-            get() = PAYMENT_TOKEN
-
-        override val msisdn: String
-            get() = MSISDN
-
-        override val millisSinceEpoch: Long
-            get() = 0
-
-        override val id: String
-            get() = "Sir Tristram, violer d'amores"
-
-        override fun asMap(): Map<String, Any> {
-            return emptyMap()
-        }
-    }
-
     // FIXME
     @Ignore
     @Test
     @Throws(EventProcessorException::class, StorageException::class)
     fun handlePurchaseRequestTest() {
 
-        val req = DummyPurchaseRequest()
+        val req = PurchaseRequest(
+                sku = DATA_TOPUP_3GB.sku,
+                msisdn = MSISDN,
+                paymentToken = PAYMENT_TOKEN,
+                millisSinceEpoch = 0,
+                id = "Sir Tristram, violer d'amores")
 
         // Process a little
         processor.handlePurchaseRequest(req)
@@ -89,7 +74,7 @@ class EventProcessorTest {
         }
 
         verify<Storage>(storage).addPurchaseRequestHandler(any(PurchaseRequestHandler::class.java))
-        verify<Storage>(storage).addRecordOfPurchaseByMsisdn(eq(MSISDN), eq(req.sku), anyLong())
+        verify<Storage>(storage).addRecordOfPurchase(RecordOfPurchase(eq(MSISDN), eq(req.sku), anyLong()))
         verify<Storage>(storage).updateDisplayDatastructure(eq(MSISDN))
         verify<Storage>(storage).removePurchaseRequestById(eq(req.id))
         verify<OcsBalanceUpdater>(ocsBalanceUpdater).updateBalance(eq(MSISDN), eq(topupBytes))

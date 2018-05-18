@@ -1,6 +1,6 @@
 package org.ostelco.prime.storage
 
-import org.ostelco.prime.storage.entities.PurchaseRequest
+import org.ostelco.prime.model.PurchaseRequest
 import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors

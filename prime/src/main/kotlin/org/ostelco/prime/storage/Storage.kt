@@ -1,8 +1,9 @@
 package org.ostelco.prime.storage
 
 
-import org.ostelco.prime.storage.entities.PurchaseRequest
-import org.ostelco.prime.storage.entities.Subscriber
+import org.ostelco.prime.model.PurchaseRequest
+import org.ostelco.prime.model.RecordOfPurchase
+import org.ostelco.prime.model.Subscriber
 
 /**
  * Interface that abstracts the interactions that
@@ -39,9 +40,9 @@ interface Storage : ProductDescriptionCache {
     fun addPurchaseRequestHandler(handler: PurchaseRequestHandler)
 
     @Throws(StorageException::class)
-    fun addRecordOfPurchaseByMsisdn(ephermeralMsisdn: String, sku: String, now: Long): String
+    fun addRecordOfPurchase(purchase: RecordOfPurchase): String
 
     fun removePurchaseRequestById(id: String)
 
-    fun removeRecordOfPurchaseById(id: String)
+    fun removeRecordOfPurchaseById(msisdn: String, id: String)
 }
