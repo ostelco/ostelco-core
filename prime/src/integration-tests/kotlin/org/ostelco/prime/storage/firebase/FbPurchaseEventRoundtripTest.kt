@@ -1,4 +1,4 @@
-package org.ostelco.prime.firebase
+package org.ostelco.prime.storage.firebase
 
 import org.junit.After
 import org.junit.Assert
@@ -19,6 +19,8 @@ import org.ostelco.prime.events.OcsBalanceUpdater
 import org.ostelco.prime.events.asTopupProduct
 import org.ostelco.prime.model.PurchaseRequest
 import org.ostelco.prime.storage.firebase.FbStorage
+import org.ostelco.prime.storage.firebase.FirebaseConfig
+import org.ostelco.prime.storage.firebase.FirebaseConfigRegistry
 import org.ostelco.prime.storage.firebase.ProductDescriptionCacheImpl
 import org.ostelco.prime.storage.legacy.Products.DATA_TOPUP_3GB
 import org.ostelco.prime.storage.legacy.PurchaseRequestHandler
@@ -48,16 +50,19 @@ class FbPurchaseEventRoundtripTest {
     @Before
     @Throws(Exception::class)
     fun setUp() {
-        this.fbStorage = FbStorage(
-                "pantel-tests",
-                "src/integration-tests/resources/pantel-tests.json")
+        val firebaseConfig = FirebaseConfig()
+        firebaseConfig.databaseName = "pantel-tests"
+        firebaseConfig.configFile = "src/integration-tests/resources/pantel-tests.json"
+        FirebaseConfigRegistry.firebaseConfig = firebaseConfig
+        this.fbStorage = FbStorage()
+
         this.storage = fbStorage
         val millisToSleepDuringStartup = 3000
         sleep(millisToSleepDuringStartup.toLong())
         storage!!.removeSubscriberByMsisdn(EPHERMERAL_MSISDN)
         storage!!.insertNewSubscriber(EPHERMERAL_MSISDN)
 
-        val processor = EventProcessor(storage!!, ocsBalanceUpdater!!)
+        val processor = EventProcessor(ocsBalanceUpdater!!)
         processor.start()
         this.prids = ArrayList()
     }

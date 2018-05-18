@@ -1,10 +1,10 @@
-package org.ostelco.prime.firebase
+package org.ostelco.prime.storage.firebase
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.ostelco.prime.storage.firebase.entity.asMap
 import org.ostelco.prime.model.Subscriber
+import org.ostelco.prime.storage.firebase.entity.asMap
 
 class SubscriberImplTest {
 

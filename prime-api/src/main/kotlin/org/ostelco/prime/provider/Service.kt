@@ -17,5 +17,5 @@ import io.dropwizard.setup.Environment
  */
 @JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
 interface Service : Discoverable {
-    fun init(env: Environment)
+    fun init(env: Environment) {}
 }

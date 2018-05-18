@@ -1,9 +1,9 @@
 package org.ostelco.prime.events
 
 
-import org.ostelco.prime.disruptor.PrimeEventProducerImpl
+import org.ostelco.prime.disruptor.PrimeEventProducer
 
-class OcsBalanceUpdaterImpl(val producer: PrimeEventProducerImpl) : OcsBalanceUpdater {
+class OcsBalanceUpdaterImpl(val producer: PrimeEventProducer) : OcsBalanceUpdater {
 
     override fun updateBalance(msisdn: String, noOfBytesToTopUp: Long) {
         // XXX removing '+' if it exists

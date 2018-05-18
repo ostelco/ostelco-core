@@ -24,8 +24,7 @@ class EventHandler {
         val sku = item.sku
         val noOfBytes = item.noOfBytes
         if (sku != null && noOfBytes != null) {
-            ProductDescriptionCacheImpl. // XXX This is an awful hack!
-                    addTopupProduct(sku, noOfBytes)
+            ProductDescriptionCacheImpl.addTopupProduct(sku, noOfBytes)
         }
     }
 

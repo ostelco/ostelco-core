@@ -1,4 +1,4 @@
-package org.ostelco.prime.firebase
+package org.ostelco.prime.storage.firebase
 
 import org.junit.After
 import org.junit.Assert
@@ -10,6 +10,8 @@ import org.junit.Test
 import org.ostelco.prime.model.PurchaseRequest
 import org.ostelco.prime.model.RecordOfPurchase
 import org.ostelco.prime.storage.firebase.FbStorage
+import org.ostelco.prime.storage.firebase.FirebaseConfig
+import org.ostelco.prime.storage.firebase.FirebaseConfigRegistry
 import org.ostelco.prime.storage.legacy.Products.DATA_TOPUP_3GB
 import org.ostelco.prime.storage.legacy.PurchaseRequestHandler
 import org.ostelco.prime.storage.legacy.Storage
@@ -31,10 +33,12 @@ class FbStorageTest {
     @Before
     @Throws(StorageException::class, InterruptedException::class)
     fun setUp() {
-        this.fbStorage = FbStorage(
-                "pantel-tests",
-                "src/integration-tests/resources/pantel-tests.json")
-        this.storage = fbStorage
+        val firebaseConfig = FirebaseConfig()
+        firebaseConfig.databaseName = "pantel-tests"
+        firebaseConfig.configFile = "src/integration-tests/resources/pantel-tests.json"
+        FirebaseConfigRegistry.firebaseConfig = firebaseConfig
+        this.fbStorage = FbStorage()
+
         sleep(MILLIS_TO_WAIT_WHEN_STARTING_UP.toLong())
         storage.removeSubscriberByMsisdn(EPHERMERAL_MSISDN)
         storage.insertNewSubscriber(EPHERMERAL_MSISDN)

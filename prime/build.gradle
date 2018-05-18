@@ -22,12 +22,14 @@ sourceSets {
 
 dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+
   // interface module between prime and prime-modules
   implementation project(':prime-api')
+  implementation project(':model')
+
   // prime-modules
   implementation project(':ocs')
-  implementation project(':model')
-  implementation project(':firebase-store')
+  runtime project(':firebase-store')
   runtime project(':client-api')
   runtime project(':admin-api')
   runtime project(':in-memory-store')
@@ -40,6 +42,8 @@ dependencies {
 
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation 'org.mockito:mockito-core:2.18.3'
+
+  integrationImplementation project(':firebase-store')
 }
 
 configurations {
