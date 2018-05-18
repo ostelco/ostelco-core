@@ -49,7 +49,9 @@ public class OcsServer {
         final CreditControlContext ccrContext = new CreditControlContext(
                 session.getSessionId(),
                 request,
-                stack.getMetaData().getLocalPeer().getUri().getFQDN());
+                stack.getMetaData().getLocalPeer().getUri().getFQDN(),
+                stack.getMetaData().getLocalPeer().getRealmName()
+        );
         source.handleRequest(ccrContext);
     }
 
