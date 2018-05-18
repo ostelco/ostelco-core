@@ -13,7 +13,7 @@ class AdminService: Service {
 
     override fun init(env: Environment) {
         val jerseySever = env.jersey()
-        jerseySever.register(OfferResource(datastore))
+        jerseySever.register(OfferResource())
         jerseySever.register(SegmentResource(datastore))
         jerseySever.register(ProductResource(datastore))
         jerseySever.register(ProductClassResource(datastore))

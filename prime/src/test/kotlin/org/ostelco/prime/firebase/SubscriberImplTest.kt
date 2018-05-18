@@ -3,7 +3,7 @@ package org.ostelco.prime.firebase
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.ostelco.prime.firebase.entities.asMap
+import org.ostelco.prime.storage.firebase.entity.asMap
 import org.ostelco.prime.model.Subscriber
 
 class SubscriberImplTest {
