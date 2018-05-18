@@ -2,12 +2,12 @@ package org.ostelco.prime.admin.api
 
 import com.fasterxml.jackson.annotation.JsonTypeName
 import io.dropwizard.setup.Environment
-import org.ostelco.prime.getResource
-import org.ostelco.prime.provider.Service
+import org.ostelco.prime.module.getResource
+import org.ostelco.prime.module.PrimeModule
 import org.ostelco.prime.storage.DataStore
 
 @JsonTypeName("admin")
-class AdminService: Service {
+class AdminModule: PrimeModule {
 
     private var datastore: DataStore = getResource()
 

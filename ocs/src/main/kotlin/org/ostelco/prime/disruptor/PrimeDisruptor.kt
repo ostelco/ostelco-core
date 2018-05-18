@@ -4,6 +4,7 @@ import com.lmax.disruptor.EventFactory
 import com.lmax.disruptor.TimeoutException
 import com.lmax.disruptor.dsl.Disruptor
 import io.dropwizard.lifecycle.Managed
+import org.ostelco.prime.disruptor.PrimeEvent
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 

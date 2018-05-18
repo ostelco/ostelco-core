@@ -3,10 +3,10 @@ package org.ostelco.prime.storage.firebase
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonTypeName
 import org.hibernate.validator.constraints.NotEmpty
-import org.ostelco.prime.provider.Service
+import org.ostelco.prime.module.PrimeModule
 
 @JsonTypeName("firebase")
-class FirebaseService : Service {
+class FirebaseModule : PrimeModule {
 
     @JsonProperty("config")
     fun setConfig(config: FirebaseConfig) {

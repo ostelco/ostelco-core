@@ -1,7 +1,7 @@
 package org.ostelco.prime.admin.api
 
 
-import org.ostelco.prime.getResource
+import org.ostelco.prime.module.getResource
 import org.ostelco.prime.model.AdminProduct
 import org.ostelco.prime.model.ProductClass
 import org.ostelco.prime.storage.DataStore
