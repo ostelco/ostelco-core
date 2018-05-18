@@ -4,19 +4,16 @@ import com.google.common.base.Preconditions.checkNotNull
 import com.lmax.disruptor.EventHandler
 import io.dropwizard.lifecycle.Managed
 import org.ostelco.prime.disruptor.PrimeEvent
-import org.ostelco.prime.firebase.entities.asMap
 import org.ostelco.prime.logger
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRequest
 import org.ostelco.prime.model.RecordOfPurchase
 import org.ostelco.prime.model.TopUpProduct
-import org.ostelco.prime.storage.PurchaseRequestHandler
-import org.ostelco.prime.storage.Storage
-import org.ostelco.prime.storage.StorageException
-import org.ostelco.prime.storage.entities.NotATopupProductException
-import org.ostelco.prime.storage.entities.asTopupProduct
-import org.ostelco.prime.storage.entities.isTopUpProject
-
+import org.ostelco.prime.storage.firebase.entity.asMap
+import org.ostelco.prime.storage.legacy.PurchaseRequestHandler
+import org.ostelco.prime.storage.legacy.Storage
+import org.ostelco.prime.storage.legacy.StorageException
+import org.ostelco.prime.storage.legacy.entities.NotATopupProductException
 import java.util.concurrent.atomic.AtomicBoolean
 
 class EventProcessor(
@@ -180,5 +177,24 @@ class EventProcessor(
 
     override fun stop() {
         // Only for completeness, don't do anything special.
+    }
+}
+
+fun Product.isTopUpProject(): Boolean = productDescription is TopUpProduct
+
+/**
+ * Return product as an instance of a TopUpProduct, or throw
+ * an exception if it can't be cast into a TopUpProduct.
+ * @return the product as a topup product, or throws an exception if
+ * the product isn't a topup product.
+ * @throws NotATopupProductException Thrown if the product if
+ * not a topup product.
+ */
+@Throws(NotATopupProductException::class)
+fun Product.asTopupProduct(): TopUpProduct? {
+    try {
+        return productDescription as TopUpProduct?
+    } catch (ex: ClassCastException) {
+        throw NotATopupProductException(ex)
     }
 }

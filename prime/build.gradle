@@ -27,14 +27,13 @@ dependencies {
   // prime-modules
   implementation project(':ocs')
   implementation project(':model')
+  implementation project(':firebase-store')
   runtime project(':client-api')
   runtime project(':admin-api')
   runtime project(':in-memory-store')
 
   implementation project(':ostelco-lib')
   implementation "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
-  // Keep it to 5.10.0 to match netty via ocs-api
-  implementation 'com.google.firebase:firebase-admin:5.10.0'
   implementation 'com.google.cloud:google-cloud-pubsub:0.46.0-beta'
   implementation 'com.lmax:disruptor:3.4.2'
   implementation 'com.google.guava:guava:24.1-jre'

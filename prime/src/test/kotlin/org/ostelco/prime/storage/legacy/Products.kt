@@ -1,4 +1,4 @@
-package org.ostelco.prime.storage
+package org.ostelco.prime.storage.legacy
 
 import com.google.common.base.Preconditions.checkNotNull
 import org.ostelco.prime.logger

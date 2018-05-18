@@ -1,4 +1,4 @@
-package org.ostelco.prime.firebase.entities
+package org.ostelco.prime.storage.firebase.entity
 
 class FbSubscriber()  {
     var msisdn: String? = null

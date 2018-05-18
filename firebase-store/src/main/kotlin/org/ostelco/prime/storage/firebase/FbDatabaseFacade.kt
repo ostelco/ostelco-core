@@ -1,4 +1,4 @@
-package org.ostelco.prime.firebase
+package org.ostelco.prime.storage.firebase
 
 import com.google.common.base.Preconditions.checkNotNull
 import com.google.firebase.database.ChildEventListener
@@ -7,15 +7,15 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import org.ostelco.prime.firebase.entities.FbPurchaseRequest
-import org.ostelco.prime.firebase.entities.FbSubscriber
-import org.ostelco.prime.firebase.entities.asMap
 import org.ostelco.prime.logger
 import org.ostelco.prime.model.ProductCatalogItem
 import org.ostelco.prime.model.PurchaseRequest
 import org.ostelco.prime.model.RecordOfPurchase
 import org.ostelco.prime.model.Subscriber
-import org.ostelco.prime.storage.StorageException
+import org.ostelco.prime.storage.firebase.entity.FbPurchaseRequest
+import org.ostelco.prime.storage.firebase.entity.FbSubscriber
+import org.ostelco.prime.storage.firebase.entity.asMap
+import org.ostelco.prime.storage.legacy.StorageException
 import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit

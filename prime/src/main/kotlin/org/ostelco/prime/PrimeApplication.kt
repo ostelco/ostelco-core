@@ -7,14 +7,13 @@ import org.ostelco.prime.config.PrimeConfiguration
 import org.ostelco.prime.disruptor.ClearingEventHandler
 import org.ostelco.prime.disruptor.PrimeDisruptor
 import org.ostelco.prime.disruptor.PrimeEventProducerImpl
-import org.ostelco.prime.events.EventHandler
 import org.ostelco.prime.events.EventProcessor
 import org.ostelco.prime.events.OcsBalanceUpdaterImpl
-import org.ostelco.prime.firebase.FbStorage
 import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.ocs.OcsServer
 import org.ostelco.prime.ocs.OcsService
 import org.ostelco.prime.ocs.OcsState
+import org.ostelco.prime.storage.firebase.FbStorage
 
 class PrimeApplication : Application<PrimeConfiguration>() {
 
@@ -43,12 +42,9 @@ class PrimeApplication : Application<PrimeConfiguration>() {
         val eventProcessorConfig = primeConfiguration.eventProcessorConfig
 
 
-        val eventHandler = EventHandler()
-
         val storage = FbStorage(
                 eventProcessorConfig.projectId,
-                eventProcessorConfig.configFile,
-                eventHandler)
+                eventProcessorConfig.configFile)
 
         loadSubscriberBalanceFromDatabaseToInMemoryStructure(storage.allSubscribers, ocsState);
 
