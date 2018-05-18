@@ -259,7 +259,7 @@ public class GrpcDataSource implements DataSource {
     @Override
     public void handleRequest(final CreditControlContext context) {
         ccrMap.put(context.getSessionId(), context);
-        sessionIdMap.put(context.getCreditControlRequest().getMsisdn(), new SessionContext(context.getSessionId(), context.getOriginHost(), context.getOriginRealm()));
+        sessionIdMap.put(context.getCreditControlRequest().getMsisdn(), new SessionContext(context.getSessionId(), context.getCreditControlRequest().getOriginHost(), context.getCreditControlRequest().getOriginRealm()));
         LOG.info("[>>] Requesting bytes for {}", context.getCreditControlRequest().getMsisdn());
 
         if (creditControlRequest != null) {
