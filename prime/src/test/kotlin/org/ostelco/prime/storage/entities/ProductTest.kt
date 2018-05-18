@@ -3,9 +3,12 @@ package org.ostelco.prime.storage.entities
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.ostelco.prime.events.asTopupProduct
+import org.ostelco.prime.events.isTopUpProject
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.TopUpProduct
-import org.ostelco.prime.storage.Products
+import org.ostelco.prime.storage.legacy.Products
+import org.ostelco.prime.storage.legacy.entities.NotATopupProductException
 
 class ProductTest {
 

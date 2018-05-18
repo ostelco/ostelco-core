@@ -1,10 +1,8 @@
-package org.ostelco.prime.events
+package org.ostelco.prime.storage.firebase
 
 import org.ostelco.prime.model.ProductCatalogItem
 import org.ostelco.prime.model.PurchaseRequest
-import org.ostelco.prime.storage.ProductDescriptionCacheImpl
-import org.ostelco.prime.storage.PurchaseRequestHandler
-import org.ostelco.prime.storage.StorageInitiatedEventExecutor
+import org.ostelco.prime.storage.legacy.PurchaseRequestHandler
 import java.time.Instant
 
 class EventHandler {

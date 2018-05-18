@@ -1,6 +1,7 @@
-package org.ostelco.prime.storage
+package org.ostelco.prime.storage.firebase
 
 import org.ostelco.prime.model.PurchaseRequest
+import org.ostelco.prime.storage.legacy.PurchaseRequestHandler
 import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors

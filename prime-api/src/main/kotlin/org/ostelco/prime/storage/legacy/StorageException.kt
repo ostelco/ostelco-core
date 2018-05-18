@@ -1,4 +1,4 @@
-package org.ostelco.prime.storage
+package org.ostelco.prime.storage.legacy
 
 class StorageException : Exception {
     constructor(t: Throwable) : super(t)

@@ -1,4 +1,4 @@
-package org.ostelco.prime.firebase
+package org.ostelco.prime.storage.firebase
 
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.common.base.Preconditions.checkArgument
@@ -6,16 +6,14 @@ import com.google.common.base.Preconditions.checkNotNull
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.database.FirebaseDatabase
-import org.ostelco.prime.events.EventHandler
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRequest
 import org.ostelco.prime.model.RecordOfPurchase
 import org.ostelco.prime.model.Subscriber
-import org.ostelco.prime.storage.ProductDescriptionCache
-import org.ostelco.prime.storage.ProductDescriptionCacheImpl
-import org.ostelco.prime.storage.PurchaseRequestHandler
-import org.ostelco.prime.storage.Storage
-import org.ostelco.prime.storage.StorageException
+import org.ostelco.prime.storage.legacy.ProductDescriptionCache
+import org.ostelco.prime.storage.legacy.PurchaseRequestHandler
+import org.ostelco.prime.storage.legacy.Storage
+import org.ostelco.prime.storage.legacy.StorageException
 import java.io.FileInputStream
 import java.io.IOException
 import java.nio.file.Files
@@ -25,23 +23,18 @@ import java.util.function.Consumer
 
 class FbStorage @Throws(StorageException::class)
 constructor(databaseName: String,
-            configFile: String,
-            eventHandler: EventHandler) : Storage {
+            configFile: String) : Storage {
 
     private val productCache: ProductDescriptionCache
 
     private val facade: FbDatabaseFacade
 
-    private val eventHandler: EventHandler
+    private val eventHandler = EventHandler()
 
     override val allSubscribers: Collection<Subscriber>
         get() = facade.allSubscribers
 
     init {
-
-        checkNotNull(configFile)
-        checkNotNull(databaseName)
-        this.eventHandler = checkNotNull(eventHandler)
 
         this.productCache = ProductDescriptionCacheImpl
 

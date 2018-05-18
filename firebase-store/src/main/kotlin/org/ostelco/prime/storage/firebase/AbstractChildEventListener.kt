@@ -1,8 +1,9 @@
-package org.ostelco.prime.firebase
+package org.ostelco.prime.storage.firebase
 
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+
 
 /**
  * Convenience class, so that in classes that actually do anything, it's only necessary
