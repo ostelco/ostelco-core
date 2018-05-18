@@ -1,4 +1,4 @@
-package org.ostelco.prime.storage.entities
+package org.ostelco.prime.storage.legacy.entities
 
 class IncompletePurchaseRequestException : Exception()
 

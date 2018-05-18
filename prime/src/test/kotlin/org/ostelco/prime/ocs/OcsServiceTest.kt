@@ -48,7 +48,7 @@ class OcsServiceTest {
 
         this.countDownLatch = CountDownLatch(1)
         this.result = HashSet()
-        val eh = EventHandler<PrimeEvent> { event, sequence, endOfBatch ->
+        val eh = EventHandler<PrimeEvent> { event, _, _ ->
             result!!.add(event)
             countDownLatch!!.countDown()
         }

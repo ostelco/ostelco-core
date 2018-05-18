@@ -1,4 +1,4 @@
-package org.ostelco.prime.firebase.entities
+package org.ostelco.prime.storage.firebase.entity
 
 import org.ostelco.prime.model.PurchaseRequest
 import org.ostelco.prime.model.RecordOfPurchase

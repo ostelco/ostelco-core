@@ -1,4 +1,4 @@
-package org.ostelco.prime.firebase
+package org.ostelco.prime.storage.firebase
 
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
