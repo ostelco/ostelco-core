@@ -18,12 +18,11 @@ import org.ostelco.prime.disruptor.PrimeEventMessageType.RELEASE_RESERVED_BUCKET
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRequest
 import org.ostelco.prime.model.RecordOfPurchase
-import org.ostelco.prime.storage.Products.DATA_TOPUP_3GB
-import org.ostelco.prime.storage.PurchaseRequestHandler
-import org.ostelco.prime.storage.Storage
-import org.ostelco.prime.storage.StorageException
-import org.ostelco.prime.storage.entities.NotATopupProductException
-import org.ostelco.prime.storage.entities.asTopupProduct
+import org.ostelco.prime.storage.legacy.Products.DATA_TOPUP_3GB
+import org.ostelco.prime.storage.legacy.PurchaseRequestHandler
+import org.ostelco.prime.storage.legacy.Storage
+import org.ostelco.prime.storage.legacy.StorageException
+import org.ostelco.prime.storage.legacy.entities.NotATopupProductException
 
 class EventProcessorTest {
 

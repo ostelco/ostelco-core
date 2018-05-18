@@ -1,6 +1,7 @@
 package org.ostelco.prime.admin.api
 
 
+import org.ostelco.prime.getResource
 import org.ostelco.prime.model.AdminProduct
 import org.ostelco.prime.model.ProductClass
 import org.ostelco.prime.storage.DataStore
@@ -11,7 +12,9 @@ import javax.ws.rs.Path
 import javax.ws.rs.PathParam
 
 @Path("/offers")
-class OfferResource(private val dataStore: DataStore) {
+class OfferResource() {
+
+    private var dataStore: DataStore = getResource()
 
     @GET
     fun getOffers() = dataStore.getOffers().map { it.id }
