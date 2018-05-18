@@ -53,6 +53,10 @@ Furthermore:
  - All client interactions goes through the backend, including handling of authentication, payment etc.
  - Subscriptions as such has already been activated through the CRM system including registration of email
    address etc.
+   
+The API is developed partly through this document.  Partly through the swagger specification of the
+prime/infra/prime-api.yaml file that is more or less reliably mirrored in the swagger-generated static website [swagger doc](https://ostelco.github.io/).
+The specs are a bit in flux right now, but we expect it to settle down over the coming few weeks. 
 
 ## Data model
 
