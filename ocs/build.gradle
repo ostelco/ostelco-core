@@ -8,6 +8,11 @@ plugins {
 }
 
 dependencies {
-  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
   implementation project(':prime-api')
+
+  implementation 'com.google.cloud:google-cloud-pubsub:0.46.0-beta'
+  implementation 'com.lmax:disruptor:3.4.2'
+
+  testImplementation 'org.mockito:mockito-core:2.18.3'
+  testImplementation "junit:junit:4.12"
 }
