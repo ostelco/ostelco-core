@@ -24,7 +24,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  */
 @JsonTypeName("api")
-public class TopupService implements PrimeModule {
+public class TopupModule implements PrimeModule {
 
     @Override
     public void init(final Environment env) {
