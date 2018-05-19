@@ -33,12 +33,16 @@ Deploy endpoints
 
 ## Deployment & Service
 
+Increment the docker image tag (version) for next two steps.
+ 
 Build the Docker image (In the folder with Dockerfile)
 
     docker build -t gcr.io/${PROJECT_ID}/prime:1.0.7 .
 Push to the registry
 
     gcloud docker -- push gcr.io/${PROJECT_ID}/prime:1.0.7
+
+Update the tag (version) of prime's docker image in `infra/prime.yaml`.
 
 Apply the deployment & service
 

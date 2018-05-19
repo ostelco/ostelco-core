@@ -8,10 +8,12 @@ plugins {
 }
 
 dependencies {
+  api "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+  api "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
+
   api project(':ocs-api')
+  api project(':model')
+
   api "com.lmax:disruptor:3.4.2"
   api "io.dropwizard:dropwizard-core:$dropwizardVersion"
-
-  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
-  implementation "org.slf4j:slf4j-api:1.7.25"
 }

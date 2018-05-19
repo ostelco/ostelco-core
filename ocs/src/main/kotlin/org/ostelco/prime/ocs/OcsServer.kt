@@ -46,6 +46,16 @@ class OcsServer(private val port: Int, service: BindableService) : Managed {
         }
     }
 
+    /**
+     * Used for unit testing
+     */
+    fun forceStop() {
+        if (server != null) {
+            LOG.info("Stopping forcefully OcsServer Server listening for gRPC traffic on  {}", port)
+            server.shutdownNow()
+        }
+    }
+
     @Throws(InterruptedException::class)
     private fun blockUntilShutdown() {
         server?.awaitTermination()

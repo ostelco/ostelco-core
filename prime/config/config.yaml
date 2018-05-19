@@ -1,10 +1,14 @@
-services:
+modules:
+  - type: firebase
+    config:
+      configFile: /secret/pantel-prod.json
+      databaseName: pantel-2decb
+  - type: ocs
+    config:
+      projectId: pantel-2decb
+      topicId: data-traffic
   - type: api
-
-eventProcessor:
-  configFile: /secret/pantel-prod.json
-  projectId: pantel-2decb
-  topicId: data-traffic
+  - type: admin
 
 logging:
   level: INFO

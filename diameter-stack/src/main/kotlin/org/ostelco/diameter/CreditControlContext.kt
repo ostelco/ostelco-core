@@ -25,13 +25,12 @@ import org.ostelco.diameter.util.DiameterUtilities
 class CreditControlContext(
         val sessionId: String,
         val originalCreditControlRequest: JCreditControlRequest,
-        val originHost: String) {
+        val originHost: String,
+        val originRealm: String) {
 
     private val LOG by logger()
 
     var skipAnswer: Boolean = false
-
-    val originRealm:String = originalCreditControlRequest.destinationRealm
 
     val creditControlRequest: CreditControlRequest = AvpParser().parse(
             CreditControlRequest::class,
@@ -42,7 +41,6 @@ class CreditControlContext(
     }
 
     fun createCCA(creditControlAnswer: CreditControlAnswer): JCreditControlAnswerImpl? {
-
         var answer: JCreditControlAnswerImpl? = null
         var resultCode = ResultCode.SUCCESS
 

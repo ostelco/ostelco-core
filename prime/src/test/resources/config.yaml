@@ -1,9 +1,0 @@
-logging:
-  level: INFO
-  loggers:
-    org.ostelco: DEBUG
-
-eventProcessor:
-  configFile: src/integration-tests/resources/pantel-tests.json
-  projectId: pantel-tests
-  topicId: data-traffic

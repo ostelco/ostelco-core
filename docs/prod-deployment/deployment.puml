@@ -10,6 +10,12 @@ package "Payment service" {
  [Payment]
 }
 
+package "Authentication service" {
+ [AUTH]
+}
+
+
+
 package "Host Operator" {
   [PGW]
 }
@@ -34,6 +40,7 @@ package "GCP" {
  }
 }
 
+[App] -- [AUTH]
 [Payment] -- [App]
 [Payment] -- [Prime]
 [Mobile data] -- [PGW] : gtp
