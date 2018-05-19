@@ -13,6 +13,14 @@ repositories {
 swagger {
     inputSpec = '../prime/infra/prime-api.yaml'
     outputDir = file('build/swagger')
+
+
+    // XXX When this works for java, we want to extend it
+    //     to at least kotlin and dart. Most likely also
+    //     bash and go, then add libraries as we feel is necessary.
+    //     Also, the libraries should be published in whatever way is
+    //     "generic" for that language.  So for java/kotlin, it should
+    //     be through the maven central mechanism.
     lang = 'java'
 
     additionalProperties = [
