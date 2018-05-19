@@ -11,18 +11,24 @@ repositories {
 }
 
 swagger {
-    inputSpec = 'http://petstore.swagger.io/v2/swagger.json'
+    inputSpec = './swagger.json'
     outputDir = file('build/swagger')
     lang = 'java'
 
     additionalProperties = [
-            'invokerPackage'   : 'io.swagger.petstore.client',
-            'modelPackage'     : 'io.swagger.petstore.client.model',
-            'apiPackage'       : 'io.swagger.petstore.client.api',
+            'invokerPackage'   : 'org.ostelco.prime.client',
+            'modelPackage'     : 'org.ostelco.prime.client.model',
+            'apiPackage'       : 'org.ostelco.prime.client.api',
             'dateLibrary'      : 'java8'
     ]
+
     importMappings = [
-            'Dog': 'io.swagger.petstore.client.model.Dog'
+            'ConsentList': 'org.ostelco.prime.client.model.ConsentList',
+	    'Currency': 'org.ostelco.prime.client.model.Currency',
+            'Product': 'org.ostelco.prime.client.model.Product',
+            'ProductList': 'org.ostelco.prime.client.model.ProductList',
+            'Profile': 'org.ostelco.prime.client.model.Profile',
+            'SubscriptionStatus': 'org.ostelco.prime.client.model.SubscriptionStatus'
     ]
 }
 
