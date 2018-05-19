@@ -21,14 +21,12 @@ sourceSets {
 }
 
 dependencies {
-  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
-
   // interface module between prime and prime-modules
   implementation project(':prime-api')
   implementation project(':model')
 
   // prime-modules
-  implementation project(':ocs')
+  runtime project(':ocs')
   runtime project(':firebase-store')
   runtime project(':client-api')
   runtime project(':admin-api')
@@ -36,12 +34,7 @@ dependencies {
 
   implementation project(':ostelco-lib')
   implementation "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
-  implementation 'com.google.cloud:google-cloud-pubsub:0.46.0-beta'
-  implementation 'com.lmax:disruptor:3.4.2'
   implementation 'com.google.guava:guava:24.1-jre'
-
-  testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
-  testImplementation 'org.mockito:mockito-core:2.18.3'
 
   integrationImplementation project(':firebase-store')
 }
@@ -58,7 +51,7 @@ task integration(type: Test, description: 'Runs the integration tests.', group: 
 }
 
 shadowJar {
-  mainClassName = 'org.ostelco.prime.PrimeApplication'
+  mainClassName = 'org.ostelco.prime.PrimeApplicationKt'
   mergeServiceFiles()
   classifier = "uber"
   version = null

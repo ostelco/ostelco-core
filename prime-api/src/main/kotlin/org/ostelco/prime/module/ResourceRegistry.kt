@@ -1,5 +1,6 @@
-package org.ostelco.prime
+package org.ostelco.prime.module
 
+import org.slf4j.LoggerFactory
 import java.util.*
 
 /**
@@ -11,5 +12,11 @@ import java.util.*
  */
 inline fun <reified T> getResource(): T {
     val services = ServiceLoader.load(T::class.java)
+    val logger = LoggerFactory.getLogger(T::class.java)
+    when (services.count()) {
+        0 -> logger.error("No implementations found for interface ${T::class.simpleName}")
+        1 -> {}
+        else -> logger.warn("Multiple implementations found for interface ${T::class.simpleName}")
+    }
     return services.first()
 }

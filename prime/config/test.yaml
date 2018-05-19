@@ -1,17 +1,16 @@
 # This config is used as config.yaml when prime is running using docker-compose for Acceptance Testing
 
-services:
+modules:
   - type: firebase
     config:
       configFile: /secret/pantel-prod.json
       databaseName: pantel-2decb
+  - type: ocs
+    config:
+      projectId: pantel-2decb
+      topicId: data-traffic
   - type: api
   - type: admin
-
-eventProcessor:
-  configFile: /secret/pantel-prod.json
-  projectId: pantel-2decb
-  topicId: data-traffic
 
 logging:
   level: INFO

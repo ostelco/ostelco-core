@@ -4,12 +4,12 @@ import com.google.common.base.Preconditions.checkNotNull
 import com.lmax.disruptor.EventHandler
 import io.dropwizard.lifecycle.Managed
 import org.ostelco.prime.disruptor.PrimeEvent
-import org.ostelco.prime.getResource
 import org.ostelco.prime.logger
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRequest
 import org.ostelco.prime.model.RecordOfPurchase
 import org.ostelco.prime.model.TopUpProduct
+import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.legacy.PurchaseRequestHandler
 import org.ostelco.prime.storage.legacy.Storage
 import org.ostelco.prime.storage.legacy.StorageException
@@ -40,7 +40,7 @@ class EventProcessor(
                 handleTopupProduct(pr, msisdn, topup)
             }
         } catch (ex: NotATopupProductException) {
-            LOG.info("Ignoring non-topup purchase request " + pr)
+            LOG.info("Ignoring non-topup purchase request {}", pr)
         }
     }
 
@@ -65,7 +65,7 @@ class EventProcessor(
         val sku = pr.sku
 
         if (!storage.isValidSKU(sku)) {
-            throw EventProcessorException("Not a valid SKU: " + sku, pr)
+            throw EventProcessorException("Not a valid SKU: $sku", pr)
         }
 
         return sku
@@ -73,7 +73,7 @@ class EventProcessor(
 
     @Throws(EventProcessorException::class)
     private fun validatePaymentToken(pr: PurchaseRequest) {
-        val paymentToken = pr.paymentToken
+
     }
 
     @Throws(EventProcessorException::class)

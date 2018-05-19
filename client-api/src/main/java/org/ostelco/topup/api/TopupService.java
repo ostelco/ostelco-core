@@ -6,7 +6,7 @@ import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
 import io.dropwizard.setup.Environment;
-import org.ostelco.prime.provider.Service;
+import org.ostelco.prime.module.PrimeModule;
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
 import org.ostelco.topup.api.auth.OAuthAuthenticator;
 import org.ostelco.topup.api.db.SubscriberDAO;
@@ -26,7 +26,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  */
 @JsonTypeName("api")
-public class TopupService implements Service {
+public class TopupService implements PrimeModule {
 
     @Override
     public void init(final Environment env) {
