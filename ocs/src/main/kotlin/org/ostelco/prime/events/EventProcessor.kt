@@ -16,6 +16,11 @@ import org.ostelco.prime.storage.legacy.StorageException
 import org.ostelco.prime.storage.legacy.entities.NotATopupProductException
 import java.util.concurrent.atomic.AtomicBoolean
 
+/**
+ * For normal execution, do not pass `storage`.
+ * It will be initialized properly using `getResource()`.
+ * Storage is parameterized into constructor to be able to pass mock for unit testing.
+ */
 class EventProcessor(
         private val ocsBalanceUpdater: OcsBalanceUpdater,
         private val storage: Storage = getResource()) : EventHandler<PrimeEvent>, Managed {
