@@ -36,6 +36,13 @@ dependencies {
   implementation "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
   implementation 'com.google.guava:guava:24.1-jre'
 
+  // for integration tests
+  testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+  testImplementation 'org.mockito:mockito-core:2.18.3'
+  testImplementation project(':ocs')
+  testImplementation project(':firebase-store')
+
+  integrationImplementation project(':ocs')
   integrationImplementation project(':firebase-store')
 }
 

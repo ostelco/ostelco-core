@@ -18,6 +18,7 @@ import org.ostelco.ocs.api.OcsServiceGrpc.OcsServiceStub
 import org.ostelco.prime.disruptor.PrimeDisruptor
 import org.ostelco.prime.disruptor.PrimeEventProducerImpl
 import org.ostelco.prime.logger
+import org.ostelco.prime.storage.firebase.initFirebaseConfigRegistry
 import java.io.IOException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -188,6 +189,7 @@ class OcsTest {
         @JvmStatic
         @Throws(IOException::class)
         fun setUp() {
+            initFirebaseConfigRegistry()
 
             // Set up processing pipeline
             disruptor = PrimeDisruptor()
@@ -226,7 +228,7 @@ class OcsTest {
         @Throws(InterruptedException::class, TimeoutException::class)
         fun tearDown() {
             disruptor.stop()
-            ocsServer.stop()
+            ocsServer.forceStop()
         }
     }
 }

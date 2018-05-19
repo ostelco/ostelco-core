@@ -112,7 +112,7 @@ class EventProcessorTest {
 
     companion object {
 
-        const val PAYMENT_TOKEN = "a weird token"
+        private const val PAYMENT_TOKEN = "a weird token"
 
         private const val MSISDN = "12345678"
 

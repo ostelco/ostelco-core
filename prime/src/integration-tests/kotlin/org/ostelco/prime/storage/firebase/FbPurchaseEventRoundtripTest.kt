@@ -14,14 +14,9 @@ import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
 import org.ostelco.prime.events.EventProcessor
 import org.ostelco.prime.events.EventProcessorException
-import org.ostelco.prime.events.EventProcessorTest
 import org.ostelco.prime.events.OcsBalanceUpdater
 import org.ostelco.prime.events.asTopupProduct
 import org.ostelco.prime.model.PurchaseRequest
-import org.ostelco.prime.storage.firebase.FbStorage
-import org.ostelco.prime.storage.firebase.FirebaseConfig
-import org.ostelco.prime.storage.firebase.FirebaseConfigRegistry
-import org.ostelco.prime.storage.firebase.ProductDescriptionCacheImpl
 import org.ostelco.prime.storage.legacy.Products.DATA_TOPUP_3GB
 import org.ostelco.prime.storage.legacy.PurchaseRequestHandler
 import org.ostelco.prime.storage.legacy.Storage
@@ -39,30 +34,24 @@ class FbPurchaseEventRoundtripTest {
     var mockitoRule: MockitoRule = MockitoJUnit.rule()
 
     @Mock
-    var ocsBalanceUpdater: OcsBalanceUpdater? = null
+    lateinit var ocsBalanceUpdater: OcsBalanceUpdater
 
-    private var prids: MutableCollection<String>? = null
+    private var prids: MutableCollection<String> = ArrayList()
 
-    private var fbStorage: FbStorage? = null
-
-    private var storage: Storage? = null
+    private lateinit var storage: Storage
 
     @Before
     @Throws(Exception::class)
     fun setUp() {
-        val firebaseConfig = FirebaseConfig()
-        firebaseConfig.databaseName = "pantel-tests"
-        firebaseConfig.configFile = "src/integration-tests/resources/pantel-tests.json"
-        FirebaseConfigRegistry.firebaseConfig = firebaseConfig
-        this.fbStorage = FbStorage()
+        initFirebaseConfigRegistry()
 
-        this.storage = fbStorage
+        this.storage = FbStorage()
         val millisToSleepDuringStartup = 3000
         sleep(millisToSleepDuringStartup.toLong())
-        storage!!.removeSubscriberByMsisdn(EPHERMERAL_MSISDN)
-        storage!!.insertNewSubscriber(EPHERMERAL_MSISDN)
+        storage.removeSubscriberByMsisdn(EPHERMERAL_MSISDN)
+        storage.insertNewSubscriber(EPHERMERAL_MSISDN)
 
-        val processor = EventProcessor(ocsBalanceUpdater!!)
+        val processor = EventProcessor(ocsBalanceUpdater)
         processor.start()
         this.prids = ArrayList()
     }
@@ -70,32 +59,28 @@ class FbPurchaseEventRoundtripTest {
     @After
     @Throws(StorageException::class)
     fun cleanUp() {
-        if (storage != null) {
-            storage!!.removeSubscriberByMsisdn(EPHERMERAL_MSISDN)
-        }
+        storage.removeSubscriberByMsisdn(EPHERMERAL_MSISDN)
 
-        if (this.prids != null) {
-            for (prid in this.prids!!) {
-                fbStorage!!.removePurchaseRequestById(prid)
-            }
+        for (prid in this.prids) {
+            storage.removePurchaseRequestById(prid)
         }
     }
 
     @Test
     @Throws(StorageException::class)
     fun insertNewSubscriberTest() {
-        Assert.assertNotEquals(null, storage!!.getSubscriberFromMsisdn(EPHERMERAL_MSISDN))
+        Assert.assertNotNull(storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN))
     }
 
     @Test
     @Throws(EventProcessorException::class, StorageException::class, InterruptedException::class, NotATopupProductException::class)
     fun purchaseRequestRoundtripTest() {
 
-        Assert.assertNotEquals(null, storage!!.getSubscriberFromMsisdn(EPHERMERAL_MSISDN))
+        Assert.assertNotNull(storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN))
 
         val latch = CountDownLatch(1)
 
-        storage!!.addPurchaseRequestHandler(object : PurchaseRequestHandler {
+        storage.addPurchaseRequestHandler(object : PurchaseRequestHandler {
             override fun onPurchaseRequest(request: PurchaseRequest) {
                 latch.countDown()
             }
@@ -103,18 +88,18 @@ class FbPurchaseEventRoundtripTest {
 
         val req = PurchaseRequest(
                 sku = DATA_TOPUP_3GB.sku,
-                paymentToken = EventProcessorTest.PAYMENT_TOKEN,
+                paymentToken = PAYMENT_TOKEN,
                 msisdn = EPHERMERAL_MSISDN,
                 id = EPHERMERAL_MSISDN,
                 millisSinceEpoch = Instant.now().toEpochMilli())
 
-        Assert.assertNotEquals(null, storage!!.getSubscriberFromMsisdn(EPHERMERAL_MSISDN))
+        Assert.assertNotNull(storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN))
 
-        val prid = storage!!.injectPurchaseRequest(req)
-        prids!!.add(prid)
+        val prid = storage.injectPurchaseRequest(req)
+        prids.add(prid)
         sleep(MINIMUM_MILLIS_TO_SLEEP_AFTER_MAKING_PURCHASE_REQUEST.toLong())
 
-        Assert.assertNotEquals(null, storage!!.getSubscriberFromMsisdn(EPHERMERAL_MSISDN))
+        Assert.assertNotNull(storage.getSubscriberFromMsisdn(EPHERMERAL_MSISDN))
 
         if (!latch.await(SECONDS_TO_WAIT_FOR_SUBSCRIPTION_PROCESSING_TO_FINISH.toLong(), TimeUnit.SECONDS)) {
             fail("Read/react failed")
@@ -123,6 +108,7 @@ class FbPurchaseEventRoundtripTest {
         val topupBytes = ProductDescriptionCacheImpl.DATA_TOPUP_3GB.asTopupProduct()!!.noOfBytes
 
         // Then verify
+        // FIXME number of invocations should be 1
         verify<OcsBalanceUpdater>(ocsBalanceUpdater, times(2)).updateBalance(safeEq(EPHERMERAL_MSISDN), safeEq(topupBytes))
 
         // XXX Verification of data stored in firebase not verified.
@@ -138,5 +124,7 @@ class FbPurchaseEventRoundtripTest {
         private const val MINIMUM_MILLIS_TO_SLEEP_AFTER_MAKING_PURCHASE_REQUEST = 3000
 
         private const val SECONDS_TO_WAIT_FOR_SUBSCRIPTION_PROCESSING_TO_FINISH = 10
+
+        private const val PAYMENT_TOKEN = "thisIsAPaymentToken"
     }
 }

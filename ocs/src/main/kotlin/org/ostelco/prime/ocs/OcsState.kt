@@ -4,11 +4,14 @@ import com.google.common.base.Preconditions
 import com.lmax.disruptor.EventHandler
 import org.ostelco.prime.disruptor.PrimeEvent
 import org.ostelco.prime.disruptor.PrimeEventMessageType
-import org.ostelco.prime.module.getResource
 import org.ostelco.prime.logger
+import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.legacy.Storage
 import java.util.*
 
+/**
+ * For unit testing, loadSubscriberInfo = false
+ */
 class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<PrimeEvent> {
 
     private val LOG by logger()
