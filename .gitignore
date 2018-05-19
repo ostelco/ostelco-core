@@ -34,3 +34,4 @@ out
 target
 secrets/*
 .nb-gradle
+.swagger_gen_dir

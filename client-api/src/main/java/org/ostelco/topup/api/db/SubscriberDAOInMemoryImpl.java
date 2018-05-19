@@ -6,25 +6,27 @@ import org.ostelco.topup.api.core.Product;
 import org.ostelco.topup.api.core.Profile;
 import org.ostelco.topup.api.core.SubscriptionStatus;
 
-import com.google.cloud.datastore.Datastore;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
 import java.util.List;
-import lombok.AllArgsConstructor;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.NonNull;
 
 /**
+ * An 'in-memory' store for testing.
  *
  */
-@AllArgsConstructor
-public class SubscriberDAOImpl implements SubscriberDAO {
+public class SubscriberDAOInMemoryImpl implements SubscriberDAO {
 
-    @NonNull
-    private Datastore store;
+    /* Table for 'profiles'. */
+    private final ConcurrentHashMap<String, Profile> profileTable = new ConcurrentHashMap<>();
 
     @Override
     public Either<Error, Profile> getProfile(final String subscriptionId) {
-        return Either.left(new Error("Incomplete profile description"));
+        if (profileTable.containsKey(subscriptionId)) {
+            return Either.right(profileTable.get(subscriptionId));
+        }
+        return Either.left(new Error("No profile found"));
     }
 
     @Override
@@ -32,6 +34,7 @@ public class SubscriberDAOImpl implements SubscriberDAO {
         if (!profile.isValid()) {
             return Option.of(new Error("Incomplete profile description"));
         }
+        profileTable.put(subscriptionId, profile);
         return Option.none();
     }
 
@@ -40,6 +43,7 @@ public class SubscriberDAOImpl implements SubscriberDAO {
         if (!profile.isValid()) {
             return Option.of(new Error("Incomplete profile description"));
         }
+        profileTable.put(subscriptionId, profile);
         return Option.none();
     }
 
