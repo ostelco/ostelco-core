@@ -11,7 +11,7 @@ repositories {
 }
 
 swagger {
-    inputSpec = './swagger.json'
+    inputSpec = '../prime/infra/prime-api.yaml'
     outputDir = file('build/swagger')
     lang = 'java'
 
