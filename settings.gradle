@@ -1,5 +1,6 @@
 rootProject.name = 'ostelco-core'
 
+include ':acceptance-tests'
 include ':admin-api'
 include ':analytics'
 include ':auth-server'
@@ -18,6 +19,7 @@ include ':prime'
 include ':prime-api'
 include ':pseudonym-server'
 
+project(':acceptance-tests').projectDir = "$rootDir/acceptance-tests" as File
 project(':admin-api').projectDir = "$rootDir/admin-api" as File
 project(':analytics').projectDir = "$rootDir/analytics" as File
 project(':auth-server').projectDir = "$rootDir/auth-server" as File
