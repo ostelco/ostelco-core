@@ -4,7 +4,10 @@
 
  * Configure firebase project - `pantel-tests` or `pantel-2decb`
  
- * Save `pantel-prod.json` in all folders where this file is added in `.gitignore`.
+ * Save `pantel-prod.json` in all folders where this file is added in `.gitignore`.  You can find these directories by
+   executing the command:
+     
+       grep -i pantel $(find . -name '.gitignore') | awk -F: '{print $1}' | sort | uniq | sed 's/.gitignore//g'
  
  * Create test subscriber
   
