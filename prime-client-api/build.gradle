@@ -1,5 +1,6 @@
 plugins {
   id 'org.detoeuf.swagger-codegen' version '1.7.4'
+  id "idea"
   id 'java-library'
 }
 
@@ -78,4 +79,12 @@ dependencies {
   runtime 'com.squareup.okhttp:okhttp:2.7.5'
   runtime 'com.squareup.okhttp:logging-interceptor:2.7.5'
   runtime 'com.google.code.gson:gson:2.8.1'
+}
+
+idea {
+  module {
+    // generatedSourceDirs
+    sourceDirs += files("${project.buildDir.path}/swagger/src/main/java")
+    testSourceDirs += files("${project.buildDir.path}/swagger/src/test/java")
+  }
 }
