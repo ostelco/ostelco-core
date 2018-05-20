@@ -1,9 +1,7 @@
 plugins {
   id 'org.detoeuf.swagger-codegen' version '1.7.4'
-  id 'java'
+  id 'java-library'
 }
-
-apply plugin: 'org.detoeuf.swagger-codegen'
 
 repositories {
   mavenCentral()
