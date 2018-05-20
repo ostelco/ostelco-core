@@ -16,6 +16,7 @@ include ':ocsgw'
 include ':ostelco-lib'
 include ':prime'
 include ':prime-api'
+include ':prime-client-api'
 include ':pseudonym-server'
 
 project(':admin-api').projectDir = "$rootDir/admin-api" as File
@@ -34,4 +35,5 @@ project(':ocsgw').projectDir = "$rootDir/ocsgw" as File
 project(':ostelco-lib').projectDir = "$rootDir/ostelco-lib" as File
 project(':prime').projectDir = "$rootDir/prime" as File
 project(':prime-api').projectDir = "$rootDir/prime-api" as File
+project(':prime-client-api').projectDir = "$rootDir/prime-client-api" as File
 project(':pseudonym-server').projectDir = "$rootDir/pseudonym-server" as File
