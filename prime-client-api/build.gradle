@@ -23,18 +23,19 @@ swagger {
 
   additionalProperties = [
           'invokerPackage': 'org.ostelco.prime.client',
-          'modelPackage'  : 'org.ostelco.prime.client.model',
+//          'modelPackage'  : 'org.ostelco.prime.client.model',
+          'modelPackage'  : 'org.ostelco.topup.api.core',
           'apiPackage'    : 'org.ostelco.prime.client.api',
           'dateLibrary'   : 'java8'
   ]
 
   importMappings = [
-          'ConsentList'       : 'org.ostelco.prime.client.model.ConsentList',
-          'Currency'          : 'org.ostelco.prime.client.model.Currency',
-          'Product'           : 'org.ostelco.prime.client.model.Product',
-          'ProductList'       : 'org.ostelco.prime.client.model.ProductList',
-          'Profile'           : 'org.ostelco.prime.client.model.Profile',
-          'SubscriptionStatus': 'org.ostelco.prime.client.model.SubscriptionStatus'
+          'ConsentList'       : 'org.ostelco.topup.api.core.ConsentList',
+          'Currency'          : 'org.ostelco.topup.api.core.Currency',
+          'Product'           : 'org.ostelco.topup.api.core.Product',
+          'ProductList'       : 'org.ostelco.topup.api.core.ProductList',
+          'Profile'           : 'org.ostelco.topup.api.core.Profile',
+          'SubscriptionStatus': 'org.ostelco.topup.api.core.SubscriptionStatus'
   ]
 }
 
@@ -57,6 +58,12 @@ ext {
 }
 
 dependencies {
+  // Adding temporary dependency to client-api.
+  // This should not be done since client-api is server side code.
+  // Dependency is added only to gain access to model/DTO classes.
+  api project(":client-api")
+  api project(":prime-api")
+
   swaggerCompile "org.springframework.boot:spring-boot-starter-web:$spring_boot_version"
   swaggerCompile 'io.swagger:swagger-annotations:1.5.16'
   swaggerCompile 'com.squareup.okhttp:okhttp:2.7.5'
@@ -64,6 +71,8 @@ dependencies {
   swaggerCompile 'com.google.code.gson:gson:2.8.1'
 
   compile sourceSets.swagger.output
+  swaggerCompile project(":client-api")
+  swaggerCompile project(":prime-api")
 
   compile "com.sun.jersey:jersey-client:$jersey_version"
   compile "com.sun.jersey.contribs:jersey-multipart:$jersey_version"
