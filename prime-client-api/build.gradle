@@ -23,19 +23,18 @@ swagger {
 
   additionalProperties = [
           'invokerPackage': 'org.ostelco.prime.client',
-//          'modelPackage'  : 'org.ostelco.prime.client.model',
-          'modelPackage'  : 'org.ostelco.topup.api.core',
+          'modelPackage'  : 'org.ostelco.prime.client.api.model',
           'apiPackage'    : 'org.ostelco.prime.client.api',
           'dateLibrary'   : 'java8'
   ]
 
   importMappings = [
-          'ConsentList'       : 'org.ostelco.topup.api.core.ConsentList',
-          'Currency'          : 'org.ostelco.topup.api.core.Currency',
-          'Product'           : 'org.ostelco.topup.api.core.Product',
-          'ProductList'       : 'org.ostelco.topup.api.core.ProductList',
-          'Profile'           : 'org.ostelco.topup.api.core.Profile',
-          'SubscriptionStatus': 'org.ostelco.topup.api.core.SubscriptionStatus'
+          'ConsentList'       : 'org.ostelco.prime.client.api.model.ConsentList',
+          'Currency'          : 'org.ostelco.prime.client.api.model.Currency',
+          'Product'           : 'org.ostelco.prime.client.api.model.Product',
+          'ProductList'       : 'org.ostelco.prime.client.api.model.ProductList',
+          'Profile'           : 'org.ostelco.prime.client.api.model.Profile',
+          'SubscriptionStatus': 'org.ostelco.prime.client.api.model.SubscriptionStatus'
   ]
 }
 
@@ -58,11 +57,7 @@ ext {
 }
 
 dependencies {
-  // Adding temporary dependency to client-api.
-  // This should not be done since client-api is server side code.
-  // Dependency is added only to gain access to model/DTO classes.
-  api project(":client-api")
-  api project(":prime-api")
+  api project(":client-api-model")
 
   swaggerCompile "org.springframework.boot:spring-boot-starter-web:$spring_boot_version"
   swaggerCompile 'io.swagger:swagger-annotations:1.5.16'
@@ -70,8 +65,7 @@ dependencies {
   swaggerCompile 'com.squareup.okhttp:logging-interceptor:2.7.5'
   swaggerCompile 'com.google.code.gson:gson:2.8.1'
 
-  swaggerCompile project(":client-api")
-  swaggerCompile project(":prime-api")
+  swaggerCompile project(":client-api-model")
 
   implementation sourceSets.swagger.output
 

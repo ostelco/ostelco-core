@@ -1,14 +1,15 @@
 package org.ostelco.topup.api.resources;
 
-import org.ostelco.topup.api.auth.AccessTokenPrincipal;
-import org.ostelco.topup.api.core.Error;
-import org.ostelco.topup.api.core.Product;
-import org.ostelco.topup.api.db.SubscriberDAO;
-
 import io.dropwizard.auth.Auth;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
-import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.NonNull;
+import org.ostelco.prime.client.api.model.Product;
+import org.ostelco.topup.api.auth.AccessTokenPrincipal;
+import org.ostelco.topup.api.core.Error;
+import org.ostelco.topup.api.db.SubscriberDAO;
+
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -16,8 +17,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
-import lombok.AllArgsConstructor;
-import lombok.NonNull;
+import java.util.List;
 
 /**
  * Products API.

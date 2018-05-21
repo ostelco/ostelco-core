@@ -1,10 +1,5 @@
 package org.ostelco.topup.api.resources;
 
-import org.ostelco.topup.api.auth.AccessTokenPrincipal;
-import org.ostelco.topup.api.auth.OAuthAuthenticator;
-import org.ostelco.topup.api.core.Product;
-import org.ostelco.topup.api.db.SubscriberDAO;
-
 import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
@@ -14,24 +9,30 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.vavr.collection.HashMap;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.ostelco.prime.client.api.model.Product;
+import org.ostelco.topup.api.auth.AccessTokenPrincipal;
+import org.ostelco.topup.api.auth.OAuthAuthenticator;
+import org.ostelco.topup.api.db.SubscriberDAO;
+
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.GenericType;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
  * Products API tests.
- *
  */
 public class ProductsResourceTest {
 
@@ -53,25 +54,25 @@ public class ProductsResourceTest {
             new Product("1", 10.00F, "NOK"),
             new Product("2", 5.00F, "NOK"),
             new Product("3", 20.00F, "NOK"))
-        .toJavaList();
+            .toJavaList();
     private final String userInfo = Base64.getEncoder()
-        .encodeToString((new String("{\n" +
-                                    "     \"issuer\": \"someone\",\n" +
-                                    "     \"email\": \"mw@internet.org\"\n" +
-                                    "}\n"))
-                .getBytes());
+            .encodeToString((new String("{\n" +
+                    "     \"issuer\": \"someone\",\n" +
+                    "     \"email\": \"mw@internet.org\"\n" +
+                    "}\n"))
+                    .getBytes());
 
     @ClassRule
     public static final ResourceTestRule RULE = ResourceTestRule.builder()
-        .addResource(new AuthDynamicFeature(
-                        new OAuthCredentialAuthFilter.Builder<AccessTokenPrincipal>()
-                        .setAuthenticator(new OAuthAuthenticator(key))
-                        .setPrefix("Bearer")
-                        .buildAuthFilter()))
-        .addResource(new AuthValueFactoryProvider.Binder<>(AccessTokenPrincipal.class))
-        .addResource(new ProductsResource(DAO))
-        .setTestContainerFactory(new GrizzlyWebTestContainerFactory())
-        .build();
+            .addResource(new AuthDynamicFeature(
+                    new OAuthCredentialAuthFilter.Builder<AccessTokenPrincipal>()
+                            .setAuthenticator(new OAuthAuthenticator(key))
+                            .setPrefix("Bearer")
+                            .buildAuthFilter()))
+            .addResource(new AuthValueFactoryProvider.Binder<>(AccessTokenPrincipal.class))
+            .addResource(new ProductsResource(DAO))
+            .setTestContainerFactory(new GrizzlyWebTestContainerFactory())
+            .build();
 
     @Test
     public void getProducts() throws Exception {
@@ -80,14 +81,17 @@ public class ProductsResourceTest {
         when(DAO.getProducts(arg.capture())).thenReturn(Either.right(products));
 
         Response resp = RULE.target("/products")
-            .request()
-            .header("Authorization", String.format("Bearer %s", accessToken))
-            .header("X-Endpoint-API-UserInfo", userInfo)
-            .get(Response.class);
+                .request()
+                .header("Authorization", String.format("Bearer %s", accessToken))
+                .header("X-Endpoint-API-UserInfo", userInfo)
+                .get(Response.class);
 
         assertThat(resp.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
         assertThat(resp.getMediaType().toString()).isEqualTo(MediaType.APPLICATION_JSON);
-        assertThat(resp.readEntity(new GenericType<List<Product>>() {})).isEqualTo(products);
+
+        // assertThat and assertEquals is not working
+        assertTrue(products.equals(resp.readEntity(new GenericType<List<Product>>() {
+        })));
         assertThat(arg.getValue()).isEqualTo(email);
     }
 
@@ -101,10 +105,10 @@ public class ProductsResourceTest {
         when(DAO.purchaseProduct(arg1.capture(), arg2.capture())).thenReturn(Option.none());
 
         Response resp = RULE.target(String.format("/products/%s", sku))
-            .request()
-            .header("Authorization", String.format("Bearer %s", accessToken))
-            .header("X-Endpoint-API-UserInfo", userInfo)
-            .post(Entity.text(""));
+                .request()
+                .header("Authorization", String.format("Bearer %s", accessToken))
+                .header("X-Endpoint-API-UserInfo", userInfo)
+                .post(Entity.text(""));
 
         assertThat(resp.getStatus()).isEqualTo(Response.Status.CREATED.getStatusCode());
         assertThat(arg1.getValue()).isEqualTo(email);

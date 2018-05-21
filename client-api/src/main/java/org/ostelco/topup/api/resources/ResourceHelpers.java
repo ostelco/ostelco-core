@@ -1,16 +1,16 @@
 package org.ostelco.topup.api.resources;
 
-import org.ostelco.topup.api.core.Consent;
-import org.ostelco.topup.api.core.Error;
-import org.ostelco.topup.api.core.Product;
-import org.ostelco.topup.api.core.Profile;
-import org.ostelco.topup.api.core.SubscriptionStatus;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.List;
+import org.ostelco.prime.client.api.model.Product;
+import org.ostelco.topup.api.core.Consent;
+import org.ostelco.topup.api.core.Error;
+import org.ostelco.topup.api.core.Profile;
+import org.ostelco.topup.api.core.SubscriptionStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 /**
  * Common 'helper' functions for resources.
