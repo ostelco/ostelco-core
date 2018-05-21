@@ -27,11 +27,10 @@ class OfferResource() {
     fun createOffer(offer: Offer) = dataStore.createOffer(toStoredOffer(offer))
 
     private fun toStoredOffer(offer: Offer): org.ostelco.prime.model.Offer {
-        val storedOffer = org.ostelco.prime.model.Offer()
-        storedOffer.id = offer.id
-        storedOffer.segments = offer.segments.map { dataStore.getSegment(it) }.requireNoNulls()
-        storedOffer.products = offer.products.map { dataStore.getProduct(it) }.requireNoNulls()
-        return storedOffer
+        return org.ostelco.prime.model.Offer(
+                offer.id,
+                offer.segments.map { dataStore.getSegment(it) }.requireNoNulls(),
+                offer.products.map { dataStore.getProduct(it) }.requireNoNulls())
     }
 }
 
@@ -60,10 +59,9 @@ class SegmentResource {
     }
 
     private fun toStoredSegment(segment: Segment): org.ostelco.prime.model.Segment {
-        val storedSegment = org.ostelco.prime.model.Segment()
-        storedSegment.id = segment.id
-        storedSegment.subscribers = segment.subscribers.map { dataStore.getSubscriber(it) }.requireNoNulls()
-        return storedSegment
+        return org.ostelco.prime.model.Segment(
+                segment.id,
+                segment.subscribers.map { dataStore.getSubscriber(it) }.requireNoNulls())
     }
 }
 
@@ -93,8 +91,7 @@ class ProductClassResource {
 
     @GET
     @Path("/{product-class-id}")
-    fun getProductClass(@PathParam("product-class-id") productClassId: String)
-            = dataStore.getProductClass(productClassId)
+    fun getProductClass(@PathParam("product-class-id") productClassId: String) = dataStore.getProductClass(productClassId)
 
     @POST
     fun createProductClass(productClass: ProductClass) = dataStore.createProductClass(productClass)
@@ -104,7 +101,7 @@ class ProductClassResource {
     fun updateProductClass(
             @PathParam("product-class-id") productClassId: String,
             productClass: ProductClass): Boolean {
-        productClass.id = productClassId
-        return dataStore.updateProductClass(productClass)
+        return dataStore.updateProductClass(
+                productClass.copy(id = productClassId))
     }
 }
