@@ -36,6 +36,6 @@ class AdminProduct : Entity {
 }
 
 class ProductClass : Entity {
-    override var id: String = "";
+    override var id: String = ""
     var properties: List<String> = listOf()
 }

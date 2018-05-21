@@ -1,7 +1,6 @@
 package org.ostelco.pseudonym.resources
 
 import com.google.cloud.bigquery.BigQuery
-import com.google.cloud.bigquery.BigQueryOptions
 import com.google.cloud.datastore.Datastore
 import com.google.cloud.datastore.Entity
 import com.google.cloud.datastore.Key
@@ -145,7 +144,7 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, va
                 .setLimit(1)
                 .build()
         val results = datastore.run(query)
-        var count = 0;
+        var count = 0
         while (results.hasNext()) {
             val entity = results.next()
             datastore.delete(entity.key)
@@ -222,14 +221,14 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, va
     }
 
     private fun createPseudonym(msisdn: String, bounds: Bounds, keyPrefix: String): PseudonymEntity {
-        val uuid = UUID.randomUUID().toString();
+        val uuid = UUID.randomUUID().toString()
         var entity = PseudonymEntity(msisdn, uuid, bounds.start, bounds.end)
         val pseudonymKey = getPseudonymKey(keyPrefix)
 
         val transaction = datastore.newTransaction()
         try {
             // Verify before writing a new value.
-            val currentEntity = transaction.get(pseudonymKey);
+            val currentEntity = transaction.get(pseudonymKey)
             if (currentEntity == null) {
                 // Prepare the new datastore entity
                 val pseudonym = Entity.newBuilder(pseudonymKey)

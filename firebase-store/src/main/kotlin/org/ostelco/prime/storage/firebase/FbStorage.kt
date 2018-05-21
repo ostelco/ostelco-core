@@ -105,7 +105,7 @@ object FbStorageSingleton : Storage {
     override fun updateDisplayDatastructure(msisdn: String) {
         checkNotNull(msisdn)
         val subscriber = getSubscriberFromMsisdn(msisdn)
-                ?: throw StorageException("Unknown MSISDN " + msisdn)
+                ?: throw StorageException("Unknown MSISDN $msisdn")
 
         val noOfBytes = subscriber.noOfBytesLeft
         val noOfGBLeft = noOfBytes / 1.0E09f

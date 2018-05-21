@@ -31,7 +31,7 @@ object ProductDescriptionCacheImpl : ProductDescriptionCache {
         checkNotNull(sku)
         checkArgument(noOfBytes >= 0)
         val topupProduct = newTopupProduct(sku, noOfBytes)
-        LOG.info("Adding topup product  " + topupProduct)
+        LOG.info("Adding topup product $topupProduct")
         addProduct(topupProduct)
     }
 

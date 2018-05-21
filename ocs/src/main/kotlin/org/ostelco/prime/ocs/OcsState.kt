@@ -139,7 +139,7 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<PrimeEvent>
 
         // P-GW is allowed to overconsume a small amount.
         if (newTotal < 0) {
-            newTotal = 0;
+            newTotal = 0
         }
 
         dataPackMap[msisdn] = newTotal

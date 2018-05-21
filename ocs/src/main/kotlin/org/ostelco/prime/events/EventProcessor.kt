@@ -72,13 +72,12 @@ class EventProcessor(
         if (!storage.isValidSKU(sku)) {
             throw EventProcessorException("Not a valid SKU: $sku", pr)
         }
-
         return sku
     }
 
     @Throws(EventProcessorException::class)
-    private fun validatePaymentToken(pr: PurchaseRequest) {
-
+    private fun validatePaymentToken(purchaseRequest: PurchaseRequest) {
+        purchaseRequest.paymentToken.isNotEmpty()
     }
 
     @Throws(EventProcessorException::class)
