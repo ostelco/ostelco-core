@@ -88,7 +88,7 @@ dependencies {
 
   implementation 'com.squareup.okhttp:okhttp:2.7.5'
   implementation 'com.squareup.okhttp:logging-interceptor:2.7.5'
-  runtime 'com.google.code.gson:gson:2.8.1'
+  implementation 'com.google.code.gson:gson:2.8.1'
 }
 
 idea {
