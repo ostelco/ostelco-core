@@ -5,6 +5,7 @@ import org.ostelco.topup.api.auth.OAuthAuthenticator;
 import org.ostelco.topup.api.core.Error;
 import org.ostelco.topup.api.core.Profile;
 import org.ostelco.topup.api.db.SubscriberDAO;
+import org.ostelco.topup.api.db.SubscriberDAOInMemoryImpl;
 
 import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
@@ -21,7 +22,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
 import org.junit.ClassRule;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 import org.mockito.ArgumentCaptor;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -31,9 +34,10 @@ import static org.mockito.Mockito.when;
  * Profile API tests.
  *
  */
-public class ProfileResourceTest {
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+public class ProfileResourceInMemoryTest {
 
-    private static final SubscriberDAO DAO = mock(SubscriberDAO.class);
+    private static final SubscriberDAO DAO = new SubscriberDAOInMemoryImpl();
 
     private final String email = "boaty@internet.org";
     private static final String key = "secret";
@@ -49,7 +53,6 @@ public class ProfileResourceTest {
             .setIssuer(issuer)
             .signWith(SignatureAlgorithm.HS512, key)
             .compact();
-    private final Profile profile = new Profile(email);
 
     @ClassRule
     public static final ResourceTestRule RULE = ResourceTestRule.builder()
@@ -64,35 +67,17 @@ public class ProfileResourceTest {
         .build();
 
     @Test
-    public void getProfile() throws Exception {
-        ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
-
-        when(DAO.getProfile(arg.capture())).thenReturn(Either.right(profile));
-
+    public void T01_getProfile() throws Exception {
         Response resp = RULE.target("/profile")
             .request()
             .header("Authorization", String.format("Bearer %s", accessToken))
             .get(Response.class);
 
-        assertThat(resp.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
-        assertThat(resp.getMediaType().toString()).isEqualTo(MediaType.APPLICATION_JSON);
-
-        /* Requires that:
-               lombok.anyConstructor.addConstructorProperties=true
-           is added to the lombok config file ('lombok.config').
-           Ref.: lombok changelog for ver. 1.16.20. */
-        assertThat(resp.readEntity(Profile.class)).isEqualTo(profile);
-        assertThat(arg.getValue()).isEqualTo(email);
+        assertThat(resp.getStatus()).isEqualTo(Response.Status.NOT_FOUND.getStatusCode());
     }
 
     @Test
-    public void createProfile() throws Exception {
-        ArgumentCaptor<String> arg1 = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Profile> arg2 = ArgumentCaptor.forClass(Profile.class);
-
-        when(DAO.createProfile(arg1.capture(), arg2.capture()))
-            .thenReturn(Option.none());
-
+    public void T02_createProfile() throws Exception {
         Response resp = RULE.target("/profile")
             .request(MediaType.APPLICATION_JSON)
             .header("Authorization", String.format("Bearer %s", accessToken))
@@ -106,24 +91,24 @@ public class ProfileResourceTest {
 
         assertThat(resp.getStatus()).isEqualTo(Response.Status.CREATED.getStatusCode());
         assertThat(resp.getMediaType()).isNull();
-        assertThat(arg1.getValue()).isEqualTo(email);
-        assertThat((arg2.getValue()).getEmail()).isEqualTo(email);
-        assertThat((arg2.getValue()).getName()).isEqualTo(name);
-        assertThat((arg2.getValue()).getAddress()).isEqualTo(address);
-        assertThat((arg2.getValue()).getPostCode()).isEqualTo(postCode);
-        assertThat((arg2.getValue()).getCity()).isEqualTo(city);
     }
 
     @Test
-    public void updateProfile() throws Exception {
-        ArgumentCaptor<String> arg1 = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Profile> arg2 = ArgumentCaptor.forClass(Profile.class);
+    public void T03_getProfile() throws Exception {
+        Response resp = RULE.target("/profile")
+            .request()
+            .header("Authorization", String.format("Bearer %s", accessToken))
+            .get(Response.class);
 
-        String newAddress = "Storvej 10";
-        String newPostCode = "132 23";
+        assertThat(resp.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
+        assertThat(resp.getMediaType().toString()).isEqualTo(MediaType.APPLICATION_JSON);
+        assertThat(resp.readEntity(Profile.class)).isEqualTo(getCheckProfile());
+    }
 
-        when(DAO.updateProfile(arg1.capture(), arg2.capture()))
-            .thenReturn(Option.none());
+    @Test
+    public void T04_updateProfile() throws Exception {
+        String newAddress = "Solhøyden 10";
+        String newPostCode = "555";
 
         Response resp = RULE.target("/profile")
             .request(MediaType.APPLICATION_JSON)
@@ -138,30 +123,35 @@ public class ProfileResourceTest {
 
         assertThat(resp.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
         assertThat(resp.getMediaType()).isNull();
-        assertThat(arg1.getValue()).isEqualTo(email);
-        assertThat((arg2.getValue()).getEmail()).isEqualTo(email);
-        assertThat((arg2.getValue()).getName()).isEqualTo(name);
-        assertThat((arg2.getValue()).getAddress()).isEqualTo(newAddress);
-        assertThat((arg2.getValue()).getPostCode()).isEqualTo(newPostCode);
-        assertThat((arg2.getValue()).getCity()).isEqualTo(city);
     }
 
     @Test
-    public void updateWithIncompleteProfile() throws Exception {
-        ArgumentCaptor<String> arg1 = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Profile> arg2 = ArgumentCaptor.forClass(Profile.class);
-
-        when(DAO.updateProfile(arg1.capture(), arg2.capture()))
-            .thenReturn(Option.of(new Error("No profile found")));
+    public void T05_getProfile() throws Exception {
+        String newAddress = "Solhøyden 10";
+        String newPostCode = "555";
 
         Response resp = RULE.target("/profile")
-            .request(MediaType.APPLICATION_JSON)
+            .request()
             .header("Authorization", String.format("Bearer %s", accessToken))
-            .put(Entity.json("{\n" +
-                             "    \"name\": \"" + name + "\"\n" +
-                             "}\n"));
+            .get(Response.class);
 
-        assertThat(resp.getStatus()).isEqualTo(Response.Status.NOT_FOUND.getStatusCode());
-        assertThat(arg1.getValue()).isEqualTo(email);
+        assertThat(resp.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
+        assertThat(resp.getMediaType().toString()).isEqualTo(MediaType.APPLICATION_JSON);
+        assertThat(resp.readEntity(Profile.class)).isEqualTo(getCheckProfile(name, newAddress,
+                        newPostCode, city, email));
+    }
+
+    private Profile getCheckProfile() {
+        return getCheckProfile(name, address, postCode, city, email);
+    }
+
+    private Profile getCheckProfile(final String name, final String address, final String postCode,
+            final String city, final String email) {
+        Profile profile = new Profile(email);
+        profile.setName(name);
+        profile.setAddress(address);
+        profile.setPostCode(postCode);
+        profile.setCity(city);
+        return profile;
     }
 }

@@ -33,7 +33,6 @@ public class SubscriptionResourceTest {
     private static final SubscriberDAO DAO = mock(SubscriberDAO.class);
 
     private static final String key = "secret";
-    private final String subscriptionId = "007";
     private final String issuer = "http://ostelco.org/";
     private final String email = "mw@internet.org";
     private final Map<String, Object> claims = HashMap.of(issuer + "email", (Object) email)
@@ -41,7 +40,6 @@ public class SubscriptionResourceTest {
     private final String accessToken = Jwts.builder()
             .setClaims(claims)
             .setIssuer(issuer)
-            .setSubject(subscriptionId)
             .signWith(SignatureAlgorithm.HS512, key)
             .compact();
     private final List<Product> acceptedProducts = io.vavr.collection.List.of(

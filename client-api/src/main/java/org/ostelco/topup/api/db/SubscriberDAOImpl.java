@@ -8,7 +8,6 @@ import lombok.NonNull;
 import org.ostelco.prime.client.api.model.Product;
 import org.ostelco.topup.api.core.Consent;
 import org.ostelco.topup.api.core.Error;
-import org.ostelco.topup.api.core.Grant;
 import org.ostelco.topup.api.core.Profile;
 import org.ostelco.topup.api.core.SubscriptionStatus;
 
@@ -24,18 +23,16 @@ public class SubscriberDAOImpl implements SubscriberDAO {
     private Datastore store;
 
     @Override
-    public Option<Error> signUp(final Profile profile) {
-        return Option.none();
-    }
-
-    @Override
-    public Either<Error, String> handleGrant(final Grant grant) {
-        return Either.right("");
-    }
-
-    @Override
     public Either<Error, Profile> getProfile(final String subscriptionId) {
         return Either.left(new Error("Incomplete profile description"));
+    }
+
+    @Override
+    public Option<Error> createProfile(final String subscriptionId, final Profile profile) {
+        if (!profile.isValid()) {
+            return Option.of(new Error("Incomplete profile description"));
+        }
+        return Option.none();
     }
 
     @Override
