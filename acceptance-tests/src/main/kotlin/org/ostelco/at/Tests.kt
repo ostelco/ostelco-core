@@ -1,8 +1,8 @@
 package org.ostelco.at
 
 import org.junit.Test
+import org.ostelco.prime.client.api.model.Product
 import org.ostelco.topup.api.core.Consent
-import org.ostelco.topup.api.core.Product
 import org.ostelco.topup.api.core.Profile
 import org.ostelco.topup.api.core.SubscriptionStatus
 import kotlin.test.assertEquals

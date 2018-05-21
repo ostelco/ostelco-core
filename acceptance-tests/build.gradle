@@ -11,6 +11,7 @@ dependencies {
   }
 
   implementation project(":prime-api")
+  implementation project(":client-api-model")
 
   // This is temporarily added to access DTO.
   // When the DTOs are moved to `model` module, then dependency to be changed accordingly.
