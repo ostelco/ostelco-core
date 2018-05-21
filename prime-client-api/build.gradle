@@ -10,7 +10,7 @@ repositories {
 }
 
 swagger {
-  inputSpec = '../prime/infra/prime-api.yaml'
+  inputSpec = "${projectDir}/../prime/infra/prime-api.yaml"
   outputDir = file('build/swagger')
 
   // XXX When this works for java, we want to extend it
