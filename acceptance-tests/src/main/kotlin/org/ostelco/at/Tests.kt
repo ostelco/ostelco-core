@@ -1,10 +1,10 @@
 package org.ostelco.at
 
 import org.junit.Test
+import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.Product
-import org.ostelco.topup.api.core.Consent
-import org.ostelco.topup.api.core.Profile
-import org.ostelco.topup.api.core.SubscriptionStatus
+import org.ostelco.prime.client.api.model.Profile
+import org.ostelco.prime.client.api.model.SubscriptionStatus
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -83,7 +83,7 @@ class ConsentTest {
         }
         assertEquals(1, acceptedConsent.size)
         assertEquals(consentId, acceptedConsent[0].consentId)
-        assertTrue(acceptedConsent[0].isAccepted)
+        assertTrue(acceptedConsent[0].accepted)
 
         put {
             path = "/consents/$consentId?accepted=false"
@@ -94,7 +94,7 @@ class ConsentTest {
         }
         assertEquals(1, rejectedConsent.size)
         assertEquals(consentId, rejectedConsent[0].consentId)
-        assertTrue(rejectedConsent[0].isAccepted)
+        assertTrue(rejectedConsent[0].accepted)
     }
 }
 

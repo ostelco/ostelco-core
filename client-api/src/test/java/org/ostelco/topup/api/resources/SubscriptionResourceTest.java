@@ -13,9 +13,9 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.ostelco.prime.client.api.model.Product;
+import org.ostelco.prime.client.api.model.SubscriptionStatus;
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
 import org.ostelco.topup.api.auth.OAuthAuthenticator;
-import org.ostelco.topup.api.core.SubscriptionStatus;
 import org.ostelco.topup.api.db.SubscriberDAO;
 
 import javax.ws.rs.core.MediaType;

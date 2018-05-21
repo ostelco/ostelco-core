@@ -2,11 +2,11 @@ package org.ostelco.topup.api.resources;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.ostelco.prime.client.api.model.Consent;
 import org.ostelco.prime.client.api.model.Product;
-import org.ostelco.topup.api.core.Consent;
+import org.ostelco.prime.client.api.model.Profile;
+import org.ostelco.prime.client.api.model.SubscriptionStatus;
 import org.ostelco.topup.api.core.Error;
-import org.ostelco.topup.api.core.Profile;
-import org.ostelco.topup.api.core.SubscriptionStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

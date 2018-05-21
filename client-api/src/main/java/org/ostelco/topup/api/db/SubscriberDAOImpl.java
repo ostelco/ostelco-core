@@ -5,11 +5,11 @@ import io.vavr.control.Either;
 import io.vavr.control.Option;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
+import org.ostelco.prime.client.api.model.Consent;
 import org.ostelco.prime.client.api.model.Product;
-import org.ostelco.topup.api.core.Consent;
+import org.ostelco.prime.client.api.model.Profile;
+import org.ostelco.prime.client.api.model.SubscriptionStatus;
 import org.ostelco.topup.api.core.Error;
-import org.ostelco.topup.api.core.Profile;
-import org.ostelco.topup.api.core.SubscriptionStatus;
 
 import java.util.List;
 
@@ -29,7 +29,7 @@ public class SubscriberDAOImpl implements SubscriberDAO {
 
     @Override
     public Option<Error> createProfile(final String subscriptionId, final Profile profile) {
-        if (!profile.isValid()) {
+        if (!SubscriberDAO.isValidProfile(profile)) {
             return Option.of(new Error("Incomplete profile description"));
         }
         return Option.none();
@@ -37,7 +37,7 @@ public class SubscriberDAOImpl implements SubscriberDAO {
 
     @Override
     public Option<Error> updateProfile(final String subscriptionId, final Profile profile) {
-        if (!profile.isValid()) {
+        if (!SubscriberDAO.isValidProfile(profile)) {
             return Option.of(new Error("Incomplete profile description"));
         }
         return Option.none();
