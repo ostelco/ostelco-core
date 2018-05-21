@@ -1,11 +1,5 @@
 package org.ostelco.topup.api.resources;
 
-import org.ostelco.topup.api.auth.AccessTokenPrincipal;
-import org.ostelco.topup.api.auth.OAuthAuthenticator;
-import org.ostelco.topup.api.core.Product;
-import org.ostelco.topup.api.core.SubscriptionStatus;
-import org.ostelco.topup.api.db.SubscriberDAO;
-
 import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
@@ -14,15 +8,23 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.vavr.collection.HashMap;
 import io.vavr.control.Either;
-import java.util.List;
-import java.util.Map;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.ostelco.prime.client.api.model.Product;
+import org.ostelco.prime.client.api.model.SubscriptionStatus;
+import org.ostelco.topup.api.auth.AccessTokenPrincipal;
+import org.ostelco.topup.api.auth.OAuthAuthenticator;
+import org.ostelco.topup.api.db.SubscriberDAO;
+
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.util.List;
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -44,20 +46,20 @@ public class SubscriptionResourceTest {
             new Product("1", 10.00F, "NOK"),
             new Product("2", 5.00F, "NOK"),
             new Product("3", 20.00F, "NOK"))
-        .toJavaList();
+            .toJavaList();
     private final SubscriptionStatus subscriptionStatus = new SubscriptionStatus(5, acceptedProducts);
 
     @ClassRule
     public static final ResourceTestRule RULE = ResourceTestRule.builder()
-        .addResource(new AuthDynamicFeature(
-                        new OAuthCredentialAuthFilter.Builder<AccessTokenPrincipal>()
-                        .setAuthenticator(new OAuthAuthenticator(key))
-                        .setPrefix("Bearer")
-                        .buildAuthFilter()))
-        .addResource(new AuthValueFactoryProvider.Binder<>(AccessTokenPrincipal.class))
-        .addResource(new SubscriptionResource(DAO))
-        .setTestContainerFactory(new GrizzlyWebTestContainerFactory())
-        .build();
+            .addResource(new AuthDynamicFeature(
+                    new OAuthCredentialAuthFilter.Builder<AccessTokenPrincipal>()
+                            .setAuthenticator(new OAuthAuthenticator(key))
+                            .setPrefix("Bearer")
+                            .buildAuthFilter()))
+            .addResource(new AuthValueFactoryProvider.Binder<>(AccessTokenPrincipal.class))
+            .addResource(new SubscriptionResource(DAO))
+            .setTestContainerFactory(new GrizzlyWebTestContainerFactory())
+            .build();
 
     @Test
     public void getSubscriptionStatus() throws Exception {
@@ -66,13 +68,15 @@ public class SubscriptionResourceTest {
         when(DAO.getSubscriptionStatus(arg.capture())).thenReturn(Either.right(subscriptionStatus));
 
         Response resp = RULE.target("/subscription/status")
-            .request()
-            .header("Authorization", String.format("Bearer %s", accessToken))
-            .get(Response.class);
+                .request()
+                .header("Authorization", String.format("Bearer %s", accessToken))
+                .get(Response.class);
 
         assertThat(resp.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
         assertThat(resp.getMediaType().toString()).isEqualTo(MediaType.APPLICATION_JSON);
-        assertThat(resp.readEntity(SubscriptionStatus.class)).isEqualTo(subscriptionStatus);
+
+        // assertThat and assertEquals is not working
+        assertTrue(subscriptionStatus.equals(resp.readEntity(SubscriptionStatus.class)));
         assertThat(arg.getValue()).isEqualTo(email);
     }
 }

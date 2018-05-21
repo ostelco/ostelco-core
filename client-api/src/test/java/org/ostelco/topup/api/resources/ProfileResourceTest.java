@@ -1,11 +1,5 @@
 package org.ostelco.topup.api.resources;
 
-import org.ostelco.topup.api.auth.AccessTokenPrincipal;
-import org.ostelco.topup.api.auth.OAuthAuthenticator;
-import org.ostelco.topup.api.core.Error;
-import org.ostelco.topup.api.core.Profile;
-import org.ostelco.topup.api.db.SubscriberDAO;
-
 import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
@@ -15,14 +9,21 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.vavr.collection.HashMap;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
-import java.util.Map;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.ostelco.prime.client.api.model.Profile;
+import org.ostelco.topup.api.auth.AccessTokenPrincipal;
+import org.ostelco.topup.api.auth.OAuthAuthenticator;
+import org.ostelco.topup.api.core.Error;
+import org.ostelco.topup.api.db.SubscriberDAO;
+
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;

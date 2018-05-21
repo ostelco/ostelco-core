@@ -2,11 +2,11 @@ package org.ostelco.topup.api.db;
 
 import io.vavr.control.Either;
 import io.vavr.control.Option;
-import org.ostelco.topup.api.core.Consent;
+import org.ostelco.prime.client.api.model.Consent;
+import org.ostelco.prime.client.api.model.Product;
+import org.ostelco.prime.client.api.model.Profile;
+import org.ostelco.prime.client.api.model.SubscriptionStatus;
 import org.ostelco.topup.api.core.Error;
-import org.ostelco.topup.api.core.Product;
-import org.ostelco.topup.api.core.Profile;
-import org.ostelco.topup.api.core.SubscriptionStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +40,7 @@ public class SubscriberDAOInMemoryImpl implements SubscriberDAO {
     @Override
     public Option<Error> createProfile(final String subscriptionId, final Profile profile) {
         LOG.info("createProfile({})",subscriptionId);
-        if (!profile.isValid()) {
+        if (!SubscriberDAO.isValidProfile(profile)) {
             return Option.of(new Error("Incomplete profile description"));
         }
         LOG.info("save Profile({})",subscriptionId);
@@ -51,7 +51,7 @@ public class SubscriberDAOInMemoryImpl implements SubscriberDAO {
     @Override
     public Option<Error> updateProfile(final String subscriptionId, final Profile profile) {
         LOG.info("updateProfile({})",subscriptionId);
-        if (!profile.isValid()) {
+        if (!SubscriberDAO.isValidProfile(profile)) {
             return Option.of(new Error("Incomplete profile description"));
         }
         LOG.info("save update Profile({})",subscriptionId);
@@ -62,12 +62,12 @@ public class SubscriberDAOInMemoryImpl implements SubscriberDAO {
     @Override
     public Either<Error, SubscriptionStatus> getSubscriptionStatus(final String subscriptionId) {
         return Either.right(new SubscriptionStatus(1_000_000_000,
-                Collections.singletonList(new Product("DataTopup3GB", 250, "NOK"))));
+                Collections.singletonList(new Product("DataTopup3GB", 250f, "NOK"))));
     }
 
     @Override
     public Either<Error, List<Product>> getProducts(final String subscriptionId) {
-        return Either.right(Collections.singletonList(new Product("DataTopup3GB", 250, "NOK")));
+        return Either.right(Collections.singletonList(new Product("DataTopup3GB", 250f, "NOK")));
     }
 
     @Override
