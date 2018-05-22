@@ -83,7 +83,7 @@ spec:
           name: api-ostelco-ssl
           readOnly: true
       - name: prime
-        image: gcr.io/pantel-2decb/prime:1.0.7
+        image: gcr.io/pantel-2decb/prime:1.1.0
         volumeMounts:
         - name: secret-config
           mountPath: "/secret"
