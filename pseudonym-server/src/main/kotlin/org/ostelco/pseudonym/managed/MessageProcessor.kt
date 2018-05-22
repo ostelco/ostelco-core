@@ -74,16 +74,16 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
             publisher = Publisher.newBuilder(publisherTopicName)
                     .setChannelProvider(channelProvider)
                     .setCredentialsProvider(credentialsProvider)
-                    .build();
+                    .build()
             subscriber = Subscriber.newBuilder(subscriptionName, receiver)
                     .setChannelProvider(channelProvider)
                     .setCredentialsProvider(credentialsProvider)
-                    .build();
+                    .build()
 
         } else {
             // Production, connect to real pubsub host
-            publisher = Publisher.newBuilder(publisherTopicName).build();
-            subscriber = Subscriber.newBuilder(subscriptionName, receiver).build();
+            publisher = Publisher.newBuilder(publisherTopicName).build()
+            subscriber = Subscriber.newBuilder(subscriptionName, receiver).build()
         }
         subscriber?.startAsync()
     }
@@ -122,7 +122,7 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
         } catch (e: ExecutionException) {
             LOG.warn("getPseudonymEntity failed, ${e.toString()}")
         }
-        return null;
+        return null
     }
 
     private fun handleMessage(message: PubsubMessage, consumer: AckReplyConsumer) {

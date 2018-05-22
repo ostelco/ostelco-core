@@ -35,7 +35,7 @@ import java.time.format.DateTimeFormatter
 
 fun main(args: Array<String>) {
 
-    System.setProperty(ContextInitializer.CONFIG_FILE_PROPERTY, "config/logback.xml");
+    System.setProperty(ContextInitializer.CONFIG_FILE_PROPERTY, "config/logback.xml")
 
     // may be we need to pass options via command-line args
     /*

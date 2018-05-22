@@ -136,7 +136,7 @@ class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastor
         val transaction = datastore.newTransaction()
         try {
             // Verify before writing a new value.
-            val currentEntity = transaction.get(exportKey);
+            val currentEntity = transaction.get(exportKey)
             var builder: Entity.Builder?
             if (currentEntity == null) {
                 builder = Entity.newBuilder(exportKey)

@@ -4,38 +4,35 @@ interface Entity {
     var id: String
 }
 
-class Offer : Entity {
-    override var id: String = ""
-    var segments: List<Segment> = emptyList()
-    var products: List<AdminProduct> = emptyList()
-}
+data class Offer(
+        override var id: String = "",
+        val segments: List<Segment> = emptyList(),
+        val products: List<AdminProduct> = emptyList()) : Entity
 
-class Segment : Entity {
-    override var id: String = ""
-    var subscribers: List<SubscriberV2> = emptyList()
-}
+data class Segment(
+        override var id: String = "",
+        val subscribers: List<SubscriberV2> = emptyList()) : Entity
 
-class SubscriberV2 : Entity {
-    override var id: String = ""
-    var name: String = ""
-    var email: String = ""
-    var address: String = ""
-}
+data class SubscriberV2(
+        override var id: String = "",
+        val name: String = "",
+        val email: String = "",
+        val address: String = "") : Entity
 
 // TODO maybe rename this later
-class AdminProduct : Entity {
+data class AdminProduct(
+        var sku: String = "",
+        val productClass: String = "",
+        val properties: Map<String, String> = mapOf(),
+        val presentation: Map<String, String> = mapOf()) : Entity {
+
     override var id: String
         get() = sku
         set(value) {
             sku = value
         }
-    var sku: String = ""
-    var productClass: String = ""
-    var properties: Map<String, String> = mapOf()
-    var presentation: Map<String, String> = mapOf()
 }
 
-class ProductClass : Entity {
-    override var id: String = "";
-    var properties: List<String> = listOf()
-}
+data class ProductClass(
+    override var id: String = "",
+    val properties: List<String> = listOf()) : Entity

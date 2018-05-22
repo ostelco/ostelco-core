@@ -26,7 +26,7 @@ data class Product(
         var amount: Float? = null,
         var currency: String? = null)
 
-class ProductList(val products: List<Product>)
+data class ProductList(val products: List<Product>)
 
 data class SubscriptionStatus(
         var remaining: Int = 0,
