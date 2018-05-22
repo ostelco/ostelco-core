@@ -13,6 +13,7 @@ allprojects {
   repositories {
     mavenLocal()
     mavenCentral()
+    jcenter()
     maven { url = "https://repository.jboss.org/nexus/content/repositories/releases/" }
     maven { url = "https://maven.repository.redhat.com/ga/" }
     maven { url = "http://clojars.org/repo/" }

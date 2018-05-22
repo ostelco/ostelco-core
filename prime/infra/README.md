@@ -37,10 +37,10 @@ Increment the docker image tag (version) for next two steps.
  
 Build the Docker image (In the folder with Dockerfile)
 
-    docker build -t gcr.io/${PROJECT_ID}/prime:1.1.0 .
+    docker build -t gcr.io/${PROJECT_ID}/prime:1.1.1 .
 Push to the registry
 
-    gcloud docker -- push gcr.io/${PROJECT_ID}/prime:1.1.0
+    gcloud docker -- push gcr.io/${PROJECT_ID}/prime:1.1.1
 
 Update the tag (version) of prime's docker image in `infra/prime.yaml`.
 
@@ -59,7 +59,7 @@ Details of service
 
 ## API Endpoint
 
-    gcloud endpoints services deploy prime-api.yaml
+    gcloud endpoints services deploy infra/prime-api.yaml
 
 ## SSL secrets for api.ostelco.org & ocs.ostelco.org
 The endpoints runtime expects the SSL configuration to be named

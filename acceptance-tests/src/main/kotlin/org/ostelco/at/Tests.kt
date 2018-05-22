@@ -1,10 +1,11 @@
 package org.ostelco.at
 
 import org.junit.Test
-import org.ostelco.prime.client.api.model.Consent
-import org.ostelco.prime.client.api.model.Product
-import org.ostelco.prime.client.api.model.Profile
-import org.ostelco.prime.client.api.model.SubscriptionStatus
+import org.ostelco.prime.client.model.Consent
+import org.ostelco.prime.client.model.Price
+import org.ostelco.prime.client.model.Product
+import org.ostelco.prime.client.model.Profile
+import org.ostelco.prime.client.model.SubscriptionStatus
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -15,8 +16,17 @@ class GetBalanceTest {
         val subscriptionStatus: SubscriptionStatus = get {
             path = "/subscription/status"
         }
-        assertEquals(subscriptionStatus, SubscriptionStatus(1_000_000_000,
-                listOf(Product("DataTopup3GB", 250f, "NOK"))))
+
+        val expectedSubscriptionStatus = SubscriptionStatus()
+        expectedSubscriptionStatus.remaining = 1_000_000_000
+        val product = Product()
+        product.sku = "DataTopup3GB"
+        product.price = Price()
+        product.price.amount = 250
+        product.price.currency = "NOK"
+        expectedSubscriptionStatus.acceptedProducts = listOf(product)
+
+        assertEquals(expectedSubscriptionStatus, subscriptionStatus)
     }
 }
 
@@ -29,8 +39,12 @@ class GetProductsTest {
             path = "/products"
         }
 
-        val expectedProducts: List<Product> = arrayListOf(
-                Product("DataTopup3GB", 250f, "NOK"))
+        val product = Product()
+        product.sku = "DataTopup3GB"
+        product.price = Price()
+        product.price.amount = 250
+        product.price.currency = "NOK"
+        val expectedProducts = listOf(product)
 
         assertEquals(expectedProducts, products)
     }
@@ -83,7 +97,7 @@ class ConsentTest {
         }
         assertEquals(1, acceptedConsent.size)
         assertEquals(consentId, acceptedConsent[0].consentId)
-        assertTrue(acceptedConsent[0].accepted)
+        assertTrue(acceptedConsent[0].isAccepted ?: false)
 
         put {
             path = "/consents/$consentId?accepted=false"
@@ -94,15 +108,17 @@ class ConsentTest {
         }
         assertEquals(1, rejectedConsent.size)
         assertEquals(consentId, rejectedConsent[0].consentId)
-        assertTrue(rejectedConsent[0].accepted)
+        assertTrue(rejectedConsent[0].isAccepted ?: false)
     }
 }
 
 class ProfileTest {
 
-    private val profile = Profile("vihang.patil@telenordigital.com")
+    private val profile: Profile
 
     init {
+        profile = Profile()
+        profile.email = "vihang.patil@telenordigital.com"
         profile.name = "Vihang Patil"
     }
 
