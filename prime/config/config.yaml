@@ -7,6 +7,7 @@ modules:
     config:
       projectId: pantel-2decb
       topicId: data-traffic
+      lowBalanceThreshold: 30000000
   - type: api
   - type: admin
 
@@ -18,7 +19,3 @@ logging:
     - type: console
       layout:
         type: json
-
-ocs:
-  lowBalanceThreshold: 30000000
-
