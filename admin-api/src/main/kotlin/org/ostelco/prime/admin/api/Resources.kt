@@ -14,7 +14,7 @@ import javax.ws.rs.PathParam
 @Path("/offers")
 class OfferResource() {
 
-    private var dataStore: DataStore = getResource()
+    private val dataStore by lazy { getResource<DataStore>() }
 
     @GET
     fun getOffers() = dataStore.getOffers().map { it.id }
@@ -36,7 +36,9 @@ class OfferResource() {
 }
 
 @Path("/segments")
-class SegmentResource(private val dataStore: DataStore) {
+class SegmentResource {
+
+    private val dataStore by lazy { getResource<DataStore>() }
 
     @GET
     fun getSegments() = dataStore.getSegments().map { it.id }
@@ -66,7 +68,9 @@ class SegmentResource(private val dataStore: DataStore) {
 }
 
 @Path("/products")
-class ProductResource(private val dataStore: DataStore) {
+class ProductResource {
+
+    private val dataStore by lazy { getResource<DataStore>() }
 
     @GET
     fun getProducts() = dataStore.getProducts().map { it.id }
@@ -80,7 +84,9 @@ class ProductResource(private val dataStore: DataStore) {
 }
 
 @Path("/product_classes")
-class ProductClassResource(private val dataStore: DataStore) {
+class ProductClassResource {
+
+    private val dataStore by lazy { getResource<DataStore>() }
 
     @GET
     fun getProductClasses() = dataStore.getProductClasses().map { it.id }
