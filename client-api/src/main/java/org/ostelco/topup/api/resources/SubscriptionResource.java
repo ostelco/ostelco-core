@@ -1,18 +1,18 @@
 package org.ostelco.topup.api.resources;
 
-import org.ostelco.topup.api.auth.AccessTokenPrincipal;
-import org.ostelco.topup.api.core.Error;
-import org.ostelco.topup.api.core.SubscriptionStatus;
-import org.ostelco.topup.api.db.SubscriberDAO;
-
 import io.dropwizard.auth.Auth;
 import io.vavr.control.Either;
+import lombok.AllArgsConstructor;
+import lombok.NonNull;
+import org.ostelco.prime.client.api.model.SubscriptionStatus;
+import org.ostelco.topup.api.auth.AccessTokenPrincipal;
+import org.ostelco.topup.api.core.Error;
+import org.ostelco.topup.api.db.SubscriberDAO;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
-import lombok.AllArgsConstructor;
-import lombok.NonNull;
 
 /**
  * Subscriptions API.

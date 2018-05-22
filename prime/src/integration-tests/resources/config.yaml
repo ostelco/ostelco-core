@@ -1,11 +1,14 @@
-services:
+modules:
+  - type: firebase
+    config:
+      configFile: src/integration-tests/resources/pantel-tests.json
+      databaseName: pantel-tests
+  - type: ocs
+    config:
+      projectId: pantel-tests
+      topicId: data-traffic
   - type: api
   - type: admin
-
-eventProcessor:
-  configFile: src/integration-tests/resources/pantel-tests.json
-  projectId: pantel-tests
-  topicId: data-traffic
 
 logging:
   level: INFO

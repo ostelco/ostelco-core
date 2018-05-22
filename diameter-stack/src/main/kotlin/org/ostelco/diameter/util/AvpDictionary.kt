@@ -4,9 +4,7 @@ import org.jdiameter.api.Avp
 import org.mobicents.diameter.dictionary.AvpDictionary
 import org.mobicents.diameter.dictionary.AvpRepresentation
 import org.ostelco.diameter.logger
-import org.ostelco.diameter.util.AvpType.ADDRESS
-import org.ostelco.diameter.util.AvpType.OCTET_STRING
-import org.ostelco.diameter.util.AvpType.UTF8STRING
+import org.ostelco.diameter.util.AvpType.*
 
 object AvpDictionary {
 
@@ -73,5 +71,7 @@ enum class AvpRep(val avpCode: Int, val avpType: AvpType) {
     RAT_TYPE(Avp.TGPP_RAT_TYPE, OCTET_STRING),
     SELECTION_MODE(Avp.TGPP_SELECTION_MODE, UTF8STRING),
     SGSN_ADDRESS(Avp.SGSN_ADDRESS, ADDRESS),
-    USER_LOCATION(Avp.GPP_USER_LOCATION_INFO, OCTET_STRING)
+    USER_LOCATION(Avp.GPP_USER_LOCATION_INFO, OCTET_STRING),
+    ORIGIN_HOST(Avp.ORIGIN_HOST, IDENTITY),
+    ORIGIN_REALM(Avp.ORIGIN_REALM, IDENTITY)
 }

@@ -1,11 +1,5 @@
 package org.ostelco.topup.api.resources;
 
-import org.ostelco.topup.api.auth.AccessTokenPrincipal;
-import org.ostelco.topup.api.auth.OAuthAuthenticator;
-import org.ostelco.topup.api.core.Error;
-import org.ostelco.topup.api.core.Profile;
-import org.ostelco.topup.api.db.SubscriberDAO;
-
 import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
@@ -15,14 +9,21 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.vavr.collection.HashMap;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
-import java.util.Map;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.ostelco.prime.client.api.model.Profile;
+import org.ostelco.topup.api.auth.AccessTokenPrincipal;
+import org.ostelco.topup.api.auth.OAuthAuthenticator;
+import org.ostelco.topup.api.core.Error;
+import org.ostelco.topup.api.db.SubscriberDAO;
+
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -38,17 +39,18 @@ public class ProfileResourceTest {
     private final String email = "boaty@internet.org";
     private static final String key = "secret";
     private final String name = "Boaty McBoatface";
-    private final String subscriptionId = "007";
+    private final String address = "Storvej 10";
+    private final String postCode = "132 23";
+    private final String city = "Oslo";
     private final String issuer = "http://ostelco.org/";
     private final Map<String, Object> claims = HashMap.of(issuer + "email", (Object) email)
             .toJavaMap();
     private final String accessToken = Jwts.builder()
             .setClaims(claims)
             .setIssuer(issuer)
-            .setSubject(subscriptionId)
             .signWith(SignatureAlgorithm.HS512, key)
             .compact();
-    private final Profile profile = new Profile(name, email);
+    private final Profile profile = new Profile(email);
 
     @ClassRule
     public static final ResourceTestRule RULE = ResourceTestRule.builder()
@@ -85,9 +87,41 @@ public class ProfileResourceTest {
     }
 
     @Test
+    public void createProfile() throws Exception {
+        ArgumentCaptor<String> arg1 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Profile> arg2 = ArgumentCaptor.forClass(Profile.class);
+
+        when(DAO.createProfile(arg1.capture(), arg2.capture()))
+            .thenReturn(Option.none());
+
+        Response resp = RULE.target("/profile")
+            .request(MediaType.APPLICATION_JSON)
+            .header("Authorization", String.format("Bearer %s", accessToken))
+            .post(Entity.json("{\n" +
+                              "    \"name\": \"" + name + "\",\n" +
+                              "    \"address\": \"" + address + "\",\n" +
+                              "    \"postCode\": \"" + postCode + "\",\n" +
+                              "    \"city\": \"" + city + "\",\n" +
+                              "    \"email\": \"" + email + "\"\n" +
+                              "}\n"));
+
+        assertThat(resp.getStatus()).isEqualTo(Response.Status.CREATED.getStatusCode());
+        assertThat(resp.getMediaType()).isNull();
+        assertThat(arg1.getValue()).isEqualTo(email);
+        assertThat((arg2.getValue()).getEmail()).isEqualTo(email);
+        assertThat((arg2.getValue()).getName()).isEqualTo(name);
+        assertThat((arg2.getValue()).getAddress()).isEqualTo(address);
+        assertThat((arg2.getValue()).getPostCode()).isEqualTo(postCode);
+        assertThat((arg2.getValue()).getCity()).isEqualTo(city);
+    }
+
+    @Test
     public void updateProfile() throws Exception {
         ArgumentCaptor<String> arg1 = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Profile> arg2 = ArgumentCaptor.forClass(Profile.class);
+
+        String newAddress = "Storvej 10";
+        String newPostCode = "132 23";
 
         when(DAO.updateProfile(arg1.capture(), arg2.capture()))
             .thenReturn(Option.none());
@@ -97,6 +131,9 @@ public class ProfileResourceTest {
             .header("Authorization", String.format("Bearer %s", accessToken))
             .put(Entity.json("{\n" +
                              "    \"name\": \"" + name + "\",\n" +
+                             "    \"address\": \"" + newAddress + "\",\n" +
+                             "    \"postCode\": \"" + newPostCode + "\",\n" +
+                             "    \"city\": \"" + city + "\",\n" +
                              "    \"email\": \"" + email + "\"\n" +
                              "}\n"));
 
@@ -105,6 +142,9 @@ public class ProfileResourceTest {
         assertThat(arg1.getValue()).isEqualTo(email);
         assertThat((arg2.getValue()).getEmail()).isEqualTo(email);
         assertThat((arg2.getValue()).getName()).isEqualTo(name);
+        assertThat((arg2.getValue()).getAddress()).isEqualTo(newAddress);
+        assertThat((arg2.getValue()).getPostCode()).isEqualTo(newPostCode);
+        assertThat((arg2.getValue()).getCity()).isEqualTo(city);
     }
 
     @Test

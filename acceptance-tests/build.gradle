@@ -1,0 +1,28 @@
+plugins {
+  id "application"
+  id "com.github.johnrengelman.shadow" version "2.0.4"
+  id "org.jetbrains.kotlin.jvm" version "1.2.41"
+}
+
+dependencies {
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+  implementation ("org.jetbrains.kotlin:kotlin-test:$kotlinVersion") {
+    exclude module: 'kotlin-stdlib-common'
+  }
+
+  implementation project(":prime-api")
+  implementation project(":client-api-model")
+
+  // This is temporarily added to access DTO.
+  // When the DTOs are moved to `model` module, then dependency to be changed accordingly.
+  implementation project(":client-api")
+  implementation "org.glassfish.jersey.media:jersey-media-json-jackson:2.25.1"
+
+  implementation 'junit:junit:4.12'
+}
+
+shadowJar {
+  mainClassName = ""
+  classifier = "uber"
+  version = null
+}

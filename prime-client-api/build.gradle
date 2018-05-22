@@ -1,0 +1,94 @@
+plugins {
+  id 'org.detoeuf.swagger-codegen' version '1.7.4'
+  id "idea"
+  id 'java-library'
+}
+
+repositories {
+  mavenCentral()
+  jcenter()
+}
+
+swagger {
+  inputSpec = "${projectDir}/../prime/infra/prime-api.yaml"
+  outputDir = file('build/swagger')
+
+  // XXX When this works for java, we want to extend it
+  //     to at least kotlin and dart. Most likely also
+  //     bash and go, then add libraries as we feel is necessary.
+  //     Also, the libraries should be published in whatever way is
+  //     "generic" for that language.  So for java/kotlin, it should
+  //     be through the maven central mechanism.
+  lang = 'java'
+
+  additionalProperties = [
+          'invokerPackage': 'org.ostelco.prime.client',
+          'modelPackage'  : 'org.ostelco.prime.client.api.model',
+          'apiPackage'    : 'org.ostelco.prime.client.api',
+          'dateLibrary'   : 'java8'
+  ]
+
+  importMappings = [
+          'ConsentList'       : 'org.ostelco.prime.client.api.model.ConsentList',
+          'Currency'          : 'org.ostelco.prime.client.api.model.Currency',
+          'Product'           : 'org.ostelco.prime.client.api.model.Product',
+          'ProductList'       : 'org.ostelco.prime.client.api.model.ProductList',
+          'Profile'           : 'org.ostelco.prime.client.api.model.Profile',
+          'SubscriptionStatus': 'org.ostelco.prime.client.api.model.SubscriptionStatus'
+  ]
+}
+
+sourceSets {
+  swagger {
+    java {
+      srcDir file("${project.buildDir.path}/swagger/src/main/java")
+    }
+  }
+}
+
+classes.dependsOn('swagger')
+
+ext {
+  spring_boot_version = '1.5.6.RELEASE'
+  jackson_version = '2.4.2'
+  jersey_version = '1.18'
+  jodatime_version = '2.3'
+  junit_version = '4.8.1'
+}
+
+dependencies {
+  api project(":client-api-model")
+
+  swaggerCompile "org.springframework.boot:spring-boot-starter-web:$spring_boot_version"
+  swaggerCompile 'io.swagger:swagger-annotations:1.5.16'
+  swaggerCompile 'com.squareup.okhttp:okhttp:2.7.5'
+  swaggerCompile 'com.squareup.okhttp:logging-interceptor:2.7.5'
+  swaggerCompile 'com.google.code.gson:gson:2.8.1'
+
+  swaggerCompile project(":client-api-model")
+
+  implementation sourceSets.swagger.output
+
+  implementation "com.sun.jersey:jersey-client:$jersey_version"
+  implementation "com.sun.jersey.contribs:jersey-multipart:$jersey_version"
+  implementation "com.fasterxml.jackson.core:jackson-core:$jackson_version"
+  implementation "com.fasterxml.jackson.core:jackson-annotations:$jackson_version"
+  implementation "com.fasterxml.jackson.core:jackson-databind:$jackson_version"
+  implementation "com.fasterxml.jackson.datatype:jackson-datatype-joda:2.1.5"
+  implementation "joda-time:joda-time:$jodatime_version"
+  implementation 'io.swagger:swagger-codegen:2.2.3'
+
+  testCompile "junit:junit:$junit_version"
+
+  implementation 'com.squareup.okhttp:okhttp:2.7.5'
+  implementation 'com.squareup.okhttp:logging-interceptor:2.7.5'
+  implementation 'com.google.code.gson:gson:2.8.1'
+}
+
+idea {
+  module {
+    // generatedSourceDirs
+    sourceDirs += files("${project.buildDir.path}/swagger/src/main/java")
+    testSourceDirs += files("${project.buildDir.path}/swagger/src/test/java")
+  }
+}
