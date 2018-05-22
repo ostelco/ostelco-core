@@ -23,7 +23,10 @@ data class Profile(var email: String? = null,
 
 data class Product(
         var sku: String? = null,
-        var amount: Float? = null,
+        var price: Price? = null)
+
+data class Price(
+        var amount: Int? = null,
         var currency: String? = null)
 
 data class ProductList(val products: List<Product>)

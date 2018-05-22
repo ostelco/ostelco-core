@@ -11,11 +11,8 @@ dependencies {
   }
 
   implementation project(":prime-api")
-  implementation project(":client-api-model")
+  implementation project(":prime-client-api")
 
-  // This is temporarily added to access DTO.
-  // When the DTOs are moved to `model` module, then dependency to be changed accordingly.
-  implementation project(":client-api")
   implementation "org.glassfish.jersey.media:jersey-media-json-jackson:2.25.1"
 
   implementation 'junit:junit:4.12'

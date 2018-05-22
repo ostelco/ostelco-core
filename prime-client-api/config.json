@@ -1,0 +1,5 @@
+{
+  "invokerPackage": "org.ostelco.prime.client",
+  "modelPackage": "org.ostelco.prime.client.model",
+  "apiPackage": "org.ostelco.prime.client.api"
+}

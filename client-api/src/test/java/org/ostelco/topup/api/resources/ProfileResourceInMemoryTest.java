@@ -13,10 +13,10 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.ostelco.prime.client.api.model.Profile;
+import org.ostelco.topup.api.db.SubscriberDAOInMemoryImpl;
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
 import org.ostelco.topup.api.auth.OAuthAuthenticator;
 import org.ostelco.topup.api.db.SubscriberDAO;
-import org.ostelco.topup.api.db.SubscriberDAOInMemoryImpl;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;

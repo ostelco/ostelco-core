@@ -12,6 +12,7 @@ import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.ostelco.prime.client.api.model.Price;
 import org.ostelco.prime.client.api.model.Product;
 import org.ostelco.prime.client.api.model.SubscriptionStatus;
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
@@ -43,9 +44,9 @@ public class SubscriptionResourceTest {
             .signWith(SignatureAlgorithm.HS512, key)
             .compact();
     private final List<Product> acceptedProducts = io.vavr.collection.List.of(
-            new Product("1", 10.00F, "NOK"),
-            new Product("2", 5.00F, "NOK"),
-            new Product("3", 20.00F, "NOK"))
+            new Product("1", new Price(10, "NOK")),
+            new Product("2", new Price(5, "NOK")),
+            new Product("3", new Price(20, "NOK")))
             .toJavaList();
     private final SubscriptionStatus subscriptionStatus = new SubscriptionStatus(5, acceptedProducts);
 

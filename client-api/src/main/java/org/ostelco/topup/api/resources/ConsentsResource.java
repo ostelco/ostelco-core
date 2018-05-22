@@ -6,8 +6,8 @@ import io.vavr.control.Option;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import org.ostelco.prime.client.api.model.Consent;
-import org.ostelco.topup.api.auth.AccessTokenPrincipal;
 import org.ostelco.topup.api.core.Error;
+import org.ostelco.topup.api.auth.AccessTokenPrincipal;
 import org.ostelco.topup.api.db.SubscriberDAO;
 
 import javax.validation.constraints.NotNull;
