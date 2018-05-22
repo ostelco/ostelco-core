@@ -3,6 +3,7 @@ package org.ostelco.ocsgw.data.grpc;
 import com.google.auth.oauth2.ServiceAccountJwtAccessCredentials;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.StatusRuntimeException;
 import io.grpc.auth.MoreCallCredentials;
 import io.grpc.stub.StreamObserver;
 import org.jdiameter.api.IllegalDiameterStateException;
@@ -10,14 +11,9 @@ import org.jdiameter.api.InternalException;
 import org.jdiameter.api.OverloadException;
 import org.jdiameter.api.RouteException;
 import org.jdiameter.api.cca.ServerCCASession;
+import org.jdiameter.api.cca.events.JCreditControlRequest;
 import org.ostelco.diameter.CreditControlContext;
-import org.ostelco.diameter.model.CreditControlAnswer;
-import org.ostelco.diameter.model.FinalUnitAction;
-import org.ostelco.diameter.model.FinalUnitIndication;
-import org.ostelco.diameter.model.MultipleServiceCreditControl;
-import org.ostelco.diameter.model.RedirectAddressType;
-import org.ostelco.diameter.model.RedirectServer;
-import org.ostelco.diameter.model.SessionContext;
+import org.ostelco.diameter.model.*;
 import org.ostelco.ocs.api.ActivateRequest;
 import org.ostelco.ocs.api.ActivateResponse;
 import org.ostelco.ocs.api.CreditControlAnswerInfo;
@@ -42,9 +38,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static org.ostelco.diameter.model.RequestType.EVENT_REQUEST;
 import static org.ostelco.diameter.model.RequestType.INITIAL_REQUEST;
@@ -66,6 +60,12 @@ public class GrpcDataSource implements DataSource {
 
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
+    private ScheduledFuture keepAliveFuture = null;
+
+    private ScheduledFuture initActivateFuture = null;
+
+    private ScheduledFuture initCCRFuture = null;
+
     private static final int MAX_ENTRIES = 3000;
     private final LinkedHashMap<String, CreditControlContext> ccrMap = new LinkedHashMap<String, CreditControlContext>(MAX_ENTRIES, .75F) {
         @Override
@@ -82,14 +82,62 @@ public class GrpcDataSource implements DataSource {
     };
 
 
-    private abstract class AbstactObserver<T> implements StreamObserver<T> {
+    private abstract class CreditControlRequestObserver<T> implements StreamObserver<T> {
         public final void onError(Throwable t) {
-            LOG.error("We got an error", t);
+            LOG.error("CreditControlRequestObserver error", t);
+            if (t instanceof StatusRuntimeException) {
+                reconnectCreditControlRequest();
+            }
         }
 
         public final void onCompleted() {
             // Nothing to do here
-            LOG.info("It seems to be completed");
+        }
+    }
+
+    private abstract class ActivateObserver<T> implements StreamObserver<T> {
+        public final void onError(Throwable t) {
+            LOG.error("ActivateObserver error", t);
+            if (t instanceof StatusRuntimeException) {
+                reconnectActivate();
+            }
+        }
+
+        public final void onCompleted() {
+            // Nothing to do here
+        }
+    }
+
+    private void reconnectActivate() {
+        LOG.info("reconnectActivate called");
+
+        if (initActivateFuture == null || initActivateFuture.isDone()) {
+            LOG.info("Schedule new Callable initActivate");
+            initActivateFuture = executorService.schedule((Callable<Object>) () -> {
+                        LOG.info("Calling initActivate");
+                        initActivate();
+                        return "Called!";
+                    },
+                    5,
+                    TimeUnit.SECONDS);
+        }
+    }
+
+    private void reconnectCreditControlRequest() {
+        LOG.info("reconnectCreditControlRequest called");
+        if (keepAliveFuture != null) {
+            keepAliveFuture.cancel(true);
+        }
+
+        if (initCCRFuture == null || initCCRFuture.isDone()) {
+            LOG.info("Schedule new Callable initCreditControlRequest");
+            initCCRFuture = executorService.schedule((Callable<Object>) () -> {
+                        LOG.info("Calling initCreditControlRequest");
+                        initCreditControlRequest();
+                        return "Called!";
+                    },
+                    5,
+                    TimeUnit.SECONDS);
         }
     }
 
@@ -128,8 +176,16 @@ public class GrpcDataSource implements DataSource {
     @Override
     public void init() {
 
+        initCreditControlRequest();
+
+        initActivate();
+
+        initKeepAlive();
+    }
+
+    private void initCreditControlRequest() {
         creditControlRequest = ocsServiceStub.creditControlRequest(
-                new AbstactObserver<CreditControlAnswerInfo>() {
+                new CreditControlRequestObserver<CreditControlAnswerInfo>() {
                     public void onNext(CreditControlAnswerInfo answer) {
                         try {
                             LOG.info("[<<] Received data bucket for {}", answer.getMsisdn());
@@ -137,10 +193,9 @@ public class GrpcDataSource implements DataSource {
                             if (ccrContext != null) {
                                 final ServerCCASession session = OcsServer.getInstance().getStack().getSession(ccrContext.getSessionId(), ServerCCASession.class);
                                 if (session != null && session.isValid()) {
-                                    CreditControlAnswer cca = createCreditControlAnswer(answer);
-                                    // Skip sending answer if skipAnswer == true.
-                                    // Still 'createCreditControlAnswer(answer)' should be invoked because it updates the msisdn blocklist.
+                                    updateBlockedList(answer, ccrContext.getCreditControlRequest());
                                     if (!ccrContext.getSkipAnswer()) {
+                                        CreditControlAnswer cca = createCreditControlAnswer(answer);
                                         try {
                                             session.sendCreditControlAnswer(ccrContext.createCCA(cca));
                                         } catch (InternalException | IllegalDiameterStateException | RouteException | OverloadException e) {
@@ -158,9 +213,11 @@ public class GrpcDataSource implements DataSource {
                         }
                     }
                 });
+    }
 
+    private void initActivate() {
         ActivateRequest dummyActivate = ActivateRequest.newBuilder().build();
-        ocsServiceStub.activate(dummyActivate, new AbstactObserver<ActivateResponse>() {
+        ocsServiceStub.activate(dummyActivate, new ActivateObserver<ActivateResponse>() {
             @Override
             public void onNext(ActivateResponse activateResponse) {
                 LOG.info("Active user {}", activateResponse.getMsisdn());
@@ -172,9 +229,11 @@ public class GrpcDataSource implements DataSource {
                 }
             }
         });
+    }
 
+    private void initKeepAlive() {
         // this is just to keep connection alive
-        executorService.scheduleWithFixedDelay(() -> {
+        keepAliveFuture = executorService.scheduleWithFixedDelay(() -> {
                     final CreditControlRequestInfo ccr = CreditControlRequestInfo.newBuilder()
                             .setType(CreditControlRequestType.NONE)
                             .build();
@@ -183,6 +242,18 @@ public class GrpcDataSource implements DataSource {
                 15,
                 50,
                 TimeUnit.SECONDS);
+    }
+
+    private void updateBlockedList(CreditControlAnswerInfo answer, CreditControlRequest request) {
+        // This suffers from the fact that one Credit-Control-Request can have multiple MSCC
+        for (org.ostelco.ocs.api.MultipleServiceCreditControl msccAnswer : answer.getMsccList()) {
+            for (org.ostelco.diameter.model.MultipleServiceCreditControl msccRequest: request.getMultipleServiceCreditControls()) {
+                if ((msccAnswer.getServiceIdentifier() == msccRequest.getServiceIdentifier()) && (msccAnswer.getRatingGroup() == msccRequest.getRatingGroup())) {
+                    updateBlockedList(msccAnswer, msccRequest, answer.getMsisdn());
+                    return;
+                }
+            }
+        }
     }
 
     @Override
@@ -293,15 +364,13 @@ public class GrpcDataSource implements DataSource {
         final LinkedList<MultipleServiceCreditControl> multipleServiceCreditControls = new LinkedList<>();
         for (org.ostelco.ocs.api.MultipleServiceCreditControl mscc : response.getMsccList()) {
             multipleServiceCreditControls.add(convertMSCC(mscc));
-            updateBlockedList(mscc, response.getMsisdn());
         }
         return new CreditControlAnswer(multipleServiceCreditControls);
     }
 
-    private void updateBlockedList(org.ostelco.ocs.api.MultipleServiceCreditControl msccGRPC, String msisdn) {
-        // This suffers from the fact that one Credit-Control-Request can have multiple MSCC
-        if (msccGRPC != null && msisdn != null) {
-            if (msccGRPC.getGranted().getTotalOctets() < msccGRPC.getRequested().getTotalOctets()) {
+    private void updateBlockedList(org.ostelco.ocs.api.MultipleServiceCreditControl msccAnswer, org.ostelco.diameter.model.MultipleServiceCreditControl msccRequest, String msisdn) {
+        if (!msccRequest.getRequested().isEmpty()) {
+            if (msccAnswer.getGranted().getTotalOctets() < msccRequest.getRequested().get(0).getTotal()) {
                 blocked.add(msisdn);
             } else {
                 blocked.remove(msisdn);

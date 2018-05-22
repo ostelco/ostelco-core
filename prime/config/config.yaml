@@ -1,3 +1,12 @@
+services:
+  - type: api
+  - type: admin
+
+eventProcessor:
+  configFile: /secret/pantel-prod.json
+  projectId: pantel-2decb
+  topicId: data-traffic
+
 logging:
   level: INFO
   loggers:
@@ -7,10 +16,6 @@ logging:
       layout:
         type: json
 
-eventProcessor:
-  configFile: /secret/pantel-prod.json
-  projectId: pantel-2decb
-  topicId: data-traffic
-
 ocs:
   lowBalanceThreshold: 30000000
+

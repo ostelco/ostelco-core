@@ -2,7 +2,7 @@ package org.ostelco.prime.config
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.dropwizard.Configuration
-
+import org.ostelco.prime.provider.Service
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
 
@@ -17,4 +17,9 @@ class PrimeConfiguration : Configuration() {
     @NotNull
     @JsonProperty("ocs")
     lateinit var ocsConfig: OcsConfig
+
+    @Valid
+    @NotNull
+    @JsonProperty
+    lateinit var services: List<Service>
 }

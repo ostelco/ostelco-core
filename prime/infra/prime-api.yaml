@@ -1,0 +1,82 @@
+swagger: "2.0"
+info:
+  title: "Ostelco API"
+  description: "The client API for Panacea."
+  version: "1.0.0"
+host: "api.ostelco.org"
+schemes:
+  - "http"
+  - "https"
+paths:
+  "/products":
+    get:
+      description: "Get all products for the user."
+      produces:
+        - application/json
+      operationId: "getAllProducts"
+      responses:
+        200:
+          description: "List of products."
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Product'
+        404:
+          description: "No products found for the user."
+      security:
+        - auth0_jwt: []
+  "/products/{sku}":
+    post:
+      description: "Buy the product specified in sku parameter."
+      produces:
+        - application/json
+        - text/plain
+      operationId: "buyProduct"
+      responses:
+        201:
+          description: "Successfully purchased the product."
+          schema:
+              $ref: '#/definitions/Product'
+        404:
+          description: "Product not found."
+      security:
+        - auth0_jwt: []
+      parameters:
+      - name: sku
+        in: path
+        description: SKU to be purchased
+        required: true
+        type: string
+definitions:
+  Product:
+    type: object
+    properties:
+      sku:
+        description: "A unique Id representing a SKU"
+        type: string
+      price:
+        $ref: '#/definitions/Currency'
+    required:
+      - sku
+      - price
+  Currency:
+    type: object
+    properties:
+      amount:
+        description: "A positive integer in the smallest currency unit"
+        type: integer
+        minimum: 0
+      code:
+        description: "ISO 4217 currency code (three letter alphabetic code)"
+        type: string
+    required:
+      - amount
+      - code
+securityDefinitions:
+  auth0_jwt:
+    authorizationUrl: "https://ostelco.eu.auth0.com/authorize"
+    flow: "implicit"
+    type: "oauth2"
+    x-google-issuer: "https://ostelco.eu.auth0.com/"
+    x-google-jwks_uri: "https://ostelco.eu.auth0.com/.well-known/jwks.json"
+    x-google-audiences: "http://google_api,bK0nRNtJHXk20O4wLFv6XJKm1FkU4Dv_"

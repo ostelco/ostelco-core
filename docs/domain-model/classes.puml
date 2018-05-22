@@ -1,0 +1,82 @@
+@startuml
+
+
+class Simcard {
+  + ICCID
+  + IMSI
+}
+note left: Navigable
+
+
+class Subscription {
+ + MSISDN
+}
+note left: Navigable
+
+
+class ProductClass {
+  + id: UUID
+  + path: String
+}
+note left: Navigable
+
+class ParameterType {
+  + name
+  + type
+}
+
+
+class ParameterInstance {
+  + name
+  + value
+}
+
+class Price {
++ currency
++ amount
+}
+
+
+class Product {
+ + SKU: UUID
+ --
+ getPresentation():Presentation
+}
+note left: Navigable
+
+class Validity {
+ + start: Timestamp
+ + end: Timestamp
+}
+
+class Subscriber {
+--
+  getAvailableProducts():[ProductID]
+}
+note left: Navigable
+
+class Offer{
+}
+note left: Navigable
+
+
+
+
+
+
+Simcard "*" -- "1" Subscription
+Subscription "1" -- "1" Subscriber
+Subscriber "1" -- "*" Purchase
+Subscriber "*" -- "*" Segment
+Segment "1" -- "*" Offer
+Purchase "1" -- "*" Product
+Purchase "1"  -- "1" Payment
+Offer "1" -- Validity
+Offer "1" -- Presentation
+Offer -- "1" Product
+Product -- "1" Price
+Product -- "1" ProductClass
+ProductClass "1" -- "*" ParameterType
+Product -- "*" ParameterInstance
+ParameterType "1" -- "1" ParameterInstance
+@enduml

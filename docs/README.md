@@ -6,4 +6,6 @@
 
 [Logging](./LOGS.md)
 
+[Modules](./MODULES.md)
+
 [Testing](./TEST.md)
