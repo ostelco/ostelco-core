@@ -1,6 +1,23 @@
 package org.ostelco.diameter.test
 
-import org.jdiameter.api.*
+import org.jdiameter.api.Answer
+import org.jdiameter.api.ApplicationId
+import org.jdiameter.api.Avp
+import org.jdiameter.api.AvpSet
+import org.jdiameter.api.Configuration
+import org.jdiameter.api.EventListener
+import org.jdiameter.api.IllegalDiameterStateException
+import org.jdiameter.api.InternalException
+import org.jdiameter.api.Message
+import org.jdiameter.api.Mode
+import org.jdiameter.api.Network
+import org.jdiameter.api.NetworkReqListener
+import org.jdiameter.api.OverloadException
+import org.jdiameter.api.Request
+import org.jdiameter.api.RouteException
+import org.jdiameter.api.Session
+import org.jdiameter.api.SessionFactory
+import org.jdiameter.api.Stack
 import org.jdiameter.common.impl.app.cca.JCreditControlRequestImpl
 import org.jdiameter.server.impl.StackImpl
 import org.jdiameter.server.impl.helpers.XMLConfiguration
@@ -129,7 +146,7 @@ class TestClient : EventListener<Request, Answer> {
                 ApplicationId.createByAuthAppId(applicationID),
                 destinationRealm,
                 destinationHost
-        );
+        )
     }
 
     /**

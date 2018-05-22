@@ -1,15 +1,10 @@
 package org.ostelco.topup.api.db;
 
-import org.ostelco.topup.api.core.Profile;
 
 import com.google.cloud.datastore.Datastore;
 import com.google.cloud.datastore.testing.LocalDatastoreHelper;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 import org.junit.Before;
 import org.junit.ClassRule;
-import org.junit.Test;
 
 import java.io.IOException;
 

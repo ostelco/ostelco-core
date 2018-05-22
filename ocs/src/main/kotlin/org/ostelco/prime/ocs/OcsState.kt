@@ -5,9 +5,14 @@ import com.lmax.disruptor.EventHandler
 import org.ostelco.prime.disruptor.PrimeEvent
 import org.ostelco.prime.disruptor.PrimeEventMessageType
 import org.ostelco.prime.logger
+import org.ostelco.prime.module.getResource
+import org.ostelco.prime.storage.legacy.Storage
 import java.util.*
 
-class OcsState : EventHandler<PrimeEvent> {
+/**
+ * For unit testing, loadSubscriberInfo = false
+ */
+class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<PrimeEvent> {
 
     private val LOG by logger()
 
@@ -134,7 +139,7 @@ class OcsState : EventHandler<PrimeEvent> {
 
         // P-GW is allowed to overconsume a small amount.
         if (newTotal < 0) {
-            newTotal = 0;
+            newTotal = 0
         }
 
         dataPackMap[msisdn] = newTotal
@@ -178,11 +183,24 @@ class OcsState : EventHandler<PrimeEvent> {
         return consumed
     }
 
-    fun injectSubscriberIntoOCS(msisdn: String, noOfBytesLeft: Long) {
-        LOG.info("{} - {}", msisdn, noOfBytesLeft)
-        if (noOfBytesLeft > 0) {
-            val newMsisdn = stripLeadingPlus(msisdn)
-            addDataBundleBytes(newMsisdn, noOfBytesLeft)
+    init {
+        if (loadSubscriberInfo) {
+            loadSubscriberBalanceFromDatabaseToInMemoryStructure()
+        }
+    }
+
+    private fun loadSubscriberBalanceFromDatabaseToInMemoryStructure() {
+        LOG.info("Loading initial balance from storage to in-memory OcsState")
+        val store: Storage = getResource()
+        val subscribers = store.allSubscribers
+        for (subscriber in subscribers) {
+            val msisdn = subscriber.msisdn
+            val noOfBytesLeft = subscriber.noOfBytesLeft
+            LOG.info("{} - {}", msisdn, noOfBytesLeft)
+            if (noOfBytesLeft > 0) {
+                val newMsisdn = stripLeadingPlus(msisdn)
+                addDataBundleBytes(newMsisdn, noOfBytesLeft)
+            }
         }
     }
 
