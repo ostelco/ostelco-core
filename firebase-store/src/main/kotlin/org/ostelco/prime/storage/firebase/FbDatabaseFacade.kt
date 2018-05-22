@@ -417,7 +417,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
                     cdl.countDown()
                 }
             } catch (e: Exception) {
-                LOG.error("Something happened while looking for key = " + msisdn, e)
+                LOG.error("Something happened while looking for key = $msisdn", e)
             }
 
         }
@@ -435,7 +435,7 @@ class FbDatabaseFacade internal constructor(firebaseDatabase: FirebaseDatabase) 
                     }
                     for (child in snapshot.children) {
                         val subscriber = child.getValue(FbSubscriber::class.java)
-                        val msisdn = subscriber.msisdn;
+                        val msisdn = subscriber.msisdn
                         if (msisdn != null) {
                             subscribers.add(Subscriber(msisdn, subscriber.noOfBytesLeft))
                         }

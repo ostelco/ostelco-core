@@ -48,7 +48,10 @@
     - File should contain 1 line - name of the class (including package name) which implements the interface.
  - Care should be taken that there is only one such implementing class.
  - The object of implementing class can then be injected using `getResource()` defined in `ResourceRegistry.kt` in `prime-api` as:
+
     
-    
-    var instance: InterfaceName = getResource()
- 
+    private val instance: InterfaceName = getResource()
+
+You may also do lazy initialization using Property Delegate feature from Kotlin.
+
+    private val instance by lazy { getResource<InterfaceName>() }

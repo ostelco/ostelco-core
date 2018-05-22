@@ -12,8 +12,8 @@ import java.util.*
 // This code is an attempt to keep all database schema in one place.
 
 // This may be moved to config.
-val project = "pantel-2decb"
-val dataset = "data_consumption"
+const val project = "pantel-2decb"
+const val dataset = "data_consumption"
 
 
 /**
@@ -69,7 +69,7 @@ class BigQueryIOUtils {
      */
     fun writeTo(table: Table) : BigQueryIO.Write<TableRow> {
         return BigQueryIO.writeTableRows()
-                .to("${project}:${dataset}.${table.name.toLowerCase()}")
+                .to("$project:${dataset}.${table.name.toLowerCase()}")
                 .withSchema(TableSchemas().getTableSchema(table))
                 .withCreateDisposition(BigQueryIO.Write.CreateDisposition.CREATE_IF_NEEDED)
                 .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_APPEND)

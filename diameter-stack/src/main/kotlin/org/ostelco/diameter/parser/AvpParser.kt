@@ -121,7 +121,7 @@ class AvpParser {
                             // Kotlin reflection
                             if (avpValue != null) {
                                 LOG.trace("${it.name} will be set to $avpValue")
-                                map.put(it.name, avpValue)
+                                map[it.name] = avpValue
                             }
                         }
                     }
@@ -161,7 +161,7 @@ class AvpParser {
                         }
                     }
                 }
-        return instance;
+        return instance
     }
 
     private fun getAvpValue(kclazz: KClass<*>, avp: Avp): Any? {

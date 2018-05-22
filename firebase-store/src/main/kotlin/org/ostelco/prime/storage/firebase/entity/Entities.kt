@@ -1,6 +1,6 @@
 package org.ostelco.prime.storage.firebase.entity
 
-class FbSubscriber()  {
+class FbSubscriber() {
     var msisdn: String? = null
     var noOfBytesLeft: Long = 0
 }

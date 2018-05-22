@@ -6,10 +6,10 @@ import java.util.*
 import javax.ws.rs.GET
 import javax.ws.rs.HeaderParam
 import javax.ws.rs.Path
+import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.Response.Status
-import javax.ws.rs.WebApplicationException
 
 /**
  * Resource used to authentiation using an X-MSISDN (injected header)
@@ -57,7 +57,5 @@ class AuthResource {
      * As of now, `msisdn` is considered as `user-id`.
      * This is subjected to change in future.
      */
-    private fun getUid(msisdn: String): String {
-        return msisdn;
-    }
+    private fun getUid(msisdn: String) = msisdn
 }

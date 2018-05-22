@@ -14,7 +14,7 @@ import javax.ws.rs.PathParam
 @Path("/offers")
 class OfferResource() {
 
-    private var dataStore: DataStore = getResource()
+    private val dataStore by lazy { getResource<DataStore>() }
 
     @GET
     fun getOffers() = dataStore.getOffers().map { it.id }
@@ -27,16 +27,17 @@ class OfferResource() {
     fun createOffer(offer: Offer) = dataStore.createOffer(toStoredOffer(offer))
 
     private fun toStoredOffer(offer: Offer): org.ostelco.prime.model.Offer {
-        val storedOffer = org.ostelco.prime.model.Offer()
-        storedOffer.id = offer.id
-        storedOffer.segments = offer.segments.map { dataStore.getSegment(it) }.requireNoNulls()
-        storedOffer.products = offer.products.map { dataStore.getProduct(it) }.requireNoNulls()
-        return storedOffer
+        return org.ostelco.prime.model.Offer(
+                offer.id,
+                offer.segments.map { dataStore.getSegment(it) }.requireNoNulls(),
+                offer.products.map { dataStore.getProduct(it) }.requireNoNulls())
     }
 }
 
 @Path("/segments")
-class SegmentResource(private val dataStore: DataStore) {
+class SegmentResource {
+
+    private val dataStore by lazy { getResource<DataStore>() }
 
     @GET
     fun getSegments() = dataStore.getSegments().map { it.id }
@@ -58,15 +59,16 @@ class SegmentResource(private val dataStore: DataStore) {
     }
 
     private fun toStoredSegment(segment: Segment): org.ostelco.prime.model.Segment {
-        val storedSegment = org.ostelco.prime.model.Segment()
-        storedSegment.id = segment.id
-        storedSegment.subscribers = segment.subscribers.map { dataStore.getSubscriber(it) }.requireNoNulls()
-        return storedSegment
+        return org.ostelco.prime.model.Segment(
+                segment.id,
+                segment.subscribers.map { dataStore.getSubscriber(it) }.requireNoNulls())
     }
 }
 
 @Path("/products")
-class ProductResource(private val dataStore: DataStore) {
+class ProductResource {
+
+    private val dataStore by lazy { getResource<DataStore>() }
 
     @GET
     fun getProducts() = dataStore.getProducts().map { it.id }
@@ -80,15 +82,16 @@ class ProductResource(private val dataStore: DataStore) {
 }
 
 @Path("/product_classes")
-class ProductClassResource(private val dataStore: DataStore) {
+class ProductClassResource {
+
+    private val dataStore by lazy { getResource<DataStore>() }
 
     @GET
     fun getProductClasses() = dataStore.getProductClasses().map { it.id }
 
     @GET
     @Path("/{product-class-id}")
-    fun getProductClass(@PathParam("product-class-id") productClassId: String)
-            = dataStore.getProductClass(productClassId)
+    fun getProductClass(@PathParam("product-class-id") productClassId: String) = dataStore.getProductClass(productClassId)
 
     @POST
     fun createProductClass(productClass: ProductClass) = dataStore.createProductClass(productClass)
@@ -98,7 +101,7 @@ class ProductClassResource(private val dataStore: DataStore) {
     fun updateProductClass(
             @PathParam("product-class-id") productClassId: String,
             productClass: ProductClass): Boolean {
-        productClass.id = productClassId
-        return dataStore.updateProductClass(productClass)
+        return dataStore.updateProductClass(
+                productClass.copy(id = productClassId))
     }
 }

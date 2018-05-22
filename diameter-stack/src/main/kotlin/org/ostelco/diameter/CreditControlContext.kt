@@ -20,7 +20,7 @@ import org.ostelco.diameter.util.DiameterUtilities
  * @param sessionId
  * @param originalCreditControlRequest
  * @param originHost
- * @param skipAnswer Set to true, when answer to not to be sent to PGw. Default value is false.
+ * @param originRealm
  */
 class CreditControlContext(
         val sessionId: String,
@@ -30,6 +30,7 @@ class CreditControlContext(
 
     private val LOG by logger()
 
+    // Set to true, when answer to not to be sent to PGw. Default value is false.
     var skipAnswer: Boolean = false
 
     val creditControlRequest: CreditControlRequest = AvpParser().parse(
