@@ -8,7 +8,6 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
 
     implementation project(":prime-api")
-    implementation project(":client-api-model")
 
     implementation "io.dropwizard:dropwizard-auth:$dropwizardVersion"
     implementation 'com.google.guava:guava:24.1-jre'

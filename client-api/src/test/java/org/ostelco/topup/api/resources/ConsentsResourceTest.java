@@ -14,10 +14,10 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.ostelco.prime.client.api.model.Consent;
-import org.ostelco.topup.api.auth.AccessTokenPrincipal;
-import org.ostelco.topup.api.auth.OAuthAuthenticator;
 import org.ostelco.topup.api.core.Error;
 import org.ostelco.topup.api.db.SubscriberDAO;
+import org.ostelco.topup.api.auth.AccessTokenPrincipal;
+import org.ostelco.topup.api.auth.OAuthAuthenticator;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.GenericType;
