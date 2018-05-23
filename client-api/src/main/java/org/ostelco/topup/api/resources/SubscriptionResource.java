@@ -5,8 +5,8 @@ import io.vavr.control.Either;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import org.ostelco.prime.client.api.model.SubscriptionStatus;
-import org.ostelco.topup.api.auth.AccessTokenPrincipal;
 import org.ostelco.topup.api.core.Error;
+import org.ostelco.topup.api.auth.AccessTokenPrincipal;
 import org.ostelco.topup.api.db.SubscriberDAO;
 
 import javax.ws.rs.GET;

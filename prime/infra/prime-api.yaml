@@ -192,7 +192,7 @@ definitions:
         description: "A unique Id representing a SKU"
         type: string
       price:
-        $ref: '#/definitions/Currency'
+        $ref: '#/definitions/Price'
     required:
       - sku
       - price
@@ -212,19 +212,19 @@ definitions:
       accepted:
         description: "Whether user has accepted the consent or not"
         type: boolean
-  Currency:
+  Price:
     type: object
     properties:
       amount:
         description: "A positive integer in the smallest currency unit"
         type: integer
         minimum: 0
-      code:
+      currency:
         description: "ISO 4217 currency code (three letter alphabetic code)"
         type: string
     required:
       - amount
-      - code
+      - currency
 securityDefinitions:
   auth0_jwt:
     authorizationUrl: "https://ostelco.eu.auth0.com/authorize"

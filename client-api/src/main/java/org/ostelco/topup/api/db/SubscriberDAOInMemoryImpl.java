@@ -3,6 +3,7 @@ package org.ostelco.topup.api.db;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
 import org.ostelco.prime.client.api.model.Consent;
+import org.ostelco.prime.client.api.model.Price;
 import org.ostelco.prime.client.api.model.Product;
 import org.ostelco.prime.client.api.model.Profile;
 import org.ostelco.prime.client.api.model.SubscriptionStatus;
@@ -62,12 +63,12 @@ public class SubscriberDAOInMemoryImpl implements SubscriberDAO {
     @Override
     public Either<Error, SubscriptionStatus> getSubscriptionStatus(final String subscriptionId) {
         return Either.right(new SubscriptionStatus(1_000_000_000,
-                Collections.singletonList(new Product("DataTopup3GB", 250f, "NOK"))));
+                Collections.singletonList(new Product("DataTopup3GB", new Price(250, "NOK")))));
     }
 
     @Override
     public Either<Error, List<Product>> getProducts(final String subscriptionId) {
-        return Either.right(Collections.singletonList(new Product("DataTopup3GB", 250f, "NOK")));
+        return Either.right(Collections.singletonList(new Product("DataTopup3GB", new Price(250, "NOK"))));
     }
 
     @Override
