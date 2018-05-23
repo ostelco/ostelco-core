@@ -1,5 +1,7 @@
 package org.ostelco.at
 
+import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.SignatureAlgorithm
 import org.glassfish.jersey.client.JerseyClientBuilder
 import org.glassfish.jersey.client.JerseyInvocation
 import javax.ws.rs.client.Entity
@@ -55,15 +57,19 @@ fun put(execute: HttpRequest.() -> Unit): Response {
  */
 class HttpClient {
 
+    private val namespace = "https://ostelco"
+    private val key = "jwtsecret"
+
     private val jerseyClient = JerseyClientBuilder.createClient()
 
     // url will be http://prime:8080 while running via docker-compose,
     // and will be http://localhost:9090 when running in IDE connecting to prime in docker-compose
     val url: String = "http://${System.getenv("PRIME_SOCKET") ?: "localhost:9090"}"
 
-    private val token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" +
-            ".eyJuYW1lIjoiVmloYW5nIFBhdGlsIiwidGVsZW5vcmRpZ2l0YWwuY29tZW1haWwiOiJ2aWhhbmcucGF0aWxAdGVsZW5vcmRpZ2l0YWwuY29tIiwiaXNzIjoidGVsZW5vcmRpZ2l0YWwuY29tIn0" +
-            ".PV3tJxOqFauZBRN5oIw17TuHJfwmL0eqhorB6wc-hbM"
+    private val token = Jwts.builder()
+            .setClaims(mapOf(Pair("$namespace/email", "foo@bar.com")))
+            .signWith(SignatureAlgorithm.HS512, key)
+            .compact()
 
     fun setup(path: String, url: String): JerseyInvocation.Builder {
         return jerseyClient.target(url)

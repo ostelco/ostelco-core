@@ -1,5 +1,6 @@
 package org.ostelco.topup.api;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
@@ -25,6 +26,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @JsonTypeName("api")
 public class TopupModule implements PrimeModule {
 
+    private String namespace;
+
+    @JsonProperty("namespace")
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
+
     @Override
     public void init(final Environment env) {
 
@@ -42,7 +50,7 @@ public class TopupModule implements PrimeModule {
         /* OAuth2. */
         env.jersey().register(new AuthDynamicFeature(
                         new OAuthCredentialAuthFilter.Builder<AccessTokenPrincipal>()
-                        .setAuthenticator(new OAuthAuthenticator("jwtsecret"))
+                        .setAuthenticator(new OAuthAuthenticator(namespace, "jwtsecret"))
                         .setPrefix("Bearer")
                         .buildAuthFilter()));
         env.jersey().register(new AuthValueFactoryProvider.Binder<>(AccessTokenPrincipal.class));

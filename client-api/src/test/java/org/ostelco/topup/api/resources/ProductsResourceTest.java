@@ -1,12 +1,7 @@
 package org.ostelco.topup.api.resources;
 
-import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
-import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
 import io.dropwizard.testing.junit.ResourceTestRule;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.vavr.collection.HashMap;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
@@ -17,7 +12,8 @@ import org.ostelco.prime.client.api.model.Price;
 import org.ostelco.prime.client.api.model.Product;
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
 import org.ostelco.topup.api.db.SubscriberDAO;
-import org.ostelco.topup.api.auth.OAuthAuthenticator;
+import org.ostelco.topup.api.util.AccessToken;
+import org.ostelco.topup.api.util.AuthDynamicFeatureFactory;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.GenericType;
@@ -25,7 +21,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Base64;
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -40,15 +35,9 @@ public class ProductsResourceTest {
     private static final SubscriberDAO DAO = mock(SubscriberDAO.class);
 
     private static final String key = "secret";
-    private final String issuer = "http://ostelco.org/";
+
     private final String email = "mw@internet.org";
-    private final Map<String, Object> claims = HashMap.of(issuer + "email", (Object) email)
-            .toJavaMap();
-    private final String accessToken = Jwts.builder()
-            .setClaims(claims)
-            .setIssuer(issuer)
-            .signWith(SignatureAlgorithm.HS512, key)
-            .compact();
+
     private final List<Product> products = io.vavr.collection.List.of(
             new Product("1", new Price(10, "NOK")),
             new Product("2", new Price(5, "NOK")),
@@ -63,11 +52,7 @@ public class ProductsResourceTest {
 
     @ClassRule
     public static final ResourceTestRule RULE = ResourceTestRule.builder()
-            .addResource(new AuthDynamicFeature(
-                    new OAuthCredentialAuthFilter.Builder<AccessTokenPrincipal>()
-                            .setAuthenticator(new OAuthAuthenticator(key))
-                            .setPrefix("Bearer")
-                            .buildAuthFilter()))
+            .addResource(AuthDynamicFeatureFactory.createInstance(key))
             .addResource(new AuthValueFactoryProvider.Binder<>(AccessTokenPrincipal.class))
             .addResource(new ProductsResource(DAO))
             .setTestContainerFactory(new GrizzlyWebTestContainerFactory())
@@ -81,7 +66,7 @@ public class ProductsResourceTest {
 
         Response resp = RULE.target("/products")
                 .request()
-                .header("Authorization", String.format("Bearer %s", accessToken))
+                .header("Authorization", String.format("Bearer %s", AccessToken.withEmail(email)))
                 .header("X-Endpoint-API-UserInfo", userInfo)
                 .get(Response.class);
 
@@ -105,7 +90,7 @@ public class ProductsResourceTest {
 
         Response resp = RULE.target(String.format("/products/%s", sku))
                 .request()
-                .header("Authorization", String.format("Bearer %s", accessToken))
+                .header("Authorization", String.format("Bearer %s", AccessToken.withEmail(email)))
                 .header("X-Endpoint-API-UserInfo", userInfo)
                 .post(Entity.text(""));
 

@@ -1,12 +1,7 @@
 package org.ostelco.topup.api.resources;
 
-import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
-import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
 import io.dropwizard.testing.junit.ResourceTestRule;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.vavr.collection.HashMap;
 import io.vavr.control.Either;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
 import org.junit.ClassRule;
@@ -16,13 +11,13 @@ import org.ostelco.prime.client.api.model.Price;
 import org.ostelco.prime.client.api.model.Product;
 import org.ostelco.prime.client.api.model.SubscriptionStatus;
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
-import org.ostelco.topup.api.auth.OAuthAuthenticator;
 import org.ostelco.topup.api.db.SubscriberDAO;
+import org.ostelco.topup.api.util.AccessToken;
+import org.ostelco.topup.api.util.AuthDynamicFeatureFactory;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -34,15 +29,9 @@ public class SubscriptionResourceTest {
     private static final SubscriberDAO DAO = mock(SubscriberDAO.class);
 
     private static final String key = "secret";
-    private final String issuer = "http://ostelco.org/";
+
     private final String email = "mw@internet.org";
-    private final Map<String, Object> claims = HashMap.of(issuer + "email", (Object) email)
-            .toJavaMap();
-    private final String accessToken = Jwts.builder()
-            .setClaims(claims)
-            .setIssuer(issuer)
-            .signWith(SignatureAlgorithm.HS512, key)
-            .compact();
+
     private final List<Product> acceptedProducts = io.vavr.collection.List.of(
             new Product("1", new Price(10, "NOK")),
             new Product("2", new Price(5, "NOK")),
@@ -52,11 +41,7 @@ public class SubscriptionResourceTest {
 
     @ClassRule
     public static final ResourceTestRule RULE = ResourceTestRule.builder()
-            .addResource(new AuthDynamicFeature(
-                    new OAuthCredentialAuthFilter.Builder<AccessTokenPrincipal>()
-                            .setAuthenticator(new OAuthAuthenticator(key))
-                            .setPrefix("Bearer")
-                            .buildAuthFilter()))
+            .addResource(AuthDynamicFeatureFactory.createInstance(key))
             .addResource(new AuthValueFactoryProvider.Binder<>(AccessTokenPrincipal.class))
             .addResource(new SubscriptionResource(DAO))
             .setTestContainerFactory(new GrizzlyWebTestContainerFactory())
@@ -70,7 +55,7 @@ public class SubscriptionResourceTest {
 
         Response resp = RULE.target("/subscription/status")
                 .request()
-                .header("Authorization", String.format("Bearer %s", accessToken))
+                .header("Authorization", String.format("Bearer %s", AccessToken.withEmail(email)))
                 .get(Response.class);
 
         assertThat(resp.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
