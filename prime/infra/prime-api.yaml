@@ -101,7 +101,7 @@ paths:
         description: SKU to be purchased
         required: true
         type: string
-  "/subscription":
+  "/subscription/status":
     get:
       description: "Get subscription status for the user (identified by bearer token)."
       produces:
