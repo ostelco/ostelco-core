@@ -10,6 +10,7 @@ modules:
       projectId: pantel-2decb
       topicId: data-traffic
   - type: api
+    namespace: https://ostelco
   - type: admin
 
 logging:

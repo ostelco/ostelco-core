@@ -1,29 +1,27 @@
 package org.ostelco.topup.api.resources;
 
-import org.ostelco.topup.api.auth.AccessTokenPrincipal;
-import org.ostelco.topup.api.auth.OAuthAuthenticator;
-import org.ostelco.topup.api.db.SubscriberDAO;
-
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
-import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
 import io.dropwizard.testing.junit.ResourceTestRule;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.vavr.collection.HashMap;
 import io.vavr.control.Option;
-import java.io.IOException;
-import java.util.Map;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.ostelco.topup.api.auth.AccessTokenPrincipal;
+import org.ostelco.topup.api.db.SubscriberDAO;
+import org.ostelco.topup.api.util.AccessToken;
+import org.ostelco.topup.api.util.AuthDynamicFeatureFactory;
+
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.io.IOException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -35,27 +33,17 @@ public class AnalyticsResourceTest {
     private static final SubscriberDAO DAO = mock(SubscriberDAO.class);
 
     private static final String key = "secret";
-    private final String issuer = "http://ostelco.org/";
+
     private final String email = "mw@internet.org";
-    private final Map<String, Object> claims = HashMap.of(issuer + "email", (Object) email)
-            .toJavaMap();
-    private final String accessToken = Jwts.builder()
-            .setClaims(claims)
-            .setIssuer(issuer)
-            .signWith(SignatureAlgorithm.HS512, key)
-            .compact();
+
     private final String accessTokenIssuerMissing = Jwts.builder()
-            .setIssuer(issuer)
+            .setPayload("{}")
             .signWith(SignatureAlgorithm.HS512, key)
             .compact();
 
     @ClassRule
     public static final ResourceTestRule RULE = ResourceTestRule.builder()
-        .addResource(new AuthDynamicFeature(
-                        new OAuthCredentialAuthFilter.Builder<AccessTokenPrincipal>()
-                        .setAuthenticator(new OAuthAuthenticator(key))
-                        .setPrefix("Bearer")
-                        .buildAuthFilter()))
+        .addResource(AuthDynamicFeatureFactory.createInstance(key))
         .addResource(new AuthValueFactoryProvider.Binder<>(AccessTokenPrincipal.class))
         .addResource(new AnalyticsResource(DAO))
         .setTestContainerFactory(new GrizzlyWebTestContainerFactory())
@@ -82,7 +70,7 @@ public class AnalyticsResourceTest {
 
         Response resp = RULE.target("/analytics")
             .request(MediaType.APPLICATION_JSON)
-            .header("Authorization", String.format("Bearer %s", accessToken))
+            .header("Authorization", String.format("Bearer %s", AccessToken.withEmail(email)))
             .post(Entity.json(events));
 
         assertThat(resp.getStatus()).isEqualTo(Response.Status.CREATED.getStatusCode());
