@@ -5,22 +5,27 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
-import java.io.IOException;
-import java.util.Base64;
-import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.Base64;
+import java.util.Optional;
 
 /**
  *
  */
 @AllArgsConstructor
 public class OAuthAuthenticator implements Authenticator<String, AccessTokenPrincipal> {
+
     private static final Logger LOG = LoggerFactory.getLogger(OAuthAuthenticator.class);
 
     private final ObjectMapper MAPPER = new ObjectMapper();
+
+    @NonNull
+    private String namespace;
 
     @NonNull
     private String key;
@@ -46,24 +51,14 @@ public class OAuthAuthenticator implements Authenticator<String, AccessTokenPrin
     }
 
     private String getEmail(final JsonNode claims) {
-        String issuer = getIssuer(claims);
 
-        if (issuer != null && claims.has(issuer + "email")) {
-            return claims.get(issuer + "email").textValue();
+        if (claims.has(namespace + "/email")) {
+            return claims.get(namespace + "/email").textValue();
         } else {
-            LOG.error("Missing '{}email' field in claims part of JWT token {}",
-                    issuer, claims);
+            LOG.error("Missing '{}/email' field in claims part of JWT token {}",
+                    namespace, claims);
             return null;
         }
-    }
-
-    private String getIssuer(final JsonNode claims) {
-        if (!claims.has("iss")) {
-            LOG.error("Missing 'iss' field in claims part of JWT token {}",
-                    claims);
-            return null;
-        }
-        return claims.get("iss").textValue();
     }
 
     /* Extracts 'claims' part from JWT token.
