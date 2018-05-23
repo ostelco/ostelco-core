@@ -224,7 +224,7 @@ definitions:
         type: string
     required:
       - amount
-      - code
+      - currency
 securityDefinitions:
   auth0_jwt:
     authorizationUrl: "https://ostelco.eu.auth0.com/authorize"
