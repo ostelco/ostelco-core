@@ -1,8 +1,13 @@
 package org.ostelco.topup.api.resources;
 
+import org.ostelco.topup.api.auth.AccessTokenPrincipal;
+import org.ostelco.topup.api.auth.OAuthAuthenticator;
+import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
+import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
 import io.dropwizard.testing.junit.ResourceTestRule;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -12,13 +17,16 @@ import org.ostelco.topup.api.auth.AccessTokenPrincipal;
 import org.ostelco.topup.api.db.SubscriberDAO;
 import org.ostelco.topup.api.db.SubscriberDAOInMemoryImpl;
 import org.ostelco.topup.api.util.AccessToken;
-import org.ostelco.topup.api.util.AuthDynamicFeatureFactory;
 
+import java.util.Optional;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Profile API tests.
@@ -27,9 +35,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ProfileResourceInMemoryTest {
 
     private static final SubscriberDAO DAO = new SubscriberDAOInMemoryImpl();
+    private static final OAuthAuthenticator AUTHENTICATOR = mock(OAuthAuthenticator.class);
 
     private final String email = "boaty@internet.org";
-    private static final String key = "secret";
     private final String name = "Boaty McBoatface";
     private final String address = "Storvej 10";
     private final String postCode = "132 23";
@@ -38,11 +46,21 @@ public class ProfileResourceInMemoryTest {
 
     @ClassRule
     public static final ResourceTestRule RULE = ResourceTestRule.builder()
-            .addResource(AuthDynamicFeatureFactory.createInstance(key))
-            .addResource(new AuthValueFactoryProvider.Binder<>(AccessTokenPrincipal.class))
-            .addResource(new ProfileResource(DAO))
-            .setTestContainerFactory(new GrizzlyWebTestContainerFactory())
-            .build();
+        .addResource(new AuthDynamicFeature(
+                        new OAuthCredentialAuthFilter.Builder<AccessTokenPrincipal>()
+                        .setAuthenticator(AUTHENTICATOR)
+                        .setPrefix("Bearer")
+                        .buildAuthFilter()))
+        .addResource(new AuthValueFactoryProvider.Binder<>(AccessTokenPrincipal.class))
+        .addResource(new ProfileResource(DAO))
+        .setTestContainerFactory(new GrizzlyWebTestContainerFactory())
+        .build();
+
+    @Before
+    public void setUp()  throws Exception {
+        when(AUTHENTICATOR.authenticate(anyString()))
+            .thenReturn(Optional.of(new AccessTokenPrincipal(email)));
+    }
 
     @Test
     public void T01_getProfile() throws Exception {

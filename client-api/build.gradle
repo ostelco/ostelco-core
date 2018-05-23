@@ -9,6 +9,7 @@ dependencies {
     implementation project(":prime-api")
 
     implementation "io.dropwizard:dropwizard-auth:$dropwizardVersion"
+    implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
     implementation 'com.google.guava:guava:24.1-jre'
 
     // https://mvnrepository.com/artifact/org.jetbrains/annotations
@@ -17,6 +18,10 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt:0.9.0'
     implementation "io.vavr:vavr:0.9.0"
 
+    compileOnly 'org.projectlombok:lombok:1.16.20'
+    annotationProcessor 'org.projectlombok:lombok:1.16.20'
+
+    testImplementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
     testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
     testImplementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.9.5'
     testImplementation "org.mockito:mockito-core:2.18.0"

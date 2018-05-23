@@ -1,26 +1,32 @@
 package org.ostelco.topup.api.resources;
 
+import org.ostelco.topup.api.auth.AccessTokenPrincipal;
+import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
+import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
 import io.dropwizard.testing.junit.ResourceTestRule;
 import io.vavr.control.Either;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.ostelco.prime.client.api.model.Consent;
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
+import org.ostelco.topup.api.auth.OAuthAuthenticator;
 import org.ostelco.topup.api.core.Error;
 import org.ostelco.topup.api.db.SubscriberDAO;
 import org.ostelco.topup.api.util.AccessToken;
-import org.ostelco.topup.api.util.AuthDynamicFeatureFactory;
 
+import java.util.List;
+import java.util.Optional;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -31,6 +37,7 @@ import static org.mockito.Mockito.when;
 public class ConsentsResourceTest {
 
     private static final SubscriberDAO DAO = mock(SubscriberDAO.class);
+    private static final OAuthAuthenticator AUTHENTICATOR = mock(OAuthAuthenticator.class);
 
     private static final String key = "secret";
 
@@ -43,11 +50,21 @@ public class ConsentsResourceTest {
 
     @ClassRule
     public static final ResourceTestRule RULE = ResourceTestRule.builder()
-        .addResource(AuthDynamicFeatureFactory.createInstance(key))
+        .addResource(new AuthDynamicFeature(
+                        new OAuthCredentialAuthFilter.Builder<AccessTokenPrincipal>()
+                        .setAuthenticator(AUTHENTICATOR)
+                        .setPrefix("Bearer")
+                        .buildAuthFilter()))
         .addResource(new AuthValueFactoryProvider.Binder<>(AccessTokenPrincipal.class))
         .addResource(new ConsentsResource(DAO))
         .setTestContainerFactory(new GrizzlyWebTestContainerFactory())
         .build();
+
+    @Before
+    public void setUp()  throws Exception {
+        when(AUTHENTICATOR.authenticate(anyString()))
+            .thenReturn(Optional.of(new AccessTokenPrincipal(email)));
+    }
 
     @Test
     public void getConsents() throws Exception {

@@ -1,29 +1,41 @@
 package org.ostelco.topup.api.auth;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.ostelco.topup.api.core.UserInfo;
+
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.core.Response;
+import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.Base64;
-import java.util.Optional;
-
 /**
+ * Verifies an OAuth2 'access-token' and fetches additional user information
+ * using the '.../userinfo' endpoint.
  *
+ * Assumes that the OAuth2 vendor is compliant with OpenID.
+ *
+ * Ref.: http://openid.net/specs/openid-connect-core-1_0.html#UserInfo
+ *       https://www.dropwizard.io/1.3.2/docs/manual/auth.html#oauth2
  */
 public class OAuthAuthenticator implements Authenticator<String, AccessTokenPrincipal> {
-
     private static final Logger LOG = LoggerFactory.getLogger(OAuthAuthenticator.class);
 
-    private final ObjectMapper MAPPER = new ObjectMapper();
+    @NonNull
+    private final Client client;
 
-    private String namespace;
-
-    private String key;
+    @NonNull
+    private final String key;
 
     public OAuthAuthenticator(String namespace, String key) {
         this.namespace = namespace;
@@ -34,59 +46,76 @@ public class OAuthAuthenticator implements Authenticator<String, AccessTokenPrin
     public Optional<AccessTokenPrincipal> authenticate(String accessToken)
         throws AuthenticationException {
 
-        JsonNode claims;
-        try {
-            claims = decodeClaims(getClaims(accessToken));
-        } catch (IllegalArgumentException e) {
-            LOG.error("Illegal or incomplete JWT token {}", accessToken);
-            return Optional.empty();
+        String audience = Jwts.parser()
+            .setSigningKey(key)
+            .parseClaimsJws(accessToken)
+            .getBody()
+            .getAudience();
+
+        if (audience == null || audience.isEmpty()) {
+            LOG.error("No audience field in the 'access-token' claims part");
+            throw new AuthenticationException("No audience field in the 'access-token' claims part");
         }
 
-        String email = getEmail(claims);
-        if (email == null) {
-            return Optional.empty();
+        Optional<String> ep = findFirstMatch("/userinfo$", decodeAudience(audience));
+
+        if (!ep.isPresent()) {
+            LOG.error("No 'userinfo' endpoint found in audience claim");
+            throw new AuthenticationException("No 'userinfo' endpoint found in audience claim");
         }
 
-        return Optional.of(new AccessTokenPrincipal(email));
+        UserInfo userInfo = getUserInfo(ep.get(), accessToken);
+        String email = userInfo.getEmail();
+
+        return email != null && !email.isEmpty()
+            ? Optional.of(new AccessTokenPrincipal(email))
+            : Optional.empty();
     }
 
-    private String getEmail(final JsonNode claims) {
+    private UserInfo getUserInfo(final String ep, final String accessToken)
+        throws AuthenticationException {
 
-        if (claims.has(namespace + "/email")) {
-            return claims.get(namespace + "/email").textValue();
-        } else {
-            LOG.error("Missing '{}/email' field in claims part of JWT token {}",
-                    namespace, claims);
-            return null;
+        Response response = client.target(ep)
+            .request()
+            .accept("application/json")
+            .header("Authorization", String.format("Bearer %s", accessToken))
+            .get(Response.class);
+
+        if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+            LOG.error("Unexpected HTTP status {} code when fething 'user-info' from {}",
+                    response.getStatus(), ep);
+            throw new AuthenticationException(String.format(
+                            "Unexpected HTTP status %s code when fething 'user-info' from %s",
+                            response.getStatus(), ep));
         }
+
+        UserInfo userInfo = response.readEntity(UserInfo.class);
+
+        if (userInfo == null) {
+            LOG.error("No 'user-info' body part in respose from {}",
+                    ep);
+            throw new AuthenticationException("No 'user-info' body part in respose from " +
+                    ep);
+        }
+
+        return userInfo;
     }
 
-    /* Extracts 'claims' part from JWT token.
-       Throws 'illegalargumentexception' exception on error. */
-    private String getClaims(final String token) {
-        if (token.codePoints().filter(ch -> ch == '.').count() != 2) {
-            throw new IllegalArgumentException("The provided token is an Invalid JWT token");
-        }
-        String parts[] = token.split("\\.");
-
-        return new String(Base64.getDecoder().decode(parts[1]
-                        .replace("-", "+")
-                        .replace("_", "/")));
+    /* As an 'audience' claim can either be a string or an array of strings,
+       convert the claim(s) to a list even if it should be a string. */
+    private List<String> decodeAudience(final String audience) {
+        return Arrays.asList(audience.replaceAll("[\\[\\]]", "").split("\\s*,\\s*"));
     }
 
-    /* Decodes the claims part of a JWT token.
-       Returns null on error. */
-    private JsonNode decodeClaims(final String claims) {
-        JsonNode obj = null;
-        try {
-            obj = MAPPER.readTree(claims);
-        } catch (JsonParseException e) {
-            LOG.error("Parsing of the provided json doc {} failed: {}", claims,
-                    e);
-        } catch (IOException e) {
-            LOG.error("Unexpected error when parsing the json doc {}: {}", claims,
-                    e);
-        }
-        return obj;
+    private Optional<String> findFirstMatch(final String pattern, final List<String> lst) {
+        return findMatches(Pattern.compile(pattern), lst)
+            .stream()
+            .findFirst();
+    }
+
+    private List<String> findMatches(final Pattern match, final List<String> lst) {
+        return lst.stream()
+            .filter(match.asPredicate())
+            .collect(Collectors.toList());
     }
 }

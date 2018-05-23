@@ -3,7 +3,8 @@ package org.ostelco.topup.api.auth;
 import java.security.Principal;
 
 /**
- *
+ * Holds the 'user-id' obtained by verifying and decoding an OAuth2
+ * 'access-token'.
  */
 public class AccessTokenPrincipal implements Principal {
 
