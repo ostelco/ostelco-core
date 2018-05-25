@@ -49,7 +49,7 @@ public class TestApp extends Application<TestConfig> {
             .using(new ObjectMapper()
                     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false))
             .build(env.getName());
-        /*
+
         /* OAuth2. */
         env.jersey().register(new AuthDynamicFeature(
                         new OAuthCredentialAuthFilter.Builder<AccessTokenPrincipal>()

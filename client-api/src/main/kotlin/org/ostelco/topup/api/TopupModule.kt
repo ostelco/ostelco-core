@@ -31,9 +31,10 @@ class TopupModule : PrimeModule {
     private val storage by lazy { getResource<Storage>() }
     private val ocsSubscriberService by lazy { getResource<OcsSubscriberService>() }
 
-    @JsonProperty("namespace")
-    fun setNamespace(namespace: String) {
-        this.namespace = namespace
+    /** Allows for overriding the default configuration. */
+    @JsonProperty("config")
+    fun setConfig() {
+        config = TopupConfiguration()
     }
 
     override fun init(env: Environment) {
