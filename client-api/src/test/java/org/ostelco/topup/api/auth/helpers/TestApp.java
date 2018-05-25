@@ -48,8 +48,7 @@ public class TestApp extends Application<TestConfig> {
             .using(config.getJerseyClientConfiguration())
             .using(new ObjectMapper()
                     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false))
-            .build("oauth2-client");
-
+            .build(env.getName());
         /*
         /* OAuth2. */
         env.jersey().register(new AuthDynamicFeature(

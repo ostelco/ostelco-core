@@ -43,12 +43,14 @@ public class TopupModule implements PrimeModule {
         env.jersey().register(new ProfileResource(dao));
         env.jersey().register(new SubscriptionResource(dao));
 
-        /* TODO: Will probaly also need to add client configuration from
-                 'config'. That is whether SSL should be used, timeout etc. */
+        /* TODO! Is this suffient? */
+        TopupConfiguration config = new TopupConfiguration();
+
         Client client = new JerseyClientBuilder(env)
+            .using(config.getJerseyClientConfiguration())
             .using(new ObjectMapper()
                     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false))
-            .build("oauth2-client");
+            .build(env.getName());
 
         /* OAuth2. */
         env.jersey().register(new AuthDynamicFeature(
