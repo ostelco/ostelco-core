@@ -2,7 +2,6 @@ package org.ostelco.topup.api.resources;
 
 import io.dropwizard.auth.Auth;
 import io.vavr.control.Either;
-import io.vavr.control.Option;
 import org.ostelco.prime.client.api.model.Consent;
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
 import org.ostelco.topup.api.core.Error;
@@ -21,7 +20,6 @@ import java.util.Collection;
 
 /**
  * Consents API.
- *
  */
 @Path("/consents")
 public class ConsentsResource extends ResourceHelpers {
@@ -37,41 +35,42 @@ public class ConsentsResource extends ResourceHelpers {
     public Response getConsents(@Auth AccessTokenPrincipal token) {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
-                .build();
+                    .build();
         }
 
         Either<Error, Collection<Consent>> result = dao.getConsents(token.getName());
 
         return result.isRight()
-            ? Response.status(Response.Status.OK)
-                 .entity(asJson(result.right().get()))
-                 .build()
-            : Response.status(Response.Status.NOT_FOUND)
-                 .entity(asJson(result.left().get()))
-                 .build();
+                ? Response.status(Response.Status.OK)
+                .entity(asJson(result.right().get()))
+                .build()
+                : Response.status(Response.Status.NOT_FOUND)
+                .entity(asJson(result.left().get()))
+                .build();
     }
 
     @PUT
     @Path("{consent-id}")
     @Produces({"application/json"})
     public Response updateConsent(@Auth AccessTokenPrincipal token,
-            @NotNull
-            @PathParam("consent-id") String consentId,
-            @DefaultValue("true") @QueryParam("accepted") boolean accepted) {
+                                  @NotNull
+                                  @PathParam("consent-id") String consentId,
+                                  @DefaultValue("true") @QueryParam("accepted") boolean accepted) {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
-                .build();
+                    .build();
         }
 
-        Option<Error> error = accepted
-            ? dao.acceptConsent(token.getName(), consentId)
-            : dao.rejectConsent(token.getName(), consentId);
+        Either<Error, Consent> result = accepted
+                ? dao.acceptConsent(token.getName(), consentId)
+                : dao.rejectConsent(token.getName(), consentId);
 
-        return error.isEmpty()
-            ? Response.status(Response.Status.OK)
-                 .build()
-            : Response.status(Response.Status.NOT_FOUND)
-                 .entity(asJson(error.get()))
-                 .build();
+        return result.isRight()
+                ? Response.status(Response.Status.OK)
+                .entity(asJson(result.right().get()))
+                .build()
+                : Response.status(Response.Status.NOT_FOUND)
+                .entity(asJson(result.left().get()))
+                .build();
     }
 }

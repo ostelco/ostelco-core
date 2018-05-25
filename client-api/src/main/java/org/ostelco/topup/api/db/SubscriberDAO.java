@@ -17,9 +17,9 @@ public interface SubscriberDAO {
 
     Either<Error, Subscriber> getProfile(final String subscriptionId);
 
-    Option<Error> createProfile(final String subscriptionId, final Subscriber profile);
+    Either<Error, Subscriber> createProfile(final String subscriptionId, final Subscriber profile);
 
-    Option<Error> updateProfile(final String subscriptionId, final Subscriber profile);
+    Either<Error, Subscriber> updateProfile(final String subscriptionId, final Subscriber profile);
 
     Either<Error, SubscriptionStatus> getSubscriptionStatus(final String subscriptionId);
 
@@ -29,9 +29,9 @@ public interface SubscriberDAO {
 
     Either<Error, Collection<Consent>> getConsents(final String subscriptionId);
 
-    Option<Error> acceptConsent(final String subscriptionId, final String consentId);
+    Either<Error, Consent> acceptConsent(final String subscriptionId, final String consentId);
 
-    Option<Error> rejectConsent(final String subscriptionId, final String consentId);
+    Either<Error, Consent> rejectConsent(final String subscriptionId, final String consentId);
 
     Option<Error> reportAnalytics(final String subscriptionId, final String events);
 
