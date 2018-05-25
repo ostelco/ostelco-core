@@ -8,6 +8,9 @@ modules:
     config:
       projectId: pantel-2decb
       topicId: data-traffic
+  - type: api
+    config:
+      secret: "change_me"
   - type: admin
 
 logging:

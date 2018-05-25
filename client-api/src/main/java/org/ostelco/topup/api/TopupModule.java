@@ -62,7 +62,7 @@ public class TopupModule implements PrimeModule {
         /* OAuth2. */
         env.jersey().register(new AuthDynamicFeature(
                         new OAuthCredentialAuthFilter.Builder<AccessTokenPrincipal>()
-                        .setAuthenticator(new OAuthAuthenticator(client, "jwtsecret"))
+                        .setAuthenticator(new OAuthAuthenticator(client, config.getSecret()))
                         .setPrefix("Bearer")
                         .buildAuthFilter()));
         env.jersey().register(new AuthValueFactoryProvider.Binder<>(AccessTokenPrincipal.class));
