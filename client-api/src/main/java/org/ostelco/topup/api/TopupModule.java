@@ -1,5 +1,6 @@
 package org.ostelco.topup.api;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,6 +30,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @JsonTypeName("api")
 public class TopupModule implements PrimeModule {
 
+    /* Load default configuration. */
+    private TopupConfiguration config = new TopupConfiguration();
+
+    /* Allows for overriding the default configuration. */
+    @JsonProperty("config")
+    public void setConfig() {
+        config = new TopupConfiguration();
+    }
+
     @Override
     public void init(final Environment env) {
 
@@ -42,9 +52,6 @@ public class TopupModule implements PrimeModule {
         env.jersey().register(new ProductsResource(dao));
         env.jersey().register(new ProfileResource(dao));
         env.jersey().register(new SubscriptionResource(dao));
-
-        /* TODO! Is this suffient? */
-        TopupConfiguration config = new TopupConfiguration();
 
         Client client = new JerseyClientBuilder(env)
             .using(config.getJerseyClientConfiguration())
