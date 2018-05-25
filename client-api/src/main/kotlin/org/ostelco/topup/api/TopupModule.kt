@@ -8,6 +8,7 @@ import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter.Builder
 import io.dropwizard.setup.Environment
 import org.ostelco.prime.module.PrimeModule
 import org.ostelco.prime.module.getResource
+import org.ostelco.prime.ocs.OcsSubscriberService
 import org.ostelco.prime.storage.legacy.Storage
 import org.ostelco.topup.api.auth.AccessTokenPrincipal
 import org.ostelco.topup.api.auth.OAuthAuthenticator
@@ -28,6 +29,7 @@ class TopupModule : PrimeModule {
     private var namespace: String? = null
 
     private val storage by lazy { getResource<Storage>() }
+    private val ocsSubscriberService by lazy { getResource<OcsSubscriberService>() }
 
     @JsonProperty("namespace")
     fun setNamespace(namespace: String) {
@@ -37,7 +39,7 @@ class TopupModule : PrimeModule {
     override fun init(env: Environment) {
 
         checkNotNull(env)
-        val dao = SubscriberDAOImpl(storage)
+        val dao = SubscriberDAOImpl(storage, ocsSubscriberService)
         val jerseyEnv = env.jersey()
 
         /* APIs. */

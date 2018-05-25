@@ -17,16 +17,16 @@ interface Storage {
     val balances: Map<String, Long>
 
     /**
-     * Create Subscriber Profile
-     */
-    @Throws(StorageException::class)
-    fun addSubscriber(id: String, subscriber: Subscriber): Boolean
-
-    /**
      * Get Subscriber Profile
      */
     @Throws(StorageException::class)
     fun getSubscriber(id: String): Subscriber?
+
+    /**
+     * Create Subscriber Profile
+     */
+    @Throws(StorageException::class)
+    fun addSubscriber(id: String, subscriber: Subscriber): Boolean
 
     /**
      * Update Subscriber Profile
@@ -40,7 +40,6 @@ interface Storage {
     @Throws(StorageException::class)
     fun removeSubscriber(id: String)
 
-
     /**
      * Link Subscriber to MSISDN
      */
@@ -51,19 +50,19 @@ interface Storage {
      * Get Product to perform OCS Topup
      */
     @Throws(StorageException::class)
-    fun getProduct(sku: String): Product?
+    fun getProducts(): Map<String, Product>
 
     /**
      * Get Product to perform OCS Topup
      */
     @Throws(StorageException::class)
-    fun getProducts(): Map<String, Product>
+    fun getProduct(sku: String): Product?
 
     /**
      * Get balance for Client
      */
     @Throws(StorageException::class)
-    fun getBalance(email: String): Long?
+    fun getBalance(id: String): Long?
 
     /**
      * Set balance after OCS Topup or Consumption
@@ -72,8 +71,20 @@ interface Storage {
     fun setBalance(msisdn: String, noOfBytes: Long): Boolean
 
     /**
+     * Get balance for Client
+     */
+    @Throws(StorageException::class)
+    fun getSubscription(id: String): String?
+
+    /**
+     * Get all PurchaseRecords
+     */
+    @Throws(StorageException::class)
+    fun getPurchaseRecords(id: String): Collection<PurchaseRecord>
+
+    /**
      * Add PurchaseRecord after Purchase operation
      */
     @Throws(StorageException::class)
-    fun addPurchaseRecord(purchase: PurchaseRecord): String?
+    fun addPurchaseRecord(id: String, purchase: PurchaseRecord): String?
 }

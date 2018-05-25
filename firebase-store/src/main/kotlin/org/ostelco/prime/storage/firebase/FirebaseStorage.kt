@@ -40,6 +40,8 @@ object FirebaseStorageSingleton : Storage {
 
     override fun updateSubscriber(id: String, subscriber: Subscriber): Boolean = subscriberStore.update(id, subscriber)
 
+    override fun getSubscription(id: String) = subscriptionStore.get(id)
+
     override fun addSubscription(id: String, msisdn: String) {
         subscriptionStore.create(id, msisdn)
     }
@@ -48,14 +50,26 @@ object FirebaseStorageSingleton : Storage {
 
     override fun getProducts() = productStore.getAll()
 
-    override fun getBalance(email: String): Long? {
-        val msisdn = subscriptionStore.get(email) ?: return null
+    override fun getBalance(id: String): Long? {
+        val msisdn = subscriptionStore.get(id) ?: return null
         return balanceStore.get(msisdn)
     }
 
     override fun setBalance(msisdn: String, noOfBytes: Long) = balanceStore.update(msisdn, noOfBytes)
 
-    override fun addPurchaseRecord(purchase: PurchaseRecord): String? = paymentHistoryStore.add(purchase)
+    override fun getPurchaseRecords(id: String): Collection<PurchaseRecord> {
+        return paymentHistoryStore.getAll {
+            // using /paymentHistory/{id} as path instead of /paymentHistor
+            databaseReference.child(urlEncode(id))
+        }.values
+    }
+
+    override fun addPurchaseRecord(id: String, purchase: PurchaseRecord): String? {
+        return paymentHistoryStore.add(purchase) {
+            // using /paymentHistory/{id} as path instead of /paymentHistor
+            databaseReference.child(urlEncode(id))
+        }
+    }
 
     override fun removeSubscriber(id: String) {
         subscriberStore.delete(id)
@@ -126,7 +140,7 @@ class EntityStore<E>(
 
     private val LOG by logger()
 
-    private val databaseReference: DatabaseReference = firebaseDatabase.getReference("/${config.rootPath}/${entityType.path}")
+    val databaseReference: DatabaseReference = firebaseDatabase.getReference("/${config.rootPath}/${entityType.path}")
 
     /**
      * Get Entity by Id
@@ -157,12 +171,16 @@ class EntityStore<E>(
     /**
      * Get all Entities
      *
+     * @param reference This is a Function which returns DatabaseReference to be used.
+     *                  Default value is a function which returns base path for that EntityType.
+     *                  For special cases, it allows to use child path for getAll operation.
+     *
      * @return Map of <id,Entity>
      */
-    fun getAll(): Map<String, E> {
+    fun getAll(reference: EntityStore<E>.() -> DatabaseReference = { databaseReference }): Map<String, E> {
         val entities: MutableMap<String, E> = LinkedHashMap()
         val countDownLatch = CountDownLatch(1);
-        databaseReference.addListenerForSingleValueEvent(
+        reference().addListenerForSingleValueEvent(
                 object : ValueEventListener {
                     override fun onCancelled(error: DatabaseError?) {
                         countDownLatch.countDown()
@@ -182,7 +200,7 @@ class EntityStore<E>(
         return entities
     }
 
-    private fun urlEncode(value: String) =
+    fun urlEncode(value: String) =
             URLEncoder.encode(value, StandardCharsets.UTF_8.name())
                     .replace(oldValue = ".", newValue = "%2E")
 
@@ -216,10 +234,16 @@ class EntityStore<E>(
     /**
      * Create Entity with auto-gen id, or null
      *
+     * @param entity Entity to be added
+     * @param reference This is a Function which returns DatabaseReference to be used.
+     *                  Default value is a function which returns base path for that EntityType.
+     *                  For special cases, it allows to use child path for add operation.
+     *
+     *
      * @return id, or null
      */
-    fun add(entity: E): String? {
-        val newPushedEntry = databaseReference.push()
+    fun add(entity: E, reference: EntityStore<E>.() -> DatabaseReference = { databaseReference }): String? {
+        val newPushedEntry = reference().push()
         val future = newPushedEntry.setValueAsync(entity)
         future.get(TIMEOUT, SECONDS) ?: return null
         return newPushedEntry.key

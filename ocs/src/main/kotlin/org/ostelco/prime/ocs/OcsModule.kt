@@ -24,12 +24,8 @@ class OcsModule : PrimeModule {
         // Disruptor provides RingBuffer, which is used by Producer
         val producer = PrimeEventProducerImpl(disruptor.disruptor.ringBuffer)
 
-        // Maybe this is bad idea to directly call OcsState.
-        // Get Balance requets should also go via Disruptor instead.
-        val ocsState = OcsState()
-
         // OcsSubscriberServiceSingleton uses Producer to produce events for incoming requests from Client App
-        OcsSubscriberServiceSingleton.init(producer, ocsState)
+        OcsSubscriberServiceSingleton.init(producer)
 
         // OcsService uses Producer to produce events for incoming requests from P-GW
         val ocsService = OcsService(producer)
@@ -48,7 +44,7 @@ class OcsModule : PrimeModule {
         //                  -> Clear
 
         disruptor.disruptor
-                .handleEventsWith(ocsState)
+                .handleEventsWith(OcsState())
                 .then(ocsService.asEventHandler(), EventProcessor(), dataConsumptionInfoPublisher)
                 .then(ClearingEventHandler())
 

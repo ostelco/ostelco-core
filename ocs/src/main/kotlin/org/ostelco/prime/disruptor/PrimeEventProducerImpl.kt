@@ -99,15 +99,15 @@ class PrimeEventProducerImpl(private val ringBuffer: RingBuffer<PrimeEvent>) : P
                     requestId = request.requestId)
         } else {
             injectIntoRingbuffer(CREDIT_CONTROL_REQUEST,
-                    request.msisdn,
-                    request.getMscc(0).requested.totalOctets,
-                    request.getMscc(0).used.totalOctets,
-                    0,
-                    request.getMscc(0).serviceIdentifier,
-                    request.getMscc(0).ratingGroup,
-                    request.getMscc(0).reportingReason,
-                    streamId,
-                    request.requestId)
+                    msisdn = request.msisdn,
+                    requestedBytes = request.getMscc(0).requested.totalOctets,
+                    usedBytes = request.getMscc(0).used.totalOctets,
+                    reservedBytes = 0,
+                    serviceId = request.getMscc(0).serviceIdentifier,
+                    ratingGroup = request.getMscc(0).ratingGroup,
+                    reportingReason = request.getMscc(0).reportingReason,
+                    streamId = streamId,
+                    requestId = request.requestId)
         }
     }
 }
