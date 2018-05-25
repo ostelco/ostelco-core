@@ -1,15 +1,21 @@
 package org.ostelco.topup.api;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.SharedMetricRegistries;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
+import io.dropwizard.auth.CachingAuthenticator;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
 import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.setup.Environment;
+
 import javax.ws.rs.client.Client;
+
 import org.ostelco.prime.module.PrimeModule;
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
 import org.ostelco.topup.api.auth.OAuthAuthenticator;
@@ -41,8 +47,8 @@ public class TopupModule implements PrimeModule {
 
     @Override
     public void init(final Environment env) {
-
         checkNotNull(env);
+
         // final SubscriberDAO dao = new SubscriberDAOImpl(DatastoreOptions.getDefaultInstance().getService());
         final SubscriberDAO dao = new SubscriberDAOInMemoryImpl();
 
@@ -53,16 +59,23 @@ public class TopupModule implements PrimeModule {
         env.jersey().register(new ProfileResource(dao));
         env.jersey().register(new SubscriptionResource(dao));
 
+        /* For reporting OAuth2 caching events. */
+        MetricRegistry metrics = SharedMetricRegistries.getOrCreate(env.getName());
+
         Client client = new JerseyClientBuilder(env)
             .using(config.getJerseyClientConfiguration())
             .using(new ObjectMapper()
                     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false))
             .build(env.getName());
 
-        /* OAuth2. */
+        /* OAuth2 with cache. */
+        CachingAuthenticator authenticator = new CachingAuthenticator(metrics,
+                new OAuthAuthenticator(client, config.getSecret()),
+                config.getAuthenticationCachePolicy());
+
         env.jersey().register(new AuthDynamicFeature(
                         new OAuthCredentialAuthFilter.Builder<AccessTokenPrincipal>()
-                        .setAuthenticator(new OAuthAuthenticator(client, config.getSecret()))
+                        .setAuthenticator(authenticator)
                         .setPrefix("Bearer")
                         .buildAuthFilter()));
         env.jersey().register(new AuthValueFactoryProvider.Binder<>(AccessTokenPrincipal.class));

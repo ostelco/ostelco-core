@@ -1,6 +1,7 @@
 package org.ostelco.topup.api;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.cache.CacheBuilderSpec;
 import io.dropwizard.client.JerseyClientConfiguration;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -12,6 +13,10 @@ public class TopupConfiguration {
     @Valid
     @NotNull
     private String secret;
+
+    @Valid
+    @NotNull
+    private CacheBuilderSpec cacheSpec;
 
     @Valid
     @NotNull
@@ -27,13 +32,18 @@ public class TopupConfiguration {
         this.secret = secret;
     }
 
-    @JsonProperty("jerseyClient")
-    public JerseyClientConfiguration getJerseyClientConfiguration() {
-        return jerseyClient;
+    @JsonProperty("authenticationCachePolicy")
+    public void setAuthenticationCachePolicy(final String spec) {
+        this.cacheSpec = CacheBuilderSpec.parse(spec);
+    }
+
+    @JsonProperty("authenticationCachePolicy")
+    public CacheBuilderSpec getAuthenticationCachePolicy() {
+        return cacheSpec;
     }
 
     @JsonProperty("jerseyClient")
-    public void setJerseyClientConfiguration(JerseyClientConfiguration jerseyClient) {
-        this.jerseyClient = jerseyClient;
+    public JerseyClientConfiguration getJerseyClientConfiguration() {
+        return jerseyClient;
     }
 }
