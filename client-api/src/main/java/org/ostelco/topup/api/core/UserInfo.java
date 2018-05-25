@@ -12,13 +12,85 @@ import lombok.Data;
  */
 @Data
 public class UserInfo {
-    final private boolean emailVerified;
-    final private String email;
-    final private String updatedAt;
-    final private String name;
-    final private String picture;       /* And URL. */
-    final private String userId;        /* An OpenID id.*/
-    final private String nickname;
-    final private String createdAt;
-    final private String sub;           /* An OpenID id. */
+    private boolean emailVerified;
+    private String email;
+    private String updatedAt;
+    private String name;
+    private String picture;       /* And URL. */
+    private String userId;        /* An OpenID id.*/
+    private String nickname;
+    private String createdAt;
+    private String sub;           /* An OpenID id. */
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(String updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getPicture() {
+        return picture;
+    }
+
+    public void setPicture(String picture) {
+        this.picture = picture;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public String getNickname() {
+        return nickname;
+    }
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    public String getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(String createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public String getSub() {
+        return sub;
+    }
+
+    public void setSub(String sub) {
+        this.sub = sub;
+    }
 }
