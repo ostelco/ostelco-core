@@ -5,6 +5,8 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
 import io.grpc.auth.MoreCallCredentials;
+import io.grpc.netty.GrpcSslContexts;
+import io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import org.jdiameter.api.IllegalDiameterStateException;
 import org.jdiameter.api.InternalException;
@@ -28,6 +30,7 @@ import org.ostelco.ocsgw.data.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -50,6 +53,10 @@ import static org.ostelco.diameter.model.RequestType.UPDATE_REQUEST;
 public class GrpcDataSource implements DataSource {
 
     private static final Logger LOG = LoggerFactory.getLogger(GrpcDataSource.class);
+
+    public static final int KEEP_ALIVE_TIMEOUT_IN_MINUTES = 1;
+
+    public static final int KEEP_ALIVE_TIME_IN_SECONDS = 50;
 
     private final OcsServiceGrpc.OcsServiceStub ocsServiceStub;
 
@@ -142,6 +149,15 @@ public class GrpcDataSource implements DataSource {
         }
     }
 
+    /**
+     *
+     * Generate a new instande that connects to an endpoint, and
+     * optionally also encrypts the connection.
+     *
+     * @param target The gRPC endpoint to connect the client to.
+     * @param encrypted True iff transport level encryption is enabled.
+     * @throws IOException
+     */
     public GrpcDataSource(final String target, final boolean encrypted) throws IOException {
 
         LOG.info("Created GrpcDataSource");
@@ -149,20 +165,22 @@ public class GrpcDataSource implements DataSource {
         LOG.info("encrypted : {}", encrypted);
         // Set up a channel to be used to communicate as an OCS instance,
         // to a gRPC instance.
+
         final ManagedChannelBuilder channelBuilder = ManagedChannelBuilder
                 .forTarget(target)
                 .keepAliveWithoutCalls(true)
-                .keepAliveTimeout(1, TimeUnit.MINUTES)
-                .keepAliveTime(50, TimeUnit.SECONDS);
+                .keepAliveTimeout(KEEP_ALIVE_TIMEOUT_IN_MINUTES, TimeUnit.MINUTES)
+                .keepAliveTime(KEEP_ALIVE_TIME_IN_SECONDS, TimeUnit.SECONDS);
 
         // Initialize the stub that will be used to actually
         // communicate from the client emulating being the OCS.
         if (encrypted) {
+
             final String serviceAccountFile = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
             final ServiceAccountJwtAccessCredentials credentials =
                     ServiceAccountJwtAccessCredentials.fromStream(new FileInputStream(serviceAccountFile));
             final ManagedChannel channel = channelBuilder
-                    .usePlaintext(true) // FIXME enable TLS and then remove this
+                    .useTransportSecurity()
                     .build();
             ocsServiceStub = OcsServiceGrpc.newStub(channel)
                     .withCallCredentials(MoreCallCredentials.from(credentials));
