@@ -3,6 +3,7 @@ modules:
     config:
       configFile: src/integration-tests/resources/pantel-tests.json
       databaseName: pantel-tests
+      rootPath: test
   - type: ocs
     config:
       projectId: pantel-tests

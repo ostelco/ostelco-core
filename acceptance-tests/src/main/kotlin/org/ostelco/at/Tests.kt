@@ -13,20 +13,10 @@ class GetBalanceTest {
 
     @Test
     fun testGetBalance() {
-        val subscriptionStatus: SubscriptionStatus = get {
+
+        get<SubscriptionStatus> {
             path = "/subscription/status"
         }
-
-        val expectedSubscriptionStatus = SubscriptionStatus()
-        expectedSubscriptionStatus.remaining = 1_000_000_000
-        val product = Product()
-        product.sku = "DataTopup3GB"
-        product.price = Price()
-        product.price.amount = 250
-        product.price.currency = "NOK"
-        expectedSubscriptionStatus.acceptedProducts = listOf(product)
-
-        assertEquals(expectedSubscriptionStatus, subscriptionStatus)
     }
 }
 
@@ -39,14 +29,7 @@ class GetProductsTest {
             path = "/products"
         }
 
-        val product = Product()
-        product.sku = "DataTopup3GB"
-        product.price = Price()
-        product.price.amount = 250
-        product.price.currency = "NOK"
-        val expectedProducts = listOf(product)
-
-        assertEquals(expectedProducts, products)
+        assertEquals(expectedProducts(), products)
     }
 }
 
@@ -114,30 +97,73 @@ class ConsentTest {
 
 class ProfileTest {
 
-    private val profile: Profile
-
-    init {
-        profile = Profile()
-        profile.email = "vihang.patil@telenordigital.com"
-        profile.name = "Vihang Patil"
-    }
-
     @Test
     fun testProfile() {
-
-        post {
-            path = "/profile"
-            body = profile
-        }
 
         val profile: Profile = get {
             path = "/profile"
         }
 
+        assertEquals("foo@bar.com", profile.email)
+        assertEquals("Test User", profile.name)
+
+        profile.address = "Some place"
+        profile.postCode = "418"
+        profile.city = "Udacity"
+        profile.country = "Online"
+
         put {
             path = "/profile"
             body = profile
         }
+
+        val updatedProfile: Profile = get {
+            path = "/profile"
+        }
+
+        assertEquals("foo@bar.com", updatedProfile.email)
+        assertEquals("Test User", updatedProfile.name)
+        assertEquals("Some place", updatedProfile.address)
+        assertEquals("418", updatedProfile.postCode)
+        assertEquals("Udacity", updatedProfile.city)
+        assertEquals("Online", updatedProfile.city)
+
+        updatedProfile.address = ""
+        updatedProfile.postCode = ""
+        updatedProfile.city = ""
+        updatedProfile.country = ""
+
+        put {
+            path = "/profile"
+            body = updatedProfile
+        }
+
+        val clearedProfile: Profile = get {
+            path = "/profile"
+        }
+
+        assertEquals("foo@bar.com", clearedProfile.email)
+        assertEquals("Test User", clearedProfile.name)
+        assertEquals("", clearedProfile.address)
+        assertEquals("", clearedProfile.postCode)
+        assertEquals("", clearedProfile.city)
+        assertEquals("", clearedProfile.country)
     }
 }
 
+private fun expectedProducts(): List<Product> {
+    return listOf(
+            createProduct("1GB_249NOK", 24900),
+            createProduct("2GB_299NOK", 29900),
+            createProduct("3GB_349NOK", 34900),
+            createProduct("5GB_399NOK", 39900))
+}
+
+private fun createProduct(sku: String, amount: Int): Product {
+    val product = Product()
+    product.sku = sku
+    product.price = Price()
+    product.price.amount = amount
+    product.price.currency = "NOK"
+    return product
+}

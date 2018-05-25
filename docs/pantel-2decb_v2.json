@@ -1,0 +1,92 @@
+{
+  "balance": {
+    "4747900184": 29918959910,
+    "4790300144": 29918984910,
+    "4790300147": 1789977326,
+    "4790300157": 3023217745,
+    "4790300168": 29918984910
+  },
+  "products": {
+    "1GB_249NOK": {
+      "price": {
+        "amount": 24900,
+        "currency": "NOK"
+      },
+      "properties": {
+        "noOfBytes": "1073741824"
+      },
+      "presentation": {}
+    },
+    "2GB_299NOK": {
+      "price": {
+        "amount": 29900,
+        "currency": "NOK"
+      },
+      "properties": {
+        "noOfBytes": "2147483648"
+      },
+      "presentation": {}
+    },
+    "3GB_349NOK": {
+      "price": {
+        "amount": 34900,
+        "currency": "NOK"
+      },
+      "properties": {
+        "noOfBytes": "3221225472"
+      },
+      "presentation": {}
+    },
+    "5GB_399NOK": {
+      "price": {
+        "amount": 39900,
+        "currency": "NOK"
+      },
+      "properties": {
+        "noOfBytes": "5368709120"
+      },
+      "presentation": {}
+    }
+  },
+  "subscriptions": {
+    "rmz%40telenordigital%2Ecom": "4747900184",
+    "oisin%40telenordigital%2Ecom": "4790300144",
+    "vihang%2Epatil%40telenordigital%2Ecom": "4790300147",
+    "martin%2Ecederlof%40telenordigital%2Ecom": "4790300157",
+    "prasanth%40telenordigital%2Ecom": "4790300168"
+  },
+  "subscribers": {
+    "rmz%40telenordigital%2Ecom": {
+      "name": "Bjørn Remseth",
+      "address": "",
+      "postcode": "",
+      "city": ""
+    },
+    "oisin%40telenordigital%2Ecom": {
+      "name": "Oisin Zimmermann",
+      "address": "",
+      "postcode": "",
+      "city": ""
+    },
+    "vihang%2Epatil%40telenordigital%2Ecom": {
+      "name": "Vihang Patil",
+      "address": "",
+      "postcode": "",
+      "city": ""
+    },
+    "martin%2Ecederlof%40telenordigital%2Ecom": {
+      "name": "Martin Cederlöf",
+      "address": "",
+      "postcode": "",
+      "city": ""
+    },
+    "prasanth%40telenordigital%2Ecom": {
+      "name": "Prasanth Ullattil",
+      "address": "",
+      "postcode": "",
+      "city": ""
+    }
+  },
+  "purchaseHistory": {
+  }
+}

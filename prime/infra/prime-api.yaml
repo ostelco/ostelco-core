@@ -154,6 +154,7 @@ paths:
         required: false
         type: boolean
 definitions:
+  AnyValue: {}
   Profile:
     type: object
     properties:
@@ -164,6 +165,8 @@ definitions:
       postCode:
         type: string
       city:
+        type: string
+      country:
         type: string
       email:
         type: string
@@ -176,6 +179,7 @@ definitions:
       remaining:
         description: "Remaining data"
         type: integer
+        format: int64
       acceptedProducts:
         description: "List of products"
         type: array
@@ -193,6 +197,8 @@ definitions:
         type: string
       price:
         $ref: '#/definitions/Price'
+      presentation:
+        $ref: '#/definitions/AnyValue'
     required:
       - sku
       - price

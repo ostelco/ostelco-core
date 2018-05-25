@@ -192,10 +192,8 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<PrimeEvent>
     private fun loadSubscriberBalanceFromDatabaseToInMemoryStructure() {
         LOG.info("Loading initial balance from storage to in-memory OcsState")
         val store: Storage = getResource()
-        val subscribers = store.allSubscribers
-        for (subscriber in subscribers) {
-            val msisdn = subscriber.msisdn
-            val noOfBytesLeft = subscriber.noOfBytesLeft
+        val balanceMap = store.balances
+        for ((msisdn, noOfBytesLeft) in balanceMap) {
             LOG.info("{} - {}", msisdn, noOfBytesLeft)
             if (noOfBytesLeft > 0) {
                 val newMsisdn = stripLeadingPlus(msisdn)

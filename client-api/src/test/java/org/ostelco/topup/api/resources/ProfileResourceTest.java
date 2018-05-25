@@ -8,7 +8,7 @@ import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.ostelco.prime.client.api.model.Profile;
+import org.ostelco.prime.model.Subscriber;
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
 import org.ostelco.topup.api.core.Error;
 import org.ostelco.topup.api.db.SubscriberDAO;
@@ -38,7 +38,7 @@ public class ProfileResourceTest {
     private final String postCode = "132 23";
     private final String city = "Oslo";
 
-    private final Profile profile = new Profile(email);
+    private final Subscriber profile = new Subscriber();
 
     @ClassRule
     public static final ResourceTestRule RULE = ResourceTestRule.builder()
@@ -66,14 +66,14 @@ public class ProfileResourceTest {
                lombok.anyConstructor.addConstructorProperties=true
            is added to the lombok config file ('lombok.config').
            Ref.: lombok changelog for ver. 1.16.20. */
-        assertThat(resp.readEntity(Profile.class)).isEqualTo(profile);
+        assertThat(resp.readEntity(Subscriber.class)).isEqualTo(profile);
         assertThat(arg.getValue()).isEqualTo(email);
     }
 
     @Test
     public void createProfile() throws Exception {
         ArgumentCaptor<String> arg1 = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Profile> arg2 = ArgumentCaptor.forClass(Profile.class);
+        ArgumentCaptor<Subscriber> arg2 = ArgumentCaptor.forClass(Subscriber.class);
 
         when(DAO.createProfile(arg1.capture(), arg2.capture()))
             .thenReturn(Option.none());
@@ -102,7 +102,7 @@ public class ProfileResourceTest {
     @Test
     public void updateProfile() throws Exception {
         ArgumentCaptor<String> arg1 = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Profile> arg2 = ArgumentCaptor.forClass(Profile.class);
+        ArgumentCaptor<Subscriber> arg2 = ArgumentCaptor.forClass(Subscriber.class);
 
         String newAddress = "Storvej 10";
         String newPostCode = "132 23";
@@ -134,7 +134,7 @@ public class ProfileResourceTest {
     @Test
     public void updateWithIncompleteProfile() throws Exception {
         ArgumentCaptor<String> arg1 = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Profile> arg2 = ArgumentCaptor.forClass(Profile.class);
+        ArgumentCaptor<Subscriber> arg2 = ArgumentCaptor.forClass(Subscriber.class);
 
         when(DAO.updateProfile(arg1.capture(), arg2.capture()))
             .thenReturn(Option.of(new Error("No profile found")));
