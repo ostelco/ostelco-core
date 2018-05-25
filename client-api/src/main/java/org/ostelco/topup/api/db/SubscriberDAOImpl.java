@@ -62,9 +62,9 @@ public class SubscriberDAOImpl implements SubscriberDAO {
     }
 
     @Override
-    public Option<Error> createProfile(final String subscriptionId, final Subscriber profile) {
+    public Either<Error, Subscriber> createProfile(final String subscriptionId, final Subscriber profile) {
         if (!SubscriberDAO.isValidProfile(profile)) {
-            return Option.of(new Error("Incomplete profile description"));
+            return Either.left(new Error("Incomplete profile description"));
         }
         try {
             storage.addSubscriber(subscriptionId, new Subscriber(
@@ -76,15 +76,15 @@ public class SubscriberDAOImpl implements SubscriberDAO {
                     profile.getCountry()));
         } catch (StorageException e) {
             LOG.error("Failed to create profile", e);
-            return Option.of(new Error("Failed to create profile"));
+            return Either.left(new Error("Failed to create profile"));
         }
-        return Option.none();
+        return getProfile(subscriptionId);
     }
 
     @Override
-    public Option<Error> updateProfile(final String subscriptionId, final Subscriber profile) {
+    public Either<Error, Subscriber> updateProfile(final String subscriptionId, final Subscriber profile) {
         if (!SubscriberDAO.isValidProfile(profile)) {
-            return Option.of(new Error("Incomplete profile description"));
+            return Either.left(new Error("Incomplete profile description"));
         }
         try {
             storage.updateSubscriber(subscriptionId, new Subscriber(
@@ -96,9 +96,9 @@ public class SubscriberDAOImpl implements SubscriberDAO {
                     profile.getCountry()));
         } catch (StorageException e) {
             LOG.error("Failed to update profile", e);
-            return Option.of(new Error("Failed to update profile"));
+            return Either.left(new Error("Failed to update profile"));
         }
-        return Option.none();
+        return getProfile(subscriptionId);
     }
 
     @Override
@@ -170,17 +170,17 @@ public class SubscriberDAOImpl implements SubscriberDAO {
     }
 
     @Override
-    public Option<Error> acceptConsent(final String subscriptionId, final String consentId) {
+    public Either<Error, Consent> acceptConsent(final String subscriptionId, final String consentId) {
         consentMap.putIfAbsent(subscriptionId, new ConcurrentHashMap<>());
         consentMap.get(subscriptionId).put(consentId, true);
-        return Option.none();
+        return Either.right(new Consent(consentId, "Grant permission to process personal data", true));
     }
 
     @Override
-    public Option<Error> rejectConsent(final String subscriptionId, final String consentId) {
+    public Either<Error, Consent> rejectConsent(final String subscriptionId, final String consentId) {
         consentMap.putIfAbsent(subscriptionId, new ConcurrentHashMap<>());
         consentMap.get(subscriptionId).put(consentId, false);
-        return Option.none();
+        return Either.right(new Consent(consentId, "Grant permission to process personal data", false));
     }
 
     @Override

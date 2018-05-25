@@ -5,6 +5,10 @@ import org.ostelco.prime.handler.PurchaseRequestHandler
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.legacy.Storage
 
+/**
+ * This class is using the singleton class as delegate.
+ * This is done because the {@link java.util.ServiceLoader} expects public no-args constructor, which is absent in Singleton.
+ */
 class OcsSubscriberServiceImpl : OcsSubscriberService by OcsSubscriberServiceSingleton
 
 object OcsSubscriberServiceSingleton : OcsSubscriberService {

@@ -7,6 +7,7 @@ import org.ostelco.prime.client.model.Product
 import org.ostelco.prime.client.model.Profile
 import org.ostelco.prime.client.model.SubscriptionStatus
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class GetBalanceTest {
@@ -40,7 +41,7 @@ class PurchaseTest {
 
         val productSku = "1GB_249NOK"
 
-        post {
+        post<String> {
             path = "/products/$productSku"
         }
     }
@@ -51,7 +52,7 @@ class AnalyticsTest {
     @Test
     fun testReportEvent() {
 
-        post {
+        post<String> {
             path = "/analytics"
             body = "event"
         }
@@ -71,27 +72,20 @@ class ConsentTest {
         assertEquals(1, defaultConsent.size)
         assertEquals(consentId, defaultConsent[0].consentId)
 
-        put {
+        val acceptedConsent: Consent = put {
             path = "/consents/$consentId"
         }
 
-        val acceptedConsent: List<Consent> = get {
-            path = "/consents"
-        }
-        assertEquals(1, acceptedConsent.size)
-        assertEquals(consentId, acceptedConsent[0].consentId)
-        assertTrue(acceptedConsent[0].isAccepted ?: false)
+        assertEquals(consentId, acceptedConsent.consentId)
+        assertTrue(acceptedConsent.isAccepted ?: false)
 
-        put {
-            path = "/consents/$consentId?accepted=false"
+        val rejectedConsent: Consent = put {
+            path = "/consents/$consentId"
+            queryParams = mapOf(Pair("accepted", "false"))
         }
 
-        val rejectedConsent: List<Consent> = get {
-            path = "/consents"
-        }
-        assertEquals(1, rejectedConsent.size)
-        assertEquals(consentId, rejectedConsent[0].consentId)
-        assertTrue(rejectedConsent[0].isAccepted ?: false)
+        assertEquals(consentId, rejectedConsent.consentId)
+        assertFalse(rejectedConsent.isAccepted ?: true)
     }
 }
 
@@ -112,13 +106,9 @@ class ProfileTest {
         profile.city = "Udacity"
         profile.country = "Online"
 
-        put {
+        val updatedProfile: Profile = put {
             path = "/profile"
             body = profile
-        }
-
-        val updatedProfile: Profile = get {
-            path = "/profile"
         }
 
         assertEquals("foo@bar.com", updatedProfile.email)
@@ -133,13 +123,9 @@ class ProfileTest {
         updatedProfile.city = ""
         updatedProfile.country = ""
 
-        put {
+        val clearedProfile: Profile = put {
             path = "/profile"
             body = updatedProfile
-        }
-
-        val clearedProfile: Profile = get {
-            path = "/profile"
         }
 
         assertEquals("foo@bar.com", clearedProfile.email)

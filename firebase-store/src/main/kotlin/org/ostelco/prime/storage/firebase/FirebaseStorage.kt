@@ -23,6 +23,10 @@ import java.nio.file.Paths
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit.SECONDS
 
+/**
+ * This class is using the singleton class as delegate.
+ * This is done because the {@link java.util.ServiceLoader} expects public no-args constructor, which is absent in Singleton.
+ */
 class FirebaseStorage : Storage by FirebaseStorageSingleton
 
 object FirebaseStorageSingleton : Storage {

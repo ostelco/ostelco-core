@@ -3,7 +3,6 @@ package org.ostelco.topup.api.resources;
 import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.testing.junit.ResourceTestRule;
 import io.vavr.control.Either;
-import io.vavr.control.Option;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -74,8 +73,8 @@ public class ConsentsResourceTest {
 
         final String consentId = consents.get(0).getConsentId();
 
-        when(DAO.acceptConsent(arg1.capture(), arg2.capture())).thenReturn(Option.none());
-        when(DAO.rejectConsent(arg1.capture(), arg2.capture())).thenReturn(Option.of(
+        when(DAO.acceptConsent(arg1.capture(), arg2.capture())).thenReturn(Either.right(consents.get(0)));
+        when(DAO.rejectConsent(arg1.capture(), arg2.capture())).thenReturn(Either.left(
                         new Error("No consents found")));
 
         Response resp = RULE.target(String.format("/consents/%s", consentId))
@@ -96,9 +95,9 @@ public class ConsentsResourceTest {
 
         final String consentId = consents.get(0).getConsentId();
 
-        when(DAO.acceptConsent(arg1.capture(), arg2.capture())).thenReturn(Option.of(
+        when(DAO.acceptConsent(arg1.capture(), arg2.capture())).thenReturn(Either.left(
                         new Error("No consents found")));
-        when(DAO.rejectConsent(arg1.capture(), arg2.capture())).thenReturn(Option.none());
+        when(DAO.rejectConsent(arg1.capture(), arg2.capture())).thenReturn(Either.right(consents.get(0)));
 
         Response resp = RULE.target(String.format("/consents/%s", consentId))
             .queryParam("accepted", false)

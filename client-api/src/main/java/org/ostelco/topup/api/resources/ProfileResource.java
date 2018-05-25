@@ -2,7 +2,6 @@ package org.ostelco.topup.api.resources;
 
 import io.dropwizard.auth.Auth;
 import io.vavr.control.Either;
-import io.vavr.control.Option;
 import org.ostelco.prime.model.Subscriber;
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
 import org.ostelco.topup.api.core.Error;
@@ -57,14 +56,14 @@ public class ProfileResource extends ResourceHelpers {
                 .build();
         }
 
-        Option<Error> error = dao.createProfile(token.getName(), profile);
+        Either<Error, Subscriber> result = dao.createProfile(token.getName(), profile);
 
-        return error.isEmpty()
-            ? Response.status(Response.Status.CREATED)
-                 .build()
-            : Response.status(Response.Status.FORBIDDEN)
-                 .entity(asJson(error.get()))
-                 .build();
+        return result.isRight()
+                ? Response.status(Response.Status.CREATED)
+                .entity(asJson(result.right().get()))
+                .build()
+                : Response.status(Response.Status.FORBIDDEN)
+                .build();
     }
 
     @PUT
@@ -76,13 +75,13 @@ public class ProfileResource extends ResourceHelpers {
                 .build();
         }
 
-        Option<Error> error = dao.updateProfile(token.getName(), profile);
+        Either<Error, Subscriber> result = dao.updateProfile(token.getName(), profile);
 
-        return error.isEmpty()
-            ? Response.status(Response.Status.OK)
-                 .build()
-            : Response.status(Response.Status.NOT_FOUND)
-                 .entity(asJson(error.get()))
-                 .build();
+        return result.isRight()
+                ? Response.status(Response.Status.OK)
+                .entity(asJson(result.right().get()))
+                .build()
+                : Response.status(Response.Status.NOT_FOUND)
+                .build();
     }
 }
