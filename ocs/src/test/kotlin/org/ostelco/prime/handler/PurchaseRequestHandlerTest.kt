@@ -58,7 +58,6 @@ class PurchaseRequestHandlerTest {
                 ?: throw EventProcessorException("Missing property 'noOfBytes' in product sku: $sku")
 
         val capturedPurchaseRecord = ArgumentCaptor.forClass(PurchaseRecord::class.java)
-        verify<Storage>(storage).addPurchaseRecord(capturedPurchaseRecord.capture())
 
         assertEquals(MSISDN, capturedPurchaseRecord.value.msisdn)
         assertEquals(sku, capturedPurchaseRecord.value.sku)

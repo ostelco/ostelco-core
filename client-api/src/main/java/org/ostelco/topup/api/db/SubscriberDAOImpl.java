@@ -5,13 +5,16 @@ import io.vavr.control.Option;
 import org.ostelco.prime.client.api.model.Consent;
 import org.ostelco.prime.client.api.model.SubscriptionStatus;
 import org.ostelco.prime.model.Product;
+import org.ostelco.prime.model.PurchaseRecord;
 import org.ostelco.prime.model.Subscriber;
+import org.ostelco.prime.ocs.OcsSubscriberService;
 import org.ostelco.prime.storage.legacy.Storage;
 import org.ostelco.prime.storage.legacy.StorageException;
 import org.ostelco.topup.api.core.Error;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -26,13 +29,16 @@ public class SubscriberDAOImpl implements SubscriberDAO {
 
     private static final Logger LOG = LoggerFactory.getLogger(SubscriberDAOImpl.class);
 
-    private Storage storage;
+    private final Storage storage;
+
+    private final OcsSubscriberService ocsSubscriberService;
 
     /* Table for 'profiles'. */
     private final ConcurrentHashMap<String, ConcurrentHashMap<String, Boolean>> consentMap = new ConcurrentHashMap<>();
 
-    public SubscriberDAOImpl(Storage storage) {
+    public SubscriberDAOImpl(Storage storage, OcsSubscriberService ocsSubscriberService) {
         this.storage = storage;
+        this.ocsSubscriberService = ocsSubscriberService;
     }
 
     @Override
@@ -48,7 +54,7 @@ public class SubscriberDAOImpl implements SubscriberDAO {
                     subscriber.getAddress(),
                     subscriber.getPostCode(),
                     subscriber.getCity(),
-                    subscriber.getCity()));
+                    subscriber.getCountry()));
         } catch (StorageException e) {
             LOG.error("Failed to fetch profile", e);
             return Either.left(new Error("Failed to fetch profile"));
@@ -129,6 +135,27 @@ public class SubscriberDAOImpl implements SubscriberDAO {
 
     @Override
     public Option<Error> purchaseProduct(final String subscriptionId, final String sku) {
+        String msisdn = null;
+        try {
+            msisdn = storage.getSubscription(subscriptionId);
+        } catch (StorageException e) {
+            LOG.error("Did not find subscription", e);
+        }
+        if(msisdn == null) {
+            return Option.of(new Error("Did not find subscription"));
+        }
+        final PurchaseRecord purchaseRecord = new PurchaseRecord(
+                msisdn,
+                sku,
+                Instant.now().toEpochMilli());
+        try {
+            storage.addPurchaseRecord(subscriptionId, purchaseRecord);
+        } catch (StorageException e) {
+            LOG.error("Failed to save purchase record", e);
+            return Option.of(new Error("Failed to save purchase record"));
+        }
+
+        ocsSubscriberService.topup(msisdn, sku);
         return Option.none();
     }
 

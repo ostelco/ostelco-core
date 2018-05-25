@@ -38,7 +38,7 @@ class PurchaseTest {
     @Test
     fun testPurchase() {
 
-        val productSku = "DataTopup3GB"
+        val productSku = "1GB_249NOK"
 
         post {
             path = "/products/$productSku"
@@ -126,7 +126,7 @@ class ProfileTest {
         assertEquals("Some place", updatedProfile.address)
         assertEquals("418", updatedProfile.postCode)
         assertEquals("Udacity", updatedProfile.city)
-        assertEquals("Online", updatedProfile.city)
+        assertEquals("Online", updatedProfile.country)
 
         updatedProfile.address = ""
         updatedProfile.postCode = ""

@@ -10,20 +10,11 @@ class OcsSubscriberServiceImpl : OcsSubscriberService by OcsSubscriberServiceSin
 object OcsSubscriberServiceSingleton : OcsSubscriberService {
 
     private lateinit var purchaseRequestHandler: PurchaseRequestHandler
-    private lateinit var producer: PrimeEventProducer
-    private lateinit var ocsState: OcsState
 
     private val storage by lazy { getResource<Storage>() }
 
-    fun init(producer: PrimeEventProducer,
-             ocsState: OcsState) {
-        this.producer = producer
-        this.ocsState = ocsState
+    fun init(producer: PrimeEventProducer) {
         purchaseRequestHandler = PurchaseRequestHandler(producer, storage)
-    }
-
-    override fun getBalance(msisdn: String) : Long {
-        return ocsState.getDataBundleBytes(msisdn)
     }
 
     override fun topup(msisdn: String, sku: String) {
