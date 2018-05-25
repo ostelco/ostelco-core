@@ -39,8 +39,6 @@ public class ConsentsResourceTest {
     private static final SubscriberDAO DAO = mock(SubscriberDAO.class);
     private static final OAuthAuthenticator AUTHENTICATOR = mock(OAuthAuthenticator.class);
 
-    private static final String key = "secret";
-
     private final String email = "mw@internet.org";
 
     private final List<Consent> consents = io.vavr.collection.List.of(
