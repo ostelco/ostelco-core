@@ -1,7 +1,7 @@
 package org.ostelco.prime.storage
 
-import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.Offer
+import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.ProductClass
 import org.ostelco.prime.model.Segment
 import org.ostelco.prime.model.Subscriber
