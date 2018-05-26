@@ -1,9 +1,9 @@
 package org.ostelco.prime.admin.api
 
 
-import org.ostelco.prime.module.getResource
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.ProductClass
+import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.DataStore
 import javax.ws.rs.GET
 import javax.ws.rs.POST
