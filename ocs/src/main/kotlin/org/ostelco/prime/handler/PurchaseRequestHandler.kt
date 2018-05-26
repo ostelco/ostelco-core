@@ -20,7 +20,7 @@ class PurchaseRequestHandler(
         LOG.info("Handling purchase request - msisdn: {} sku = {}", msisdn, productSku)
 
         // get Product by SKU
-        val product = storage.getProduct(productSku) ?: throw EventProcessorException("Not a valid SKU: $productSku")
+        val product = storage.getProduct("id", productSku) ?: throw EventProcessorException("Not a valid SKU: $productSku")
 
         val noOfBytes = product.properties["noOfBytes"]?.toLong()
 

@@ -28,10 +28,10 @@ dependencies {
   // prime-modules
   runtimeOnly project(':ocs')
   runtimeOnly project(':firebase-store')
+  // runtimeOnly project(':embedded-graph-store')
   runtimeOnly project(':client-api')
   runtimeOnly project(':admin-api')
-  runtimeOnly project(':in-memory-store')
-  runtime project(':app-notifier')
+  runtimeOnly project(':app-notifier')
 
   // removing io.grpc:grpc-netty-shaded:1.10.1 causes ALPN error
   implementation 'io.grpc:grpc-netty-shaded:1.10.1'
@@ -68,6 +68,7 @@ shadowJar {
   mainClassName = 'org.ostelco.prime.PrimeApplicationKt'
   mergeServiceFiles()
   classifier = "uber"
+  zip64 true
   version = null
 }
 

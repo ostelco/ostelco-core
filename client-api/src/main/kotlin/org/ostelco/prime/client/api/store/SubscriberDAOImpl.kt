@@ -50,7 +50,7 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
             return Either.left(ApiError("Incomplete profile description"))
         }
         try {
-            storage.addSubscriber(subscriptionId, Subscriber(
+            storage.addSubscriber(Subscriber(
                     profile.email,
                     profile.name,
                     profile.address,
@@ -91,7 +91,7 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
             return Either.left(ApiError("Incomplete profile description"))
         }
         try {
-            storage.updateSubscriber(subscriptionId, Subscriber(
+            storage.updateSubscriber(Subscriber(
                     profile.email,
                     profile.name,
                     profile.address,
@@ -135,7 +135,7 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
 
     override fun getProducts(subscriptionId: String): Either<ApiError, Collection<Product>> {
         try {
-            val products = storage.getProducts()
+            val products = storage.getProducts(subscriptionId)
             if (products.isEmpty()) {
                 return Either.left(ApiError("No products found"))
             }
@@ -152,7 +152,7 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
     override fun purchaseProduct(subscriptionId: String, sku: String): Option<ApiError> {
         var msisdn: String? = null
         try {
-            msisdn = storage.getSubscription(subscriptionId)
+            msisdn = storage.getMsisdn(subscriptionId)
         } catch (e: StorageException) {
             LOG.error("Did not find subscription", e)
         }
@@ -163,7 +163,7 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
 
         val product: Product?
         try {
-            product = storage.getProduct(sku)
+            product = storage.getProduct(subscriptionId, sku)
         } catch (e: StorageException) {
             LOG.error("Did not find product: sku = $sku", e)
             return Option.of(ApiError("Product unavailable"))

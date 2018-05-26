@@ -27,37 +27,37 @@ interface Storage {
      * Create Subscriber Profile
      */
     @Throws(StorageException::class)
-    fun addSubscriber(id: String, subscriber: Subscriber): Boolean
+    fun addSubscriber(subscriber: Subscriber): Boolean
 
     /**
      * Update Subscriber Profile
      */
     @Throws(StorageException::class)
-    fun updateSubscriber(id: String, subscriber: Subscriber): Boolean
+    fun updateSubscriber(subscriber: Subscriber): Boolean
 
     /**
      * Remove Subscriber for testing
      */
     @Throws(StorageException::class)
-    fun removeSubscriber(id: String)
+    fun removeSubscriber(id: String): Boolean
 
     /**
      * Link Subscriber to MSISDN
      */
     @Throws(StorageException::class)
-    fun addSubscription(id: String, msisdn: String)
+    fun addSubscription(id: String, msisdn: String): Boolean
+
+    /**
+     * Get Products for a given subscriber
+     */
+    @Throws(StorageException::class)
+    fun getProducts(subscriberId: String): Map<String, Product>
 
     /**
      * Get Product to perform OCS Topup
      */
     @Throws(StorageException::class)
-    fun getProducts(): Map<String, Product>
-
-    /**
-     * Get Product to perform OCS Topup
-     */
-    @Throws(StorageException::class)
-    fun getProduct(sku: String): Product?
+    fun getProduct(subscriberId: String?, sku: String): Product?
 
     /**
      * Get balance for Client
@@ -70,12 +70,6 @@ interface Storage {
      */
     @Throws(StorageException::class)
     fun setBalance(msisdn: String, noOfBytes: Long): Boolean
-
-    /**
-     * Get subscription for given subscription-id
-     */
-    @Throws(StorageException::class)
-    fun getSubscription(id: String): String?
 
     /**
      * Get msisdn for the given subscription-id

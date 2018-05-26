@@ -34,7 +34,7 @@ class EventProcessorTest  {
     @Before
     fun setUp() {
 
-        Mockito.`when`<Product>(storage.getProduct(Products.DATA_TOPUP_3GB.sku)).thenReturn(Products.DATA_TOPUP_3GB)
+        Mockito.`when`<Product>(storage.getProduct("id", Products.DATA_TOPUP_3GB.sku)).thenReturn(Products.DATA_TOPUP_3GB)
 
         this.processor = EventProcessor(storage)
     }
