@@ -48,6 +48,7 @@ object FirebaseStorageSingleton : Storage {
 
     override fun addSubscription(id: String, msisdn: String) {
         subscriptionStore.create(id, msisdn)
+        balanceStore.create(msisdn, 0)
     }
 
     override fun getProduct(sku: String) = productStore.get(sku)
@@ -77,6 +78,8 @@ object FirebaseStorageSingleton : Storage {
 
     override fun removeSubscriber(id: String) {
         subscriberStore.delete(id)
+        // for payment history, skip checking if it exists.
+        paymentHistoryStore.delete(id, dontExists = false)
         val msisdn = subscriptionStore.get(id)
         if (msisdn != null) {
             subscriptionStore.delete(id)
@@ -279,10 +282,13 @@ class EntityStore<E>(
     /**
      * Delete Entity for given id
      *
+     * @param id
+     * @param dontExists Optional parameter if you want to skip checking if entry exists.
+     *
      * @return success
      */
-    fun delete(id: String): Boolean {
-        if (dontExists(id)) {
+    fun delete(id: String, dontExists: Boolean = dontExists(id)): Boolean {
+        if (dontExists) {
             return false
         }
         val future = databaseReference.child(urlEncode(id)).removeValueAsync()

@@ -6,15 +6,9 @@
  
  * Save `pantel-prod.json` in all folders where this file is added in `.gitignore`.
  
- * Create test subscriber
+ * Create test subscriber with default balance by importing `docs/pantel-2decb_test.json` 
+   at `/test` path in Firebase.
   
-  
-    firebase --project pantel-2decb  --data '{"msisdn": "+4747900184", "noOfBytesLeft": 0}' database:set /authorative-user-balance/4747900184
-
- * Top up test subscriber
- 
-
-    firebase --project pantel-2decb  --data '{"msisdn": "+4747900184", "sku": "DataTopup3GB", "paymentToken": "xxxx"}' database:push /client-requests
 
 ### Test ext-pgw -- ocsgw -- prime --firebase
 
