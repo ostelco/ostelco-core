@@ -81,7 +81,7 @@ class ConsentTest {
 
         val rejectedConsent: Consent = put {
             path = "/consents/$consentId"
-            queryParams = mapOf(Pair("accepted", "false"))
+            queryParams = mapOf("accepted" to "false")
         }
 
         assertEquals(consentId, rejectedConsent.consentId)

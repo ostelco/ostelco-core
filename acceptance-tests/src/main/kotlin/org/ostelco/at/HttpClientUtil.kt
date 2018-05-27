@@ -69,7 +69,7 @@ class HttpClient {
     val url: String = "http://${System.getenv("PRIME_SOCKET") ?: "localhost:9090"}"
 
     private val token = Jwts.builder()
-            .setClaims(mapOf(Pair("$namespace/email", "foo@bar.com")))
+            .setClaims(mapOf("$namespace/email" to "foo@bar.com"))
             .signWith(SignatureAlgorithm.HS512, key)
             .compact()
 
