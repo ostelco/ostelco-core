@@ -1,10 +1,13 @@
 package org.ostelco.topup.api.auth.helpers;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.SharedMetricRegistries;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dropwizard.Application;
 import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
+import io.dropwizard.auth.CachingAuthenticator;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
 import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
@@ -44,16 +47,24 @@ public class TestApp extends Application<TestConfig> {
         env.jersey().register(new ProfileResource(dao));
         env.jersey().register(new UserInfoResource());
 
+        /* For reporting OAuth2 caching events. */
+        MetricRegistry metrics = SharedMetricRegistries.getOrCreate(env.getName());
+
         Client client = new JerseyClientBuilder(env)
             .using(config.getJerseyClientConfiguration())
             .using(new ObjectMapper()
                     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false))
             .build(env.getName());
 
+        /* OAuth2 with cache. */
+        CachingAuthenticator authenticator = new CachingAuthenticator(metrics,
+                new OAuthAuthenticator(client, config.getSecret()),
+                config.getAuthenticationCachePolicy());
+
         /* OAuth2. */
         env.jersey().register(new AuthDynamicFeature(
                         new OAuthCredentialAuthFilter.Builder<AccessTokenPrincipal>()
-                        .setAuthenticator(new OAuthAuthenticator(client, config.getSecret()))
+                        .setAuthenticator(authenticator)
                         .setPrefix("Bearer")
                         .buildAuthFilter()));
         env.jersey().register(new AuthValueFactoryProvider.Binder<>(AccessTokenPrincipal.class));

@@ -1,15 +1,15 @@
 package org.ostelco.topup.api.auth;
 
-import org.ostelco.topup.api.auth.helpers.TestApp;
-import org.ostelco.topup.api.auth.helpers.TestConfig;
 import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.vavr.collection.Array;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.ostelco.topup.api.auth.helpers.TestApp;
+import org.ostelco.topup.api.auth.helpers.TestConfig;
 import org.ostelco.topup.api.util.AccessToken;
 
 import java.util.List;
@@ -32,15 +32,15 @@ public class GetUserInfoTest {
             String.format("http://localhost:%d/userinfo", RULE.getLocalPort()))
         .toJavaList();
 
-    private Client client;
+    private static Client client;
 
     @ClassRule
     public static final DropwizardAppRule<TestConfig> RULE =
         new DropwizardAppRule<TestConfig>(TestApp.class, ResourceHelpers.resourceFilePath("test.yaml"),
                 ConfigOverride.config("secret", key));
 
-    @Before
-    public void setUp() {
+    @BeforeClass
+    public static void setUpClient() {
         client = new JerseyClientBuilder(RULE.getEnvironment()).build("test client");
     }
 
