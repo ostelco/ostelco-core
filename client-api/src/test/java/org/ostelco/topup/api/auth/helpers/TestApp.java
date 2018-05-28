@@ -14,11 +14,15 @@ import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import io.vavr.control.Either;
+import org.mockito.ArgumentCaptor;
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
 import org.ostelco.topup.api.auth.OAuthAuthenticator;
+import org.ostelco.topup.api.core.Error;
 import org.ostelco.topup.api.db.SubscriberDAO;
-import org.ostelco.topup.api.db.SubscriberDAOInMemoryImpl;
 import org.ostelco.topup.api.resources.ProfileResource;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import javax.ws.rs.client.Client;
@@ -41,10 +45,14 @@ public class TestApp extends Application<TestConfig> {
     public void run(final TestConfig config, final Environment env)
         throws IOException {
 
-        final SubscriberDAO dao = new SubscriberDAOInMemoryImpl();
+        final SubscriberDAO DAO = mock(SubscriberDAO.class);
+
+        ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
+        when(DAO.getProfile(arg.capture()))
+            .thenReturn(Either.left(new Error("No profile found")));
 
         /* APIs. */
-        env.jersey().register(new ProfileResource(dao));
+        env.jersey().register(new ProfileResource(DAO));
         env.jersey().register(new UserInfoResource());
 
         /* For reporting OAuth2 caching events. */
