@@ -6,18 +6,25 @@ import org.ostelco.prime.client.model.Price
 import org.ostelco.prime.client.model.Product
 import org.ostelco.prime.client.model.Profile
 import org.ostelco.prime.client.model.SubscriptionStatus
+import org.ostelco.prime.logger
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class GetBalanceTest {
 
+    private val LOG by logger()
+
     @Test
     fun testGetBalance() {
 
-        get<SubscriptionStatus> {
+        val subscriptionStatus: SubscriptionStatus = get {
             path = "/subscription/status"
         }
+
+        // TODO add asserts
+        LOG.info("Balance: ${subscriptionStatus.remaining}")
+        subscriptionStatus.purchaseRecords.forEach { LOG.info("PurchaseRecord: ${it}") }
     }
 }
 
@@ -81,7 +88,7 @@ class ConsentTest {
 
         val rejectedConsent: Consent = put {
             path = "/consents/$consentId"
-            queryParams = mapOf(Pair("accepted", "false"))
+            queryParams = mapOf("accepted" to "false")
         }
 
         assertEquals(consentId, rejectedConsent.consentId)
@@ -151,5 +158,11 @@ private fun createProduct(sku: String, amount: Int): Product {
     product.price = Price()
     product.price.amount = amount
     product.price.currency = "NOK"
+
+    // This is messy code
+    val gbs: Long = "${sku[0]}".toLong()
+    product.properties = mapOf("noOfBytes" to "${gbs*1024*1024*1024}")
+    product.presentation = mapOf("label" to "$gbs GB for ${amount/100}")
+
     return product
 }

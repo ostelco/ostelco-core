@@ -24,7 +24,6 @@ version = "1.2.0"
 dependencies {
   // interface module between prime and prime-modules
   implementation project(':prime-api')
-  implementation project(':model')
 
   // prime-modules
   runtime project(':ocs')

@@ -154,7 +154,6 @@ paths:
         required: false
         type: boolean
 definitions:
-  AnyValue: {}
   Profile:
     type: object
     properties:
@@ -180,11 +179,26 @@ definitions:
         description: "Remaining data"
         type: integer
         format: int64
-      acceptedProducts:
-        description: "List of products"
+      purchaseRecords:
+        description: "List of Purchases"
         type: array
         items:
-          $ref: '#/definitions/Product'
+          $ref: '#/definitions/PurchaseRecord'
+  PurchaseRecord:
+    type: object
+    properties:
+      msisdn:
+        description: "The MSISDN for which the purchase was made."
+        type: string
+      timestamp:
+        description: "The time stamp of the purchase"
+        type: integer
+        format: int64
+      product:
+        $ref: '#/definitions/Product'
+    required:
+      - timestamp
+      - product
   ProductList:
     type: array
     items:
@@ -197,8 +211,10 @@ definitions:
         type: string
       price:
         $ref: '#/definitions/Price'
+      properties:
+        type: object
       presentation:
-        $ref: '#/definitions/AnyValue'
+        type: object
     required:
       - sku
       - price
