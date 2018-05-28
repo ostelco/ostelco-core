@@ -15,12 +15,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static java.util.Collections.emptyList;
 
 /**
  *
@@ -108,8 +107,9 @@ public class SubscriberDAOImpl implements SubscriberDAO {
             if (balance == null) {
                 return Either.left(new Error("No subscription data found"));
             }
+            final Collection<PurchaseRecord> purchaseRecords = storage.getPurchaseRecords(subscriptionId);
             final SubscriptionStatus subscriptionStatus = new SubscriptionStatus(
-                    balance, emptyList());
+                    balance, new ArrayList<>(purchaseRecords));
             return Either.right(subscriptionStatus);
         } catch (StorageException e) {
             LOG.error("Failed to get balance", e);
@@ -141,12 +141,22 @@ public class SubscriberDAOImpl implements SubscriberDAO {
         } catch (StorageException e) {
             LOG.error("Did not find subscription", e);
         }
-        if(msisdn == null) {
+        if (msisdn == null) {
             return Option.of(new Error("Did not find subscription"));
         }
+
+        Product product = null;
+        try {
+            product = storage.getProduct(sku);
+        } catch (StorageException e) {
+            LOG.error("Did not find product: sku = " + sku, e);
+            return Option.of(new Error("Product unavailable"));
+        }
+
+        product.setSku(sku);
         final PurchaseRecord purchaseRecord = new PurchaseRecord(
                 msisdn,
-                sku,
+                product,
                 Instant.now().toEpochMilli());
         try {
             storage.addPurchaseRecord(subscriptionId, purchaseRecord);

@@ -10,6 +10,7 @@ import org.mockito.ArgumentCaptor;
 import org.ostelco.prime.client.api.model.SubscriptionStatus;
 import org.ostelco.prime.model.Price;
 import org.ostelco.prime.model.Product;
+import org.ostelco.prime.model.PurchaseRecord;
 import org.ostelco.topup.api.auth.AccessTokenPrincipal;
 import org.ostelco.topup.api.db.SubscriberDAO;
 import org.ostelco.topup.api.util.AccessToken;
@@ -17,6 +18,7 @@ import org.ostelco.topup.api.util.AuthDynamicFeatureFactory;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.time.Instant;
 import java.util.List;
 
 import static java.util.Collections.emptyMap;
@@ -33,12 +35,14 @@ public class SubscriptionResourceTest {
 
     private final String email = "mw@internet.org";
 
-    private final List<Product> acceptedProducts = io.vavr.collection.List.of(
-            new Product("1", new Price(10, "NOK"), emptyMap(), emptyMap()),
-            new Product("2", new Price(5, "NOK"), emptyMap(), emptyMap()),
-            new Product("3", new Price(20, "NOK"), emptyMap(), emptyMap()))
+    private final List<PurchaseRecord> purchaseRecords = io.vavr.collection.List.of(
+            new PurchaseRecord(
+                    "msisdn",
+                    new Product("1", new Price(10, "NOK"), emptyMap(), emptyMap()),
+                    Instant.now().toEpochMilli()))
             .toJavaList();
-    private final SubscriptionStatus subscriptionStatus = new SubscriptionStatus(5, acceptedProducts);
+
+    private final SubscriptionStatus subscriptionStatus = new SubscriptionStatus(5, purchaseRecords);
 
     @ClassRule
     public static final ResourceTestRule RULE = ResourceTestRule.builder()

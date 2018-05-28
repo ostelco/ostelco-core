@@ -6,18 +6,25 @@ import org.ostelco.prime.client.model.Price
 import org.ostelco.prime.client.model.Product
 import org.ostelco.prime.client.model.Profile
 import org.ostelco.prime.client.model.SubscriptionStatus
+import org.ostelco.prime.logger
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class GetBalanceTest {
 
+    private val LOG by logger()
+
     @Test
     fun testGetBalance() {
 
-        get<SubscriptionStatus> {
+        val subscriptionStatus: SubscriptionStatus = get {
             path = "/subscription/status"
         }
+
+        // TODO add asserts
+        LOG.info("Balance: ${subscriptionStatus.remaining}")
+        subscriptionStatus.purchaseRecords.forEach { LOG.info("PurchaseRecord: ${it}") }
     }
 }
 

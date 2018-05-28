@@ -60,8 +60,8 @@ class FbStorageTest {
         val now = Instant.now().toEpochMilli()
         val purchase = PurchaseRecord(
                 msisdn = MSISDN,
-                sku = DATA_TOPUP_3GB.sku,
-                millisSinceEpoch = now)
+                product = DATA_TOPUP_3GB,
+                timestamp = now)
         storage.addPurchaseRecord(EPHERMERAL_EMAIL, purchase)
     }
 

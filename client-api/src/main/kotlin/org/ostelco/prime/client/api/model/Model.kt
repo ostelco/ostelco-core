@@ -1,6 +1,6 @@
 package org.ostelco.prime.client.api.model
 
-import org.ostelco.prime.model.Product
+import org.ostelco.prime.model.PurchaseRecord
 
 data class Consent(
         var consentId: String? = null,
@@ -14,24 +14,6 @@ data class ConsentList(val consents: List<Consent>)
 //        val code: String,
 //        val refreshToken: String)
 
-//data class Profile(var email: String? = null,
-//                   var name: String? = null,
-//                   var address: String? = null,
-//                   var postCode: String? = null,
-//                   var city: String? = null) {
-//
-//    constructor(email: String) : this(email = email, name = null)
-//}
-
-data class ProductList(val products: List<Product>)
-
 data class SubscriptionStatus(
         var remaining: Long = 0,
-        var acceptedProducts: List<Product> = emptyList())
-
-//data class Subscription(
-//        val subscriptionId: String,
-//        val name: String,
-//        val email: String,
-//        val msisdn: String,
-//        val imsi: String)
+        var purchaseRecords: List<PurchaseRecord> = emptyList())

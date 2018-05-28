@@ -6,13 +6,18 @@ import org.ostelco.prime.client.api.model.Consent;
 import org.ostelco.prime.client.api.model.SubscriptionStatus;
 import org.ostelco.prime.model.Price;
 import org.ostelco.prime.model.Product;
+import org.ostelco.prime.model.PurchaseRecord;
 import org.ostelco.prime.model.Subscriber;
 import org.ostelco.topup.api.core.Error;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -28,6 +33,9 @@ public class SubscriberDAOInMemoryImpl implements SubscriberDAO {
 
     /* Table for 'profiles'. */
     private final ConcurrentHashMap<String, ConcurrentHashMap<String, Boolean>> consentMap = new ConcurrentHashMap<>();
+
+    /* Table for 'purchaseRecords'. */
+    private final ConcurrentHashMap<String, Set<PurchaseRecord>> purchaseHistory = new ConcurrentHashMap<>();
 
     @Override
     public Either<Error, Subscriber> getProfile(final String subscriptionId) {
@@ -63,11 +71,7 @@ public class SubscriberDAOInMemoryImpl implements SubscriberDAO {
     @Override
     public Either<Error, SubscriptionStatus> getSubscriptionStatus(final String subscriptionId) {
         return Either.right(new SubscriptionStatus(1_000_000_000,
-                Collections.singletonList(
-                        new Product("DataTopup3GB",
-                                new Price(250, "NOK"),
-                                Collections.emptyMap(),
-                                Collections.emptyMap()))));
+                new ArrayList<>(purchaseHistory.get(subscriptionId))));
     }
 
     @Override
@@ -81,6 +85,15 @@ public class SubscriberDAOInMemoryImpl implements SubscriberDAO {
 
     @Override
     public Option<Error> purchaseProduct(final String subscriptionId, final String sku) {
+        purchaseHistory.putIfAbsent(subscriptionId, new HashSet<>());
+        purchaseHistory.get(subscriptionId).add(new PurchaseRecord(
+                "msisdn",
+                new Product("DataTopup3GB",
+                        new Price(250, "NOK"),
+                        Collections.emptyMap(),
+                        Collections.emptyMap()),
+                Instant.now().toEpochMilli()
+        ));
         return Option.none();
     }
 

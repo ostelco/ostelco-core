@@ -62,8 +62,6 @@ data class ProductClass(
         var properties: List<String> = listOf()) : Entity
 
 data class PurchaseRecord(
-    var msisdn: String = "",
-    var sku: String = "",
-    var millisSinceEpoch: Long = 0L)
-
-class Subscription(var msisdn: String)
+        var msisdn: String = "",
+        var product: Product = Product(),
+        var timestamp: Long = 0L)
