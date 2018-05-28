@@ -1,29 +1,65 @@
 package org.ostelco.prime.model
 
-data class PurchaseRequest(
-        var sku: String,
-        var paymentToken: String,
-        var msisdn: String,
-        var millisSinceEpoch: Long,
-        var id: String)
+import com.fasterxml.jackson.annotation.JsonIgnore
 
-data class RecordOfPurchase(
-        val msisdn: String,
-        val sku: String,
-        val millisSinceEpoch: Long)
+interface Entity {
+    var id: String
+}
+
+data class Offer(
+        @JsonIgnore
+        override var id: String = "",
+        var segments: List<Segment> = emptyList(),
+        var products: List<Product> = emptyList()) : Entity
+
+data class Segment(
+        @JsonIgnore
+        override var id: String = "",
+        var subscribers: List<Subscriber> = emptyList()) : Entity
 
 data class Subscriber(
-        val msisdn: String,
-        val noOfBytesLeft: Long)
+        var email: String = "",
+        var name: String = "",
+        var address: String = "",
+        var postCode: String = "",
+        var city: String = "",
+        var country: String = "") : Entity {
 
-data class TopUpProduct(val noOfBytes: Long)
+    constructor(email: String) : this()
+
+    override var id: String
+        @JsonIgnore
+        get() = email
+        @JsonIgnore
+        set(value) {
+            email = value
+        }
+}
+
+data class Price(
+        var amount: Int = 0,
+        var currency: String = "")
 
 data class Product(
-        /**
-         * A "Stock Keeping Unit" that is assumed to be a primary key for products.
-         */
-        val sku: String,
-        /**
-         * A description intended to be useful for the consumer.
-         */
-        val productDescription: Any)
+        var sku: String = "",
+        var price: Price = Price(0, ""),
+        var properties: Map<String, String> = mapOf(),
+        var presentation: Map<String, String> = mapOf()) : Entity {
+
+    override var id: String
+        @JsonIgnore
+        get() = sku
+        @JsonIgnore
+        set(value) {
+            sku = value
+        }
+}
+
+data class ProductClass(
+        override var id: String = "",
+        var properties: List<String> = listOf()) : Entity
+
+data class PurchaseRecord(
+        var msisdn: String = "",
+        var product: Product = Product(),
+        var timestamp: Long = 0L)

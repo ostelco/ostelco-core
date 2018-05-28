@@ -1,9 +1,9 @@
 package org.ostelco.auth
 
-import org.ostelco.auth.resources.AuthResource
 import io.dropwizard.testing.junit.ResourceTestRule
 import org.junit.ClassRule
 import org.junit.Test
+import org.ostelco.auth.resources.AuthResource
 import javax.ws.rs.core.Response.Status
 import kotlin.test.assertEquals
 

@@ -6,27 +6,25 @@ import org.ostelco.prime.client.model.Price
 import org.ostelco.prime.client.model.Product
 import org.ostelco.prime.client.model.Profile
 import org.ostelco.prime.client.model.SubscriptionStatus
+import org.ostelco.prime.logger
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class GetBalanceTest {
 
+    private val LOG by logger()
+
     @Test
     fun testGetBalance() {
+
         val subscriptionStatus: SubscriptionStatus = get {
             path = "/subscription/status"
         }
 
-        val expectedSubscriptionStatus = SubscriptionStatus()
-        expectedSubscriptionStatus.remaining = 1_000_000_000
-        val product = Product()
-        product.sku = "DataTopup3GB"
-        product.price = Price()
-        product.price.amount = 250
-        product.price.currency = "NOK"
-        expectedSubscriptionStatus.acceptedProducts = listOf(product)
-
-        assertEquals(expectedSubscriptionStatus, subscriptionStatus)
+        // TODO add asserts
+        LOG.info("Balance: ${subscriptionStatus.remaining}")
+        subscriptionStatus.purchaseRecords.forEach { LOG.info("PurchaseRecord: ${it}") }
     }
 }
 
@@ -39,14 +37,7 @@ class GetProductsTest {
             path = "/products"
         }
 
-        val product = Product()
-        product.sku = "DataTopup3GB"
-        product.price = Price()
-        product.price.amount = 250
-        product.price.currency = "NOK"
-        val expectedProducts = listOf(product)
-
-        assertEquals(expectedProducts, products)
+        assertEquals(expectedProducts(), products)
     }
 }
 
@@ -55,9 +46,9 @@ class PurchaseTest {
     @Test
     fun testPurchase() {
 
-        val productSku = "DataTopup3GB"
+        val productSku = "1GB_249NOK"
 
-        post {
+        post<String> {
             path = "/products/$productSku"
         }
     }
@@ -68,7 +59,7 @@ class AnalyticsTest {
     @Test
     fun testReportEvent() {
 
-        post {
+        post<String> {
             path = "/analytics"
             body = "event"
         }
@@ -88,56 +79,90 @@ class ConsentTest {
         assertEquals(1, defaultConsent.size)
         assertEquals(consentId, defaultConsent[0].consentId)
 
-        put {
+        val acceptedConsent: Consent = put {
             path = "/consents/$consentId"
         }
 
-        val acceptedConsent: List<Consent> = get {
-            path = "/consents"
-        }
-        assertEquals(1, acceptedConsent.size)
-        assertEquals(consentId, acceptedConsent[0].consentId)
-        assertTrue(acceptedConsent[0].isAccepted ?: false)
+        assertEquals(consentId, acceptedConsent.consentId)
+        assertTrue(acceptedConsent.isAccepted ?: false)
 
-        put {
-            path = "/consents/$consentId?accepted=false"
+        val rejectedConsent: Consent = put {
+            path = "/consents/$consentId"
+            queryParams = mapOf("accepted" to "false")
         }
 
-        val rejectedConsent: List<Consent> = get {
-            path = "/consents"
-        }
-        assertEquals(1, rejectedConsent.size)
-        assertEquals(consentId, rejectedConsent[0].consentId)
-        assertTrue(rejectedConsent[0].isAccepted ?: false)
+        assertEquals(consentId, rejectedConsent.consentId)
+        assertFalse(rejectedConsent.isAccepted ?: true)
     }
 }
 
 class ProfileTest {
 
-    private val profile: Profile
-
-    init {
-        profile = Profile()
-        profile.email = "vihang.patil@telenordigital.com"
-        profile.name = "Vihang Patil"
-    }
-
     @Test
     fun testProfile() {
-
-        post {
-            path = "/profile"
-            body = profile
-        }
 
         val profile: Profile = get {
             path = "/profile"
         }
 
-        put {
+        assertEquals("foo@bar.com", profile.email)
+        assertEquals("Test User", profile.name)
+
+        profile.address = "Some place"
+        profile.postCode = "418"
+        profile.city = "Udacity"
+        profile.country = "Online"
+
+        val updatedProfile: Profile = put {
             path = "/profile"
             body = profile
         }
+
+        assertEquals("foo@bar.com", updatedProfile.email)
+        assertEquals("Test User", updatedProfile.name)
+        assertEquals("Some place", updatedProfile.address)
+        assertEquals("418", updatedProfile.postCode)
+        assertEquals("Udacity", updatedProfile.city)
+        assertEquals("Online", updatedProfile.country)
+
+        updatedProfile.address = ""
+        updatedProfile.postCode = ""
+        updatedProfile.city = ""
+        updatedProfile.country = ""
+
+        val clearedProfile: Profile = put {
+            path = "/profile"
+            body = updatedProfile
+        }
+
+        assertEquals("foo@bar.com", clearedProfile.email)
+        assertEquals("Test User", clearedProfile.name)
+        assertEquals("", clearedProfile.address)
+        assertEquals("", clearedProfile.postCode)
+        assertEquals("", clearedProfile.city)
+        assertEquals("", clearedProfile.country)
     }
 }
 
+private fun expectedProducts(): List<Product> {
+    return listOf(
+            createProduct("1GB_249NOK", 24900),
+            createProduct("2GB_299NOK", 29900),
+            createProduct("3GB_349NOK", 34900),
+            createProduct("5GB_399NOK", 39900))
+}
+
+private fun createProduct(sku: String, amount: Int): Product {
+    val product = Product()
+    product.sku = sku
+    product.price = Price()
+    product.price.amount = amount
+    product.price.currency = "NOK"
+
+    // This is messy code
+    val gbs: Long = "${sku[0]}".toLong()
+    product.properties = mapOf("noOfBytes" to "${gbs*1024*1024*1024}")
+    product.presentation = mapOf("label" to "$gbs GB for ${amount/100}")
+
+    return product
+}
