@@ -154,7 +154,6 @@ paths:
         required: false
         type: boolean
 definitions:
-  AnyValue: {}
   Profile:
     type: object
     properties:
@@ -212,8 +211,10 @@ definitions:
         type: string
       price:
         $ref: '#/definitions/Price'
+      properties:
+        type: object
       presentation:
-        $ref: '#/definitions/AnyValue'
+        type: object
     required:
       - sku
       - price

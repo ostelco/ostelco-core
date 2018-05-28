@@ -43,9 +43,7 @@ data class Price(
 data class Product(
         var sku: String = "",
         var price: Price = Price(0, ""),
-        @JsonIgnore
         var properties: Map<String, String> = mapOf(),
-        @JsonIgnore
         var presentation: Map<String, String> = mapOf()) : Entity {
 
     override var id: String

@@ -11,7 +11,9 @@
       "properties": {
         "noOfBytes": "1073741824"
       },
-      "presentation": {}
+      "presentation": {
+        "label": "1 GB for 249"
+      }
     },
     "2GB_299NOK": {
       "price": {
@@ -21,7 +23,9 @@
       "properties": {
         "noOfBytes": "2147483648"
       },
-      "presentation": {}
+      "presentation": {
+        "label": "2 GB for 299"
+      }
     },
     "3GB_349NOK": {
       "price": {
@@ -31,7 +35,9 @@
       "properties": {
         "noOfBytes": "3221225472"
       },
-      "presentation": {}
+      "presentation": {
+        "label": "3 GB for 349"
+      }
     },
     "5GB_399NOK": {
       "price": {
@@ -41,7 +47,9 @@
       "properties": {
         "noOfBytes": "5368709120"
       },
-      "presentation": {}
+      "presentation": {
+        "label": "5 GB for 399"
+      }
     }
   },
   "subscriptions": {
