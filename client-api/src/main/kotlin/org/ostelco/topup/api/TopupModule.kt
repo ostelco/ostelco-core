@@ -1,10 +1,16 @@
 package org.ostelco.topup.api
 
+import com.codahale.metrics.MetricRegistry
+import com.codahale.metrics.SharedMetricRegistries
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonTypeName
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.dropwizard.auth.AuthDynamicFeature
 import io.dropwizard.auth.AuthValueFactoryProvider
+import io.dropwizard.auth.CachingAuthenticator
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter.Builder
+import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.setup.Environment
 import org.ostelco.prime.module.PrimeModule
 import org.ostelco.prime.module.getResource
@@ -19,6 +25,8 @@ import org.ostelco.topup.api.resources.ProductsResource
 import org.ostelco.topup.api.resources.ProfileResource
 import org.ostelco.topup.api.resources.SubscriptionResource
 
+import javax.ws.rs.client.Client
+
 /**
  * Provides API for "top-up" client.
  *
@@ -26,7 +34,8 @@ import org.ostelco.topup.api.resources.SubscriptionResource
 @JsonTypeName("api")
 class TopupModule : PrimeModule {
 
-    private var namespace: String? = null
+    /* Load default configuration. */
+    private var config: TopupConfiguration = TopupConfiguration() 
 
     private val storage by lazy { getResource<Storage>() }
     private val ocsSubscriberService by lazy { getResource<OcsSubscriberService>() }
@@ -50,10 +59,23 @@ class TopupModule : PrimeModule {
         jerseyEnv.register(ProfileResource(dao))
         jerseyEnv.register(SubscriptionResource(dao))
 
-        /* OAuth2. */
+        /* For reporting OAuth2 caching events. */
+        val metrics = SharedMetricRegistries.getOrCreate(env.getName())
+
+        val client: Client = JerseyClientBuilder(env)
+            .using(config.getJerseyClientConfiguration())
+            .using(ObjectMapper()
+                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false))
+            .build(env.getName())
+
+        /* OAuth2 with cache. */
+        var authenticator = CachingAuthenticator(metrics,
+                OAuthAuthenticator(client, config.getSecret()),
+                config.getAuthenticationCachePolicy())
+
         jerseyEnv.register(AuthDynamicFeature(
                 Builder<AccessTokenPrincipal>()
-                        .setAuthenticator(OAuthAuthenticator(namespace, "jwtsecret"))
+                        .setAuthenticator(authenticator)
                         .setPrefix("Bearer")
                         .buildAuthFilter()))
         jerseyEnv.register(AuthValueFactoryProvider.Binder(AccessTokenPrincipal::class.java))

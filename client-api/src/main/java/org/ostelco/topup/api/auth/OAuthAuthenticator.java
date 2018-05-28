@@ -1,10 +1,13 @@
 package org.ostelco.topup.api.auth;
 
-import org.ostelco.topup.api.core.UserInfo;
-
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
 import io.jsonwebtoken.Jwts;
+import lombok.NonNull;
+import org.ostelco.topup.api.core.UserInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -12,10 +15,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.core.Response;
-import lombok.AllArgsConstructor;
-import lombok.NonNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Verifies an OAuth2 'access-token' and fetches additional user information
@@ -35,8 +34,8 @@ public class OAuthAuthenticator implements Authenticator<String, AccessTokenPrin
     @NonNull
     private final String key;
 
-    public OAuthAuthenticator(String namespace, String key) {
-        this.namespace = namespace;
+    public OAuthAuthenticator(Client client, String key) {
+        this.client = client;
         this.key = key;
     }
 
