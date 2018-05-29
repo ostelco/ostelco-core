@@ -65,10 +65,10 @@ class OAuthAuthenticator(private val client: Client,
                 .get(Response::class.java)
 
         if (response.status != Response.Status.OK.statusCode) {
-            LOG.error("Unexpected HTTP status {} code when fething 'user-info' from {}",
+            LOG.error("Unexpected HTTP status {} code when fetching 'user-info' from {}",
                     response.status, ep)
             throw AuthenticationException(
-                    "Unexpected HTTP status ${response.status} code when fething 'user-info' from $ep")
+                    "Unexpected HTTP status ${response.status} code when fetching 'user-info' from $ep")
         }
 
         val userInfo = response.readEntity(UserInfo::class.java)

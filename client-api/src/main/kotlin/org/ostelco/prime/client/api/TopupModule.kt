@@ -32,21 +32,14 @@ import javax.ws.rs.client.Client
 @JsonTypeName("api")
 class TopupModule : PrimeModule {
 
-    /* Load default configuration. */
+    @JsonProperty("config")
     private var config: TopupConfiguration = TopupConfiguration()
 
     private val storage by lazy { getResource<Storage>() }
     private val ocsSubscriberService by lazy { getResource<OcsSubscriberService>() }
 
-    /** Allows for overriding the default configuration. */
-    @JsonProperty("config")
-    fun setConfig() {
-        config = TopupConfiguration()
-    }
-
     override fun init(env: Environment) {
 
-        checkNotNull(env)
         val dao = SubscriberDAOImpl(storage, ocsSubscriberService)
         val jerseyEnv = env.jersey()
 

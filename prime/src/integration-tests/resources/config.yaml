@@ -9,7 +9,9 @@ modules:
       projectId: pantel-2decb
       topicId: data-traffic
   - type: api
-    namespace: https://ostelco
+    config:
+      secret: "change_me"
+      authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
   - type: admin
 
 logging:
