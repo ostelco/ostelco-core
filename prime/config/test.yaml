@@ -12,7 +12,6 @@ modules:
       topicId: data-traffic
   - type: api
     config:
-      secret: "change_me"
       authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
   - type: admin
 

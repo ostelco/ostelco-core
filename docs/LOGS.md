@@ -11,9 +11,9 @@
  * Goto [this link](https://console.cloud.google.com/logs/viewer?project=pantel-2decb)
  * Open hidden-menu from right of Search bar and select `Convert to advanced filter`
 
+
     resource.type="container"
     resource.labels.cluster_name="private-cluster"
-    resource.labels.namespace_id="default"
     logName="projects/pantel-2decb/logs/prime"
 
 ### Basic filter

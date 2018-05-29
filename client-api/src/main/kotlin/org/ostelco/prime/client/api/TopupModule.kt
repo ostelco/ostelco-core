@@ -61,7 +61,7 @@ class TopupModule : PrimeModule {
 
         /* OAuth2 with cache. */
         val authenticator = CachingAuthenticator(metrics,
-                OAuthAuthenticator(client, config.secret),
+                OAuthAuthenticator(client, config.jwtSigningKey),
                 config.authenticationCachePolicy)
 
         jerseyEnv.register(AuthDynamicFeature(

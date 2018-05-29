@@ -8,13 +8,9 @@ import javax.validation.constraints.NotNull
 
 class TopupConfiguration {
 
-    /* TODO: Update to use the Kubernetes way of handling secrets (either stored
-             in a file or as an ENV variable). */
     @Valid
     @NotNull
-    @get:JsonProperty("secret")
-    @set:JsonProperty("secret")
-    lateinit var secret: String
+    val jwtSigningKey: String = System.getenv("JWT_SIGNING_KEY")
 
     @Valid
     @NotNull
