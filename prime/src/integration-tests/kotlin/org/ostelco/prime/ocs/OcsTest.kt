@@ -13,11 +13,14 @@ import org.ostelco.ocs.api.ActivateResponse
 import org.ostelco.ocs.api.CreditControlAnswerInfo
 import org.ostelco.ocs.api.CreditControlRequestInfo
 import org.ostelco.ocs.api.CreditControlRequestType.INITIAL_REQUEST
+import org.ostelco.ocs.api.MultipleServiceCreditControl
 import org.ostelco.ocs.api.OcsServiceGrpc
 import org.ostelco.ocs.api.OcsServiceGrpc.OcsServiceStub
+import org.ostelco.ocs.api.ServiceUnit
 import org.ostelco.prime.disruptor.PrimeDisruptor
 import org.ostelco.prime.disruptor.PrimeEventProducerImpl
 import org.ostelco.prime.logger
+import org.ostelco.prime.storage.firebase.initFirebaseConfigRegistry
 import java.io.IOException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -42,10 +45,16 @@ class OcsTest {
 
     private fun newDefaultCreditControlRequestInfo(): CreditControlRequestInfo {
         LOG.info("Req Id: {}", REQUEST_ID)
+
+        val mscc = MultipleServiceCreditControl.newBuilder()
+                .setRequested(ServiceUnit
+                        .newBuilder()
+                        .setTotalOctets(BYTES))
         return CreditControlRequestInfo.newBuilder()
                 .setType(INITIAL_REQUEST)
                 .setMsisdn(MSISDN)
                 .setRequestId(REQUEST_ID)
+                .addMscc(mscc)
                 .build()
     }
 
@@ -145,7 +154,7 @@ class OcsTest {
         private const val MSISDN = "4790300017"
 
         // Default chunk of byte used in various test cases
-        private const val BYTES = 100
+        private const val BYTES: Long = 100
 
         // Request ID used by OCS gateway to correlate responses with requests
         private val REQUEST_ID = RandomStringUtils.randomAlphanumeric(22)
@@ -173,7 +182,7 @@ class OcsTest {
 
         /**
          * The gRPC service that will produce incoming events from the
-         * simulated packet gateway, contains an [OcsService] instance bound
+         * simulated packet gateway, contains an [OcsSubscriberService] instance bound
          * to a particular port (in our case 8082).
          */
         private lateinit var ocsServer: OcsServer
@@ -188,6 +197,7 @@ class OcsTest {
         @JvmStatic
         @Throws(IOException::class)
         fun setUp() {
+            initFirebaseConfigRegistry()
 
             // Set up processing pipeline
             disruptor = PrimeDisruptor()
@@ -213,7 +223,9 @@ class OcsTest {
 
             // Set up a channel to be used to communicate as an OCS instance, to an
             // Prime instance.
-            val channel = ManagedChannelBuilder.forTarget("0.0.0.0:" + PORT).usePlaintext(true). // disable encryption for testing
+            val channel = ManagedChannelBuilder
+                    .forTarget("0.0.0.0:" + PORT)
+                    .usePlaintext(true). // disable encryption for testing
                     build()
 
             // Initialize the stub that will be used to actually
@@ -226,7 +238,7 @@ class OcsTest {
         @Throws(InterruptedException::class, TimeoutException::class)
         fun tearDown() {
             disruptor.stop()
-            ocsServer.stop()
+            ocsServer.forceStop()
         }
     }
 }

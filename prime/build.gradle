@@ -20,10 +20,10 @@ sourceSets {
   }
 }
 
+version = "1.2.3"
 dependencies {
   // interface module between prime and prime-modules
   implementation project(':prime-api')
-  implementation project(':model')
 
   // prime-modules
   runtime project(':ocs')
@@ -32,10 +32,18 @@ dependencies {
   runtime project(':admin-api')
   runtime project(':in-memory-store')
 
+  implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.9.5'
   implementation project(':ostelco-lib')
   implementation "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
   implementation 'com.google.guava:guava:24.1-jre'
 
+  // for integration tests
+  testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+  testImplementation 'org.mockito:mockito-core:2.18.3'
+  testImplementation project(':ocs')
+  testImplementation project(':firebase-store')
+
+  integrationImplementation project(':ocs')
   integrationImplementation project(':firebase-store')
 }
 

@@ -10,10 +10,14 @@ services:
       - GOOGLE_APPLICATION_CREDENTIALS=/secret/pantel-prod.json
       - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
       - PUBSUB_PROJECT_ID=pantel-2decb
+    ports:
+      - "9090:8080"
+    depends_on:
+      - "pubsub-emulator"
     networks:
       net:
         aliases:
-          - prime
+          - "prime"
         ipv4_address: 172.16.238.4
 
   ocsgw:
@@ -29,14 +33,14 @@ services:
   ext-pgw:
     container_name: ext-pgw
     build: ext-pgw
-    networks:
-      net:
-        aliases:
-          - ext-pgw
-        ipv4_address: 172.16.238.2
     depends_on:
       - "ocsgw"
     command: ["./wait_for_ocsgw.sh"]
+    networks:
+      net:
+        aliases:
+          - "ext-pgw"
+        ipv4_address: 172.16.238.2
 
 #  pseudonym-server:
 #    container_name: pseudonym-server
@@ -68,6 +72,29 @@ services:
       - CLOUDSDK_CORE_PROJECT=pantel-2decb
       - DATASTORE_DATASET=pantel-2decb
     command: ["gcloud", "beta", "emulators", "datastore", "start", "--host-port=0.0.0.0:8081"]
+
+  ext-auth-provider:
+    container_name: ext-auth-provider
+    build: ext-auth-provider
+    networks:
+      net:
+        aliases:
+          - "acceptance-tests"
+        ipv4_address: 172.16.238.5
+
+  acceptance-tests:
+    container_name: acceptance-tests
+    build: acceptance-tests
+    depends_on:
+      - "prime"
+    command: ["./wait_for_prime.sh"]
+    environment:
+      - PRIME_SOCKET=prime:8080
+    networks:
+      net:
+        aliases:
+          - "acceptance-tests"
+        ipv4_address: 172.16.238.6
 
 networks:
   net:

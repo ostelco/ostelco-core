@@ -1,13 +1,16 @@
 modules:
   - type: firebase
     config:
-      configFile: src/integration-tests/resources/pantel-tests.json
-      databaseName: pantel-tests
+      configFile: config/pantel-prod.json
+      databaseName: pantel-2decb
+      rootPath: test
   - type: ocs
     config:
-      projectId: pantel-tests
+      projectId: pantel-2decb
       topicId: data-traffic
   - type: api
+    config:
+      authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
   - type: admin
 
 logging:

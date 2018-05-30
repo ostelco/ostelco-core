@@ -4,7 +4,6 @@ import com.lmax.disruptor.EventFactory
 import com.lmax.disruptor.TimeoutException
 import com.lmax.disruptor.dsl.Disruptor
 import io.dropwizard.lifecycle.Managed
-import org.ostelco.prime.disruptor.PrimeEvent
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
@@ -17,7 +16,6 @@ class PrimeDisruptor : Managed {
         private const val BUFFER_SIZE = 65536
         private const val TIMEOUT_IN_SECONDS = 10
     }
-
 
     val disruptor: Disruptor<PrimeEvent>
 

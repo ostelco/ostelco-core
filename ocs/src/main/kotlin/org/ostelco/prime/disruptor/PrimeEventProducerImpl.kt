@@ -4,12 +4,9 @@ import com.google.common.base.Preconditions.checkNotNull
 import com.lmax.disruptor.RingBuffer
 import org.ostelco.ocs.api.CreditControlRequestInfo
 import org.ostelco.ocs.api.ReportingReason
-import org.ostelco.prime.disruptor.PrimeEvent
-import org.ostelco.prime.disruptor.PrimeEventMessageType
 import org.ostelco.prime.disruptor.PrimeEventMessageType.CREDIT_CONTROL_REQUEST
 import org.ostelco.prime.disruptor.PrimeEventMessageType.RELEASE_RESERVED_BUCKET
 import org.ostelco.prime.disruptor.PrimeEventMessageType.TOPUP_DATA_BUNDLE_BALANCE
-import org.ostelco.prime.disruptor.PrimeEventProducer
 import org.ostelco.prime.logger
 import java.util.function.Consumer
 
@@ -102,15 +99,15 @@ class PrimeEventProducerImpl(private val ringBuffer: RingBuffer<PrimeEvent>) : P
                     requestId = request.requestId)
         } else {
             injectIntoRingbuffer(CREDIT_CONTROL_REQUEST,
-                    request.msisdn,
-                    request.getMscc(0).requested.totalOctets,
-                    request.getMscc(0).used.totalOctets,
-                    0,
-                    request.getMscc(0).serviceIdentifier,
-                    request.getMscc(0).ratingGroup,
-                    request.getMscc(0).reportingReason,
-                    streamId,
-                    request.requestId)
+                    msisdn = request.msisdn,
+                    requestedBytes = request.getMscc(0).requested.totalOctets,
+                    usedBytes = request.getMscc(0).used.totalOctets,
+                    reservedBytes = 0,
+                    serviceId = request.getMscc(0).serviceIdentifier,
+                    ratingGroup = request.getMscc(0).ratingGroup,
+                    reportingReason = request.getMscc(0).reportingReason,
+                    streamId = streamId,
+                    requestId = request.requestId)
         }
     }
 }

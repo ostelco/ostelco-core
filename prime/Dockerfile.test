@@ -1,6 +1,6 @@
 # This Dockerfile is used when running locally using docker-compose for Acceptance Testing.
 
-FROM openjdk:8u151
+FROM openjdk:8u171
 
 MAINTAINER CSI "csi@telenordigital.com"
 

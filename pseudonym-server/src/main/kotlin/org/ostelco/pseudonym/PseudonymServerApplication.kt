@@ -73,7 +73,7 @@ class PseudonymServerApplication : Application<PseudonymServerConfig>() {
             config: PseudonymServerConfig,
             env: Environment) {
         val datastore = getDatastore(config)
-        val client: Client = JerseyClientBuilder(env).using(config.jerseyClient).build(name);
+        val client: Client = JerseyClientBuilder(env).using(config.jerseyClient).build(name)
         // Increase HTTP timeout values
         client.property(ClientProperties.CONNECT_TIMEOUT, 2000)
         client.property(ClientProperties.READ_TIMEOUT, 2000)
@@ -87,7 +87,7 @@ class PseudonymServerApplication : Application<PseudonymServerConfig>() {
                 WeeklyBounds(),
                 client)
         env.lifecycle().manage(messageProcessor)
-        val bigquery = BigQueryOptions.getDefaultInstance().getService();
+        val bigquery = BigQueryOptions.getDefaultInstance().getService()
         env.jersey().register(PseudonymResource(datastore, WeeklyBounds(), bigquery))
     }
 }

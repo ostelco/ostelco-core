@@ -11,7 +11,6 @@ import org.jdiameter.api.InternalException;
 import org.jdiameter.api.OverloadException;
 import org.jdiameter.api.RouteException;
 import org.jdiameter.api.cca.ServerCCASession;
-import org.jdiameter.api.cca.events.JCreditControlRequest;
 import org.ostelco.diameter.CreditControlContext;
 import org.ostelco.diameter.model.*;
 import org.ostelco.ocs.api.ActivateRequest;
@@ -134,6 +133,8 @@ public class GrpcDataSource implements DataSource {
             initCCRFuture = executorService.schedule((Callable<Object>) () -> {
                         LOG.info("Calling initCreditControlRequest");
                         initCreditControlRequest();
+                        LOG.info("Calling initKeepAlive");
+                        initKeepAlive();
                         return "Called!";
                     },
                     5,

@@ -4,11 +4,14 @@ import com.google.common.base.Preconditions
 import com.lmax.disruptor.EventHandler
 import org.ostelco.prime.disruptor.PrimeEvent
 import org.ostelco.prime.disruptor.PrimeEventMessageType
-import org.ostelco.prime.module.getResource
 import org.ostelco.prime.logger
+import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.legacy.Storage
 import java.util.*
 
+/**
+ * For unit testing, loadSubscriberInfo = false
+ */
 class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<PrimeEvent> {
 
     private val LOG by logger()
@@ -136,7 +139,7 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<PrimeEvent>
 
         // P-GW is allowed to overconsume a small amount.
         if (newTotal < 0) {
-            newTotal = 0;
+            newTotal = 0
         }
 
         dataPackMap[msisdn] = newTotal
@@ -189,10 +192,8 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<PrimeEvent>
     private fun loadSubscriberBalanceFromDatabaseToInMemoryStructure() {
         LOG.info("Loading initial balance from storage to in-memory OcsState")
         val store: Storage = getResource()
-        val subscribers = store.allSubscribers
-        for (subscriber in subscribers) {
-            val msisdn = subscriber.msisdn
-            val noOfBytesLeft = subscriber.noOfBytesLeft
+        val balanceMap = store.balances
+        for ((msisdn, noOfBytesLeft) in balanceMap) {
             LOG.info("{} - {}", msisdn, noOfBytesLeft)
             if (noOfBytesLeft > 0) {
                 val newMsisdn = stripLeadingPlus(msisdn)

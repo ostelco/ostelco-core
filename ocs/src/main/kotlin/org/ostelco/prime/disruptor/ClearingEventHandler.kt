@@ -1,7 +1,6 @@
 package org.ostelco.prime.disruptor
 
 import com.lmax.disruptor.EventHandler
-import org.ostelco.prime.disruptor.PrimeEvent
 import org.ostelco.prime.logger
 
 class ClearingEventHandler : EventHandler<PrimeEvent> {

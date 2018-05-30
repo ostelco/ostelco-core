@@ -34,4 +34,4 @@ out
 target
 secrets/*
 .nb-gradle
-prime/src/integration-tests/resources/pantel-prod.json
+.swagger_gen_dir

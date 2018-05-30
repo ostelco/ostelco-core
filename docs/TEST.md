@@ -9,21 +9,19 @@
      
        grep -i pantel $(find . -name '.gitignore') | awk -F: '{print $1}' | sort | uniq | sed 's/.gitignore//g'
  
- * Create test subscriber
+ * Create test subscriber with default balance by importing `docs/pantel-2decb_test.json` 
+   at `/test` path in Firebase.
   
-  
-    firebase --project pantel-2decb  --data '{"msisdn": "+4747900184", "noOfBytesLeft": 0}' database:set /authorative-user-balance/4747900184
-
- * Top up test subscriber
- 
-
-    firebase --project pantel-2decb  --data '{"msisdn": "+4747900184", "sku": "DataTopup3GB", "paymentToken": "xxxx"}' database:push /client-requests
 
 ### Test ext-pgw -- ocsgw -- prime --firebase
+
     
     gradle clean build  
-    docker-compose up --build --abort-on-container-exit
-    
+    docker-compose up --build
+
+**Note:** `ext-pgw` is planned to to transformed from unit-test module to simulator server.
+During this transition phase, skip using `--abort-on-container-exit` with above `docker-compose` command.
+
     gradle prime:integration
  
  * Test pubsub -- pseudonymiser(--datastore) -- pubsub
