@@ -10,7 +10,6 @@ services:
       - GOOGLE_APPLICATION_CREDENTIALS=/secret/pantel-prod.json
       - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
       - PUBSUB_PROJECT_ID=pantel-2decb
-      - JWT_SIGNING_KEY=jwt_secret
     ports:
       - "9090:8080"
     depends_on:

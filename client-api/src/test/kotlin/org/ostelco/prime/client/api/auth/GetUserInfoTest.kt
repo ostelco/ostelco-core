@@ -38,7 +38,7 @@ class GetUserInfoTest {
                 .get(Response::class.java)
 
         assertThat(response.status).isEqualTo(Response.Status.NOT_FOUND.statusCode)
-        assertThat(response.mediaType.toString()).startsWith(MediaType.TEXT_HTML)
+        assertThat(response.mediaType.toString()).startsWith(MediaType.APPLICATION_JSON)
     }
 
     companion object {

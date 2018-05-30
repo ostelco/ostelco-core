@@ -41,11 +41,11 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
             LOG.error("Failed to fetch profile", e)
             return Either.left(ApiError("Failed to fetch profile"))
         }
-
     }
 
     override fun createProfile(subscriptionId: String, profile: Subscriber): Either<ApiError, Subscriber> {
         if (!SubscriberDAO.isValidProfile(profile)) {
+            LOG.error("Failed to create profile. Invalid profile.")
             return Either.left(ApiError("Incomplete profile description"))
         }
         try {

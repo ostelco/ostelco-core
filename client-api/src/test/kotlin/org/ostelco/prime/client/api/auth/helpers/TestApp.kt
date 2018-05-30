@@ -61,7 +61,7 @@ class TestApp : Application<TestConfig>() {
 
         /* OAuth2 with cache. */
         val authenticator = CachingAuthenticator(metrics,
-                OAuthAuthenticator(client, config.secret!!),
+                OAuthAuthenticator(client),
                 config.authenticationCachePolicy!!)
 
         /* OAuth2. */

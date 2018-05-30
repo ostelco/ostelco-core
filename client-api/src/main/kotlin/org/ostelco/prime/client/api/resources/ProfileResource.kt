@@ -36,11 +36,13 @@ class ProfileResource(private val dao: SubscriberDAO) : ResourceHelpers() {
                     .build()
         } else {
             Response.status(Response.Status.NOT_FOUND)
+                    .entity(asJson(result.left().get()))
                     .build()
         }
     }
 
     @POST
+    @Produces("application/json")
     @Consumes("application/json")
     fun createProfile(@Auth token: AccessTokenPrincipal?,
                       @NotNull profile: Subscriber): Response {
@@ -57,11 +59,13 @@ class ProfileResource(private val dao: SubscriberDAO) : ResourceHelpers() {
                     .build()
         } else {
             Response.status(Response.Status.FORBIDDEN)
+                    .entity(asJson(result.left().get()))
                     .build()
         }
     }
 
     @PUT
+    @Produces("application/json")
     @Consumes("application/json")
     fun updateProfile(@Auth token: AccessTokenPrincipal?,
                       @NotNull profile: Subscriber): Response {
@@ -78,6 +82,7 @@ class ProfileResource(private val dao: SubscriberDAO) : ResourceHelpers() {
                     .build()
         } else {
             Response.status(Response.Status.NOT_FOUND)
+                    .entity(asJson(result.left().get()))
                     .build()
         }
     }

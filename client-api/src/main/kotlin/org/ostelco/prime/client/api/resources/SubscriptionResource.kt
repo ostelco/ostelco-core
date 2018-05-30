@@ -33,6 +33,7 @@ class SubscriptionResource(private val dao: SubscriberDAO) : ResourceHelpers() {
                     .build()
         } else {
             Response.status(Response.Status.NOT_FOUND)
+                    .entity(asJson(result.left().get()))
                     .build()
         }
     }

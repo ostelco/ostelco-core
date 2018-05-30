@@ -10,10 +10,6 @@ class TopupConfiguration {
 
     @Valid
     @NotNull
-    val jwtSigningKey: String = System.getenv("JWT_SIGNING_KEY")
-
-    @Valid
-    @NotNull
     @get:JsonProperty("authenticationCachePolicy")
     var authenticationCachePolicy: CacheBuilderSpec? = null
         private set

@@ -84,12 +84,6 @@ spec:
           readOnly: true
       - name: prime
         image: gcr.io/pantel-2decb/prime:PRIME_VERSION
-        env:
-          - name: JWT_SIGNING_KEY
-            valueFrom:
-              secretKeyRef:
-              name: prime-secrets
-              key: jwtSecretKey
         volumeMounts:
         - name: secret-config
           mountPath: "/secret"
