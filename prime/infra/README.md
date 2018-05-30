@@ -14,6 +14,7 @@ Reference:
 Reference:
  * https://cloud.google.com/kubernetes-engine/docs/concepts/secret
  * https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-files-from-a-pod
+ * https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables
 
 ## Endpoint
 

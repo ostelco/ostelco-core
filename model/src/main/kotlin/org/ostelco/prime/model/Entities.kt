@@ -25,7 +25,9 @@ data class Subscriber(
         var city: String = "",
         var country: String = "") : Entity {
 
-    constructor(email: String) : this()
+    constructor(email: String) : this() {
+        this.email = email
+    }
 
     override var id: String
         @JsonIgnore

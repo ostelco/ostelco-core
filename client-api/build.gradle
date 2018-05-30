@@ -9,14 +9,13 @@ dependencies {
     implementation project(":prime-api")
 
     implementation "io.dropwizard:dropwizard-auth:$dropwizardVersion"
+    implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
     implementation 'com.google.guava:guava:24.1-jre'
-
-    // https://mvnrepository.com/artifact/org.jetbrains/annotations
-    implementation 'org.jetbrains:annotations:16.0.1'
 
     implementation 'io.jsonwebtoken:jjwt:0.9.0'
     implementation "io.vavr:vavr:0.9.0"
 
+    testImplementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
     testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
     testImplementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.9.5'
     testImplementation "org.mockito:mockito-core:2.18.0"
@@ -28,5 +27,13 @@ dependencies {
         // 2.26 (latest)
         exclude group: 'javax.servlet',  module: 'javax.servlet-api'
         exclude group: 'junit',  module: 'junit'
+    }
+
+    testCompile "com.nhaarman:mockito-kotlin:1.5.0"
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions {
+        jvmTarget = "1.8"
     }
 }
