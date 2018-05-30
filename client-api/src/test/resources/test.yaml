@@ -1,0 +1,1 @@
+authenticationCachePolicy: "maximumSize=100, expireAfterAccess=1m"

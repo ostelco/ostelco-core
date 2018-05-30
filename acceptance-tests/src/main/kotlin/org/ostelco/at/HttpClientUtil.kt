@@ -59,8 +59,7 @@ inline fun <reified T> put(execute: HttpRequest.() -> Unit): T {
  */
 class HttpClient {
 
-    private val namespace = "https://ostelco"
-    private val key = "jwtsecret"
+    private val jwtSigningKey = "jwt_secret"
 
     private val jerseyClient = JerseyClientBuilder.createClient()
 
@@ -69,8 +68,8 @@ class HttpClient {
     val url: String = "http://${System.getenv("PRIME_SOCKET") ?: "localhost:9090"}"
 
     private val token = Jwts.builder()
-            .setClaims(mapOf("$namespace/email" to "foo@bar.com"))
-            .signWith(SignatureAlgorithm.HS512, key)
+            .setClaims(mapOf("aud" to "http://ext-auth-provider:8080/userinfo"))
+            .signWith(SignatureAlgorithm.HS512, jwtSigningKey)
             .compact()
 
     fun setup(path: String, queryParams: Map<String, String>, url: String): JerseyInvocation.Builder {
