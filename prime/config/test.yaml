@@ -15,6 +15,13 @@ modules:
       authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
   - type: admin
 
+server:
+  applicationConnectors:
+    - type: h2c
+      port: 8080
+      maxConcurrentStreams: 1024
+      initialStreamRecvWindow: 65535
+
 logging:
   level: INFO
   loggers:
