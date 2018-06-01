@@ -24,7 +24,7 @@ class HttpRequest {
 inline fun <reified T> get(execute: HttpRequest.() -> Unit): T {
     val request = HttpRequest()
     execute(request)
-    val response = HttpClient().send(request.path, request.queryParams).get()
+    val response = HttpClient.send(request.path, request.queryParams).get()
     assertEquals(200, response.status)
     return response.readEntity(object : GenericType<T>() {})
 }
@@ -35,7 +35,7 @@ inline fun <reified T> get(execute: HttpRequest.() -> Unit): T {
 inline fun <reified T> post(execute: HttpRequest.() -> Unit): T {
     val request = HttpRequest()
     execute(request)
-    val response = HttpClient().send(request.path, request.queryParams)
+    val response = HttpClient.send(request.path, request.queryParams)
             .post(Entity.entity(request.body ?: "", MediaType.APPLICATION_JSON_TYPE))
     assertEquals(201, response.status)
     return response.readEntity(object : GenericType<T>() {})
@@ -47,7 +47,7 @@ inline fun <reified T> post(execute: HttpRequest.() -> Unit): T {
 inline fun <reified T> put(execute: HttpRequest.() -> Unit): T {
     val request = HttpRequest()
     execute(request)
-    val response = HttpClient().send(request.path, request.queryParams)
+    val response = HttpClient.send(request.path, request.queryParams)
             .put(Entity.entity(request.body ?: "", MediaType.APPLICATION_JSON_TYPE))
     assertEquals(200, response.status)
     return response.readEntity(object : GenericType<T>() {})
@@ -57,7 +57,7 @@ inline fun <reified T> put(execute: HttpRequest.() -> Unit): T {
  * Class which holds JerseyClient.
  * It is used by DSL functions to make actual HTTP Rest invocation.
  */
-class HttpClient {
+object HttpClient {
 
     private val jerseyClient = JerseyClientBuilder.createClient()
 
