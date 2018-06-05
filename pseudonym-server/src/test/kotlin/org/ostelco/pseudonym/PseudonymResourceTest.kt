@@ -23,6 +23,7 @@ import kotlin.test.assertTrue
 class PseudonymResourceTest {
     private val pathForGet = "/pseudonym/get"
     private val pathForCurrent = "/pseudonym/current"
+    private val pathForActive = "/pseudonym/active"
     private val pathForFind= "/pseudonym/find"
     private val pathForDelete= "/pseudonym/delete"
     private val testMsisdn1 = "4790303333"
@@ -100,6 +101,42 @@ class PseudonymResourceTest {
         json = result.readEntity(String::class.java)
         val pseudonymEntity2 = mapper.readValue<PseudonymEntity>(json)
         assertEquals(pseudonymEntity2.pseudonym, pseudonymEntity.pseudonym)
+    }
+
+    /**
+     * Test get pseudonym for a timestamp
+     */
+    @Test
+    fun testActivePseudonyms() {
+
+        var result = resources
+                ?.target("$pathForCurrent/$testMsisdn1")
+                ?.request()
+                ?.get()
+        assertNotNull(result)
+        if (result == null) return
+        assertEquals(Status.OK.statusCode, result.status)
+        var json = result.readEntity(String::class.java)
+        var pseudonymEntity = mapper.readValue<PseudonymEntity>(json)
+        assertEquals(pseudonymEntity.msisdn, testMsisdn1)
+
+        result = resources
+                ?.target("$pathForActive/$testMsisdn1")
+                ?.request()
+                ?.get()
+        assertNotNull(result)
+        if (result == null) return
+        assertEquals(Status.OK.statusCode, result.status)
+        json = result.readEntity(String::class.java)
+        val mapOfPseudonyms:Map<String, PseudonymEntity> = mapper.readValue<Map<String, PseudonymEntity>>(json)
+        val current = mapOfPseudonyms["current"]
+        val next = mapOfPseudonyms["next"]
+        assertNotNull(current)
+        assertNotNull(next)
+        if (current != null && next != null) {
+            assertEquals(current.pseudonym, pseudonymEntity.pseudonym)
+            assertEquals(current.end+1, next.start)
+        }
     }
 
     /**
