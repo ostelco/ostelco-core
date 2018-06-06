@@ -73,6 +73,15 @@ services:
       - DATASTORE_DATASET=pantel-2decb
     command: ["gcloud", "beta", "emulators", "datastore", "start", "--host-port=0.0.0.0:8081"]
 
+  ext-auth-provider:
+    container_name: ext-auth-provider
+    build: ext-auth-provider
+    networks:
+      net:
+        aliases:
+          - "acceptance-tests"
+        ipv4_address: 172.16.238.5
+
   acceptance-tests:
     container_name: acceptance-tests
     build: acceptance-tests
@@ -85,7 +94,7 @@ services:
       net:
         aliases:
           - "acceptance-tests"
-        ipv4_address: 172.16.238.5
+        ipv4_address: 172.16.238.6
 
 networks:
   net:
