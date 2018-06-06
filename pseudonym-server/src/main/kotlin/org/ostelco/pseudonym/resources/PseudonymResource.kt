@@ -7,6 +7,8 @@ import com.google.cloud.datastore.Key
 import com.google.cloud.datastore.Query
 import com.google.cloud.datastore.StructuredQuery.PropertyFilter
 import org.hibernate.validator.constraints.NotBlank
+import org.ostelco.prime.model.ActivePseudonyms
+import org.ostelco.prime.model.PseudonymEntity
 import org.ostelco.pseudonym.managed.PseudonymExport
 import org.slf4j.LoggerFactory
 import java.time.Instant
@@ -21,11 +23,6 @@ import javax.ws.rs.core.Response
 import javax.ws.rs.core.Response.Status
 import kotlin.collections.HashMap
 
-
-/**
- * Class representing the Pseudonym entity in Datastore.
- */
-data class PseudonymEntity(val msisdn: String, val pseudonym: String, val start: Long, val end: Long)
 
 const val PseudonymEntityKind = "Pseudonym"
 const val msisdnPropertyName = "msisdn"
@@ -72,7 +69,7 @@ interface DateBounds {
  * are store in datastore. The key for the object is made from "<msisdn>-<start timestamp ms>.
  */
 @Path("/pseudonym")
-class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, val bigquery: BigQuery) {
+class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, val bigquery: BigQuery?) {
 
     private val LOG = LoggerFactory.getLogger(PseudonymResource::class.java)
     private val executor = Executors.newFixedThreadPool(3)
@@ -118,7 +115,7 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, va
         LOG.info("GET pseudonym for Msisdn = $msisdn at timestamps = $currentTimestamp & $nextTimestamp")
         val current = getPseudonymEntityFor(msisdn, currentTimestamp)
         val next = getPseudonymEntityFor(msisdn, nextTimestamp)
-        val entity: Map<String, PseudonymEntity> = mapOf("current" to current, "next" to next)
+        val entity = ActivePseudonyms(current, next)
         return Response.ok(entity, MediaType.APPLICATION_JSON).build()
     }
 

@@ -65,3 +65,13 @@ data class PurchaseRecord(
         var msisdn: String = "",
         var product: Product = Product(),
         var timestamp: Long = 0L)
+
+data class PseudonymEntity(
+        val msisdn: String,
+        val pseudonym: String,
+        val start: Long,
+        val end: Long)
+
+data class ActivePseudonyms(
+        val current: PseudonymEntity,
+        val next: PseudonymEntity)

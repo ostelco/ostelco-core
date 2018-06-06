@@ -9,7 +9,8 @@ import io.dropwizard.testing.junit.ResourceTestRule
 import org.junit.ClassRule
 import org.junit.Test
 import org.mockito.Mockito.mock
-import org.ostelco.pseudonym.resources.PseudonymEntity
+import org.ostelco.prime.model.ActivePseudonyms
+import org.ostelco.prime.model.PseudonymEntity
 import org.ostelco.pseudonym.resources.PseudonymResource
 import org.ostelco.pseudonym.utils.WeeklyBounds
 import javax.ws.rs.core.Response.Status
@@ -128,6 +129,7 @@ class PseudonymResourceTest {
         if (result == null) return
         assertEquals(Status.OK.statusCode, result.status)
         json = result.readEntity(String::class.java)
+        // This is how the client will recieve the output.
         val mapOfPseudonyms:Map<String, PseudonymEntity> = mapper.readValue<Map<String, PseudonymEntity>>(json)
         val current = mapOfPseudonyms["current"]
         val next = mapOfPseudonyms["next"]
@@ -137,6 +139,36 @@ class PseudonymResourceTest {
             assertEquals(current.pseudonym, pseudonymEntity.pseudonym)
             assertEquals(current.end+1, next.start)
         }
+    }
+
+    /**
+     * Test get pseudonym for a timestamp
+     */
+    @Test
+    fun testActivePseudonymUsingModel() {
+
+        var result = resources
+                ?.target("$pathForCurrent/$testMsisdn1")
+                ?.request()
+                ?.get()
+        assertNotNull(result)
+        if (result == null) return
+        assertEquals(Status.OK.statusCode, result.status)
+        var json = result.readEntity(String::class.java)
+        var pseudonymEntity = mapper.readValue<PseudonymEntity>(json)
+        assertEquals(pseudonymEntity.msisdn, testMsisdn1)
+
+        result = resources
+                ?.target("$pathForActive/$testMsisdn1")
+                ?.request()
+                ?.get()
+        assertNotNull(result)
+        if (result == null) return
+        assertEquals(Status.OK.statusCode, result.status)
+        json = result.readEntity(String::class.java)
+        val active = mapper.readValue<ActivePseudonyms>(json)
+        assertEquals(active.current.pseudonym, pseudonymEntity.pseudonym)
+        assertEquals(active.current.end+1, active.next.start)
     }
 
     /**
