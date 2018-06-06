@@ -101,7 +101,7 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
     override fun getMsisdn(subscriptionId: String): Either<ApiError, String> {
         var msisdn: String? = null
         try {
-            msisdn = storage.getSubscription(subscriptionId)
+            msisdn = storage.getMsisdn(subscriptionId)
         } catch (e: StorageException) {
             LOG.error("Did not find subscription", e)
         }

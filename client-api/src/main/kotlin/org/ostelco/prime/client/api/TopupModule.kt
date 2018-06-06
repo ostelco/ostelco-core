@@ -51,21 +51,16 @@ class TopupModule : PrimeModule {
                 .using(ObjectMapper()
                         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false))
                 .build(env.getName())
-        client.property(ClientProperties.CONNECT_TIMEOUT, 2000)
-        client.property(ClientProperties.READ_TIMEOUT, 2000)
 
         /* APIs. */
         jerseyEnv.register(AnalyticsResource(dao))
         jerseyEnv.register(ConsentsResource(dao))
         jerseyEnv.register(ProductsResource(dao))
         jerseyEnv.register(ProfileResource(dao))
-
-        LOG.info("client-api pseudonymEndpoint ${config.pseudonymEndpoint}")
         jerseyEnv.register(SubscriptionResource(dao, client, config.pseudonymEndpoint))
 
         /* For reporting OAuth2 caching events. */
         val metrics = SharedMetricRegistries.getOrCreate(env.getName())
-
 
         /* OAuth2 with cache. */
         val authenticator = CachingAuthenticator(metrics,
