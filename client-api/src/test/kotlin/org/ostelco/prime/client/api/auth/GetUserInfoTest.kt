@@ -6,6 +6,7 @@ import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
 import io.vavr.collection.Array
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.fail
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -31,6 +32,14 @@ class GetUserInfoTest {
     @Throws(Exception::class)
     fun getProfileNotFound() {
 
+
+        // XXX Race condition makes test fail sometimes.
+        // This is an abominiation :-) But it's whats necessary to consistently pass this
+        // test on my workstation.
+
+        waitForServer()
+
+
         val response = client!!.target(
                 "http://localhost:${RULE.localPort}/profile")
                 .request()
@@ -39,6 +48,29 @@ class GetUserInfoTest {
 
         assertThat(response.status).isEqualTo(Response.Status.NOT_FOUND.statusCode)
         assertThat(response.mediaType.toString()).startsWith(MediaType.APPLICATION_JSON)
+    }
+
+    private fun waitForServer() {
+        var counter = 40  // Max wait time, ten seconds.
+        while (counter > 0) {
+            try {
+                val r = client!!.target(
+                        "http://localhost:${RULE.adminPort}/healthcheck")
+                        .request()
+                        .get(Response::class.java)
+                if (r.status == 200) {
+                    break
+                }
+            } catch (t: Throwable) {
+                println("Caught throwable  $t")
+            }
+            counter -= 1
+            Thread.sleep(250)
+        }
+
+        if (counter == 0) {
+            fail("Couldn't connect to RULE server")
+        }
     }
 
     companion object {
