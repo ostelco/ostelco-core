@@ -21,6 +21,8 @@ interface SubscriberDAO {
 
     fun getSubscriptionStatus(subscriptionId: String): Either<ApiError, SubscriptionStatus>
 
+    fun getMsisdn(subscriptionId: String): Either<ApiError, String>
+
     fun getProducts(subscriptionId: String): Either<ApiError, Collection<Product>>
 
     fun purchaseProduct(subscriptionId: String, sku: String): Option<ApiError>

@@ -12,6 +12,7 @@ modules:
   - type: api
     config:
       authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
+      pseudonymEndpoint: http://pseudonym-server-service.default.svc.cluster.local
   - type: admin
 
 server:

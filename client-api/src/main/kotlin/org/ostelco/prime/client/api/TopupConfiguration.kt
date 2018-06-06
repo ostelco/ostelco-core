@@ -23,4 +23,6 @@ class TopupConfiguration {
     fun setAuthenticationCachePolicy(spec: String) {
         this.authenticationCachePolicy = CacheBuilderSpec.parse(spec)
     }
+    var pseudonymEndpoint = ""
+
 }
