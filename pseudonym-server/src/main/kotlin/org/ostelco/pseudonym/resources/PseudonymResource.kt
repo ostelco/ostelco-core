@@ -190,6 +190,10 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, va
     @Path("/export/{exportId}")
     fun exportPseudonyms(@NotBlank @PathParam("exportId") exportId: String): Response {
         LOG.info("GET export all pseudonyms to the table $exportId")
+        if (bigquery == null) {
+            LOG.info("BigQuery is not available, ignoring export request $exportId")
+            return Response.status(Status.NOT_FOUND).build()
+        }
         val exporter = PseudonymExport(exportId, bigquery, datastore)
         executor.execute(exporter.getRunnable())
         return Response.ok("Started Exporting", MediaType.TEXT_PLAIN).build()
