@@ -98,6 +98,20 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
 
     }
 
+    override fun getMsisdn(subscriptionId: String): Either<ApiError, String> {
+        var msisdn: String? = null
+        try {
+            msisdn = storage.getSubscription(subscriptionId)
+        } catch (e: StorageException) {
+            LOG.error("Did not find subscription", e)
+        }
+
+        if (msisdn == null) {
+            return Either.left(ApiError("Did not find subscription"))
+        }
+        return Either.right(msisdn)
+    }
+
     override fun getProducts(subscriptionId: String): Either<ApiError, Collection<Product>> {
         try {
             val products = storage.getProducts()

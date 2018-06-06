@@ -116,6 +116,21 @@ paths:
           description: "No subscription found for this user."
       security:
         - auth0_jwt: []
+  "/subscription/activePseudonyms":
+    get:
+      description: "Get currently active pseudonyms for the user's msisdn (identified by bearer token)."
+      produces:
+        - application/json
+      operationId: "getActivePseudonyms"
+      responses:
+        200:
+          description: "Get active pseudonyms for the user's msisdn."
+          schema:
+            $ref: '#/definitions/ActivePseudonyms'
+        404:
+          description: "No subscription found for this user."
+      security:
+        - auth0_jwt: []
   "/consents":
     get:
       description: "Get all consents for the user."
@@ -247,6 +262,36 @@ definitions:
     required:
       - amount
       - currency
+  PseudonymEntity:
+    type: object
+    properties:
+      msisdn:
+        type: string
+      pseudonym:
+        type: string
+      start:
+        description: "The start time stamp for this pseudonym"
+        type: integer
+        format: int64
+      end:
+        description: "The start time stamp for this pseudonym"
+        type: integer
+        format: int64
+    required:
+      - msisdn
+      - pseudonym
+      - start
+      - end
+  ActivePseudonyms:
+    type: object
+    properties:
+      current:
+        $ref: '#/definitions/PseudonymEntity'
+      next:
+        $ref: '#/definitions/PseudonymEntity'
+    required:
+      - current
+      - next
 securityDefinitions:
   auth0_jwt:
     authorizationUrl: "https://ostelco.eu.auth0.com/authorize"
