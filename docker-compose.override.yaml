@@ -19,6 +19,7 @@ services:
         aliases:
           - "prime"
         ipv4_address: 172.16.238.4
+      simple:
 
   ocsgw:
     depends_on:
@@ -42,26 +43,33 @@ services:
           - "ext-pgw"
         ipv4_address: 172.16.238.2
 
-#  pseudonym-server:
-#    container_name: pseudonym-server
-#    build: pseudonym-server
-#    ports:
-#      - "8090:8080"
-#    environment:
-#      - DATASTORE_EMULATOR_HOST=localhost:9090
-#      - DATASTORE_PROJECT_ID=pantel-2decb
-#      - PUBSUB_EMULATOR_HOST=localhost:9080
-#      - PUBSUB_PROJECT_ID=pantel-2decb
-#    command: ["/bin/bash", "./wait_for_emulators.sh"]
+  pseudonym-server:
+    container_name: pseudonym-server
+    build: pseudonym-server
+    ports:
+      - "8090:8080"
+    environment:
+      - DATASTORE_EMULATOR_HOST=localhost:9090
+      - DATASTORE_PROJECT_ID=pantel-2decb
+      - PUBSUB_EMULATOR_HOST=localhost:9080
+      - PUBSUB_PROJECT_ID=pantel-2decb
+      - LOCAL_TESTING=true
+    command: ["/bin/bash", "./wait_for_emulators.sh"]
+    networks:
+      - simple
 
   pubsub-emulator:
     container_name: pubsub-emulator
     image: knarz/pubsub-emulator
+    networks:
+      - simple
 
   gpubsub-emulator:
     container_name: gpubsub-emulator
     image: google/cloud-sdk
     command: ["gcloud", "beta", "emulators", "pubsub", "start", "--host-port=0.0.0.0:8085"]
+    networks:
+      - simple
 
   datastore-emulator:
     container_name: datastore-emulator
@@ -72,15 +80,14 @@ services:
       - CLOUDSDK_CORE_PROJECT=pantel-2decb
       - DATASTORE_DATASET=pantel-2decb
     command: ["gcloud", "beta", "emulators", "datastore", "start", "--host-port=0.0.0.0:8081"]
+    networks:
+      - simple
 
   ext-auth-provider:
     container_name: ext-auth-provider
     build: ext-auth-provider
     networks:
-      net:
-        aliases:
-          - "acceptance-tests"
-        ipv4_address: 172.16.238.5
+      - simple
 
   acceptance-tests:
     container_name: acceptance-tests
@@ -94,7 +101,8 @@ services:
       net:
         aliases:
           - "acceptance-tests"
-        ipv4_address: 172.16.238.6
+        ipv4_address: 172.16.238.5
+      simple:
 
 networks:
   net:
@@ -103,3 +111,4 @@ networks:
       driver: default
       config:
         - subnet: 172.16.238.0/24
+  simple:
