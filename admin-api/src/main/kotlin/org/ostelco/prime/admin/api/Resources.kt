@@ -1,9 +1,9 @@
 package org.ostelco.prime.admin.api
 
 
-import org.ostelco.prime.module.getResource
-import org.ostelco.prime.model.AdminProduct
+import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.ProductClass
+import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.DataStore
 import javax.ws.rs.GET
 import javax.ws.rs.POST
@@ -78,7 +78,7 @@ class ProductResource {
     fun getProducts(@PathParam("product-sku") productSku: String) = dataStore.getProduct(productSku)
 
     @POST
-    fun createProduct(product: AdminProduct) = dataStore.createProduct(product)
+    fun createProduct(product: Product) = dataStore.createProduct(product)
 }
 
 @Path("/product_classes")

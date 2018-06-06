@@ -17,7 +17,6 @@ class PrimeDisruptor : Managed {
         private const val TIMEOUT_IN_SECONDS = 10
     }
 
-
     val disruptor: Disruptor<PrimeEvent>
 
     init {

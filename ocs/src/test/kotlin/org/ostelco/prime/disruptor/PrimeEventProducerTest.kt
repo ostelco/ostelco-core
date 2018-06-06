@@ -114,7 +114,7 @@ class PrimeEventProducerTest {
 
         private const val USED_BYTES = 300L
 
-        private const val MSISDN = "+4711223344"
+        private const val MSISDN = "4711223344"
 
         private const val STREAM_ID = "mySecret stream"
 

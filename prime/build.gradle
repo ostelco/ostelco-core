@@ -20,10 +20,10 @@ sourceSets {
   }
 }
 
+version = "1.4.0"
 dependencies {
   // interface module between prime and prime-modules
   implementation project(':prime-api')
-  implementation project(':model')
 
   // prime-modules
   runtime project(':ocs')
@@ -32,6 +32,8 @@ dependencies {
   runtime project(':admin-api')
   runtime project(':in-memory-store')
 
+  implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.9.5'
+  implementation "io.dropwizard:dropwizard-http2:$dropwizardVersion"
   implementation project(':ostelco-lib')
   implementation "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
   implementation 'com.google.guava:guava:24.1-jre'

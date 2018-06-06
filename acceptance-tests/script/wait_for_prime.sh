@@ -11,9 +11,14 @@ done
 echo "Prime launched"
 
 java -cp '/acceptance-tests.jar' org.junit.runner.JUnitCore \
-     org.ostelco.at.GetBalanceTest \
-     org.ostelco.at.GetProductsTest \
-     org.ostelco.at.PurchaseTest \
-     org.ostelco.at.AnalyticsTest \
-     org.ostelco.at.ConsentTest \
-     org.ostelco.at.ProfileTest
+     org.ostelco.at.okhttp.GetBalanceTest \
+     org.ostelco.at.okhttp.GetProductsTest \
+     org.ostelco.at.okhttp.PurchaseTest \
+     org.ostelco.at.okhttp.ConsentTest \
+     org.ostelco.at.okhttp.ProfileTest \
+     org.ostelco.at.jersey.GetBalanceTest \
+     org.ostelco.at.jersey.GetProductsTest \
+     org.ostelco.at.jersey.PurchaseTest \
+     org.ostelco.at.jersey.AnalyticsTest \
+     org.ostelco.at.jersey.ConsentTest \
+     org.ostelco.at.jersey.ProfileTest

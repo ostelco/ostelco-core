@@ -2,6 +2,7 @@
 
     #PROJECT_ID=pantel-2decb
     export PROJECT_ID="$(gcloud config get-value project -q)"
+    export PRIME_VERSION="$(gradle properties -q | grep "version:" | awk '{print $2}' | tr -d '[:space:]')"
 
 Reference:
  * https://cloud.google.com/endpoints/docs/grpc/get-started-grpc-kubernetes-engine
@@ -13,6 +14,7 @@ Reference:
 Reference:
  * https://cloud.google.com/kubernetes-engine/docs/concepts/secret
  * https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-files-from-a-pod
+ * https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables
 
 ## Endpoint
 
@@ -37,16 +39,17 @@ Increment the docker image tag (version) for next two steps.
  
 Build the Docker image (In the folder with Dockerfile)
 
-    docker build -t gcr.io/${PROJECT_ID}/prime:1.1.0 .
+    docker build -t gcr.io/${PROJECT_ID}/prime:${PRIME_VERSION} .
 Push to the registry
 
-    gcloud docker -- push gcr.io/${PROJECT_ID}/prime:1.1.0
+    gcloud docker -- push gcr.io/${PROJECT_ID}/prime:${PRIME_VERSION}
 
 Update the tag (version) of prime's docker image in `infra/prime.yaml`.
 
 Apply the deployment & service
 
-    kubectl apply -f infra/prime.yaml
+    sed -e "s/PRIME_VERSION/$PRIME_VERSION/" infra/prime.yaml | kubectl apply -f -
+    
 
 Details of the deployment
 
@@ -59,7 +62,7 @@ Details of service
 
 ## API Endpoint
 
-    gcloud endpoints services deploy prime-api.yaml
+    gcloud endpoints services deploy infra/prime-client-api.yaml
 
 ## SSL secrets for api.ostelco.org & ocs.ostelco.org
 The endpoints runtime expects the SSL configuration to be named
