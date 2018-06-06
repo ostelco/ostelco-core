@@ -19,7 +19,7 @@ services:
         aliases:
           - "prime"
         ipv4_address: 172.16.238.4
-      simple:
+      default:
 
   ocsgw:
     depends_on:
@@ -55,21 +55,15 @@ services:
       - PUBSUB_PROJECT_ID=pantel-2decb
       - LOCAL_TESTING=true
     command: ["/bin/bash", "./wait_for_emulators.sh"]
-    networks:
-      - simple
 
   pubsub-emulator:
     container_name: pubsub-emulator
     image: knarz/pubsub-emulator
-    networks:
-      - simple
 
   gpubsub-emulator:
     container_name: gpubsub-emulator
     image: google/cloud-sdk
     command: ["gcloud", "beta", "emulators", "pubsub", "start", "--host-port=0.0.0.0:8085"]
-    networks:
-      - simple
 
   datastore-emulator:
     container_name: datastore-emulator
@@ -80,14 +74,10 @@ services:
       - CLOUDSDK_CORE_PROJECT=pantel-2decb
       - DATASTORE_DATASET=pantel-2decb
     command: ["gcloud", "beta", "emulators", "datastore", "start", "--host-port=0.0.0.0:8081"]
-    networks:
-      - simple
 
   ext-auth-provider:
     container_name: ext-auth-provider
     build: ext-auth-provider
-    networks:
-      - simple
 
   acceptance-tests:
     container_name: acceptance-tests
@@ -97,12 +87,6 @@ services:
     command: ["./wait_for_prime.sh"]
     environment:
       - PRIME_SOCKET=prime:8080
-    networks:
-      net:
-        aliases:
-          - "acceptance-tests"
-        ipv4_address: 172.16.238.5
-      simple:
 
 networks:
   net:
@@ -111,4 +95,3 @@ networks:
       driver: default
       config:
         - subnet: 172.16.238.0/24
-  simple:
