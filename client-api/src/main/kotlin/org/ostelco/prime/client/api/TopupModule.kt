@@ -11,7 +11,6 @@ import io.dropwizard.auth.CachingAuthenticator
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter.Builder
 import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.setup.Environment
-import org.glassfish.jersey.client.ClientProperties
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.auth.OAuthAuthenticator
 import org.ostelco.prime.client.api.resources.AnalyticsResource
@@ -57,7 +56,7 @@ class TopupModule : PrimeModule {
         jerseyEnv.register(ConsentsResource(dao))
         jerseyEnv.register(ProductsResource(dao))
         jerseyEnv.register(ProfileResource(dao))
-        jerseyEnv.register(SubscriptionResource(dao, client, config.pseudonymEndpoint!!))
+        jerseyEnv.register(SubscriptionResource(dao, client, config.pseudonymEndpoint))
 
         /* For reporting OAuth2 caching events. */
         val metrics = SharedMetricRegistries.getOrCreate(env.getName())
