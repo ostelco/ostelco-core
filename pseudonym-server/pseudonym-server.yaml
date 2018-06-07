@@ -15,6 +15,6 @@ spec:
     spec:
       containers:
       - name: pseudonym-server
-        image: gcr.io/pantel-2decb/pseudonym-server:v1.3
+        image: gcr.io/pantel-2decb/pseudonym-server:v1.4
         ports:
         - containerPort: 8080
