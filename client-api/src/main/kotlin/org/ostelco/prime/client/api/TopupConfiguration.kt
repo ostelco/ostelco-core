@@ -25,6 +25,12 @@ class TopupConfiguration {
     }
 
     @NotNull
-    var pseudonymEndpoint: String? = null
-
+    var pseudonymEndpoint: String = ""
+        // TODO make @NotBlank or @NotEmpty work again
+        set(value) {
+            if (value.isBlank()) {
+                throw Error("modules.type['api'].config.pseudonymEndpoint is blank")
+            }
+            field = value
+        }
 }
