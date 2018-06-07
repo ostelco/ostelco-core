@@ -13,6 +13,9 @@ modules:
   - type: api
     config:
       authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
+      pseudonymEndpoint: http://pseudonym-server:8080
+      jerseyClient:
+        timeout: 3s
   - type: admin
 
 server:

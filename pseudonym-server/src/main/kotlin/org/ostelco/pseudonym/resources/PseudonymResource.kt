@@ -7,6 +7,8 @@ import com.google.cloud.datastore.Key
 import com.google.cloud.datastore.Query
 import com.google.cloud.datastore.StructuredQuery.PropertyFilter
 import org.hibernate.validator.constraints.NotBlank
+import org.ostelco.prime.model.ActivePseudonyms
+import org.ostelco.prime.model.PseudonymEntity
 import org.ostelco.pseudonym.managed.PseudonymExport
 import org.slf4j.LoggerFactory
 import java.time.Instant
@@ -21,11 +23,6 @@ import javax.ws.rs.core.Response
 import javax.ws.rs.core.Response.Status
 import kotlin.collections.HashMap
 
-
-/**
- * Class representing the Pseudonym entity in Datastore.
- */
-data class PseudonymEntity(val msisdn: String, val pseudonym: String, val start: Long, val end: Long)
 
 const val PseudonymEntityKind = "Pseudonym"
 const val msisdnPropertyName = "msisdn"
@@ -59,6 +56,12 @@ interface DateBounds {
      * Also returns the key prefix
      */
     fun getBoundsNKeyPrefix(msisdn: String, timestamp: Long): Pair<Bounds, String>
+
+    /**
+     * Returns the timestamp for start of the next period for given timestamp.
+     * (value > timestamp). Timestamps are in UTC
+     */
+    fun getNextPeriodStart(timestamp: Long): Long
 }
 
 /**
@@ -66,7 +69,7 @@ interface DateBounds {
  * are store in datastore. The key for the object is made from "<msisdn>-<start timestamp ms>.
  */
 @Path("/pseudonym")
-class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, val bigquery: BigQuery) {
+class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, val bigquery: BigQuery?) {
 
     private val LOG = LoggerFactory.getLogger(PseudonymResource::class.java)
     private val executor = Executors.newFixedThreadPool(3)
@@ -81,11 +84,7 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, va
     fun getPseudonym(@NotBlank @PathParam("msisdn") msisdn: String,
                      @NotBlank @PathParam("timestamp") timestamp: String): Response {
         LOG.info("GET pseudonym for Msisdn = $msisdn at timestamp = $timestamp")
-        val (bounds, keyPrefix) = dateBounds.getBoundsNKeyPrefix(msisdn, timestamp.toLong())
-        var entity = getPseudonymEntity(keyPrefix)
-        if (entity == null) {
-            entity = createPseudonym(msisdn, bounds, keyPrefix)
-        }
+        val entity = getPseudonymEntityFor(msisdn, timestamp.toLong())
         return Response.ok(entity, MediaType.APPLICATION_JSON).build()
     }
 
@@ -99,12 +98,34 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, va
     fun getPseudonym(@NotBlank @PathParam("msisdn") msisdn: String): Response {
         val timestamp = Instant.now().toEpochMilli()
         LOG.info("GET pseudonym for Msisdn = $msisdn at current time, timestamp = $timestamp")
+        val entity = getPseudonymEntityFor(msisdn, timestamp)
+        return Response.ok(entity, MediaType.APPLICATION_JSON).build()
+    }
+
+    /**
+     * Get the pseudonyms valid for current & next time periods for the given
+     * msisdn. In case pseudonym doesn't exist, a new one will be created
+     * for the periods
+     */
+    @GET
+    @Path("/active/{msisdn}")
+    fun getActivePseudonyms(@NotBlank @PathParam("msisdn") msisdn: String): Response {
+        val currentTimestamp = Instant.now().toEpochMilli()
+        val nextTimestamp = dateBounds.getNextPeriodStart(currentTimestamp)
+        LOG.info("GET pseudonym for Msisdn = $msisdn at timestamps = $currentTimestamp & $nextTimestamp")
+        val current = getPseudonymEntityFor(msisdn, currentTimestamp)
+        val next = getPseudonymEntityFor(msisdn, nextTimestamp)
+        val entity = ActivePseudonyms(current, next)
+        return Response.ok(entity, MediaType.APPLICATION_JSON).build()
+    }
+
+    private fun getPseudonymEntityFor(@NotBlank msisdn: String, timestamp: Long): PseudonymEntity {
         val (bounds, keyPrefix) = dateBounds.getBoundsNKeyPrefix(msisdn, timestamp)
         var entity = getPseudonymEntity(keyPrefix)
         if (entity == null) {
             entity = createPseudonym(msisdn, bounds, keyPrefix)
         }
-        return Response.ok(entity, MediaType.APPLICATION_JSON).build()
+        return entity
     }
 
     /**
@@ -166,6 +187,10 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, va
     @Path("/export/{exportId}")
     fun exportPseudonyms(@NotBlank @PathParam("exportId") exportId: String): Response {
         LOG.info("GET export all pseudonyms to the table $exportId")
+        if (bigquery == null) {
+            LOG.info("BigQuery is not available, ignoring export request $exportId")
+            return Response.status(Status.NOT_FOUND).build()
+        }
         val exporter = PseudonymExport(exportId, bigquery, datastore)
         executor.execute(exporter.getRunnable())
         return Response.ok("Started Exporting", MediaType.TEXT_PLAIN).build()

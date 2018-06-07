@@ -65,3 +65,13 @@ data class PurchaseRecord(
         var msisdn: String = "",
         var product: Product = Product(),
         var timestamp: Long = 0L)
+
+data class PseudonymEntity(
+        var msisdn: String,
+        var pseudonym: String,
+        var start: Long,
+        var end: Long)
+
+data class ActivePseudonyms(
+        var current: PseudonymEntity,
+        var next: PseudonymEntity)

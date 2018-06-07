@@ -1,5 +1,6 @@
 package org.ostelco.pseudonym
 
+import com.google.cloud.bigquery.BigQuery
 import com.google.cloud.bigquery.BigQueryOptions
 import com.google.cloud.datastore.Datastore
 import com.google.cloud.datastore.DatastoreOptions
@@ -87,7 +88,13 @@ class PseudonymServerApplication : Application<PseudonymServerConfig>() {
                 WeeklyBounds(),
                 client)
         env.lifecycle().manage(messageProcessor)
-        val bigquery = BigQueryOptions.getDefaultInstance().getService()
+
+        var bigquery: BigQuery? = null
+        if(System.getenv("LOCAL_TESTING") != "true") {
+            bigquery = BigQueryOptions.getDefaultInstance().getService()
+        } else {
+            LOG.info("Local testing, BigQuery is not available...")
+        }
         env.jersey().register(PseudonymResource(datastore, WeeklyBounds(), bigquery))
     }
 }
