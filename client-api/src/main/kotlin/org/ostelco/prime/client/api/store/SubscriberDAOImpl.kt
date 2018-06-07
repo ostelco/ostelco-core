@@ -103,7 +103,7 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
         try {
             msisdn = storage.getMsisdn(subscriptionId)
         } catch (e: StorageException) {
-            LOG.error("Did not find subscription", e)
+            LOG.error("Did not find msisdn for this subscription", e)
         }
 
         if (msisdn == null) {
