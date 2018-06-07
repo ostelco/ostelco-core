@@ -71,10 +71,16 @@ interface Storage {
     fun setBalance(msisdn: String, noOfBytes: Long): Boolean
 
     /**
-     * Get balance for Client
+     * Get subscription for given subscription-id
      */
     @Throws(StorageException::class)
     fun getSubscription(id: String): String?
+
+    /**
+     * Get msisdn for the given subscription-id
+     */
+    @Throws(StorageException::class)
+    fun getMsisdn(subscriptionId: String): String?
 
     /**
      * Get all PurchaseRecords

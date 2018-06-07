@@ -46,6 +46,8 @@ object FirebaseStorageSingleton : Storage {
 
     override fun getSubscription(id: String) = subscriptionStore.get(id)
 
+    override fun getMsisdn(subscriptionId: String) = subscriptionStore.get(subscriptionId)
+
     override fun addSubscription(id: String, msisdn: String) {
         subscriptionStore.create(id, msisdn)
         balanceStore.create(msisdn, 0)

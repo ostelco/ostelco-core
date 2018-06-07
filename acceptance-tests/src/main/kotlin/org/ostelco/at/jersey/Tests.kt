@@ -2,6 +2,7 @@ package org.ostelco.at.jersey
 
 import org.junit.Test
 import org.ostelco.at.common.expectedProducts
+import org.ostelco.prime.client.model.ActivePseudonyms
 import org.ostelco.prime.client.model.Consent
 import org.ostelco.prime.client.model.Product
 import org.ostelco.prime.client.model.Profile
@@ -10,6 +11,7 @@ import org.ostelco.prime.logger
 import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class GetBalanceTest {
@@ -28,6 +30,25 @@ class GetBalanceTest {
             assertEquals("4747900184", it.msisdn, "Incorrect 'MSISDN' in purchase record")
             assertEquals(expectedProducts().first(), it.product, "Incorrect 'Product' in purchase record")
         }
+    }
+}
+
+class GetPseudonymsTest {
+
+    private val LOG by logger()
+
+    @Test
+    fun testGetActivePseudonyms() {
+
+        val activePseudonyms: ActivePseudonyms = get {
+            path = "/subscription/activePseudonyms"
+        }
+
+        LOG.info("Current: ${activePseudonyms.current.pseudonym}")
+        LOG.info("Next: ${activePseudonyms.next.pseudonym}")
+        assertNotNull(activePseudonyms.current.pseudonym,"Empty current pseudonym")
+        assertNotNull(activePseudonyms.next.pseudonym,"Empty next pseudonym")
+        assertEquals(activePseudonyms.current.end+1, activePseudonyms.next.start, "The pseudonyms are not in order")
     }
 }
 

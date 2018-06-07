@@ -12,7 +12,7 @@ class TestPrimeConfig {
     /**
      * Do nothing.
      * This test will just start and stop the server.
-     * It will validate config file in 'src/test/resources/config.yaml'
+     * It will validate config file in 'src/integration-tests/resources/config.yaml'
      */
     @Test
     fun test() {
@@ -24,11 +24,13 @@ class TestPrimeConfig {
         private val SUPPORT = DropwizardTestSupport(PrimeApplication::class.java,
                 ResourceHelpers.resourceFilePath("config.yaml"))
 
+        @JvmStatic
         @BeforeClass
         fun beforeClass() {
             SUPPORT.before()
         }
 
+        @JvmStatic
         @AfterClass
         fun afterClass() {
             SUPPORT.after()

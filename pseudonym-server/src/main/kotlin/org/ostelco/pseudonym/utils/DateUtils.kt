@@ -30,6 +30,19 @@ class WeeklyBounds : DateBounds {
         return Pair(start, end)
     }
 
+    override fun getNextPeriodStart(timestamp: Long): Long {
+        val cal = Calendar.getInstance(timeZone)
+        cal.timeInMillis = timestamp
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.clear(Calendar.MINUTE)
+        cal.clear(Calendar.SECOND)
+        cal.clear(Calendar.MILLISECOND)
+
+        cal.set(Calendar.DAY_OF_WEEK, cal.firstDayOfWeek)
+        cal.add(Calendar.WEEK_OF_YEAR, 1)
+        return cal.timeInMillis
+    }
+
     override fun getBoundsNKeyPrefix(msisdn: String, timestamp: Long): Pair<Bounds, String> {
         val bounds = getBounds(timestamp.toLong())
         val keyPrefix = "${msisdn}-${bounds.first}"
