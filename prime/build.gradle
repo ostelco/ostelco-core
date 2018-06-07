@@ -26,17 +26,20 @@ dependencies {
   implementation project(':prime-api')
 
   // prime-modules
-  runtime project(':ocs')
-  runtime project(':firebase-store')
-  runtime project(':client-api')
-  runtime project(':admin-api')
-  runtime project(':in-memory-store')
+  runtimeOnly project(':ocs')
+  runtimeOnly project(':firebase-store')
+  runtimeOnly project(':client-api')
+  runtimeOnly project(':admin-api')
+  runtimeOnly project(':in-memory-store')
+
+  // removing io.grpc:grpc-netty-shaded:1.10.1 causes ALPN error
+  implementation 'io.grpc:grpc-netty-shaded:1.10.1'
 
   implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.9.5'
   implementation "io.dropwizard:dropwizard-http2:$dropwizardVersion"
   implementation project(':ostelco-lib')
   implementation "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
-  implementation 'com.google.guava:guava:24.1-jre'
+  implementation 'com.google.guava:guava:25.1-jre'
 
   // for integration tests
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
