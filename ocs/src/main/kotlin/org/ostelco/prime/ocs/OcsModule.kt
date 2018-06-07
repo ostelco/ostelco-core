@@ -23,7 +23,7 @@ class OcsModule : PrimeModule {
     override fun init(env: Environment) {
 
         val notifier = getResource<AppNotifier>()
-        notifier.notify("some msisdn")
+        notifier.notify("4790300157", "Pi", "You haz data not!")
 
         val disruptor = PrimeDisruptor()
 

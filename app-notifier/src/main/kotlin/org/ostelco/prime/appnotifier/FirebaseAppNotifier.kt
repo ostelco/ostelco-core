@@ -7,6 +7,9 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.Message
+import com.google.firebase.messaging.Notification
+import org.ostelco.prime.module.getResource
+import org.ostelco.prime.storage.legacy.Storage
 import java.io.FileInputStream
 import java.io.IOException
 import java.nio.file.Files
@@ -14,38 +17,45 @@ import java.nio.file.Paths
 
 class FirebaseAppNotifier: AppNotifier {
 
-    override fun notify(msisdn: String) {
+    override fun notify(msisdn: String, title: String, body: String) {
         println("Will try to notify msisdn : $msisdn")
-        sendNotification(msisdn)
+        sendNotification(msisdn, title, body)
     }
 
-    private fun sendNotification(msisdn: String) {
+    private fun sendNotification(msisdn: String, title: String, body: String) {
+
+        val store = getResource<Storage>()
+
         // This registration token comes from the client FCM SDKs.
-        val applicationToken = "THE_APP_TOKEN"
+        val applicationToken = store.getNotificationToken(msisdn)
 
-        // See documentation on defining a message payload.
-        val message = Message.builder()
-                .putData("score", "850")
-                .putData("time", "2:45")
-                .setToken(applicationToken)
-                .build()
+        if (applicationToken != null) {
 
-        // Send a message to the device corresponding to the provided
-        // registration token.
-        val future = FirebaseMessaging
-                .getInstance(FirebaseApp.getInstance("fcm"))
-                .sendAsync(message)
+            // See documentation on defining a message payload.
+            val message = Message.builder()
+                    .setNotification(Notification(title, body))
+                    .setToken(applicationToken)
+                    .build()
 
-        val apiFutureCallback = object : ApiFutureCallback<String>  {
-            override fun onSuccess(result: String) {
-                println("Notification completed with result: $result")
+            // Send a message to the device corresponding to the provided
+            // registration token.
+            val future = FirebaseMessaging
+                    .getInstance(FirebaseApp.getInstance("fcm"))
+                    .sendAsync(message)
+
+            val apiFutureCallback = object : ApiFutureCallback<String> {
+                override fun onSuccess(result: String) {
+                    println("Notification completed with result: $result")
+                }
+
+                override fun onFailure(t: Throwable) {
+                    println("Notification failed with error: $t")
+                }
             }
 
-            override fun onFailure(t: Throwable) {
-                println("Notification failed with error: $t")
-            }
+            addCallback(future, apiFutureCallback)
+        } else {
+            println("Not able to fetch notification token for msisdn : $msisdn")
         }
-
-        addCallback(future, apiFutureCallback)
     }
 }

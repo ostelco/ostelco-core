@@ -88,6 +88,14 @@ object FirebaseStorageSingleton : Storage {
             balanceStore.delete(msisdn)
         }
     }
+
+    override fun addNotificationToken(msisdn: String, token: String) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun getNotificationToken(msisdn: String): String? {
+        return fcmTokenStore.get(msisdn)
+    }
 }
 
 val balanceEntity = EntityType("balance", Long::class.java)
@@ -95,6 +103,7 @@ val productEntity = EntityType("products", Product::class.java)
 val subscriptionEntity = EntityType("subscriptions", String::class.java)
 val subscriberEntity = EntityType("subscribers", Subscriber::class.java)
 val paymentHistoryEntity = EntityType("paymentHistory", PurchaseRecord::class.java)
+val fcmTokenEntity = EntityType("notificationTokens/FCM", String::class.java)
 
 val config = FirebaseConfigRegistry.firebaseConfig
 val firebaseDatabase = setupFirebaseInstance(config.databaseName, config.configFile)
@@ -104,6 +113,7 @@ val productStore = EntityStore(firebaseDatabase, productEntity)
 val subscriptionStore = EntityStore(firebaseDatabase, subscriptionEntity)
 val subscriberStore = EntityStore(firebaseDatabase, subscriberEntity)
 val paymentHistoryStore = EntityStore(firebaseDatabase, paymentHistoryEntity)
+val fcmTokenStore = EntityStore(firebaseDatabase, fcmTokenEntity)
 
 private fun setupFirebaseInstance(
         databaseName: String,
