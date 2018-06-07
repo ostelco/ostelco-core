@@ -22,9 +22,6 @@ class OcsModule : PrimeModule {
 
     override fun init(env: Environment) {
 
-        val notifier = getResource<AppNotifier>()
-        notifier.notify("4790300157", "Pi", "You haz data not!")
-
         val disruptor = PrimeDisruptor()
 
         // Disruptor provides RingBuffer, which is used by Producer

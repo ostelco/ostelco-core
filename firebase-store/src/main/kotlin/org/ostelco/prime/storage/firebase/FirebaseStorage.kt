@@ -90,7 +90,7 @@ object FirebaseStorageSingleton : Storage {
     }
 
     override fun addNotificationToken(msisdn: String, token: String) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        fcmTokenStore.create(msisdn, token)
     }
 
     override fun getNotificationToken(msisdn: String): String? {
