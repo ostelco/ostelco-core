@@ -3,6 +3,7 @@ package org.ostelco.prime.events
 import com.lmax.disruptor.EventHandler
 import org.ostelco.prime.disruptor.PrimeEvent
 import org.ostelco.prime.logger
+import org.ostelco.prime.model.*
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.legacy.Storage
 import org.ostelco.prime.storage.legacy.StorageException
@@ -12,10 +13,10 @@ import org.ostelco.prime.storage.legacy.StorageException
  * It will be initialized properly using `getResource()`.
  * Storage is parameterized into constructor to be able to pass mock for unit testing.
  */
-class EventProcessor(
-        private val storage: Storage = getResource()) : EventHandler<PrimeEvent> {
+class EventProcessor(private val storage: Storage = getResource()) : EventHandler<PrimeEvent> {
 
     private val LOG by logger()
+
 
     override fun onEvent(
             event: PrimeEvent,
@@ -29,9 +30,21 @@ class EventProcessor(
             if (msisdn != null) {
                 setRemainingByMsisdn(msisdn, event.bundleBytes)
             }
+            checkThreshold(event)
         } catch (e: Exception) {
             LOG.warn("Exception handling prime event in EventProcessor", e)
         }
+    }
+
+    private fun checkThreshold(event: PrimeEvent) {
+        /*
+        if (event.bundleBytes < lowBalanceThreshold) {
+            // Only send when just crossed the threshold
+            if ((event.bundleBytes + event.reservedBucketBytes) > lowBalanceThreshold) {
+                storage.addNotification(Subscriber(event.msisdn!!, event.bundleBytes))
+            }
+        }
+        */
     }
 
     @Throws(EventProcessorException::class)

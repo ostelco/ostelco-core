@@ -89,6 +89,12 @@ interface Storage {
     fun getPurchaseRecords(id: String): Collection<PurchaseRecord>
 
     /**
+     * This is using the storage as an API for sending notifications to the subscriber.
+     * It will send a notification to the subscriber about the current balance.
+     */
+    fun addNotification(subscriber: Subscriber)
+
+    /**
      * Add PurchaseRecord after Purchase operation
      */
     @Throws(StorageException::class)

@@ -66,4 +66,8 @@ class OcsConfig {
     @NotEmpty
     @JsonProperty("topicId")
     lateinit var topicId: String
+
+    @NotEmpty
+    @JsonProperty("lowBalanceThreshold")
+    lateinit var lowBalanceThreshold: String
 }
