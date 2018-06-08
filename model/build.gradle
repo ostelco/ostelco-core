@@ -9,6 +9,6 @@ plugins {
 
 dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
-  implementation "com.fasterxml.jackson.core:jackson-annotations:2.9.0"
+  implementation "com.fasterxml.jackson.core:jackson-annotations:2.9.5"
   implementation "org.slf4j:slf4j-api:1.7.25"
 }

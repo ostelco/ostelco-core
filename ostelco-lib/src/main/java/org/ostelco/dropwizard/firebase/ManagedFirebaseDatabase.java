@@ -1,9 +1,9 @@
 package org.ostelco.dropwizard.firebase;
 
 import com.codahale.metrics.health.HealthCheck;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.auth.FirebaseCredentials;
 import com.google.firebase.database.FirebaseDatabase;
 import io.dropwizard.lifecycle.Managed;
 
@@ -67,7 +67,7 @@ public final class ManagedFirebaseDatabase implements Managed {
         try (FileInputStream serviceAccount = new FileInputStream(configFile)) {
 
             final FirebaseOptions options = new FirebaseOptions.Builder().
-                    setCredential(FirebaseCredentials.fromCertificate(serviceAccount)).
+                    setCredentials(GoogleCredentials.fromStream(serviceAccount)).
                     setDatabaseUrl("https://" + databaseName + ".firebaseio.com/").
                     build();
             try {
