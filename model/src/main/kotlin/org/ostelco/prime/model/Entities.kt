@@ -38,6 +38,11 @@ data class Subscriber(
         }
 }
 
+data class ApplicationToken(
+        var token: String = "",
+        var applicationID: String = "",
+        var tokenType: String = "")
+
 data class Price(
         var amount: Int = 0,
         var currency: String = "")

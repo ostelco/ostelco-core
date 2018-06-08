@@ -64,6 +64,27 @@ paths:
           description: "Profile not found."
       security:
         - auth0_jwt: []
+  "/applicationtoken":
+    post:
+      description: "Store application token"
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      operationId: "storeApplicationToken"
+      parameters:
+        - name: applicationToken
+          in: body
+          description: application token
+          schema:
+            $ref: '#/definitions/ApplicationToken'
+      responses:
+        201:
+          description: "Successfully stored token."
+        500:
+          description: "Not able to store token."
+      security:
+        - auth0_jwt: []
   "/products":
     get:
       description: "Get all products for the user."
@@ -262,6 +283,21 @@ definitions:
     required:
       - amount
       - currency
+  ApplicationToken:
+    type: object
+    properties:
+      token:
+        description: "Application token"
+        type: string
+      applicationID:
+        description: "Uniquely identifier for the app instance"
+        type: string
+      tokenType:
+        description: "Type of application token (FCM)"
+        type: string
+    required:
+      - token
+      - applicationID
   PseudonymEntity:
     type: object
     properties:
