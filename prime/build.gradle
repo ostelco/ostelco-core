@@ -31,6 +31,7 @@ dependencies {
   runtimeOnly project(':client-api')
   runtimeOnly project(':admin-api')
   runtimeOnly project(':in-memory-store')
+  runtime project(':app-notifier')
 
   // removing io.grpc:grpc-netty-shaded:1.10.1 causes ALPN error
   implementation 'io.grpc:grpc-netty-shaded:1.10.1'

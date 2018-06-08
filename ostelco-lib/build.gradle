@@ -7,7 +7,7 @@ plugins {
 dependencies {
     implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
     implementation "io.dropwizard:dropwizard-auth:$dropwizardVersion"
-    // Keep it to 5.10.0 to match netty via ocs-api
+    // Match netty via ocs-api
     implementation 'com.google.firebase:firebase-admin:6.2.0'
     implementation 'com.lmax:disruptor:3.4.2'
     implementation 'com.google.guava:guava:25.1-jre'
