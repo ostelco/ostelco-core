@@ -65,15 +65,15 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
         return getProfile(subscriptionId)
     }
 
-    override fun storeApplicationToken(subscriptionId: String, token: ApplicationToken): Either<ApiError, ApplicationToken> {
+    override fun storeApplicationToken(subscriptionId: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken> {
 
         println("storeApplicationToken called")
         val result = getMsisdn(subscriptionId)
 
         if (result.isRight) {
             val msisdn = result.right().get()
-            storage.addNotificationToken(msisdn, token.token)
-            return Either.right(token)
+            storage.addNotificationToken(msisdn, applicationToken.token)
+            return Either.right(applicationToken)
         } else {
             return Either.left(ApiError("User not found"))
         }

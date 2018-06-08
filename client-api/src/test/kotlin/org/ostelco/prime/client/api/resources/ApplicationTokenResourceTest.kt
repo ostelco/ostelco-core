@@ -20,8 +20,8 @@ import org.ostelco.prime.client.api.core.ApiError
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
 import org.ostelco.prime.model.ApplicationToken
-import org.ostelco.prime.model.Subscriber
 import java.util.*
+import javax.ws.rs.client.Client
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
@@ -53,8 +53,12 @@ class ApplicationTokenResourceTest {
         val arg1 = argumentCaptor<String>()
         val arg2 = argumentCaptor<ApplicationToken>()
 
+        val argMsisdn = argumentCaptor<String>()
+        val msisdn = "4790300001"
+
         `when`(DAO.storeApplicationToken(arg1.capture(), arg2.capture()))
                 .thenReturn(Either.right(applicationToken))
+        `when`<Either<ApiError, String>>(DAO.getMsisdn(argMsisdn.capture())).thenReturn(Either.right(msisdn))
 
         val resp = RULE.target("/applicationtoken")
                 .request(MediaType.APPLICATION_JSON)
@@ -63,9 +67,10 @@ class ApplicationTokenResourceTest {
                 .post(Entity.json("{\n" +
                         "    \"token\": \"" + token + "\",\n" +
                         "    \"applicationID\": \"" + applicationID + "\",\n" +
-                        "    \"tokenType\": \"" + tokenType + "\",\n" +
+                        "    \"tokenType\": \"" + tokenType + "\"\n" +
                         "}\n"))
 
+        println("Response is $resp")
         assertThat(resp.status).isEqualTo(Response.Status.CREATED.statusCode)
         assertThat(resp.mediaType.toString()).isEqualTo(MediaType.APPLICATION_JSON)
         assertThat(arg1.firstValue).isEqualTo(email)
@@ -75,6 +80,8 @@ class ApplicationTokenResourceTest {
 
         val DAO = mock(SubscriberDAO::class.java)
         val AUTHENTICATOR = mock(OAuthAuthenticator::class.java)
+        val PSEUDONYMENDPOINT = "http://localhost"
+        val client: Client = mock(Client::class.java)
 
         @JvmField
         @ClassRule

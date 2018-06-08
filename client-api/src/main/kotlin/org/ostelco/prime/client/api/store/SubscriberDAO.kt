@@ -36,7 +36,7 @@ interface SubscriberDAO {
 
     fun reportAnalytics(subscriptionId: String, events: String): Option<ApiError>
 
-    fun storeApplicationToken(subscriptionId: String, token: ApplicationToken): Either<ApiError, ApplicationToken>
+    fun storeApplicationToken(subscriptionId: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken>
 
     companion object {
 

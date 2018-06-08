@@ -27,7 +27,12 @@ class ApplicationTokenResource(private val dao: SubscriberDAO) : ResourceHelpers
 
         val msisdn = dao.getMsisdn(authToken.name)
 
-        println("ApplicationTokenResource called with msisdn : $msisdn and applicationToken : $applicationToken")
+        if (msisdn.isRight) {
+            val m = msisdn.right().get()
+            println("ApplicationTokenResource called with msisdn : $m")
+        } else {
+            println("ApplicationTokenResource could not find subscriper msisdn")
+        }
 
         val result = dao.getSubscriptionStatus(authToken.name)
 
