@@ -38,6 +38,8 @@ class ApplicationTokenResourceTest {
     private val applicationID = "myAppID:4378932"
     private val tokenType = "FCM"
 
+    private val applicationToken = ApplicationToken()
+
     @Before
     @Throws(Exception::class)
     fun setUp() {
@@ -51,10 +53,9 @@ class ApplicationTokenResourceTest {
         val arg1 = argumentCaptor<String>()
         val arg2 = argumentCaptor<ApplicationToken>()
 
-        /*
-        `when`(DAO.createProfile(arg1.capture(), arg2.capture()))
-                .thenReturn(Either.right(profile))
-        */
+        `when`(DAO.storeApplicationToken(arg1.capture(), arg2.capture()))
+                .thenReturn(Either.right(applicationToken))
+
         val resp = RULE.target("/applicationtoken")
                 .request(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
@@ -84,7 +85,7 @@ class ApplicationTokenResourceTest {
                                 .setPrefix("Bearer")
                                 .buildAuthFilter()))
                 .addResource(AuthValueFactoryProvider.Binder(AccessTokenPrincipal::class.java))
-                .addResource(ProfileResource(DAO))
+                .addResource(ApplicationTokenResource(DAO))
                 .setTestContainerFactory(GrizzlyWebTestContainerFactory())
                 .build()
     }

@@ -6,6 +6,7 @@ import org.ostelco.prime.client.api.core.ApiError
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.SubscriptionStatus
 import org.ostelco.prime.logger
+import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
@@ -62,6 +63,20 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
         }
 
         return getProfile(subscriptionId)
+    }
+
+    override fun storeApplicationToken(subscriptionId: String, token: ApplicationToken): Either<ApiError, ApplicationToken> {
+
+        println("storeApplicationToken called")
+        val result = getMsisdn(subscriptionId)
+
+        if (result.isRight) {
+            val msisdn = result.right().get()
+            storage.addNotificationToken(msisdn, token.token)
+            return Either.right(token)
+        } else {
+            return Either.left(ApiError("User not found"))
+        }
     }
 
     override fun updateProfile(subscriptionId: String, profile: Subscriber): Either<ApiError, Subscriber> {
