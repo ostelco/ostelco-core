@@ -9,7 +9,7 @@ plugins {
 
 dependencies {
   implementation project(":prime-api")
-  // Keep it to 5.10.0 to match netty via ocs-api
+  // Match netty via ocs-api
   implementation 'com.google.firebase:firebase-admin:6.2.0'
 
   testImplementation "junit:junit:4.12"
