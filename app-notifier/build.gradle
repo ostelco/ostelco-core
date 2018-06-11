@@ -8,11 +8,9 @@ plugins {
 }
 
 dependencies {
-  implementation project(':prime-api')
+  implementation project(":prime-api")
+  // Keep it to 5.10.0 to match netty via ocs-api
+  implementation 'com.google.firebase:firebase-admin:6.2.0'
 
-  implementation 'com.google.cloud:google-cloud-pubsub:1.32.0'
-  implementation 'com.lmax:disruptor:3.4.2'
-
-  testImplementation 'org.mockito:mockito-core:2.18.3'
   testImplementation "junit:junit:4.12"
 }

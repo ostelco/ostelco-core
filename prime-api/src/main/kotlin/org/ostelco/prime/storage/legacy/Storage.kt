@@ -93,4 +93,14 @@ interface Storage {
      */
     @Throws(StorageException::class)
     fun addPurchaseRecord(id: String, purchase: PurchaseRecord): String?
+
+    /**
+     * Get token used for sending notification to user application
+     */
+    fun getNotificationToken(msisdn : String): String?
+
+    /**
+     * Add token used for sending notification to user application
+     */
+    fun addNotificationToken(msisdn: String, token: String)
 }
