@@ -61,3 +61,7 @@ SQL for joining dataconsumption and pseudonyms table
       [pantel-2decb:exported_pseudonyms.3ebcdc4a7ecc4cd385e82087e49b7b7b] as ps
     ON  ps.msisdn = hc.msisdn
 
+Login to gcr.io for pushing images
+
+    docker login -u oauth2accesstoken -p "$(gcloud auth print-access-token)" https://gcr.io
+
