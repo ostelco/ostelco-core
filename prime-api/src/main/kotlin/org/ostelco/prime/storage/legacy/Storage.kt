@@ -1,5 +1,6 @@
 package org.ostelco.prime.storage.legacy
 
+import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
@@ -97,10 +98,11 @@ interface Storage {
     /**
      * Get token used for sending notification to user application
      */
-    fun getNotificationToken(msisdn : String): String?
+    fun getNotificationTokens(msisdn : String): Collection<ApplicationToken>
 
     /**
      * Add token used for sending notification to user application
      */
-    fun addNotificationToken(msisdn: String, token: String)
+    fun addNotificationToken(msisdn: String, token: ApplicationToken) : Boolean
+
 }

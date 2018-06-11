@@ -25,23 +25,22 @@ class ApplicationTokenResource(private val dao: SubscriberDAO) : ResourceHelpers
                     .build()
         }
 
-        val msisdn = dao.getMsisdn(authToken.name)
+        val result = dao.getMsisdn(authToken.name)
 
-        if (msisdn.isRight) {
-            val m = msisdn.right().get()
-            println("ApplicationTokenResource called with msisdn : $m")
+        if (result.isRight) {
+            val msisdn = result.right().get()
+            val created = dao.storeApplicationToken(msisdn, applicationToken)
+            if (created.isRight) {
+                return Response.status(Response.Status.CREATED)
+                        .entity(asJson(created.right().get()))
+                        .build()
+            } else {
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity(asJson(created.left().get()))
+                        .build()
+            }
         } else {
-            println("ApplicationTokenResource could not find subscriper msisdn")
-        }
-
-        val result = dao.getSubscriptionStatus(authToken.name)
-
-        return if (result.isRight) {
-            Response.status(Response.Status.CREATED)
-                    .entity(asJson(result.right().get()))
-                    .build()
-        } else {
-            Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(asJson(result.left().get()))
                     .build()
         }

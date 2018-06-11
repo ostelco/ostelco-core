@@ -70,17 +70,18 @@ class ApplicationTokenResourceTest {
                         "    \"tokenType\": \"" + tokenType + "\"\n" +
                         "}\n"))
 
-        println("Response is $resp")
         assertThat(resp.status).isEqualTo(Response.Status.CREATED.statusCode)
         assertThat(resp.mediaType.toString()).isEqualTo(MediaType.APPLICATION_JSON)
-        assertThat(arg1.firstValue).isEqualTo(email)
+        assertThat(arg1.firstValue).isEqualTo(msisdn)
+        assertThat(arg2.firstValue.token).isEqualTo(token)
+        assertThat(arg2.firstValue.applicationID).isEqualTo(applicationID)
+        assertThat(arg2.firstValue.tokenType).isEqualTo(tokenType)
     }
 
     companion object {
 
         val DAO = mock(SubscriberDAO::class.java)
         val AUTHENTICATOR = mock(OAuthAuthenticator::class.java)
-        val PSEUDONYMENDPOINT = "http://localhost"
         val client: Client = mock(Client::class.java)
 
         @JvmField

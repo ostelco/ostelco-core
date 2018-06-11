@@ -9,6 +9,7 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import org.ostelco.prime.logger
+import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
@@ -89,12 +90,14 @@ object FirebaseStorageSingleton : Storage {
         }
     }
 
-    override fun addNotificationToken(msisdn: String, token: String) {
-        fcmTokenStore.create(msisdn, token)
+    override fun addNotificationToken(msisdn: String, token: ApplicationToken) : Boolean {
+        return fcmTokenStore.setInPath(token, msisdn, token.applicationID)
     }
 
-    override fun getNotificationToken(msisdn: String): String? {
-        return fcmTokenStore.get(msisdn)
+    override fun getNotificationTokens(msisdn: String): Collection<ApplicationToken> {
+        return fcmTokenStore.getAll {
+            databaseReference.child(urlEncode(msisdn))
+        }.values
     }
 }
 
@@ -103,7 +106,7 @@ val productEntity = EntityType("products", Product::class.java)
 val subscriptionEntity = EntityType("subscriptions", String::class.java)
 val subscriberEntity = EntityType("subscribers", Subscriber::class.java)
 val paymentHistoryEntity = EntityType("paymentHistory", PurchaseRecord::class.java)
-val fcmTokenEntity = EntityType("notificationTokens/FCM", String::class.java)
+val fcmTokenEntity = EntityType("notificationTokens", ApplicationToken::class.java)
 
 val config = FirebaseConfigRegistry.firebaseConfig
 val firebaseDatabase = setupFirebaseInstance(config.databaseName, config.configFile)
@@ -305,6 +308,20 @@ class EntityStore<E>(
         }
         val future = databaseReference.child(urlEncode(id)).removeValueAsync()
         future.get(TIMEOUT, SECONDS) ?: return false
+        return true
+    }
+
+    fun setInPath(token: E, vararg childNodes: String): Boolean {
+
+        var ref = databaseReference
+
+        for (node in childNodes) {
+            ref = ref.child(urlEncode(node))
+        }
+
+        val future = ref.setValueAsync(token)
+        //future.get(TIMEOUT, SECONDS) ?: return false
+        future.get(TIMEOUT, SECONDS)
         return true
     }
 }
