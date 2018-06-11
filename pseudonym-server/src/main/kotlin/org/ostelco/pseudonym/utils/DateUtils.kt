@@ -10,11 +10,12 @@ import java.util.*
  */
 class WeeklyBounds : DateBounds {
     private val timeZone = TimeZone.getTimeZone("UTC")
+    private val locale  = java.util.Locale.UK
     /**
      * Returns the boundaries for the week of the given timestamp.
      */
     fun getBounds(timestamp: Long): Pair<Long, Long> {
-        val cal = Calendar.getInstance(timeZone)
+        val cal = Calendar.getInstance(timeZone, locale)
         cal.timeInMillis = timestamp
         cal.set(Calendar.HOUR_OF_DAY, 0)
         cal.clear(Calendar.MINUTE)
@@ -31,7 +32,7 @@ class WeeklyBounds : DateBounds {
     }
 
     override fun getNextPeriodStart(timestamp: Long): Long {
-        val cal = Calendar.getInstance(timeZone)
+        val cal = Calendar.getInstance(timeZone, locale)
         cal.timeInMillis = timestamp
         cal.set(Calendar.HOUR_OF_DAY, 0)
         cal.clear(Calendar.MINUTE)
