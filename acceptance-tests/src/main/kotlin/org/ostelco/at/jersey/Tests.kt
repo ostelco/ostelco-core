@@ -196,5 +196,9 @@ class ProfileTest {
             path = "/applicationtoken"
             body = testToken
         }
+
+        assertEquals(token, reply.token, "Incorrect token in reply after posting new token")
+        assertEquals(applicationId, reply.applicationID, "Incorrect applicationId in reply after posting new token")
+        assertEquals(tokenType, reply.tokenType, "Incorrect tokenType in reply after posting new token")
     }
 }
