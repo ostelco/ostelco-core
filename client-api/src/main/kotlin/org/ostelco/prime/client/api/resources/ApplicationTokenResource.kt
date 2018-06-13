@@ -35,12 +35,12 @@ class ApplicationTokenResource(private val dao: SubscriberDAO) : ResourceHelpers
                         .entity(asJson(created.right().get()))
                         .build()
             } else {
-                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                return Response.status(507) // Insufficient Storage
                         .entity(asJson(created.left().get()))
                         .build()
             }
         } else {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+            return Response.status(Response.Status.NOT_FOUND)
                     .entity(asJson(result.left().get()))
                     .build()
         }

@@ -65,11 +65,24 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
         return getProfile(subscriptionId)
     }
 
-    override fun storeApplicationToken(subscriptionId: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken> {
-        if ( storage.addNotificationToken(subscriptionId, applicationToken) ) {
-            return Either.right(applicationToken)
-        } else {
+    override fun storeApplicationToken(msisdn: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken> {
+        try {
+            storage.addNotificationToken(msisdn, applicationToken)
+        } catch(e: Exception) {
+            LOG.error("Failed to store ApplicationToken", e)
             return Either.left(ApiError("Failed to store ApplicationToken"))
+        }
+        return getNotificationToken(msisdn, applicationToken.applicationID)
+    }
+
+    fun getNotificationToken(msisdn: String, applicationId: String): Either<ApiError, ApplicationToken> {
+        try {
+            return storage.getNotificationToken(msisdn, applicationId)
+                    ?.let { Either.right<ApiError, ApplicationToken>(it) }
+                    ?: return Either.left(ApiError("Failed to get ApplicationToken"))
+        } catch (e: StorageException) {
+            LOG.error("Failed to get ApplicationToken", e)
+            return Either.left(ApiError("Failed to get ApplicationToken"))
         }
     }
 
@@ -104,7 +117,6 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
             LOG.error("Failed to get balance", e)
             return Either.left(ApiError("Failed to get balance"))
         }
-
     }
 
     override fun getMsisdn(subscriptionId: String): Either<ApiError, String> {

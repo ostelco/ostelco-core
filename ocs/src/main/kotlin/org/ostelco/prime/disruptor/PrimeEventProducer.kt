@@ -10,8 +10,7 @@ interface PrimeEventProducer {
     fun releaseReservedDataBucketEvent(
             msisdn: String,
             bytes: Long)
-
-    // FixMe : For now we assume that there is only 1 MSCC in the Request.
+    
     fun injectCreditControlRequestIntoRingbuffer(
             request: CreditControlRequestInfo,
             streamId: String)

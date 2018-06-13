@@ -81,7 +81,11 @@ paths:
       responses:
         201:
           description: "Successfully stored token."
-        500:
+          schema:
+            $ref: '#/definitions/ApplicationToken'
+        404:
+          description: "User not found."
+        507:
           description: "Not able to store token."
       security:
         - auth0_jwt: []
