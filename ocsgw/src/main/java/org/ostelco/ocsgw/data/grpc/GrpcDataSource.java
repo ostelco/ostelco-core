@@ -110,36 +110,46 @@ public class GrpcDataSource implements DataSource {
     private void reconnectActivate() {
         LOG.info("reconnectActivate called");
 
-        if (initActivateFuture == null || initActivateFuture.isDone()) {
-            LOG.info("Schedule new Callable initActivate");
-            initActivateFuture = executorService.schedule((Callable<Object>) () -> {
-                        LOG.info("Calling initActivate");
-                        initActivate();
-                        return "Called!";
-                    },
-                    5,
-                    TimeUnit.SECONDS);
+        if (initActivateFuture != null) {
+            initActivateFuture.cancel(true);
         }
+
+        LOG.info("Schedule new Callable initActivate");
+        initActivateFuture = executorService.schedule((Callable<Object>) () -> {
+                    LOG.info("Calling initActivate");
+                    initActivate();
+                    return "Called!";
+                },
+                5,
+                TimeUnit.SECONDS);
     }
 
-    private void reconnectCreditControlRequest() {
+    private void reconnectCcrKeepAlive() {
         LOG.info("reconnectCreditControlRequest called");
         if (keepAliveFuture != null) {
             keepAliveFuture.cancel(true);
         }
 
-        if (initCCRFuture == null || initCCRFuture.isDone()) {
-            LOG.info("Schedule new Callable initCreditControlRequest");
-            initCCRFuture = executorService.schedule((Callable<Object>) () -> {
-                        LOG.info("Calling initCreditControlRequest");
-                        initCreditControlRequest();
-                        LOG.info("Calling initKeepAlive");
-                        initKeepAlive();
-                        return "Called!";
-                    },
-                    5,
-                    TimeUnit.SECONDS);
+        initKeepAlive();
+    }
+
+
+    private void reconnectCreditControlRequest() {
+        LOG.info("reconnectCreditControlRequest called");
+
+        if (initCCRFuture != null) {
+            initCCRFuture.cancel(true);
         }
+
+        LOG.info("Schedule new Callable initCreditControlRequest");
+        initCCRFuture = executorService.schedule((Callable<Object>) () -> {
+                    reconnectCcrKeepAlive();
+                    LOG.info("Calling initCreditControlRequest");
+                    initCreditControlRequest();
+                    return "Called!";
+                },
+                5,
+                TimeUnit.SECONDS);
     }
 
     public GrpcDataSource(final String target, final boolean encrypted) throws IOException {
@@ -233,7 +243,7 @@ public class GrpcDataSource implements DataSource {
     }
 
     private void initKeepAlive() {
-        // this is just to keep connection alive
+        // this is used to keep connection alive
         keepAliveFuture = executorService.scheduleWithFixedDelay(() -> {
                     final CreditControlRequestInfo ccr = CreditControlRequestInfo.newBuilder()
                             .setType(CreditControlRequestType.NONE)
