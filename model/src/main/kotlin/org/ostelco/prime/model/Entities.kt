@@ -2,20 +2,21 @@ package org.ostelco.prime.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 
-interface Entity {
+interface HasId {
     var id: String
 }
 
+open class Entity : HasId {
+    @JsonIgnore
+    override var id: String = ""
+}
+
 data class Offer(
-        @JsonIgnore
-        override var id: String = "",
-        var segments: List<Segment> = emptyList(),
-        var products: List<Product> = emptyList()) : Entity
+        var segments: Collection<String> = emptyList(),
+        var products: Collection<String> = emptyList()) : Entity()
 
 data class Segment(
-        @JsonIgnore
-        override var id: String = "",
-        var subscribers: List<Subscriber> = emptyList()) : Entity
+        var subscribers: Collection<String> = emptyList()) : Entity()
 
 data class Subscriber(
         var email: String = "",
@@ -23,7 +24,7 @@ data class Subscriber(
         var address: String = "",
         var postCode: String = "",
         var city: String = "",
-        var country: String = "") : Entity {
+        var country: String = "") : HasId {
 
     constructor(email: String) : this() {
         this.email = email
@@ -41,7 +42,7 @@ data class Subscriber(
 data class ApplicationToken(
         var token: String = "",
         var applicationID: String = "",
-        var tokenType: String = "") : Entity {
+        var tokenType: String = "") : HasId {
 
     constructor(applicationID: String) : this() {
         this.applicationID = applicationID
@@ -56,6 +57,19 @@ data class ApplicationToken(
         }
 }
 
+data class Subscription(
+        var msisdn: String,
+        var balance: Long) : HasId {
+
+    override var id: String
+        @JsonIgnore
+        get() = msisdn
+        @JsonIgnore
+        set(value) {
+            msisdn = value
+        }
+}
+
 data class Price(
         var amount: Int = 0,
         var currency: String = "")
@@ -64,7 +78,7 @@ data class Product(
         var sku: String = "",
         var price: Price = Price(0, ""),
         var properties: Map<String, String> = mapOf(),
-        var presentation: Map<String, String> = mapOf()) : Entity {
+        var presentation: Map<String, String> = mapOf()) : HasId {
 
     override var id: String
         @JsonIgnore
@@ -77,12 +91,21 @@ data class Product(
 
 data class ProductClass(
         override var id: String = "",
-        var properties: List<String> = listOf()) : Entity
+        var properties: List<String> = listOf()) : HasId
 
 data class PurchaseRecord(
         var msisdn: String = "",
         var product: Product = Product(),
-        var timestamp: Long = 0L)
+        var timestamp: Long = 0L) : HasId {
+
+    private var _id: String = ""
+
+    override var id: String
+        get() = this._id
+        set(value) {
+            _id = value
+        }
+}
 
 data class PseudonymEntity(
         var msisdn: String,

@@ -43,6 +43,14 @@ services:
           - "ext-pgw"
         ipv4_address: 172.16.238.2
 
+  neo4j:
+    container_name: neo4j
+    image: neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    tmpfs: /data
+
   pseudonym-server:
     container_name: pseudonym-server
     build: pseudonym-server

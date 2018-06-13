@@ -37,7 +37,7 @@ class PurchaseRequestHandlerTest {
     @Before
     fun setUp() {
 
-        `when`<Product>(storage.getProduct(DATA_TOPUP_3GB.sku)).thenReturn(DATA_TOPUP_3GB)
+        `when`<Product>(storage.getProduct("id", DATA_TOPUP_3GB.sku)).thenReturn(DATA_TOPUP_3GB)
 
         this.purchaseRequestHandler = PurchaseRequestHandler(producer, storage)
     }
