@@ -8,10 +8,25 @@ modules:
     config:
       projectId: pantel-2decb
       topicId: data-traffic
+      lowBalanceThreshold: 30000000
   - type: api
     config:
       authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
+      pseudonymEndpoint: http://pseudonym-server-service.default.svc.cluster.local
+      jerseyClient:
+        timeout: 2s
+  - type: firebase-app-notifier
+    config:
+      configFile: /secret/pantel-prod.json
+      databaseName: pantel-2decb
   - type: admin
+
+server:
+  applicationConnectors:
+    - type: h2c
+      port: 8080
+      maxConcurrentStreams: 1024
+      initialStreamRecvWindow: 65535
 
 logging:
   level: INFO

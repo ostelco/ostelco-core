@@ -9,6 +9,7 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import org.ostelco.prime.logger
+import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
@@ -34,7 +35,7 @@ object FirebaseStorageSingleton : Storage {
     override val balances: Map<String, Long>
         get() = balanceStore.getAll()
 
-    override fun addSubscriber(id: String, subscriber: Subscriber) = subscriberStore.create(id, subscriber)
+    override fun addSubscriber(id: String, subscriber: Subscriber): Boolean = subscriberStore.create(id, subscriber)
 
     override fun getSubscriber(id: String): Subscriber? {
         val subscriber = subscriberStore.get(id)
@@ -45,6 +46,8 @@ object FirebaseStorageSingleton : Storage {
     override fun updateSubscriber(id: String, subscriber: Subscriber): Boolean = subscriberStore.update(id, subscriber)
 
     override fun getSubscription(id: String) = subscriptionStore.get(id)
+
+    override fun getMsisdn(subscriptionId: String) = subscriptionStore.get(subscriptionId)
 
     override fun addSubscription(id: String, msisdn: String) {
         subscriptionStore.create(id, msisdn)
@@ -86,6 +89,20 @@ object FirebaseStorageSingleton : Storage {
             balanceStore.delete(msisdn)
         }
     }
+
+    override fun addNotificationToken(msisdn: String, token: ApplicationToken) : Boolean {
+        return fcmTokenStore.set(token.applicationID, token) { databaseReference.child(urlEncode(msisdn)) }
+    }
+
+    override fun getNotificationToken(msisdn: String, applicationID: String): ApplicationToken? {
+        return fcmTokenStore.get(applicationID) { databaseReference.child(msisdn) }
+    }
+
+    override fun getNotificationTokens(msisdn: String): Collection<ApplicationToken> {
+        return fcmTokenStore.getAll {
+            databaseReference.child(urlEncode(msisdn))
+        }.values
+    }
 }
 
 val balanceEntity = EntityType("balance", Long::class.java)
@@ -93,6 +110,7 @@ val productEntity = EntityType("products", Product::class.java)
 val subscriptionEntity = EntityType("subscriptions", String::class.java)
 val subscriberEntity = EntityType("subscribers", Subscriber::class.java)
 val paymentHistoryEntity = EntityType("paymentHistory", PurchaseRecord::class.java)
+val fcmTokenEntity = EntityType("notificationTokens", ApplicationToken::class.java)
 
 val config = FirebaseConfigRegistry.firebaseConfig
 val firebaseDatabase = setupFirebaseInstance(config.databaseName, config.configFile)
@@ -102,6 +120,7 @@ val productStore = EntityStore(firebaseDatabase, productEntity)
 val subscriptionStore = EntityStore(firebaseDatabase, subscriptionEntity)
 val subscriberStore = EntityStore(firebaseDatabase, subscriberEntity)
 val paymentHistoryStore = EntityStore(firebaseDatabase, paymentHistoryEntity)
+val fcmTokenStore = EntityStore(firebaseDatabase, fcmTokenEntity)
 
 private fun setupFirebaseInstance(
         databaseName: String,
@@ -155,10 +174,10 @@ class EntityStore<E>(
      * @param id
      * @return Entity
      */
-    fun get(id: String): E? {
+    fun get(id: String, reference: EntityStore<E>.() -> DatabaseReference = { databaseReference }): E? {
         var entity: E? = null
         val countDownLatch = CountDownLatch(1);
-        databaseReference.child(urlEncode(id)).addListenerForSingleValueEvent(
+        reference().child(urlEncode(id)).addListenerForSingleValueEvent(
                 object : ValueEventListener {
                     override fun onCancelled(error: DatabaseError?) {
                         countDownLatch.countDown()
@@ -252,6 +271,7 @@ class EntityStore<E>(
     fun add(entity: E, reference: EntityStore<E>.() -> DatabaseReference = { databaseReference }): String? {
         val newPushedEntry = reference().push()
         val future = newPushedEntry.setValueAsync(entity)
+        // FIXME this may always return null
         future.get(TIMEOUT, SECONDS) ?: return null
         return newPushedEntry.key
     }
@@ -273,8 +293,9 @@ class EntityStore<E>(
      *
      * @return success
      */
-    fun set(id: String, entity: E): Boolean {
-        val future = databaseReference.child(urlEncode(id)).setValueAsync(entity)
+    fun set(id: String, entity: E, reference: EntityStore<E>.() -> DatabaseReference = { databaseReference }): Boolean {
+        val future = reference().child(urlEncode(id)).setValueAsync(entity)
+        // FIXME this always return false
         future.get(TIMEOUT, SECONDS) ?: return false
         return true
     }
@@ -292,6 +313,7 @@ class EntityStore<E>(
             return false
         }
         val future = databaseReference.child(urlEncode(id)).removeValueAsync()
+        // FIXME this may always return false
         future.get(TIMEOUT, SECONDS) ?: return false
         return true
     }

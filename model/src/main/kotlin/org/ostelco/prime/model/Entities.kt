@@ -38,6 +38,24 @@ data class Subscriber(
         }
 }
 
+data class ApplicationToken(
+        var token: String = "",
+        var applicationID: String = "",
+        var tokenType: String = "") : Entity {
+
+    constructor(applicationID: String) : this() {
+        this.applicationID = applicationID
+    }
+
+    override var id: String
+        @JsonIgnore
+        get() = applicationID
+        @JsonIgnore
+        set(value) {
+            applicationID = value
+        }
+}
+
 data class Price(
         var amount: Int = 0,
         var currency: String = "")
@@ -65,3 +83,13 @@ data class PurchaseRecord(
         var msisdn: String = "",
         var product: Product = Product(),
         var timestamp: Long = 0L)
+
+data class PseudonymEntity(
+        var msisdn: String,
+        var pseudonym: String,
+        var start: Long,
+        var end: Long)
+
+data class ActivePseudonyms(
+        var current: PseudonymEntity,
+        var next: PseudonymEntity)

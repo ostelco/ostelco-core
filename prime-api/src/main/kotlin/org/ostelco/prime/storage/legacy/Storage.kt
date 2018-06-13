@@ -1,5 +1,6 @@
 package org.ostelco.prime.storage.legacy
 
+import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
@@ -71,10 +72,16 @@ interface Storage {
     fun setBalance(msisdn: String, noOfBytes: Long): Boolean
 
     /**
-     * Get balance for Client
+     * Get subscription for given subscription-id
      */
     @Throws(StorageException::class)
     fun getSubscription(id: String): String?
+
+    /**
+     * Get msisdn for the given subscription-id
+     */
+    @Throws(StorageException::class)
+    fun getMsisdn(subscriptionId: String): String?
 
     /**
      * Get all PurchaseRecords
@@ -87,4 +94,16 @@ interface Storage {
      */
     @Throws(StorageException::class)
     fun addPurchaseRecord(id: String, purchase: PurchaseRecord): String?
+
+    /**
+     * Get token used for sending notification to user application
+     */
+    fun getNotificationTokens(msisdn : String): Collection<ApplicationToken>
+
+    /**
+     * Add token used for sending notification to user application
+     */
+    fun addNotificationToken(msisdn: String, token: ApplicationToken) : Boolean
+
+    fun getNotificationToken(msisdn: String, applicationID: String): ApplicationToken?
 }

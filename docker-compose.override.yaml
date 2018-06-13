@@ -19,6 +19,7 @@ services:
         aliases:
           - "prime"
         ipv4_address: 172.16.238.4
+      default:
 
   ocsgw:
     depends_on:
@@ -42,17 +43,18 @@ services:
           - "ext-pgw"
         ipv4_address: 172.16.238.2
 
-#  pseudonym-server:
-#    container_name: pseudonym-server
-#    build: pseudonym-server
-#    ports:
-#      - "8090:8080"
-#    environment:
-#      - DATASTORE_EMULATOR_HOST=localhost:9090
-#      - DATASTORE_PROJECT_ID=pantel-2decb
-#      - PUBSUB_EMULATOR_HOST=localhost:9080
-#      - PUBSUB_PROJECT_ID=pantel-2decb
-#    command: ["/bin/bash", "./wait_for_emulators.sh"]
+  pseudonym-server:
+    container_name: pseudonym-server
+    build: pseudonym-server
+    ports:
+      - "8090:8080"
+    environment:
+      - DATASTORE_EMULATOR_HOST=localhost:9090
+      - DATASTORE_PROJECT_ID=pantel-2decb
+      - PUBSUB_EMULATOR_HOST=localhost:9080
+      - PUBSUB_PROJECT_ID=pantel-2decb
+      - LOCAL_TESTING=true
+    command: ["/bin/bash", "./wait_for_emulators.sh"]
 
   pubsub-emulator:
     container_name: pubsub-emulator
@@ -76,11 +78,6 @@ services:
   ext-auth-provider:
     container_name: ext-auth-provider
     build: ext-auth-provider
-    networks:
-      net:
-        aliases:
-          - "acceptance-tests"
-        ipv4_address: 172.16.238.5
 
   acceptance-tests:
     container_name: acceptance-tests
@@ -90,11 +87,6 @@ services:
     command: ["./wait_for_prime.sh"]
     environment:
       - PRIME_SOCKET=prime:8080
-    networks:
-      net:
-        aliases:
-          - "acceptance-tests"
-        ipv4_address: 172.16.238.6
 
 networks:
   net:

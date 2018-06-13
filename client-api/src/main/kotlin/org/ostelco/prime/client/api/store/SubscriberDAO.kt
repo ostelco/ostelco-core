@@ -5,6 +5,7 @@ import io.vavr.control.Option
 import org.ostelco.prime.client.api.core.ApiError
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.SubscriptionStatus
+import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.Subscriber
 
@@ -21,6 +22,8 @@ interface SubscriberDAO {
 
     fun getSubscriptionStatus(subscriptionId: String): Either<ApiError, SubscriptionStatus>
 
+    fun getMsisdn(subscriptionId: String): Either<ApiError, String>
+
     fun getProducts(subscriptionId: String): Either<ApiError, Collection<Product>>
 
     fun purchaseProduct(subscriptionId: String, sku: String): Option<ApiError>
@@ -32,6 +35,8 @@ interface SubscriberDAO {
     fun rejectConsent(subscriptionId: String, consentId: String): Either<ApiError, Consent>
 
     fun reportAnalytics(subscriptionId: String, events: String): Option<ApiError>
+
+    fun storeApplicationToken(subscriptionId: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken>
 
     companion object {
 

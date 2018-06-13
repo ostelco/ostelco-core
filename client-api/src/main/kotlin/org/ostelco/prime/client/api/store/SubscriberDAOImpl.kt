@@ -6,6 +6,7 @@ import org.ostelco.prime.client.api.core.ApiError
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.SubscriptionStatus
 import org.ostelco.prime.logger
+import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
@@ -64,6 +65,27 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
         return getProfile(subscriptionId)
     }
 
+    override fun storeApplicationToken(msisdn: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken> {
+        try {
+            storage.addNotificationToken(msisdn, applicationToken)
+        } catch(e: Exception) {
+            LOG.error("Failed to store ApplicationToken", e)
+            return Either.left(ApiError("Failed to store ApplicationToken"))
+        }
+        return getNotificationToken(msisdn, applicationToken.applicationID)
+    }
+
+    fun getNotificationToken(msisdn: String, applicationId: String): Either<ApiError, ApplicationToken> {
+        try {
+            return storage.getNotificationToken(msisdn, applicationId)
+                    ?.let { Either.right<ApiError, ApplicationToken>(it) }
+                    ?: return Either.left(ApiError("Failed to get ApplicationToken"))
+        } catch (e: StorageException) {
+            LOG.error("Failed to get ApplicationToken", e)
+            return Either.left(ApiError("Failed to get ApplicationToken"))
+        }
+    }
+
     override fun updateProfile(subscriptionId: String, profile: Subscriber): Either<ApiError, Subscriber> {
         if (!SubscriberDAO.isValidProfile(profile)) {
             return Either.left(ApiError("Incomplete profile description"))
@@ -95,7 +117,20 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
             LOG.error("Failed to get balance", e)
             return Either.left(ApiError("Failed to get balance"))
         }
+    }
 
+    override fun getMsisdn(subscriptionId: String): Either<ApiError, String> {
+        var msisdn: String? = null
+        try {
+            msisdn = storage.getMsisdn(subscriptionId)
+        } catch (e: StorageException) {
+            LOG.error("Did not find msisdn for this subscription", e)
+        }
+
+        if (msisdn == null) {
+            return Either.left(ApiError("Did not find subscription"))
+        }
+        return Either.right(msisdn)
     }
 
     override fun getProducts(subscriptionId: String): Either<ApiError, Collection<Product>> {

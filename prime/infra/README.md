@@ -62,7 +62,7 @@ Details of service
 
 ## API Endpoint
 
-    gcloud endpoints services deploy infra/prime-api.yaml
+    gcloud endpoints services deploy infra/prime-client-api.yaml
 
 ## SSL secrets for api.ostelco.org & ocs.ostelco.org
 The endpoints runtime expects the SSL configuration to be named
