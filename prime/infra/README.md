@@ -48,7 +48,7 @@ Update the tag (version) of prime's docker image in `infra/prime.yaml`.
 
 Apply the deployment & service
 
-    sed -e "s/PRIME_VERSION/$PRIME_VERSION/" infra/prime.yaml | kubectl apply -f -
+    sed -e s/PRIME_VERSION/$PRIME_VERSION/g infra/prime.yaml | kubectl apply -f -
     
 
 Details of the deployment
