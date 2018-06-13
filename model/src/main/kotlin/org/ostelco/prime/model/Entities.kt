@@ -101,7 +101,9 @@ data class PurchaseRecord(
     private var _id: String = ""
 
     override var id: String
+        @JsonIgnore
         get() = this._id
+        @JsonIgnore
         set(value) {
             _id = value
         }
