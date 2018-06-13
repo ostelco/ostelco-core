@@ -38,6 +38,24 @@ data class Subscriber(
         }
 }
 
+data class ApplicationToken(
+        var token: String = "",
+        var applicationID: String = "",
+        var tokenType: String = "") : Entity {
+
+    constructor(applicationID: String) : this() {
+        this.applicationID = applicationID
+    }
+
+    override var id: String
+        @JsonIgnore
+        get() = applicationID
+        @JsonIgnore
+        set(value) {
+            applicationID = value
+        }
+}
+
 data class Price(
         var amount: Int = 0,
         var currency: String = "")

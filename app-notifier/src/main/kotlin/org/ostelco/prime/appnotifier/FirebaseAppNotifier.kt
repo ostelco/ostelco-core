@@ -27,14 +27,16 @@ class FirebaseAppNotifier: AppNotifier {
         val store = getResource<Storage>()
 
         // This registration token comes from the client FCM SDKs.
-        val applicationToken = store.getNotificationToken(msisdn)
+        val applicationTokens = store.getNotificationTokens(msisdn)
 
-        if (applicationToken != null) {
+        for (applicationToken in applicationTokens) {
+
+            // ToDo : Currently we asume that all tokens are for FCM
 
             // See documentation on defining a message payload.
             val message = Message.builder()
                     .setNotification(Notification(title, body))
-                    .setToken(applicationToken)
+                    .setToken(applicationToken.token)
                     .build()
 
             // Send a message to the device corresponding to the provided
@@ -54,8 +56,6 @@ class FirebaseAppNotifier: AppNotifier {
             }
 
             addCallback(future, apiFutureCallback)
-        } else {
-            println("Not able to fetch notification token for msisdn : $msisdn")
         }
     }
 }

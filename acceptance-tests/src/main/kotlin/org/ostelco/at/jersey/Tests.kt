@@ -8,7 +8,9 @@ import org.ostelco.prime.client.model.Product
 import org.ostelco.prime.client.model.Profile
 import org.ostelco.prime.client.model.SubscriptionStatus
 import org.ostelco.prime.logger
+import org.ostelco.prime.model.ApplicationToken
 import java.time.Instant
+import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -179,5 +181,24 @@ class ProfileTest {
         assertEquals("", clearedProfile.postCode, "Incorrect 'postcode' in response after clearing profile")
         assertEquals("", clearedProfile.city, "Incorrect 'city' in response after clearing profile")
         assertEquals("", clearedProfile.country, "Incorrect 'country' in response after clearing profile")
+    }
+
+    @Test
+    fun testApplicationToken() {
+
+        val token = UUID.randomUUID().toString()
+        val applicationId = "testApplicationId"
+        val tokenType = "FCM"
+
+        val testToken = ApplicationToken(token, applicationId, tokenType)
+
+        val reply: ApplicationToken = post {
+            path = "/applicationtoken"
+            body = testToken
+        }
+
+        assertEquals(token, reply.token, "Incorrect token in reply after posting new token")
+        assertEquals(applicationId, reply.applicationID, "Incorrect applicationId in reply after posting new token")
+        assertEquals(tokenType, reply.tokenType, "Incorrect tokenType in reply after posting new token")
     }
 }
