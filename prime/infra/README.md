@@ -7,6 +7,31 @@
 Reference:
  * https://cloud.google.com/endpoints/docs/grpc/get-started-grpc-kubernetes-engine
 
+## Deploying a Deployment to GKE using GCP Container/Cloud Builder
+
+ * A build trigger is configured in GCP Container/Cloud Builder to build and deploy prime to GKE cluster
+   just by adding a git tag.
+ * The tag name should be `prime-*`
+ * Tag can be on any branch. (Should we limit this to `master` branch only?).
+
+#### Limitations
+ * The version tag on docker images is `prime-X.Y.Z` instead of `X.Y.Z`.
+
+#### Future Improvements
+ * Create a custom build docker image. (suggestion by Vihang).
+ * Run AT as quality gate. (suggestion by Remseth).
+ * Use it for CI. Currently it is only CD. (suggestion by Remseth).
+ * Use `git-sha` along/instead with version (suggestion by Håvard).
+
+#### References
+ * Config: https://cloud.google.com/container-builder/docs/build-config
+ * Running locally: https://cloud.google.com/container-builder/docs/build-debug-locally
+ * Cloud builders: https://cloud.google.com/container-builder/docs/cloud-builders
+ * Customization: https://cloud.google.com/container-builder/docs/create-custom-build-steps
+ * Optimization: https://cloud.google.com/container-builder/docs/speeding-up-builds
+ * Custom Github web-hooks: https://cloud.google.com/container-builder/docs/configure-third-party-notifications
+ * Storing secrets for AT: https://cloud.google.com/container-builder/docs/securing-builds/use-encrypted-secrets-credentials
+
 ## Secrets
 
     kubectl create secret generic pantel-prod.json --from-file config/pantel-prod.json
