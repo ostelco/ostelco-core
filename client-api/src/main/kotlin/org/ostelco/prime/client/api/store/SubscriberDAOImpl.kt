@@ -75,7 +75,7 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
         return getNotificationToken(msisdn, applicationToken.applicationID)
     }
 
-    fun getNotificationToken(msisdn: String, applicationId: String): Either<ApiError, ApplicationToken> {
+    private fun getNotificationToken(msisdn: String, applicationId: String): Either<ApiError, ApplicationToken> {
         try {
             return storage.getNotificationToken(msisdn, applicationId)
                     ?.let { Either.right<ApiError, ApplicationToken>(it) }

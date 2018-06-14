@@ -17,6 +17,12 @@ import java.nio.file.Paths
 
 class FirebaseAppNotifier: AppNotifier {
 
+    val listOfFailureCodes = listOf(
+            "messaging/invalid-recipient",
+            "messaging/invalid-registration-token",
+            "messaging/registration-token-not-registered"
+    )
+
     override fun notify(msisdn: String, title: String, body: String) {
         println("Will try to notify msisdn : $msisdn")
         sendNotification(msisdn, title, body)
@@ -31,31 +37,33 @@ class FirebaseAppNotifier: AppNotifier {
 
         for (applicationToken in applicationTokens) {
 
-            // ToDo : Currently we asume that all tokens are for FCM
+            if (applicationToken.tokenType.equals("FCM")) {
+                // See documentation on defining a message payload.
+                val message = Message.builder()
+                        .setNotification(Notification(title, body))
+                        .setToken(applicationToken.token)
+                        .build()
 
-            // See documentation on defining a message payload.
-            val message = Message.builder()
-                    .setNotification(Notification(title, body))
-                    .setToken(applicationToken.token)
-                    .build()
+                // Send a message to the device corresponding to the provided
+                // registration token.
+                val future = FirebaseMessaging
+                        .getInstance(FirebaseApp.getInstance("fcm"))
+                        .sendAsync(message)
 
-            // Send a message to the device corresponding to the provided
-            // registration token.
-            val future = FirebaseMessaging
-                    .getInstance(FirebaseApp.getInstance("fcm"))
-                    .sendAsync(message)
+                val apiFutureCallback = object : ApiFutureCallback<String> {
+                    override fun onSuccess(result: String) {
+                        println("Notification completed with result: $result")
+                        if (listOfFailureCodes.contains(result)) {
+                            store.removeNotificationToken(msisdn, applicationToken.applicationID)
+                        }
+                    }
 
-            val apiFutureCallback = object : ApiFutureCallback<String> {
-                override fun onSuccess(result: String) {
-                    println("Notification completed with result: $result")
+                    override fun onFailure(t: Throwable) {
+                        println("Notification failed with error: $t")
+                    }
                 }
-
-                override fun onFailure(t: Throwable) {
-                    println("Notification failed with error: $t")
-                }
+                addCallback(future, apiFutureCallback)
             }
-
-            addCallback(future, apiFutureCallback)
         }
     }
 }

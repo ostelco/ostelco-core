@@ -154,6 +154,10 @@ object FirebaseStorageSingleton : Storage {
             databaseReference.child(urlEncode(msisdn))
         }.values
     }
+
+    override fun removeNotificationToken(msisdn: String, applicationID: String): Boolean {
+        return fcmTokenStore.delete(applicationID) { databaseReference.child(urlEncode(msisdn)) }
+    }
 }
 
 private val config = FirebaseConfigRegistry.firebaseConfig
@@ -312,11 +316,11 @@ class EntityStore<E>(
      *
      * @return success
      */
-    fun delete(id: String, dontExists: Boolean = dontExists(id)): Boolean {
+    fun delete(id: String, dontExists: Boolean = dontExists(id), reference: EntityStore<E>.() -> DatabaseReference = { databaseReference }): Boolean {
         if (dontExists) {
             return false
         }
-        val future = databaseReference.child(urlEncode(id)).removeValueAsync()
+        val future = reference().child(urlEncode(id)).removeValueAsync()
         // FIXME this may always return false
         future.get(TIMEOUT, SECONDS) ?: return false
         return true
