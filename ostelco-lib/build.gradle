@@ -1,6 +1,5 @@
 plugins {
     id "java-library"
-    id "jacoco"
     id 'net.ltgt.apt' version '0.15'
 }
 
@@ -42,3 +41,5 @@ jar {
                 'Implementation-Version': project.version)
     }
 }
+
+apply from: '../jacoco.gradle'
