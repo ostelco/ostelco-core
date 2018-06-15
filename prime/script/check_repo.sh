@@ -2,9 +2,8 @@
 
 # This script checks if current branch is master
 
-if [ master != $1 ];
-then
-    echo "Aborting. '$1' is not 'master' branch."
+if [ master != "$1" ]; then
+    (>&2 echo "Aborting. '$1' is not 'master' branch.")
     exit 1;
 fi
 exit 0;
