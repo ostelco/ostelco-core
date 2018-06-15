@@ -1,4 +1,7 @@
 steps:
+# Check if branch is master
+  - name: ubuntu
+    args: ['bash', 'prime/script/check_repo.sh', '$BRANCH_NAME']
 # Download gradle cache zip from Google Storage (GS) Bucket
   - name: gcr.io/cloud-builders/gsutil
     args: ['cp', 'gs://prime-gradle-caches/caches.tar.gz', '/root/in_zip/']
