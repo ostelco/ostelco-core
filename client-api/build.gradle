@@ -1,6 +1,6 @@
 plugins {
+    id "org.jetbrains.kotlin.jvm" version "1.2.50"
     id "java-library"
-    id "org.jetbrains.kotlin.jvm" version "1.2.41"
 }
 
 dependencies {
@@ -17,7 +17,7 @@ dependencies {
 
     testImplementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
     testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
-    testImplementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.9.5'
+    testImplementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
     testImplementation "org.mockito:mockito-core:2.18.3"
     testImplementation 'org.assertj:assertj-core:3.10.0'
 
@@ -38,3 +38,5 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
         jvmTarget = "1.8"
     }
 }
+
+apply from: '../jacoco.gradle'
