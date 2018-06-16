@@ -87,7 +87,6 @@ class PrimeEventProducerImpl(private val ringBuffer: RingBuffer<PrimeEvent>) : P
                 requestedBytes = bytes)
     }
 
-    // FixMe : For now we assume that there is only 1 MSCC in the Request.
     override fun injectCreditControlRequestIntoRingbuffer(
             request: CreditControlRequestInfo,
             streamId: String) {
@@ -98,6 +97,7 @@ class PrimeEventProducerImpl(private val ringBuffer: RingBuffer<PrimeEvent>) : P
                     streamId = streamId,
                     requestId = request.requestId)
         } else {
+            // FixMe : For now we assume that there is only 1 MSCC in the Request.
             injectIntoRingbuffer(CREDIT_CONTROL_REQUEST,
                     msisdn = request.msisdn,
                     requestedBytes = request.getMscc(0).requested.totalOctets,

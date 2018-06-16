@@ -1,17 +1,18 @@
+// these are needed only in top-level module
 plugins {
   id "java"
-  id "maven"
   id "project-report"
-  id "com.github.ben-manes.versions" version "0.17.0"
+  id "com.github.ben-manes.versions" version "0.19.0"
+  id "jacoco"
 }
 
 allprojects {
+  apply plugin: 'jacoco'
 
   group = 'org.ostelco'
   version = '1.0.0-SNAPSHOT'
 
   repositories {
-    mavenLocal()
     mavenCentral()
     jcenter()
     maven { url = "https://repository.jboss.org/nexus/content/repositories/releases/" }
@@ -27,8 +28,10 @@ subprojects {
     options.encoding = 'UTF-8'
   }
   ext {
-    kotlinVersion = "1.2.41"
-    dropwizardVersion = "1.3.3"
+    kotlinVersion = "1.2.50"
+    dropwizardVersion = "1.3.4"
+    googleCloudVersion = "1.34.0"
+    jacksonVersion = "2.9.6"
   }
 }
 

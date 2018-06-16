@@ -1,0 +1,26 @@
+plugins {
+  id "org.jetbrains.kotlin.jvm" version "1.2.50"
+  id "java-library"
+}
+
+ext.neo4jVersion="3.4.0"
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+  kotlinOptions {
+    jvmTarget = "1.8"
+  }
+}
+
+dependencies {
+
+  implementation project(":prime-api")
+  implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
+  implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
+
+  implementation "org.neo4j:neo4j-bolt:$neo4jVersion"
+
+  testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
+  testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
+}
+
+apply from: '../jacoco.gradle'

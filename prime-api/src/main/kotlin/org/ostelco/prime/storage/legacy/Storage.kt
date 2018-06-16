@@ -1,5 +1,6 @@
 package org.ostelco.prime.storage.legacy
 
+import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
@@ -26,37 +27,37 @@ interface Storage {
      * Create Subscriber Profile
      */
     @Throws(StorageException::class)
-    fun addSubscriber(id: String, subscriber: Subscriber): Boolean
+    fun addSubscriber(subscriber: Subscriber): Boolean
 
     /**
      * Update Subscriber Profile
      */
     @Throws(StorageException::class)
-    fun updateSubscriber(id: String, subscriber: Subscriber): Boolean
+    fun updateSubscriber(subscriber: Subscriber): Boolean
 
     /**
      * Remove Subscriber for testing
      */
     @Throws(StorageException::class)
-    fun removeSubscriber(id: String)
+    fun removeSubscriber(id: String): Boolean
 
     /**
      * Link Subscriber to MSISDN
      */
     @Throws(StorageException::class)
-    fun addSubscription(id: String, msisdn: String)
+    fun addSubscription(id: String, msisdn: String): Boolean
+
+    /**
+     * Get Products for a given subscriber
+     */
+    @Throws(StorageException::class)
+    fun getProducts(subscriberId: String): Map<String, Product>
 
     /**
      * Get Product to perform OCS Topup
      */
     @Throws(StorageException::class)
-    fun getProducts(): Map<String, Product>
-
-    /**
-     * Get Product to perform OCS Topup
-     */
-    @Throws(StorageException::class)
-    fun getProduct(sku: String): Product?
+    fun getProduct(subscriberId: String?, sku: String): Product?
 
     /**
      * Get balance for Client
@@ -69,12 +70,6 @@ interface Storage {
      */
     @Throws(StorageException::class)
     fun setBalance(msisdn: String, noOfBytes: Long): Boolean
-
-    /**
-     * Get subscription for given subscription-id
-     */
-    @Throws(StorageException::class)
-    fun getSubscription(id: String): String?
 
     /**
      * Get msisdn for the given subscription-id
@@ -97,10 +92,12 @@ interface Storage {
     /**
      * Get token used for sending notification to user application
      */
-    fun getNotificationToken(msisdn : String): String?
+    fun getNotificationTokens(msisdn : String): Collection<ApplicationToken>
 
     /**
      * Add token used for sending notification to user application
      */
-    fun addNotificationToken(msisdn: String, token: String)
+    fun addNotificationToken(msisdn: String, token: ApplicationToken) : Boolean
+
+    fun getNotificationToken(msisdn: String, applicationID: String): ApplicationToken?
 }

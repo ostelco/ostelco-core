@@ -1,6 +1,6 @@
 [Deploying Project](./DEPLOY.md)
 
-[Development](./DEPLOY.md)
+[Development](./DEV.md)
 
 [Glossary](./GLOSSARY.md)
 
