@@ -56,7 +56,6 @@ task integrationTest(type: Test, description: 'Runs the integration tests.', gro
   classpath = sourceSets.integrationTest.runtimeClasspath
 }
 
-check.dependsOn integrationTest
 integrationTest.mustRunAfter test
 
 apply from: '../jacoco.gradle'
