@@ -7,6 +7,7 @@ import io.dropwizard.testing.junit.DropwizardAppRule
 import io.vavr.collection.Array
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.fail
+import org.glassfish.jersey.client.ClientProperties
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -43,6 +44,8 @@ class GetUserInfoTest {
         val response = client!!.target(
                 "http://localhost:${RULE.localPort}/profile")
                 .request()
+                .property(ClientProperties.CONNECT_TIMEOUT, 30000)
+                .property(ClientProperties.READ_TIMEOUT, 30000)
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email, audience)}")
                 .get(Response::class.java)
 
@@ -59,6 +62,7 @@ class GetUserInfoTest {
                         .request()
                         .get(Response::class.java)
                 if (r.status == 200) {
+                    println("Connected")
                     break
                 }
             } catch (t: Throwable) {
@@ -86,7 +90,7 @@ class GetUserInfoTest {
         @BeforeClass
         @JvmStatic
         fun setUpClient() {
-            client = JerseyClientBuilder(RULE.environment).build("test client")
+            client = JerseyClientBuilder(RULE.environment).build("test client");
         }
     }
 }
