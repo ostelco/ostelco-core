@@ -1,10 +1,8 @@
 plugins {
+  id "org.jetbrains.kotlin.jvm" version "1.2.50"
   id "application"
-  id "jacoco"
   id "com.github.johnrengelman.shadow" version "2.0.4"
-  id "org.jetbrains.kotlin.jvm" version "1.2.41"
   id "idea"
-  id "project-report"
 }
 
 sourceSets {
@@ -20,23 +18,27 @@ sourceSets {
   }
 }
 
-version = "1.4.0"
+version = "1.5.1"
 dependencies {
   // interface module between prime and prime-modules
   implementation project(':prime-api')
 
   // prime-modules
-  runtime project(':ocs')
-  runtime project(':firebase-store')
-  runtime project(':client-api')
-  runtime project(':admin-api')
-  runtime project(':in-memory-store')
+  runtimeOnly project(':ocs')
+  runtimeOnly project(':firebase-store')
+  // runtimeOnly project(':embedded-graph-store')
+  runtimeOnly project(':client-api')
+  runtimeOnly project(':admin-api')
+  runtimeOnly project(':app-notifier')
 
-  implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.9.5'
+  // removing io.grpc:grpc-netty-shaded:1.10.1 causes ALPN error
+  implementation 'io.grpc:grpc-netty-shaded:1.10.1'
+
+  implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
   implementation "io.dropwizard:dropwizard-http2:$dropwizardVersion"
   implementation project(':ostelco-lib')
   implementation "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
-  implementation 'com.google.guava:guava:24.1-jre'
+  implementation 'com.google.guava:guava:25.1-jre'
 
   // for integration tests
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
@@ -55,6 +57,7 @@ configurations {
 }
 
 task integration(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
+  environment("GOOGLE_APPLICATION_CREDENTIALS", "config/pantel-prod.json")
   testClassesDirs = sourceSets.integration.output.classesDirs
   classpath = sourceSets.integration.runtimeClasspath
 }
@@ -63,20 +66,9 @@ shadowJar {
   mainClassName = 'org.ostelco.prime.PrimeApplicationKt'
   mergeServiceFiles()
   classifier = "uber"
+  zip64 true
   version = null
 }
-
-jacocoTestReport {
-  group = "Reporting"
-  description = "Generate Jacoco coverage reports after running tests."
-  additionalSourceDirs = files(sourceSets.main.allJava.srcDirs)
-  reports {
-    xml.enabled = true
-    html.enabled = true
-  }
-}
-
-check.dependsOn jacocoTestReport
 
 test {
   testLogging {

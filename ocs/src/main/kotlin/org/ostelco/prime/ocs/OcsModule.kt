@@ -5,11 +5,14 @@ import com.fasterxml.jackson.annotation.JsonTypeName
 import io.dropwizard.setup.Environment
 import org.hibernate.validator.constraints.NotEmpty
 import org.ostelco.prime.analytics.DataConsumptionInfoPublisher
+import org.ostelco.prime.appnotifier.AppNotifier
 import org.ostelco.prime.disruptor.ClearingEventHandler
 import org.ostelco.prime.disruptor.PrimeDisruptor
 import org.ostelco.prime.disruptor.PrimeEventProducerImpl
 import org.ostelco.prime.events.EventProcessor
 import org.ostelco.prime.module.PrimeModule
+import org.ostelco.prime.module.getResource
+import org.ostelco.prime.thresholds.ThresholdChecker
 
 @JsonTypeName("ocs")
 class OcsModule : PrimeModule {
@@ -37,6 +40,8 @@ class OcsModule : PrimeModule {
                 config.projectId,
                 config.topicId)
 
+        val thresholdChecker = ThresholdChecker(config.lowBalanceThreshold);
+
         // Events flow:
         //      Producer:(OcsService, Subscriber)
         //          -> Handler:(OcsState)
@@ -45,7 +50,7 @@ class OcsModule : PrimeModule {
 
         disruptor.disruptor
                 .handleEventsWith(OcsState())
-                .then(ocsService.asEventHandler(), EventProcessor(), dataConsumptionInfoPublisher)
+                .then(ocsService.asEventHandler(), EventProcessor(), thresholdChecker, dataConsumptionInfoPublisher)
                 .then(ClearingEventHandler())
 
         // dropwizard starts Analytics events publisher
@@ -66,4 +71,9 @@ class OcsConfig {
     @NotEmpty
     @JsonProperty("topicId")
     lateinit var topicId: String
+
+
+    @NotEmpty
+    @JsonProperty("lowBalanceThreshold")
+    var lowBalanceThreshold: Long = 0
 }

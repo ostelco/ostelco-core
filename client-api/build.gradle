@@ -1,6 +1,6 @@
 plugins {
+    id "org.jetbrains.kotlin.jvm" version "1.2.50"
     id "java-library"
-    id "org.jetbrains.kotlin.jvm" version "1.2.41"
 }
 
 dependencies {
@@ -10,19 +10,20 @@ dependencies {
 
     implementation "io.dropwizard:dropwizard-auth:$dropwizardVersion"
     implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
-    implementation 'com.google.guava:guava:24.1-jre'
+    implementation 'com.google.guava:guava:25.1-jre'
 
     implementation 'io.jsonwebtoken:jjwt:0.9.0'
-    implementation "io.vavr:vavr:0.9.0"
+    implementation "io.vavr:vavr:0.9.2"
 
     testImplementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
     testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
-    testImplementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.9.5'
-    testImplementation "org.mockito:mockito-core:2.18.0"
-    testImplementation 'org.assertj:assertj-core:3.9.1'
+    testImplementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
+    testImplementation "org.mockito:mockito-core:2.18.3"
+    testImplementation 'org.assertj:assertj-core:3.10.0'
 
     // from filter
     // https://mvnrepository.com/artifact/org.glassfish.jersey.test-framework.providers/jersey-test-framework-provider-grizzly2
+    // Updating from 2.25.1 to 2.27 causes error
     testCompile (group: 'org.glassfish.jersey.test-framework.providers', name: 'jersey-test-framework-provider-grizzly2', version: '2.25.1') {
         // 2.26 (latest)
         exclude group: 'javax.servlet',  module: 'javax.servlet-api'
@@ -37,3 +38,5 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
         jvmTarget = "1.8"
     }
 }
+
+apply from: '../jacoco.gradle'

@@ -6,7 +6,11 @@ Mono Repository for core protocols and services around a OCS/BSS for packet data
 
 [analytics](./analytics/README.md)
 
+[admin-api](./admin-api/README.md)
+
 [auth-server](./auth-server/README.md)
+
+[client-api](./client-api/README.md)
 
 [diameter-stack](./diameter-stack/README.md)
 

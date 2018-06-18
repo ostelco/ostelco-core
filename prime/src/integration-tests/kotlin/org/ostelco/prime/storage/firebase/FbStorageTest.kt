@@ -28,7 +28,7 @@ class FbStorageTest {
 
         sleep(MILLIS_TO_WAIT_WHEN_STARTING_UP.toLong())
         storage.removeSubscriber(EPHERMERAL_EMAIL)
-        storage.addSubscriber(EPHERMERAL_EMAIL, Subscriber(EPHERMERAL_EMAIL))
+        storage.addSubscriber(Subscriber(EPHERMERAL_EMAIL))
         storage.addSubscription(EPHERMERAL_EMAIL, MSISDN)
         this.prids = ArrayList()
     }

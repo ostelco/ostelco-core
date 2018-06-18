@@ -22,8 +22,8 @@ import io.dropwizard.lifecycle.Managed
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import org.ostelco.ocs.api.DataTrafficInfo
+import org.ostelco.prime.model.PseudonymEntity
 import org.ostelco.pseudonym.resources.DateBounds
-import org.ostelco.pseudonym.resources.PseudonymEntity
 import org.slf4j.LoggerFactory
 import java.util.concurrent.Callable
 import java.util.concurrent.ExecutionException

@@ -13,12 +13,9 @@ import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.setup.Environment
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.auth.OAuthAuthenticator
-import org.ostelco.prime.client.api.resources.AnalyticsResource
-import org.ostelco.prime.client.api.resources.ConsentsResource
-import org.ostelco.prime.client.api.resources.ProductsResource
-import org.ostelco.prime.client.api.resources.ProfileResource
-import org.ostelco.prime.client.api.resources.SubscriptionResource
+import org.ostelco.prime.client.api.resources.*
 import org.ostelco.prime.client.api.store.SubscriberDAOImpl
+import org.ostelco.prime.logger
 import org.ostelco.prime.module.PrimeModule
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.ocs.OcsSubscriberService
@@ -37,27 +34,29 @@ class TopupModule : PrimeModule {
 
     private val storage by lazy { getResource<Storage>() }
     private val ocsSubscriberService by lazy { getResource<OcsSubscriberService>() }
+    private val LOG by logger()
 
     override fun init(env: Environment) {
 
         val dao = SubscriberDAOImpl(storage, ocsSubscriberService)
         val jerseyEnv = env.jersey()
 
+        val client: Client = JerseyClientBuilder(env)
+                .using(config.jerseyClientConfiguration)
+                .using(ObjectMapper()
+                        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false))
+                .build(env.getName())
+
         /* APIs. */
         jerseyEnv.register(AnalyticsResource(dao))
         jerseyEnv.register(ConsentsResource(dao))
         jerseyEnv.register(ProductsResource(dao))
         jerseyEnv.register(ProfileResource(dao))
-        jerseyEnv.register(SubscriptionResource(dao))
+        jerseyEnv.register(SubscriptionResource(dao, client, config.pseudonymEndpoint!!))
+        jerseyEnv.register(ApplicationTokenResource(dao))
 
         /* For reporting OAuth2 caching events. */
         val metrics = SharedMetricRegistries.getOrCreate(env.getName())
-
-        val client: Client = JerseyClientBuilder(env)
-            .using(config.jerseyClientConfiguration)
-            .using(ObjectMapper()
-                    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false))
-            .build(env.getName())
 
         /* OAuth2 with cache. */
         val authenticator = CachingAuthenticator(metrics,

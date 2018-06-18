@@ -1,16 +1,18 @@
 rootProject.name = 'ostelco-core'
 
 include ':acceptance-tests'
+include ':app-notifier'
 include ':admin-api'
 include ':analytics'
 include ':auth-server'
 include ':client-api'
 include ':diameter-stack'
 include ':diameter-test'
+include ':embedded-graph-store'
 include ':ext-auth-provider'
 include ':ext-pgw'
 include ':firebase-store'
-include ':in-memory-store'
+include ':graph-store'
 include ':model'
 include ':ocs'
 include ':ocs-api'
@@ -22,16 +24,18 @@ include ':prime-client-api'
 include ':pseudonym-server'
 
 project(':acceptance-tests').projectDir = "$rootDir/acceptance-tests" as File
+project(':app-notifier').projectDir = "$rootDir/app-notifier" as File
 project(':admin-api').projectDir = "$rootDir/admin-api" as File
 project(':analytics').projectDir = "$rootDir/analytics" as File
 project(':auth-server').projectDir = "$rootDir/auth-server" as File
 project(':client-api').projectDir = "$rootDir/client-api" as File
 project(':diameter-stack').projectDir = "$rootDir/diameter-stack" as File
 project(':diameter-test').projectDir = "$rootDir/diameter-test" as File
+project(':embedded-graph-store').projectDir = "$rootDir/embedded-graph-store" as File
 project(':ext-auth-provider').projectDir = "$rootDir/ext-auth-provider" as File
 project(':ext-pgw').projectDir = "$rootDir/ext-pgw" as File
 project(':firebase-store').projectDir = "$rootDir/firebase-store" as File
-project(':in-memory-store').projectDir = "$rootDir/in-memory-store" as File
+project(':graph-store').projectDir = "$rootDir/graph-store" as File
 project(':model').projectDir = "$rootDir/model" as File
 project(':ocs').projectDir = "$rootDir/ocs" as File
 project(':ocs-api').projectDir = "$rootDir/ocs-api" as File
