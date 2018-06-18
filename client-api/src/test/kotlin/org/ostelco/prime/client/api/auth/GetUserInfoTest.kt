@@ -60,7 +60,8 @@ class GetUserInfoTest {
                         .get(Response::class.java)
                 if (r.status == 200) {
                     // Give some time for localPort to bind as well
-                    Thread.sleep(250)
+                    Thread.sleep(800)
+                    println("Connected")
                     break
                 }
             } catch (t: Throwable) {
