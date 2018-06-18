@@ -1,11 +1,67 @@
 # Deploying Prime to Kubernetes
 
+### TL;DR
+
+* **Option 1:** Run this from project root folder (ostelco-core) on `master` branch
+
+
+    prime/script/deploy.sh  
+
+* **Option 2:** Push a tag `prime-X.Y.Z` on `master` branch.
+
+
+===
+
+
+### Setup
+
+Set variables by doing this in `prime` directory:
+
     #PROJECT_ID=pantel-2decb
+    
     export PROJECT_ID="$(gcloud config get-value project -q)"
+    echo "PROJECT_ID=$PROJECT_ID"
     export PRIME_VERSION="$(gradle properties -q | grep "version:" | awk '{print $2}' | tr -d '[:space:]')"
+    echo "PRIME_VERSION=$PRIME_VERSION"
 
 Reference:
  * https://cloud.google.com/endpoints/docs/grpc/get-started-grpc-kubernetes-engine
+
+## Deploying to GKE using GCP Container/Cloud Builder
+
+### Using CLI
+In the project (ostelco-core) root folder: 
+
+    gcloud container builds submit \
+        --config prime/cloudbuild.yaml \
+        --substitutions TAG_NAME=$PRIME_VERSION,BRANCH_NAME=$(git branch | grep \* | cut -d ' ' -f2) .
+
+#### Limitations
+ * Remove .git from `.gcloudignore` and detect branch name and check for uncommitted changes. 
+
+### Using build trigger
+ 
+ * A build trigger is configured in GCP Container/Cloud Builder to build and deploy prime to GKE cluster
+   just by adding a git tag on `master` branch.
+ * The tag name should be `prime-*`
+
+#### Limitations
+ * When using build trigger, the version tag on docker images is `prime-X.Y.Z` instead of `X.Y.Z`.
+
+### Future Improvements
+ * Create a custom build docker image. (suggestion by Vihang).
+ * Run AT as quality gate. (suggestion by Remseth).
+ * Use it for CI. Currently it is only CD. (suggestion by Remseth).
+ * Use `git-sha` along/instead with version (suggestion by Håvard).
+
+### References
+ * Config: https://cloud.google.com/container-builder/docs/build-config
+ * Running locally: https://cloud.google.com/container-builder/docs/build-debug-locally
+ * Cloud builders: https://cloud.google.com/container-builder/docs/cloud-builders
+ * Customization: https://cloud.google.com/container-builder/docs/create-custom-build-steps
+ * Optimization: https://cloud.google.com/container-builder/docs/speeding-up-builds
+ * Custom Github web-hooks: https://cloud.google.com/container-builder/docs/configure-third-party-notifications
+ * Storing secrets for AT: https://cloud.google.com/container-builder/docs/securing-builds/use-encrypted-secrets-credentials
 
 ## Secrets
 
@@ -48,7 +104,7 @@ Update the tag (version) of prime's docker image in `infra/prime.yaml`.
 
 Apply the deployment & service
 
-    sed -e "s/PRIME_VERSION/$PRIME_VERSION/" infra/prime.yaml | kubectl apply -f -
+    sed -e s/PRIME_VERSION/$PRIME_VERSION/g infra/prime.yaml | kubectl apply -f -
     
 
 Details of the deployment

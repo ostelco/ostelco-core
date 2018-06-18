@@ -1,11 +1,9 @@
 plugins {
-    id "java-library"
-    id "org.jetbrains.kotlin.jvm" version "1.2.41"
+  id "org.jetbrains.kotlin.jvm" version "1.2.50"
+  id "java-library"
 }
 
 dependencies {
-
-    implementation project(":prime-api")
-
-    testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+  implementation project(":prime-api")
+  testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
 }
