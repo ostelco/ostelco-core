@@ -21,5 +21,3 @@
  * Goto [this link](https://console.cloud.google.com/logs/viewer?project=pantel-2decb)
  * GKE container > private-cluster > All namespace_id
  * You can expand a single log and filter to log prime-only logs.
-
-
