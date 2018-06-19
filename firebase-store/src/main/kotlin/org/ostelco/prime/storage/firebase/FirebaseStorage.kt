@@ -131,7 +131,7 @@ object FirebaseStorageSingleton : Storage {
     override fun removeSubscriber(id: String): Boolean {
         subscriberStore.delete(id)
         // for payment history, skip checking if it exists.
-        paymentHistoryStore.delete(id, dontExists = false)
+        paymentHistoryStore.delete(id, checkIfExists = false)
         val msisdn = subscriptionStore.get(id)
         if (msisdn != null) {
             if (subscriptionStore.delete(id)) {
@@ -156,7 +156,7 @@ object FirebaseStorageSingleton : Storage {
     }
 
     override fun removeNotificationToken(msisdn: String, applicationID: String): Boolean {
-        return fcmTokenStore.delete(applicationID) { databaseReference.child(urlEncode(msisdn)) }
+        return fcmTokenStore.delete(applicationID, checkIfExists = false) { databaseReference.child(urlEncode(msisdn)) }
     }
 }
 
@@ -245,12 +245,12 @@ class EntityStore<E>(
     /**
      * Check if entity exists for a given value
      */
-    fun exists(id: String) = get(id) != null
+    private fun exists(id: String, reference: EntityStore<E>.() -> DatabaseReference = { databaseReference }) = get(id, reference) != null
 
     /**
      * Inverse of exists
      */
-    fun dontExists(id: String) = !exists(id)
+    private fun dontExists(id: String, reference: EntityStore<E>.() -> DatabaseReference = { databaseReference }) = !exists(id, reference)
 
     /**
      * Create Entity for given id
@@ -312,12 +312,12 @@ class EntityStore<E>(
      * Delete Entity for given id
      *
      * @param id
-     * @param dontExists Optional parameter if you want to skip checking if entry exists.
+     * @param checkIfExists Optional parameter if you want to skip checking if entry exists.
      *
      * @return success
      */
-    fun delete(id: String, dontExists: Boolean = dontExists(id), reference: EntityStore<E>.() -> DatabaseReference = { databaseReference }): Boolean {
-        if (dontExists) {
+    fun delete(id: String, checkIfExists: Boolean = true, reference: EntityStore<E>.() -> DatabaseReference = { databaseReference }): Boolean {
+        if (checkIfExists && dontExists(id, reference)) {
             return false
         }
         val future = reference().child(urlEncode(id)).removeValueAsync()
