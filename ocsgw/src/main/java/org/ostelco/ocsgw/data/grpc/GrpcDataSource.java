@@ -5,8 +5,8 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
 import io.grpc.auth.MoreCallCredentials;
-import io.grpc.netty.GrpcSslContexts;
-import io.grpc.netty.NettyChannelBuilder;
+import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
+import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import org.jdiameter.api.IllegalDiameterStateException;
 import org.jdiameter.api.InternalException;
@@ -14,7 +14,14 @@ import org.jdiameter.api.OverloadException;
 import org.jdiameter.api.RouteException;
 import org.jdiameter.api.cca.ServerCCASession;
 import org.ostelco.diameter.CreditControlContext;
-import org.ostelco.diameter.model.*;
+import org.ostelco.diameter.model.CreditControlAnswer;
+import org.ostelco.diameter.model.CreditControlRequest;
+import org.ostelco.diameter.model.FinalUnitAction;
+import org.ostelco.diameter.model.FinalUnitIndication;
+import org.ostelco.diameter.model.MultipleServiceCreditControl;
+import org.ostelco.diameter.model.RedirectAddressType;
+import org.ostelco.diameter.model.RedirectServer;
+import org.ostelco.diameter.model.SessionContext;
 import org.ostelco.ocs.api.ActivateRequest;
 import org.ostelco.ocs.api.ActivateResponse;
 import org.ostelco.ocs.api.CreditControlAnswerInfo;
@@ -40,7 +47,11 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import static org.ostelco.diameter.model.RequestType.EVENT_REQUEST;
 import static org.ostelco.diameter.model.RequestType.INITIAL_REQUEST;
@@ -176,15 +187,15 @@ public class GrpcDataSource implements DataSource {
         // Set up a channel to be used to communicate as an OCS instance,
         // to a gRPC instance.
 
-        final ManagedChannelBuilder channelBuilder = ManagedChannelBuilder
-                .forTarget(target)
-                .keepAliveWithoutCalls(true)
-                .keepAliveTimeout(KEEP_ALIVE_TIMEOUT_IN_MINUTES, TimeUnit.MINUTES)
-                .keepAliveTime(KEEP_ALIVE_TIME_IN_SECONDS, TimeUnit.SECONDS);
-
         // Initialize the stub that will be used to actually
         // communicate from the client emulating being the OCS.
         if (encrypted) {
+            final ManagedChannelBuilder channelBuilder = NettyChannelBuilder
+                    .forTarget(target)
+                    .sslContext(GrpcSslContexts.forClient().trustManager(new File("/config/nginx.crt")).build())
+                    .keepAliveWithoutCalls(true)
+                    .keepAliveTimeout(KEEP_ALIVE_TIMEOUT_IN_MINUTES, TimeUnit.MINUTES)
+                    .keepAliveTime(KEEP_ALIVE_TIME_IN_SECONDS, TimeUnit.SECONDS);
 
             final String serviceAccountFile = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
             final ServiceAccountJwtAccessCredentials credentials =
@@ -195,8 +206,14 @@ public class GrpcDataSource implements DataSource {
             ocsServiceStub = OcsServiceGrpc.newStub(channel)
                     .withCallCredentials(MoreCallCredentials.from(credentials));
         } else {
+            final ManagedChannelBuilder channelBuilder = ManagedChannelBuilder
+                    .forTarget(target)
+                    .keepAliveWithoutCalls(true)
+                    .keepAliveTimeout(KEEP_ALIVE_TIMEOUT_IN_MINUTES, TimeUnit.MINUTES)
+                    .keepAliveTime(KEEP_ALIVE_TIME_IN_SECONDS, TimeUnit.SECONDS);
+
             final ManagedChannel channel = channelBuilder
-                    .usePlaintext(true)
+                    .usePlaintext()
                     .build();
             ocsServiceStub = OcsServiceGrpc.newStub(channel);
         }

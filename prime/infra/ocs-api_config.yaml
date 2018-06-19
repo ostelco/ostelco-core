@@ -20,7 +20,10 @@ authentication:
   - id: google_service_account
     issuer: prime-service-account@pantel-2decb.iam.gserviceaccount.com
     jwks_uri: https://www.googleapis.com/robot/v1/metadata/x509/prime-service-account@pantel-2decb.iam.gserviceaccount.com
-    audiences: https://ocs.endpoints.pantel-2decb.cloud.goog/org.ostelco.ocs.api.OcsService, ocs.endpoints.pantel-2decb.cloud.goog/org.ostelco.ocs.api.OcsService, ocs.endpoints.pantel-2decb.cloud.goog
+    audiences: >
+      https://ocs.endpoints.pantel-2decb.cloud.goog/org.ostelco.ocs.api.OcsService,
+      ocs.endpoints.pantel-2decb.cloud.goog/org.ostelco.ocs.api.OcsService,
+      ocs.endpoints.pantel-2decb.cloud.goog
   rules:
   - selector: "*"
     requirements:
