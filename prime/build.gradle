@@ -48,6 +48,9 @@ dependencies {
 
   integrationImplementation project(':ocs')
   integrationImplementation project(':firebase-store')
+  integrationImplementation project(':admin-api')
+  integrationImplementation project(':client-api')
+  integrationImplementation project(':app-notifier')
 }
 
 configurations {
