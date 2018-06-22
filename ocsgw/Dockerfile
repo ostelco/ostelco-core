@@ -1,11 +1,11 @@
-FROM openjdk:8u151-jre-alpine3.7
+FROM openjdk:8u171
 
 MAINTAINER CSI "csi@telenordigital.com"
 
-RUN apk update && apk add unzip && apk add netcat-openbsd
+RUN apt-get update && apt-get install -y --no-install-recommends netcat-openbsd && rm -rf /var/lib/apt/lists/*
 
 COPY script/start.sh /start.sh
-COPY script/wait_for_prime.sh /wait_for_prime.sh
+COPY script/wait_for_esp_and_prime.sh /wait_for_esp_and_prime.sh
 COPY config /config
 
 COPY build/libs/ocsgw-uber.jar /ocsgw.jar

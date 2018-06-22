@@ -31,9 +31,6 @@ dependencies {
   runtimeOnly project(':admin-api')
   runtimeOnly project(':app-notifier')
 
-  // removing io.grpc:grpc-netty-shaded:1.10.1 causes ALPN error
-  implementation 'io.grpc:grpc-netty-shaded:1.10.1'
-
   implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
   implementation "io.dropwizard:dropwizard-http2:$dropwizardVersion"
   implementation project(':ostelco-lib')
