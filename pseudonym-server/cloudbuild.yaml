@@ -1,7 +1,7 @@
 steps:
 # Check if branch is master [using same script as prime]
   - name: ubuntu
-    args: ['bash', 'prime/script/check_repo.sh', '$BRANCH_NAME:$TAG_NAME']
+    args: ['bash', 'prime/script/check_repo.sh', 'test-$BRANCH_NAME:$TAG_NAME']
 # Gradle clean and build pseudonym-server & its dependencies only
   - name: gcr.io/cloud-builders/gradle
     args: ['clean', 'pseudonym-server:build']
