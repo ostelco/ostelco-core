@@ -1,27 +1,19 @@
 #!/usr/bin/env bash
 
 set -e
-module=""
-if [ -z "$1" ]; then
-  echo "module is blank"
+if [ -z "$1" ] || [ -z "$2" ]; then
+  (>&2 echo "Usage: deploy.sh <module name> <git tag>")
   exit 1
-else
-  module=$1
 fi
-tag=""
-if [ -z "$2" ]; then
-  echo "tag is blank"
-  exit 1
-else
-  tag=$2
-fi
+module=$1
+tag=$2
 
-if [ ! -f pseudonym-server/script/deploy.sh ]; then
+if [ ! -f "$module/script/deploy.sh" ]; then
     (>&2 echo "Run this script from project root dir (ostelco-core)")
     exit 1
 fi
 
-CHECK_REPO="pseudonym-server/script/check_repo.sh"
+CHECK_REPO="$module/script/check_repo.sh"
 
 if [ ! -f ${CHECK_REPO} ]; then
     (>&2 echo "Missing file - $CHECK_REPO")
@@ -34,7 +26,7 @@ BRANCH_NAME=$(git branch | grep \* | cut -d ' ' -f2)
 echo PROJECT_ID=${PROJECT_ID}
 echo BRANCH_NAME=${BRANCH_NAME}
 
-echo "Deploying pseudonym-server to GKE"
+echo "Deploying $module to GKE"
 
 gcloud container builds submit \
   --config pseudonym-server/cloudbuild.yaml \
