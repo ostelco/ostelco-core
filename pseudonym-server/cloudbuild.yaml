@@ -11,14 +11,14 @@ steps:
     args: ['build', '--tag=gcr.io/$PROJECT_ID/pseudonym-server:$TAG_NAME', 'pseudonym-server']
     timeout: 120s
 # Deploy new docker image to Google Kubernetes Engine (GKE)
-#  - name: ubuntu
-#    args: ['sed', '-i', 's/PSEUDONYM_VERSION/$TAG_NAME/g', 'pseudonym-server/pseudonym-server.yaml']
-#  - name: gcr.io/cloud-builders/kubectl
-#    args: ['apply', '-f', 'pseudonym-server/pseudonym-server.yaml']
-#    env:
-#      - 'CLOUDSDK_COMPUTE_ZONE=europe-west1-b'
-#      - 'CLOUDSDK_CONTAINER_CLUSTER=private-cluster'
-#    timeout: 300s
+  - name: ubuntu
+    args: ['sed', '-i', 's/PSEUDONYM_VERSION/$TAG_NAME/g', 'pseudonym-server/pseudonym-server.yaml']
+  - name: gcr.io/cloud-builders/kubectl
+    args: ['apply', '-f', 'pseudonym-server/pseudonym-server.yaml']
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=europe-west1-b'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=private-cluster'
+    timeout: 300s
 
 # Upload docker image into Google Container Registry (GCR)
 images: ['gcr.io/$PROJECT_ID/pseudonym-server:$TAG_NAME']
