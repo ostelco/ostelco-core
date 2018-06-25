@@ -6,6 +6,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.storage.legacy.Products.DATA_TOPUP_3GB
@@ -64,6 +65,30 @@ class FbStorageTest {
                 product = DATA_TOPUP_3GB,
                 timestamp = now)
         storage.addPurchaseRecord(EPHERMERAL_EMAIL, purchase)
+    }
+
+
+    @Test
+    @Throws(StorageException::class)
+    fun addApplicationNotificationTokenTest() {
+
+        val token = "ThisIsTheToken"
+        val applicaitonId = "thisIsTheApplicationId"
+        val tokenType = "FCM"
+
+        val applicationToken = ApplicationToken(token,applicaitonId,tokenType)
+
+        assertTrue(storage.addNotificationToken(MSISDN, applicationToken))
+        val reply = storage.getNotificationToken(MSISDN, applicaitonId)
+        Assert.assertNotNull(reply)
+        Assert.assertEquals(reply?.token, token)
+        Assert.assertEquals(reply?.applicationID, applicaitonId)
+        Assert.assertEquals(reply?.tokenType, tokenType)
+
+        Assert.assertEquals(storage.getNotificationTokens(MSISDN).size, 1)
+
+        assertTrue(storage.removeNotificationToken(MSISDN, applicaitonId))
+        Assert.assertEquals(storage.getNotificationTokens(MSISDN).size, 0)
     }
 
     companion object {
