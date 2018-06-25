@@ -40,12 +40,19 @@ interface SubscriberDAO {
 
     companion object {
 
+        /**
+         * Profile is only valid when name and email set.
+         */
         fun isValidProfile(profile: Subscriber?): Boolean {
             return (profile != null
                     && !profile.name.isEmpty()
                     && !profile.email.isEmpty())
         }
 
+        /**
+         * The application token is only valid if token,
+         * applicationID and token type is set.
+         */
         fun isValidApplicationToken(appToken: ApplicationToken?): Boolean {
             return (appToken != null
                     && !appToken.token.isEmpty()
