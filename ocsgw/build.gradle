@@ -8,6 +8,7 @@ plugins {
 dependencies {
     implementation project(':ocs-api')
     implementation project(':diameter-stack')
+
     implementation "com.google.cloud:google-cloud-core-grpc:$googleCloudVersion"
 
     testImplementation project(':diameter-test')

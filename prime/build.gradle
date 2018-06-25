@@ -31,29 +31,21 @@ dependencies {
   runtimeOnly project(':admin-api')
   runtimeOnly project(':app-notifier')
 
-  // removing io.grpc:grpc-netty-shaded:1.10.1 causes ALPN error
-  implementation 'io.grpc:grpc-netty-shaded:1.10.1'
-
   implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
   implementation "io.dropwizard:dropwizard-http2:$dropwizardVersion"
   implementation project(':ostelco-lib')
   implementation "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
   implementation 'com.google.guava:guava:25.1-jre'
 
-  // for integration tests
-  testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
-  testImplementation 'org.mockito:mockito-core:2.18.3'
-  testImplementation project(':ocs')
-  testImplementation project(':firebase-store')
-
-  integrationImplementation project(':ocs')
-  integrationImplementation project(':firebase-store')
+  integrationImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+  integrationImplementation 'org.mockito:mockito-core:2.18.3'
 }
 
 configurations {
-  integrationImplementation.extendsFrom testImplementation
-  integrationCompile.extendsFrom testCompile
-  integrationRuntime.extendsFrom testRuntime
+  integration
+  integrationImplementation.extendsFrom implementation
+  integrationImplementation.extendsFrom runtime
+  integrationImplementation.extendsFrom runtimeOnly
 }
 
 task integration(type: Test, description: 'Runs the integration tests.', group: 'Verification') {

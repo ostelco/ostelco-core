@@ -32,6 +32,8 @@ class FirebaseStorage : Storage by FirebaseStorageSingleton
 
 object FirebaseStorageSingleton : Storage {
 
+    private val LOG by logger()
+
     private val balanceEntity = EntityType("balance", Long::class.java)
     private val productEntity = EntityType("products", Product::class.java)
     private val subscriptionEntity = EntityType("subscriptions", String::class.java)
@@ -72,9 +74,6 @@ object FirebaseStorageSingleton : Storage {
 
             return FirebaseDatabase.getInstance()
 
-            // (un)comment next line to turn on/of extended debugging
-            // from firebase.
-            // this.firebaseDatabase.setLogLevel(com.google.firebase.database.Logger.Level.DEBUG);
         } catch (ex: IOException) {
             throw StorageException(ex)
         }
@@ -112,7 +111,7 @@ object FirebaseStorageSingleton : Storage {
         return balanceStore.get(msisdn)
     }
 
-    override fun setBalance(msisdn: String, noOfBytes: Long) = balanceStore.update(msisdn, noOfBytes)
+    override fun setBalance(msisdn: String, noOfBytes: Long):Boolean = balanceStore.update(msisdn, noOfBytes)
 
     override fun getPurchaseRecords(id: String): Collection<PurchaseRecord> {
         return paymentHistoryStore.getAll {
@@ -260,6 +259,7 @@ class EntityStore<E>(
     fun create(id: String, entity: E): Boolean {
         // fail if already exist
         if (exists(id)) {
+            LOG.warn("Failed to create. id {} already exists", id)
             return false
         }
         return set(id, entity)
@@ -279,9 +279,8 @@ class EntityStore<E>(
     fun add(entity: E, reference: EntityStore<E>.() -> DatabaseReference = { databaseReference }): String? {
         val newPushedEntry = reference().push()
         val future = newPushedEntry.setValueAsync(entity)
-        // FIXME this may always return null
-        future.get(TIMEOUT, SECONDS) ?: return null
-        return newPushedEntry.key
+        future.get(TIMEOUT, SECONDS)
+        return if (future.isDone) newPushedEntry.key else null
     }
 
     /**
@@ -291,6 +290,7 @@ class EntityStore<E>(
      */
     fun update(id: String, entity: E): Boolean {
         if (dontExists(id)) {
+            LOG.warn("Failed to update. id {} does not exists", id)
             return false
         }
         return set(id, entity)
@@ -303,9 +303,8 @@ class EntityStore<E>(
      */
     fun set(id: String, entity: E, reference: EntityStore<E>.() -> DatabaseReference = { databaseReference }): Boolean {
         val future = reference().child(urlEncode(id)).setValueAsync(entity)
-        // FIXME this always return false
-        future.get(TIMEOUT, SECONDS) ?: return false
-        return true
+        future.get(TIMEOUT, SECONDS)
+        return future.isDone
     }
 
     /**
@@ -320,9 +319,8 @@ class EntityStore<E>(
         if (checkIfExists && dontExists(id, reference)) {
             return false
         }
-        val future = reference().child(urlEncode(id)).removeValueAsync()
-        // FIXME this may always return false
-        future.get(TIMEOUT, SECONDS) ?: return false
-        return true
+        val future = databaseReference.child(urlEncode(id)).removeValueAsync()
+        future.get(TIMEOUT, SECONDS)
+        return future.isDone
     }
 }
