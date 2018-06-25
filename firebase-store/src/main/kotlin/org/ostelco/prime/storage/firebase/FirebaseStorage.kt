@@ -9,6 +9,7 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import org.ostelco.prime.logger
+import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
@@ -31,10 +32,57 @@ class FirebaseStorage : Storage by FirebaseStorageSingleton
 
 object FirebaseStorageSingleton : Storage {
 
+    private val LOG by logger()
+
+    private val balanceEntity = EntityType("balance", Long::class.java)
+    private val productEntity = EntityType("products", Product::class.java)
+    private val subscriptionEntity = EntityType("subscriptions", String::class.java)
+    private val subscriberEntity = EntityType("subscribers", Subscriber::class.java)
+    private val paymentHistoryEntity = EntityType("paymentHistory", PurchaseRecord::class.java)
+    private val fcmTokenEntity = EntityType("notificationTokens", ApplicationToken::class.java)
+
+    private val firebaseDatabase = setupFirebaseInstance(config.databaseName, config.configFile)
+
+    private val balanceStore = EntityStore(firebaseDatabase, balanceEntity)
+    private val productStore = EntityStore(firebaseDatabase, productEntity)
+    private val subscriptionStore = EntityStore(firebaseDatabase, subscriptionEntity)
+    private val subscriberStore = EntityStore(firebaseDatabase, subscriberEntity)
+    private val paymentHistoryStore = EntityStore(firebaseDatabase, paymentHistoryEntity)
+    private val fcmTokenStore = EntityStore(firebaseDatabase, fcmTokenEntity)
+
+    private fun setupFirebaseInstance(
+            databaseName: String,
+            configFile: String): FirebaseDatabase {
+
+        try {
+
+            val credentials: GoogleCredentials = if (Files.exists(Paths.get(configFile))) {
+                FileInputStream(configFile).use { serviceAccount -> GoogleCredentials.fromStream(serviceAccount) }
+            } else {
+                GoogleCredentials.getApplicationDefault()
+            }
+
+            val options = FirebaseOptions.Builder()
+                    .setCredentials(credentials)
+                    .setDatabaseUrl("https://$databaseName.firebaseio.com/")
+                    .build()
+            try {
+                FirebaseApp.getInstance()
+            } catch (e: Exception) {
+                FirebaseApp.initializeApp(options)
+            }
+
+            return FirebaseDatabase.getInstance()
+
+        } catch (ex: IOException) {
+            throw StorageException(ex)
+        }
+    }
+
     override val balances: Map<String, Long>
         get() = balanceStore.getAll()
 
-    override fun addSubscriber(id: String, subscriber: Subscriber) = subscriberStore.create(id, subscriber)
+    override fun addSubscriber(subscriber: Subscriber) = subscriberStore.create(subscriber.id, subscriber)
 
     override fun getSubscriber(id: String): Subscriber? {
         val subscriber = subscriberStore.get(id)
@@ -42,27 +90,28 @@ object FirebaseStorageSingleton : Storage {
         return subscriber
     }
 
-    override fun updateSubscriber(id: String, subscriber: Subscriber): Boolean = subscriberStore.update(id, subscriber)
-
-    override fun getSubscription(id: String) = subscriptionStore.get(id)
+    override fun updateSubscriber(subscriber: Subscriber): Boolean = subscriberStore.update(subscriber.id, subscriber)
 
     override fun getMsisdn(subscriptionId: String) = subscriptionStore.get(subscriptionId)
 
-    override fun addSubscription(id: String, msisdn: String) {
-        subscriptionStore.create(id, msisdn)
-        balanceStore.create(msisdn, 0)
+    override fun addSubscription(id: String, msisdn: String): Boolean {
+        if (subscriptionStore.create(id, msisdn)) {
+            // should we set non-zero default balance?
+            return balanceStore.create(msisdn, 0)
+        }
+        return false
     }
 
-    override fun getProduct(sku: String) = productStore.get(sku)
+    override fun getProduct(subscriberId: String?, sku: String) = productStore.get(sku)
 
-    override fun getProducts() = productStore.getAll()
+    override fun getProducts(subscriberId: String): Map<String, Product> = productStore.getAll()
 
     override fun getBalance(id: String): Long? {
         val msisdn = subscriptionStore.get(id) ?: return null
         return balanceStore.get(msisdn)
     }
 
-    override fun setBalance(msisdn: String, noOfBytes: Long) = balanceStore.update(msisdn, noOfBytes)
+    override fun setBalance(msisdn: String, noOfBytes: Long):Boolean = balanceStore.update(msisdn, noOfBytes)
 
     override fun getPurchaseRecords(id: String): Collection<PurchaseRecord> {
         return paymentHistoryStore.getAll {
@@ -78,74 +127,35 @@ object FirebaseStorageSingleton : Storage {
         }
     }
 
-    override fun removeSubscriber(id: String) {
+    override fun removeSubscriber(id: String): Boolean {
         subscriberStore.delete(id)
         // for payment history, skip checking if it exists.
         paymentHistoryStore.delete(id, dontExists = false)
         val msisdn = subscriptionStore.get(id)
         if (msisdn != null) {
-            subscriptionStore.delete(id)
-            balanceStore.delete(msisdn)
+            if (subscriptionStore.delete(id)) {
+                return balanceStore.delete(msisdn)
+            }
         }
+        return false
     }
 
-    override fun addNotificationToken(msisdn: String, token: String) {
-        fcmTokenStore.create(msisdn, token)
+    override fun addNotificationToken(msisdn: String, token: ApplicationToken) : Boolean {
+        return fcmTokenStore.set(token.applicationID, token) { databaseReference.child(urlEncode(msisdn)) }
     }
 
-    override fun getNotificationToken(msisdn: String): String? {
-        return fcmTokenStore.get(msisdn)
+    override fun getNotificationToken(msisdn: String, applicationID: String): ApplicationToken? {
+        return fcmTokenStore.get(applicationID) { databaseReference.child(msisdn) }
+    }
+
+    override fun getNotificationTokens(msisdn: String): Collection<ApplicationToken> {
+        return fcmTokenStore.getAll {
+            databaseReference.child(urlEncode(msisdn))
+        }.values
     }
 }
 
-val balanceEntity = EntityType("balance", Long::class.java)
-val productEntity = EntityType("products", Product::class.java)
-val subscriptionEntity = EntityType("subscriptions", String::class.java)
-val subscriberEntity = EntityType("subscribers", Subscriber::class.java)
-val paymentHistoryEntity = EntityType("paymentHistory", PurchaseRecord::class.java)
-val fcmTokenEntity = EntityType("notificationTokens/FCM", String::class.java)
-
-val config = FirebaseConfigRegistry.firebaseConfig
-val firebaseDatabase = setupFirebaseInstance(config.databaseName, config.configFile)
-
-val balanceStore = EntityStore(firebaseDatabase, balanceEntity)
-val productStore = EntityStore(firebaseDatabase, productEntity)
-val subscriptionStore = EntityStore(firebaseDatabase, subscriptionEntity)
-val subscriberStore = EntityStore(firebaseDatabase, subscriberEntity)
-val paymentHistoryStore = EntityStore(firebaseDatabase, paymentHistoryEntity)
-val fcmTokenStore = EntityStore(firebaseDatabase, fcmTokenEntity)
-
-private fun setupFirebaseInstance(
-        databaseName: String,
-        configFile: String): FirebaseDatabase {
-
-    try {
-
-        val credentials: GoogleCredentials = if (Files.exists(Paths.get(configFile))) {
-            FileInputStream(configFile).use { serviceAccount -> GoogleCredentials.fromStream(serviceAccount) }
-        } else {
-            GoogleCredentials.getApplicationDefault()
-        }
-
-        val options = FirebaseOptions.Builder()
-                .setCredentials(credentials)
-                .setDatabaseUrl("https://$databaseName.firebaseio.com/")
-                .build()
-        try {
-            FirebaseApp.getInstance()
-        } catch (e: Exception) {
-            FirebaseApp.initializeApp(options)
-        }
-
-        return FirebaseDatabase.getInstance()
-
-        // (un)comment next line to turn on/of extended debugging
-        // from firebase.
-        // this.firebaseDatabase.setLogLevel(com.google.firebase.database.Logger.Level.DEBUG);
-    } catch (ex: IOException) {
-        throw StorageException(ex)
-    }
-}
+private val config = FirebaseConfigRegistry.firebaseConfig
 
 const val TIMEOUT: Long = 10 //sec
 
@@ -167,10 +177,10 @@ class EntityStore<E>(
      * @param id
      * @return Entity
      */
-    fun get(id: String): E? {
+    fun get(id: String, reference: EntityStore<E>.() -> DatabaseReference = { databaseReference }): E? {
         var entity: E? = null
         val countDownLatch = CountDownLatch(1);
-        databaseReference.child(urlEncode(id)).addListenerForSingleValueEvent(
+        reference().child(urlEncode(id)).addListenerForSingleValueEvent(
                 object : ValueEventListener {
                     override fun onCancelled(error: DatabaseError?) {
                         countDownLatch.countDown()
@@ -245,6 +255,7 @@ class EntityStore<E>(
     fun create(id: String, entity: E): Boolean {
         // fail if already exist
         if (exists(id)) {
+            LOG.warn("Failed to create. id {} already exists", id)
             return false
         }
         return set(id, entity)
@@ -264,8 +275,8 @@ class EntityStore<E>(
     fun add(entity: E, reference: EntityStore<E>.() -> DatabaseReference = { databaseReference }): String? {
         val newPushedEntry = reference().push()
         val future = newPushedEntry.setValueAsync(entity)
-        future.get(TIMEOUT, SECONDS) ?: return null
-        return newPushedEntry.key
+        future.get(TIMEOUT, SECONDS)
+        return if (future.isDone) newPushedEntry.key else null
     }
 
     /**
@@ -275,6 +286,7 @@ class EntityStore<E>(
      */
     fun update(id: String, entity: E): Boolean {
         if (dontExists(id)) {
+            LOG.warn("Failed to update. id {} does not exists", id)
             return false
         }
         return set(id, entity)
@@ -285,10 +297,10 @@ class EntityStore<E>(
      *
      * @return success
      */
-    fun set(id: String, entity: E): Boolean {
-        val future = databaseReference.child(urlEncode(id)).setValueAsync(entity)
-        future.get(TIMEOUT, SECONDS) ?: return false
-        return true
+    fun set(id: String, entity: E, reference: EntityStore<E>.() -> DatabaseReference = { databaseReference }): Boolean {
+        val future = reference().child(urlEncode(id)).setValueAsync(entity)
+        future.get(TIMEOUT, SECONDS)
+        return future.isDone
     }
 
     /**
@@ -304,7 +316,7 @@ class EntityStore<E>(
             return false
         }
         val future = databaseReference.child(urlEncode(id)).removeValueAsync()
-        future.get(TIMEOUT, SECONDS) ?: return false
-        return true
+        future.get(TIMEOUT, SECONDS)
+        return future.isDone
     }
 }

@@ -3,6 +3,7 @@ package org.ostelco.prime.storage.firebase
 import org.junit.After
 import org.junit.Assert
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.ostelco.prime.model.PurchaseRecord
@@ -28,8 +29,8 @@ class FbStorageTest {
 
         sleep(MILLIS_TO_WAIT_WHEN_STARTING_UP.toLong())
         storage.removeSubscriber(EPHERMERAL_EMAIL)
-        storage.addSubscriber(EPHERMERAL_EMAIL, Subscriber(EPHERMERAL_EMAIL))
-        storage.addSubscription(EPHERMERAL_EMAIL, MSISDN)
+        assertTrue(storage.addSubscriber(Subscriber(EPHERMERAL_EMAIL)))
+        assertTrue(storage.addSubscription(EPHERMERAL_EMAIL, MSISDN))
         this.prids = ArrayList()
     }
 
@@ -48,7 +49,7 @@ class FbStorageTest {
     @Test
     @Throws(StorageException::class)
     fun setBalance() {
-        storage.setBalance(MSISDN, RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS)
+        assertTrue(storage.setBalance(MSISDN, RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS))
         Assert.assertEquals(RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS, storage.balances[MSISDN])
         storage.setBalance(MSISDN, 0)
         Assert.assertEquals(0L, storage.balances[MSISDN])

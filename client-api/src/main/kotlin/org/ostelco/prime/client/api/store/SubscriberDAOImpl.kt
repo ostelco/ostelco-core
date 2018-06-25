@@ -6,6 +6,7 @@ import org.ostelco.prime.client.api.core.ApiError
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.SubscriptionStatus
 import org.ostelco.prime.logger
+import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
@@ -49,7 +50,7 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
             return Either.left(ApiError("Incomplete profile description"))
         }
         try {
-            storage.addSubscriber(subscriptionId, Subscriber(
+            storage.addSubscriber(Subscriber(
                     profile.email,
                     profile.name,
                     profile.address,
@@ -64,12 +65,33 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
         return getProfile(subscriptionId)
     }
 
+    override fun storeApplicationToken(msisdn: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken> {
+        try {
+            storage.addNotificationToken(msisdn, applicationToken)
+        } catch(e: Exception) {
+            LOG.error("Failed to store ApplicationToken", e)
+            return Either.left(ApiError("Failed to store ApplicationToken"))
+        }
+        return getNotificationToken(msisdn, applicationToken.applicationID)
+    }
+
+    fun getNotificationToken(msisdn: String, applicationId: String): Either<ApiError, ApplicationToken> {
+        try {
+            return storage.getNotificationToken(msisdn, applicationId)
+                    ?.let { Either.right<ApiError, ApplicationToken>(it) }
+                    ?: return Either.left(ApiError("Failed to get ApplicationToken"))
+        } catch (e: StorageException) {
+            LOG.error("Failed to get ApplicationToken", e)
+            return Either.left(ApiError("Failed to get ApplicationToken"))
+        }
+    }
+
     override fun updateProfile(subscriptionId: String, profile: Subscriber): Either<ApiError, Subscriber> {
         if (!SubscriberDAO.isValidProfile(profile)) {
             return Either.left(ApiError("Incomplete profile description"))
         }
         try {
-            storage.updateSubscriber(subscriptionId, Subscriber(
+            storage.updateSubscriber(Subscriber(
                     profile.email,
                     profile.name,
                     profile.address,
@@ -95,7 +117,6 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
             LOG.error("Failed to get balance", e)
             return Either.left(ApiError("Failed to get balance"))
         }
-
     }
 
     override fun getMsisdn(subscriptionId: String): Either<ApiError, String> {
@@ -114,7 +135,7 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
 
     override fun getProducts(subscriptionId: String): Either<ApiError, Collection<Product>> {
         try {
-            val products = storage.getProducts()
+            val products = storage.getProducts(subscriptionId)
             if (products.isEmpty()) {
                 return Either.left(ApiError("No products found"))
             }
@@ -131,7 +152,7 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
     override fun purchaseProduct(subscriptionId: String, sku: String): Option<ApiError> {
         var msisdn: String? = null
         try {
-            msisdn = storage.getSubscription(subscriptionId)
+            msisdn = storage.getMsisdn(subscriptionId)
         } catch (e: StorageException) {
             LOG.error("Did not find subscription", e)
         }
@@ -142,7 +163,7 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
 
         val product: Product?
         try {
-            product = storage.getProduct(sku)
+            product = storage.getProduct(subscriptionId, sku)
         } catch (e: StorageException) {
             LOG.error("Did not find product: sku = $sku", e)
             return Option.of(ApiError("Product unavailable"))

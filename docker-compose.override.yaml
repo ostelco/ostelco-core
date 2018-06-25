@@ -18,13 +18,33 @@ services:
       net:
         aliases:
           - "prime"
+        ipv4_address: 172.16.238.5
+      default:
+
+  esp:
+    container_name: esp
+    image: gcr.io/endpoints-release/endpoints-runtime:1
+    volumes:
+      - "./prime/config:/esp"
+      - "./esp:/etc/nginx/ssl"
+    command: >
+      --service=ocs.endpoints.pantel-2decb.cloud.goog
+      --rollout_strategy=managed
+      --http2_port=80
+      --ssl_port=443
+      --backend=grpc://172.16.238.5:8082
+      --service_account_key=/esp/pantel-prod.json
+    networks:
+      net:
+        aliases:
+          - "ocs.endpoints.pantel-2decb.cloud.goog"
         ipv4_address: 172.16.238.4
       default:
 
   ocsgw:
     depends_on:
       - "prime"
-    command: ["./wait_for_prime.sh"]
+    command: ["./wait_for_esp_and_prime.sh"]
     networks:
       net:
         aliases:
@@ -42,6 +62,14 @@ services:
         aliases:
           - "ext-pgw"
         ipv4_address: 172.16.238.2
+
+#  neo4j:
+#    container_name: neo4j
+#    image: neo4j
+#    ports:
+#      - "7474:7474"
+#      - "7687:7687"
+#    tmpfs: /data
 
   pseudonym-server:
     container_name: pseudonym-server

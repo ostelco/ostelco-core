@@ -1,17 +1,15 @@
 plugins {
   id "java-library"
-  id "idea"
   id "com.google.protobuf" version "0.8.5"
+  id "idea"
 }
 
-// FIXME
-// Updating to 1.11.* causes ClassNotFound exception at runtime
-// Keeping it version 1.10.1 to be consistent with grpc via PubSub client lib
-// Keeping it version 1.10.1 to be consistent with netty via Firebase lib
-ext.grpcVersion = "1.10.1"
+// Keeping it version 1.12.0 to be consistent with grpc via PubSub client lib
+// Keeping it version 1.12.0 to be consistent with netty via Firebase lib
+ext.grpcVersion = "1.12.0"
 
 dependencies {
-  api "io.grpc:grpc-netty:$grpcVersion"
+  api "io.grpc:grpc-netty-shaded:$grpcVersion"
   api "io.grpc:grpc-protobuf:$grpcVersion"
   api "io.grpc:grpc-stub:$grpcVersion"
   api "io.grpc:grpc-core:$grpcVersion"

@@ -1,0 +1,66 @@
+steps:
+# Check if branch is master
+  - name: ubuntu
+    args: ['bash', 'prime/script/check_repo.sh', '$BRANCH_NAME']
+# Download gradle cache zip from Google Storage (GS) Bucket
+  - name: gcr.io/cloud-builders/gsutil
+    args: ['cp', 'gs://prime-gradle-caches/caches.tar.gz', '/root/in_zip/']
+    volumes:
+    - name: gradle_caches_in_zip
+      path: /root/in_zip
+# Unzip gradle cache zip
+  - name: ubuntu
+    args: ['tar', '-xzvf', '/root/in_zip/caches.tar.gz', '-C', '/root/.gradle/caches/', '.']
+    volumes:
+    - name: gradle_caches_in_zip
+      path: /root/in_zip
+    - name: gradle_caches
+      path: /root/.gradle/caches
+# Gradle clean and build prime & its dependencies only
+  - name: gcr.io/cloud-builders/gradle
+    args: ['clean', 'prime:build']
+    volumes:
+    - name: gradle_caches
+      path: /root/.gradle/caches
+    timeout: 600s
+# Remove unwanted files from gradle cache
+  - name: ubuntu
+    args: ['rm', '-f', '/root/.gradle/caches/modules-2/modules-2.lock']
+    volumes:
+    - name: gradle_caches
+      path: /root/.gradle/caches
+  - name: ubuntu
+    args: ['rm', '-fr', '/root/.gradle/caches/*/plugin-resolution/']
+    volumes:
+    - name: gradle_caches
+      path: /root/.gradle/caches
+# Zip gradle cache
+  - name: ubuntu
+    args: ['tar', '-czvf', '/root/out_zip/caches.tar.gz', '-C', '/root/.gradle/caches', '.']
+    volumes:
+    - name: gradle_caches_out_zip
+      path: /root/out_zip
+    - name: gradle_caches
+      path: /root/.gradle/caches
+# Upload gradle cache to Google Storage (GS) Bucket
+  - name: gcr.io/cloud-builders/gsutil
+    args: ['cp', '/root/out_zip/caches.tar.gz', 'gs://prime-gradle-caches']
+    volumes:
+    - name: gradle_caches_out_zip
+      path: /root/out_zip
+# Build docker images
+  - name: gcr.io/cloud-builders/docker
+    args: ['build', '--tag=gcr.io/$PROJECT_ID/prime:$TAG_NAME', '--cache-from', 'openjdk:8u171', 'prime']
+    timeout: 120s
+# Deploy new docker image to Google Kubernetes Engine (GKE)
+  - name: ubuntu
+    args: ['sed', '-i', 's/PRIME_VERSION/$TAG_NAME/g', 'prime/infra/prime.yaml']
+  - name: gcr.io/cloud-builders/kubectl
+    args: ['apply', '-f', 'prime/infra/prime.yaml']
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=europe-west1-b'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=private-cluster'
+    timeout: 300s
+
+# Upload docker image into Google Container Registry (GCR)
+images: ['gcr.io/$PROJECT_ID/prime:$TAG_NAME']
