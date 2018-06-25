@@ -45,5 +45,12 @@ interface SubscriberDAO {
                     && !profile.name.isEmpty()
                     && !profile.email.isEmpty())
         }
+
+        fun isValidApplicationToken(appToken: ApplicationToken?): Boolean {
+            return (appToken != null
+                    && !appToken.token.isEmpty()
+                    && !appToken.applicationID.isEmpty()
+                    && !appToken.tokenType.isEmpty())
+        }
     }
 }

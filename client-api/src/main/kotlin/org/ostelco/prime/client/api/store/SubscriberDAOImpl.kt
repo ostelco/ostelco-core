@@ -66,6 +66,11 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
     }
 
     override fun storeApplicationToken(msisdn: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken> {
+
+        if (!SubscriberDAO.isValidApplicationToken(applicationToken)) {
+            return Either.left(ApiError("Incomplete ApplicationToken"))
+        }
+
         try {
             storage.addNotificationToken(msisdn, applicationToken)
         } catch(e: Exception) {
