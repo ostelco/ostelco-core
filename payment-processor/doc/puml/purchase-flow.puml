@@ -1,5 +1,5 @@
 @startuml
-
+actor Handset
 Handset -> Stripe : CC-info
 Stripe -> Handset: PaymentToken
 Handset --> Prime: Buy(prod, paymentToken, etc.)
