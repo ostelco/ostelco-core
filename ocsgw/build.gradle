@@ -58,6 +58,9 @@ task pack(type: Zip, dependsOn: 'shadowJar') {
     from ('config/pantel-prod.json') {
         into (project.name + '/config/')
     }
+    from ('config/logback.xml') {
+        into (project.name + '/config/')
+    }
     from ('build/libs/ocsgw-uber.jar') {
         into(project.name + '/build/libs/')
     }
