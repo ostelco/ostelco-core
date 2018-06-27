@@ -1,0 +1,9 @@
+@startuml
+
+Client -> Auth0 : Auth
+Auth0 -> Client: Tokens (ID (with email), Access)
+Client -> CloudEP: GET /profile (https, with access token)
+CloudEP -> Prime: GET /profile (http, with access token)
+Prime -> Client: User profile (email, address, etc.)
+
+@enduml
