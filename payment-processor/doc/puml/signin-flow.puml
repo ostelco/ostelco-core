@@ -1,9 +1,10 @@
 @startuml
 
-Client -> Auth0 : Auth
-Auth0 -> Client: Tokens (ID (with email), Access)
-Client -> CloudEP: GET /profile (https, with access token)
-CloudEP -> Prime: GET /profile (http, with access token)
-Prime -> Client: User profile (email, address, etc.)
+Handset -> Stripe : CC-info
+Stripe -> Handset: PaymentToken
+Handset -> Prime: Buy(prod, paymentToken, etc.)
+Prime -> Stripe: Buy(token, ...)
+Stripe -> Prime: Ok
+Prime -> Handset: Response of buy thingy
 
 @enduml
