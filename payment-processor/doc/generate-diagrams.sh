@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-plantuml -tsvg -pipe < puml/signin-flow.puml > diagrams/signin-flow.svg
+nplantuml -tsvg -pipe < puml/purchase-flow.puml > diagrams/purchase-flow.svg
