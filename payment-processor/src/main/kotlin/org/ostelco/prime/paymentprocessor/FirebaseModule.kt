@@ -12,53 +12,25 @@ import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
 
-@JsonTypeName("firebase-app-notifier")
-class FirebaseModule : PrimeModule {
+@JsonTypeName("stripe-payment-processor")
+class PaymentProcessorModule : PrimeModule {
 
     @JsonProperty("config")
-    fun setConfig(config: FirebaseConfig) {
-        println("Config set for AppNotifier")
-        setupFirebaseApp(config.databaseName, config.configFile)
+    fun setConfig(config: PaymentProcessorConfig) {
+        setUpPaymentProcessor()
     }
 
-    private fun setupFirebaseApp(
-            databaseName: String,
-            configFile: String) {
-
-        try {
-            println("Setting up Firebase for FirebaseAppNotifier. databaseName : $databaseName , configFile : $configFile ")
-            val credentials: GoogleCredentials = if (Files.exists(Paths.get(configFile))) {
-                FileInputStream(configFile).use { serviceAccount -> GoogleCredentials.fromStream(serviceAccount) }
-            } else {
-                GoogleCredentials.getApplicationDefault()
-            }
-
-            val options = FirebaseOptions.Builder()
-                    .setCredentials(credentials)
-                    .setDatabaseUrl("https://$databaseName.firebaseio.com/")
-                    .build()
-            try {
-                FirebaseApp.getInstance("fcm")
-            } catch (e: Exception) {
-                FirebaseApp.initializeApp(options, "fcm")
-            }
-
-            // (un)comment next line to turn on/of extended debugging
-            // from firebase.
-            // this.firebaseDatabase.setLogLevel(com.google.firebase.database.Logger.Level.DEBUG);
-        } catch (ex: IOException) {
-            throw AppNotifierException(ex)
-        }
+    private fun setUpPaymentProcessor() {
     }
 }
 
-class FirebaseConfig {
+class PaymentProcessorConfig {
 
     @NotEmpty
-    @JsonProperty("databaseName")
+    @JsonProperty("something") // XXX Replace with Stripe config parameters
     lateinit var databaseName: String
 
     @NotEmpty
-    @JsonProperty("configFile")
+    @JsonProperty("somethingelse")  // XXX Replace with Stripe config parameters
     lateinit var configFile: String
 }
