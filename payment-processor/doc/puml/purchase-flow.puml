@@ -1,11 +1,66 @@
 @startuml
-actor Client
-Client -> Client : Collecting payment information
-Client -> Stripe : Checkout
-Stripe --> Client: {token}
-Client -> Prime: Post /products {SKU, token}
-Prime -> Stripe: Charge {token}
-Stripe --> Prime: Charge Object {id,result..}
-Prime --> Client: {result}
+participant Client
+
+box "Prime"
+    participant "client-api"
+    participant OCS
+    participant Storage
+    participant "payment-processor"
+end box
+participant Stripe
+
+activate Client
+  Client -> Client : Collecting payment information
+
+  Client -> Stripe : Checkout
+  activate Stripe
+  Client <-- Stripe: {token}
+  deactivate Stripe
+
+  Client -> "client-api": POST /products {SKU, token}
+  activate "client-api"
+
+    "client-api" -> Storage : State { Purchase Initiated }
+    activate Storage
+    "client-api" <-- Storage
+    deactivate Storage
+
+    "client-api" -> "payment-processor" : Perform payment
+    activate "payment-processor"
+
+      "payment-processor" -> Stripe: Charge {token}
+      activate Stripe
+      "payment-processor" <-- Stripe : Charge Object {id,result..}
+      deactivate Stripe
+
+    "client-api" <-- "payment-processor"
+    deactivate "payment-processor"
+
+    "client-api" -> Storage : State { Payment Completed }
+    activate Storage
+    "client-api" <-- Storage
+    deactivate Storage
+
+    "client-api" -> OCS : Notify OCS
+    activate OCS
+
+        OCS -> Storage : Update Balance
+        activate Storage
+        OCS <-- Storage
+        deactivate Storage
+
+    "client-api" <-- OCS
+    deactivate OCS
+
+    "client-api" -> Storage : State { Balance Updated } \nSave Purchase Record
+    activate Storage
+    "client-api" <-- Storage
+    deactivate Storage
+
+
+  Client <-- "client-api": {result}
+  deactivate "client-api"
+
+deactivate Client
 
 @enduml
