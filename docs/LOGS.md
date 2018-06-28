@@ -11,13 +11,23 @@
  * Goto [this link](https://console.cloud.google.com/logs/viewer?project=pantel-2decb)
  * Open hidden-menu from right of Search bar and select `Convert to advanced filter`
 
-
-    resource.type="container"
-    resource.labels.cluster_name="private-cluster"
-    logName="projects/pantel-2decb/logs/prime"
+```properties
+resource.type="container"
+resource.labels.cluster_name="private-cluster"
+logName="projects/pantel-2decb/logs/prime"
+```
 
 ### Basic filter
 
  * Goto [this link](https://console.cloud.google.com/logs/viewer?project=pantel-2decb)
  * GKE container > private-cluster > All namespace_id
  * You can expand a single log and filter to log prime-only logs.
+
+# OCSGW logs in GCP
+
+Same steps as above. Use the filter below:
+
+```properties
+resource.type="global"
+logName="projects/pantel-2decb/logs/ocsgw"
+```

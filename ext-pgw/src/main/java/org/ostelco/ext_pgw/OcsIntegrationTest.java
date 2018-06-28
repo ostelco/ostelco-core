@@ -1,13 +1,18 @@
 package org.ostelco.ext_pgw;
 
-import org.apache.log4j.Logger;
-import org.jdiameter.api.*;
+import org.jdiameter.api.Avp;
+import org.jdiameter.api.AvpDataException;
+import org.jdiameter.api.AvpSet;
+import org.jdiameter.api.Request;
+import org.jdiameter.api.Session;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.ostelco.diameter.model.RequestType;
 import org.ostelco.diameter.test.TestClient;
 import org.ostelco.diameter.test.TestHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.junit.Assert.assertEquals;
 
@@ -23,7 +28,7 @@ import static org.junit.Assert.assertEquals;
 
 public class OcsIntegrationTest {
 
-    private static final Logger LOG = Logger.getLogger(OcsIntegrationTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OcsIntegrationTest.class);
 
     private static final String DEST_REALM = "loltel";
     private static final String DEST_HOST = "ocs";

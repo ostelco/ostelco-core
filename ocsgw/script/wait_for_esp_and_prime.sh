@@ -18,10 +18,7 @@ done
 
 echo "Prime launched"
 
-# TODO call start.sh from here. For some reason, it is not working
-# ./start.sh
-
-# Start app
+# Start app for testing
 exec java \
     -Dfile.encoding=UTF-8 \
     -jar /ocsgw.jar

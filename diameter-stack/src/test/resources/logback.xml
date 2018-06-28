@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{dd MMM yyyy HH:mm:ss,SSS} %-4r [%t] %-5p %c %x - %m%n</pattern>
+    </encoder>
+  </appender>
+
+  <logger name="org.mobicents.tests.diameter" level="INFO"/>
+  <logger name="org.jdiameter.common.impl.validation" level="OFF"/>
+  <logger name="jdiameter" level="OFF"/>
+  <logger name="org.jdiameter" level="INFO"/>
+
+  <root level="DEBUG">
+    <appender-ref ref="CONSOLE"/>
+  </root>
+
+</configuration>

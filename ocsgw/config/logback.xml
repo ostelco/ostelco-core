@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{dd MMM yyyy HH:mm:ss,SSS} %-5p %c{1} - %m%n</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="CLOUD" class="com.google.cloud.logging.logback.LoggingAppender">
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>INFO</level>
+    </filter>
+    <log>ocsgw</log>
+    <resourceType>global</resourceType>
+    <flushLevel>INFO</flushLevel>
+  </appender>
+
+  <logger name="org.mobicents.tests.diameter" level="DEBUG"/>
+  <logger name="org.jdiameter.common.impl.validation" level="INFO"/>
+  <logger name="jdiameter.statistic" level="INFO"/>
+  <logger name="org.jdiameter" level="INFO"/>
+
+  <root level="INFO">
+    <appender-ref ref="STDOUT"/>
+    <appender-ref ref="CLOUD"/>
+  </root>
+
+</configuration>
