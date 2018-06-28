@@ -2,10 +2,10 @@
 
 Client -> Client : Collecting payment information
 Client -> Stripe : Checkout
-Stripe -> Client: {token}
+Stripe --> Client: {token}
 Client -> Prime: Post /products {SKU, token}
 Prime -> Stripe: Charge {token}
-Stripe -> Prime: Charge Object {id,result..}
-Prime -> Client: {result}
+Stripe --> Prime: Charge Object {id,result..}
+Prime --> Client: {result}
 
 @enduml
