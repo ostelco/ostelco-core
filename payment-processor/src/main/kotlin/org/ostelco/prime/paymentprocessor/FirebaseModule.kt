@@ -17,10 +17,6 @@ class PaymentProcessorModule : PrimeModule {
 
     @JsonProperty("config")
     fun setConfig(config: PaymentProcessorConfig) {
-        setUpPaymentProcessor()
-    }
-
-    private fun setUpPaymentProcessor() {
     }
 }
 
