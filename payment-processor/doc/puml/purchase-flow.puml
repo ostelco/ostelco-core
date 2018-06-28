@@ -1,5 +1,5 @@
 @startuml
-
+actor Client
 Client -> Client : Collecting payment information
 Client -> Stripe : Checkout
 Stripe --> Client: {token}
