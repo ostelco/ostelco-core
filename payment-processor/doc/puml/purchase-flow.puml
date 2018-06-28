@@ -1,11 +1,31 @@
 @startuml
 
+participant Client
+
+box "Prime"
+    participant "client-api"
+    participant "payment-processor"
+    participant "storage"
+end box
+participant Stripe
+
+activate Client
 Client -> Client : Collecting payment information
 Client -> Stripe : Checkout
+activate Stripe
 Stripe --> Client: {token}
-Client -> Prime: Post /products {SKU, token}
-Prime -> Stripe: Charge {token}
-Stripe --> Prime: Charge Object {id,result..}
-Prime --> Client: {result}
-
+deactivate Stripe
+Client -> "client-api": POST /products {SKU, token}
+activate "client-api"
+"client-api" -> "payment-processor"
+activate "payment-processor"
+"payment-processor" -> Stripe: Charge {token}
+activate Stripe
+Stripe --> "payment-processor": Charge Object {id,result..}
+deactivate Stripe
+"payment-processor" -> "client-api"
+deactivate "payment-processor"
+"client-api" --> Client: {result}
+deactivate "client-api"
+deactivate Client
 @enduml
