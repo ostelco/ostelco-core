@@ -1,4 +1,6 @@
 @startuml
+
+actor Client
 participant Client
 
 box "Prime"
