@@ -2,6 +2,15 @@
 
 ## Deploy to on-premise adjoining Packet gateway
 
+
+### TL;DR
+
+```bash
+gradle clean pack
+scripts/deploy-ocsgw.sh
+```
+
+
 ### Package
 
     gradle clean pack
@@ -19,6 +28,10 @@ With unit testing:
 ```bash
 scp -oProxyJump=loltel@10.6.101.1 build/deploy/ostelco-core.zip  ubuntu@192.168.0.123:.
 ssh -A -Jloltel@10.6.101.1 ubuntu@192.168.0.123
+cd ostelco-core
+sudo docker-compose down
+cd ..
+rm -rf ostelco-core
 unzip ostelco-core.zip -d ostelco-core
 ```
 
