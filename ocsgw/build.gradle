@@ -61,6 +61,9 @@ task pack(type: Zip, dependsOn: 'shadowJar') {
     from ('config/logback.xml') {
         into (project.name + '/config/')
     }
+    from ('config/nginx.crt') {
+        into (project.name + '/config/')
+    }
     from ('build/libs/ocsgw-uber.jar') {
         into(project.name + '/build/libs/')
     }
