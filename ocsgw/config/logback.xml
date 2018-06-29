@@ -16,6 +16,11 @@
     <flushLevel>INFO</flushLevel>
   </appender>
 
+  <appender name="CLOUD_ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+    <appender-ref ref="CLOUD" />
+    <queueSize>1000</queueSize>
+  </appender>
+
   <logger name="org.ostelco" level="DEBUG"/>
   <logger name="org.mobicents.tests.diameter" level="DEBUG"/>
   <logger name="org.jdiameter.common.impl.validation" level="INFO"/>
@@ -24,7 +29,7 @@
 
   <root level="INFO">
     <appender-ref ref="STDOUT"/>
-    <appender-ref ref="CLOUD"/>
+    <appender-ref ref="CLOUD_ASYNC"/>
   </root>
 
 </configuration>
