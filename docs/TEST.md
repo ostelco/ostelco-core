@@ -11,8 +11,16 @@
  
  * Create test subscriber with default balance by importing `docs/pantel-2decb_test.json` 
    at `/test` path in Firebase.
-  
-
+ 
+ * Create self-signed certificate for nginx with domain as `ocs.ostelco.org` and place them at following location:
+   * In `esp`, keep `nginx.key` and `nginx.cert`.
+   * In `ocsgw/config`, keep `nginx.cert`.
+```bash
+cd esp
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./nginx.key -out ./nginx.crt
+cp nginx.crt ../ocsgw/config
+```
+   
 ### Test ext-pgw -- ocsgw -- prime --firebase
 
     

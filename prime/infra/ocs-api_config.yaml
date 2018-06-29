@@ -2,7 +2,7 @@ type: google.api.Service
 
 config_version: 3
 
-name: ocs.endpoints.pantel-2decb.cloud.goog
+name: ocs.ostelco.org
 
 title: OCS Service gRPC API
 
@@ -21,9 +21,9 @@ authentication:
     issuer: prime-service-account@pantel-2decb.iam.gserviceaccount.com
     jwks_uri: https://www.googleapis.com/robot/v1/metadata/x509/prime-service-account@pantel-2decb.iam.gserviceaccount.com
     audiences: >
-      https://ocs.endpoints.pantel-2decb.cloud.goog/org.ostelco.ocs.api.OcsService,
-      ocs.endpoints.pantel-2decb.cloud.goog/org.ostelco.ocs.api.OcsService,
-      ocs.endpoints.pantel-2decb.cloud.goog
+      https://ocs.ostelco.org/org.ostelco.ocs.api.OcsService,
+      ocs.ostelco.org/org.ostelco.ocs.api.OcsService,
+      ocs.ostelco.org
   rules:
   - selector: "*"
     requirements:

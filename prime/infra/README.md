@@ -18,11 +18,13 @@
 Set variables by doing this in `prime` directory:
 
     #PROJECT_ID=pantel-2decb
-    
-    export PROJECT_ID="$(gcloud config get-value project -q)"
-    echo "PROJECT_ID=$PROJECT_ID"
-    export PRIME_VERSION="$(gradle properties -q | grep "version:" | awk '{print $2}' | tr -d '[:space:]')"
-    echo "PRIME_VERSION=$PRIME_VERSION"
+
+```bash
+export PROJECT_ID="$(gcloud config get-value project -q)"
+echo "PROJECT_ID=$PROJECT_ID"
+export PRIME_VERSION="$(gradle properties -q | grep "version:" | awk '{print $2}' | tr -d '[:space:]')"
+echo "PRIME_VERSION=$PRIME_VERSION"
+```    
 
 Reference:
  * https://cloud.google.com/endpoints/docs/grpc/get-started-grpc-kubernetes-engine
