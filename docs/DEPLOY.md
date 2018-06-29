@@ -1,15 +1,15 @@
 # Deploy to production
 
-## Deploy to on-premise adjoining Packet gateway   
+## Deploy to on-premise adjoining Packet gateway
 
 ### Package
- 
+
     gradle clean pack
 
 With unit testing:
-    
+
     gradle clean test pack
-    
+
 * This creates zip file `build/deploy/ostelco-core.zip`
 
 ### Deploy on host
@@ -17,11 +17,9 @@ With unit testing:
 * Upload and unzip `ostelco-core.zip` file.
 
 ```bash
-scp build/deploy/ostelco-core.zip loltel@10.6.101.1:ostelco-core/  
-ssh -A loltel@10.6.101.1  
-scp ostelco-core/ostelco-core.zip ubuntu@192.168.0.123:.  
-ssh ubuntu@192.168.0.123  
-unzip ostelco-core.zip -d ostelco-core  
+scp -oProxyJump=loltel@10.6.101.1 build/deploy/ostelco-core.zip  ubuntu@192.168.0.123:.
+ssh -A -Jloltel@10.6.101.1 ubuntu@192.168.0.123
+unzip ostelco-core.zip -d ostelco-core
 ```
 
 * Run in docker
@@ -81,7 +79,7 @@ Deploy the service
     kubectl apply -f ./<service>.yaml
 
 Details of service
-    
+
     kubectl describe service <service>
 
 ### Cleanup kubernetes
@@ -91,7 +89,7 @@ Delete service
     kubectl delete service <service>
 
 Delete deployment
-    
+
     kubectl delete  deployment <deployment>
 
 Delete cluster
