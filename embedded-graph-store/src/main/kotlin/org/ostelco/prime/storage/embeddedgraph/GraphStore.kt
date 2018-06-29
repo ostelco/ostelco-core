@@ -113,6 +113,7 @@ object GraphStoreSingleton : Storage, AdminDataStore {
 
     override fun getNotificationToken(msisdn: String, applicationID: String): ApplicationToken? = notificationTokenStore.get("$msisdn.$applicationID")
 
+    override fun removeNotificationToken(msisdn: String, applicationID: String): Boolean = notificationTokenStore.delete("$msisdn.$applicationID")
     //
     // Admin Store
     //

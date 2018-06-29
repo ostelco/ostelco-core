@@ -6,6 +6,7 @@ plugins {
 dependencies {
     implementation project(':diameter-test')
     implementation 'junit:junit:4.12'
+    implementation 'ch.qos.logback:logback-classic:1.2.3'
 }
 
 shadowJar {

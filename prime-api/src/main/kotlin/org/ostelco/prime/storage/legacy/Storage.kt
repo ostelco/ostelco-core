@@ -99,5 +99,13 @@ interface Storage {
      */
     fun addNotificationToken(msisdn: String, token: ApplicationToken) : Boolean
 
+    /**
+     * Get token used for sending notification to user application
+     */
     fun getNotificationToken(msisdn: String, applicationID: String): ApplicationToken?
+
+    /**
+     * Get token used for sending notification to user application
+     */
+    fun removeNotificationToken(msisdn: String, applicationID: String): Boolean
 }
