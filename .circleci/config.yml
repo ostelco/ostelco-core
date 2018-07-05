@@ -1,0 +1,29 @@
+version: 2
+jobs:
+  deploy-prime:
+    docker:
+    - image: devth/helm:v2.9.1
+    working_directory: ~/repo
+    steps:
+    - run:
+        name: running helm install
+        command: |
+          echo $GOOGLE_CREDENTIALS > $HOME/pantel-tests.json
+          gcloud auth activate-service-account --key-file=$HOME/pantel-tests.json
+          gcloud container clusters get-credentials my-cluster --zone europe-west2-c --project pantel-tests
+          kubectl create serviceaccount -n kube-system tiller
+          kubectl create clusterrolebinding tiller-binding --clusterrole=cluster-admin --serviceaccount kube-system:tiller
+          helm init --service-account tiller
+          helm repo add pantel-tests https://pantel-tests-charts.storage.googleapis.com/
+          helm install pantel-tests/prime --name prime --set firebaseServiceAccount=$(echo $FIREBASE_SERVICE_ACCOUNT | base64)
+workflows:
+  version: 2
+  my-workflow:
+    jobs:
+    - helm-package:
+        filters:
+          branches:
+            only:
+            - master
+
+8u171-jdk
