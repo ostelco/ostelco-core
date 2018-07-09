@@ -40,6 +40,8 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -171,11 +173,10 @@ public class GrpcDataSource implements DataSource {
     }
 
     /**
-     *
      * Generate a new instande that connects to an endpoint, and
      * optionally also encrypts the connection.
      *
-     * @param target The gRPC endpoint to connect the client to.
+     * @param target    The gRPC endpoint to connect the client to.
      * @param encrypted True iff transport level encryption is enabled.
      * @throws IOException
      */
@@ -190,12 +191,16 @@ public class GrpcDataSource implements DataSource {
         // Initialize the stub that will be used to actually
         // communicate from the client emulating being the OCS.
         if (encrypted) {
-            final ManagedChannelBuilder channelBuilder = NettyChannelBuilder
+            final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder
                     .forTarget(target)
-                    .sslContext(GrpcSslContexts.forClient().trustManager(new File("/config/nginx.crt")).build())
                     .keepAliveWithoutCalls(true)
                     .keepAliveTimeout(KEEP_ALIVE_TIMEOUT_IN_MINUTES, TimeUnit.MINUTES)
                     .keepAliveTime(KEEP_ALIVE_TIME_IN_SECONDS, TimeUnit.SECONDS);
+
+            final ManagedChannelBuilder channelBuilder =
+                    Files.exists(Paths.get("/config/nginx.crt"))
+                            ? nettyChannelBuilder.sslContext(GrpcSslContexts.forClient().trustManager(new File("/config/nginx.crt")).build())
+                            : nettyChannelBuilder;
 
             final String serviceAccountFile = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
             final ServiceAccountJwtAccessCredentials credentials =
@@ -293,7 +298,7 @@ public class GrpcDataSource implements DataSource {
     private void updateBlockedList(CreditControlAnswerInfo answer, CreditControlRequest request) {
         // This suffers from the fact that one Credit-Control-Request can have multiple MSCC
         for (org.ostelco.ocs.api.MultipleServiceCreditControl msccAnswer : answer.getMsccList()) {
-            for (org.ostelco.diameter.model.MultipleServiceCreditControl msccRequest: request.getMultipleServiceCreditControls()) {
+            for (org.ostelco.diameter.model.MultipleServiceCreditControl msccRequest : request.getMultipleServiceCreditControls()) {
                 if ((msccAnswer.getServiceIdentifier() == msccRequest.getServiceIdentifier()) && (msccAnswer.getRatingGroup() == msccRequest.getRatingGroup())) {
                     updateBlockedList(msccAnswer, msccRequest, answer.getMsisdn());
                     return;

@@ -6,16 +6,17 @@ metadata:
     app: prime
     tier: backend
 spec:
+  type: LoadBalancer
+  loadBalancerIP: 35.195.49.238
   ports:
   - name: grpc
-    port: 80
-    targetPort: 9000
+    port: 443
+    targetPort: 8443
     protocol: TCP
     name: http2
   selector:
     app: prime
     tier: backend
-  type: LoadBalancer
 ---
 apiVersion: v1
 kind: Service
@@ -28,10 +29,6 @@ spec:
   type: LoadBalancer
   loadBalancerIP: 35.233.36.235
   ports:
-  - port: 80
-    targetPort: 9002
-    protocol: TCP
-    name: http
   - port: 443
     protocol: TCP
     name: https
@@ -59,12 +56,14 @@ spec:
         image: gcr.io/endpoints-release/endpoints-runtime:1
         args: [
           "--http2_port=9000",
-          "--service=ocs.endpoints.pantel-2decb.cloud.goog",
+          "--ssl_port=8443",
+          "--service=ocs.ostelco.org",
           "--rollout_strategy=managed",
           "--backend=grpc://127.0.0.1:8082"
         ]
         ports:
         - containerPort: 9000
+        - containerPort: 8443
         volumeMounts:
         - mountPath: /etc/nginx/ssl
           name: ocs-ostelco-ssl

@@ -44,7 +44,7 @@ class DiameterUtilities {
                 avpLine.append(if (avpLine.length % 2 == 0) "." else " ")
             }
             avpLine.append(avpValue)
-            LOG.info(avpLine.toString())
+            LOG.debug(avpLine.toString())
             if (isGrouped(avp)) {
                 try {
                     printAvps(avp.grouped, "$indentation  ")
