@@ -20,8 +20,7 @@ class PaymentProcessorModule : PrimeModule {
     fun setConfig(config: PaymentProcessorConfig) {
     }
 
-    @Override
-    fun init(config: Environment) {
+    override fun init(config: Environment) {
     }
 }
 
