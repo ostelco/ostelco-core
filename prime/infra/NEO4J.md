@@ -24,4 +24,3 @@ Deploy Neo4j to Kubernetes Cluster
     git clone git@github.com:neo4j-contrib/kubernetes-neo4j.git
     cd kubernetes-neo4j
     kubectl apply -f cores
-    

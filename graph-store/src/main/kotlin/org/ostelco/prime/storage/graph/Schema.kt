@@ -76,8 +76,7 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
         try {
             transaction = Graph.beginTx()
             return entityType.name.getGraphRelatedNodes(id, relationType.name)
-                    .map { it.allProperties }
-                    .map { toEntityType.createEntity(it) }
+                    .map { toEntityType.createEntity(it.allProperties) }
         } finally {
             transaction?.close()
         }
@@ -85,8 +84,7 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
 
     fun <RELATION : Any> getRelations(id: String, relationType: RelationType<E, RELATION, *>): List<RELATION> {
         return entityType.name.getGraphRelations(id, relationType.name)
-                .map { relationType.createRelation(it.allProperties) }
-                .filterNotNull()
+                .mapNotNull { relationType.createRelation(it.allProperties) }
     }
 
     fun update(id: String, entity: E): Boolean {

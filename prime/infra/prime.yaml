@@ -13,7 +13,6 @@ spec:
     port: 443
     targetPort: 8443
     protocol: TCP
-    name: http2
   selector:
     app: prime
     tier: backend
