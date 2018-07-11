@@ -1,0 +1,38 @@
+@startuml
+
+actor Client
+participant Client
+
+box "Prime"
+    participant "client-api"
+    participant "payment-processor"
+    participant "Storage"
+end box
+participant Stripe
+
+activate Client
+  Client -> "client-api": GET /cards
+  activate "client-api"
+
+    "client-api" -> "payment-processor" : getSavedCards
+    activate "payment-processor"
+
+        "payment-processor" -> Storage : getStripeCustomerId
+        activate Storage
+        "payment-processor" <-- Storage
+        deactivate Storage
+
+        "payment-processor" -> Stripe: GET /customer
+        activate Stripe
+        "payment-processor" <-- Stripe : Customer Object {sources..}
+        deactivate Stripe
+
+    "client-api" <-- "payment-processor" :  { Source List }
+    deactivate "payment-processor"
+
+  Client <-- "client-api": {result}
+  deactivate "client-api"
+
+deactivate Client
+
+@enduml
