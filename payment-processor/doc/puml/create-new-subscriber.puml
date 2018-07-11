@@ -1,0 +1,59 @@
+@startuml
+
+actor Client
+participant Client
+
+box "Prime"
+    participant "client-api"
+    participant "payment-processor"
+    participant OCS
+    participant Storage
+end box
+participant Stripe
+
+activate Client
+    Client -> Client : Collecting payment information
+
+    Client -> Stripe : Create Source
+    activate Stripe
+    Stripe -> Client : {source-id}
+    deactivate Stripe
+
+    Client -> "client-api": POST /profile {source-id, email}
+    activate "client-api"
+
+    "client-api" -> "payment-processor" : Create new profile {source-id, email}
+    activate "payment-processor"
+
+    "payment-processor" -> Stripe : POST /v1/customers {email} (Create new subscriber with Stripe)
+    activate Stripe
+    "Stripe" -> "payment-processor" : {customer-id}
+
+    "payment-processor" -> Stripe : POST /v1/customers/{customer-id}/sources {source-id}
+    "Stripe" -> "payment-processor"
+    deactivate Stripe
+
+    "payment-processor" -> Storage : Store profile {customer-id, source-id}
+    activate Storage
+    Storage -> "payment-processor" : {profile-id}
+
+    "payment-processor" -> Storage : Get default subscription plan
+    Storage -> "payment-processor" : {plan-id}
+    deactivate Storage
+
+    "payment-processor" -> Stripe : POST v1/subscriptions {plan-id, customer-id}
+    activate Stripe
+    "Stripe" -> "payment-processor"
+    deactivate Stripe
+
+    "payment-processor" -> OCS : Notify OCS
+
+    "payment-processor" -> "client-api" : {result}
+    deactivate "payment-processor"
+
+    "client-api" -> Client : {result}
+    deactivate "client-api"
+
+deactivate Client
+
+@enduml
