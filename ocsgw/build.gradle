@@ -42,7 +42,9 @@ shadowJar {
     version = null
 }
 
-task pack(type: Zip, dependsOn: 'shadowJar') {
+task pack(dependsOn: ['packDev', 'packProd'])
+
+task packProd(type: Zip, dependsOn: 'shadowJar') {
     from ('script/') {
         into(project.name + '/script')
     }
@@ -68,7 +70,36 @@ task pack(type: Zip, dependsOn: 'shadowJar') {
         into(project.name)
     }
     archiveName = 'ocsgw.zip'
-    destinationDir = file('build/deploy/')
+    destinationDir = file('build/deploy/prod/')
+}
+
+task packDev(type: Zip, dependsOn: 'shadowJar') {
+    from ('script/') {
+        into(project.name + '/script')
+    }
+    from ('config/dictionary.xml') {
+        into (project.name + '/config/')
+    }
+    from ('config/server-jdiameter-config.dev.xml') {
+        into (project.name + '/config/')
+        rename { String fileName ->
+            fileName.replace('dev.', '')
+        }
+    }
+    from ('config/pantel-prod.json') {
+        into (project.name + '/config/')
+    }
+    from ('config/logback.xml') {
+        into (project.name + '/config/')
+    }
+    from ('build/libs/ocsgw-uber.jar') {
+        into(project.name + '/build/libs/')
+    }
+    from ('Dockerfile') {
+        into(project.name)
+    }
+    archiveName = 'ocsgw.zip'
+    destinationDir = file('build/deploy/dev/')
 }
 
 apply from: '../jacoco.gradle'
