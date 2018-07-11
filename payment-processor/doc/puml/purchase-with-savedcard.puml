@@ -1,0 +1,61 @@
+@startuml
+
+actor Client
+participant Client
+
+box "Prime"
+    participant "client-api"
+    participant "payment-processor"
+    participant OCS
+    participant Storage
+end box
+participant Stripe
+
+activate Client
+  Client -> "client-api" : Get saved sources
+  activate "client-api"
+  Client <-- "client-api": {list of sources}
+  deactivate "client-api"
+
+  Client -> Client : Choose source for payment
+
+  Client -> "client-api": POST /products {SKU, source_id}
+  activate "client-api"
+
+    "client-api" -> Storage : State { Purchase Initiated }
+    activate Storage
+    "client-api" <-- Storage
+    deactivate Storage
+
+    "client-api" -> "payment-processor" : Perform payment
+    activate "payment-processor"
+
+        "payment-processor" -> Storage : Get Stripe Customer Id
+        activate Storage
+        "payment-processor" <-- Storage : {customer_id}
+        deactivate Storage
+
+        "payment-processor" -> Storage : Get Payment Info for SKU
+        activate Storage
+        "payment-processor" <-- Storage : {payment_info}
+        deactivate Storage
+
+        "payment-processor" -> Stripe: Create Charge {source_id, customer_id, payment_info}
+        activate Stripe
+        "payment-processor" <-- Stripe : Charge Object {id,result..}
+        deactivate Stripe
+
+        "payment-processor" -> Storage : Save Payment Record
+        "payment-processor" -> Storage : update balance
+
+        "payment-processor" -> OCS : Notify OCS
+
+    "client-api" <-- "payment-processor"
+    deactivate "payment-processor"
+
+  Client <-- "client-api": {result}
+  deactivate "client-api"
+
+deactivate Client
+
+@enduml
