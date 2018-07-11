@@ -1,7 +1,7 @@
 <Configuration xmlns="http://www.jdiameter.org/jdiameter-server">
 
   <LocalPeer>
-    <URI value="aaa://ocs:3868" />
+    <URI value="aaa://ocs_dev:3868" />
     <IPAddresses>
       <IPAddress value="10.6.4.69" />
     </IPAddresses>
