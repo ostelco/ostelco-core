@@ -22,10 +22,6 @@ activate Client
   Client -> "client-api": POST /products {SKU, source_id, save-card-flag}
   activate "client-api"
 
-    "client-api" -> Storage : State { Purchase Initiated }
-    activate Storage
-    "client-api" <-- Storage
-    deactivate Storage
 
     "client-api" -> "payment-processor" : Perform payment
     activate "payment-processor"
