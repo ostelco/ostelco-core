@@ -18,7 +18,6 @@ activate Client
     activate Stripe
     Stripe -> Client : {sourceId}
     deactivate Stripe
-    note right : See "create-source" flow diagram
 
     Client -> Client : Select product ({sku})
 
