@@ -38,6 +38,8 @@ interface SubscriberDAO {
 
     fun storeApplicationToken(msisdn: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken>
 
+    fun getPaymentId(name: String): String?
+
     companion object {
 
         /**

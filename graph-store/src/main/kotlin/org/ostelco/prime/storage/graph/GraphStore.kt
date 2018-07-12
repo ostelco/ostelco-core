@@ -183,4 +183,16 @@ object GraphStoreSingleton : Storage, AdminDataStore {
     // override fun getSegment(id: String): Segment? = segmentStore.get(id)?.let { Segment().apply { this.id = it.id } }
 
     // override fun getProductClass(id: String): ProductClass? = productClassStore.get(id)
+
+    override fun getPaymentId(id: String): String? {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun deletePaymentId(id: String): Boolean {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun createPaymentId(id: String, paymentId: String): Boolean {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
 }

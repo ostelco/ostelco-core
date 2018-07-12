@@ -5,13 +5,11 @@ import com.fasterxml.jackson.annotation.JsonTypeName
 import io.dropwizard.setup.Environment
 import org.hibernate.validator.constraints.NotEmpty
 import org.ostelco.prime.analytics.DataConsumptionInfoPublisher
-import org.ostelco.prime.appnotifier.AppNotifier
 import org.ostelco.prime.disruptor.ClearingEventHandler
 import org.ostelco.prime.disruptor.PrimeDisruptor
 import org.ostelco.prime.disruptor.PrimeEventProducerImpl
 import org.ostelco.prime.events.EventProcessor
 import org.ostelco.prime.module.PrimeModule
-import org.ostelco.prime.module.getResource
 import org.ostelco.prime.thresholds.ThresholdChecker
 
 @JsonTypeName("ocs")

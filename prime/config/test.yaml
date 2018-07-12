@@ -18,6 +18,9 @@ modules:
       pseudonymEndpoint: http://pseudonym-server:8080
       jerseyClient:
         timeout: 3s
+  - type: stripe-payment-processor
+    config:
+      configFile: /secret/stripe.json
   - type: firebase-app-notifier
     config:
       configFile: /secret/pantel-prod.json
