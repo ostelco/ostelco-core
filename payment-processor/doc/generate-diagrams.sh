@@ -1,4 +1,17 @@
-#!/usr/bin/env bash
+#! /usr/bin/env bash
 
-plantuml -tsvg -pipe < puml/purchase-flow.puml > diagrams/purchase-flow.svg
-plantuml -tsvg -pipe < puml/purchase-state-diagram.puml > diagrams/purchase-state-diagram.svg
+# Convert 'puml' files.
+# Usage:
+#    generate-diagrams.sh [<image-format>]
+# where '<image-format>' can be 'svg', 'png' or 'eps'.
+# Default is 'svg'.
+
+FRMT=${1:-svg}
+test -d diagrams || mkdir diagrams
+
+for i in puml/*.puml
+do
+    b=$(basename $i .puml)
+    echo "converting $i -> diagrams/$b.$FRMT"
+    plantuml -t$FRMT -pipe < $i > diagrams/$b.$FRMT
+done
