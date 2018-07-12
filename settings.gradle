@@ -18,6 +18,7 @@ include ':ocs'
 include ':ocs-api'
 include ':ocsgw'
 include ':ostelco-lib'
+include ':payment-processor'
 include ':prime'
 include ':prime-api'
 include ':prime-client-api'
@@ -41,6 +42,7 @@ project(':ocs').projectDir = "$rootDir/ocs" as File
 project(':ocs-api').projectDir = "$rootDir/ocs-api" as File
 project(':ocsgw').projectDir = "$rootDir/ocsgw" as File
 project(':ostelco-lib').projectDir = "$rootDir/ostelco-lib" as File
+project(':payment-processor').projectDir = "$rootDir/payment-processor" as File
 project(':prime').projectDir = "$rootDir/prime" as File
 project(':prime-api').projectDir = "$rootDir/prime-api" as File
 project(':prime-client-api').projectDir = "$rootDir/prime-client-api" as File

@@ -40,6 +40,7 @@ object FirebaseStorageSingleton : Storage {
     private val subscriberEntity = EntityType("subscribers", Subscriber::class.java)
     private val paymentHistoryEntity = EntityType("paymentHistory", PurchaseRecord::class.java)
     private val fcmTokenEntity = EntityType("notificationTokens", ApplicationToken::class.java)
+    private val paymentIdEntity = EntityType("paymentId", String::class.java)
 
     private val firebaseDatabase = setupFirebaseInstance(config.databaseName, config.configFile)
 
@@ -49,6 +50,7 @@ object FirebaseStorageSingleton : Storage {
     private val subscriberStore = EntityStore(firebaseDatabase, subscriberEntity)
     private val paymentHistoryStore = EntityStore(firebaseDatabase, paymentHistoryEntity)
     private val fcmTokenStore = EntityStore(firebaseDatabase, fcmTokenEntity)
+    private val paymentIdStore = EntityStore(firebaseDatabase, paymentIdEntity)
 
     private fun setupFirebaseInstance(
             databaseName: String,
@@ -157,6 +159,12 @@ object FirebaseStorageSingleton : Storage {
     override fun removeNotificationToken(msisdn: String, applicationID: String): Boolean {
         return fcmTokenStore.delete(applicationID) { databaseReference.child(urlEncode(msisdn)) }
     }
+
+    override fun getPaymentId(id: String): String? = paymentIdStore.get(id)
+
+    override fun deletePaymentId(id: String): Boolean = paymentIdStore.delete(id)
+
+    override fun createPaymentId(id: String, paymentId: String): Boolean = paymentIdStore.create(id, paymentId)
 }
 
 private val config = FirebaseConfigRegistry.firebaseConfig

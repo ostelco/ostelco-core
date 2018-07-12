@@ -211,7 +211,7 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
         return Either.right(Consent(consentId, "Grant permission to process personal data", false))
     }
 
-    override fun reportAnalytics(subscriptionId: String, events: String): Option<ApiError> {
-        return Option.none()
-    }
+    override fun reportAnalytics(subscriptionId: String, events: String): Option<ApiError> = Option.none()
+
+    override fun getPaymentId(name: String): String? = storage.getPaymentId(name)
 }
