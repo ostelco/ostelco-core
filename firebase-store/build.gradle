@@ -1,5 +1,5 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.50"
+  id "org.jetbrains.kotlin.jvm" version "1.2.51"
   id "java-library"
 }
 
@@ -8,5 +8,6 @@ dependencies {
   // Match netty via ocs-api
   implementation 'com.google.firebase:firebase-admin:6.2.0'
 
-  testImplementation "junit:junit:4.12"
+  testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
+  testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
 }
