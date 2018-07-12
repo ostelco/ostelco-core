@@ -12,20 +12,20 @@ end box
 participant Stripe
 
 activate Client
+    Client -> Client : Collecting payment information
 
-    Client -> "client-api" : Get saved sources
-    activate "client-api"
-    "client-api" -> Client : {list of sources}
-    deactivate "client-api"
-    note right : See "list-sources" flow diagram
+    Client -> Stripe : Create new source with Stripe
+    activate Stripe
+    Stripe -> Client : {sourceId}
+    deactivate Stripe
+    note right : See "create-source" flow diagram
 
-    Client -> Client : Choose source for payment ({sourceId})
     Client -> Client : Select product ({sku})
 
-    Client -> "client-api": POST /products {sku, sourceId}
+    Client -> "client-api": POST /products {sku, sourceId, saveCardFlag}
     activate "client-api"
 
-    "client-api" -> "payment-processor" : purchaseProduct(name, sku, sourceId)
+    "client-api" -> "payment-processor" : purchaseProduct(name, sku, sourceId, saveCardFlag)
     activate "payment-processor"
 
     "payment-processor" -> DAO : getStripeCustomerId(name)
@@ -39,10 +39,24 @@ activate Client
     deactivate DAO
 
     alt successful case
+
+        "payment-processor" -> Stripe : POST /v1/customers/{customerId}/sources {sourceId}
+        activate Stripe
+        Stripe -> "payment-processor" : {sourceInfo}
+        deactivate Stripe
+        note left : Attach new source to customer ({sourceId, customerId})
+
         "payment-processor" -> Stripe : POST /v1/charges {customerId, sourceId, product.amount, product.currency, product.description}
         activate Stripe
         Stripe -> "payment-processor" : {chargeInfo}
         deactivate Stripe
+
+        alt saveCardFlag is false
+            "payment-processor" -> Stripe : DELETE /v1/customer/{customerId}/sources/{sourceId}
+             activate Stripe
+            Stripe -> "payment-processor" : {result)}
+            deactivate Stripe
+        end
 
         "payment-processor" -> DAO: recordChargeInfo(name, chargeInfo)
         activate DAO
