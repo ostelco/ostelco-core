@@ -16,7 +16,7 @@ activate Client
     activate "client-api"
     "client-api" -> Client : {list of sources}
     deactivate "client-api"
-    note right : See "list-card" flow diagram
+    note right : See "list-sources" flow diagram
 
     Client -> Client : Choose source for payment
 
