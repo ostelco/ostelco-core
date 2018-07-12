@@ -16,6 +16,9 @@ modules:
       pseudonymEndpoint: http://pseudonym-server-service.default.svc.cluster.local
       jerseyClient:
         timeout: 2s
+  - type: stripe-payment-processor
+    config:
+      configFile: /secret/stripe.json
   - type: firebase-app-notifier
     config:
       configFile: /secret/pantel-prod.json

@@ -108,4 +108,19 @@ interface Storage {
      * Get token used for sending notification to user application
      */
     fun removeNotificationToken(msisdn: String, applicationID: String): Boolean
+
+    /**
+     *
+     */
+    fun getPaymentId(id: String): String?
+
+    /**
+     *
+     */
+    fun deletePaymentId(id: String): Boolean
+
+    /**
+     *
+     */
+    fun createPaymentId(id: String, paymentId: String): Boolean
 }

@@ -155,6 +155,18 @@ object GraphStoreSingleton : Storage, AdminDataStore {
         segmentToSubscriberStore.create(segment.id, segment.subscribers)
     }
 
+    override fun getPaymentId(id: String): String? {
+        TODO("not implemented")
+    }
+
+    override fun deletePaymentId(id: String): Boolean {
+        TODO("not implemented")
+    }
+
+    override fun createPaymentId(id: String, paymentId: String): Boolean {
+        TODO("not implemented")
+    }
+
     // override fun getOffers(): Collection<Offer> = offerStore.getAll().values.map { Offer().apply { id = it.id } }
 
     // override fun getSegments(): Collection<Segment> = segmentStore.getAll().values.map { Segment().apply { id = it.id } }
