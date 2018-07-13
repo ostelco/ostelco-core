@@ -23,20 +23,25 @@
    - Modules which implement an interface, which is defined in `prime-api`.
 
 ### Dependency
-    
-    [prime] --(compile-time dependency)--> [prime-api] <--(compile-time dependency)-- [Component] <--(runtime dependency)
-        \                                                                                ^   \           /
-         \__________________________(runtime dependency)________________________________/     \_________/
+
+```text
+[prime] --(compile-time dependency)--> [prime-api] <--(compile-time dependency)-- [Component] <--(runtime dependency)
+    \                                                                                ^   \           /
+     \__________________________(runtime dependency)________________________________/     \_________/
+
+```
 
 ### Implementation
+ - New module library will have `prime-api` as `implementation` dependency (which is `compile` dependency in gradle).   
+ - Add the new module library as `runtimeOnly` dependency in `prime`.
 
 ##### Modules needing Dropwizard environment or configuration
- - Implement `org.ostelco.prime.module` interface.
+ - Implement `org.ostelco.prime.module.PrimeModule` interface.
  - This interface has `fun init(env: Environment)` via which Dropwizard environment will be passed.
  - Implementing class may also receive module specific configuration like Dropwizard's configuration.
  - Add following files in `src/main/resources/META-INF/services`:
    - File named `io.dropwizard.jackson.Discoverable` which contains a line `org.ostelco.prime.module.PrimeModule`.
-   - File named `org.ostelco.prime.module.PrimeModule` which contains name of class (including package name) which implements `org.ostelco.prime.module`. 
+   - File named `org.ostelco.prime.module.PrimeModule` which contains name of class (including package name) which implements `org.ostelco.prime.module.PrimeModule`. 
 
 ##### Modules implementing an interface
  - These components act as a **provider** for a **service** defined by an `interface` in `prime-api`.
@@ -49,9 +54,12 @@
  - Care should be taken that there is only one such implementing class.
  - The object of implementing class can then be injected using `getResource()` defined in `ResourceRegistry.kt` in `prime-api` as:
 
-    
-    private val instance: InterfaceName = getResource()
+```kotlin
+private val instance: InterfaceName = getResource()
+```
 
 You may also do lazy initialization using Property Delegate feature from Kotlin.
 
-    private val instance by lazy { getResource<InterfaceName>() }
+```kotlin
+private val instance by lazy { getResource<InterfaceName>() }
+```
