@@ -6,8 +6,8 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends netcat \
  && rm -rf /var/lib/apt/lists/*
 
-COPY script/wait_for_prime.sh /wait_for_prime.sh
-
+COPY src/main/resources/ /
+COPY script/wait_for_services.sh /wait_for_services.sh
 COPY build/libs/acceptance-tests-uber.jar /acceptance-tests.jar
 
-CMD ["/wait_for_prime.sh"]
+CMD ["/wait_for_services.sh"]
