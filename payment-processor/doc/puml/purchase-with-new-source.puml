@@ -23,6 +23,10 @@ activate Client
 
     Client -> "client-api": POST /products {sku, sourceId, saveCardFlag}
     activate "client-api"
+    note right of "client-api"
+       {name} identifies the user (from Oauth2 auth.)
+       and is equivalent to the users email address
+    end note
 
     "client-api" -> "payment-processor" : purchaseProduct(name, sku, sourceId, saveCardFlag)
     activate "payment-processor"

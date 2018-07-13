@@ -7,7 +7,7 @@ box "Prime"
     participant "client-api"
     participant "payment-processor"
     participant OCS
-    participant Storage
+    participant DAO
 end box
 participant Stripe
 
@@ -38,13 +38,13 @@ activate Client
        "Stripe" -> "payment-processor"
        deactivate Stripe
 
-       "payment-processor" -> Storage : createProfile(name, customerId, sourceId)
-       activate Storage
-       Storage -> "payment-processor" : {result}
+       "payment-processor" -> DAO : createProfile(name, customerId)
+       activate DAO
+       DAO -> "payment-processor" : {result}
 
-       "payment-processor" -> Storage : getDefaultPlan(name)
-       Storage -> "payment-processor" : {planId}
-       deactivate Storage
+       "payment-processor" -> DAO : getDefaultPlan(name)
+       DAO -> "payment-processor" : {planId}
+       deactivate DAO
 
        "payment-processor" -> Stripe : POST v1/subscriptions {planId}, {customerId}
        activate Stripe
