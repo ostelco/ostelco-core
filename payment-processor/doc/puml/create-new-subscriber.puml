@@ -16,35 +16,45 @@ activate Client
 
     Client -> Stripe : Create Source
     activate Stripe
-    Stripe -> Client : {source-id}
+    Stripe -> Client : {sourceId}
     deactivate Stripe
 
-    Client -> "client-api": POST /profile {source-id, email}
+    Client -> "client-api": POST /profile {sourceId}
     activate "client-api"
+    note right of "client-api"
+       {name} identifies the user (from Oauth2 auth.)
+       and is equivalent to the users email address
+    end note
 
-    "client-api" -> "payment-processor" : Create new profile {source-id, email}
+    "client-api" -> "payment-processor" : createProfile(name, sourceId)
     activate "payment-processor"
 
-    "payment-processor" -> Stripe : POST /v1/customers {email} (Create new subscriber with Stripe)
-    activate Stripe
-    "Stripe" -> "payment-processor" : {customer-id}
+    alt successful case
+       "payment-processor" -> Stripe : POST /v1/customers {name} (Create new subscriber with Stripe)
+       activate Stripe
+       "Stripe" -> "payment-processor" : {customerId}
 
-    "payment-processor" -> Stripe : POST /v1/customers/{customer-id}/sources {source-id}
-    "Stripe" -> "payment-processor"
-    deactivate Stripe
+       "payment-processor" -> Stripe : POST /v1/customers/{customerId}/sources {sourceId}
+       "Stripe" -> "payment-processor"
+       deactivate Stripe
 
-    "payment-processor" -> Storage : Store profile {customer-id, source-id}
-    activate Storage
-    Storage -> "payment-processor" : {profile-id}
+       "payment-processor" -> Storage : createProfile(name, customerId, sourceId)
+       activate Storage
+       Storage -> "payment-processor" : {result}
 
-    "payment-processor" -> Storage : Get default subscription plan
-    Storage -> "payment-processor" : {plan-id}
-    deactivate Storage
+       "payment-processor" -> Storage : getDefaultPlan(name)
+       Storage -> "payment-processor" : {planId}
+       deactivate Storage
 
-    "payment-processor" -> Stripe : POST v1/subscriptions {plan-id, customer-id}
-    activate Stripe
-    "Stripe" -> "payment-processor"
-    deactivate Stripe
+       "payment-processor" -> Stripe : POST v1/subscriptions {planId}, {customerId}
+       activate Stripe
+       "Stripe" -> "payment-processor"
+       deactivate Stripe
+
+    else error
+       note right of "payment-processor" : Unroll charge with Stripe etc. (TBD)
+
+    end
 
     "payment-processor" -> OCS : Notify OCS
 
