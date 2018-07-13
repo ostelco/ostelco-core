@@ -31,12 +31,12 @@
 ### Implementation
 
 ##### Modules needing Dropwizard environment or configuration
- - Implement `org.ostelco.prime.provider.Service` interface.
+ - Implement `org.ostelco.prime.module` interface.
  - This interface has `fun init(env: Environment)` via which Dropwizard environment will be passed.
  - Implementing class may also receive module specific configuration like Dropwizard's configuration.
  - Add following files in `src/main/resources/META-INF/services`:
-   - File named `io.dropwizard.jackson.Discoverable` which contains a line `org.ostelco.prime.provider.Service`.
-   - File named `org.ostelco.prime.provider.Service` which contains name of class (including package name) which implements `org.ostelco.prime.provider.Service`. 
+   - File named `io.dropwizard.jackson.Discoverable` which contains a line `org.ostelco.prime.module.PrimeModule`.
+   - File named `org.ostelco.prime.module.PrimeModule` which contains name of class (including package name) which implements `org.ostelco.prime.module`. 
 
 ##### Modules implementing an interface
  - These components act as a **provider** for a **service** defined by an `interface` in `prime-api`.
