@@ -12,6 +12,7 @@ dependencies {
 
   implementation project(":prime-api")
   implementation project(":prime-client-api")
+  implementation project(':diameter-test')
 
   implementation 'io.jsonwebtoken:jjwt:0.9.1'
   // tests fail when updated to 2.27
