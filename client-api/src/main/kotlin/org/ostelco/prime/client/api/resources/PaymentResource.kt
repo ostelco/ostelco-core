@@ -14,7 +14,7 @@ import javax.ws.rs.core.Response
  * Payment API.
  *
  */
-@Path("/payment")
+@Path("/paymentSources")
 class PaymentResource(private val dao: SubscriberDAO) : ResourceHelpers() {
 
     private val paymentProcessor by lazy { getResource<PaymentProcessor>() }

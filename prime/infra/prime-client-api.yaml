@@ -89,6 +89,21 @@ paths:
           description: "Not able to store token."
       security:
         - auth0_jwt: []
+  "/paymentSources":
+    get:
+      description: "Get all payment sources for the user."
+      produces:
+        - application/json
+      operationId: "listSources"
+      responses:
+        200:
+          description: "List of payment sources."
+          schema:
+            $ref: '#/definitions/PaymentSourceList'
+        404:
+          description: "No user found."
+      security:
+        - auth0_jwt: []
   "/products":
     get:
       description: "Get all products for the user."
@@ -258,6 +273,31 @@ definitions:
     required:
       - sku
       - price
+  PaymentSourceList:
+    type: array
+    items:
+        $ref: '#/definitions/PaymentSource'
+  PaymentSource:
+    type: object
+    properties:
+      id:
+        desctiption: "The identifier for the source"
+        type: string
+      exp_month:
+        description: "Expiry Month"
+        type: integer
+      exp_year:
+        description: "Expiry Year"
+        type: integer
+      last4:
+        description: "Last for digit from card number"
+        type: string
+      brand:
+        description: "card branch"
+        type: string
+      object:
+        description: "String representing the object’s type"
+        type: string
   ConsentList:
     type: array
     items:
