@@ -38,9 +38,10 @@ activate Client
        "Stripe" -> "payment-processor"
        deactivate Stripe
 
-       "payment-processor" -> DAO : createProfile(name, customerId)
+       "payment-processor" -> DAO : createProfile(name, customerId, sourceId)
        activate DAO
        DAO -> "payment-processor" : {result}
+       note right : {sourceId} will be saved as default payment source
 
        "payment-processor" -> DAO : getDefaultPlan(name)
        DAO -> "payment-processor" : {planId}

@@ -13,6 +13,10 @@ participant Stripe
 activate Client
     Client -> "client-api": GET /sources
     activate "client-api"
+    note right of "client-api"
+       {name} identifies the user (from Oauth2 auth.)
+       and is equivalent to the users email address
+    end note
 
     "client-api" -> "payment-processor" : getSavedSources(name)
     activate "payment-processor"
