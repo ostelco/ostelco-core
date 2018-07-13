@@ -20,8 +20,14 @@ activate Client
     deactivate Stripe
 
     Client -> "client-api" : POST /sources {sourceId}
+    activate  "client-api"
+    note right of "client-api"
+       {name} identifies the user (from Oauth2 auth.)
+       and is equivalent to the users email address
+    end note
 
     "client-api" -> "payment-processor" : addSource(name, sourceId)
+    activate "payment-processor"
 
     "payment-processor" -> DAO : getStripeCustomerId(name)
     activate DAO
