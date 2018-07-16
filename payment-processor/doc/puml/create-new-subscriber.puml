@@ -75,7 +75,9 @@ activate Client
     activate DAO
     DAO -> "client-api" : {result}
     deactivate DAO
-    note right : {sourceId} will be saved as default payment source
+    note right of "client-api"
+      {sourceId} will be saved as default payment source
+    end note
 
     "client-api" -> Client : {result}
     deactivate "client-api"
