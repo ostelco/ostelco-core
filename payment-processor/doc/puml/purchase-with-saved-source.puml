@@ -29,26 +29,26 @@ activate Client
        and is equivalent to the users email address
     end note
 
-    "client-api" -> "payment-processor" : purchaseProduct(name, sku, sourceId)
+    "client-api" -> DAO : getPaymentId(name)
+    activate DAO
+    DAO -> "client-api" : {paymentId}
+    deactivate DAO
+
+    "client-api" -> DAO : getProduct(sku)
+    activate DAO
+    DAO -> "client-api" : {product}
+    deactivate DAO
+
+    "client-api" -> "payment-processor" : purchaseProduct(paymentId, product, sourceId)
     activate "payment-processor"
 
-    "payment-processor" -> DAO : getStripeCustomerId(name)
-    activate DAO
-    DAO -> "payment-processor" : {customerId}
-    deactivate DAO
-
-    "payment-processor" -> DAO : getProduct(sku)
-    activate DAO
-    DAO -> "payment-processor" : {product}
-    deactivate DAO
-
     alt successful case
-        "payment-processor" -> Stripe : POST /v1/charges {customerId, sourceId, product.amount, product.currency, product.description}
+        "payment-processor" -> Stripe : POST /v1/charges {paymentId, sourceId, product.amount, product.currency, product.description}
         activate Stripe
         Stripe -> "payment-processor" : {chargeInfo}
         deactivate Stripe
 
-        "payment-processor" -> DAO: recordChargeInfo(name, chargeInfo)
+        "payment-processor" -> DAO: recordChargeInfo(paymentId, chargeInfo)
         activate DAO
         DAO -> "payment-processor" : {result}
         deactivate DAO
@@ -57,7 +57,7 @@ activate Client
           in a "ledger" type of store
         end note
 
-        "payment-processor" -> OCS : updateBucket(name, product.size)
+        "payment-processor" -> OCS : updateBucket(paymentId, product.size)
         activate OCS
         OCS -> "payment-processor" : {result}
         deactivate OCS

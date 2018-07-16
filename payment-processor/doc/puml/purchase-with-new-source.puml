@@ -28,40 +28,40 @@ activate Client
        and is equivalent to the users email address
     end note
 
-    "client-api" -> "payment-processor" : purchaseProduct(name, sku, sourceId, saveCardFlag)
+    "client-api" -> DAO : getPaymentId(name)
+    activate DAO
+    DAO -> "client-api" : {paymentId}
+    deactivate DAO
+
+    "client-api" -> DAO : getProduct(sku)
+    activate DAO
+    DAO -> "client-api" : {product}
+    deactivate DAO
+
+    "client-api" -> "payment-processor" : purchaseProduct(paymentId, sourceId, product, saveCardFlag)
     activate "payment-processor"
-
-    "payment-processor" -> DAO : getStripeCustomerId(name)
-    activate DAO
-    DAO -> "payment-processor" : {customerId}
-    deactivate DAO
-
-    "payment-processor" -> DAO : getProduct(sku)
-    activate DAO
-    DAO -> "payment-processor" : {product}
-    deactivate DAO
 
     alt successful case
 
-        "payment-processor" -> Stripe : POST /v1/customers/{customerId}/sources {sourceId}
+        "payment-processor" -> Stripe : POST /v1/customers/{paymentId}/sources {sourceId}
         activate Stripe
         Stripe -> "payment-processor" : {sourceInfo}
         deactivate Stripe
-        note left : Attach new source to customer ({sourceId, customerId})
+        note left : Attach new source to customer ({sourceId, paymentId})
 
-        "payment-processor" -> Stripe : POST /v1/charges {customerId, sourceId, product.amount, product.currency, product.description}
+        "payment-processor" -> Stripe : POST /v1/charges {paymentId, sourceId, product.amount, product.currency, product.description}
         activate Stripe
         Stripe -> "payment-processor" : {chargeInfo}
         deactivate Stripe
 
         alt saveCardFlag is false
-            "payment-processor" -> Stripe : DELETE /v1/customer/{customerId}/sources/{sourceId}
+            "payment-processor" -> Stripe : DELETE /v1/customer/{paymentId}/sources/{sourceId}
              activate Stripe
             Stripe -> "payment-processor" : {result)}
             deactivate Stripe
         end
 
-        "payment-processor" -> DAO: recordChargeInfo(name, chargeInfo)
+        "payment-processor" -> DAO: recordChargeInfo(paymentId, chargeInfo)
         activate DAO
         DAO -> "payment-processor" : {result}
         deactivate DAO
@@ -70,7 +70,7 @@ activate Client
           in a "ledger" type of store
         end note
 
-        "payment-processor" -> OCS : updateBucket(name, product.size)
+        "payment-processor" -> OCS : updateBucket(paymentId, product.size)
         activate OCS
         OCS -> "payment-processor" : {result}
         deactivate OCS

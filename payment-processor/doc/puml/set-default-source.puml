@@ -24,15 +24,15 @@ activate Client
        and is equivalent to the users email address
     end note
 
-    "client-api" -> "payment-processor" : setDefaultSource(name, sourceId)
-
-    "payment-processor" -> DAO : setDefaultSource(name, sourceId)
+    "client-api" -> DAO : getPaymentId(name)
     activate DAO
-    DAO -> "payment-processor" : {result}
+    DAO -> "client-api" : {paymentId}
     deactivate DAO
 
-    "payment-processor" -> "client-api" :  {result}
-    deactivate "payment-processor"
+    "client-api" -> DAO : setDefaultSource(paymentId, sourceId)
+    activate DAO
+    DAO -> "client-api" : {result}
+    deactivate DAO
 
     "client-api" -> Client : {result}
     deactivate "client-api"
