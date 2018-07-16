@@ -25,30 +25,25 @@ activate Client
     DAO -> "client-api" : {paymentId}
     deactivate DAO
 
-    "client-api" -> "payment-processor" : deleteProfile(paymentId)
+    "client-api" -> "payment-processor" : deletePaymentProfile(paymentId)
     activate "payment-processor"
 
-    "payment-processor" -> DAO : getStripeCustomerId(paymentId)
-    activate DAO
-    DAO -> "payment-processor" : {paymentId}
-    deactivate DAO
-
     alt successful case
-       "payment-processor" -> Stripe : DELETE /v1/customers {paymentId}
-       activate Stripe
-       "Stripe" -> "payment-processor" : {result}
-       deactivate Stripe
+        "payment-processor" -> Stripe : DELETE /v1/customers {paymentId}
+        activate Stripe
+        "Stripe" -> "payment-processor" : {result}
+        deactivate Stripe
 
         "payment-processor" -> OCS : clearBucket(paymentId)
         activate OCS
         OCS -> "payment-processor" : {result}
         deactivate OCS
 
-       "payment-processor" -> "client-api" : {result}
-       deactivate "payment-processor"
+        "payment-processor" -> "client-api" : {result}
+        deactivate "payment-processor"
 
     else error
-       note right of "payment-processor" : Unroll etc. (TBD)
+        note right of "payment-processor" : Unroll etc. (TBD)
 
     end
 
