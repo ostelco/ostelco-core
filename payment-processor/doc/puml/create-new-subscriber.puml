@@ -26,41 +26,56 @@ activate Client
        and is equivalent to the users email address
     end note
 
-    "client-api" -> "payment-processor" : createProfile(name, sourceId)
+    "client-api" -> DAO : getDefaultPlan(name)
+    DAO -> "client-api" : {planId}
+    deactivate DAO
+
+    "client-api" -> DAO : getRecurringProduct(planId)
+    activate DAO
+    DAO -> "client-api" : {product}
+    deactivate DAO
+
+    note right of "client-api"
+       The {customer} object contains the information
+       required for registering the user with a payment
+       service (received from client)
+    end note
+
+    "client-api" -> "payment-processor" : createPaymentProfile(customer, sourceId, planId)
     activate "payment-processor"
 
     alt successful case
-       "payment-processor" -> Stripe : POST /v1/customers {name} (Create new subscriber with Stripe)
-       activate Stripe
-       "Stripe" -> "payment-processor" : {customerId}
+        "payment-processor" -> Stripe : POST /v1/customers {customer} (Create new subscriber with Stripe)
+        activate Stripe
+        "Stripe" -> "payment-processor" : {paymentId}
 
-       "payment-processor" -> Stripe : POST /v1/customers/{customerId}/sources {sourceId}
-       "Stripe" -> "payment-processor"
-       deactivate Stripe
+        "payment-processor" -> Stripe : POST /v1/customers/{paymentId}/sources {sourceId}
+        "Stripe" -> "payment-processor"
+        deactivate Stripe
 
-       "payment-processor" -> DAO : createProfile(name, customerId, sourceId)
-       activate DAO
-       DAO -> "payment-processor" : {result}
-       note right : {sourceId} will be saved as default payment source
+        "payment-processor" -> Stripe : POST v1/subscriptions {planId}, {paymentId}
+        activate Stripe
+        "Stripe" -> "payment-processor"
+        deactivate Stripe
 
-       "payment-processor" -> DAO : getDefaultPlan(name)
-       DAO -> "payment-processor" : {planId}
-       deactivate DAO
+        "payment-processor" -> OCS : updateBucket(paymentId, product.size)
+        activate OCS
+        OCS -> "payment-processor" : {result}
+        deactivate OCS
 
-       "payment-processor" -> Stripe : POST v1/subscriptions {planId}, {customerId}
-       activate Stripe
-       "Stripe" -> "payment-processor"
-       deactivate Stripe
+        "payment-processor" -> "client-api" : {paymentId}
+        deactivate "payment-processor"
 
     else error
        note right of "payment-processor" : Unroll charge with Stripe etc. (TBD)
 
     end
 
-    "payment-processor" -> OCS : Notify OCS
-
-    "payment-processor" -> "client-api" : {result}
-    deactivate "payment-processor"
+    "client-api" -> DAO : createProfile(name, paymentId, sourceId)
+    activate DAO
+    DAO -> "client-api" : {result}
+    deactivate DAO
+    note right : {sourceId} will be saved as default payment source
 
     "client-api" -> Client : {result}
     deactivate "client-api"

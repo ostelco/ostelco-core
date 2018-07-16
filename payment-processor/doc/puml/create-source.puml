@@ -26,15 +26,15 @@ activate Client
        and is equivalent to the users email address
     end note
 
-    "client-api" -> "payment-processor" : addSource(name, sourceId)
-    activate "payment-processor"
-
-    "payment-processor" -> DAO : getStripeCustomerId(name)
+    "client-api" -> DAO : getPaymentId(name)
     activate DAO
-    DAO -> "payment-processor" : {customerId}
+    DAO -> "client-api" : {paymentId}
     deactivate DAO
 
-    "payment-processor" -> Stripe : POST /v1/customers/{customerId}/sources {sourceId}
+    "client-api" -> "payment-processor" : addSource(paymentId, sourceId)
+    activate "payment-processor"
+
+    "payment-processor" -> Stripe : POST /v1/customers/{paymentId}/sources {sourceId}
     activate Stripe
     Stripe -> "payment-processor" : {sourceInfo}
     deactivate Stripe
