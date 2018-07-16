@@ -30,7 +30,7 @@ class PaymentResource(private val dao: SubscriberDAO) : ResourceHelpers() {
         val paymentId: String = dao.getPaymentId(token.name)
                 ?: return Response.status(Response.Status.NOT_FOUND).build()
 
-        val sources = paymentProcessor.listSources(paymentId)
+        val sources = paymentProcessor.getSavedSources(paymentId)
 
         return Response.status(Response.Status.OK)
                 .entity(asJson(sources))

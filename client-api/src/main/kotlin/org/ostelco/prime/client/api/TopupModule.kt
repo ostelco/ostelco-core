@@ -19,7 +19,6 @@ import org.ostelco.prime.logger
 import org.ostelco.prime.module.PrimeModule
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.ocs.OcsSubscriberService
-import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.storage.legacy.Storage
 import javax.ws.rs.client.Client
 
