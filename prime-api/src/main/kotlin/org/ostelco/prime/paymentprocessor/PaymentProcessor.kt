@@ -1,5 +1,7 @@
 package org.ostelco.prime.paymentprocessor
 
 interface PaymentProcessor {
-    fun listSources(stripeUser: String): List<String>
+    fun getSavedSources(paymentId: String): List<String>
+
+    fun createProfile(userEmail: String): String?
 }

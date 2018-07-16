@@ -5,14 +5,17 @@ import com.fasterxml.jackson.annotation.JsonTypeName
 import io.dropwizard.setup.Environment
 import org.hibernate.validator.constraints.NotEmpty
 import org.ostelco.prime.module.PrimeModule
+import java.io.File
+import com.stripe.Stripe
 
 @JsonTypeName("stripe-payment-processor")
 class PaymentProcessorModule : PrimeModule {
 
+
     @JsonProperty("config")
     fun setConfig(config: PaymentProcessorConfig) {
-        println("Config set for PaymentProcessor")
-        println("Secret key is ${config.configFile}")
+        val secretKey = File(config.configFile)?.readText(Charsets.UTF_8)
+        Stripe.apiKey = secretKey
     }
 
     override fun init(env: Environment) {

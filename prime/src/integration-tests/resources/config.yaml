@@ -17,7 +17,7 @@ modules:
         timeout: 3s
   - type: stripe-payment-processor
     config:
-      configFile: config/stripe.json
+      configFile: config/stripe.cfg
   - type: firebase-app-notifier
     config:
       configFile: config/pantel-prod.json
