@@ -42,11 +42,11 @@ activate Client
     DAO -> "client-api" : {product}
     deactivate DAO
 
-    "client-api" -> "payment-processor" : purchaseProduct(customerId, sourceId, product)
+    "client-api" -> "payment-processor" : purchaseProduct(customerId, sourceId, amount, currency)
     activate "payment-processor"
 
     alt successful case
-        "payment-processor" -> Stripe : POST /v1/charges {customerId, sourceId, product.amount, product.currency, product.description}
+        "payment-processor" -> Stripe : POST /v1/charges {customerId, sourceId, amount, currency, product.description}
         activate Stripe
         Stripe -> "payment-processor" : {chargeInfo}
         deactivate Stripe
