@@ -1,3 +1,3 @@
 package org.ostelco.prime.paymentprocessor.core
 
-class ApiError(val description: String)
+class SourceInfo(val description: String)

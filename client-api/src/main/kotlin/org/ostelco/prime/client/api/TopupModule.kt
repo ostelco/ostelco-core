@@ -53,8 +53,8 @@ class TopupModule : PrimeModule {
         jerseyEnv.register(ProductsResource(dao))
         jerseyEnv.register(ProfileResource(dao))
         jerseyEnv.register(SubscriptionResource(dao, client, config.pseudonymEndpoint!!))
-        jerseyEnv.register(ApplicationTokenResource(dao))
         jerseyEnv.register(PaymentResource(dao))
+        jerseyEnv.register(ApplicationTokenResource(dao))
 
         /* For reporting OAuth2 caching events. */
         val metrics = SharedMetricRegistries.getOrCreate(env.getName())
