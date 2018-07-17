@@ -17,7 +17,7 @@ class StripePaymentProcessor : PaymentProcessor {
     /**
      * Return Stripe customerId or null if not created
      */
-    override fun createProfile(userEmail: String): String? {
+    override fun createPaymentProfile(userEmail: String): String? {
         val customerParams = HashMap<String, Any>()
         customerParams.put("email", userEmail)
         return try {
