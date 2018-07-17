@@ -29,10 +29,10 @@ activate Client
     DAO -> "client-api" : {customerId}
     deactivate DAO
 
-    "client-api" -> DAO : setDefaultSource(customerId, sourceId)
-    activate DAO
-    DAO -> "client-api" : {result}
-    deactivate DAO
+    "client-api" -> "payment-processor" : setDefaultSource(customerId, sourceId)
+    activate "payment-processor"
+    "payment-processor" -> "client-api" : {result}
+    deactivate "payment-processor"
 
     "client-api" -> Client : {result}
     deactivate "client-api"
