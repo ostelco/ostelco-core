@@ -19,4 +19,6 @@ interface PaymentProcessor {
 
     fun createProduct(sku: String): String?
 
+    fun setDefaultSource(customerId: String, sourceId: String): String?
+
 }

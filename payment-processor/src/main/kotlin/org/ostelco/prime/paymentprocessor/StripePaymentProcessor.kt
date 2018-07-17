@@ -81,4 +81,19 @@ class StripePaymentProcessor : PaymentProcessor {
             null
         }
     }
+
+    /**
+     * Return Stripe customerId or null if not created
+     */
+    override fun setDefaultSource(customerId: String, sourceId: String): String? {
+        return try {
+            val customer = Customer.retrieve(customerId);
+            val updateParams = HashMap<String, Any>();
+            updateParams.put("default_source", sourceId);
+            customer?.update(updateParams)?.id
+        } catch (e: Exception) {
+            LOG.warn("Failed to set default source ${sourceId} for customer ${customerId}", e)
+            null
+        }
+    }
 }
