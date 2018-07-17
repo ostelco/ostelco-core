@@ -51,6 +51,9 @@ class StripePaymentProcessor : PaymentProcessor {
         }
     }
 
+    /**
+     * Return Stripe productId or null if not created
+     */
     override fun createProduct(sku: String): String? {
         val productParams = HashMap<String, Any>()
         productParams["name"] = sku
@@ -60,6 +63,21 @@ class StripePaymentProcessor : PaymentProcessor {
             Product.create(productParams)?.id
         } catch (e : Exception) {
             LOG.warn("Failed to create Product", e)
+            null
+        }
+    }
+
+    /**
+     * Return Stripe sourceId or null if not created
+     */
+    override fun addSource(customerId: String, sourceId: String): String? {
+        return try {
+            val customer = Customer.retrieve(customerId)
+            val params = HashMap<String, Any>();
+            params["source"] = sourceId;
+            customer?.sources?.create(params)?.id
+        } catch (e: Exception) {
+            LOG.warn("Failed to add source ${sourceId} to customer ${customerId}", e)
             null
         }
     }
