@@ -13,7 +13,7 @@ Push to the registry
 
     gcloud docker -- push gcr.io/${PROJECT_ID}/pseudonym-server:${PSEUDONYM_VERSION}
 
-Update the tag (version) of prime's docker image in `infra/prime.yaml`.
+Update the tag (version) of prime's docker image in `pseudonym-server.yaml`.
 
 Apply the deployment & service
 

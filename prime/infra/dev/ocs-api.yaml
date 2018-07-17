@@ -1,0 +1,30 @@
+type: google.api.Service
+
+config_version: 3
+
+name: ocs.endpoints.pantel-2decb.cloud.goog
+
+title: OCS Service gRPC API
+
+apis:
+  - name: org.ostelco.ocs.api.OcsService
+
+usage:
+  rules:
+  # All methods can be called without an API Key.
+  - selector: "*"
+    allow_unregistered_calls: true
+
+authentication:
+  providers:
+  - id: google_service_account
+    issuer: prime-service-account@pantel-2decb.iam.gserviceaccount.com
+    jwks_uri: https://www.googleapis.com/robot/v1/metadata/x509/prime-service-account@pantel-2decb.iam.gserviceaccount.com
+    audiences: >
+      https://ocs.endpoints.pantel-2decb.cloud.goog/org.ostelco.ocs.api.OcsService,
+      ocs.endpoints.pantel-2decb.cloud.goog/org.ostelco.ocs.api.OcsService,
+      ocs.endpoints.pantel-2decb.cloud.goog
+  rules:
+  - selector: "*"
+    requirements:
+      - provider_id: google_service_account

@@ -4,6 +4,9 @@ modules:
       configFile: config/pantel-prod.json
       databaseName: pantel-2decb
       rootPath: test
+  - type: embedded-neo4j
+    config:
+      path: build/neo4j
   - type: ocs
     config:
       projectId: pantel-2decb

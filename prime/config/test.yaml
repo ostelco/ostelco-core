@@ -6,7 +6,9 @@ modules:
       configFile: /secret/pantel-prod.json
       databaseName: pantel-2decb
       rootPath: test
-#  - type: embedded-graph
+  - type: embedded-neo4j
+    config:
+      path: /data
   - type: ocs
     config:
       projectId: pantel-2decb

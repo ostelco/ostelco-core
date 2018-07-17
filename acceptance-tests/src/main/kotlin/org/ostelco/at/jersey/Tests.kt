@@ -63,7 +63,7 @@ class GetProductsTest {
             path = "/products"
         }
 
-        assertEquals(expectedProducts(), products, "Incorrect 'Products' fetched")
+        assertEquals(expectedProducts().toSet(), products.toSet(), "Incorrect 'Products' fetched")
     }
 }
 

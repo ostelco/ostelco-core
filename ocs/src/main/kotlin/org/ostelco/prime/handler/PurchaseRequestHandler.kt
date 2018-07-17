@@ -4,11 +4,11 @@ import org.ostelco.prime.disruptor.PrimeEventProducer
 import org.ostelco.prime.events.EventProcessorException
 import org.ostelco.prime.logger
 import org.ostelco.prime.module.getResource
-import org.ostelco.prime.storage.legacy.Storage
+import org.ostelco.prime.storage.ClientGraphStore
 
 class PurchaseRequestHandler(
         private val producer: PrimeEventProducer,
-        private val storage: Storage = getResource()) {
+        private val storage: ClientGraphStore = getResource()) {
 
     private val LOG by logger()
 

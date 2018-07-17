@@ -3,7 +3,7 @@ package org.ostelco.prime.ocs
 import org.ostelco.prime.disruptor.PrimeEventProducer
 import org.ostelco.prime.handler.PurchaseRequestHandler
 import org.ostelco.prime.module.getResource
-import org.ostelco.prime.storage.legacy.Storage
+import org.ostelco.prime.storage.ClientDataSource
 
 /**
  * This class is using the singleton class as delegate.
@@ -15,7 +15,7 @@ object OcsSubscriberServiceSingleton : OcsSubscriberService {
 
     private lateinit var purchaseRequestHandler: PurchaseRequestHandler
 
-    private val storage by lazy { getResource<Storage>() }
+    private val storage by lazy { getResource<ClientDataSource>() }
 
     fun init(producer: PrimeEventProducer) {
         purchaseRequestHandler = PurchaseRequestHandler(producer, storage)
