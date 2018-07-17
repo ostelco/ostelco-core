@@ -6,33 +6,33 @@ participant Admin
 box "Prime"
     participant "admin-api"
     participant "payment-processor"
-    participant Storage
+    participant DAO
 end box
 participant Stripe
 
 activate Admin
     "Admin" -> "admin-api" : POST /plans {sku}
     activate "admin-api"
-    "admin-api" -> "payment-processor" : POST /plans {sku}
+    "admin-api" -> "DAO" : Read product {sku}
+    activate "DAO"
+    "DAO" -> "admin-api" : {prodId}  (e.g. Stripe prod-id)
+    deactivate "DAO"
 
+    "admin-api" -> "payment-processor" : createPlan { productId, amount, currency, interval }
     activate "payment-processor"
-    "payment-processor" -> "Storage" : Read product {sku}
-    activate "Storage"
-    "Storage" -> "payment-processor" : {prod-id}  (e.g. Stripe prod-id)
-    deactivate "Storage"
-
-    "payment-processor" -> "Stripe" : POST /v1/plans {prod-id}  (create plan with Stripe)
+    "payment-processor" -> "Stripe" : POST /v1/plans {productId}  (create plan with Stripe)
     activate "Stripe"
-    "Stripe" -> "payment-processor" : {plan-id}
+    "Stripe" -> "payment-processor" : {planId}
     deactivate "Stripe"
-
-    "payment-processor" -> "Storage" : Save plan as a subscription {plan-id}
-    activate "Storage"
-    "Storage" -> "payment-processor" : {subscription-id}
-    deactivate "Storage"
-
-    "payment-processor" -> "admin-api" : {subscription-id}
     deactivate "payment-processor"
+    "payment-processor" -> "admin-api" : {planId}
+
+
+    "admin-api" -> "DAO" : Save plan as a subscription {planId}
+    activate "DAO"
+    "DAO" -> "admin-api" : {subscription-id}
+    deactivate "DAO"
+
     "admin-api" -> "Admin" : {subscription-id}
     deactivate "admin-api"
 deactivate Admin
