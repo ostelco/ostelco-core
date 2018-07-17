@@ -27,6 +27,11 @@ activate Client
     DAO -> "client-api" : {paymentId}
     deactivate DAO
 
+    note right of "client-api"
+        Report an error if {paymentId} does not exists, as a "default source"
+        can not be used without having a valid {paymentId}
+    end note
+
     "client-api" -> DAO : getDefaultSource(name)
     activate DAO
     DAO -> "client-api" : {sourceId}

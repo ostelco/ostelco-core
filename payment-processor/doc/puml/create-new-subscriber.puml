@@ -11,77 +11,37 @@ box "Prime"
 end box
 participant Stripe
 
-activate Client
-    Client -> Client : Collecting payment information
-
-    Client -> Stripe : Create Source
-    activate Stripe
-    Stripe -> Client : {sourceId}
-    deactivate Stripe
-
-    Client -> "client-api": POST /profile {sourceId}
+    "client-api" -> "payment-processor" : createPaymentProfile(customer)
     activate "client-api"
-    note right of "client-api"
-       {name} identifies the user (from Oauth2 auth.)
-       and is equivalent to the users email address
-    end note
-
-    "client-api" -> DAO : getDefaultPlan(name)
-    DAO -> "client-api" : {planId}
-    deactivate DAO
-
-    "client-api" -> DAO : getRecurringProduct(planId)
-    activate DAO
-    DAO -> "client-api" : {product}
-    deactivate DAO
-
-    note right of "client-api"
-       The {customer} object contains the information
-       required for registering the user with a payment
-       service (received from client)
-    end note
-
-    "client-api" -> "payment-processor" : createPaymentProfile(customer, sourceId, planId)
     activate "payment-processor"
+    note right of "client-api"
+        The {customer} object, obtained from OAuth2 authentication
+        contains the information required for registering the user
+        with a payment service (received from client)
+    end note
 
     alt successful case
         "payment-processor" -> Stripe : POST /v1/customers {customer} (Create new subscriber with Stripe)
         activate Stripe
         "Stripe" -> "payment-processor" : {paymentId}
-
-        "payment-processor" -> Stripe : POST /v1/customers/{paymentId}/sources {sourceId}
-        "Stripe" -> "payment-processor"
         deactivate Stripe
-
-        "payment-processor" -> Stripe : POST v1/subscriptions {planId}, {paymentId}
-        activate Stripe
-        "Stripe" -> "payment-processor"
-        deactivate Stripe
-
-        "payment-processor" -> OCS : updateBucket(paymentId, product.size)
-        activate OCS
-        OCS -> "payment-processor" : {result}
-        deactivate OCS
 
         "payment-processor" -> "client-api" : {paymentId}
         deactivate "payment-processor"
 
+        "client-api" -> DAO : createProfile(name, paymentId)
+        activate DAO
+        DAO -> "client-api" : {result}
+        deactivate DAO
+        deactivate "client-api"
+        note right of "client-api"
+            The subscriber has now been registered with {name}
+            as the id and {paymentId} as the id with Stripe
+        end note
+
     else error
-       note right of "payment-processor" : Unroll charge with Stripe etc. (TBD)
+        note right of "payment-processor" : Unroll charge with Stripe etc. (TBD)
 
     end
-
-    "client-api" -> DAO : createProfile(name, paymentId, sourceId)
-    activate DAO
-    DAO -> "client-api" : {result}
-    deactivate DAO
-    note right of "client-api"
-      {sourceId} will be saved as default payment source
-    end note
-
-    "client-api" -> Client : {result}
-    deactivate "client-api"
-
-deactivate Client
 
 @enduml
