@@ -39,7 +39,7 @@ activate Client
     DAO -> "client-api" : {product}
     deactivate DAO
 
-    "client-api" -> "payment-processor" : purchaseProduct(paymentId, product, sourceId)
+    "client-api" -> "payment-processor" : purchaseProduct(paymentId, sourceId, product)
     activate "payment-processor"
 
     alt successful case

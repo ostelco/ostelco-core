@@ -33,6 +33,20 @@ activate Client
     DAO -> "client-api" : {paymentId}
     deactivate DAO
 
+    alt {paymentId} is null
+        note right of "client-api"
+            Register subscriber using the "create-new-subscriber"
+            flow diagram
+        end note
+    else {paymentId} is not null
+        note right of "client-api"
+            Subscriber already registered
+        end note
+    end
+    note right of "client-api"
+        At this point there is a valid {paymentId} for {name}
+    end note
+
     "client-api" -> DAO : getProduct(sku)
     activate DAO
     DAO -> "client-api" : {product}
