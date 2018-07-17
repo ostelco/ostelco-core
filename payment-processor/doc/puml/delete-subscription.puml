@@ -20,21 +20,21 @@ activate Client
        and is equivalent to the users email address
     end note
 
-    "client-api" -> DAO : getPaymentId(name)
+    "client-api" -> DAO : getCustomerId(name)
     activate DAO
-    DAO -> "client-api" : {paymentId}
+    DAO -> "client-api" : {customerId}
     deactivate DAO
 
-    "client-api" -> "payment-processor" : deletePaymentProfile(paymentId)
+    "client-api" -> "payment-processor" : deletePaymentProfile(customerId)
     activate "payment-processor"
 
     alt successful case
-        "payment-processor" -> Stripe : DELETE /v1/customers {paymentId}
+        "payment-processor" -> Stripe : DELETE /v1/customers {customerId}
         activate Stripe
         "Stripe" -> "payment-processor" : {result}
         deactivate Stripe
 
-        "payment-processor" -> OCS : clearBucket(paymentId)
+        "payment-processor" -> OCS : clearBucket(customerId)
         activate OCS
         OCS -> "payment-processor" : {result}
         deactivate OCS

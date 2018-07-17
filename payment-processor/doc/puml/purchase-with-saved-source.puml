@@ -29,9 +29,9 @@ activate Client
        and is equivalent to the users email address
     end note
 
-    "client-api" -> DAO : getPaymentId(name)
+    "client-api" -> DAO : getCustomerId(name)
     activate DAO
-    DAO -> "client-api" : {paymentId}
+    DAO -> "client-api" : {customerId}
     deactivate DAO
 
     "client-api" -> DAO : getProduct(sku)
@@ -39,16 +39,16 @@ activate Client
     DAO -> "client-api" : {product}
     deactivate DAO
 
-    "client-api" -> "payment-processor" : purchaseProduct(paymentId, sourceId, product)
+    "client-api" -> "payment-processor" : purchaseProduct(customerId, sourceId, product)
     activate "payment-processor"
 
     alt successful case
-        "payment-processor" -> Stripe : POST /v1/charges {paymentId, sourceId, product.amount, product.currency, product.description}
+        "payment-processor" -> Stripe : POST /v1/charges {customerId, sourceId, product.amount, product.currency, product.description}
         activate Stripe
         Stripe -> "payment-processor" : {chargeInfo}
         deactivate Stripe
 
-        "payment-processor" -> DAO: recordChargeInfo(paymentId, chargeInfo)
+        "payment-processor" -> DAO: recordChargeInfo(customerId, chargeInfo)
         activate DAO
         DAO -> "payment-processor" : {result}
         deactivate DAO
@@ -57,7 +57,7 @@ activate Client
           in a "ledger" type of store
         end note
 
-        "payment-processor" -> OCS : updateBucket(paymentId, product.size)
+        "payment-processor" -> OCS : updateBucket(customerId, product.size)
         activate OCS
         OCS -> "payment-processor" : {result}
         deactivate OCS

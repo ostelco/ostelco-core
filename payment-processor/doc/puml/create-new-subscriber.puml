@@ -23,20 +23,20 @@ participant Stripe
     alt successful case
         "payment-processor" -> Stripe : POST /v1/customers {customer} (Create new subscriber with Stripe)
         activate Stripe
-        "Stripe" -> "payment-processor" : {paymentId}
+        "Stripe" -> "payment-processor" : {customerId}
         deactivate Stripe
 
-        "payment-processor" -> "client-api" : {paymentId}
+        "payment-processor" -> "client-api" : {customerId}
         deactivate "payment-processor"
 
-        "client-api" -> DAO : createProfile(name, paymentId)
+        "client-api" -> DAO : createProfile(name, customerId)
         activate DAO
         DAO -> "client-api" : {result}
         deactivate DAO
         deactivate "client-api"
         note right of "client-api"
             The subscriber has now been registered with {name}
-            as the id and {paymentId} as the id with Stripe
+            as the id and {customerId} as the id with Stripe
         end note
 
     else error
