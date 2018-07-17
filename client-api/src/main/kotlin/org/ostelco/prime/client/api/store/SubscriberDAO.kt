@@ -16,7 +16,7 @@ interface SubscriberDAO {
 
     fun getProfile(subscriptionId: String): Either<ApiError, Subscriber>
 
-    fun createProfile(subscriptionId: String, profile: Subscriber): Either<ApiError, Subscriber>
+    fun createProfile(subscriptionId: String, customerId: String): Either<ApiError, Subscriber>
 
     fun updateProfile(subscriptionId: String, profile: Subscriber): Either<ApiError, Subscriber>
 
