@@ -1,5 +1,6 @@
 package org.ostelco.prime.paymentprocessor
 
+import com.stripe.model.Charge
 import com.stripe.model.Customer
 import com.stripe.model.Plan
 import com.stripe.model.Product
@@ -9,10 +10,6 @@ class StripePaymentProcessor : PaymentProcessor {
 
     private val LOG by logger()
 
-    /**
-     * @param customerId Stripe customer id
-     * @return List of Stripe sourceId or null if none stored
-     */
     override fun getSavedSources(customerId: String): List<String> {
         val customer = Customer.retrieve(customerId)
         println("Customer is : ${customer}")
@@ -20,10 +17,7 @@ class StripePaymentProcessor : PaymentProcessor {
         return emptyList()
     }
 
-    /**
-     * @param userEmail: user email (Prime unique identifier for customer)
-     * @return Stripe customerId or null if not created
-     */
+
     override fun createPaymentProfile(userEmail: String): String? {
         val customerParams = HashMap<String, Any>()
         customerParams.put("email", userEmail)
@@ -35,13 +29,7 @@ class StripePaymentProcessor : PaymentProcessor {
         }
     }
 
-    /**
-     * @param productId Stripe product id
-     * @param amount The amount to be charged in the interval specified
-     * @param currency Three-letter ISO currency code in lowercase
-     * @param interval The frequency with which a subscription should be billed.
-     * @return Stripe planId or null if not created
-     */
+
     override fun createPlan(productId: String, amount: Int, currency: String, interval: PaymentProcessor.Interval) : String?{
         val productParams = HashMap<String, Any>()
         productParams["name"] = "Quartz pro"
@@ -60,10 +48,7 @@ class StripePaymentProcessor : PaymentProcessor {
         }
     }
 
-    /**
-     * @param sku Prime product SKU
-     * @return Stripe productId or null if not created
-     */
+
     override fun createProduct(sku: String): String? {
         val productParams = HashMap<String, Any>()
         productParams["name"] = sku
@@ -77,11 +62,7 @@ class StripePaymentProcessor : PaymentProcessor {
         }
     }
 
-    /**
-     * @param customerId Stripe customer id
-     * @param sourceId Stripe source id
-     * @return Stripe sourceId or null if not created
-     */
+
     override fun addSource(customerId: String, sourceId: String): String? {
         return try {
             val customer = Customer.retrieve(customerId)
@@ -94,11 +75,7 @@ class StripePaymentProcessor : PaymentProcessor {
         }
     }
 
-    /**
-     * @param customerId Stripe customer id
-     * @param sourceId Stripe source id
-     * @return Stripe customerId or null if not created
-     */
+
     override fun setDefaultSource(customerId: String, sourceId: String): String? {
         return try {
             val customer = Customer.retrieve(customerId);
@@ -111,15 +88,28 @@ class StripePaymentProcessor : PaymentProcessor {
         }
     }
 
-    /**
-     * @param customerId Stripe customer id
-     * @return Stripe sourceId or null if not set
-     */
+
     override fun getDefaultSource(customerId: String): String? {
         return try {
             Customer.retrieve(customerId).defaultSource
         } catch (e: Exception) {
             LOG.warn("Failed to get default source for customer ${customerId}", e)
+            null
+        }
+    }
+
+
+    override fun purchaseProduct(customerId: String, sourceId: String, amount: Int, currency: String) : String? {
+        return try {
+            val chargeParams = HashMap<String, Any>()
+            chargeParams["amount"] = amount
+            chargeParams["currency"] = currency
+            chargeParams["customer"] = customerId
+            chargeParams["source"] = sourceId
+
+            Charge.create(chargeParams).id
+        } catch (e: Exception) {
+            LOG.warn("Failed to purchase product customerId ${customerId} sourceId ${sourceId} amount ${amount} currency ${currency}")
             null
         }
     }
