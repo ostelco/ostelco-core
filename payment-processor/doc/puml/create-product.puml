@@ -5,15 +5,15 @@ participant Admin
 
 box "Prime"
     participant "admin-api"
+    participant DAO
     participant "payment-processor"
-    participant Storage
 end box
 participant Stripe
 
 activate Admin
     "Admin" -> "admin-api" : POST /products (create product)
     activate "admin-api"
-    "admin-api" -> "payment-processor" : POST /products (create product)
+    "admin-api" -> "payment-processor" : createProduct (create product)
 
     activate "payment-processor"
     "payment-processor" -> "Stripe" : POST /v1/products (create product)
@@ -21,13 +21,14 @@ activate Admin
     "Stripe" -> "payment-processor" : {prod-id}
     deactivate "Stripe"
 
-    "payment-processor" -> "Storage" : Save product {prod-id}
-    activate "Storage"
-    "Storage" -> "payment-processor" : {sku}
-    deactivate "Storage"
-
-    "payment-processor" -> "admin-api" : {sku}
+    "payment-processor" -> "admin-api" : {prod-id}
     deactivate "payment-processor"
+
+    "admin-api" -> "DAO" : Save product {prod-id}
+    activate "DAO"
+    "DAO" -> "admin-api" : {sku}
+    deactivate "DAO"
+
     "admin-api" -> "Admin" : {sku}
     deactivate "admin-api"
 deactivate Admin
