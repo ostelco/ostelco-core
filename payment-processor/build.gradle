@@ -4,9 +4,17 @@ plugins {
 }
 
 dependencies {
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+
   implementation project(":prime-api")
 
-  compile "com.stripe:stripe-java:5.51.0"
+  implementation "com.stripe:stripe-java:5.51.0"
 
   testImplementation "junit:junit:4.12"
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+  kotlinOptions {
+    jvmTarget = "1.8"
+  }
 }
