@@ -9,15 +9,20 @@ class StripePaymentProcessor : PaymentProcessor {
 
     private val LOG by logger()
 
-    override fun getSavedSources(stripeUser: String): List<String> {
-        val customer = Customer.retrieve(stripeUser)
+    /**
+     * @param customerId Stripe customer id
+     * @return List of Stripe sourceId or null if none stored
+     */
+    override fun getSavedSources(customerId: String): List<String> {
+        val customer = Customer.retrieve(customerId)
         println("Customer is : ${customer}")
         println("Customer has source : ${customer.sources.data}")
         return emptyList()
     }
 
     /**
-     * Return Stripe customerId or null if not created
+     * @param userEmail: user email (Prime unique identifier for customer)
+     * @return Stripe customerId or null if not created
      */
     override fun createPaymentProfile(userEmail: String): String? {
         val customerParams = HashMap<String, Any>()
@@ -25,13 +30,17 @@ class StripePaymentProcessor : PaymentProcessor {
         return try {
             Customer.create(customerParams)?.id
         } catch (e: Exception) {
-            LOG.warn("Failed to create profile", e)
+            LOG.warn("Failed to create profile for user ${userEmail}", e)
             null
         }
     }
 
     /**
-     * Return Stripe planId or null if not created
+     * @param productId Stripe product id
+     * @param amount The amount to be charged in the interval specified
+     * @param currency Three-letter ISO currency code in lowercase
+     * @param interval The frequency with which a subscription should be billed.
+     * @return Stripe planId or null if not created
      */
     override fun createPlan(productId: String, amount: Int, currency: String, interval: PaymentProcessor.Interval) : String?{
         val productParams = HashMap<String, Any>()
@@ -46,13 +55,14 @@ class StripePaymentProcessor : PaymentProcessor {
         return try {
             Plan.create(planParams)?.id
         } catch (e: Exception) {
-            LOG.warn("Failed to create plan", e)
+            LOG.warn("Failed to create plan with producuct id ${productId} amount ${amount} currency ${currency} interval ${interval.value}", e)
             null
         }
     }
 
     /**
-     * Return Stripe productId or null if not created
+     * @param sku Prime product SKU
+     * @return Stripe productId or null if not created
      */
     override fun createProduct(sku: String): String? {
         val productParams = HashMap<String, Any>()
@@ -62,13 +72,15 @@ class StripePaymentProcessor : PaymentProcessor {
         return try {
             Product.create(productParams)?.id
         } catch (e : Exception) {
-            LOG.warn("Failed to create Product", e)
+            LOG.warn("Failed to create product with sku ${sku}", e)
             null
         }
     }
 
     /**
-     * Return Stripe sourceId or null if not created
+     * @param customerId Stripe customer id
+     * @param sourceId Stripe source id
+     * @return Stripe sourceId or null if not created
      */
     override fun addSource(customerId: String, sourceId: String): String? {
         return try {
@@ -83,7 +95,9 @@ class StripePaymentProcessor : PaymentProcessor {
     }
 
     /**
-     * Return Stripe customerId or null if not created
+     * @param customerId Stripe customer id
+     * @param sourceId Stripe source id
+     * @return Stripe customerId or null if not created
      */
     override fun setDefaultSource(customerId: String, sourceId: String): String? {
         return try {
@@ -93,6 +107,19 @@ class StripePaymentProcessor : PaymentProcessor {
             customer?.update(updateParams)?.id
         } catch (e: Exception) {
             LOG.warn("Failed to set default source ${sourceId} for customer ${customerId}", e)
+            null
+        }
+    }
+
+    /**
+     * @param customerId Stripe customer id
+     * @return Stripe sourceId or null if not set
+     */
+    override fun getDefaultSource(customerId: String): String? {
+        return try {
+            Customer.retrieve(customerId).defaultSource
+        } catch (e: Exception) {
+            LOG.warn("Failed to get default source for customer ${customerId}", e)
             null
         }
     }

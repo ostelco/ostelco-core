@@ -32,10 +32,10 @@ activate Client
         can not be used without having a valid {customerId}
     end note
 
-    "client-api" -> DAO : getDefaultSource(name)
-    activate DAO
-    DAO -> "client-api" : {sourceId}
-    deactivate DAO
+    "client-api" -> "payment-processor" : getDefaultSource(name)
+    activate "payment-processor"
+    "payment-processor" -> "client-api" : {sourceId}
+    deactivate "payment-processor"
 
     "client-api" -> DAO : getProduct(sku)
     activate DAO
