@@ -1,5 +1,12 @@
 package org.ostelco.prime.paymentprocessor
 
+import io.vavr.control.Either
+import org.ostelco.prime.paymentprocessor.core.ApiError
+import org.ostelco.prime.paymentprocessor.core.SourceInfo
+
+/**
+ *
+ */
 interface PaymentProcessor {
 
     enum class Interval(val value: String) {
@@ -63,3 +70,12 @@ interface PaymentProcessor {
     fun setDefaultSource(customerId: String, sourceId: String): String?
 
 }
+/*
+    fun createSource(customerId: String, sourceId: String): Either<ApiError, SourceInfo>
+
+    fun getSavedSources(customerId: String): Either<ApiError, Collection<SourceInfo>>
+
+    fun setDefaultSource(customerId: String, sourceId: String): Either<ApiError, SourceInfo>
+
+    fun createProfile(userEmail: String): String?
+*/

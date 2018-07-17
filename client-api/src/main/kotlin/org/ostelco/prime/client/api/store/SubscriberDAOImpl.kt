@@ -214,4 +214,6 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
     override fun reportAnalytics(subscriptionId: String, events: String): Option<ApiError> = Option.none()
 
     override fun getPaymentId(name: String): String? = storage.getPaymentId(name)
+
+    override fun getCustomerId(name: String): String? = storage.getCustomerId(name)
 }

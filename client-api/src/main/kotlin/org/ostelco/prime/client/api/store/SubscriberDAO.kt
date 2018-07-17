@@ -40,6 +40,8 @@ interface SubscriberDAO {
 
     fun getPaymentId(name: String): String?
 
+    fun getCustomerId(name: String): String?
+
     companion object {
 
         /**

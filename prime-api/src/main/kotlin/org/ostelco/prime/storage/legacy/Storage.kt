@@ -123,4 +123,9 @@ interface Storage {
      *
      */
     fun createPaymentId(id: String, paymentId: String): Boolean
+
+    /**
+     *
+     */
+    fun getCustomerId(id: String): String?
 }
