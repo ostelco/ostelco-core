@@ -5,8 +5,8 @@ participant Admin
 
 box "Prime"
     participant "admin-api"
+    participant "DAO"
     participant "payment-processor"
-    participant DAO
 end box
 participant Stripe
 

@@ -14,4 +14,6 @@ interface PaymentProcessor {
     fun createPaymentProfile(userEmail: String): String?
 
     fun createPlan(productId: String, amount: Int, currency: String, interval: Interval): String?
+
+    fun createProduct(sku: String): String?
 }

@@ -2,6 +2,7 @@ package org.ostelco.prime.paymentprocessor
 
 import com.stripe.model.Customer
 import com.stripe.model.Plan
+import com.stripe.model.Product
 import org.ostelco.prime.logger
 
 class StripePaymentProcessor : PaymentProcessor {
@@ -46,6 +47,19 @@ class StripePaymentProcessor : PaymentProcessor {
             Plan.create(planParams)?.id
         } catch (e: Exception) {
             LOG.warn("Failed to create plan", e)
+            null
+        }
+    }
+
+    override fun createProduct(sku: String): String? {
+        val productParams = HashMap<String, Any>()
+        productParams["name"] = sku
+        productParams["type"] = "service"
+
+        return try {
+            Product.create(productParams)?.id
+        } catch (e : Exception) {
+            LOG.warn("Failed to create Product", e)
             null
         }
     }
