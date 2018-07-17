@@ -10,6 +10,7 @@ import javax.ws.rs.GET
 import javax.ws.rs.POST
 import javax.ws.rs.Path
 import javax.ws.rs.PathParam
+import javax.ws.rs.QueryParam
 import javax.ws.rs.Produces
 import javax.ws.rs.core.Response
 
@@ -49,20 +50,46 @@ class ProductsResource(private val dao: SubscriberDAO) : ResourceHelpers() {
     fun purchaseProduct(@Auth token: AccessTokenPrincipal?,
                         @NotNull
                         @PathParam("sku")
-                        sku: String): Response {
+                        sku: String,
+                        @NotNull
+                        @QueryParam("sourceId")
+                        sourceId: String,
+                        @QueryParam("saveCard")
+                        saveCard: Boolean): Response {    /* 'false' is default. */
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
 
-        val error = dao.purchaseProduct(token.name, sku)
+        val customerId: String? = dao.getCustomerId(token.name)
+                ?: paymentProcessor.createProfile(token.name)
 
-        return if (error.isEmpty) {
-            Response.status(Response.Status.CREATED)
+        if (customerId == null) {
+            return Response.status(Response.Status.BAD_GATEWAY)
                     .build()
+        }
+
+        val result = dao.createProfile(token.name, customerId)
+
+        if (result.isLeft) {
+            // Remove payment registration
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(asJson(result.left().get()))
+                    .build()
+        }
+
+        val product: Product = dao.getProduct(sku)
+                ?: return Response.status(Response.Status.NOT_FOUND).build()
+
+        val result = paymentProcessor.purchaseProduct(customerId, sourceId, product, saveCard)
+
+        return if (result.isRight) {
+            Response.status(Response.Status.CREATED)
+                .entity(asJson(result.right().get()))
+                .build()
         } else {
-            Response.status(Response.Status.NOT_FOUND)
-                    .entity(asJson(error.get()))
+            Response.status(Response.Status.BAD_GATEWAY)
+                    .entity(asJson(result.left().get()))
                     .build()
         }
     }
