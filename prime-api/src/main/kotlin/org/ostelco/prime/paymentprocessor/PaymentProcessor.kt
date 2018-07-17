@@ -11,13 +11,15 @@ interface PaymentProcessor {
 
     fun addSource(customerId: String, sourceId: String): String?
 
-    fun getSavedSources(paymentId: String): List<String>
-
     fun createPaymentProfile(userEmail: String): String?
 
     fun createPlan(productId: String, amount: Int, currency: String, interval: Interval): String?
 
     fun createProduct(sku: String): String?
+
+    fun getSavedSources(customerId: String): List<String>
+
+    fun getDefaultSource(customerId: String): String?
 
     fun setDefaultSource(customerId: String, sourceId: String): String?
 
