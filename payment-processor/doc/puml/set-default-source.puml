@@ -24,12 +24,12 @@ activate Client
        and is equivalent to the users email address
     end note
 
-    "client-api" -> DAO : getPaymentId(name)
+    "client-api" -> DAO : getCustomerId(name)
     activate DAO
-    DAO -> "client-api" : {paymentId}
+    DAO -> "client-api" : {customerId}
     deactivate DAO
 
-    "client-api" -> DAO : setDefaultSource(paymentId, sourceId)
+    "client-api" -> DAO : setDefaultSource(customerId, sourceId)
     activate DAO
     DAO -> "client-api" : {result}
     deactivate DAO

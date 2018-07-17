@@ -18,15 +18,15 @@ activate Client
        and is equivalent to the users email address
     end note
 
-    "client-api" -> DAO : getPaymentId(name)
+    "client-api" -> DAO : getCustomerId(name)
     activate DAO
-    DAO -> "client-api" : {paymentId}
+    DAO -> "client-api" : {customerId}
     deactivate DAO
 
-    "client-api" -> "payment-processor" : getSources(paymentId)
+    "client-api" -> "payment-processor" : getSources(customerId)
     activate "payment-processor"
 
-    "payment-processor" -> Stripe : GET /v1/customers/<paymentId>
+    "payment-processor" -> Stripe : GET /v1/customers/<customerId>
     activate Stripe
     Stripe -> "payment-processor" : {customer}
     deactivate Stripe
