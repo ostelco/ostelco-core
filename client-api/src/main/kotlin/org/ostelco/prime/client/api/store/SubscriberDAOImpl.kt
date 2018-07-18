@@ -2,15 +2,16 @@ package org.ostelco.prime.client.api.store
 
 import io.vavr.control.Either
 import io.vavr.control.Option
-import org.ostelco.prime.client.api.core.ApiError
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.SubscriptionStatus
+import org.ostelco.prime.core.ApiError
 import org.ostelco.prime.logger
 import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.ocs.OcsSubscriberService
+import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.storage.legacy.Storage
 import org.ostelco.prime.storage.legacy.StorageException
 import java.time.Instant
@@ -154,6 +155,17 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
 
     }
 
+    override fun getProduct(subscriptionId: String, sku: String): Either<ApiError, Product> {
+        try {
+            val product = storage.getProduct(subscriptionId, sku)
+
+            return Either.right(product)
+        } catch (e: StorageException) {
+            LOG.error("Failed to get product with sku {}", sku, e)
+            return Either.left(ApiError("Failed to get products for sku " + sku))
+        }
+    }
+
     override fun purchaseProduct(subscriptionId: String, sku: String): Option<ApiError> {
         var msisdn: String? = null
         try {
@@ -213,7 +225,9 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
 
     override fun reportAnalytics(subscriptionId: String, events: String): Option<ApiError> = Option.none()
 
-    override fun getPaymentId(name: String): String? = storage.getPaymentId(name)
+    override fun getPaymentProfile(name: String): Either<ApiError, ProfileInfo> {
+        return Either.left(ApiError("not implemented"))
+    }
 
-    override fun getCustomerId(name: String): String? = storage.getCustomerId(name)
+    override fun setPaymentProfile(name: String, profileInfo: ProfileInfo): Option<ApiError> = Option.none()
 }

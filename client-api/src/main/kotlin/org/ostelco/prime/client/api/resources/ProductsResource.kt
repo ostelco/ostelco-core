@@ -3,8 +3,11 @@ package org.ostelco.prime.client.api.resources
 import io.dropwizard.auth.Auth
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.store.SubscriberDAO
+import org.ostelco.prime.core.ApiError
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
+import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import io.vavr.control.Either
 import javax.validation.constraints.NotNull
 import javax.ws.rs.GET
 import javax.ws.rs.POST
@@ -61,27 +64,27 @@ class ProductsResource(private val dao: SubscriberDAO) : ResourceHelpers() {
                     .build()
         }
 
-        val customerId: String? = dao.getCustomerId(token.name)
-                ?: paymentProcessor.createProfile(token.name)
+        val paymentProfile = getOrCreatePaymentProfile(token.name)
 
-        if (customerId == null) {
+        if (paymentProfile.isLeft) {
             return Response.status(Response.Status.BAD_GATEWAY)
+                    .entity(asJson(paymentProfile.left().get()))
                     .build()
         }
 
-        val result = dao.createProfile(token.name, customerId)
+        val product = dao.getProduct(token.name, sku)
 
-        if (result.isLeft) {
-            // Remove payment registration
-            return Response.status(Response.Status.FORBIDDEN)
-                    .entity(asJson(result.left().get()))
+        if (product.isLeft) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(asJson(product.left().get()))
                     .build()
         }
 
-        val product: Product = dao.getProduct(sku)
-                ?: return Response.status(Response.Status.NOT_FOUND).build()
+        val customerId = paymentProfile.right().get().id
+        val price = product.right().get().price
 
-        val result = paymentProcessor.purchaseProduct(customerId, sourceId, product, saveCard)
+        val result = paymentProcessor.purchaseProduct(customerId, sourceId, price.amount,
+                            price.currency, saveCard)
 
         return if (result.isRight) {
             Response.status(Response.Status.CREATED)
@@ -92,5 +95,28 @@ class ProductsResource(private val dao: SubscriberDAO) : ResourceHelpers() {
                     .entity(asJson(result.left().get()))
                     .build()
         }
+    }
+
+    private fun getOrCreatePaymentProfile(name: String): Either<ApiError, ProfileInfo> {
+        val profile = dao.getPaymentProfile(name)
+
+        return if (profile.isRight) {
+            profile
+        } else {
+            createAndStorePaymentProfile(name)
+        }
+    }
+
+    private fun createAndStorePaymentProfile(name: String): Either<ApiError, ProfileInfo> {
+        val profile = paymentProcessor.createPaymentProfile(name)
+
+        if (profile.isRight) {
+            val error = dao.setPaymentProfile(name, profile.right().get())
+            if (!error.isEmpty) {
+                /* TODO: Remove profile with payment-processor. */
+                return Either.left(error.get())
+            }
+        }
+        return profile
     }
 }

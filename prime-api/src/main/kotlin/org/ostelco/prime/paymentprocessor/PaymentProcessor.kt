@@ -1,6 +1,7 @@
 package org.ostelco.prime.paymentprocessor
 
 import io.vavr.control.Either
+import org.ostelco.prime.core.ApiError
 import org.ostelco.prime.paymentprocessor.core.*
 
 interface PaymentProcessor {
@@ -56,7 +57,7 @@ interface PaymentProcessor {
      * @param customerId Stripe customer id
      * @return Stripe default chargeId or null failed
      */
-    fun purchaseProduct(customerId: String, sourceId: String, amount: Int, currency: String): Either<ApiError, ProductInfo>
+    fun purchaseProduct(customerId: String, sourceId: String, amount: Int, currency: String, saveCard: Boolean = true): Either<ApiError, ProductInfo>
 
     /**
      * @param customerId Stripe customer id

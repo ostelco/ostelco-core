@@ -3,9 +3,9 @@ package org.ostelco.prime.client.api.resources
 import io.dropwizard.auth.Auth
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.store.SubscriberDAO
+import org.ostelco.prime.core.ApiError
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
-import org.ostelco.prime.paymentprocessor.core.ApiError
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
 import javax.validation.constraints.NotNull
 import javax.ws.rs.Consumes
@@ -37,10 +37,15 @@ class PaymentResource(private val dao: SubscriberDAO) : ResourceHelpers() {
                     .build()
         }
 
-        val customerId: String = dao.getCustomerId(token.name)
-                ?: return Response.status(Response.Status.NOT_FOUND).build()
+        val paymentProfile = dao.getPaymentProfile(token.name)
 
-        val result = paymentProcessor.createSource(customerId, sourceId)
+        if (paymentProfile.isLeft) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(asJson(paymentProfile.left().get()))
+                    .build()
+        }
+
+        val result = paymentProcessor.addSource(paymentProfile.right().get().id, sourceId)
 
         return if (result.isRight) {
             Response.status(Response.Status.CREATED)
@@ -61,10 +66,15 @@ class PaymentResource(private val dao: SubscriberDAO) : ResourceHelpers() {
                     .build()
         }
 
-        val customerId: String = dao.getCustomerId(token.name)
-                ?: return Response.status(Response.Status.NOT_FOUND).build()
+        val paymentProfile = dao.getPaymentProfile(token.name)
 
-        val result = paymentProcessor.getSavedSources(customerId)
+        if (paymentProfile.isLeft) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(asJson(paymentProfile.left().get()))
+                    .build()
+        }
+
+        val result = paymentProcessor.getSavedSources(paymentProfile.right().get().id)
 
         return if (result.isRight) {
             Response.status(Response.Status.OK)
@@ -87,10 +97,15 @@ class PaymentResource(private val dao: SubscriberDAO) : ResourceHelpers() {
                     .build()
         }
 
-        val customerId: String = dao.getCustomerId(token.name)
-                ?: return Response.status(Response.Status.NOT_FOUND).build()
+        val paymentProfile = dao.getPaymentProfile(token.name)
 
-        val result = paymentProcessor.setDefaultSource(customerId, sourceId)
+        if (paymentProfile.isLeft) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(asJson(paymentProfile.left().get()))
+                    .build()
+        }
+
+        val result = paymentProcessor.setDefaultSource(paymentProfile.right().get().id, sourceId)
 
         return if (result.isRight) {
             Response.status(Response.Status.OK)

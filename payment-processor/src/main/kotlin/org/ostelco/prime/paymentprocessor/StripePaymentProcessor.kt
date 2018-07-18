@@ -6,6 +6,7 @@ import com.stripe.model.Plan
 import com.stripe.model.Product
 import io.vavr.control.Either
 import org.ostelco.prime.logger
+import org.ostelco.prime.core.ApiError
 import org.ostelco.prime.paymentprocessor.core.*
 
 class StripePaymentProcessor : PaymentProcessor {
