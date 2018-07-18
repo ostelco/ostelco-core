@@ -19,9 +19,9 @@ import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.auth.OAuthAuthenticator
-import org.ostelco.prime.client.api.core.ApiError
 import org.ostelco.prime.client.api.resources.ProfileResource
 import org.ostelco.prime.client.api.store.SubscriberDAO
+import org.ostelco.prime.core.ApiError
 import org.ostelco.prime.model.Subscriber
 import java.io.IOException
 

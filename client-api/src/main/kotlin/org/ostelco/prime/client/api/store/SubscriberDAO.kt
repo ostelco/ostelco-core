@@ -2,12 +2,13 @@ package org.ostelco.prime.client.api.store
 
 import io.vavr.control.Either
 import io.vavr.control.Option
-import org.ostelco.prime.client.api.core.ApiError
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.SubscriptionStatus
+import org.ostelco.prime.core.ApiError
 import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.Subscriber
+import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 
 /**
  *
@@ -16,7 +17,7 @@ interface SubscriberDAO {
 
     fun getProfile(subscriptionId: String): Either<ApiError, Subscriber>
 
-    fun createProfile(subscriptionId: String, customerId: String): Either<ApiError, Subscriber>
+    fun createProfile(subscriptionId: String, profile: Subscriber): Either<ApiError, Subscriber>
 
     fun updateProfile(subscriptionId: String, profile: Subscriber): Either<ApiError, Subscriber>
 
@@ -25,6 +26,8 @@ interface SubscriberDAO {
     fun getMsisdn(subscriptionId: String): Either<ApiError, String>
 
     fun getProducts(subscriptionId: String): Either<ApiError, Collection<Product>>
+
+    fun getProduct(subscriptionId: String, sku: String): Either<ApiError, Product>
 
     fun purchaseProduct(subscriptionId: String, sku: String): Option<ApiError>
 
@@ -38,9 +41,9 @@ interface SubscriberDAO {
 
     fun storeApplicationToken(msisdn: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken>
 
-    fun getPaymentId(name: String): String?
+    fun getPaymentProfile(name: String): Either<ApiError, ProfileInfo>
 
-    fun getCustomerId(name: String): String?
+    fun setPaymentProfile(name: String, profileInfo: ProfileInfo): Option<ApiError>
 
     companion object {
 
