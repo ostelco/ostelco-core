@@ -63,7 +63,12 @@ For the commands below:
 
 Create cluster
 
-    gcloud container clusters create private-cluster --scopes=default,bigquery,datastore,pubsub,sql,storage-rw --num-nodes=3
+```bash
+gcloud container clusters \
+  create private-cluster --scopes=default,bigquery,datastore,pubsub,sql,storage-rw \
+  --num-nodes=3 \
+  --zone europe-west1-b
+```
 
 If cluster already exists, fetch authentication credentials for the Kubernetes cluster
 

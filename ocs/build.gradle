@@ -1,5 +1,5 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.50"
+  id "org.jetbrains.kotlin.jvm" version "1.2.51"
   id "java-library"
 }
 
@@ -9,8 +9,9 @@ dependencies {
   implementation "com.google.cloud:google-cloud-pubsub:$googleCloudVersion"
   implementation 'com.lmax:disruptor:3.4.2'
 
+  testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
+  testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
   testImplementation 'org.mockito:mockito-core:2.18.3'
-  testImplementation "junit:junit:4.12"
 }
 
 apply from: '../jacoco.gradle'
