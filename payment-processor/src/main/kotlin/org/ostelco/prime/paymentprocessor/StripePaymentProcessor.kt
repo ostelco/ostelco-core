@@ -78,7 +78,17 @@ class StripePaymentProcessor : PaymentProcessor {
                 chargeParams["customer"] = customerId
                 chargeParams["source"] = sourceId
 
-                ProductInfo(Charge.create(chargeParams).id)
+                val charge = Charge.create(chargeParams)
+                if (!saveCard) {
+                    // ToDo : What if this fail?
+                    removeSource(customerId, charge.source.id)
+                }
+                ProductInfo(charge.id)
+            }
+
+    private fun removeSource(customerId: String, sourceId: String): Either<ApiError, SourceInfo> =
+            either("Failed to remove source ${sourceId} from customer ${customerId}") {
+                SourceInfo(Customer.retrieve(customerId).sources.retrieve(sourceId).delete().id)
             }
 
     private fun <RETURN> either(errorMessage: String, action: () -> RETURN): Either<ApiError, RETURN> {

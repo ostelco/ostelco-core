@@ -195,4 +195,8 @@ object GraphStoreSingleton : Storage, AdminDataStore {
     override fun createPaymentId(id: String, paymentId: String): Boolean {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
+
+    override fun getCustomerId(id: String): String? {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
 }

@@ -14,7 +14,7 @@ class PaymentProcessorModule : PrimeModule {
 
     @JsonProperty("config")
     fun setConfig(config: PaymentProcessorConfig) {
-        val secretKey = File(config.configFile)?.readText(Charsets.UTF_8)
+        val secretKey = File(config.configFile).readText(Charsets.UTF_8)
         Stripe.apiKey = secretKey
     }
 
