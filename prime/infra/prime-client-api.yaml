@@ -283,21 +283,6 @@ definitions:
       id:
         desctiption: "The identifier for the source"
         type: string
-      exp_month:
-        description: "Expiry Month"
-        type: integer
-      exp_year:
-        description: "Expiry Year"
-        type: integer
-      last4:
-        description: "Last for digit from card number"
-        type: string
-      brand:
-        description: "card branch"
-        type: string
-      object:
-        description: "String representing the object’s type"
-        type: string
   ConsentList:
     type: array
     items:

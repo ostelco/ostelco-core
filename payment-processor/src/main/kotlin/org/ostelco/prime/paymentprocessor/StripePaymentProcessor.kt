@@ -1,9 +1,6 @@
 package org.ostelco.prime.paymentprocessor
 
-import com.stripe.model.Charge
-import com.stripe.model.Customer
-import com.stripe.model.Plan
-import com.stripe.model.Product
+import com.stripe.model.*
 import io.vavr.control.Either
 import org.ostelco.prime.logger
 import org.ostelco.prime.core.ApiError
@@ -13,12 +10,15 @@ class StripePaymentProcessor : PaymentProcessor {
 
     private val LOG by logger()
 
-    override fun getSavedSources(customerId: String): Either<ApiError, List<SourceInfo>> {
-        val customer = Customer.retrieve(customerId)
-        println("Customer is : ${customer}")
-        println("Customer has source : ${customer.sources.data}")
-        return Either.right(emptyList())
-    }
+    override fun getSavedSources(customerId: String): Either<ApiError, List<SourceInfo>> =
+            either ("Failed to get sources for customer ${customerId}") {
+                var sources = mutableListOf<SourceInfo>()
+                val customer = Customer.retrieve(customerId)
+                customer.sources.data.forEach {
+                    sources.add(SourceInfo(it.id))
+                }
+                sources
+            }
 
     override fun createPaymentProfile(userEmail: String): Either<ApiError, ProfileInfo> =
             either(errorMessage = "Failed to create profile for user ${userEmail}") {
@@ -70,7 +70,7 @@ class StripePaymentProcessor : PaymentProcessor {
                 SourceInfo(Customer.retrieve(customerId).defaultSource)
             }
 
-    override fun purchaseProduct(customerId: String, sourceId: String, amount: Int, currency: String): Either<ApiError, ProductInfo> =
+    override fun purchaseProduct(customerId: String, sourceId: String, amount: Int, currency: String, saveCard: Boolean): Either<ApiError, ProductInfo> =
             either(errorMessage = "Failed to purchase product customerId ${customerId} sourceId ${sourceId} amount ${amount} currency ${currency}") {
                 val chargeParams = HashMap<String, Any>()
                 chargeParams["amount"] = amount
