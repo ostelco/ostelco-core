@@ -23,12 +23,18 @@ import org.ostelco.prime.client.api.util.AccessToken
 import org.ostelco.prime.core.ApiError
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
+import org.ostelco.prime.paymentprocessor.PaymentProcessor
+import org.ostelco.prime.paymentprocessor.core.ProductInfo
+import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import java.util.*
 import java.util.Collections.emptyMap
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.GenericType
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+
+private val PAYMENT: PaymentProcessor = mock(PaymentProcessor::class.java)
+class MockPaymentProcessor : PaymentProcessor by PAYMENT
 
 /**
  * Products API tests.
@@ -85,12 +91,34 @@ class ProductsResourceTest {
     fun purchaseProduct() {
         val arg1 = argumentCaptor<String>()
         val arg2 = argumentCaptor<String>()
+        val arg3 = argumentCaptor<String>()
+        val arg4 = argumentCaptor<ProfileInfo>()
+        val arg5 = argumentCaptor<String>()
+        val arg6 = argumentCaptor<String>()
+        val arg7 = argumentCaptor<String>()
+        val arg8 = argumentCaptor<String>()
+        val arg9 = argumentCaptor<Int>()
+        val arg10 = argumentCaptor<String>()
+        val arg11 = argumentCaptor<Boolean>()
 
+        val product = products[0]
         val sku = products[0].sku
+        val customerId = "123"
+        val sourceId = "amex"
 
-        `when`<Option<ApiError>>(DAO.purchaseProduct(arg1.capture(), arg2.capture())).thenReturn(Option.none())
+        `when`<Either<ApiError, ProfileInfo>>(DAO.getPaymentProfile(arg1.capture()))
+                .thenReturn(Either.left(ApiError("no profile found")))
+        `when`<Either<ApiError, ProfileInfo>>(PAYMENT.createPaymentProfile(arg2.capture()))
+                .thenReturn(Either.right(ProfileInfo(customerId)))
+        `when`<Option<ApiError>>(DAO.setPaymentProfile(arg3.capture(), arg4.capture()))
+                .thenReturn(Option.none())
+        `when`<Either<ApiError, Product>>(DAO.getProduct(arg5.capture(), arg6.capture()))
+                .thenReturn(Either.right(product))
+        `when`<Either<ApiError, ProductInfo>>(PAYMENT.purchaseProduct(arg7.capture(), arg8.capture(), arg9.capture(), arg10.capture(), arg11.capture()))
+                .thenReturn(Either.right(ProductInfo(sku)))
 
         val resp = RULE.target("/products/$sku")
+                .queryParam("sourceId", "$sourceId")
                 .request()
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
                 .header("X-Endpoint-API-UserInfo", userInfo)
@@ -98,7 +126,16 @@ class ProductsResourceTest {
 
         assertThat(resp.status).isEqualTo(Response.Status.CREATED.statusCode)
         assertThat(arg1.firstValue).isEqualTo(email)
-        assertThat(arg2.firstValue).isEqualTo(sku)
+        assertThat(arg2.firstValue).isEqualTo(email)
+        assertThat(arg3.firstValue).isEqualTo(email)
+        assertThat(arg4.firstValue.id).isEqualTo(customerId)  /* ProfileInfo */
+        assertThat(arg5.firstValue).isEqualTo(email)
+        assertThat(arg6.firstValue).isEqualTo(sku)
+        assertThat(arg7.firstValue).isEqualTo(customerId)
+        assertThat(arg8.firstValue).isEqualTo(sourceId)
+        assertThat(arg9.firstValue).isEqualTo(product.price.amount)
+        assertThat(arg10.firstValue).isEqualTo(product.price.currency)
+        assertThat(arg11.firstValue).isEqualTo(false)
     }
 
     companion object {
