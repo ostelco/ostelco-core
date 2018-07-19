@@ -7,17 +7,17 @@ services:
       context: prime
       dockerfile: Dockerfile.test
     environment:
-      - GOOGLE_APPLICATION_CREDENTIALS=/secret/pantel-prod.json
-      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
-      - PUBSUB_PROJECT_ID=pantel-2decb
+    - GOOGLE_APPLICATION_CREDENTIALS=/secret/pantel-prod.json
+    - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
+    - PUBSUB_PROJECT_ID=pantel-2decb
     ports:
-      - "9090:8080"
+    - "9090:8080"
     depends_on:
-      - "pubsub-emulator"
+    - "pubsub-emulator"
     networks:
       net:
         aliases:
-          - "prime"
+        - "prime"
         ipv4_address: 172.16.238.5
       default:
 
@@ -25,8 +25,8 @@ services:
     container_name: esp
     image: gcr.io/endpoints-release/endpoints-runtime:1
     volumes:
-      - "./prime/config:/esp"
-      - "./esp:/etc/nginx/ssl"
+    - "./prime/config:/esp"
+    - "./esp:/etc/nginx/ssl"
     command: >
       --service=ocs.ostelco.org
       --rollout_strategy=managed
@@ -37,51 +37,45 @@ services:
     networks:
       net:
         aliases:
-          - "ocs.ostelco.org"
+        - "ocs.ostelco.org"
         ipv4_address: 172.16.238.4
       default:
 
   ocsgw:
     depends_on:
-      - "prime"
+    - "prime"
     command: ["./wait_for_esp_and_prime.sh"]
     networks:
       net:
         aliases:
-          - "ocsgw"
+        - "ocsgw"
         ipv4_address: 172.16.238.3
 
-  ext-pgw:
-    container_name: ext-pgw
-    build: ext-pgw
+  acceptance-tests:
+    container_name: acceptance-tests
+    build: acceptance-tests
     depends_on:
-      - "ocsgw"
-    command: ["./wait_for_ocsgw.sh"]
+    - "ocsgw"
+    - "prime"
+    command: ["./wait_for_services.sh"]
+    environment:
+    - PRIME_SOCKET=prime:8080
     networks:
       net:
-        aliases:
-          - "ext-pgw"
         ipv4_address: 172.16.238.2
-
-#  neo4j:
-#    container_name: neo4j
-#    image: neo4j
-#    ports:
-#      - "7474:7474"
-#      - "7687:7687"
-#    tmpfs: /data
+      default:
 
   pseudonym-server:
     container_name: pseudonym-server
     build: pseudonym-server
     ports:
-      - "8090:8080"
+    - "8090:8080"
     environment:
-      - DATASTORE_EMULATOR_HOST=localhost:9090
-      - DATASTORE_PROJECT_ID=pantel-2decb
-      - PUBSUB_EMULATOR_HOST=localhost:9080
-      - PUBSUB_PROJECT_ID=pantel-2decb
-      - LOCAL_TESTING=true
+    - DATASTORE_EMULATOR_HOST=localhost:9090
+    - DATASTORE_PROJECT_ID=pantel-2decb
+    - PUBSUB_EMULATOR_HOST=localhost:9080
+    - PUBSUB_PROJECT_ID=pantel-2decb
+    - LOCAL_TESTING=true
     command: ["/bin/bash", "./wait_for_emulators.sh"]
 
   pubsub-emulator:
@@ -97,24 +91,15 @@ services:
     container_name: datastore-emulator
     image: google/cloud-sdk
     expose:
-      - "8081"
+    - "8081"
     environment:
-      - CLOUDSDK_CORE_PROJECT=pantel-2decb
-      - DATASTORE_DATASET=pantel-2decb
+    - CLOUDSDK_CORE_PROJECT=pantel-2decb
+    - DATASTORE_DATASET=pantel-2decb
     command: ["gcloud", "beta", "emulators", "datastore", "start", "--host-port=0.0.0.0:8081"]
 
   ext-auth-provider:
     container_name: ext-auth-provider
     build: ext-auth-provider
-
-  acceptance-tests:
-    container_name: acceptance-tests
-    build: acceptance-tests
-    depends_on:
-      - "prime"
-    command: ["./wait_for_prime.sh"]
-    environment:
-      - PRIME_SOCKET=prime:8080
 
 networks:
   net:
@@ -122,4 +107,4 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 172.16.238.0/24
+      - subnet: 172.16.238.0/24

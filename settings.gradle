@@ -10,7 +10,6 @@ include ':diameter-stack'
 include ':diameter-test'
 include ':embedded-graph-store'
 include ':ext-auth-provider'
-include ':ext-pgw'
 include ':firebase-store'
 include ':graph-store'
 include ':model'
@@ -34,7 +33,6 @@ project(':diameter-stack').projectDir = "$rootDir/diameter-stack" as File
 project(':diameter-test').projectDir = "$rootDir/diameter-test" as File
 project(':embedded-graph-store').projectDir = "$rootDir/embedded-graph-store" as File
 project(':ext-auth-provider').projectDir = "$rootDir/ext-auth-provider" as File
-project(':ext-pgw').projectDir = "$rootDir/ext-pgw" as File
 project(':firebase-store').projectDir = "$rootDir/firebase-store" as File
 project(':graph-store').projectDir = "$rootDir/graph-store" as File
 project(':model').projectDir = "$rootDir/model" as File

@@ -1,5 +1,5 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.50"
+  id "org.jetbrains.kotlin.jvm" version "1.2.51"
   id "application"
   id "com.github.johnrengelman.shadow" version "2.0.4"
   id "idea"
@@ -12,8 +12,8 @@ dependencies {
   implementation project(':ocs-api')
   implementation 'com.google.guava:guava:25.1-jre'
   // Match with grpc-netty-shaded via PubSub
-  // removing io.grpc:grpc-netty-shaded:1.12.0 causes ALPN error
-  implementation 'io.grpc:grpc-netty-shaded:1.12.0'
+  // removing io.grpc:grpc-netty-shaded:1.13.1 causes ALPN error
+  implementation 'io.grpc:grpc-netty-shaded:1.13.1'
   implementation "com.google.cloud:google-cloud-bigquery:$googleCloudVersion"
   implementation "com.google.cloud:google-cloud-datastore:$googleCloudVersion"
   implementation "com.google.cloud:google-cloud-pubsub:$googleCloudVersion"
