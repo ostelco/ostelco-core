@@ -23,7 +23,7 @@ activate Client
     DAO -> "client-api" : {customerId}
     deactivate DAO
 
-    "client-api" -> "payment-processor" : getSources(customerId)
+    "client-api" -> "payment-processor" : getSavedSources(customerId)
     activate "payment-processor"
 
     "payment-processor" -> Stripe : GET /v1/customers/<customerId>

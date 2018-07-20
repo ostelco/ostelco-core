@@ -32,7 +32,7 @@ activate Client
         can not be used without having a valid {customerId}
     end note
 
-    "client-api" -> "payment-processor" : getDefaultSource(name)
+    "client-api" -> "payment-processor" : getDefaultSource(customerId)
     activate "payment-processor"
     "payment-processor" -> "client-api" : {sourceId}
     deactivate "payment-processor"

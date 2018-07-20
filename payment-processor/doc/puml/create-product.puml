@@ -13,10 +13,10 @@ participant Stripe
 activate Admin
     "Admin" -> "admin-api" : POST /products (create product)
     activate "admin-api"
-    "admin-api" -> "payment-processor" : createProduct (create product)
+    "admin-api" -> "payment-processor" : createProduct (sku)
 
     activate "payment-processor"
-    "payment-processor" -> "Stripe" : POST /v1/products (create product)
+    "payment-processor" -> "Stripe" : POST /v1/products (sku)
     activate "Stripe"
     "Stripe" -> "payment-processor" : {prod-id}
     deactivate "Stripe"
