@@ -86,6 +86,8 @@ class ProductsResource(private val dao: SubscriberDAO) : ResourceHelpers() {
         val result = paymentProcessor.purchaseProduct(customerId, sourceId, price.amount,
                             price.currency, saveCard)
 
+        //ToDo: This should topup if that is what you bought
+
         return if (result.isRight) {
             Response.status(Response.Status.CREATED)
                 .entity(asJson(result.right().get()))

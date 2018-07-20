@@ -70,7 +70,38 @@ class StripePaymentProcessor : PaymentProcessor {
                 SourceInfo(Customer.retrieve(customerId).defaultSource)
             }
 
-    override fun purchaseProduct(customerId: String, sourceId: String, amount: Int, currency: String, saveCard: Boolean): Either<ApiError, ProductInfo> =
+    // FixMe : This needs to be able to rollback
+    override fun purchaseProduct(customerId: String, sourceId: String, amount: Int, currency: String, saveCard: Boolean): Either<ApiError, ProductInfo> {
+
+        var storedSourceId = sourceId
+        val stored = isSourceStored(customerId, sourceId)
+        if (stored.isLeft) {
+            return Either.left(stored.left)
+        } else if (!stored.right().get()) {
+            val savedSource = addSource(customerId, sourceId)
+            if (savedSource.isLeft) {
+                return Either.left(savedSource.left)
+            } else {
+                storedSourceId = savedSource.right().get().id
+            }
+        }
+
+        val charge = purchaseProduct(customerId, storedSourceId, amount, currency)
+        if (charge.isLeft) {
+            return Either.left(charge.left)
+        }
+
+        if (!saveCard) {
+            val removed = removeSource(customerId, storedSourceId)
+            if (removed.isLeft) {
+                return Either.left(removed.left)
+            }
+        }
+
+        return Either.right(ProductInfo(charge.right().get().id))
+    }
+
+    private fun purchaseProduct(customerId: String, sourceId: String, amount: Int, currency: String): Either<ApiError, ProductInfo> =
             either(errorMessage = "Failed to purchase product customerId ${customerId} sourceId ${sourceId} amount ${amount} currency ${currency}") {
                 val chargeParams = HashMap<String, Any>()
                 chargeParams["amount"] = amount
@@ -79,12 +110,22 @@ class StripePaymentProcessor : PaymentProcessor {
                 chargeParams["source"] = sourceId
 
                 val charge = Charge.create(chargeParams)
-                if (!saveCard) {
-                    // ToDo : What if this fail?
-                    removeSource(customerId, charge.source.id)
-                }
                 ProductInfo(charge.id)
             }
+
+    private fun isSourceStored(customerId: String, sourceId: String): Either<ApiError, Boolean> {
+        val storedSources = getSavedSources(customerId)
+        if (storedSources.isLeft) {
+            return Either.left(storedSources.left)
+        }
+        var sourceStored = false
+        storedSources.right().get().forEach {
+            if (it.id.equals(sourceId)) {
+                sourceStored = true
+            }
+        }
+        return Either.right(sourceStored)
+    }
 
     private fun removeSource(customerId: String, sourceId: String): Either<ApiError, SourceInfo> =
             either("Failed to remove source ${sourceId} from customer ${customerId}") {
