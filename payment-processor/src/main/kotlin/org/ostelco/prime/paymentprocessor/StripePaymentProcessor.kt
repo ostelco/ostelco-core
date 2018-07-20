@@ -101,6 +101,35 @@ class StripePaymentProcessor : PaymentProcessor {
         return Either.right(ProductInfo(charge.right().get().id))
     }
 
+    override fun deletePaymentProfile(customerId: String): Either<ApiError, ProfileInfo> =
+            either("Failed to delete customer ${customerId}") {
+                val customer = Customer.retrieve(customerId)
+                ProfileInfo(customer.delete().id)
+            }
+
+    override fun subscribeToPlan(planId: String, customerId: String): Either<ApiError, SubscriptionInfo> =
+            either("Failed to subscribe customer ${customerId} to plan ${planId}") {
+                val item = HashMap<String, Any>()
+                item["plan"] = planId
+
+                val items = HashMap<String, Any>()
+                items["0"] = item
+
+                val params = HashMap<String, Any>()
+                params["customer"] = customerId
+                params["items"] = items
+
+                SubscriptionInfo(Subscription.create(params).id)
+            }
+
+    override fun cancelSubscription(subscriptionId: String, atIntervalEnd: Boolean): Either<ApiError, SubscriptionInfo> =
+            either("Failed to unsubscribe subscription Id : ${subscriptionId} atIntervalEnd ${atIntervalEnd}") {
+                val subscription = Subscription.retrieve(subscriptionId)
+                val subscriptionParams = HashMap<String, Any>()
+                subscriptionParams["at_period_end"] = atIntervalEnd
+                SubscriptionInfo(subscription.cancel(subscriptionParams).id)
+            }
+
     private fun purchaseProduct(customerId: String, sourceId: String, amount: Int, currency: String): Either<ApiError, ProductInfo> =
             either(errorMessage = "Failed to purchase product customerId ${customerId} sourceId ${sourceId} amount ${amount} currency ${currency}") {
                 val chargeParams = HashMap<String, Any>()

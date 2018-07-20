@@ -27,6 +27,12 @@ interface PaymentProcessor {
     fun createPaymentProfile(userEmail: String): Either<ApiError, ProfileInfo>
 
     /**
+     * @param customerId Stripe customer id
+     * @return Stripe customerId if deleted
+     */
+    fun deletePaymentProfile(customerId: String): Either<ApiError, ProfileInfo>
+
+    /**
      * @param productId Stripe product id
      * @param amount The amount to be charged in the interval specified
      * @param currency Three-letter ISO currency code in lowercase
@@ -34,6 +40,20 @@ interface PaymentProcessor {
      * @return Stripe planId if created
      */
     fun createPlan(productId: String, amount: Int, currency: String, interval: Interval): Either<ApiError, PlanInfo>
+
+    /**
+     * @param Stripe Plan Id
+     * @param Stripe Customer Id
+     * @return Stripe SubscriptionId if subscribed
+     */
+    fun subscribeToPlan(planId: String, customerId: String): Either<ApiError, SubscriptionInfo>
+
+    /**
+     * @param Stripe Subscription Id
+     * @param Stripe atIntervalEnd set to true if the subscription shall remain active until the end of the Plan interval
+     * @return Stripe SubscriptionId if unsubscribed
+     */
+    fun cancelSubscription(subscriptionId: String, atIntervalEnd: Boolean = true): Either<ApiError, SubscriptionInfo>
 
     /**
      * @param sku Prime product SKU
@@ -56,7 +76,7 @@ interface PaymentProcessor {
     /**
      * @param customerId Stripe customer id
      * @param sourceId Stripe source id
-     * @param amount The amount to be charged in the interval specified
+     * @param amount The amount to be charged
      * @param currency Three-letter ISO currency code in lowercase
      * @param saveSource set if source should be stored with Stripe
      * @return Stripe default chargeId or null failed

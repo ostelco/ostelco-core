@@ -7,3 +7,5 @@ class ProductInfo(val id: String)
 class ProfileInfo(val id: String)
 
 class SourceInfo(val id: String)
+
+class SubscriptionInfo(val id: String)
