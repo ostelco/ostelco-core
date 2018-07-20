@@ -18,7 +18,7 @@ sourceSets {
   }
 }
 
-version = "1.6.1"
+version = "1.7.0"
 dependencies {
   // interface module between prime and prime-modules
   implementation project(':prime-api')
@@ -26,7 +26,8 @@ dependencies {
   // prime-modules
   runtimeOnly project(':ocs')
   runtimeOnly project(':firebase-store')
-  runtimeOnly project(':embedded-neo4j-store')
+  //runtimeOnly project(':embedded-neo4j-store')
+  runtimeOnly project(':neo4j-store')
   runtimeOnly project(':client-api')
   runtimeOnly project(':admin-api')
   runtimeOnly project(':app-notifier')

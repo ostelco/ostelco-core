@@ -4,9 +4,12 @@ modules:
       configFile: /secret/pantel-prod.json
       databaseName: pantel-2decb
       rootPath: ${FIREBASE_ROOT_PATH}
-  - type: embedded-neo4j
+#  - type: embedded-neo4j
+#    config:
+#      path: /data
+  - type: neo4j
     config:
-      path: /data
+      host: neo4j
   - type: ocs
     config:
       projectId: pantel-2decb

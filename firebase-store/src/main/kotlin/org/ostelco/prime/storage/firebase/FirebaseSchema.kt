@@ -6,6 +6,7 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import org.ostelco.prime.logger
+import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.CountDownLatch
@@ -90,7 +91,7 @@ class EntityStore<E>(
                     .replace(oldValue = ".", newValue = "%2E")
 
     private fun urlDecode(value: String) =
-            URLEncoder.encode(value, StandardCharsets.UTF_8.name())
+            URLDecoder.decode(value, StandardCharsets.UTF_8.name())
                     .replace(oldValue = "%2E", newValue = ".")
 
     /**

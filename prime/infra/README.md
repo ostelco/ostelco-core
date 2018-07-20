@@ -120,7 +120,7 @@ Update the tag (version) of prime's docker image in `infra/prod/prime.yaml`.
 Apply the deployment & service
 
 ```bash
-sed -e s/PRIME_VERSION/$PRIME_VERSION/g infra/prod/prime.yaml | kubectl apply -f -
+sed -e s/PRIME_VERSION/${PRIME_VERSION}/g infra/prod/prime.yaml | kubectl apply -f -
 ```
 
 Details of the deployment
@@ -162,15 +162,16 @@ ocs.ostelco.org is in `ocs-ostelco-ssl`
 ```bash
 gcloud container clusters create dev-cluster \
   --scopes=default,bigquery,datastore,pubsub,sql,storage-rw \
+  --zone=europe-west1-b \
   --num-nodes=1
 ```
  * Create node-pool
 ```bash
-gcloud container node-pools create dev-nodes \
+gcloud container node-pools create dev-node-pool \
   --cluster=dev-cluster \
   --machine-type=n1-standard-4 \
   --scopes=default,bigquery,datastore,pubsub,sql,storage-rw \
-  --num-nodes=1 \
+  --num-nodes=3 \
   --zone=europe-west1-b
 ```
  * Delete default pool
@@ -185,9 +186,9 @@ gcloud container node-pools delete default-pool \
 
 ```bash
 cd ../certs/ocs.endpoints.pantel-2decb.cloud.goog
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./nginx.key -out ./nginx.crt
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./nginx.key -out ./nginx.crt -subj '/CN=ocs.endpoints.pantel-2decb.cloud.goog'
 cd ../api.endpoints.pantel-2decb.cloud.goog
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./nginx.key -out ./nginx.crt
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./nginx.key -out ./nginx.crt -subj '/CN=api.endpoints.pantel-2decb.cloud.goog'
 cd ../../prime
 ```
 
@@ -240,7 +241,10 @@ gcloud endpoints services deploy infra/dev/prime-client-api.yaml
 
 ## Deploy to Dev cluster
 
+
 ```bash
+kubectl apply -f infra/dev/neo4j.yaml
+cd ..
 prime/script/deploy-dev.sh
 ```
 

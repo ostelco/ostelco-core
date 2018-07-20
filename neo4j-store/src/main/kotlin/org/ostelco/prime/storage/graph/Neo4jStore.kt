@@ -1,8 +1,6 @@
 package org.ostelco.prime.storage.graph
 
-import org.neo4j.driver.v1.AccessMode.READ
 import org.ostelco.prime.logger
-import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Entity
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Product
@@ -12,6 +10,7 @@ import org.ostelco.prime.model.Segment
 import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.storage.GraphStore
+import org.ostelco.prime.storage.graph.Graph.read
 import java.util.*
 import java.util.stream.Collectors
 
@@ -30,9 +29,6 @@ object Neo4jStoreSingleton : GraphStore {
     private val subscriptionEntity = EntityType("Subscription", Subscription::class.java)
     private val subscriptionStore = EntityStore(subscriptionEntity)
 
-    private val notificationTokenEntity = EntityType("NotificationToken", ApplicationToken::class.java)
-    private val notificationTokenStore = EntityStore(notificationTokenEntity)
-
     private val subscriptionRelation = RelationType(
             name = "HAS_SUBSCRIPTION",
             from = subscriberEntity,
@@ -48,79 +44,84 @@ object Neo4jStoreSingleton : GraphStore {
     private val purchaseRecordStore = RelationStore(purchaseRecordRelation)
 
     override val balances: Map<String, Long>
-        get() = subscriptionStore.getAll().mapValues { it.value.balance }
+        get() = readTransaction { subscriptionStore.getAll(transaction).mapValues { it.value.balance } }
 
-    override fun getSubscriber(id: String): Subscriber? = subscriberStore.get(id)
+    override fun getSubscriber(id: String): Subscriber? = readTransaction { subscriberStore.get(id, transaction) }
 
-    override fun addSubscriber(subscriber: Subscriber): Boolean = subscriberStore.create(subscriber.id, subscriber)
+    override fun addSubscriber(subscriber: Subscriber): Boolean = writeTransaction {
+        subscriberStore.create(subscriber.id, subscriber, transaction)
+    }
 
-    override fun updateSubscriber(subscriber: Subscriber): Boolean = subscriberStore.update(subscriber.id, subscriber)
+    override fun updateSubscriber(subscriber: Subscriber): Boolean = writeTransaction {
+        subscriberStore.update(subscriber.id, subscriber, transaction)
+    }
 
-    override fun removeSubscriber(id: String) = subscriberStore.delete(id)
+    override fun removeSubscriber(id: String) = writeTransaction { subscriberStore.delete(id, transaction) }
 
     override fun addSubscription(id: String, msisdn: String): Boolean {
-        val from = subscriberStore.get(id) ?: return false
-        subscriptionStore.create(msisdn, Subscription(msisdn, 0L))
-        val to = subscriptionStore.get(msisdn) ?: return false
-        return subscriptionRelationStore.create(from, null, to)
+        return writeTransaction {
+            val from = subscriberStore.get(id, transaction) ?: return@writeTransaction false
+            subscriptionStore.create(msisdn, Subscription(msisdn, 0L), transaction)
+            val to = subscriptionStore.get(msisdn, transaction) ?: return@writeTransaction false
+            subscriptionRelationStore.create(from, null, to, transaction)
+        }
     }
 
     override fun getProducts(subscriberId: String): Map<String, Product> {
-        val tx = Neo4jClient
-                .driver
-                .session(READ)
-                .beginTransaction()
-
-        try {
-            val result = tx.run(
-                    """
+        return readTransaction {
+            read("""
                 MATCH (:${subscriberEntity.name} {id: '$subscriberId'})
                 <-[:${segmentToSubscriberRelation.name}]-(:${segmentEntity.name})
                 <-[:${offerToSegmentRelation.name}]-(:${offerEntity.name})
                 -[:${offerToProductRelation.name}]->(product:${productEntity.name})
-                RETURN properties(product) AS product
-                """.trimIndent())
+                RETURN product;
+                """.trimIndent(),
+                    transaction) {
 
-            tx.success()
-
-            return result.list { ObjectHandler.getObject(it.asMap(), Product::class.java) }
-                    .stream()
-                    .collect(Collectors.toMap({ it?.sku }, { it }))
-        } catch (e: Exception) {
-            LOG.error("Failed to fetch products", e)
-            return emptyMap()
-        } finally {
-            tx.failure()
+                it.list { ObjectHandler.getObject(it["product"].asMap(), Product::class.java) }
+                        .stream()
+                        .collect(Collectors.toMap({ it?.sku }, { it }))
+            }
         }
     }
 
-    override fun getProduct(subscriberId: String?, sku: String): Product? = productStore.get(sku)
+    override fun getProduct(subscriberId: String?, sku: String): Product? =
+            readTransaction { productStore.get(sku, transaction) }
 
     override fun getBalance(id: String): Long? {
-        return subscriberStore.getRelated(id, subscriptionRelation, subscriptionEntity)
-                .first()
-                .balance
+        return readTransaction {
+            subscriberStore.getRelated(id, subscriptionRelation, transaction)
+                    .first()
+                    .balance
+        }
     }
 
-    override fun setBalance(msisdn: String, noOfBytes: Long): Boolean =
-            subscriptionStore.update(msisdn, Subscription(msisdn, balance = noOfBytes))
+    override fun setBalance(msisdn: String, noOfBytes: Long): Boolean = readTransaction {
+        subscriptionStore.update(msisdn, Subscription(msisdn, balance = noOfBytes), transaction)
+    }
 
     override fun getMsisdn(subscriptionId: String): String? {
-        return subscriberStore.getRelated(subscriptionId, subscriptionRelation, subscriptionEntity)
-                .first()
-                .msisdn
+        return readTransaction {
+            subscriberStore.getRelated(subscriptionId, subscriptionRelation, transaction)
+                    .first()
+                    .msisdn
+        }
     }
 
     override fun getPurchaseRecords(id: String): Collection<PurchaseRecord> {
-        return subscriberStore.getRelations(id, purchaseRecordRelation)
+        return readTransaction {
+            subscriberStore.getRelations(id, purchaseRecordRelation, transaction)
+        }
     }
 
     override fun addPurchaseRecord(id: String, purchase: PurchaseRecord): String? {
-        val subscriber = subscriberStore.get(id) ?: throw Exception("Subscriber not found")
-        val product = productStore.get(purchase.product.sku) ?: throw Exception("Product not found")
-        purchase.id = UUID.randomUUID().toString()
-        purchaseRecordStore.create(subscriber, purchase, product)
-        return purchase.id
+        return writeTransaction {
+            val subscriber = subscriberStore.get(id, transaction) ?: throw Exception("Subscriber not found")
+            val product = productStore.get(purchase.product.sku, transaction) ?: throw Exception("Product not found")
+            purchase.id = UUID.randomUUID().toString()
+            purchaseRecordStore.create(subscriber, purchase, product, transaction)
+            purchase.id
+        }
     }
 
     //
@@ -145,22 +146,34 @@ object Neo4jStoreSingleton : GraphStore {
     private val productClassEntity = EntityType("ProductClass", ProductClass::class.java)
     private val productClassStore = EntityStore(productClassEntity)
 
-    override fun createProductClass(productClass: ProductClass): Boolean = productClassStore.create(productClass.id, productClass)
+    override fun createProductClass(productClass: ProductClass): Boolean = writeTransaction {
+        productClassStore.create(productClass.id, productClass, transaction)
+    }
 
-    override fun createProduct(product: Product): Boolean = productStore.create(product.sku, product)
+    override fun createProduct(product: Product): Boolean =
+            writeTransaction { productStore.create(product.sku, product, transaction) }
 
     override fun createSegment(segment: Segment): Boolean {
-        return segmentStore.create(segment.id, segment)
-                && updateSegment(segment)
+        return writeTransaction {
+            segmentStore.create(segment.id, segment, transaction)
+                    && segmentToSubscriberStore.create(segment.id, segment.subscribers, transaction)
+        }
     }
 
-    override fun createOffer(offer: Offer): Boolean {
-        return offerStore.create(offer.id, offer)
-                && offerToSegmentStore.create(offer.id, offer.segments)
-                && offerToProductStore.create(offer.id, offer.products)
+    override fun createOffer(offer: Offer): Boolean = writeTransaction {
+        //         offerStore.create(offer.id, offer)
+//                && offerToSegmentStore.create(offer.id, offer.segments)
+//                && offerToProductStore.create(offer.id, offer.products)
+
+        val result = offerStore.create(offer.id, offer, transaction)
+        val result2 = result && offerToSegmentStore.create(offer.id, offer.segments, transaction)
+        val result3 = result && offerToProductStore.create(offer.id, offer.products, transaction)
+        result && result2 && result3
     }
 
-    override fun updateSegment(segment: Segment): Boolean = segmentToSubscriberStore.create(segment.id, segment.subscribers)
+    override fun updateSegment(segment: Segment): Boolean = writeTransaction {
+        segmentToSubscriberStore.create(segment.id, segment.subscribers, transaction)
+    }
 
     // override fun getOffers(): Collection<Offer> = offerStore.getAll().values.map { Offer().apply { id = it.id } }
 

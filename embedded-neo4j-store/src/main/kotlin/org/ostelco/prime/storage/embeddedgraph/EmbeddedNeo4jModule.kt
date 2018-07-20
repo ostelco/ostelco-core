@@ -119,26 +119,3 @@ fun createProduct(sku: String, amount: Int): Product {
 
     return product
 }
-
-fun main(args: Array<String>) {
-
-    // Shutdown hook
-    Runtime.getRuntime().addShutdownHook(object : Thread() {
-        override fun run() {
-            println("Stopping Graph server...")
-            GraphServer.stop()
-        }
-    })
-
-    // Start server
-    ConfigRegistry.config = Config()
-    ConfigRegistry.config.path = "build/neo4j"
-    GraphServer.start()
-
-    // test data
-    initDatabase()
-
-    // wait for exit
-    println("Type 'exit' to quit...")
-    while (readLine() != "exit");
-}

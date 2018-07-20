@@ -13,9 +13,11 @@ services:
     - FIREBASE_ROOT_PATH=test
     ports:
     - "9090:8080"
-    - "7687:7687"
+#    - "7687:7687"
     depends_on:
     - "pubsub-emulator"
+    - "neo4j"
+    command: ["/bin/bash", "./wait.sh"]
     tmpfs:
       - /data
     networks:
@@ -48,7 +50,7 @@ services:
   ocsgw:
     depends_on:
     - "prime"
-    command: ["./wait_for_esp_and_prime.sh"]
+    command: ["./wait.sh"]
     networks:
       net:
         aliases:
@@ -61,7 +63,7 @@ services:
     depends_on:
     - "ocsgw"
     - "prime"
-    command: ["./wait_for_services.sh"]
+    command: ["./wait.sh"]
     environment:
     - PRIME_SOCKET=prime:8080
     networks:
@@ -81,6 +83,16 @@ services:
     - PUBSUB_PROJECT_ID=pantel-2decb
     - LOCAL_TESTING=true
     command: ["/bin/bash", "./wait_for_emulators.sh"]
+
+  neo4j:
+    container_name: "neo4j"
+    image: neo4j:3.4.4
+    environment:
+    - NEO4J_AUTH=none
+    ports:
+    - "7687:7687"
+    - "7474:7474"
+    tmpfs: "/data"
 
   pubsub-emulator:
     container_name: pubsub-emulator

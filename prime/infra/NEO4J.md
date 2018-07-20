@@ -12,15 +12,9 @@ This setup is not intended for production since that requires serious Operation 
 
 ### Steps
 
-Create Kubernetes Cluster
+ * Dev cluster
+Deploy Neo4j
 
-    gcloud container clusters create neo4j-cluster \
-    --zone europe-west1-b \
-    --scopes=default,bigquery,datastore,pubsub,sql,storage-rw \
-    --num-nodes=3
-
-Deploy Neo4j to Kubernetes Cluster
-
-    git clone git@github.com:neo4j-contrib/kubernetes-neo4j.git
-    cd kubernetes-neo4j
-    kubectl apply -f cores
+```bash
+kubectl apply -f infra/dev/neo4j.yaml
+```

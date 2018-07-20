@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: prime-dev-service
+  name: prime-service
   labels:
     app: prime
     tier: backend
@@ -19,7 +19,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: prime-dev-api
+  name: prime-api
   labels:
     app: prime
     tier: backend
@@ -33,23 +33,14 @@ spec:
     app: prime
     tier: backend
 ---
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
+apiVersion: extensions/v1beta1
+kind: Deployment
 metadata:
-  name: faster
-provisioner: kubernetes.io/gce-pd
-parameters:
-  type: pd-ssd
----
-apiVersion: apps/v1beta1
-kind: StatefulSet
-metadata:
-  name: prime-dev
+  name: prime
   labels:
     app: prime
     tier: backend
 spec:
-  serviceName: prime
   replicas: 1
   template:
     metadata:
@@ -100,10 +91,7 @@ spec:
         - name: secret-config
           mountPath: "/secret"
           readOnly: true
-        - name: neo4j-data
-          mountPath: "/data"
         ports:
-        - containerPort: 7687
         - containerPort: 8080
         - containerPort: 8081
         - containerPort: 8082
@@ -117,13 +105,3 @@ spec:
       - name: ocs-ostelco-ssl
         secret:
           secretName: ocs-ostelco-ssl
-  volumeClaimTemplates:
-  - metadata:
-      name: neo4j-data
-    spec:
-      accessModes:
-      - ReadWriteOnce
-      storageClassName: "faster"
-      resources:
-        requests:
-          storage: "10Gi"

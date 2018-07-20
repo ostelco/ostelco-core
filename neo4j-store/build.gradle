@@ -3,7 +3,7 @@ plugins {
   id "java-library"
 }
 
-ext.neo4jVersion="3.4.0"
+ext.neo4jVersion="3.4.4"
 ext.neo4jDriverVersion="1.6.1"
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
@@ -12,6 +12,11 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
   }
 }
 
+repositories {
+  maven {
+    url 'https://dl.bintray.com/palantir/releases' // docker-compose-rule is published on bintray
+  }
+}
 dependencies {
 
   implementation project(":prime-api")
@@ -20,7 +25,12 @@ dependencies {
 
   implementation "org.neo4j:neo4j-graphdb-api:$neo4jVersion"
   implementation "org.neo4j.driver:neo4j-java-driver:$neo4jDriverVersion"
+  implementation "org.neo4j:neo4j-slf4j:$neo4jVersion"
+
+  testImplementation 'com.palantir.docker.compose:docker-compose-rule-junit4:0.34.0'
 
   testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
 }
+
+apply from: '../jacoco.gradle'
