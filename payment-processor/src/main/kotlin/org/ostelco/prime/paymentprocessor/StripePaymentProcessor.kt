@@ -71,7 +71,7 @@ class StripePaymentProcessor : PaymentProcessor {
             }
 
     // FixMe : This needs to be able to rollback
-    override fun purchaseProduct(customerId: String, sourceId: String, amount: Int, currency: String, saveCard: Boolean): Either<ApiError, ProductInfo> {
+    override fun purchaseProduct(customerId: String, sourceId: String, amount: Int, currency: String, saveSource: Boolean): Either<ApiError, ProductInfo> {
 
         var storedSourceId = sourceId
         val stored = isSourceStored(customerId, sourceId)
@@ -91,7 +91,7 @@ class StripePaymentProcessor : PaymentProcessor {
             return Either.left(charge.left)
         }
 
-        if (!saveCard) {
+        if (!saveSource) {
             val removed = removeSource(customerId, storedSourceId)
             if (removed.isLeft) {
                 return Either.left(removed.left)
