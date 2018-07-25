@@ -14,11 +14,11 @@ jobs:
         keys:
           - gradle-cache
     - run:
-      name: download codacy jar file 
-      command: wget -O ~/codacy-coverage-reporter-assembly-latest.jar https://github.com/codacy/codacy-coverage-reporter/releases/download/4.0.1/codacy-coverage-reporter-4.0.1-assembly.jar
+        name: download codacy jar file 
+        command: wget -O ~/codacy-coverage-reporter-assembly-latest.jar https://github.com/codacy/codacy-coverage-reporter/releases/download/4.0.1/codacy-coverage-reporter-4.0.1-assembly.jar
     - run:
-      name: build entire repo (prime, ocsgw,.. etc)
-      command: ./gradlew clean build --parallel
+        name: build entire repo (prime, ocsgw,.. etc)
+        command: ./gradlew clean build --parallel
 
 #  deploy-prime:
 #    docker:
