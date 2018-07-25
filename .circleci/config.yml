@@ -2,10 +2,10 @@ version: 2
 jobs:
   build:
     docker:
-    - image: azul/zulu-openjdk:8
+      - image: azul/zulu-openjdk:8
 
     steps:
-    - checkout
+      - checkout
 
 #    - restore_cache:
 #        keys:
