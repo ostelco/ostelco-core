@@ -1,7 +1,6 @@
 version: 2
 jobs:
   build:
-
     working_directory: ~/repo
 
     docker:
@@ -18,7 +17,12 @@ jobs:
         command: wget -O ~/codacy-coverage-reporter-assembly-latest.jar https://github.com/codacy/codacy-coverage-reporter/releases/download/4.0.1/codacy-coverage-reporter-4.0.1-assembly.jar
     - run:
         name: build entire repo (prime, ocsgw,.. etc)
-        command: ./gradlew clean build --parallel
+        command: ./gradlew clean build
+
+    - save_cache:
+        key: gradle-cache
+        paths:
+        - "~/.gradle/caches"
 
 #  deploy-prime:
 #    docker:
