@@ -1,51 +1,38 @@
 version: 2
 jobs:
   build:
-    working_directory: ~/repo
 
     docker:
     - image: azul/zulu-openjdk:8
 
     steps:
-    - setup_remote_docker
     - checkout
+
 #    - restore_cache:
 #        keys:
 #          - gradle-cache
 #    - run:
 #        name: download codacy jar file
 #        command: wget -O ~/codacy-coverage-reporter-assembly-latest.jar https://github.com/codacy/codacy-coverage-reporter/releases/download/4.0.1/codacy-coverage-reporter-4.0.1-assembly.jar
+
     - run:
         name: build entire repo (prime, ocsgw,.. etc)
-        command: ./gradlew clean client-api:build --debug
+        # command: ./gradlew clean client-api:build --debug
+        command: ./gradlew clean build
+
+    - setup_remote_docker
 
 #    - save_cache:
 #        key: gradle-cache
 #        paths:
 #        - "~/.gradle/caches"
 
-#  deploy-prime:
-#    docker:
-#    - image: devth/helm:v2.9.1
-#    working_directory: ~/repo
-#    steps:
-#    - run:
-#        name: running helm install
-#        command: |
-#          echo $GOOGLE_CREDENTIALS > $HOME/pantel-tests.json
-#          gcloud auth activate-service-account --key-file=$HOME/pantel-tests.json
-#          gcloud container clusters get-credentials my-cluster --zone europe-west2-c --project pantel-tests
-#          kubectl create serviceaccount -n kube-system tiller
-#          kubectl create clusterrolebinding tiller-binding --clusterrole=cluster-admin --serviceaccount kube-system:tiller
-#          helm init --service-account tiller
-#          helm repo add pantel-tests https://pantel-tests-charts.storage.googleapis.com/
-#          helm install pantel-tests/prime --name prime --set firebaseServiceAccount=$(echo $FIREBASE_SERVICE_ACCOUNT | base64)
 workflows:
   version: 2
-  build-and-deploy-prime:
+  build-repo-and-deploy:
     jobs:
     - build
-#      filters:
-#        branches:
-#          only:
-#          - master
+      filters:
+        branches:
+          only:
+          - feature/circleci-integration
