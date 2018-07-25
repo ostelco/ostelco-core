@@ -9,9 +9,9 @@ jobs:
     steps:
     - setup_remote_docker
     - checkout
-    - restore_cache:
-        keys:
-          - gradle-cache
+#    - restore_cache:
+#        keys:
+#          - gradle-cache
     - run:
         name: download codacy jar file 
         command: wget -O ~/codacy-coverage-reporter-assembly-latest.jar https://github.com/codacy/codacy-coverage-reporter/releases/download/4.0.1/codacy-coverage-reporter-4.0.1-assembly.jar
@@ -19,10 +19,10 @@ jobs:
         name: build entire repo (prime, ocsgw,.. etc)
         command: ./gradlew clean build
 
-    - save_cache:
-        key: gradle-cache
-        paths:
-        - "~/.gradle/caches"
+#    - save_cache:
+#        key: gradle-cache
+#        paths:
+#        - "~/.gradle/caches"
 
 #  deploy-prime:
 #    docker:
