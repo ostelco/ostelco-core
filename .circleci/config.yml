@@ -17,7 +17,7 @@ jobs:
 #        command: wget -O ~/codacy-coverage-reporter-assembly-latest.jar https://github.com/codacy/codacy-coverage-reporter/releases/download/4.0.1/codacy-coverage-reporter-4.0.1-assembly.jar
     - run:
         name: build entire repo (prime, ocsgw,.. etc)
-        command: ./gradlew clean build --info
+        command: ./gradlew clean client-api:build --debug
 
 #    - save_cache:
 #        key: gradle-cache

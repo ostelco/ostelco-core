@@ -24,13 +24,13 @@ dependencies {
     // from filter
     // https://mvnrepository.com/artifact/org.glassfish.jersey.test-framework.providers/jersey-test-framework-provider-grizzly2
     // Updating from 2.25.1 to 2.27 causes error
-    testCompile (group: 'org.glassfish.jersey.test-framework.providers', name: 'jersey-test-framework-provider-grizzly2', version: '2.25.1') {
+    testImplementation (group: 'org.glassfish.jersey.test-framework.providers', name: 'jersey-test-framework-provider-grizzly2', version: '2.25.1') {
         // 2.26 (latest)
         exclude group: 'javax.servlet',  module: 'javax.servlet-api'
         exclude group: 'junit',  module: 'junit'
     }
 
-    testCompile "com.nhaarman:mockito-kotlin:1.6.0"
+    testImplementation "com.nhaarman:mockito-kotlin:1.6.0"
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
