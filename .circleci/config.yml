@@ -15,7 +15,7 @@ workflows:
   version: 2
   build-repo-and-deploy:
     jobs:
-      - build
+      - build:
           filters:
             branches:
               only: feature/circleci-integration
