@@ -1,7 +1,6 @@
 version: 2
 jobs:
   build:
-
     docker:
     - image: azul/zulu-openjdk:8
 
@@ -16,11 +15,11 @@ jobs:
 #        command: wget -O ~/codacy-coverage-reporter-assembly-latest.jar https://github.com/codacy/codacy-coverage-reporter/releases/download/4.0.1/codacy-coverage-reporter-4.0.1-assembly.jar
 
     - run:
-        name: build entire repo (prime, ocsgw,.. etc)
+        name: build entire repo
         # command: ./gradlew clean client-api:build --debug
         command: ./gradlew clean build
 
-    - setup_remote_docker
+#    - setup_remote_docker
 
 #    - save_cache:
 #        key: gradle-cache
@@ -31,8 +30,7 @@ workflows:
   version: 2
   build-repo-and-deploy:
     jobs:
-    - build
-      filters:
-        branches:
-          only:
-          - feature/circleci-integration
+      - build
+          filters:
+            branches:
+              only: feature/circleci-integration
