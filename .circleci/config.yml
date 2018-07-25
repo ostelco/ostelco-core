@@ -4,7 +4,7 @@ jobs:
     working_directory: ~/repo
 
     docker:
-    - image: openjdk:8u171
+    - image: azul/zulu-openjdk:8
 
     steps:
     - setup_remote_docker
