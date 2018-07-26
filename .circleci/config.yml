@@ -13,6 +13,8 @@ jobs:
           # command: ./gradlew clean client-api:build  -x test 
           command: ./gradlew clean build  -x test --parallel
   coverage-report:
+    docker:
+      - image: circleci/openjdk:8u171-jdk
     environment:
       CODACY_DOWNLOAD_URL: https://github.com/codacy/codacy-coverage-reporter/releases/download/ 
       CODACY_VERSION: 4.0.1
