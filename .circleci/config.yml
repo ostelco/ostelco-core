@@ -1,20 +1,16 @@
 version: 2
 jobs:
-  build:
-
-    environment:
-      CODACY_DOWNLOAD_URL: https://github.com/codacy/codacy-coverage-reporter/releases/download
-      CODACY_VERSION: 4.0.1
-      CODACY_JAR_FILE: codacy-coverage-reporter-assembly-latest.jar
-      CODACY_MODULE: com.codacy.CodacyCoverageReporter
+  build-repo:
 
     docker:
       # - image: azul/zulu-openjdk:8
       - image: circleci/openjdk:8u171-jdk
 
+    # By default, the working_directory in circleci is: '~/project'. So it will work without even specifying it.
+    working_directory: ~/project
+
     steps:
       - checkout
-      - run: pwd; ls -la
       - run:
           name: Build entire repo, skipping test(s)
           # command: ./gradlew clean client-api:build --debug
@@ -22,6 +18,26 @@ jobs:
           # command: ./gradlew clean build  -x test --parallel
           command: ./gradlew clean build  -x :client-api:test 
 
+      - persist_to_workspace:
+          root: ~/
+          paths: project
+
+
+  code-coverage:
+
+    environment:
+      CODACY_DOWNLOAD_URL: https://github.com/codacy/codacy-coverage-reporter/releases/download
+      CODACY_VERSION: 4.0.1
+      CODACY_JAR_FILE: codacy-coverage-reporter-assembly-latest.jar
+      CODACY_MODULE: com.codacy.CodacyCoverageReporter
+  
+    docker:
+      # - image: azul/zulu-openjdk:8
+      - image: circleci/openjdk:8u171-jdk
+
+    steps:
+      - attach_workspace:
+          at: ~/
       - run:  
           name: Download codacy
           command: |
@@ -32,21 +48,29 @@ jobs:
           # the commands below need "CODACY_PROJECT_TOKEN" to be present as (circleci) ENV variable.
           name: Generate Codacy code-coverage report
           command: |
-            for REPORT_TARGET in $(find . -name jacocoTestReport.xml); do
+            REPORT_TARGETS=$(find . -name jacocoTestReport.xml)
+            for REPORT_TARGET in ${REPORT_TARGETS}; do
               echo "Processing code-coverage report for ${REPORT_TARGET} ..."
               java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} report -l Java -r ${REPORT_TARGET} --partial
             done
-            echo "Uploading final code-coverage report to CODACY website."
-            java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} final
-
+            if [ -n ${REPORT_TARGETS} ]; then
+              echo "Uploading final code-coverage report to CODACY website."
+              java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} final
+            else
+              echo "There were no 'build' directories found under each module." 
+              echo "This means tests were not run in the previous build job."
+              echo "... so, not uploading any code-coverage reports to CODACY website. "
+            fi
 
 
 workflows:
   version: 2
   build-repo-and-code-coverage:
     jobs:
-      - build:
+      - build-repo:
           filters:
             branches:
               only: feature/circleci-integration
-
+      - code-coverage:
+          requires:
+            - build-repo
