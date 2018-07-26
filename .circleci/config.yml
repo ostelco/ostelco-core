@@ -9,7 +9,7 @@ jobs:
       - run:
           name: build entire repo
           # command: ./gradlew clean client-api:build --debug
-          command: ./gradlew clean build
+          command: ./gradlew clean client-api:test  --info
 
 workflows:
   version: 2
