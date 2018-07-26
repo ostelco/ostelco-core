@@ -32,24 +32,13 @@ jobs:
           # the commands below need "CODACY_PROJECT_TOKEN" to be present as (circleci) ENV variable.
           name: Generate Codacy code-coverage report
           command: |
-            java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} report -l Java -r \
-              analytics/build/reports/jacoco/test/jacocoTestReport.xml --partial
-            java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} report -l Java -r \
-              diameter-stack/build/reports/jacoco/test/jacocoTestReport.xml --partial
-            java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} report -l Java -r \
-              embedded-graph-store/build/reports/jacoco/test/jacocoTestReport.xml --partial
-            java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} report -l Java -r \
-              ocs/build/reports/jacoco/test/jacocoTestReport.xml --partial
-            java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} report -l Java -r \
-              ocsgw/build/reports/jacoco/test/jacocoTestReport.xml --partial
-            java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} report -l Java -r \
-              ostelco-lib/build/reports/jacoco/test/jacocoTestReport.xml --partial
-            java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} report -l Java -r \
-              pseudonym-server/build/reports/jacoco/test/jacocoTestReport.xml --partial
+            for REPORT_TARGET in $(find . -name jacocoTestReport.xml); do
+              echo "Processing code-coverage report for ${REPORT_TARGET} ..."
+              java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} report -l Java -r ${REPORT_TARGET} --partial
+            done
+            echo "Uploading final code-coverage report to CODACY website."
             java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} final
 
-            # java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} report -l Java -r \
-            #   client-api/build/reports/jacoco/test/jacocoTestReport.xml --partial
 
 
 workflows:
