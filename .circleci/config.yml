@@ -1,6 +1,13 @@
 version: 2
 jobs:
   build:
+
+    environment:
+      CODACY_DOWNLOAD_URL: https://github.com/codacy/codacy-coverage-reporter/releases/download/ 
+      CODACY_VERSION: 4.0.1
+      CODACY_JAR_FILE: codacy-coverage-reporter-assembly-latest.jar
+      CODACY_MODULE: com.codacy.CodacyCoverageReporter
+
     docker:
       # - image: azul/zulu-openjdk:8
       - image: circleci/openjdk:8u171-jdk
@@ -12,15 +19,7 @@ jobs:
           # command: ./gradlew clean client-api:build --debug
           # command: ./gradlew clean client-api:build  -x test 
           command: ./gradlew clean build  -x test --parallel
-  coverage-report:
-    docker:
-      - image: circleci/openjdk:8u171-jdk
-    environment:
-      CODACY_DOWNLOAD_URL: https://github.com/codacy/codacy-coverage-reporter/releases/download/ 
-      CODACY_VERSION: 4.0.1
-      CODACY_JAR_FILE: codacy-coverage-reporter-assembly-latest.jar
-      CODACY_MODULE: com.codacy.CodacyCoverageReporter
-    steps:
+
       - run:  
           name: Download codacy
           command: |
@@ -28,6 +27,7 @@ jobs:
               ${CODACY_DOWNLOAD_URL}/${CODACY_VERSION}/codacy-coverage-reporter-${CODACY_VERSION}-assembly.jar
 
       - run:
+          # the commands below need "CODACY_PROJECT_TOKEN" to be present as (circleci) ENV variable.
           name: Generate Codacy code-coverage report
           command: |
             java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} report -l Java -r \
@@ -57,7 +57,4 @@ workflows:
           filters:
             branches:
               only: feature/circleci-integration
-      - coverage-report:
-          requires:
-            - build
 
