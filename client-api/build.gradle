@@ -39,4 +39,5 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
     }
 }
 
-apply from: '../jacoco.gradle'
+// commented by Kamran
+// apply from: '../jacoco.gradle'
