@@ -53,7 +53,7 @@ jobs:
             if [ -n "${REPORT_TARGETS}" ]; then
               echo "Found 'jacocoTestReport.xml' file under 'build' directories in the following modules,"
               echo ", implying - tests were run for them."
-              echo "${REPORT_TARGETS}"
+              echo "${REPORT_TARGETS}" ; echo 
             else
               echo "There were no 'build' directories found under each module." 
               echo "This means tests were not run in the previous build job."
