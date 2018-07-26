@@ -2,6 +2,8 @@ package org.ostelco.prime
 
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.dropwizard.Application
+import io.dropwizard.configuration.EnvironmentVariableSubstitutor
+import io.dropwizard.configuration.SubstitutingSourceProvider
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 
@@ -13,6 +15,9 @@ fun main(args: Array<String>) {
 class PrimeApplication : Application<PrimeConfiguration>() {
 
     override fun initialize(bootstrap: Bootstrap<PrimeConfiguration>) {
+        bootstrap.configurationSourceProvider = SubstitutingSourceProvider(
+                bootstrap.configurationSourceProvider,
+                EnvironmentVariableSubstitutor())
         bootstrap.objectMapper.registerModule(KotlinModule())
     }
 

@@ -20,7 +20,7 @@ import org.ostelco.ocs.api.ServiceUnit
 import org.ostelco.prime.disruptor.PrimeDisruptor
 import org.ostelco.prime.disruptor.PrimeEventProducerImpl
 import org.ostelco.prime.logger
-import org.ostelco.prime.storage.firebase.initFirebaseConfigRegistry
+import org.ostelco.prime.storage.embeddedgraph.GraphServer
 import java.io.IOException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -197,7 +197,7 @@ class OcsTest {
         @JvmStatic
         @Throws(IOException::class)
         fun setUp() {
-            initFirebaseConfigRegistry()
+            GraphServer.start()
 
             // Set up processing pipeline
             disruptor = PrimeDisruptor()
@@ -224,9 +224,9 @@ class OcsTest {
             // Set up a channel to be used to communicate as an OCS instance, to an
             // Prime instance.
             val channel = ManagedChannelBuilder
-                    .forTarget("0.0.0.0:" + PORT)
-                    .usePlaintext(true). // disable encryption for testing
-                    build()
+                    .forTarget("0.0.0.0:$PORT")
+                    .usePlaintext() // disable encryption for testing
+                    .build()
 
             // Initialize the stub that will be used to actually
             // communicate from the client emulating being the OCS.
@@ -239,6 +239,7 @@ class OcsTest {
         fun tearDown() {
             disruptor.stop()
             ocsServer.forceStop()
+            GraphServer.stop()
         }
     }
 }

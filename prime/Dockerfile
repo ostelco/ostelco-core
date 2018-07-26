@@ -8,6 +8,7 @@ COPY config/config.yaml /config/
 
 COPY build/libs/prime-uber.jar /prime.jar
 
+EXPOSE 7687
 EXPOSE 8080
 EXPOSE 8081
 EXPOSE 8082

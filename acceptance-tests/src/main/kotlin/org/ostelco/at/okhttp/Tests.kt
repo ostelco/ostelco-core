@@ -46,7 +46,7 @@ class GetProductsTest {
     @Test
     fun testGetProducts() {
         val products = client.allProducts.toList()
-        assertEquals(expectedProducts(), products, "Incorrect 'Products' fetched")
+        assertEquals(expectedProducts().toSet(), products.toSet(), "Incorrect 'Products' fetched")
     }
 }
 

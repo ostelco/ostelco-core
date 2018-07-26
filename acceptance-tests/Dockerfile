@@ -7,7 +7,7 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 COPY src/main/resources/ /
-COPY script/wait_for_services.sh /wait_for_services.sh
+COPY script/wait.sh /wait.sh
 COPY build/libs/acceptance-tests-uber.jar /acceptance-tests.jar
 
-CMD ["/wait_for_services.sh"]
+CMD ["/wait.sh"]

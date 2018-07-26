@@ -55,7 +55,7 @@ Furthermore:
    address etc.
    
 The API is developed partly through this document.  Partly through the swagger specification of the
-prime/infra/prime-api.yaml file that is more or less reliably mirrored in the swagger-generated static website [swagger doc](https://ostelco.github.io/).
+prime/infra/prod/prime-api.yaml file that is more or less reliably mirrored in the swagger-generated static website [swagger doc](https://ostelco.github.io/).
 
 ## Data model
 
