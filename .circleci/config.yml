@@ -52,7 +52,7 @@ jobs:
             
             if [ -n "${REPORT_TARGETS}" ]; then
               echo "Found 'build' directories in the following modules, implying, tests were run for them."
-              echo "${TEST_TARGETS}"
+              echo "${REPORT_TARGETS}"
             else
               echo "There were no 'build' directories found under each module." 
               echo "This means tests were not run in the previous build job."
