@@ -51,7 +51,8 @@ jobs:
             REPORT_TARGETS=$(find . -name jacocoTestReport.xml)
             
             if [ -n "${REPORT_TARGETS}" ]; then
-              echo "Found 'build' directories in the following modules, implying, tests were run for them."
+              echo "Found 'jacocoTestReport.xml' file under 'build' directories in the following modules,"
+              echo ", implying - tests were run for them."
               echo "${REPORT_TARGETS}"
             else
               echo "There were no 'build' directories found under each module." 
@@ -67,7 +68,7 @@ jobs:
               echo "======> Uploading final code-coverage report to CODACY website. <======"
               java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} final
             else
-              echo "There were no 'build' directories found under each module." 
+              echo "There were no 'jacocoTestReport.xml' files found under 'build' directories in each module." 
               echo "This means tests were not run in the previous build job."
               echo "... so, not uploading any code-coverage reports to CODACY website. "
             fi
