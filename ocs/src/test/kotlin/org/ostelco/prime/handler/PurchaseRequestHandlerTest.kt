@@ -16,9 +16,8 @@ import org.ostelco.prime.disruptor.PrimeEventProducer
 import org.ostelco.prime.events.EventProcessorException
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
+import org.ostelco.prime.storage.ClientDataSource
 import org.ostelco.prime.storage.legacy.Products.DATA_TOPUP_3GB
-import org.ostelco.prime.storage.legacy.Storage
-import org.ostelco.prime.storage.legacy.StorageException
 
 class PurchaseRequestHandlerTest {
 
@@ -27,7 +26,7 @@ class PurchaseRequestHandlerTest {
     var mockitoRule: MockitoRule = MockitoJUnit.rule()
 
     @Mock
-    lateinit var storage: Storage
+    lateinit var storage: ClientDataSource
 
     @Mock
     lateinit var producer: PrimeEventProducer
@@ -45,7 +44,7 @@ class PurchaseRequestHandlerTest {
     // FIXME
     @Ignore
     @Test
-    @Throws(EventProcessorException::class, StorageException::class)
+    @Throws(Exception::class)
     fun handlePurchaseRequestTest() {
 
         val sku = DATA_TOPUP_3GB.sku

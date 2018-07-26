@@ -54,9 +54,9 @@ steps:
     timeout: 120s
 # Deploy new docker image to Google Kubernetes Engine (GKE)
   - name: ubuntu
-    args: ['sed', '-i', 's/PRIME_VERSION/$TAG_NAME/g', 'prime/infra/prime.yaml']
+    args: ['sed', '-i', 's/PRIME_VERSION/$TAG_NAME/g', 'prime/infra/prod/prime.yaml']
   - name: gcr.io/cloud-builders/kubectl
-    args: ['apply', '-f', 'prime/infra/prime.yaml']
+    args: ['apply', '-f', 'prime/infra/prod/prime.yaml']
     env:
       - 'CLOUDSDK_COMPUTE_ZONE=europe-west1-b'
       - 'CLOUDSDK_CONTAINER_CLUSTER=private-cluster'

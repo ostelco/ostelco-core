@@ -6,7 +6,7 @@ import org.ostelco.prime.disruptor.PrimeEvent
 import org.ostelco.prime.disruptor.PrimeEventMessageType
 import org.ostelco.prime.logger
 import org.ostelco.prime.module.getResource
-import org.ostelco.prime.storage.legacy.Storage
+import org.ostelco.prime.storage.ClientDataSource
 import java.util.*
 
 /**
@@ -191,7 +191,7 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<PrimeEvent>
 
     private fun loadSubscriberBalanceFromDatabaseToInMemoryStructure() {
         LOG.info("Loading initial balance from storage to in-memory OcsState")
-        val store: Storage = getResource()
+        val store: ClientDataSource = getResource()
         val balanceMap = store.balances
         for ((msisdn, noOfBytesLeft) in balanceMap) {
             LOG.info("{} - {}", msisdn, noOfBytesLeft)

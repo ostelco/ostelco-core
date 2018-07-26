@@ -22,8 +22,7 @@ class HttpRequest {
  * DSL function for GET operation
  */
 inline fun <reified T> get(execute: HttpRequest.() -> Unit): T {
-    val request = HttpRequest()
-    execute(request)
+    val request = HttpRequest().apply(execute)
     val response = HttpClient.send(request.path, request.queryParams).get()
     assertEquals(200, response.status)
     return response.readEntity(object : GenericType<T>() {})
@@ -33,8 +32,7 @@ inline fun <reified T> get(execute: HttpRequest.() -> Unit): T {
  * DSL function for POST operation
  */
 inline fun <reified T> post(execute: HttpRequest.() -> Unit): T {
-    val request = HttpRequest()
-    execute(request)
+    val request = HttpRequest().apply(execute)
     val response = HttpClient.send(request.path, request.queryParams)
             .post(Entity.entity(request.body ?: "", MediaType.APPLICATION_JSON_TYPE))
     assertEquals(201, response.status)
@@ -45,8 +43,7 @@ inline fun <reified T> post(execute: HttpRequest.() -> Unit): T {
  * DSL function for PUT operation
  */
 inline fun <reified T> put(execute: HttpRequest.() -> Unit): T {
-    val request = HttpRequest()
-    execute(request)
+    val request = HttpRequest().apply(execute)
     val response = HttpClient.send(request.path, request.queryParams)
             .put(Entity.entity(request.body ?: "", MediaType.APPLICATION_JSON_TYPE))
     assertEquals(200, response.status)
@@ -68,7 +65,5 @@ object HttpClient {
                 .header("Authorization", "Bearer $accessToken")
     }
 
-    fun send(path: String, queryParams: Map<String, String>): JerseyInvocation.Builder {
-        return setup(path, queryParams, url)
-    }
+    fun send(path: String, queryParams: Map<String, String>): JerseyInvocation.Builder = setup(path, queryParams, url)
 }

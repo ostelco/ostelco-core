@@ -75,31 +75,34 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
             // This is a hack to know when we have received an MSCC in the request or not.
             // For Terminate request we might not have any MSCC and therefore no serviceIdentifier.
             if (event.serviceIdentifier > 0) {
-                val msccBulder = MultipleServiceCreditControl.newBuilder()
-                msccBulder.setServiceIdentifier(event.serviceIdentifier)
+                val msccBuilder = MultipleServiceCreditControl.newBuilder()
+                msccBuilder.setServiceIdentifier(event.serviceIdentifier)
                         .setRatingGroup(event.ratingGroup)
                         .setValidityTime(86400)
 
                 if ((event.reportingReason != ReportingReason.FINAL) && (event.requestedBucketBytes > 0)) {
-                    msccBulder.setGranted(ServiceUnit.newBuilder()
+                    msccBuilder.granted = ServiceUnit.newBuilder()
                             .setTotalOctets(event.reservedBucketBytes)
-                            .build())
+                            .build()
                     if (event.reservedBucketBytes < event.requestedBucketBytes) {
-                        msccBulder.setFinalUnitIndication(FinalUnitIndication.newBuilder()
+                        msccBuilder.finalUnitIndication = FinalUnitIndication.newBuilder()
                                 .setFinalUnitAction(FinalUnitAction.TERMINATE)
                                 .setIsSet(true)
-                                .build())
+                                .build()
                     }
                 } else {
                     // Use -1 to indicate no granted service unit should be included in the answer
-                    msccBulder.setGranted(ServiceUnit.newBuilder()
+                    msccBuilder.granted = ServiceUnit.newBuilder()
                             .setTotalOctets(-1)
-                            .build())
+                            .build()
                 }
-                creditControlAnswer.addMscc(msccBulder.build())
+                creditControlAnswer.addMscc(msccBuilder.build())
             }
 
-            ocsService.sendCreditControlAnswer(event.ocsgwStreamId ?: "", creditControlAnswer.build())
+            val streamId = event.ocsgwStreamId
+            if (streamId != null) {
+                ocsService.sendCreditControlAnswer(streamId, creditControlAnswer.build())
+            }
         } catch (e: Exception) {
             LOG.warn("Exception handling prime event", e)
             logEventProcessing("Exception sending Credit-Control-Answer", event)

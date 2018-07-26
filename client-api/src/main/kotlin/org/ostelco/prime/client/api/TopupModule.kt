@@ -13,13 +13,18 @@ import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.setup.Environment
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.auth.OAuthAuthenticator
-import org.ostelco.prime.client.api.resources.*
+import org.ostelco.prime.client.api.resources.AnalyticsResource
+import org.ostelco.prime.client.api.resources.ApplicationTokenResource
+import org.ostelco.prime.client.api.resources.ConsentsResource
+import org.ostelco.prime.client.api.resources.ProductsResource
+import org.ostelco.prime.client.api.resources.ProfileResource
+import org.ostelco.prime.client.api.resources.SubscriptionResource
 import org.ostelco.prime.client.api.store.SubscriberDAOImpl
 import org.ostelco.prime.logger
 import org.ostelco.prime.module.PrimeModule
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.ocs.OcsSubscriberService
-import org.ostelco.prime.storage.legacy.Storage
+import org.ostelco.prime.storage.ClientDataSource
 import javax.ws.rs.client.Client
 
 /**
@@ -32,7 +37,7 @@ class TopupModule : PrimeModule {
     @JsonProperty("config")
     private var config: TopupConfiguration = TopupConfiguration()
 
-    private val storage by lazy { getResource<Storage>() }
+    private val storage by lazy { getResource<ClientDataSource>() }
     private val ocsSubscriberService by lazy { getResource<OcsSubscriberService>() }
     private val LOG by logger()
 

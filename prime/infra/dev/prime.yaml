@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: prime-service
+  labels:
+    app: prime
+    tier: backend
+spec:
+  type: LoadBalancer
+  ports:
+  - name: grpc
+    port: 443
+    targetPort: 8443
+    protocol: TCP
+  selector:
+    app: prime
+    tier: backend
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prime-api
+  labels:
+    app: prime
+    tier: backend
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 443
+    protocol: TCP
+    name: https
+  selector:
+    app: prime
+    tier: backend
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: prime
+  labels:
+    app: prime
+    tier: backend
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: prime
+        tier: backend
+    spec:
+      containers:
+      - name: esp
+        image: gcr.io/endpoints-release/endpoints-runtime:1
+        args: [
+          "--http2_port=9000",
+          "--ssl_port=8443",
+          "--service=ocs.endpoints.pantel-2decb.cloud.goog",
+          "--rollout_strategy=managed",
+          "--backend=grpc://127.0.0.1:8082"
+        ]
+        ports:
+        - containerPort: 9000
+        - containerPort: 8443
+        volumeMounts:
+        - mountPath: /etc/nginx/ssl
+          name: ocs-ostelco-ssl
+          readOnly: true
+      - name: api-esp
+        image: gcr.io/endpoints-release/endpoints-runtime:1
+        args: [
+          "--http2_port=9002",
+          "--ssl_port", "443",
+          "--status_port=8092",
+          "--service=api.endpoints.pantel-2decb.cloud.goog",
+          "--rollout_strategy=managed",
+          "--backend=127.0.0.1:8080"
+        ]
+        ports:
+        - containerPort: 9002
+        - containerPort: 443
+        volumeMounts:
+        - mountPath: /etc/nginx/ssl
+          name: api-ostelco-ssl
+          readOnly: true
+      - name: prime
+        image: gcr.io/pantel-2decb/prime:PRIME_VERSION
+        env:
+        - name: FIREBASE_ROOT_PATH
+          value: dev
+        volumeMounts:
+        - name: secret-config
+          mountPath: "/secret"
+          readOnly: true
+        ports:
+        - containerPort: 8080
+        - containerPort: 8081
+        - containerPort: 8082
+      volumes:
+      - name: secret-config
+        secret:
+          secretName: pantel-prod.json
+      - name: api-ostelco-ssl
+        secret:
+          secretName: api-ostelco-ssl
+      - name: ocs-ostelco-ssl
+        secret:
+          secretName: ocs-ostelco-ssl

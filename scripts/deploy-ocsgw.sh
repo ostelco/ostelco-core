@@ -11,10 +11,17 @@ echo "Starting to deploy OCSGW to test installation"
 echo "The last thing this script will do is to look  at logs from the ocsgw"
 echo "It will continue to do so until terminated by ^C"
 
-scp -oProxyJump=loltel@10.6.101.1 build/deploy/ostelco-core.zip  ubuntu@192.168.0.123:.
-ssh -A -Jloltel@10.6.101.1 ubuntu@192.168.0.123 <<EOF
-  if [ ! -f ostelco-core.zip ] ; then 
-     echo "Couldn't find ostelco-core.zip"
+variant=dev
+host_ip=192.168.0.124
+if [ "$1" = prod ] ; then
+   host_ip=192.168.0.123
+   variant=prod
+fi
+
+scp -oProxyJump=loltel@10.6.101.1 build/deploy/ostelco-core-${variant}.zip  ubuntu@${host_ip}:.
+ssh -A -Jloltel@10.6.101.1 ubuntu@${host_ip} <<EOF
+  if [ ! -f ostelco-core-${variant}.zip ] ; then
+     echo "Couldn't find ostelco-core-${variant}.zip"
      exit 1
   fi
   if [ -d ostelco-core ] ; then 
@@ -23,7 +30,7 @@ ssh -A -Jloltel@10.6.101.1 ubuntu@192.168.0.123 <<EOF
     cd ..
     rm -rf ostelco-core
   fi
-  unzip ostelco-core.zip -d ostelco-core
+  unzip ostelco-core-${variant}.zip -d ostelco-core
   cd ostelco-core
   sudo docker-compose up -d --build
   sudo docker-compose logs -f

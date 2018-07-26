@@ -11,8 +11,7 @@ import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.ocs.OcsSubscriberService
-import org.ostelco.prime.storage.legacy.Storage
-import org.ostelco.prime.storage.legacy.StorageException
+import org.ostelco.prime.storage.ClientDataSource
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -20,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  *
  */
-class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberService: OcsSubscriberService) : SubscriberDAO {
+class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSubscriberService: OcsSubscriberService) : SubscriberDAO {
 
     private val LOG by logger()
 
@@ -38,7 +37,7 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
                     postCode,
                     city,
                     country))
-        } catch (e: StorageException) {
+        } catch (e: Exception) {
             LOG.error("Failed to fetch profile", e)
             return Either.left(ApiError("Failed to fetch profile"))
         }
@@ -57,7 +56,7 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
                     profile.postCode,
                     profile.city,
                     profile.country))
-        } catch (e: StorageException) {
+        } catch (e: Exception) {
             LOG.error("Failed to create profile", e)
             return Either.left(ApiError("Failed to create profile"))
         }
@@ -85,7 +84,7 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
             return storage.getNotificationToken(msisdn, applicationId)
                     ?.let { Either.right<ApiError, ApplicationToken>(it) }
                     ?: return Either.left(ApiError("Failed to get ApplicationToken"))
-        } catch (e: StorageException) {
+        } catch (e: Exception) {
             LOG.error("Failed to get ApplicationToken", e)
             return Either.left(ApiError("Failed to get ApplicationToken"))
         }
@@ -103,7 +102,7 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
                     profile.postCode,
                     profile.city,
                     profile.country))
-        } catch (e: StorageException) {
+        } catch (e: Exception) {
             LOG.error("Failed to update profile", e)
             return Either.left(ApiError("Failed to update profile"))
         }
@@ -118,7 +117,7 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
             val subscriptionStatus = SubscriptionStatus(
                     balance, ArrayList(purchaseRecords))
             return Either.right(subscriptionStatus)
-        } catch (e: StorageException) {
+        } catch (e: Exception) {
             LOG.error("Failed to get balance", e)
             return Either.left(ApiError("Failed to get balance"))
         }
@@ -128,7 +127,7 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
         var msisdn: String? = null
         try {
             msisdn = storage.getMsisdn(subscriptionId)
-        } catch (e: StorageException) {
+        } catch (e: Exception) {
             LOG.error("Did not find msisdn for this subscription", e)
         }
 
@@ -147,7 +146,7 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
             products.forEach { key, value -> value.sku = key }
             return Either.right(products.values)
 
-        } catch (e: StorageException) {
+        } catch (e: Exception) {
             LOG.error("Failed to get Products", e)
             return Either.left(ApiError("Failed to get Products"))
         }
@@ -158,7 +157,7 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
         var msisdn: String? = null
         try {
             msisdn = storage.getMsisdn(subscriptionId)
-        } catch (e: StorageException) {
+        } catch (e: Exception) {
             LOG.error("Did not find subscription", e)
         }
 
@@ -169,7 +168,7 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
         val product: Product?
         try {
             product = storage.getProduct(subscriptionId, sku)
-        } catch (e: StorageException) {
+        } catch (e: Exception) {
             LOG.error("Did not find product: sku = $sku", e)
             return Option.of(ApiError("Product unavailable"))
         }
@@ -181,7 +180,7 @@ class SubscriberDAOImpl(private val storage: Storage, private val ocsSubscriberS
                 Instant.now().toEpochMilli())
         try {
             storage.addPurchaseRecord(subscriptionId, purchaseRecord)
-        } catch (e: StorageException) {
+        } catch (e: Exception) {
             LOG.error("Failed to save purchase record", e)
             return Option.of(ApiError("Failed to save purchase record"))
         }

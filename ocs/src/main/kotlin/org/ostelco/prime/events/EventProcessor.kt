@@ -4,8 +4,7 @@ import com.lmax.disruptor.EventHandler
 import org.ostelco.prime.disruptor.PrimeEvent
 import org.ostelco.prime.logger
 import org.ostelco.prime.module.getResource
-import org.ostelco.prime.storage.legacy.Storage
-import org.ostelco.prime.storage.legacy.StorageException
+import org.ostelco.prime.storage.ClientDataSource
 
 /**
  * For normal execution, do not pass `storage`.
@@ -13,7 +12,7 @@ import org.ostelco.prime.storage.legacy.StorageException
  * Storage is parameterized into constructor to be able to pass mock for unit testing.
  */
 class EventProcessor(
-        private val storage: Storage = getResource()) : EventHandler<PrimeEvent> {
+        private val storage: ClientDataSource = getResource()) : EventHandler<PrimeEvent> {
 
     private val LOG by logger()
 
@@ -40,7 +39,7 @@ class EventProcessor(
             noOfBytes: Long) {
         try {
             storage.setBalance(msisdn, noOfBytes)
-        } catch (e: StorageException) {
+        } catch (e: Exception) {
             throw EventProcessorException(e)
         }
     }
