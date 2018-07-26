@@ -18,7 +18,7 @@ import org.ostelco.prime.logger
  */
 internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandler<PrimeEvent> {
 
-    private val LOG by logger()
+    private val logger by logger()
 
     override fun onEvent(
             event: PrimeEvent,
@@ -28,7 +28,7 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
         try {
             dispatchOnEventType(event)
         } catch (e: Exception) {
-            LOG.warn("Exception handling prime event in OcsService", e)
+            logger.warn("Exception handling prime event in OcsService", e)
             // XXX Should the exception be cast further up the call chain?
         }
 
@@ -40,7 +40,7 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
 
             PrimeEventMessageType.TOPUP_DATA_BUNDLE_BALANCE -> handleTopupDataBundleBalance(event)
 
-            else -> LOG.warn("Unknown event type " + event.messageType!!)
+            else -> logger.warn("Unknown event type " + event.messageType!!)
         }
     }
 
@@ -50,14 +50,14 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
     }
 
     private fun logEventProcessing(msg: String, event: PrimeEvent) {
-        LOG.info("{}", msg)
-        LOG.info("MSISDN: {}", event.msisdn)
-        LOG.info("requested bytes: {}", event.requestedBucketBytes)
-        LOG.info("reserved bytes: {}", event.reservedBucketBytes)
-        LOG.info("used bytes: {}", event.usedBucketBytes)
-        LOG.info("bundle bytes: {}", event.bundleBytes)
-        LOG.info("Reporting reason: {}", event.reportingReason)
-        LOG.info("request id: {} ",event.ocsgwRequestId)
+        logger.info("{}", msg)
+        logger.info("MSISDN: {}", event.msisdn)
+        logger.info("requested bytes: {}", event.requestedBucketBytes)
+        logger.info("reserved bytes: {}", event.reservedBucketBytes)
+        logger.info("used bytes: {}", event.usedBucketBytes)
+        logger.info("bundle bytes: {}", event.bundleBytes)
+        logger.info("Reporting reason: {}", event.reportingReason)
+        logger.info("request id: {} ",event.ocsgwRequestId)
     }
 
     private fun handleCreditControlRequest(event: PrimeEvent) {
@@ -104,7 +104,7 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
                 ocsService.sendCreditControlAnswer(streamId, creditControlAnswer.build())
             }
         } catch (e: Exception) {
-            LOG.warn("Exception handling prime event", e)
+            logger.warn("Exception handling prime event", e)
             logEventProcessing("Exception sending Credit-Control-Answer", event)
 
             // unable to send Credit-Control-Answer.

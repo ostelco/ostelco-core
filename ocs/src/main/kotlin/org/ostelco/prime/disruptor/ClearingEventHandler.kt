@@ -5,7 +5,7 @@ import org.ostelco.prime.logger
 
 class ClearingEventHandler : EventHandler<PrimeEvent> {
 
-    private val LOG by logger()
+    private val logger by logger()
 
     override fun onEvent(
             event: PrimeEvent,
@@ -14,7 +14,7 @@ class ClearingEventHandler : EventHandler<PrimeEvent> {
         try {
             event.clear()
         } catch (e: Exception) {
-            LOG.warn("Exception clearing the prime event", e)
+            logger.warn("Exception clearing the prime event", e)
         }
     }
 }

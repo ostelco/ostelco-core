@@ -6,7 +6,7 @@ import io.dropwizard.client.JerseyClientConfiguration
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
 
-class TopupConfiguration {
+class ClientApiConfiguration {
 
     @Valid
     @NotNull

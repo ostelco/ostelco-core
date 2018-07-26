@@ -26,9 +26,9 @@ import javax.validation.constraints.NotNull
  */
 class EndpointUserInfo(enc: String) {
 
-    private val LOG by logger()
+    private val logger by logger()
 
-    private val MAPPER = ObjectMapper()
+    private val mapper = ObjectMapper()
 
     /* Causes an error if decoding of the base64 encoded json doc fails. */
     @NotNull
@@ -46,11 +46,11 @@ class EndpointUserInfo(enc: String) {
     init {
         var obj: JsonNode? = null
         try {
-            obj = MAPPER.readTree(decode(enc))
+            obj = mapper.readTree(decode(enc))
         } catch (e: JsonParseException) {
-            LOG.error("Parsing of the provided json doc {} failed: {}", enc, e)
+            logger.error("Parsing of the provided json doc {} failed: {}", enc, e)
         } catch (e: IOException) {
-            LOG.error("Unexpected error when parsing the json doc {}: {}", enc, e)
+            logger.error("Unexpected error when parsing the json doc {}: {}", enc, e)
         }
 
         this.obj = obj

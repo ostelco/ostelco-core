@@ -11,6 +11,7 @@ import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Segment
 import org.ostelco.prime.model.Subscriber
+import org.ostelco.prime.model.Subscription
 import java.time.Instant
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -33,7 +34,7 @@ class GraphStoreTest {
 
     @Test
     fun `test add subscriber`() {
-        assertTrue(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME)))
+        assertTrue(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null))
         assertEquals(
                 Subscriber(email = EMAIL, name = NAME),
                 Neo4jStoreSingleton.getSubscriber(EMAIL))
@@ -41,18 +42,18 @@ class GraphStoreTest {
 
     @Test
     fun `test add subscription, set and get balance`() {
-        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME)))
+        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null))
 
         assertTrue(Neo4jStoreSingleton.addSubscription(EMAIL, MSISDN))
         assertEquals(MSISDN, Neo4jStoreSingleton.getMsisdn(EMAIL))
 
         Neo4jStoreSingleton.setBalance(MSISDN, BALANCE)
-        assertEquals(BALANCE, Neo4jStoreSingleton.getBalance(EMAIL))
+        assertEquals(listOf(Subscription(MSISDN, BALANCE)), Neo4jStoreSingleton.getSubscriptions(EMAIL))
     }
 
     @Test
     fun `test set and get Purchase record`() {
-        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME)))
+        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null))
 
         val product = createProduct("1GB_249NOK", 24900)
         val now = Instant.now().toEpochMilli()
@@ -67,7 +68,7 @@ class GraphStoreTest {
 
     @Test
     fun `test offer, segment and get products`() {
-        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME)))
+        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null))
 
         Neo4jStoreSingleton.createProduct(createProduct("1GB_249NOK", 24900))
         Neo4jStoreSingleton.createProduct(createProduct("2GB_299NOK", 29900))

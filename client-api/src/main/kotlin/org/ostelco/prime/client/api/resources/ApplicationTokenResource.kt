@@ -5,7 +5,10 @@ import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.model.ApplicationToken
 import javax.validation.constraints.NotNull
-import javax.ws.rs.*
+import javax.ws.rs.Consumes
+import javax.ws.rs.POST
+import javax.ws.rs.Path
+import javax.ws.rs.Produces
 import javax.ws.rs.core.Response
 
 /**
@@ -13,7 +16,7 @@ import javax.ws.rs.core.Response
  *
  */
 @Path("/applicationtoken")
-class ApplicationTokenResource(private val dao: SubscriberDAO) : ResourceHelpers() {
+class ApplicationTokenResource(private val dao: SubscriberDAO) {
 
     @POST
     @Produces("application/json")

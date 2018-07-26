@@ -19,20 +19,20 @@ import org.ostelco.prime.storage.graph.ObjectHandler.getProperties
 //
 
 data class EntityType<ENTITY : HasId>(
-        val name: String,
-        private val dataClass: Class<ENTITY>) {
+        private val dataClass: Class<ENTITY>,
+        val name:String = dataClass.simpleName) {
 
     fun createEntity(map: Map<String, Any>): ENTITY = ObjectHandler.getObject(map, dataClass)
 }
 
 data class RelationType<FROM : HasId, RELATION, TO : HasId>(
-        val name: String,
+        val relation: Relation,
         val from: EntityType<FROM>,
         val to: EntityType<TO>,
-        private val dataClass: Class<RELATION>?) {
+        private val dataClass: Class<RELATION>) {
 
     fun createRelation(map: Map<String, Any>): RELATION? {
-        return ObjectHandler.getObject(map, dataClass ?: return null)
+        return ObjectHandler.getObject(map, dataClass)
     }
 }
 
@@ -67,7 +67,7 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
 
     fun <TO : HasId> getRelated(id: String, relationType: RelationType<E, *, TO>, transaction: Transaction): List<TO> {
         return read("""
-                MATCH (:${relationType.from.name} {id: '$id'})-[:${relationType.name}]->(node:${relationType.to.name})
+                MATCH (:${relationType.from.name} {id: '$id'})-[:${relationType.relation.name}]->(node:${relationType.to.name})
                 RETURN node;
                 """.trimIndent(),
                 transaction) {
@@ -75,9 +75,19 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
         }
     }
 
+    fun <FROM : HasId> getRelatedFrom(id: String, relationType: RelationType<FROM, *, E>, transaction: Transaction): List<FROM> {
+        return read("""
+                MATCH (node:${relationType.from.name})-[:${relationType.relation.name}]->(:${relationType.to.name} {id: '$id'})
+                RETURN node;
+                """.trimIndent(),
+                transaction) {
+            it.list { relationType.from.createEntity(it["node"].asMap()) }
+        }
+    }
+
     fun <RELATION : Any> getRelations(id: String, relationType: RelationType<E, RELATION, *>, transaction: Transaction): List<RELATION> {
         return read("""
-                MATCH (from:${entityType.name} { id: '${id}' })-[r:${relationType.name}]-()
+                MATCH (from:${entityType.name} { id: '$id' })-[r:${relationType.relation.name}]-()
                 return r;
                 """.trimIndent(),
                 transaction) {
@@ -112,7 +122,7 @@ class RelationStore<FROM : HasId, TO : HasId>(private val relationType: Relation
             val strProps: String = properties.entries.joinToString(",") { """`${it.key}`: "${it.value}"""" }
             return write("""
                 MATCH (from:${relationType.from.name} { id: '${from.id}' }),(to:${relationType.to.name} { id: '${to.id}' })
-                CREATE (from)-[:${relationType.name} { $strProps } ]->(to);
+                CREATE (from)-[:${relationType.relation.name} { $strProps } ]->(to);
                 """.trimIndent(),
                     transaction) {
                 it.summary().counters().relationshipsCreated() == 1
@@ -121,11 +131,19 @@ class RelationStore<FROM : HasId, TO : HasId>(private val relationType: Relation
 
         return write("""
                 MATCH (from:${relationType.from.name} { id: '${from.id}' }),(to:${relationType.to.name} { id: '${to.id}' })
-                CREATE (from)-[:${relationType.name}]->(to);
+                CREATE (from)-[:${relationType.relation.name}]->(to);
                 """.trimIndent(),
                 transaction) {
             it.summary().counters().relationshipsCreated() == 1
         }
+    }
+
+    fun create(fromId: String, toId: String, transaction: Transaction): Boolean = write("""
+                MATCH (from:${relationType.from.name} { id: '$fromId' }),(to:${relationType.to.name} { id: '$toId' })
+                CREATE (from)-[:${relationType.relation.name}]->(to);
+                """.trimIndent(),
+            transaction) {
+        it.summary().counters().relationshipsCreated() == 1
     }
 
     fun create(fromId: String, toIds: Collection<String>, transaction: Transaction): Boolean = write("""
@@ -133,10 +151,21 @@ class RelationStore<FROM : HasId, TO : HasId>(private val relationType: Relation
                 WHERE to.id in [${toIds.joinToString(",") { "'$it'" }}]
                 WITH to
                 MATCH (from:${relationType.from.name} { id: '$fromId' })
-                CREATE (from)-[:${relationType.name}]->(to);
+                CREATE (from)-[:${relationType.relation.name}]->(to);
                 """.trimIndent(),
             transaction) {
         it.summary().counters().relationshipsCreated() == toIds.size
+    }
+
+    fun create(fromIds: Collection<String>, toId: String, transaction: Transaction): Boolean = write("""
+                MATCH (from:${relationType.from.name})
+                WHERE from.id in [${fromIds.joinToString(",") { "'$it'" }}]
+                WITH from
+                MATCH (to:${relationType.to.name} { id: '$toId' })
+                CREATE (from)-[:${relationType.relation.name}]->(to);
+                """.trimIndent(),
+            transaction) {
+        it.summary().counters().relationshipsCreated() == fromIds.size
     }
 }
 

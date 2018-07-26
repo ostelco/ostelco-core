@@ -23,7 +23,7 @@ fun main(args: Array<String>) {
  */
 class AuthServerApplication : Application<AuthServerConfig>() {
 
-    private val LOG = LoggerFactory.getLogger(AuthServerApplication::class.java)
+    private val logger = LoggerFactory.getLogger(AuthServerApplication::class.java)
 
     override fun getName(): String = "AuthServer"
 

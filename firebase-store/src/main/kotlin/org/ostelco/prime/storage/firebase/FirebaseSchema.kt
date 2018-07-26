@@ -24,7 +24,7 @@ class EntityStore<E>(
         firebaseDatabase: FirebaseDatabase,
         private val entityType: EntityType<E>) {
 
-    private val LOG by logger()
+    private val logger by logger()
 
     val databaseReference: DatabaseReference = firebaseDatabase.getReference("/${config.rootPath}/${entityType.path}")
 
@@ -36,7 +36,7 @@ class EntityStore<E>(
      */
     fun get(id: String, reference: EntityStore<E>.() -> DatabaseReference = { databaseReference }): E? {
         var entity: E? = null
-        val countDownLatch = CountDownLatch(1);
+        val countDownLatch = CountDownLatch(1)
         reference().child(urlEncode(id)).addListenerForSingleValueEvent(
                 object : ValueEventListener {
                     override fun onCancelled(error: DatabaseError?) {
@@ -65,7 +65,7 @@ class EntityStore<E>(
      */
     fun getAll(reference: EntityStore<E>.() -> DatabaseReference = { databaseReference }): Map<String, E> {
         val entities: MutableMap<String, E> = LinkedHashMap()
-        val countDownLatch = CountDownLatch(1);
+        val countDownLatch = CountDownLatch(1)
         reference().addListenerForSingleValueEvent(
                 object : ValueEventListener {
                     override fun onCancelled(error: DatabaseError?) {
@@ -76,7 +76,7 @@ class EntityStore<E>(
                         if (snapshot != null) {
                             for (child in snapshot.children) {
                                 val value = child.getValue(entityType.entityClass)
-                                entities.put(urlDecode(child.key), value)
+                                entities[urlDecode(child.key)] = value
                             }
                         }
                         countDownLatch.countDown()
@@ -112,7 +112,7 @@ class EntityStore<E>(
     fun create(id: String, entity: E): Boolean {
         // fail if already exist
         if (exists(id)) {
-            LOG.warn("Failed to create. id {} already exists", id)
+            logger.warn("Failed to create. id {} already exists", id)
             return false
         }
         return set(id, entity)
@@ -143,7 +143,7 @@ class EntityStore<E>(
      */
     fun update(id: String, entity: E): Boolean {
         if (dontExists(id)) {
-            LOG.warn("Failed to update. id {} does not exists", id)
+            logger.warn("Failed to update. id {} does not exists", id)
             return false
         }
         return set(id, entity)

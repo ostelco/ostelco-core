@@ -110,7 +110,7 @@ paths:
       produces:
         - application/json
         - text/plain
-      operationId: "buyProduct"
+      operationId: "buyProductDeprecated"
       responses:
         201:
           description: "Successfully purchased the product."
@@ -126,19 +126,72 @@ paths:
         description: SKU to be purchased
         required: true
         type: string
+  "/products/{sku}/purchase":
+    post:
+      description: "Buy the product specified in sku parameter."
+      produces:
+      - application/json
+      - text/plain
+      operationId: "buyProduct"
+      responses:
+        201:
+          description: "Successfully purchased the product."
+          schema:
+            $ref: '#/definitions/Product'
+        404:
+          description: "Product not found."
+      security:
+      - auth0_jwt: []
+      parameters:
+      - name: sku
+        in: path
+        description: SKU to be purchased
+        required: true
+        type: string
+  "/purchases":
+    get:
+      description: "Get list of all purchases."
+      produces:
+      - application/json
+      - text/plain
+      operationId: "getPurchaseHistory"
+      responses:
+        200:
+          description: "List of Purchase Records."
+          schema:
+            $ref: '#/definitions/PurchaseRecordList'
+        404:
+          description: "No Purchase Records found for the user."
+      security:
+      - auth0_jwt: []
+  "/subscriptions":
+    get:
+      description: "Get subscription (msisdn, balance) for the user (identified by bearer token)."
+      produces:
+      - application/json
+      operationId: "getSubscriptions"
+      responses:
+        200:
+          description: "Get the subscription for this user."
+          schema:
+            $ref: '#/definitions/SubscriptionList'
+        404:
+          description: "No subscription found for this user."
+      security:
+      - auth0_jwt: []
   "/subscription/status":
     get:
       description: "Get subscription status for the user (identified by bearer token)."
       produces:
         - application/json
-      operationId: "getSubscription"
+      operationId: "getSubscriptionStatus"
       responses:
         200:
           description: "Get the subscription status for this user."
           schema:
             $ref: '#/definitions/SubscriptionStatus'
         404:
-          description: "No subscription found for this user."
+          description: "No subscription status found for this user."
       security:
         - auth0_jwt: []
   "/subscription/activePseudonyms":
@@ -156,6 +209,36 @@ paths:
           description: "No subscription found for this user."
       security:
         - auth0_jwt: []
+  "/referred":
+    get:
+      description: "Get list of people whom the user has referred to."
+      produces:
+        - application/json
+      operationId: "getReferred"
+      responses:
+        200:
+          description: "List of people whom this person has referred to."
+          schema:
+            $ref: '#/definitions/PersonList'
+        404:
+          description: "No referrals found for this user."
+      security:
+        - auth0_jwt: []
+  "/referred/by":
+    get:
+      description: "Get the people who had referred this user."
+      produces:
+      - application/json
+      operationId: "getReferredBy"
+      responses:
+        200:
+          description: "List of people whom this person has referred to."
+          schema:
+            $ref: '#/definitions/Person'
+        404:
+          description: "No 'referred by' found for this user."
+      security:
+      - auth0_jwt: []
   "/consents":
     get:
       description: "Get all consents for the user."
@@ -210,8 +293,24 @@ definitions:
       email:
         type: string
         format: email
+      referralId:
+        type: string
     required:
       - email
+  SubscriptionList:
+    type: array
+    items:
+      $ref: '#/definitions/Subscription'
+  Subscription:
+    type: object
+    properties:
+      msisdn:
+        description: "The MSISDN for which the purchase was made."
+        type: string
+      balance:
+        description: "Remaining data"
+        type: integer
+        format: int64
   SubscriptionStatus:
     type: object
     properties:
@@ -224,6 +323,10 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/PurchaseRecord'
+  PurchaseRecordList:
+    type: array
+    items:
+      $ref: '#/definitions/PurchaseRecord'
   PurchaseRecord:
     type: object
     properties:
@@ -322,6 +425,17 @@ definitions:
       - pseudonym
       - start
       - end
+  Person:
+    type: object
+    properties:
+      name:
+        type: string
+    required:
+      - name
+  PersonList:
+    type: array
+    items:
+      $ref: '#/definitions/Person'
   ActivePseudonyms:
     type: object
     properties:

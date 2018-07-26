@@ -22,13 +22,14 @@ import javax.ws.rs.core.Response
  * Ref.: http://openid.net/specs/openid-connect-core-1_0.html#UserInfo
  * https://www.dropwizard.io/1.3.2/docs/manual/auth.html#oauth2
  */
+
+private const val DEFAULT_USER_INFO_ENDPOINT = "https://ostelco.eu.auth0.com/userinfo"
+
 class OAuthAuthenticator(private val client: Client) : Authenticator<String, AccessTokenPrincipal> {
 
-    private val LOG by logger()
+    private val logger by logger()
 
-    private val MAPPER = ObjectMapper()
-
-    private val DEFAULT_USER_INFO_ENDPOINT = "https://ostelco.eu.auth0.com/userinfo"
+    private val mapper = ObjectMapper()
 
     @Throws(AuthenticationException::class)
     override fun authenticate(accessToken: String): Optional<AccessTokenPrincipal> {
@@ -39,7 +40,7 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
             val claims = decodeClaims(getClaims(accessToken))
             userInfoEndpoint = getUserInfoEndpointFromAudience(claims)
         } catch (e: Exception) {
-            LOG.error("No audience field in the 'access-token' claims part", e)
+            logger.error("No audience field in the 'access-token' claims part", e)
             userInfoEndpoint = DEFAULT_USER_INFO_ENDPOINT
         }
 
@@ -62,7 +63,7 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
                 .get(Response::class.java)
 
         if (response.status != Response.Status.OK.statusCode) {
-            LOG.error("Unexpected HTTP status {} code when fetching 'user-info' from {}",
+            logger.error("Unexpected HTTP status {} code when fetching 'user-info' from {}",
                     response.status,
                     userInfoEndpoint)
             throw AuthenticationException(
@@ -72,7 +73,7 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
         val userInfo = response.readEntity(UserInfo::class.java)
 
         if (userInfo == null) {
-            LOG.error("No 'user-info' body part in response from {}", userInfoEndpoint)
+            logger.error("No 'user-info' body part in response from {}", userInfoEndpoint)
             throw AuthenticationException("No 'user-info' body part in response from $userInfoEndpoint")
         }
 
@@ -98,7 +99,7 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
                         }
             }
         }
-        LOG.error("No audience field in the 'access-token' claims")
+        logger.error("No audience field in the 'access-token' claims")
         return DEFAULT_USER_INFO_ENDPOINT
     }
 
@@ -120,11 +121,11 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
     private fun decodeClaims(claims: String): JsonNode? {
         var obj: JsonNode? = null
         try {
-            obj = MAPPER.readTree(claims)
+            obj = mapper.readTree(claims)
         } catch (e: JsonParseException) {
-            LOG.error("Parsing of the provided json doc {} failed: {}", claims, e)
+            logger.error("Parsing of the provided json doc {} failed: {}", claims, e)
         } catch (e: IOException) {
-            LOG.error("Unexpected error when parsing the json doc {}: {}", claims, e)
+            logger.error("Unexpected error when parsing the json doc {}: {}", claims, e)
         }
         return obj
     }

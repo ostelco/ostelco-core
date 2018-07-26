@@ -74,8 +74,10 @@ class ProfileResourceTest {
     fun createProfile() {
         val arg1 = argumentCaptor<String>()
         val arg2 = argumentCaptor<Subscriber>()
+        val arg3 = argumentCaptor<String>()
 
-        `when`(DAO.createProfile(arg1.capture(), arg2.capture()))
+
+        `when`(DAO.createProfile(arg1.capture(), arg2.capture(), arg3.capture()))
                 .thenReturn(Either.right(profile))
 
         val resp = RULE.target("/profile")
@@ -97,6 +99,42 @@ class ProfileResourceTest {
         assertThat(arg2.firstValue.address).isEqualTo(address)
         assertThat(arg2.firstValue.postCode).isEqualTo(postCode)
         assertThat(arg2.firstValue.city).isEqualTo(city)
+        assertThat(arg3.firstValue).isNull()
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun createProfileWithReferral() {
+        val arg1 = argumentCaptor<String>()
+        val arg2 = argumentCaptor<Subscriber>()
+        val arg3 = argumentCaptor<String>()
+
+        val referredBy = "foo@bar.com"
+
+        `when`(DAO.createProfile(arg1.capture(), arg2.capture(), arg3.capture()))
+                .thenReturn(Either.right(profile))
+
+        val resp = RULE.target("/profile")
+                .queryParam("referred_by", referredBy)
+                .request(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
+                .post(Entity.json("{\n" +
+                        "    \"name\": \"" + name + "\",\n" +
+                        "    \"address\": \"" + address + "\",\n" +
+                        "    \"postCode\": \"" + postCode + "\",\n" +
+                        "    \"city\": \"" + city + "\",\n" +
+                        "    \"email\": \"" + email + "\"\n" +
+                        "}\n"))
+
+        assertThat(resp.status).isEqualTo(Response.Status.CREATED.statusCode)
+        assertThat(resp.mediaType.toString()).isEqualTo(MediaType.APPLICATION_JSON)
+        assertThat(arg1.firstValue).isEqualTo(email)
+        assertThat(arg2.firstValue.email).isEqualTo(email)
+        assertThat(arg2.firstValue.name).isEqualTo(name)
+        assertThat(arg2.firstValue.address).isEqualTo(address)
+        assertThat(arg2.firstValue.postCode).isEqualTo(postCode)
+        assertThat(arg2.firstValue.city).isEqualTo(city)
+        assertThat(arg3.firstValue).isEqualTo(referredBy)
     }
 
     @Test

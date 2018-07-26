@@ -71,7 +71,7 @@ interface DateBounds {
 @Path("/pseudonym")
 class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, val bigquery: BigQuery?) {
 
-    private val LOG = LoggerFactory.getLogger(PseudonymResource::class.java)
+    private val logger = LoggerFactory.getLogger(PseudonymResource::class.java)
     private val executor = Executors.newFixedThreadPool(3)
 
     /**
@@ -83,7 +83,7 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, va
     @Path("/get/{msisdn}/{timestamp}")
     fun getPseudonym(@NotBlank @PathParam("msisdn") msisdn: String,
                      @NotBlank @PathParam("timestamp") timestamp: String): Response {
-        LOG.info("GET pseudonym for Msisdn = $msisdn at timestamp = $timestamp")
+        logger.info("GET pseudonym for Msisdn = $msisdn at timestamp = $timestamp")
         val entity = getPseudonymEntityFor(msisdn, timestamp.toLong())
         return Response.ok(entity, MediaType.APPLICATION_JSON).build()
     }
@@ -97,7 +97,7 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, va
     @Path("/current/{msisdn}")
     fun getPseudonym(@NotBlank @PathParam("msisdn") msisdn: String): Response {
         val timestamp = Instant.now().toEpochMilli()
-        LOG.info("GET pseudonym for Msisdn = $msisdn at current time, timestamp = $timestamp")
+        logger.info("GET pseudonym for Msisdn = $msisdn at current time, timestamp = $timestamp")
         val entity = getPseudonymEntityFor(msisdn, timestamp)
         return Response.ok(entity, MediaType.APPLICATION_JSON).build()
     }
@@ -112,7 +112,7 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, va
     fun getActivePseudonyms(@NotBlank @PathParam("msisdn") msisdn: String): Response {
         val currentTimestamp = Instant.now().toEpochMilli()
         val nextTimestamp = dateBounds.getNextPeriodStart(currentTimestamp)
-        LOG.info("GET pseudonym for Msisdn = $msisdn at timestamps = $currentTimestamp & $nextTimestamp")
+        logger.info("GET pseudonym for Msisdn = $msisdn at timestamps = $currentTimestamp & $nextTimestamp")
         val current = getPseudonymEntityFor(msisdn, currentTimestamp)
         val next = getPseudonymEntityFor(msisdn, nextTimestamp)
         val entity = ActivePseudonyms(current, next)
@@ -135,7 +135,7 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, va
     @GET
     @Path("/find/{pseudonym}")
     fun findPseudonym(@NotBlank @PathParam("pseudonym") pseudonym: String): Response {
-        LOG.info("Find details for pseudonym = $pseudonym")
+        logger.info("Find details for pseudonym = $pseudonym")
         val query = Query.newEntityQueryBuilder()
                 .setKind(PseudonymEntityKind)
                 .setFilter(PropertyFilter.eq(pseudonymPropertyName, pseudonym))
@@ -146,7 +146,7 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, va
             val entity = results.next()
             return Response.ok(convertToPseudonymEntity(entity), MediaType.APPLICATION_JSON).build()
         }
-        LOG.info("Couldn't find, pseudonym = ${pseudonym}")
+        logger.info("Couldn't find, pseudonym = $pseudonym")
         return Response.status(Status.NOT_FOUND).build()
     }
 
@@ -158,7 +158,7 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, va
     @DELETE
     @Path("/delete/{msisdn}")
     fun deleteAllPseudonyms(@NotBlank @PathParam("msisdn") msisdn: String): Response {
-        LOG.info("delete all pseudonyms for Msisdn = $msisdn")
+        logger.info("delete all pseudonyms for Msisdn = $msisdn")
         val query = Query.newEntityQueryBuilder()
                 .setKind(PseudonymEntityKind)
                 .setFilter(PropertyFilter.eq(msisdnPropertyName, msisdn))
@@ -174,7 +174,7 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, va
         // Return a Json object with number of records deleted.
         val countMap = HashMap<String, Int>()
         countMap["count"] = count
-        LOG.info("deleted $count records for Msisdn = $msisdn")
+        logger.info("deleted $count records for Msisdn = $msisdn")
         return Response.ok(countMap, MediaType.APPLICATION_JSON).build()
     }
 
@@ -186,9 +186,9 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, va
     @GET
     @Path("/export/{exportId}")
     fun exportPseudonyms(@NotBlank @PathParam("exportId") exportId: String): Response {
-        LOG.info("GET export all pseudonyms to the table $exportId")
+        logger.info("GET export all pseudonyms to the table $exportId")
         if (bigquery == null) {
-            LOG.info("BigQuery is not available, ignoring export request $exportId")
+            logger.info("BigQuery is not available, ignoring export request $exportId")
             return Response.status(Status.NOT_FOUND).build()
         }
         val exporter = PseudonymExport(exportId, bigquery, datastore)
@@ -202,7 +202,7 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, va
     @GET
     @Path("/exportstatus/{exportId}")
     fun getExportStatus(@NotBlank @PathParam("exportId") exportId: String): Response {
-        LOG.info("GET status of export $exportId")
+        logger.info("GET status of export $exportId")
         val exportTask = getExportTask(exportId)
         if (exportTask != null) {
             return Response.ok(exportTask, MediaType.APPLICATION_JSON).build()

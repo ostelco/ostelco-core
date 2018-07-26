@@ -1,6 +1,5 @@
 package org.ostelco.prime.storage.graph
 
-import org.ostelco.prime.logger
 import org.ostelco.prime.model.Entity
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Product
@@ -11,45 +10,67 @@ import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.storage.GraphStore
 import org.ostelco.prime.storage.graph.Graph.read
+import org.ostelco.prime.storage.graph.Relation.BELONG_TO_SEGMENT
+import org.ostelco.prime.storage.graph.Relation.HAS_SUBSCRIPTION
+import org.ostelco.prime.storage.graph.Relation.OFFERED_TO_SEGMENT
+import org.ostelco.prime.storage.graph.Relation.OFFER_HAS_PRODUCT
+import org.ostelco.prime.storage.graph.Relation.PURCHASED
+import org.ostelco.prime.storage.graph.Relation.REFERRED
 import java.util.*
 import java.util.stream.Collectors
+
+enum class Relation {
+    HAS_SUBSCRIPTION,      // (Subscriber) -[HAS_SUBSCRIPTION]-> (Subscription)
+    PURCHASED,             // (Subscriber) -[PURCHASED]-> (Product)
+    REFERRED,              // (Subscriber) -[REFERRED]-> (Subscriber)
+    OFFERED_TO_SEGMENT,    // (Offer) -[OFFERED_TO_SEGMENT]-> (Segment)
+    OFFER_HAS_PRODUCT,     // (Offer) -[OFFER_HAS_PRODUCT]-> (Product)
+    BELONG_TO_SEGMENT      // (Subscriber) -[BELONG_TO_SEGMENT]-> (Segment)
+}
+
 
 class Neo4jStore : GraphStore by Neo4jStoreSingleton
 
 object Neo4jStoreSingleton : GraphStore {
 
-    private val LOG by logger()
-
-    private val subscriberEntity = EntityType("Subscriber", Subscriber::class.java)
+    private val subscriberEntity = EntityType(Subscriber::class.java)
     private val subscriberStore = EntityStore(subscriberEntity)
 
-    private val productEntity = EntityType("Product", Product::class.java)
+    private val productEntity = EntityType(Product::class.java)
     private val productStore = EntityStore(productEntity)
 
-    private val subscriptionEntity = EntityType("Subscription", Subscription::class.java)
+    private val subscriptionEntity = EntityType(Subscription::class.java)
     private val subscriptionStore = EntityStore(subscriptionEntity)
 
     private val subscriptionRelation = RelationType(
-            name = "HAS_SUBSCRIPTION",
+            relation = HAS_SUBSCRIPTION,
             from = subscriberEntity,
             to = subscriptionEntity,
             dataClass = Void::class.java)
     private val subscriptionRelationStore = RelationStore(subscriptionRelation)
 
     private val purchaseRecordRelation = RelationType(
-            name = "PURCHASED",
+            relation = PURCHASED,
             from = subscriberEntity,
             to = productEntity,
             dataClass = PurchaseRecord::class.java)
-    private val purchaseRecordStore = RelationStore(purchaseRecordRelation)
+    private val purchaseRecordRelationStore = RelationStore(purchaseRecordRelation)
+
+    private val referredRelation = RelationType(
+            relation = REFERRED,
+            from = subscriberEntity,
+            to = subscriberEntity,
+            dataClass = Void::class.java)
+    private val referredRelationStore = RelationStore(referredRelation)
 
     override val balances: Map<String, Long>
         get() = readTransaction { subscriptionStore.getAll(transaction).mapValues { it.value.balance } }
 
     override fun getSubscriber(id: String): Subscriber? = readTransaction { subscriberStore.get(id, transaction) }
 
-    override fun addSubscriber(subscriber: Subscriber): Boolean = writeTransaction {
+    override fun addSubscriber(subscriber: Subscriber, referredBy: String?): Boolean = writeTransaction {
         subscriberStore.create(subscriber.id, subscriber, transaction)
+                && referredBy?.let { referredRelationStore.create(it, subscriber.id, transaction) } ?: true
     }
 
     override fun updateSubscriber(subscriber: Subscriber): Boolean = writeTransaction {
@@ -71,9 +92,9 @@ object Neo4jStoreSingleton : GraphStore {
         return readTransaction {
             read("""
                 MATCH (:${subscriberEntity.name} {id: '$subscriberId'})
-                <-[:${segmentToSubscriberRelation.name}]-(:${segmentEntity.name})
-                <-[:${offerToSegmentRelation.name}]-(:${offerEntity.name})
-                -[:${offerToProductRelation.name}]->(product:${productEntity.name})
+                -[:${subscriberToSegmentRelation.relation.name}]->(:${segmentEntity.name})
+                <-[:${offerToSegmentRelation.relation.name}]-(:${offerEntity.name})
+                -[:${offerToProductRelation.relation.name}]->(product:${productEntity.name})
                 RETURN product;
                 """.trimIndent(),
                     transaction) {
@@ -88,11 +109,9 @@ object Neo4jStoreSingleton : GraphStore {
     override fun getProduct(subscriberId: String?, sku: String): Product? =
             readTransaction { productStore.get(sku, transaction) }
 
-    override fun getBalance(id: String): Long? {
+    override fun getSubscriptions(id: String): Collection<Subscription>? {
         return readTransaction {
             subscriberStore.getRelated(id, subscriptionRelation, transaction)
-                    .first()
-                    .balance
         }
     }
 
@@ -119,31 +138,39 @@ object Neo4jStoreSingleton : GraphStore {
             val subscriber = subscriberStore.get(id, transaction) ?: throw Exception("Subscriber not found")
             val product = productStore.get(purchase.product.sku, transaction) ?: throw Exception("Product not found")
             purchase.id = UUID.randomUUID().toString()
-            purchaseRecordStore.create(subscriber, purchase, product, transaction)
+            purchaseRecordRelationStore.create(subscriber, purchase, product, transaction)
             purchase.id
         }
+    }
+
+    override fun getReferrals(id: String): Collection<String> = readTransaction {
+        subscriberStore.getRelated(id, referredRelation, transaction).map { it.name }
+    }
+
+    override fun getReferredBy(id: String): String? = readTransaction {
+        subscriberStore.getRelatedFrom(id, referredRelation, transaction).singleOrNull()?.name
     }
 
     //
     // Admin Store
     //
 
-    private val offerEntity = EntityType("Offer", Entity::class.java)
+    private val offerEntity = EntityType(Entity::class.java, "Offer")
     private val offerStore = EntityStore(offerEntity)
 
-    private val segmentEntity = EntityType("Segment", Entity::class.java)
+    private val segmentEntity = EntityType(Entity::class.java, "Segment")
     private val segmentStore = EntityStore(segmentEntity)
 
-    private val offerToSegmentRelation = RelationType("offerHasSegment", offerEntity, segmentEntity, Void::class.java)
+    private val offerToSegmentRelation = RelationType(OFFERED_TO_SEGMENT, offerEntity, segmentEntity, Void::class.java)
     private val offerToSegmentStore = RelationStore(offerToSegmentRelation)
 
-    private val offerToProductRelation = RelationType("offerHasProduct", offerEntity, productEntity, Void::class.java)
+    private val offerToProductRelation = RelationType(OFFER_HAS_PRODUCT, offerEntity, productEntity, Void::class.java)
     private val offerToProductStore = RelationStore(offerToProductRelation)
 
-    private val segmentToSubscriberRelation = RelationType("segmentToSubscriber", segmentEntity, subscriberEntity, Void::class.java)
-    private val segmentToSubscriberStore = RelationStore(segmentToSubscriberRelation)
+    private val subscriberToSegmentRelation = RelationType(BELONG_TO_SEGMENT, subscriberEntity, segmentEntity, Void::class.java)
+    private val subscriberToSegmentStore = RelationStore(subscriberToSegmentRelation)
 
-    private val productClassEntity = EntityType("ProductClass", ProductClass::class.java)
+    private val productClassEntity = EntityType(ProductClass::class.java)
     private val productClassStore = EntityStore(productClassEntity)
 
     override fun createProductClass(productClass: ProductClass): Boolean = writeTransaction {
@@ -156,7 +183,7 @@ object Neo4jStoreSingleton : GraphStore {
     override fun createSegment(segment: Segment): Boolean {
         return writeTransaction {
             segmentStore.create(segment.id, segment, transaction)
-                    && segmentToSubscriberStore.create(segment.id, segment.subscribers, transaction)
+                    && subscriberToSegmentStore.create(segment.subscribers, segment.id, transaction)
         }
     }
 
@@ -172,7 +199,7 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     override fun updateSegment(segment: Segment): Boolean = writeTransaction {
-        segmentToSubscriberStore.create(segment.id, segment.subscribers, transaction)
+        subscriberToSegmentStore.create(segment.id, segment.subscribers, transaction)
     }
 
     // override fun getOffers(): Collection<Offer> = offerStore.getAll().values.map { Offer().apply { id = it.id } }

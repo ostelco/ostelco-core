@@ -18,9 +18,11 @@ import org.ostelco.prime.client.api.resources.ApplicationTokenResource
 import org.ostelco.prime.client.api.resources.ConsentsResource
 import org.ostelco.prime.client.api.resources.ProductsResource
 import org.ostelco.prime.client.api.resources.ProfileResource
+import org.ostelco.prime.client.api.resources.PurchaseResource
+import org.ostelco.prime.client.api.resources.ReferralResource
 import org.ostelco.prime.client.api.resources.SubscriptionResource
+import org.ostelco.prime.client.api.resources.SubscriptionsResource
 import org.ostelco.prime.client.api.store.SubscriberDAOImpl
-import org.ostelco.prime.logger
 import org.ostelco.prime.module.PrimeModule
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.ocs.OcsSubscriberService
@@ -28,18 +30,17 @@ import org.ostelco.prime.storage.ClientDataSource
 import javax.ws.rs.client.Client
 
 /**
- * Provides API for "top-up" client.
+ * Provides API for client.
  *
  */
 @JsonTypeName("api")
-class TopupModule : PrimeModule {
+class ClientApiModule : PrimeModule {
 
     @JsonProperty("config")
-    private var config: TopupConfiguration = TopupConfiguration()
+    private var config: ClientApiConfiguration = ClientApiConfiguration()
 
     private val storage by lazy { getResource<ClientDataSource>() }
     private val ocsSubscriberService by lazy { getResource<OcsSubscriberService>() }
-    private val LOG by logger()
 
     override fun init(env: Environment) {
 
@@ -50,18 +51,21 @@ class TopupModule : PrimeModule {
                 .using(config.jerseyClientConfiguration)
                 .using(ObjectMapper()
                         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false))
-                .build(env.getName())
+                .build(env.name)
 
         /* APIs. */
         jerseyEnv.register(AnalyticsResource(dao))
         jerseyEnv.register(ConsentsResource(dao))
         jerseyEnv.register(ProductsResource(dao))
+        jerseyEnv.register(PurchaseResource(dao))
         jerseyEnv.register(ProfileResource(dao))
+        jerseyEnv.register(ReferralResource(dao))
         jerseyEnv.register(SubscriptionResource(dao, client, config.pseudonymEndpoint!!))
+        jerseyEnv.register(SubscriptionsResource(dao))
         jerseyEnv.register(ApplicationTokenResource(dao))
 
         /* For reporting OAuth2 caching events. */
-        val metrics = SharedMetricRegistries.getOrCreate(env.getName())
+        val metrics = SharedMetricRegistries.getOrCreate(env.name)
 
         /* OAuth2 with cache. */
         val authenticator = CachingAuthenticator(metrics,

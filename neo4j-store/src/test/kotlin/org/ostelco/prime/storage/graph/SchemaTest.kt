@@ -11,6 +11,7 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.neo4j.driver.v1.AccessMode.WRITE
 import org.ostelco.prime.model.HasId
+import org.ostelco.prime.storage.graph.Relation.REFERRED
 import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -31,7 +32,7 @@ class SchemaTest {
     fun `test node`() {
         writeTransaction {
             val aId = "a_id"
-            val aEntity = EntityType("A", A::class.java)
+            val aEntity = EntityType(A::class.java)
             val aEntityStore = EntityStore(aEntity)
 
             // create node
@@ -71,13 +72,13 @@ class SchemaTest {
             val aId = "a_id"
             val bId = "b_id"
 
-            val fromEntity = EntityType("From", A::class.java)
+            val fromEntity = EntityType(A::class.java)
             val fromEntityStore = EntityStore(fromEntity)
 
-            val toEntity = EntityType("To", B::class.java)
+            val toEntity = EntityType(B::class.java)
             val toEntityStore = EntityStore(toEntity)
 
-            val relation = RelationType<A, Nothing, B>("relatedTo", fromEntity, toEntity, null)
+            val relation = RelationType(REFERRED, fromEntity, toEntity, Void::class.java)
             val relationStore = RelationStore(relation)
 
             // create nodes
@@ -109,13 +110,13 @@ class SchemaTest {
             val aId = "a_id"
             val bId = "b_id"
 
-            val fromEntity = EntityType("From2", A::class.java)
+            val fromEntity = EntityType(A::class.java)
             val fromEntityStore = EntityStore(fromEntity)
 
-            val toEntity = EntityType("To2", B::class.java)
+            val toEntity = EntityType(B::class.java)
             val toEntityStore = EntityStore(toEntity)
 
-            val relation = RelationType("relatedTo", fromEntity, toEntity, R::class.java)
+            val relation = RelationType(REFERRED, fromEntity, toEntity, R::class.java)
             val relationStore = RelationStore(relation)
 
             // create nodes

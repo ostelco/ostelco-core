@@ -45,8 +45,8 @@ class WeeklyBounds : DateBounds {
     }
 
     override fun getBoundsNKeyPrefix(msisdn: String, timestamp: Long): Pair<Bounds, String> {
-        val bounds = getBounds(timestamp.toLong())
-        val keyPrefix = "${msisdn}-${bounds.first}"
+        val bounds = getBounds(timestamp)
+        val keyPrefix = "$msisdn-${bounds.first}"
         return Pair(Bounds(bounds.first, bounds.second), keyPrefix)
     }
 }
