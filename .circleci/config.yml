@@ -57,7 +57,7 @@ workflows:
           filters:
             branches:
               only: feature/circleci-integration
-      - coverage_report:
+      - coverage-report:
           requires:
             - build
 
