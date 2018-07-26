@@ -3,7 +3,7 @@ jobs:
   build:
 
     environment:
-      CODACY_DOWNLOAD_URL: https://github.com/codacy/codacy-coverage-reporter/releases/download/ 
+      CODACY_DOWNLOAD_URL: https://github.com/codacy/codacy-coverage-reporter/releases/download
       CODACY_VERSION: 4.0.1
       CODACY_JAR_FILE: codacy-coverage-reporter-assembly-latest.jar
       CODACY_MODULE: com.codacy.CodacyCoverageReporter
@@ -14,11 +14,13 @@ jobs:
 
     steps:
       - checkout
+      - run: pwd; ls -la
       - run:
           name: Build entire repo, skipping test(s)
           # command: ./gradlew clean client-api:build --debug
           # command: ./gradlew clean client-api:build  -x test 
-          command: ./gradlew clean build  -x test --parallel
+          # command: ./gradlew clean build  -x test --parallel
+          command: ./gradlew clean build  -x :client-api:test 
 
       - run:  
           name: Download codacy
@@ -33,8 +35,6 @@ jobs:
             java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} report -l Java -r \
               analytics/build/reports/jacoco/test/jacocoTestReport.xml --partial
             java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} report -l Java -r \
-              client-api/build/reports/jacoco/test/jacocoTestReport.xml --partial
-            java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} report -l Java -r \
               diameter-stack/build/reports/jacoco/test/jacocoTestReport.xml --partial
             java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} report -l Java -r \
               embedded-graph-store/build/reports/jacoco/test/jacocoTestReport.xml --partial
@@ -47,6 +47,9 @@ jobs:
             java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} report -l Java -r \
               pseudonym-server/build/reports/jacoco/test/jacocoTestReport.xml --partial
             java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} final
+
+            # java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} report -l Java -r \
+            #   client-api/build/reports/jacoco/test/jacocoTestReport.xml --partial
 
 
 workflows:
