@@ -50,11 +50,11 @@ jobs:
           command: |
             REPORT_TARGETS=$(find . -name jacocoTestReport.xml)
             for REPORT_TARGET in ${REPORT_TARGETS}; do
-              echo "====== Processing code-coverage report for ======> ${REPORT_TARGET} <======"
+              echo "======> Processing code-coverage report for ======> ${REPORT_TARGET} <======"
               java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} report -l Java -r ${REPORT_TARGET} --partial
             done
             if [ -n "${REPORT_TARGETS}" ]; then
-              echo "Uploading final code-coverage report to CODACY website."
+              echo "======> Uploading final code-coverage report to CODACY website. <======"
               java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} final
             else
               echo "There were no 'build' directories found under each module." 
