@@ -3,7 +3,7 @@ jobs:
   build:
     docker:
       # - image: azul/zulu-openjdk:8
-      - circleci/openjdk:8u171-jdk
+      - image: circleci/openjdk:8u171-jdk
 
     steps:
       - checkout
@@ -21,8 +21,9 @@ jobs:
     steps:
       - run:  
           name: Download codacy
-          command: wget -O ~/${CODACY_JAR_FILE} \
-                   ${CODACY_DOWNLOAD_URL}/${CODACY_VERSION}/codacy-coverage-reporter-${CODACY_VERSION}-assembly.jar
+          command: |
+            wget -O ~/${CODACY_JAR_FILE} \
+              ${CODACY_DOWNLOAD_URL}/${CODACY_VERSION}/codacy-coverage-reporter-${CODACY_VERSION}-assembly.jar
 
       - run:
           name: Generate Codacy code-coverage report
@@ -48,7 +49,7 @@ jobs:
 
 workflows:
   version: 2
-  build-repo:
+  build-repo-and-code-coverage:
     jobs:
       - build:
           filters:
