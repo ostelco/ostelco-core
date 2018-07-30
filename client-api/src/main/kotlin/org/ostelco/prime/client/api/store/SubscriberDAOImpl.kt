@@ -4,12 +4,14 @@ import io.vavr.control.Either
 import io.vavr.control.Option
 import org.ostelco.prime.client.api.core.ApiError
 import org.ostelco.prime.client.api.model.Consent
+import org.ostelco.prime.client.api.model.Person
 import org.ostelco.prime.client.api.model.SubscriptionStatus
 import org.ostelco.prime.logger
 import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
+import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.ocs.OcsSubscriberService
 import org.ostelco.prime.storage.ClientDataSource
 import java.time.Instant
@@ -21,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSubscriberService: OcsSubscriberService) : SubscriberDAO {
 
-    private val LOG by logger()
+    private val logger by logger()
 
     /* Table for 'profiles'. */
     private val consentMap = ConcurrentHashMap<String, ConcurrentHashMap<String, Boolean>>()
@@ -38,14 +40,14 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                     city,
                     country))
         } catch (e: Exception) {
-            LOG.error("Failed to fetch profile", e)
+            logger.error("Failed to fetch profile", e)
             return Either.left(ApiError("Failed to fetch profile"))
         }
     }
 
-    override fun createProfile(subscriptionId: String, profile: Subscriber): Either<ApiError, Subscriber> {
+    override fun createProfile(subscriptionId: String, profile: Subscriber, referredBy: String?): Either<ApiError, Subscriber> {
         if (!SubscriberDAO.isValidProfile(profile)) {
-            LOG.error("Failed to create profile. Invalid profile.")
+            logger.error("Failed to create profile. Invalid profile.")
             return Either.left(ApiError("Incomplete profile description"))
         }
         try {
@@ -55,9 +57,9 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                     profile.address,
                     profile.postCode,
                     profile.city,
-                    profile.country))
+                    profile.country), referredBy)
         } catch (e: Exception) {
-            LOG.error("Failed to create profile", e)
+            logger.error("Failed to create profile", e)
             return Either.left(ApiError("Failed to create profile"))
         }
 
@@ -72,8 +74,8 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
 
         try {
             storage.addNotificationToken(msisdn, applicationToken)
-        } catch(e: Exception) {
-            LOG.error("Failed to store ApplicationToken", e)
+        } catch (e: Exception) {
+            logger.error("Failed to store ApplicationToken", e)
             return Either.left(ApiError("Failed to store ApplicationToken"))
         }
         return getNotificationToken(msisdn, applicationToken.applicationID)
@@ -85,7 +87,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                     ?.let { Either.right<ApiError, ApplicationToken>(it) }
                     ?: return Either.left(ApiError("Failed to get ApplicationToken"))
         } catch (e: Exception) {
-            LOG.error("Failed to get ApplicationToken", e)
+            logger.error("Failed to get ApplicationToken", e)
             return Either.left(ApiError("Failed to get ApplicationToken"))
         }
     }
@@ -103,7 +105,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                     profile.city,
                     profile.country))
         } catch (e: Exception) {
-            LOG.error("Failed to update profile", e)
+            logger.error("Failed to update profile", e)
             return Either.left(ApiError("Failed to update profile"))
         }
 
@@ -112,14 +114,36 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
 
     override fun getSubscriptionStatus(subscriptionId: String): Either<ApiError, SubscriptionStatus> {
         try {
-            val balance = storage.getBalance(subscriptionId) ?: return Either.left(ApiError("No subscription data found"))
+            val balance = storage.getSubscriptions(subscriptionId)?.first()?.balance
+                    ?: return Either.left(ApiError("No subscription data found"))
             val purchaseRecords = storage.getPurchaseRecords(subscriptionId)
             val subscriptionStatus = SubscriptionStatus(
                     balance, ArrayList(purchaseRecords))
             return Either.right(subscriptionStatus)
         } catch (e: Exception) {
-            LOG.error("Failed to get balance", e)
+            logger.error("Failed to get balance", e)
             return Either.left(ApiError("Failed to get balance"))
+        }
+    }
+
+    override fun getSubscriptions(subscriptionId: String): Either<ApiError, Collection<Subscription>> {
+        try {
+            val subscription = storage.getSubscriptions(subscriptionId)
+                    ?: return Either.left(ApiError("No subscription data found"))
+            return Either.right(subscription)
+        } catch (e: Exception) {
+            logger.error("Failed to get balance", e)
+            return Either.left(ApiError("Failed to get balance"))
+        }
+    }
+
+    override fun getPurchaseHistory(subscriptionId: String): Either<ApiError, Collection<PurchaseRecord>> {
+        return try {
+            val purchaseRecords = storage.getPurchaseRecords(subscriptionId)
+            Either.right(purchaseRecords.toList())
+        } catch (e: Exception) {
+            logger.error("Failed to get purchase history", e)
+            Either.left(ApiError("Failed to get purchase history"))
         }
     }
 
@@ -128,7 +152,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         try {
             msisdn = storage.getMsisdn(subscriptionId)
         } catch (e: Exception) {
-            LOG.error("Did not find msisdn for this subscription", e)
+            logger.error("Did not find msisdn for this subscription", e)
         }
 
         if (msisdn == null) {
@@ -147,7 +171,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
             return Either.right(products.values)
 
         } catch (e: Exception) {
-            LOG.error("Failed to get Products", e)
+            logger.error("Failed to get Products", e)
             return Either.left(ApiError("Failed to get Products"))
         }
 
@@ -158,7 +182,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         try {
             msisdn = storage.getMsisdn(subscriptionId)
         } catch (e: Exception) {
-            LOG.error("Did not find subscription", e)
+            logger.error("Did not find subscription", e)
         }
 
         if (msisdn == null) {
@@ -169,7 +193,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         try {
             product = storage.getProduct(subscriptionId, sku)
         } catch (e: Exception) {
-            LOG.error("Did not find product: sku = $sku", e)
+            logger.error("Did not find product: sku = $sku", e)
             return Option.of(ApiError("Product unavailable"))
         }
 
@@ -181,12 +205,30 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         try {
             storage.addPurchaseRecord(subscriptionId, purchaseRecord)
         } catch (e: Exception) {
-            LOG.error("Failed to save purchase record", e)
+            logger.error("Failed to save purchase record", e)
             return Option.of(ApiError("Failed to save purchase record"))
         }
 
         ocsSubscriberService.topup(msisdn, sku)
         return Option.none()
+    }
+
+    override fun getReferrals(name: String): Either<ApiError, Collection<Person>> {
+        return try {
+            Either.right(storage.getReferrals(name).map { Person(it) })
+        } catch (e: Exception) {
+            logger.error("Failed to get referral list", e)
+            Either.left(ApiError("Failed to get referral list"))
+        }
+    }
+
+    override fun getReferredBy(name: String): Either<ApiError, Person> {
+        return try {
+            Either.right(Person(storage.getReferredBy(name)))
+        } catch (e: Exception) {
+            logger.error("Failed to get referred-by", e)
+            Either.left(ApiError("Failed to get referred-by"))
+        }
     }
 
     override fun getConsents(subscriptionId: String): Either<ApiError, Collection<Consent>> {

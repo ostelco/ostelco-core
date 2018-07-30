@@ -10,14 +10,14 @@ class PurchaseRequestHandler(
         private val producer: PrimeEventProducer,
         private val storage: ClientGraphStore = getResource()) {
 
-    private val LOG by logger()
+    private val logger by logger()
 
     @Throws(EventProcessorException::class)
     fun handlePurchaseRequest(
             msisdn: String,
             productSku: String) {
 
-        LOG.info("Handling purchase request - msisdn: {} sku = {}", msisdn, productSku)
+        logger.info("Handling purchase request - msisdn: {} sku = {}", msisdn, productSku)
 
         // get Product by SKU
         val product = storage.getProduct("id", productSku) ?: throw EventProcessorException("Not a valid SKU: $productSku")
@@ -26,7 +26,7 @@ class PurchaseRequestHandler(
 
         if (noOfBytes != null && noOfBytes > 0) {
 
-            LOG.info("Handling topup product - msisdn: {} topup: {}", msisdn, noOfBytes)
+            logger.info("Handling topup product - msisdn: {} topup: {}", msisdn, noOfBytes)
 
             producer.topupDataBundleBalanceEvent(msisdn, noOfBytes)
         }

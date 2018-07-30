@@ -24,10 +24,12 @@ data class Subscriber(
         var address: String = "",
         var postCode: String = "",
         var city: String = "",
-        var country: String = "") : HasId {
+        var country: String = "",
+        var referralId: String = "") : HasId {
 
     constructor(email: String) : this() {
         this.email = email
+        this.referralId = email
     }
 
     override var id: String
@@ -58,8 +60,8 @@ data class ApplicationToken(
 }
 
 data class Subscription(
-        var msisdn: String,
-        var balance: Long) : HasId {
+        var msisdn: String = "",
+        var balance: Long = 0) : HasId {
 
     override var id: String
         @JsonIgnore

@@ -14,7 +14,7 @@ import org.ostelco.prime.storage.ClientDataSource
 class EventProcessor(
         private val storage: ClientDataSource = getResource()) : EventHandler<PrimeEvent> {
 
-    private val LOG by logger()
+    private val logger by logger()
 
     override fun onEvent(
             event: PrimeEvent,
@@ -22,14 +22,14 @@ class EventProcessor(
             endOfBatch: Boolean) {
 
         try {
-            LOG.info("Updating data bundle balance for {} to {} bytes",
+            logger.info("Updating data bundle balance for {} to {} bytes",
                     event.msisdn, event.bundleBytes)
             val msisdn = event.msisdn
             if (msisdn != null) {
                 setRemainingByMsisdn(msisdn, event.bundleBytes)
             }
         } catch (e: Exception) {
-            LOG.warn("Exception handling prime event in EventProcessor", e)
+            logger.warn("Exception handling prime event in EventProcessor", e)
         }
     }
 

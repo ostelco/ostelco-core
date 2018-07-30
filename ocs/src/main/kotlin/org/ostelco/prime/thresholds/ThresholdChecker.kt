@@ -12,7 +12,7 @@ import org.ostelco.prime.module.getResource
  */
 class ThresholdChecker(private val lowBalanceThreshold: Long) : EventHandler<PrimeEvent> {
 
-    private val LOG by logger()
+    private val logger by logger()
 
     private val appNotifier by lazy { getResource<AppNotifier>() }
      // private val appNotifier by getResource<AppNotifier>()
@@ -26,15 +26,15 @@ class ThresholdChecker(private val lowBalanceThreshold: Long) : EventHandler<Pri
             return
         }
 
-        checkThreshold(event);
+        checkThreshold(event)
     }
 
     private fun checkThreshold(event: PrimeEvent) {
         // Check that we just crossed the threshold
         if ((event.bundleBytes < lowBalanceThreshold) && ((event.bundleBytes + event.reservedBucketBytes) > lowBalanceThreshold)) {
-            val msisdn = event.msisdn;
+            val msisdn = event.msisdn
             if (msisdn != null) {
-                appNotifier.notify(msisdn, "Pi", "You have less then " + lowBalanceThreshold/100000 + "Mb data left");
+                appNotifier.notify(msisdn, "Pi", "You have less then " + lowBalanceThreshold/100000 + "Mb data left")
             }
         }
     }

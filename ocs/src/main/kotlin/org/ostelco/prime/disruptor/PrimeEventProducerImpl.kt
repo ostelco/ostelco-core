@@ -12,7 +12,7 @@ import java.util.function.Consumer
 
 class PrimeEventProducerImpl(private val ringBuffer: RingBuffer<PrimeEvent>) : PrimeEventProducer {
 
-    private val LOG by logger()
+    private val logger by logger()
 
     private fun processNextEventOnTheRingbuffer(consumer: Consumer<PrimeEvent>) {
         checkNotNull(consumer)
@@ -27,7 +27,7 @@ class PrimeEventProducerImpl(private val ringBuffer: RingBuffer<PrimeEvent>) : P
                 // XXX Actually this is wrong, we're ignoring the update
                 //     request since we couldn't get something out of the buffer
                 //     altogether different and potentially a lost topup.
-                LOG.error("Dropping PrimeEvent update " + "since we couldn't get one off the ringbuffer")
+                logger.error("Dropping PrimeEvent update " + "since we couldn't get one off the ringbuffer")
                 return
             }
 

@@ -17,3 +17,5 @@ data class ConsentList(val consents: List<Consent>)
 data class SubscriptionStatus(
         var remaining: Long = 0,
         var purchaseRecords: List<PurchaseRecord> = emptyList())
+
+data class Person(var name:String? = null)

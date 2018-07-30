@@ -10,8 +10,8 @@ import org.junit.BeforeClass
 import org.junit.Test
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
-import org.ostelco.prime.storage.embeddedgraph.EmbeddedNeo4jStore
-import org.ostelco.prime.storage.embeddedgraph.GraphServer
+import org.ostelco.prime.storage.graph.Neo4jClient
+import org.ostelco.prime.storage.graph.Neo4jStore
 import org.ostelco.prime.storage.legacy.Products.DATA_TOPUP_3GB
 import java.lang.Thread.sleep
 import java.time.Instant
@@ -23,11 +23,11 @@ class Neo4jStorageTest {
     @Before
     @Throws(InterruptedException::class)
     fun setUp() {
-        this.storage = EmbeddedNeo4jStore()
+        this.storage = Neo4jStore()
 
         sleep(MILLIS_TO_WAIT_WHEN_STARTING_UP.toLong())
         storage.removeSubscriber(EPHERMERAL_EMAIL)
-        assertTrue(storage.addSubscriber(Subscriber(EPHERMERAL_EMAIL)))
+        assertTrue(storage.addSubscriber(Subscriber(EPHERMERAL_EMAIL), referredBy = null))
         assertTrue(storage.addSubscription(EPHERMERAL_EMAIL, MSISDN))
     }
 
@@ -74,13 +74,13 @@ class Neo4jStorageTest {
         @JvmStatic
         @BeforeClass
         fun setup() {
-            GraphServer.start()
+            Neo4jClient.start()
         }
 
         @JvmStatic
         @AfterClass
         fun cleanup() {
-            GraphServer.stop()
+            Neo4jClient.stop()
         }
     }
 }

@@ -20,7 +20,7 @@ import org.ostelco.ocs.api.ServiceUnit
 import org.ostelco.prime.disruptor.PrimeDisruptor
 import org.ostelco.prime.disruptor.PrimeEventProducerImpl
 import org.ostelco.prime.logger
-import org.ostelco.prime.storage.embeddedgraph.GraphServer
+import org.ostelco.prime.storage.graph.Neo4jClient
 import java.io.IOException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -33,18 +33,23 @@ import java.util.concurrent.TimeUnit
  */
 class OcsTest {
 
-    abstract class AbstactObserver<T> : StreamObserver<T> {
+    private val logger by logger()
+
+    abstract class AbstractObserver<T> : StreamObserver<T> {
+
+        private val logger by logger()
+
         override fun onError(t: Throwable) {
             // Ignore errors
         }
 
         override fun onCompleted() {
-            LOG.info("Completed")
+            logger.info("Completed")
         }
     }
 
     private fun newDefaultCreditControlRequestInfo(): CreditControlRequestInfo {
-        LOG.info("Req Id: {}", REQUEST_ID)
+        logger.info("Req Id: {}", REQUEST_ID)
 
         val mscc = MultipleServiceCreditControl.newBuilder()
                 .setRequested(ServiceUnit
@@ -73,9 +78,9 @@ class OcsTest {
         // information about a data bucket containing a number
         // of bytes for some MSISDN.
         val requests = ocsServiceStub.creditControlRequest(
-                object : AbstactObserver<CreditControlAnswerInfo>() {
+                object : AbstractObserver<CreditControlAnswerInfo>() {
                     override fun onNext(response: CreditControlAnswerInfo) {
-                        LOG.info("Received answer for {}",
+                        logger.info("Received answer for {}",
                                 response.msisdn)
                         assertEquals(MSISDN, response.msisdn)
                         assertEquals(REQUEST_ID, response.requestId)
@@ -108,10 +113,10 @@ class OcsTest {
 
         val cdl = CountDownLatch(2)
 
-        val streamObserver = object : AbstactObserver<ActivateResponse>() {
+        val streamObserver = object : AbstractObserver<ActivateResponse>() {
             override fun onNext(response: ActivateResponse) {
                 if (!response.msisdn.isEmpty()) {
-                    LOG.info("Activate {}", response.msisdn)
+                    logger.info("Activate {}", response.msisdn)
                     assertEquals(MSISDN, response.msisdn)
                 }
                 cdl.countDown()
@@ -139,8 +144,6 @@ class OcsTest {
     }
 
     companion object {
-
-        private val LOG by logger()
 
         /**
          * The port on which the gRPC service will be receiving incoming
@@ -197,7 +200,7 @@ class OcsTest {
         @JvmStatic
         @Throws(IOException::class)
         fun setUp() {
-            GraphServer.start()
+            Neo4jClient.start()
 
             // Set up processing pipeline
             disruptor = PrimeDisruptor()
@@ -239,7 +242,7 @@ class OcsTest {
         fun tearDown() {
             disruptor.stop()
             ocsServer.forceStop()
-            GraphServer.stop()
+            Neo4jClient.stop()
         }
     }
 }

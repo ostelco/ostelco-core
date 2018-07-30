@@ -8,27 +8,18 @@ cache:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
 
-before_install:
-  # The curl command is not always working. Kept original command in comment incase codacy updates
-  #- sudo apt-get install jq
-  #- wget -O ~/codacy-coverage-reporter-assembly-latest.jar $(curl https://api.github.com/repos/codacy/codacy-coverage-reporter/releases/latest | jq -r .assets[0].browser_download_url)
-  - wget -O ~/codacy-coverage-reporter-assembly-latest.jar https://github.com/codacy/codacy-coverage-reporter/releases/download/4.0.2/codacy-coverage-reporter-4.0.2-assembly.jar
-
 install: echo "skip 'gradle assemble' step"
 
-script: ./gradlew build --info
+script: ./gradlew build
 
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
 
 after_success:
-  - java -cp ~/codacy-coverage-reporter-assembly-latest.jar com.codacy.CodacyCoverageReporter report -l Java -r analytics/build/reports/jacoco/test/jacocoTestReport.xml --partial
-  - java -cp ~/codacy-coverage-reporter-assembly-latest.jar com.codacy.CodacyCoverageReporter report -l Java -r client-api/build/reports/jacoco/test/jacocoTestReport.xml --partial
-  - java -cp ~/codacy-coverage-reporter-assembly-latest.jar com.codacy.CodacyCoverageReporter report -l Java -r diameter-stack/build/reports/jacoco/test/jacocoTestReport.xml --partial
-  - java -cp ~/codacy-coverage-reporter-assembly-latest.jar com.codacy.CodacyCoverageReporter report -l Java -r embedded-graph-store/build/reports/jacoco/test/jacocoTestReport.xml --partial
-  - java -cp ~/codacy-coverage-reporter-assembly-latest.jar com.codacy.CodacyCoverageReporter report -l Java -r ocs/build/reports/jacoco/test/jacocoTestReport.xml --partial
-  - java -cp ~/codacy-coverage-reporter-assembly-latest.jar com.codacy.CodacyCoverageReporter report -l Java -r ocsgw/build/reports/jacoco/test/jacocoTestReport.xml --partial
-  - java -cp ~/codacy-coverage-reporter-assembly-latest.jar com.codacy.CodacyCoverageReporter report -l Java -r ostelco-lib/build/reports/jacoco/test/jacocoTestReport.xml --partial
-  - java -cp ~/codacy-coverage-reporter-assembly-latest.jar com.codacy.CodacyCoverageReporter report -l Java -r pseudonym-server/build/reports/jacoco/test/jacocoTestReport.xml --partial
+  # The curl command is not always working. Kept original command in comment incase codacy updates
+  #- sudo apt-get install jq
+  #- wget -O ~/codacy-coverage-reporter-assembly-latest.jar $(curl https://api.github.com/repos/codacy/codacy-coverage-reporter/releases/latest | jq -r .assets[0].browser_download_url)
+  - wget -O ~/codacy-coverage-reporter-assembly-latest.jar https://github.com/codacy/codacy-coverage-reporter/releases/download/4.0.2/codacy-coverage-reporter-4.0.2-assembly.jar
+  - for REPORT_TARGET in $(find . -name jacocoTestReport.xml | sort); do java -cp ~/codacy-coverage-reporter-assembly-latest.jar com.codacy.CodacyCoverageReporter report -l Java -r ${REPORT_TARGET} --partial; done
   - java -cp ~/codacy-coverage-reporter-assembly-latest.jar com.codacy.CodacyCoverageReporter final

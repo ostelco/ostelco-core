@@ -20,7 +20,7 @@ import javax.ws.rs.core.Response.Status
 @Path("/auth")
 class AuthResource {
 
-    private val LOG = LoggerFactory.getLogger(AuthResource::class.java)
+    private val logger = LoggerFactory.getLogger(AuthResource::class.java)
 
 
     /**

@@ -34,11 +34,11 @@ fun main(args: Array<String>) {
  */
 class PseudonymServerApplication : Application<PseudonymServerConfig>() {
 
-    private val LOG = LoggerFactory.getLogger(PseudonymServerApplication::class.java)
+    private val logger = LoggerFactory.getLogger(PseudonymServerApplication::class.java)
 
     // Find port for the local REST endpoint
     private fun getPseudonymEndpoint(config: PseudonymServerConfig): String {
-        var endpoint = config.pseudonymEndpoint
+        val endpoint = config.pseudonymEndpoint
         if (!endpoint.isEmpty()) {
             return endpoint
         }
@@ -57,9 +57,9 @@ class PseudonymServerApplication : Application<PseudonymServerConfig>() {
 
     // Integration testing helper for Datastore.
     private fun getDatastore(config: PseudonymServerConfig): Datastore {
-        var datastore: Datastore?
+        val datastore: Datastore?
         if (config.datastoreType == "inmemory-emulator") {
-            LOG.info("Starting with in-memory datastore emulator...")
+            logger.info("Starting with in-memory datastore emulator...")
             val helper: LocalDatastoreHelper = LocalDatastoreHelper.create(1.0)
             helper.start()
             datastore = helper.options.service
@@ -81,7 +81,7 @@ class PseudonymServerApplication : Application<PseudonymServerConfig>() {
         val subscriptionName = ProjectSubscriptionName.of(config.projectName, config.subscriptionName)
         val publisherTopicName = ProjectTopicName.of(config.projectName, config.publisherTopic)
         val endpoint = getPseudonymEndpoint(config)
-        LOG.info("Pseudonym endpoint = $endpoint")
+        logger.info("Pseudonym endpoint = $endpoint")
         val messageProcessor = MessageProcessor(subscriptionName,
                 publisherTopicName,
                 endpoint,
@@ -93,7 +93,7 @@ class PseudonymServerApplication : Application<PseudonymServerConfig>() {
         if(System.getenv("LOCAL_TESTING") != "true") {
             bigquery = BigQueryOptions.getDefaultInstance().getService()
         } else {
-            LOG.info("Local testing, BigQuery is not available...")
+            logger.info("Local testing, BigQuery is not available...")
         }
         env.jersey().register(PseudonymResource(datastore, WeeklyBounds(), bigquery))
     }

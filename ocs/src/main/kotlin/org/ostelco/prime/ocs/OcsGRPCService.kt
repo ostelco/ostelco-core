@@ -40,7 +40,7 @@ import java.util.*
  */
 class OcsGRPCService(private val ocsService: OcsService) : OcsServiceGrpc.OcsServiceImplBase() {
 
-    private val LOG by logger()
+    private val logger by logger()
 
     /**
      * Method to handle Credit-Control-Requests
@@ -52,7 +52,7 @@ class OcsGRPCService(private val ocsService: OcsService) : OcsServiceGrpc.OcsSer
 
         val streamId = newUniqueStreamId()
 
-        LOG.info("Starting Credit-Control-Request with streamId: {}", streamId)
+        logger.info("Starting Credit-Control-Request with streamId: {}", streamId)
 
         ocsService.putCreditControlClient(streamId, creditControlAnswer)
 
@@ -80,7 +80,7 @@ class OcsGRPCService(private val ocsService: OcsService) : OcsServiceGrpc.OcsSer
                 // this request is just to keep connection alive
                 return
             }
-            LOG.info("Received Credit-Control-Request request :: " + "for MSISDN: {} with request id: {}",
+            logger.info("Received Credit-Control-Request request :: " + "for MSISDN: {} with request id: {}",
                     request.msisdn, request.requestId)
 
             ocsService.creditControlRequestEvent(request, streamId)
@@ -91,7 +91,7 @@ class OcsGRPCService(private val ocsService: OcsService) : OcsServiceGrpc.OcsSer
         }
 
         override fun onCompleted() {
-            LOG.info("Credit-Control-Request with streamId: {} completed", streamId)
+            logger.info("Credit-Control-Request with streamId: {} completed", streamId)
             ocsService.deleteCreditControlClient(streamId)
         }
     }

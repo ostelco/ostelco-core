@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit
 
 class OcsServiceTest {
 
-    private var disruptor: Disruptor<PrimeEvent>? = null
+    private var disruptor: Disruptor<PrimeEvent>?= null
 
     private var countDownLatch: CountDownLatch? = null
 
@@ -27,34 +27,39 @@ class OcsServiceTest {
     private var service: OcsService? = null
 
     private// Wait  wait a short while for the thing to process.
-    val collectedEvent: PrimeEvent
+    val collectedEvent: PrimeEvent?
         @Throws(InterruptedException::class)
         get() {
-            assertTrue(countDownLatch!!.await(TIMEOUT, TimeUnit.SECONDS))
-            assertFalse(result!!.isEmpty())
-            val event = result!!.iterator().next()
+            assertTrue(countDownLatch?.await(TIMEOUT, TimeUnit.SECONDS) ?: false)
+            assertFalse(result?.isEmpty() ?: true)
+            val event = result?.iterator()?.next()
             assertNotNull(event)
             return event
         }
 
     @Before
     fun setUp() {
-        this.disruptor = Disruptor<PrimeEvent>(
+
+        val disruptor = Disruptor<PrimeEvent>(
                 PrimeEventFactory(),
                 RING_BUFFER_SIZE,
                 Executors.defaultThreadFactory())
-        val ringBuffer = disruptor!!.ringBuffer
+
+        this.disruptor = disruptor
+        val ringBuffer = disruptor.ringBuffer
         val pep = PrimeEventProducerImpl(ringBuffer)
 
-        this.countDownLatch = CountDownLatch(1)
-        this.result = HashSet()
+        val countDownLatch = CountDownLatch(1)
+        this.countDownLatch = countDownLatch
+        val result = HashSet<PrimeEvent>()
+        this.result = result
         val eh = EventHandler<PrimeEvent> { event, _, _ ->
-            result!!.add(event)
-            countDownLatch!!.countDown()
+            result.add(event)
+            countDownLatch.countDown()
         }
 
-        disruptor!!.handleEventsWith(eh)
-        disruptor!!.start()
+        disruptor.handleEventsWith(eh)
+        disruptor.start()
         this.service = OcsService(pep)
     }
 
