@@ -31,7 +31,7 @@ class FirebaseAppNotifier: AppNotifier {
 
         for (applicationToken in applicationTokens) {
 
-            if (applicationToken.tokenType.equals("FCM")) {
+            if (applicationToken.tokenType == "FCM") {
                 // See documentation on defining a message payload.
                 val message = Message.builder()
                         .setNotification(Notification(title, body))

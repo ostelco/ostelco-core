@@ -28,7 +28,7 @@ class CreditControlContext(
         val originHost: String,
         val originRealm: String) {
 
-    private val LOG by logger()
+    private val logger by logger()
 
     // Set to true, when answer to not to be sent to PGw. Default value is false.
     var skipAnswer: Boolean = false
@@ -43,7 +43,7 @@ class CreditControlContext(
 
     fun createCCA(creditControlAnswer: CreditControlAnswer): JCreditControlAnswerImpl? {
         var answer: JCreditControlAnswerImpl? = null
-        var resultCode = ResultCode.SUCCESS
+        val resultCode = ResultCode.SUCCESS
 
         try {
             answer = JCreditControlAnswerImpl(originalCreditControlRequest.message as Request, ResultCode.SUCCESS.toLong())
@@ -86,11 +86,11 @@ class CreditControlContext(
                 answerMSCC.addAvp(Avp.RESULT_CODE, resultCode, true, false)
                 answerMSCC.addAvp(Avp.VALIDITY_TIME, mscc.validityTime, true, false)
             }
-            LOG.info("Credit-Control-Answer")
+            logger.info("Credit-Control-Answer")
             DiameterUtilities().printAvps(ccaAvps)
 
         } catch (e: InternalException) {
-            LOG.error("Failed to convert to Credit-Control-Answer", e)
+            logger.error("Failed to convert to Credit-Control-Answer", e)
         }
 
         return answer

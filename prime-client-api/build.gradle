@@ -17,7 +17,7 @@ swaggerSources {
 //    }
 //  }
   'java-client' {
-    inputFile = file("${projectDir}/../prime/infra/prod/prime-client-api.yaml")
+    inputFile = file("${projectDir}/../prime/infra/dev/prime-client-api.yaml")
     code {
       language = 'java'
       configFile = file("${projectDir}/config.json")

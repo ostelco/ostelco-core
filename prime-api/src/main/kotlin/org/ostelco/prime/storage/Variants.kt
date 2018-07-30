@@ -7,6 +7,7 @@ import org.ostelco.prime.model.ProductClass
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Segment
 import org.ostelco.prime.model.Subscriber
+import org.ostelco.prime.model.Subscription
 
 interface ClientDocumentStore {
 
@@ -31,9 +32,7 @@ interface ClientDocumentStore {
     fun removeNotificationToken(msisdn: String, applicationID: String): Boolean
 }
 
-interface AdminDocumentStore {
-
-}
+interface AdminDocumentStore
 
 interface ClientGraphStore {
 
@@ -47,7 +46,7 @@ interface ClientGraphStore {
     /**
      * Create Subscriber Profile
      */
-    fun addSubscriber(subscriber: Subscriber): Boolean
+    fun addSubscriber(subscriber: Subscriber, referredBy: String? = null): Boolean
 
     /**
      * Update Subscriber Profile
@@ -77,7 +76,7 @@ interface ClientGraphStore {
     /**
      * Get balance for Client
      */
-    fun getBalance(id: String): Long?
+    fun getSubscriptions(id: String): Collection<Subscription>?
 
     /**
      * Set balance after OCS Topup or Consumption
@@ -98,6 +97,16 @@ interface ClientGraphStore {
      * Add PurchaseRecord after Purchase operation
      */
     fun addPurchaseRecord(id: String, purchase: PurchaseRecord): String?
+
+    /**
+     * Get list of users this user has referred to
+     */
+    fun getReferrals(id: String): Collection<String>
+
+    /**
+     * Get user who has referred this user.
+     */
+    fun getReferredBy(id: String): String?
 }
 
 interface AdminGraphStore {

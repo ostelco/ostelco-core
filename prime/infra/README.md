@@ -169,7 +169,7 @@ gcloud container clusters create dev-cluster \
 ```bash
 gcloud container node-pools create dev-node-pool \
   --cluster=dev-cluster \
-  --machine-type=n1-standard-4 \
+  --machine-type=n1-standard-2 \
   --scopes=default,bigquery,datastore,pubsub,sql,storage-rw \
   --num-nodes=3 \
   --zone=europe-west1-b

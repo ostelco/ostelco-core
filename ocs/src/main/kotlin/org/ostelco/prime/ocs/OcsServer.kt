@@ -15,7 +15,7 @@ import java.io.IOException
  */
 class OcsServer(private val port: Int, service: BindableService) : Managed {
 
-    private val LOG by logger()
+    private val logger by logger()
 
     // may add Transport Security with Certificates if needed.
     // may add executor for control over number of threads
@@ -29,7 +29,7 @@ class OcsServer(private val port: Int, service: BindableService) : Managed {
     @Throws(IOException::class)
     override fun start() {
         server!!.start()
-        LOG.info("OcsServer Server started, listening for incoming gRPC traffic on {}", port)
+        logger.info("OcsServer Server started, listening for incoming gRPC traffic on {}", port)
     }
 
     /**
@@ -40,7 +40,7 @@ class OcsServer(private val port: Int, service: BindableService) : Managed {
     @Throws(InterruptedException::class)
     override fun stop() {
         if (server != null) {
-            LOG.info("Stopping OcsServer Server listening for gRPC traffic on  {}", port)
+            logger.info("Stopping OcsServer Server listening for gRPC traffic on  {}", port)
             server.shutdown()
             blockUntilShutdown()
         }
@@ -51,7 +51,7 @@ class OcsServer(private val port: Int, service: BindableService) : Managed {
      */
     fun forceStop() {
         if (server != null) {
-            LOG.info("Stopping forcefully OcsServer Server listening for gRPC traffic on  {}", port)
+            logger.info("Stopping forcefully OcsServer Server listening for gRPC traffic on  {}", port)
             server.shutdownNow()
         }
     }

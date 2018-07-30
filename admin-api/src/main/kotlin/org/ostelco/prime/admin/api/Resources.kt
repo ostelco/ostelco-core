@@ -14,7 +14,7 @@ import javax.ws.rs.Path
 import javax.ws.rs.PathParam
 
 @Path("/offers")
-class OfferResource() {
+class OfferResource {
 
     private val adminDataSource by lazy { getResource<AdminDataSource>() }
 
