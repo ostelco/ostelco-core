@@ -2,11 +2,16 @@ version: 2
 jobs:
   build-repo:
 
+    environment:
+      # setup the versions you want to use for docker and docker-compose
+      DOCKER_VERSION: 18.06.0-ce
+      DOCKER_COMPOSE_VERSION: 1.22.0
+
     docker:
-      # - image: azul/zulu-openjdk:8
       - image: circleci/openjdk:8u171-jdk
 
     # By default, the working_directory in circleci is: '~/project'. So it will work without even specifying it.
+    # I defined it, just to be explicit.
     working_directory: ~/project
 
     steps:
@@ -22,6 +27,55 @@ jobs:
           root: ~/
           paths: project
 
+      - run:
+          name: Install Docker client on primary container
+          command: |
+            curl -L -o ~/docker-${DOCKER_VERSION}.tgz \
+              https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz
+            tar -xzf ~/docker-${DOCKER_VERSION}.tgz -C /tmp/
+            if test $(which sudo); then echo "sudo found"; SUDO='sudo'; else echo "sudo not found"; SUDO=''; fi
+            ${SUDO} chmod +x /tmp/docker/*   
+            ${SUDO} mv /tmp/docker/* /usr/bin/
+            
+      - run:
+          name: Install Docker-Compose on primary container
+          command: |
+            curl -L -o ~/docker-compose \
+              https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m`
+            if test $(which sudo); then echo "sudo found"; SUDO='sudo'; else echo "sudo not found";  SUDO=''; fi
+            ${SUDO} chmod +x ~/docker-compose    
+            ${SUDO} mv ~/docker-compose /usr/bin/
+
+
+            ###########################################################################################################
+            # The few lines of code in the run section for docker and docker-compose installation
+            #  checks for sudo binary executable.
+            # If it finds it in the container image, the command runs as sudo.
+            # If it does not find it, the command runs without sudo.
+            # It is done for a reason. Some images are run as root and they do not have sudo.
+            # In those images, the USER already is root, and absense of sudo normally ends up in the command failure.
+            # So, the small piece of code handle that so it is agnostic to image behavior.
+            #
+            # The 'if test $(command)' is used instead of normal 'if []', 
+            # because I wanted to test for the existence for sudo. 
+            # I first tried to capture it in a variable, and then test it, 
+            # but if the 'which' command fails during variable assignment, it caused CI server to fail the job.
+            # This is why 'which sudo' needs to be inside the 'if test'
+            # For completeness sake, the following does not work:
+            # CHECK_SUDO=$(which sudo)
+            # if [ -n "${CHECK_SUDO}" ]; then echo "found sudo"; SUDO='sudo'; else SUDO=''; fi
+            ###########################################################################################################
+
+      - setup_remote_docker
+
+      # The following two commands are just to show how 'setup_remote_docker' works.
+      - run: docker run  nginx:alpine "hostname"
+      - run: docker images
+
+      # Put in docker-compose up command below:
+      # The following docker-compose command will fail without proper secrets.
+      # The docker-compose command will also include the docker-compose.override.yaml file
+      - run: docker-compose up --abort-on-container-exit
 
   code-coverage:
 
