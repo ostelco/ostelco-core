@@ -8,6 +8,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Test
+import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.storage.graph.Neo4jClient
@@ -43,10 +44,13 @@ class Neo4jStorageTest {
 
     @Test
     fun setBalance() {
-        assertTrue(storage.setBalance(MSISDN, RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS))
-        Assert.assertEquals(RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS, storage.balances[MSISDN])
-        storage.setBalance(MSISDN, 0)
-        Assert.assertEquals(0L, storage.balances[MSISDN])
+        assertTrue(storage.updateBundle(Bundle(EPHERMERAL_EMAIL, RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS)))
+        Assert.assertEquals(RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS,
+                storage.getBundles(EPHERMERAL_EMAIL)?.first { it.id == EPHERMERAL_EMAIL }?.balance)
+
+        storage.updateBundle(Bundle(EPHERMERAL_EMAIL, 0))
+        Assert.assertEquals(0L,
+                storage.getBundles(EPHERMERAL_EMAIL)?.first { it.id == EPHERMERAL_EMAIL }?.balance)
     }
 
     @Test

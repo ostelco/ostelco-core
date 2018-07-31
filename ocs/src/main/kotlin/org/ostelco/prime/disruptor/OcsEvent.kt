@@ -2,18 +2,23 @@ package org.ostelco.prime.disruptor
 
 import org.ostelco.ocs.api.ReportingReason
 
-class PrimeEvent {
+class OcsEvent {
 
     /**
      * The type of message this is, closely mirroring the types of messages in
      * ocs.proto (the GRPC specification file).
      */
-    var messageType: PrimeEventMessageType? = null
+    var messageType: EventMessageType? = null
 
     /**
      * Phone number this event is related to.
      */
     var msisdn: String? = null
+
+    /**
+     * Bundle ID of bundle to which bundleBytes are to be set.
+     */
+    var bundleId: String? = null
 
     /**
      * Origin of word 'bucket' - P-GW consumes data in `buckets` of 10 MB ~ 100 MB at a time
@@ -62,29 +67,36 @@ class PrimeEvent {
 
     /**
      * Reporting-Reason
-     * // FixMe: This is the Reporting-Reason for the MSCC. The PrimeEvent might be to generic since there is also Reporting-Reason used on ServiceUnit level
+     * // FIXME martin: This is the Reporting-Reason for the MSCC. The PrimeEvent might be to generic since there is also Reporting-Reason used on ServiceUnit level
      */
     var reportingReason: ReportingReason = ReportingReason.UNRECOGNIZED
 
     fun clear() {
+        messageType = null
+
         msisdn = null
+        bundleId = null
+
+        bundleBytes = 0
         requestedBucketBytes = 0
         usedBucketBytes = 0
         reservedBucketBytes = 0
         bundleBytes = 0
+
         ocsgwStreamId = null
         ocsgwRequestId = null
         serviceIdentifier = 0
         ratingGroup = 0
-        messageType = null
         reportingReason = ReportingReason.UNRECOGNIZED
     }
 
-    //FixMe : We need to think about roaming!!!
+    //FIXME vihang: We need to think about roaming!!!
 
     fun update(
-            messageType: PrimeEventMessageType?,
+            messageType: EventMessageType?,
             msisdn: String?,
+            bundleId: String?,
+            bundleBytes: Long,
             requestedBytes: Long,
             usedBytes: Long,
             reservedBucketBytes: Long,
@@ -95,6 +107,8 @@ class PrimeEvent {
             ocsgwRequestId: String?) {
         this.messageType = messageType
         this.msisdn = msisdn
+        this.bundleId = bundleId
+        this.bundleBytes = bundleBytes
         this.requestedBucketBytes = requestedBytes
         this.usedBucketBytes = usedBytes
         this.reservedBucketBytes = reservedBucketBytes

@@ -33,7 +33,7 @@ class SubscriptionsResourceTest {
 
     private val email = "mw@internet.org"
 
-    private val subscription  = Subscription(MSISDN, 5)
+    private val subscription  = Subscription(MSISDN)
 
     @Before
     @Throws(Exception::class)

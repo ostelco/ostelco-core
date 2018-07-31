@@ -47,13 +47,12 @@ class PurchasesResourceTest {
     }
 
     @Test
-    @Throws(Exception::class)
     fun testGetPurchaseRecords() {
         val arg1 = argumentCaptor<String>()
 
         val product = Product("1", Price(10, "NOK"), Collections.emptyMap(), Collections.emptyMap())
         val now = Instant.now().toEpochMilli()
-        val purchaseRecord = PurchaseRecord("msisdn", product, now)
+        val purchaseRecord = PurchaseRecord(msisdn = "msisdn", product = product, timestamp = now)
 
         Mockito.`when`<Either<ApiError, Collection<PurchaseRecord>>>(DAO.getPurchaseHistory(arg1.capture()))
                 .thenReturn(Either.right(listOf(purchaseRecord)))

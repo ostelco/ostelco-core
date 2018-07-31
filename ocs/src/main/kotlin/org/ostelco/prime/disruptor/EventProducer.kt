@@ -1,10 +1,11 @@
 package org.ostelco.prime.disruptor
 
 import org.ostelco.ocs.api.CreditControlRequestInfo
+import org.ostelco.prime.model.Bundle
 
-interface PrimeEventProducer {
+interface EventProducer {
     fun topupDataBundleBalanceEvent(
-            msisdn: String,
+            subscriberId: String,
             bytes: Long)
 
     fun releaseReservedDataBucketEvent(
@@ -14,4 +15,10 @@ interface PrimeEventProducer {
     fun injectCreditControlRequestIntoRingbuffer(
             request: CreditControlRequestInfo,
             streamId: String)
+
+    fun addBundle(bundle: Bundle)
+
+    fun addMsisdnToBundleMapping(
+            msisdn: String,
+            bundleId: String)
 }

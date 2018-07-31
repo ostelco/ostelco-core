@@ -12,8 +12,7 @@ import org.mockito.Mockito.`when`
 import org.mockito.Mockito.verify
 import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
-import org.ostelco.prime.disruptor.PrimeEventProducer
-import org.ostelco.prime.events.EventProcessorException
+import org.ostelco.prime.disruptor.EventProducer
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.storage.ClientDataSource
@@ -29,7 +28,7 @@ class PurchaseRequestHandlerTest {
     lateinit var storage: ClientDataSource
 
     @Mock
-    lateinit var producer: PrimeEventProducer
+    lateinit var producer: EventProducer
 
     private lateinit var purchaseRequestHandler: PurchaseRequestHandler
 
@@ -41,10 +40,9 @@ class PurchaseRequestHandlerTest {
         this.purchaseRequestHandler = PurchaseRequestHandler(producer, storage)
     }
 
-    // FIXME
+    // FIXME vihang: handlePurchaseRequestTest is marked to be ignored, until it is fixed
     @Ignore
     @Test
-    @Throws(Exception::class)
     fun handlePurchaseRequestTest() {
 
         val sku = DATA_TOPUP_3GB.sku
@@ -54,14 +52,14 @@ class PurchaseRequestHandlerTest {
 
         // Then verify that the appropriate actions has been performed.
         val topupBytes = DATA_TOPUP_3GB.properties["noOfBytes"]?.toLong()
-                ?: throw EventProcessorException("Missing property 'noOfBytes' in product sku: $sku")
+                ?: throw Exception("Missing property 'noOfBytes' in product sku: $sku")
 
         val capturedPurchaseRecord = ArgumentCaptor.forClass(PurchaseRecord::class.java)
 
         assertEquals(MSISDN, capturedPurchaseRecord.value.msisdn)
         assertEquals(DATA_TOPUP_3GB, capturedPurchaseRecord.value.product)
 
-        verify<PrimeEventProducer>(producer).topupDataBundleBalanceEvent(MSISDN, topupBytes)
+        verify<EventProducer>(producer).topupDataBundleBalanceEvent(MSISDN, topupBytes)
     }
 
     companion object {

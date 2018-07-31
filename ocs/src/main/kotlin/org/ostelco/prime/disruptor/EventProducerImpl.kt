@@ -1,21 +1,22 @@
 package org.ostelco.prime.disruptor
 
-import com.google.common.base.Preconditions.checkNotNull
 import com.lmax.disruptor.RingBuffer
 import org.ostelco.ocs.api.CreditControlRequestInfo
 import org.ostelco.ocs.api.ReportingReason
-import org.ostelco.prime.disruptor.PrimeEventMessageType.CREDIT_CONTROL_REQUEST
-import org.ostelco.prime.disruptor.PrimeEventMessageType.RELEASE_RESERVED_BUCKET
-import org.ostelco.prime.disruptor.PrimeEventMessageType.TOPUP_DATA_BUNDLE_BALANCE
+import org.ostelco.prime.disruptor.EventMessageType.CREDIT_CONTROL_REQUEST
+import org.ostelco.prime.disruptor.EventMessageType.RELEASE_RESERVED_BUCKET
+import org.ostelco.prime.disruptor.EventMessageType.TOPUP_DATA_BUNDLE_BALANCE
+import org.ostelco.prime.disruptor.EventMessageType.UPDATE_BUNDLE
+import org.ostelco.prime.disruptor.EventMessageType.ADD_MSISDN_TO_BUNDLE_MAPPING
 import org.ostelco.prime.logger
+import org.ostelco.prime.model.Bundle
 import java.util.function.Consumer
 
-class PrimeEventProducerImpl(private val ringBuffer: RingBuffer<PrimeEvent>) : PrimeEventProducer {
+class EventProducerImpl(private val ringBuffer: RingBuffer<OcsEvent>) : EventProducer {
 
     private val logger by logger()
 
-    private fun processNextEventOnTheRingbuffer(consumer: Consumer<PrimeEvent>) {
-        checkNotNull(consumer)
+    private fun processNextEventOnTheRingBuffer(consumer: Consumer<OcsEvent>) {
 
         // pick
         val sequence = ringBuffer.next()
@@ -40,9 +41,11 @@ class PrimeEventProducerImpl(private val ringBuffer: RingBuffer<PrimeEvent>) : P
         }
     }
 
-    private fun injectIntoRingbuffer(
-            type: PrimeEventMessageType,
-            msisdn: String,
+    private fun injectIntoRingBuffer(
+            type: EventMessageType,
+            msisdn: String? = null,
+            bundleId: String? = null,
+            bundleBytes: Long = 0,
             requestedBytes: Long = 0,
             usedBytes: Long = 0,
             reservedBytes: Long = 0,
@@ -52,10 +55,12 @@ class PrimeEventProducerImpl(private val ringBuffer: RingBuffer<PrimeEvent>) : P
             streamId: String? = null,
             requestId: String? = null) {
 
-        processNextEventOnTheRingbuffer(
+        processNextEventOnTheRingBuffer(
                 Consumer { event ->
                     event.update(type,
                             msisdn,
+                            bundleId,
+                            bundleBytes,
                             requestedBytes,
                             usedBytes,
                             reservedBytes,
@@ -68,12 +73,12 @@ class PrimeEventProducerImpl(private val ringBuffer: RingBuffer<PrimeEvent>) : P
     }
 
     override fun topupDataBundleBalanceEvent(
-            msisdn: String,
+            bundleId: String,
             bytes: Long) {
 
-        injectIntoRingbuffer(
+        injectIntoRingBuffer(
                 type = TOPUP_DATA_BUNDLE_BALANCE,
-                msisdn = msisdn,
+                bundleId = bundleId,
                 requestedBytes = bytes)
     }
 
@@ -81,7 +86,7 @@ class PrimeEventProducerImpl(private val ringBuffer: RingBuffer<PrimeEvent>) : P
             msisdn: String,
             bytes: Long) {
 
-        injectIntoRingbuffer(
+        injectIntoRingBuffer(
                 type = RELEASE_RESERVED_BUCKET,
                 msisdn = msisdn,
                 requestedBytes = bytes)
@@ -92,13 +97,13 @@ class PrimeEventProducerImpl(private val ringBuffer: RingBuffer<PrimeEvent>) : P
             streamId: String) {
 
         if (request.msccList.isEmpty()) {
-            injectIntoRingbuffer(CREDIT_CONTROL_REQUEST,
+            injectIntoRingBuffer(CREDIT_CONTROL_REQUEST,
                     request.msisdn,
                     streamId = streamId,
                     requestId = request.requestId)
         } else {
-            // FixMe : For now we assume that there is only 1 MSCC in the Request.
-            injectIntoRingbuffer(CREDIT_CONTROL_REQUEST,
+            // FIXME vihang: For now we assume that there is only 1 MSCC in the Request.
+            injectIntoRingBuffer(CREDIT_CONTROL_REQUEST,
                     msisdn = request.msisdn,
                     requestedBytes = request.getMscc(0).requested.totalOctets,
                     usedBytes = request.getMscc(0).used.totalOctets,
@@ -109,5 +114,13 @@ class PrimeEventProducerImpl(private val ringBuffer: RingBuffer<PrimeEvent>) : P
                     streamId = streamId,
                     requestId = request.requestId)
         }
+    }
+
+    override fun addBundle(bundle: Bundle) {
+        injectIntoRingBuffer(UPDATE_BUNDLE, bundleId = bundle.id, bundleBytes = bundle.balance)
+    }
+
+    override fun addMsisdnToBundleMapping(msisdn: String, bundleId: String) {
+        injectIntoRingBuffer(ADD_MSISDN_TO_BUNDLE_MAPPING, msisdn = msisdn, bundleId = bundleId)
     }
 }

@@ -20,7 +20,7 @@ import org.ostelco.prime.storage.graph.ObjectHandler.getProperties
 
 data class EntityType<ENTITY : HasId>(
         private val dataClass: Class<ENTITY>,
-        val name:String = dataClass.simpleName) {
+        val name: String = dataClass.simpleName) {
 
     fun createEntity(map: Map<String, Any>): ENTITY = ObjectHandler.getObject(map, dataClass)
 }
@@ -55,11 +55,16 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
         }
     }
 
-    fun create(id: String, entity: E, transaction: Transaction): Boolean {
+    fun create(entity: E, transaction: Transaction): Boolean {
+
+        if (get(entity.id, transaction) != null) {
+            return false
+        }
+
         val properties = getProperties(entity)
         val strProps: String = properties.entries.joinToString(separator = ",") { """ `${it.key}`: "${it.value}"""" }
                 .let { if (it.isNotBlank()) ",$it" else it }
-        return write("""CREATE (node:${entityType.name} { id: '$id'$strProps });""",
+        return write("""CREATE (node:${entityType.name} { id:"${entity.id}"$strProps });""",
                 transaction) {
             it.summary().counters().nodesCreated() == 1
         }
@@ -96,10 +101,10 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
         }
     }
 
-    fun update(id: String, entity: E, transaction: Transaction): Boolean {
+    fun update(entity: E, transaction: Transaction): Boolean {
         val properties = getProperties(entity)
         val setClause: String = properties.entries.fold("") { acc, entry -> """$acc SET node.${entry.key} = "${entry.value}" """ }
-        return write("""MATCH (node:${entityType.name} { id: '$id' }) $setClause ;""",
+        return write("""MATCH (node:${entityType.name} { id: '${entity.id}' }) $setClause ;""",
                 transaction) {
             it.summary().counters().containsUpdates()
         }
@@ -115,30 +120,36 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
 
 class RelationStore<FROM : HasId, TO : HasId>(private val relationType: RelationType<FROM, *, TO>) {
 
-    fun create(from: FROM, relation: Any?, to: TO, transaction: Transaction): Boolean {
+    fun create(from: FROM, relation: Any, to: TO, transaction: Transaction): Boolean {
 
-        if (relation != null) {
-            val properties = getProperties(relation)
-            val strProps: String = properties.entries.joinToString(",") { """`${it.key}`: "${it.value}"""" }
-            return write("""
-                MATCH (from:${relationType.from.name} { id: '${from.id}' }),(to:${relationType.to.name} { id: '${to.id}' })
-                CREATE (from)-[:${relationType.relation.name} { $strProps } ]->(to);
-                """.trimIndent(),
-                    transaction) {
-                it.summary().counters().relationshipsCreated() == 1
-            }
-        }
-
+        val properties = getProperties(relation)
+        val strProps: String = properties.entries.joinToString(",") { """`${it.key}`: "${it.value}"""" }
         return write("""
                 MATCH (from:${relationType.from.name} { id: '${from.id}' }),(to:${relationType.to.name} { id: '${to.id}' })
-                CREATE (from)-[:${relationType.relation.name}]->(to);
+                CREATE (from)-[:${relationType.relation.name} { $strProps } ]->(to);
                 """.trimIndent(),
                 transaction) {
             it.summary().counters().relationshipsCreated() == 1
         }
     }
 
+    fun create(from: FROM, to: TO, transaction: Transaction): Boolean = write("""
+                MATCH (from:${relationType.from.name} { id: '${from.id}' }),(to:${relationType.to.name} { id: '${to.id}' })
+                CREATE (from)-[:${relationType.relation.name}]->(to);
+                """.trimIndent(),
+            transaction) {
+        it.summary().counters().relationshipsCreated() == 1
+    }
+
     fun create(fromId: String, toId: String, transaction: Transaction): Boolean = write("""
+                MATCH (from:${relationType.from.name} { id: '$fromId' }),(to:${relationType.to.name} { id: '$toId' })
+                CREATE (from)-[:${relationType.relation.name}]->(to);
+                """.trimIndent(),
+            transaction) {
+        it.summary().counters().relationshipsCreated() == 1
+    }
+
+    fun create(fromId: String, relation: Any, toId: String, transaction: Transaction): Boolean = write("""
                 MATCH (from:${relationType.from.name} { id: '$fromId' }),(to:${relationType.to.name} { id: '$toId' })
                 CREATE (from)-[:${relationType.relation.name}]->(to);
                 """.trimIndent(),

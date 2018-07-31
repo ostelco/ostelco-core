@@ -41,7 +41,7 @@ class SchemaTest {
             a.field1 = "value1"
             a.field2 = "value2"
 
-            aEntityStore.create(aId, a, transaction)
+            aEntityStore.create(a, transaction)
 
             // get node
             assertEquals(a, aEntityStore.get("a_id", transaction))
@@ -52,7 +52,7 @@ class SchemaTest {
             ua.field1 = "value1_u"
             ua.field2 = "value2_u"
 
-            aEntityStore.update(aId, ua, transaction)
+            aEntityStore.update(ua, transaction)
 
             // get updated node
             assertEquals(ua, aEntityStore.get(aId, transaction))
@@ -92,11 +92,11 @@ class SchemaTest {
             b.field1 = "b's value1"
             b.field2 = "b's value2"
 
-            fromEntityStore.create(aId, a, transaction)
-            toEntityStore.create(bId, b, transaction)
+            fromEntityStore.create(a, transaction)
+            toEntityStore.create(b, transaction)
 
             // create relation
-            relationStore.create(a, null, b, transaction)
+            relationStore.create(a, b, transaction)
 
             // get 'b' from 'a'
             assertEquals(listOf(b), fromEntityStore.getRelated(aId, relation, transaction))
@@ -130,8 +130,8 @@ class SchemaTest {
             b.field1 = "b's value1"
             b.field2 = "b's value2"
 
-            fromEntityStore.create(aId, a, transaction)
-            toEntityStore.create(bId, b, transaction)
+            fromEntityStore.create(a, transaction)
+            toEntityStore.create(b, transaction)
 
             // create relation
             val r = R()

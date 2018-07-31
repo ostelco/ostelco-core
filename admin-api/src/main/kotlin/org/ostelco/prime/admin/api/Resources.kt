@@ -12,8 +12,27 @@ import javax.ws.rs.POST
 import javax.ws.rs.PUT
 import javax.ws.rs.Path
 import javax.ws.rs.PathParam
+import javax.ws.rs.QueryParam
+import javax.ws.rs.core.Response
 
-@Path("/offers")
+@Path("/admin/subscriptions")
+class SubscriptionsResource {
+
+    private val adminDataSource by lazy { getResource<AdminDataSource>() }
+
+    @POST
+    fun createSubscription(
+            @QueryParam("subscription_id") subscriberId: String,
+            @QueryParam("msisdn") msisdn: String): Response {
+        val created = adminDataSource.addSubscription(subscriberId, msisdn)
+        if (created) {
+            return Response.status(Response.Status.CREATED).build()
+        }
+        return Response.status(Response.Status.NOT_FOUND).build()
+    }
+}
+
+@Path("/admin/offers")
 class OfferResource {
 
     private val adminDataSource by lazy { getResource<AdminDataSource>() }
@@ -36,7 +55,7 @@ class OfferResource {
 //    }
 }
 
-@Path("/segments")
+@Path("/admin/segments")
 class SegmentResource {
 
     private val adminDataSource by lazy { getResource<AdminDataSource>() }
@@ -67,7 +86,7 @@ class SegmentResource {
 //    }
 }
 
-@Path("/products")
+@Path("/admin/products")
 class ProductResource {
 
     private val adminDataSource by lazy { getResource<AdminDataSource>() }
@@ -83,7 +102,7 @@ class ProductResource {
     fun createProduct(product: Product) = adminDataSource.createProduct(product)
 }
 
-@Path("/product_classes")
+@Path("/admin/product_classes")
 class ProductClassResource {
 
     private val adminDataSource by lazy { getResource<AdminDataSource>() }
