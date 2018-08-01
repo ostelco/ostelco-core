@@ -22,7 +22,7 @@ jobs:
           # command: ./gradlew clean client-api:build  -x test 
           # command: ./gradlew clean build  -x test --parallel
           # command: ./gradlew clean build  -x :client-api:test 
-          command: ./gradlew clean build
+          command: ./gradlew clean build --no-daemon
 
       - persist_to_workspace:
           root: ~/
