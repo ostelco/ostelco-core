@@ -6,7 +6,8 @@ jobs:
       # setup the versions you want to use for docker and docker-compose
       DOCKER_VERSION: 18.06.0-ce
       DOCKER_COMPOSE_VERSION: 1.22.0
-      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xms2g -Xmx2g"
+      JAVA_OPTS: "-Xmx2g -XX:MaxPermSize=256m -XX:+HeapDumpOnOutOfMemoryError"
+      # GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xms2g -Xmx2g"
 
     docker:
       - image: circleci/openjdk:8u171-jdk
@@ -23,7 +24,7 @@ jobs:
           # command: ./gradlew clean client-api:build  -x test 
           # command: ./gradlew clean build  -x test --parallel
           # command: ./gradlew clean build  -x :client-api:test 
-          command: ./gradlew clean build --no-daemon
+          command: ./gradlew clean build  -Dorg.gradle.jvmargs=-Xmx2g
 
       - persist_to_workspace:
           root: ~/
