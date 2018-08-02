@@ -6,7 +6,7 @@ import org.ostelco.prime.disruptor.PrimeEvent
 import org.ostelco.prime.disruptor.PrimeEventMessageType
 import org.ostelco.prime.logger
 import org.ostelco.prime.module.getResource
-import org.ostelco.prime.storage.legacy.Storage
+import org.ostelco.prime.storage.ClientDataSource
 import java.util.*
 
 /**
@@ -14,7 +14,7 @@ import java.util.*
  */
 class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<PrimeEvent> {
 
-    private val LOG by logger()
+    private val logger by logger()
 
     private val dataPackMap = HashMap<String, Long>()
     private val bucketReservedMap = HashMap<String, Long>()
@@ -26,7 +26,7 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<PrimeEvent>
         try {
             val msisdn = event.msisdn
             if (msisdn == null) {
-                LOG.error("Received null as msisdn")
+                logger.error("Received null as msisdn")
                 return
             }
             when (event.messageType) {
@@ -42,7 +42,7 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<PrimeEvent>
                 PrimeEventMessageType.RELEASE_RESERVED_BUCKET -> releaseReservedBucket(msisdn)
             }
         } catch (e: Exception) {
-            LOG.warn("Exception handling prime event in OcsState", e)
+            logger.warn("Exception handling prime event in OcsState", e)
         }
     }
 
@@ -87,7 +87,7 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<PrimeEvent>
 
         val reserved = bucketReservedMap.remove(msisdn)
         if (reserved == null || reserved == 0L) {
-            LOG.warn("Trying to release not existing reserved bucket for msisdn {}", msisdn)
+            logger.warn("Trying to release not existing reserved bucket for msisdn {}", msisdn)
             return 0
         }
 
@@ -109,7 +109,7 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<PrimeEvent>
         Preconditions.checkArgument(usedBytes > -1, "Non-positive value for bytes")
 
         if (!dataPackMap.containsKey(msisdn)) {
-            LOG.warn("Used-Units for unknown msisdn : {}", msisdn)
+            logger.warn("Used-Units for unknown msisdn : {}", msisdn)
             return 0
         }
 
@@ -120,7 +120,7 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<PrimeEvent>
             // If there was usedBytes but no reservation, this indicates an error.
             // usedBytes = 0 and reserved = 0 is normal in CCR-I
             if (usedBytes > 0) {
-                LOG.warn("Used-Units without reservation")
+                logger.warn("Used-Units without reservation")
             }
             return existing
         }
@@ -163,12 +163,12 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<PrimeEvent>
         }
 
         if (!dataPackMap.containsKey(msisdn)) {
-            LOG.warn("Trying to reserve bucket for unknown msisdn {}", msisdn)
+            logger.warn("Trying to reserve bucket for unknown msisdn {}", msisdn)
             return 0
         }
 
         if (bucketReservedMap.containsKey(msisdn)) {
-            LOG.warn("Bucket already reserved for {}", msisdn)
+            logger.warn("Bucket already reserved for {}", msisdn)
             return 0
         }
 
@@ -190,11 +190,11 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<PrimeEvent>
     }
 
     private fun loadSubscriberBalanceFromDatabaseToInMemoryStructure() {
-        LOG.info("Loading initial balance from storage to in-memory OcsState")
-        val store: Storage = getResource()
+        logger.info("Loading initial balance from storage to in-memory OcsState")
+        val store: ClientDataSource = getResource()
         val balanceMap = store.balances
         for ((msisdn, noOfBytesLeft) in balanceMap) {
-            LOG.info("{} - {}", msisdn, noOfBytesLeft)
+            logger.info("{} - {}", msisdn, noOfBytesLeft)
             if (noOfBytesLeft > 0) {
                 val newMsisdn = stripLeadingPlus(msisdn)
                 addDataBundleBytes(newMsisdn, noOfBytesLeft)

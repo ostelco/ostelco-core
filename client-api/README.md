@@ -8,7 +8,7 @@ This document describes the API between the client and the backend.
    * [Common for all API methods](#common-for-all-api-methods)
       * [Preferred language](#preferred-language)
          * [Language indication sent from client](#language-indication-sent-from-client)
-         * [Format multi-language text strings sent in reponses to client](#format-multi-language-text-strings-sent-in-reponses-to-client)
+         * [Format multi-language text strings sent in responses to client](#format-multi-language-text-strings-sent-in-reponses-to-client)
       * [HTTP status codes and error reporting](#http-status-codes-and-error-reporting)
          * [If a request gives no error](#if-a-request-gives-no-error)
          * [If a request results in an error (Bad Request or Forbidden)](#if-a-request-results-in-an-error-bad-request-or-forbidden)
@@ -55,7 +55,7 @@ Furthermore:
    address etc.
    
 The API is developed partly through this document.  Partly through the swagger specification of the
-prime/infra/prime-api.yaml file that is more or less reliably mirrored in the swagger-generated static website [swagger doc](https://ostelco.github.io/).
+prime/infra/prod/prime-api.yaml file that is more or less reliably mirrored in the swagger-generated static website [swagger doc](https://ostelco.github.io/).
 
 ## Data model
 
@@ -87,7 +87,7 @@ is used up first and then the next etc.
 
 #### Language indication sent from client
 
- 1. As a query paramter in the URI.
+ 1. As a query parameter in the URI.
 
 ```
     /long/url/to/somewhere?lang=no,en
@@ -104,7 +104,7 @@ is used up first and then the next etc.
  4. If none of the requested languages are supported, fall back to the default language.
  5. The `lang` query parameter values has priority over the `Accept-Language` HTTP header.
 
-#### Format multi-language text strings sent in reponses to client
+#### Format multi-language text strings sent in responses to client
 
     "message": [{
                  "lang": "en",           // ISO 639-1
@@ -133,7 +133,7 @@ code | meaning
  500 | Internal Server Error
  503 | Service Unavailable
 
-In addition a service specific error code in included in the document describing the error in the error repsonse.
+In addition a service specific error code in included in the document describing the error in the error response.
 
 #### If a request gives no error
 
@@ -248,9 +248,9 @@ When the service is down for maintenance or similar.
 
 ### Sign up and authentication
 
-![Signin flow sequence diagram](diagrams/signin-flow.svg)
+![Sign-in flow sequence diagram](diagrams/signin-flow.svg)
 
-The client will intiate the login by contacting the [Auth0](http://auth0.com) service that helps us interface with
+The client will initiate the login by contacting the [Auth0](http://auth0.com) service that helps us interface with
 identity providers.  What's returned by auth0 is a combination of an ID token and an access token. 
 The ID token can contain many types of information, including email, address etc.   The access token
 is simply used to authenticate the user.    We use only the access token from Auth0 and ignore the ID token.
@@ -261,13 +261,13 @@ client towards the Prime component.
 
 The client then asks for a user profile.  The request is sent to a cloud endpoint, that will use the AWT token to 
 authenticate the user.  The web endpoint terminates the https connection and sends it on, with a header
-that indicates that it has been authenticted, to the Prime component.  The authentication process will include
+that indicates that it has been authenticated, to the Prime component.  The authentication process will include
 a conversation between the cloud endpoint and the identity provider.  That conversation is not described
 in this document.
 
 The user profile is then displayed.  If it is empty, as it will be the first time,  then the client will ask for information to be filled in and
 uploaded.  Populating the user profile is part of the _sign up_ procedure.   During sign up the user will be asked about
-name and email address.  The email address will be previously registred as part of the subscription activation. - Email address (previously registered as part of the subscription activation)
+name and email address.  The email address will be previously registered as part of the subscription activation. - Email address (previously registered as part of the subscription activation)
 
 An email with a verification code is then sent to the registered email address. The verification code is then
 entered into the client and the sign up procedure has been completed.
@@ -281,7 +281,7 @@ entered into the client and the sign up procedure has been completed.
        }
     <- 201 Created
 
-Provided that the given email address is know, an email with a verification code is sent to the registred
+Provided that the given email address is know, an email with a verification code is sent to the registered
 email address.
 
 On unknown email address a HTTP `403` status code is returned.
@@ -628,14 +628,14 @@ Sending of analytics events depends on the [consents](#consents) set.
 Analytics events will normally be implicitly reported as part of normal client/backend interaction flow. F.ex. when an offer
 is [accepted](#accept an offer).
 
-In cases where an event is not part of the normal client/backend interaction flow, an explict analytics event will be sent. F.ex. if
+In cases where an event is not part of the normal client/backend interaction flow, an explicit analytics event will be sent. F.ex. if
 an offer is [dismissed](#dismiss an offer).
 
 In both cases reporting of the event for analytics purposes is subject to the consents given by the user.
 
 #### Report an analytics event
 
-The API for reporting events that are not implictly given by the normal client/backend interaction flow, uses an `event-type` field
+The API for reporting events that are not implicitly given by the normal client/backend interaction flow, uses an `event-type` field
 to specify which event that is reported. Only the `event-type` is common to such reports, the remaining content is dependent upon
 the type of event reported.
 

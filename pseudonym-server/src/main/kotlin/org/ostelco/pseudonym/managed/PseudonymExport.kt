@@ -1,11 +1,28 @@
 package org.ostelco.pseudonym.managed
 
-import com.google.cloud.bigquery.*
+import com.google.cloud.bigquery.BigQuery
+import com.google.cloud.bigquery.Field
 import com.google.cloud.bigquery.InsertAllRequest.RowToInsert
-import com.google.cloud.datastore.*
+import com.google.cloud.bigquery.LegacySQLTypeName
+import com.google.cloud.bigquery.Schema
+import com.google.cloud.bigquery.StandardTableDefinition
+import com.google.cloud.bigquery.Table
+import com.google.cloud.bigquery.TableId
+import com.google.cloud.bigquery.TableInfo
+import com.google.cloud.datastore.Cursor
+import com.google.cloud.datastore.Datastore
+import com.google.cloud.datastore.Entity
+import com.google.cloud.datastore.Query
+import com.google.cloud.datastore.StructuredQuery
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
-import org.ostelco.pseudonym.resources.*
+import org.ostelco.pseudonym.resources.ExportTaskKind
+import org.ostelco.pseudonym.resources.PseudonymEntityKind
+import org.ostelco.pseudonym.resources.errorPropertyName
+import org.ostelco.pseudonym.resources.exportIdPropertyName
+import org.ostelco.pseudonym.resources.msisdnPropertyName
+import org.ostelco.pseudonym.resources.pseudonymPropertyName
+import org.ostelco.pseudonym.resources.statusPropertyName
 import org.slf4j.LoggerFactory
 import java.util.*
 import java.util.concurrent.Callable
@@ -20,7 +37,7 @@ const val idFieldName = "msisdnid"
  */
 
 class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastore: Datastore) {
-    private val LOG = LoggerFactory.getLogger(PseudonymExport::class.java)
+    private val logger = LoggerFactory.getLogger(PseudonymExport::class.java)
 
     /**
      * Status of the export operation in progress.
@@ -46,7 +63,7 @@ class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastor
         // Delete existing table
         val deleted = bigquery.delete(datasetName, tableName)
         if (deleted) {
-            LOG.info("Existing table deleted.")
+            logger.info("Existing table deleted.")
         }
         val tableId = TableId.of(datasetName, tableName)
         // Table field definition
@@ -88,13 +105,13 @@ class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastor
                     msisdnFieldName to entity.getString(msisdnPropertyName),
                     pseudonymFiledName to entity.getString(pseudonymPropertyName),
                     idFieldName to getIdForMsisdn(entity.getString(msisdnPropertyName)))
-            val rowId = "rowId${totalPseudonyms}"
+            val rowId = "rowId$totalPseudonyms"
             rows.add(RowToInsert.of(rowId, row))
         }
         if (totalPseudonyms != 0) {
             val response = table.insert(rows, true, true)
             if (response.hasErrors()) {
-                LOG.error("Failed to insert Records", response.insertErrors)
+                logger.error("Failed to insert Records", response.insertErrors)
                 error = "$error${response.insertErrors.toString()}\n"
             }
         }
@@ -106,7 +123,7 @@ class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastor
     }
 
     private fun start() {
-        LOG.info("Starting to export Pseudonyms for ${exportId}")
+        logger.info("Starting to export Pseudonyms for $exportId")
         status = Status.RUNNING
         upsertTaskStatus()
         val table = createTable()
@@ -118,7 +135,7 @@ class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastor
             status = Status.FINISHED
             upsertTaskStatus()
         }
-        LOG.info("Exported Pseudonyms for ${exportId}")
+        logger.info("Exported Pseudonyms for $exportId")
     }
 
     /**
@@ -137,7 +154,7 @@ class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastor
         try {
             // Verify before writing a new value.
             val currentEntity = transaction.get(exportKey)
-            var builder: Entity.Builder?
+            val builder: Entity.Builder?
             if (currentEntity == null) {
                 builder = Entity.newBuilder(exportKey)
             } else {

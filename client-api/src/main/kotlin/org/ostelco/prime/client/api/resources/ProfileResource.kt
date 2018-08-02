@@ -11,6 +11,7 @@ import javax.ws.rs.POST
 import javax.ws.rs.PUT
 import javax.ws.rs.Path
 import javax.ws.rs.Produces
+import javax.ws.rs.QueryParam
 import javax.ws.rs.core.Response
 
 /**
@@ -18,7 +19,7 @@ import javax.ws.rs.core.Response
  *
  */
 @Path("/profile")
-class ProfileResource(private val dao: SubscriberDAO) : ResourceHelpers() {
+class ProfileResource(private val dao: SubscriberDAO) {
 
     @GET
     @Produces("application/json")
@@ -45,13 +46,15 @@ class ProfileResource(private val dao: SubscriberDAO) : ResourceHelpers() {
     @Produces("application/json")
     @Consumes("application/json")
     fun createProfile(@Auth token: AccessTokenPrincipal?,
-                      @NotNull profile: Subscriber): Response {
+                      @NotNull profile: Subscriber,
+                      @QueryParam("referred_by") referredBy: String?): Response {
+
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
 
-        val result = dao.createProfile(token.name, profile)
+        val result = dao.createProfile(token.name, profile, referredBy)
 
         return if (result.isRight) {
             Response.status(Response.Status.CREATED)

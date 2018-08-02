@@ -21,7 +21,7 @@ import java.time.Instant
  */
 class DataConsumptionInfoPublisher(private val projectId: String, private val topicId: String) : EventHandler<PrimeEvent>, Managed {
 
-    private val LOG by logger()
+    private val logger by logger()
 
     private lateinit var publisher: Publisher
 
@@ -71,15 +71,15 @@ class DataConsumptionInfoPublisher(private val projectId: String, private val to
             override fun onFailure(throwable: Throwable) {
                 if (throwable is ApiException) {
                     // details on the API exception
-                    LOG.warn("Status code: {}", throwable.statusCode.code)
-                    LOG.warn("Retrying: {}", throwable.isRetryable)
+                    logger.warn("Status code: {}", throwable.statusCode.code)
+                    logger.warn("Retrying: {}", throwable.isRetryable)
                 }
-                LOG.warn("Error publishing message for msisdn: {}", event.msisdn)
+                logger.warn("Error publishing message for msisdn: {}", event.msisdn)
             }
 
             override fun onSuccess(messageId: String) {
                 // Once published, returns server-assigned message ids (unique within the topic)
-                LOG.debug(messageId)
+                logger.debug(messageId)
             }
         })
     }

@@ -12,7 +12,7 @@ BASEDIR=$($(cd $(dirname "$0")/.. ); pwd)
 # Setting up source and destination directories
 SWAGGER_DOC_DIR=${BASEDIR}/docs/prime-api
 SWAGGER_GEN_DIR=${BASEDIR}/.swagger_gen_dir
-SWAGGER_YAML_FILE=${BASEDIR}/prime/infra/prime-api.yaml
+SWAGGER_YAML_FILE=${BASEDIR}/prime/infra/prod/prime-api.yaml
 
 rm -rf $SWAGGER_DOC_DIR
 mkdir $SWAGGER_DOC_DIR

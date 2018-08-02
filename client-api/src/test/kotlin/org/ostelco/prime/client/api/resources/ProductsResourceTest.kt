@@ -7,6 +7,7 @@ import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter
 import io.dropwizard.testing.junit.ResourceTestRule
 import io.vavr.control.Either
 import io.vavr.control.Option
+import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory
 import org.junit.Assert.assertTrue
@@ -14,6 +15,7 @@ import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Test
 import org.mockito.ArgumentMatchers
+import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
@@ -88,17 +90,17 @@ class ProductsResourceTest {
 
         val sku = products[0].sku
 
-        `when`<Option<ApiError>>(DAO.purchaseProduct(arg1.capture(), arg2.capture())).thenReturn(Option.none())
+        Mockito.`when`<Option<ApiError>>(DAO.purchaseProduct(arg1.capture(), arg2.capture())).thenReturn(Option.none())
 
-        val resp = RULE.target("/products/$sku")
+        val resp = RULE.target("/products/$sku/purchase")
                 .request()
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
                 .header("X-Endpoint-API-UserInfo", userInfo)
                 .post(Entity.text(""))
 
-        assertThat(resp.status).isEqualTo(Response.Status.CREATED.statusCode)
-        assertThat(arg1.firstValue).isEqualTo(email)
-        assertThat(arg2.firstValue).isEqualTo(sku)
+        Assertions.assertThat(resp.status).isEqualTo(Response.Status.CREATED.statusCode)
+        Assertions.assertThat(arg1.firstValue).isEqualTo(email)
+        Assertions.assertThat(arg2.firstValue).isEqualTo(sku)
     }
 
     companion object {

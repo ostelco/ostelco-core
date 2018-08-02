@@ -42,7 +42,7 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
                        private val dateBounds: DateBounds,
                        private val client: Client) : Managed {
 
-    private val LOG = LoggerFactory.getLogger(MessageProcessor::class.java)
+    private val logger = LoggerFactory.getLogger(MessageProcessor::class.java)
     private val receiver: MessageReceiver
     private var subscriber: Subscriber? = null
     private var publisher: Publisher? = null
@@ -64,7 +64,7 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
 
     @Throws(Exception::class)
     override fun start() {
-        LOG.info("Starting MessageProcessor...")
+        logger.info("Starting MessageProcessor...")
         if (emulatorHost != null && !emulatorHost.isEmpty()) {
             // Setup for picking up emulator settings
             // https://cloud.google.com/pubsub/docs/emulator#pubsub-emulator-java
@@ -90,14 +90,14 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
 
     @Throws(Exception::class)
     override fun stop() {
-        LOG.info("Stopping MessageProcessor...")
+        logger.info("Stopping MessageProcessor...")
         channel?.shutdown()
         subscriber?.stopAsync()
         publisher?.shutdown()
     }
 
     private fun getPseudonymUrl(msisdn: String, timestamp: Long): String {
-        return "${pseudonymEndpoint}/pseudonym/get/$msisdn/$timestamp"
+        return "$pseudonymEndpoint/pseudonym/get/$msisdn/$timestamp"
     }
 
     private fun getPseudonymEntity(msisdn: String, timestamp: Long): PseudonymEntity? {
@@ -111,16 +111,16 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
                 val response = target.request().get()
                 if (response.getStatus() != 200) {
                     val unexpectedResponse = response.readEntity(String::class.java)
-                    LOG.warn("$url returned ${response.getStatus()} Response: ${unexpectedResponse}")
+                    logger.warn("$url returned ${response.getStatus()} Response: $unexpectedResponse")
                     throw javax.ws.rs.ProcessingException(unexpectedResponse)
                 }
-                LOG.warn("$url returned ${response.getStatus()}")
+                logger.warn("$url returned ${response.getStatus()}")
                 val json = response.readEntity(String::class.java)
                 response.close()
                 mapper.readValue<PseudonymEntity>(json)
             })
         } catch (e: ExecutionException) {
-            LOG.warn("getPseudonymEntity failed, ${e.toString()}")
+            logger.warn("getPseudonymEntity failed, ${e.toString()}")
         }
         return null
     }
@@ -130,7 +130,7 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
         // Retrieve the pseudonym for msisdn
         val pseudonymEntity = getPseudonymEntity(trafficInfo.msisdn, Timestamps.toMillis(trafficInfo.timestamp))
         if (pseudonymEntity == null) {
-            LOG.error("Error converting DataTrafficInfo message ${message.messageId}")
+            logger.error("Error converting DataTrafficInfo message ${message.messageId}")
             consumer.nack()
             return
         }
@@ -142,7 +142,7 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
                 .setTimestamp(trafficInfo.timestamp)
                 .build()
                 .toByteString()
-        LOG.info("msisdn {}, bucketBytes {}", trafficInfo.msisdn, trafficInfo.bucketBytes)
+        logger.info("msisdn {}, bucketBytes {}", trafficInfo.msisdn, trafficInfo.bucketBytes)
         val pubsubMessage = PubsubMessage.newBuilder()
                 .setData(data)
                 .build()
@@ -155,17 +155,17 @@ class MessageProcessor(private val subscriptionName: ProjectSubscriptionName,
             override fun onFailure(throwable: Throwable) {
                 if (throwable is ApiException) {
                     // details on the API exception
-                    LOG.warn("Status code: {}", throwable.statusCode.code)
-                    LOG.warn("Retrying: {}", throwable.isRetryable)
+                    logger.warn("Status code: {}", throwable.statusCode.code)
+                    logger.warn("Retrying: {}", throwable.isRetryable)
                 }
-                LOG.warn("Error publishing message for msisdn: {}", trafficInfo.msisdn)
+                logger.warn("Error publishing message for msisdn: {}", trafficInfo.msisdn)
                 consumer.nack()
             }
 
             override fun onSuccess(messageId: String) {
                 // Once published, returns server-assigned message ids (unique within the topic)
-                LOG.debug(messageId)
-                LOG.info("Processed message $messageId")
+                logger.debug(messageId)
+                logger.info("Processed message $messageId")
                 consumer.ack()
             }
         })

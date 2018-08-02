@@ -13,9 +13,8 @@ import org.ostelco.prime.disruptor.PrimeEventMessageType.GET_DATA_BUNDLE_BALANCE
 import org.ostelco.prime.disruptor.PrimeEventMessageType.RELEASE_RESERVED_BUCKET
 import org.ostelco.prime.events.EventProcessor
 import org.ostelco.prime.model.Product
+import org.ostelco.prime.storage.ClientDataSource
 import org.ostelco.prime.storage.legacy.Products
-import org.ostelco.prime.storage.legacy.Storage
-import org.ostelco.prime.storage.legacy.StorageException
 
 class EventProcessorTest  {
 
@@ -27,7 +26,7 @@ class EventProcessorTest  {
     var mockitoRule: MockitoRule = MockitoJUnit.rule()
 
     @Mock
-    lateinit var storage: Storage
+    lateinit var storage: ClientDataSource
 
     private lateinit var processor: EventProcessor
 
@@ -50,11 +49,11 @@ class EventProcessorTest  {
 
         processor.onEvent(primeEvent, 0L, false)
 
-        Mockito.verify<Storage>(storage).setBalance(safeEq(MSISDN), safeEq(noOfBytes))
+        Mockito.verify<ClientDataSource>(storage).setBalance(safeEq(MSISDN), safeEq(noOfBytes))
     }
 
     @Test
-    @Throws(StorageException::class)
+    @Throws(Exception::class)
     fun testPrimeEventGetDataBundleBalance() {
         val primeEvent = PrimeEvent()
         primeEvent.messageType = GET_DATA_BUNDLE_BALANCE
@@ -64,7 +63,7 @@ class EventProcessorTest  {
         processor.onEvent(primeEvent, 0L, false)
 
         // Verify a little.
-        Mockito.verify<Storage>(storage).setBalance(safeEq(MSISDN), safeEq(NO_OF_BYTES))
+        Mockito.verify<ClientDataSource>(storage).setBalance(safeEq(MSISDN), safeEq(NO_OF_BYTES))
     }
 
     // https://github.com/mockito/mockito/issues/1255

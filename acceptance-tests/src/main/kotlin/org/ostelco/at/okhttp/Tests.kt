@@ -12,13 +12,20 @@ import kotlin.test.assertNotNull
 
 class GetBalanceTest {
 
-    private val LOG by logger()
+    private val logger by logger()
 
     @Test
     fun testGetBalance() {
-        val subscriptionStatus = client.subscription
+        val subscriptions = client.subscriptions
 
-        LOG.info("Balance: ${subscriptionStatus.remaining}")
+        subscriptions.forEach { logger.info("Balance: ${it.balance}") }
+    }
+
+    @Test
+    fun testGetBalanceUsingStatus() {
+        val subscriptionStatus = client.subscriptionStatus
+
+        logger.info("Balance: ${subscriptionStatus.remaining}")
         subscriptionStatus.purchaseRecords.forEach {
             assertEquals("4747900184", it.msisdn, "Incorrect 'MSISDN' in purchase record")
             assertEquals(expectedProducts().first(), it.product, "Incorrect 'Product' in purchase record")
@@ -27,14 +34,14 @@ class GetBalanceTest {
 }
 class GetPseudonymsTest {
 
-    private val LOG by logger()
+    private val logger by logger()
 
     @Test
     fun testGetActivePseudonyms() {
         val activePseudonyms = client.activePseudonyms
 
-        LOG.info("Current: ${activePseudonyms.current.pseudonym}")
-        LOG.info("Next: ${activePseudonyms.next.pseudonym}")
+        logger.info("Current: ${activePseudonyms.current.pseudonym}")
+        logger.info("Next: ${activePseudonyms.next.pseudonym}")
         assertNotNull(activePseudonyms.current.pseudonym,"Empty current pseudonym")
         assertNotNull(activePseudonyms.next.pseudonym,"Empty next pseudonym")
         assertEquals(activePseudonyms.current.end+1, activePseudonyms.next.start, "The pseudonyms are not in order")
@@ -46,7 +53,7 @@ class GetProductsTest {
     @Test
     fun testGetProducts() {
         val products = client.allProducts.toList()
-        assertEquals(expectedProducts(), products, "Incorrect 'Products' fetched")
+        assertEquals(expectedProducts().toSet(), products.toSet(), "Incorrect 'Products' fetched")
     }
 }
 
@@ -58,11 +65,14 @@ class PurchaseTest {
 
         client.buyProduct("1GB_249NOK")
 
-        val subscriptionStatusAfter = client.subscription
+        val subscriptionStatusAfter = client.subscriptionStatus
         // TODO Test to check updated balance after purchase is not working
 //        val balanceAfter = subscriptionStatusAfter.remaining
 //        assertEquals(1L*1024*124*1024, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
-        assert(Instant.now().toEpochMilli() - subscriptionStatusAfter.purchaseRecords.last().timestamp < 10_000, { "Missing Purchase Record" })
+        assert(Instant.now().toEpochMilli() - subscriptionStatusAfter.purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
+
+        val purchaseRecordList = client.purchaseHistory
+        assert(Instant.now().toEpochMilli() - purchaseRecordList.last().timestamp < 10_000) { "Missing Purchase Record" }
     }
 }
 

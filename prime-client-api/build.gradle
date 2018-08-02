@@ -10,14 +10,14 @@ swaggerSources {
 
   // if they ever fix kotlin
 //  'kotlin-client' {
-//    inputFile = file("${projectDir}/../prime/infra/prime-client-api.yaml")
+//    inputFile = file("${projectDir}/../prime/infra/prod/prime-client-api.yaml")
 //    code {
 //      language = 'kotlin'
 //      configFile = file("${projectDir}/config.json")
 //    }
 //  }
   'java-client' {
-    inputFile = file("${projectDir}/../prime/infra/prime-client-api.yaml")
+    inputFile = file("${projectDir}/../prime/infra/dev/prime-client-api.yaml")
     code {
       language = 'java'
       configFile = file("${projectDir}/config.json")

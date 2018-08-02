@@ -4,10 +4,13 @@ import io.vavr.control.Either
 import io.vavr.control.Option
 import org.ostelco.prime.client.api.core.ApiError
 import org.ostelco.prime.client.api.model.Consent
+import org.ostelco.prime.client.api.model.Person
 import org.ostelco.prime.client.api.model.SubscriptionStatus
 import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Product
+import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
+import org.ostelco.prime.model.Subscription
 
 /**
  *
@@ -16,11 +19,16 @@ interface SubscriberDAO {
 
     fun getProfile(subscriptionId: String): Either<ApiError, Subscriber>
 
-    fun createProfile(subscriptionId: String, profile: Subscriber): Either<ApiError, Subscriber>
+    fun createProfile(subscriptionId: String, profile: Subscriber, referredBy: String?): Either<ApiError, Subscriber>
 
     fun updateProfile(subscriptionId: String, profile: Subscriber): Either<ApiError, Subscriber>
 
+    @Deprecated("use getSubscriptions", ReplaceWith("getSubscriptions", "org.ostelco.prime.client.api.model.Subscription"))
     fun getSubscriptionStatus(subscriptionId: String): Either<ApiError, SubscriptionStatus>
+
+    fun getSubscriptions(subscriptionId: String): Either<ApiError, Collection<Subscription>>
+
+    fun getPurchaseHistory(subscriptionId: String): Either<ApiError, Collection<PurchaseRecord>>
 
     fun getMsisdn(subscriptionId: String): Either<ApiError, String>
 
@@ -37,6 +45,10 @@ interface SubscriberDAO {
     fun reportAnalytics(subscriptionId: String, events: String): Option<ApiError>
 
     fun storeApplicationToken(msisdn: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken>
+
+    fun getReferrals(name: String): Either<ApiError, Collection<Person>>
+
+    fun getReferredBy(name: String): Either<ApiError, Person>
 
     companion object {
 

@@ -6,9 +6,11 @@ import org.ostelco.prime.client.model.ActivePseudonyms
 import org.ostelco.prime.client.model.Consent
 import org.ostelco.prime.client.model.Product
 import org.ostelco.prime.client.model.Profile
+import org.ostelco.prime.client.model.PurchaseRecordList
 import org.ostelco.prime.client.model.SubscriptionStatus
 import org.ostelco.prime.logger
 import org.ostelco.prime.model.ApplicationToken
+import org.ostelco.prime.model.Subscription
 import java.time.Instant
 import java.util.*
 import kotlin.test.assertEquals
@@ -18,16 +20,26 @@ import kotlin.test.assertTrue
 
 class GetBalanceTest {
 
-    private val LOG by logger()
+    private val logger by logger()
 
     @Test
     fun testGetBalance() {
+
+        val subscriptions: Collection<Subscription> = get {
+            path = "/subscriptions"
+        }
+
+        subscriptions.forEach { logger.info("Balance: ${it.balance}") }
+    }
+
+    @Test
+    fun testGetBalanceUsingStatus() {
 
         val subscriptionStatus: SubscriptionStatus = get {
             path = "/subscription/status"
         }
 
-        LOG.info("Balance: ${subscriptionStatus.remaining}")
+        logger.info("Balance: ${subscriptionStatus.remaining}")
         subscriptionStatus.purchaseRecords.forEach {
             assertEquals("4747900184", it.msisdn, "Incorrect 'MSISDN' in purchase record")
             assertEquals(expectedProducts().first(), it.product, "Incorrect 'Product' in purchase record")
@@ -37,7 +49,7 @@ class GetBalanceTest {
 
 class GetPseudonymsTest {
 
-    private val LOG by logger()
+    private val logger by logger()
 
     @Test
     fun testGetActivePseudonyms() {
@@ -46,8 +58,8 @@ class GetPseudonymsTest {
             path = "/subscription/activePseudonyms"
         }
 
-        LOG.info("Current: ${activePseudonyms.current.pseudonym}")
-        LOG.info("Next: ${activePseudonyms.next.pseudonym}")
+        logger.info("Current: ${activePseudonyms.current.pseudonym}")
+        logger.info("Next: ${activePseudonyms.next.pseudonym}")
         assertNotNull(activePseudonyms.current.pseudonym,"Empty current pseudonym")
         assertNotNull(activePseudonyms.next.pseudonym,"Empty next pseudonym")
         assertEquals(activePseudonyms.current.end+1, activePseudonyms.next.start, "The pseudonyms are not in order")
@@ -63,7 +75,7 @@ class GetProductsTest {
             path = "/products"
         }
 
-        assertEquals(expectedProducts(), products, "Incorrect 'Products' fetched")
+        assertEquals(expectedProducts().toSet(), products.toSet(), "Incorrect 'Products' fetched")
     }
 }
 
@@ -80,17 +92,22 @@ class PurchaseTest {
         val productSku = "1GB_249NOK"
 
         post<String> {
-            path = "/products/$productSku"
+            path = "/products/$productSku/purchase"
         }
 
         val subscriptionStatusAfter: SubscriptionStatus = get {
             path = "/subscription/status"
         }
-
         // TODO Test to check updated balance after purchase is not working
-//        val balanceAfter = subscriptionStatusBefore.remaining
+//        val balanceAfter = subscriptionStatusAfter.remaining
 //        assertEquals(1L*1024*124*1024, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
-        assert(Instant.now().toEpochMilli() - subscriptionStatusAfter.purchaseRecords.last().timestamp < 10_000, { "Missing Purchase Record" })
+        assert(Instant.now().toEpochMilli() - subscriptionStatusAfter.purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
+
+        val purchaseRecords: PurchaseRecordList = get {
+            path = "/purchases"
+        }
+
+        assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
     }
 }
 
