@@ -14,6 +14,7 @@ pushd ${SCRIPT_REAL_PATH}
 
 CERTS_DIR=../certs/${DOMAIN_NAME}
 OCSGW_CONFIG_DIR=../ocsgw/config
+ESP_SSL_DIR=../esp
 
 if [ -d ${CERTS_DIR} ]; then
   echo "Found the matching domain in certs. Generating SSL certs for domain ${DOMAIN_NAME} in ${CERTS_DIR} ..."
@@ -32,6 +33,9 @@ if [ -d ${CERTS_DIR} ]; then
   echo "Copying the generated nginx.crt to 'ocsgw/config/' directory"
   cp ${CERTS_DIR}/nginx.crt ${OCSGW_CONFIG_DIR}
   ls -l ${OCSGW_CONFIG_DIR}/nginx.crt
+  echo
+  echo ; echo "Copying the generated nginx.* to ${ESP_SSL_DIR} ..."
+  cp ${CERTS_DIR}/nginx.* ${ESP_SSL_DIR}/
   echo
 
 else
