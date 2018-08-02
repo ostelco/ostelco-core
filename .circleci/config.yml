@@ -6,7 +6,7 @@ jobs:
       # setup the versions you want to use for docker and docker-compose
       DOCKER_VERSION: 18.06.0-ce
       DOCKER_COMPOSE_VERSION: 1.22.0
-      JAVA_OPTS: "-Xmx2g -XX:MaxPermSize=256m -XX:+HeapDumpOnOutOfMemoryError"
+      # JAVA_OPTS: "-Xmx2g -XX:MaxPermSize=256m -XX:+HeapDumpOnOutOfMemoryError"
       # GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xms2g -Xmx2g"
 
     docker:
@@ -18,13 +18,27 @@ jobs:
 
     steps:
       - checkout
+      
+      - run:
+          name: Create pantel-prod.json file using the PANTEL_SECRETS_FILE env var.
+          command: |
+            echo; echo "======> Creating pantel-prod.json file, using the env variable PANTEL_SECRETS_FILE"
+            for LOCATION in $(find . -name .gitignore  -exec grep pantel-prod.json  '{}' '+' ); do 
+              DIR_NAME=$(dirname $LOCATION)
+              echo "Creating secrets file: ${DIR_NAME}/pantel-prod.json ..."
+              echo ${PANTEL_SECRETS_FILE} | base64 -d >  ${DIR_NAME}/pantel-prod.json
+            done
+            echo ''
+
+
+
       - run:
           name: Build entire repo, skipping test(s)
           # command: ./gradlew clean client-api:build --debug
           # command: ./gradlew clean client-api:build  -x test 
           # command: ./gradlew clean build  -x test --parallel
-          # command: ./gradlew clean build  -x :client-api:test 
-          command: ./gradlew clean build  -Dorg.gradle.jvmargs=-Xmx2g
+          command: ./gradlew clean build  -x :client-api:test 
+          # command: ./gradlew clean build  -Dorg.gradle.jvmargs=-Xmx2g
 
       - persist_to_workspace:
           root: ~/
@@ -78,7 +92,7 @@ jobs:
       # Put in docker-compose up command below:
       # The following docker-compose command will fail without proper secrets.
       # The docker-compose command will also include the docker-compose.override.yaml file
-      # - run: docker-compose up --abort-on-container-exit
+      - run: docker-compose up --abort-on-container-exit
 
   code-coverage:
 
