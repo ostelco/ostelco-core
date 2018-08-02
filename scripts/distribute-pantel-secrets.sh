@@ -15,9 +15,3 @@ for LOCATION in $(find . -name .gitignore  -exec grep pantel-prod.json  '{}' '+'
 done
 echo ''
 
-echo "Generating SSL certs ..."
-cd certs/ocs.ostelco.org/
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./nginx.key -out ./nginx.crt -subj '/CN=ocs.ostelco.org'
-cp nginx.crt ../../ocsgw/config
-cd -
-

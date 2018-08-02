@@ -32,7 +32,10 @@ jobs:
             echo ''
 
 
-
+      - run:
+          name: Generate self signed certs for ocs.ostelco.org .
+          command: scripts/generate-selfsigned-ssl-certs.sh   ocs.ostelco.org 
+          
       - run:
           name: Build entire repo, skipping test(s)
           # command: ./gradlew clean client-api:build --debug
