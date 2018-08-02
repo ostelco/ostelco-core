@@ -35,19 +35,9 @@ jobs:
       - run:
           name: Generate self signed certs for ocs.ostelco.org .
           command: scripts/generate-selfsigned-ssl-certs.sh   ocs.ostelco.org 
+
+      - setup_remote_docker
           
-      - run:
-          name: Build entire repo, skipping test(s)
-          # command: ./gradlew clean client-api:build --debug
-          # command: ./gradlew clean client-api:build  -x test 
-          # command: ./gradlew clean build  -x test --parallel
-          command: ./gradlew clean build  -x :client-api:test  -x :neo4j-store:test
-          # command: ./gradlew clean build  -Dorg.gradle.jvmargs=-Xmx2g
-
-      - persist_to_workspace:
-          root: ~/
-          paths: project
-
       - run:
           name: Install Docker client on primary container
           command: |
@@ -87,16 +77,30 @@ jobs:
             # if [ -n "${CHECK_SUDO}" ]; then echo "found sudo"; SUDO='sudo'; else SUDO=''; fi
             ###########################################################################################################
 
-      - setup_remote_docker
 
       # The following two commands are just to show how 'setup_remote_docker' works.
       - run: docker run  nginx:alpine "hostname"
       - run: docker images
 
+
+      - run:
+          name: Build entire repo, skipping test(s)
+          # command: ./gradlew clean client-api:build --debug
+          # command: ./gradlew clean client-api:build  -x test 
+          # command: ./gradlew clean build  -x test --parallel
+          command: ./gradlew clean build  -x :client-api:test  -x :neo4j-store:test
+          # command: ./gradlew clean build  -Dorg.gradle.jvmargs=-Xmx2g
+
+
       # Put in docker-compose up command below:
       # The following docker-compose command will fail without proper secrets.
       # The docker-compose command will also include the docker-compose.override.yaml file
       - run: docker-compose up --build --abort-on-container-exit
+
+
+      - persist_to_workspace:
+          root: ~/
+          paths: project
 
   code-coverage:
 
