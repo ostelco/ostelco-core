@@ -10,7 +10,7 @@ fi
 # Real path is not on every linux distribution.
 
 # SCRIPT_REAL_PATH=$(dirname $(realpath $0))
-SCRIPT_REAL_PATH="$( cd "$(dirname "$0")" ; pwd -P )
+SCRIPT_REAL_PATH="$( cd "$(dirname "$0")" ; pwd -P )"
 
 pushd ${SCRIPT_REAL_PATH}
 
