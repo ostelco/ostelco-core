@@ -90,8 +90,9 @@ jobs:
           # command: ./gradlew clean client-api:build --debug
           # command: ./gradlew clean client-api:build  -x test 
           # command: ./gradlew clean build  -x test --parallel
-          # command: ./gradlew clean build  -x :client-api:test  -x :neo4j-store:test
-          command: ./gradlew clean build 
+          command: ./gradlew clean build  -x :client-api:test  -x :neo4j-store:test
+          # command: ./gradlew clean build 
+          # command: ./gradlew clean build 
           # command: ./gradlew clean build  -Dorg.gradle.jvmargs=-Xmx2g
 
 
