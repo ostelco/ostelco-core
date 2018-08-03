@@ -40,25 +40,7 @@ jobs:
 
       # - setup_remote_docker
           
-      - run:
-          name: Install Docker client on primary container
-          command: |
-            curl -L -o ~/docker-${DOCKER_VERSION}.tgz \
-              https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz
-            tar -xzf ~/docker-${DOCKER_VERSION}.tgz -C /tmp/
-            if test $(which sudo); then echo "sudo found"; SUDO='sudo'; else echo "sudo not found"; SUDO=''; fi
-            ${SUDO} chmod +x /tmp/docker/*   
-            ${SUDO} mv /tmp/docker/* /usr/bin/
-            
-      - run:
-          name: Install Docker-Compose on primary container
-          command: |
-            curl -L -o ~/docker-compose \
-              https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m`
-            if test $(which sudo); then echo "sudo found"; SUDO='sudo'; else echo "sudo not found";  SUDO=''; fi
-            ${SUDO} chmod +x ~/docker-compose    
-            ${SUDO} mv ~/docker-compose /usr/bin/
-
+      # docker install instructions here
 
             ###########################################################################################################
             # The few lines of code in the run section for docker and docker-compose installation
