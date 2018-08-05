@@ -7,7 +7,6 @@ import org.ostelco.prime.model.ProductClass
 import org.ostelco.prime.model.Segment
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.AdminDataSource
-import javax.ws.rs.GET
 import javax.ws.rs.POST
 import javax.ws.rs.PUT
 import javax.ws.rs.Path
@@ -24,11 +23,10 @@ class SubscriptionsResource {
     fun createSubscription(
             @QueryParam("subscription_id") subscriberId: String,
             @QueryParam("msisdn") msisdn: String): Response {
-        val created = adminDataSource.addSubscription(subscriberId, msisdn)
-        if (created) {
-            return Response.status(Response.Status.CREATED).build()
-        }
-        return Response.status(Response.Status.NOT_FOUND).build()
+
+        return adminDataSource.addSubscription(subscriberId, msisdn)
+                .fold({ Response.status(Response.Status.CREATED).build() },
+                        { Response.status(Response.Status.NOT_FOUND).entity(it.message).build() })
     }
 }
 
@@ -45,7 +43,11 @@ class OfferResource {
 //    fun getOffer(@PathParam("offer-id") offerId: String) = adminDataSource.getOffer(offerId)
 
     @POST
-    fun createOffer(offer: Offer) = adminDataSource.createOffer(offer)
+    fun createOffer(offer: Offer): Response {
+        return adminDataSource.createOffer(offer)
+                .fold({ Response.status(Response.Status.CREATED).build() },
+                        { Response.status(Response.Status.FORBIDDEN).entity(it.message).build() })
+    }
 
 //    private fun toStoredOffer(offer: Offer): org.ostelco.prime.model.Offer {
 //        return org.ostelco.prime.model.Offer(
@@ -68,15 +70,23 @@ class SegmentResource {
 //    fun getSegment(@PathParam("segment-id") segmentId: String) = adminDataSource.getSegment(segmentId)
 
     @POST
-    fun createSegment(segment: Segment) = adminDataSource.createSegment(segment)
+    fun createSegment(segment: Segment): Response {
+        return adminDataSource.createSegment(segment)
+                .fold({ Response.status(Response.Status.CREATED).build() },
+                        { Response.status(Response.Status.FORBIDDEN).entity(it.message).build() })
+    }
 
     @PUT
     @Path("/{segment-id}")
     fun updateSegment(
             @PathParam("segment-id") segmentId: String,
-            segment: Segment) {
+            segment: Segment): Response {
+
         segment.id = segmentId
-        adminDataSource.updateSegment(segment)
+
+        return adminDataSource.updateSegment(segment)
+                .fold({ Response.ok().build() },
+                        { Response.status(Response.Status.NOT_MODIFIED).entity(it.message).build() })
     }
 
 //    private fun toStoredSegment(segment: Segment): org.ostelco.prime.model.Segment {
@@ -94,12 +104,16 @@ class ProductResource {
 //    @GET
 //    fun getProducts() = adminDataSource.getProducts().map { it.id }
 
-    @GET
-    @Path("/{product-sku}")
-    fun getProducts(@PathParam("product-sku") productSku: String) = adminDataSource.getProduct(null, productSku)
+//    @GET
+//    @Path("/{product-sku}")
+//    fun getProducts(@PathParam("product-sku") productSku: String) = adminDataSource.getProduct(null, productSku)
 
     @POST
-    fun createProduct(product: Product) = adminDataSource.createProduct(product)
+    fun createProduct(product: Product): Response {
+        return adminDataSource.createProduct(product)
+                .fold({ Response.ok().build() },
+                        { Response.status(Response.Status.FORBIDDEN).entity(it.message).build() })
+    }
 }
 
 @Path("/admin/product_classes")
@@ -115,7 +129,11 @@ class ProductClassResource {
 //    fun getProductClass(@PathParam("product-class-id") productClassId: String) = adminDataSource.getProductClass(productClassId)
 
     @POST
-    fun createProductClass(productClass: ProductClass) = adminDataSource.createProductClass(productClass)
+    fun createProductClass(productClass: ProductClass): Response {
+        return adminDataSource.createProductClass(productClass)
+                .fold({ Response.ok().build() },
+                        { Response.status(Response.Status.FORBIDDEN).entity(it.message).build() })
+    }
 
 //    @PUT
 //    @Path("/{product-class-id}")

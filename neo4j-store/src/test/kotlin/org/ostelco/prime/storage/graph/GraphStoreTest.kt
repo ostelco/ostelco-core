@@ -55,10 +55,10 @@ class GraphStoreTest {
     @Test
     fun `test add subscriber`() {
 
-        assertTrue(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null))
+        assertTrue(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null).isEmpty())
         assertEquals(
                 Subscriber(email = EMAIL, name = NAME, referralId = EMAIL),
-                Neo4jStoreSingleton.getSubscriber(EMAIL))
+                Neo4jStoreSingleton.getSubscriber(EMAIL).toOption().orNull())
 
         // TODO vihang: fix argument captor for neo4j-store tests
 //        val bundleArgCaptor: ArgumentCaptor<Bundle> = ArgumentCaptor.forClass(Bundle::class.java)
@@ -69,9 +69,9 @@ class GraphStoreTest {
     @Test
     fun `test add subscription`() {
 
-        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null))
+        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null).isEmpty())
 
-        assertTrue(Neo4jStoreSingleton.addSubscription(EMAIL, MSISDN))
+        assertTrue(Neo4jStoreSingleton.addSubscription(EMAIL, MSISDN).isEmpty())
         assertEquals(MSISDN, Neo4jStoreSingleton.getMsisdn(EMAIL))
         assertEquals(listOf(Subscription(MSISDN)), Neo4jStoreSingleton.getSubscriptions(EMAIL))
 
@@ -85,12 +85,12 @@ class GraphStoreTest {
 
     @Test
     fun `test set and get Purchase record`() {
-        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null))
+        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null).isEmpty())
 
         val product = createProduct("1GB_249NOK", 24900)
         val now = Instant.now().toEpochMilli()
 
-        assertTrue(Neo4jStoreSingleton.createProduct(product), "Failed to create product")
+        assertTrue(Neo4jStoreSingleton.createProduct(product).isEmpty(), "Failed to create product")
 
         val purchaseRecord = PurchaseRecord(product = product, timestamp = now)
         assertNotNull(Neo4jStoreSingleton.addPurchaseRecord(EMAIL, purchaseRecord), "Failed to add purchase record")
@@ -100,7 +100,7 @@ class GraphStoreTest {
 
     @Test
     fun `test offer, segment and get products`() {
-        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null))
+        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null).isEmpty())
 
         Neo4jStoreSingleton.createProduct(createProduct("1GB_249NOK", 24900))
         Neo4jStoreSingleton.createProduct(createProduct("2GB_299NOK", 29900))

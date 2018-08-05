@@ -1,5 +1,9 @@
 package org.ostelco.prime.storage.graph
 
+import arrow.core.Either
+import arrow.core.None
+import arrow.core.Option
+import arrow.core.orElse
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Entity
@@ -13,6 +17,9 @@ import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.ocs.OcsAdminService
 import org.ostelco.prime.storage.GraphStore
+import org.ostelco.prime.storage.NotFoundError
+import org.ostelco.prime.storage.StoreError
+import org.ostelco.prime.storage.ValidationError
 import org.ostelco.prime.storage.graph.Graph.read
 import org.ostelco.prime.storage.graph.Relation.BELONG_TO_SEGMENT
 import org.ostelco.prime.storage.graph.Relation.HAS_BUNDLE
@@ -119,42 +126,63 @@ object Neo4jStoreSingleton : GraphStore {
     // Subscriber
     //
 
-    override fun getSubscriber(subscriberId: String): Subscriber? = readTransaction { subscriberStore.get(subscriberId, transaction) }
+    override fun getSubscriber(subscriberId: String): Either<StoreError, Subscriber> =
+            readTransaction { subscriberStore.get(subscriberId, transaction) }
 
     // TODO vihang: Move this logic to DSL + Rule Engine + Triggers, when they are ready
-    override fun addSubscriber(subscriber: Subscriber, referredBy: String?): Boolean = writeTransaction {
+    override fun addSubscriber(subscriber: Subscriber, referredBy: String?): Option<StoreError> = writeTransaction {
 
         if (subscriber.id == referredBy) {
-            return@writeTransaction false
+            return@writeTransaction Option(ValidationError(
+                    type = subscriberEntity.name,
+                    id = subscriber.id,
+                    message = "Referred by self"))
         }
 
         val bundleId = subscriber.id
 
-        var result = subscriberStore.create(subscriber, transaction)
+        var failed = subscriberStore.create(subscriber, transaction)
         if (referredBy != null) {
             // Give 1 GB if subscriber is referred
-            result = result
-                    && referredRelationStore.create(referredBy, subscriber.id, transaction)
-                    && bundleStore.create(Bundle(bundleId, 1_000_000_000), transaction)
-            if (result) {
+            failed
+                    .ifSuccessThen { referredRelationStore.create(referredBy, subscriber.id, transaction) }
+                    .ifSuccessThen { bundleStore.create(Bundle(bundleId, 1_000_000_000), transaction) }
+                    .ifSuccessThen {
+                        productStore
+                                .get("1GB_FREE_ON_REFERRED", transaction)
+                                .map {
+                                    createPurchaseRecordRelation(
+                                            subscriber.id,
+                                            PurchaseRecord(product = it, timestamp = Instant.now().toEpochMilli()),
+                                            transaction)
+                                }
+                                .fold({ Option(it) }, { None })
+                    }
+            if (failed.isEmpty()) {
                 ocs.addBundle(Bundle(bundleId, 1_000_000_000))
-                val product = productStore.get("1GB_FREE_ON_REFERRED", transaction) ?: return@writeTransaction false
-                createPurchaseRecordRelation(subscriber.id, PurchaseRecord(product = product, timestamp = Instant.now().toEpochMilli()), transaction)
             }
-
         } else {
             // Give 100 MB as free initial balance
-            result = result && bundleStore.create(Bundle(bundleId, 100_000_000), transaction)
-            if (result) {
+            failed = failed
+                    .ifSuccessThen { bundleStore.create(Bundle(bundleId, 100_000_000), transaction) }
+                    .ifSuccessThen {
+                        productStore
+                                .get("100MB_FREE_ON_JOINING", transaction)
+                                .map {
+                                    createPurchaseRecordRelation(
+                                            subscriber.id,
+                                            PurchaseRecord(product = it, timestamp = Instant.now().toEpochMilli()),
+                                            transaction)
+                                }
+                                .fold({ Option(it) }, { None })
+                    }
+            if (failed.isEmpty()) {
                 ocs.addBundle(Bundle(bundleId, 100_000_000))
-                val product = productStore.get("100MB_FREE_ON_JOINING", transaction) ?: return@writeTransaction false
-                createPurchaseRecordRelation(subscriber.id, PurchaseRecord(product = product, timestamp = Instant.now().toEpochMilli()), transaction)
             }
         }
-        result = result
-                && subscriberToBundleStore.create(subscriber.id, bundleId, transaction)
-                && subscriberToSegmentStore.create(subscriber.id, "all", transaction)
-        result
+        failed
+                .ifSuccessThen { subscriberToBundleStore.create(subscriber.id, bundleId, transaction) }
+                .ifSuccessThen { subscriberToSegmentStore.create(subscriber.id, "all", transaction) }
     }
 
     override fun updateSubscriber(subscriber: Subscriber): Boolean = writeTransaction {
@@ -167,22 +195,35 @@ object Neo4jStoreSingleton : GraphStore {
     // Subscription
     //
 
-    override fun addSubscription(subscriberId: String, msisdn: String): Boolean {
-        return writeTransaction {
-            val subscriber = subscriberStore.get(subscriberId, transaction) ?: return@writeTransaction false
-            val bundles = subscriberStore.getRelated(subscriberId, subscriberToBundleRelation, transaction)
-            if (bundles.isEmpty()) {
-                return@writeTransaction false
-            }
-            val result = subscriptionStore.create(Subscription(msisdn), transaction)
-            val subscription = subscriptionStore.get(msisdn, transaction) ?: return@writeTransaction false
+    override fun addSubscription(subscriberId: String, msisdn: String): Option<StoreError> = writeTransaction {
+        subscriberStore.get(subscriberId, transaction)
+                .map { subscriber ->
 
-            bundles.forEach {
-                subscriptionToBundleStore.create(subscription, it, transaction)
-                ocs.addMsisdnToBundleMapping(msisdn, it.id)
-            }
-            subscriptionRelationStore.create(subscriber, subscription, transaction)
-        }
+                    val bundles = subscriberStore.getRelated(subscriberId, subscriberToBundleRelation, transaction)
+
+                    var failed: Option<StoreError> =
+                            if (bundles.isEmpty()) {
+                                Option(NotFoundError(type = subscriberToBundleRelation.relation.name, id = "$subscriberId -> *"))
+                            } else {
+                                None
+                            }
+
+                    failed.ifSuccessThen { subscriptionStore.create(Subscription(msisdn), transaction) }
+                            .ifSuccessThen {
+                                subscriptionStore.get(msisdn, transaction)
+                                        .map { subscription ->
+                                            bundles.forEach {
+                                                subscriptionToBundleStore.create(subscription, it, transaction)
+                                                ocs.addMsisdnToBundleMapping(msisdn, it.id)
+                                            }
+                                            subscriptionRelationStore.create(subscriber, subscription, transaction)
+                                        }
+                                        .swap()
+                                        .toOption()
+                            }
+                }
+                .swap()
+                .toOption()
     }
 
     override fun getSubscriptions(subscriberId: String): Collection<Subscription>? {
@@ -221,7 +262,7 @@ object Neo4jStoreSingleton : GraphStore {
         }
     }
 
-    override fun getProduct(subscriberId: String?, sku: String): Product? =
+    override fun getProduct(subscriberId: String?, sku: String): Either<StoreError, Product> =
             readTransaction { productStore.get(sku, transaction) }
 
     //
@@ -234,18 +275,26 @@ object Neo4jStoreSingleton : GraphStore {
         }
     }
 
-    override fun addPurchaseRecord(subscriberId: String, purchase: PurchaseRecord): String? {
+    override fun addPurchaseRecord(subscriberId: String, purchase: PurchaseRecord): Either<StoreError, String> {
         return writeTransaction {
             createPurchaseRecordRelation(subscriberId, purchase, transaction)
         }
     }
 
-    private fun createPurchaseRecordRelation(subscriberId: String, purchase: PurchaseRecord, transaction: Transaction): String {
-        val subscriber = subscriberStore.get(subscriberId, transaction) ?: throw Exception("Subscriber not found")
-        val product = productStore.get(purchase.product.sku, transaction) ?: throw Exception("Product not found")
-        purchase.id = UUID.randomUUID().toString()
-        purchaseRecordRelationStore.create(subscriber, purchase, product, transaction)
-        return purchase.id
+    private fun createPurchaseRecordRelation(
+            subscriberId: String,
+            purchase: PurchaseRecord,
+            transaction: Transaction): Either<StoreError, String> {
+
+        return subscriberStore.get(subscriberId, transaction).map { subscriber ->
+            productStore.get(purchase.product.sku, transaction).map { product ->
+
+                purchase.id = UUID.randomUUID().toString()
+                purchaseRecordRelationStore.create(subscriber, purchase, product, transaction)
+                        .toEither { purchase.id }
+                        .swap()
+            }
+        }.fold({ Either.left(it) }, { it.get() })
     }
 
     //
@@ -337,32 +386,28 @@ object Neo4jStoreSingleton : GraphStore {
     private val productClassEntity = EntityType(ProductClass::class.java)
     private val productClassStore = EntityStore(productClassEntity)
 
-    override fun createProductClass(productClass: ProductClass): Boolean = writeTransaction {
+    override fun createProductClass(productClass: ProductClass): Option<StoreError> = writeTransaction {
         productClassStore.create(productClass, transaction)
     }
 
-    override fun createProduct(product: Product): Boolean =
+    override fun createProduct(product: Product): Option<StoreError> =
             writeTransaction { productStore.create(product, transaction) }
 
-    override fun createSegment(segment: Segment): Boolean {
+    override fun createSegment(segment: Segment): Option<StoreError> {
         return writeTransaction {
             segmentStore.create(segment, transaction)
-                    && subscriberToSegmentStore.create(segment.subscribers, segment.id, transaction)
+                    .and(subscriberToSegmentStore.create(segment.subscribers, segment.id, transaction))
         }
     }
 
-    override fun createOffer(offer: Offer): Boolean = writeTransaction {
-        //         offerStore.create(offer.id, offer)
-//                && offerToSegmentStore.create(offer.id, offer.segments)
-//                && offerToProductStore.create(offer.id, offer.products)
-
-        val result = offerStore.create(offer, transaction)
-        val result2 = result && offerToSegmentStore.create(offer.id, offer.segments, transaction)
-        val result3 = result && offerToProductStore.create(offer.id, offer.products, transaction)
-        result && result2 && result3
+    override fun createOffer(offer: Offer): Option<StoreError> = writeTransaction {
+        offerStore
+                .create(offer, transaction)
+                .orElse { offerToSegmentStore.create(offer.id, offer.segments, transaction) }
+                .orElse { offerToProductStore.create(offer.id, offer.products, transaction) }
     }
 
-    override fun updateSegment(segment: Segment): Boolean = writeTransaction {
+    override fun updateSegment(segment: Segment): Option<StoreError> = writeTransaction {
         subscriberToSegmentStore.create(segment.id, segment.subscribers, transaction)
     }
 
@@ -376,3 +421,6 @@ object Neo4jStoreSingleton : GraphStore {
 
 // override fun getProductClass(id: String): ProductClass? = productClassStore.get(id)
 }
+
+fun <A> Option<A>.ifSuccessThen(next: () -> Option<A>): Option<A> = this.orElse(next)
+fun <L, R> Either<L, R>.ifSuccessThen(next: () -> Either<L, R>): Either<L, R> = this.fold({ Either.left(it) }, { next() })

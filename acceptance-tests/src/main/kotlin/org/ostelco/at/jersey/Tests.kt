@@ -242,7 +242,7 @@ class PurchaseTest {
         }
 
         Thread.sleep(100) // wait for 100 ms for balance to be updated in db
-        
+
         val subscriptionStatusAfter: SubscriptionStatus = get {
             path = "/subscription/status"
             subscriberId = email

@@ -1,5 +1,6 @@
 package org.ostelco.prime.handler
 
+import arrow.core.Either
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Ignore
@@ -16,6 +17,7 @@ import org.ostelco.prime.disruptor.EventProducer
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.storage.ClientDataSource
+import org.ostelco.prime.storage.StoreError
 import org.ostelco.prime.storage.legacy.Products.DATA_TOPUP_3GB
 
 class PurchaseRequestHandlerTest {
@@ -35,7 +37,8 @@ class PurchaseRequestHandlerTest {
     @Before
     fun setUp() {
 
-        `when`<Product>(storage.getProduct("id", DATA_TOPUP_3GB.sku)).thenReturn(DATA_TOPUP_3GB)
+        `when`< Either<StoreError, Product>>(storage.getProduct("id", DATA_TOPUP_3GB.sku))
+                .thenReturn(Either.right(DATA_TOPUP_3GB))
 
         this.purchaseRequestHandler = PurchaseRequestHandler(producer, storage)
     }

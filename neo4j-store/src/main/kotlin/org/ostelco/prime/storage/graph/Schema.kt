@@ -1,15 +1,21 @@
 package org.ostelco.prime.storage.graph
 
+import arrow.core.Either
+import arrow.core.None
+import arrow.core.Option
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.neo4j.driver.v1.AccessMode.READ
 import org.neo4j.driver.v1.AccessMode.WRITE
-import org.neo4j.driver.v1.Session
 import org.neo4j.driver.v1.StatementResult
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.logger
 import org.ostelco.prime.model.HasId
+import org.ostelco.prime.storage.AlreadyExistsError
+import org.ostelco.prime.storage.NotCreatedError
+import org.ostelco.prime.storage.NotFoundError
+import org.ostelco.prime.storage.StoreError
 import org.ostelco.prime.storage.graph.Graph.read
 import org.ostelco.prime.storage.graph.Graph.write
 import org.ostelco.prime.storage.graph.ObjectHandler.getProperties
@@ -38,27 +44,19 @@ data class RelationType<FROM : HasId, RELATION, TO : HasId>(
 
 class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
 
-    fun getAll(transaction: Transaction): Map<String, E> =
-            read("""MATCH (node:${entityType.name}) RETURN node;""", transaction) {
-                it.list { entityType.createEntity(it["node"].asMap()) }
-                        .mapNotNull { it.id to it }
-                        .toMap()
-            }
-
-
-    fun get(id: String, transaction: Transaction): E? {
+    fun get(id: String, transaction: Transaction): Either<StoreError, E> {
         return read("""MATCH (node:${entityType.name} {id: '$id'}) RETURN node;""", transaction) {
             if (it.hasNext())
-                entityType.createEntity(it.single().get("node").asMap())
+                Either.right(entityType.createEntity(it.single().get("node").asMap()))
             else
-                null
+                Either.left(NotFoundError(type = entityType.name, id = id))
         }
     }
 
-    fun create(entity: E, transaction: Transaction): Boolean {
+    fun create(entity: E, transaction: Transaction): Option<StoreError> {
 
-        if (get(entity.id, transaction) != null) {
-            return false
+        if (get(entity.id, transaction).isRight()) {
+            return Option(AlreadyExistsError(type= entityType.name, id = entity.id))
         }
 
         val properties = getProperties(entity)
@@ -66,7 +64,10 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
                 .let { if (it.isNotBlank()) ",$it" else it }
         return write("""CREATE (node:${entityType.name} { id:"${entity.id}"$strProps });""",
                 transaction) {
-            it.summary().counters().nodesCreated() == 1
+            if (it.summary().counters().nodesCreated() == 1)
+                None
+            else
+                Option(NotCreatedError(type = entityType.name, id = entity.id))
         }
     }
 
@@ -75,8 +76,8 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
                 MATCH (:${relationType.from.name} {id: '$id'})-[:${relationType.relation.name}]->(node:${relationType.to.name})
                 RETURN node;
                 """.trimIndent(),
-                transaction) {
-            it.list { relationType.to.createEntity(it["node"].asMap()) }
+                transaction) { statementResult ->
+            statementResult.list { relationType.to.createEntity(it["node"].asMap()) }
         }
     }
 
@@ -85,8 +86,8 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
                 MATCH (node:${relationType.from.name})-[:${relationType.relation.name}]->(:${relationType.to.name} {id: '$id'})
                 RETURN node;
                 """.trimIndent(),
-                transaction) {
-            it.list { relationType.from.createEntity(it["node"].asMap()) }
+                transaction) { statementResult ->
+            statementResult.list { relationType.from.createEntity(it["node"].asMap()) }
         }
     }
 
@@ -95,8 +96,8 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
                 MATCH (from:${entityType.name} { id: '$id' })-[r:${relationType.relation.name}]-()
                 return r;
                 """.trimIndent(),
-                transaction) {
-            it.list { relationType.createRelation(it["r"].asMap()) }
+                transaction) { statementResult ->
+            statementResult.list { relationType.createRelation(it["r"].asMap()) }
                     .filterNotNull()
         }
     }
@@ -118,9 +119,10 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
 
 }
 
+// TODO vihang: check if relation already exists, with allow duplicate boolean flag param
 class RelationStore<FROM : HasId, TO : HasId>(private val relationType: RelationType<FROM, *, TO>) {
 
-    fun create(from: FROM, relation: Any, to: TO, transaction: Transaction): Boolean {
+    fun create(from: FROM, relation: Any, to: TO, transaction: Transaction): Option<StoreError> {
 
         val properties = getProperties(relation)
         val strProps: String = properties.entries.joinToString(",") { """`${it.key}`: "${it.value}"""" }
@@ -129,35 +131,51 @@ class RelationStore<FROM : HasId, TO : HasId>(private val relationType: Relation
                 CREATE (from)-[:${relationType.relation.name} { $strProps } ]->(to);
                 """.trimIndent(),
                 transaction) {
-            it.summary().counters().relationshipsCreated() == 1
+            if (it.summary().counters().relationshipsCreated() == 1) {
+                None
+            } else {
+                Option(NotCreatedError(type = relationType.relation.name, id = "${from.id} -> ${to.id}"))
+            }
         }
     }
 
-    fun create(from: FROM, to: TO, transaction: Transaction): Boolean = write("""
+    fun create(from: FROM, to: TO, transaction: Transaction): Option<StoreError> = write("""
                 MATCH (from:${relationType.from.name} { id: '${from.id}' }),(to:${relationType.to.name} { id: '${to.id}' })
                 CREATE (from)-[:${relationType.relation.name}]->(to);
                 """.trimIndent(),
             transaction) {
-        it.summary().counters().relationshipsCreated() == 1
+        if (it.summary().counters().relationshipsCreated() == 1) {
+            None
+        } else {
+            Option(NotCreatedError(type = relationType.relation.name, id = "${from.id} -> ${to.id}"))
+        }
     }
 
-    fun create(fromId: String, toId: String, transaction: Transaction): Boolean = write("""
+    fun create(fromId: String, toId: String, transaction: Transaction): Option<StoreError> = write("""
                 MATCH (from:${relationType.from.name} { id: '$fromId' }),(to:${relationType.to.name} { id: '$toId' })
                 CREATE (from)-[:${relationType.relation.name}]->(to);
                 """.trimIndent(),
             transaction) {
-        it.summary().counters().relationshipsCreated() == 1
+        if (it.summary().counters().relationshipsCreated() == 1) {
+            None
+        } else {
+            Option(NotCreatedError(type = relationType.relation.name, id = "$fromId -> $toId"))
+        }
     }
 
-    fun create(fromId: String, relation: Any, toId: String, transaction: Transaction): Boolean = write("""
+    fun create(fromId: String, relation: Any, toId: String, transaction: Transaction): Option<StoreError> = write("""
                 MATCH (from:${relationType.from.name} { id: '$fromId' }),(to:${relationType.to.name} { id: '$toId' })
                 CREATE (from)-[:${relationType.relation.name}]->(to);
                 """.trimIndent(),
             transaction) {
-        it.summary().counters().relationshipsCreated() == 1
+        if (it.summary().counters().relationshipsCreated() == 1) {
+            None
+        } else {
+            Option(NotCreatedError(type = relationType.relation.name, id = "$fromId -> $toId"))
+        }
     }
 
-    fun create(fromId: String, toIds: Collection<String>, transaction: Transaction): Boolean = write("""
+    fun create(fromId: String, toIds: Collection<String>, transaction: Transaction): Option<StoreError> = write("""
                 MATCH (to:${relationType.to.name})
                 WHERE to.id in [${toIds.joinToString(",") { "'$it'" }}]
                 WITH to
@@ -165,10 +183,18 @@ class RelationStore<FROM : HasId, TO : HasId>(private val relationType: Relation
                 CREATE (from)-[:${relationType.relation.name}]->(to);
                 """.trimIndent(),
             transaction) {
-        it.summary().counters().relationshipsCreated() == toIds.size
+        val actualCount = it.summary().counters().relationshipsCreated()
+        if (actualCount == toIds.size) {
+            None
+        } else {
+            Option(NotCreatedError(
+                    type = relationType.relation.name,
+                    expectedCount = toIds.size,
+                    actualCount = actualCount))
+        }
     }
 
-    fun create(fromIds: Collection<String>, toId: String, transaction: Transaction): Boolean = write("""
+    fun create(fromIds: Collection<String>, toId: String, transaction: Transaction): Option<StoreError> = write("""
                 MATCH (from:${relationType.from.name})
                 WHERE from.id in [${fromIds.joinToString(",") { "'$it'" }}]
                 WITH from
@@ -176,7 +202,15 @@ class RelationStore<FROM : HasId, TO : HasId>(private val relationType: Relation
                 CREATE (from)-[:${relationType.relation.name}]->(to);
                 """.trimIndent(),
             transaction) {
-        it.summary().counters().relationshipsCreated() == fromIds.size
+        val actualCount = it.summary().counters().relationshipsCreated()
+        if (actualCount == fromIds.size) {
+            None
+        } else {
+            Option(NotCreatedError(
+                    type = relationType.relation.name,
+                    expectedCount = fromIds.size,
+                    actualCount = actualCount))
+        }
     }
 }
 
@@ -198,23 +232,21 @@ object Graph {
     }
 }
 
-fun <R> readTransaction(action: ReadTransaction.() -> R): R {
-    val session: Session = Neo4jClient.driver.session(READ)
-    return session.use {
-        it.readTransaction {
-            action(ReadTransaction(it))
-        }
-    }
-}
+fun <R> readTransaction(action: ReadTransaction.() -> R): R =
+        Neo4jClient.driver.session(READ)
+                .use { session ->
+                    session.readTransaction {
+                        action(ReadTransaction(it))
+                    }
+                }
 
-fun <R> writeTransaction(action: WriteTransaction.() -> R): R {
-    val session: Session = Neo4jClient.driver.session(WRITE)
-    return session.use {
-        it.writeTransaction {
-            action(WriteTransaction(it))
-        }
-    }
-}
+fun <R> writeTransaction(action: WriteTransaction.() -> R): R =
+        Neo4jClient.driver.session(WRITE)
+                .use { session ->
+                    session.writeTransaction {
+                        action(WriteTransaction(it))
+                    }
+                }
 
 data class ReadTransaction(val transaction: Transaction)
 data class WriteTransaction(val transaction: Transaction)

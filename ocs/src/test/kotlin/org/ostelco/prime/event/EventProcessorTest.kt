@@ -1,5 +1,6 @@
 package org.ostelco.prime.event
 
+import arrow.core.Either
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -8,12 +9,13 @@ import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
-import org.ostelco.prime.disruptor.OcsEvent
 import org.ostelco.prime.disruptor.EventMessageType.RELEASE_RESERVED_BUCKET
+import org.ostelco.prime.disruptor.OcsEvent
 import org.ostelco.prime.events.EventProcessor
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.storage.ClientDataSource
+import org.ostelco.prime.storage.StoreError
 import org.ostelco.prime.storage.legacy.Products
 
 class EventProcessorTest  {
@@ -33,7 +35,8 @@ class EventProcessorTest  {
     @Before
     fun setUp() {
 
-        Mockito.`when`<Product>(storage.getProduct("id", Products.DATA_TOPUP_3GB.sku)).thenReturn(Products.DATA_TOPUP_3GB)
+        Mockito.`when`<Either<StoreError, Product>>(storage.getProduct("id", Products.DATA_TOPUP_3GB.sku))
+                .thenReturn(Either.right(Products.DATA_TOPUP_3GB))
 
         this.processor = EventProcessor(storage)
     }

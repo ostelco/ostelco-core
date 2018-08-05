@@ -18,9 +18,13 @@ class PurchaseRequestHandler(
         logger.info("Handling purchase request - subscriberId: {} sku = {}", subscriberId, productSku)
 
         // get Product by SKU
-        val product = storage.getProduct(subscriberId, productSku) ?: throw Exception("Not a valid SKU: $productSku")
+        val product = storage.getProduct(subscriberId, productSku)
 
-        val noOfBytes = product.properties["noOfBytes"]?.replace("_", "")?.toLong()
+        if (product.isLeft()) {
+            throw Exception("Not a valid SKU: $productSku")
+        }
+
+        val noOfBytes = product.get().properties["noOfBytes"]?.replace("_", "")?.toLong()
 
         val bundleId = storage.getBundles(subscriberId)?.first()?.id
 

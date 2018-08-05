@@ -14,7 +14,6 @@ import org.ostelco.prime.model.HasId
 import org.ostelco.prime.storage.graph.Relation.REFERRED
 import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 class SchemaTest {
 
@@ -44,7 +43,7 @@ class SchemaTest {
             aEntityStore.create(a, transaction)
 
             // get node
-            assertEquals(a, aEntityStore.get("a_id", transaction))
+            assertEquals(a, aEntityStore.get("a_id", transaction).toOption().orNull())
 
             // update node
             val ua = A()
@@ -55,13 +54,13 @@ class SchemaTest {
             aEntityStore.update(ua, transaction)
 
             // get updated node
-            assertEquals(ua, aEntityStore.get(aId, transaction))
+            assertEquals(ua, aEntityStore.get(aId, transaction).toOption().orNull())
 
             // delete node
             aEntityStore.delete(aId, transaction)
 
             // get deleted node
-            assertNull(aEntityStore.get(aId, transaction))
+            assert(aEntityStore.get(aId, transaction).isLeft())
         }
     }
 

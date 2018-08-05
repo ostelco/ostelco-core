@@ -1,5 +1,7 @@
 package org.ostelco.prime.storage
 
+import arrow.core.Either
+import arrow.core.Option
 import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Offer
@@ -40,12 +42,12 @@ interface ClientGraphStore {
     /**
      * Get Subscriber Profile
      */
-    fun getSubscriber(subscriberId: String): Subscriber?
+    fun getSubscriber(subscriberId: String): Either<StoreError, Subscriber>
 
     /**
      * Create Subscriber Profile
      */
-    fun addSubscriber(subscriber: Subscriber, referredBy: String? = null): Boolean
+    fun addSubscriber(subscriber: Subscriber, referredBy: String? = null): Option<StoreError>
 
     /**
      * Update Subscriber Profile
@@ -60,7 +62,7 @@ interface ClientGraphStore {
     /**
      * Link Subscriber to MSISDN
      */
-    fun addSubscription(subscriberId: String, msisdn: String): Boolean
+    fun addSubscription(subscriberId: String, msisdn: String): Option<StoreError>
 
     /**
      * Get Products for a given subscriber
@@ -70,7 +72,7 @@ interface ClientGraphStore {
     /**
      * Get Product to perform OCS Topup
      */
-    fun getProduct(subscriberId: String?, sku: String): Product?
+    fun getProduct(subscriberId: String?, sku: String): Either<StoreError, Product>
 
     /**
      * Get subscriptions for Client
@@ -100,7 +102,7 @@ interface ClientGraphStore {
     /**
      * Add PurchaseRecord after Purchase operation
      */
-    fun addPurchaseRecord(subscriberId: String, purchase: PurchaseRecord): String?
+    fun addPurchaseRecord(subscriberId: String, purchase: PurchaseRecord): Either<StoreError, String>
 
     /**
      * Get list of users this user has referred to
@@ -121,14 +123,14 @@ interface AdminGraphStore {
     fun getSubscriberToMsisdnMap(): Map<Subscriber, Subscription>
 
     // simple create
-    fun createProductClass(productClass: ProductClass): Boolean
-    fun createProduct(product: Product): Boolean
-    fun createSegment(segment: Segment): Boolean
-    fun createOffer(offer: Offer): Boolean
+    fun createProductClass(productClass: ProductClass): Option<StoreError>
+    fun createProduct(product: Product): Option<StoreError>
+    fun createSegment(segment: Segment): Option<StoreError>
+    fun createOffer(offer: Offer): Option<StoreError>
 
     // simple update
     // updating an Offer and Product is not allowed
-    fun updateSegment(segment: Segment): Boolean
+    fun updateSegment(segment: Segment): Option<StoreError>
 
     // simple getAll
     // fun getOffers(): Collection<Offer>

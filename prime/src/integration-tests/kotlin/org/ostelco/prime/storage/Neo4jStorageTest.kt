@@ -28,8 +28,8 @@ class Neo4jStorageTest {
 
         sleep(MILLIS_TO_WAIT_WHEN_STARTING_UP.toLong())
         storage.removeSubscriber(EPHERMERAL_EMAIL)
-        assertTrue(storage.addSubscriber(Subscriber(EPHERMERAL_EMAIL), referredBy = null))
-        assertTrue(storage.addSubscription(EPHERMERAL_EMAIL, MSISDN))
+        assertTrue(storage.addSubscriber(Subscriber(EPHERMERAL_EMAIL), referredBy = null).isEmpty())
+        assertTrue(storage.addSubscription(EPHERMERAL_EMAIL, MSISDN).isEmpty())
     }
 
     @After

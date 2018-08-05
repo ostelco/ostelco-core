@@ -29,12 +29,13 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
     private val consentMap = ConcurrentHashMap<String, ConcurrentHashMap<String, Boolean>>()
 
     override fun getProfile(subscriberId: String): Either<ApiError, Subscriber> {
-        try {
-            return storage.getSubscriber(subscriberId)?.let { Either.right<ApiError, Subscriber>(it) }
-                    ?: return Either.left(ApiError("Incomplete profile description"))
+        return try {
+            storage.getSubscriber(subscriberId)
+                    .fold({ Either.left<ApiError, Subscriber>(ApiError("Incomplete profile description")) },
+                            { Either.right<ApiError, Subscriber>(it) })
         } catch (e: Exception) {
             logger.error("Failed to fetch profile", e)
-            return Either.left(ApiError("Failed to fetch profile"))
+            Either.left(ApiError("Failed to fetch profile"))
         }
     }
 
@@ -160,30 +161,28 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
 
     }
 
-    override fun purchaseProduct(subscriberId: String, sku: String): Option<ApiError> {
+    override fun purchaseProduct(subscriberId: String, sku: String): Option<ApiError> =
+            storage.getProduct(subscriberId, sku).fold(
+                    {
+                        logger.error("Did not find product: sku = $sku")
+                        Option.of(ApiError("Product unavailable"))
+                    },
+                    { product ->
+                        product.sku = sku
+                        val purchaseRecord = PurchaseRecord(
+                                product = product,
+                                timestamp = Instant.now().toEpochMilli())
+                        storage.addPurchaseRecord(subscriberId, purchaseRecord)
+                                .swap()
+                                .toOption()
+                                .map {
+                                    logger.error("Failed to save purchase record")
+                                    Option.of(ApiError("Failed to save purchase record"))
+                                }
+                        ocsSubscriberService.topup(subscriberId, sku)
+                        Option.none()
+                    })
 
-        val product: Product?
-        try {
-            product = storage.getProduct(subscriberId, sku)
-        } catch (e: Exception) {
-            logger.error("Did not find product: sku = $sku", e)
-            return Option.of(ApiError("Product unavailable"))
-        }
-
-        product!!.sku = sku
-        val purchaseRecord = PurchaseRecord(
-                product = product,
-                timestamp = Instant.now().toEpochMilli())
-        try {
-            storage.addPurchaseRecord(subscriberId, purchaseRecord)
-        } catch (e: Exception) {
-            logger.error("Failed to save purchase record", e)
-            return Option.of(ApiError("Failed to save purchase record"))
-        }
-
-        ocsSubscriberService.topup(subscriberId, sku)
-        return Option.none()
-    }
 
     override fun getReferrals(subscriberId: String): Either<ApiError, Collection<Person>> {
         return try {
