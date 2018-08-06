@@ -4,6 +4,9 @@ modules:
       configFile: config/pantel-prod.json
       databaseName: pantel-2decb
       rootPath: test
+  - type: neo4j
+    config:
+      host: 0.0.0.0
   - type: ocs
     config:
       projectId: pantel-2decb

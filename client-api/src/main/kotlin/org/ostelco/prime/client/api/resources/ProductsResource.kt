@@ -1,20 +1,20 @@
 package org.ostelco.prime.client.api.resources
 
 import io.dropwizard.auth.Auth
+import io.vavr.control.Either
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.core.ApiError
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
-import io.vavr.control.Either
 import javax.validation.constraints.NotNull
 import javax.ws.rs.GET
 import javax.ws.rs.POST
 import javax.ws.rs.Path
 import javax.ws.rs.PathParam
-import javax.ws.rs.QueryParam
 import javax.ws.rs.Produces
+import javax.ws.rs.QueryParam
 import javax.ws.rs.core.Response
 
 /**
@@ -22,7 +22,7 @@ import javax.ws.rs.core.Response
  *
  */
 @Path("/products")
-class ProductsResource(private val dao: SubscriberDAO) : ResourceHelpers() {
+class ProductsResource(private val dao: SubscriberDAO) {
 
     private val paymentProcessor by lazy { getResource<PaymentProcessor>() }
 
@@ -47,8 +47,33 @@ class ProductsResource(private val dao: SubscriberDAO) : ResourceHelpers() {
         }
     }
 
+    @Deprecated("use purchaseProduct")
     @POST
     @Path("{sku}")
+    @Produces("application/json")
+    fun purchaseProductOld(@Auth token: AccessTokenPrincipal?,
+                        @NotNull
+                        @PathParam("sku")
+                        sku: String): Response {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .build()
+        }
+
+        val error = dao.purchaseProduct(token.name, sku)
+
+        return if (error.isEmpty) {
+            Response.status(Response.Status.CREATED)
+                    .build()
+        } else {
+            Response.status(Response.Status.NOT_FOUND)
+                    .entity(asJson(error.get()))
+                    .build()
+        }
+    }
+
+    @POST
+    @Path("{sku}/purchase")
     @Produces("application/json")
     fun purchaseProduct(@Auth token: AccessTokenPrincipal?,
                         @NotNull

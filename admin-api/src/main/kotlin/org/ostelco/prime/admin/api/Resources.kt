@@ -6,61 +6,87 @@ import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.ProductClass
 import org.ostelco.prime.model.Segment
 import org.ostelco.prime.module.getResource
-import org.ostelco.prime.storage.AdminDataStore
-import org.ostelco.prime.storage.legacy.Storage
-import javax.ws.rs.GET
+import org.ostelco.prime.storage.AdminDataSource
 import javax.ws.rs.POST
 import javax.ws.rs.PUT
 import javax.ws.rs.Path
 import javax.ws.rs.PathParam
+import javax.ws.rs.QueryParam
+import javax.ws.rs.core.Response
 
-@Path("/offers")
-class OfferResource() {
+@Path("/admin/subscriptions")
+class SubscriptionsResource {
 
-    private val dataStore by lazy { getResource<Storage>() }
-    private val adminDataStore by lazy { getResource<AdminDataStore>() }
+    private val adminDataSource by lazy { getResource<AdminDataSource>() }
+
+    @POST
+    fun createSubscription(
+            @QueryParam("subscription_id") subscriberId: String,
+            @QueryParam("msisdn") msisdn: String): Response {
+
+        return adminDataSource.addSubscription(subscriberId, msisdn)
+                .fold({ Response.status(Response.Status.CREATED).build() },
+                        { Response.status(Response.Status.NOT_FOUND).entity(it.message).build() })
+    }
+}
+
+@Path("/admin/offers")
+class OfferResource {
+
+    private val adminDataSource by lazy { getResource<AdminDataSource>() }
 
 //    @GET
-//    fun getOffers() = adminDataStore.getOffers()
+//    fun getOffers() = adminDataSource.getOffers()
 
 //    @GET
 //    @Path("/{offer-id}")
-//    fun getOffer(@PathParam("offer-id") offerId: String) = adminDataStore.getOffer(offerId)
+//    fun getOffer(@PathParam("offer-id") offerId: String) = adminDataSource.getOffer(offerId)
 
     @POST
-    fun createOffer(offer: Offer) = adminDataStore.createOffer(offer)
+    fun createOffer(offer: Offer): Response {
+        return adminDataSource.createOffer(offer)
+                .fold({ Response.status(Response.Status.CREATED).build() },
+                        { Response.status(Response.Status.FORBIDDEN).entity(it.message).build() })
+    }
 
 //    private fun toStoredOffer(offer: Offer): org.ostelco.prime.model.Offer {
 //        return org.ostelco.prime.model.Offer(
 //                offer.id,
-//                offer.segments.map { adminDataStore.getSegment(it) }.requireNoNulls(),
+//                offer.segments.map { adminDataSource.getSegment(it) }.requireNoNulls(),
 //                offer.products.map { dataStore.getProduct(null, it) }.requireNoNulls())
 //    }
 }
 
-@Path("/segments")
+@Path("/admin/segments")
 class SegmentResource {
 
-    private val dataStore by lazy { getResource<Storage>() }
-    private val adminDataStore by lazy { getResource<AdminDataStore>() }
+    private val adminDataSource by lazy { getResource<AdminDataSource>() }
 
 //    @GET
-//    fun getSegments() = adminDataStore.getSegments().map { it.id }
+//    fun getSegments() = adminDataSource.getSegments().map { it.id }
 
 //    @GET
 //    @Path("/{segment-id}")
-//    fun getSegment(@PathParam("segment-id") segmentId: String) = adminDataStore.getSegment(segmentId)
+//    fun getSegment(@PathParam("segment-id") segmentId: String) = adminDataSource.getSegment(segmentId)
 
     @POST
-    fun createSegment(segment: Segment) = adminDataStore.createSegment(segment)
+    fun createSegment(segment: Segment): Response {
+        return adminDataSource.createSegment(segment)
+                .fold({ Response.status(Response.Status.CREATED).build() },
+                        { Response.status(Response.Status.FORBIDDEN).entity(it.message).build() })
+    }
 
     @PUT
     @Path("/{segment-id}")
     fun updateSegment(
             @PathParam("segment-id") segmentId: String,
-            segment: Segment) {
+            segment: Segment): Response {
+
         segment.id = segmentId
-        adminDataStore.updateSegment(segment)
+
+        return adminDataSource.updateSegment(segment)
+                .fold({ Response.ok().build() },
+                        { Response.status(Response.Status.NOT_MODIFIED).entity(it.message).build() })
     }
 
 //    private fun toStoredSegment(segment: Segment): org.ostelco.prime.model.Segment {
@@ -70,44 +96,51 @@ class SegmentResource {
 //    }
 }
 
-@Path("/products")
+@Path("/admin/products")
 class ProductResource {
 
-    private val dataStore by lazy { getResource<Storage>() }
-    private val adminDataStore by lazy { getResource<AdminDataStore>() }
+    private val adminDataSource by lazy { getResource<AdminDataSource>() }
 
 //    @GET
-//    fun getProducts() = adminDataStore.getProducts().map { it.id }
+//    fun getProducts() = adminDataSource.getProducts().map { it.id }
 
-    @GET
-    @Path("/{product-sku}")
-    fun getProducts(@PathParam("product-sku") productSku: String) = dataStore.getProduct(null, productSku)
+//    @GET
+//    @Path("/{product-sku}")
+//    fun getProducts(@PathParam("product-sku") productSku: String) = adminDataSource.getProduct(null, productSku)
 
     @POST
-    fun createProduct(product: Product) = adminDataStore.createProduct(product)
+    fun createProduct(product: Product): Response {
+        return adminDataSource.createProduct(product)
+                .fold({ Response.ok().build() },
+                        { Response.status(Response.Status.FORBIDDEN).entity(it.message).build() })
+    }
 }
 
-@Path("/product_classes")
+@Path("/admin/product_classes")
 class ProductClassResource {
 
-    private val adminDataStore by lazy { getResource<AdminDataStore>() }
+    private val adminDataSource by lazy { getResource<AdminDataSource>() }
 
 //    @GET
-//    fun getProductClasses() = adminDataStore.getProductClasses().map { it.id }
+//    fun getProductClasses() = adminDataSource.getProductClasses().map { it.id }
 //
 //    @GET
 //    @Path("/{product-class-id}")
-//    fun getProductClass(@PathParam("product-class-id") productClassId: String) = adminDataStore.getProductClass(productClassId)
+//    fun getProductClass(@PathParam("product-class-id") productClassId: String) = adminDataSource.getProductClass(productClassId)
 
     @POST
-    fun createProductClass(productClass: ProductClass) = adminDataStore.createProductClass(productClass)
+    fun createProductClass(productClass: ProductClass): Response {
+        return adminDataSource.createProductClass(productClass)
+                .fold({ Response.ok().build() },
+                        { Response.status(Response.Status.FORBIDDEN).entity(it.message).build() })
+    }
 
 //    @PUT
 //    @Path("/{product-class-id}")
 //    fun updateProductClass(
 //            @PathParam("product-class-id") productClassId: String,
 //            productClass: ProductClass): Boolean {
-//        return adminDataStore.updateProductClass(
+//        return adminDataSource.updateProductClass(
 //                productClass.copy(id = productClassId))
 //    }
 }

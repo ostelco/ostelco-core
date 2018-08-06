@@ -1,5 +1,6 @@
 package org.ostelco.prime.handler
 
+import arrow.core.Either
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Ignore
@@ -12,13 +13,12 @@ import org.mockito.Mockito.`when`
 import org.mockito.Mockito.verify
 import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
-import org.ostelco.prime.disruptor.PrimeEventProducer
-import org.ostelco.prime.events.EventProcessorException
+import org.ostelco.prime.disruptor.EventProducer
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
+import org.ostelco.prime.storage.ClientDataSource
+import org.ostelco.prime.storage.StoreError
 import org.ostelco.prime.storage.legacy.Products.DATA_TOPUP_3GB
-import org.ostelco.prime.storage.legacy.Storage
-import org.ostelco.prime.storage.legacy.StorageException
 
 class PurchaseRequestHandlerTest {
 
@@ -27,25 +27,25 @@ class PurchaseRequestHandlerTest {
     var mockitoRule: MockitoRule = MockitoJUnit.rule()
 
     @Mock
-    lateinit var storage: Storage
+    lateinit var storage: ClientDataSource
 
     @Mock
-    lateinit var producer: PrimeEventProducer
+    lateinit var producer: EventProducer
 
     private lateinit var purchaseRequestHandler: PurchaseRequestHandler
 
     @Before
     fun setUp() {
 
-        `when`<Product>(storage.getProduct("id", DATA_TOPUP_3GB.sku)).thenReturn(DATA_TOPUP_3GB)
+        `when`< Either<StoreError, Product>>(storage.getProduct("id", DATA_TOPUP_3GB.sku))
+                .thenReturn(Either.right(DATA_TOPUP_3GB))
 
         this.purchaseRequestHandler = PurchaseRequestHandler(producer, storage)
     }
 
-    // FIXME
+    // FIXME vihang: handlePurchaseRequestTest is marked to be ignored, until it is fixed
     @Ignore
     @Test
-    @Throws(EventProcessorException::class, StorageException::class)
     fun handlePurchaseRequestTest() {
 
         val sku = DATA_TOPUP_3GB.sku
@@ -55,14 +55,14 @@ class PurchaseRequestHandlerTest {
 
         // Then verify that the appropriate actions has been performed.
         val topupBytes = DATA_TOPUP_3GB.properties["noOfBytes"]?.toLong()
-                ?: throw EventProcessorException("Missing property 'noOfBytes' in product sku: $sku")
+                ?: throw Exception("Missing property 'noOfBytes' in product sku: $sku")
 
         val capturedPurchaseRecord = ArgumentCaptor.forClass(PurchaseRecord::class.java)
 
         assertEquals(MSISDN, capturedPurchaseRecord.value.msisdn)
         assertEquals(DATA_TOPUP_3GB, capturedPurchaseRecord.value.product)
 
-        verify<PrimeEventProducer>(producer).topupDataBundleBalanceEvent(MSISDN, topupBytes)
+        verify<EventProducer>(producer).topupDataBundleBalanceEvent(MSISDN, topupBytes)
     }
 
     companion object {

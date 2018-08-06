@@ -14,7 +14,7 @@ import javax.ws.rs.core.Response
  *
  */
 @Path("/analytics")
-class AnalyticsResource(private val dao: SubscriberDAO) : ResourceHelpers() {
+class AnalyticsResource(private val dao: SubscriberDAO) {
 
     @POST
     @Consumes("application/json")

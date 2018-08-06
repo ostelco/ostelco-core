@@ -14,6 +14,7 @@ import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Test
 import org.mockito.ArgumentMatchers
+import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
@@ -117,8 +118,10 @@ class ProductsResourceTest {
         `when`<Either<ApiError, ProductInfo>>(PAYMENT.purchaseProduct(arg7.capture(), arg8.capture(), arg9.capture(), arg10.capture(), arg11.capture()))
                 .thenReturn(Either.right(ProductInfo(sku)))
 
-        val resp = RULE.target("/products/$sku")
-                .queryParam("sourceId", "$sourceId")
+        Mockito.`when`<Option<ApiError>>(DAO.purchaseProduct(arg1.capture(), arg2.capture())).thenReturn(Option.none())
+
+        val resp = RULE.target("/products/$sku/purchase")
+                .queryParam("sourceId", sourceId)
                 .request()
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
                 .header("X-Endpoint-API-UserInfo", userInfo)

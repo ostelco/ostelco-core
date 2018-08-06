@@ -1,34 +1,38 @@
 package org.ostelco.prime.handler
 
-import org.ostelco.prime.disruptor.PrimeEventProducer
-import org.ostelco.prime.events.EventProcessorException
+import org.ostelco.prime.disruptor.EventProducer
 import org.ostelco.prime.logger
 import org.ostelco.prime.module.getResource
-import org.ostelco.prime.storage.legacy.Storage
+import org.ostelco.prime.storage.ClientGraphStore
 
 class PurchaseRequestHandler(
-        private val producer: PrimeEventProducer,
-        private val storage: Storage = getResource()) {
+        private val producer: EventProducer,
+        private val storage: ClientGraphStore = getResource()) {
 
-    private val LOG by logger()
+    private val logger by logger()
 
-    @Throws(EventProcessorException::class)
     fun handlePurchaseRequest(
-            msisdn: String,
+            subscriberId: String,
             productSku: String) {
 
-        LOG.info("Handling purchase request - msisdn: {} sku = {}", msisdn, productSku)
+        logger.info("Handling purchase request - subscriberId: {} sku = {}", subscriberId, productSku)
 
         // get Product by SKU
-        val product = storage.getProduct("id", productSku) ?: throw EventProcessorException("Not a valid SKU: $productSku")
+        val product = storage.getProduct(subscriberId, productSku)
 
-        val noOfBytes = product.properties["noOfBytes"]?.toLong()
+        if (product.isLeft()) {
+            throw Exception("Not a valid SKU: $productSku")
+        }
 
-        if (noOfBytes != null && noOfBytes > 0) {
+        val noOfBytes = product.get().properties["noOfBytes"]?.replace("_", "")?.toLong()
 
-            LOG.info("Handling topup product - msisdn: {} topup: {}", msisdn, noOfBytes)
+        val bundleId = storage.getBundles(subscriberId)?.first()?.id
 
-            producer.topupDataBundleBalanceEvent(msisdn, noOfBytes)
+        if (bundleId != null && noOfBytes != null && noOfBytes > 0) {
+
+            logger.info("Handling topup product - bundleId: {} topup: {}", bundleId, noOfBytes)
+
+            producer.topupDataBundleBalanceEvent(bundleId, noOfBytes)
         }
     }
 }

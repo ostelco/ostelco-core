@@ -8,18 +8,14 @@ import org.ostelco.prime.logger
  * Common 'helper' functions for resources.
  *
  */
-abstract class ResourceHelpers {
+val objectMapper = ObjectMapper()
 
-    private val LOG by logger()
-
-    private val MAPPER = ObjectMapper()
-
-    protected fun asJson(`object`: Any): String {
-        try {
-            return MAPPER.writeValueAsString(`object`)
-        } catch (e: JsonProcessingException) {
-            LOG.error("Error in json response {}", e)
-        }
-        return ""
+fun <R : Any> R.asJson(`object`: Any): String {
+    try {
+        return objectMapper.writeValueAsString(`object`)
+    } catch (e: JsonProcessingException) {
+        val logger by logger()
+        logger.error("Error in json response {}", e)
     }
+    return ""
 }

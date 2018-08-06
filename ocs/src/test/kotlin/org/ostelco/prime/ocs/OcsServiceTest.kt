@@ -8,9 +8,9 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.ostelco.prime.disruptor.PrimeEvent
-import org.ostelco.prime.disruptor.PrimeEventFactory
-import org.ostelco.prime.disruptor.PrimeEventProducerImpl
+import org.ostelco.prime.disruptor.OcsEvent
+import org.ostelco.prime.disruptor.OcsEventFactory
+import org.ostelco.prime.disruptor.EventProducerImpl
 import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -18,43 +18,48 @@ import java.util.concurrent.TimeUnit
 
 class OcsServiceTest {
 
-    private var disruptor: Disruptor<PrimeEvent>? = null
+    private var disruptor: Disruptor<OcsEvent>?= null
 
     private var countDownLatch: CountDownLatch? = null
 
-    private var result: HashSet<PrimeEvent>? = null
+    private var result: HashSet<OcsEvent>? = null
 
     private var service: OcsService? = null
 
     private// Wait  wait a short while for the thing to process.
-    val collectedEvent: PrimeEvent
+    val collectedEvent: OcsEvent?
         @Throws(InterruptedException::class)
         get() {
-            assertTrue(countDownLatch!!.await(TIMEOUT, TimeUnit.SECONDS))
-            assertFalse(result!!.isEmpty())
-            val event = result!!.iterator().next()
+            assertTrue(countDownLatch?.await(TIMEOUT, TimeUnit.SECONDS) ?: false)
+            assertFalse(result?.isEmpty() ?: true)
+            val event = result?.iterator()?.next()
             assertNotNull(event)
             return event
         }
 
     @Before
     fun setUp() {
-        this.disruptor = Disruptor<PrimeEvent>(
-                PrimeEventFactory(),
+
+        val disruptor = Disruptor<OcsEvent>(
+                OcsEventFactory(),
                 RING_BUFFER_SIZE,
                 Executors.defaultThreadFactory())
-        val ringBuffer = disruptor!!.ringBuffer
-        val pep = PrimeEventProducerImpl(ringBuffer)
 
-        this.countDownLatch = CountDownLatch(1)
-        this.result = HashSet()
-        val eh = EventHandler<PrimeEvent> { event, _, _ ->
-            result!!.add(event)
-            countDownLatch!!.countDown()
+        this.disruptor = disruptor
+        val ringBuffer = disruptor.ringBuffer
+        val pep = EventProducerImpl(ringBuffer)
+
+        val countDownLatch = CountDownLatch(1)
+        this.countDownLatch = countDownLatch
+        val result = HashSet<OcsEvent>()
+        this.result = result
+        val eh = EventHandler<OcsEvent> { event, _, _ ->
+            result.add(event)
+            countDownLatch.countDown()
         }
 
-        disruptor!!.handleEventsWith(eh)
-        disruptor!!.start()
+        disruptor.handleEventsWith(eh)
+        disruptor.start()
         this.service = OcsService(pep)
     }
 

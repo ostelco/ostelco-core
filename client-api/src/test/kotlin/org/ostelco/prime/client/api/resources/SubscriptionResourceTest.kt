@@ -22,15 +22,18 @@ import org.ostelco.prime.client.api.model.SubscriptionStatus
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
 import org.ostelco.prime.core.ApiError
-import org.ostelco.prime.model.*
+import org.ostelco.prime.model.ActivePseudonyms
+import org.ostelco.prime.model.Price
+import org.ostelco.prime.model.Product
+import org.ostelco.prime.model.PseudonymEntity
+import org.ostelco.prime.model.PurchaseRecord
 import java.time.Instant
 import java.util.*
-import java.util.Collections.emptyMap
-import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.Response
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.Invocation
 import javax.ws.rs.client.WebTarget
+import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.Response
 
 /**
  * Subscription API tests.
@@ -42,9 +45,9 @@ class SubscriptionResourceTest {
 
     private val purchaseRecords = io.vavr.collection.List.of(
             PurchaseRecord(
-                    "msisdn",
-                    Product("1", Price(10, "NOK"), emptyMap(), emptyMap()),
-                    Instant.now().toEpochMilli()))
+                    msisdn = "msisdn",
+                    product = Product(sku = "1", price = Price(10, "NOK")),
+                    timestamp = Instant.now().toEpochMilli()))
             .toJavaList()
 
     private val subscriptionStatus = SubscriptionStatus(5, purchaseRecords)

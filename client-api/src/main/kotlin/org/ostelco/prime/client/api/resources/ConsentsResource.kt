@@ -18,7 +18,7 @@ import javax.ws.rs.core.Response
  * Consents API.
  */
 @Path("/consents")
-class ConsentsResource(private val dao: SubscriberDAO) : ResourceHelpers() {
+class ConsentsResource(private val dao: SubscriberDAO) {
 
     @GET
     @Produces("application/json")

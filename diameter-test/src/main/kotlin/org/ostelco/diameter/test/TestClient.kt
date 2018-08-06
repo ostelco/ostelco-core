@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit
 
 class TestClient : EventListener<Request, Answer> {
 
-    private val LOG by logger()
+    private val logger by logger()
 
     companion object {
 
@@ -77,10 +77,10 @@ class TestClient : EventListener<Request, Answer> {
         try {
             config = XMLConfiguration(configPath + configFile)
         } catch (e: Exception) {
-            LOG.error("Failed to load configuration", e)
+            logger.error("Failed to load configuration", e)
         }
 
-        LOG.info("Initializing Stack...")
+        logger.info("Initializing Stack...")
         try {
             this.stack = StackImpl()
             factory = stack.init(config)
@@ -91,7 +91,7 @@ class TestClient : EventListener<Request, Answer> {
             val network = stack.unwrap<Network>(Network::class.java)
             network.addNetworkReqListener(
                     NetworkReqListener { request ->
-                        LOG.info("Got a request")
+                        logger.info("Got a request")
                         resultAvps = request.getAvps()
                         DiameterUtilities().printAvps(resultAvps)
                         isRequestReceived = true
@@ -100,30 +100,30 @@ class TestClient : EventListener<Request, Answer> {
                     this.authAppId) //passing our example app id.
 
         } catch (e: Exception) {
-            LOG.error("Failed to init Diameter Stack", e)
+            logger.error("Failed to init Diameter Stack", e)
             this.stack.destroy()
             return
         }
 
         try {
-            LOG.info("Starting stack")
+            logger.info("Starting stack")
             stack.start(Mode.ANY_PEER, 30000, TimeUnit.MILLISECONDS)
-            LOG.info("Stack is running.")
+            logger.info("Stack is running.")
         } catch (e: Exception) {
-            LOG.error("Failed to start Diameter Stack", e)
+            logger.error("Failed to start Diameter Stack", e)
             stack.destroy()
             return
         }
 
-        LOG.info("Stack initialization successfully completed.")
+        logger.info("Stack initialization successfully completed.")
     }
 
     private fun printApplicationInfo() {
         val appIds = stack.metaData.localPeer.commonApplications
 
-        LOG.info("Diameter Stack  :: Supporting " + appIds.size + " applications.")
+        logger.info("Diameter Stack  :: Supporting " + appIds.size + " applications.")
         for (id in appIds) {
-            LOG.info("Diameter Stack  :: Common :: $id")
+            logger.info("Diameter Stack  :: Common :: $id")
         }
     }
 
@@ -154,15 +154,15 @@ class TestClient : EventListener<Request, Answer> {
      */
     fun createSession() : Session? {
         try {
-            // FixMe : Need better way to make sure the session can be created
+            // FIXME martin: Need better way to make sure the session can be created
             if (!stack.isActive) {
-                LOG.warn("Stack not active")
+                logger.warn("Stack not active")
             }
             return this.factory.getNewSession("BadCustomSessionId;" + System.currentTimeMillis() + ";0")
         } catch (e: InternalException) {
-            LOG.error("Start Failed", e)
+            logger.error("Start Failed", e)
         } catch (e: InterruptedException) {
-            LOG.error("Start Failed", e)
+            logger.error("Start Failed", e)
         }
         return null
     }
@@ -182,16 +182,16 @@ class TestClient : EventListener<Request, Answer> {
                 dumpMessage(ccr.message, true) //dump info on console
                 return true
             } catch (e: InternalException) {
-                LOG.error("Failed to send request", e)
+                logger.error("Failed to send request", e)
             } catch (e: IllegalDiameterStateException) {
-                LOG.error("Failed to send request", e)
+                logger.error("Failed to send request", e)
             } catch (e: RouteException) {
-                LOG.error("Failed to send request", e)
+                logger.error("Failed to send request", e)
             } catch (e: OverloadException) {
-                LOG.error("Failed to send request", e)
+                logger.error("Failed to send request", e)
             }
         } else {
-            LOG.error("Failed to send request. No session")
+            logger.error("Failed to send request. No session")
         }
         return false
     }
@@ -204,18 +204,18 @@ class TestClient : EventListener<Request, Answer> {
     }
 
     override fun timeoutExpired(request: Request) {
-        LOG.info("Timeout expired $request")
+        logger.info("Timeout expired $request")
     }
 
 
     private fun dumpMessage(message: Message, sending: Boolean) {
-        LOG.info((if (sending) "Sending " else "Received ")
+        logger.info((if (sending) "Sending " else "Received ")
                 + (if (message.isRequest) "Request: " else "Answer: ") + message.commandCode
                 + "\nE2E:" + message.endToEndIdentifier
                 + "\nHBH:" + message.hopByHopIdentifier
                 + "\nAppID:" + message.applicationId)
 
-        LOG.info("AVPS[" + message.avps.size() + "]: \n")
+        logger.info("AVPS[" + message.avps.size() + "]: \n")
     }
 
     /**
@@ -225,9 +225,9 @@ class TestClient : EventListener<Request, Answer> {
         try {
             stack.stop(30000, TimeUnit.MILLISECONDS, 0)
         } catch (e: IllegalDiameterStateException) {
-            LOG.error("Failed to shutdown", e)
+            logger.error("Failed to shutdown", e)
         } catch (e: InternalException) {
-            LOG.error("Failed to shutdown", e)
+            logger.error("Failed to shutdown", e)
         }
         stack.destroy()
     }

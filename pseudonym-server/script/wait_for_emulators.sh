@@ -37,10 +37,6 @@ echo "Done creating topics and subscriptions"
 socat TCP-LISTEN:9090,fork TCP:datastore-emulator:8081 &
 socat TCP-LISTEN:9080,fork TCP:gpubsub-emulator:8085 &
 
-
-# TODO call start.sh from here. For some reason, it is not working
-# ./start.sh
-
 # Start app
 exec java \
     -Dfile.encoding=UTF-8 \

@@ -6,8 +6,8 @@ import io.dropwizard.setup.Environment
 import org.hibernate.validator.constraints.NotEmpty
 import org.ostelco.prime.analytics.DataConsumptionInfoPublisher
 import org.ostelco.prime.disruptor.ClearingEventHandler
-import org.ostelco.prime.disruptor.PrimeDisruptor
-import org.ostelco.prime.disruptor.PrimeEventProducerImpl
+import org.ostelco.prime.disruptor.EventProducerImpl
+import org.ostelco.prime.disruptor.OcsDisruptor
 import org.ostelco.prime.events.EventProcessor
 import org.ostelco.prime.module.PrimeModule
 import org.ostelco.prime.thresholds.ThresholdChecker
@@ -20,25 +20,25 @@ class OcsModule : PrimeModule {
 
     override fun init(env: Environment) {
 
-        val disruptor = PrimeDisruptor()
+        val disruptor = OcsDisruptor()
 
         // Disruptor provides RingBuffer, which is used by Producer
-        val producer = PrimeEventProducerImpl(disruptor.disruptor.ringBuffer)
+        val producer = EventProducerImpl(disruptor.disruptor.ringBuffer)
 
         // OcsSubscriberServiceSingleton uses Producer to produce events for incoming requests from Client App
-        OcsSubscriberServiceSingleton.init(producer)
+        OcsPrimeServiceSingleton.init(producer)
 
         // OcsService uses Producer to produce events for incoming requests from P-GW
         val ocsService = OcsService(producer)
 
         // OcsServer assigns OcsService as handler for gRPC requests
-        val server = OcsServer(8082, ocsService.asOcsServiceImplBase())
+        val server = OcsGrpcServer(8082, ocsService.asOcsServiceImplBase())
 
         val dataConsumptionInfoPublisher = DataConsumptionInfoPublisher(
                 config.projectId,
                 config.topicId)
 
-        val thresholdChecker = ThresholdChecker(config.lowBalanceThreshold);
+        val thresholdChecker = ThresholdChecker(config.lowBalanceThreshold)
 
         // Events flow:
         //      Producer:(OcsService, Subscriber)

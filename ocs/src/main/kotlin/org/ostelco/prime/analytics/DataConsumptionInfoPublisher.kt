@@ -10,8 +10,8 @@ import com.google.pubsub.v1.PubsubMessage
 import com.lmax.disruptor.EventHandler
 import io.dropwizard.lifecycle.Managed
 import org.ostelco.ocs.api.DataTrafficInfo
-import org.ostelco.prime.disruptor.PrimeEvent
-import org.ostelco.prime.disruptor.PrimeEventMessageType.CREDIT_CONTROL_REQUEST
+import org.ostelco.prime.disruptor.OcsEvent
+import org.ostelco.prime.disruptor.EventMessageType.CREDIT_CONTROL_REQUEST
 import org.ostelco.prime.logger
 import java.io.IOException
 import java.time.Instant
@@ -19,9 +19,9 @@ import java.time.Instant
 /**
  * This class publishes the data consumption information events to the Google Cloud Pub/Sub.
  */
-class DataConsumptionInfoPublisher(private val projectId: String, private val topicId: String) : EventHandler<PrimeEvent>, Managed {
+class DataConsumptionInfoPublisher(private val projectId: String, private val topicId: String) : EventHandler<OcsEvent>, Managed {
 
-    private val LOG by logger()
+    private val logger by logger()
 
     private lateinit var publisher: Publisher
 
@@ -41,7 +41,7 @@ class DataConsumptionInfoPublisher(private val projectId: String, private val to
     }
 
     override fun onEvent(
-            event: PrimeEvent,
+            event: OcsEvent,
             sequence: Long,
             endOfBatch: Boolean) {
 
@@ -49,7 +49,7 @@ class DataConsumptionInfoPublisher(private val projectId: String, private val to
             return
         }
 
-        // FiXMe : We only report the requested bucket. Should probably report the Used-Units instead
+        // FIXME vihang: We only report the requested bucket. Should probably report the Used-Units instead
         val data = DataTrafficInfo.newBuilder()
                 .setMsisdn(event.msisdn)
                 .setBucketBytes(event.requestedBucketBytes)
@@ -71,15 +71,15 @@ class DataConsumptionInfoPublisher(private val projectId: String, private val to
             override fun onFailure(throwable: Throwable) {
                 if (throwable is ApiException) {
                     // details on the API exception
-                    LOG.warn("Status code: {}", throwable.statusCode.code)
-                    LOG.warn("Retrying: {}", throwable.isRetryable)
+                    logger.warn("Status code: {}", throwable.statusCode.code)
+                    logger.warn("Retrying: {}", throwable.isRetryable)
                 }
-                LOG.warn("Error publishing message for msisdn: {}", event.msisdn)
+                logger.warn("Error publishing message for msisdn: {}", event.msisdn)
             }
 
             override fun onSuccess(messageId: String) {
                 // Once published, returns server-assigned message ids (unique within the topic)
-                LOG.debug(messageId)
+                logger.debug(messageId)
             }
         })
     }

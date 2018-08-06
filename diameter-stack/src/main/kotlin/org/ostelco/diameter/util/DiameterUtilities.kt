@@ -25,9 +25,9 @@ import org.ostelco.diameter.util.AvpType.VENDOR_ID
 
 class DiameterUtilities {
 
-    private val LOG by logger()
+    private val logger by logger()
 
-    private val AVP_DICTIONARY = DictionaryImpl.INSTANCE
+    private val dictionary = DictionaryImpl.INSTANCE
 
     fun printAvps(avps: AvpSet?) {
         if (avps != null) {
@@ -37,14 +37,14 @@ class DiameterUtilities {
 
     private fun printAvps(avps: AvpSet, indentation: String) {
         for (avp in avps) {
-            val avpRep = AVP_DICTIONARY.getAvp(avp.code, avp.vendorId)
+            val avpRep = dictionary.getAvp(avp.code, avp.vendorId)
             val avpValue = getAvpValue(avp)
             val avpLine = StringBuilder("$indentation${avp.code} : ${avpRep.name} (${avpRep.type})")
             while (avpLine.length < 50) {
                 avpLine.append(if (avpLine.length % 2 == 0) "." else " ")
             }
             avpLine.append(avpValue)
-            LOG.debug(avpLine.toString())
+            logger.debug(avpLine.toString())
             if (isGrouped(avp)) {
                 try {
                     printAvps(avp.grouped, "$indentation  ")
@@ -77,7 +77,7 @@ class DiameterUtilities {
         }
     }
 
-    // TODO for missing Avp, is code and vendorId as 0 okay?
+    // TODO martin: for missing Avp, is code and vendorId as 0 okay?
     private fun isGrouped(avp: Avp?): Boolean =
-            ("Grouped" == AVP_DICTIONARY.getAvp(avp?.code ?: 0, avp?.vendorId ?: 0).type)
+            ("Grouped" == dictionary.getAvp(avp?.code ?: 0, avp?.vendorId ?: 0).type)
 }
