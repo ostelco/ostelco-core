@@ -12,24 +12,24 @@ import org.junit.Test
 import org.ostelco.ocs.api.CreditControlRequestInfo
 import org.ostelco.ocs.api.MultipleServiceCreditControl
 import org.ostelco.ocs.api.ServiceUnit
-import org.ostelco.prime.disruptor.PrimeEventMessageType.CREDIT_CONTROL_REQUEST
-import org.ostelco.prime.disruptor.PrimeEventMessageType.TOPUP_DATA_BUNDLE_BALANCE
+import org.ostelco.prime.disruptor.EventMessageType.CREDIT_CONTROL_REQUEST
+import org.ostelco.prime.disruptor.EventMessageType.TOPUP_DATA_BUNDLE_BALANCE
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 class PrimeEventProducerTest {
 
-    private var primeEventProducer: PrimeEventProducerImpl? = null
+    private var primeEventProducer: EventProducerImpl? = null
 
-    private var disruptor: Disruptor<PrimeEvent>? = null
+    private var disruptor: Disruptor<OcsEvent>? = null
 
     private var countDownLatch: CountDownLatch? = null
 
-    private var result: MutableSet<PrimeEvent>? = null
+    private var result: MutableSet<OcsEvent>? = null
 
     private// Wait a short while for the thing to process.
-    val collectedEvent: PrimeEvent
+    val collectedEvent: OcsEvent
         @Throws(InterruptedException::class)
         get() {
             assertTrue(countDownLatch!!.await(TIMEOUT.toLong(), TimeUnit.SECONDS))
@@ -42,16 +42,16 @@ class PrimeEventProducerTest {
 
     @Before
     fun setUp() {
-        this.disruptor = Disruptor<PrimeEvent>(
-                PrimeEventFactory(),
+        this.disruptor = Disruptor<OcsEvent>(
+                OcsEventFactory(),
                 RING_BUFFER_SIZE,
                 Executors.defaultThreadFactory())
         val ringBuffer = disruptor!!.ringBuffer
-        this.primeEventProducer = PrimeEventProducerImpl(ringBuffer)
+        this.primeEventProducer = EventProducerImpl(ringBuffer)
 
         this.countDownLatch = CountDownLatch(1)
         this.result = HashSet()
-        val eh = EventHandler<PrimeEvent> { event, _, _ ->
+        val eh = EventHandler<OcsEvent> { event, _, _ ->
             result!!.add(event)
             countDownLatch?.countDown()
         }
@@ -70,13 +70,13 @@ class PrimeEventProducerTest {
     fun topupDataBundleBalanceEvent() {
 
         // Stimulating a response
-        primeEventProducer!!.topupDataBundleBalanceEvent(MSISDN, NO_OF_TOPUP_BYTES)
+        primeEventProducer!!.topupDataBundleBalanceEvent(BUNDLE_ID, NO_OF_TOPUP_BYTES)
 
         // Collect an event (or fail trying).
         val event = collectedEvent
 
         // Verify some behavior
-        assertEquals(MSISDN, event.msisdn)
+        assertEquals(BUNDLE_ID, event.bundleId)
         assertEquals(NO_OF_TOPUP_BYTES, event.requestedBucketBytes)
         assertEquals(TOPUP_DATA_BUNDLE_BALANCE, event.messageType)
     }
@@ -113,6 +113,8 @@ class PrimeEventProducerTest {
         private const val REQUESTED_BYTES = 500L
 
         private const val USED_BYTES = 300L
+
+        private const val BUNDLE_ID = "foo@bar.com"
 
         private const val MSISDN = "4711223344"
 

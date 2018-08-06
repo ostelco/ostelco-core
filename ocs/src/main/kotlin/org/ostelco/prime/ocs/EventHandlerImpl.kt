@@ -1,27 +1,26 @@
 package org.ostelco.prime.ocs
 
 import com.lmax.disruptor.EventHandler
-import org.ostelco.ocs.api.ActivateResponse
 import org.ostelco.ocs.api.CreditControlAnswerInfo
 import org.ostelco.ocs.api.FinalUnitAction
 import org.ostelco.ocs.api.FinalUnitIndication
 import org.ostelco.ocs.api.MultipleServiceCreditControl
 import org.ostelco.ocs.api.ReportingReason
 import org.ostelco.ocs.api.ServiceUnit
-import org.ostelco.prime.disruptor.PrimeEvent
-import org.ostelco.prime.disruptor.PrimeEventMessageType
+import org.ostelco.prime.disruptor.OcsEvent
+import org.ostelco.prime.disruptor.EventMessageType
 import org.ostelco.prime.logger
 
 /**
- * An event handler, handling the [PrimeEvent] messages that
+ * An event handler, handling the [OcsEvent] messages that
  * are used by the Disruptor execution mechanism to handle events.
  */
-internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandler<PrimeEvent> {
+internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandler<OcsEvent> {
 
     private val logger by logger()
 
     override fun onEvent(
-            event: PrimeEvent,
+            event: OcsEvent,
             sequence: Long,
             endOfBatch: Boolean) {
 
@@ -34,22 +33,23 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
 
     }
 
-    private fun dispatchOnEventType(event: PrimeEvent) {
+    private fun dispatchOnEventType(event: OcsEvent) {
         when (event.messageType) {
-            PrimeEventMessageType.CREDIT_CONTROL_REQUEST -> handleCreditControlRequest(event)
+            EventMessageType.CREDIT_CONTROL_REQUEST -> handleCreditControlRequest(event)
 
-            PrimeEventMessageType.TOPUP_DATA_BUNDLE_BALANCE -> handleTopupDataBundleBalance(event)
+            EventMessageType.TOPUP_DATA_BUNDLE_BALANCE -> handleTopupDataBundleBalance(event)
 
             else -> logger.warn("Unknown event type " + event.messageType!!)
         }
     }
 
-    private fun handleTopupDataBundleBalance(event: PrimeEvent) {
-        val response = ActivateResponse.newBuilder().setMsisdn(event.msisdn).build()
-        ocsService.activateOnNextResponse(response)
+    private fun handleTopupDataBundleBalance(event: OcsEvent) {
+        // FIXME vihang: On topup, activate all MSISDNs linked to the bundle
+        // val response = ActivateResponse.newBuilder().setMsisdn(event.msisdn).build()
+        // ocsService.activateOnNextResponse(response)
     }
 
-    private fun logEventProcessing(msg: String, event: PrimeEvent) {
+    private fun logEventProcessing(msg: String, event: OcsEvent) {
         logger.info("{}", msg)
         logger.info("MSISDN: {}", event.msisdn)
         logger.info("requested bytes: {}", event.requestedBucketBytes)
@@ -60,12 +60,12 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
         logger.info("request id: {} ",event.ocsgwRequestId)
     }
 
-    private fun handleCreditControlRequest(event: PrimeEvent) {
+    private fun handleCreditControlRequest(event: OcsEvent) {
 
         logEventProcessing("Returning Credit-Control-Answer", event)
 
-        // FixMe : This assume we only have one MSCC
-        // ToDo : In case of zero balance we should add appropriate FinalUnitAction
+        // FIXME martin: This assume we only have one MSCC
+        // TODO martin: In case of zero balance we should add appropriate FinalUnitAction
 
         try {
             val creditControlAnswer = CreditControlAnswerInfo.newBuilder()
@@ -110,7 +110,7 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
             // unable to send Credit-Control-Answer.
             // So, return reserved bucket bytes back to data bundle.
             ocsService.returnUnusedDataBucketEvent(
-                    event.msisdn!!, // TODO need proper null check
+                    event.msisdn!!, // TODO vihang: need proper null check
                     event.reservedBucketBytes)
         }
 

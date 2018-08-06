@@ -10,6 +10,6 @@ dependencies {
   api project(':ocs-api')
   api project(':model')
 
-  api "com.lmax:disruptor:3.4.2"
   api "io.dropwizard:dropwizard-core:$dropwizardVersion"
+  api "io.arrow-kt:arrow-core:0.7.2"
 }

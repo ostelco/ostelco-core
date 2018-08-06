@@ -1,8 +1,12 @@
 package org.ostelco.prime.events
 
 import com.lmax.disruptor.EventHandler
-import org.ostelco.prime.disruptor.PrimeEvent
+import org.ostelco.prime.disruptor.EventMessageType.CREDIT_CONTROL_REQUEST
+import org.ostelco.prime.disruptor.EventMessageType.RELEASE_RESERVED_BUCKET
+import org.ostelco.prime.disruptor.EventMessageType.TOPUP_DATA_BUNDLE_BALANCE
+import org.ostelco.prime.disruptor.OcsEvent
 import org.ostelco.prime.logger
+import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.ClientDataSource
 
@@ -12,35 +16,28 @@ import org.ostelco.prime.storage.ClientDataSource
  * Storage is parameterized into constructor to be able to pass mock for unit testing.
  */
 class EventProcessor(
-        private val storage: ClientDataSource = getResource()) : EventHandler<PrimeEvent> {
+        private val storage: ClientDataSource = getResource()) : EventHandler<OcsEvent> {
 
     private val logger by logger()
 
     override fun onEvent(
-            event: PrimeEvent,
+            event: OcsEvent,
             sequence: Long,
             endOfBatch: Boolean) {
 
         try {
-            logger.info("Updating data bundle balance for {} to {} bytes",
-                    event.msisdn, event.bundleBytes)
-            val msisdn = event.msisdn
-            if (msisdn != null) {
-                setRemainingByMsisdn(msisdn, event.bundleBytes)
+            if (event.messageType == CREDIT_CONTROL_REQUEST
+                    || event.messageType == RELEASE_RESERVED_BUCKET
+                    || event.messageType == TOPUP_DATA_BUNDLE_BALANCE) {
+                logger.info("Updating data bundle balance for {} : {} to {} bytes",
+                        event.msisdn, event.bundleId, event.bundleBytes)
+                val bundleId = event.bundleId
+                if (bundleId != null) {
+                    storage.updateBundle(Bundle(bundleId, event.bundleBytes))
+                }
             }
         } catch (e: Exception) {
             logger.warn("Exception handling prime event in EventProcessor", e)
-        }
-    }
-
-    @Throws(EventProcessorException::class)
-    private fun setRemainingByMsisdn(
-            msisdn: String,
-            noOfBytes: Long) {
-        try {
-            storage.setBalance(msisdn, noOfBytes)
-        } catch (e: Exception) {
-            throw EventProcessorException(e)
         }
     }
 }
