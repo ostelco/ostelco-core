@@ -1,6 +1,9 @@
 package org.ostelco.prime.storage
 
+import arrow.core.Either
+import arrow.core.Option
 import org.ostelco.prime.model.ApplicationToken
+import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.ProductClass
@@ -36,17 +39,15 @@ interface AdminDocumentStore
 
 interface ClientGraphStore {
 
-    val balances: Map<String, Long>
-
     /**
      * Get Subscriber Profile
      */
-    fun getSubscriber(id: String): Subscriber?
+    fun getSubscriber(subscriberId: String): Either<StoreError, Subscriber>
 
     /**
      * Create Subscriber Profile
      */
-    fun addSubscriber(subscriber: Subscriber, referredBy: String? = null): Boolean
+    fun addSubscriber(subscriber: Subscriber, referredBy: String? = null): Option<StoreError>
 
     /**
      * Update Subscriber Profile
@@ -56,12 +57,12 @@ interface ClientGraphStore {
     /**
      * Remove Subscriber for testing
      */
-    fun removeSubscriber(id: String): Boolean
+    fun removeSubscriber(subscriberId: String): Boolean
 
     /**
      * Link Subscriber to MSISDN
      */
-    fun addSubscription(id: String, msisdn: String): Boolean
+    fun addSubscription(subscriberId: String, msisdn: String): Option<StoreError>
 
     /**
      * Get Products for a given subscriber
@@ -71,17 +72,22 @@ interface ClientGraphStore {
     /**
      * Get Product to perform OCS Topup
      */
-    fun getProduct(subscriberId: String?, sku: String): Product?
+    fun getProduct(subscriberId: String?, sku: String): Either<StoreError, Product>
+
+    /**
+     * Get subscriptions for Client
+     */
+    fun getSubscriptions(subscriberId: String): Collection<Subscription>?
 
     /**
      * Get balance for Client
      */
-    fun getSubscriptions(id: String): Collection<Subscription>?
+    fun getBundles(subscriberId: String): Collection<Bundle>?
 
     /**
      * Set balance after OCS Topup or Consumption
      */
-    fun setBalance(msisdn: String, noOfBytes: Long): Boolean
+    fun updateBundle(bundle: Bundle): Boolean
 
     /**
      * Get msisdn for the given subscription-id
@@ -91,35 +97,40 @@ interface ClientGraphStore {
     /**
      * Get all PurchaseRecords
      */
-    fun getPurchaseRecords(id: String): Collection<PurchaseRecord>
+    fun getPurchaseRecords(subscriberId: String): Collection<PurchaseRecord>
 
     /**
      * Add PurchaseRecord after Purchase operation
      */
-    fun addPurchaseRecord(id: String, purchase: PurchaseRecord): String?
+    fun addPurchaseRecord(subscriberId: String, purchase: PurchaseRecord): Either<StoreError, String>
 
     /**
      * Get list of users this user has referred to
      */
-    fun getReferrals(id: String): Collection<String>
+    fun getReferrals(subscriberId: String): Collection<String>
 
     /**
      * Get user who has referred this user.
      */
-    fun getReferredBy(id: String): String?
+    fun getReferredBy(subscriberId: String): String?
 }
 
 interface AdminGraphStore {
 
+    fun getMsisdnToBundleMap(): Map<Subscription, Bundle>
+    fun getAllBundles(): Collection<Bundle>
+    fun getSubscriberToBundleIdMap(): Map<Subscriber, Bundle>
+    fun getSubscriberToMsisdnMap(): Map<Subscriber, Subscription>
+
     // simple create
-    fun createProductClass(productClass: ProductClass): Boolean
-    fun createProduct(product: Product): Boolean
-    fun createSegment(segment: Segment): Boolean
-    fun createOffer(offer: Offer): Boolean
+    fun createProductClass(productClass: ProductClass): Option<StoreError>
+    fun createProduct(product: Product): Option<StoreError>
+    fun createSegment(segment: Segment): Option<StoreError>
+    fun createOffer(offer: Offer): Option<StoreError>
 
     // simple update
     // updating an Offer and Product is not allowed
-    fun updateSegment(segment: Segment): Boolean
+    fun updateSegment(segment: Segment): Option<StoreError>
 
     // simple getAll
     // fun getOffers(): Collection<Offer>
@@ -132,4 +143,5 @@ interface AdminGraphStore {
     // fun getOffer(id: String): Offer?
     // fun getSegment(id: String): Segment?
     // fun getProductClass(id: String): ProductClass?
+
 }

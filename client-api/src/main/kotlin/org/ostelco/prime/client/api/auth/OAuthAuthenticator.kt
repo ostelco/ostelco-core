@@ -48,6 +48,7 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
         val email = userInfo.email
 
         if (email == null || email.isEmpty()) {
+            logger.warn("email is missing in userInfo")
             return Optional.empty()
         }
         return Optional.of(AccessTokenPrincipal(email))

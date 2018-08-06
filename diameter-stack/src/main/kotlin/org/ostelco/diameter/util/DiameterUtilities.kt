@@ -77,7 +77,7 @@ class DiameterUtilities {
         }
     }
 
-    // TODO for missing Avp, is code and vendorId as 0 okay?
+    // TODO martin: for missing Avp, is code and vendorId as 0 okay?
     private fun isGrouped(avp: Avp?): Boolean =
             ("Grouped" == dictionary.getAvp(avp?.code ?: 0, avp?.vendorId ?: 0).type)
 }

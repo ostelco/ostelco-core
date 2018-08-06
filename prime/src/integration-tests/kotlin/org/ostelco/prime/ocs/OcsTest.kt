@@ -17,8 +17,8 @@ import org.ostelco.ocs.api.MultipleServiceCreditControl
 import org.ostelco.ocs.api.OcsServiceGrpc
 import org.ostelco.ocs.api.OcsServiceGrpc.OcsServiceStub
 import org.ostelco.ocs.api.ServiceUnit
-import org.ostelco.prime.disruptor.PrimeDisruptor
-import org.ostelco.prime.disruptor.PrimeEventProducerImpl
+import org.ostelco.prime.disruptor.OcsDisruptor
+import org.ostelco.prime.disruptor.EventProducerImpl
 import org.ostelco.prime.logger
 import org.ostelco.prime.storage.graph.Neo4jClient
 import java.io.IOException
@@ -95,7 +95,7 @@ class OcsTest {
 
         // Wait for response (max ten seconds) and the pass the test only
         // if a response was actually generated (and cdl counted down to zero).
-        cdl.await(TIMEOUT_IN_SECONDS.toLong(), TimeUnit.SECONDS)
+        cdl.await(TIMEOUT_IN_SECONDS, TimeUnit.SECONDS)
 
         requests.onCompleted()
 
@@ -131,15 +131,15 @@ class OcsTest {
         ocsServiceStub.activate(activateRequest, streamObserver)
 
         // Wait for a second to let things get through, then move on.
-        Thread.sleep(ONE_SECOND_IN_MILLISECONDS.toLong())
+        Thread.sleep(ONE_SECOND_IN_MILLISECONDS)
 
         // Send a report using the producer to the pipeline that will
         // inject a PrimeEvent that will top up the data bundle balance.
-        producer.topupDataBundleBalanceEvent(MSISDN, NO_OF_BYTES_TO_ADD.toLong())
+        producer.topupDataBundleBalanceEvent(MSISDN, NO_OF_BYTES_TO_ADD)
 
         // Now wait, again, for the latch to reach zero, and fail the test
         // ff it hasn't.
-        cdl.await(TIMEOUT_IN_SECONDS.toLong(), TimeUnit.SECONDS)
+        cdl.await(TIMEOUT_IN_SECONDS, TimeUnit.SECONDS)
         assertEquals(0, cdl.count)
     }
 
@@ -162,11 +162,11 @@ class OcsTest {
         // Request ID used by OCS gateway to correlate responses with requests
         private val REQUEST_ID = RandomStringUtils.randomAlphanumeric(22)
 
-        private const val NO_OF_BYTES_TO_ADD = 10000
+        private const val NO_OF_BYTES_TO_ADD = 10000L
 
-        private const val TIMEOUT_IN_SECONDS = 10
+        private const val TIMEOUT_IN_SECONDS = 10L
 
-        private const val ONE_SECOND_IN_MILLISECONDS = 1000
+        private const val ONE_SECOND_IN_MILLISECONDS = 1000L
 
         /**
          * This is the "disruptor" (processing engine) that will process
@@ -176,19 +176,19 @@ class OcsTest {
          *
          * Disruptor also provides RingBuffer, which is used by Producer
          */
-        private lateinit var disruptor: PrimeDisruptor
+        private lateinit var disruptor: OcsDisruptor
 
         /**
          *
          */
-        private lateinit var producer: PrimeEventProducerImpl
+        private lateinit var producer: EventProducerImpl
 
         /**
          * The gRPC service that will produce incoming events from the
          * simulated packet gateway, contains an [OcsSubscriberService] instance bound
          * to a particular port (in our case 8082).
          */
-        private lateinit var ocsServer: OcsServer
+        private lateinit var ocsServer: OcsGrpcServer
 
         /**
          * The "sub" that will mediate access to the GRPC channel,
@@ -203,16 +203,16 @@ class OcsTest {
             Neo4jClient.start()
 
             // Set up processing pipeline
-            disruptor = PrimeDisruptor()
-            producer = PrimeEventProducerImpl(disruptor.disruptor.ringBuffer)
+            disruptor = OcsDisruptor()
+            producer = EventProducerImpl(disruptor.disruptor.ringBuffer)
 
             // Set up the gRPC server at a particular port with a particular
             // service, that is connected to the processing pipeline.
             val ocsService = OcsService(producer)
-            ocsServer = OcsServer(PORT, ocsService.asOcsServiceImplBase())
+            ocsServer = OcsGrpcServer(PORT, ocsService.asOcsServiceImplBase())
 
             val ocsState = OcsState()
-            ocsState.addDataBundleBytes(MSISDN, NO_OF_BYTES_TO_ADD.toLong())
+            ocsState.addDataBundleBytesForMsisdn(MSISDN, NO_OF_BYTES_TO_ADD)
 
             // Events flow:
             //      Producer:(OcsService, Subscriber)

@@ -10,7 +10,7 @@ dependencies {
     exclude module: 'kotlin-stdlib-common'
   }
 
-  implementation project(":prime-api")
+  implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
   implementation project(":prime-client-api")
   implementation project(':diameter-test')
 

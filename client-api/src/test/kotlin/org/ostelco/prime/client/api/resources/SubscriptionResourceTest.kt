@@ -29,7 +29,6 @@ import org.ostelco.prime.model.PseudonymEntity
 import org.ostelco.prime.model.PurchaseRecord
 import java.time.Instant
 import java.util.*
-import java.util.Collections.emptyMap
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.Invocation
 import javax.ws.rs.client.WebTarget
@@ -46,9 +45,9 @@ class SubscriptionResourceTest {
 
     private val purchaseRecords = io.vavr.collection.List.of(
             PurchaseRecord(
-                    "msisdn",
-                    Product("1", Price(10, "NOK"), emptyMap(), emptyMap()),
-                    Instant.now().toEpochMilli()))
+                    msisdn = "msisdn",
+                    product = Product(sku = "1", price = Price(10, "NOK")),
+                    timestamp = Instant.now().toEpochMilli()))
             .toJavaList()
 
     private val subscriptionStatus = SubscriptionStatus(5, purchaseRecords)

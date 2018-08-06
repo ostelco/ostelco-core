@@ -5,11 +5,15 @@ import org.jdiameter.api.AvpDataException
 import org.jdiameter.api.Session
 import org.junit.After
 import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Test
+import org.ostelco.at.common.createProfile
+import org.ostelco.at.common.createSubscription
+import org.ostelco.at.common.logger
+import org.ostelco.at.common.randomInt
 import org.ostelco.diameter.model.RequestType
 import org.ostelco.diameter.test.TestClient
 import org.ostelco.diameter.test.TestHelper
-import org.ostelco.prime.logger
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
@@ -18,7 +22,6 @@ import kotlin.test.fail
  * actually send Diameter traffic on the selected DataSource to the OcsApplication. The
  * DataSource used is the one in the configuration file for this resources.
  *
- * ToDo: These test should start with a creation of a user in Prime. Now they use a predefined user in Firebase.
  */
 class OcsTest {
 
@@ -231,7 +234,18 @@ class OcsTest {
         private const val DEST_REALM = "loltel"
         private const val DEST_HOST = "ocs"
 
-        private const val MSISDN = "4747900184"
         private const val BUCKET_SIZE = 500L
+
+        private lateinit var MSISDN: String
+
+        @BeforeClass
+        @JvmStatic
+        fun createTestUserAndSubscription() {
+
+            val email = "ocs-${randomInt()}@test.com"
+            createProfile(name = "Test OCS User", email = email)
+
+            MSISDN = createSubscription(email)
+        }
     }
 }

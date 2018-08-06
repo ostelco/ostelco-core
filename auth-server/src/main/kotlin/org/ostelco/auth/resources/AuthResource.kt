@@ -47,9 +47,6 @@ class AuthResource {
                         additionalClaims)
                 .get()
 
-        // TODO: Missing explicit handling of error-situation where
-        //       firebase response gives error, times out or
-        //       something else that shouldn't be interpreted as success.
         return Response.ok(customToken, MediaType.TEXT_PLAIN_TYPE).build()
     }
 

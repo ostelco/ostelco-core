@@ -154,7 +154,7 @@ class TestClient : EventListener<Request, Answer> {
      */
     fun createSession() : Session? {
         try {
-            // FixMe : Need better way to make sure the session can be created
+            // FIXME martin: Need better way to make sure the session can be created
             if (!stack.isActive) {
                 logger.warn("Stack not active")
             }
