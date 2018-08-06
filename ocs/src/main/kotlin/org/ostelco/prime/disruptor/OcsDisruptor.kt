@@ -7,7 +7,7 @@ import io.dropwizard.lifecycle.Managed
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
-class PrimeDisruptor : Managed {
+class OcsDisruptor : Managed {
 
     /**
      * Buffer size defaults to 65536 = 2^16
@@ -17,11 +17,11 @@ class PrimeDisruptor : Managed {
         private const val TIMEOUT_IN_SECONDS = 10
     }
 
-    val disruptor: Disruptor<PrimeEvent>
+    val disruptor: Disruptor<OcsEvent>
 
     init {
         val threadFactory = Executors.privilegedThreadFactory()
-        this.disruptor = Disruptor(EventFactory<PrimeEvent> { PrimeEvent() }, BUFFER_SIZE, threadFactory)
+        this.disruptor = Disruptor(EventFactory<OcsEvent> { OcsEvent() }, BUFFER_SIZE, threadFactory)
     }
 
     override fun start() {

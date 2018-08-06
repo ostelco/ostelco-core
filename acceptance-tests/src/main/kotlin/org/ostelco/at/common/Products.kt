@@ -20,7 +20,7 @@ private fun createProduct(sku: String, amount: Int): Product {
 
     // This is messy code
     val gbs: Long = "${sku[0]}".toLong()
-    product.properties = mapOf("noOfBytes" to "${gbs*1024*1024*1024}")
+    product.properties = mapOf("noOfBytes" to "${gbs}_000_000_000")
     product.presentation = mapOf("label" to "$gbs GB for ${amount/100}")
 
     return product

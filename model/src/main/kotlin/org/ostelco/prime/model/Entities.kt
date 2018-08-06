@@ -25,11 +25,10 @@ data class Subscriber(
         var postCode: String = "",
         var city: String = "",
         var country: String = "",
-        var referralId: String = "") : HasId {
+        var referralId: String = email) : HasId {
 
     constructor(email: String) : this() {
         this.email = email
-        this.referralId = email
     }
 
     override var id: String
@@ -60,8 +59,7 @@ data class ApplicationToken(
 }
 
 data class Subscription(
-        var msisdn: String = "",
-        var balance: Long = 0) : HasId {
+        var msisdn: String = "") : HasId {
 
     override var id: String
         @JsonIgnore
@@ -71,6 +69,10 @@ data class Subscription(
             msisdn = value
         }
 }
+
+data class Bundle(
+        override var id: String = "",
+        var balance: Long = 0) : HasId
 
 data class Price(
         var amount: Int = 0,
@@ -96,20 +98,10 @@ data class ProductClass(
         var properties: List<String> = listOf()) : HasId
 
 data class PurchaseRecord(
-        var msisdn: String = "",
+        override var id: String = "",
+        @Deprecated("Will be removed in future") var msisdn: String = "",
         var product: Product = Product(),
-        var timestamp: Long = 0L) : HasId {
-
-    private var _id: String = ""
-
-    override var id: String
-        @JsonIgnore
-        get() = this._id
-        @JsonIgnore
-        set(value) {
-            _id = value
-        }
-}
+        var timestamp: Long = 0L) : HasId
 
 data class PseudonymEntity(
         var msisdn: String,

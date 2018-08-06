@@ -9,6 +9,7 @@ class AdminModule: PrimeModule {
 
     override fun init(env: Environment) {
         val jerseySever = env.jersey()
+        jerseySever.register(SubscriptionsResource())
         jerseySever.register(OfferResource())
         jerseySever.register(SegmentResource())
         jerseySever.register(ProductResource())

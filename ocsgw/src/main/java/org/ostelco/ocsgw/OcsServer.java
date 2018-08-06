@@ -65,7 +65,7 @@ public class OcsServer {
         try {
             ServerCCASessionImpl ccaSession = stack.getSession(sessionContext.getSessionId(), ServerCCASessionImpl.class);
             if (ccaSession != null && ccaSession.isValid()) {
-                // ToDo: Not sure why there are multiple sessions for one session Id.
+                // TODO martin: Not sure why there are multiple sessions for one session Id.
                 for (Session session : ccaSession.getSessions()) {
                     if (session.isValid()) {
                         Request request = session.createRequest(258,

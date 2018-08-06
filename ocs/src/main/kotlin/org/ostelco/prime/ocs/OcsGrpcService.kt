@@ -38,7 +38,7 @@ import java.util.*
  * see that a client invokes a method, and listens for a stream of information related to
  * that particular stream.
  */
-class OcsGRPCService(private val ocsService: OcsService) : OcsServiceGrpc.OcsServiceImplBase() {
+class OcsGrpcService(private val ocsService: OcsService) : OcsServiceGrpc.OcsServiceImplBase() {
 
     private val logger by logger()
 
@@ -87,7 +87,7 @@ class OcsGRPCService(private val ocsService: OcsService) : OcsServiceGrpc.OcsSer
         }
 
         override fun onError(t: Throwable) {
-            // TODO vihang: this is important?
+            // TODO vihang: handle onError for stream observers
         }
 
         override fun onCompleted() {

@@ -14,7 +14,6 @@ import org.ostelco.prime.model.HasId
 import org.ostelco.prime.storage.graph.Relation.REFERRED
 import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 class SchemaTest {
 
@@ -41,10 +40,10 @@ class SchemaTest {
             a.field1 = "value1"
             a.field2 = "value2"
 
-            aEntityStore.create(aId, a, transaction)
+            aEntityStore.create(a, transaction)
 
             // get node
-            assertEquals(a, aEntityStore.get("a_id", transaction))
+            assertEquals(a, aEntityStore.get("a_id", transaction).toOption().orNull())
 
             // update node
             val ua = A()
@@ -52,16 +51,16 @@ class SchemaTest {
             ua.field1 = "value1_u"
             ua.field2 = "value2_u"
 
-            aEntityStore.update(aId, ua, transaction)
+            aEntityStore.update(ua, transaction)
 
             // get updated node
-            assertEquals(ua, aEntityStore.get(aId, transaction))
+            assertEquals(ua, aEntityStore.get(aId, transaction).toOption().orNull())
 
             // delete node
             aEntityStore.delete(aId, transaction)
 
             // get deleted node
-            assertNull(aEntityStore.get(aId, transaction))
+            assert(aEntityStore.get(aId, transaction).isLeft())
         }
     }
 
@@ -92,11 +91,11 @@ class SchemaTest {
             b.field1 = "b's value1"
             b.field2 = "b's value2"
 
-            fromEntityStore.create(aId, a, transaction)
-            toEntityStore.create(bId, b, transaction)
+            fromEntityStore.create(a, transaction)
+            toEntityStore.create(b, transaction)
 
             // create relation
-            relationStore.create(a, null, b, transaction)
+            relationStore.create(a, b, transaction)
 
             // get 'b' from 'a'
             assertEquals(listOf(b), fromEntityStore.getRelated(aId, relation, transaction))
@@ -130,8 +129,8 @@ class SchemaTest {
             b.field1 = "b's value1"
             b.field2 = "b's value2"
 
-            fromEntityStore.create(aId, a, transaction)
-            toEntityStore.create(bId, b, transaction)
+            fromEntityStore.create(a, transaction)
+            toEntityStore.create(b, transaction)
 
             // create relation
             val r = R()
