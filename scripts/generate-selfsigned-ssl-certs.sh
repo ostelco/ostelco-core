@@ -21,8 +21,6 @@ ESP_SSL_DIR=../esp
 if [ -d ${CERTS_DIR} ]; then
   echo "Found the matching domain in certs. Generating SSL certs for domain ${DOMAIN_NAME} in ${CERTS_DIR} ..."
 
-
-
   openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -keyout ${CERTS_DIR}/nginx.key \
     -out ${CERTS_DIR}/nginx.crt \
@@ -38,6 +36,7 @@ if [ -d ${CERTS_DIR} ]; then
   echo
   echo ; echo "Copying the generated nginx.* to ${ESP_SSL_DIR} ..."
   cp ${CERTS_DIR}/nginx.* ${ESP_SSL_DIR}/
+  ls -l ${ESP_SSL_DIR}
   echo
 
 else
