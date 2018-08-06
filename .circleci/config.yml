@@ -39,9 +39,20 @@ jobs:
           name: Generate self signed certs for ocs.ostelco.org .
           command: scripts/generate-selfsigned-ssl-certs.sh   ocs.ostelco.org 
 
-      # - setup_remote_docker
           
       # docker install instructions here
+
+      - run:
+          name: Install latest Docker-Compose 
+          command: |
+            curl -L -o ~/docker-compose \
+              https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m`
+            if test $(which sudo); then echo "sudo found"; SUDO='sudo'; else echo "sudo not found";  SUDO=''; fi
+            ${SUDO} chmod +x ~/docker-compose    
+            # Note: On CircleCI, the following two lines will overwrite the default (older) docker-compose found in /usr/local/bin/
+            ${SUDO} mv ~/docker-compose /usr/local/bin/
+            ls -l /usr/local/bin/docker-compose
+
 
             ###########################################################################################################
             # The few lines of code in the run section for docker and docker-compose installation
