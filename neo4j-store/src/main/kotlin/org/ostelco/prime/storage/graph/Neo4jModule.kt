@@ -36,7 +36,7 @@ class Neo4jModule : PrimeModule {
     }
 }
 
-private fun initDatabase() {
+fun initDatabase() {
     Neo4jStoreSingleton.createProduct(createProduct("1GB_249NOK", 24900))
     Neo4jStoreSingleton.createProduct(createProduct("2GB_299NOK", 29900))
     Neo4jStoreSingleton.createProduct(createProduct("3GB_349NOK", 34900))

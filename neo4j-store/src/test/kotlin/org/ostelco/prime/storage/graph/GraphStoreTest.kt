@@ -1,5 +1,6 @@
 package org.ostelco.prime.storage.graph
 
+import arrow.core.getOrElse
 import com.palantir.docker.compose.DockerComposeRule
 import com.palantir.docker.compose.connection.waiting.HealthChecks
 import org.joda.time.Duration
@@ -16,15 +17,15 @@ import org.ostelco.prime.model.Segment
 import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.ocs.OcsAdminService
-import org.ostelco.prime.storage.graph.GraphStoreTest.Companion.OCS_MOCK
 import java.time.Instant
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.test.fail
 
-class MockOcsAdminService : OcsAdminService by OCS_MOCK
+class MockOcsAdminService : OcsAdminService by Mockito.mock(OcsAdminService::class.java)
 
 class GraphStoreTest {
 
@@ -55,10 +56,12 @@ class GraphStoreTest {
     @Test
     fun `test add subscriber`() {
 
-        assertTrue(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null).isEmpty())
-        assertEquals(
-                Subscriber(email = EMAIL, name = NAME, referralId = EMAIL),
-                Neo4jStoreSingleton.getSubscriber(EMAIL).toOption().orNull())
+        Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null)
+                .map { fail(it.message) }
+
+        Neo4jStoreSingleton.getSubscriber(EMAIL).bimap(
+                { fail(it.message) },
+                { assertEquals(Subscriber(email = EMAIL, name = NAME, referralId = EMAIL), it) })
 
         // TODO vihang: fix argument captor for neo4j-store tests
 //        val bundleArgCaptor: ArgumentCaptor<Bundle> = ArgumentCaptor.forClass(Bundle::class.java)
@@ -69,11 +72,19 @@ class GraphStoreTest {
     @Test
     fun `test add subscription`() {
 
-        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null).isEmpty())
+        Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null)
+                .map { fail(it.message) }
 
-        assertTrue(Neo4jStoreSingleton.addSubscription(EMAIL, MSISDN).isEmpty())
-        assertEquals(MSISDN, Neo4jStoreSingleton.getMsisdn(EMAIL))
-        assertEquals(listOf(Subscription(MSISDN)), Neo4jStoreSingleton.getSubscriptions(EMAIL))
+        Neo4jStoreSingleton.addSubscription(EMAIL, MSISDN)
+                .map { fail(it.message) }
+
+        Neo4jStoreSingleton.getMsisdn(EMAIL).bimap(
+                { fail(it.message) },
+                { assertEquals(MSISDN, it) })
+
+        Neo4jStoreSingleton.getSubscriptions(EMAIL).bimap(
+                { fail(it.message) },
+                { assertEquals(listOf(Subscription(MSISDN)), it) })
 
         // TODO vihang: fix argument captor for neo4j-store tests
 //        val msisdnArgCaptor: ArgumentCaptor<String> = ArgumentCaptor.forClass(String::class.java)
@@ -90,12 +101,19 @@ class GraphStoreTest {
         val product = createProduct("1GB_249NOK", 24900)
         val now = Instant.now().toEpochMilli()
 
-        assertTrue(Neo4jStoreSingleton.createProduct(product).isEmpty(), "Failed to create product")
+        Neo4jStoreSingleton.createProduct(product)
+                .map { fail(it.message) }
 
         val purchaseRecord = PurchaseRecord(product = product, timestamp = now)
-        assertNotNull(Neo4jStoreSingleton.addPurchaseRecord(EMAIL, purchaseRecord), "Failed to add purchase record")
+        Neo4jStoreSingleton.addPurchaseRecord(EMAIL, purchaseRecord).bimap(
+                { fail(it.message) },
+                { assertNotNull(it) }
+        )
 
-        assertTrue(Neo4jStoreSingleton.getPurchaseRecords(EMAIL).contains(purchaseRecord))
+        Neo4jStoreSingleton.getPurchaseRecords(EMAIL).bimap(
+                { fail(it.message) },
+                { assertTrue(it.contains(purchaseRecord)) }
+        )
     }
 
     @Test
@@ -118,7 +136,7 @@ class GraphStoreTest {
         offer.products = listOf("3GB_349NOK")
         Neo4jStoreSingleton.createOffer(offer)
 
-        val products = Neo4jStoreSingleton.getProducts(EMAIL)
+        val products = Neo4jStoreSingleton.getProducts(EMAIL).getOrElse { emptyMap() }
         assertEquals(1, products.size)
         assertEquals(createProduct("3GB_349NOK", 34900), products.values.first())
     }
@@ -127,7 +145,6 @@ class GraphStoreTest {
         const val EMAIL = "foo@bar.com"
         const val NAME = "Test User"
         const val MSISDN = "4712345678"
-        val OCS_MOCK = Mockito.mock(OcsAdminService::class.java)
 
         @ClassRule
         @JvmField
@@ -135,8 +152,8 @@ class GraphStoreTest {
                 .file("src/test/resources/docker-compose.yaml")
                 .waitingForService("neo4j", HealthChecks.toHaveAllPortsOpen())
                 .waitingForService("neo4j",
-                        HealthChecks.toRespond2xxOverHttp(7474) {
-                            port -> port.inFormat("http://\$HOST:\$EXTERNAL_PORT/browser")
+                        HealthChecks.toRespond2xxOverHttp(7474) { port ->
+                            port.inFormat("http://\$HOST:\$EXTERNAL_PORT/browser")
                         },
                         Duration.standardSeconds(20L))
                 .build()

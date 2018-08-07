@@ -3,6 +3,7 @@ package org.ostelco.prime.storage.graph
 import arrow.core.Either
 import arrow.core.None
 import arrow.core.Option
+import arrow.core.flatMap
 import arrow.core.orElse
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.model.Bundle
@@ -114,12 +115,13 @@ object Neo4jStoreSingleton : GraphStore {
     // Balance (Subscriber - Bundle)
     //
 
-    override fun getBundles(subscriberId: String): Collection<Bundle>? = readTransaction {
+    override fun getBundles(subscriberId: String): Either<StoreError, Collection<Bundle>?> = readTransaction {
         subscriberStore.getRelated(subscriberId, subscriberToBundleRelation, transaction)
     }
 
-    override fun updateBundle(bundle: Bundle): Boolean = writeTransaction {
+    override fun updateBundle(bundle: Bundle): Option<StoreError> = writeTransaction {
         bundleStore.update(bundle, transaction)
+                .ifFailedThenRollback(transaction)
     }
 
     //
@@ -150,13 +152,13 @@ object Neo4jStoreSingleton : GraphStore {
                     .ifSuccessThen {
                         productStore
                                 .get("1GB_FREE_ON_REFERRED", transaction)
-                                .map {
+                                .flatMap {
                                     createPurchaseRecordRelation(
                                             subscriber.id,
                                             PurchaseRecord(product = it, timestamp = Instant.now().toEpochMilli()),
                                             transaction)
                                 }
-                                .fold({ Option(it) }, { None })
+                                .swap().toOption()
                     }
             if (failed.isEmpty()) {
                 ocs.addBundle(Bundle(bundleId, 1_000_000_000))
@@ -183,93 +185,140 @@ object Neo4jStoreSingleton : GraphStore {
         failed
                 .ifSuccessThen { subscriberToBundleStore.create(subscriber.id, bundleId, transaction) }
                 .ifSuccessThen { subscriberToSegmentStore.create(subscriber.id, "all", transaction) }
+                .ifFailedThenRollback(transaction)
     }
 
-    override fun updateSubscriber(subscriber: Subscriber): Boolean = writeTransaction {
+    override fun updateSubscriber(subscriber: Subscriber): Option<StoreError> = writeTransaction {
         subscriberStore.update(subscriber, transaction)
+                .ifFailedThenRollback(transaction)
     }
 
-    override fun removeSubscriber(subscriberId: String) = writeTransaction { subscriberStore.delete(subscriberId, transaction) }
+    override fun removeSubscriber(subscriberId: String): Option<StoreError> = writeTransaction {
+        subscriberStore.exists(subscriberId, transaction)
+                .ifSuccessThen {
+                    subscriberStore.getRelated(subscriberId, subscriberToBundleRelation, transaction)
+                            .map { it.forEach { bundle -> bundleStore.delete(bundle.id, transaction) } }
+                    subscriberStore.getRelated(subscriberId, subscriptionRelation, transaction)
+                            .map { it.forEach { subscription -> subscriptionStore.delete(subscription.id, transaction) } }
+                    None
+                }
+                .ifSuccessThen { subscriberStore.delete(subscriberId, transaction) }
+                .ifFailedThenRollback(transaction)
+    }
 
     //
     // Subscription
     //
-
     override fun addSubscription(subscriberId: String, msisdn: String): Option<StoreError> = writeTransaction {
-        subscriberStore.get(subscriberId, transaction)
-                .map { subscriber ->
 
-                    val bundles = subscriberStore.getRelated(subscriberId, subscriberToBundleRelation, transaction)
-
-                    var failed: Option<StoreError> =
-                            if (bundles.isEmpty()) {
-                                Option(NotFoundError(type = subscriberToBundleRelation.relation.name, id = "$subscriberId -> *"))
-                            } else {
-                                None
-                            }
-
-                    failed.ifSuccessThen { subscriptionStore.create(Subscription(msisdn), transaction) }
-                            .ifSuccessThen {
-                                subscriptionStore.get(msisdn, transaction)
-                                        .map { subscription ->
-                                            bundles.forEach {
-                                                subscriptionToBundleStore.create(subscription, it, transaction)
-                                                ocs.addMsisdnToBundleMapping(msisdn, it.id)
-                                            }
-                                            subscriptionRelationStore.create(subscriber, subscription, transaction)
-                                        }
-                                        .swap()
-                                        .toOption()
-                            }
+        subscriberStore.getRelated(subscriberId, subscriberToBundleRelation, transaction)
+                .flatMap { bundles ->
+                    if (bundles.isEmpty()) {
+                        Either.left(NotFoundError(type = subscriberToBundleRelation.relation.name, id = "$subscriberId -> *"))
+                    } else {
+                        Either.right(bundles)
+                    }
+                }
+                .flatMap { bundles ->
+                    subscriptionStore.create(Subscription(msisdn), transaction)
+                            .swapToEither { bundles }
+                }
+                .flatMap { bundles ->
+                    subscriptionStore.get(msisdn, transaction)
+                            .map { subscription -> Pair(bundles, subscription) }
+                }
+                .flatMap { (bundles, subscription) ->
+                    subscriberStore.get(subscriberId, transaction)
+                            .map { subscriber -> Triple(bundles, subscription, subscriber) }
+                }
+                .flatMap { (bundles, subscription, subscriber) ->
+                    bundles.fold(None as Option<StoreError>) { failed, bundle ->
+                        failed.ifSuccessThen {
+                            subscriptionToBundleStore.create(subscription, bundle, transaction)
+                                    .ifSuccessThen {
+                                        ocs.addMsisdnToBundleMapping(msisdn, bundle.id)
+                                        None
+                                    }
+                        }
+                    }.swapToEither { Pair(subscription, subscriber) }
+                }
+                .flatMap { (subscription, subscriber) ->
+                    subscriptionRelationStore.create(subscriber, subscription, transaction)
+                            .swapToEither { None }
                 }
                 .swap()
                 .toOption()
+                .ifFailedThenRollback(transaction)
     }
 
-    override fun getSubscriptions(subscriberId: String): Collection<Subscription>? {
-        return readTransaction {
-            subscriberStore.getRelated(subscriberId, subscriptionRelation, transaction)
-        }
-    }
+    override fun getSubscriptions(subscriberId: String): Either<StoreError, Collection<Subscription>> =
+            readTransaction { subscriberStore.getRelated(subscriberId, subscriptionRelation, transaction) }
 
-    override fun getMsisdn(subscriptionId: String): String? {
+    override fun getMsisdn(subscriptionId: String): Either<StoreError, String> {
         return readTransaction {
             subscriberStore.getRelated(subscriptionId, subscriptionRelation, transaction)
-                    .first()
-                    .msisdn
+                    .map { it.first().msisdn }
         }
     }
 
-    //
-    // Products
-    //
+//
+// Products
+//
 
-    override fun getProducts(subscriberId: String): Map<String, Product> {
+    override fun getProducts(subscriberId: String): Either<StoreError, Map<String, Product>> {
         return readTransaction {
-            read("""
-                MATCH (:${subscriberEntity.name} {id: '$subscriberId'})
-                -[:${subscriberToSegmentRelation.relation.name}]->(:${segmentEntity.name})
-                <-[:${offerToSegmentRelation.relation.name}]-(:${offerEntity.name})
-                -[:${offerToProductRelation.relation.name}]->(product:${productEntity.name})
-                RETURN product;
-                """.trimIndent(),
-                    transaction) { statementResult ->
-                statementResult
-                        .list { ObjectHandler.getObject(it["product"].asMap(), Product::class.java) }
-                        .stream()
-                        .collect(Collectors.toMap({ it?.sku }, { it }))
-            }
+
+            subscriberStore.exists(subscriberId, transaction)
+                    .swapToEither { emptyMap<String, Product>() }
+                    .ifSuccessThen {
+                        read("""
+                            MATCH (:${subscriberEntity.name} {id: '$subscriberId'})
+                            -[:${subscriberToSegmentRelation.relation.name}]->(:${segmentEntity.name})
+                            <-[:${offerToSegmentRelation.relation.name}]-(:${offerEntity.name})
+                            -[:${offerToProductRelation.relation.name}]->(product:${productEntity.name})
+                            RETURN product;
+                            """.trimIndent(),
+                                transaction) { statementResult ->
+                            Either.right(statementResult
+                                    .list { productEntity.createEntity(it["product"].asMap()) }
+                                    .stream()
+                                    .collect(Collectors.toMap({ it?.sku }, { it })))
+                        }
+                    }
         }
     }
 
-    override fun getProduct(subscriberId: String?, sku: String): Either<StoreError, Product> =
-            readTransaction { productStore.get(sku, transaction) }
+    override fun getProduct(subscriberId: String, sku: String): Either<StoreError, Product> {
+        return readTransaction {
+            subscriberStore.exists(subscriberId, transaction)
+                    .swapToEither { Product() }
+                    .ifSuccessThen {
+                        read("""
+                            MATCH (:${subscriberEntity.name} {id: '$subscriberId'})
+                            -[:${subscriberToSegmentRelation.relation.name}]->(:${segmentEntity.name})
+                            <-[:${offerToSegmentRelation.relation.name}]-(:${offerEntity.name})
+                            -[:${offerToProductRelation.relation.name}]->(product:${productEntity.name} {sku: '$sku'})
+                            RETURN product;
+                            """.trimIndent(),
+                                transaction) { statementResult ->
+                            if (statementResult.hasNext()) {
+                                Either.right(productEntity.createEntity(statementResult.single().get("product").asMap()))
+                            } else {
+                                Either.left(NotFoundError(type = productEntity.name, id = sku))
+                            }
+                        }
+                    }
+        }
+    }
+// TODO vihang: check if subscriberId exists
+// TODO vihang: check if subscriberId is eligible for the product
+// readTransaction { productStore.get(sku, transaction) }
 
-    //
-    // Purchase Records
-    //
+//
+// Purchase Records
+//
 
-    override fun getPurchaseRecords(subscriberId: String): Collection<PurchaseRecord> {
+    override fun getPurchaseRecords(subscriberId: String): Either<StoreError, Collection<PurchaseRecord>> {
         return readTransaction {
             subscriberStore.getRelations(subscriberId, purchaseRecordRelation, transaction)
         }
@@ -278,6 +327,7 @@ object Neo4jStoreSingleton : GraphStore {
     override fun addPurchaseRecord(subscriberId: String, purchase: PurchaseRecord): Either<StoreError, String> {
         return writeTransaction {
             createPurchaseRecordRelation(subscriberId, purchase, transaction)
+                    .ifFailedThenRollback(transaction)
         }
     }
 
@@ -286,44 +336,46 @@ object Neo4jStoreSingleton : GraphStore {
             purchase: PurchaseRecord,
             transaction: Transaction): Either<StoreError, String> {
 
-        return subscriberStore.get(subscriberId, transaction).map { subscriber ->
-            productStore.get(purchase.product.sku, transaction).map { product ->
+        return subscriberStore.get(subscriberId, transaction).flatMap { subscriber ->
+            productStore.get(purchase.product.sku, transaction).flatMap { product ->
 
                 purchase.id = UUID.randomUUID().toString()
                 purchaseRecordRelationStore.create(subscriber, purchase, product, transaction)
                         .toEither { purchase.id }
                         .swap()
             }
-        }.fold({ Either.left(it) }, { it.get() })
+        }
     }
 
-    //
-    // Referrals
-    //
+//
+// Referrals
+//
 
-    override fun getReferrals(subscriberId: String): Collection<String> = readTransaction {
-        subscriberStore.getRelated(subscriberId, referredRelation, transaction).map { it.name }
+    override fun getReferrals(subscriberId: String): Either<StoreError, Collection<String>> = readTransaction {
+        subscriberStore.getRelated(subscriberId, referredRelation, transaction)
+                .map { list -> list.map { it.name } }
     }
 
-    override fun getReferredBy(subscriberId: String): String? = readTransaction {
-        subscriberStore.getRelatedFrom(subscriberId, referredRelation, transaction).singleOrNull()?.name
+    override fun getReferredBy(subscriberId: String): Either<StoreError, String?> = readTransaction {
+        subscriberStore.getRelatedFrom(subscriberId, referredRelation, transaction)
+                .map { it.singleOrNull()?.name }
     }
 
-    // ------------
-    // Admin Store
-    // ------------
+// ------------
+// Admin Store
+// ------------
 
-    //
-    // Balance (Subscriber - Subscription - Bundle)
-    //
+//
+// Balance (Subscriber - Subscription - Bundle)
+//
 
     override fun getMsisdnToBundleMap(): Map<Subscription, Bundle> = readTransaction {
         read("""
                 MATCH (subscription:${subscriptionEntity.name})-[:${subscriptionToBundleRelation.relation.name}]->(bundle:${bundleEntity.name})<-[:${subscriberToBundleRelation.relation.name}]-(:${subscriberEntity.name})
                 RETURN subscription, bundle
                 """.trimIndent(),
-                transaction) {
-            it.list {
+                transaction) { result ->
+            result.list {
                 Pair(ObjectHandler.getObject(it["subscription"].asMap(), Subscription::class.java),
                         ObjectHandler.getObject(it["bundle"].asMap(), Bundle::class.java))
             }.toMap()
@@ -335,8 +387,8 @@ object Neo4jStoreSingleton : GraphStore {
                 MATCH (:${subscriberEntity.name})-[:${subscriberToBundleRelation.relation.name}]->(bundle:${bundleEntity.name})<-[:${subscriptionToBundleRelation.relation.name}]-(:${subscriptionEntity.name})
                 RETURN bundle
                 """.trimIndent(),
-                transaction) {
-            it.list {
+                transaction) { result ->
+            result.list {
                 ObjectHandler.getObject(it["bundle"].asMap(), Bundle::class.java)
             }.toSet()
         }
@@ -347,8 +399,8 @@ object Neo4jStoreSingleton : GraphStore {
                 MATCH (subscriber:${subscriberEntity.name})-[:${subscriberToBundleRelation.relation.name}]->(bundle:${bundleEntity.name})
                 RETURN subscriber, bundle
                 """.trimIndent(),
-                transaction) {
-            it.list {
+                transaction) { result ->
+            result.list {
                 Pair(ObjectHandler.getObject(it["subscriber"].asMap(), Subscriber::class.java),
                         ObjectHandler.getObject(it["bundle"].asMap(), Bundle::class.java))
             }.toMap()
@@ -360,8 +412,8 @@ object Neo4jStoreSingleton : GraphStore {
                 MATCH (subscriber:${subscriberEntity.name})-[:${subscriptionRelation.relation.name}]->(subscription:${subscriptionEntity.name})
                 RETURN subscriber, subscription
                 """.trimIndent(),
-                transaction) {
-            it.list {
+                transaction) { result ->
+            result.list {
                 Pair(ObjectHandler.getObject(it["subscriber"].asMap(), Subscriber::class.java),
                         ObjectHandler.getObject(it["subscription"].asMap(), Subscription::class.java))
             }.toMap()
@@ -388,27 +440,33 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun createProductClass(productClass: ProductClass): Option<StoreError> = writeTransaction {
         productClassStore.create(productClass, transaction)
+                .ifFailedThenRollback(transaction)
     }
 
-    override fun createProduct(product: Product): Option<StoreError> =
-            writeTransaction { productStore.create(product, transaction) }
+    override fun createProduct(product: Product): Option<StoreError> = writeTransaction {
+        productStore.create(product, transaction)
+                .ifFailedThenRollback(transaction)
+    }
 
     override fun createSegment(segment: Segment): Option<StoreError> {
         return writeTransaction {
             segmentStore.create(segment, transaction)
-                    .and(subscriberToSegmentStore.create(segment.subscribers, segment.id, transaction))
+                    .ifSuccessThen { subscriberToSegmentStore.create(segment.subscribers, segment.id, transaction) }
+                    .ifFailedThenRollback(transaction)
         }
     }
 
     override fun createOffer(offer: Offer): Option<StoreError> = writeTransaction {
         offerStore
                 .create(offer, transaction)
-                .orElse { offerToSegmentStore.create(offer.id, offer.segments, transaction) }
-                .orElse { offerToProductStore.create(offer.id, offer.products, transaction) }
+                .ifSuccessThen { offerToSegmentStore.create(offer.id, offer.segments, transaction) }
+                .ifSuccessThen { offerToProductStore.create(offer.id, offer.products, transaction) }
+                .ifFailedThenRollback(transaction)
     }
 
     override fun updateSegment(segment: Segment): Option<StoreError> = writeTransaction {
         subscriberToSegmentStore.create(segment.id, segment.subscribers, transaction)
+                .ifFailedThenRollback(transaction)
     }
 
 // override fun getOffers(): Collection<Offer> = offerStore.getAll().values.map { Offer().apply { id = it.id } }
@@ -423,4 +481,19 @@ object Neo4jStoreSingleton : GraphStore {
 }
 
 fun <A> Option<A>.ifSuccessThen(next: () -> Option<A>): Option<A> = this.orElse(next)
+fun <A> Option<A>.ifFailedThenRollback(transaction: Transaction): Option<A> {
+    if (this.nonEmpty()) {
+        transaction.failure()
+    }
+    return this
+}
+
+fun <L, R> Option<L>.swapToEither(right: () -> R): Either<L, R> = this.toEither(right).swap()
+
 fun <L, R> Either<L, R>.ifSuccessThen(next: () -> Either<L, R>): Either<L, R> = this.fold({ Either.left(it) }, { next() })
+fun <L, R> Either<L, R>.ifFailedThenRollback(transaction: Transaction): Either<L, R> {
+    if (this.isLeft()) {
+        transaction.failure()
+    }
+    return this
+}

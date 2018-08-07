@@ -1,5 +1,6 @@
 package org.ostelco.prime.storage.graph
 
+import arrow.core.getOrElse
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.palantir.docker.compose.DockerComposeRule
@@ -98,7 +99,7 @@ class SchemaTest {
             relationStore.create(a, b, transaction)
 
             // get 'b' from 'a'
-            assertEquals(listOf(b), fromEntityStore.getRelated(aId, relation, transaction))
+            assertEquals(listOf(b), fromEntityStore.getRelated(aId, relation, transaction).getOrElse { emptyList() })
         }
     }
 
@@ -139,10 +140,10 @@ class SchemaTest {
             relationStore.create(a, r, b, transaction)
 
             // get 'b' from 'a'
-            assertEquals(listOf(b), fromEntityStore.getRelated(aId, relation, transaction))
+            assertEquals(listOf(b), fromEntityStore.getRelated(aId, relation, transaction).getOrElse { emptyList() })
 
             // get 'r' from 'a'
-            assertEquals(listOf(r), fromEntityStore.getRelations(aId, relation, transaction))
+            assertEquals(listOf(r), fromEntityStore.getRelations(aId, relation, transaction).getOrElse { emptyList() })
         }
     }
 
