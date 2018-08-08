@@ -24,16 +24,17 @@ activate Admin
     activate "Stripe"
     "Stripe" -> "payment-processor" : {planId}
     deactivate "Stripe"
-    deactivate "payment-processor"
     "payment-processor" -> "admin-api" : {planId}
+    deactivate "payment-processor"
 
 
-    "admin-api" -> "DAO" : Save plan as a subscription {planId}
-    activate "DAO"
-    "DAO" -> "admin-api" : {subscription-id}
-    deactivate "DAO"
-
-    "admin-api" -> "Admin" : {subscription-id}
+'    "admin-api" -> "DAO" : Save plan as a subscription {planId}
+'    activate "DAO"
+'    "DAO" -> "admin-api" : {subscription-id}
+'    deactivate "DAO"
+'
+'    "admin-api" -> "Admin" : {subscription-id}
+    "admin-api" -> "Admin" : {plan-id}
     deactivate "admin-api"
 deactivate Admin
 

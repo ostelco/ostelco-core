@@ -60,7 +60,7 @@ activate Client
           in a "ledger" type of store
         end note
 
-        "payment-processor" -> OCS : updateBucket(customerId, product.size)
+        "payment-processor" -> OCS : updateBundle(customerId, product.size)
         activate OCS
         OCS -> "payment-processor" : {result}
         deactivate OCS
