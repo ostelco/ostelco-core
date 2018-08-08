@@ -22,7 +22,7 @@ import javax.ws.rs.core.Response
  *
  */
 @Path("/sources")
-class PaymentResource(private val dao: SubscriberDAO) : ResourceHelpers() {
+class PaymentResource(private val dao: SubscriberDAO) {
 
     private val paymentProcessor by lazy { getResource<PaymentProcessor>() }
 

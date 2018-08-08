@@ -44,6 +44,8 @@ dependencies {
 
   integrationImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   integrationImplementation 'org.mockito:mockito-core:2.18.3'
+  integrationImplementation 'com.lmax:disruptor:3.4.2'
+
 }
 
 configurations {
