@@ -1,12 +1,16 @@
 package org.ostelco.prime.ocs
 
 import com.lmax.disruptor.TimeoutException
+import com.palantir.docker.compose.DockerComposeRule
+import com.palantir.docker.compose.connection.waiting.HealthChecks
 import io.grpc.ManagedChannelBuilder
 import io.grpc.stub.StreamObserver
 import org.apache.commons.lang3.RandomStringUtils
+import org.joda.time.Duration
 import org.junit.AfterClass
 import org.junit.Assert.assertEquals
 import org.junit.BeforeClass
+import org.junit.ClassRule
 import org.junit.Test
 import org.ostelco.ocs.api.ActivateRequest
 import org.ostelco.ocs.api.ActivateResponse
@@ -17,9 +21,12 @@ import org.ostelco.ocs.api.MultipleServiceCreditControl
 import org.ostelco.ocs.api.OcsServiceGrpc
 import org.ostelco.ocs.api.OcsServiceGrpc.OcsServiceStub
 import org.ostelco.ocs.api.ServiceUnit
-import org.ostelco.prime.disruptor.OcsDisruptor
 import org.ostelco.prime.disruptor.EventProducerImpl
+import org.ostelco.prime.disruptor.OcsDisruptor
 import org.ostelco.prime.logger
+import org.ostelco.prime.storage.firebase.initFirebaseConfigRegistry
+import org.ostelco.prime.storage.graph.Config
+import org.ostelco.prime.storage.graph.ConfigRegistry
 import org.ostelco.prime.storage.graph.Neo4jClient
 import java.io.IOException
 import java.util.concurrent.CountDownLatch
@@ -135,7 +142,7 @@ class OcsTest {
 
         // Send a report using the producer to the pipeline that will
         // inject a PrimeEvent that will top up the data bundle balance.
-        producer.topupDataBundleBalanceEvent(MSISDN, NO_OF_BYTES_TO_ADD)
+        producer.topupDataBundleBalanceEvent(BUNDLE_ID, NO_OF_BYTES_TO_ADD)
 
         // Now wait, again, for the latch to reach zero, and fail the test
         // ff it hasn't.
@@ -155,6 +162,8 @@ class OcsTest {
          * The phone numbe for which we're faking data consumption during this test.
          */
         private const val MSISDN = "4790300017"
+
+        private const val BUNDLE_ID = "foo@bar.com"
 
         // Default chunk of byte used in various test cases
         private const val BYTES: Long = 100
@@ -196,10 +205,25 @@ class OcsTest {
          */
         private lateinit var ocsServiceStub: OcsServiceStub
 
+        @ClassRule
+        @JvmField
+        var docker: DockerComposeRule = DockerComposeRule.builder()
+                .file("src/integration-tests/resources/docker-compose.yaml")
+                .waitingForService("neo4j", HealthChecks.toHaveAllPortsOpen())
+                .waitingForService("neo4j",
+                        HealthChecks.toRespond2xxOverHttp(7474) {
+                            port -> port.inFormat("http://\$HOST:\$EXTERNAL_PORT/browser")
+                        },
+                        Duration.standardSeconds(20L))
+                .build()
+
         @BeforeClass
         @JvmStatic
         @Throws(IOException::class)
         fun setUp() {
+            ConfigRegistry.config = Config().apply { this.host = "0.0.0.0" }
+            initFirebaseConfigRegistry()
+
             Neo4jClient.start()
 
             // Set up processing pipeline
@@ -212,6 +236,9 @@ class OcsTest {
             ocsServer = OcsGrpcServer(PORT, ocsService.asOcsServiceImplBase())
 
             val ocsState = OcsState()
+            ocsState.msisdnToBundleIdMap[MSISDN] = BUNDLE_ID
+            ocsState.bundleIdToMsisdnMap[BUNDLE_ID] = mutableSetOf(MSISDN)
+
             ocsState.addDataBundleBytesForMsisdn(MSISDN, NO_OF_BYTES_TO_ADD)
 
             // Events flow:

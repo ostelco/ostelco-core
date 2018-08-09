@@ -21,6 +21,11 @@ class OcsEvent {
     var bundleId: String? = null
 
     /**
+     * Phone numbers linked to a bundle which is topped up.
+     */
+    var msisdnToppedUp: List<String>? = null
+
+    /**
      * Origin of word 'bucket' - P-GW consumes data in `buckets` of 10 MB ~ 100 MB at a time
      * This field is used in.
      * Request to reserve a new bucket of bytes
@@ -77,6 +82,8 @@ class OcsEvent {
         msisdn = null
         bundleId = null
 
+        msisdnToppedUp = null
+
         bundleBytes = 0
         requestedBucketBytes = 0
         usedBucketBytes = 0
@@ -96,6 +103,7 @@ class OcsEvent {
             messageType: EventMessageType?,
             msisdn: String?,
             bundleId: String?,
+            msisdnToppedUp: List<String>,
             bundleBytes: Long,
             requestedBytes: Long,
             usedBytes: Long,
@@ -108,6 +116,7 @@ class OcsEvent {
         this.messageType = messageType
         this.msisdn = msisdn
         this.bundleId = bundleId
+        this.msisdnToppedUp = msisdnToppedUp
         this.bundleBytes = bundleBytes
         this.requestedBucketBytes = requestedBytes
         this.usedBucketBytes = usedBytes

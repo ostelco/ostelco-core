@@ -3,11 +3,11 @@ package org.ostelco.prime.disruptor
 import com.lmax.disruptor.RingBuffer
 import org.ostelco.ocs.api.CreditControlRequestInfo
 import org.ostelco.ocs.api.ReportingReason
+import org.ostelco.prime.disruptor.EventMessageType.ADD_MSISDN_TO_BUNDLE_MAPPING
 import org.ostelco.prime.disruptor.EventMessageType.CREDIT_CONTROL_REQUEST
 import org.ostelco.prime.disruptor.EventMessageType.RELEASE_RESERVED_BUCKET
 import org.ostelco.prime.disruptor.EventMessageType.TOPUP_DATA_BUNDLE_BALANCE
 import org.ostelco.prime.disruptor.EventMessageType.UPDATE_BUNDLE
-import org.ostelco.prime.disruptor.EventMessageType.ADD_MSISDN_TO_BUNDLE_MAPPING
 import org.ostelco.prime.logger
 import org.ostelco.prime.model.Bundle
 import java.util.function.Consumer
@@ -60,6 +60,7 @@ class EventProducerImpl(private val ringBuffer: RingBuffer<OcsEvent>) : EventPro
                     event.update(type,
                             msisdn,
                             bundleId,
+                            emptyList(),
                             bundleBytes,
                             requestedBytes,
                             usedBytes,

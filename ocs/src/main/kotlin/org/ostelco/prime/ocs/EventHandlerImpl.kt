@@ -1,14 +1,15 @@
 package org.ostelco.prime.ocs
 
 import com.lmax.disruptor.EventHandler
+import org.ostelco.ocs.api.ActivateResponse
 import org.ostelco.ocs.api.CreditControlAnswerInfo
 import org.ostelco.ocs.api.FinalUnitAction
 import org.ostelco.ocs.api.FinalUnitIndication
 import org.ostelco.ocs.api.MultipleServiceCreditControl
 import org.ostelco.ocs.api.ReportingReason
 import org.ostelco.ocs.api.ServiceUnit
-import org.ostelco.prime.disruptor.OcsEvent
 import org.ostelco.prime.disruptor.EventMessageType
+import org.ostelco.prime.disruptor.OcsEvent
 import org.ostelco.prime.logger
 
 /**
@@ -28,9 +29,7 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
             dispatchOnEventType(event)
         } catch (e: Exception) {
             logger.warn("Exception handling prime event in OcsService", e)
-            // XXX Should the exception be cast further up the call chain?
         }
-
     }
 
     private fun dispatchOnEventType(event: OcsEvent) {
@@ -44,9 +43,10 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
     }
 
     private fun handleTopupDataBundleBalance(event: OcsEvent) {
-        // FIXME vihang: On topup, activate all MSISDNs linked to the bundle
-        // val response = ActivateResponse.newBuilder().setMsisdn(event.msisdn).build()
-        // ocsService.activateOnNextResponse(response)
+        event.msisdnToppedUp?.forEach { msisdn ->
+            val response = ActivateResponse.newBuilder().setMsisdn(msisdn).build()
+            ocsService.activateOnNextResponse(response)
+        }
     }
 
     private fun logEventProcessing(msg: String, event: OcsEvent) {

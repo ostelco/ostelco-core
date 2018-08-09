@@ -27,7 +27,7 @@ class AnalyticsResource(private val dao: SubscriberDAO) {
 
         val error = dao.reportAnalytics(token.name, event)
 
-        return if (error.isEmpty) {
+        return if (error.isEmpty()) {
             Response.status(Response.Status.CREATED)
                     .build()
         } else {
