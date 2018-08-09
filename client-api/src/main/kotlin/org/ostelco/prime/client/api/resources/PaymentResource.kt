@@ -21,13 +21,13 @@ import javax.ws.rs.core.Response
  * Payment API.
  *
  */
-@Path("/sources")
+@Path("/paymentSources")
 class PaymentResource(private val dao: SubscriberDAO) {
 
     private val paymentProcessor by lazy { getResource<PaymentProcessor>() }
 
     @POST
-    @Consumes("application/json")
+    @Produces("application/json")
     fun createSource(@Auth token: AccessTokenPrincipal?,
                      @NotNull
                      @QueryParam("sourceId")
