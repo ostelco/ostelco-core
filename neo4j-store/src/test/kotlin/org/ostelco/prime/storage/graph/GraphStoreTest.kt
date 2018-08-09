@@ -1,6 +1,5 @@
 package org.ostelco.prime.storage.graph
 
-import arrow.core.getOrElse
 import com.palantir.docker.compose.DockerComposeRule
 import com.palantir.docker.compose.connection.waiting.HealthChecks
 import org.joda.time.Duration
@@ -54,7 +53,7 @@ class GraphStoreTest {
     }
 
     @Test
-    fun `test add subscriber`() {
+    fun `add subscriber`() {
 
         Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null)
                 .map { fail(it.message) }
@@ -70,7 +69,19 @@ class GraphStoreTest {
     }
 
     @Test
-    fun `test add subscription`() {
+    fun `fail to add subscriber with invalid referred by`() {
+
+        Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = "blah")
+                .fold({ fail("Created subscriber in spite of invalid 'referred by'") },
+                        {
+                            assertEquals(
+                                    expected = "Failed to create REFERRED - blah -> foo@bar.com",
+                                    actual = it.message)
+                        })
+    }
+
+    @Test
+    fun `add subscription`() {
 
         Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null)
                 .map { fail(it.message) }
@@ -95,7 +106,7 @@ class GraphStoreTest {
     }
 
     @Test
-    fun `test set and get Purchase record`() {
+    fun `set and get Purchase record`() {
         assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null).isEmpty())
 
         val product = createProduct("1GB_249NOK", 24900)
@@ -117,7 +128,7 @@ class GraphStoreTest {
     }
 
     @Test
-    fun `test offer, segment and get products`() {
+    fun `create products, offer, segment and then get products for a subscriber`() {
         assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null).isEmpty())
 
         Neo4jStoreSingleton.createProduct(createProduct("1GB_249NOK", 24900))
@@ -136,9 +147,16 @@ class GraphStoreTest {
         offer.products = listOf("3GB_349NOK")
         Neo4jStoreSingleton.createOffer(offer)
 
-        val products = Neo4jStoreSingleton.getProducts(EMAIL).getOrElse { emptyMap() }
-        assertEquals(1, products.size)
-        assertEquals(createProduct("3GB_349NOK", 34900), products.values.first())
+        Neo4jStoreSingleton.getProducts(EMAIL).bimap(
+                { fail(it.message) },
+                { products ->
+                    assertEquals(1, products.size)
+                    assertEquals(createProduct("3GB_349NOK", 34900), products.values.first())
+                })
+
+        Neo4jStoreSingleton.getProduct(EMAIL, "2GB_299NOK").bimap(
+                { assertEquals("Product - 2GB_299NOK not found.", it.message) },
+                { fail("Expected get product to fail since it is not linked to any subscriber --> segment --> offer") })
     }
 
     companion object {
