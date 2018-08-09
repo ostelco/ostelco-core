@@ -1,18 +1,31 @@
 package org.ostelco.prime.storage
 
+import arrow.core.getOrElse
+import com.palantir.docker.compose.DockerComposeRule
+import com.palantir.docker.compose.connection.waiting.HealthChecks
+import org.joda.time.Duration
 import org.junit.After
 import org.junit.AfterClass
 import org.junit.Assert
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.BeforeClass
+import org.junit.ClassRule
 import org.junit.Test
+import org.mockito.Mockito.mock
+import org.ostelco.prime.disruptor.EventProducer
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
+import org.ostelco.prime.ocs.OcsPrimeServiceSingleton
+import org.ostelco.prime.storage.firebase.initFirebaseConfigRegistry
+import org.ostelco.prime.storage.graph.Config
+import org.ostelco.prime.storage.graph.ConfigRegistry
 import org.ostelco.prime.storage.graph.Neo4jClient
 import org.ostelco.prime.storage.graph.Neo4jStore
+import org.ostelco.prime.storage.graph.initDatabase
 import org.ostelco.prime.storage.legacy.Products.DATA_TOPUP_3GB
 import java.lang.Thread.sleep
 import java.time.Instant
@@ -28,8 +41,10 @@ class Neo4jStorageTest {
 
         sleep(MILLIS_TO_WAIT_WHEN_STARTING_UP.toLong())
         storage.removeSubscriber(EPHERMERAL_EMAIL)
-        assertTrue(storage.addSubscriber(Subscriber(EPHERMERAL_EMAIL), referredBy = null).isEmpty())
-        assertTrue(storage.addSubscription(EPHERMERAL_EMAIL, MSISDN).isEmpty())
+        storage.addSubscriber(Subscriber(EPHERMERAL_EMAIL), referredBy = null)
+                .map { fail(it.message) }
+        storage.addSubscription(EPHERMERAL_EMAIL, MSISDN)
+                .map { fail(it.message) }
     }
 
     @After
@@ -44,13 +59,13 @@ class Neo4jStorageTest {
 
     @Test
     fun setBalance() {
-        assertTrue(storage.updateBundle(Bundle(EPHERMERAL_EMAIL, RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS)))
+        assertTrue(storage.updateBundle(Bundle(EPHERMERAL_EMAIL, RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS)).isEmpty())
         Assert.assertEquals(RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS,
-                storage.getBundles(EPHERMERAL_EMAIL)?.first { it.id == EPHERMERAL_EMAIL }?.balance)
+                storage.getBundles(EPHERMERAL_EMAIL).getOrElse { emptyList() }?.first { it.id == EPHERMERAL_EMAIL }?.balance)
 
         storage.updateBundle(Bundle(EPHERMERAL_EMAIL, 0))
         Assert.assertEquals(0L,
-                storage.getBundles(EPHERMERAL_EMAIL)?.first { it.id == EPHERMERAL_EMAIL }?.balance)
+                storage.getBundles(EPHERMERAL_EMAIL).getOrElse { emptyList() }?.first { it.id == EPHERMERAL_EMAIL }?.balance)
     }
 
     @Test
@@ -75,10 +90,33 @@ class Neo4jStorageTest {
 
         private const val RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS = 92L
 
+        @ClassRule
+        @JvmField
+        var docker: DockerComposeRule = DockerComposeRule.builder()
+                .file("src/integration-tests/resources/docker-compose.yaml")
+                .waitingForService("neo4j", HealthChecks.toHaveAllPortsOpen())
+                .waitingForService("neo4j",
+                        HealthChecks.toRespond2xxOverHttp(7474) {
+                            port -> port.inFormat("http://\$HOST:\$EXTERNAL_PORT/browser")
+                        },
+                        Duration.standardSeconds(20L))
+                .build()
+        
         @JvmStatic
         @BeforeClass
         fun setup() {
+
+            initFirebaseConfigRegistry()
+
+            val config = Config()
+            config.host = "0.0.0.0"
+            ConfigRegistry.config = config
+
             Neo4jClient.start()
+
+            initDatabase()
+
+            OcsPrimeServiceSingleton.init(mock(EventProducer::class.java))
         }
 
         @JvmStatic

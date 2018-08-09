@@ -14,7 +14,9 @@ import org.ostelco.prime.logger
 import org.ostelco.prime.model.HasId
 import org.ostelco.prime.storage.AlreadyExistsError
 import org.ostelco.prime.storage.NotCreatedError
+import org.ostelco.prime.storage.NotDeletedError
 import org.ostelco.prime.storage.NotFoundError
+import org.ostelco.prime.storage.NotUpdatedError
 import org.ostelco.prime.storage.StoreError
 import org.ostelco.prime.storage.graph.Graph.read
 import org.ostelco.prime.storage.graph.Graph.write
@@ -56,7 +58,7 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
     fun create(entity: E, transaction: Transaction): Option<StoreError> {
 
         if (get(entity.id, transaction).isRight()) {
-            return Option(AlreadyExistsError(type= entityType.name, id = entity.id))
+            return Option(AlreadyExistsError(type = entityType.name, id = entity.id))
         }
 
         val properties = getProperties(entity)
@@ -71,52 +73,106 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
         }
     }
 
-    fun <TO : HasId> getRelated(id: String, relationType: RelationType<E, *, TO>, transaction: Transaction): List<TO> {
-        return read("""
+    fun <TO : HasId> getRelated(
+            id: String,
+            relationType: RelationType<E, *, TO>,
+            transaction: Transaction): Either<StoreError, List<TO>> {
+
+        return exists(id, transaction).swapToEither { emptyList<TO>() }.ifSuccessThen {
+
+            read("""
                 MATCH (:${relationType.from.name} {id: '$id'})-[:${relationType.relation.name}]->(node:${relationType.to.name})
                 RETURN node;
                 """.trimIndent(),
-                transaction) { statementResult ->
-            statementResult.list { relationType.to.createEntity(it["node"].asMap()) }
+                    transaction) { statementResult ->
+                Either.right(
+                        statementResult.list { relationType.to.createEntity(it["node"].asMap()) })
+            }
         }
     }
 
-    fun <FROM : HasId> getRelatedFrom(id: String, relationType: RelationType<FROM, *, E>, transaction: Transaction): List<FROM> {
-        return read("""
+    fun <FROM : HasId> getRelatedFrom(
+            id: String,
+            relationType: RelationType<FROM, *, E>,
+            transaction: Transaction): Either<StoreError, List<FROM>> {
+
+        return exists(id, transaction).swapToEither { emptyList<FROM>() }.ifSuccessThen {
+
+            read("""
                 MATCH (node:${relationType.from.name})-[:${relationType.relation.name}]->(:${relationType.to.name} {id: '$id'})
                 RETURN node;
                 """.trimIndent(),
-                transaction) { statementResult ->
-            statementResult.list { relationType.from.createEntity(it["node"].asMap()) }
+                    transaction) { statementResult ->
+                Either.right(
+                        statementResult.list { relationType.from.createEntity(it["node"].asMap()) })
+            }
         }
     }
 
-    fun <RELATION : Any> getRelations(id: String, relationType: RelationType<E, RELATION, *>, transaction: Transaction): List<RELATION> {
-        return read("""
+    fun <RELATION : Any> getRelations(
+            id: String,
+            relationType: RelationType<E, RELATION, *>,
+            transaction: Transaction): Either<StoreError, List<RELATION>> {
+
+        return exists(id, transaction).toEither { emptyList<RELATION>() }.swap().ifSuccessThen {
+            read("""
                 MATCH (from:${entityType.name} { id: '$id' })-[r:${relationType.relation.name}]-()
                 return r;
                 """.trimIndent(),
-                transaction) { statementResult ->
-            statementResult.list { relationType.createRelation(it["r"].asMap()) }
-                    .filterNotNull()
+                    transaction) { statementResult ->
+                Either.right(
+                        statementResult.list { relationType.createRelation(it["r"].asMap()) }
+                                .filterNotNull())
+            }
         }
     }
 
-    fun update(entity: E, transaction: Transaction): Boolean {
-        val properties = getProperties(entity)
-        val setClause: String = properties.entries.fold("") { acc, entry -> """$acc SET node.${entry.key} = "${entry.value}" """ }
-        return write("""MATCH (node:${entityType.name} { id: '${entity.id}' }) $setClause ;""",
-                transaction) {
-            it.summary().counters().containsUpdates()
-        }
-    }
+    fun update(entity: E, transaction: Transaction): Option<StoreError> {
 
-    fun delete(id: String, transaction: Transaction): Boolean =
-            write("""MATCH (node:${entityType.name} {id: '$id'} ) DELETE node;""",
+        return exists(entity.id, transaction).ifSuccessThen {
+            val properties = getProperties(entity)
+            val setClause: String = properties.entries.fold("") { acc, entry -> """$acc SET node.${entry.key} = "${entry.value}" """ }
+            write("""MATCH (node:${entityType.name} { id: '${entity.id}' }) $setClause ;""",
                     transaction) {
-                it.summary().counters().nodesDeleted() > 0
+                if (it.summary().counters().containsUpdates()) // TODO vihang: this is not perfect way to check if updates are applied
+                    None
+                else
+                    Option(NotUpdatedError(type = entityType.name, id = entity.id))
+            }
+        }
+    }
+
+    fun delete(id: String, transaction: Transaction): Option<StoreError> =
+            exists(id, transaction).ifSuccessThen {
+                write("""MATCH (node:${entityType.name} {id: '$id'} ) DETACH DELETE node;""",
+                        transaction) {
+                    if (it.summary().counters().nodesDeleted() == 1) {
+                        None
+                    } else {
+                        Option(NotDeletedError(type = entityType.name, id = id))
+                    }
+                }
             }
 
+    fun exists(id: String, transaction: Transaction): Option<StoreError> =
+            read("""MATCH (node:${entityType.name} {id: '$id'} ) RETURN count(node);""",
+                    transaction) { statementResult ->
+                if (statementResult.single()["count(node)"].asInt(0) == 1) {
+                    None
+                } else {
+                    Option(NotFoundError(type = entityType.name, id = id))
+                }
+            }
+
+    fun doNotExist(id: String, transaction: Transaction): Option<StoreError> =
+            read("""MATCH (node:${entityType.name} {id: '$id'} ) RETURN count(node);""",
+                    transaction) { statementResult ->
+                if (statementResult.single()["count(node)"].asInt(1) == 0) {
+                    None
+                } else {
+                    Option(AlreadyExistsError(type = entityType.name, id = id))
+                }
+            }
 }
 
 // TODO vihang: check if relation already exists, with allow duplicate boolean flag param

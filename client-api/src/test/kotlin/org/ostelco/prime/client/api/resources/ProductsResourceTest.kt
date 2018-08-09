@@ -1,12 +1,13 @@
 package org.ostelco.prime.client.api.resources
 
+import arrow.core.Either
+import arrow.core.None
+import arrow.core.Option
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import io.dropwizard.auth.AuthDynamicFeature
 import io.dropwizard.auth.AuthValueFactoryProvider
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter
 import io.dropwizard.testing.junit.ResourceTestRule
-import io.vavr.control.Either
-import io.vavr.control.Option
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory
@@ -90,7 +91,7 @@ class ProductsResourceTest {
 
         val sku = products[0].sku
 
-        Mockito.`when`<Option<ApiError>>(DAO.purchaseProduct(arg1.capture(), arg2.capture())).thenReturn(Option.none())
+        Mockito.`when`<Option<ApiError>>(DAO.purchaseProduct(arg1.capture(), arg2.capture())).thenReturn(None)
 
         val resp = RULE.target("/products/$sku/purchase")
                 .request()
