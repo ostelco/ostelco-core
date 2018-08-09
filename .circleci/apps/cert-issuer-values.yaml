@@ -1,0 +1,40 @@
+# Default values for cert-issuer.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+#################### NOTE: GOOGLE DNS SECRET ######################################################
+# A secret containing Google Cloud Service Account credentials to access Google Cloud DNS must 
+# exist in the kube-system namespace. It can be created with the following command:
+# kubectl create secret generic cert-manager-google-serviceaccount -n kube-system --from-file=service-account.json=/path/to/your/pi-ostelco-dns.json  
+###################################################################################################
+
+letsencrypt:
+  production:
+    type: ClusterIssuer # ClusterIssuer or Issuer
+    # namespace: default # only needed if type is Issuer
+    acmeEmail: sami@praqma.com
+    name: letsencrypt-production
+    apiVersion: 2
+    http01:
+      enabled: true
+    dns01: 
+      enabled: false 
+      provider: google-dns
+      googleProject: 
+      serviceAccountSecretName: cert-manager-google-serviceaccount # the secret containing the google cloud credentials with DNS admin permission
+      serviceAccountKey: service-account.json    
+  staging:
+    type: ClusterIssuer
+    # namespace: default # only needed if type is Issuer
+    acmeEmail: sami@praqma.com
+    name: letsencrypt-staging
+    apiVersion: 2
+    staging: true
+    http01:
+      enabled: true
+    dns01: 
+      enabled: false 
+      provider: google-dns
+      googleProject: 
+      serviceAccountSecretName: cert-manager-google-serviceaccount # the secret containing the google cloud credentials with DNS admin permission
+      serviceAccountKey: service-account.json

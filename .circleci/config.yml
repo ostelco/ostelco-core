@@ -1,47 +1,25 @@
 version: 2
 jobs:
-  build:
+  deploy:
 
     working_directory: ~/repo
 
     docker:
-    - image: circleci/openjdk:8u171-jdk-browsers
+    - image: praqma/helmsman:v1.3.0-helm-v2.8.1
 
     steps:
-    - setup_remote_docker
-    - checkout
-    - restore_cache:
-        keys:
-          - gradle-cache
-    - run:
-      name: download codacy jar file 
-      command: wget -O ~/codacy-coverage-reporter-assembly-latest.jar https://github.com/codacy/codacy-coverage-reporter/releases/download/4.0.1/codacy-coverage-reporter-4.0.1-assembly.jar
-    - run:
-      name: build entire repo (prime, ocsgw,.. etc)
-      command: ./gradlew clean build --parallel
+      - checkout
+      - run:
+          name: deploy prime and needed apps to the dev cluster
+          command: |
+            helmsman --debug --apply -f .circleci/helmsman-dev-deployment.toml
 
-#  deploy-prime:
-#    docker:
-#    - image: devth/helm:v2.9.1
-#    working_directory: ~/repo
-#    steps:
-#    - run:
-#        name: running helm install
-#        command: |
-#          echo $GOOGLE_CREDENTIALS > $HOME/pantel-tests.json
-#          gcloud auth activate-service-account --key-file=$HOME/pantel-tests.json
-#          gcloud container clusters get-credentials my-cluster --zone europe-west2-c --project pantel-tests
-#          kubectl create serviceaccount -n kube-system tiller
-#          kubectl create clusterrolebinding tiller-binding --clusterrole=cluster-admin --serviceaccount kube-system:tiller
-#          helm init --service-account tiller
-#          helm repo add pantel-tests https://pantel-tests-charts.storage.googleapis.com/
-#          helm install pantel-tests/prime --name prime --set firebaseServiceAccount=$(echo $FIREBASE_SERVICE_ACCOUNT | base64)
 workflows:
   version: 2
-  build-and-deploy-prime:
+  deploy-prime:
     jobs:
-    - build:
-#      filters:
-#        branches:
-#          only:
-#          - master
+    - deploy:
+        filters:
+          branches:
+            only:
+            - helmsman-utilities
