@@ -143,7 +143,7 @@ object Neo4jStoreSingleton : GraphStore {
 
         val bundleId = subscriber.id
 
-        var failed = subscriberStore.create(subscriber, transaction)
+        val failed = subscriberStore.create(subscriber, transaction)
         if (referredBy != null) {
             // Give 1 GB if subscriber is referred
             failed
@@ -160,12 +160,13 @@ object Neo4jStoreSingleton : GraphStore {
                                 }
                                 .swap().toOption()
                     }
-            if (failed.isEmpty()) {
-                ocs.addBundle(Bundle(bundleId, 1_000_000_000))
-            }
+                    .ifSuccessThen {
+                        ocs.addBundle(Bundle(bundleId, 1_000_000_000))
+                        None
+                    }
         } else {
             // Give 100 MB as free initial balance
-            failed = failed
+            failed
                     .ifSuccessThen { bundleStore.create(Bundle(bundleId, 100_000_000), transaction) }
                     .ifSuccessThen {
                         productStore
@@ -178,12 +179,11 @@ object Neo4jStoreSingleton : GraphStore {
                                 }
                                 .fold({ Option(it) }, { None })
                     }
-            if (failed.isEmpty()) {
-                ocs.addBundle(Bundle(bundleId, 100_000_000))
-            }
-        }
-        failed
-                .ifSuccessThen { subscriberToBundleStore.create(subscriber.id, bundleId, transaction) }
+                    .ifSuccessThen {
+                        ocs.addBundle(Bundle(bundleId, 100_000_000))
+                        None
+                    }
+        }.ifSuccessThen { subscriberToBundleStore.create(subscriber.id, bundleId, transaction) }
                 .ifSuccessThen { subscriberToSegmentStore.create(subscriber.id, "all", transaction) }
                 .ifFailedThenRollback(transaction)
     }
@@ -209,6 +209,7 @@ object Neo4jStoreSingleton : GraphStore {
     //
     // Subscription
     //
+
     override fun addSubscription(subscriberId: String, msisdn: String): Option<StoreError> = writeTransaction {
 
         subscriberStore.getRelated(subscriberId, subscriberToBundleRelation, transaction)
@@ -261,9 +262,9 @@ object Neo4jStoreSingleton : GraphStore {
         }
     }
 
-//
-// Products
-//
+    //
+    // Products
+    //
 
     override fun getProducts(subscriberId: String): Either<StoreError, Map<String, Product>> {
         return readTransaction {
@@ -310,13 +311,10 @@ object Neo4jStoreSingleton : GraphStore {
                     }
         }
     }
-// TODO vihang: check if subscriberId exists
-// TODO vihang: check if subscriberId is eligible for the product
-// readTransaction { productStore.get(sku, transaction) }
 
-//
-// Purchase Records
-//
+    //
+    // Purchase Records
+    //
 
     override fun getPurchaseRecords(subscriberId: String): Either<StoreError, Collection<PurchaseRecord>> {
         return readTransaction {
@@ -347,9 +345,9 @@ object Neo4jStoreSingleton : GraphStore {
         }
     }
 
-//
-// Referrals
-//
+    //
+    // Referrals
+    //
 
     override fun getReferrals(subscriberId: String): Either<StoreError, Collection<String>> = readTransaction {
         subscriberStore.getRelated(subscriberId, referredRelation, transaction)
@@ -361,13 +359,13 @@ object Neo4jStoreSingleton : GraphStore {
                 .map { it.singleOrNull()?.name }
     }
 
-// ------------
-// Admin Store
-// ------------
+    // ------------
+    // Admin Store
+    // ------------
 
-//
-// Balance (Subscriber - Subscription - Bundle)
-//
+    //
+    // Balance (Subscriber - Subscription - Bundle)
+    //
 
     override fun getMsisdnToBundleMap(): Map<Subscription, Bundle> = readTransaction {
         read("""

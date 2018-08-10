@@ -8,7 +8,8 @@ import org.ostelco.ocs.api.FinalUnitIndication
 import org.ostelco.ocs.api.MultipleServiceCreditControl
 import org.ostelco.ocs.api.ReportingReason
 import org.ostelco.ocs.api.ServiceUnit
-import org.ostelco.prime.disruptor.EventMessageType
+import org.ostelco.prime.disruptor.EventMessageType.CREDIT_CONTROL_REQUEST
+import org.ostelco.prime.disruptor.EventMessageType.TOPUP_DATA_BUNDLE_BALANCE
 import org.ostelco.prime.disruptor.OcsEvent
 import org.ostelco.prime.logger
 
@@ -34,11 +35,10 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
 
     private fun dispatchOnEventType(event: OcsEvent) {
         when (event.messageType) {
-            EventMessageType.CREDIT_CONTROL_REQUEST -> handleCreditControlRequest(event)
+            CREDIT_CONTROL_REQUEST -> handleCreditControlRequest(event)
+            TOPUP_DATA_BUNDLE_BALANCE -> handleTopupDataBundleBalance(event)
 
-            EventMessageType.TOPUP_DATA_BUNDLE_BALANCE -> handleTopupDataBundleBalance(event)
-
-            else -> logger.warn("Unknown event type " + event.messageType!!)
+            else -> {} // do nothing
         }
     }
 

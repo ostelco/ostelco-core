@@ -1,4 +1,4 @@
-package org.ostelco.prime.storage.legacy
+package org.ostelco.prime.storage.graph
 
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
