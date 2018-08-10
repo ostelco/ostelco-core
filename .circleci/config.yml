@@ -1,25 +1,133 @@
 version: 2
 jobs:
-  deploy:
+  
+  build-code:
 
-    working_directory: ~/repo
+    machine:
+      enabled: true
 
-    docker:
-    - image: praqma/helmsman:v1.3.0-helm-v2.8.1
+    working_directory: ~/project
 
     steps:
+
       - checkout
+      
+      # - run:
+      #     name: Create pantel-prod.json file using the PANTEL_SECRETS_FILE env var.
+      #     command: |
+      #       echo; echo "======> Creating pantel-prod.json file, using the env variable PANTEL_SECRETS_FILE"
+      #       for LOCATION in $(find . -name .gitignore  -exec grep pantel-prod.json  '{}' '+' ); do 
+      #         DIR_NAME=$(dirname $LOCATION)
+      #         echo "Creating secrets file: ${DIR_NAME}/pantel-prod.json ..."
+      #         echo ${PANTEL_SECRETS_FILE} | base64 -d >  ${DIR_NAME}/pantel-prod.json
+      #         ls -l ${DIR_NAME}/pantel-prod.json 
+      #       done
+      #       echo ''
+      # - run:
+      #     name: Generate self signed certs for ocs.ostelco.org .
+      #     command: scripts/generate-selfsigned-ssl-certs.sh   ocs.ostelco.org 
+
       - run:
-          name: deploy prime and needed apps to the dev cluster
+          name: Gradle Build 
           command: |
-            helmsman --debug --apply -f .circleci/helmsman-dev-deployment.toml
+            java -version
+            ./gradlew clean build 
+
+      - persist_to_workspace:
+          root: /
+          paths:
+            - .
+      
+
+  build-image:
+    docker:
+      - image: google/cloud-sdk:latest
+
+    working_directory: ~/project
+
+    steps:
+      - run:
+          name: authenticate with gcloud
+          command: |
+            # $GOOGLE_GCR_CREDENTIALS env variable contains Google credentials 
+            # with permission to write to Google container registry
+            echo $GOOGLE_GCR_CREDENTIALS > ${HOME}/gcloud-service-key.json
+            gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
+      # if authentication succeeded - checkout code
+     # - checkout
+      - attach_workspace:
+          # Must be absolute path or relative path from working_directory
+          at: /
+
+      - run:
+          name: test shared attach_workspace
+          command: ls -la     
+
+      # starts a remote docker environment to run docker commands
+      - setup_remote_docker
+
+      - run:
+          name: build Prime docker image and push image to GCR
+          command: |
+            gcloud auth configure-docker --quiet
+            TAG=${CIRCLE_SHA1:0:9}
+            cd prime
+            docker build -t eu.gcr.io/pi-ostelco-dev/prime:$TAG .
+            docker push eu.gcr.io/pi-ostelco-dev/prime:$TAG
+      
+      - run:
+          name: build Pseudonym-server docker image and push image to GCR
+          command: |
+            gcloud auth configure-docker --quiet
+            TAG=${CIRCLE_SHA1:0:9}
+            cd pseudonym-server
+            docker build -t eu.gcr.io/pi-ostelco-dev/pseudonym-server:$TAG .
+            docker push eu.gcr.io/pi-ostelco-dev/pseudonym-server:$TAG   
+      
+      - run:
+          name: build OCSGW docker image and push image to GCR
+          command: |
+            gcloud auth configure-docker --quiet
+            TAG=${CIRCLE_SHA1:0:9}
+            cd ocsgw
+            docker build -t eu.gcr.io/pi-ostelco-dev/ocsgw:$TAG .
+            docker push eu.gcr.io/pi-ostelco-dev/ocsgw:$TAG      
+            
+
+
+  # deploy-to-dev:
+
+  #   working_directory: ~/project
+
+  #   docker:
+  #   - image: praqma/helmsman:v1.3.0-helm-v2.8.1
+
+  #   steps:
+  #     - checkout
+  #     - run:
+  #         name: deploy prime and needed apps to the dev cluster
+  #         command: |
+  #           export TAG=${CIRCLE_SHA1:0:9}
+  #           helmsman --debug --apply -f .circleci/helmsman-dev-deployment.toml
 
 workflows:
   version: 2
-  deploy-prime:
+  merge-to-dev:
     jobs:
-    - deploy:
+    - build-code:
         filters:
           branches:
             only:
-            - helmsman-utilities
+            - circleci-dev
+    - build-image:
+        requires:
+          - build-code
+        filters:
+          branches:
+            only:
+            - circleci-dev
+    # - deploy-to-dev:
+    #     filters:
+    #       branches:
+    #         only:
+    #         - circleci-dev
