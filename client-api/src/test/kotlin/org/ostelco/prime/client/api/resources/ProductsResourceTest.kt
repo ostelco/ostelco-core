@@ -1,12 +1,13 @@
 package org.ostelco.prime.client.api.resources
 
+import arrow.core.Either
+import arrow.core.None
+import arrow.core.Option
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import io.dropwizard.auth.AuthDynamicFeature
 import io.dropwizard.auth.AuthValueFactoryProvider
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter
 import io.dropwizard.testing.junit.ResourceTestRule
-import io.vavr.control.Either
-import io.vavr.control.Option
 import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory
 import org.junit.Assert.assertTrue
@@ -112,13 +113,13 @@ class ProductsResourceTest {
         `when`<Either<ApiError, ProfileInfo>>(PAYMENT.createPaymentProfile(arg2.capture()))
                 .thenReturn(Either.right(ProfileInfo(customerId)))
         `when`<Option<ApiError>>(DAO.setPaymentProfile(arg3.capture(), arg4.capture()))
-                .thenReturn(Option.none())
+                .thenReturn(None)
         `when`<Either<ApiError, Product>>(DAO.getProduct(arg5.capture(), arg6.capture()))
                 .thenReturn(Either.right(product))
         `when`<Either<ApiError, ProductInfo>>(PAYMENT.chargeUsingSource(arg7.capture(), arg8.capture(), arg9.capture(), arg10.capture(), arg11.capture()))
                 .thenReturn(Either.right(ProductInfo(sku)))
 
-        Mockito.`when`<Option<ApiError>>(DAO.purchaseProduct(arg1.capture(), arg2.capture())).thenReturn(Option.none())
+        Mockito.`when`<Option<ApiError>>(DAO.purchaseProduct(arg1.capture(), arg2.capture())).thenReturn(None)
 
         val resp = RULE.target("/products/$sku/purchase")
                 .queryParam("sourceId", sourceId)

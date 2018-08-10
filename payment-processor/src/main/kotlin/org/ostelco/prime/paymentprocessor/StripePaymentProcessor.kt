@@ -1,10 +1,18 @@
 package org.ostelco.prime.paymentprocessor
 
-import com.stripe.model.*
-import io.vavr.control.Either
-import org.ostelco.prime.logger
+import arrow.core.Either
+import com.stripe.model.Charge
+import com.stripe.model.Customer
+import com.stripe.model.Plan
+import com.stripe.model.Product
+import com.stripe.model.Subscription
 import org.ostelco.prime.core.ApiError
-import org.ostelco.prime.paymentprocessor.core.*
+import org.ostelco.prime.logger
+import org.ostelco.prime.paymentprocessor.core.PlanInfo
+import org.ostelco.prime.paymentprocessor.core.ProductInfo
+import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.paymentprocessor.core.SourceInfo
+import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
 
 class StripePaymentProcessor : PaymentProcessor {
 
@@ -12,7 +20,7 @@ class StripePaymentProcessor : PaymentProcessor {
 
     override fun getSavedSources(customerId: String): Either<ApiError, List<SourceInfo>> =
             either ("Failed to get sources for customer ${customerId}") {
-                var sources = mutableListOf<SourceInfo>()
+                val sources = mutableListOf<SourceInfo>()
                 val customer = Customer.retrieve(customerId)
                 customer.sources.data.forEach {
                     sources.add(SourceInfo(it.id))
@@ -75,26 +83,26 @@ class StripePaymentProcessor : PaymentProcessor {
 
         var storedSourceId = sourceId
         val stored = isSourceStored(customerId, sourceId)
-        if (stored.isLeft) {
-            return Either.left(stored.left)
+        if (stored.isLeft()) {
+            return Either.left(stored.left().get())
         } else if (!stored.right().get()) {
             val savedSource = addSource(customerId, sourceId)
-            if (savedSource.isLeft) {
-                return Either.left(savedSource.left)
+            if (savedSource.isLeft()) {
+                return Either.left(savedSource.left().get())
             } else {
                 storedSourceId = savedSource.right().get().id
             }
         }
 
         val charge = chargeCustomer(customerId, storedSourceId, amount, currency)
-        if (charge.isLeft) {
-            return Either.left(charge.left)
+        if (charge.isLeft()) {
+            return Either.left(charge.left().get())
         }
 
         if (!saveSource) {
             val removed = removeSource(customerId, storedSourceId)
-            if (removed.isLeft) {
-                return Either.left(removed.left)
+            if (removed.isLeft()) {
+                return Either.left(removed.left().get())
             }
         }
 
@@ -105,8 +113,8 @@ class StripePaymentProcessor : PaymentProcessor {
     override fun chargeUsingDefaultSource(customerId: String, amount: Int, currency: String): Either<ApiError, ProductInfo> {
 
         val charge = chargeCustomer(customerId, null, amount, currency)
-        if (charge.isLeft) {
-            return Either.left(charge.left)
+        if (charge.isLeft()) {
+            return Either.left(charge.left().get())
         }
 
         return Either.right(ProductInfo(charge.right().get().id))
@@ -157,8 +165,8 @@ class StripePaymentProcessor : PaymentProcessor {
 
     private fun isSourceStored(customerId: String, sourceId: String): Either<ApiError, Boolean> {
         val storedSources = getSavedSources(customerId)
-        if (storedSources.isLeft) {
-            return Either.left(storedSources.left)
+        if (storedSources.isLeft()) {
+            return Either.left(storedSources.left().get())
         }
         var sourceStored = false
         storedSources.right().get().forEach {

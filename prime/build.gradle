@@ -18,7 +18,13 @@ sourceSets {
   }
 }
 
-version = "1.9.0"
+version = "1.10.1"
+
+repositories {
+  maven {
+    url 'https://dl.bintray.com/palantir/releases' // docker-compose-rule is published on bintray
+  }
+}
 
 dependencies {
   // interface module between prime and prime-modules
@@ -41,11 +47,13 @@ dependencies {
 
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation 'org.mockito:mockito-core:2.18.3'
+  testImplementation 'com.lmax:disruptor:3.4.2'
+  testImplementation 'com.palantir.docker.compose:docker-compose-rule-junit4:0.34.0'
 
   integrationImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   integrationImplementation 'org.mockito:mockito-core:2.18.3'
   integrationImplementation 'com.lmax:disruptor:3.4.2'
-
+  integrationImplementation 'com.palantir.docker.compose:docker-compose-rule-junit4:0.34.0'
 }
 
 configurations {

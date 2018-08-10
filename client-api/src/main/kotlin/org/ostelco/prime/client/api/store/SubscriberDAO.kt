@@ -1,7 +1,7 @@
 package org.ostelco.prime.client.api.store
 
-import io.vavr.control.Either
-import io.vavr.control.Option
+import arrow.core.Either
+import arrow.core.Option
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.Person
 import org.ostelco.prime.client.api.model.SubscriptionStatus

@@ -33,17 +33,10 @@ class ProfileResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        val result = dao.getProfile(token.name)
-
-        return if (result.isRight) {
-            Response.status(Response.Status.OK)
-                    .entity(asJson(result.right().get()))
-                    .build()
-        } else {
-            Response.status(Response.Status.NOT_FOUND)
-                    .entity(asJson(result.left().get()))
-                    .build()
-        }
+        return dao.getProfile(token.name).fold(
+                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) },
+                { Response.status(Response.Status.OK).entity(asJson(it)) })
+                .build()
     }
 
     @POST
@@ -58,17 +51,10 @@ class ProfileResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        val result = dao.createProfile(token.name, profile, referredBy)
-
-        return if (result.isRight) {
-            Response.status(Response.Status.CREATED)
-                    .entity(asJson(result.right().get()))
-                    .build()
-        } else {
-            Response.status(Response.Status.FORBIDDEN)
-                    .entity(asJson(result.left().get()))
-                    .build()
-        }
+        return dao.createProfile(token.name, profile, referredBy).fold(
+                { Response.status(Response.Status.FORBIDDEN).entity(asJson(it)) },
+                { Response.status(Response.Status.CREATED).entity(asJson(it)) })
+                .build()
     }
 
     @PUT
@@ -81,16 +67,9 @@ class ProfileResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        val result = dao.updateProfile(token.name, profile)
-
-        return if (result.isRight) {
-            Response.status(Response.Status.OK)
-                    .entity(asJson(result.right().get()))
-                    .build()
-        } else {
-            Response.status(Response.Status.NOT_FOUND)
-                    .entity(asJson(result.left().get()))
-                    .build()
-        }
+        return dao.updateProfile(token.name, profile).fold(
+                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) },
+                { Response.status(Response.Status.OK).entity(asJson(it)) })
+                .build()
     }
 }

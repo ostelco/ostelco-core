@@ -1,14 +1,16 @@
 package org.ostelco.prime.ocs
 
 import com.lmax.disruptor.EventHandler
+import org.ostelco.ocs.api.ActivateResponse
 import org.ostelco.ocs.api.CreditControlAnswerInfo
 import org.ostelco.ocs.api.FinalUnitAction
 import org.ostelco.ocs.api.FinalUnitIndication
 import org.ostelco.ocs.api.MultipleServiceCreditControl
 import org.ostelco.ocs.api.ReportingReason
 import org.ostelco.ocs.api.ServiceUnit
+import org.ostelco.prime.disruptor.EventMessageType.CREDIT_CONTROL_REQUEST
+import org.ostelco.prime.disruptor.EventMessageType.TOPUP_DATA_BUNDLE_BALANCE
 import org.ostelco.prime.disruptor.OcsEvent
-import org.ostelco.prime.disruptor.EventMessageType
 import org.ostelco.prime.logger
 
 /**
@@ -28,25 +30,23 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
             dispatchOnEventType(event)
         } catch (e: Exception) {
             logger.warn("Exception handling prime event in OcsService", e)
-            // XXX Should the exception be cast further up the call chain?
         }
-
     }
 
     private fun dispatchOnEventType(event: OcsEvent) {
         when (event.messageType) {
-            EventMessageType.CREDIT_CONTROL_REQUEST -> handleCreditControlRequest(event)
+            CREDIT_CONTROL_REQUEST -> handleCreditControlRequest(event)
+            TOPUP_DATA_BUNDLE_BALANCE -> handleTopupDataBundleBalance(event)
 
-            EventMessageType.TOPUP_DATA_BUNDLE_BALANCE -> handleTopupDataBundleBalance(event)
-
-            else -> logger.warn("Unknown event type " + event.messageType!!)
+            else -> {} // do nothing
         }
     }
 
     private fun handleTopupDataBundleBalance(event: OcsEvent) {
-        // FIXME vihang: On topup, activate all MSISDNs linked to the bundle
-        // val response = ActivateResponse.newBuilder().setMsisdn(event.msisdn).build()
-        // ocsService.activateOnNextResponse(response)
+        event.msisdnToppedUp?.forEach { msisdn ->
+            val response = ActivateResponse.newBuilder().setMsisdn(msisdn).build()
+            ocsService.activateOnNextResponse(response)
+        }
     }
 
     private fun logEventProcessing(msg: String, event: OcsEvent) {

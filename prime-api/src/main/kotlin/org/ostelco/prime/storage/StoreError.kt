@@ -10,11 +10,13 @@ class NotFoundError(type: String, id: String) : StoreError(type, id) {
         super.message = "$type - $id not found."
     }
 }
+
 class AlreadyExistsError(type: String, id: String) : StoreError(type, id) {
     init {
         super.message = "$type - $id already exists."
     }
 }
+
 class NotCreatedError(
         type: String,
         id: String = "",
@@ -25,6 +27,19 @@ class NotCreatedError(
         super.message = "Failed to create $type - $id"
     }
 }
+
+class NotUpdatedError(type: String, id: String) : StoreError(type, id) {
+    init {
+        super.message = "$type - $id not updated."
+    }
+}
+
+class NotDeletedError(type: String, id: String) : StoreError(type, id) {
+    init {
+        super.message = "$type - $id not deleted."
+    }
+}
+
 class ValidationError(
         type: String, id: String,
         override var message: String) : StoreError(type, id)

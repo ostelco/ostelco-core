@@ -1,11 +1,11 @@
 package org.ostelco.prime.client.api.resources
 
+import arrow.core.Either
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import io.dropwizard.auth.AuthDynamicFeature
 import io.dropwizard.auth.AuthValueFactoryProvider
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter
 import io.dropwizard.testing.junit.ResourceTestRule
-import io.vavr.control.Either
 import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory
 import org.junit.Before
@@ -34,10 +34,9 @@ class ConsentsResourceTest {
 
     private val email = "mw@internet.org"
 
-    private val consents = io.vavr.collection.List.of(
+    private val consents = listOf(
             Consent("1", "blabla", false),
             Consent("2", "blabla", true))
-            .toJavaList()
 
     @Before
     @Throws(Exception::class)

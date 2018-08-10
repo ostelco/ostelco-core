@@ -1,12 +1,12 @@
 package org.ostelco.prime.client.api.resources
 
+import arrow.core.Either
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import io.dropwizard.auth.AuthDynamicFeature
 import io.dropwizard.auth.AuthValueFactoryProvider
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter
 import io.dropwizard.testing.junit.ResourceTestRule
-import io.vavr.control.Either
 import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory
 import org.junit.Assert.assertTrue
@@ -43,12 +43,11 @@ class SubscriptionResourceTest {
 
     private val email = "mw@internet.org"
 
-    private val purchaseRecords = io.vavr.collection.List.of(
+    private val purchaseRecords = listOf(
             PurchaseRecord(
                     msisdn = "msisdn",
                     product = Product(sku = "1", price = Price(10, "NOK")),
                     timestamp = Instant.now().toEpochMilli()))
-            .toJavaList()
 
     private val subscriptionStatus = SubscriptionStatus(5, purchaseRecords)
 

@@ -1,6 +1,6 @@
 package org.ostelco.prime.paymentprocessor
 
-import io.vavr.control.Either
+import arrow.core.Either
 import org.ostelco.prime.core.ApiError
 import org.ostelco.prime.paymentprocessor.core.*
 
@@ -18,7 +18,7 @@ interface PaymentProcessor {
      * @param sourceId Stripe source id
      * @return Stripe sourceId if created
      */
-    fun addSource(customerId: String, sourceId: String):  Either<ApiError, SourceInfo>
+    fun addSource(customerId: String, sourceId: String): Either<ApiError, SourceInfo>
 
     /**
      * @param userEmail: user email (Prime unique identifier for customer)
