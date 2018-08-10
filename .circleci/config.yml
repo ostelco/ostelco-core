@@ -19,7 +19,7 @@ jobs:
             ./gradlew clean build -s -x :neo4j-store:test
 
       - persist_to_workspace:
-          root: /project/
+          root: ~/project/
           paths:
             - .
       
@@ -42,7 +42,7 @@ jobs:
      # - checkout
       - attach_workspace:
           # Must be absolute path or relative path from working_directory
-          at: /
+          at: ~/project
 
       - run:
           name: test shared attach_workspace
