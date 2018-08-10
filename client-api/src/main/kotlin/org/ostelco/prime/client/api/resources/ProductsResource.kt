@@ -108,7 +108,7 @@ class ProductsResource(private val dao: SubscriberDAO) {
         val customerId = paymentProfile.right().get().id
         val price = product.right().get().price
 
-        val result = paymentProcessor.purchaseProduct(customerId, sourceId, price.amount,
+        val result = paymentProcessor.chargeUsingSource(customerId, sourceId, price.amount,
                             price.currency, saveCard)
 
         //ToDo: This should topup if that is what you bought

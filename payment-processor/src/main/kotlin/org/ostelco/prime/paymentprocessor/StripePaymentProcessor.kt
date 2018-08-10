@@ -71,7 +71,7 @@ class StripePaymentProcessor : PaymentProcessor {
             }
 
     // FixMe : This needs to be able to rollback
-    override fun purchaseProduct(customerId: String, sourceId: String, amount: Int, currency: String, saveSource: Boolean): Either<ApiError, ProductInfo> {
+    override fun chargeUsingSource(customerId: String, sourceId: String, amount: Int, currency: String, saveSource: Boolean): Either<ApiError, ProductInfo> {
 
         var storedSourceId = sourceId
         val stored = isSourceStored(customerId, sourceId)
@@ -86,7 +86,7 @@ class StripePaymentProcessor : PaymentProcessor {
             }
         }
 
-        val charge = purchaseProduct(customerId, storedSourceId, amount, currency)
+        val charge = chargeCustomer(customerId, storedSourceId, amount, currency)
         if (charge.isLeft) {
             return Either.left(charge.left)
         }
@@ -96,6 +96,17 @@ class StripePaymentProcessor : PaymentProcessor {
             if (removed.isLeft) {
                 return Either.left(removed.left)
             }
+        }
+
+        return Either.right(ProductInfo(charge.right().get().id))
+    }
+
+    // Charge the customer using default payment source.
+    override fun chargeUsingDefaultSource(customerId: String, amount: Int, currency: String): Either<ApiError, ProductInfo> {
+
+        val charge = chargeCustomer(customerId, null, amount, currency)
+        if (charge.isLeft) {
+            return Either.left(charge.left)
         }
 
         return Either.right(ProductInfo(charge.right().get().id))
@@ -130,13 +141,15 @@ class StripePaymentProcessor : PaymentProcessor {
                 SubscriptionInfo(subscription.cancel(subscriptionParams).id)
             }
 
-    private fun purchaseProduct(customerId: String, sourceId: String, amount: Int, currency: String): Either<ApiError, ProductInfo> =
-            either(errorMessage = "Failed to purchase product customerId ${customerId} sourceId ${sourceId} amount ${amount} currency ${currency}") {
+    private fun chargeCustomer(customerId: String, sourceId: String?, amount: Int, currency: String): Either<ApiError, ProductInfo> =
+            either(errorMessage = "Failed to charge customer, customerId ${customerId} sourceId ${sourceId} amount ${amount} currency ${currency}") {
                 val chargeParams = HashMap<String, Any>()
                 chargeParams["amount"] = amount
                 chargeParams["currency"] = currency
                 chargeParams["customer"] = customerId
-                chargeParams["source"] = sourceId
+                if (sourceId != null) {
+                    chargeParams["source"] = sourceId
+                }
 
                 val charge = Charge.create(chargeParams)
                 ProductInfo(charge.id)

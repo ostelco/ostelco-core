@@ -81,7 +81,15 @@ interface PaymentProcessor {
      * @param saveSource set if source should be stored with Stripe
      * @return Stripe default chargeId or null failed
      */
-    fun purchaseProduct(customerId: String, sourceId: String, amount: Int, currency: String, saveSource: Boolean = true): Either<ApiError, ProductInfo>
+    fun chargeUsingSource(customerId: String, sourceId: String, amount: Int, currency: String, saveSource: Boolean = true): Either<ApiError, ProductInfo>
+
+    /**
+     * @param customerId Stripe customer id
+     * @param amount The amount to be charged
+     * @param currency Three-letter ISO currency code in lowercase
+     * @return Stripe default chargeId or null failed
+     */
+    fun chargeUsingDefaultSource(customerId: String, amount: Int, currency: String): Either<ApiError, ProductInfo>
 
     /**
      * @param customerId Stripe customer id

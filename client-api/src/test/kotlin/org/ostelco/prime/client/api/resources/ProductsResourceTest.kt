@@ -115,7 +115,7 @@ class ProductsResourceTest {
                 .thenReturn(Option.none())
         `when`<Either<ApiError, Product>>(DAO.getProduct(arg5.capture(), arg6.capture()))
                 .thenReturn(Either.right(product))
-        `when`<Either<ApiError, ProductInfo>>(PAYMENT.purchaseProduct(arg7.capture(), arg8.capture(), arg9.capture(), arg10.capture(), arg11.capture()))
+        `when`<Either<ApiError, ProductInfo>>(PAYMENT.chargeUsingSource(arg7.capture(), arg8.capture(), arg9.capture(), arg10.capture(), arg11.capture()))
                 .thenReturn(Either.right(ProductInfo(sku)))
 
         Mockito.`when`<Option<ApiError>>(DAO.purchaseProduct(arg1.capture(), arg2.capture())).thenReturn(Option.none())
