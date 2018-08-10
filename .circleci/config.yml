@@ -19,7 +19,7 @@ jobs:
             ./gradlew clean build -s -x :neo4j-store:test
 
       - persist_to_workspace:
-          root: /
+          root: /project/
           paths:
             - .
       
