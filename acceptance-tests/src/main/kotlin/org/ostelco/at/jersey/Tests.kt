@@ -19,6 +19,7 @@ import org.ostelco.prime.client.model.SubscriptionStatus
 import java.time.Instant
 import java.util.*
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -322,6 +323,47 @@ class ReferralTest {
 
     @Test
     fun `jersey test - POST profile with invalid referred by`() {
+
+        val email = "referred_by_invalid-${randomInt()}@test.com"
+
+        val invalid = "invalid_referrer@test.com"
+
+        val profile = Profile()
+                .email(email)
+                .name("Test Referral Second User")
+                .address("")
+                .city("")
+                .country("")
+                .postCode("")
+                .referralId("")
+
+        val failedToCreate = assertFails {
+            post<Profile> {
+                path = "/profile"
+                body = profile
+                subscriberId = email
+                queryParams = mapOf("referred_by" to invalid)
+            }
+        }
+
+        assertEquals("""
+{"description":"Incomplete profile description. Subscriber - $invalid not found."} expected:<201> but was:<403>
+        """.trimIndent(), failedToCreate.message)
+
+        val failedToGet = assertFails {
+            get<Profile> {
+                path = "/profile"
+                subscriberId = email
+            }
+        }
+
+        assertEquals("""
+{"description":"Incomplete profile description. Subscriber - $email not found."} expected:<200> but was:<404>
+        """.trimIndent(), failedToGet.message)
+    }
+
+    @Test
+    fun `jersey test - POST profile`() {
 
         val firstEmail = "referral_first-${randomInt()}@test.com"
         createProfile(name = "Test Referral First User", email = firstEmail)
