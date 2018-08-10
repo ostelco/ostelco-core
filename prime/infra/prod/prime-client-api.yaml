@@ -196,8 +196,8 @@ paths:
         type: string
       - name: sourceId
         in: query
-        description: "The stripe-id of the source to be used for this purchase"
-        required: true
+        description: "The stripe-id of the source to be used for this purchase (if empty, use default source)"
+        required: false
         type: string
       - name: saveCard
         in: query

@@ -7,6 +7,7 @@ import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.core.ApiError
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
+import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import javax.validation.constraints.NotNull
 import javax.ws.rs.GET
@@ -79,9 +80,8 @@ class ProductsResource(private val dao: SubscriberDAO) {
                         @NotNull
                         @PathParam("sku")
                         sku: String,
-                        @NotNull
                         @QueryParam("sourceId")
-                        sourceId: String,
+                        sourceId: String?,
                         @QueryParam("saveCard")
                         saveCard: Boolean): Response {    /* 'false' is default. */
         if (token == null) {
@@ -108,8 +108,14 @@ class ProductsResource(private val dao: SubscriberDAO) {
         val customerId = paymentProfile.right().get().id
         val price = product.right().get().price
 
-        val result = paymentProcessor.chargeUsingSource(customerId, sourceId, price.amount,
-                            price.currency, saveCard)
+        var result: Either<ApiError, ProductInfo>;
+
+        if (sourceId != null) {
+            result = paymentProcessor.chargeUsingSource(customerId, sourceId, price.amount,
+                    price.currency, saveCard)
+        } else {
+            result = paymentProcessor.chargeUsingDefaultSource(customerId, price.amount, price.currency)
+        }
 
         //ToDo: This should topup if that is what you bought
 
