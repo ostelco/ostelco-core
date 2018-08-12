@@ -19,11 +19,15 @@ allprojects {
     maven { url = "https://maven.repository.redhat.com/ga/" }
     maven { url = "http://clojars.org/repo/" }
   }
+
+  jacoco {
+    toolVersion = "0.8.2"
+  }
 }
 
 subprojects {
-  sourceCompatibility = 1.8
-  targetCompatibility = 1.8
+  sourceCompatibility = 11
+  targetCompatibility = 11
   tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
   }

@@ -10,6 +10,9 @@ dependencies {
   implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
   implementation 'io.jsonwebtoken:jjwt:0.9.1'
 
+  implementation 'javax.xml.bind:jaxb-api:2.3.0'
+  implementation 'javax.activation:activation:1.1.1'
+
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"

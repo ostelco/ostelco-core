@@ -12,6 +12,9 @@ dependencies {
     implementation project(':diameter-stack')
     implementation "com.google.cloud:google-cloud-core-grpc:$googleCloudVersion"
 
+    implementation 'javax.xml.bind:jaxb-api:2.3.0'
+    implementation 'javax.activation:activation:1.1.1'
+
     implementation 'ch.qos.logback:logback-classic:1.2.3'
 
     // log to gcp stack-driver
