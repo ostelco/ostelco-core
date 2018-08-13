@@ -36,6 +36,8 @@ storageBackend = "secret" # default is configMap
 ostelco="https://storage.googleapis.com/pi-ostelco-helm-charts-repo/"
 
 
+
+
 [apps]
     [apps.prime]
     name = "prime"
