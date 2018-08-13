@@ -47,3 +47,4 @@ ostelco="https://storage.googleapis.com/pi-ostelco-helm-charts-repo/"
     valuesFile = "prime-dev-values.yaml"
     [apps.prime.set]
     "prime.tag"="$TAG" 
+    "firebaseServiceAccount"="$PANTEL_SECRETS_FILE"
