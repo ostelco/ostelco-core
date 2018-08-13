@@ -1,8 +1,7 @@
 package org.ostelco.prime.storage.graph
 
 import arrow.core.Either
-import arrow.core.None
-import arrow.core.Option
+import arrow.core.flatMap
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
@@ -55,10 +54,10 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
         }
     }
 
-    fun create(entity: E, transaction: Transaction): Option<StoreError> {
+    fun create(entity: E, transaction: Transaction): Either<StoreError, Unit> {
 
         if (get(entity.id, transaction).isRight()) {
-            return Option(AlreadyExistsError(type = entityType.name, id = entity.id))
+            return Either.left(AlreadyExistsError(type = entityType.name, id = entity.id))
         }
 
         val properties = getProperties(entity)
@@ -67,9 +66,9 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
         return write("""CREATE (node:${entityType.name} { id:"${entity.id}"$strProps });""",
                 transaction) {
             if (it.summary().counters().nodesCreated() == 1)
-                None
+                Either.right(Unit)
             else
-                Option(NotCreatedError(type = entityType.name, id = entity.id))
+                Either.left(NotCreatedError(type = entityType.name, id = entity.id))
         }
     }
 
@@ -78,7 +77,7 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
             relationType: RelationType<E, *, TO>,
             transaction: Transaction): Either<StoreError, List<TO>> {
 
-        return exists(id, transaction).swapToEither { emptyList<TO>() }.ifSuccessThen {
+        return exists(id, transaction).flatMap { _ ->
 
             read("""
                 MATCH (:${relationType.from.name} {id: '$id'})-[:${relationType.relation.name}]->(node:${relationType.to.name})
@@ -96,7 +95,7 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
             relationType: RelationType<FROM, *, E>,
             transaction: Transaction): Either<StoreError, List<FROM>> {
 
-        return exists(id, transaction).swapToEither { emptyList<FROM>() }.ifSuccessThen {
+        return exists(id, transaction).flatMap { _ ->
 
             read("""
                 MATCH (node:${relationType.from.name})-[:${relationType.relation.name}]->(:${relationType.to.name} {id: '$id'})
@@ -114,7 +113,7 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
             relationType: RelationType<E, RELATION, *>,
             transaction: Transaction): Either<StoreError, List<RELATION>> {
 
-        return exists(id, transaction).toEither { emptyList<RELATION>() }.swap().ifSuccessThen {
+        return exists(id, transaction).flatMap { _ ->
             read("""
                 MATCH (from:${entityType.name} { id: '$id' })-[r:${relationType.relation.name}]-()
                 return r;
@@ -127,58 +126,55 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
         }
     }
 
-    fun update(entity: E, transaction: Transaction): Option<StoreError> {
+    fun update(entity: E, transaction: Transaction): Either<StoreError, Unit> {
 
-        return exists(entity.id, transaction).ifSuccessThen {
+        return exists(entity.id, transaction).flatMap {
             val properties = getProperties(entity)
             val setClause: String = properties.entries.fold("") { acc, entry -> """$acc SET node.${entry.key} = "${entry.value}" """ }
             write("""MATCH (node:${entityType.name} { id: '${entity.id}' }) $setClause ;""",
                     transaction) {
-                if (it.summary().counters().containsUpdates()) // TODO vihang: this is not perfect way to check if updates are applied
-                    None
-                else
-                    Option(NotUpdatedError(type = entityType.name, id = entity.id))
+                Either.cond(
+                        test = it.summary().counters().containsUpdates(), // TODO vihang: this is not perfect way to check if updates are applied
+                        ifTrue = {},
+                        ifFalse = { NotUpdatedError(type = entityType.name, id = entity.id) })
             }
         }
     }
 
-    fun delete(id: String, transaction: Transaction): Option<StoreError> =
-            exists(id, transaction).ifSuccessThen {
+    fun delete(id: String, transaction: Transaction): Either<StoreError, Unit> =
+            exists(id, transaction).flatMap {
                 write("""MATCH (node:${entityType.name} {id: '$id'} ) DETACH DELETE node;""",
                         transaction) {
-                    if (it.summary().counters().nodesDeleted() == 1) {
-                        None
-                    } else {
-                        Option(NotDeletedError(type = entityType.name, id = id))
-                    }
+                    Either.cond(
+                            test = it.summary().counters().nodesDeleted() == 1,
+                            ifTrue = {},
+                            ifFalse = { NotDeletedError(type = entityType.name, id = id) })
                 }
             }
 
-    fun exists(id: String, transaction: Transaction): Option<StoreError> =
+    fun exists(id: String, transaction: Transaction): Either<StoreError, Unit> =
             read("""MATCH (node:${entityType.name} {id: '$id'} ) RETURN count(node);""",
                     transaction) { statementResult ->
-                if (statementResult.single()["count(node)"].asInt(0) == 1) {
-                    None
-                } else {
-                    Option(NotFoundError(type = entityType.name, id = id))
-                }
+                Either.cond(
+                        test = statementResult.single()["count(node)"].asInt(0) == 1,
+                        ifTrue = {},
+                        ifFalse = { NotFoundError(type = entityType.name, id = id) })
             }
 
-    fun doNotExist(id: String, transaction: Transaction): Option<StoreError> =
+    fun doNotExist(id: String, transaction: Transaction): Either<StoreError, Unit> =
             read("""MATCH (node:${entityType.name} {id: '$id'} ) RETURN count(node);""",
                     transaction) { statementResult ->
-                if (statementResult.single()["count(node)"].asInt(1) == 0) {
-                    None
-                } else {
-                    Option(AlreadyExistsError(type = entityType.name, id = id))
-                }
+                Either.cond(
+                        test = statementResult.single()["count(node)"].asInt(1) == 0,
+                        ifTrue = {},
+                        ifFalse = { AlreadyExistsError(type = entityType.name, id = id) })
             }
 }
 
 // TODO vihang: check if relation already exists, with allow duplicate boolean flag param
 class RelationStore<FROM : HasId, TO : HasId>(private val relationType: RelationType<FROM, *, TO>) {
 
-    fun create(from: FROM, relation: Any, to: TO, transaction: Transaction): Option<StoreError> {
+    fun create(from: FROM, relation: Any, to: TO, transaction: Transaction): Either<StoreError, Unit> {
 
         val properties = getProperties(relation)
         val strProps: String = properties.entries.joinToString(",") { """`${it.key}`: "${it.value}"""" }
@@ -187,51 +183,47 @@ class RelationStore<FROM : HasId, TO : HasId>(private val relationType: Relation
                 CREATE (from)-[:${relationType.relation.name} { $strProps } ]->(to);
                 """.trimIndent(),
                 transaction) {
-            if (it.summary().counters().relationshipsCreated() == 1) {
-                None
-            } else {
-                Option(NotCreatedError(type = relationType.relation.name, id = "${from.id} -> ${to.id}"))
-            }
+            Either.cond(
+                    test = it.summary().counters().relationshipsCreated() == 1,
+                    ifTrue = {},
+                    ifFalse = { NotCreatedError(type = relationType.relation.name, id = "${from.id} -> ${to.id}") })
         }
     }
 
-    fun create(from: FROM, to: TO, transaction: Transaction): Option<StoreError> = write("""
+    fun create(from: FROM, to: TO, transaction: Transaction): Either<StoreError, Unit> = write("""
                 MATCH (from:${relationType.from.name} { id: '${from.id}' }),(to:${relationType.to.name} { id: '${to.id}' })
                 CREATE (from)-[:${relationType.relation.name}]->(to);
                 """.trimIndent(),
             transaction) {
-        if (it.summary().counters().relationshipsCreated() == 1) {
-            None
-        } else {
-            Option(NotCreatedError(type = relationType.relation.name, id = "${from.id} -> ${to.id}"))
-        }
+        Either.cond(
+                test = it.summary().counters().relationshipsCreated() == 1,
+                ifTrue = {},
+                ifFalse = { NotCreatedError(type = relationType.relation.name, id = "${from.id} -> ${to.id}") })
     }
 
-    fun create(fromId: String, toId: String, transaction: Transaction): Option<StoreError> = write("""
+    fun create(fromId: String, toId: String, transaction: Transaction): Either<StoreError, Unit> = write("""
                 MATCH (from:${relationType.from.name} { id: '$fromId' }),(to:${relationType.to.name} { id: '$toId' })
                 CREATE (from)-[:${relationType.relation.name}]->(to);
                 """.trimIndent(),
             transaction) {
-        if (it.summary().counters().relationshipsCreated() == 1) {
-            None
-        } else {
-            Option(NotCreatedError(type = relationType.relation.name, id = "$fromId -> $toId"))
-        }
+        Either.cond(
+                test = it.summary().counters().relationshipsCreated() == 1,
+                ifTrue = {},
+                ifFalse = { NotCreatedError(type = relationType.relation.name, id = "$fromId -> $toId") })
     }
 
-    fun create(fromId: String, relation: Any, toId: String, transaction: Transaction): Option<StoreError> = write("""
+    fun create(fromId: String, relation: Any, toId: String, transaction: Transaction): Either<StoreError, Unit> = write("""
                 MATCH (from:${relationType.from.name} { id: '$fromId' }),(to:${relationType.to.name} { id: '$toId' })
                 CREATE (from)-[:${relationType.relation.name}]->(to);
                 """.trimIndent(),
             transaction) {
-        if (it.summary().counters().relationshipsCreated() == 1) {
-            None
-        } else {
-            Option(NotCreatedError(type = relationType.relation.name, id = "$fromId -> $toId"))
-        }
+        Either.cond(
+                test = it.summary().counters().relationshipsCreated() == 1,
+                ifTrue = {},
+                ifFalse = { NotCreatedError(type = relationType.relation.name, id = "$fromId -> $toId") })
     }
 
-    fun create(fromId: String, toIds: Collection<String>, transaction: Transaction): Option<StoreError> = write("""
+    fun create(fromId: String, toIds: Collection<String>, transaction: Transaction): Either<StoreError, Unit> = write("""
                 MATCH (to:${relationType.to.name})
                 WHERE to.id in [${toIds.joinToString(",") { "'$it'" }}]
                 WITH to
@@ -240,17 +232,18 @@ class RelationStore<FROM : HasId, TO : HasId>(private val relationType: Relation
                 """.trimIndent(),
             transaction) {
         val actualCount = it.summary().counters().relationshipsCreated()
-        if (actualCount == toIds.size) {
-            None
-        } else {
-            Option(NotCreatedError(
-                    type = relationType.relation.name,
-                    expectedCount = toIds.size,
-                    actualCount = actualCount))
-        }
+        Either.cond(
+                test = actualCount == toIds.size,
+                ifTrue = {},
+                ifFalse = {
+                    NotCreatedError(
+                            type = relationType.relation.name,
+                            expectedCount = toIds.size,
+                            actualCount = actualCount)
+                })
     }
 
-    fun create(fromIds: Collection<String>, toId: String, transaction: Transaction): Option<StoreError> = write("""
+    fun create(fromIds: Collection<String>, toId: String, transaction: Transaction): Either<StoreError, Unit> = write("""
                 MATCH (from:${relationType.from.name})
                 WHERE from.id in [${fromIds.joinToString(",") { "'$it'" }}]
                 WITH from
@@ -259,14 +252,15 @@ class RelationStore<FROM : HasId, TO : HasId>(private val relationType: Relation
                 """.trimIndent(),
             transaction) {
         val actualCount = it.summary().counters().relationshipsCreated()
-        if (actualCount == fromIds.size) {
-            None
-        } else {
-            Option(NotCreatedError(
-                    type = relationType.relation.name,
-                    expectedCount = fromIds.size,
-                    actualCount = actualCount))
-        }
+        Either.cond(
+                test = actualCount == fromIds.size,
+                ifTrue = {},
+                ifFalse = {
+                    NotCreatedError(
+                            type = relationType.relation.name,
+                            expectedCount = fromIds.size,
+                            actualCount = actualCount)
+                })
     }
 }
 

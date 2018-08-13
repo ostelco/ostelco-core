@@ -46,8 +46,8 @@ class ProductsResource(private val dao: SubscriberDAO) {
         }
 
         return dao.purchaseProduct(token.name, sku).fold(
-                { Response.status(Response.Status.CREATED) },
-                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) })
+                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) },
+                { Response.status(Response.Status.CREATED) })
                 .build()
     }
 
@@ -64,8 +64,8 @@ class ProductsResource(private val dao: SubscriberDAO) {
         }
 
         return dao.purchaseProduct(token.name, sku).fold(
-                { Response.status(Response.Status.CREATED) },
-                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) })
+                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) },
+                { Response.status(Response.Status.CREATED) })
                 .build()
     }
 }

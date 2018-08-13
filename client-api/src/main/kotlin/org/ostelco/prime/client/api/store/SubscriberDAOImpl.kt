@@ -1,9 +1,6 @@
 package org.ostelco.prime.client.api.store
 
 import arrow.core.Either
-import arrow.core.None
-import arrow.core.Option
-import arrow.core.Some
 import arrow.core.flatMap
 import org.ostelco.prime.client.api.core.ApiError
 import org.ostelco.prime.client.api.model.Consent
@@ -48,15 +45,9 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         }
         try {
             profile.referralId = profile.email
-            val created = storage.addSubscriber(profile, referredBy)
-                    .map { ApiError("Failed to create profile. ${it.message}") }
-
-            if(created.isEmpty()) {
-                return getProfile(subscriberId)
-            }
-
-            return Either.left(created.get())
-
+            return storage.addSubscriber(profile, referredBy)
+                    .mapLeft { ApiError("Failed to create profile. ${it.message}") }
+                    .flatMap { getProfile(subscriberId) }
         } catch (e: Exception) {
             logger.error("Failed to create profile", e)
             return Either.left(ApiError("Failed to create profile"))
@@ -169,11 +160,11 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
 
     }
 
-    override fun purchaseProduct(subscriberId: String, sku: String): Option<ApiError> =
+    override fun purchaseProduct(subscriberId: String, sku: String): Either<ApiError, Unit> =
             storage.getProduct(subscriberId, sku).fold(
                     {
                         logger.error("Did not find product: sku = $sku")
-                        Option(ApiError("Product unavailable"))
+                        Either.left(ApiError("Product unavailable"))
                     },
                     { product ->
                         product.sku = sku
@@ -181,14 +172,14 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                                 product = product,
                                 timestamp = Instant.now().toEpochMilli())
                         storage.addPurchaseRecord(subscriberId, purchaseRecord)
-                                .swap()
-                                .toOption()
-                                .map {
+                                .mapLeft {
                                     logger.error("Failed to save purchase record")
-                                    Some(ApiError("Failed to save purchase record"))
+                                    ApiError("Failed to save purchase record")
                                 }
-                        ocsSubscriberService.topup(subscriberId, sku)
-                        None
+                                .flatMap {
+                                    ocsSubscriberService.topup(subscriberId, sku)
+                                    Either.right(Unit)
+                                }
                     })
 
 
@@ -235,5 +226,5 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         return Either.right(Consent(consentId, "Grant permission to process personal data", false))
     }
 
-    override fun reportAnalytics(subscriberId: String, events: String): Option<ApiError> = None
+    override fun reportAnalytics(subscriberId: String, events: String): Either<ApiError, Unit> = Either.right(Unit)
 }
