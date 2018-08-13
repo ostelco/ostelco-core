@@ -92,7 +92,8 @@ jobs:
           name: deploy prime and needed apps to the dev cluster
           command: |
             export TAG=${CIRCLE_SHA1:0:9}
-            helmsman --debug --apply -f .circleci/helmsman-dev-deployment.toml
+            cd .circleci/
+            helmsman --debug --apply -f helmsman-dev-deployment.toml
 
 workflows:
   version: 2
