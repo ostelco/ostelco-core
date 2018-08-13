@@ -48,13 +48,19 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         }
         try {
             profile.referralId = profile.email
-            storage.addSubscriber(profile, referredBy)
+            val created = storage.addSubscriber(profile, referredBy)
+                    .map { ApiError("Failed to create profile. ${it.message}") }
+
+            if(created.isEmpty()) {
+                return getProfile(subscriberId)
+            }
+
+            return Either.left(created.get())
+
         } catch (e: Exception) {
             logger.error("Failed to create profile", e)
             return Either.left(ApiError("Failed to create profile"))
         }
-
-        return getProfile(subscriberId)
     }
 
     override fun storeApplicationToken(msisdn: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken> {

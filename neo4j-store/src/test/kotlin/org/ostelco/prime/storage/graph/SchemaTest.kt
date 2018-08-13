@@ -210,6 +210,7 @@ class SchemaTest {
         fun start() {
             ConfigRegistry.config = Config()
             ConfigRegistry.config.host = "0.0.0.0"
+            ConfigRegistry.config.protocol = "bolt"
             Neo4jClient.start()
         }
 

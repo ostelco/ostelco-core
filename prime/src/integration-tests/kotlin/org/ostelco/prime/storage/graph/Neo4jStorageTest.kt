@@ -114,6 +114,7 @@ class Neo4jStorageTest {
 
             val config = Config()
             config.host = "0.0.0.0"
+            ConfigRegistry.config.protocol = "bolt"
             ConfigRegistry.config = config
 
             Neo4jClient.start()
