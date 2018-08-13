@@ -39,11 +39,11 @@ ostelco="https://storage.googleapis.com/pi-ostelco-helm-charts-repo/"
 [apps]
     [apps.prime]
     name = "prime"
-    description = "Prime deployment"
+    description = "Prime Dev deployment"
     namespace = "dev"
     enabled = true
     chart = "ostelco/prime"
     version = "0.2.1"
-    valuesFile = "prime-values.yaml"
+    valuesFile = "prime-dev-values.yaml"
     [apps.prime.set]
     "prime.tag"="$TAG" 
