@@ -1,8 +1,6 @@
 package org.ostelco.prime.client.api.resources
 
 import arrow.core.Either
-import arrow.core.None
-import arrow.core.Option
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import io.dropwizard.auth.AuthDynamicFeature
 import io.dropwizard.auth.AuthValueFactoryProvider
@@ -91,7 +89,7 @@ class ProductsResourceTest {
 
         val sku = products[0].sku
 
-        Mockito.`when`<Option<ApiError>>(DAO.purchaseProduct(arg1.capture(), arg2.capture())).thenReturn(None)
+        Mockito.`when`(DAO.purchaseProduct(arg1.capture(), arg2.capture())).thenReturn(Either.right(Unit))
 
         val resp = RULE.target("/products/$sku/purchase")
                 .request()

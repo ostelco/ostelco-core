@@ -1,6 +1,6 @@
 package org.ostelco.prime.client.api.resources
 
-import arrow.core.None
+import arrow.core.Either
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.nhaarman.mockito_kotlin.argumentCaptor
@@ -49,8 +49,7 @@ class AnalyticsResourceTest {
         val arg1 = argumentCaptor<String>()
         val arg2 = argumentCaptor<String>()
 
-        `when`(DAO.reportAnalytics(arg1.capture(), arg2.capture()))
-                .thenReturn(None)
+        `when`(DAO.reportAnalytics(arg1.capture(), arg2.capture())).thenReturn(Either.right(Unit))
 
         val events = """
             |[
