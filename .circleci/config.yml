@@ -99,7 +99,7 @@ jobs:
     working_directory: ~/project
 
     docker:
-    - image: eu.gcr.io/pi-ostelco-dev/github-hub
+    - image: eu.gcr.io/pi-ostelco-dev/github-hub:2.5.0
 
     steps:
       - checkout
@@ -133,3 +133,10 @@ workflows:
           branches:
             only:
             - circleci-dev
+    - create-PR:
+        requires:
+          - deploy-to-dev
+        filters:
+          branches:
+            only:
+            - circleci-dev          
