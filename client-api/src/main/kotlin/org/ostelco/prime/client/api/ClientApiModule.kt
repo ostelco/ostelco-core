@@ -21,6 +21,7 @@ import org.ostelco.prime.client.api.resources.ProductsResource
 import org.ostelco.prime.client.api.resources.ProfileResource
 import org.ostelco.prime.client.api.resources.PurchaseResource
 import org.ostelco.prime.client.api.resources.ReferralResource
+import org.ostelco.prime.client.api.resources.SubscriptionResource
 import org.ostelco.prime.client.api.resources.SubscriptionsResource
 import org.ostelco.prime.client.api.store.SubscriberDAOImpl
 import org.ostelco.prime.module.PrimeModule
@@ -61,6 +62,10 @@ class ClientApiModule : PrimeModule {
         jerseyEnv.register(ProfileResource(dao))
         jerseyEnv.register(ReferralResource(dao))
         jerseyEnv.register(PaymentResource(dao))
+        jerseyEnv.register(SubscriptionResource(
+                dao = dao,
+                pseudonymEndpoint = config.pseudonymEndpoint ?: "", // this will never be empty
+                client = client))
         jerseyEnv.register(SubscriptionsResource(dao))
         jerseyEnv.register(ApplicationTokenResource(dao))
 
