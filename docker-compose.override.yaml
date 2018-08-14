@@ -66,6 +66,7 @@ services:
     command: ["./wait.sh"]
     environment:
     - PRIME_SOCKET=prime:8080
+    - STRIPE_API_KEY=${STRIPE_API_KEY}
     networks:
       net:
         ipv4_address: 172.16.238.2
