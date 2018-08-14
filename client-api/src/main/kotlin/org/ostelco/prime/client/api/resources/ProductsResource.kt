@@ -55,17 +55,7 @@ class ProductsResource(private val dao: SubscriberDAO) {
                            @QueryParam("sourceId")
                            sourceId: String?,
                            @QueryParam("saveCard")
-                           saveCard: Boolean = false): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-
-        return dao.purchaseProduct(token.name, sku).fold(
-                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) },
-                { Response.status(Response.Status.CREATED) })
-                .build()
-    }
+                           saveCard: Boolean = false): Response = purchaseProduct(token, sku, sourceId, saveCard)
 
     @POST
     @Path("{sku}/purchase")
@@ -82,40 +72,11 @@ class ProductsResource(private val dao: SubscriberDAO) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
-        return dao.getPaymentProfile(token.name)
+        return dao.purchaseProduct(token.name, sku, sourceId, saveCard)
                 .fold(
-                        {createAndStorePaymentProfile(token.name)},
-                        {Either.right(it)}
-                )
-                .fold(
-                        { Response.status(Response.Status.BAD_GATEWAY).entity(asJson(it)) },
-                        { profileInfo ->
-                            dao.getProduct(token.name, sku).fold(
-                                    { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) },
-                                    { product ->
-                                        val price = product.price
-                                        val customerId = profileInfo.id
-
-                                        val result: Either<ApiError, ProductInfo> = if (sourceId != null) {
-                                            paymentProcessor.chargeUsingSource(customerId, sourceId, price.amount, price.currency, saveCard)
-                                        } else {
-                                            paymentProcessor.chargeUsingDefaultSource(customerId, price.amount, price.currency)
-                                        }
-                                        //ToDo: This should topup if that is what you bought
-                                        result.fold(
-                                                { Response.status(BAD_GATEWAY).entity(it) },
-                                                { Response.status(CREATED).entity(it) })
-
-                                    })
-                        }
+                        { (status, apiError )-> Response.status(status).entity(asJson(apiError)) },
+                        { productInfo -> Response.status(CREATED).entity(productInfo)}
                 ).build()
-    }
 
-    private fun createAndStorePaymentProfile(name: String): Either<ApiError, ProfileInfo> {
-        return paymentProcessor.createPaymentProfile(name)
-                .flatMap { profileInfo ->
-                    dao.setPaymentProfile(name, profileInfo)
-                            .map { profileInfo }
-                }
     }
 }

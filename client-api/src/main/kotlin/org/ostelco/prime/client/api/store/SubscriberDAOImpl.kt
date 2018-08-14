@@ -5,6 +5,7 @@ import arrow.core.flatMap
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.Person
 import org.ostelco.prime.client.api.model.SubscriptionStatus
+import org.ostelco.prime.client.api.resources.asJson
 import org.ostelco.prime.core.ApiError
 import org.ostelco.prime.logger
 import org.ostelco.prime.model.ApplicationToken
@@ -15,10 +16,12 @@ import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.ocs.OcsSubscriberService
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
+import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.storage.ClientDataSource
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
+import javax.ws.rs.core.Response
 
 /**
  *
@@ -169,28 +172,60 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                         { Either.right(it) })
     }
 
-    override fun purchaseProduct(subscriberId: String, sku: String): Either<ApiError, Unit> =
-            storage.getProduct(subscriberId, sku).fold(
-                    {
-                        logger.error("Did not find product: sku = $sku")
-                        Either.left(ApiError("Product unavailable"))
-                    },
-                    { product ->
-                        product.sku = sku
-                        val purchaseRecord = PurchaseRecord(
-                                product = product,
-                                timestamp = Instant.now().toEpochMilli())
-                        storage.addPurchaseRecord(subscriberId, purchaseRecord)
-                                .mapLeft {
-                                    logger.error("Failed to save purchase record")
-                                    ApiError("Failed to save purchase record")
-                                }
-                                .flatMap {
-                                    ocsSubscriberService.topup(subscriberId, sku)
-                                    Either.right(Unit)
-                                }
-                    })
+    private fun createAndStorePaymentProfile(name: String): Either<ApiError, ProfileInfo> {
+        return paymentProcessor.createPaymentProfile(name)
+                .flatMap { profileInfo ->
+                    setPaymentProfile(name, profileInfo)
+                            .map { profileInfo }
+                }
+    }
 
+    // TODO: extend ApiError to allow more information, so that we can avoid returning Pair<Response.Status, ApiError>
+    override fun purchaseProduct(subscriberId: String, sku: String, sourceId: String?, saveCard: Boolean): Either<Pair<Response.Status, ApiError>, ProductInfo> {
+        return getProduct(subscriberId, sku)
+                // If we can't find the product, return not-found
+                .mapLeft { Pair(Response.Status.NOT_FOUND, ApiError("Product unavailable")) }
+                .flatMap { product ->
+                    product.sku = sku
+                    val purchaseRecord = PurchaseRecord(
+                            product = product,
+                            timestamp = Instant.now().toEpochMilli())
+                            // Create purchase record
+                    storage.addPurchaseRecord(subscriberId, purchaseRecord)
+                            .mapLeft {
+                                logger.error("Failed to save purchase record")
+                                Pair(Response.Status.BAD_GATEWAY, ApiError("Failed to save purchase record"))
+                            }
+                            // Notify OCS
+                            .flatMap {
+                                //TODO: Handle errors (when it becomes available)
+                                ocsSubscriberService.topup(subscriberId, sku)
+                                Either.right(product)
+                            }
+                }
+                .flatMap { product: Product ->
+                    // Fetch/Create stripe payment profile for the subscriber.
+                    getPaymentProfile(subscriberId)
+                            .fold(
+                                    { createAndStorePaymentProfile(subscriberId) },
+                                    { apiError -> Either.right(apiError) }
+                            )
+                            .mapLeft { apiError -> Pair(Response.Status.BAD_GATEWAY, apiError) }
+                            .map { profileInfo -> Pair(product, profileInfo) }
+                }
+                .flatMap {  (product, profileInfo) ->
+                    // Create stripe charge for this purchase
+                    val price = product.price
+                    val customerId = profileInfo.id
+
+                    val result: Either<ApiError, ProductInfo> = if (sourceId != null) {
+                        paymentProcessor.chargeUsingSource(customerId, sourceId, price.amount, price.currency, saveCard)
+                    } else {
+                        paymentProcessor.chargeUsingDefaultSource(customerId, price.amount, price.currency)
+                    }
+                    result.mapLeft { Pair(Response.Status.BAD_GATEWAY, it) }
+                }
+    }
 
     override fun getReferrals(subscriberId: String): Either<ApiError, Collection<Person>> {
         return try {

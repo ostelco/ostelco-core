@@ -10,7 +10,9 @@ import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.model.Subscription
+import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import javax.ws.rs.core.Response
 
 /**
  *
@@ -36,7 +38,7 @@ interface SubscriberDAO {
 
     fun getProducts(subscriberId: String): Either<ApiError, Collection<Product>>
 
-    fun purchaseProduct(subscriberId: String, sku: String): Either<ApiError, Unit>
+    fun purchaseProduct(subscriberId: String, sku: String, sourceId: String?, saveCard: Boolean): Either<Pair<Response.Status, ApiError>, ProductInfo>
 
     fun getConsents(subscriberId: String): Either<ApiError, Collection<Consent>>
 
