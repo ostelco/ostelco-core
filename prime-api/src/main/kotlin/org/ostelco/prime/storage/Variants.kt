@@ -38,8 +38,6 @@ interface ClientDocumentStore {
     fun deletePaymentId(id: String): Boolean
 
     fun createPaymentId(id: String, paymentId: String): Boolean
-
-    fun getCustomerId(id: String): String?
 }
 
 interface AdminDocumentStore

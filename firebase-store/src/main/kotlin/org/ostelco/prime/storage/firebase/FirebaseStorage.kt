@@ -90,8 +90,4 @@ object FirebaseStorageSingleton : DocumentStore {
     override fun deletePaymentId(id: String): Boolean = paymentIdStore.delete(id)
 
     override fun createPaymentId(id: String, paymentId: String): Boolean = paymentIdStore.create(id, paymentId)
-
-    override fun getCustomerId(id: String): String? {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
 }
