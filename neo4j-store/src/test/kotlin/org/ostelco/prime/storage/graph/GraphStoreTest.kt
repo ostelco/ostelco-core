@@ -56,7 +56,7 @@ class GraphStoreTest {
     fun `add subscriber`() {
 
         Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null)
-                .map { fail(it.message) }
+                .mapLeft { fail(it.message) }
 
         Neo4jStoreSingleton.getSubscriber(EMAIL).bimap(
                 { fail(it.message) },
@@ -72,22 +72,22 @@ class GraphStoreTest {
     fun `fail to add subscriber with invalid referred by`() {
 
         Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = "blah")
-                .fold({ fail("Created subscriber in spite of invalid 'referred by'") },
-                        {
-                            assertEquals(
-                                    expected = "Failed to create REFERRED - blah -> foo@bar.com",
-                                    actual = it.message)
-                        })
+                .fold({
+                    assertEquals(
+                            expected = "Failed to create REFERRED - blah -> foo@bar.com",
+                            actual = it.message)
+                },
+                        { fail("Created subscriber in spite of invalid 'referred by'") })
     }
 
     @Test
     fun `add subscription`() {
 
         Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null)
-                .map { fail(it.message) }
+                .mapLeft { fail(it.message) }
 
         Neo4jStoreSingleton.addSubscription(EMAIL, MSISDN)
-                .map { fail(it.message) }
+                .mapLeft { fail(it.message) }
 
         Neo4jStoreSingleton.getMsisdn(EMAIL).bimap(
                 { fail(it.message) },
@@ -107,13 +107,13 @@ class GraphStoreTest {
 
     @Test
     fun `set and get Purchase record`() {
-        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null).isEmpty())
+        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null).isRight())
 
         val product = createProduct("1GB_249NOK", 24900)
         val now = Instant.now().toEpochMilli()
 
         Neo4jStoreSingleton.createProduct(product)
-                .map { fail(it.message) }
+                .mapLeft { fail(it.message) }
 
         val purchaseRecord = PurchaseRecord(product = product, timestamp = now)
         Neo4jStoreSingleton.addPurchaseRecord(EMAIL, purchaseRecord).bimap(
@@ -129,7 +129,7 @@ class GraphStoreTest {
 
     @Test
     fun `create products, offer, segment and then get products for a subscriber`() {
-        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null).isEmpty())
+        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null).isRight())
 
         Neo4jStoreSingleton.createProduct(createProduct("1GB_249NOK", 24900))
         Neo4jStoreSingleton.createProduct(createProduct("2GB_299NOK", 29900))
@@ -181,6 +181,7 @@ class GraphStoreTest {
         fun start() {
             ConfigRegistry.config = Config()
             ConfigRegistry.config.host = "0.0.0.0"
+            ConfigRegistry.config.protocol = "bolt"
             Neo4jClient.start()
         }
 

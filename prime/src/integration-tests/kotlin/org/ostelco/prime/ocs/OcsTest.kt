@@ -221,7 +221,10 @@ class OcsTest {
         @JvmStatic
         @Throws(IOException::class)
         fun setUp() {
-            ConfigRegistry.config = Config().apply { this.host = "0.0.0.0" }
+            ConfigRegistry.config = Config().apply {
+                this.host = "0.0.0.0"
+                this.protocol = "bolt"
+            }
             initFirebaseConfigRegistry()
 
             Neo4jClient.start()

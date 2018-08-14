@@ -1,10 +1,7 @@
 package org.ostelco.prime.client.api.store
 
 import arrow.core.Either
-import arrow.core.None
-import arrow.core.Option
 import arrow.core.flatMap
-import org.ostelco.prime.arrow.ifSuccessThen
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.Person
 import org.ostelco.prime.client.api.model.SubscriptionStatus
@@ -53,13 +50,13 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         }
         try {
             profile.referralId = profile.email
-            storage.addSubscriber(profile, referredBy)
+            return storage.addSubscriber(profile, referredBy)
+                    .mapLeft { ApiError("Failed to create profile. ${it.message}") }
+                    .flatMap { getProfile(subscriberId) }
         } catch (e: Exception) {
             logger.error("Failed to create profile", e)
             return Either.left(ApiError("Failed to create profile"))
         }
-
-        return getProfile(subscriberId)
     }
 
     override fun storeApplicationToken(msisdn: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken> {
@@ -107,13 +104,11 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         try {
             return storage.getBundles(subscriberId)
                     .map { bundles -> bundles?.first()?.balance ?: 0 }
-                    .map { balance ->
+                    .flatMap { balance ->
                         storage.getPurchaseRecords(subscriberId)
                                 .map { purchaseRecords -> SubscriptionStatus(balance, purchaseRecords.toList()) }
-                                .mapLeft { ApiError(it.message) }
                     }
                     .mapLeft { ApiError(it.message) }
-                    .flatMap { it }
         } catch (e: Exception) {
             logger.error("Failed to get balance", e)
             return Either.left(ApiError("Failed to get balance"))
@@ -174,11 +169,11 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                         { Either.right(it) })
     }
 
-    override fun purchaseProduct(subscriberId: String, sku: String): Option<ApiError> =
+    override fun purchaseProduct(subscriberId: String, sku: String): Either<ApiError, Unit> =
             storage.getProduct(subscriberId, sku).fold(
                     {
                         logger.error("Did not find product: sku = $sku")
-                        Option(ApiError("Product unavailable"))
+                        Either.left(ApiError("Product unavailable"))
                     },
                     { product ->
                         product.sku = sku
@@ -186,15 +181,13 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                                 product = product,
                                 timestamp = Instant.now().toEpochMilli())
                         storage.addPurchaseRecord(subscriberId, purchaseRecord)
-                                .swap()
-                                .toOption()
-                                .map {
+                                .mapLeft {
                                     logger.error("Failed to save purchase record")
                                     ApiError("Failed to save purchase record")
                                 }
-                                .ifSuccessThen {
+                                .flatMap {
                                     ocsSubscriberService.topup(subscriberId, sku)
-                                None
+                                    Either.right(Unit)
                                 }
                     })
 
@@ -246,7 +239,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         return Either.left(ApiError("not implemented"))
     }
 
-    override fun setPaymentProfile(name: String, profileInfo: ProfileInfo): Option<ApiError> = None
+    override fun setPaymentProfile(name: String, profileInfo: ProfileInfo): Either<ApiError, Unit> = Either.right(Unit)
 
-    override fun reportAnalytics(subscriberId: String, events: String): Option<ApiError> = None
+    override fun reportAnalytics(subscriberId: String, events: String): Either<ApiError, Unit> = Either.right(Unit)
 }

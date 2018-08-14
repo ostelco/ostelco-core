@@ -37,9 +37,9 @@ class Neo4jStorageTest {
         sleep(MILLIS_TO_WAIT_WHEN_STARTING_UP.toLong())
         storage.removeSubscriber(EPHERMERAL_EMAIL)
         storage.addSubscriber(Subscriber(EPHERMERAL_EMAIL), referredBy = null)
-                .map { fail(it.message) }
+                .mapLeft { fail(it.message) }
         storage.addSubscription(EPHERMERAL_EMAIL, MSISDN)
-                .map { fail(it.message) }
+                .mapLeft { fail(it.message) }
     }
 
     @After
@@ -54,7 +54,7 @@ class Neo4jStorageTest {
 
     @Test
     fun setBalance() {
-        assertTrue(storage.updateBundle(Bundle(EPHERMERAL_EMAIL, RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS)).isEmpty())
+        assertTrue(storage.updateBundle(Bundle(EPHERMERAL_EMAIL, RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS)).isRight())
 
         storage.getBundles(EPHERMERAL_EMAIL).bimap(
                 { fail(it.message) },
@@ -114,6 +114,7 @@ class Neo4jStorageTest {
 
             val config = Config()
             config.host = "0.0.0.0"
+            config.protocol = "bolt"
             ConfigRegistry.config = config
 
             Neo4jClient.start()

@@ -7,6 +7,7 @@ modules:
   - type: neo4j
     config:
       host: neo4j
+      protocol: bolt+routing
   - type: ocs
     config:
       projectId: pantel-2decb

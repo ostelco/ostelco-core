@@ -3,7 +3,6 @@ package org.ostelco.prime.client.api.resources
 import arrow.core.Either
 import arrow.core.flatMap
 import io.dropwizard.auth.Auth
-import org.ostelco.prime.arrow.swapToEither
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.core.ApiError
@@ -56,15 +55,15 @@ class ProductsResource(private val dao: SubscriberDAO) {
                            @QueryParam("sourceId")
                            sourceId: String?,
                            @QueryParam("saveCard")
-                           saveCard: Boolean): Response {
+                           saveCard: Boolean = false): Response {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
 
         return dao.purchaseProduct(token.name, sku).fold(
-                { Response.status(Response.Status.CREATED) },
-                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) })
+                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) },
+                { Response.status(Response.Status.CREATED) })
                 .build()
     }
 
@@ -78,7 +77,7 @@ class ProductsResource(private val dao: SubscriberDAO) {
                         @QueryParam("sourceId")
                         sourceId: String?,
                         @QueryParam("saveCard")
-                        saveCard: Boolean): Response {    /* 'false' is default. */
+                        saveCard: Boolean = false): Response {    /* 'false' is default. */
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
@@ -114,8 +113,9 @@ class ProductsResource(private val dao: SubscriberDAO) {
 
     private fun createAndStorePaymentProfile(name: String): Either<ApiError, ProfileInfo> {
         return paymentProcessor.createPaymentProfile(name)
-                .flatMap { profileInfo ->  dao.setPaymentProfile(name, profileInfo)
-                        .swapToEither { profileInfo }
+                .flatMap { profileInfo ->
+                    dao.setPaymentProfile(name, profileInfo)
+                            .map { profileInfo }
                 }
     }
 }

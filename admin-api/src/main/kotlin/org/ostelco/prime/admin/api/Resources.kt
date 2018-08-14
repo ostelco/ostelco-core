@@ -25,8 +25,8 @@ class SubscriptionsResource {
             @QueryParam("msisdn") msisdn: String): Response {
 
         return adminDataSource.addSubscription(subscriberId, msisdn)
-                .fold({ Response.status(Response.Status.CREATED).build() },
-                        { Response.status(Response.Status.NOT_FOUND).entity(it.message).build() })
+                .fold({ Response.status(Response.Status.NOT_FOUND).entity(it.message).build() },
+                        { Response.status(Response.Status.CREATED).build() })
     }
 }
 
@@ -45,8 +45,8 @@ class OfferResource {
     @POST
     fun createOffer(offer: Offer): Response {
         return adminDataSource.createOffer(offer)
-                .fold({ Response.status(Response.Status.CREATED).build() },
-                        { Response.status(Response.Status.FORBIDDEN).entity(it.message).build() })
+                .fold({ Response.status(Response.Status.FORBIDDEN).entity(it.message).build() },
+                        { Response.status(Response.Status.CREATED).build() })
     }
 
 //    private fun toStoredOffer(offer: Offer): org.ostelco.prime.model.Offer {
@@ -72,8 +72,8 @@ class SegmentResource {
     @POST
     fun createSegment(segment: Segment): Response {
         return adminDataSource.createSegment(segment)
-                .fold({ Response.status(Response.Status.CREATED).build() },
-                        { Response.status(Response.Status.FORBIDDEN).entity(it.message).build() })
+                .fold({ Response.status(Response.Status.FORBIDDEN).entity(it.message).build() },
+                        { Response.status(Response.Status.CREATED).build() })
     }
 
     @PUT
@@ -85,8 +85,8 @@ class SegmentResource {
         segment.id = segmentId
 
         return adminDataSource.updateSegment(segment)
-                .fold({ Response.ok().build() },
-                        { Response.status(Response.Status.NOT_MODIFIED).entity(it.message).build() })
+                .fold({ Response.status(Response.Status.NOT_MODIFIED).entity(it.message).build() },
+                        { Response.ok().build() })
     }
 
 //    private fun toStoredSegment(segment: Segment): org.ostelco.prime.model.Segment {
@@ -111,8 +111,8 @@ class ProductResource {
     @POST
     fun createProduct(product: Product): Response {
         return adminDataSource.createProduct(product)
-                .fold({ Response.ok().build() },
-                        { Response.status(Response.Status.FORBIDDEN).entity(it.message).build() })
+                .fold({ Response.status(Response.Status.FORBIDDEN).entity(it.message).build() },
+                        { Response.ok().build() })
     }
 }
 
@@ -131,8 +131,8 @@ class ProductClassResource {
     @POST
     fun createProductClass(productClass: ProductClass): Response {
         return adminDataSource.createProductClass(productClass)
-                .fold({ Response.ok().build() },
-                        { Response.status(Response.Status.FORBIDDEN).entity(it.message).build() })
+                .fold({ Response.status(Response.Status.FORBIDDEN).entity(it.message).build() },
+                        { Response.ok().build() })
     }
 
 //    @PUT

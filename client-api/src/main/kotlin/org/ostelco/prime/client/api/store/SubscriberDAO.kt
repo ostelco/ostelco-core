@@ -1,7 +1,6 @@
 package org.ostelco.prime.client.api.store
 
 import arrow.core.Either
-import arrow.core.Option
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.Person
 import org.ostelco.prime.client.api.model.SubscriptionStatus
@@ -37,7 +36,7 @@ interface SubscriberDAO {
 
     fun getProducts(subscriberId: String): Either<ApiError, Collection<Product>>
 
-    fun purchaseProduct(subscriberId: String, sku: String): Option<ApiError>
+    fun purchaseProduct(subscriberId: String, sku: String): Either<ApiError, Unit>
 
     fun getConsents(subscriberId: String): Either<ApiError, Collection<Consent>>
 
@@ -45,13 +44,13 @@ interface SubscriberDAO {
 
     fun rejectConsent(subscriberId: String, consentId: String): Either<ApiError, Consent>
 
-    fun reportAnalytics(subscriberId: String, events: String): Option<ApiError>
+    fun reportAnalytics(subscriberId: String, events: String): Either<ApiError, Unit>
 
     fun storeApplicationToken(msisdn: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken>
 
     fun getPaymentProfile(name: String): Either<ApiError, ProfileInfo>
 
-    fun setPaymentProfile(name: String, profileInfo: ProfileInfo): Option<ApiError>
+    fun setPaymentProfile(name: String, profileInfo: ProfileInfo): Either<ApiError, Unit>
 
     fun getReferrals(subscriberId: String): Either<ApiError, Collection<Person>>
 
