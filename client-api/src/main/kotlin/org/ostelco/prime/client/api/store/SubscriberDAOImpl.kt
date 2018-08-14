@@ -5,7 +5,6 @@ import arrow.core.flatMap
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.Person
 import org.ostelco.prime.client.api.model.SubscriptionStatus
-import org.ostelco.prime.client.api.resources.asJson
 import org.ostelco.prime.core.ApiError
 import org.ostelco.prime.logger
 import org.ostelco.prime.model.ApplicationToken
@@ -193,7 +192,6 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                             // Create purchase record
                     storage.addPurchaseRecord(subscriberId, purchaseRecord)
                             .mapLeft {
-                                logger.error("Failed to save purchase record")
                                 Pair(Response.Status.BAD_GATEWAY, ApiError("Failed to save purchase record"))
                             }
                             // Notify OCS
@@ -217,7 +215,6 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                     // Create stripe charge for this purchase
                     val price = product.price
                     val customerId = profileInfo.id
-
                     val result: Either<ApiError, ProductInfo> = if (sourceId != null) {
                         paymentProcessor.chargeUsingSource(customerId, sourceId, price.amount, price.currency, saveCard)
                     } else {
@@ -270,11 +267,16 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         return Either.right(Consent(consentId, "Grant permission to process personal data", false))
     }
 
-    override fun getPaymentProfile(name: String): Either<ApiError, ProfileInfo> {
-        return Either.left(ApiError("not implemented"))
-    }
+    override fun getPaymentProfile(name: String): Either<ApiError, ProfileInfo> =
+            storage.getPaymentId(name)
+                    ?.let { profileInfoId -> Either.right(ProfileInfo(profileInfoId)) }
+                    ?: Either.left(ApiError("Failed to fetch payment customer ID"))
 
-    override fun setPaymentProfile(name: String, profileInfo: ProfileInfo): Either<ApiError, Unit> = Either.right(Unit)
+    override fun setPaymentProfile(name: String, profileInfo: ProfileInfo): Either<ApiError, Unit> =
+        Either.cond(
+                test = storage.createPaymentId(name, profileInfo.id),
+                ifTrue = { Unit },
+                ifFalse = { ApiError("Failed to save payment customer ID") })
 
     override fun reportAnalytics(subscriberId: String, events: String): Either<ApiError, Unit> = Either.right(Unit)
 }

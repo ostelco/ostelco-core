@@ -13,7 +13,6 @@ import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Test
 import org.mockito.ArgumentMatchers
-import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
@@ -25,7 +24,6 @@ import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
-import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import java.util.*
 import java.util.Collections.emptyMap
 import javax.ws.rs.client.Entity
@@ -89,35 +87,19 @@ class ProductsResourceTest {
     @Test
     @Throws(Exception::class)
     fun purchaseProduct() {
-        val arg1 = argumentCaptor<String>()
-        val arg2 = argumentCaptor<String>()
-        val arg3 = argumentCaptor<String>()
-        val arg4 = argumentCaptor<ProfileInfo>()
-        val arg5 = argumentCaptor<String>()
-        val arg6 = argumentCaptor<String>()
-        val arg7 = argumentCaptor<String>()
-        val arg8 = argumentCaptor<String>()
-        val arg9 = argumentCaptor<Int>()
-        val arg10 = argumentCaptor<String>()
-        val arg11 = argumentCaptor<Boolean>()
+        val emailArg = argumentCaptor<String>()
+        val skuArg = argumentCaptor<String>()
+        val sourceIdArg = argumentCaptor<String>()
+        val saveSourceArg = argumentCaptor<Boolean>()
 
-        val product = products[0]
         val sku = products[0].sku
-        val customerId = "123"
         val sourceId = "amex"
 
-        `when`<Either<ApiError, ProfileInfo>>(DAO.getPaymentProfile(arg1.capture()))
-                .thenReturn(Either.left(ApiError("no profile found")))
-        `when`<Either<ApiError, ProfileInfo>>(PAYMENT.createPaymentProfile(arg2.capture()))
-                .thenReturn(Either.right(ProfileInfo(customerId)))
-        `when`(DAO.setPaymentProfile(arg3.capture(), arg4.capture()))
-                .thenReturn(Either.right(Unit))
-        `when`<Either<ApiError, Product>>(DAO.getProduct(arg5.capture(), arg6.capture()))
-                .thenReturn(Either.right(product))
-        `when`<Either<ApiError, ProductInfo>>(PAYMENT.chargeUsingSource(arg7.capture(), arg8.capture(), arg9.capture(), arg10.capture(), arg11.capture()))
-                .thenReturn(Either.right(ProductInfo(sku)))
-
-        Mockito.`when`(DAO.purchaseProduct(arg1.capture(), arg2.capture())).thenReturn(Either.right(Unit))
+        `when`(DAO.purchaseProduct(
+                emailArg.capture(),
+                skuArg.capture(),
+                sourceIdArg.capture(),
+                saveSourceArg.capture())).thenReturn(Either.right(ProductInfo(sku)))
 
         val resp = RULE.target("/products/$sku/purchase")
                 .queryParam("sourceId", sourceId)
@@ -127,17 +109,10 @@ class ProductsResourceTest {
                 .post(Entity.text(""))
 
         assertThat(resp.status).isEqualTo(Response.Status.CREATED.statusCode)
-        assertThat(arg1.firstValue).isEqualTo(email)
-        assertThat(arg2.firstValue).isEqualTo(email)
-        assertThat(arg3.firstValue).isEqualTo(email)
-        assertThat(arg4.firstValue.id).isEqualTo(customerId)  /* ProfileInfo */
-        assertThat(arg5.firstValue).isEqualTo(email)
-        assertThat(arg6.firstValue).isEqualTo(sku)
-        assertThat(arg7.firstValue).isEqualTo(customerId)
-        assertThat(arg8.firstValue).isEqualTo(sourceId)
-        assertThat(arg9.firstValue).isEqualTo(product.price.amount)
-        assertThat(arg10.firstValue).isEqualTo(product.price.currency)
-        assertThat(arg11.firstValue).isEqualTo(false)
+        assertThat(emailArg.allValues.toSet()).isEqualTo(setOf(email))
+        assertThat(skuArg.allValues.toSet()).isEqualTo(setOf(sku))
+        assertThat(sourceIdArg.allValues.toSet()).isEqualTo(setOf(sourceId))
+        assertThat(saveSourceArg.allValues.toSet()).isEqualTo(setOf(false))
     }
 
     companion object {

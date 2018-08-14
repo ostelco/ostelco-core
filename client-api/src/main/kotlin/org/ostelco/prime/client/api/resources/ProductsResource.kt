@@ -1,15 +1,8 @@
 package org.ostelco.prime.client.api.resources
 
-import arrow.core.Either
-import arrow.core.flatMap
 import io.dropwizard.auth.Auth
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.store.SubscriberDAO
-import org.ostelco.prime.core.ApiError
-import org.ostelco.prime.module.getResource
-import org.ostelco.prime.paymentprocessor.PaymentProcessor
-import org.ostelco.prime.paymentprocessor.core.ProductInfo
-import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import javax.validation.constraints.NotNull
 import javax.ws.rs.GET
 import javax.ws.rs.POST
@@ -18,7 +11,6 @@ import javax.ws.rs.PathParam
 import javax.ws.rs.Produces
 import javax.ws.rs.QueryParam
 import javax.ws.rs.core.Response
-import javax.ws.rs.core.Response.Status.BAD_GATEWAY
 import javax.ws.rs.core.Response.Status.CREATED
 
 /**
@@ -27,8 +19,6 @@ import javax.ws.rs.core.Response.Status.CREATED
  */
 @Path("/products")
 class ProductsResource(private val dao: SubscriberDAO) {
-
-    private val paymentProcessor by lazy { getResource<PaymentProcessor>() }
 
     @GET
     @Produces("application/json")
@@ -72,6 +62,7 @@ class ProductsResource(private val dao: SubscriberDAO) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
+
         return dao.purchaseProduct(token.name, sku, sourceId, saveCard)
                 .fold(
                         { (status, apiError )-> Response.status(status).entity(asJson(apiError)) },

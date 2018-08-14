@@ -272,12 +272,12 @@ object Graph {
     private val LOG by logger()
 
     fun <R> write(query: String, transaction: Transaction, transform: (StatementResult) -> R): R {
-        LOG.debug("write:[\n$query\n]")
+        LOG.trace("write:[\n$query\n]")
         return transaction.run(query).let(transform)
     }
 
     fun <R> read(query: String, transaction: Transaction, transform: (StatementResult) -> R): R {
-        LOG.debug("read:[\n$query\n]")
+        LOG.trace("read:[\n$query\n]")
         return transaction.run(query).let(transform)
     }
 }
