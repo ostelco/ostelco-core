@@ -95,6 +95,21 @@ jobs:
             cd .circleci/
             helmsman --debug --apply -f helmsman-dev-deployment.toml
 
+  create-PR:
+    working_directory: ~/project
+
+    docker:
+    - image: eu.gcr.io/pi-ostelco-dev/github-hub
+
+    steps:
+      - checkout
+      - run:
+          name: create PR to merge develop into master
+          command: |
+            git checkout circleci-dev
+            hub pull-request -m "merging circle-dev into circleci-prod" -b circleci-prod
+
+
 workflows:
   version: 2
   merge-to-dev:
