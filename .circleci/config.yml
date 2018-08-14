@@ -22,22 +22,22 @@ jobs:
       
       # - run: ls -la 
 
-      # - run:
-      #     name: Create pantel-prod.json file using the PANTEL_SECRETS_FILE env var.
-      #     command: |
-      #       echo; echo "======> Creating pantel-prod.json file, using the env variable PANTEL_SECRETS_FILE"
-      #       for LOCATION in $(find . -name .gitignore  -exec grep pantel-prod.json  '{}' '+' ); do 
-      #         DIR_NAME=$(dirname $LOCATION)
-      #         echo "Creating secrets file: ${DIR_NAME}/pantel-prod.json ..."
-      #         echo ${PANTEL_SECRETS_FILE} | base64 -d >  ${DIR_NAME}/pantel-prod.json
-      #         ls -l ${DIR_NAME}/pantel-prod.json 
-      #       done
-      #       echo ''
+      - run:
+          name: Create pantel-prod.json file using the PANTEL_SECRETS_FILE env var.
+          command: |
+            echo; echo "======> Creating pantel-prod.json file, using the env variable PANTEL_SECRETS_FILE"
+            for LOCATION in $(find . -name .gitignore  -exec grep pantel-prod.json  '{}' '+' ); do 
+              DIR_NAME=$(dirname $LOCATION)
+              echo "Creating secrets file: ${DIR_NAME}/pantel-prod.json ..."
+              echo ${PANTEL_SECRETS_FILE} | base64 -d >  ${DIR_NAME}/pantel-prod.json
+              ls -l ${DIR_NAME}/pantel-prod.json 
+            done
+            echo ''
 
 
-      # - run:
-      #     name: Generate self signed certs for ocs.ostelco.org .
-      #     command: scripts/generate-selfsigned-ssl-certs.sh   ocs.ostelco.org 
+      - run:
+          name: Generate self signed certs for ocs.ostelco.org .
+          command: scripts/generate-selfsigned-ssl-certs.sh   ocs.ostelco.org 
 
           
       # docker install instructions here
