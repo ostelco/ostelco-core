@@ -82,11 +82,11 @@ class ProductsResource(private val dao: SubscriberDAO) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
-
         return dao.getPaymentProfile(token.name)
-                .swap()
-                .flatMap { createAndStorePaymentProfile(token.name).swap() }
-                .swap()
+                .fold(
+                        {createAndStorePaymentProfile(token.name)},
+                        {Either.right(it)}
+                )
                 .fold(
                         { Response.status(Response.Status.BAD_GATEWAY).entity(asJson(it)) },
                         { profileInfo ->
