@@ -137,7 +137,7 @@ class StripePaymentProcessor : PaymentProcessor {
         }.flatMap { charge: Charge ->
             val review = charge.review
             Either.cond(
-                    test = (review != null),
+                    test = (review == null),
                     ifTrue = { charge.id },
                     ifFalse = { ForbiddenError("Review required, $errorMessage $review") }
             )
@@ -151,7 +151,7 @@ class StripePaymentProcessor : PaymentProcessor {
         }.flatMap { charge: Charge ->
             val review = charge.review
             Either.cond(
-                    test = (review != null),
+                    test = (review == null),
                     ifTrue = { charge },
                     ifFalse = { ForbiddenError("Review required, $errorMessage $review") }
             )

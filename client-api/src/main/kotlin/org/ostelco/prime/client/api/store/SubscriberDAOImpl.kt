@@ -202,7 +202,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                 .flatMap { (product, profileInfo) ->
                     // Add payment source
                     if (sourceId != null) {
-                        paymentProcessor.addSource(subscriberId, sourceId).
+                        paymentProcessor.addSource(profileInfo.id, sourceId).
                                 map {sourceInfo -> Triple(product, profileInfo, sourceInfo.id)}
                     } else {
                         Either.right(Triple(product, profileInfo, null))
@@ -211,8 +211,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                 .flatMap { (product, profileInfo, savedSourceId) ->
                     // Authorize stripe charge for this purchase
                     val price = product.price
-                    val customerId = profileInfo.id
-                    paymentProcessor.authorizeCharge(customerId, savedSourceId, price.amount, price.currency)
+                    paymentProcessor.authorizeCharge(profileInfo.id, savedSourceId, price.amount, price.currency)
                             .mapLeft { apiError ->
                                 logger.error("failed to authorize purchase for customerId ${profileInfo.id}, sourceId $savedSourceId, sku $sku")
                                 apiError
