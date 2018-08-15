@@ -9,7 +9,7 @@ jobs:
       - run: 
           name: checking for merge conflicts
           command: |
-            git config --global user.email "you@example.com"
+            git config --global user.email "you@example.com" # TODO: to be replaced with some CI github user
             git config --global user.name "Your Name"
             git checkout ${CIRCLE_BRANCH}
             git checkout circleci-dev # TODO: to be replaced with "develop" later
@@ -115,11 +115,6 @@ jobs:
           name: Acceptance Tests
           command: docker-compose up --build --abort-on-container-exit
 
-
-#      - persist_to_workspace:
-#          root: ~/
-#          paths: project
-
   code-coverage:
 
     environment:
@@ -132,9 +127,6 @@ jobs:
       - image: circleci/openjdk:8u171-jdk
 
     steps:
-#      - attach_workspace:
-#          at: ~/
-
       - run:  
           name: Download codacy
           command: |
@@ -176,8 +168,10 @@ jobs:
     steps:
       - checkout
       - run: 
-          name: checking for merge conflicts
+          name: merging the feature branch into develop
           command: |
+            git config --global user.email "you@example.com" # TODO: to be replaced with some CI github user
+            git config --global user.name "Your Name"
             git checkout ${CIRCLE_BRANCH}
             git checkout circleci-dev # TODO: to be replaced with "develop" later
             git merge ${CIRCLE_BRANCH} 
