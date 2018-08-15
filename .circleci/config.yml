@@ -58,9 +58,9 @@ jobs:
           command: ./gradlew clean build -x :neo4j-store:test --stacktrace
           # command: ./gradlew clean build  -Dorg.gradle.jvmargs=-Xmx2g
 
-      - run:
-          name: Gradle integration Tests
-          command: ./gradlew integration --stacktrace
+      # - run:
+      #     name: Gradle integration Tests
+      #     command: ./gradlew integration --stacktrace
 
       # The following two commands are just to show which exact versions of docker and docker-compose will be used.
       - run: docker version
