@@ -110,15 +110,9 @@ class StripePaymentProcessor : PaymentProcessor {
     }
 
     // Charge the customer using default payment source.
-    override fun chargeUsingDefaultSource(customerId: String, amount: Int, currency: String): Either<ApiError, ProductInfo> {
-
-        val charge = chargeCustomer(customerId, null, amount, currency)
-        if (charge.isLeft()) {
-            return Either.left(charge.left().get())
-        }
-
-        return Either.right(ProductInfo(charge.right().get().id))
-    }
+    override fun chargeUsingDefaultSource(customerId: String, amount: Int, currency: String): Either<ApiError, ProductInfo> =
+            chargeCustomer(customerId, null, amount, currency)
+                    .map { ProductInfo(it.id) }
 
     override fun deletePaymentProfile(customerId: String): Either<ApiError, ProfileInfo> =
             either("Failed to delete customer ${customerId}") {
@@ -163,19 +157,8 @@ class StripePaymentProcessor : PaymentProcessor {
                 ProductInfo(charge.id)
             }
 
-    private fun isSourceStored(customerId: String, sourceId: String): Either<ApiError, Boolean> {
-        val storedSources = getSavedSources(customerId)
-        if (storedSources.isLeft()) {
-            return Either.left(storedSources.left().get())
-        }
-        var sourceStored = false
-        storedSources.right().get().forEach {
-            if (it.id.equals(sourceId)) {
-                sourceStored = true
-            }
-        }
-        return Either.right(sourceStored)
-    }
+    private fun isSourceStored(customerId: String, sourceId: String): Either<ApiError, Boolean> =
+            getSavedSources(customerId).map { sourceInfoList -> sourceInfoList.find { it.id.equals(sourceId) } != null }
 
     private fun removeSource(customerId: String, sourceId: String): Either<ApiError, SourceInfo> =
             either("Failed to remove source ${sourceId} from customer ${customerId}") {
