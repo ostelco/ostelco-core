@@ -1,6 +1,7 @@
 package org.ostelco.prime.paymentprocessor
 
 import arrow.core.Either
+import arrow.core.flatMap
 import com.stripe.model.Charge
 import com.stripe.model.Customer
 import com.stripe.model.Plan
@@ -163,6 +164,55 @@ class StripePaymentProcessor : PaymentProcessor {
                 ProductInfo(charge.id)
             }
 
+    override fun authorizeCharge(customerId: String, sourceId: String?, amount: Int, currency: String): Either<ApiError, String> {
+        val errorMessage = "Failed to authorize the charge for customerId $customerId sourceId $sourceId amount $amount currency $currency"
+        return either(errorMessage = errorMessage) {
+            val chargeParams = HashMap<String, Any>()
+            chargeParams["amount"] = amount
+            chargeParams["currency"] = currency
+            chargeParams["customer"] = customerId
+            chargeParams["capture"] = false
+            if (sourceId != null) {
+                chargeParams["source"] = sourceId
+            }
+            Charge.create(chargeParams)
+        }.flatMap { charge: Charge ->
+            val review = charge.review
+            Either.cond(
+                    test = (review != null),
+                    ifTrue = { charge.id },
+                    ifFalse = { ApiError("Review required, $errorMessage $review") }
+            )
+        }
+    }
+
+    override fun captureCharge(chargeId: String, customerId: String, sourceId: String?): Either<ApiError, String> {
+        val errorMessage = "Failed to capture charge for customerId $customerId chargeId $chargeId"
+        return either(errorMessage = errorMessage) {
+            Charge.retrieve(chargeId)
+        }.flatMap { charge: Charge ->
+            val review = charge.review
+            Either.cond(
+                    test = (review != null),
+                    ifTrue = { charge },
+                    ifFalse = { ApiError("Review required, $errorMessage $review") }
+            )
+        }.flatMap { charge ->
+            try {
+                charge.capture()
+                Either.right(charge.id)
+            } catch (e: Exception) {
+                LOG.warn(errorMessage, e)
+                Either.left(ApiError(errorMessage))
+            }
+        }
+    }
+    override fun removeSource(customerId: String, sourceId: String): Either<ApiError, String> =
+            either("Failed to remove source ${sourceId} from customer ${customerId}") {
+                Customer.retrieve(customerId).sources.retrieve(sourceId).delete().id
+            }
+
+
     private fun isSourceStored(customerId: String, sourceId: String): Either<ApiError, Boolean> {
         val storedSources = getSavedSources(customerId)
         if (storedSources.isLeft()) {
@@ -176,11 +226,6 @@ class StripePaymentProcessor : PaymentProcessor {
         }
         return Either.right(sourceStored)
     }
-
-    private fun removeSource(customerId: String, sourceId: String): Either<ApiError, SourceInfo> =
-            either("Failed to remove source ${sourceId} from customer ${customerId}") {
-                SourceInfo(Customer.retrieve(customerId).sources.retrieve(sourceId).delete().id)
-            }
 
     private fun <RETURN> either(errorMessage: String, action: () -> RETURN): Either<ApiError, RETURN> {
         return try {

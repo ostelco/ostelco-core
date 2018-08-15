@@ -98,4 +98,29 @@ interface PaymentProcessor {
      */
     fun setDefaultSource(customerId: String, sourceId: String): Either<ApiError, SourceInfo>
 
+
+    /**
+     * @param customerId Customer id in the payment system
+     * @param sourceId id of the payment source
+     * @param amount The amount to be charged
+     * @param currency Three-letter ISO currency code in lowercase
+     * @return id of the charge if authorization was successful
+     */
+    fun authorizeCharge(customerId: String, sourceId: String?, amount: Int, currency: String): Either<ApiError, String>
+
+    /**
+     * @param chargeId ID of the of the authorized charge from authorizeCharge()
+     * @param customerId Customer id in the payment system
+     * @param sourceId id of the payment source
+     * @return id of the charge if authorization was successful
+     */
+    fun captureCharge(chargeId: String, customerId: String, sourceId: String?): Either<ApiError, String>
+
+    /**
+     * @param customerId Customer id in the payment system
+     * @param sourceId id of the payment source
+     * @return id if removed
+     */
+    fun removeSource(customerId: String, sourceId: String): Either<ApiError, String>
+
 }
