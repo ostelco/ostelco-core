@@ -3,13 +3,25 @@ package org.ostelco.prime.core
 import javax.ws.rs.core.Response
 
 open class ApiError(val description: String) {
-    open var status : Response.Status = Response.Status.OK
-}
-
-class NotFoundError(description: String) : ApiError(description) {
-    override var status : Response.Status = Response.Status.NOT_FOUND
+    open var status : Int = 0
 }
 
 class BadGatewayError(description: String) : ApiError(description) {
-    override var status : Response.Status = Response.Status.BAD_GATEWAY
+    override var status : Int = Response.Status.BAD_GATEWAY.getStatusCode()
+}
+
+class BadRequestError(description: String) : ApiError(description) {
+    override var status : Int = Response.Status.BAD_REQUEST.getStatusCode()
+}
+
+class ForbiddenError(description: String) : ApiError(description) {
+    override var status : Int = Response.Status.FORBIDDEN.getStatusCode()
+}
+
+class InsuffientStorageError(description: String) : ApiError(description) {
+    override var status : Int = 507
+}
+
+class NotFoundError(description: String) : ApiError(description) {
+    override var status : Int = Response.Status.NOT_FOUND.getStatusCode()
 }
