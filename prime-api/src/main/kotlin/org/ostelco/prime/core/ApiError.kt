@@ -2,7 +2,7 @@ package org.ostelco.prime.core
 
 import javax.ws.rs.core.Response
 
-open class ApiError(val description: String) {
+sealed class ApiError(val description: String) {
     open var status : Int = 0
 }
 
