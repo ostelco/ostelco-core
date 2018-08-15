@@ -78,42 +78,6 @@ class StripePaymentProcessor : PaymentProcessor {
                 SourceInfo(Customer.retrieve(customerId).defaultSource)
             }
 
-    // FixMe : This needs to be able to rollback
-    override fun chargeUsingSource(customerId: String, sourceId: String, amount: Int, currency: String, saveSource: Boolean): Either<ApiError, ProductInfo> {
-
-        var storedSourceId = sourceId
-        val stored = isSourceStored(customerId, sourceId)
-        if (stored.isLeft()) {
-            return Either.left(stored.left().get())
-        } else if (!stored.right().get()) {
-            val savedSource = addSource(customerId, sourceId)
-            if (savedSource.isLeft()) {
-                return Either.left(savedSource.left().get())
-            } else {
-                storedSourceId = savedSource.right().get().id
-            }
-        }
-
-        val charge = chargeCustomer(customerId, storedSourceId, amount, currency)
-        if (charge.isLeft()) {
-            return Either.left(charge.left().get())
-        }
-
-        if (!saveSource) {
-            val removed = removeSource(customerId, storedSourceId)
-            if (removed.isLeft()) {
-                return Either.left(removed.left().get())
-            }
-        }
-
-        return Either.right(ProductInfo(charge.right().get().id))
-    }
-
-    // Charge the customer using default payment source.
-    override fun chargeUsingDefaultSource(customerId: String, amount: Int, currency: String): Either<ApiError, ProductInfo> =
-            chargeCustomer(customerId, null, amount, currency)
-                    .map { ProductInfo(it.id) }
-
     override fun deletePaymentProfile(customerId: String): Either<ApiError, ProfileInfo> =
             either(NotFoundError("Failed to delete customer ${customerId}")) {
                 val customer = Customer.retrieve(customerId)

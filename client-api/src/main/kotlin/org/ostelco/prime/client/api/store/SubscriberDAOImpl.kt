@@ -185,49 +185,6 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                 }
     }
 
-    fun purchaseProductOld(subscriberId: String, sku: String, sourceId: String?, saveCard: Boolean): Either<ApiError, ProductInfo> {
-        return getProduct(subscriberId, sku)
-                // If we can't find the product, return not-found
-                .mapLeft { NotFoundError("Product unavailable") }
-                .flatMap { product ->
-                    product.sku = sku
-                    val purchaseRecord = PurchaseRecord(
-                            product = product,
-                            timestamp = Instant.now().toEpochMilli())
-                    // Create purchase record
-                    storage.addPurchaseRecord(subscriberId, purchaseRecord)
-                            .mapLeft {
-                                BadGatewayError("Failed to save purchase record")
-                            }
-                            // Notify OCS
-                            .flatMap {
-                                //TODO: Handle errors (when it becomes available)
-                                ocsSubscriberService.topup(subscriberId, sku)
-                                Either.right(product)
-                            }
-                }
-                .flatMap { product: Product ->
-                    // Fetch/Create stripe payment profile for the subscriber.
-                    getPaymentProfile(subscriberId)
-                            .fold(
-                                    { createAndStorePaymentProfile(subscriberId) },
-                                    { profileInfo -> Either.right(profileInfo) }
-                            )
-                            .mapLeft { apiError -> BadGatewayError(apiError.description) }
-                            .map { profileInfo -> Pair(product, profileInfo) }
-                }
-                .flatMap {  (product, profileInfo) ->
-                    // Create stripe charge for this purchase
-                    val price = product.price
-                    val customerId = profileInfo.id
-                    val result: Either<ApiError, ProductInfo> = if (sourceId != null) {
-                        paymentProcessor.chargeUsingSource(customerId, sourceId, price.amount, price.currency, saveCard)
-                    } else {
-                        paymentProcessor.chargeUsingDefaultSource(customerId, price.amount, price.currency)
-                    }
-                    result.mapLeft { BadGatewayError(it.description) }
-                }
-    }
 
     override fun purchaseProduct(subscriberId: String, sku: String, sourceId: String?, saveCard: Boolean): Either<ApiError, ProductInfo> {
         return getProduct(subscriberId, sku)
@@ -288,7 +245,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                                 logger.error("Capture failed for customerId ${profileInfo.id}, chargeId $chargeId, Fix this in Stripe Dashborad")
                                 apiError
                             }
-                            .map { chargeId -> Triple(profileInfo, savedSourceId, productInfo) }
+                            .map { Triple(profileInfo, savedSourceId, productInfo) }
                 }
                 .flatMap { (profileInfo, savedSourceId, productInfo) ->
                     // Remove the payment source
