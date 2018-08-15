@@ -8,31 +8,40 @@
 * Code in pull requests should conform to the project's coding standards (see below)
 * Pull requests should also be manually approved by by a core team member before being merged to master.
 
-
 # Coding standards
 
-This is a work in progress.  We do not strictly enforce coding
-standards at this point, meaning that there will be code in this
-repository that do ont conform to the standards listed below.  That
-said, we do want code to be easily understandable both by people who
-haven't written it and by people who wrote it a year ago.  The coding
-standards we refer to should be examined and to the best of your
-ability followed.  If the coding standards are an impediment to
-getting your work done then consider breaking them, but only do so if
-the resulting code is still easily understandable, as described above.
+We have coding standards to make life as a development team
+easier.  You should  do your best to follow the coding standards,
+including suggesting changes to them if that makes life easier
+for you and your fellow developers.
+
+That said, we do not strictly enforce coding standards at this time.
+This means that there will be code in this repository that do not
+conform to the standards listed below.  The intent behind the
+standards is to enforce an uniform "style" in which the code is
+written, that makes it easily understandable both by people who
+haven't written it and by people who wrote it a year ago.  The
+standards also shouldn't feel like a burden to follow.  This isn't an
+exercise in obedience, it's an exercise in respectful collaboration.
+
+All developers should familarize themselves with the coding standards,
+and to the best of of their ability followed by them. If the coding
+standards are an impediment to getting your work done then consider
+breaking them, or even better, to suggest an improvement to the coding
+standard but only do so if the resulting code is still easily
+understandable, as described above.
 
 To the extent possible, we would want static code analysis serve as
 quality gates that will not permit code that is in gross violation of
 coding standards.  We also encourage code reviewers to help enforce
 coding standards.  If the code is not following the coding standards,
-or is not easily understandable even if it is following it is
-perfectly ok to reject pull requests.
+or is not easily understandable even if it is following the standards
+it is perfectly ok to reject pull requests.
 
 Also, this coding standard document should be updated to include
-coding standards applicable to all code in the repository.  If for
-instance we start using Go, then a Go coding standard should be
-included.
-
+coding standards applicable to all code in the repository.  We
+currently don't use the Go language in this project, but if we do
+start using Go, then a Go coding standard should be included.
 
 ## All programming language and configuration files
 
