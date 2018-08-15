@@ -9,6 +9,8 @@ jobs:
       - run: 
           name: checking for merge conflicts
           command: |
+            git config --global user.email "you@example.com"
+            git config --global user.name "Your Name"
             git checkout ${CIRCLE_BRANCH}
             git checkout circleci-dev # TODO: to be replaced with "develop" later
             git merge ${CIRCLE_BRANCH} 
@@ -176,8 +178,6 @@ jobs:
       - run: 
           name: checking for merge conflicts
           command: |
-            git config --global user.email "you@example.com"
-            git config --global user.name "Your Name"
             git checkout ${CIRCLE_BRANCH}
             git checkout circleci-dev # TODO: to be replaced with "develop" later
             git merge ${CIRCLE_BRANCH} 
