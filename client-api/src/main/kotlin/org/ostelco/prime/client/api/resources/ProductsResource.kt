@@ -65,7 +65,7 @@ class ProductsResource(private val dao: SubscriberDAO) {
 
         return dao.purchaseProduct(token.name, sku, sourceId, saveCard)
                 .fold(
-                        { (status, apiError )-> Response.status(status).entity(asJson(apiError)) },
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
                         { productInfo -> Response.status(CREATED).entity(productInfo)}
                 ).build()
 

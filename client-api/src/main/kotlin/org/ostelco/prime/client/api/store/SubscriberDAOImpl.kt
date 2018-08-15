@@ -6,6 +6,8 @@ import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.Person
 import org.ostelco.prime.client.api.model.SubscriptionStatus
 import org.ostelco.prime.core.ApiError
+import org.ostelco.prime.core.BadGatewayError
+import org.ostelco.prime.core.NotFoundError
 import org.ostelco.prime.logger
 import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Product
@@ -20,7 +22,6 @@ import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.storage.ClientDataSource
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
-import javax.ws.rs.core.Response
 
 /**
  *
@@ -180,10 +181,10 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
     }
 
     // TODO: extend ApiError to allow more information, so that we can avoid returning Pair<Response.Status, ApiError>
-    override fun purchaseProduct(subscriberId: String, sku: String, sourceId: String?, saveCard: Boolean): Either<Pair<Response.Status, ApiError>, ProductInfo> {
+    override fun purchaseProduct(subscriberId: String, sku: String, sourceId: String?, saveCard: Boolean): Either<ApiError, ProductInfo> {
         return getProduct(subscriberId, sku)
                 // If we can't find the product, return not-found
-                .mapLeft { Pair(Response.Status.NOT_FOUND, ApiError("Product unavailable")) }
+                .mapLeft { NotFoundError("Product unavailable") }
                 .flatMap { product ->
                     product.sku = sku
                     val purchaseRecord = PurchaseRecord(
@@ -192,7 +193,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                             // Create purchase record
                     storage.addPurchaseRecord(subscriberId, purchaseRecord)
                             .mapLeft {
-                                Pair(Response.Status.BAD_GATEWAY, ApiError("Failed to save purchase record"))
+                                BadGatewayError("Failed to save purchase record")
                             }
                             // Notify OCS
                             .flatMap {
@@ -208,7 +209,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                                     { createAndStorePaymentProfile(subscriberId) },
                                     { apiError -> Either.right(apiError) }
                             )
-                            .mapLeft { apiError -> Pair(Response.Status.BAD_GATEWAY, apiError) }
+                            .mapLeft { apiError -> BadGatewayError(apiError.description) }
                             .map { profileInfo -> Pair(product, profileInfo) }
                 }
                 .flatMap {  (product, profileInfo) ->
@@ -220,7 +221,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                     } else {
                         paymentProcessor.chargeUsingDefaultSource(customerId, price.amount, price.currency)
                     }
-                    result.mapLeft { Pair(Response.Status.BAD_GATEWAY, it) }
+                    result.mapLeft { BadGatewayError(it.description) }
                 }
     }
 
