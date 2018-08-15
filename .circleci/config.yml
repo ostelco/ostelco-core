@@ -1,13 +1,27 @@
 version: 2
 jobs:
-  build-repo:
+  check-merge-conflicts:
+    docker:
+      - image: alpine/git
+        entrypoint: /bin/sh
+    steps:
+      - checkout
+      - run: 
+          name: checking for merge conflicts
+          command: |
+            git checkout ${CIRCLE_BRANCH}
+            git checkout circleci-dev # TODO: to be replaced with "develop" later
+            git merge ${CIRCLE_BRANCH} 
+          
 
-    environment:
-      # setup the versions you want to use for docker and docker-compose
-      DOCKER_VERSION: 18.06.0-ce
-      DOCKER_COMPOSE_VERSION: 1.22.0
-      # JAVA_OPTS: "-Xmx2g -XX:MaxPermSize=256m -XX:+HeapDumpOnOutOfMemoryError"
-      # GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xms2g -Xmx2g"
+  build-test-repo:
+
+    # environment:
+    #   # setup the versions you want to use for docker and docker-compose
+    #   # DOCKER_VERSION: 18.06.0-ce
+    #   # DOCKER_COMPOSE_VERSION: 1.22.0
+    #   # JAVA_OPTS: "-Xmx2g -XX:MaxPermSize=256m -XX:+HeapDumpOnOutOfMemoryError"
+    #   # GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xms2g -Xmx2g"
 
     machine:
       enabled: true
@@ -19,25 +33,23 @@ jobs:
     steps:
 
       - checkout
-      
-      # - run: ls -la 
-
-      # - run:
-      #     name: Create pantel-prod.json file using the PANTEL_SECRETS_FILE env var.
-      #     command: |
-      #       echo; echo "======> Creating pantel-prod.json file, using the env variable PANTEL_SECRETS_FILE"
-      #       for LOCATION in $(find . -name .gitignore  -exec grep pantel-prod.json  '{}' '+' ); do 
-      #         DIR_NAME=$(dirname $LOCATION)
-      #         echo "Creating secrets file: ${DIR_NAME}/pantel-prod.json ..."
-      #         echo ${PANTEL_SECRETS_FILE} | base64 -d >  ${DIR_NAME}/pantel-prod.json
-      #         ls -l ${DIR_NAME}/pantel-prod.json 
-      #       done
-      #       echo ''
+      - run:
+          # This is needed for docker compose acceptance test
+          name: Create pantel-prod.json file using the PANTEL_SECRETS_FILE env var. 
+          command: |
+            echo; echo "======> Creating pantel-prod.json file, using the env variable PANTEL_SECRETS_FILE"
+            for LOCATION in $(find . -name .gitignore  -exec grep pantel-prod.json  '{}' '+' ); do 
+              DIR_NAME=$(dirname $LOCATION)
+              echo "Creating secrets file: ${DIR_NAME}/pantel-prod.json ..."
+              echo ${PANTEL_SECRETS_FILE} | base64 -d >  ${DIR_NAME}/pantel-prod.json
+              ls -l ${DIR_NAME}/pantel-prod.json 
+            done
+            echo ''
 
 
-      # - run:
-      #     name: Generate self signed certs for ocs.ostelco.org .
-      #     command: scripts/generate-selfsigned-ssl-certs.sh   ocs.ostelco.org 
+      - run:
+          name: Generate self signed certs for ocs.ostelco.org .
+          command: scripts/generate-selfsigned-ssl-certs.sh   ocs.ostelco.org 
 
           
       # docker install instructions here
@@ -83,9 +95,12 @@ jobs:
           # command: ./gradlew clean build  -x test --parallel
           # command: ./gradlew clean build  -x :client-api:test  -x :neo4j-store:test
           # command: ./gradlew clean build 
-          command: ./gradlew clean build -x :neo4j-store:test 
+          command: ./gradlew clean build -x :neo4j-store:test --stacktrace
           # command: ./gradlew clean build  -Dorg.gradle.jvmargs=-Xmx2g
 
+      - run:
+          name: Gradle integration Tests
+          command: ./gradlew integration --stacktrace
 
       # The following two commands are just to show which exact versions of docker and docker-compose will be used.
       - run: docker version
@@ -94,7 +109,9 @@ jobs:
       # Put in docker-compose up command below:
       # The following docker-compose command will fail without proper secrets.
       # The docker-compose command will also include the docker-compose.override.yaml file
-      - run: docker-compose up --build --abort-on-container-exit
+      - run: 
+          name: Acceptance Tests
+          command: docker-compose up --build --abort-on-container-exit
 
 
 #      - persist_to_workspace:
@@ -150,16 +167,40 @@ jobs:
               echo "This means tests were not run in the previous build job."
               echo "... so, not uploading any code-coverage reports to CODACY website. "
             fi
+  merge-to-dev:
+    docker:
+      - image: alpine/git
+        entrypoint: /bin/sh
+    steps:
+      - checkout
+      - run: 
+          name: checking for merge conflicts
+          command: |
+            git checkout ${CIRCLE_BRANCH}
+            git checkout circleci-dev # TODO: to be replaced with "develop" later
+            git merge ${CIRCLE_BRANCH} 
+            git push origin circleci-dev # TODO: to be replaced with "develop" later
+            # git branch -d ${CIRCLE_BRANCH}
+
 
 
 workflows:
   version: 2
   build-repo-and-code-coverage:
     jobs:
-      - build-repo:
+      - check-merge-conflicts:
+          filters:
+            branches: 
+              only: feature/circleci-integration
+      - build-test-repo:
+          requires:
+            - check-merge-conflicts
           filters:
             branches:
               only: feature/circleci-integration
-#      - code-coverage:
-#          requires:
-#            - build-repo
+      - code-coverage:
+         requires:
+           - build-test-repo
+      - merge-to-dev:
+         requires:
+           - code-coverage     
