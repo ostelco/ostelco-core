@@ -36,40 +36,41 @@ included.
 
 ## All programming language and configuration files
 
-* Please avoid  commented out / dead code:   If the code is part of
+* _Please avoid  commented out / dead code_:   If the code is part of
   documentation then the code must be preceded
   by a comment that explains how the commented out code is to be
   interpreted, as a template, as something to be uncommented very soon
   in the future or what.   As a general rule no commented-out code
   should be found permanently in our codebase.
 
-* Avoid repetition: Don't say the same thing more than once.  Don't
+* _Avoid repetition_: Don't say the same thing more than once.  Don't
   implement the same thing more than once if it can be avoided.
   It's annoying to be told the same thing more than once.   Don't
-  be more redundant than necessary.    ... catch my drift? :-)
+  be more redundant than necessary.    ... etc. :-)
 
-* Concentrate dependencies as much as possible: Eventually all
+* _Concentrate dependencies as much as practical_: Eventually all
   dependencies will have to be updated.  It makes sense to make
   those updates as simple as possible, by concentrating the
   dependencies in as few places as possible and upgrading them.
 
-* Whatever convension you use with respect to spacing, between
-  lines: Be consistent!   If you separate blocks with two lines,
+* _Whatever convension you use with respect to spacing, between
+  lines_: Be consistent!   If you separate blocks with two lines,
   then always do that.  If you use three then always do that.
   These visual cues are picked up by experienced programmers,
   making them consistently useful is the polite thing to do.
 
-* When something weird needs to be done because of versioning
-  problems, by all means do them, but document them. Also document
-  the date and who made the decision so that it is very obvious for a
-  reader if the workaround is something recent, or if it is something
-  that happened a while ago and might be reconsidered in light of new
-  evidence.  (e.g. "we needed to use version foo.bar instad of
-  foo.latest, since version foo.zot introduces a bug that causes the
-  frobboz to bling.  This decision was made on march 21 2017 by
-  Zaphood.").
+* _When something weird needs to be done because of versioning
+  problems, by all means do them, but document them_: Document what
+  was done, and why.  Also document the date and who made the decision
+  so that it is very obvious for a reader if the workaround is
+  something recent, or if it is something that happened a while ago
+  and might be reconsidered in light of new evidence.  (e.g. "we
+  needed to use version foo.bar instad of foo.latest, since version
+  foo.zot introduces a bug that causes the frobboz to bling.  This
+  decision was made on march 21 2017 by Zaphood.").
 
-* Scripts of all kinds (sh, python, ...) should (at least) have a
+* _State intent of scripts as comment near the beginning of the file_:
+  Scripts of all kinds (sh, python, ...)  should (at least) have a
   paragraph immediately after the #! line that explains the purpose of
   the script, and typically also a typical usecase.
 
