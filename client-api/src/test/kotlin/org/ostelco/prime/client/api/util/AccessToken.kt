@@ -2,8 +2,6 @@ package org.ostelco.prime.client.api.util
 
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
-import io.vavr.collection.Array
-import io.vavr.collection.HashMap
 
 object AccessToken {
 
@@ -12,19 +10,16 @@ object AccessToken {
 
     fun withEmail(email: String): String {
 
-        val audience = Array.of("http://kmmtest", "$namespace/userinfo")
-                .toJavaList()
+        val audience = listOf("http://kmmtest", "$namespace/userinfo")
 
         return withEmail(email, audience)
     }
 
     fun withEmail(email: String, audience: List<String>): String {
 
-        val claims = HashMap
-                .of("$namespace/email", email as Any,
-                        "aud", audience as Any,
-                        "sub", email as Any)
-                .toJavaMap()
+        val claims = mapOf("$namespace/email" to email,
+                        "aud" to audience,
+                        "sub" to email)
 
         return Jwts.builder()
                 .setClaims(claims)

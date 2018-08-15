@@ -1,5 +1,6 @@
 package org.ostelco.prime.handler
 
+import arrow.core.getOrElse
 import org.ostelco.prime.disruptor.EventProducer
 import org.ostelco.prime.logger
 import org.ostelco.prime.module.getResource
@@ -26,7 +27,7 @@ class PurchaseRequestHandler(
 
         val noOfBytes = product.get().properties["noOfBytes"]?.replace("_", "")?.toLong()
 
-        val bundleId = storage.getBundles(subscriberId)?.first()?.id
+        val bundleId = storage.getBundles(subscriberId).map { it?.first()?.id }.getOrElse { null }
 
         if (bundleId != null && noOfBytes != null && noOfBytes > 0) {
 

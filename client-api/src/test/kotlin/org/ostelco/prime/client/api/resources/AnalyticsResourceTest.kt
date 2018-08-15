@@ -1,5 +1,6 @@
 package org.ostelco.prime.client.api.resources
 
+import arrow.core.Either
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.nhaarman.mockito_kotlin.argumentCaptor
@@ -7,7 +8,6 @@ import io.dropwizard.auth.AuthDynamicFeature
 import io.dropwizard.auth.AuthValueFactoryProvider
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter
 import io.dropwizard.testing.junit.ResourceTestRule
-import io.vavr.control.Option
 import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory
 import org.junit.Before
@@ -49,8 +49,7 @@ class AnalyticsResourceTest {
         val arg1 = argumentCaptor<String>()
         val arg2 = argumentCaptor<String>()
 
-        `when`(DAO.reportAnalytics(arg1.capture(), arg2.capture()))
-                .thenReturn(Option.none())
+        `when`(DAO.reportAnalytics(arg1.capture(), arg2.capture())).thenReturn(Either.right(Unit))
 
         val events = """
             |[

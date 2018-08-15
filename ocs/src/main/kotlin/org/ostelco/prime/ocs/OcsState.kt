@@ -21,8 +21,10 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<OcsEvent> {
 
     private val logger by logger()
 
-    internal val msisdnToBundleIdMap = HashMap<String, String>()
-    private val bundleIdToMsisdnMap = HashMap<String, MutableSet<String>>()
+    // this is public for prime:integration tests
+    val msisdnToBundleIdMap = HashMap<String, String>()
+    val bundleIdToMsisdnMap = HashMap<String, MutableSet<String>>()
+
     private val bundleBalanceMap = HashMap<String, Long>()
     private val bucketReservedMap = HashMap<String, Long>()
 
@@ -52,6 +54,7 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<OcsEvent> {
                         return
                     }
                     event.bundleBytes = addDataBundleBytes(bundleId, event.requestedBucketBytes)
+                    event.msisdnToppedUp = bundleIdToMsisdnMap[bundleId]?.toList()
                 }
                 RELEASE_RESERVED_BUCKET -> {
                     val msisdn = event.msisdn

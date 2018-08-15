@@ -4,7 +4,6 @@ import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.testing.ConfigOverride
 import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
-import io.vavr.collection.Array
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.fail
 import org.glassfish.jersey.client.ClientProperties
@@ -25,9 +24,8 @@ class GetUserInfoTest {
 
     private val email = "boaty@internet.org"
 
-    private val audience = Array.of("http://kmmtest",
+    private val audience = listOf("http://kmmtest",
             "http://localhost:${RULE.localPort}/userinfo")
-            .toJavaList()
 
     @Test
     @Throws(Exception::class)

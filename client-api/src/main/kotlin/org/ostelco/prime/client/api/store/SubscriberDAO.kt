@@ -1,7 +1,6 @@
 package org.ostelco.prime.client.api.store
 
-import io.vavr.control.Either
-import io.vavr.control.Option
+import arrow.core.Either
 import org.ostelco.prime.client.api.core.ApiError
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.Person
@@ -34,7 +33,7 @@ interface SubscriberDAO {
 
     fun getProducts(subscriberId: String): Either<ApiError, Collection<Product>>
 
-    fun purchaseProduct(subscriberId: String, sku: String): Option<ApiError>
+    fun purchaseProduct(subscriberId: String, sku: String): Either<ApiError, Unit>
 
     fun getConsents(subscriberId: String): Either<ApiError, Collection<Consent>>
 
@@ -42,7 +41,7 @@ interface SubscriberDAO {
 
     fun rejectConsent(subscriberId: String, consentId: String): Either<ApiError, Consent>
 
-    fun reportAnalytics(subscriberId: String, events: String): Option<ApiError>
+    fun reportAnalytics(subscriberId: String, events: String): Either<ApiError, Unit>
 
     fun storeApplicationToken(msisdn: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken>
 

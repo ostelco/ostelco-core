@@ -26,17 +26,10 @@ class ProductsResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        val result = dao.getProducts(token.name)
-
-        return if (result.isRight) {
-            Response.status(Response.Status.OK)
-                    .entity(asJson(result.right().get()))
-                    .build()
-        } else {
-            Response.status(Response.Status.NOT_FOUND)
-                    .entity(asJson(result.left().get()))
-                    .build()
-        }
+        return dao.getProducts(token.name).fold(
+                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) },
+                { Response.status(Response.Status.OK).entity(asJson(it)) })
+                .build()
     }
 
     @Deprecated("use purchaseProduct")
@@ -44,24 +37,18 @@ class ProductsResource(private val dao: SubscriberDAO) {
     @Path("{sku}")
     @Produces("application/json")
     fun purchaseProductOld(@Auth token: AccessTokenPrincipal?,
-                        @NotNull
-                        @PathParam("sku")
-                        sku: String): Response {
+                           @NotNull
+                           @PathParam("sku")
+                           sku: String): Response {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
 
-        val error = dao.purchaseProduct(token.name, sku)
-
-        return if (error.isEmpty) {
-            Response.status(Response.Status.CREATED)
-                    .build()
-        } else {
-            Response.status(Response.Status.NOT_FOUND)
-                    .entity(asJson(error.get()))
-                    .build()
-        }
+        return dao.purchaseProduct(token.name, sku).fold(
+                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) },
+                { Response.status(Response.Status.CREATED) })
+                .build()
     }
 
     @POST
@@ -76,15 +63,9 @@ class ProductsResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        val error = dao.purchaseProduct(token.name, sku)
-
-        return if (error.isEmpty) {
-            Response.status(Response.Status.CREATED)
-                    .build()
-        } else {
-            Response.status(Response.Status.NOT_FOUND)
-                    .entity(asJson(error.get()))
-                    .build()
-        }
+        return dao.purchaseProduct(token.name, sku).fold(
+                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) },
+                { Response.status(Response.Status.CREATED) })
+                .build()
     }
 }

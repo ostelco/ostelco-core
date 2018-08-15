@@ -178,7 +178,7 @@ class PurchaseTest {
 
         client.buyProduct("1GB_249NOK")
 
-        Thread.sleep(100) // wait for 100 ms for balance to be updated in db
+        Thread.sleep(200) // wait for 200 ms for balance to be updated in db
 
         val balanceAfter = client.subscriptionStatus.remaining
 

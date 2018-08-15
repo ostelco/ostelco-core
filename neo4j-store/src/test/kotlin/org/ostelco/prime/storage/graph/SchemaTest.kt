@@ -14,6 +14,7 @@ import org.ostelco.prime.model.HasId
 import org.ostelco.prime.storage.graph.Relation.REFERRED
 import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
+import kotlin.test.fail
 
 class SchemaTest {
 
@@ -98,7 +99,9 @@ class SchemaTest {
             relationStore.create(a, b, transaction)
 
             // get 'b' from 'a'
-            assertEquals(listOf(b), fromEntityStore.getRelated(aId, relation, transaction))
+            fromEntityStore.getRelated(aId, relation, transaction).bimap(
+                    { fail(it.message) },
+                    { assertEquals(listOf(b), it) })
         }
     }
 
@@ -139,11 +142,47 @@ class SchemaTest {
             relationStore.create(a, r, b, transaction)
 
             // get 'b' from 'a'
-            assertEquals(listOf(b), fromEntityStore.getRelated(aId, relation, transaction))
+            fromEntityStore.getRelated(aId, relation, transaction).fold(
+                    { fail(it.message) },
+                    { assertEquals(listOf(b), it) })
 
             // get 'r' from 'a'
-            assertEquals(listOf(r), fromEntityStore.getRelations(aId, relation, transaction))
+            fromEntityStore.getRelations(aId, relation, transaction).fold(
+                    { fail(it.message) },
+                    { assertEquals(listOf(r), it) })
         }
+    }
+
+    @Test
+    fun `test fail to create relation due to missing node`() {
+        val either = writeTransaction {
+            val aId = "a_id"
+            val bId = "b_id"
+
+            val fromEntity = EntityType(A::class.java)
+            val fromEntityStore = EntityStore(fromEntity)
+
+            val toEntity = EntityType(B::class.java)
+            val toEntityStore = EntityStore(toEntity)
+
+            val relation = RelationType(REFERRED, fromEntity, toEntity, Void::class.java)
+            val relationStore = RelationStore(relation)
+
+            // create node
+            val b = B()
+            b.id = bId
+            b.field1 = "b's value1"
+            b.field2 = "b's value2"
+
+            toEntityStore.create(b, transaction)
+
+            // create relation
+            relationStore.create(aId, bId, transaction)
+        }
+
+        either.fold(
+                { assertEquals("Failed to create REFERRED - a_id -> b_id", it.message) },
+                { fail("Did not received error while creating relation for missing node") })
     }
 
     @Test
@@ -160,8 +199,8 @@ class SchemaTest {
                 .file("src/test/resources/docker-compose.yaml")
                 .waitingForService("neo4j", HealthChecks.toHaveAllPortsOpen())
                 .waitingForService("neo4j",
-                        HealthChecks.toRespond2xxOverHttp(7474) {
-                            port -> port.inFormat("http://\$HOST:\$EXTERNAL_PORT/browser")
+                        HealthChecks.toRespond2xxOverHttp(7474) { port ->
+                            port.inFormat("http://\$HOST:\$EXTERNAL_PORT/browser")
                         },
                         Duration.standardSeconds(10L))
                 .build()
@@ -171,6 +210,7 @@ class SchemaTest {
         fun start() {
             ConfigRegistry.config = Config()
             ConfigRegistry.config.host = "0.0.0.0"
+            ConfigRegistry.config.protocol = "bolt"
             Neo4jClient.start()
         }
 

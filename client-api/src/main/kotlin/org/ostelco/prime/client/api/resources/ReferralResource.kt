@@ -15,21 +15,13 @@ class ReferralResource(private val dao: SubscriberDAO) {
     @Produces("application/json")
     fun getReferrals(@Auth token: AccessTokenPrincipal?): Response {
         if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
+            return Response.status(Response.Status.UNAUTHORIZED).build()
         }
 
-        val result = dao.getReferrals(token.name)
-
-        return if (result.isRight) {
-            Response.status(Response.Status.OK)
-                    .entity(asJson(result.right().get()))
-                    .build()
-        } else {
-            Response.status(Response.Status.NOT_FOUND)
-                    .entity(asJson(result.left().get()))
-                    .build()
-        }
+        return dao.getReferrals(token.name).fold(
+                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) },
+                { Response.status(Response.Status.OK).entity(it) })
+                .build()
     }
 
     @GET
@@ -37,20 +29,12 @@ class ReferralResource(private val dao: SubscriberDAO) {
     @Produces("application/json")
     fun getReferredBy(@Auth token: AccessTokenPrincipal?): Response {
         if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
+            return Response.status(Response.Status.UNAUTHORIZED).build()
         }
 
-        val result = dao.getReferredBy(token.name)
-
-        return if (result.isRight) {
-            Response.status(Response.Status.OK)
-                    .entity(asJson(result.right().get()))
-                    .build()
-        } else {
-            Response.status(Response.Status.NOT_FOUND)
-                    .entity(asJson(result.left().get()))
-                    .build()
-        }
+        return dao.getReferredBy(token.name).fold(
+                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) },
+                { Response.status(Response.Status.OK).entity(it) })
+                .build()
     }
 }

@@ -1,7 +1,7 @@
 package org.ostelco.prime.client.api.store
 
-import io.vavr.control.Either
-import io.vavr.control.Option
+import arrow.core.Either
+import arrow.core.flatMap
 import org.ostelco.prime.client.api.core.ApiError
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.Person
@@ -15,7 +15,6 @@ import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.ocs.OcsSubscriberService
 import org.ostelco.prime.storage.ClientDataSource
 import java.time.Instant
-import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -30,9 +29,9 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
 
     override fun getProfile(subscriberId: String): Either<ApiError, Subscriber> {
         return try {
-            storage.getSubscriber(subscriberId)
-                    .fold({ Either.left<ApiError, Subscriber>(ApiError("Incomplete profile description")) },
-                            { Either.right<ApiError, Subscriber>(it) })
+            storage.getSubscriber(subscriberId).mapLeft {
+                        ApiError("Incomplete profile description. ${it.message}")
+                    }
         } catch (e: Exception) {
             logger.error("Failed to fetch profile", e)
             Either.left(ApiError("Failed to fetch profile"))
@@ -46,13 +45,13 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         }
         try {
             profile.referralId = profile.email
-            storage.addSubscriber(profile, referredBy)
+            return storage.addSubscriber(profile, referredBy)
+                    .mapLeft { ApiError("Failed to create profile. ${it.message}") }
+                    .flatMap { getProfile(subscriberId) }
         } catch (e: Exception) {
             logger.error("Failed to create profile", e)
             return Either.left(ApiError("Failed to create profile"))
         }
-
-        return getProfile(subscriberId)
     }
 
     override fun storeApplicationToken(msisdn: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken> {
@@ -73,7 +72,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
     private fun getNotificationToken(msisdn: String, applicationId: String): Either<ApiError, ApplicationToken> {
         try {
             return storage.getNotificationToken(msisdn, applicationId)
-                    ?.let { Either.right<ApiError, ApplicationToken>(it) }
+                    ?.let { Either.right(it) }
                     ?: return Either.left(ApiError("Failed to get ApplicationToken"))
         } catch (e: Exception) {
             logger.error("Failed to get ApplicationToken", e)
@@ -98,12 +97,15 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
 
     override fun getSubscriptionStatus(subscriberId: String): Either<ApiError, SubscriptionStatus> {
         try {
-            val balance = storage.getBundles(subscriberId)?.first()?.balance
-                    ?: return Either.left(ApiError("No subscription data found"))
-            val purchaseRecords = storage.getPurchaseRecords(subscriberId)
-            val subscriptionStatus = SubscriptionStatus(
-                    balance, ArrayList(purchaseRecords))
-            return Either.right(subscriptionStatus)
+            return storage.getBundles(subscriberId)
+                    .map { bundles -> bundles?.first()?.balance ?: 0 }
+                    .map { balance ->
+                        storage.getPurchaseRecords(subscriberId)
+                                .map { purchaseRecords -> SubscriptionStatus(balance, purchaseRecords.toList()) }
+                                .mapLeft { ApiError(it.message) }
+                    }
+                    .mapLeft { ApiError(it.message) }
+                    .flatMap { it }
         } catch (e: Exception) {
             logger.error("Failed to get balance", e)
             return Either.left(ApiError("Failed to get balance"))
@@ -112,19 +114,20 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
 
     override fun getSubscriptions(subscriberId: String): Either<ApiError, Collection<Subscription>> {
         try {
-            val subscription = storage.getSubscriptions(subscriberId)
-                    ?: return Either.left(ApiError("No subscription data found"))
-            return Either.right(subscription)
+            return storage.getSubscriptions(subscriberId).mapLeft {
+                ApiError("Failed to get subscriptions. ${it.message}")
+            }
         } catch (e: Exception) {
-            logger.error("Failed to get balance", e)
-            return Either.left(ApiError("Failed to get balance"))
+            logger.error("Failed to get subscriptions", e)
+            return Either.left(ApiError("Failed to get subscriptions"))
         }
     }
 
     override fun getPurchaseHistory(subscriberId: String): Either<ApiError, Collection<PurchaseRecord>> {
         return try {
-            val purchaseRecords = storage.getPurchaseRecords(subscriberId)
-            Either.right(purchaseRecords.toList())
+            return storage.getPurchaseRecords(subscriberId).bimap(
+                    { ApiError("Failed to get purchase history. ${it.message}") },
+                    { it.toList() })
         } catch (e: Exception) {
             logger.error("Failed to get purchase history", e)
             Either.left(ApiError("Failed to get purchase history"))
@@ -132,28 +135,24 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
     }
 
     override fun getMsisdn(subscriberId: String): Either<ApiError, String> {
-        var msisdn: String? = null
         try {
-            msisdn = storage.getMsisdn(subscriberId)
+            return storage.getMsisdn(subscriberId).mapLeft {
+                ApiError("Did not find msisdn for this subscription. ${it.message}")
+            }
         } catch (e: Exception) {
             logger.error("Did not find msisdn for this subscription", e)
-        }
-
-        if (msisdn == null) {
             return Either.left(ApiError("Did not find subscription"))
         }
-        return Either.right(msisdn)
     }
 
     override fun getProducts(subscriberId: String): Either<ApiError, Collection<Product>> {
         try {
-            val products = storage.getProducts(subscriberId)
-            if (products.isEmpty()) {
-                return Either.left(ApiError("No products found"))
-            }
-            products.forEach { key, value -> value.sku = key }
-            return Either.right(products.values)
-
+            return storage.getProducts(subscriberId).bimap(
+                    { ApiError(it.message) },
+                    { products ->
+                        products.forEach { key, value -> value.sku = key }
+                        products.values
+                    })
         } catch (e: Exception) {
             logger.error("Failed to get Products", e)
             return Either.left(ApiError("Failed to get Products"))
@@ -161,11 +160,11 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
 
     }
 
-    override fun purchaseProduct(subscriberId: String, sku: String): Option<ApiError> =
+    override fun purchaseProduct(subscriberId: String, sku: String): Either<ApiError, Unit> =
             storage.getProduct(subscriberId, sku).fold(
                     {
                         logger.error("Did not find product: sku = $sku")
-                        Option.of(ApiError("Product unavailable"))
+                        Either.left(ApiError("Product unavailable"))
                     },
                     { product ->
                         product.sku = sku
@@ -173,20 +172,22 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                                 product = product,
                                 timestamp = Instant.now().toEpochMilli())
                         storage.addPurchaseRecord(subscriberId, purchaseRecord)
-                                .swap()
-                                .toOption()
-                                .map {
+                                .mapLeft {
                                     logger.error("Failed to save purchase record")
-                                    Option.of(ApiError("Failed to save purchase record"))
+                                    ApiError("Failed to save purchase record")
                                 }
-                        ocsSubscriberService.topup(subscriberId, sku)
-                        Option.none()
+                                .flatMap {
+                                    ocsSubscriberService.topup(subscriberId, sku)
+                                    Either.right(Unit)
+                                }
                     })
 
 
     override fun getReferrals(subscriberId: String): Either<ApiError, Collection<Person>> {
         return try {
-            Either.right(storage.getReferrals(subscriberId).map { Person(it) })
+            storage.getReferrals(subscriberId).bimap(
+                    { ApiError("Failed to get referral list. ${it.message}") },
+                    { list -> list.map { Person(it) } })
         } catch (e: Exception) {
             logger.error("Failed to get referral list", e)
             Either.left(ApiError("Failed to get referral list"))
@@ -195,7 +196,9 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
 
     override fun getReferredBy(subscriberId: String): Either<ApiError, Person> {
         return try {
-            Either.right(Person(storage.getReferredBy(subscriberId)))
+            storage.getReferredBy(subscriberId).bimap(
+                    { ApiError("Failed to get referred-by. ${it.message}") },
+                    { Person(name = it) })
         } catch (e: Exception) {
             logger.error("Failed to get referred-by", e)
             Either.left(ApiError("Failed to get referred-by"))
@@ -206,9 +209,9 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         consentMap.putIfAbsent(subscriberId, ConcurrentHashMap())
         consentMap[subscriberId]!!.putIfAbsent("privacy", false)
         return Either.right(listOf(Consent(
-                "privacy",
-                "Grant permission to process personal data",
-                consentMap[subscriberId]?.get("privacy") ?: false)))
+                consentId = "privacy",
+                description = "Grant permission to process personal data",
+                accepted = consentMap[subscriberId]?.get("privacy") ?: false)))
     }
 
     override fun acceptConsent(subscriberId: String, consentId: String): Either<ApiError, Consent> {
@@ -223,7 +226,5 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         return Either.right(Consent(consentId, "Grant permission to process personal data", false))
     }
 
-    override fun reportAnalytics(subscriberId: String, events: String): Option<ApiError> {
-        return Option.none()
-    }
+    override fun reportAnalytics(subscriberId: String, events: String): Either<ApiError, Unit> = Either.right(Unit)
 }

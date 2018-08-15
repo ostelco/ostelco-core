@@ -22,30 +22,19 @@ class ApplicationTokenResource(private val dao: SubscriberDAO) {
     @Produces("application/json")
     @Consumes("application/json")
     fun storeApplicationToken(@Auth authToken: AccessTokenPrincipal?,
-                      @NotNull applicationToken: ApplicationToken): Response {
+                              @NotNull applicationToken: ApplicationToken): Response {
         if (authToken == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
 
-        val result = dao.getMsisdn(authToken.name)
-
-        if (result.isRight) {
-            val msisdn = result.right().get()
-            val created = dao.storeApplicationToken(msisdn, applicationToken)
-            if (created.isRight) {
-                return Response.status(Response.Status.CREATED)
-                        .entity(asJson(created.right().get()))
-                        .build()
-            } else {
-                return Response.status(507) // Insufficient Storage
-                        .entity(asJson(created.left().get()))
-                        .build()
-            }
-        } else {
-            return Response.status(Response.Status.NOT_FOUND)
-                    .entity(asJson(result.left().get()))
-                    .build()
-        }
+        return dao.getMsisdn(authToken.name).fold(
+                { Response.status(Response.Status.NOT_FOUND) },
+                { msisdn ->
+                    dao.storeApplicationToken(msisdn, applicationToken).fold(
+                            { Response.status(507).entity(asJson(it)) },  // Insufficient Storage
+                            { Response.status(Response.Status.CREATED).entity(asJson(it)) })
+                })
+                .build()
     }
 }
