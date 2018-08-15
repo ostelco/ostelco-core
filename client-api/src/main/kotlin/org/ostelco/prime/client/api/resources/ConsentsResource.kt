@@ -28,17 +28,10 @@ class ConsentsResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        val result = dao.getConsents(token.name)
-
-        return if (result.isRight) {
-            Response.status(Response.Status.OK)
-                    .entity(asJson(result.right().get()))
-                    .build()
-        } else {
-            Response.status(Response.Status.NOT_FOUND)
-                    .entity(asJson(result.left().get()))
-                    .build()
-        }
+        return dao.getConsents(token.name).fold(
+                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) },
+                { Response.status(Response.Status.OK).entity(asJson(it)) })
+                .build()
     }
 
     @PUT
@@ -60,14 +53,9 @@ class ConsentsResource(private val dao: SubscriberDAO) {
             dao.rejectConsent(token.name, consentId)
         }
 
-        return if (result.isRight) {
-            Response.status(Response.Status.OK)
-                    .entity(asJson(result.right().get()))
-                    .build()
-        } else {
-            Response.status(Response.Status.NOT_FOUND)
-                    .entity(asJson(result.left().get()))
-                    .build()
-        }
+        return result.fold(
+                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) },
+                { Response.status(Response.Status.OK).entity(asJson(it)) })
+                .build()
     }
 }

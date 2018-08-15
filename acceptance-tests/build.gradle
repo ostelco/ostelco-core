@@ -1,5 +1,5 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.51"
+  id "org.jetbrains.kotlin.jvm" version "1.2.60"
   id "application"
   id "com.github.johnrengelman.shadow" version "2.0.4"
 }
@@ -10,7 +10,7 @@ dependencies {
     exclude module: 'kotlin-stdlib-common'
   }
 
-  implementation project(":prime-api")
+  implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
   implementation project(":prime-client-api")
   implementation project(':diameter-test')
 

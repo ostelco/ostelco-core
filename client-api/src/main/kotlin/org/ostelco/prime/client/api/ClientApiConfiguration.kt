@@ -26,7 +26,7 @@ class ClientApiConfiguration {
 
     @NotNull
     var pseudonymEndpoint: String? = null
-        // TODO make @NotBlank or @NotEmpty work again
+        // TODO vihang: make @NotBlank or @NotEmpty work again
         set(value) {
             if (value == null || value.isBlank()) {
                 throw Error("modules.type['api'].config.pseudonymEndpoint is blank")

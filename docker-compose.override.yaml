@@ -29,10 +29,7 @@ services:
 
   esp:
     container_name: esp
-    image: gcr.io/endpoints-release/endpoints-runtime:1
-    volumes:
-    - "./prime/config:/esp"
-    - "./certs/ocs.ostelco.org:/etc/nginx/ssl"
+    build: esp
     command: >
       --service=ocs.ostelco.org
       --rollout_strategy=managed

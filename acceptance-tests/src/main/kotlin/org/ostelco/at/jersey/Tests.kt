@@ -1,49 +1,181 @@
 package org.ostelco.at.jersey
 
 import org.junit.Test
+import org.ostelco.at.common.createProfile
+import org.ostelco.at.common.createSubscription
 import org.ostelco.at.common.expectedProducts
+import org.ostelco.at.common.logger
+import org.ostelco.at.common.randomInt
 import org.ostelco.prime.client.model.ActivePseudonyms
+import org.ostelco.prime.client.model.ApplicationToken
 import org.ostelco.prime.client.model.Consent
+import org.ostelco.prime.client.model.Person
+import org.ostelco.prime.client.model.Price
 import org.ostelco.prime.client.model.Product
 import org.ostelco.prime.client.model.Profile
 import org.ostelco.prime.client.model.PurchaseRecordList
+import org.ostelco.prime.client.model.Subscription
 import org.ostelco.prime.client.model.SubscriptionStatus
-import org.ostelco.prime.logger
-import org.ostelco.prime.model.ApplicationToken
-import org.ostelco.prime.model.Subscription
 import java.time.Instant
 import java.util.*
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class GetBalanceTest {
+class ProfileTest {
+
+    @Test
+    fun `jersey test - GET and PUT profile`() {
+
+        val email = "profile-${randomInt()}@test.com"
+
+        val createProfile = Profile()
+                .email(email)
+                .name("Test Profile User")
+                .address("")
+                .city("")
+                .country("")
+                .postCode("")
+                .referralId("")
+
+        val createdProfile: Profile = post {
+            path = "/profile"
+            body = createProfile
+            subscriberId = email
+        }
+
+        assertEquals(createProfile.email, createdProfile.email, "Incorrect 'email' in created profile")
+        assertEquals(createProfile.name, createdProfile.name, "Incorrect 'name' in created profile")
+        assertEquals(createProfile.email, createdProfile.referralId, "Incorrect 'referralId' in created profile")
+
+        val profile: Profile = get {
+            path = "/profile"
+            subscriberId = email
+        }
+
+        assertEquals(email, profile.email, "Incorrect 'email' in fetched profile")
+        assertEquals(createProfile.name, profile.name, "Incorrect 'name' in fetched profile")
+        assertEquals(email, profile.referralId, "Incorrect 'referralId' in fetched profile")
+
+        profile
+                .address("Some place")
+                .postCode("418")
+                .city("Udacity")
+                .country("Online")
+
+        val updatedProfile: Profile = put {
+            path = "/profile"
+            body = profile
+            subscriberId = email
+        }
+
+        assertEquals(email, updatedProfile.email, "Incorrect 'email' in response after updating profile")
+        assertEquals(createProfile.name, updatedProfile.name, "Incorrect 'name' in response after updating profile")
+        assertEquals("Some place", updatedProfile.address, "Incorrect 'address' in response after updating profile")
+        assertEquals("418", updatedProfile.postCode, "Incorrect 'postcode' in response after updating profile")
+        assertEquals("Udacity", updatedProfile.city, "Incorrect 'city' in response after updating profile")
+        assertEquals("Online", updatedProfile.country, "Incorrect 'country' in response after updating profile")
+
+        updatedProfile
+                .address("")
+                .postCode("")
+                .city("")
+                .country("")
+
+        val clearedProfile: Profile = put {
+            path = "/profile"
+            body = updatedProfile
+            subscriberId = email
+        }
+
+        assertEquals(email, clearedProfile.email, "Incorrect 'email' in response after clearing profile")
+        assertEquals(createProfile.name, clearedProfile.name, "Incorrect 'name' in response after clearing profile")
+        assertEquals("", clearedProfile.address, "Incorrect 'address' in response after clearing profile")
+        assertEquals("", clearedProfile.postCode, "Incorrect 'postcode' in response after clearing profile")
+        assertEquals("", clearedProfile.city, "Incorrect 'city' in response after clearing profile")
+        assertEquals("", clearedProfile.country, "Incorrect 'country' in response after clearing profile")
+    }
+
+    @Test
+    fun `jersey test - GET application token`() {
+
+        val email = "token-${randomInt()}@test.com"
+        createProfile("Test Token User", email)
+
+        createSubscription(email)
+
+        val token = UUID.randomUUID().toString()
+        val applicationId = "testApplicationId"
+        val tokenType = "FCM"
+
+        val testToken = ApplicationToken()
+                .token(token)
+                .applicationID(applicationId)
+                .tokenType(tokenType)
+
+        val reply: ApplicationToken = post {
+            path = "/applicationtoken"
+            body = testToken
+            subscriberId = email
+        }
+
+        assertEquals(token, reply.token, "Incorrect token in reply after posting new token")
+        assertEquals(applicationId, reply.applicationID, "Incorrect applicationId in reply after posting new token")
+        assertEquals(tokenType, reply.tokenType, "Incorrect tokenType in reply after posting new token")
+    }
+}
+
+class GetSubscriptions {
+
+    @Test
+    fun `jersey test - GET subscriptions`() {
+
+        val email = "subs-${randomInt()}@test.com"
+        createProfile(name = "Test Subscriptions User", email = email)
+        val msisdn = createSubscription(email)
+
+        val subscriptions: Collection<Subscription> = get {
+            path = "/subscriptions"
+            subscriberId = email
+        }
+
+        assertEquals(listOf(msisdn), subscriptions.map { it.msisdn })
+    }
+}
+
+class GetSubscriptionStatusTest {
 
     private val logger by logger()
 
     @Test
-    fun testGetBalance() {
+    fun `jersey test - GET subscription status`() {
 
-        val subscriptions: Collection<Subscription> = get {
-            path = "/subscriptions"
-        }
-
-        subscriptions.forEach { logger.info("Balance: ${it.balance}") }
-    }
-
-    @Test
-    fun testGetBalanceUsingStatus() {
+        val email = "balance-${randomInt()}@test.com"
+        createProfile(name = "Test Balance User", email = email)
 
         val subscriptionStatus: SubscriptionStatus = get {
             path = "/subscription/status"
+            subscriberId = email
         }
 
         logger.info("Balance: ${subscriptionStatus.remaining}")
-        subscriptionStatus.purchaseRecords.forEach {
-            assertEquals("4747900184", it.msisdn, "Incorrect 'MSISDN' in purchase record")
-            assertEquals(expectedProducts().first(), it.product, "Incorrect 'Product' in purchase record")
-        }
+
+        val freeProduct = Product()
+                .sku("100MB_FREE_ON_JOINING")
+                .price(Price().apply {
+                    this.amount = 0
+                    this.currency = "NOK"
+                })
+                .properties(mapOf("noOfBytes" to "100_000_000"))
+                .presentation(emptyMap<String, String>())
+
+        val purchaseRecords = subscriptionStatus.purchaseRecords
+        purchaseRecords.sortBy { it.timestamp }
+
+        assertEquals(listOf(freeProduct), purchaseRecords.map { it.product }, "Incorrect first 'Product' in purchase record")
     }
 }
 
@@ -52,27 +184,37 @@ class GetPseudonymsTest {
     private val logger by logger()
 
     @Test
-    fun testGetActivePseudonyms() {
+    fun `jersey test - GET active pseudonyms`() {
+
+        val email = "pseu-${randomInt()}@test.com"
+        createProfile(name = "Test Pseudonyms User", email = email)
+
+        createSubscription(email)
 
         val activePseudonyms: ActivePseudonyms = get {
             path = "/subscription/activePseudonyms"
+            subscriberId = email
         }
 
         logger.info("Current: ${activePseudonyms.current.pseudonym}")
         logger.info("Next: ${activePseudonyms.next.pseudonym}")
-        assertNotNull(activePseudonyms.current.pseudonym,"Empty current pseudonym")
-        assertNotNull(activePseudonyms.next.pseudonym,"Empty next pseudonym")
-        assertEquals(activePseudonyms.current.end+1, activePseudonyms.next.start, "The pseudonyms are not in order")
+        assertNotNull(activePseudonyms.current.pseudonym, "Empty current pseudonym")
+        assertNotNull(activePseudonyms.next.pseudonym, "Empty next pseudonym")
+        assertEquals(activePseudonyms.current.end + 1, activePseudonyms.next.start, "The pseudonyms are not in order")
     }
 }
 
 class GetProductsTest {
 
     @Test
-    fun testGetProducts() {
+    fun `jersey test - GET products`() {
+
+        val email = "products-${randomInt()}@test.com"
+        createProfile(name = "Test Products User", email = email)
 
         val products: List<Product> = get {
             path = "/products"
+            subscriberId = email
         }
 
         assertEquals(expectedProducts().toSet(), products.toSet(), "Incorrect 'Products' fetched")
@@ -82,32 +224,43 @@ class GetProductsTest {
 class PurchaseTest {
 
     @Test
-    fun testPurchase() {
+    fun `jersey test - POST products purchase`() {
 
-//        val subscriptionStatusBefore: SubscriptionStatus = get {
-//            path = "/subscription/status"
-//        }
-//        val balanceBefore = subscriptionStatusBefore.remaining
+        val email = "purchase-${randomInt()}@test.com"
+        createProfile(name = "Test Purchase User", email = email)
+
+        val subscriptionStatusBefore: SubscriptionStatus = get {
+            path = "/subscription/status"
+            subscriberId = email
+        }
+        val balanceBefore = subscriptionStatusBefore.remaining
 
         val productSku = "1GB_249NOK"
 
         post<String> {
             path = "/products/$productSku/purchase"
+            subscriberId = email
         }
+
+        Thread.sleep(100) // wait for 100 ms for balance to be updated in db
 
         val subscriptionStatusAfter: SubscriptionStatus = get {
             path = "/subscription/status"
+            subscriberId = email
         }
-        // TODO Test to check updated balance after purchase is not working
-//        val balanceAfter = subscriptionStatusAfter.remaining
-//        assertEquals(1L*1024*124*1024, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
-        assert(Instant.now().toEpochMilli() - subscriptionStatusAfter.purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
+        val balanceAfter = subscriptionStatusAfter.remaining
+
+        assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
 
         val purchaseRecords: PurchaseRecordList = get {
             path = "/purchases"
+            subscriberId = email
         }
 
+        purchaseRecords.sortBy { it.timestamp }
+
         assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
+        assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
     }
 }
 
@@ -116,9 +269,13 @@ class AnalyticsTest {
     @Test
     fun testReportEvent() {
 
+        val email = "analytics-${randomInt()}@test.com"
+        createProfile(name = "Test Analytics User", email = email)
+
         post<String> {
             path = "/analytics"
             body = "event"
+            subscriberId = email
         }
     }
 }
@@ -128,94 +285,151 @@ class ConsentTest {
     private val consentId = "privacy"
 
     @Test
-    fun testConsent() {
+    fun `jersey test - GET and PUT consent`() {
+
+        val email = "consent-${randomInt()}@test.com"
+        createProfile(name = "Test Consent User", email = email)
 
         val defaultConsent: List<Consent> = get {
             path = "/consents"
+            subscriberId = email
         }
+
         assertEquals(1, defaultConsent.size, "Incorrect number of consents fetched")
         assertEquals(consentId, defaultConsent[0].consentId, "Incorrect 'consent id' in fetched consent")
 
         val acceptedConsent: Consent = put {
             path = "/consents/$consentId"
+            subscriberId = email
         }
 
         assertEquals(consentId, acceptedConsent.consentId, "Incorrect 'consent id' in response after accepting consent")
-        assertTrue(acceptedConsent.isAccepted ?: false, "Accepted consent not reflected in response after accepting consent")
+        assertTrue(acceptedConsent.isAccepted
+                ?: false, "Accepted consent not reflected in response after accepting consent")
 
         val rejectedConsent: Consent = put {
             path = "/consents/$consentId"
             queryParams = mapOf("accepted" to "false")
+            subscriberId = email
         }
 
         assertEquals(consentId, rejectedConsent.consentId, "Incorrect 'consent id' in response after rejecting consent")
-        assertFalse(rejectedConsent.isAccepted ?: true, "Accepted consent not reflected in response after rejecting consent")
+        assertFalse(rejectedConsent.isAccepted
+                ?: true, "Accepted consent not reflected in response after rejecting consent")
     }
 }
 
-class ProfileTest {
+class ReferralTest {
 
     @Test
-    fun testProfile() {
+    fun `jersey test - POST profile with invalid referred by`() {
 
-        val profile: Profile = get {
-            path = "/profile"
+        val email = "referred_by_invalid-${randomInt()}@test.com"
+
+        val invalid = "invalid_referrer@test.com"
+
+        val profile = Profile()
+                .email(email)
+                .name("Test Referral Second User")
+                .address("")
+                .city("")
+                .country("")
+                .postCode("")
+                .referralId("")
+
+        val failedToCreate = assertFails {
+            post<Profile> {
+                path = "/profile"
+                body = profile
+                subscriberId = email
+                queryParams = mapOf("referred_by" to invalid)
+            }
         }
 
-        assertEquals("foo@bar.com", profile.email, "Incorrect 'email' in fetched profile")
-        assertEquals("Test User", profile.name, "Incorrect 'name' in fetched profile")
+        assertEquals("""
+{"description":"Incomplete profile description. Subscriber - $invalid not found."} expected:<201> but was:<403>
+        """.trimIndent(), failedToCreate.message)
 
-        profile.address = "Some place"
-        profile.postCode = "418"
-        profile.city = "Udacity"
-        profile.country = "Online"
-
-        val updatedProfile: Profile = put {
-            path = "/profile"
-            body = profile
+        val failedToGet = assertFails {
+            get<Profile> {
+                path = "/profile"
+                subscriberId = email
+            }
         }
 
-        assertEquals("foo@bar.com", updatedProfile.email, "Incorrect 'email' in response after updating profile")
-        assertEquals("Test User", updatedProfile.name, "Incorrect 'name' in response after updating profile")
-        assertEquals("Some place", updatedProfile.address, "Incorrect 'address' in response after updating profile")
-        assertEquals("418", updatedProfile.postCode, "Incorrect 'postcode' in response after updating profile")
-        assertEquals("Udacity", updatedProfile.city, "Incorrect 'city' in response after updating profile")
-        assertEquals("Online", updatedProfile.country, "Incorrect 'country' in response after updating profile")
-
-        updatedProfile.address = ""
-        updatedProfile.postCode = ""
-        updatedProfile.city = ""
-        updatedProfile.country = ""
-
-        val clearedProfile: Profile = put {
-            path = "/profile"
-            body = updatedProfile
-        }
-
-        assertEquals("foo@bar.com", clearedProfile.email, "Incorrect 'email' in response after clearing profile")
-        assertEquals("Test User", clearedProfile.name, "Incorrect 'name' in response after clearing profile")
-        assertEquals("", clearedProfile.address, "Incorrect 'address' in response after clearing profile")
-        assertEquals("", clearedProfile.postCode, "Incorrect 'postcode' in response after clearing profile")
-        assertEquals("", clearedProfile.city, "Incorrect 'city' in response after clearing profile")
-        assertEquals("", clearedProfile.country, "Incorrect 'country' in response after clearing profile")
+        assertEquals("""
+{"description":"Incomplete profile description. Subscriber - $email not found."} expected:<200> but was:<404>
+        """.trimIndent(), failedToGet.message)
     }
 
     @Test
-    fun testApplicationToken() {
+    fun `jersey test - POST profile`() {
 
-        val token = UUID.randomUUID().toString()
-        val applicationId = "testApplicationId"
-        val tokenType = "FCM"
+        val firstEmail = "referral_first-${randomInt()}@test.com"
+        createProfile(name = "Test Referral First User", email = firstEmail)
 
-        val testToken = ApplicationToken(token, applicationId, tokenType)
+        val secondEmail = "referral_second-${randomInt()}@test.com"
 
-        val reply: ApplicationToken = post {
-            path = "/applicationtoken"
-            body = testToken
+        val profile = Profile()
+                .email(secondEmail)
+                .name("Test Referral Second User")
+                .address("")
+                .city("")
+                .country("")
+                .postCode("")
+                .referralId("")
+
+        post<Profile> {
+            path = "/profile"
+            body = profile
+            subscriberId = secondEmail
+            queryParams = mapOf("referred_by" to firstEmail)
         }
 
-        assertEquals(token, reply.token, "Incorrect token in reply after posting new token")
-        assertEquals(applicationId, reply.applicationID, "Incorrect applicationId in reply after posting new token")
-        assertEquals(tokenType, reply.tokenType, "Incorrect tokenType in reply after posting new token")
+        // for first
+        val referralsForFirst: List<Person> = get {
+            path = "/referred"
+            subscriberId = firstEmail
+        }
+        assertEquals(listOf("Test Referral Second User"), referralsForFirst.map { it.name })
+
+        val referredByForFirst: Person = get {
+            path = "/referred/by"
+            subscriberId = firstEmail
+        }
+        assertNull(referredByForFirst.name)
+
+        // No need to test SubscriptionStatus for first, since it is already tested in GetSubscriptionStatusTest.
+
+        // for referred_by_foo
+        val referralsForSecond: List<Person> = get {
+            path = "/referred"
+            subscriberId = secondEmail
+        }
+        assertEquals(emptyList(), referralsForSecond.map { it.name })
+
+        val referredByForSecond: Person = get {
+            path = "/referred/by"
+            subscriberId = secondEmail
+        }
+        assertEquals("Test Referral First User", referredByForSecond.name)
+
+        val secondSubscriptionStatus: SubscriptionStatus = get {
+            path = "/subscription/status"
+            subscriberId = secondEmail
+        }
+
+        assertEquals(1_000_000_000, secondSubscriptionStatus.remaining)
+
+        val freeProductForReferred = Product()
+                .sku("1GB_FREE_ON_REFERRED")
+                .price(Price().apply {
+                    this.amount = 0
+                    this.currency = "NOK"
+                })
+                .properties(mapOf("noOfBytes" to "1_000_000_000"))
+                .presentation(emptyMap<String, String>())
+
+        assertEquals(listOf(freeProductForReferred), secondSubscriptionStatus.purchaseRecords.map { it.product })
     }
 }

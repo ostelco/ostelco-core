@@ -15,7 +15,7 @@ class ObjectHandlerTest {
         expectedMap["sku"] = "1GB_249NOK"
         expectedMap["price${separator}amount"] = 24900
         expectedMap["price${separator}currency"]  = "NOK"
-        expectedMap["properties${separator}noOfBytes"]  = "1073741824"
+        expectedMap["properties${separator}noOfBytes"]  = "1_000_000_000"
         expectedMap["presentation${separator}label"]  = "1 GB for 249"
 
         assertEquals(expectedMap, map)
@@ -28,7 +28,7 @@ class ObjectHandlerTest {
         priceMap["currency"]  = "NOK"
         val propertiesMap = LinkedHashMap<String, Any>()
         expectedNestedMap["properties"] = propertiesMap
-        propertiesMap["noOfBytes"]  = "1073741824"
+        propertiesMap["noOfBytes"]  = "1_000_000_000"
         val presentationMap = LinkedHashMap<String, Any>()
         expectedNestedMap["presentation"] = presentationMap
         presentationMap["label"]  = "1 GB for 249"

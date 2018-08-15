@@ -307,10 +307,6 @@ definitions:
       msisdn:
         description: "The MSISDN for which the purchase was made."
         type: string
-      balance:
-        description: "Remaining data"
-        type: integer
-        format: int64
   SubscriptionStatus:
     type: object
     properties:
@@ -330,8 +326,11 @@ definitions:
   PurchaseRecord:
     type: object
     properties:
+      id:
+        description: "Purchase Record ID"
+        type: string
       msisdn:
-        description: "The MSISDN for which the purchase was made."
+        description: "Deprecated: The MSISDN for which the purchase was made."
         type: string
       timestamp:
         description: "The time stamp of the purchase"

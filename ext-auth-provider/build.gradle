@@ -1,12 +1,18 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.51"
+  id "org.jetbrains.kotlin.jvm" version "1.2.60"
   id "application"
   id "com.github.johnrengelman.shadow" version "2.0.4"
 }
 
 dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+
   implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
+  implementation 'io.jsonwebtoken:jjwt:0.9.1'
+
+  testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+  testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
+  testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
 }
 
 shadowJar {

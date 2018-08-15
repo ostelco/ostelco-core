@@ -1,0 +1,5 @@
+pantel-prod.json
+
+# ocs.ostelco.org certs
+nginx.crt
+nginx.key

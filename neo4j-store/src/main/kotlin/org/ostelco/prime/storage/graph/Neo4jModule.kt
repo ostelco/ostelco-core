@@ -11,7 +11,6 @@ import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.Segment
-import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.module.PrimeModule
 import java.net.URI
 import java.util.concurrent.TimeUnit.SECONDS
@@ -37,17 +36,16 @@ class Neo4jModule : PrimeModule {
     }
 }
 
-private fun initDatabase() {
+fun initDatabase() {
     Neo4jStoreSingleton.createProduct(createProduct("1GB_249NOK", 24900))
     Neo4jStoreSingleton.createProduct(createProduct("2GB_299NOK", 29900))
     Neo4jStoreSingleton.createProduct(createProduct("3GB_349NOK", 34900))
     Neo4jStoreSingleton.createProduct(createProduct("5GB_399NOK", 39900))
 
-    Neo4jStoreSingleton.addSubscriber(Subscriber(email = "foo@bar.com", name = "Test User"))
-    Neo4jStoreSingleton.addSubscription("foo@bar.com", "4747900184")
-    Neo4jStoreSingleton.setBalance("4747900184", 1_000_000_000L)
+    Neo4jStoreSingleton.createProduct(Product("100MB_FREE_ON_JOINING", Price(0, "NOK"), mapOf("noOfBytes" to "100_000_000")))
+    Neo4jStoreSingleton.createProduct(Product("1GB_FREE_ON_REFERRED", Price(0, "NOK"), mapOf("noOfBytes" to "1_000_000_000")))
 
-    val segment = Segment(listOf("foo@bar.com"))
+    val segment = Segment()
     segment.id = "all"
     Neo4jStoreSingleton.createSegment(segment)
 
@@ -58,6 +56,7 @@ private fun initDatabase() {
 
 class Config {
     lateinit var host: String
+    lateinit var protocol: String
 }
 
 object ConfigRegistry {
@@ -76,7 +75,7 @@ object Neo4jClient : Managed {
                 .withConnectionTimeout(10, SECONDS)
                 .toConfig()
         driver = GraphDatabase.driver(
-                URI("bolt://${ConfigRegistry.config.host}:7687"),
+                URI("${ConfigRegistry.config.protocol}://${ConfigRegistry.config.host}:7687"),
                 AuthTokens.none(),
                 config) ?: throw Exception("Unable to get Neo4j client driver instance")
     }
@@ -95,7 +94,7 @@ fun createProduct(sku: String, amount: Int): Product {
 
     // This is messy code
     val gbs: Long = "${sku[0]}".toLong()
-    product.properties = mapOf("noOfBytes" to "${gbs * 1024 * 1024 * 1024}")
+    product.properties = mapOf("noOfBytes" to "${gbs}_000_000_000")
     product.presentation = mapOf("label" to "$gbs GB for ${amount / 100}")
 
     return product

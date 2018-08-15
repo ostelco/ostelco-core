@@ -1,7 +1,6 @@
 package org.ostelco.prime.client.api.store
 
-import io.vavr.control.Either
-import io.vavr.control.Option
+import arrow.core.Either
 import org.ostelco.prime.client.api.core.ApiError
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.Person
@@ -17,38 +16,38 @@ import org.ostelco.prime.model.Subscription
  */
 interface SubscriberDAO {
 
-    fun getProfile(subscriptionId: String): Either<ApiError, Subscriber>
+    fun getProfile(subscriberId: String): Either<ApiError, Subscriber>
 
-    fun createProfile(subscriptionId: String, profile: Subscriber, referredBy: String?): Either<ApiError, Subscriber>
+    fun createProfile(subscriberId: String, profile: Subscriber, referredBy: String?): Either<ApiError, Subscriber>
 
-    fun updateProfile(subscriptionId: String, profile: Subscriber): Either<ApiError, Subscriber>
+    fun updateProfile(subscriberId: String, profile: Subscriber): Either<ApiError, Subscriber>
 
     @Deprecated("use getSubscriptions", ReplaceWith("getSubscriptions", "org.ostelco.prime.client.api.model.Subscription"))
-    fun getSubscriptionStatus(subscriptionId: String): Either<ApiError, SubscriptionStatus>
+    fun getSubscriptionStatus(subscriberId: String): Either<ApiError, SubscriptionStatus>
 
-    fun getSubscriptions(subscriptionId: String): Either<ApiError, Collection<Subscription>>
+    fun getSubscriptions(subscriberId: String): Either<ApiError, Collection<Subscription>>
 
-    fun getPurchaseHistory(subscriptionId: String): Either<ApiError, Collection<PurchaseRecord>>
+    fun getPurchaseHistory(subscriberId: String): Either<ApiError, Collection<PurchaseRecord>>
 
-    fun getMsisdn(subscriptionId: String): Either<ApiError, String>
+    fun getMsisdn(subscriberId: String): Either<ApiError, String>
 
-    fun getProducts(subscriptionId: String): Either<ApiError, Collection<Product>>
+    fun getProducts(subscriberId: String): Either<ApiError, Collection<Product>>
 
-    fun purchaseProduct(subscriptionId: String, sku: String): Option<ApiError>
+    fun purchaseProduct(subscriberId: String, sku: String): Either<ApiError, Unit>
 
-    fun getConsents(subscriptionId: String): Either<ApiError, Collection<Consent>>
+    fun getConsents(subscriberId: String): Either<ApiError, Collection<Consent>>
 
-    fun acceptConsent(subscriptionId: String, consentId: String): Either<ApiError, Consent>
+    fun acceptConsent(subscriberId: String, consentId: String): Either<ApiError, Consent>
 
-    fun rejectConsent(subscriptionId: String, consentId: String): Either<ApiError, Consent>
+    fun rejectConsent(subscriberId: String, consentId: String): Either<ApiError, Consent>
 
-    fun reportAnalytics(subscriptionId: String, events: String): Option<ApiError>
+    fun reportAnalytics(subscriberId: String, events: String): Either<ApiError, Unit>
 
     fun storeApplicationToken(msisdn: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken>
 
-    fun getReferrals(name: String): Either<ApiError, Collection<Person>>
+    fun getReferrals(subscriberId: String): Either<ApiError, Collection<Person>>
 
-    fun getReferredBy(name: String): Either<ApiError, Person>
+    fun getReferredBy(subscriberId: String): Either<ApiError, Person>
 
     companion object {
 
