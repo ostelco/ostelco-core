@@ -22,36 +22,36 @@ jobs:
       
       # - run: ls -la 
 
-      - run:
-          name: Create pantel-prod.json file using the PANTEL_SECRETS_FILE env var.
-          command: |
-            echo; echo "======> Creating pantel-prod.json file, using the env variable PANTEL_SECRETS_FILE"
-            for LOCATION in $(find . -name .gitignore  -exec grep pantel-prod.json  '{}' '+' ); do 
-              DIR_NAME=$(dirname $LOCATION)
-              echo "Creating secrets file: ${DIR_NAME}/pantel-prod.json ..."
-              echo ${PANTEL_SECRETS_FILE} | base64 -d >  ${DIR_NAME}/pantel-prod.json
-              ls -l ${DIR_NAME}/pantel-prod.json 
-            done
-            echo ''
+      # - run:
+      #     name: Create pantel-prod.json file using the PANTEL_SECRETS_FILE env var.
+      #     command: |
+      #       echo; echo "======> Creating pantel-prod.json file, using the env variable PANTEL_SECRETS_FILE"
+      #       for LOCATION in $(find . -name .gitignore  -exec grep pantel-prod.json  '{}' '+' ); do 
+      #         DIR_NAME=$(dirname $LOCATION)
+      #         echo "Creating secrets file: ${DIR_NAME}/pantel-prod.json ..."
+      #         echo ${PANTEL_SECRETS_FILE} | base64 -d >  ${DIR_NAME}/pantel-prod.json
+      #         ls -l ${DIR_NAME}/pantel-prod.json 
+      #       done
+      #       echo ''
 
 
-      - run:
-          name: Generate self signed certs for ocs.ostelco.org .
-          command: scripts/generate-selfsigned-ssl-certs.sh   ocs.ostelco.org 
+      # - run:
+      #     name: Generate self signed certs for ocs.ostelco.org .
+      #     command: scripts/generate-selfsigned-ssl-certs.sh   ocs.ostelco.org 
 
           
       # docker install instructions here
 
-      - run:
-          name: Install latest Docker-Compose 
-          command: |
-            curl -L -o ~/docker-compose \
-              https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m`
-            if test $(which sudo); then echo "sudo found"; SUDO='sudo'; else echo "sudo not found";  SUDO=''; fi
-            ${SUDO} chmod +x ~/docker-compose    
-            # Note: On CircleCI, the following two lines will overwrite the default (older) docker-compose found in /usr/local/bin/
-            ${SUDO} mv ~/docker-compose /usr/local/bin/
-            ls -l /usr/local/bin/docker-compose
+      # - run:
+      #     name: Install latest Docker-Compose 
+      #     command: |
+      #       curl -L -o ~/docker-compose \
+      #         https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m`
+      #       if test $(which sudo); then echo "sudo found"; SUDO='sudo'; else echo "sudo not found";  SUDO=''; fi
+      #       ${SUDO} chmod +x ~/docker-compose    
+      #       # Note: On CircleCI, the following two lines will overwrite the default (older) docker-compose found in /usr/local/bin/
+      #       ${SUDO} mv ~/docker-compose /usr/local/bin/
+      #       ls -l /usr/local/bin/docker-compose
 
 
             ###########################################################################################################
@@ -83,7 +83,7 @@ jobs:
           # command: ./gradlew clean build  -x test --parallel
           # command: ./gradlew clean build  -x :client-api:test  -x :neo4j-store:test
           # command: ./gradlew clean build 
-          command: ./gradlew clean build 
+          command: ./gradlew clean build -x :neo4j-store:test 
           # command: ./gradlew clean build  -Dorg.gradle.jvmargs=-Xmx2g
 
 
