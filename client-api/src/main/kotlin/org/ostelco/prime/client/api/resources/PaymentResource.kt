@@ -38,7 +38,7 @@ class PaymentResource(private val dao: SubscriberDAO) {
         return dao.getPaymentProfile(token.name)
                 .flatMap { profileInfo -> paymentProcessor.addSource(profileInfo.id, sourceId) }
                 .fold(
-                        { Response.status(Response.Status.BAD_GATEWAY).entity(asJson(it)) },
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
                         { Response.status(Response.Status.CREATED).entity(asJson(it)) }
                 ).build()
     }
@@ -55,7 +55,7 @@ class PaymentResource(private val dao: SubscriberDAO) {
         return dao.getPaymentProfile(token.name)
                 .flatMap { profileInfo -> paymentProcessor.getSavedSources(profileInfo.id) }
                 .fold(
-                        { Response.status(Response.Status.BAD_GATEWAY).entity(asJson(it)) },
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
                         { Response.status(Response.Status.CREATED).entity(asJson(it)) }
                 ).build()
     }
@@ -73,7 +73,7 @@ class PaymentResource(private val dao: SubscriberDAO) {
         return dao.getPaymentProfile(token.name)
                 .flatMap { profileInfo -> paymentProcessor.setDefaultSource(profileInfo.id, sourceId) }
                 .fold(
-                        { Response.status(Response.Status.BAD_GATEWAY).entity(asJson(it)) },
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
                         { Response.status(Response.Status.CREATED).entity(asJson(it)) }
                 ).build()
     }
