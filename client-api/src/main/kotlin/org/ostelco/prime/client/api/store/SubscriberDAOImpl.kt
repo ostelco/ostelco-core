@@ -238,6 +238,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                             .mapLeft { apiError -> Pair(Response.Status.BAD_GATEWAY, apiError) }
                             .map { profileInfo -> Pair(product, profileInfo) }
                 }
+                // Add source
                 .flatMap { (product, profileInfo) ->
                     // Authorize stripe charge for this purchase
                     val price = product.price
