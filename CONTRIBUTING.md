@@ -79,18 +79,18 @@ included.
 ## Shell
 
 * [Google's coding standards for shell scripts](https://google.github.io/styleguide/shell.xml).
-* [Greg's wiki about shell scripting is a very good resource] (http://mywiki.wooledge.org/)
+* [Greg's wiki about shell scripting is a very good resource](http://mywiki.wooledge.org/)
 * For complex output (multiple lines etc.), consider using "printf"
   instead of the simple "echo".
 
 ## Kotlin
 
-* [Coding confentions] (https://kotlinlang.org/docs/reference/coding-conventions.html).
-* |documenting kotlin code] (https://kotlinlang.org/docs/reference/kotlin-doc.html).
+* [Coding confentions](https://kotlinlang.org/docs/reference/coding-conventions.html).
+* |documenting kotlin code](https://kotlinlang.org/docs/reference/kotlin-doc.html).
 
 ## Java
 
-* [Oracle java docing conventions]  https://www.oracle.com/technetwork/java/javase/documentation/codeconvtoc-136057.html).
+* [Oracle java docing conventions](https://www.oracle.com/technetwork/java/javase/documentation/codeconvtoc-136057.html).
 * [Google java style guide](https://google.github.io/styleguide/javaguide.html).
 
 ## Dockerfiles
