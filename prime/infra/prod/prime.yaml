@@ -89,6 +89,11 @@ spec:
         env:
         - name: FIREBASE_ROOT_PATH
           value: v2
+        - name: STRIPE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: stripe-secrets
+              key: stripeApiKey
         volumeMounts:
         - name: secret-config
           mountPath: "/secret"

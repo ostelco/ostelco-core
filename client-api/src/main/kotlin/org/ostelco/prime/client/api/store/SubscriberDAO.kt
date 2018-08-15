@@ -38,7 +38,7 @@ interface SubscriberDAO {
 
     fun getProducts(subscriberId: String): Either<ApiError, Collection<Product>>
 
-    fun purchaseProduct(subscriberId: String, sku: String, sourceId: String?, saveCard: Boolean): Either<Pair<Response.Status, ApiError>, ProductInfo>
+    fun purchaseProduct(subscriberId: String, sku: String, sourceId: String?, saveCard: Boolean): Either<ApiError, ProductInfo>
 
     fun getConsents(subscriberId: String): Either<ApiError, Collection<Consent>>
 

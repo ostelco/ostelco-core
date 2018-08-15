@@ -22,8 +22,6 @@ modules:
       jerseyClient:
         timeout: 3s
   - type: stripe-payment-processor
-    config:
-      configFile: /secret/stripe.cfg
   - type: firebase-app-notifier
     config:
       configFile: /secret/pantel-prod.json
