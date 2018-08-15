@@ -265,8 +265,8 @@ workflows:
       #       branches: 
       #         only: feature/circleci-integration
       - build-test-repo:
-          requires:
-            - check-merge-conflicts
+          # requires:
+          #   - check-merge-conflicts
           filters:
             branches:
               only: feature/circleci-integration
