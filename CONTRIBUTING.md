@@ -74,7 +74,6 @@ included.
 
 * Scripts of all kinds should be terminated by a blank line.
 
-
 ## Shell
 
 * [Google's coding standards for shell scripts](https://google.github.io/styleguide/shell.xml).
@@ -86,7 +85,6 @@ included.
 
 * [Coding confentions] (https://kotlinlang.org/docs/reference/coding-conventions.html).
 * |documenting kotlin code] (https://kotlinlang.org/docs/reference/kotlin-doc.html).
-
 
 ## Java
 
