@@ -103,6 +103,11 @@ by the github repository. It should all be open.
 
 * Scripts of all kinds should be terminated by a blank line.
 
+* All graphical elements should be available in the "most editable" version
+  available, but also as a "markdown viewable" element if referred to in
+  documentation. Don't submit bitmaps only except as a supplement to
+  source code e.g. in Plant UML.
+
 ## Shell
 
 * [Google's coding standards for shell scripts](https://google.github.io/styleguide/shell.xml).
