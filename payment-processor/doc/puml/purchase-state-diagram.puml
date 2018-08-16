@@ -1,0 +1,14 @@
+@startuml
+
+
+[*] -> PurchaseInitiated
+PurchaseInitiated -> PaymentCompleted
+PurchaseInitiated -> Rollback
+PaymentCompleted -> BalanceUpdated
+PaymentCompleted -> Rollback
+BalanceUpdated -> Success
+BalanceUpdated -> Rollback
+Rollback -> Failed
+Success -> [*]
+Failed -> [*]
+@enduml
