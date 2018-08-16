@@ -10,7 +10,8 @@ dependencies {
 
   implementation "com.stripe:stripe-java:5.51.0"
 
-  testImplementation "junit:junit:4.12"
+  testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
+  testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
