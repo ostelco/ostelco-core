@@ -179,6 +179,11 @@ class PurchaseTest {
 
         val sourceId = createPaymentSourceId()
 
+        val source1 = client.createSource(createPaymentSourceId())
+        val source2 = client.createSource(createPaymentSourceId())
+
+        println("source 1 = ${source1.id} , source 2 = ${source2.id}")
+
         client.purchaseProduct("1GB_249NOK", sourceId, false)
 
         Thread.sleep(200) // wait for 200 ms for balance to be updated in db
