@@ -37,6 +37,7 @@ dependencies {
   runtimeOnly project(':client-api')
   runtimeOnly project(':admin-api')
   runtimeOnly project(':app-notifier')
+  runtimeOnly project(':payment-processor')
 
   implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
   implementation "io.dropwizard:dropwizard-http2:$dropwizardVersion"

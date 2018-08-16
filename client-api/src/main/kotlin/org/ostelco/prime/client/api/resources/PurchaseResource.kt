@@ -24,7 +24,7 @@ class PurchaseResource(private val dao: SubscriberDAO) {
         }
 
         return dao.getPurchaseHistory(token.name).fold(
-                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) },
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
     }

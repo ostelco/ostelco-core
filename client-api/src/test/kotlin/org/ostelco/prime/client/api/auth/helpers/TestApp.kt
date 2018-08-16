@@ -19,9 +19,9 @@ import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.auth.OAuthAuthenticator
-import org.ostelco.prime.client.api.core.ApiError
 import org.ostelco.prime.client.api.resources.ProfileResource
 import org.ostelco.prime.client.api.store.SubscriberDAO
+import org.ostelco.prime.core.NotFoundError
 import java.io.IOException
 
 class TestApp : Application<TestConfig>() {
@@ -43,7 +43,7 @@ class TestApp : Application<TestConfig>() {
 
         val arg = argumentCaptor<String>()
         `when`(DAO.getProfile(arg.capture()))
-                .thenReturn(Either.left(ApiError("No profile found")))
+                .thenReturn(Either.left(NotFoundError("No profile found")))
 
         /* APIs. */
         env.jersey().register(ProfileResource(DAO))
