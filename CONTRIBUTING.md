@@ -43,6 +43,14 @@ coding standards applicable to all code in the repository.  We
 currently don't use the Go language in this project, but if we do
 start using Go, then a Go coding standard should be included.
 
+## Everything, everywhere
+
+This is an open source project.  Do not refer to or include any piece
+of code or information that is not appropriately covered by an open
+source license and made freely available.  Do not close off parts of
+the project as it is present in github or other repositories linked to
+by the github repository. It should all be open.
+
 ## All programming language and configuration files
 
 * _Please avoid  commented out / dead code_:   If the code is part of
