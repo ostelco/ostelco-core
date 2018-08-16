@@ -2,7 +2,7 @@ package org.ostelco.at.jersey
 
 import org.glassfish.jersey.client.JerseyClientBuilder
 import org.glassfish.jersey.client.JerseyInvocation
-import org.ostelco.at.common.generateAccessToken
+import org.ostelco.at.common.Auth.generateAccessToken
 import org.ostelco.at.common.url
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.GenericType

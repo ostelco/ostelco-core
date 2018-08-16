@@ -16,9 +16,10 @@ import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.auth.OAuthAuthenticator
-import org.ostelco.prime.client.api.core.ApiError
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
+import org.ostelco.prime.core.ApiError
+import org.ostelco.prime.core.NotFoundError
 import org.ostelco.prime.model.Subscriber
 import java.util.*
 import javax.ws.rs.client.Entity
@@ -177,7 +178,7 @@ class ProfileResourceTest {
         val arg2 = argumentCaptor<Subscriber>()
 
         `when`(DAO.updateProfile(arg1.capture(), arg2.capture()))
-                .thenReturn(Either.left(ApiError("No profile found")))
+                .thenReturn(Either.left(NotFoundError("No profile found")))
 
         val resp = RULE.target("/profile")
                 .request(MediaType.APPLICATION_JSON)

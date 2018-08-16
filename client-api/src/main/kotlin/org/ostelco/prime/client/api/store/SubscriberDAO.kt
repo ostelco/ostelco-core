@@ -1,15 +1,18 @@
 package org.ostelco.prime.client.api.store
 
 import arrow.core.Either
-import org.ostelco.prime.client.api.core.ApiError
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.Person
 import org.ostelco.prime.client.api.model.SubscriptionStatus
+import org.ostelco.prime.core.ApiError
 import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.model.Subscription
+import org.ostelco.prime.paymentprocessor.core.ProductInfo
+import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import javax.ws.rs.core.Response
 
 /**
  *
@@ -29,11 +32,13 @@ interface SubscriberDAO {
 
     fun getPurchaseHistory(subscriberId: String): Either<ApiError, Collection<PurchaseRecord>>
 
+    fun getProduct(subscriptionId: String, sku: String): Either<ApiError, Product>
+
     fun getMsisdn(subscriberId: String): Either<ApiError, String>
 
     fun getProducts(subscriberId: String): Either<ApiError, Collection<Product>>
 
-    fun purchaseProduct(subscriberId: String, sku: String): Either<ApiError, Unit>
+    fun purchaseProduct(subscriberId: String, sku: String, sourceId: String?, saveCard: Boolean): Either<ApiError, ProductInfo>
 
     fun getConsents(subscriberId: String): Either<ApiError, Collection<Consent>>
 
@@ -44,6 +49,10 @@ interface SubscriberDAO {
     fun reportAnalytics(subscriberId: String, events: String): Either<ApiError, Unit>
 
     fun storeApplicationToken(msisdn: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken>
+
+    fun getPaymentProfile(name: String): Either<ApiError, ProfileInfo>
+
+    fun setPaymentProfile(name: String, profileInfo: ProfileInfo): Either<ApiError, Unit>
 
     fun getReferrals(subscriberId: String): Either<ApiError, Collection<Person>>
 
