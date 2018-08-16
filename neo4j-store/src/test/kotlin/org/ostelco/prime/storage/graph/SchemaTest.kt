@@ -160,7 +160,6 @@ class SchemaTest {
             val bId = "b_id"
 
             val fromEntity = EntityType(A::class.java)
-            val fromEntityStore = EntityStore(fromEntity)
 
             val toEntity = EntityType(B::class.java)
             val toEntityStore = EntityStore(toEntity)
