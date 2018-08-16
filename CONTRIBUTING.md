@@ -8,6 +8,16 @@
 * Code in pull requests should conform to the project's coding standards (see below)
 * Pull requests should also be manually approved by by a core team member before being merged to master.
 
+
+# Code review
+
+Code review is the gold standard of code quality.  If code passes code
+review, then it's good enough.  If a reviewer  has comments the
+committer _must_ take those comments into consideration before
+merging to master.
+
+TBD:   Guidelines for how to do code review.
+
 # Coding standards
 
 We have coding standards to make life as a development team
