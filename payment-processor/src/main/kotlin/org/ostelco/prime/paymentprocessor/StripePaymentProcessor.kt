@@ -36,10 +36,7 @@ class StripePaymentProcessor : PaymentProcessor {
             }
 
     override fun createPlan(productId: String, amount: Int, currency: String, interval: PaymentProcessor.Interval): Either<ApiError, PlanInfo> =
-            either(ForbiddenError("Failed to create plan with producuct id ${productId} amount ${amount} currency ${currency} interval ${interval.value}")) {
-                val productParams = HashMap<String, Any>()
-                productParams["name"] = "Quartz pro"
-
+            either(ForbiddenError("Failed to create plan with product id ${productId} amount ${amount} currency ${currency} interval ${interval.value}")) {
                 val planParams = HashMap<String, Any>()
                 planParams["amount"] = amount
                 planParams["interval"] = interval.value
