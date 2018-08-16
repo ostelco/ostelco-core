@@ -34,7 +34,6 @@ class PaymentResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        logger.warn("Calling createSource with ${token.name} sourceId ${sourceId}")
         return dao.createSource(token.name, sourceId)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },

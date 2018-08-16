@@ -167,6 +167,8 @@ class GetProductsTest {
 
 class PurchaseTest {
 
+    private val logger by logger()
+
     @Test
     fun `okhttp test - POST products purchase`() {
 
@@ -178,11 +180,6 @@ class PurchaseTest {
         val balanceBefore = client.subscriptionStatus.remaining
 
         val sourceId = createPaymentSourceId()
-
-        val source1 = client.createSource(createPaymentSourceId())
-        val source2 = client.createSource(createPaymentSourceId())
-
-        println("source 1 = ${source1.id} , source 2 = ${source2.id}")
 
         client.purchaseProduct("1GB_249NOK", sourceId, false)
 
