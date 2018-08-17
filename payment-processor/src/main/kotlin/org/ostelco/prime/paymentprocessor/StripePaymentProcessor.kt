@@ -67,7 +67,7 @@ class StripePaymentProcessor : PaymentProcessor {
                 val updateParams = HashMap<String, Any>()
                 updateParams.put("default_source", sourceId)
                 val customerUpdated = customer.update(updateParams)
-                SourceInfo(customerUpdated.id)
+                SourceInfo(customerUpdated.defaultSource)
             }
 
     override fun getDefaultSource(customerId: String): Either<ApiError, SourceInfo> =
