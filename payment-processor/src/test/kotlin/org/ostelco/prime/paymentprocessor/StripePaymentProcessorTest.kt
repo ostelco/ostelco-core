@@ -29,6 +29,13 @@ class StripePaymentProcessorTest {
         return token.id
     }
 
+    private fun addCustomer() {
+        val resultAdd = paymentProcessor.createPaymentProfile(testCustomer)
+        assertEquals(true, resultAdd.isRight())
+
+        stripeCustomerId = resultAdd.get().id
+    }
+
     @Before
     fun setUp() {
         Stripe.apiKey = System.getenv("STRIPE_API_KEY")
@@ -47,47 +54,20 @@ class StripePaymentProcessorTest {
         assertEquals(true, result.isLeft())
     }
 
-    fun addCustomer() {
-        val resultAdd = paymentProcessor.createPaymentProfile(testCustomer)
-        assertEquals(true, resultAdd.isRight())
-
-        stripeCustomerId = resultAdd.get().id
-    }
-
     @Test
     fun addSourceToCustomerAndRemove() {
 
         val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentSourceId())
         assertEquals(true, resultAddSource.isRight())
 
+        val resultStoredSources = paymentProcessor.getSavedSources(stripeCustomerId)
+        assertEquals(true, resultStoredSources.isRight())
+        assertEquals(1, resultStoredSources.get().size)
+        assertEquals(resultAddSource.get().id, resultStoredSources.get().first().id)
+
         val resultDeleteSource = paymentProcessor.removeSource(stripeCustomerId ,resultAddSource.get().id)
         assertEquals(true, resultDeleteSource.isRight())
     }
-
-    /*
-    @Test
-    fun addSameSourceTwise() {
-        val resultAddCustomer = paymentProcessor.createPaymentProfile(testCustomer)
-        assertEquals(true, resultAddCustomer.isRight())
-
-        val resultAddSource1 = paymentProcessor.addSource(resultAddCustomer.get().id, createPaymentSourceId())
-        assertEquals(true, resultAddSource1.isRight())
-
-        val resultAddSource2 = paymentProcessor.addSource(resultAddCustomer.get().id, createPaymentSourceId())
-        assertEquals(true, resultAddSource2.isRight())
-
-        assertEquals(resultAddSource1.get().id, resultAddSource2.get().id)
-
-        val resultDeleteSource1 = paymentProcessor.removeSource(resultAddCustomer.get().id ,resultAddSource1.get().id)
-        assertEquals(true, resultDeleteSource1.isRight())
-
-        val resultDeleteSource2 = paymentProcessor.removeSource(resultAddCustomer.get().id ,resultAddSource2.get().id)
-        assertEquals(true, resultDeleteSource2.isRight())
-
-        val resultDeleteCustomer = paymentProcessor.deletePaymentProfile(resultAddCustomer.get().id)
-        assertEquals(true, resultDeleteCustomer.isRight())
-    }
-    */
 
     @Test
     fun addDefaultSourceAndRemove() {
@@ -106,4 +86,44 @@ class StripePaymentProcessorTest {
         assertEquals(true, resultRemoveDefault.isRight())
     }
 
+    @Test
+    fun createAndRemoveProduct() {
+        val resultCreateProduct = paymentProcessor.createProduct("TestSku")
+        assertEquals(true, resultCreateProduct.isRight())
+
+        val resultRemoveProduct = paymentProcessor.removeProduct(resultCreateProduct.get().id)
+        assertEquals(true, resultRemoveProduct.isRight())
+    }
+
+
+    @Test
+    fun subscribeAndUnsubscribePlan() {
+
+        val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentSourceId())
+        assertEquals(true, resultAddSource.isRight())
+
+        val resultCreateProduct = paymentProcessor.createProduct("TestSku")
+        assertEquals(true, resultCreateProduct.isRight())
+
+        val resultCreatePlan = paymentProcessor.createPlan(resultCreateProduct.get().id, 1000, "NOK", PaymentProcessor.Interval.MONTH)
+        assertEquals(true, resultCreatePlan.isRight())
+
+        val resultSubscribePlan = paymentProcessor.subscribeToPlan(resultCreatePlan.get().id, stripeCustomerId)
+        assertEquals(true, resultSubscribePlan.isRight())
+
+        val resultUnsubscribePlan = paymentProcessor.cancelSubscription(resultSubscribePlan.get().id, false)
+        assertEquals(true, resultUnsubscribePlan.isRight())
+        assertEquals(resultSubscribePlan.get().id, resultUnsubscribePlan.get().id)
+
+        val resultDeletePlan = paymentProcessor.removePlan(resultCreatePlan.get().id)
+        assertEquals(true, resultDeletePlan.isRight())
+        assertEquals(resultCreatePlan.get().id, resultDeletePlan.get().id)
+
+        val resultRemoveProduct = paymentProcessor.removeProduct(resultCreateProduct.get().id)
+        assertEquals(true, resultRemoveProduct.isRight())
+        assertEquals(resultCreateProduct.get().id, resultRemoveProduct.get().id)
+
+        val resultDeleteSource = paymentProcessor.removeSource(stripeCustomerId ,resultAddSource.get().id)
+        assertEquals(true, resultDeleteSource.isRight())
+    }
 }
