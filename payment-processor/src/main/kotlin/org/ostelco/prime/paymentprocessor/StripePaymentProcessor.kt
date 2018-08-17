@@ -116,20 +116,6 @@ class StripePaymentProcessor : PaymentProcessor {
                 SubscriptionInfo(subscription.cancel(subscriptionParams).id)
             }
 
-    private fun chargeCustomer(customerId: String, sourceId: String?, amount: Int, currency: String): Either<ApiError, ProductInfo> =
-            either(ForbiddenError("Failed to charge customer, customerId ${customerId} sourceId ${sourceId} amount ${amount} currency ${currency}")) {
-                val chargeParams = HashMap<String, Any>()
-                chargeParams["amount"] = amount
-                chargeParams["currency"] = currency
-                chargeParams["customer"] = customerId
-                if (sourceId != null) {
-                    chargeParams["source"] = sourceId
-                }
-
-                val charge = Charge.create(chargeParams)
-                ProductInfo(charge.id)
-            }
-
 
     override fun authorizeCharge(customerId: String, sourceId: String?, amount: Int, currency: String): Either<ApiError, String> {
         val errorMessage = "Failed to authorize the charge for customerId $customerId sourceId $sourceId amount $amount currency $currency"
@@ -179,9 +165,6 @@ class StripePaymentProcessor : PaymentProcessor {
             either(ForbiddenError("Failed to remove source ${sourceId} from customer ${customerId}")) {
                 Customer.retrieve(customerId).sources.retrieve(sourceId).delete().id
             }
-
-    private fun isSourceStored(customerId: String, sourceId: String): Either<ApiError, Boolean> =
-            getSavedSources(customerId).map { sourceInfoList -> sourceInfoList.find { it.id.equals(sourceId) } != null }
 
     private fun <RETURN> either(apiError: ApiError, action: () -> RETURN): Either<ApiError, RETURN> {
         return try {

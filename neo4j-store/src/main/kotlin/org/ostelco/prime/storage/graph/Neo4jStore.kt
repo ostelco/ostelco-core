@@ -154,7 +154,7 @@ object Neo4jStoreSingleton : GraphStore {
                                 .flatMap {
                                     createPurchaseRecordRelation(
                                             subscriber.id,
-                                            PurchaseRecord(product = it, timestamp = Instant.now().toEpochMilli()),
+                                            PurchaseRecord(id = UUID.randomUUID().toString(), product = it, timestamp = Instant.now().toEpochMilli()),
                                             transaction)
                                 }
                     }
@@ -172,7 +172,7 @@ object Neo4jStoreSingleton : GraphStore {
                                 .flatMap {
                                     createPurchaseRecordRelation(
                                             subscriber.id,
-                                            PurchaseRecord(product = it, timestamp = Instant.now().toEpochMilli()),
+                                            PurchaseRecord(id = UUID.randomUUID().toString(), product = it, timestamp = Instant.now().toEpochMilli()),
                                             transaction)
                                 }
                     }

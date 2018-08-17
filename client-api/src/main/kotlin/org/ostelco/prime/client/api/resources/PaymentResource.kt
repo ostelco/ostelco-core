@@ -1,11 +1,10 @@
 package org.ostelco.prime.client.api.resources
 
-import arrow.core.flatMap
 import io.dropwizard.auth.Auth
+import org.ostelco.prime.logger
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.module.getResource
-import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import javax.validation.constraints.NotNull
 import javax.ws.rs.GET
 import javax.ws.rs.POST
@@ -22,7 +21,7 @@ import javax.ws.rs.core.Response
 @Path("/paymentSources")
 class PaymentResource(private val dao: SubscriberDAO) {
 
-    private val paymentProcessor by lazy { getResource<PaymentProcessor>() }
+    private val logger by logger()
 
     @POST
     @Produces("application/json")
@@ -35,11 +34,10 @@ class PaymentResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        return dao.getPaymentProfile(token.name)
-                .flatMap { profileInfo -> paymentProcessor.addSource(profileInfo.id, sourceId) }
+        return dao.createSource(token.name, sourceId)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
-                        { Response.status(Response.Status.CREATED).entity(asJson(it)) }
+                        { sourceInfo -> Response.status(Response.Status.CREATED).entity(sourceInfo)}
                 ).build()
     }
 
@@ -51,12 +49,10 @@ class PaymentResource(private val dao: SubscriberDAO) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
-
-        return dao.getPaymentProfile(token.name)
-                .flatMap { profileInfo -> paymentProcessor.getSavedSources(profileInfo.id) }
+        return dao.listSources(token.name)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
-                        { Response.status(Response.Status.CREATED).entity(asJson(it)) }
+                        { sourceList -> Response.status(Response.Status.CREATED).entity(sourceList)}
                 ).build()
     }
 
@@ -70,11 +66,10 @@ class PaymentResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        return dao.getPaymentProfile(token.name)
-                .flatMap { profileInfo -> paymentProcessor.setDefaultSource(profileInfo.id, sourceId) }
+        return dao.setDefaultSource(token.name, sourceId)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
-                        { Response.status(Response.Status.CREATED).entity(asJson(it)) }
+                        { sourceInfo -> Response.status(Response.Status.CREATED).entity(sourceInfo)}
                 ).build()
     }
 }

@@ -2,7 +2,6 @@ package org.ostelco.prime.client.api.store
 
 import arrow.core.Either
 import arrow.core.Tuple4
-import arrow.core.Tuple5
 import arrow.core.flatMap
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.Person
@@ -24,6 +23,7 @@ import org.ostelco.prime.ocs.OcsSubscriberService
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.paymentprocessor.core.SourceInfo
 import org.ostelco.prime.storage.ClientDataSource
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
@@ -316,4 +316,33 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                 ifFalse = { BadGatewayError("Failed to save payment customer ID") })
 
     override fun reportAnalytics(subscriberId: String, events: String): Either<ApiError, Unit> = Either.right(Unit)
+
+    override fun createSource(subscriberId: String, sourceId: String): Either<ApiError, SourceInfo> {
+        return getPaymentProfile(subscriberId)
+                .fold(
+                        { createAndStorePaymentProfile(subscriberId) },
+                        { profileInfo -> Either.right(profileInfo) }
+                )
+                .flatMap { profileInfo -> paymentProcessor.addSource(profileInfo.id, sourceId) }
+    }
+
+    override fun setDefaultSource(subscriberId: String, sourceId: String): Either<ApiError, SourceInfo> {
+        return getPaymentProfile(subscriberId)
+                .fold(
+                        { createAndStorePaymentProfile(subscriberId) },
+                        { profileInfo -> Either.right(profileInfo) }
+                )
+                .flatMap { profileInfo -> paymentProcessor.setDefaultSource(profileInfo.id, sourceId) }
+    }
+
+    override fun listSources(subscriberId: String): Either<ApiError, List<SourceInfo>> {
+        return getPaymentProfile(subscriberId)
+                .fold(
+                        { createAndStorePaymentProfile(subscriberId) },
+                        { profileInfo -> Either.right(profileInfo) }
+                )
+                .flatMap { profileInfo -> paymentProcessor.getSavedSources(profileInfo.id) }
+    }
+
+
 }
