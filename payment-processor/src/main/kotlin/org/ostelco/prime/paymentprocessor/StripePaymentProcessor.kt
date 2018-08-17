@@ -45,12 +45,24 @@ class StripePaymentProcessor : PaymentProcessor {
                 PlanInfo(Plan.create(planParams).id)
             }
 
+    override fun removePlan(planId: String): Either<ApiError, PlanInfo> =
+            either(NotFoundError("Failed to delete plan ${planId}")) {
+                val plan = Plan.retrieve(planId)
+                PlanInfo(plan.delete().id)
+            }
+
     override fun createProduct(sku: String): Either<ApiError, ProductInfo> =
             either(ForbiddenError("Failed to create product with sku ${sku}")) {
                 val productParams = HashMap<String, Any>()
                 productParams["name"] = sku
                 productParams["type"] = "service"
                 ProductInfo(Product.create(productParams).id)
+            }
+
+    override fun removeProduct(productId: String): Either<ApiError, ProductInfo> =
+            either(NotFoundError("Failed to delete product ${productId}")) {
+                val product = Product.retrieve(productId)
+                ProductInfo(product.delete().id)
             }
 
     override fun addSource(customerId: String, sourceId: String): Either<ApiError, SourceInfo> =
@@ -67,7 +79,7 @@ class StripePaymentProcessor : PaymentProcessor {
                 val updateParams = HashMap<String, Any>()
                 updateParams.put("default_source", sourceId)
                 val customerUpdated = customer.update(updateParams)
-                SourceInfo(customerUpdated.id)
+                SourceInfo(customerUpdated.defaultSource)
             }
 
     override fun getDefaultSource(customerId: String): Either<ApiError, SourceInfo> =
