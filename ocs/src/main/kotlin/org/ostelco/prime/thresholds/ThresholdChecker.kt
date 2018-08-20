@@ -34,7 +34,7 @@ class ThresholdChecker(private val lowBalanceThreshold: Long) : EventHandler<Ocs
         if ((event.bundleBytes < lowBalanceThreshold) && ((event.bundleBytes + event.reservedBucketBytes) > lowBalanceThreshold)) {
             val msisdn = event.msisdn
             if (msisdn != null) {
-                appNotifier.notify(msisdn, "Pi", "You have less then " + lowBalanceThreshold/100000 + "Mb data left")
+                appNotifier.notify(msisdn, "Pi", "You have less then " + lowBalanceThreshold/1000000 + "Mb data left")
             }
         }
     }

@@ -199,6 +199,10 @@ kubectl create secret generic pantel-prod.json --from-file config/pantel-prod.js
 ```
 
 ```bash
+sed -e s/STRIPE_API_KEY/$(echo -n 'keep-stripe-api-key-here' | base64)/g prime/infra/dev/stripe-secrets.yaml | kubectl apply -f -
+```
+
+```bash
 kubectl create secret generic ocs-ostelco-ssl \
   --from-file=../certs/ocs.endpoints.pantel-2decb.cloud.goog/nginx.crt \
   --from-file=../certs/ocs.endpoints.pantel-2decb.cloud.goog/nginx.key

@@ -30,7 +30,7 @@ class SubscriptionResource(private val dao: SubscriberDAO,
         }
 
         return dao.getSubscriptionStatus(token.name).fold(
-                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) },
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
     }
@@ -45,7 +45,7 @@ class SubscriptionResource(private val dao: SubscriberDAO,
         }
 
         return dao.getMsisdn(token.name).fold(
-                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)).build() },
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)).build() },
                 { msisdn -> client.target("$pseudonymEndpoint/pseudonym/active/$msisdn").request().get() })
     }
 }
@@ -62,7 +62,7 @@ class SubscriptionsResource(private val dao: SubscriberDAO) {
         }
 
         return dao.getSubscriptions(token.name).fold(
-                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) },
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
     }

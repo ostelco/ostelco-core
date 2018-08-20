@@ -1,0 +1,36 @@
+@startuml
+
+actor Admin
+participant Admin
+
+box "Prime"
+    participant "admin-api"
+    participant DAO
+    participant "payment-processor"
+end box
+participant Stripe
+
+activate Admin
+    "Admin" -> "admin-api" : POST /products (create product)
+    activate "admin-api"
+    "admin-api" -> "payment-processor" : createProduct (sku)
+
+    activate "payment-processor"
+    "payment-processor" -> "Stripe" : POST /v1/products (sku)
+    activate "Stripe"
+    "Stripe" -> "payment-processor" : {prod-id}
+    deactivate "Stripe"
+
+    "payment-processor" -> "admin-api" : {prod-id}
+    deactivate "payment-processor"
+
+    "admin-api" -> "DAO" : Save product {prod-id}
+    activate "DAO"
+    "DAO" -> "admin-api" : {sku}
+    deactivate "DAO"
+
+    "admin-api" -> "Admin" : {sku}
+    deactivate "admin-api"
+deactivate Admin
+
+@enduml

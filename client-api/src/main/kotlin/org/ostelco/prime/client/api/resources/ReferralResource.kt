@@ -19,7 +19,7 @@ class ReferralResource(private val dao: SubscriberDAO) {
         }
 
         return dao.getReferrals(token.name).fold(
-                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) },
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
                 { Response.status(Response.Status.OK).entity(it) })
                 .build()
     }
@@ -33,7 +33,7 @@ class ReferralResource(private val dao: SubscriberDAO) {
         }
 
         return dao.getReferredBy(token.name).fold(
-                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) },
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
                 { Response.status(Response.Status.OK).entity(it) })
                 .build()
     }

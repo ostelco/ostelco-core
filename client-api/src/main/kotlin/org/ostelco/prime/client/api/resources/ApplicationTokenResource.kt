@@ -29,10 +29,10 @@ class ApplicationTokenResource(private val dao: SubscriberDAO) {
         }
 
         return dao.getMsisdn(authToken.name).fold(
-                { Response.status(Response.Status.NOT_FOUND) },
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
                 { msisdn ->
                     dao.storeApplicationToken(msisdn, applicationToken).fold(
-                            { Response.status(507).entity(asJson(it)) },  // Insufficient Storage
+                            { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
                             { Response.status(Response.Status.CREATED).entity(asJson(it)) })
                 })
                 .build()

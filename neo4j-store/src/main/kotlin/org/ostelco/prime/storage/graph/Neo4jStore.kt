@@ -3,6 +3,7 @@ package org.ostelco.prime.storage.graph
 import arrow.core.Either
 import arrow.core.flatMap
 import org.neo4j.driver.v1.Transaction
+import org.ostelco.prime.logger
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Entity
 import org.ostelco.prime.model.Offer
@@ -48,6 +49,7 @@ class Neo4jStore : GraphStore by Neo4jStoreSingleton
 object Neo4jStoreSingleton : GraphStore {
 
     private val ocs: OcsAdminService by lazy { getResource<OcsAdminService>() }
+    private val logger by logger()
 
     //
     // Entity
@@ -152,7 +154,7 @@ object Neo4jStoreSingleton : GraphStore {
                                 .flatMap {
                                     createPurchaseRecordRelation(
                                             subscriber.id,
-                                            PurchaseRecord(product = it, timestamp = Instant.now().toEpochMilli()),
+                                            PurchaseRecord(id = UUID.randomUUID().toString(), product = it, timestamp = Instant.now().toEpochMilli()),
                                             transaction)
                                 }
                     }
@@ -170,7 +172,7 @@ object Neo4jStoreSingleton : GraphStore {
                                 .flatMap {
                                     createPurchaseRecordRelation(
                                             subscriber.id,
-                                            PurchaseRecord(product = it, timestamp = Instant.now().toEpochMilli()),
+                                            PurchaseRecord(id = UUID.randomUUID().toString(), product = it, timestamp = Instant.now().toEpochMilli()),
                                             transaction)
                                 }
                     }
@@ -326,7 +328,10 @@ object Neo4jStoreSingleton : GraphStore {
         return subscriberStore.get(subscriberId, transaction).flatMap { subscriber ->
             productStore.get(purchase.product.sku, transaction).flatMap { product ->
 
-                purchase.id = UUID.randomUUID().toString()
+                if (purchase.id.isBlank()) {
+                    logger.warn("Purchase Id not set, generating a UUID")
+                    purchase.id = UUID.randomUUID().toString()
+                }
                 purchaseRecordRelationStore.create(subscriber, purchase, product, transaction)
                         .map { purchase.id }
             }

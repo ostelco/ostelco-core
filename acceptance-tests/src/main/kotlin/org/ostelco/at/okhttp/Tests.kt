@@ -1,6 +1,7 @@
 package org.ostelco.at.okhttp
 
 import org.junit.Test
+import org.ostelco.at.common.Payment.createPaymentSourceId
 import org.ostelco.at.common.createProfile
 import org.ostelco.at.common.createSubscription
 import org.ostelco.at.common.expectedProducts
@@ -166,6 +167,8 @@ class GetProductsTest {
 
 class PurchaseTest {
 
+    private val logger by logger()
+
     @Test
     fun `okhttp test - POST products purchase`() {
 
@@ -176,7 +179,9 @@ class PurchaseTest {
 
         val balanceBefore = client.subscriptionStatus.remaining
 
-        client.buyProduct("1GB_249NOK")
+        val sourceId = createPaymentSourceId()
+
+        client.purchaseProduct("1GB_249NOK", sourceId, false)
 
         Thread.sleep(200) // wait for 200 ms for balance to be updated in db
 

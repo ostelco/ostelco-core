@@ -89,6 +89,61 @@ paths:
           description: "Not able to store token."
       security:
         - auth0_jwt: []
+  "/paymentSources":
+    get:
+      description: "Get all payment sources for the user."
+      produces:
+        - application/json
+      operationId: "listSources"
+      responses:
+        200:
+          description: "List of payment sources."
+          schema:
+            $ref: '#/definitions/PaymentSourceList'
+        404:
+          description: "No user found."
+      security:
+        - auth0_jwt: []
+    post:
+      description: "Add a new payment source for user"
+      produces:
+      - application/json
+      operationId: "createSource"
+      parameters:
+      - name: sourceId
+        in: query
+        description: "The stripe-id of the source to be added to user"
+        required: true
+        type: string
+      responses:
+        201:
+          description: "Successfully added source to user"
+          schema:
+            $ref: '#/definitions/PaymentSource'
+        404:
+          description: "User not found."
+      security:
+      - auth0_jwt: []
+    put:
+      description: "Set the source as default for user"
+      produces:
+      - application/json
+      operationId: "setDefaultSource"
+      parameters:
+      - name: sourceId
+        in: query
+        description: "The stripe-id of the default source"
+        required: true
+        type: string
+      responses:
+        200:
+          description: "Successfully set as default source to user"
+          schema:
+            $ref: '#/definitions/PaymentSource'
+        404:
+          description: "User not found."
+      security:
+      - auth0_jwt: []
   "/products":
     get:
       description: "Get all products for the user."
@@ -132,7 +187,23 @@ paths:
       produces:
       - application/json
       - text/plain
-      operationId: "buyProduct"
+      operationId: "purchaseProduct"
+      parameters:
+      - name: sku
+        in: path
+        description: "SKU to be purchased"
+        required: true
+        type: string
+      - name: sourceId
+        in: query
+        description: "The stripe-id of the source to be used for this purchase (if empty, use default source)"
+        required: false
+        type: string
+      - name: saveCard
+        in: query
+        description: "Whether to save this card as a source for this user (default = false)"
+        required: false
+        type: boolean
       responses:
         201:
           description: "Successfully purchased the product."
@@ -142,12 +213,6 @@ paths:
           description: "Product not found."
       security:
       - auth0_jwt: []
-      parameters:
-      - name: sku
-        in: path
-        description: SKU to be purchased
-        required: true
-        type: string
   "/purchases":
     get:
       description: "Get list of all purchases."
@@ -268,12 +333,12 @@ paths:
       parameters:
       - name: consent-id
         in: path
-        description: Id of the consent to be changed
+        description: "Id of the consent to be changed"
         required: true
         type: string
       - name: accepted
         in: query
-        description: Whether user accepted the consent (default = true)
+        description: "Whether user accepted the consent (default = true)"
         required: false
         type: boolean
 definitions:
@@ -360,6 +425,16 @@ definitions:
     required:
       - sku
       - price
+  PaymentSourceList:
+    type: array
+    items:
+        $ref: '#/definitions/PaymentSource'
+  PaymentSource:
+    type: object
+    properties:
+      id:
+        desctiption: "The identifier for the source"
+        type: string
   ConsentList:
     type: array
     items:
