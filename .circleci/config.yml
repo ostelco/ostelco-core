@@ -231,7 +231,7 @@ jobs:
     working_directory: ~/project
 
     docker:
-    - image: praqma/helmsman:v1.4.0-rc-helm-v2.8.1
+    - image: praqma/helmsman:test-1.4.0
 
     steps:
       - checkout
