@@ -12,6 +12,7 @@ import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.paymentprocessor.core.SourceInfo
 import javax.ws.rs.core.Response
 
 /**
@@ -57,6 +58,12 @@ interface SubscriberDAO {
     fun getReferrals(subscriberId: String): Either<ApiError, Collection<Person>>
 
     fun getReferredBy(subscriberId: String): Either<ApiError, Person>
+
+    fun createSource(subscriberId: String, sourceId: String): Either<ApiError, SourceInfo>
+
+    fun setDefaultSource(subscriberId: String, sourceId: String): Either<ApiError, SourceInfo>
+
+    fun listSources(subscriberId: String): Either<ApiError, List<SourceInfo>>
 
     companion object {
 

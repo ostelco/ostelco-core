@@ -167,6 +167,8 @@ class GetProductsTest {
 
 class PurchaseTest {
 
+    private val logger by logger()
+
     @Test
     fun `okhttp test - POST products purchase`() {
 

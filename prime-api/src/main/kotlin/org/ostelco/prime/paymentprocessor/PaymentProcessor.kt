@@ -49,6 +49,12 @@ interface PaymentProcessor {
     fun subscribeToPlan(planId: String, customerId: String): Either<ApiError, SubscriptionInfo>
 
     /**
+     * @param Stripe Plan Id
+     * @return Stripe PlanId if deleted
+     */
+    fun removePlan(planId: String): Either<ApiError, PlanInfo>
+
+    /**
      * @param Stripe Subscription Id
      * @param Stripe atIntervalEnd set to true if the subscription shall remain active until the end of the Plan interval
      * @return Stripe SubscriptionId if unsubscribed
@@ -60,6 +66,12 @@ interface PaymentProcessor {
      * @return Stripe productId if created
      */
     fun createProduct(sku: String): Either<ApiError, ProductInfo>
+
+    /**
+     * @param productId Stripe product Id
+     * @return Stripe productId if removed
+     */
+    fun removeProduct(productId: String): Either<ApiError, ProductInfo>
 
     /**
      * @param customerId Stripe customer id
@@ -79,7 +91,6 @@ interface PaymentProcessor {
      * @return SourceInfo if created
      */
     fun setDefaultSource(customerId: String, sourceId: String): Either<ApiError, SourceInfo>
-
 
     /**
      * @param customerId Customer id in the payment system

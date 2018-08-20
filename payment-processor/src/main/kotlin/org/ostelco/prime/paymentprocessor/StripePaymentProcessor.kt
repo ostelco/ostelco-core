@@ -36,10 +36,7 @@ class StripePaymentProcessor : PaymentProcessor {
             }
 
     override fun createPlan(productId: String, amount: Int, currency: String, interval: PaymentProcessor.Interval): Either<ApiError, PlanInfo> =
-            either(ForbiddenError("Failed to create plan with producuct id ${productId} amount ${amount} currency ${currency} interval ${interval.value}")) {
-                val productParams = HashMap<String, Any>()
-                productParams["name"] = "Quartz pro"
-
+            either(ForbiddenError("Failed to create plan with product id ${productId} amount ${amount} currency ${currency} interval ${interval.value}")) {
                 val planParams = HashMap<String, Any>()
                 planParams["amount"] = amount
                 planParams["interval"] = interval.value
@@ -48,12 +45,24 @@ class StripePaymentProcessor : PaymentProcessor {
                 PlanInfo(Plan.create(planParams).id)
             }
 
+    override fun removePlan(planId: String): Either<ApiError, PlanInfo> =
+            either(NotFoundError("Failed to delete plan ${planId}")) {
+                val plan = Plan.retrieve(planId)
+                PlanInfo(plan.delete().id)
+            }
+
     override fun createProduct(sku: String): Either<ApiError, ProductInfo> =
             either(ForbiddenError("Failed to create product with sku ${sku}")) {
                 val productParams = HashMap<String, Any>()
                 productParams["name"] = sku
                 productParams["type"] = "service"
                 ProductInfo(Product.create(productParams).id)
+            }
+
+    override fun removeProduct(productId: String): Either<ApiError, ProductInfo> =
+            either(NotFoundError("Failed to delete product ${productId}")) {
+                val product = Product.retrieve(productId)
+                ProductInfo(product.delete().id)
             }
 
     override fun addSource(customerId: String, sourceId: String): Either<ApiError, SourceInfo> =
@@ -70,7 +79,7 @@ class StripePaymentProcessor : PaymentProcessor {
                 val updateParams = HashMap<String, Any>()
                 updateParams.put("default_source", sourceId)
                 val customerUpdated = customer.update(updateParams)
-                SourceInfo(customerUpdated.id)
+                SourceInfo(customerUpdated.defaultSource)
             }
 
     override fun getDefaultSource(customerId: String): Either<ApiError, SourceInfo> =
@@ -105,20 +114,6 @@ class StripePaymentProcessor : PaymentProcessor {
                 val subscriptionParams = HashMap<String, Any>()
                 subscriptionParams["at_period_end"] = atIntervalEnd
                 SubscriptionInfo(subscription.cancel(subscriptionParams).id)
-            }
-
-    private fun chargeCustomer(customerId: String, sourceId: String?, amount: Int, currency: String): Either<ApiError, ProductInfo> =
-            either(ForbiddenError("Failed to charge customer, customerId ${customerId} sourceId ${sourceId} amount ${amount} currency ${currency}")) {
-                val chargeParams = HashMap<String, Any>()
-                chargeParams["amount"] = amount
-                chargeParams["currency"] = currency
-                chargeParams["customer"] = customerId
-                if (sourceId != null) {
-                    chargeParams["source"] = sourceId
-                }
-
-                val charge = Charge.create(chargeParams)
-                ProductInfo(charge.id)
             }
 
 
@@ -170,9 +165,6 @@ class StripePaymentProcessor : PaymentProcessor {
             either(ForbiddenError("Failed to remove source ${sourceId} from customer ${customerId}")) {
                 Customer.retrieve(customerId).sources.retrieve(sourceId).delete().id
             }
-
-    private fun isSourceStored(customerId: String, sourceId: String): Either<ApiError, Boolean> =
-            getSavedSources(customerId).map { sourceInfoList -> sourceInfoList.find { it.id.equals(sourceId) } != null }
 
     private fun <RETURN> either(apiError: ApiError, action: () -> RETURN): Either<ApiError, RETURN> {
         return try {
