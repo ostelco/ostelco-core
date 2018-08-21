@@ -18,7 +18,7 @@ sourceSets {
   }
 }
 
-version = "1.10.3"
+version = "1.11.0"
 
 repositories {
   maven {
@@ -41,7 +41,6 @@ dependencies {
 
   implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
   implementation "io.dropwizard:dropwizard-http2:$dropwizardVersion"
-  implementation project(':ostelco-lib')
   implementation "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
   implementation 'com.google.guava:guava:25.1-jre'
 
@@ -67,6 +66,10 @@ task integration(type: Test, description: 'Runs the integration tests.', group: 
   environment("GOOGLE_APPLICATION_CREDENTIALS", "config/pantel-prod.json")
   testClassesDirs = sourceSets.integration.output.classesDirs
   classpath = sourceSets.integration.runtimeClasspath
+}
+
+if (System.getenv("BUILD_ENV") != "CI_CD") {
+  build.dependsOn integration
 }
 
 shadowJar {

@@ -1,5 +1,5 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.50"
+  id "org.jetbrains.kotlin.jvm" version "1.2.60"
   id "java-library"
   id "idea"
 }
@@ -41,6 +41,10 @@ configurations {
 task integration(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
   testClassesDirs = sourceSets.integration.output.classesDirs
   classpath = sourceSets.integration.runtimeClasspath
+}
+
+if (System.getenv("BUILD_ENV") != "CI_CD") {
+  build.dependsOn integration
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
