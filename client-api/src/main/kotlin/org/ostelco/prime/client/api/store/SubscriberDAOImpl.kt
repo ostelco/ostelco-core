@@ -26,6 +26,7 @@ import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
 import org.ostelco.prime.storage.ClientDataSource
 import java.time.Instant
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -185,6 +186,32 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                 }
     }
 
+
+    @Deprecated("use purchaseProduct", ReplaceWith("purchaseProduct"))
+    override fun purchaseProductWithoutPayment(subscriberId: String, sku: String): Either<ApiError,Unit> {
+        return getProduct(subscriberId, sku)
+                // If we can't find the product, return not-found
+                .mapLeft { NotFoundError("Product unavailable") }
+                .flatMap { product ->
+                    product.sku = sku
+                    val purchaseRecord = PurchaseRecord(
+                            id = UUID.randomUUID().toString(),
+                            product = product,
+                            timestamp = Instant.now().toEpochMilli())
+                    // Create purchase record
+                    storage.addPurchaseRecord(subscriberId, purchaseRecord)
+                            .mapLeft { storeError ->
+                                logger.error("failed to save purchase record, for subscriberId $subscriberId, sku $sku")
+                                BadGatewayError(storeError.message)
+                            }
+                            // Notify OCS
+                            .flatMap {
+                                //TODO: Handle errors (when it becomes available)
+                                ocsSubscriberService.topup(subscriberId, sku)
+                                Either.right(Unit)
+                            }
+                }
+    }
 
     override fun purchaseProduct(subscriberId: String, sku: String, sourceId: String?, saveCard: Boolean): Either<ApiError, ProductInfo> {
         return getProduct(subscriberId, sku)

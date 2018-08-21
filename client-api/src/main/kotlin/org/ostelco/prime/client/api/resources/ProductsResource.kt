@@ -38,14 +38,21 @@ class ProductsResource(private val dao: SubscriberDAO) {
     @POST
     @Path("{sku}")
     @Produces("application/json")
-    fun purchaseProductOld(@Auth token: AccessTokenPrincipal?,
-                           @NotNull
-                           @PathParam("sku")
-                           sku: String,
-                           @QueryParam("sourceId")
-                           sourceId: String?,
-                           @QueryParam("saveCard")
-                           saveCard: Boolean = false): Response = purchaseProduct(token, sku, sourceId, saveCard)
+    fun purchaseProductWithoutPayment(@Auth token: AccessTokenPrincipal?,
+                                      @NotNull
+                                      @PathParam("sku")
+                                      sku: String): Response {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .build()
+        }
+
+        return dao.purchaseProductWithoutPayment(token.name, sku)
+                .fold(
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                        { productInfo -> Response.status(CREATED).entity(productInfo) }
+                ).build()
+    }
 
     @POST
     @Path("{sku}/purchase")
@@ -66,8 +73,7 @@ class ProductsResource(private val dao: SubscriberDAO) {
         return dao.purchaseProduct(token.name, sku, sourceId, saveCard)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
-                        { productInfo -> Response.status(CREATED).entity(productInfo)}
+                        { productInfo -> Response.status(CREATED).entity(productInfo) }
                 ).build()
-
     }
 }

@@ -87,4 +87,7 @@ interface SubscriberDAO {
                     && !appToken.tokenType.isEmpty())
         }
     }
+
+    @Deprecated(message = "use purchaseProduct")
+    fun purchaseProductWithoutPayment(subscriberId: String, sku: String): Either<ApiError, Unit>
 }
