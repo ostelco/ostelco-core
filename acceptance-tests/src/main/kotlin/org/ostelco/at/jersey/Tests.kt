@@ -266,6 +266,46 @@ class PurchaseTest {
         assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
         assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
     }
+
+    @Test
+    fun `jersey test - POST products purchase without payment`() {
+
+        val email = "purchase-legacy-${randomInt()}@test.com"
+        createProfile(name = "Test Legacy Purchase User", email = email)
+
+        val subscriptionStatusBefore: SubscriptionStatus = get {
+            path = "/subscription/status"
+            subscriberId = email
+        }
+        val balanceBefore = subscriptionStatusBefore.remaining
+
+        val productSku = "1GB_249NOK"
+
+        post<String> {
+            path = "/products/$productSku"
+            subscriberId = email
+        }
+
+        Thread.sleep(100) // wait for 100 ms for balance to be updated in db
+
+        val subscriptionStatusAfter: SubscriptionStatus = get {
+            path = "/subscription/status"
+            subscriberId = email
+        }
+        val balanceAfter = subscriptionStatusAfter.remaining
+
+        assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
+
+        val purchaseRecords: PurchaseRecordList = get {
+            path = "/purchases"
+            subscriberId = email
+        }
+
+        purchaseRecords.sortBy { it.timestamp }
+
+        assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
+        assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
+    }
 }
 
 class AnalyticsTest {
