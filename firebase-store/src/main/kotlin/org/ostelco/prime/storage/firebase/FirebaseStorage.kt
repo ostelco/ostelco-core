@@ -11,6 +11,9 @@ import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.storage.DocumentStore
 import java.io.FileInputStream
+import java.net.URLDecoder
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 
@@ -34,10 +37,10 @@ object FirebaseStorageSingleton : DocumentStore {
 
     private val firebaseDatabase = setupFirebaseInstance()
 
-    private val balanceStore = EntityStore(firebaseDatabase, balanceEntity)
-    private val productStore = EntityStore(firebaseDatabase, productEntity)
-    private val subscriptionStore = EntityStore(firebaseDatabase, subscriptionEntity)
-    private val subscriberStore = EntityStore(firebaseDatabase, subscriberEntity)
+    val balanceStore = EntityStore(firebaseDatabase, balanceEntity)
+    val productStore = EntityStore(firebaseDatabase, productEntity)
+    val subscriptionStore = EntityStore(firebaseDatabase, subscriptionEntity)
+    val subscriberStore = EntityStore(firebaseDatabase, subscriberEntity)
     private val paymentHistoryStore = EntityStore(firebaseDatabase, paymentHistoryEntity)
     private val fcmTokenStore = EntityStore(firebaseDatabase, fcmTokenEntity)
     private val paymentIdStore = EntityStore(firebaseDatabase, paymentIdEntity)

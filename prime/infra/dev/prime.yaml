@@ -54,7 +54,7 @@ spec:
         args: [
           "--http2_port=9000",
           "--ssl_port=8443",
-          "--service=ocs.endpoints.pantel-2decb.cloud.goog",
+          "--service=ocs.dev.ostelco.org",
           "--rollout_strategy=managed",
           "--backend=grpc://127.0.0.1:8082"
         ]
@@ -71,7 +71,7 @@ spec:
           "--http2_port=9002",
           "--ssl_port", "443",
           "--status_port=8092",
-          "--service=api.endpoints.pantel-2decb.cloud.goog",
+          "--service=api.dev.ostelco.org",
           "--rollout_strategy=managed",
           "--backend=127.0.0.1:8080"
         ]
