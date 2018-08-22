@@ -45,7 +45,8 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<OcsEvent> {
                     event.reservedBucketBytes = reserveDataBytes(
                             msisdn,
                             event.requestedBucketBytes)
-                    event.bundleBytes = getDataBundleBytes(msisdn = msisdn)
+                    event.bundleId = msisdnToBundleIdMap[msisdn]
+                    event.bundleBytes = bundleBalanceMap[event.bundleId] ?: 0
                 }
                 TOPUP_DATA_BUNDLE_BALANCE -> {
                     val bundleId = event.bundleId
@@ -63,6 +64,8 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<OcsEvent> {
                         return
                     }
                     releaseReservedBucket(msisdn = msisdn)
+                    event.bundleId = msisdnToBundleIdMap[msisdn]
+                    event.bundleBytes = bundleBalanceMap[event.bundleId] ?: 0
                 }
                 UPDATE_BUNDLE -> {
                     val bundleId = event.bundleId
@@ -98,9 +101,10 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<OcsEvent> {
                         logger.error("Received null as bundleId")
                         return
                     }
+                    releaseReservedBucket(msisdn = msisdn)
+                    event.bundleBytes = bundleBalanceMap[bundleId] ?: 0
                     msisdnToBundleIdMap.remove(msisdn)
                     bundleIdToMsisdnMap[bundleId]?.remove(msisdn)
-                    // TODO vihang: return reserved bytes back to bundle
                 }
             }
         } catch (e: Exception) {
