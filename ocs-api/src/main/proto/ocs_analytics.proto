@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package org.ostelco.ocs.api;
+
+option java_multiple_files = true;
+option java_package = "org.ostelco.ocs.api";
+
+import "google/protobuf/timestamp.proto";
+
+// This is used only to report to Analytics events from OCSgw to Prime
+
+// OCS Service
+service OcsAnalyticsService {
+    rpc AnalyticsEvent (stream ActiveSessionsRequest) returns (ActiveSessionsReply) {}
+}
+
+message ActiveSessionsRequest {
+    uint32 activeSessions = 1;
+    google.protobuf.Timestamp timestamp = 2;
+}
+
+message ActiveSessionsReply {
+}

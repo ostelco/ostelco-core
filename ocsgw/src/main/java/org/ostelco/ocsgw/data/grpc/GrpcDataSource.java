@@ -22,16 +22,7 @@ import org.ostelco.diameter.model.MultipleServiceCreditControl;
 import org.ostelco.diameter.model.RedirectAddressType;
 import org.ostelco.diameter.model.RedirectServer;
 import org.ostelco.diameter.model.SessionContext;
-import org.ostelco.ocs.api.ActivateRequest;
-import org.ostelco.ocs.api.ActivateResponse;
-import org.ostelco.ocs.api.CreditControlAnswerInfo;
-import org.ostelco.ocs.api.CreditControlRequestInfo;
-import org.ostelco.ocs.api.CreditControlRequestType;
-import org.ostelco.ocs.api.OcsServiceGrpc;
-import org.ostelco.ocs.api.PsInformation;
-import org.ostelco.ocs.api.ReportingReason;
-import org.ostelco.ocs.api.ServiceInfo;
-import org.ostelco.ocs.api.ServiceUnit;
+import org.ostelco.ocs.api.*;
 import org.ostelco.ocsgw.OcsServer;
 import org.ostelco.ocsgw.data.DataSource;
 import org.slf4j.Logger;
@@ -67,11 +58,13 @@ public class GrpcDataSource implements DataSource {
 
     private static final Logger LOG = LoggerFactory.getLogger(GrpcDataSource.class);
 
-    public static final int KEEP_ALIVE_TIMEOUT_IN_MINUTES = 1;
+    private static final int KEEP_ALIVE_TIMEOUT_IN_MINUTES = 1;
 
-    public static final int KEEP_ALIVE_TIME_IN_SECONDS = 50;
+    private static final int KEEP_ALIVE_TIME_IN_SECONDS = 50;
 
     private final OcsServiceGrpc.OcsServiceStub ocsServiceStub;
+
+    //private final OcsAnalyticsServiceGrpc.OcsAnalyticsServiceStub ocsAnalyticsServiceStub;
 
     private final Set<String> blocked = new HashSet<>();
 
@@ -85,7 +78,7 @@ public class GrpcDataSource implements DataSource {
 
     private ScheduledFuture initCCRFuture = null;
 
-    private static final int MAX_ENTRIES = 3000;
+    private static final int MAX_ENTRIES = 50000;
     private final LinkedHashMap<String, CreditControlContext> ccrMap = new LinkedHashMap<String, CreditControlContext>(MAX_ENTRIES, .75F) {
         @Override
         protected boolean removeEldestEntry(Map.Entry<String, CreditControlContext> eldest) {
@@ -210,6 +203,8 @@ public class GrpcDataSource implements DataSource {
                     .build();
             ocsServiceStub = OcsServiceGrpc.newStub(channel)
                     .withCallCredentials(MoreCallCredentials.from(credentials));
+
+            //ocsAnalyticsServiceStub = OcsAnalyticsServiceGrpc.newStub(channel).withCallCredentials(MoreCallCredentials.from(credentials));
         } else {
             final ManagedChannelBuilder channelBuilder = ManagedChannelBuilder
                     .forTarget(target)
@@ -238,32 +233,58 @@ public class GrpcDataSource implements DataSource {
         creditControlRequest = ocsServiceStub.creditControlRequest(
                 new CreditControlRequestObserver<CreditControlAnswerInfo>() {
                     public void onNext(CreditControlAnswerInfo answer) {
-                        try {
-                            LOG.info("[<<] Received data bucket for {}", answer.getMsisdn());
-                            final CreditControlContext ccrContext = ccrMap.remove(answer.getRequestId());
-                            if (ccrContext != null) {
-                                final ServerCCASession session = OcsServer.getInstance().getStack().getSession(ccrContext.getSessionId(), ServerCCASession.class);
-                                if (session != null && session.isValid()) {
-                                    updateBlockedList(answer, ccrContext.getCreditControlRequest());
-                                    if (!ccrContext.getSkipAnswer()) {
-                                        CreditControlAnswer cca = createCreditControlAnswer(answer);
-                                        try {
-                                            session.sendCreditControlAnswer(ccrContext.createCCA(cca));
-                                        } catch (InternalException | IllegalDiameterStateException | RouteException | OverloadException e) {
-                                            LOG.error("Failed to send Credit-Control-Answer", e);
-                                        }
-                                    }
-                                } else {
-                                    LOG.warn("No stored CCR or Session for {}", answer.getRequestId());
-                                }
-                            } else {
-                                LOG.warn("Missing CreditControlContext for req id {}", answer.getRequestId());
-                            }
-                        } catch (Exception e) {
-                            LOG.error("Credit-Control-Request failed ", e);
-                        }
+                        handleGrpcCcrAnswer(answer);
                     }
                 });
+    }
+
+    private void handleGrpcCcrAnswer(CreditControlAnswerInfo answer) {
+        try {
+            LOG.info("[<<] Received data bucket for {}", answer.getMsisdn());
+            final CreditControlContext ccrContext = ccrMap.remove(answer.getRequestId());
+            if (ccrContext != null) {
+                final ServerCCASession session = OcsServer.getInstance().getStack().getSession(ccrContext.getSessionId(), ServerCCASession.class);
+                if (session != null && session.isValid()) {
+                    removeFromSessionMap(ccrContext);
+                    updateBlockedList(answer, ccrContext.getCreditControlRequest());
+                    if (!ccrContext.getSkipAnswer()) {
+                        CreditControlAnswer cca = createCreditControlAnswer(answer);
+                        try {
+                            session.sendCreditControlAnswer(ccrContext.createCCA(cca));
+                        } catch (InternalException | IllegalDiameterStateException | RouteException | OverloadException e) {
+                            LOG.error("Failed to send Credit-Control-Answer", e);
+                        }
+                    }
+                } else {
+                    LOG.warn("No stored CCR or Session for {}", answer.getRequestId());
+                }
+            } else {
+                LOG.warn("Missing CreditControlContext for req id {}", answer.getRequestId());
+            }
+        } catch (Exception e) {
+            LOG.error("Credit-Control-Request failed ", e);
+        }
+    }
+
+    private void addToSessionMap(CreditControlContext creditControlContext) {
+        switch (getRequestType(creditControlContext)) {
+            case INITIAL_REQUEST:
+            case UPDATE_REQUEST:
+            case TERMINATION_REQUEST:
+                sessionIdMap.put(creditControlContext.getCreditControlRequest().getMsisdn(), new SessionContext(creditControlContext.getSessionId(), creditControlContext.getCreditControlRequest().getOriginHost(), creditControlContext.getCreditControlRequest().getOriginRealm()));
+                break;
+            case EVENT_REQUEST:
+                break;
+            default:
+                LOG.warn("Unknown request type");
+                break;
+        }
+    }
+
+    private void removeFromSessionMap(CreditControlContext creditControlContext) {
+        if (getRequestType(creditControlContext) == CreditControlRequestType.TERMINATION_REQUEST) {
+            sessionIdMap.remove(creditControlContext.getCreditControlRequest().getMsisdn());
+        }
     }
 
     private void initActivate() {
@@ -310,7 +331,7 @@ public class GrpcDataSource implements DataSource {
     @Override
     public void handleRequest(final CreditControlContext context) {
         ccrMap.put(context.getSessionId(), context);
-        sessionIdMap.put(context.getCreditControlRequest().getMsisdn(), new SessionContext(context.getSessionId(), context.getCreditControlRequest().getOriginHost(), context.getCreditControlRequest().getOriginRealm()));
+        addToSessionMap(context);
         LOG.info("[>>] Requesting bytes for {}", context.getCreditControlRequest().getMsisdn());
 
         if (creditControlRequest != null) {
