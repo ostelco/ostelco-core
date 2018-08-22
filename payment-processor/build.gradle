@@ -1,0 +1,60 @@
+plugins {
+  id "org.jetbrains.kotlin.jvm" version "1.2.61"
+  id "java-library"
+  id "idea"
+}
+
+sourceSets {
+  test {
+    java.srcDirs = ['src/test/kotlin']
+  }
+
+  integration {
+    java.srcDirs = ['src/test/kotlin', 'src/integration-tests/kotlin']
+    resources.srcDir 'src/integration-tests/resources'
+    compileClasspath += main.output + test.output
+    runtimeClasspath += main.output + test.output
+  }
+}
+
+dependencies {
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+
+  implementation project(":prime-api")
+
+  implementation "com.stripe:stripe-java:5.51.0"
+
+  testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
+  testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
+
+  integrationImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
+  integrationImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
+}
+
+configurations {
+  integration
+  integrationImplementation.extendsFrom implementation
+  integrationImplementation.extendsFrom runtime
+  integrationImplementation.extendsFrom runtimeOnly
+}
+
+task integration(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
+  testClassesDirs = sourceSets.integration.output.classesDirs
+  classpath = sourceSets.integration.runtimeClasspath
+}
+
+if (System.getenv("BUILD_ENV") != "CI_CD") {
+  build.dependsOn integration
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+  kotlinOptions {
+    jvmTarget = "1.8"
+  }
+}
+
+idea {
+  module {
+    testSourceDirs += file('src/integration-tests/kotlin')
+  }
+}

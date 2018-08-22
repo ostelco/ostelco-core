@@ -13,7 +13,7 @@ COPY script/wait.sh /wait.sh
 
 # test.yaml is copied as config.yaml for AT.
 COPY config/test.yaml /config/config.yaml
-COPY config/pantel-prod.json /secret/
+COPY config/pantel-prod.json /secret/pantel-prod.json
 
 COPY build/libs/prime-uber.jar /prime.jar
 

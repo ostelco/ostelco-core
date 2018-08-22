@@ -1,11 +1,9 @@
 package org.ostelco.prime.storage.graph
 
 import arrow.core.Either
-import arrow.core.None
-import arrow.core.Option
 import arrow.core.flatMap
-import arrow.core.orElse
 import org.neo4j.driver.v1.Transaction
+import org.ostelco.prime.logger
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Entity
 import org.ostelco.prime.model.Offer
@@ -51,6 +49,7 @@ class Neo4jStore : GraphStore by Neo4jStoreSingleton
 object Neo4jStoreSingleton : GraphStore {
 
     private val ocs: OcsAdminService by lazy { getResource<OcsAdminService>() }
+    private val logger by logger()
 
     //
     // Entity
@@ -119,7 +118,7 @@ object Neo4jStoreSingleton : GraphStore {
         subscriberStore.getRelated(subscriberId, subscriberToBundleRelation, transaction)
     }
 
-    override fun updateBundle(bundle: Bundle): Option<StoreError> = writeTransaction {
+    override fun updateBundle(bundle: Bundle): Either<StoreError, Unit> = writeTransaction {
         bundleStore.update(bundle, transaction)
                 .ifFailedThenRollback(transaction)
     }
@@ -132,10 +131,10 @@ object Neo4jStoreSingleton : GraphStore {
             readTransaction { subscriberStore.get(subscriberId, transaction) }
 
     // TODO vihang: Move this logic to DSL + Rule Engine + Triggers, when they are ready
-    override fun addSubscriber(subscriber: Subscriber, referredBy: String?): Option<StoreError> = writeTransaction {
+    override fun addSubscriber(subscriber: Subscriber, referredBy: String?): Either<StoreError, Unit> = writeTransaction {
 
         if (subscriber.id == referredBy) {
-            return@writeTransaction Option(ValidationError(
+            return@writeTransaction Either.left(ValidationError(
                     type = subscriberEntity.name,
                     id = subscriber.id,
                     message = "Referred by self"))
@@ -143,66 +142,63 @@ object Neo4jStoreSingleton : GraphStore {
 
         val bundleId = subscriber.id
 
-        val failed = subscriberStore.create(subscriber, transaction)
+        val either = subscriberStore.create(subscriber, transaction)
         if (referredBy != null) {
             // Give 1 GB if subscriber is referred
-            failed
-                    .ifSuccessThen { referredRelationStore.create(referredBy, subscriber.id, transaction) }
-                    .ifSuccessThen { bundleStore.create(Bundle(bundleId, 1_000_000_000), transaction) }
-                    .ifSuccessThen {
+            either
+                    .flatMap { referredRelationStore.create(referredBy, subscriber.id, transaction) }
+                    .flatMap { bundleStore.create(Bundle(bundleId, 1_000_000_000), transaction) }
+                    .flatMap { _ ->
                         productStore
                                 .get("1GB_FREE_ON_REFERRED", transaction)
                                 .flatMap {
                                     createPurchaseRecordRelation(
                                             subscriber.id,
-                                            PurchaseRecord(product = it, timestamp = Instant.now().toEpochMilli()),
+                                            PurchaseRecord(id = UUID.randomUUID().toString(), product = it, timestamp = Instant.now().toEpochMilli()),
                                             transaction)
                                 }
-                                .swap().toOption()
                     }
-                    .ifSuccessThen {
+                    .flatMap {
                         ocs.addBundle(Bundle(bundleId, 1_000_000_000))
-                        None
+                        Either.right(Unit)
                     }
         } else {
             // Give 100 MB as free initial balance
-            failed
-                    .ifSuccessThen { bundleStore.create(Bundle(bundleId, 100_000_000), transaction) }
-                    .ifSuccessThen {
+            either
+                    .flatMap { bundleStore.create(Bundle(bundleId, 100_000_000), transaction) }
+                    .flatMap { _ ->
                         productStore
                                 .get("100MB_FREE_ON_JOINING", transaction)
-                                .map {
+                                .flatMap {
                                     createPurchaseRecordRelation(
                                             subscriber.id,
-                                            PurchaseRecord(product = it, timestamp = Instant.now().toEpochMilli()),
+                                            PurchaseRecord(id = UUID.randomUUID().toString(), product = it, timestamp = Instant.now().toEpochMilli()),
                                             transaction)
                                 }
-                                .fold({ Option(it) }, { None })
                     }
-                    .ifSuccessThen {
+                    .flatMap {
                         ocs.addBundle(Bundle(bundleId, 100_000_000))
-                        None
+                        Either.right(Unit)
                     }
-        }.ifSuccessThen { subscriberToBundleStore.create(subscriber.id, bundleId, transaction) }
-                .ifSuccessThen { subscriberToSegmentStore.create(subscriber.id, "all", transaction) }
+        }.flatMap { subscriberToBundleStore.create(subscriber.id, bundleId, transaction) }
+                .flatMap { subscriberToSegmentStore.create(subscriber.id, "all", transaction) }
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun updateSubscriber(subscriber: Subscriber): Option<StoreError> = writeTransaction {
+    override fun updateSubscriber(subscriber: Subscriber): Either<StoreError, Unit> = writeTransaction {
         subscriberStore.update(subscriber, transaction)
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun removeSubscriber(subscriberId: String): Option<StoreError> = writeTransaction {
+    override fun removeSubscriber(subscriberId: String): Either<StoreError, Unit> = writeTransaction {
         subscriberStore.exists(subscriberId, transaction)
-                .ifSuccessThen {
+                .flatMap { _ ->
                     subscriberStore.getRelated(subscriberId, subscriberToBundleRelation, transaction)
                             .map { it.forEach { bundle -> bundleStore.delete(bundle.id, transaction) } }
                     subscriberStore.getRelated(subscriberId, subscriptionRelation, transaction)
                             .map { it.forEach { subscription -> subscriptionStore.delete(subscription.id, transaction) } }
-                    None
                 }
-                .ifSuccessThen { subscriberStore.delete(subscriberId, transaction) }
+                .flatMap { subscriberStore.delete(subscriberId, transaction) }
                 .ifFailedThenRollback(transaction)
     }
 
@@ -210,7 +206,7 @@ object Neo4jStoreSingleton : GraphStore {
     // Subscription
     //
 
-    override fun addSubscription(subscriberId: String, msisdn: String): Option<StoreError> = writeTransaction {
+    override fun addSubscription(subscriberId: String, msisdn: String): Either<StoreError, Unit> = writeTransaction {
 
         subscriberStore.getRelated(subscriberId, subscriberToBundleRelation, transaction)
                 .flatMap { bundles ->
@@ -222,7 +218,7 @@ object Neo4jStoreSingleton : GraphStore {
                 }
                 .flatMap { bundles ->
                     subscriptionStore.create(Subscription(msisdn), transaction)
-                            .swapToEither { bundles }
+                            .map { bundles }
                 }
                 .flatMap { bundles ->
                     subscriptionStore.get(msisdn, transaction)
@@ -233,22 +229,19 @@ object Neo4jStoreSingleton : GraphStore {
                             .map { subscriber -> Triple(bundles, subscription, subscriber) }
                 }
                 .flatMap { (bundles, subscription, subscriber) ->
-                    bundles.fold(None as Option<StoreError>) { failed, bundle ->
-                        failed.ifSuccessThen {
+                    bundles.fold(Either.right(Unit) as Either<StoreError, Unit>) { either, bundle ->
+                        either.flatMap { _ ->
                             subscriptionToBundleStore.create(subscription, bundle, transaction)
-                                    .ifSuccessThen {
+                                    .flatMap {
                                         ocs.addMsisdnToBundleMapping(msisdn, bundle.id)
-                                        None
+                                        Either.right(Unit)
                                     }
                         }
-                    }.swapToEither { Pair(subscription, subscriber) }
+                    }.map { Pair(subscription, subscriber) }
                 }
                 .flatMap { (subscription, subscriber) ->
                     subscriptionRelationStore.create(subscriber, subscription, transaction)
-                            .swapToEither { None }
                 }
-                .swap()
-                .toOption()
                 .ifFailedThenRollback(transaction)
     }
 
@@ -270,9 +263,8 @@ object Neo4jStoreSingleton : GraphStore {
         return readTransaction {
 
             subscriberStore.exists(subscriberId, transaction)
-                    .swapToEither { emptyMap<String, Product>() }
-                    .ifSuccessThen {
-                        read("""
+                    .flatMap { _ ->
+                        read<Either<StoreError, Map<String, Product>>>("""
                             MATCH (:${subscriberEntity.name} {id: '$subscriberId'})
                             -[:${subscriberToSegmentRelation.relation.name}]->(:${segmentEntity.name})
                             <-[:${offerToSegmentRelation.relation.name}]-(:${offerEntity.name})
@@ -292,8 +284,7 @@ object Neo4jStoreSingleton : GraphStore {
     override fun getProduct(subscriberId: String, sku: String): Either<StoreError, Product> {
         return readTransaction {
             subscriberStore.exists(subscriberId, transaction)
-                    .swapToEither { Product() }
-                    .ifSuccessThen {
+                    .flatMap {
                         read("""
                             MATCH (:${subscriberEntity.name} {id: '$subscriberId'})
                             -[:${subscriberToSegmentRelation.relation.name}]->(:${segmentEntity.name})
@@ -337,10 +328,12 @@ object Neo4jStoreSingleton : GraphStore {
         return subscriberStore.get(subscriberId, transaction).flatMap { subscriber ->
             productStore.get(purchase.product.sku, transaction).flatMap { product ->
 
-                purchase.id = UUID.randomUUID().toString()
+                if (purchase.id.isBlank()) {
+                    logger.warn("Purchase Id not set, generating a UUID")
+                    purchase.id = UUID.randomUUID().toString()
+                }
                 purchaseRecordRelationStore.create(subscriber, purchase, product, transaction)
-                        .toEither { purchase.id }
-                        .swap()
+                        .map { purchase.id }
             }
         }
     }
@@ -436,33 +429,33 @@ object Neo4jStoreSingleton : GraphStore {
     private val productClassEntity = EntityType(ProductClass::class.java)
     private val productClassStore = EntityStore(productClassEntity)
 
-    override fun createProductClass(productClass: ProductClass): Option<StoreError> = writeTransaction {
+    override fun createProductClass(productClass: ProductClass): Either<StoreError, Unit> = writeTransaction {
         productClassStore.create(productClass, transaction)
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun createProduct(product: Product): Option<StoreError> = writeTransaction {
+    override fun createProduct(product: Product): Either<StoreError, Unit> = writeTransaction {
         productStore.create(product, transaction)
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun createSegment(segment: Segment): Option<StoreError> {
+    override fun createSegment(segment: Segment): Either<StoreError, Unit> {
         return writeTransaction {
             segmentStore.create(segment, transaction)
-                    .ifSuccessThen { subscriberToSegmentStore.create(segment.subscribers, segment.id, transaction) }
+                    .flatMap { subscriberToSegmentStore.create(segment.subscribers, segment.id, transaction) }
                     .ifFailedThenRollback(transaction)
         }
     }
 
-    override fun createOffer(offer: Offer): Option<StoreError> = writeTransaction {
+    override fun createOffer(offer: Offer): Either<StoreError, Unit> = writeTransaction {
         offerStore
                 .create(offer, transaction)
-                .ifSuccessThen { offerToSegmentStore.create(offer.id, offer.segments, transaction) }
-                .ifSuccessThen { offerToProductStore.create(offer.id, offer.products, transaction) }
+                .flatMap { offerToSegmentStore.create(offer.id, offer.segments, transaction) }
+                .flatMap { offerToProductStore.create(offer.id, offer.products, transaction) }
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun updateSegment(segment: Segment): Option<StoreError> = writeTransaction {
+    override fun updateSegment(segment: Segment): Either<StoreError, Unit> = writeTransaction {
         subscriberToSegmentStore.create(segment.id, segment.subscribers, transaction)
                 .ifFailedThenRollback(transaction)
     }
@@ -478,17 +471,6 @@ object Neo4jStoreSingleton : GraphStore {
 // override fun getProductClass(id: String): ProductClass? = productClassStore.get(id)
 }
 
-fun <A> Option<A>.ifSuccessThen(next: () -> Option<A>): Option<A> = this.orElse(next)
-fun <A> Option<A>.ifFailedThenRollback(transaction: Transaction): Option<A> {
-    if (this.nonEmpty()) {
-        transaction.failure()
-    }
-    return this
-}
-
-fun <L, R> Option<L>.swapToEither(right: () -> R): Either<L, R> = this.toEither(right).swap()
-
-fun <L, R> Either<L, R>.ifSuccessThen(next: () -> Either<L, R>): Either<L, R> = this.fold({ Either.left(it) }, { next() })
 fun <L, R> Either<L, R>.ifFailedThenRollback(transaction: Transaction): Either<L, R> {
     if (this.isLeft()) {
         transaction.failure()

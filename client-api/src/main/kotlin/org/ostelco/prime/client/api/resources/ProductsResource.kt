@@ -9,7 +9,9 @@ import javax.ws.rs.POST
 import javax.ws.rs.Path
 import javax.ws.rs.PathParam
 import javax.ws.rs.Produces
+import javax.ws.rs.QueryParam
 import javax.ws.rs.core.Response
+import javax.ws.rs.core.Response.Status.CREATED
 
 /**
  * Products API.
@@ -27,7 +29,7 @@ class ProductsResource(private val dao: SubscriberDAO) {
         }
 
         return dao.getProducts(token.name).fold(
-                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) },
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
     }
@@ -36,19 +38,20 @@ class ProductsResource(private val dao: SubscriberDAO) {
     @POST
     @Path("{sku}")
     @Produces("application/json")
-    fun purchaseProductOld(@Auth token: AccessTokenPrincipal?,
-                           @NotNull
-                           @PathParam("sku")
-                           sku: String): Response {
+    fun purchaseProductWithoutPayment(@Auth token: AccessTokenPrincipal?,
+                                      @NotNull
+                                      @PathParam("sku")
+                                      sku: String): Response {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
 
-        return dao.purchaseProduct(token.name, sku).fold(
-                { Response.status(Response.Status.CREATED) },
-                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) })
-                .build()
+        return dao.purchaseProductWithoutPayment(token.name, sku)
+                .fold(
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                        { productInfo -> Response.status(CREATED).entity(productInfo) }
+                ).build()
     }
 
     @POST
@@ -57,15 +60,20 @@ class ProductsResource(private val dao: SubscriberDAO) {
     fun purchaseProduct(@Auth token: AccessTokenPrincipal?,
                         @NotNull
                         @PathParam("sku")
-                        sku: String): Response {
+                        sku: String,
+                        @QueryParam("sourceId")
+                        sourceId: String?,
+                        @QueryParam("saveCard")
+                        saveCard: Boolean = false): Response {    /* 'false' is default. */
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
 
-        return dao.purchaseProduct(token.name, sku).fold(
-                { Response.status(Response.Status.CREATED) },
-                { Response.status(Response.Status.NOT_FOUND).entity(asJson(it)) })
-                .build()
+        return dao.purchaseProduct(token.name, sku, sourceId, saveCard)
+                .fold(
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                        { productInfo -> Response.status(CREATED).entity(productInfo) }
+                ).build()
     }
 }

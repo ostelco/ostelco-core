@@ -15,12 +15,12 @@ This setup is not intended for production since that requires serious Operation 
 Deploy Neo4j
 
 ```bash
-kubectl apply -f infra/dev/neo4j.yaml
+kubectl apply -f prime/infra/dev/neo4j.yaml
 ```
 
  * Private (prod) cluster
 Deploy Neo4j
 
 ```bash
-kubectl apply -f infra/prod/neo4j.yaml
+kubectl apply -f prime/infra/prod/neo4j.yaml
 ```

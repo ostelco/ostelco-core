@@ -25,15 +25,9 @@ class AnalyticsResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        val error = dao.reportAnalytics(token.name, event)
-
-        return if (error.isEmpty()) {
-            Response.status(Response.Status.CREATED)
-                    .build()
-        } else {
-            Response.status(Response.Status.NOT_FOUND)
-                    .entity(asJson(error.get()))
-                    .build()
-        }
+        return dao.reportAnalytics(token.name, event).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                { Response.status(Response.Status.CREATED) }
+        ).build()
     }
 }

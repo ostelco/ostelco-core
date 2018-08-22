@@ -1,0 +1,42 @@
+@startuml
+
+actor Client
+participant Client
+
+box "Prime"
+    participant "client-api"
+    participant "payment-processor"
+    participant "DAO"
+end box
+participant Stripe
+
+activate Client
+
+    Client -> "client-api" : Get saved sources
+    activate "client-api"
+    "client-api" -> Client : {list of sources}
+    deactivate "client-api"
+    note right : See "list-sources" flow diagram
+
+    Client -> "client-api" : PUT /sources {sourceId}
+    note right of "client-api"
+       {name} identifies the user (from Oauth2 auth.)
+       and is equivalent to the users email address
+    end note
+
+    "client-api" -> DAO : getCustomerId(name)
+    activate DAO
+    DAO -> "client-api" : {customerId}
+    deactivate DAO
+
+    "client-api" -> "payment-processor" : setDefaultSource(customerId, sourceId)
+    activate "payment-processor"
+    "payment-processor" -> "client-api" : {result}
+    deactivate "payment-processor"
+
+    "client-api" -> Client : {result}
+    deactivate "client-api"
+
+deactivate Client
+
+@enduml

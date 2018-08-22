@@ -3,6 +3,7 @@ package org.ostelco.prime.events
 import com.lmax.disruptor.EventHandler
 import org.ostelco.prime.disruptor.EventMessageType.CREDIT_CONTROL_REQUEST
 import org.ostelco.prime.disruptor.EventMessageType.RELEASE_RESERVED_BUCKET
+import org.ostelco.prime.disruptor.EventMessageType.REMOVE_MSISDN_TO_BUNDLE_MAPPING
 import org.ostelco.prime.disruptor.EventMessageType.TOPUP_DATA_BUNDLE_BALANCE
 import org.ostelco.prime.disruptor.OcsEvent
 import org.ostelco.prime.logger
@@ -28,7 +29,8 @@ class EventProcessor(
         try {
             if (event.messageType == CREDIT_CONTROL_REQUEST
                     || event.messageType == RELEASE_RESERVED_BUCKET
-                    || event.messageType == TOPUP_DATA_BUNDLE_BALANCE) {
+                    || event.messageType == TOPUP_DATA_BUNDLE_BALANCE
+                    || event.messageType == REMOVE_MSISDN_TO_BUNDLE_MAPPING) {
                 logger.info("Updating data bundle balance for {} : {} to {} bytes",
                         event.msisdn, event.bundleId, event.bundleBytes)
                 val bundleId = event.bundleId

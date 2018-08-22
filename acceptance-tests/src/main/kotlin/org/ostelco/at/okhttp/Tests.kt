@@ -1,6 +1,7 @@
 package org.ostelco.at.okhttp
 
 import org.junit.Test
+import org.ostelco.at.common.Payment.createPaymentSourceId
 import org.ostelco.at.common.createProfile
 import org.ostelco.at.common.createSubscription
 import org.ostelco.at.common.expectedProducts
@@ -74,8 +75,6 @@ class ProfileTest {
 }
 
 class GetSubscriptions {
-
-    private val logger by logger()
 
     @Test
     fun `okhttp test - GET subscriptions`() {
@@ -176,7 +175,35 @@ class PurchaseTest {
 
         val balanceBefore = client.subscriptionStatus.remaining
 
-        client.buyProduct("1GB_249NOK")
+        val sourceId = createPaymentSourceId()
+
+        client.purchaseProduct("1GB_249NOK", sourceId, false)
+
+        Thread.sleep(200) // wait for 200 ms for balance to be updated in db
+
+        val balanceAfter = client.subscriptionStatus.remaining
+
+        assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
+
+        val purchaseRecords = client.purchaseHistory
+
+        purchaseRecords.sortBy { it.timestamp }
+
+        assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
+        assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
+    }
+
+    @Test
+    fun `okhttp test - POST products purchase without payment`() {
+
+        val email = "purchase-legacy-${randomInt()}@test.com"
+        createProfile(name = "Test Legacy Purchase User", email = email)
+
+        val client = clientForSubject(subject = email)
+
+        val balanceBefore = client.subscriptionStatus.remaining
+
+        client.buyProductDeprecated("1GB_249NOK")
 
         Thread.sleep(200) // wait for 200 ms for balance to be updated in db
 

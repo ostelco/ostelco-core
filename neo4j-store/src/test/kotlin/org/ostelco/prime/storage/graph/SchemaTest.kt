@@ -155,12 +155,11 @@ class SchemaTest {
 
     @Test
     fun `test fail to create relation due to missing node`() {
-        val failed = writeTransaction {
+        val either = writeTransaction {
             val aId = "a_id"
             val bId = "b_id"
 
             val fromEntity = EntityType(A::class.java)
-            val fromEntityStore = EntityStore(fromEntity)
 
             val toEntity = EntityType(B::class.java)
             val toEntityStore = EntityStore(toEntity)
@@ -180,9 +179,9 @@ class SchemaTest {
             relationStore.create(aId, bId, transaction)
         }
 
-        failed.fold(
-                { fail("Did not received error while creating relation for missing node") },
-                { assertEquals("Failed to create REFERRED - a_id -> b_id", it.message) })
+        either.fold(
+                { assertEquals("Failed to create REFERRED - a_id -> b_id", it.message) },
+                { fail("Did not received error while creating relation for missing node") })
     }
 
     @Test

@@ -59,7 +59,6 @@ class PurchaseRequestHandlerTest {
 
         val capturedPurchaseRecord = ArgumentCaptor.forClass(PurchaseRecord::class.java)
 
-        assertEquals(MSISDN, capturedPurchaseRecord.value.msisdn)
         assertEquals(DATA_TOPUP_3GB, capturedPurchaseRecord.value.product)
 
         verify<EventProducer>(producer).topupDataBundleBalanceEvent(MSISDN, topupBytes)

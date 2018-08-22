@@ -1,5 +1,5 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.60"
+  id "org.jetbrains.kotlin.jvm" version "1.2.61"
   id "application"
   id "com.github.johnrengelman.shadow" version "2.0.4"
   id "idea"
@@ -18,7 +18,7 @@ sourceSets {
   }
 }
 
-version = "1.10.2"
+version = "1.11.0"
 
 repositories {
   maven {
@@ -37,10 +37,10 @@ dependencies {
   runtimeOnly project(':client-api')
   runtimeOnly project(':admin-api')
   runtimeOnly project(':app-notifier')
+  runtimeOnly project(':payment-processor')
 
   implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
   implementation "io.dropwizard:dropwizard-http2:$dropwizardVersion"
-  implementation project(':ostelco-lib')
   implementation "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
   implementation 'com.google.guava:guava:25.1-jre'
 
@@ -66,6 +66,10 @@ task integration(type: Test, description: 'Runs the integration tests.', group: 
   environment("GOOGLE_APPLICATION_CREDENTIALS", "config/pantel-prod.json")
   testClassesDirs = sourceSets.integration.output.classesDirs
   classpath = sourceSets.integration.runtimeClasspath
+}
+
+if (System.getenv("BUILD_ENV") != "CI_CD") {
+  build.dependsOn integration
 }
 
 shadowJar {

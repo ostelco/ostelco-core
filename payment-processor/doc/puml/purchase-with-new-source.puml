@@ -1,0 +1,105 @@
+@startuml
+
+actor Client
+participant Client
+
+box "Prime"
+    participant "client-api"
+    participant "payment-processor"
+    participant OCS
+    participant DAO
+end box
+participant Stripe
+
+activate Client
+    Client -> Client : Collecting payment information
+
+    Client -> Stripe : Create new source with Stripe
+    activate Stripe
+    Stripe -> Client : {sourceId}
+    deactivate Stripe
+
+    Client -> Client : Select product ({sku})
+
+    Client -> "client-api": POST /products {sku, sourceId, saveCardFlag}
+    activate "client-api"
+    note right of "client-api"
+       {name} identifies the user (from Oauth2 auth.)
+       and is equivalent to the users email address
+    end note
+
+    "client-api" -> DAO : getCustomerId(name)
+    activate DAO
+    DAO -> "client-api" : {customerId}
+    deactivate DAO
+
+    alt {customerId} is null
+        note right of "client-api"
+            Register subscriber using the "create-new-subscriber"
+            flow diagram
+        end note
+    else {customerId} is not null
+        note right of "client-api"
+            Subscriber already registered
+        end note
+    end
+    note right of "client-api"
+        At this point there is a valid {customerId} for {name}
+    end note
+
+    "client-api" -> DAO : getProduct(sku)
+    activate DAO
+    DAO -> "client-api" : {product}
+    deactivate DAO
+
+    "client-api" -> "payment-processor" : purchaseProduct(customerId, sourceId, product, saveCardFlag)
+    activate "payment-processor"
+
+    alt successful case
+
+        "payment-processor" -> Stripe : POST /v1/customers/{customerId}/sources {sourceId}
+        activate Stripe
+        Stripe -> "payment-processor" : {sourceInfo}
+        deactivate Stripe
+        note left : Attach new source to customer ({sourceId, customerId})
+
+        "payment-processor" -> Stripe : POST /v1/charges {customerId, sourceId, product.amount, product.currency, product.description}
+        activate Stripe
+        Stripe -> "payment-processor" : {chargeInfo}
+        deactivate Stripe
+
+        alt saveCardFlag is false
+            "payment-processor" -> Stripe : DELETE /v1/customer/{customerId}/sources/{sourceId}
+             activate Stripe
+            Stripe -> "payment-processor" : {result)}
+            deactivate Stripe
+        end
+
+        "payment-processor" -> DAO: recordChargeInfo(customerId, chargeInfo)
+        activate DAO
+        DAO -> "payment-processor" : {result}
+        deactivate DAO
+        note right
+          Charges/refunds to be recorded
+          in a "ledger" type of store
+        end note
+
+        "payment-processor" -> OCS : updateBucket(customerId, product.size)
+        activate OCS
+        OCS -> "payment-processor" : {result}
+        deactivate OCS
+
+    else error
+         note right of "payment-processor" : Unroll charge with Stripe etc. (TBD)
+
+    end
+
+    "payment-processor" -> "client-api" : {result}
+    deactivate "payment-processor"
+
+    "client-api" -> Client : {result}
+    deactivate "client-api"
+
+deactivate Client
+
+@enduml
