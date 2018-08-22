@@ -23,6 +23,7 @@ import org.ostelco.diameter.model.RedirectAddressType;
 import org.ostelco.diameter.model.RedirectServer;
 import org.ostelco.diameter.model.SessionContext;
 import org.ostelco.ocs.grpc.api.*;
+import org.ostelco.analytics.grpc.api.*;
 import org.ostelco.ocsgw.OcsServer;
 import org.ostelco.ocsgw.data.DataSource;
 import org.slf4j.Logger;
@@ -64,11 +65,13 @@ public class GrpcDataSource implements DataSource {
 
     private final OcsServiceGrpc.OcsServiceStub ocsServiceStub;
 
-    //private final OcsAnalyticsServiceGrpc.OcsAnalyticsServiceStub ocsAnalyticsServiceStub;
-
     private final Set<String> blocked = new HashSet<>();
 
     private StreamObserver<CreditControlRequestInfo> creditControlRequest;
+
+    private final OcsgwAnalyticsServiceGrpc.OcsgwAnalyticsServiceStub ocsgwAnalyticsServiceStub;
+
+    private StreamObserver<OcsgwAnalyticsReport> ocsgwAnalyticsReport;
 
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
@@ -77,6 +80,8 @@ public class GrpcDataSource implements DataSource {
     private ScheduledFuture initActivateFuture = null;
 
     private ScheduledFuture initCCRFuture = null;
+
+    private ScheduledFuture initAnalyticsFuture = null;
 
     private static final int MAX_ENTRIES = 50000;
     private final LinkedHashMap<String, CreditControlContext> ccrMap = new LinkedHashMap<String, CreditControlContext>(MAX_ENTRIES, .75F) {
@@ -99,6 +104,19 @@ public class GrpcDataSource implements DataSource {
             LOG.error("CreditControlRequestObserver error", t);
             if (t instanceof StatusRuntimeException) {
                 reconnectCreditControlRequest();
+            }
+        }
+
+        public final void onCompleted() {
+            // Nothing to do here
+        }
+    }
+
+    private abstract class AnalyticsRequestObserver<T> implements StreamObserver<T> {
+        public final void onError(Throwable t) {
+            LOG.error("AnalyticsRequestObserver error", t);
+            if (t instanceof StatusRuntimeException) {
+                reconnectAnalyticsReport();
             }
         }
 
@@ -131,6 +149,24 @@ public class GrpcDataSource implements DataSource {
         initActivateFuture = executorService.schedule((Callable<Object>) () -> {
                     LOG.info("Calling initActivate");
                     initActivate();
+                    return "Called!";
+                },
+                5,
+                TimeUnit.SECONDS);
+    }
+
+
+    private void reconnectAnalyticsReport() {
+        LOG.info("reconnectAnalyticsReport called");
+
+        if (initAnalyticsFuture != null) {
+            initAnalyticsFuture.cancel(true);
+        }
+
+        LOG.info("Schedule new Callable initAnalyticsRequest");
+        initAnalyticsFuture = executorService.schedule((Callable<Object>) () -> {
+                    LOG.info("Calling initAnalyticsRequest");
+                    initAnalyticsRequest();
                     return "Called!";
                 },
                 5,
@@ -204,7 +240,8 @@ public class GrpcDataSource implements DataSource {
             ocsServiceStub = OcsServiceGrpc.newStub(channel)
                     .withCallCredentials(MoreCallCredentials.from(credentials));
 
-            //ocsAnalyticsServiceStub = OcsAnalyticsServiceGrpc.newStub(channel).withCallCredentials(MoreCallCredentials.from(credentials));
+            ocsgwAnalyticsServiceStub = OcsgwAnalyticsServiceGrpc.newStub(channel)
+                    .withCallCredentials(MoreCallCredentials.from(credentials));
         } else {
             final ManagedChannelBuilder channelBuilder = ManagedChannelBuilder
                     .forTarget(target)
@@ -216,6 +253,8 @@ public class GrpcDataSource implements DataSource {
                     .usePlaintext()
                     .build();
             ocsServiceStub = OcsServiceGrpc.newStub(channel);
+
+            ocsgwAnalyticsServiceStub = OcsgwAnalyticsServiceGrpc.newStub(channel);
         }
     }
 
@@ -227,6 +266,8 @@ public class GrpcDataSource implements DataSource {
         initActivate();
 
         initKeepAlive();
+
+        initAnalyticsRequest();
     }
 
     private void initCreditControlRequest() {
@@ -236,6 +277,18 @@ public class GrpcDataSource implements DataSource {
                         handleGrpcCcrAnswer(answer);
                     }
                 });
+    }
+
+    private void initAnalyticsRequest() {
+        ocsgwAnalyticsReport = ocsgwAnalyticsServiceStub.ocsgwAnalyticsEvent(
+            new AnalyticsRequestObserver<OcsgwAnalyticsReply>() {
+
+                @Override
+                public void onNext(OcsgwAnalyticsReply value) {
+                    // Ignore reply from Prime
+                }
+            }
+        );
     }
 
     private void handleGrpcCcrAnswer(CreditControlAnswerInfo answer) {
@@ -291,9 +344,7 @@ public class GrpcDataSource implements DataSource {
 
     private void updateAnalytics() {
         LOG.info("Number of active sesssions is {}", sessionIdMap.size());
-
-        // ToDo: Send to analytics
-
+        ocsgwAnalyticsReport.onNext(OcsgwAnalyticsReport.newBuilder().setActiveSessions(sessionIdMap.size()).build());
     }
 
     private void initActivate() {

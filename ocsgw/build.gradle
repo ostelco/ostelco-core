@@ -5,6 +5,7 @@ plugins {
 
 dependencies {
     implementation project(':ocs-grpc-api')
+    implementation project(':analytics-grpc-api')
 
     implementation project(':diameter-stack')
     implementation "com.google.cloud:google-cloud-core-grpc:$googleCloudVersion"

@@ -7,17 +7,16 @@ option java_package = "org.ostelco.analytics.grpc.api";
 
 import "google/protobuf/timestamp.proto";
 
-// This is used only to report to Analytics events from OCSgw to Prime
+// This is used to report Analytics events from OCSgw to Prime
 
-// OCS Service
-service OcsAnalyticsService {
-    rpc AnalyticsEvent (ActiveSessionsRequest) returns (ActiveSessionsReply) {}
+service OcsgwAnalyticsService {
+    rpc OcsgwAnalyticsEvent (stream OcsgwAnalyticsReport) returns (OcsgwAnalyticsReply) {}
 }
 
-message ActiveSessionsRequest {
+message OcsgwAnalyticsReport {
     uint32 activeSessions = 1;
     google.protobuf.Timestamp timestamp = 2;
 }
 
-message ActiveSessionsReply {
+message OcsgwAnalyticsReply {
 }
