@@ -1,13 +1,13 @@
 package org.ostelco.prime.ocs
 
 import com.lmax.disruptor.EventHandler
-import org.ostelco.ocs.api.ActivateResponse
-import org.ostelco.ocs.api.CreditControlAnswerInfo
-import org.ostelco.ocs.api.FinalUnitAction
-import org.ostelco.ocs.api.FinalUnitIndication
-import org.ostelco.ocs.api.MultipleServiceCreditControl
-import org.ostelco.ocs.api.ReportingReason
-import org.ostelco.ocs.api.ServiceUnit
+import org.ostelco.ocs.grpc.api.ActivateResponse
+import org.ostelco.ocs.grpc.api.CreditControlAnswerInfo
+import org.ostelco.ocs.grpc.api.FinalUnitAction
+import org.ostelco.ocs.grpc.api.FinalUnitIndication
+import org.ostelco.ocs.grpc.api.MultipleServiceCreditControl
+import org.ostelco.ocs.grpc.api.ReportingReason
+import org.ostelco.ocs.grpc.api.ServiceUnit
 import org.ostelco.prime.disruptor.EventMessageType.CREDIT_CONTROL_REQUEST
 import org.ostelco.prime.disruptor.EventMessageType.TOPUP_DATA_BUNDLE_BALANCE
 import org.ostelco.prime.disruptor.OcsEvent

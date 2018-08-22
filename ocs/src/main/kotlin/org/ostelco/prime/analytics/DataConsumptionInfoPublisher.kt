@@ -9,7 +9,7 @@ import com.google.pubsub.v1.ProjectTopicName
 import com.google.pubsub.v1.PubsubMessage
 import com.lmax.disruptor.EventHandler
 import io.dropwizard.lifecycle.Managed
-import org.ostelco.ocs.api.DataTrafficInfo
+import org.ostelco.analytics.grpc.api.DataTrafficInfo
 import org.ostelco.prime.disruptor.OcsEvent
 import org.ostelco.prime.disruptor.EventMessageType.CREDIT_CONTROL_REQUEST
 import org.ostelco.prime.logger

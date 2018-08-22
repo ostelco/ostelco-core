@@ -1,6 +1,6 @@
 package org.ostelco.prime.disruptor
 
-import org.ostelco.ocs.api.ReportingReason
+import org.ostelco.ocs.grpc.api.ReportingReason
 
 class OcsEvent {
 

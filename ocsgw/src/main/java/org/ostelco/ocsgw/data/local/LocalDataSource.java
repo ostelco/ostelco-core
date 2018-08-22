@@ -13,7 +13,7 @@ import org.ostelco.diameter.model.MultipleServiceCreditControl;
 import org.ostelco.diameter.model.RedirectAddressType;
 import org.ostelco.diameter.model.RedirectServer;
 import org.ostelco.diameter.model.ServiceUnit;
-import org.ostelco.ocs.api.CreditControlRequestType;
+import org.ostelco.ocs.grpc.api.CreditControlRequestType;
 import org.ostelco.ocsgw.OcsServer;
 import org.ostelco.ocsgw.data.DataSource;
 import org.slf4j.Logger;

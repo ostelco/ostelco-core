@@ -9,9 +9,9 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.ostelco.ocs.api.CreditControlRequestInfo
-import org.ostelco.ocs.api.MultipleServiceCreditControl
-import org.ostelco.ocs.api.ServiceUnit
+import org.ostelco.ocs.grpc.api.CreditControlRequestInfo
+import org.ostelco.ocs.grpc.api.MultipleServiceCreditControl
+import org.ostelco.ocs.grpc.api.ServiceUnit
 import org.ostelco.prime.disruptor.EventMessageType.CREDIT_CONTROL_REQUEST
 import org.ostelco.prime.disruptor.EventMessageType.TOPUP_DATA_BUNDLE_BALANCE
 import java.util.concurrent.CountDownLatch

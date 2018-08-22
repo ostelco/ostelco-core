@@ -1,0 +1,41 @@
+plugins {
+  id "java-library"
+  id "com.google.protobuf" version "0.8.6"
+  id "idea"
+}
+
+// Keeping it version 1.13.1 to be consistent with grpc via PubSub client lib
+// Keeping it version 1.13.1 to be consistent with netty via Firebase lib
+ext.grpcVersion = "1.13.1"
+
+dependencies {
+  api "io.grpc:grpc-netty-shaded:$grpcVersion"
+  api "io.grpc:grpc-protobuf:$grpcVersion"
+  api "io.grpc:grpc-stub:$grpcVersion"
+  api "io.grpc:grpc-core:$grpcVersion"
+}
+
+protobuf {
+  plugins {
+    grpc {
+      artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"
+    }
+  }
+  protoc { artifact = 'com.google.protobuf:protoc:3.6.0' }
+  generateProtoTasks {
+    all()*.plugins {
+      grpc {}
+    }
+  }
+}
+
+idea {
+  module {
+    sourceDirs += files("${protobuf.generatedFilesBaseDir}/main/java")
+    sourceDirs += files("${protobuf.generatedFilesBaseDir}/main/grpc")
+  }
+}
+
+clean {
+  delete protobuf.generatedFilesBaseDir
+}

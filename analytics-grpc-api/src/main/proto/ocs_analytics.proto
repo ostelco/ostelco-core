@@ -1,9 +1,9 @@
 syntax = "proto3";
 
-package org.ostelco.ocs.api;
+package org.ostelco.analytics.grpc.api;
 
 option java_multiple_files = true;
-option java_package = "org.ostelco.ocs.api";
+option java_package = "org.ostelco.analytics.grpc.api";
 
 import "google/protobuf/timestamp.proto";
 
@@ -11,7 +11,7 @@ import "google/protobuf/timestamp.proto";
 
 // OCS Service
 service OcsAnalyticsService {
-    rpc AnalyticsEvent (stream ActiveSessionsRequest) returns (ActiveSessionsReply) {}
+    rpc AnalyticsEvent (ActiveSessionsRequest) returns (ActiveSessionsReply) {}
 }
 
 message ActiveSessionsRequest {

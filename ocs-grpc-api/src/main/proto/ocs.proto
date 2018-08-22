@@ -1,9 +1,9 @@
 syntax = "proto3";
 
-package org.ostelco.ocs.api;
+package org.ostelco.ocs.grpc.api;
 
 option java_multiple_files = true;
-option java_package = "org.ostelco.ocs.api";
+option java_package = "org.ostelco.ocs.grpc.api";
 
 // OCS Service
 service OcsService {

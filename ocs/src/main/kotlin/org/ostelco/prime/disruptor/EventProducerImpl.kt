@@ -1,8 +1,8 @@
 package org.ostelco.prime.disruptor
 
 import com.lmax.disruptor.RingBuffer
-import org.ostelco.ocs.api.CreditControlRequestInfo
-import org.ostelco.ocs.api.ReportingReason
+import org.ostelco.ocs.grpc.api.CreditControlRequestInfo
+import org.ostelco.ocs.grpc.api.ReportingReason
 import org.ostelco.prime.disruptor.EventMessageType.ADD_MSISDN_TO_BUNDLE_MAPPING
 import org.ostelco.prime.disruptor.EventMessageType.CREDIT_CONTROL_REQUEST
 import org.ostelco.prime.disruptor.EventMessageType.RELEASE_RESERVED_BUCKET
