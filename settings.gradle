@@ -4,6 +4,7 @@ include ':acceptance-tests'
 include ':app-notifier'
 include ':admin-api'
 include ':analytics-grpc-api'
+include ':analytics-module'
 include ':analytics'
 include ':auth-server'
 include ':client-api'
@@ -28,6 +29,7 @@ project(':acceptance-tests').projectDir = "$rootDir/acceptance-tests" as File
 project(':app-notifier').projectDir = "$rootDir/app-notifier" as File
 project(':admin-api').projectDir = "$rootDir/admin-api" as File
 project(':analytics-grpc-api').projectDir = "$rootDir/analytics-grpc-api" as File
+project(':analytics-module').projectDir = "$rootDir/analytics-module" as File
 project(':analytics').projectDir = "$rootDir/analytics" as File
 project(':auth-server').projectDir = "$rootDir/auth-server" as File
 project(':client-api').projectDir = "$rootDir/client-api" as File
