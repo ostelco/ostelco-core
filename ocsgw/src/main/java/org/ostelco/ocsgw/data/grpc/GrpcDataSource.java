@@ -23,7 +23,6 @@ import org.ostelco.diameter.model.RedirectAddressType;
 import org.ostelco.diameter.model.RedirectServer;
 import org.ostelco.diameter.model.SessionContext;
 import org.ostelco.ocs.grpc.api.*;
-import org.ostelco.analytics.grpc.api.*;
 import org.ostelco.ocsgw.OcsServer;
 import org.ostelco.ocsgw.data.DataSource;
 import org.slf4j.Logger;
@@ -333,7 +332,7 @@ public class GrpcDataSource implements DataSource {
     private void updateBlockedList(CreditControlAnswerInfo answer, CreditControlRequest request) {
         // This suffers from the fact that one Credit-Control-Request can have multiple MSCC
         for (org.ostelco.ocs.grpc.api.MultipleServiceCreditControl msccAnswer : answer.getMsccList()) {
-            for (org.ostelco.diameter.model.MultipleServiceCreditControl msccRequest : request.getMultipleServiceCreditControls()) {
+            for (MultipleServiceCreditControl msccRequest : request.getMultipleServiceCreditControls()) {
                 if ((msccAnswer.getServiceIdentifier() == msccRequest.getServiceIdentifier()) && (msccAnswer.getRatingGroup() == msccRequest.getRatingGroup())) {
                     updateBlockedList(msccAnswer, msccRequest, answer.getMsisdn());
                     return;
@@ -454,7 +453,7 @@ public class GrpcDataSource implements DataSource {
         return new CreditControlAnswer(multipleServiceCreditControls);
     }
 
-    private void updateBlockedList(org.ostelco.ocs.grpc.api.MultipleServiceCreditControl msccAnswer, org.ostelco.diameter.model.MultipleServiceCreditControl msccRequest, String msisdn) {
+    private void updateBlockedList(org.ostelco.ocs.grpc.api.MultipleServiceCreditControl msccAnswer, MultipleServiceCreditControl msccRequest, String msisdn) {
         if (!msccRequest.getRequested().isEmpty()) {
             if (msccAnswer.getGranted().getTotalOctets() < msccRequest.getRequested().get(0).getTotal()) {
                 blocked.add(msisdn);
