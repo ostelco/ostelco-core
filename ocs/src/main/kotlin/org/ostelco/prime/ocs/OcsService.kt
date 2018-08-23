@@ -56,7 +56,7 @@ class OcsService(private val producer: EventProducer) {
      * build();
     ` *
      *
-     * @return The service that can receive incoming GPRS messages
+     * @return The service that can receive incoming GRPC messages
      */
     fun asOcsServiceImplBase(): OcsServiceGrpc.OcsServiceImplBase {
         return this.ocsServerImplBaseImpl

@@ -13,6 +13,7 @@ import org.ostelco.analytics.grpc.api.DataTrafficInfo
 import org.ostelco.prime.disruptor.OcsEvent
 import org.ostelco.prime.disruptor.EventMessageType.CREDIT_CONTROL_REQUEST
 import org.ostelco.prime.logger
+import org.ostelco.prime.module.getResource
 import java.io.IOException
 import java.time.Instant
 
@@ -22,6 +23,8 @@ import java.time.Instant
 class DataConsumptionInfoPublisher(private val projectId: String, private val topicId: String) : EventHandler<OcsEvent>, Managed {
 
     private val logger by logger()
+
+    private val analyticsReporter by lazy { getResource<AnalyticsService>() }
 
     private lateinit var publisher: Publisher
 
@@ -49,10 +52,12 @@ class DataConsumptionInfoPublisher(private val projectId: String, private val to
             return
         }
 
-        // FIXME vihang: We only report the requested bucket. Should probably report the Used-Units instead
+        // FIXME martin: Move rest of this code to the analytics module
+        if (event.msisdn != null) analyticsReporter.reportTrafficInfo(event.msisdn!!, event.usedBucketBytes, event.bundleBytes)
+
         val data = DataTrafficInfo.newBuilder()
                 .setMsisdn(event.msisdn)
-                .setBucketBytes(event.requestedBucketBytes)
+                .setBucketBytes(event.usedBucketBytes)
                 .setBundleBytes(event.bundleBytes)
                 .setTimestamp(Timestamps.fromMillis(Instant.now().toEpochMilli()))
                 .build()

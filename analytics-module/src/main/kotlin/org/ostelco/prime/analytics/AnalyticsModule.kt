@@ -25,5 +25,11 @@ class AnalyticsModule : PrimeModule {
 }
 
 class AnalyticsConfig {
+    @NotEmpty
+    @JsonProperty("projectId")
+    lateinit var projectId: String
 
+    @NotEmpty
+    @JsonProperty("topicId")
+    lateinit var topicId: String
 }
