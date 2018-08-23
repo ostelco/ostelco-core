@@ -69,9 +69,7 @@ public class GrpcDataSource implements DataSource {
 
     private StreamObserver<CreditControlRequestInfo> creditControlRequest;
 
-    private final OcsgwAnalyticsServiceGrpc.OcsgwAnalyticsServiceStub ocsgwAnalyticsServiceStub;
-
-    private StreamObserver<OcsgwAnalyticsReport> ocsgwAnalyticsReport;
+    private  OcsgwAnalytics ocsgwAnalytics;
 
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
@@ -80,8 +78,6 @@ public class GrpcDataSource implements DataSource {
     private ScheduledFuture initActivateFuture = null;
 
     private ScheduledFuture initCCRFuture = null;
-
-    private ScheduledFuture initAnalyticsFuture = null;
 
     private static final int MAX_ENTRIES = 50000;
     private final LinkedHashMap<String, CreditControlContext> ccrMap = new LinkedHashMap<String, CreditControlContext>(MAX_ENTRIES, .75F) {
@@ -104,19 +100,6 @@ public class GrpcDataSource implements DataSource {
             LOG.error("CreditControlRequestObserver error", t);
             if (t instanceof StatusRuntimeException) {
                 reconnectCreditControlRequest();
-            }
-        }
-
-        public final void onCompleted() {
-            // Nothing to do here
-        }
-    }
-
-    private abstract class AnalyticsRequestObserver<T> implements StreamObserver<T> {
-        public final void onError(Throwable t) {
-            LOG.error("AnalyticsRequestObserver error", t);
-            if (t instanceof StatusRuntimeException) {
-                reconnectAnalyticsReport();
             }
         }
 
@@ -149,24 +132,6 @@ public class GrpcDataSource implements DataSource {
         initActivateFuture = executorService.schedule((Callable<Object>) () -> {
                     LOG.info("Calling initActivate");
                     initActivate();
-                    return "Called!";
-                },
-                5,
-                TimeUnit.SECONDS);
-    }
-
-
-    private void reconnectAnalyticsReport() {
-        LOG.info("reconnectAnalyticsReport called");
-
-        if (initAnalyticsFuture != null) {
-            initAnalyticsFuture.cancel(true);
-        }
-
-        LOG.info("Schedule new Callable initAnalyticsRequest");
-        initAnalyticsFuture = executorService.schedule((Callable<Object>) () -> {
-                    LOG.info("Calling initAnalyticsRequest");
-                    initAnalyticsRequest();
                     return "Called!";
                 },
                 5,
@@ -240,8 +205,7 @@ public class GrpcDataSource implements DataSource {
             ocsServiceStub = OcsServiceGrpc.newStub(channel)
                     .withCallCredentials(MoreCallCredentials.from(credentials));
 
-            ocsgwAnalyticsServiceStub = OcsgwAnalyticsServiceGrpc.newStub(channel)
-                    .withCallCredentials(MoreCallCredentials.from(credentials));
+            ocsgwAnalytics = new OcsgwAnalytics(channel, credentials);
         } else {
             final ManagedChannelBuilder channelBuilder = ManagedChannelBuilder
                     .forTarget(target)
@@ -254,7 +218,7 @@ public class GrpcDataSource implements DataSource {
                     .build();
             ocsServiceStub = OcsServiceGrpc.newStub(channel);
 
-            ocsgwAnalyticsServiceStub = OcsgwAnalyticsServiceGrpc.newStub(channel);
+            ocsgwAnalytics = new OcsgwAnalytics(channel, null);
         }
     }
 
@@ -267,7 +231,7 @@ public class GrpcDataSource implements DataSource {
 
         initKeepAlive();
 
-        initAnalyticsRequest();
+        ocsgwAnalytics.initAnalyticsRequest();
     }
 
     private void initCreditControlRequest() {
@@ -279,17 +243,6 @@ public class GrpcDataSource implements DataSource {
                 });
     }
 
-    private void initAnalyticsRequest() {
-        ocsgwAnalyticsReport = ocsgwAnalyticsServiceStub.ocsgwAnalyticsEvent(
-            new AnalyticsRequestObserver<OcsgwAnalyticsReply>() {
-
-                @Override
-                public void onNext(OcsgwAnalyticsReply value) {
-                    // Ignore reply from Prime
-                }
-            }
-        );
-    }
 
     private void handleGrpcCcrAnswer(CreditControlAnswerInfo answer) {
         try {
@@ -344,7 +297,8 @@ public class GrpcDataSource implements DataSource {
 
     private void updateAnalytics() {
         LOG.info("Number of active sesssions is {}", sessionIdMap.size());
-        ocsgwAnalyticsReport.onNext(OcsgwAnalyticsReport.newBuilder().setActiveSessions(sessionIdMap.size()).build());
+
+        ocsgwAnalytics.sendAnalytics(sessionIdMap.size());
     }
 
     private void initActivate() {
