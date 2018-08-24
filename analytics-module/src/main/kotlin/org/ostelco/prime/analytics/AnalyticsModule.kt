@@ -5,22 +5,29 @@ import com.fasterxml.jackson.annotation.JsonTypeName
 import io.dropwizard.setup.Environment
 import com.codahale.metrics.SharedMetricRegistries
 import org.hibernate.validator.constraints.NotEmpty
+import org.ostelco.prime.analytics.ConfigRegistry.config
 import org.ostelco.prime.module.PrimeModule
 import org.ostelco.prime.analytics.metrics.OcsgwMetrics
+import org.ostelco.prime.analytics.publishers.DataConsumptionInfoPublisher
 
 @JsonTypeName("analytics")
 class AnalyticsModule : PrimeModule {
 
     @JsonProperty("config")
-    lateinit var config: AnalyticsConfig
+    fun setConfig(config: AnalyticsConfig) {
+        ConfigRegistry.config = config
+    }
 
     override fun init(env: Environment) {
 
         val ocsgwMetrics = OcsgwMetrics(SharedMetricRegistries.getOrCreate("ocsgw-metrics"))
 
-        val server = AnalyticsGrpcServer(8082, AnalyticsGrpcService(ocsgwMetrics))
+        val server = AnalyticsGrpcServer(8083, AnalyticsGrpcService(ocsgwMetrics))
 
         env.lifecycle().manage(server)
+
+        // dropwizard starts Analytics events publisher
+        env.lifecycle().manage(DataConsumptionInfoPublisher)
     }
 }
 
@@ -32,4 +39,8 @@ class AnalyticsConfig {
     @NotEmpty
     @JsonProperty("topicId")
     lateinit var topicId: String
+}
+
+object ConfigRegistry {
+    lateinit var config: AnalyticsConfig
 }

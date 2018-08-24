@@ -12,9 +12,11 @@ modules:
       protocol: bolt
   - type: ocs
     config:
+      lowBalanceThreshold: 0
+  - type: analytics
+    config:
       projectId: pantel-2decb
       topicId: data-traffic
-      lowBalanceThreshold: 0
   - type: api
     config:
       authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
