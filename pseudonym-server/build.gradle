@@ -1,15 +1,16 @@
 plugins {
   id "org.jetbrains.kotlin.jvm" version "1.2.61"
-  id "application"
-  id "com.github.johnrengelman.shadow" version "2.0.4"
-  id "idea"
+  id "java-library"
 }
-version = "1.6.0"
+
 dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
-  implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
-  implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
+
   implementation project(':ocs-api')
+  implementation project(':prime-api')
+  implementation project(':model')
+
+  implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
   implementation 'com.google.guava:guava:25.1-jre'
   // Match with grpc-netty-shaded via PubSub
   // removing io.grpc:grpc-netty-shaded:1.13.1 causes ALPN error
@@ -19,49 +20,10 @@ dependencies {
   implementation "com.google.cloud:google-cloud-pubsub:$googleCloudVersion"
   implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
 
-  implementation project(':model')
-
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
-  testCompile group: 'org.mockito', name: 'mockito-all', version: '1.10.19'
+  testImplementation "org.mockito:mockito-all:1.10.19"
   testRuntimeOnly 'org.hamcrest:hamcrest-all:1.3'
 }
 
-shadowJar {
-  mainClassName = 'org.ostelco.pseudonym.PseudonymServerApplicationKt'
-  mergeServiceFiles()
-  classifier = "uber"
-  version = null
-}
-
-sourceSets {
-  integrationTest {
-    kotlin {
-      compileClasspath += main.output + test.output
-      runtimeClasspath += main.output + test.output
-      srcDirs += file('src/integration-test/kotlin')
-    }
-    resources.srcDir file('src/integration-test/resources')
-  }
-}
-
-configurations {
-  integrationTestImplementation.extendsFrom testImplementation
-  integrationTestCompile.extendsFrom testCompile
-  integrationTestRuntime.extendsFrom testRuntime
-}
-
-task integrationTest(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
-  testClassesDirs = sourceSets.integrationTest.output.classesDirs
-  classpath = sourceSets.integrationTest.runtimeClasspath
-}
-
-integrationTest.mustRunAfter test
-
 apply from: '../jacoco.gradle'
-
-idea {
-  module {
-    testSourceDirs += file('src/integration-test/kotlin')
-  }
-}

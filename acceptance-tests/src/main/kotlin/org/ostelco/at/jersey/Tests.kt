@@ -1,7 +1,7 @@
 package org.ostelco.at.jersey
 
 import org.junit.Test
-import org.ostelco.at.common.Payment.createPaymentSourceId
+import org.ostelco.at.common.StripePayment
 import org.ostelco.at.common.createProfile
 import org.ostelco.at.common.createSubscription
 import org.ostelco.at.common.expectedProducts
@@ -228,6 +228,8 @@ class PurchaseTest {
     @Test
     fun `jersey test - POST products purchase`() {
 
+        StripePayment.deleteAllCustomers()
+
         val email = "purchase-${randomInt()}@test.com"
         createProfile(name = "Test Purchase User", email = email)
 
@@ -238,7 +240,7 @@ class PurchaseTest {
         val balanceBefore = subscriptionStatusBefore.remaining
 
         val productSku = "1GB_249NOK"
-        val sourceId = createPaymentSourceId()
+        val sourceId = StripePayment.createPaymentSourceId()
 
         post<String> {
             path = "/products/$productSku/purchase"

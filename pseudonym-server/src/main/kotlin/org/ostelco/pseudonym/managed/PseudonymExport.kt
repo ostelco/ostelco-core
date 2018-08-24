@@ -16,27 +16,25 @@ import com.google.cloud.datastore.Query
 import com.google.cloud.datastore.StructuredQuery
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
-import org.ostelco.pseudonym.resources.ExportTaskKind
-import org.ostelco.pseudonym.resources.PseudonymEntityKind
-import org.ostelco.pseudonym.resources.errorPropertyName
-import org.ostelco.pseudonym.resources.exportIdPropertyName
-import org.ostelco.pseudonym.resources.msisdnPropertyName
-import org.ostelco.pseudonym.resources.pseudonymPropertyName
-import org.ostelco.pseudonym.resources.statusPropertyName
+import org.ostelco.pseudonym.ExportTaskKind
+import org.ostelco.pseudonym.PseudonymEntityKind
+import org.ostelco.pseudonym.errorPropertyName
+import org.ostelco.pseudonym.exportIdPropertyName
+import org.ostelco.pseudonym.msisdnPropertyName
+import org.ostelco.pseudonym.pseudonymPropertyName
+import org.ostelco.pseudonym.statusPropertyName
 import org.slf4j.LoggerFactory
 import java.util.*
-import java.util.concurrent.Callable
 
-const val datasetName = "exported_pseudonyms"
-const val msisdnFieldName = "msisdn"
-const val pseudonymFiledName = "pseudonym"
-const val idFieldName = "msisdnid"
+private const val datasetName = "exported_pseudonyms"
+private const val msisdnFieldName = "msisdn"
+private const val pseudonymFiledName = "pseudonym"
+private const val idFieldName = "msisdnid"
 
 /**
  * Exports pseudonym objects to a bigquery Table
  */
-
-class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastore: Datastore) {
+class PseudonymExport(private val exportId: String, private val bigquery: BigQuery, private val datastore: Datastore) {
     private val logger = LoggerFactory.getLogger(PseudonymExport::class.java)
 
     /**
@@ -46,16 +44,14 @@ class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastor
         INITIAL, RUNNING, FINISHED, ERROR
     }
 
-    private val tableName: String
-    private val idCache: Cache<String, String>
+    private val tableName: String = exportId.replace("-", "")
+    private val idCache: Cache<String, String> = CacheBuilder.newBuilder()
+            .maximumSize(5000)
+            .build()
     private var status = Status.INITIAL
     private var error: String = ""
 
     init {
-        tableName = exportId.replace("-", "")
-        idCache = CacheBuilder.newBuilder()
-                .maximumSize(5000)
-                .build()
         upsertTaskStatus()
     }
 
@@ -80,9 +76,7 @@ class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastor
     private fun getIdForMsisdn(msisdn: String): String {
         // Retrieves the element from cache.
         // Incase of cache miss, generate a new UUID
-        return idCache.get(msisdn, Callable {
-            UUID.randomUUID().toString()
-        })
+        return idCache.get(msisdn) { UUID.randomUUID().toString() }
     }
 
     private fun createTablePage(pageSize: Int, cursor: Cursor?, table: Table): Cursor? {
@@ -112,13 +106,13 @@ class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastor
             val response = table.insert(rows, true, true)
             if (response.hasErrors()) {
                 logger.error("Failed to insert Records", response.insertErrors)
-                error = "$error${response.insertErrors.toString()}\n"
+                error = "$error${response.insertErrors}\n"
             }
         }
-        if (totalPseudonyms < pageSize) {
-            return null
+        return if (totalPseudonyms < pageSize) {
+            null
         } else {
-            return pseudonyms.getCursorAfter()
+            pseudonyms.cursorAfter
         }
     }
 
@@ -154,12 +148,12 @@ class PseudonymExport(val exportId: String, val bigquery: BigQuery, val datastor
         try {
             // Verify before writing a new value.
             val currentEntity = transaction.get(exportKey)
-            val builder: Entity.Builder?
-            if (currentEntity == null) {
-                builder = Entity.newBuilder(exportKey)
-            } else {
-                builder = Entity.newBuilder(currentEntity)
-            }
+            val builder: Entity.Builder =
+                    if (currentEntity == null) {
+                        Entity.newBuilder(exportKey)
+                    } else {
+                        Entity.newBuilder(currentEntity)
+                    }
             // Prepare the new datastore entity
             val exportTask = builder
                     .set(exportIdPropertyName, exportId)

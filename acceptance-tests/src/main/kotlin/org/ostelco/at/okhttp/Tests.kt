@@ -1,7 +1,7 @@
 package org.ostelco.at.okhttp
 
 import org.junit.Test
-import org.ostelco.at.common.Payment.createPaymentSourceId
+import org.ostelco.at.common.StripePayment
 import org.ostelco.at.common.createProfile
 import org.ostelco.at.common.createSubscription
 import org.ostelco.at.common.expectedProducts
@@ -168,6 +168,8 @@ class PurchaseTest {
     @Test
     fun `okhttp test - POST products purchase`() {
 
+        StripePayment.deleteAllCustomers()
+
         val email = "purchase-${randomInt()}@test.com"
         createProfile(name = "Test Purchase User", email = email)
 
@@ -175,7 +177,7 @@ class PurchaseTest {
 
         val balanceBefore = client.subscriptionStatus.remaining
 
-        val sourceId = createPaymentSourceId()
+        val sourceId = StripePayment.createPaymentSourceId()
 
         client.purchaseProduct("1GB_249NOK", sourceId, false)
 

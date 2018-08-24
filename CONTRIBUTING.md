@@ -114,6 +114,20 @@ by the github repository. It should all be open.
 * [Greg's wiki about shell scripting is a very good resource](http://mywiki.wooledge.org/)
 * For complex output (multiple lines etc.), consider using "printf"
   instead of the simple "echo".
+* Scripts, in particular scripts that are run during startup of containers
+  either for production or testing, should die cleanly and visibly as soon as
+  possible if they have to.  For instance, if the script depends on
+  an executable that may be missing, the script should test for the
+  existance of the executable before any of the script's "payload" is
+  executed.  Example:
+
+     DEPENDENCIES="foo bar baz gazonk"
+     for dep in $DEPENDENCIES; do
+	   if [[ -z "$(type $dep)" ]] ; then
+		   echo "Cannot locate executable '${dep}', bailing out"
+		   exit 1
+	   fi
+     done
 
 ## Kotlin
 
