@@ -6,7 +6,6 @@ import org.ostelco.prime.client.api.store.SubscriberDAO
 import javax.ws.rs.GET
 import javax.ws.rs.Path
 import javax.ws.rs.Produces
-import javax.ws.rs.client.Client
 import javax.ws.rs.core.Response
 
 /**
@@ -16,9 +15,7 @@ import javax.ws.rs.core.Response
 
 @Path("/subscription")
 @Deprecated("use SubscriptionsResource", ReplaceWith("SubscriptionsResource", "org.ostelco.prime.client.api.resources.SubscriptionsResource"))
-class SubscriptionResource(private val dao: SubscriberDAO,
-                           val client: Client,
-                           private val pseudonymEndpoint: String) {
+class SubscriptionResource(private val dao: SubscriberDAO) {
 
     @GET
     @Path("status")
@@ -44,9 +41,10 @@ class SubscriptionResource(private val dao: SubscriberDAO,
                     .build()
         }
 
-        return dao.getMsisdn(token.name).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)).build() },
-                { msisdn -> client.target("$pseudonymEndpoint/pseudonym/active/$msisdn").request().get() })
+        return dao.getActivePseudonymOfMsisdnForSubscriber(token.name).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                { pseudonym -> Response.status(Response.Status.OK).entity(pseudonym) })
+                .build()
     }
 }
 

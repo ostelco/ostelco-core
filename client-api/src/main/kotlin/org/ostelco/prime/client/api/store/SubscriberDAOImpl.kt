@@ -13,6 +13,7 @@ import org.ostelco.prime.core.ForbiddenError
 import org.ostelco.prime.core.InsuffientStorageError
 import org.ostelco.prime.core.NotFoundError
 import org.ostelco.prime.logger
+import org.ostelco.prime.model.ActivePseudonyms
 import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
@@ -24,6 +25,7 @@ import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
+import org.ostelco.prime.pseudonymizer.PseudonymizerService
 import org.ostelco.prime.storage.ClientDataSource
 import java.time.Instant
 import java.util.*
@@ -37,6 +39,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
     private val logger by logger()
 
     private val paymentProcessor by lazy { getResource<PaymentProcessor>() }
+    private val pseudonymizer by lazy { getResource<PseudonymizerService>() }
 
     /* Table for 'profiles'. */
     private val consentMap = ConcurrentHashMap<String, ConcurrentHashMap<String, Boolean>>()
@@ -133,6 +136,12 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
             logger.error("Failed to get subscriptions", e)
             return Either.left(NotFoundError("Failed to get subscriptions"))
         }
+    }
+
+    override fun getActivePseudonymOfMsisdnForSubscriber(subscriberId: String): Either<ApiError, ActivePseudonyms> {
+        return storage.getMsisdn(subscriberId)
+                .mapLeft { NotFoundError("Failed to msisdn for user. ${it.message}") }
+                .map { msisdn -> pseudonymizer.getActivePseudonymsForMsisdn(msisdn) }
     }
 
     override fun getPurchaseHistory(subscriberId: String): Either<ApiError, Collection<PurchaseRecord>> {

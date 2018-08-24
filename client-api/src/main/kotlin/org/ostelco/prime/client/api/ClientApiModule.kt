@@ -62,10 +62,7 @@ class ClientApiModule : PrimeModule {
         jerseyEnv.register(ProfileResource(dao))
         jerseyEnv.register(ReferralResource(dao))
         jerseyEnv.register(PaymentResource(dao))
-        jerseyEnv.register(SubscriptionResource(
-                dao = dao,
-                pseudonymEndpoint = config.pseudonymEndpoint ?: "", // this will never be empty
-                client = client))
+        jerseyEnv.register(SubscriptionResource(dao))
         jerseyEnv.register(SubscriptionsResource(dao))
         jerseyEnv.register(ApplicationTokenResource(dao))
 

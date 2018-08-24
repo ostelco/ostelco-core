@@ -5,6 +5,7 @@ import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.Person
 import org.ostelco.prime.client.api.model.SubscriptionStatus
 import org.ostelco.prime.core.ApiError
+import org.ostelco.prime.model.ActivePseudonyms
 import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
@@ -13,7 +14,6 @@ import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
-import javax.ws.rs.core.Response
 
 /**
  *
@@ -90,4 +90,6 @@ interface SubscriberDAO {
 
     @Deprecated(message = "use purchaseProduct")
     fun purchaseProductWithoutPayment(subscriberId: String, sku: String): Either<ApiError, Unit>
+
+    fun getActivePseudonymOfMsisdnForSubscriber(subscriberId: String): Either<ApiError, ActivePseudonyms>
 }

@@ -5,7 +5,7 @@ FROM openjdk:8u171
 MAINTAINER CSI "csi@telenordigital.com"
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends netcat \
+ && apt-get install -y --no-install-recommends netcat socat=1.7.3.1-2+deb9u1 \
  && rm -rf /var/lib/apt/lists/*
 
 COPY script/start.sh /start.sh
