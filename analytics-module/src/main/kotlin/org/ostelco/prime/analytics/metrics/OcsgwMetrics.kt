@@ -2,13 +2,17 @@ package org.ostelco.prime.analytics.metrics
 
 import com.codahale.metrics.Counter
 import com.codahale.metrics.MetricRegistry
+import com.codahale.metrics.MetricRegistry.name
+import org.ostelco.prime.analytics.AnalyticsGrpcService
+
 
 class OcsgwMetrics(private val registry: MetricRegistry) {
 
     private val activeSessions : Counter
 
     init {
-        this.activeSessions = Counter()
+        this.activeSessions = registry.counter(name(AnalyticsGrpcService::class.java,
+                "active-sessions"))
     }
 
     /**
