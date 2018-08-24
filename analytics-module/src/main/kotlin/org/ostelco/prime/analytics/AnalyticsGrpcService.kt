@@ -9,16 +9,27 @@ import org.ostelco.prime.logger
 import java.util.*
 
 
+/**
+ * Serves incoming GRPC analytcs requests.
+ *
+ * It's implemented as a subclass of [OcsServiceGrpc.OcsServiceImplBase] overriding
+ * methods that together implements the protocol described in the  analytics protobuf
+ * file: ocs_analytics.proto
+ *`
+ * service OcsgwAnalyticsService {
+ *    rpc OcsgwAnalyticsEvent (stream OcsgwAnalyticsReport) returns (OcsgwAnalyticsReply) {}
+ * }
+ */
+
 class AnalyticsGrpcService(private val metrics : OcsgwMetrics) : OcsgwAnalyticsServiceGrpc.OcsgwAnalyticsServiceImplBase() {
 
     private val logger by logger()
 
-    //  rpc OcsgwAnalyticsEvent (stream OcsgwAnalyticsReport) returns (OcsgwAnalyticsReply) {}
-
+    /**
+     * Handles the OcsgwAnalyticsEvent message.
+     */
     override fun ocsgwAnalyticsEvent(ocsgwAnalyticsReply: StreamObserver<OcsgwAnalyticsReply>): StreamObserver<OcsgwAnalyticsReport> {
-
         val streamId = newUniqueStreamId()
-
         return StreamObserverForStreamWithId(streamId)
     }
 
@@ -34,12 +45,12 @@ class AnalyticsGrpcService(private val metrics : OcsgwMetrics) : OcsgwAnalyticsS
     private inner class StreamObserverForStreamWithId internal constructor(private val streamId: String) : StreamObserver<OcsgwAnalyticsReport> {
 
         /**
-         * This method gets called every time a Credit-Control-Request is received
-         * from the OCS.
-         * @param request
+         * This method gets called every time a new active session count is sent
+         * from the OCS GW.
+         * @param request provides current active session as a counter with a timestamp
          */
         override fun onNext(request: OcsgwAnalyticsReport) {
-            //
+            metrics.setActiveSessions(request.timestamp.seconds, request.activeSessions.toLong())
         }
 
         override fun onError(t: Throwable) {
@@ -48,7 +59,6 @@ class AnalyticsGrpcService(private val metrics : OcsgwMetrics) : OcsgwAnalyticsS
 
         override fun onCompleted() {
             logger.info("AnalyticsGrpcService with streamId: {} completed", streamId)
-
         }
     }
 }
