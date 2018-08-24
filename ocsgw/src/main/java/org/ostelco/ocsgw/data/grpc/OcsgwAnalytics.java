@@ -26,6 +26,7 @@ public class OcsgwAnalytics {
     private ScheduledFuture initAnalyticsFuture = null;
 
 
+    // FixMe Martin : Can not reuse channel
     public OcsgwAnalytics(ManagedChannel channel, ServiceAccountJwtAccessCredentials credentials) {
         if (credentials != null) {
             ocsgwAnalyticsServiceStub  = OcsgwAnalyticsServiceGrpc.newStub(channel)
