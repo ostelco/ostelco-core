@@ -21,7 +21,7 @@ import com.google.pubsub.v1.PubsubMessage
 import io.dropwizard.lifecycle.Managed
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
-import org.ostelco.analytics.grpc.api.DataTrafficInfo
+import org.ostelco.analytics.api.DataTrafficInfo
 import org.ostelco.prime.model.PseudonymEntity
 import org.ostelco.pseudonym.resources.DateBounds
 import org.slf4j.LoggerFactory

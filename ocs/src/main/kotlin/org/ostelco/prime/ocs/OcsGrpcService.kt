@@ -1,12 +1,12 @@
 package org.ostelco.prime.ocs
 
 import io.grpc.stub.StreamObserver
-import org.ostelco.ocs.grpc.api.ActivateRequest
-import org.ostelco.ocs.grpc.api.ActivateResponse
-import org.ostelco.ocs.grpc.api.CreditControlAnswerInfo
-import org.ostelco.ocs.grpc.api.CreditControlRequestInfo
-import org.ostelco.ocs.grpc.api.CreditControlRequestType.NONE
-import org.ostelco.ocs.grpc.api.OcsServiceGrpc
+import org.ostelco.ocs.api.ActivateRequest
+import org.ostelco.ocs.api.ActivateResponse
+import org.ostelco.ocs.api.CreditControlAnswerInfo
+import org.ostelco.ocs.api.CreditControlRequestInfo
+import org.ostelco.ocs.api.CreditControlRequestType.NONE
+import org.ostelco.ocs.api.OcsServiceGrpc
 import org.ostelco.prime.logger
 import java.util.*
 

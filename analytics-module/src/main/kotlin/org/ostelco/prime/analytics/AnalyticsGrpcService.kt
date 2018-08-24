@@ -1,9 +1,9 @@
 package org.ostelco.prime.analytics
 
 import io.grpc.stub.StreamObserver
-import org.ostelco.analytics.grpc.api.OcsgwAnalyticsReport
-import org.ostelco.analytics.grpc.api.OcsgwAnalyticsReply
-import org.ostelco.analytics.grpc.api.OcsgwAnalyticsServiceGrpc
+import org.ostelco.prime.analytics.api.OcsgwAnalyticsReply
+import org.ostelco.prime.analytics.api.OcsgwAnalyticsReport
+import org.ostelco.prime.analytics.api.OcsgwAnalyticsServiceGrpc
 import org.ostelco.prime.analytics.metrics.OcsgwMetrics
 import org.ostelco.prime.logger
 import java.util.*

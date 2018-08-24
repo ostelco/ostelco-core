@@ -5,9 +5,9 @@ import io.grpc.ManagedChannel;
 import io.grpc.StatusRuntimeException;
 import io.grpc.auth.MoreCallCredentials;
 import io.grpc.stub.StreamObserver;
-import org.ostelco.analytics.grpc.api.OcsgwAnalyticsReply;
-import org.ostelco.analytics.grpc.api.OcsgwAnalyticsReport;
-import org.ostelco.analytics.grpc.api.OcsgwAnalyticsServiceGrpc;
+import org.ostelco.prime.analytics.api.OcsgwAnalyticsReply;
+import org.ostelco.prime.analytics.api.OcsgwAnalyticsReport;
+import org.ostelco.prime.analytics.api.OcsgwAnalyticsServiceGrpc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

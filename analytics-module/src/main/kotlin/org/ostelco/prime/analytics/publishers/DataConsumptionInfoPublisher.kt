@@ -8,7 +8,7 @@ import com.google.protobuf.util.Timestamps
 import com.google.pubsub.v1.ProjectTopicName
 import com.google.pubsub.v1.PubsubMessage
 import io.dropwizard.lifecycle.Managed
-import org.ostelco.analytics.grpc.api.DataTrafficInfo
+import org.ostelco.analytics.api.DataTrafficInfo
 import org.ostelco.prime.analytics.ConfigRegistry.config
 import org.ostelco.prime.logger
 import java.io.IOException

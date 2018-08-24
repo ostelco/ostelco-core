@@ -1,6 +1,6 @@
 package org.ostelco.prime.disruptor
 
-import org.ostelco.ocs.grpc.api.CreditControlRequestInfo
+import org.ostelco.ocs.api.CreditControlRequestInfo
 import org.ostelco.prime.model.Bundle
 
 interface EventProducer {

@@ -1,7 +1,7 @@
 package org.ostelco.prime.ocs
 
 import io.grpc.stub.StreamObserver
-import org.ostelco.ocs.grpc.api.ActivateResponse
+import org.ostelco.ocs.api.ActivateResponse
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantReadWriteLock
 

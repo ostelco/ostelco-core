@@ -22,7 +22,7 @@ import org.ostelco.diameter.model.MultipleServiceCreditControl;
 import org.ostelco.diameter.model.RedirectAddressType;
 import org.ostelco.diameter.model.RedirectServer;
 import org.ostelco.diameter.model.SessionContext;
-import org.ostelco.ocs.grpc.api.*;
+import org.ostelco.ocs.api.*;
 import org.ostelco.ocsgw.OcsServer;
 import org.ostelco.ocsgw.data.DataSource;
 import org.slf4j.Logger;
@@ -331,7 +331,7 @@ public class GrpcDataSource implements DataSource {
 
     private void updateBlockedList(CreditControlAnswerInfo answer, CreditControlRequest request) {
         // This suffers from the fact that one Credit-Control-Request can have multiple MSCC
-        for (org.ostelco.ocs.grpc.api.MultipleServiceCreditControl msccAnswer : answer.getMsccList()) {
+        for (org.ostelco.ocs.api.MultipleServiceCreditControl msccAnswer : answer.getMsccList()) {
             for (MultipleServiceCreditControl msccRequest : request.getMultipleServiceCreditControls()) {
                 if ((msccAnswer.getServiceIdentifier() == msccRequest.getServiceIdentifier()) && (msccAnswer.getRatingGroup() == msccRequest.getRatingGroup())) {
                     updateBlockedList(msccAnswer, msccRequest, answer.getMsisdn());
@@ -355,7 +355,7 @@ public class GrpcDataSource implements DataSource {
 
                 for (MultipleServiceCreditControl mscc : context.getCreditControlRequest().getMultipleServiceCreditControls()) {
 
-                    org.ostelco.ocs.grpc.api.MultipleServiceCreditControl.Builder protoMscc = org.ostelco.ocs.grpc.api.MultipleServiceCreditControl.newBuilder();
+                    org.ostelco.ocs.api.MultipleServiceCreditControl.Builder protoMscc = org.ostelco.ocs.api.MultipleServiceCreditControl.newBuilder();
 
                     if (!mscc.getRequested().isEmpty()) {
 
@@ -447,13 +447,13 @@ public class GrpcDataSource implements DataSource {
         }
 
         final LinkedList<MultipleServiceCreditControl> multipleServiceCreditControls = new LinkedList<>();
-        for (org.ostelco.ocs.grpc.api.MultipleServiceCreditControl mscc : response.getMsccList()) {
+        for (org.ostelco.ocs.api.MultipleServiceCreditControl mscc : response.getMsccList()) {
             multipleServiceCreditControls.add(convertMSCC(mscc));
         }
         return new CreditControlAnswer(multipleServiceCreditControls);
     }
 
-    private void updateBlockedList(org.ostelco.ocs.grpc.api.MultipleServiceCreditControl msccAnswer, MultipleServiceCreditControl msccRequest, String msisdn) {
+    private void updateBlockedList(org.ostelco.ocs.api.MultipleServiceCreditControl msccAnswer, MultipleServiceCreditControl msccRequest, String msisdn) {
         if (!msccRequest.getRequested().isEmpty()) {
             if (msccAnswer.getGranted().getTotalOctets() < msccRequest.getRequested().get(0).getTotal()) {
                 blocked.add(msisdn);
@@ -463,7 +463,7 @@ public class GrpcDataSource implements DataSource {
         }
     }
 
-    private MultipleServiceCreditControl convertMSCC(org.ostelco.ocs.grpc.api.MultipleServiceCreditControl msccGRPC) {
+    private MultipleServiceCreditControl convertMSCC(org.ostelco.ocs.api.MultipleServiceCreditControl msccGRPC) {
         return new MultipleServiceCreditControl(
                 msccGRPC.getRatingGroup(),
                 (int) msccGRPC.getServiceIdentifier(),
@@ -474,7 +474,7 @@ public class GrpcDataSource implements DataSource {
                 convertFinalUnitIndication(msccGRPC.getFinalUnitIndication()));
     }
 
-    private FinalUnitIndication convertFinalUnitIndication(org.ostelco.ocs.grpc.api.FinalUnitIndication fuiGrpc) {
+    private FinalUnitIndication convertFinalUnitIndication(org.ostelco.ocs.api.FinalUnitIndication fuiGrpc) {
         if (!fuiGrpc.getIsSet()) {
             return null;
         }

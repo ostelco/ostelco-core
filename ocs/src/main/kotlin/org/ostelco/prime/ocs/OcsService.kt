@@ -2,10 +2,10 @@ package org.ostelco.prime.ocs
 
 import com.lmax.disruptor.EventHandler
 import io.grpc.stub.StreamObserver
-import org.ostelco.ocs.grpc.api.ActivateResponse
-import org.ostelco.ocs.grpc.api.CreditControlAnswerInfo
-import org.ostelco.ocs.grpc.api.CreditControlRequestInfo
-import org.ostelco.ocs.grpc.api.OcsServiceGrpc
+import org.ostelco.ocs.api.ActivateResponse
+import org.ostelco.ocs.api.CreditControlAnswerInfo
+import org.ostelco.ocs.api.CreditControlRequestInfo
+import org.ostelco.ocs.api.OcsServiceGrpc
 import org.ostelco.prime.disruptor.EventProducer
 import org.ostelco.prime.disruptor.OcsEvent
 import java.util.concurrent.ConcurrentHashMap
