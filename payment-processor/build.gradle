@@ -8,7 +8,6 @@ sourceSets {
   test {
     java.srcDirs = ['src/test/kotlin']
   }
-
   integration {
     java.srcDirs = ['src/test/kotlin', 'src/integration-tests/kotlin']
     resources.srcDir 'src/integration-tests/resources'
@@ -52,6 +51,8 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
     jvmTarget = "1.8"
   }
 }
+
+apply from: '../jacoco.gradle'
 
 idea {
   module {

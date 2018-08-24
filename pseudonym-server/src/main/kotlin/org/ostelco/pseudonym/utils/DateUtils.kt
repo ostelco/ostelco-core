@@ -1,7 +1,7 @@
 package org.ostelco.pseudonym.utils
 
-import org.ostelco.pseudonym.resources.Bounds
-import org.ostelco.pseudonym.resources.DateBounds
+import org.ostelco.pseudonym.service.Bounds
+import org.ostelco.pseudonym.service.DateBounds
 import java.util.*
 
 /**
