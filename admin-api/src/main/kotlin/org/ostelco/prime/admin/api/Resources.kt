@@ -82,8 +82,6 @@ class SegmentResource {
             @PathParam("segment-id") segmentId: String,
             segment: Segment): Response {
 
-        segment.id = segmentId
-
         return adminDataSource.updateSegment(segment)
                 .fold({ Response.status(Response.Status.NOT_MODIFIED).entity(it.message).build() },
                         { Response.ok().build() })
