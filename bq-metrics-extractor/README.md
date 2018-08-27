@@ -14,12 +14,28 @@ that will:
   [Prometheus java client](https://github.com/prometheus/client_java)
   to talk to the pushgateway.
 
-The component will be built as a docker component, and will then be periodically 
-run as a command line application, as a 
-[Kubernetes cron job](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/) 
+The component will be built as a docker component, and will then be periodically
+run as a command line application, as a
+[Kubernetes cron job](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/)
 (or perhaps some other meaningful deployment architecture that we will dream up eventually).
 
 
 XXX NOTE: This code was initiated using yeoman, and while functional that seems to be
 have been a mistake.  It will have to be refactored into something much
 leaner asap, and certainly before merging to develop.
+
+TODO
+===
+
+* Set up skeleton kotlin code. [done(ish)]
+* Make the skeleton code read something (anything) from BigQuery, using config
+  that is production-like.
+* Build a docker image.
+* Send metrics to something that looks like a pushgateway, do that as an
+  integration test running in docker compose.
+* Run a proper metric and push it to test-pushgateway.
+* Package up as kubernetes component and introduce cronjob into cluster,
+  use the cluster config scripts (XXX Reconsider the whole cronjob thing,
+  perhaps this should run as a proper dropwizard application that is
+  periodically invoked using a REST invocation from a cronjob?)
+* Deploy to production.
