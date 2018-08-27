@@ -1,0 +1,102 @@
+# Default values for prime.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+firebaseServiceAccount: ""
+  
+
+prime:
+  image: eu.gcr.io/pi-ostelco-dev/prime
+  tag: 8d6884cfb
+  pullPolicy: Always
+  env: 
+    FIREBASE_ROOT_PATH: dev
+  ports:
+    - 8080
+    - 8081
+    - 8082  
+  resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #  cpu: 100m
+  #  memory: 128Mi
+  # requests:
+  #  cpu: 100m
+  #  memory: 128Mi  
+  livenessProbe: {}
+    # path: /
+    # port: 8081
+  readinessProbe: {}
+    # path: /
+    # port: 8081  
+
+
+
+esp: 
+  enabled: true
+  image: gcr.io/endpoints-release/endpoints-runtime
+  tag: 1
+  pullPolicy: IfNotPresent
+  env: {}
+  endpointAddress: ocs.endpoints.pantel-2decb.cloud.goog 
+  ports:
+    - 9000
+    - 8443
+  secrets: 
+    - secretName: ocs-ostelco-ssl
+      containerMountPath: /etc/nginx/ssl 
+
+apiEsp: 
+  enabled: true
+  env: {}
+  endpointAddress: api.endpoints.pantel-2decb.cloud.goog
+  ports:
+    - 9002
+    - 443
+  secrets: 
+    - secretName: api-ostelco-ssl
+      containerMountPath: /etc/nginx/ssl 
+
+
+service:
+  prime:
+    type: LoadBalancer
+    port: 443
+    targetPort: 8443
+  api:
+    type: LoadBalancer
+    port: 443
+    targetPort: 443
+
+ingress:
+  enabled: false
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+  path: /
+  hosts:
+    - prime.local
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+
+certs: 
+  enabled: false
+  issuer: letsencrypt-staging # or letsencrypt-production
+  apiDns: []
+  ocsDns: []
+
+disruptionBudget: 
+  enabled: false
+  minAvailable: 1
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
