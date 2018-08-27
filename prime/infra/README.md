@@ -239,6 +239,41 @@ gcloud endpoints services deploy prime/infra/dev/prime-client-api.yaml
 
 ## Deploy to Dev cluster
 
+### Deploy monitoring
+```bash
+# Create namespace if it does not already exist
+kubectl create namespace monitoring
+
+# Not sure what this does, but should probably have a description
+kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user $(gcloud config get-value account)
+
+kubectl create -f prime/infra/dev/monitoring-cluster-role.yaml
+
+# config map, prometheus, grafana
+kubectl create -f prime/infra/dev/monitoring.yaml --namespace=monitoring
+
+kubectl create -f prime/infra/dev/monitoring-pushgateway.yaml
+```
+
+#### Prometheus dashboard
+```bash
+kubectl port-forward --namespace=monitoring $(kubectl get pods --namespace=monitoring | grep prometheus-deployment | awk '{print $1}') 9090
+```
+
+#### Grafana dashboard
+__`Has own its own load balancer and can be accessed directly. Discuss if this is OK or find and implement a different way of accessing the grafana dashboard.`__
+
+Can be accessed directly from external ip
+```bash
+kubectl get services --namespace=monitoring | grep grafana | awk '{print $4}'
+```
+
+#### Push gateway
+```bash
+# Push a metric to pushgateway:8080 (specified in the service declaration for pushgateway)
+echo "some_metric 4.71" | curl -v  --data-binary @- http://pushgateway:8080/metrics/job/some_job
+```
+
 ### Setup Neo4j
 
 ```bash
