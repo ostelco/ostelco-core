@@ -176,6 +176,7 @@ public class GrpcDataSource implements DataSource {
 
         LOG.info("Created GrpcDataSource");
         LOG.info("ocsServerHostname : {}", ocsServerHostname);
+        LOG.info("metricsServerHostname : {}", metricsServerHostname);
         // Set up a channel to be used to communicate as an OCS instance,
         // to a gRPC instance.
 

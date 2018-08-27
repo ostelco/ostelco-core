@@ -62,7 +62,7 @@ services:
       --rollout_strategy=managed
       --http2_port=80
       --ssl_port=443
-      --backend=grpc://172.16.238.5:8082
+      --backend=grpc://172.16.238.5:8083
       --service_account_key=/esp/pantel-prod.json
     networks:
       net:
