@@ -22,16 +22,7 @@ import org.ostelco.diameter.model.MultipleServiceCreditControl;
 import org.ostelco.diameter.model.RedirectAddressType;
 import org.ostelco.diameter.model.RedirectServer;
 import org.ostelco.diameter.model.SessionContext;
-import org.ostelco.ocs.api.ActivateRequest;
-import org.ostelco.ocs.api.ActivateResponse;
-import org.ostelco.ocs.api.CreditControlAnswerInfo;
-import org.ostelco.ocs.api.CreditControlRequestInfo;
-import org.ostelco.ocs.api.CreditControlRequestType;
-import org.ostelco.ocs.api.OcsServiceGrpc;
-import org.ostelco.ocs.api.PsInformation;
-import org.ostelco.ocs.api.ReportingReason;
-import org.ostelco.ocs.api.ServiceInfo;
-import org.ostelco.ocs.api.ServiceUnit;
+import org.ostelco.ocs.api.*;
 import org.ostelco.ocsgw.OcsServer;
 import org.ostelco.ocsgw.data.DataSource;
 import org.slf4j.Logger;
@@ -67,15 +58,17 @@ public class GrpcDataSource implements DataSource {
 
     private static final Logger LOG = LoggerFactory.getLogger(GrpcDataSource.class);
 
-    public static final int KEEP_ALIVE_TIMEOUT_IN_MINUTES = 1;
+    private static final int KEEP_ALIVE_TIMEOUT_IN_MINUTES = 1;
 
-    public static final int KEEP_ALIVE_TIME_IN_SECONDS = 50;
+    private static final int KEEP_ALIVE_TIME_IN_SECONDS = 50;
 
     private final OcsServiceGrpc.OcsServiceStub ocsServiceStub;
 
     private final Set<String> blocked = new HashSet<>();
 
     private StreamObserver<CreditControlRequestInfo> creditControlRequest;
+
+    private OcsgwMetrics ocsgwAnalytics;
 
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
@@ -85,7 +78,7 @@ public class GrpcDataSource implements DataSource {
 
     private ScheduledFuture initCCRFuture = null;
 
-    private static final int MAX_ENTRIES = 3000;
+    private static final int MAX_ENTRIES = 50000;
     private final LinkedHashMap<String, CreditControlContext> ccrMap = new LinkedHashMap<String, CreditControlContext>(MAX_ENTRIES, .75F) {
         @Override
         protected boolean removeEldestEntry(Map.Entry<String, CreditControlContext> eldest) {
@@ -176,52 +169,40 @@ public class GrpcDataSource implements DataSource {
      * Generate a new instande that connects to an endpoint, and
      * optionally also encrypts the connection.
      *
-     * @param target    The gRPC endpoint to connect the client to.
-     * @param encrypted True iff transport level encryption is enabled.
+     * @param ocsServerHostname The gRPC endpoint to connect the client to.
      * @throws IOException
      */
-    public GrpcDataSource(final String target, final boolean encrypted) throws IOException {
+    public GrpcDataSource(final String ocsServerHostname, final String metricsServerHostname) throws IOException {
 
         LOG.info("Created GrpcDataSource");
-        LOG.info("target : {}", target);
-        LOG.info("encrypted : {}", encrypted);
+        LOG.info("ocsServerHostname : {}", ocsServerHostname);
+        LOG.info("metricsServerHostname : {}", metricsServerHostname);
         // Set up a channel to be used to communicate as an OCS instance,
         // to a gRPC instance.
 
         // Initialize the stub that will be used to actually
         // communicate from the client emulating being the OCS.
-        if (encrypted) {
-            final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder
-                    .forTarget(target)
-                    .keepAliveWithoutCalls(true)
-                    .keepAliveTimeout(KEEP_ALIVE_TIMEOUT_IN_MINUTES, TimeUnit.MINUTES)
-                    .keepAliveTime(KEEP_ALIVE_TIME_IN_SECONDS, TimeUnit.SECONDS);
+        final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder
+                .forTarget(ocsServerHostname)
+                .keepAliveWithoutCalls(true)
+                .keepAliveTimeout(KEEP_ALIVE_TIMEOUT_IN_MINUTES, TimeUnit.MINUTES)
+                .keepAliveTime(KEEP_ALIVE_TIME_IN_SECONDS, TimeUnit.SECONDS);
 
-            final ManagedChannelBuilder channelBuilder =
-                    Files.exists(Paths.get("/config/nginx.crt"))
-                            ? nettyChannelBuilder.sslContext(GrpcSslContexts.forClient().trustManager(new File("/config/nginx.crt")).build())
-                            : nettyChannelBuilder;
+        final ManagedChannelBuilder channelBuilder =
+                Files.exists(Paths.get("/config/ocs.crt"))
+                        ? nettyChannelBuilder.sslContext(GrpcSslContexts.forClient().trustManager(new File("/config/ocs.crt")).build())
+                        : nettyChannelBuilder;
 
-            final String serviceAccountFile = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
-            final ServiceAccountJwtAccessCredentials credentials =
-                    ServiceAccountJwtAccessCredentials.fromStream(new FileInputStream(serviceAccountFile));
-            final ManagedChannel channel = channelBuilder
-                    .useTransportSecurity()
-                    .build();
-            ocsServiceStub = OcsServiceGrpc.newStub(channel)
-                    .withCallCredentials(MoreCallCredentials.from(credentials));
-        } else {
-            final ManagedChannelBuilder channelBuilder = ManagedChannelBuilder
-                    .forTarget(target)
-                    .keepAliveWithoutCalls(true)
-                    .keepAliveTimeout(KEEP_ALIVE_TIMEOUT_IN_MINUTES, TimeUnit.MINUTES)
-                    .keepAliveTime(KEEP_ALIVE_TIME_IN_SECONDS, TimeUnit.SECONDS);
+        final String serviceAccountFile = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
+        final ServiceAccountJwtAccessCredentials credentials =
+                ServiceAccountJwtAccessCredentials.fromStream(new FileInputStream(serviceAccountFile));
+        final ManagedChannel channel = channelBuilder
+                .useTransportSecurity()
+                .build();
+        ocsServiceStub = OcsServiceGrpc.newStub(channel)
+                .withCallCredentials(MoreCallCredentials.from(credentials));
 
-            final ManagedChannel channel = channelBuilder
-                    .usePlaintext()
-                    .build();
-            ocsServiceStub = OcsServiceGrpc.newStub(channel);
-        }
+        ocsgwAnalytics = new OcsgwMetrics(metricsServerHostname, credentials);
     }
 
     @Override
@@ -232,38 +213,75 @@ public class GrpcDataSource implements DataSource {
         initActivate();
 
         initKeepAlive();
+
+        ocsgwAnalytics.initAnalyticsRequest();
     }
 
     private void initCreditControlRequest() {
         creditControlRequest = ocsServiceStub.creditControlRequest(
                 new CreditControlRequestObserver<CreditControlAnswerInfo>() {
                     public void onNext(CreditControlAnswerInfo answer) {
-                        try {
-                            LOG.info("[<<] Received data bucket for {}", answer.getMsisdn());
-                            final CreditControlContext ccrContext = ccrMap.remove(answer.getRequestId());
-                            if (ccrContext != null) {
-                                final ServerCCASession session = OcsServer.getInstance().getStack().getSession(ccrContext.getSessionId(), ServerCCASession.class);
-                                if (session != null && session.isValid()) {
-                                    updateBlockedList(answer, ccrContext.getCreditControlRequest());
-                                    if (!ccrContext.getSkipAnswer()) {
-                                        CreditControlAnswer cca = createCreditControlAnswer(answer);
-                                        try {
-                                            session.sendCreditControlAnswer(ccrContext.createCCA(cca));
-                                        } catch (InternalException | IllegalDiameterStateException | RouteException | OverloadException e) {
-                                            LOG.error("Failed to send Credit-Control-Answer", e);
-                                        }
-                                    }
-                                } else {
-                                    LOG.warn("No stored CCR or Session for {}", answer.getRequestId());
-                                }
-                            } else {
-                                LOG.warn("Missing CreditControlContext for req id {}", answer.getRequestId());
-                            }
-                        } catch (Exception e) {
-                            LOG.error("Credit-Control-Request failed ", e);
-                        }
+                        handleGrpcCcrAnswer(answer);
                     }
                 });
+    }
+
+
+    private void handleGrpcCcrAnswer(CreditControlAnswerInfo answer) {
+        try {
+            LOG.info("[<<] Received data bucket for {}", answer.getMsisdn());
+            final CreditControlContext ccrContext = ccrMap.remove(answer.getRequestId());
+            if (ccrContext != null) {
+                final ServerCCASession session = OcsServer.getInstance().getStack().getSession(ccrContext.getSessionId(), ServerCCASession.class);
+                if (session != null && session.isValid()) {
+                    removeFromSessionMap(ccrContext);
+                    updateBlockedList(answer, ccrContext.getCreditControlRequest());
+                    if (!ccrContext.getSkipAnswer()) {
+                        CreditControlAnswer cca = createCreditControlAnswer(answer);
+                        try {
+                            session.sendCreditControlAnswer(ccrContext.createCCA(cca));
+                        } catch (InternalException | IllegalDiameterStateException | RouteException | OverloadException e) {
+                            LOG.error("Failed to send Credit-Control-Answer", e);
+                        }
+                    }
+                } else {
+                    LOG.warn("No stored CCR or Session for {}", answer.getRequestId());
+                }
+            } else {
+                LOG.warn("Missing CreditControlContext for req id {}", answer.getRequestId());
+            }
+        } catch (Exception e) {
+            LOG.error("Credit-Control-Request failed ", e);
+        }
+    }
+
+    private void addToSessionMap(CreditControlContext creditControlContext) {
+        switch (getRequestType(creditControlContext)) {
+            case INITIAL_REQUEST:
+            case UPDATE_REQUEST:
+            case TERMINATION_REQUEST:
+                sessionIdMap.put(creditControlContext.getCreditControlRequest().getMsisdn(), new SessionContext(creditControlContext.getSessionId(), creditControlContext.getCreditControlRequest().getOriginHost(), creditControlContext.getCreditControlRequest().getOriginRealm()));
+                updateAnalytics();
+                break;
+            case EVENT_REQUEST:
+                break;
+            default:
+                LOG.warn("Unknown request type");
+                break;
+        }
+    }
+
+    private void removeFromSessionMap(CreditControlContext creditControlContext) {
+        if (getRequestType(creditControlContext) == CreditControlRequestType.TERMINATION_REQUEST) {
+            sessionIdMap.remove(creditControlContext.getCreditControlRequest().getMsisdn());
+            updateAnalytics();
+        }
+    }
+
+    private void updateAnalytics() {
+        LOG.info("Number of active sesssions is {}", sessionIdMap.size());
+
+        ocsgwAnalytics.sendAnalytics(sessionIdMap.size());
     }
 
     private void initActivate() {
@@ -298,7 +316,7 @@ public class GrpcDataSource implements DataSource {
     private void updateBlockedList(CreditControlAnswerInfo answer, CreditControlRequest request) {
         // This suffers from the fact that one Credit-Control-Request can have multiple MSCC
         for (org.ostelco.ocs.api.MultipleServiceCreditControl msccAnswer : answer.getMsccList()) {
-            for (org.ostelco.diameter.model.MultipleServiceCreditControl msccRequest : request.getMultipleServiceCreditControls()) {
+            for (MultipleServiceCreditControl msccRequest : request.getMultipleServiceCreditControls()) {
                 if ((msccAnswer.getServiceIdentifier() == msccRequest.getServiceIdentifier()) && (msccAnswer.getRatingGroup() == msccRequest.getRatingGroup())) {
                     updateBlockedList(msccAnswer, msccRequest, answer.getMsisdn());
                     return;
@@ -310,7 +328,7 @@ public class GrpcDataSource implements DataSource {
     @Override
     public void handleRequest(final CreditControlContext context) {
         ccrMap.put(context.getSessionId(), context);
-        sessionIdMap.put(context.getCreditControlRequest().getMsisdn(), new SessionContext(context.getSessionId(), context.getCreditControlRequest().getOriginHost(), context.getCreditControlRequest().getOriginRealm()));
+        addToSessionMap(context);
         LOG.info("[>>] Requesting bytes for {}", context.getCreditControlRequest().getMsisdn());
 
         if (creditControlRequest != null) {
@@ -419,7 +437,7 @@ public class GrpcDataSource implements DataSource {
         return new CreditControlAnswer(multipleServiceCreditControls);
     }
 
-    private void updateBlockedList(org.ostelco.ocs.api.MultipleServiceCreditControl msccAnswer, org.ostelco.diameter.model.MultipleServiceCreditControl msccRequest, String msisdn) {
+    private void updateBlockedList(org.ostelco.ocs.api.MultipleServiceCreditControl msccAnswer, MultipleServiceCreditControl msccRequest, String msisdn) {
         if (!msccRequest.getRequested().isEmpty()) {
             if (msccAnswer.getGranted().getTotalOctets() < msccRequest.getRequested().get(0).getTotal()) {
                 blocked.add(msisdn);

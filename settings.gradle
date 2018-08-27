@@ -3,6 +3,8 @@ rootProject.name = 'ostelco-core'
 include ':acceptance-tests'
 include ':app-notifier'
 include ':admin-api'
+include ':analytics-grpc-api'
+include ':analytics-module'
 include ':analytics'
 include ':auth-server'
 include ':client-api'
@@ -14,7 +16,7 @@ include ':model'
 include ':neo4j-admin-tools'
 include ':neo4j-store'
 include ':ocs'
-include ':ocs-api'
+include ':ocs-grpc-api'
 include ':ocsgw'
 include ':ostelco-lib'
 include ':payment-processor'
@@ -26,6 +28,8 @@ include ':pseudonym-server'
 project(':acceptance-tests').projectDir = "$rootDir/acceptance-tests" as File
 project(':app-notifier').projectDir = "$rootDir/app-notifier" as File
 project(':admin-api').projectDir = "$rootDir/admin-api" as File
+project(':analytics-grpc-api').projectDir = "$rootDir/analytics-grpc-api" as File
+project(':analytics-module').projectDir = "$rootDir/analytics-module" as File
 project(':analytics').projectDir = "$rootDir/analytics" as File
 project(':auth-server').projectDir = "$rootDir/auth-server" as File
 project(':client-api').projectDir = "$rootDir/client-api" as File
@@ -37,7 +41,7 @@ project(':model').projectDir = "$rootDir/model" as File
 project(':neo4j-admin-tools').projectDir = "$rootDir/tools/neo4j-admin-tools" as File
 project(':neo4j-store').projectDir = "$rootDir/neo4j-store" as File
 project(':ocs').projectDir = "$rootDir/ocs" as File
-project(':ocs-api').projectDir = "$rootDir/ocs-api" as File
+project(':ocs-grpc-api').projectDir = "$rootDir/ocs-grpc-api" as File
 project(':ocsgw').projectDir = "$rootDir/ocsgw" as File
 project(':ostelco-lib').projectDir = "$rootDir/ostelco-lib" as File
 project(':payment-processor').projectDir = "$rootDir/payment-processor" as File

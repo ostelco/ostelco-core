@@ -7,6 +7,7 @@ import org.junit.Before
 import org.junit.Test
 import org.ostelco.prime.module.getResource
 import kotlin.test.assertEquals
+import kotlin.test.fail
 
 
 class StripePaymentProcessorTest {
@@ -33,7 +34,7 @@ class StripePaymentProcessorTest {
         val resultAdd = paymentProcessor.createPaymentProfile(testCustomer)
         assertEquals(true, resultAdd.isRight())
 
-        stripeCustomerId = resultAdd.fold({""}, {it.id})
+        stripeCustomerId = resultAdd.fold({ "" }, { it.id })
     }
 
     @Before
@@ -58,14 +59,17 @@ class StripePaymentProcessorTest {
     fun addSourceToCustomerAndRemove() {
 
         val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentSourceId())
-        assertEquals(true, resultAddSource.isRight())
 
         val resultStoredSources = paymentProcessor.getSavedSources(stripeCustomerId)
-        assertEquals(true, resultStoredSources.isRight())
-        assertEquals(1, resultStoredSources.fold({0},{it.size}))
-        assertEquals(resultAddSource.get().id, resultStoredSources.get().first().id)
+        assertEquals(1, resultStoredSources.fold({ 0 }, { it.size }))
 
-        val resultDeleteSource = paymentProcessor.removeSource(stripeCustomerId ,resultAddSource.fold({""}, {it.id}))
+        resultAddSource.map { addedSource ->
+            resultStoredSources.map { storedSources ->
+                assertEquals(addedSource.id, storedSources.first().id)
+            }.mapLeft { fail() }
+        }.mapLeft { fail() }
+
+        val resultDeleteSource = paymentProcessor.removeSource(stripeCustomerId, resultAddSource.fold({ "" }, { it.id }))
         assertEquals(true, resultDeleteSource.isRight())
     }
 
@@ -75,14 +79,14 @@ class StripePaymentProcessorTest {
         val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentSourceId())
         assertEquals(true, resultAddSource.isRight())
 
-        val resultAddDefault = paymentProcessor.setDefaultSource(stripeCustomerId, resultAddSource.fold({""}, {it.id}))
+        val resultAddDefault = paymentProcessor.setDefaultSource(stripeCustomerId, resultAddSource.fold({ "" }, { it.id }))
         assertEquals(true, resultAddDefault.isRight())
 
         val resultGetDefault = paymentProcessor.getDefaultSource(stripeCustomerId)
         assertEquals(true, resultGetDefault.isRight())
-        assertEquals(resultAddDefault.fold({""}, {it.id}), resultGetDefault.fold({""}, {it.id}))
+        assertEquals(resultAddDefault.fold({ "" }, { it.id }), resultGetDefault.fold({ "" }, { it.id }))
 
-        val resultRemoveDefault = paymentProcessor.removeSource(stripeCustomerId, resultAddDefault.fold({""}, {it.id}))
+        val resultRemoveDefault = paymentProcessor.removeSource(stripeCustomerId, resultAddDefault.fold({ "" }, { it.id }))
         assertEquals(true, resultRemoveDefault.isRight())
     }
 
@@ -91,7 +95,7 @@ class StripePaymentProcessorTest {
         val resultCreateProduct = paymentProcessor.createProduct("TestSku")
         assertEquals(true, resultCreateProduct.isRight())
 
-        val resultRemoveProduct = paymentProcessor.removeProduct(resultCreateProduct.fold({""}, {it.id}))
+        val resultRemoveProduct = paymentProcessor.removeProduct(resultCreateProduct.fold({ "" }, { it.id }))
         assertEquals(true, resultRemoveProduct.isRight())
     }
 
@@ -105,25 +109,25 @@ class StripePaymentProcessorTest {
         val resultCreateProduct = paymentProcessor.createProduct("TestSku")
         assertEquals(true, resultCreateProduct.isRight())
 
-        val resultCreatePlan = paymentProcessor.createPlan(resultCreateProduct.fold({""}, {it.id}), 1000, "NOK", PaymentProcessor.Interval.MONTH)
+        val resultCreatePlan = paymentProcessor.createPlan(resultCreateProduct.fold({ "" }, { it.id }), 1000, "NOK", PaymentProcessor.Interval.MONTH)
         assertEquals(true, resultCreatePlan.isRight())
 
-        val resultSubscribePlan = paymentProcessor.subscribeToPlan(resultCreatePlan.fold({""}, {it.id}), stripeCustomerId)
+        val resultSubscribePlan = paymentProcessor.subscribeToPlan(resultCreatePlan.fold({ "" }, { it.id }), stripeCustomerId)
         assertEquals(true, resultSubscribePlan.isRight())
 
-        val resultUnsubscribePlan = paymentProcessor.cancelSubscription(resultSubscribePlan.fold({""}, {it.id}), false)
+        val resultUnsubscribePlan = paymentProcessor.cancelSubscription(resultSubscribePlan.fold({ "" }, { it.id }), false)
         assertEquals(true, resultUnsubscribePlan.isRight())
-        assertEquals(resultSubscribePlan.fold({""}, {it.id}), resultUnsubscribePlan.fold({""}, {it.id}))
+        assertEquals(resultSubscribePlan.fold({ "" }, { it.id }), resultUnsubscribePlan.fold({ "" }, { it.id }))
 
-        val resultDeletePlan = paymentProcessor.removePlan(resultCreatePlan.fold({""}, {it.id}))
+        val resultDeletePlan = paymentProcessor.removePlan(resultCreatePlan.fold({ "" }, { it.id }))
         assertEquals(true, resultDeletePlan.isRight())
-        assertEquals(resultCreatePlan.fold({""}, {it.id}), resultDeletePlan.fold({""}, {it.id}))
+        assertEquals(resultCreatePlan.fold({ "" }, { it.id }), resultDeletePlan.fold({ "" }, { it.id }))
 
-        val resultRemoveProduct = paymentProcessor.removeProduct(resultCreateProduct.fold({""}, {it.id}))
+        val resultRemoveProduct = paymentProcessor.removeProduct(resultCreateProduct.fold({ "" }, { it.id }))
         assertEquals(true, resultRemoveProduct.isRight())
-        assertEquals(resultCreateProduct.fold({""}, {it.id}), resultRemoveProduct.fold({""}, {it.id}))
+        assertEquals(resultCreateProduct.fold({ "" }, { it.id }), resultRemoveProduct.fold({ "" }, { it.id }))
 
-        val resultDeleteSource = paymentProcessor.removeSource(stripeCustomerId ,resultAddSource.fold({""}, {it.id}))
+        val resultDeleteSource = paymentProcessor.removeSource(stripeCustomerId, resultAddSource.fold({ "" }, { it.id }))
         assertEquals(true, resultDeleteSource.isRight())
     }
 }

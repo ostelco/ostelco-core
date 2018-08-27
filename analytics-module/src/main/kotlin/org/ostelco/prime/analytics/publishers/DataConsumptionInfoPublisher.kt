@@ -1,4 +1,4 @@
-package org.ostelco.prime.analytics
+package org.ostelco.prime.analytics.publishers
 
 import com.google.api.core.ApiFutureCallback
 import com.google.api.core.ApiFutures
@@ -7,11 +7,9 @@ import com.google.cloud.pubsub.v1.Publisher
 import com.google.protobuf.util.Timestamps
 import com.google.pubsub.v1.ProjectTopicName
 import com.google.pubsub.v1.PubsubMessage
-import com.lmax.disruptor.EventHandler
 import io.dropwizard.lifecycle.Managed
-import org.ostelco.ocs.api.DataTrafficInfo
-import org.ostelco.prime.disruptor.OcsEvent
-import org.ostelco.prime.disruptor.EventMessageType.CREDIT_CONTROL_REQUEST
+import org.ostelco.analytics.api.DataTrafficInfo
+import org.ostelco.prime.analytics.ConfigRegistry.config
 import org.ostelco.prime.logger
 import java.io.IOException
 import java.time.Instant
@@ -19,7 +17,7 @@ import java.time.Instant
 /**
  * This class publishes the data consumption information events to the Google Cloud Pub/Sub.
  */
-class DataConsumptionInfoPublisher(private val projectId: String, private val topicId: String) : EventHandler<OcsEvent>, Managed {
+object DataConsumptionInfoPublisher : Managed {
 
     private val logger by logger()
 
@@ -28,7 +26,7 @@ class DataConsumptionInfoPublisher(private val projectId: String, private val to
     @Throws(IOException::class)
     override fun start() {
 
-        val topicName = ProjectTopicName.of(projectId, topicId)
+        val topicName = ProjectTopicName.of(config.projectId, config.topicId)
 
         // Create a publisher instance with default settings bound to the topic
         publisher = Publisher.newBuilder(topicName).build()
@@ -40,20 +38,12 @@ class DataConsumptionInfoPublisher(private val projectId: String, private val to
         publisher.shutdown()
     }
 
-    override fun onEvent(
-            event: OcsEvent,
-            sequence: Long,
-            endOfBatch: Boolean) {
+    fun publish(msisdn: String, usedBucketBytes: Long, bundleBytes: Long) {
 
-        if (event.messageType != CREDIT_CONTROL_REQUEST) {
-            return
-        }
-
-        // FIXME vihang: We only report the requested bucket. Should probably report the Used-Units instead
         val data = DataTrafficInfo.newBuilder()
-                .setMsisdn(event.msisdn)
-                .setBucketBytes(event.requestedBucketBytes)
-                .setBundleBytes(event.bundleBytes)
+                .setMsisdn(msisdn)
+                .setBucketBytes(usedBucketBytes)
+                .setBundleBytes(bundleBytes)
                 .setTimestamp(Timestamps.fromMillis(Instant.now().toEpochMilli()))
                 .build()
                 .toByteString()
@@ -74,7 +64,7 @@ class DataConsumptionInfoPublisher(private val projectId: String, private val to
                     logger.warn("Status code: {}", throwable.statusCode.code)
                     logger.warn("Retrying: {}", throwable.isRetryable)
                 }
-                logger.warn("Error publishing message for msisdn: {}", event.msisdn)
+                logger.warn("Error publishing message for msisdn: {}", msisdn)
             }
 
             override fun onSuccess(messageId: String) {
