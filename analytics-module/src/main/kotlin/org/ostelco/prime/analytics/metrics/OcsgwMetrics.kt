@@ -4,6 +4,7 @@ import com.codahale.metrics.Gauge
 import com.codahale.metrics.MetricRegistry
 import com.codahale.metrics.MetricRegistry.name
 import org.ostelco.prime.analytics.AnalyticsGrpcService
+import java.time.Instant
 
 
 class OcsgwMetrics(private val registry: MetricRegistry) {
@@ -27,8 +28,8 @@ class OcsgwMetrics(private val registry: MetricRegistry) {
      * @param count - active sessions
      */
     @Synchronized
-    fun setActiveSessions(timestamp: Long, count: Long) {
-        currentActiveSessions.timestamp = timestamp
+    fun setActiveSessions(count: Long) {
+        currentActiveSessions.timestamp = Instant.now().toEpochMilli()
         currentActiveSessions.count = count
     }
 }

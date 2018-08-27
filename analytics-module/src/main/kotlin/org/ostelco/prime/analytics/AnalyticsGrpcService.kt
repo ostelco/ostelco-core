@@ -1,11 +1,11 @@
 package org.ostelco.prime.analytics
 
 import io.grpc.stub.StreamObserver
-import org.ostelco.prime.analytics.api.OcsgwAnalyticsReply
-import org.ostelco.prime.analytics.api.OcsgwAnalyticsReport
-import org.ostelco.prime.analytics.api.OcsgwAnalyticsServiceGrpc
 import org.ostelco.prime.analytics.metrics.OcsgwMetrics
 import org.ostelco.prime.logger
+import org.ostelco.prime.metrics.api.OcsgwAnalyticsReply
+import org.ostelco.prime.metrics.api.OcsgwAnalyticsReport
+import org.ostelco.prime.metrics.api.OcsgwAnalyticsServiceGrpc
 import java.util.*
 
 
@@ -50,7 +50,7 @@ class AnalyticsGrpcService(private val metrics : OcsgwMetrics) : OcsgwAnalyticsS
          * @param request provides current active session as a counter with a timestamp
          */
         override fun onNext(request: OcsgwAnalyticsReport) {
-            metrics.setActiveSessions(request.timestamp.seconds, request.activeSessions.toLong())
+            metrics.setActiveSessions(request.activeSessions.toLong())
         }
 
         override fun onError(t: Throwable) {
