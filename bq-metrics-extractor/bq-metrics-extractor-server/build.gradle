@@ -1,0 +1,23 @@
+// =======
+// Plugins
+// =======
+apply from: "$rootDir/gradle/repositories.gradle"
+apply plugin: 'java'
+
+// ============
+// Dependencies
+// ============
+dependencies {
+    compile "io.dropwizard:dropwizard-core:$dropwizardVersion"
+    compile "io.dropwizard:dropwizard-jdbi:$dropwizardVersion"
+
+    compile "org.antlr:stringtemplate:$antlrVersion"
+    compile "org.postgresql:postgresql:$postgresqlVersion"
+    compile "org.glassfish.jersey.core:jersey-client:$jerseyVersion"
+    compile "commons-codec:commons-codec:$commonsCodecVersion"
+    compile "com.google.guava:guava:$guavaVersion"
+    compile "org.apache.directory.studio:org.apache.commons.io:$apacheCommonsVersion"
+
+    testCompile "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+    testCompile "org.mockito:mockito-all:$mockitoAllVersion"
+}

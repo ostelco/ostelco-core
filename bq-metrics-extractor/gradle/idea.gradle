@@ -1,0 +1,29 @@
+apply plugin: 'idea'
+
+// =======================
+// IDEA run configurations
+// =======================
+idea.workspace.iws.withXml { provider ->
+    def runConfigurationName = 'bq-metrics-extractor-server'
+    def runManager = provider.node.component.find { it.@name == 'RunManager' }
+    if (runManager) {
+        if (!runManager.find { it.@name == runConfigurationName }) {
+            runManager.attributes()['selected'] = "Application.$runConfigurationName"
+            runManager.appendNode('configuration', [default: 'false', name: runConfigurationName, type: 'Application', factoryName: 'Application'], [
+                new Node(null, 'extension', [name: 'coverage', enabled: 'false', merge: 'false', runner: 'idea']),
+                new Node(null, 'option', [name: 'MAIN_CLASS_NAME', value: 'org.ostelco.bqmetrics.BqMetricsExtractorApplication']),
+                new Node(null, 'option', [name: 'VM_PARAMETERS', value: '']),
+                new Node(null, 'option', [name: 'PROGRAM_PARAMETERS', value: 'server ../dev/var/conf/server.yml']),
+                new Node(null, 'option', [name: 'WORKING_DIRECTORY', value: 'file://$PROJECT_DIR$/bq-metrics-extractor-distribution/src/standard']),
+                new Node(null, 'option', [name: 'ALTERNATIVE_JRE_PATH_ENABLED', value: 'false']),
+                new Node(null, 'option', [name: 'ALTERNATIVE_JRE_PATH', value: '']),
+                new Node(null, 'option', [name: 'ENABLE_SWING_INSPECTOR', value: 'false']),
+                new Node(null, 'option', [name: 'ENV_VARIABLES']),
+                new Node(null, 'option', [name: 'PASS_PARENT_ENVS', value: 'true']),
+                new Node(null, 'module', [name: 'bq-metrics-extractor-server_main']),
+                new Node(null, 'envs'),
+                new Node(null, 'method')
+            ])
+        }
+    }
+}

@@ -1,0 +1,51 @@
+# Dropwizard Configuration File
+# See for details: https://dropwizard.github.io/dropwizard/manual/configuration.html
+
+database:
+  connection:
+    driverClass: org.postgresql.Driver
+    user: db_user
+    password: db_pass
+    url: jdbc:postgresql://localhost/dbname
+
+# =============================================
+#                Server Settings
+# =============================================
+# See for details: https://dropwizard.github.io/dropwizard/manual/configuration.html#servers
+server:
+  applicationConnectors:
+    - type: http
+      port: 8000
+    - type: https
+      port: 8443
+      excludedProtocols: [SSLv3]
+      supportedProtocols: [TLSv1, TLSv1.1, TLSv1.2]
+      keyStorePath: var/conf/keyStore.jks
+      keyStorePassword: dropwizard-angular-gradle
+      validateCerts: false
+  applicationContextPath: /
+  adminConnectors:
+    - type: http
+      port: 8001
+  adminContextPath: /
+  requestLog:
+    appenders:
+      - type: file
+        currentLogFilename: var/log/requests.log
+        archivedLogFilenamePattern: var/log/requests-%d.log
+        archivedFileCount: 5
+        timeZone: UTC
+        threshold: INFO
+  rootPath: /api/*
+
+# See for details: https://dropwizard.github.io/dropwizard/manual/configuration.html#logging
+logging:
+  appenders:
+    - type: file
+      currentLogFilename: var/log/server.log
+      archivedLogFilenamePattern: var/log/server-%d.log
+      archivedFileCount: 5
+      timeZone: UTC
+      threshold: INFO
+    - type: console
+      threshold: INFO
