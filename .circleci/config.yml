@@ -58,6 +58,10 @@ jobs:
           command: ./gradlew clean build -x :neo4j-store:test --stacktrace
           # command: ./gradlew clean build  -Dorg.gradle.jvmargs=-Xmx2g
 
+      - persist_to_workspace:
+          root: ~/project/
+          paths:
+            - .    
       # - run:
       #     name: Gradle integration Tests
       #     command: ./gradlew integration --stacktrace
@@ -108,6 +112,10 @@ jobs:
             wget -O ~/${CODACY_JAR_FILE} \
               ${CODACY_DOWNLOAD_URL}/${CODACY_VERSION}/codacy-coverage-reporter-${CODACY_VERSION}-assembly.jar
 
+      - attach_workspace:
+          # Must be absolute path or relative path from working_directory
+          at: ~/project  
+                  
       - run:
           # the commands below need "CODACY_PROJECT_TOKEN" to be present as (circleci) ENV variable.
           name: Generate Codacy code-coverage report
