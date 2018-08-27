@@ -56,9 +56,9 @@ services:
     image: gcr.io/endpoints-release/endpoints-runtime:1
     volumes:
     - "./prime/config:/esp"
-    - "./certs/metrics.ostelco.org:/etc/nginx/ssl"
+    - "./certs/metrics.dev.endpoints.pantel-2decb.cloud.goog:/etc/nginx/ssl"
     command: >
-      --service=metrics.ostelco.org
+      --service=metrics.dev.endpoints.pantel-2decb.cloud.goog
       --rollout_strategy=managed
       --http2_port=80
       --ssl_port=443
@@ -67,7 +67,7 @@ services:
     networks:
       net:
         aliases:
-        - "metrics.ostelco.org"
+        - "metrics.dev.endpoints.pantel-2decb.cloud.goog"
         ipv4_address: 172.16.238.6
       default:
 
