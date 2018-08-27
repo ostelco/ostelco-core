@@ -10,3 +10,8 @@ that will:
 
 The component will be built as a docker component, and will then be periodically run as a command line application, as a [Kubernetes batch job]
 (https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/) (or perhaps some other meaningful deployment architecture that we will dream up eventually).
+
+
+XXX NOTE: This code was initiated using yeoman, and while functional that seems to be
+have been a mistake.  It will have to be refactored into something much
+leaner asap, and certainly before merging to develop.
