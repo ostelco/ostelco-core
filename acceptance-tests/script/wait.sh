@@ -42,4 +42,3 @@ java -cp '/acceptance-tests.jar' org.junit.runner.JUnitCore \
      org.ostelco.at.jersey.ProfileTest \
      org.ostelco.at.pgw.OcsTest
      
-
