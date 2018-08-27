@@ -256,6 +256,20 @@ jobs:
             git checkout circleci-dev
             hub pull-request -m "merging circle-dev into circleci-prod" -b circleci-prod
 
+  # jobs for on-PR-merge-to-master 
+  deploy-to-prod:
+    docker:
+    - image: praqma/helmsman:test-1.4.0
+
+    steps:
+      - checkout
+      - run:
+          name: deploy prime and needed apps to the prod cluster
+          command: |
+            export TAG=$(git rev-parse --short=9 @~)
+            cd .circleci/
+            helmsman --debug --apply -f helmsman-prod-deployment.toml
+ 
 workflows:
   version: 2
   on-feature-branch-PR:
@@ -304,4 +318,11 @@ workflows:
         filters:
           branches:
             only:
-            - circleci-dev              
+            - circleci-dev 
+  deploy-to-prod:
+    jobs:
+    - deploy-to-prod:
+        filters:
+          branches:
+            only:
+            - circleci-prod                       
