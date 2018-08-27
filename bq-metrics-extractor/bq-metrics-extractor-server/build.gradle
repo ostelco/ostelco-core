@@ -20,9 +20,19 @@ dependencies {
     compile "com.google.guava:guava:$guavaVersion"
     compile "org.apache.directory.studio:org.apache.commons.io:$apacheCommonsVersion"
 
+
     testCompile "io.dropwizard:dropwizard-testing:$dropwizardVersion"
     testCompile "org.mockito:mockito-all:$mockitoAllVersion"
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+
+    // Bigquery dependency
+    compile 'com.google.cloud:google-cloud-bigquery:1.40.0'
+
+    // Prometheus pushgateway dependencies (we might not need all of these)
+    // compile 'io.prometheus:simpleclient:0.5.0'
+    // compile 'io.prometheus:simpleclient_hotspot:0.5.0'
+    // compile 'io.prometheus:simpleclient_httpserver:0.5.0'
+    compile 'io.prometheus:simpleclient_pushgateway:0.5.0'
 }
 repositories {
     mavenCentral()
