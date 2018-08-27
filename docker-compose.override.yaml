@@ -12,9 +12,11 @@ services:
     - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
     - PUBSUB_PROJECT_ID=pantel-2decb
     - STRIPE_API_KEY=${STRIPE_API_KEY}
+    - DATASTORE_EMULATOR_HOST=localhost:9090
+    - DATASTORE_PROJECT_ID=pantel-2decb
+    - LOCAL_TESTING=true
     ports:
     - "9090:8080"
-#    - "7687:7687"
     depends_on:
     - "pubsub-emulator"
     - "neo4j"
@@ -73,19 +75,6 @@ services:
         ipv4_address: 172.16.238.2
       default:
 
-  pseudonym-server:
-    container_name: pseudonym-server
-    build: pseudonym-server
-    ports:
-    - "8090:8080"
-    environment:
-    - DATASTORE_EMULATOR_HOST=localhost:9090
-    - DATASTORE_PROJECT_ID=pantel-2decb
-    - PUBSUB_EMULATOR_HOST=localhost:9080
-    - PUBSUB_PROJECT_ID=pantel-2decb
-    - LOCAL_TESTING=true
-    command: ["/bin/bash", "./wait_for_emulators.sh"]
-
   neo4j:
     container_name: "neo4j"
     image: neo4j:3.4.4
@@ -99,11 +88,6 @@ services:
   pubsub-emulator:
     container_name: pubsub-emulator
     image: knarz/pubsub-emulator
-
-  gpubsub-emulator:
-    container_name: gpubsub-emulator
-    image: google/cloud-sdk
-    command: ["gcloud", "beta", "emulators", "pubsub", "start", "--host-port=0.0.0.0:8085"]
 
   datastore-emulator:
     container_name: datastore-emulator
