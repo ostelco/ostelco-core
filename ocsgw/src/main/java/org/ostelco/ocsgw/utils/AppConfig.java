@@ -33,11 +33,12 @@ public class AppConfig {
         return grpcServer;
     }
 
-    public boolean encryptGrpc() {
-        String encrypt = System.getenv("GRPC_ENCRYPTION");
-        if (encrypt == null || encrypt.isEmpty()) {
-            encrypt = prop.getProperty("GrpcEncryption", "true");
+    public String getMetricsServer() {
+        // GRPC_SERVER env has higher preference over config.properties
+        final String metricsServer = System.getenv("METRICS_SERVER");
+        if (metricsServer == null || metricsServer.isEmpty()) {
+            LOG.warn("No metric server set in env");
         }
-        return Boolean.valueOf(encrypt);
+        return metricsServer;
     }
 }

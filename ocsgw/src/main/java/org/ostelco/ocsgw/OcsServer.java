@@ -95,7 +95,7 @@ public class OcsServer {
         switch (appConfig.getDataStoreType()) {
             case DataSourceType.GRPC:
                 LOG.info("Using GrpcDataSource");
-                source = new GrpcDataSource(appConfig.getGrpcServer(), appConfig.encryptGrpc());
+                source = new GrpcDataSource(appConfig.getGrpcServer(), appConfig.getMetricsServer());
                 break;
             case DataSourceType.LOCAL:
                 LOG.info("Using LocalDataSource");
@@ -103,7 +103,7 @@ public class OcsServer {
                 break;
             case DataSourceType.PROXY:
                 LOG.info("Using ProxyDataSource");
-                GrpcDataSource secondary = new GrpcDataSource(appConfig.getGrpcServer(), appConfig.encryptGrpc());
+                GrpcDataSource secondary = new GrpcDataSource(appConfig.getGrpcServer(), appConfig.getMetricsServer());
                 secondary.init();
                 source = new ProxyDataSource(secondary);
                 break;

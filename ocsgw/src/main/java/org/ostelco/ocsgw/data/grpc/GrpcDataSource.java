@@ -68,7 +68,7 @@ public class GrpcDataSource implements DataSource {
 
     private StreamObserver<CreditControlRequestInfo> creditControlRequest;
 
-    private  OcsgwAnalytics ocsgwAnalytics;
+    private OcsgwMetrics ocsgwAnalytics;
 
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
@@ -169,56 +169,39 @@ public class GrpcDataSource implements DataSource {
      * Generate a new instande that connects to an endpoint, and
      * optionally also encrypts the connection.
      *
-     * @param target    The gRPC endpoint to connect the client to.
-     * @param encrypted True iff transport level encryption is enabled.
+     * @param ocsServerHostname The gRPC endpoint to connect the client to.
      * @throws IOException
      */
-    public GrpcDataSource(final String target, final boolean encrypted) throws IOException {
+    public GrpcDataSource(final String ocsServerHostname, final String metricsServerHostname) throws IOException {
 
         LOG.info("Created GrpcDataSource");
-        LOG.info("target : {}", target);
-        LOG.info("encrypted : {}", encrypted);
+        LOG.info("ocsServerHostname : {}", ocsServerHostname);
         // Set up a channel to be used to communicate as an OCS instance,
         // to a gRPC instance.
 
         // Initialize the stub that will be used to actually
         // communicate from the client emulating being the OCS.
-        if (encrypted) {
-            final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder
-                    .forTarget(target)
-                    .keepAliveWithoutCalls(true)
-                    .keepAliveTimeout(KEEP_ALIVE_TIMEOUT_IN_MINUTES, TimeUnit.MINUTES)
-                    .keepAliveTime(KEEP_ALIVE_TIME_IN_SECONDS, TimeUnit.SECONDS);
+        final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder
+                .forTarget(ocsServerHostname)
+                .keepAliveWithoutCalls(true)
+                .keepAliveTimeout(KEEP_ALIVE_TIMEOUT_IN_MINUTES, TimeUnit.MINUTES)
+                .keepAliveTime(KEEP_ALIVE_TIME_IN_SECONDS, TimeUnit.SECONDS);
 
-            final ManagedChannelBuilder channelBuilder =
-                    Files.exists(Paths.get("/config/nginx.crt"))
-                            ? nettyChannelBuilder.sslContext(GrpcSslContexts.forClient().trustManager(new File("/config/nginx.crt")).build())
-                            : nettyChannelBuilder;
+        final ManagedChannelBuilder channelBuilder =
+                Files.exists(Paths.get("/config/ocs.crt"))
+                        ? nettyChannelBuilder.sslContext(GrpcSslContexts.forClient().trustManager(new File("/config/ocs.crt")).build())
+                        : nettyChannelBuilder;
 
-            final String serviceAccountFile = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
-            final ServiceAccountJwtAccessCredentials credentials =
-                    ServiceAccountJwtAccessCredentials.fromStream(new FileInputStream(serviceAccountFile));
-            final ManagedChannel channel = channelBuilder
-                    .useTransportSecurity()
-                    .build();
-            ocsServiceStub = OcsServiceGrpc.newStub(channel)
-                    .withCallCredentials(MoreCallCredentials.from(credentials));
+        final String serviceAccountFile = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
+        final ServiceAccountJwtAccessCredentials credentials =
+                ServiceAccountJwtAccessCredentials.fromStream(new FileInputStream(serviceAccountFile));
+        final ManagedChannel channel = channelBuilder
+                .useTransportSecurity()
+                .build();
+        ocsServiceStub = OcsServiceGrpc.newStub(channel)
+                .withCallCredentials(MoreCallCredentials.from(credentials));
 
-            ocsgwAnalytics = new OcsgwAnalytics(channel, credentials);
-        } else {
-            final ManagedChannelBuilder channelBuilder = ManagedChannelBuilder
-                    .forTarget(target)
-                    .keepAliveWithoutCalls(true)
-                    .keepAliveTimeout(KEEP_ALIVE_TIMEOUT_IN_MINUTES, TimeUnit.MINUTES)
-                    .keepAliveTime(KEEP_ALIVE_TIME_IN_SECONDS, TimeUnit.SECONDS);
-
-            final ManagedChannel channel = channelBuilder
-                    .usePlaintext()
-                    .build();
-            ocsServiceStub = OcsServiceGrpc.newStub(channel);
-
-            ocsgwAnalytics = new OcsgwAnalytics(channel, null);
-        }
+        ocsgwAnalytics = new OcsgwMetrics(metricsServerHostname, credentials);
     }
 
     @Override

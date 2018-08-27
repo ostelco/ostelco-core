@@ -50,6 +50,27 @@ services:
         ipv4_address: 172.16.238.4
       default:
 
+
+  metrics-esp:
+    container_name: metrics-esp
+    image: gcr.io/endpoints-release/endpoints-runtime:1
+    volumes:
+    - "./prime/config:/esp"
+    - "./certs/metrics.ostelco.org:/etc/nginx/ssl"
+    command: >
+      --service=metrics.ostelco.org
+      --rollout_strategy=managed
+      --http2_port=80
+      --ssl_port=443
+      --backend=grpc://172.16.238.5:8082
+      --service_account_key=/esp/pantel-prod.json
+    networks:
+      net:
+        aliases:
+        - "metrics.ostelco.org"
+        ipv4_address: 172.16.238.6
+      default:
+
   ocsgw:
     depends_on:
     - "prime"
