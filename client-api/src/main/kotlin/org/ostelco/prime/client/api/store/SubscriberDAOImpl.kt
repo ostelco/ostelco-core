@@ -60,14 +60,13 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
             logger.error("Failed to create profile. Invalid profile.")
             return Either.left(BadRequestError("Incomplete profile description"))
         }
-        try {
-            profile.referralId = profile.email
-            return storage.addSubscriber(profile, referredBy)
+        return try {
+            storage.addSubscriber(profile, referredBy)
                     .mapLeft { ForbiddenError("Failed to create profile. ${it.message}") }
                     .flatMap { getProfile(subscriberId) }
         } catch (e: Exception) {
             logger.error("Failed to create profile", e)
-            return Either.left(ForbiddenError("Failed to create profile"))
+            Either.left(ForbiddenError("Failed to create profile"))
         }
     }
 
@@ -102,7 +101,6 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
             return Either.left(BadRequestError("Incomplete profile description"))
         }
         try {
-            profile.referralId = profile.email
             storage.updateSubscriber(profile)
         } catch (e: Exception) {
             logger.error("Failed to update profile", e)
@@ -156,27 +154,24 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
     }
 
     override fun getMsisdn(subscriberId: String): Either<ApiError, String> {
-        try {
-            return storage.getMsisdn(subscriberId).mapLeft {
+        return try {
+            storage.getMsisdn(subscriberId).mapLeft {
                 NotFoundError("Did not find msisdn for this subscription. ${it.message}")
             }
         } catch (e: Exception) {
             logger.error("Did not find msisdn for this subscription", e)
-            return Either.left(NotFoundError("Did not find subscription"))
+            Either.left(NotFoundError("Did not find subscription"))
         }
     }
 
     override fun getProducts(subscriberId: String): Either<ApiError, Collection<Product>> {
-        try {
-            return storage.getProducts(subscriberId).bimap(
+        return try {
+            storage.getProducts(subscriberId).bimap(
                     { NotFoundError(it.message) },
-                    { products ->
-                        products.forEach { key, value -> value.sku = key }
-                        products.values
-                    })
+                    { products -> products.values })
         } catch (e: Exception) {
             logger.error("Failed to get Products", e)
-            return Either.left(NotFoundError("Failed to get Products"))
+            Either.left(NotFoundError("Failed to get Products"))
         }
 
     }
@@ -202,11 +197,11 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                 // If we can't find the product, return not-found
                 .mapLeft { NotFoundError("Product unavailable") }
                 .flatMap { product ->
-                    product.sku = sku
                     val purchaseRecord = PurchaseRecord(
                             id = UUID.randomUUID().toString(),
                             product = product,
-                            timestamp = Instant.now().toEpochMilli())
+                            timestamp = Instant.now().toEpochMilli(),
+                            msisdn = "")
                     // Create purchase record
                     storage.addPurchaseRecord(subscriberId, purchaseRecord)
                             .mapLeft { storeError ->
@@ -255,11 +250,11 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                             .map { chargeId -> Tuple4(profileInfo, savedSourceId, chargeId, product) }
                 }
                 .flatMap { (profileInfo, savedSourceId, chargeId, product) ->
-                    product.sku = sku
                     val purchaseRecord = PurchaseRecord(
                             id = chargeId,
                             product = product,
-                            timestamp = Instant.now().toEpochMilli())
+                            timestamp = Instant.now().toEpochMilli(),
+                            msisdn = "")
                     // Create purchase record
                     storage.addPurchaseRecord(subscriberId, purchaseRecord)
                             .mapLeft { storeError ->

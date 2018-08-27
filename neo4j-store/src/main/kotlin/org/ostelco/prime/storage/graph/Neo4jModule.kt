@@ -37,20 +37,27 @@ class Neo4jModule : PrimeModule {
 }
 
 fun initDatabase() {
-    Neo4jStoreSingleton.createProduct(createProduct("1GB_249NOK", 24900))
-    Neo4jStoreSingleton.createProduct(createProduct("2GB_299NOK", 29900))
-    Neo4jStoreSingleton.createProduct(createProduct("3GB_349NOK", 34900))
-    Neo4jStoreSingleton.createProduct(createProduct("5GB_399NOK", 39900))
+    Neo4jStoreSingleton.createProduct(createProduct(sku = "1GB_249NOK", amount = 24900))
+    Neo4jStoreSingleton.createProduct(createProduct(sku = "2GB_299NOK", amount = 29900))
+    Neo4jStoreSingleton.createProduct(createProduct(sku = "3GB_349NOK", amount = 34900))
+    Neo4jStoreSingleton.createProduct(createProduct(sku = "5GB_399NOK", amount = 39900))
 
-    Neo4jStoreSingleton.createProduct(Product("100MB_FREE_ON_JOINING", Price(0, "NOK"), mapOf("noOfBytes" to "100_000_000")))
-    Neo4jStoreSingleton.createProduct(Product("1GB_FREE_ON_REFERRED", Price(0, "NOK"), mapOf("noOfBytes" to "1_000_000_000")))
+    Neo4jStoreSingleton.createProduct(Product(
+            sku = "100MB_FREE_ON_JOINING",
+            price = Price(0, "NOK"),
+            properties = mapOf("noOfBytes" to "100_000_000")))
+    Neo4jStoreSingleton.createProduct(Product(
+            sku = "1GB_FREE_ON_REFERRED",
+            price = Price(0, "NOK"),
+            properties = mapOf("noOfBytes" to "1_000_000_000")))
 
-    val segment = Segment()
-    segment.id = "all"
+    val segment = Segment(id = "all")
     Neo4jStoreSingleton.createSegment(segment)
 
-    val offer = Offer(listOf("all"), listOf("1GB_249NOK", "2GB_299NOK", "3GB_349NOK", "5GB_399NOK"))
-    offer.id = "default_offer"
+    val offer = Offer(
+            id = "default_offer",
+            segments = listOf("all"),
+            products = listOf("1GB_249NOK", "2GB_299NOK", "3GB_349NOK", "5GB_399NOK"))
     Neo4jStoreSingleton.createOffer(offer)
 }
 
@@ -86,16 +93,13 @@ object Neo4jClient : Managed {
 }
 
 fun createProduct(sku: String, amount: Int): Product {
-    val product = Product()
-    product.sku = sku
-    product.price = Price()
-    product.price.amount = amount
-    product.price.currency = "NOK"
 
     // This is messy code
     val gbs: Long = "${sku[0]}".toLong()
-    product.properties = mapOf("noOfBytes" to "${gbs}_000_000_000")
-    product.presentation = mapOf("label" to "$gbs GB for ${amount / 100}")
 
-    return product
+    return Product(
+            sku = sku,
+            price = Price(amount = amount, currency = "NOK"),
+            properties = mapOf("noOfBytes" to "${gbs}_000_000_000"),
+            presentation = mapOf("label" to "$gbs GB for ${amount / 100}"))
 }
