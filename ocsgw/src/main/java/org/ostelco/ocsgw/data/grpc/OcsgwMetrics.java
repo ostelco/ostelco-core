@@ -40,6 +40,8 @@ public class OcsgwMetrics {
 
     private ScheduledFuture initAnalyticsFuture = null;
 
+    private int lastActiveSessions = 0;
+
     public OcsgwMetrics(String metricsServerHostname, ServiceAccountJwtAccessCredentials credentials) {
 
         try {
@@ -91,6 +93,7 @@ public class OcsgwMetrics {
         initAnalyticsFuture = executorService.schedule((Callable<Object>) () -> {
                     LOG.info("Calling initAnalyticsRequest");
                     initAnalyticsRequest();
+                    sendAnalytics(lastActiveSessions);
                     return "Called!";
                 },
                 5,
@@ -111,6 +114,7 @@ public class OcsgwMetrics {
 
     public void sendAnalytics(int size) {
         ocsgwAnalyticsReport.onNext(OcsgwAnalyticsReport.newBuilder().setActiveSessions(size).build());
+        lastActiveSessions = size;
     }
 
 }
