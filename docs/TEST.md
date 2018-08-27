@@ -24,8 +24,8 @@ cp nginx.crt ../../ocsgw/config/ocs.crt
 ```
 
 ```bash
-cd certs/metrics.ostelco.org
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./nginx.key -out ./nginx.crt -subj '/CN=metrics.ostelco.org'
+cd certs/metrics.dev.endpoints.pantel-2decb.cloud.goog
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./nginx.key -out ./nginx.crt -subj '/CN=metrics.dev.endpoints.pantel-2decb.cloud.goog'
 cp nginx.crt ../../ocsgw/config/metrics.crt
 ```
    
