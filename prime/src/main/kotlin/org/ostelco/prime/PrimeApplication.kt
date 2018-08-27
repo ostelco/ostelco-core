@@ -19,7 +19,7 @@ class PrimeApplication : Application<PrimeConfiguration>() {
                 bootstrap.configurationSourceProvider,
                 EnvironmentVariableSubstitutor())
         bootstrap.objectMapper.registerModule(KotlinModule())
-        bootstrap.addBundle(PrometheusBundle());
+        bootstrap.addBundle(PrometheusBundle())
     }
 
     override fun run(
