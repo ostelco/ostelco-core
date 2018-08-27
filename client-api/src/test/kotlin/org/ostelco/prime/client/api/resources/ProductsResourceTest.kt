@@ -1,13 +1,11 @@
 package org.ostelco.prime.client.api.resources
 
+import arrow.core.Either
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import io.dropwizard.auth.AuthDynamicFeature
 import io.dropwizard.auth.AuthValueFactoryProvider
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter
 import io.dropwizard.testing.junit.ResourceTestRule
-import io.vavr.control.Either
-import io.vavr.control.Option
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory
 import org.junit.Assert.assertTrue
@@ -15,22 +13,26 @@ import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Test
 import org.mockito.ArgumentMatchers
-import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.auth.OAuthAuthenticator
-import org.ostelco.prime.client.api.core.ApiError
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
+import org.ostelco.prime.core.ApiError
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
+import org.ostelco.prime.paymentprocessor.PaymentProcessor
+import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import java.util.*
 import java.util.Collections.emptyMap
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.GenericType
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+
+private val PAYMENT: PaymentProcessor = mock(PaymentProcessor::class.java)
+class MockPaymentProcessor : PaymentProcessor by PAYMENT
 
 /**
  * Products API tests.
@@ -85,22 +87,32 @@ class ProductsResourceTest {
     @Test
     @Throws(Exception::class)
     fun purchaseProduct() {
-        val arg1 = argumentCaptor<String>()
-        val arg2 = argumentCaptor<String>()
+        val emailArg = argumentCaptor<String>()
+        val skuArg = argumentCaptor<String>()
+        val sourceIdArg = argumentCaptor<String>()
+        val saveSourceArg = argumentCaptor<Boolean>()
 
         val sku = products[0].sku
+        val sourceId = "amex"
 
-        Mockito.`when`<Option<ApiError>>(DAO.purchaseProduct(arg1.capture(), arg2.capture())).thenReturn(Option.none())
+        `when`(DAO.purchaseProduct(
+                emailArg.capture(),
+                skuArg.capture(),
+                sourceIdArg.capture(),
+                saveSourceArg.capture())).thenReturn(Either.right(ProductInfo(sku)))
 
         val resp = RULE.target("/products/$sku/purchase")
+                .queryParam("sourceId", sourceId)
                 .request()
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
                 .header("X-Endpoint-API-UserInfo", userInfo)
                 .post(Entity.text(""))
 
-        Assertions.assertThat(resp.status).isEqualTo(Response.Status.CREATED.statusCode)
-        Assertions.assertThat(arg1.firstValue).isEqualTo(email)
-        Assertions.assertThat(arg2.firstValue).isEqualTo(sku)
+        assertThat(resp.status).isEqualTo(Response.Status.CREATED.statusCode)
+        assertThat(emailArg.allValues.toSet()).isEqualTo(setOf(email))
+        assertThat(skuArg.allValues.toSet()).isEqualTo(setOf(sku))
+        assertThat(sourceIdArg.allValues.toSet()).isEqualTo(setOf(sourceId))
+        assertThat(saveSourceArg.allValues.toSet()).isEqualTo(setOf(false))
     }
 
     companion object {

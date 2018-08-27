@@ -1,0 +1,81 @@
+@startuml
+
+actor Client
+participant Client
+
+box "Prime"
+    participant "client-api"
+    participant "payment-processor"
+    participant OCS
+    participant DAO
+end box
+participant Stripe
+
+activate Client
+
+    Client -> Client : Select product ({sku})
+
+    Client -> "client-api": POST /products {sku}
+    activate "client-api"
+    note right of "client-api"
+       {name} identifies the user (from Oauth2 auth.)
+       and is equivalent to the users email address
+    end note
+
+    "client-api" -> DAO : getCustomerId(name)
+    activate DAO
+    DAO -> "client-api" : {customerId}
+    deactivate DAO
+
+    note right of "client-api"
+        Report an error if {customerId} does not exists, as a "default source"
+        can not be used without having a valid {customerId}
+    end note
+
+    "client-api" -> "payment-processor" : getDefaultSource(customerId)
+    activate "payment-processor"
+    "payment-processor" -> "client-api" : {sourceId}
+    deactivate "payment-processor"
+
+    "client-api" -> DAO : getProduct(sku)
+    activate DAO
+    DAO -> "client-api" : {product}
+    deactivate DAO
+
+    "client-api" -> "payment-processor" : purchaseProduct(customerId, sourceId, amount, currency)
+    activate "payment-processor"
+
+    alt successful case
+        "payment-processor" -> Stripe : POST /v1/charges {customerId, sourceId, amount, currency, product.description}
+        activate Stripe
+        Stripe -> "payment-processor" : {chargeInfo}
+        deactivate Stripe
+
+        "payment-processor" -> DAO: recordChargeInfo(customerId, chargeInfo)
+        activate DAO
+        DAO -> "payment-processor" : {result}
+        deactivate DAO
+        note right
+          Charges/refunds to be recorded
+          in a "ledger" type of store
+        end note
+
+        "payment-processor" -> OCS : updateBundle(customerId, product.size)
+        activate OCS
+        OCS -> "payment-processor" : {result}
+        deactivate OCS
+
+    else error
+         note right of "payment-processor" : Unroll charge with Stripe etc. (TBD)
+
+    end
+
+    "payment-processor" -> "client-api" : {result}
+    deactivate "payment-processor"
+
+    "client-api" -> Client : {result}
+    deactivate "client-api"
+
+deactivate Client
+
+@enduml

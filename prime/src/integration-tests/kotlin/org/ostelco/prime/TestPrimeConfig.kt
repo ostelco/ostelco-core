@@ -1,10 +1,14 @@
 package org.ostelco.prime
 
+import com.palantir.docker.compose.DockerComposeRule
+import com.palantir.docker.compose.connection.waiting.HealthChecks
 import io.dropwizard.testing.DropwizardTestSupport
 import io.dropwizard.testing.ResourceHelpers
+import org.joda.time.Duration
 import org.junit.AfterClass
 import org.junit.Assert.assertNotNull
 import org.junit.BeforeClass
+import org.junit.ClassRule
 import org.junit.Test
 
 class TestPrimeConfig {
@@ -21,8 +25,22 @@ class TestPrimeConfig {
 
     companion object {
 
-        private val SUPPORT = DropwizardTestSupport(PrimeApplication::class.java,
-                ResourceHelpers.resourceFilePath("config.yaml"))
+        private val SUPPORT:DropwizardTestSupport<PrimeConfiguration> =
+                DropwizardTestSupport(
+                        PrimeApplication::class.java,
+                        ResourceHelpers.resourceFilePath("config.yaml"))
+
+        @ClassRule
+        @JvmField
+        var docker: DockerComposeRule = DockerComposeRule.builder()
+                .file("src/integration-tests/resources/docker-compose.yaml")
+                .waitingForService("neo4j", HealthChecks.toHaveAllPortsOpen())
+                .waitingForService("neo4j",
+                        HealthChecks.toRespond2xxOverHttp(7474) {
+                            port -> port.inFormat("http://\$HOST:\$EXTERNAL_PORT/browser")
+                        },
+                        Duration.standardSeconds(20L))
+                .build()
 
         @JvmStatic
         @BeforeClass

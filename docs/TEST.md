@@ -19,8 +19,8 @@ grep -i pantel $(find . -name '.gitignore') | awk -F: '{print $1}' | sort | uniq
 
 ```bash
 cd certs/ocs.ostelco.org
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./nginx.key -out ./nginx.crt
-cp nginx.crt ../ocsgw/config
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./nginx.key -out ./nginx.crt -subj '/CN=ocs.ostelco.org'
+cp nginx.crt ../../ocsgw/config
 ```
    
 ### Test ext-pgw -- ocsgw -- prime --firebase

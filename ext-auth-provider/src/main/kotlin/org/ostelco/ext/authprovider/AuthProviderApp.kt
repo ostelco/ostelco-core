@@ -3,12 +3,15 @@ package org.ostelco.ext.authprovider
 import io.dropwizard.Application
 import io.dropwizard.Configuration
 import io.dropwizard.setup.Environment
+import io.jsonwebtoken.Jwts
 import javax.validation.Valid
 import javax.ws.rs.GET
 import javax.ws.rs.HeaderParam
 import javax.ws.rs.Path
 import javax.ws.rs.Produces
 import javax.ws.rs.core.Response
+
+internal const val JWT_SIGNING_KEY = "jwt_secret"
 
 fun main(args: Array<String>) {
     AuthProviderApp().run("server")
@@ -27,16 +30,22 @@ class AuthProviderApp : Application<Configuration>() {
 @Path("/userinfo")
 class UserInfoResource {
 
-    private val email = "foo@bar.com"
-
     @GET
     @Produces("application/json")
-    fun getuserInfo(@Valid @HeaderParam("Authorization") token: String?): Response {
+    fun getUserInfo(@Valid @HeaderParam("Authorization") token: String?): Response {
 
-        return if (token == null) {
-            Response.status(Response.Status.NOT_FOUND).build()
-        } else Response.status(Response.Status.OK)
-                .entity("""{ "email": "$email" }""")
-                .build()
+        if (token != null) {
+
+            val claims = Jwts.parser()
+                    .setSigningKey(JWT_SIGNING_KEY.toByteArray())
+                    .parseClaimsJws(token.removePrefix("Bearer "))
+                    .body
+
+            return Response.status(Response.Status.OK)
+                    .entity("""{ "email": "${claims.subject}" }""")
+                    .build()
+        }
+        return Response.status(Response.Status.NOT_FOUND).build()
     }
 }
+

@@ -46,11 +46,11 @@ class CreditControlRequest() {
 
     var ccrAvps: AvpSet? = null
 
-    // ToDo: This should be connected to rating groups
+    // TODO martin: This should be connected to rating groups
     val requestedUnits: Long
         get() = this.multipleServiceCreditControls.first().requested[0].total
 
-    // ToDo: This only get the total. There is also input/output if needed
+    // TODO martin: This only get the total. There is also input/output if needed
     val usedUnits: Long
         get() = this.multipleServiceCreditControls.first().used.total
 }

@@ -3,12 +3,12 @@ package org.ostelco.prime.disruptor
 import com.lmax.disruptor.EventHandler
 import org.ostelco.prime.logger
 
-class ClearingEventHandler : EventHandler<PrimeEvent> {
+class ClearingEventHandler : EventHandler<OcsEvent> {
 
     private val logger by logger()
 
     override fun onEvent(
-            event: PrimeEvent,
+            event: OcsEvent,
             sequence: Long,
             endOfBatch: Boolean) {
         try {

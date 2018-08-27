@@ -1,9 +1,8 @@
 # Instructions to install neo4j on GCP
 
 For enterprise version of Neo4j, a `casual` cluster can be created in GCP using `App Launcher`.
-Only prerequisite for this is to have Enterprise license for Neo4j.
-This is already well documented and hence will not covered here.
-Instead this document focuses on deploying the `Community` edition of Neo4j.
+Neo4j is licensed as A-GPL.
+Since `ostelco-core` is an open source project, we can use Enterprise version of Neo4j.
 This setup is not intended for production since that requires serious Operation and Maintenance of Neo4j.
 
 ### Reference
@@ -17,4 +16,11 @@ Deploy Neo4j
 
 ```bash
 kubectl apply -f infra/dev/neo4j.yaml
+```
+
+ * Private (prod) cluster
+Deploy Neo4j
+
+```bash
+kubectl apply -f infra/prod/neo4j.yaml
 ```

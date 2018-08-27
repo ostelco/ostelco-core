@@ -8,7 +8,7 @@ import java.net.InetAddress
  * PS-Information ( Avp 874 )
  * http://www.3gpp.org/ftp/Specs/html-info/32299.htm
  *
- * ToDo : Add 3GPP-GPRS-Negotiated-QoS-Profile ( Avp 5 )
+ * TODO martin: Add 3GPP-GPRS-Negotiated-QoS-Profile ( Avp 5 )
  */
 class PsInformation() {
 

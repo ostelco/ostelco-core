@@ -2,44 +2,106 @@ package org.ostelco.prime.ocs
 
 import com.google.common.base.Preconditions
 import com.lmax.disruptor.EventHandler
-import org.ostelco.prime.disruptor.PrimeEvent
-import org.ostelco.prime.disruptor.PrimeEventMessageType
+import org.ostelco.prime.disruptor.EventMessageType.ADD_MSISDN_TO_BUNDLE_MAPPING
+import org.ostelco.prime.disruptor.EventMessageType.CREDIT_CONTROL_REQUEST
+import org.ostelco.prime.disruptor.EventMessageType.RELEASE_RESERVED_BUCKET
+import org.ostelco.prime.disruptor.EventMessageType.REMOVE_MSISDN_TO_BUNDLE_MAPPING
+import org.ostelco.prime.disruptor.EventMessageType.TOPUP_DATA_BUNDLE_BALANCE
+import org.ostelco.prime.disruptor.EventMessageType.UPDATE_BUNDLE
+import org.ostelco.prime.disruptor.OcsEvent
 import org.ostelco.prime.logger
 import org.ostelco.prime.module.getResource
-import org.ostelco.prime.storage.ClientDataSource
+import org.ostelco.prime.storage.AdminDataSource
 import java.util.*
 
 /**
  * For unit testing, loadSubscriberInfo = false
  */
-class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<PrimeEvent> {
+class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<OcsEvent> {
 
     private val logger by logger()
 
-    private val dataPackMap = HashMap<String, Long>()
+    // this is public for prime:integration tests
+    val msisdnToBundleIdMap = HashMap<String, String>()
+    val bundleIdToMsisdnMap = HashMap<String, MutableSet<String>>()
+
+    private val bundleBalanceMap = HashMap<String, Long>()
     private val bucketReservedMap = HashMap<String, Long>()
 
     override fun onEvent(
-            event: PrimeEvent,
+            event: OcsEvent,
             sequence: Long,
             endOfBatch: Boolean) {
         try {
-            val msisdn = event.msisdn
-            if (msisdn == null) {
-                logger.error("Received null as msisdn")
-                return
-            }
+
             when (event.messageType) {
-                PrimeEventMessageType.CREDIT_CONTROL_REQUEST -> {
+                CREDIT_CONTROL_REQUEST -> {
+                    val msisdn = event.msisdn
+                    if (msisdn == null) {
+                        logger.error("Received null as msisdn")
+                        return
+                    }
                     consumeDataBytes(msisdn, event.usedBucketBytes)
                     event.reservedBucketBytes = reserveDataBytes(
                             msisdn,
                             event.requestedBucketBytes)
-                    event.bundleBytes = getDataBundleBytes(msisdn)
+                    event.bundleBytes = getDataBundleBytes(msisdn = msisdn)
                 }
-                PrimeEventMessageType.TOPUP_DATA_BUNDLE_BALANCE -> event.bundleBytes = addDataBundleBytes(msisdn, event.requestedBucketBytes)
-                PrimeEventMessageType.GET_DATA_BUNDLE_BALANCE -> event.bundleBytes = getDataBundleBytes(msisdn)
-                PrimeEventMessageType.RELEASE_RESERVED_BUCKET -> releaseReservedBucket(msisdn)
+                TOPUP_DATA_BUNDLE_BALANCE -> {
+                    val bundleId = event.bundleId
+                    if (bundleId == null) {
+                        logger.error("Received null as bundleId")
+                        return
+                    }
+                    event.bundleBytes = addDataBundleBytes(bundleId, event.requestedBucketBytes)
+                    event.msisdnToppedUp = bundleIdToMsisdnMap[bundleId]?.toList()
+                }
+                RELEASE_RESERVED_BUCKET -> {
+                    val msisdn = event.msisdn
+                    if (msisdn == null) {
+                        logger.error("Received null as msisdn")
+                        return
+                    }
+                    releaseReservedBucket(msisdn = msisdn)
+                }
+                UPDATE_BUNDLE -> {
+                    val bundleId = event.bundleId
+                    if (bundleId == null) {
+                        logger.error("Received null as bundleId")
+                        return
+                    }
+                    bundleBalanceMap[bundleId] = event.bundleBytes
+                }
+                ADD_MSISDN_TO_BUNDLE_MAPPING -> {
+                    val msisdn = event.msisdn
+                    if (msisdn == null) {
+                        logger.error("Received null as msisdn")
+                        return
+                    }
+                    val bundleId = event.bundleId
+                    if (bundleId == null) {
+                        logger.error("Received null as bundleId")
+                        return
+                    }
+                    msisdnToBundleIdMap[msisdn] = bundleId
+                    bundleIdToMsisdnMap.putIfAbsent(bundleId, mutableSetOf())
+                    bundleIdToMsisdnMap[bundleId]?.add(msisdn)
+                }
+                REMOVE_MSISDN_TO_BUNDLE_MAPPING -> {
+                    val msisdn = event.msisdn
+                    if (msisdn == null) {
+                        logger.error("Received null as msisdn")
+                        return
+                    }
+                    val bundleId = event.bundleId
+                    if (bundleId == null) {
+                        logger.error("Received null as bundleId")
+                        return
+                    }
+                    msisdnToBundleIdMap.remove(msisdn)
+                    bundleIdToMsisdnMap[bundleId]?.remove(msisdn)
+                    // TODO vihang: return reserved bytes back to bundle
+                }
             }
         } catch (e: Exception) {
             logger.warn("Exception handling prime event in OcsState", e)
@@ -54,27 +116,43 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<PrimeEvent>
      * data bundle balance in bytes
      */
     fun getDataBundleBytes(msisdn: String): Long {
-        return dataPackMap.getOrDefault(msisdn, 0L)
+        val bundleId = msisdnToBundleIdMap[msisdn] ?: return 0
+        return bundleBalanceMap[bundleId] ?: 0
     }
 
     /**
      * Add to subscriber's data bundle balance in bytes.
-     * This is called when subscriber top ups or, P-GW returns
+     * This is called when subscriber top ups. or, P-GW returns
+     * unused data after subscriber disconnects data.
+     *
+     * @param bundleId Bundle ID
+     * @param bytes Number of bytes we want to add
+     * @return bytes data bundle balance in bytes
+     */
+    private fun addDataBundleBytes(bundleId: String, bytes: Long): Long {
+
+        Preconditions.checkArgument(bytes > 0,
+                "Number of bytes must be positive")
+
+        bundleBalanceMap.putIfAbsent(bundleId, 0L)
+        val newDataSize = bundleBalanceMap[bundleId]!! + bytes
+        bundleBalanceMap[bundleId] = newDataSize
+        return newDataSize
+    }
+
+    /**
+     * Add to subscriber's data bundle balance in bytes.
+     * This is called when subscriber top ups. or, P-GW returns
      * unused data after subscriber disconnects data.
      *
      * @param msisdn Phone number
      * @param bytes Number of bytes we want to add
      * @return bytes data bundle balance in bytes
      */
-    fun addDataBundleBytes(msisdn: String, bytes: Long): Long {
+    fun addDataBundleBytesForMsisdn(msisdn: String, bytes: Long): Long {
 
-        Preconditions.checkArgument(bytes > 0,
-                "Number of bytes must be positive")
-
-        dataPackMap.putIfAbsent(msisdn, 0L)
-        val newDataSize = dataPackMap[msisdn]!! + bytes
-        dataPackMap[msisdn] = newDataSize
-        return newDataSize
+        val bundleId = msisdnToBundleIdMap[msisdn] ?: return 0
+        return addDataBundleBytes(bundleId, bytes)
     }
 
     /**
@@ -91,7 +169,7 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<PrimeEvent>
             return 0
         }
 
-        addDataBundleBytes(msisdn, reserved)
+        addDataBundleBytesForMsisdn(msisdn, reserved)
 
         return reserved
     }
@@ -108,12 +186,20 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<PrimeEvent>
 
         Preconditions.checkArgument(usedBytes > -1, "Non-positive value for bytes")
 
-        if (!dataPackMap.containsKey(msisdn)) {
+        val bundleId = msisdnToBundleIdMap[msisdn]
+
+        if (bundleId == null) {
             logger.warn("Used-Units for unknown msisdn : {}", msisdn)
             return 0
         }
 
-        val existing = dataPackMap[msisdn] ?: 0
+
+        if (!bundleBalanceMap.containsKey(bundleId)) {
+            logger.warn("Used-Units for unknown bundle : {}", bundleId)
+            return 0
+        }
+
+        val existing = bundleBalanceMap[bundleId] ?: 0
 
         val reserved = bucketReservedMap.remove(msisdn)
         if (reserved == null || reserved == 0L) {
@@ -142,7 +228,7 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<PrimeEvent>
             newTotal = 0
         }
 
-        dataPackMap[msisdn] = newTotal
+        bundleBalanceMap[bundleId] = newTotal
         return newTotal
     }
 
@@ -162,7 +248,8 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<PrimeEvent>
             return 0
         }
 
-        if (!dataPackMap.containsKey(msisdn)) {
+        val bundleId = msisdnToBundleIdMap[msisdn]
+        if (bundleId == null) {
             logger.warn("Trying to reserve bucket for unknown msisdn {}", msisdn)
             return 0
         }
@@ -172,39 +259,48 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<PrimeEvent>
             return 0
         }
 
-        val existing = dataPackMap[msisdn] ?: 0L
+        val existing = bundleBalanceMap[bundleId] ?: 0L
         if (existing == 0L) {
             return 0
         }
 
         val consumed = Math.min(existing, bytes)
         bucketReservedMap[msisdn] = consumed
-        dataPackMap[msisdn] = existing - consumed
+        bundleBalanceMap[bundleId] = existing - consumed
         return consumed
     }
 
     init {
         if (loadSubscriberInfo) {
-            loadSubscriberBalanceFromDatabaseToInMemoryStructure()
+            loadDatabaseToInMemoryStructure()
         }
     }
 
-    private fun loadSubscriberBalanceFromDatabaseToInMemoryStructure() {
+    private fun loadDatabaseToInMemoryStructure() {
+
         logger.info("Loading initial balance from storage to in-memory OcsState")
-        val store: ClientDataSource = getResource()
-        val balanceMap = store.balances
-        for ((msisdn, noOfBytesLeft) in balanceMap) {
-            logger.info("{} - {}", msisdn, noOfBytesLeft)
-            if (noOfBytesLeft > 0) {
-                val newMsisdn = stripLeadingPlus(msisdn)
-                addDataBundleBytes(newMsisdn, noOfBytesLeft)
-            }
-        }
-    }
+        val store: AdminDataSource = getResource()
 
-    companion object {
-        fun stripLeadingPlus(str: String): String {
-            return str.replaceFirst("^\\+".toRegex(), "")
+        msisdnToBundleIdMap.putAll(
+                store.getMsisdnToBundleMap()
+                        .map { it.key.msisdn to it.value.id })
+
+        for ((msisdn, bundleId) in msisdnToBundleIdMap) {
+            bundleIdToMsisdnMap.putIfAbsent(bundleId, mutableSetOf())
+            bundleIdToMsisdnMap[bundleId]?.add(msisdn)
+        }
+
+        bundleBalanceMap.putAll(
+                store.getAllBundles()
+                        .filter { it.balance > 0 }
+                        .map { it.id to it.balance })
+
+        for ((msisdn, bundleId) in msisdnToBundleIdMap) {
+            logger.info("msisdn :: bundleId - {} :: {}", msisdn, bundleId)
+        }
+
+        for ((bundleId, noOfBytesLeft) in bundleBalanceMap) {
+            logger.info("bundleId :: noOfBytesLeft - {} :: {}", bundleId, noOfBytesLeft)
         }
     }
 }

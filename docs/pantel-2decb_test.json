@@ -9,7 +9,7 @@
         "currency": "NOK"
       },
       "properties": {
-        "noOfBytes": "1073741824"
+        "noOfBytes": "1_000_000_000"
       },
       "presentation": {
         "label": "1 GB for 249"
@@ -21,7 +21,7 @@
         "currency": "NOK"
       },
       "properties": {
-        "noOfBytes": "2147483648"
+        "noOfBytes": "2_000_000_000"
       },
       "presentation": {
         "label": "2 GB for 299"
@@ -33,7 +33,7 @@
         "currency": "NOK"
       },
       "properties": {
-        "noOfBytes": "3221225472"
+        "noOfBytes": "3_000_000_000"
       },
       "presentation": {
         "label": "3 GB for 349"
@@ -45,7 +45,7 @@
         "currency": "NOK"
       },
       "properties": {
-        "noOfBytes": "5368709120"
+        "noOfBytes": "5_000_000_000"
       },
       "presentation": {
         "label": "5 GB for 399"

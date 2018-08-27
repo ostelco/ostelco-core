@@ -7,6 +7,7 @@ modules:
   - type: neo4j
     config:
       host: neo4j
+      protocol: bolt+routing
   - type: ocs
     config:
       projectId: pantel-2decb
@@ -18,6 +19,7 @@ modules:
       pseudonymEndpoint: http://pseudonym-server-service.default.svc.cluster.local
       jerseyClient:
         timeout: 2s
+  - type: stripe-payment-processor
   - type: firebase-app-notifier
     config:
       configFile: /secret/pantel-prod.json

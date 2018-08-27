@@ -1,11 +1,11 @@
 package org.ostelco.prime.client.api.resources
 
+import arrow.core.Either
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import io.dropwizard.auth.AuthDynamicFeature
 import io.dropwizard.auth.AuthValueFactoryProvider
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter
 import io.dropwizard.testing.junit.ResourceTestRule
-import io.vavr.control.Either
 import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory
 import org.junit.Before
@@ -16,10 +16,10 @@ import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.auth.OAuthAuthenticator
-import org.ostelco.prime.client.api.core.ApiError
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
+import org.ostelco.prime.core.NotFoundError
 import java.util.*
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.GenericType
@@ -34,10 +34,9 @@ class ConsentsResourceTest {
 
     private val email = "mw@internet.org"
 
-    private val consents = io.vavr.collection.List.of(
+    private val consents = listOf(
             Consent("1", "blabla", false),
             Consent("2", "blabla", true))
-            .toJavaList()
 
     @Before
     @Throws(Exception::class)
@@ -76,7 +75,7 @@ class ConsentsResourceTest {
 
         `when`(DAO.acceptConsent(arg1.capture(), arg2.capture())).thenReturn(Either.right(consents[0]))
         `when`(DAO.rejectConsent(arg1.capture(), arg2.capture())).thenReturn(Either.left(
-                ApiError("No consents found")))
+                NotFoundError("No consents found")))
 
         val resp = RULE.target("/consents/$consentId")
                 .queryParam("accepted", true)
@@ -98,7 +97,7 @@ class ConsentsResourceTest {
         val consentId = consents[0].consentId
 
         `when`(DAO.acceptConsent(arg1.capture(), arg2.capture())).thenReturn(Either.left(
-                ApiError("No consents found")))
+                NotFoundError("No consents found")))
         `when`(DAO.rejectConsent(arg1.capture(), arg2.capture())).thenReturn(Either.right(consents[0]))
 
         val resp = RULE.target("/consents/$consentId")

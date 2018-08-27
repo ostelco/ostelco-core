@@ -29,17 +29,10 @@ class SubscriptionResource(private val dao: SubscriberDAO,
                     .build()
         }
 
-        val result = dao.getSubscriptionStatus(token.name)
-
-        return if (result.isRight) {
-            Response.status(Response.Status.OK)
-                    .entity(asJson(result.right().get()))
-                    .build()
-        } else {
-            Response.status(Response.Status.NOT_FOUND)
-                    .entity(asJson(result.left().get()))
-                    .build()
-        }
+        return dao.getSubscriptionStatus(token.name).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                { Response.status(Response.Status.OK).entity(asJson(it)) })
+                .build()
     }
 
     @GET
@@ -51,17 +44,9 @@ class SubscriptionResource(private val dao: SubscriberDAO,
                     .build()
         }
 
-        val result = dao.getMsisdn(token.name)
-
-        return if (result.isRight) {
-            val msisdn = result.right().get()
-            val target = client.target("$pseudonymEndpoint/pseudonym/active/$msisdn")
-            target.request().get()
-        } else {
-            Response.status(Response.Status.NOT_FOUND)
-                    .entity(asJson(result.left().get()))
-                    .build()
-        }
+        return dao.getMsisdn(token.name).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)).build() },
+                { msisdn -> client.target("$pseudonymEndpoint/pseudonym/active/$msisdn").request().get() })
     }
 }
 
@@ -76,16 +61,9 @@ class SubscriptionsResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        val result = dao.getSubscriptions(token.name)
-
-        return if (result.isRight) {
-            Response.status(Response.Status.OK)
-                    .entity(asJson(result.right().get()))
-                    .build()
-        } else {
-            Response.status(Response.Status.NOT_FOUND)
-                    .entity(asJson(result.left().get()))
-                    .build()
-        }
+        return dao.getSubscriptions(token.name).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                { Response.status(Response.Status.OK).entity(asJson(it)) })
+                .build()
     }
 }

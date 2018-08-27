@@ -2,7 +2,7 @@ package org.ostelco.at.jersey
 
 import org.glassfish.jersey.client.JerseyClientBuilder
 import org.glassfish.jersey.client.JerseyInvocation
-import org.ostelco.at.common.accessToken
+import org.ostelco.at.common.Auth.generateAccessToken
 import org.ostelco.at.common.url
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.GenericType
@@ -16,6 +16,7 @@ class HttpRequest {
     lateinit var path: String
     var queryParams: Map<String, String> = emptyMap()
     var body: Any? = null
+    var subscriberId = "foo@bar.com"
 }
 
 /**
@@ -23,8 +24,8 @@ class HttpRequest {
  */
 inline fun <reified T> get(execute: HttpRequest.() -> Unit): T {
     val request = HttpRequest().apply(execute)
-    val response = HttpClient.send(request.path, request.queryParams).get()
-    assertEquals(200, response.status)
+    val response = HttpClient.send(request.path, request.queryParams, request.subscriberId).get()
+    assertEquals(200, response.status) { response.readEntity(String::class.java) }
     return response.readEntity(object : GenericType<T>() {})
 }
 
@@ -33,9 +34,9 @@ inline fun <reified T> get(execute: HttpRequest.() -> Unit): T {
  */
 inline fun <reified T> post(execute: HttpRequest.() -> Unit): T {
     val request = HttpRequest().apply(execute)
-    val response = HttpClient.send(request.path, request.queryParams)
+    val response = HttpClient.send(request.path, request.queryParams, request.subscriberId)
             .post(Entity.entity(request.body ?: "", MediaType.APPLICATION_JSON_TYPE))
-    assertEquals(201, response.status)
+    assertEquals(201, response.status) { response.readEntity(String::class.java) }
     return response.readEntity(object : GenericType<T>() {})
 }
 
@@ -44,10 +45,18 @@ inline fun <reified T> post(execute: HttpRequest.() -> Unit): T {
  */
 inline fun <reified T> put(execute: HttpRequest.() -> Unit): T {
     val request = HttpRequest().apply(execute)
-    val response = HttpClient.send(request.path, request.queryParams)
+    val response = HttpClient.send(request.path, request.queryParams, request.subscriberId)
             .put(Entity.entity(request.body ?: "", MediaType.APPLICATION_JSON_TYPE))
-    assertEquals(200, response.status)
+    assertEquals(200, response.status) { response.readEntity(String::class.java) }
     return response.readEntity(object : GenericType<T>() {})
+}
+
+fun <T> assertEquals(expected: T, actual: T, lazyMessage: () -> String) {
+    var message = ""
+    if (expected != actual) {
+        message = lazyMessage()
+    }
+    assertEquals(expected, actual, message)
 }
 
 /**
@@ -58,12 +67,13 @@ object HttpClient {
 
     private val jerseyClient = JerseyClientBuilder.createClient()
 
-    private fun setup(path: String, queryParams: Map<String, String>, url: String): JerseyInvocation.Builder {
+    private fun setup(path: String, queryParams: Map<String, String>, url: String, subscriberId: String): JerseyInvocation.Builder {
         var target = jerseyClient.target(url).path(path)
         queryParams.forEach { target = target.queryParam(it.key, it.value) }
         return target.request(MediaType.APPLICATION_JSON_TYPE)
-                .header("Authorization", "Bearer $accessToken")
+                .header("Authorization", "Bearer ${generateAccessToken(subscriberId)}")
     }
 
-    fun send(path: String, queryParams: Map<String, String>): JerseyInvocation.Builder = setup(path, queryParams, url)
+    fun send(path: String, queryParams: Map<String, String>, subscriberId: String): JerseyInvocation.Builder =
+            setup(path, queryParams, url, subscriberId)
 }

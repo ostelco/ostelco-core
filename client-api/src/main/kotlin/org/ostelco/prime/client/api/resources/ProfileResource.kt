@@ -4,6 +4,8 @@ import io.dropwizard.auth.Auth
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.model.Subscriber
+import org.ostelco.prime.module.getResource
+import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import javax.validation.constraints.NotNull
 import javax.ws.rs.Consumes
 import javax.ws.rs.GET
@@ -21,6 +23,8 @@ import javax.ws.rs.core.Response
 @Path("/profile")
 class ProfileResource(private val dao: SubscriberDAO) {
 
+    private val paymentProcessor by lazy { getResource<PaymentProcessor>() }
+
     @GET
     @Produces("application/json")
     fun getProfile(@Auth token: AccessTokenPrincipal?): Response {
@@ -29,17 +33,10 @@ class ProfileResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        val result = dao.getProfile(token.name)
-
-        return if (result.isRight) {
-            Response.status(Response.Status.OK)
-                    .entity(asJson(result.right().get()))
-                    .build()
-        } else {
-            Response.status(Response.Status.NOT_FOUND)
-                    .entity(asJson(result.left().get()))
-                    .build()
-        }
+        return dao.getProfile(token.name).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                { Response.status(Response.Status.OK).entity(asJson(it)) })
+                .build()
     }
 
     @POST
@@ -54,17 +51,10 @@ class ProfileResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        val result = dao.createProfile(token.name, profile, referredBy)
-
-        return if (result.isRight) {
-            Response.status(Response.Status.CREATED)
-                    .entity(asJson(result.right().get()))
-                    .build()
-        } else {
-            Response.status(Response.Status.FORBIDDEN)
-                    .entity(asJson(result.left().get()))
-                    .build()
-        }
+        return dao.createProfile(token.name, profile, referredBy).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                { Response.status(Response.Status.CREATED).entity(asJson(it)) })
+                .build()
     }
 
     @PUT
@@ -77,16 +67,9 @@ class ProfileResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        val result = dao.updateProfile(token.name, profile)
-
-        return if (result.isRight) {
-            Response.status(Response.Status.OK)
-                    .entity(asJson(result.right().get()))
-                    .build()
-        } else {
-            Response.status(Response.Status.NOT_FOUND)
-                    .entity(asJson(result.left().get()))
-                    .build()
-        }
+        return dao.updateProfile(token.name, profile).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                { Response.status(Response.Status.OK).entity(asJson(it)) })
+                .build()
     }
 }
