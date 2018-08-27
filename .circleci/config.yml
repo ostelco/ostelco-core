@@ -266,7 +266,9 @@ jobs:
       - run:
           name: deploy prime and needed apps to the prod cluster
           command: |
-            export TAG=$(git rev-parse --short=9 @~)
+            export TAG=$(git rev-parse --short=9 origin/circleci-dev)
+            echo $GOOGLE_GCS_PROD_CREDENTIALS > ${HOME}/serviceacccount.json
+            export GOOGLE_APPLICATION_CREDENTIALS=${HOME}/serviceacccount.json
             cd .circleci/
             helmsman --debug --apply -f helmsman-prod-deployment.toml
  
