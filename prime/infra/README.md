@@ -240,24 +240,18 @@ gcloud endpoints services deploy prime/infra/dev/prime-client-api.yaml
 ## Deploy to Dev cluster
 
 ### Deploy monitoring
+Based on https://github.com/giantswarm/kubernetes-prometheus
+
 ```bash
-# Create namespace if it does not already exist
-kubectl create namespace monitoring
+kubectl apply -f prime/infra/dev/monitoring.yaml
 
-# Not sure what this does, but should probably have a description
-kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user $(gcloud config get-value account)
-
-kubectl create -f prime/infra/dev/monitoring-cluster-role.yaml
-
-# config map, prometheus, grafana
-kubectl create -f prime/infra/dev/monitoring.yaml --namespace=monitoring
-
-kubectl create -f prime/infra/dev/monitoring-pushgateway.yaml
+#
+kubectl apply -f prime/infra/dev/monitoring-pushgateway.yaml 
 ```
 
 #### Prometheus dashboard
 ```bash
-kubectl port-forward --namespace=monitoring $(kubectl get pods --namespace=monitoring | grep prometheus-deployment | awk '{print $1}') 9090
+kubectl port-forward --namespace=monitoring $(kubectl get pods --namespace=monitoring | grep prometheus-core | awk '{print $1}') 9090
 ```
 
 #### Grafana dashboard
@@ -271,6 +265,7 @@ kubectl get services --namespace=monitoring | grep grafana | awk '{print $4}'
 #### Push gateway
 ```bash
 # Push a metric to pushgateway:8080 (specified in the service declaration for pushgateway)
+kubectl run curl-it --image=radial/busyboxplus:curl -i --tty --rm
 echo "some_metric 4.71" | curl -v  --data-binary @- http://pushgateway:8080/metrics/job/some_job
 ```
 
