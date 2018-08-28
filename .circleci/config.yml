@@ -234,7 +234,7 @@ jobs:
             
   update-endpoints:
     docker:
-      - image: ostelco/python-gcloud
+      - image: eu.gcr.io/pi-ostelco-dev/python-gcloud
     steps: 
       - checkout
       - run:
