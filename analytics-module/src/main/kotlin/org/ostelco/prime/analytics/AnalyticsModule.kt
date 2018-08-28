@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonTypeName
 import io.dropwizard.setup.Environment
 import org.hibernate.validator.constraints.NotEmpty
-import org.ostelco.prime.analytics.metrics.OcsgwMetrics
+import org.ostelco.prime.analytics.metrics.CustomMetricsRegistry
 import org.ostelco.prime.analytics.publishers.DataConsumptionInfoPublisher
 import org.ostelco.prime.module.PrimeModule
 
@@ -18,9 +18,9 @@ class AnalyticsModule : PrimeModule {
 
     override fun init(env: Environment) {
 
-        val ocsgwMetrics = OcsgwMetrics(env.metrics())
+        CustomMetricsRegistry.init(env.metrics())
 
-        val server = AnalyticsGrpcServer(8083, AnalyticsGrpcService(ocsgwMetrics))
+        val server = AnalyticsGrpcServer(8083, AnalyticsGrpcService())
 
         env.lifecycle().manage(server)
 
