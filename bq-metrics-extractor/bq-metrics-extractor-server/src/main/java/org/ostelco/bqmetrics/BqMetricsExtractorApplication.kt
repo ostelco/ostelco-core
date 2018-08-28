@@ -12,6 +12,7 @@ import com.google.cloud.bigquery.DatasetInfo
 import com.google.cloud.bigquery.BigQueryOptions
 import com.google.cloud.bigquery.BigQuery
 import com.google.cloud.bigquery.Dataset
+import net.sourceforge.argparse4j.inf.Namespace
 
 
 /**
@@ -20,13 +21,12 @@ import com.google.cloud.bigquery.Dataset
 class BqMetricsExtractorApplication : Application<BqMetricsExtractorConfiguration>() {
 
     override fun initialize(bootstrap: Bootstrap<BqMetricsExtractorConfiguration>?) {
-        bootstrap.addCommand(CollectAndPushMetrics())
+        bootstrap!!.addCommand(CollectAndPushMetrics())
     }
 
     override fun run(configuration: BqMetricsExtractorConfiguration, environment: Environment) {
         //DatabaseBackend databaseBackend = configuration.getDatabaseBackend(environment);
     }
-
 
     companion object {
 
@@ -62,8 +62,7 @@ object BigquerySample {
     }
 }
 
-class CollectAndPushMetrics : Command("hello", "Prints a greeting") {
-
+class Pusher {
     // Example code for  pushing to pushgateway (from https://github.com/prometheus/client_java#exporting-to-a-pushgateway,
     // translated to Kotlin)
     @Throws(Exception::class)
@@ -86,8 +85,13 @@ class CollectAndPushMetrics : Command("hello", "Prints a greeting") {
             pg.pushAdd(registry, "my_batch_job")
         }
     }
+}
 
+class CollectAndPushMetrics : Command("hello", "Prints a greeting") {
 
+    override fun run(bootstrap: Bootstrap<*>?, namespace: Namespace?) {
+        TODO("not implemented")
+    }
 
     override fun configure(subparser: Subparser) {
         // Add a command line option
@@ -97,6 +101,4 @@ class CollectAndPushMetrics : Command("hello", "Prints a greeting") {
                 .required(true)
                 .help("The user of the program")
     }
-
-}// The name of our command is "hello" and the description printed is
-// "Prints a greeting"
+}
