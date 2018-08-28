@@ -27,9 +27,10 @@ leaner asap, and certainly before merging to develop.
 TODO
 ===
 
-* Set up skeleton kotlin code. [done(ish)]
+* Set up skeleton kotlin code. [Done]
+* Move to standard gradle setup [Done]
+* Reduce the gradle stuff to something simple (with Vihang).[done)]
 * Run something from the command line ("hello world")
-* Reduce the gradle stuff to something simple (with Vihang).
 * Make the skeleton code read something (anything) from BigQuery, using config
   that is production-like.
 * Build a docker image.

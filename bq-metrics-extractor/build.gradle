@@ -1,50 +1,39 @@
-// =====
-// Build
-// =====
-buildscript {
-    apply from: "$rootDir/gradle/repositories.gradle", to: buildscript
-
-    dependencies {
-        classpath "commons-codec:commons-codec:$commonsCodecVersion"
-        classpath "com.palantir:gradle-flexversion:$flexVersion"
-    }
+plugins {
+  id "org.jetbrains.kotlin.jvm" version "1.2.61"
+  id "application"
+  id "com.github.johnrengelman.shadow" version "2.0.4"
+  id "idea"
 }
 
-// =======
-// Plugins
-// =======
-apply from: "$rootDir/gradle/repositories.gradle"
-apply plugin: 'java-base'
-apply plugin: 'idea'
 
-// ============
-// Repositories
-// ============
-repositories {
-    mavenCentral()
+dependencies {
+
+  implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
+  implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
+
+  testImplementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
+  testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+  testImplementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
+  testImplementation "org.mockito:mockito-core:2.18.3"
+  testImplementation 'org.assertj:assertj-core:3.10.0'
+
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+  // Bigquery dependency
+  compile 'com.google.cloud:google-cloud-bigquery:1.40.0'
+
+  // Prometheus pushgateway dependencies (we might not need all of these)
+  // compile 'io.prometheus:simpleclient:0.5.0'
+  // compile 'io.prometheus:simpleclient_hotspot:0.5.0'
+  // compile 'io.prometheus:simpleclient_httpserver:0.5.0'
+  compile 'io.prometheus:simpleclient_pushgateway:0.5.0'
+
 }
 
-// ==========
-// Versioning
-// ==========
-apply plugin: 'gradle-flexversion'
-flexversion {
-    useTags = true
-}
-addPrintVersionTask()
-
-allprojects {
-    group 'org.ostelco.bqmetrics'
-    version flexVersion()
-
-    // ============
-    // Java Version
-    // ============
-    sourceCompatibility = "1.$jreMinorVersion"
-    targetCompatibility = "1.$jreMinorVersion"
+shadowJar {
+  mainClassName = 'org.ostelco.bqmetrics.BqMetricsExtractorApplicationKt'
+  mergeServiceFiles()
+  classifier = "uber"
+  version = null
 }
 
-// ====
-// IDEA
-// ====
-apply from: "$rootDir/gradle/idea.gradle"
+apply from: '../jacoco.gradle'

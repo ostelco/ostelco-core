@@ -1,4 +1,0 @@
-rootProject.name = 'bq-metrics-extractor'
-
-include 'bq-metrics-extractor-server'
-include 'bq-metrics-extractor-distribution'

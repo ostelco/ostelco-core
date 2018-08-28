@@ -1,9 +1,0 @@
-[Unit]
-Description=bq-metrics-extractor
-
-[Service]
-WorkingDirectory=/opt/api/
-ExecStart=/opt/api/scripts/api.sh
-
-[Install]
-WantedBy=multi-user.target
