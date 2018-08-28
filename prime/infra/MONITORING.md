@@ -43,6 +43,8 @@ echo "some_metric 4.71" | curl -v  --data-binary @- http://pushgateway:8080/metr
  
 ## [Monitoring.yaml](dev/monitoring.yaml)
 
+Is completely based on manifests-all.yaml from this (github repo)[https://github.com/giantswarm/kubernetes-prometheus]
+
 ### Namespace
 Defines monitoring namespace
 
