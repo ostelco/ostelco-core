@@ -216,6 +216,12 @@ kubectl create secret generic api-ostelco-ssl \
   --from-file=certs/dev.ostelco.org/nginx.key
 ```
 
+```bash
+kubectl create secret generic metrics-ostelco-ssl \
+  --from-file=certs/dev.ostelco.org/nginx.crt \
+  --from-file=certs/dev.ostelco.org/nginx.key
+```
+
 ### Endpoints
 
  * OCS gRPC endpoint
@@ -231,12 +237,20 @@ python -m grpc_tools.protoc \
   --proto_path=ocs-api/src/main/proto \
   --descriptor_set_out=ocs_descriptor.pb \
   ocs.proto
+
+python -m grpc_tools.protoc \
+  --include_imports \
+  --include_source_info \
+  --proto_path=analytics-grpc-api/src/main/proto \
+  --descriptor_set_out=metrics_descriptor.pb \
+  prime_metrics.proto
 ```
 
 Deploy endpoints
 
 ```bash
 gcloud endpoints services deploy ocs_descriptor.pb prime/infra/dev/ocs-api.yaml
+gcloud endpoints services deploy metrics_descriptor.pb prime/infra/dev/metrics-api.yaml
 ```
 
  * Client API HTTP endpoint
@@ -258,7 +272,7 @@ Then, import initial data into neo4j using `tools/neo4j-admin-tools`.
 ### Deploy prime
 
 ```bash
-prime/script/deploy-dev.sh
+prime/script/deploy-dev-direct.sh
 ```
 
 OR

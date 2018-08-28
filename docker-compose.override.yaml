@@ -56,9 +56,9 @@ services:
     image: gcr.io/endpoints-release/endpoints-runtime:1
     volumes:
     - "./prime/config:/esp"
-    - "./certs/metrics.dev.endpoints.pantel-2decb.cloud.goog:/etc/nginx/ssl"
+    - "./certs/metrics.dev.ostelco.org:/etc/nginx/ssl"
     command: >
-      --service=metrics.dev.endpoints.pantel-2decb.cloud.goog
+      --service=metrics.dev.ostelco.org
       --rollout_strategy=managed
       --http2_port=80
       --ssl_port=443
@@ -67,11 +67,14 @@ services:
     networks:
       net:
         aliases:
-        - "metrics.dev.endpoints.pantel-2decb.cloud.goog"
+        - "metrics.dev.ostelco.org"
         ipv4_address: 172.16.238.6
       default:
 
   ocsgw:
+    environment:
+    - OCS_GRPC_SERVER=ocs.ostelco.org
+    - METRICS_GRPC_SERVER=metrics.dev.ostelco.org
     depends_on:
     - "prime"
     command: ["./wait.sh"]

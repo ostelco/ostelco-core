@@ -7,6 +7,7 @@ metadata:
     tier: backend
 spec:
   type: LoadBalancer
+  loadBalancerIP: 35.190.197.222
   ports:
   - name: grpc
     port: 443
@@ -25,10 +26,30 @@ metadata:
     tier: backend
 spec:
   type: LoadBalancer
+  loadBalancerIP: 35.190.192.27
   ports:
-  - port: 443
+  - name: https
+    port: 443
     protocol: TCP
-    name: https
+  selector:
+    app: prime
+    tier: backend
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prime-metrics
+  labels:
+    app: prime
+    tier: backend
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 146.148.16.201
+  ports:
+  - name: grpc
+    port: 443
+    targetPort: 9443
+    protocol: TCP
   selector:
     app: prime
     tier: backend
@@ -49,11 +70,12 @@ spec:
         tier: backend
     spec:
       containers:
-      - name: esp
+      - name: ocs-esp
         image: gcr.io/endpoints-release/endpoints-runtime:1
         args: [
           "--http2_port=9000",
           "--ssl_port=8443",
+          "--status_port=8090",
           "--service=ocs.dev.ostelco.org",
           "--rollout_strategy=managed",
           "--backend=grpc://127.0.0.1:8082"
@@ -82,6 +104,23 @@ spec:
         - mountPath: /etc/nginx/ssl
           name: api-ostelco-ssl
           readOnly: true
+      - name: metrics-esp
+        image: gcr.io/endpoints-release/endpoints-runtime:1
+        args: [
+          "--http2_port=9004",
+          "--ssl_port=9443",
+          "--status_port=8094",
+          "--service=metrics.dev.ostelco.org",
+          "--rollout_strategy=managed",
+          "--backend=grpc://127.0.0.1:8083"
+        ]
+        ports:
+        - containerPort: 9004
+        - containerPort: 9443
+        volumeMounts:
+        - mountPath: /etc/nginx/ssl
+          name: metrics-ostelco-ssl
+          readOnly: true
       - name: prime
         image: gcr.io/pantel-2decb/prime:PRIME_VERSION
         env:
@@ -100,6 +139,7 @@ spec:
         - containerPort: 8080
         - containerPort: 8081
         - containerPort: 8082
+        - containerPort: 8083
       volumes:
       - name: secret-config
         secret:
@@ -110,3 +150,6 @@ spec:
       - name: ocs-ostelco-ssl
         secret:
           secretName: ocs-ostelco-ssl
+      - name: metrics-ostelco-ssl
+        secret:
+          secretName: metrics-ostelco-ssl

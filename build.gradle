@@ -41,8 +41,8 @@ task packDev(type: Zip, dependsOn: [':ocsgw:packDev', ':auth-server:pack']) {
   from zipTree('ocsgw/build/deploy/dev/ocsgw.zip')
   from zipTree('auth-server/build/deploy/auth-server.zip')
   from 'docker-compose.yaml'
-  from 'docker-compose.prod.yaml'
-  rename 'docker-compose.prod.yaml','docker-compose.override.yaml'
+  from 'docker-compose.dev.yaml'
+  rename 'docker-compose.dev.yaml','docker-compose.override.yaml'
   archiveName = 'ostelco-core-dev.zip'
   destinationDir = file('build/deploy/')
 }
