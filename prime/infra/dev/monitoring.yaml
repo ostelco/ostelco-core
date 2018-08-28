@@ -2791,7 +2791,6 @@ metadata:
   name: prometheus-rules
   namespace: monitoring
 ---
----
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
