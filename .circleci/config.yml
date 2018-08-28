@@ -232,7 +232,31 @@ jobs:
             docker build -t eu.gcr.io/pi-ostelco-dev/ocsgw:$TAG .
             docker push eu.gcr.io/pi-ostelco-dev/ocsgw:$TAG      
             
+  update-endpoints:
+    docker:
+      - image: ostelco/python-gcloud
+    steps: 
+      - checkout
+      - run:
+          name: update endpoints spec
+          command: |  
+            git checkout circleci-dev # TODO: change branch to develop
+            echo $GOOGLE_DEV_ENDPOINTS_CREDENTIALS > ${HOME}/gcloud-service-key.json
+            gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
+            
+            python -m grpc_tools.protoc --include_imports --include_source_info \      
+            --proto_path=ocs-grpc-api/src/main/proto \
+            --descriptor_set_out=ocs_descriptor.pb \
+            ocs.proto
 
+            python -m grpc_tools.protoc --include_imports --include_source_info \
+            --proto_path=analytics-grpc-api/src/main/proto \
+            --descriptor_set_out=metrics_descriptor.pb \
+            prime_metrics.proto
+
+            gcloud endpoints services deploy ocs_descriptor.pb prime/infra/prod/ocs-api.yaml
+            gcloud endpoints services deploy metrics_descriptor.pb prime/infra/prod/metrics-api.yaml
+            
 
   deploy-to-dev:
 
@@ -311,24 +335,16 @@ workflows:
     - build-image:
         requires:
           - build-code
-        filters:
-          branches:
-            only:
-            - circleci-dev
+    - update-endpoints:
+        requires:
+          - build-image        
     - deploy-to-dev:
         requires:
-          - build-image
-        filters:
-          branches:
-            only:
-            - circleci-dev
+          - update-endpoints
     - create-PR-to-master:
         requires:
           - deploy-to-dev
-        filters:
-          branches:
-            only:
-            - circleci-dev 
+
   deploy-to-prod:
     jobs:
     - deploy-to-prod:
