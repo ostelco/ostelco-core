@@ -216,7 +216,7 @@ class PseudonymResourceTest {
             assertEquals(Status.OK.statusCode, result.status)
             val json = result.readEntity(String::class.java)
             val pseudonymEntity2 = mapper.readValue<PseudonymEntity>(json)
-            assertEquals(testMsisdn1, pseudonymEntity.msisdn)
+            assertEquals(testMsisdn1, pseudonymEntity2.msisdn)
         }
     }
 

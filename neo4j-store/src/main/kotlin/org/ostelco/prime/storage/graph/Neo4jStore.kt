@@ -405,6 +405,44 @@ object Neo4jStoreSingleton : GraphStore {
         }
     }
 
+    //
+    // For metrics
+    //
+    override fun getSubscriberCount(): Long = readTransaction {
+        read("""
+                MATCH (subscriber:${subscriberEntity.name})
+                RETURN count(subscriber) AS count
+                """.trimIndent(),
+                transaction) { result ->
+            result.single().get("count").asLong()
+        }
+    }
+
+    override fun getReferredSubscriberCount(): Long = readTransaction {
+        read("""
+                MATCH (:${subscriberEntity.name})-[:${referredRelation.relation.name}]->(subscriber:${subscriberEntity.name})
+                RETURN count(subscriber) AS count
+                """.trimIndent(),
+                transaction) { result ->
+            result.single().get("count").asLong()
+        }
+    }
+
+    override fun getPaidSubscriberCount(): Long = readTransaction {
+        read("""
+                MATCH (subscriber:${subscriberEntity.name})-[:${purchaseRecordRelation.relation.name}]->(product:${productEntity.name})
+                WHERE product.`price/amount` > 0
+                RETURN count(subscriber) AS count
+                """.trimIndent(),
+                transaction) { result ->
+            result.single().get("count").asLong()
+        }
+    }
+
+    //
+    // Stores
+    //
+
     private val offerEntity = EntityType(Offer::class.java)
     private val offerStore = EntityStore(offerEntity)
 

@@ -1,6 +1,5 @@
 package org.ostelco.prime.client.api
 
-import com.codahale.metrics.SharedMetricRegistries
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonTypeName
 import com.fasterxml.jackson.databind.DeserializationFeature
@@ -13,6 +12,7 @@ import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.setup.Environment
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.auth.OAuthAuthenticator
+import org.ostelco.prime.client.api.metrics.reportMetricsAtStartUp
 import org.ostelco.prime.client.api.resources.AnalyticsResource
 import org.ostelco.prime.client.api.resources.ApplicationTokenResource
 import org.ostelco.prime.client.api.resources.ConsentsResource
@@ -66,11 +66,8 @@ class ClientApiModule : PrimeModule {
         jerseyEnv.register(SubscriptionsResource(dao))
         jerseyEnv.register(ApplicationTokenResource(dao))
 
-        /* For reporting OAuth2 caching events. */
-        val metrics = SharedMetricRegistries.getOrCreate(env.name)
-
         /* OAuth2 with cache. */
-        val authenticator = CachingAuthenticator(metrics,
+        val authenticator = CachingAuthenticator(env.metrics(),
                 OAuthAuthenticator(client),
                 config.authenticationCachePolicy)
 
@@ -80,5 +77,7 @@ class ClientApiModule : PrimeModule {
                         .setPrefix("Bearer")
                         .buildAuthFilter()))
         jerseyEnv.register(AuthValueFactoryProvider.Binder(AccessTokenPrincipal::class.java))
+
+        reportMetricsAtStartUp()
     }
 }

@@ -1,5 +1,6 @@
 package org.ostelco.prime.analytics
 
+import org.ostelco.prime.analytics.metrics.CustomMetricsRegistry
 import org.ostelco.prime.analytics.publishers.DataConsumptionInfoPublisher
 import org.ostelco.prime.logger
 
@@ -10,5 +11,9 @@ class AnalyticsServiceImpl : AnalyticsService {
     override fun reportTrafficInfo(msisdn: String, usedBytes: Long, bundleBytes: Long) {
         logger.info("reportTrafficInfo : msisdn {} usedBytes {} bundleBytes {}", msisdn, usedBytes, bundleBytes)
         DataConsumptionInfoPublisher.publish(msisdn, usedBytes, bundleBytes)
+    }
+
+    override fun reportMetric(primeMetric: PrimeMetric, value: Long) {
+        CustomMetricsRegistry.updateMetricValue(primeMetric, value)
     }
 }

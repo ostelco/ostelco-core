@@ -8,7 +8,7 @@ plugins {
 dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
   implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
-  implementation 'com.google.firebase:firebase-admin:6.2.0'
+  implementation 'com.google.firebase:firebase-admin:6.4.0'
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
   testRuntimeOnly 'org.hamcrest:hamcrest-all:1.3'
