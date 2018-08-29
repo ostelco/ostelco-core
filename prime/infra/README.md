@@ -150,7 +150,7 @@ kubectl describe service prime-service
 gcloud endpoints services deploy prime/infra/prod/prime-client-api.yaml
 ```
 
-## SSL secrets for api.ostelco.org & ocs.ostelco.org
+## SSL secrets for api.ostelco.org, ocs.ostelco.org & metrics.ostelco.org
 The endpoints runtime expects the SSL configuration to be named
 as `nginx.crt` and `nginx.key`. Sample command to create the secret:
 ```bash
@@ -158,8 +158,10 @@ kubectl create secret generic api-ostelco-ssl \
   --from-file=./nginx.crt \
   --from-file=./nginx.key
 ```
-The secret for api.ostelco.org is in `api-ostelco-ssl` & the one for
-ocs.ostelco.org is in `ocs-ostelco-ssl`
+The secret for ...
+ * `api.ostelco.org` is in `api-ostelco-ssl`
+ * `ocs.ostelco.org` is in `ocs-ostelco-ssl`
+ * `metrics.ostelco.org` is in `metrics-ostelco-ssl`
 
 # For Dev cluster
 

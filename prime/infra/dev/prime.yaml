@@ -68,6 +68,10 @@ spec:
       labels:
         app: prime
         tier: backend
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/path: '/prometheus-metrics'
+        prometheus.io/port: '8081'
     spec:
       containers:
       - name: ocs-esp
