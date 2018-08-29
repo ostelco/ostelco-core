@@ -38,8 +38,8 @@ TODO
           docker pull prom/pushgateway
           docker run -d -p 9091:9091 prom/pushgateway
   
-* Send something from the program to a pushgateway running somewhere [in progress]
-* Make it testable to send send metrics to pushgatway.
+* Send something from the program to a pushgateway running somewhere [Done]
+* Make it testable to send send metrics to pushgatway. [In progress (or not, we'll see)]
 * Make the skeleton code read something (anything) from BigQuery, using config
   that is production-like.
 * Build a docker image.

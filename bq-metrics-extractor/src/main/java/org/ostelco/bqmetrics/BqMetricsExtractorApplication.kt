@@ -93,6 +93,7 @@ class CollectAndPushMetrics : Command("hello", "Prints a greeting") {
     override fun run(bootstrap: Bootstrap<*>?, namespace: Namespace?) {
         val user: String? =  namespace!!.getString("user")
         println("Hello $user")
+        Pusher().executeBatchJob()
     }
 
     override fun configure(subparser: Subparser) {
