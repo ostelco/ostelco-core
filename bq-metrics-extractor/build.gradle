@@ -30,7 +30,7 @@ dependencies {
 }
 
 shadowJar {
-  mainClassName = 'org.ostelco.bqmetrics.BqMetricsExtractorApplicationKt'
+  mainClassName = 'org.ostelco.bqmetrics.BqMetricsExtractorApplication'
   mergeServiceFiles()
   classifier = "uber"
   version = null
