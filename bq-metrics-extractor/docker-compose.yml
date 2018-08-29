@@ -1,5 +1,19 @@
 version: '3.3'
 services:
+#    application:
+#      image: ...
+#      environment:
+#      - PUBSUB_EMULATOR_HOST="emulator:8085"
+#      # ...other configurations...
+#     depends_on:
+#      - emulator
+#      - push-gateway
+  
+    emulator:
+      image: adilsoncarvalho/gcloud-pubsub-emulator
+      ports:
+      - "8085:8085"
+
     prometheus:
         image: prom/prometheus
         volumes:
@@ -14,10 +28,10 @@ services:
     grafana:
         image: grafana/grafana
         environment:
-	# Please note that setting the password only works the _FIRST_TIME_
-	# the image is built.  After that, it's cached and won't change
-	# if you change it in this docker-compose.yml file.  You have
-	# been warned!
+        # Please note that setting the password only works the _FIRST_TIME_
+        # the image is built.  After that, it's cached and won't change
+        # if you change it in this docker-compose.yml file.  You have
+        # been warned!
             - GF_SECURITY_ADMIN_PASSWORD=pass
         depends_on:
             - prometheus
