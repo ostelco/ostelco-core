@@ -29,13 +29,20 @@ TODO
 
 * Set up skeleton kotlin code. [Done]
 * Move to standard gradle setup [Done]
-* Reduce the gradle stuff to something simple (with Vihang).[done)]
-* Run something from the command line ("hello world")
+* Reduce the gradle stuff to something simple (with Vihang).[done]
+* Run something from the command line ("hello world") [done]
+* Set up a pushgateway running in a test environment using
+  * Prometheus: https://github.com/evnsio/prom-stack. [In progress]
+          docker run -p 9090:9090 -v $(pwd)/tmp/prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus
+  * Pushgateway: https://hub.docker.com/r/prom/pushgateway/
+          docker pull prom/pushgateway
+          docker run -d -p 9091:9091 prom/pushgateway
+  
+* Send something from the program to a pushgateway running somewhere.
+* Make it testable to send send metrics to pushgatway.
 * Make the skeleton code read something (anything) from BigQuery, using config
   that is production-like.
 * Build a docker image.
-* Send metrics to something that looks like a pushgateway, do that as an
-  integration test running in docker compose.
 * Run a proper metric and push it to test-pushgateway.
 * Package up as kubernetes component and introduce cronjob into cluster,
   use the cluster config scripts (XXX Reconsider the whole cronjob thing,
