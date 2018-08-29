@@ -32,13 +32,13 @@ TODO
 * Reduce the gradle stuff to something simple (with Vihang).[done]
 * Run something from the command line ("hello world") [done]
 * Set up a pushgateway running in a test environment using
-  * Prometheus: https://github.com/evnsio/prom-stack. [In progress]
+  * Prometheus: https://github.com/evnsio/prom-stack. [done]
           docker run -p 9090:9090 -v $(pwd)/tmp/prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus
   * Pushgateway: https://hub.docker.com/r/prom/pushgateway/
           docker pull prom/pushgateway
           docker run -d -p 9091:9091 prom/pushgateway
   
-* Send something from the program to a pushgateway running somewhere.
+* Send something from the program to a pushgateway running somewhere [in progress]
 * Make it testable to send send metrics to pushgatway.
 * Make the skeleton code read something (anything) from BigQuery, using config
   that is production-like.
