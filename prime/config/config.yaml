@@ -10,9 +10,11 @@ modules:
       protocol: bolt+routing
   - type: ocs
     config:
+      lowBalanceThreshold: 100000000
+  - type: analytics
+    config:
       projectId: pantel-2decb
       topicId: data-traffic
-      lowBalanceThreshold: 100000000
   - type: pseudonymizer
   - type: api
     config:

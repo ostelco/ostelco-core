@@ -50,6 +50,27 @@ services:
         ipv4_address: 172.16.238.4
       default:
 
+
+  metrics-esp:
+    container_name: metrics-esp
+    image: gcr.io/endpoints-release/endpoints-runtime:1
+    volumes:
+    - "./prime/config:/esp"
+    - "./certs/metrics.dev.endpoints.pantel-2decb.cloud.goog:/etc/nginx/ssl"
+    command: >
+      --service=metrics.dev.endpoints.pantel-2decb.cloud.goog
+      --rollout_strategy=managed
+      --http2_port=80
+      --ssl_port=443
+      --backend=grpc://172.16.238.5:8083
+      --service_account_key=/esp/pantel-prod.json
+    networks:
+      net:
+        aliases:
+        - "metrics.dev.endpoints.pantel-2decb.cloud.goog"
+        ipv4_address: 172.16.238.6
+      default:
+
   ocsgw:
     depends_on:
     - "prime"
@@ -91,7 +112,7 @@ services:
 
   datastore-emulator:
     container_name: datastore-emulator
-    image: google/cloud-sdk
+    image: google/cloud-sdk:206.0.0
     expose:
     - "8081"
     environment:

@@ -7,7 +7,7 @@ services:
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/config/pantel-prod.json
       - GRPC_SERVER=ocs.ostelco.org
-      - GRPC_ENCRYPTION=true
+      - METRICS_SERVER=metrics.dev.endpoints.pantel-2decb.cloud.goog
       - GOOGLE_CLOUD_PROJECT=pantel-2decb
 
   auth-server:

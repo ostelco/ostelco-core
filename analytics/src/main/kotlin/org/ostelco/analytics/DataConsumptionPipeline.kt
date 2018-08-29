@@ -26,8 +26,8 @@ import org.joda.time.Instant
 import org.ostelco.analytics.ParDoFn.transform
 import org.ostelco.analytics.Table.HOURLY_CONSUMPTION
 import org.ostelco.analytics.Table.RAW_CONSUMPTION
-import org.ostelco.ocs.api.AggregatedDataTrafficInfo
-import org.ostelco.ocs.api.DataTrafficInfo
+import org.ostelco.analytics.api.AggregatedDataTrafficInfo
+import org.ostelco.analytics.api.DataTrafficInfo
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter

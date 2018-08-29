@@ -11,8 +11,8 @@ import org.joda.time.Instant
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
-import org.ostelco.ocs.api.AggregatedDataTrafficInfo
-import org.ostelco.ocs.api.DataTrafficInfo
+import org.ostelco.analytics.api.AggregatedDataTrafficInfo
+import org.ostelco.analytics.api.DataTrafficInfo
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter

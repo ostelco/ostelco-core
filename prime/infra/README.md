@@ -80,7 +80,7 @@ Reference:
 
 ## Endpoint
 
-Generate self-contained protobuf descriptor file - api_descriptor.pb
+Generate self-contained protobuf descriptor file - `ocs_descriptor.pb` & `metrics_descriptor.pb`
 
 ```bash
 pip install grpcio grpcio-tools
@@ -88,15 +88,23 @@ pip install grpcio grpcio-tools
 python -m grpc_tools.protoc \
   --include_imports \
   --include_source_info \
-  --proto_path=ocs-api/src/main/proto \
-  --descriptor_set_out=api_descriptor.pb \
+  --proto_path=ocs-grpc-api/src/main/proto \
+  --descriptor_set_out=ocs_descriptor.pb \
   ocs.proto
+
+python -m grpc_tools.protoc \
+  --include_imports \
+  --include_source_info \
+  --proto_path=analytics-grpc-api/src/main/proto \
+  --descriptor_set_out=metrics_descriptor.pb \
+  prime_metrics.proto
 ```
 
 Deploy endpoints
 
 ```bash
-gcloud endpoints services deploy api_descriptor.pb prime/infra/prod/ocs-api.yaml
+gcloud endpoints services deploy ocs_descriptor.pb prime/infra/prod/ocs-api.yaml
+gcloud endpoints services deploy metrics_descriptor.pb prime/infra/prod/metrics-api.yaml
 ```
 
 ## Deployment & Service
@@ -212,7 +220,7 @@ kubectl create secret generic api-ostelco-ssl \
 
  * OCS gRPC endpoint
 
-Generate self-contained protobuf descriptor file - api_descriptor.pb
+Generate self-contained protobuf descriptor file - ocs_descriptor.pb
 
 ```bash
 pip install grpcio grpcio-tools
@@ -221,14 +229,14 @@ python -m grpc_tools.protoc \
   --include_imports \
   --include_source_info \
   --proto_path=ocs-api/src/main/proto \
-  --descriptor_set_out=api_descriptor.pb \
+  --descriptor_set_out=ocs_descriptor.pb \
   ocs.proto
 ```
 
 Deploy endpoints
 
 ```bash
-gcloud endpoints services deploy api_descriptor.pb prime/infra/dev/ocs-api.yaml
+gcloud endpoints services deploy ocs_descriptor.pb prime/infra/dev/ocs-api.yaml
 ```
 
  * Client API HTTP endpoint

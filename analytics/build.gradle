@@ -6,7 +6,7 @@ plugins {
 }
 
 dependencies {
-  implementation project(':ocs-api')
+  implementation project(':analytics-grpc-api')
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
   implementation "com.google.cloud:google-cloud-pubsub:$googleCloudVersion"
   implementation 'com.google.cloud.dataflow:google-cloud-dataflow-java-sdk-all:2.5.0'

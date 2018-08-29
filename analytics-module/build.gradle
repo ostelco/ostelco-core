@@ -1,0 +1,18 @@
+plugins {
+    id "org.jetbrains.kotlin.jvm" version "1.2.61"
+    id "java-library"
+}
+
+dependencies {
+    implementation project(":prime-api")
+
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+    implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
+    implementation "com.google.cloud:google-cloud-pubsub:$googleCloudVersion"
+
+    testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+    testImplementation 'org.mockito:mockito-core:2.18.3'
+    testImplementation 'org.assertj:assertj-core:3.10.0'
+}
+
+apply from: '../jacoco.gradle'
