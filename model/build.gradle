@@ -8,6 +8,6 @@ dependencies {
   implementation "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
 
   // TODO vihang: this dependency is added only for @Exclude annotation for firebase
-  implementation 'com.google.firebase:firebase-admin:6.2.0'
+  implementation 'com.google.firebase:firebase-admin:6.4.0'
   implementation "org.slf4j:slf4j-api:1.7.25"
 }

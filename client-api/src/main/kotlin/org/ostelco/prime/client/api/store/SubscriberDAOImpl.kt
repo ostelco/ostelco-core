@@ -3,6 +3,10 @@ package org.ostelco.prime.client.api.store
 import arrow.core.Either
 import arrow.core.Tuple4
 import arrow.core.flatMap
+import org.ostelco.prime.analytics.AnalyticsService
+import org.ostelco.prime.analytics.PrimeMetric.REVENUE
+import org.ostelco.prime.client.api.metrics.updateMetricsOnNewSubscriber
+import org.ostelco.prime.client.api.metrics.updateMetricsOnPurchase
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.Person
 import org.ostelco.prime.client.api.model.SubscriptionStatus
@@ -40,6 +44,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
 
     private val paymentProcessor by lazy { getResource<PaymentProcessor>() }
     private val pseudonymizer by lazy { getResource<PseudonymizerService>() }
+    private val analyticsReporter by lazy { getResource<AnalyticsService>() }
 
     /* Table for 'profiles'. */
     private val consentMap = ConcurrentHashMap<String, ConcurrentHashMap<String, Boolean>>()
@@ -63,7 +68,10 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         return try {
             storage.addSubscriber(profile, referredBy)
                     .mapLeft { ForbiddenError("Failed to create profile. ${it.message}") }
-                    .flatMap { getProfile(subscriberId) }
+                    .flatMap {
+                        updateMetricsOnNewSubscriber()
+                        getProfile(subscriberId)
+                    }
         } catch (e: Exception) {
             logger.error("Failed to create profile", e)
             Either.left(ForbiddenError("Failed to create profile"))
@@ -212,6 +220,8 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                             .flatMap {
                                 //TODO: Handle errors (when it becomes available)
                                 ocsSubscriberService.topup(subscriberId, sku)
+                                // TODO vihang: handle currency conversion
+                                analyticsReporter.reportMetric(REVENUE, product.price.amount.toLong())
                                 Either.right(Unit)
                             }
                 }
@@ -265,21 +275,26 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                             .flatMap {
                                 //TODO: Handle errors (when it becomes available)
                                 ocsSubscriberService.topup(subscriberId, sku)
-                                Either.right(Tuple4(profileInfo, savedSourceId, chargeId, ProductInfo(sku)))
+                                Either.right(Tuple4(profileInfo, savedSourceId, chargeId, product))
                             }
                 }
-                .flatMap { (profileInfo, savedSourceId, chargeId, productInfo) ->
+                .flatMap { (profileInfo, savedSourceId, chargeId, product) ->
                     // Capture the charge, our database have been updated.
                     paymentProcessor.captureCharge(chargeId, profileInfo.id, sourceId)
                             .mapLeft { apiError ->
                                 logger.error("Capture failed for customerId ${profileInfo.id}, chargeId $chargeId, Fix this in Stripe Dashborad")
                                 apiError
                             }
-                            .map { Triple(profileInfo, savedSourceId, productInfo) }
+                            .map {
+                                // TODO vihang: handle currency conversion
+                                analyticsReporter.reportMetric(REVENUE, product.price.amount.toLong())
+                                updateMetricsOnPurchase()
+                                Triple(profileInfo, savedSourceId, ProductInfo(product.sku))
+                            }
                 }
                 .flatMap { (profileInfo, savedSourceId, productInfo) ->
                     // Remove the payment source
-                    if (saveCard == false && savedSourceId != null) {
+                    if (!saveCard && savedSourceId != null) {
                         paymentProcessor.removeSource(profileInfo.id, savedSourceId)
                                 .mapLeft { apiError ->
                                     logger.error("Failed to remove card, for customerId ${profileInfo.id}, sourceId $sourceId")

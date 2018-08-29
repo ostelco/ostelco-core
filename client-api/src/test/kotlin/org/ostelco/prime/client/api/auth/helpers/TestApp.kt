@@ -1,7 +1,6 @@
 package org.ostelco.prime.client.api.auth.helpers
 
 import arrow.core.Either
-import com.codahale.metrics.SharedMetricRegistries
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.nhaarman.mockito_kotlin.argumentCaptor
@@ -49,9 +48,6 @@ class TestApp : Application<TestConfig>() {
         env.jersey().register(ProfileResource(DAO))
         env.jersey().register(UserInfoResource())
 
-        /* For reporting OAuth2 caching events. */
-        val metrics = SharedMetricRegistries.getOrCreate(env.name)
-
         val client = JerseyClientBuilder(env)
                 .using(config.jerseyClientConfiguration)
                 .using(ObjectMapper()
@@ -59,7 +55,7 @@ class TestApp : Application<TestConfig>() {
                 .build(env.name)
 
         /* OAuth2 with cache. */
-        val authenticator = CachingAuthenticator(metrics,
+        val authenticator = CachingAuthenticator(env.metrics(),
                 OAuthAuthenticator(client),
                 config.authenticationCachePolicy!!)
 

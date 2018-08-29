@@ -28,9 +28,9 @@ spec:
   type: LoadBalancer
   loadBalancerIP: 35.233.36.235
   ports:
-  - port: 443
+  - name: https
+    port: 443
     protocol: TCP
-    name: https
   selector:
     app: prime
     tier: backend
@@ -49,6 +49,10 @@ spec:
       labels:
         app: prime
         tier: backend
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/path: '/prometheus-metrics'
+        prometheus.io/port: '8081'
     spec:
       containers:
       - name: esp
@@ -56,6 +60,7 @@ spec:
         args: [
           "--http2_port=9000",
           "--ssl_port=8443",
+          "--status_port=8090",
           "--service=ocs.ostelco.org",
           "--rollout_strategy=managed",
           "--backend=grpc://127.0.0.1:8082"

@@ -5,8 +5,8 @@ plugins {
 
 dependencies {
   implementation project(":prime-api")
-  // Keep it to 5.10.0 to match netty via ocs-api
-  implementation 'com.google.firebase:firebase-admin:6.2.0'
+  // Keep it to 6.4.0 to match netty via ocs-api
+  implementation 'com.google.firebase:firebase-admin:6.4.0'
 
   testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
