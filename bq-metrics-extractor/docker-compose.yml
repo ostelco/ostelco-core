@@ -14,6 +14,10 @@ services:
     grafana:
         image: grafana/grafana
         environment:
+	# Please note that setting the password only works the _FIRST_TIME_
+	# the image is built.  After that, it's cached and won't change
+	# if you change it in this docker-compose.yml file.  You have
+	# been warned!
             - GF_SECURITY_ADMIN_PASSWORD=pass
         depends_on:
             - prometheus
@@ -24,4 +28,3 @@ services:
 volumes:
     prometheus_data: {}
     grafana_data: {}
-    
