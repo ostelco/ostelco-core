@@ -49,11 +49,8 @@ class EventProducerImpl(private val ringBuffer: RingBuffer<OcsEvent>) : EventPro
             requestedBytes: Long = 0,
             usedBytes: Long = 0,
             reservedBytes: Long = 0,
-            serviceId: Long = 0,
-            ratingGroup: Long = 0,
-            reportingReason: ReportingReason = ReportingReason.UNRECOGNIZED,
             streamId: String? = null,
-            requestId: String? = null) {
+            request: CreditControlRequestInfo? = null) {
 
         processNextEventOnTheRingBuffer(
                 Consumer { event ->
@@ -65,11 +62,8 @@ class EventProducerImpl(private val ringBuffer: RingBuffer<OcsEvent>) : EventPro
                             requestedBytes,
                             usedBytes,
                             reservedBytes,
-                            serviceId,
-                            ratingGroup,
-                            reportingReason,
                             streamId,
-                            requestId)
+                            request)
                 })
     }
 
@@ -101,7 +95,7 @@ class EventProducerImpl(private val ringBuffer: RingBuffer<OcsEvent>) : EventPro
             injectIntoRingBuffer(CREDIT_CONTROL_REQUEST,
                     request.msisdn,
                     streamId = streamId,
-                    requestId = request.requestId)
+                    request = request)
         } else {
             // FIXME vihang: For now we assume that there is only 1 MSCC in the Request.
             injectIntoRingBuffer(CREDIT_CONTROL_REQUEST,
@@ -109,11 +103,8 @@ class EventProducerImpl(private val ringBuffer: RingBuffer<OcsEvent>) : EventPro
                     requestedBytes = request.getMscc(0).requested.totalOctets,
                     usedBytes = request.getMscc(0).used.totalOctets,
                     reservedBytes = 0,
-                    serviceId = request.getMscc(0).serviceIdentifier,
-                    ratingGroup = request.getMscc(0).ratingGroup,
-                    reportingReason = request.getMscc(0).reportingReason,
                     streamId = streamId,
-                    requestId = request.requestId)
+                    request = request)
         }
     }
 

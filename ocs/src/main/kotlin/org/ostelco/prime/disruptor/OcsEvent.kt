@@ -1,5 +1,6 @@
 package org.ostelco.prime.disruptor
 
+import org.ostelco.ocs.api.CreditControlRequestInfo
 import org.ostelco.ocs.api.ReportingReason
 
 class OcsEvent {
@@ -55,26 +56,9 @@ class OcsEvent {
     var ocsgwStreamId: String? = null
 
     /**
-     * Request ID used by OCS gateway to correlate response with requests
+     * Credit-Control-Request from OCS
      */
-    var ocsgwRequestId: String? = null
-
-
-    /**
-     * Service-Identifier is used to classify traffic
-     */
-    var serviceIdentifier: Long = 0
-
-    /**
-     * Rating-Group is used to classify traffic
-     */
-    var ratingGroup: Long = 0
-
-    /**
-     * Reporting-Reason
-     * // FIXME martin: This is the Reporting-Reason for the MSCC. The PrimeEvent might be to generic since there is also Reporting-Reason used on ServiceUnit level
-     */
-    var reportingReason: ReportingReason = ReportingReason.UNRECOGNIZED
+    var request: CreditControlRequestInfo? = null;
 
     fun clear() {
         messageType = null
@@ -91,10 +75,7 @@ class OcsEvent {
         bundleBytes = 0
 
         ocsgwStreamId = null
-        ocsgwRequestId = null
-        serviceIdentifier = 0
-        ratingGroup = 0
-        reportingReason = ReportingReason.UNRECOGNIZED
+        request = null
     }
 
     //FIXME vihang: We need to think about roaming!!!
@@ -108,11 +89,8 @@ class OcsEvent {
             requestedBytes: Long,
             usedBytes: Long,
             reservedBucketBytes: Long,
-            serviceIdentifier: Long,
-            ratingGroup: Long,
-            reportingReason: ReportingReason,
             ocsgwStreamId: String?,
-            ocsgwRequestId: String?) {
+            request: CreditControlRequestInfo?) {
         this.messageType = messageType
         this.msisdn = msisdn
         this.bundleId = bundleId
@@ -121,10 +99,7 @@ class OcsEvent {
         this.requestedBucketBytes = requestedBytes
         this.usedBucketBytes = usedBytes
         this.reservedBucketBytes = reservedBucketBytes
-        this.serviceIdentifier = serviceIdentifier
-        this.ratingGroup = ratingGroup
-        this.reportingReason = reportingReason
         this.ocsgwStreamId = ocsgwStreamId
-        this.ocsgwRequestId = ocsgwRequestId
+        this.request = request
     }
 }

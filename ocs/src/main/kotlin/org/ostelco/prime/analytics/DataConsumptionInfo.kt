@@ -2,8 +2,9 @@ package org.ostelco.prime.analytics
 
 import com.lmax.disruptor.EventHandler
 import org.ostelco.prime.analytics.PrimeMetric.MEGABYTES_CONSUMED
-import org.ostelco.prime.disruptor.EventMessageType.CREDIT_CONTROL_REQUEST
+import org.ostelco.ocs.api.CreditControlRequestType
 import org.ostelco.prime.disruptor.OcsEvent
+import org.ostelco.prime.disruptor.EventMessageType.CREDIT_CONTROL_REQUEST
 import org.ostelco.prime.logger
 import org.ostelco.prime.module.getResource
 
@@ -34,6 +35,14 @@ class DataConsumptionInfo() : EventHandler<OcsEvent> {
             analyticsReporter.reportMetric(
                     primeMetric = MEGABYTES_CONSUMED,
                     value = event.usedBucketBytes / 1_000_000)
+
+            event.request?.let {
+                if(it.type == CreditControlRequestType.INITIAL_REQUEST) {
+                   logger.info("MSISDN : {} connected", it.msisdn)
+                } else if (it.type == CreditControlRequestType.TERMINATION_REQUEST) {
+                    logger.info("MSISDN : {} disconnected", it.msisdn)
+                }
+            }
         }
     }
 }

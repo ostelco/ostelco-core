@@ -89,8 +89,8 @@ class PrimeEventProducerTest {
                         .setTotalOctets(REQUESTED_BYTES)
                         .build())
                 .setUsed(ServiceUnit.newBuilder().setTotalOctets(USED_BYTES).build())
-                .setRatingGroup(10)
-                .setServiceIdentifier(1)
+                .setRatingGroup(RATING_GROUP)
+                .setServiceIdentifier(SERVICE_IDENTIFIER)
                 .build()
         ).build()
 
@@ -100,8 +100,8 @@ class PrimeEventProducerTest {
         assertEquals(MSISDN, event.msisdn)
         assertEquals(REQUESTED_BYTES, event.requestedBucketBytes)
         assertEquals(USED_BYTES, event.usedBucketBytes)
-        assertEquals(10, event.ratingGroup)
-        assertEquals(1, event.serviceIdentifier)
+        assertEquals(RATING_GROUP, event.request?.getMscc(0)?.ratingGroup)
+        assertEquals(SERVICE_IDENTIFIER, event.request?.getMscc(0)?.serviceIdentifier)
         assertEquals(STREAM_ID, event.ocsgwStreamId)
         assertEquals(CREDIT_CONTROL_REQUEST, event.messageType)
     }
@@ -123,6 +123,10 @@ class PrimeEventProducerTest {
         private const val RING_BUFFER_SIZE = 256
 
         private const val TIMEOUT = 10
+
+        private const val RATING_GROUP = 10L;
+
+        private const val SERVICE_IDENTIFIER = 1L;
     }
 }
 

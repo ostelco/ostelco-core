@@ -56,8 +56,7 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
         logger.info("reserved bytes: {}", event.reservedBucketBytes)
         logger.info("used bytes: {}", event.usedBucketBytes)
         logger.info("bundle bytes: {}", event.bundleBytes)
-        logger.info("Reporting reason: {}", event.reportingReason)
-        logger.info("request id: {} ",event.ocsgwRequestId)
+        logger.info("request id: {} ",event.request?.requestId)
     }
 
     private fun handleCreditControlRequest(event: OcsEvent) {
@@ -70,33 +69,36 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
         try {
             val creditControlAnswer = CreditControlAnswerInfo.newBuilder()
                     .setMsisdn(event.msisdn)
-                    .setRequestId(event.ocsgwRequestId)
 
-            // This is a hack to know when we have received an MSCC in the request or not.
-            // For Terminate request we might not have any MSCC and therefore no serviceIdentifier.
-            if (event.serviceIdentifier > 0) {
-                val msccBuilder = MultipleServiceCreditControl.newBuilder()
-                msccBuilder.setServiceIdentifier(event.serviceIdentifier)
-                        .setRatingGroup(event.ratingGroup)
-                        .setValidityTime(86400)
+            event.request?.let {
+                // This is a hack to know when we have received an MSCC in the request or not.
+                // For Terminate request we might not have any MSCC and therefore no serviceIdentifier.
+                if (it.getMscc(0).serviceIdentifier > 0) {
+                    val msccBuilder = MultipleServiceCreditControl.newBuilder()
+                    msccBuilder.setServiceIdentifier(it.getMscc(0).serviceIdentifier)
+                            .setRatingGroup(it.getMscc(0).ratingGroup)
+                            .setValidityTime(86400)
 
-                if ((event.reportingReason != ReportingReason.FINAL) && (event.requestedBucketBytes > 0)) {
-                    msccBuilder.granted = ServiceUnit.newBuilder()
-                            .setTotalOctets(event.reservedBucketBytes)
-                            .build()
-                    if (event.reservedBucketBytes < event.requestedBucketBytes) {
-                        msccBuilder.finalUnitIndication = FinalUnitIndication.newBuilder()
-                                .setFinalUnitAction(FinalUnitAction.TERMINATE)
-                                .setIsSet(true)
+                    if ((it.getMscc(0).reportingReason != ReportingReason.FINAL) && (event.requestedBucketBytes > 0)) {
+                        msccBuilder.granted = ServiceUnit.newBuilder()
+                                .setTotalOctets(event.reservedBucketBytes)
+                                .build()
+                        if (event.reservedBucketBytes < event.requestedBucketBytes) {
+                            msccBuilder.finalUnitIndication = FinalUnitIndication.newBuilder()
+                                    .setFinalUnitAction(FinalUnitAction.TERMINATE)
+                                    .setIsSet(true)
+                                    .build()
+                        }
+                    } else {
+                        // Use -1 to indicate no granted service unit should be included in the answer
+                        msccBuilder.granted = ServiceUnit.newBuilder()
+                                .setTotalOctets(-1)
                                 .build()
                     }
-                } else {
-                    // Use -1 to indicate no granted service unit should be included in the answer
-                    msccBuilder.granted = ServiceUnit.newBuilder()
-                            .setTotalOctets(-1)
-                            .build()
+                    creditControlAnswer.addMscc(msccBuilder.build())
                 }
-                creditControlAnswer.addMscc(msccBuilder.build())
+
+                creditControlAnswer.setRequestId(it.requestId)
             }
 
             val streamId = event.ocsgwStreamId
