@@ -46,10 +46,10 @@ class EventProducerImpl(private val ringBuffer: RingBuffer<OcsEvent>) : EventPro
             msisdn: String? = null,
             bundleId: String? = null,
             bundleBytes: Long = 0,
-            requestedBytes: Long = 0,
             reservedBytes: Long = 0,
             streamId: String? = null,
-            request: CreditControlRequestInfo? = null) {
+            request: CreditControlRequestInfo? = null,
+            topUpBytes: Long? = 0) {
 
         processNextEventOnTheRingBuffer(
                 Consumer { event ->
@@ -58,10 +58,10 @@ class EventProducerImpl(private val ringBuffer: RingBuffer<OcsEvent>) : EventPro
                             bundleId,
                             emptyList(),
                             bundleBytes,
-                            requestedBytes,
                             reservedBytes,
                             streamId,
-                            request)
+                            request,
+                            topUpBytes)
                 })
     }
 
@@ -72,7 +72,7 @@ class EventProducerImpl(private val ringBuffer: RingBuffer<OcsEvent>) : EventPro
         injectIntoRingBuffer(
                 type = TOPUP_DATA_BUNDLE_BALANCE,
                 bundleId = bundleId,
-                requestedBytes = bytes)
+                topUpBytes = bytes)
     }
 
     override fun releaseReservedDataBucketEvent(
@@ -81,28 +81,18 @@ class EventProducerImpl(private val ringBuffer: RingBuffer<OcsEvent>) : EventPro
 
         injectIntoRingBuffer(
                 type = RELEASE_RESERVED_BUCKET,
-                msisdn = msisdn,
-                requestedBytes = bytes)
+                msisdn = msisdn)
     }
 
     override fun injectCreditControlRequestIntoRingbuffer(
             request: CreditControlRequestInfo,
             streamId: String) {
 
-        if (request.msccList.isEmpty()) {
-            injectIntoRingBuffer(CREDIT_CONTROL_REQUEST,
-                    request.msisdn,
-                    streamId = streamId,
-                    request = request)
-        } else {
-            // FIXME vihang: For now we assume that there is only 1 MSCC in the Request.
-            injectIntoRingBuffer(CREDIT_CONTROL_REQUEST,
-                    msisdn = request.msisdn,
-                    requestedBytes = request.getMscc(0).requested.totalOctets,
-                    reservedBytes = 0,
-                    streamId = streamId,
-                    request = request)
-        }
+        injectIntoRingBuffer(CREDIT_CONTROL_REQUEST,
+                msisdn = request.msisdn,
+                reservedBytes = 0,
+                streamId = streamId,
+                request = request)
     }
 
     override fun addBundle(bundle: Bundle) {

@@ -52,10 +52,11 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
     private fun logEventProcessing(msg: String, event: OcsEvent) {
         logger.info("{}", msg)
         logger.info("MSISDN: {}", event.msisdn)
-        logger.info("requested bytes: {}", event.requestedBucketBytes)
+        logger.info("requested bytes: {}", event.request?.getMscc(0)?.requested?.totalOctets ?: 0L)
         logger.info("reserved bytes: {}", event.reservedBucketBytes)
         logger.info("used bytes: {}", event.request?.getMscc(0)?.used?.totalOctets ?: 0L)
         logger.info("bundle bytes: {}", event.bundleBytes)
+        logger.info("topup bytes: {}", event.topUpBytes)
         logger.info("request id: {} ",event.request?.requestId)
     }
 
@@ -70,20 +71,20 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
             val creditControlAnswer = CreditControlAnswerInfo.newBuilder()
                     .setMsisdn(event.msisdn)
 
-            event.request?.let {
+            event.request?.let { request ->
                 // This is a hack to know when we have received an MSCC in the request or not.
                 // For Terminate request we might not have any MSCC and therefore no serviceIdentifier.
-                if (it.getMscc(0).serviceIdentifier > 0) {
+                if (request.getMscc(0).serviceIdentifier > 0) {
                     val msccBuilder = MultipleServiceCreditControl.newBuilder()
-                    msccBuilder.setServiceIdentifier(it.getMscc(0).serviceIdentifier)
-                            .setRatingGroup(it.getMscc(0).ratingGroup)
+                    msccBuilder.setServiceIdentifier(request.getMscc(0).serviceIdentifier)
+                            .setRatingGroup(request.getMscc(0).ratingGroup)
                             .setValidityTime(86400)
 
-                    if ((it.getMscc(0).reportingReason != ReportingReason.FINAL) && (event.requestedBucketBytes > 0)) {
+                    if ((request.getMscc(0).reportingReason != ReportingReason.FINAL) && (request.getMscc(0).requested.totalOctets > 0)) {
                         msccBuilder.granted = ServiceUnit.newBuilder()
                                 .setTotalOctets(event.reservedBucketBytes)
                                 .build()
-                        if (event.reservedBucketBytes < event.requestedBucketBytes) {
+                        if (event.reservedBucketBytes < request.getMscc(0).requested.totalOctets) {
                             msccBuilder.finalUnitIndication = FinalUnitIndication.newBuilder()
                                     .setFinalUnitAction(FinalUnitAction.TERMINATE)
                                     .setIsSet(true)
@@ -97,8 +98,7 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
                     }
                     creditControlAnswer.addMscc(msccBuilder.build())
                 }
-
-                creditControlAnswer.setRequestId(it.requestId)
+                creditControlAnswer.setRequestId(request.requestId)
             }
 
             val streamId = event.ocsgwStreamId

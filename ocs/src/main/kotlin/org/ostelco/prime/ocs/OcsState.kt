@@ -44,7 +44,7 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<OcsEvent> {
                     consumeDataBytes(msisdn, event.request?.getMscc(0)?.used?.totalOctets ?: 0L)
                     event.reservedBucketBytes = reserveDataBytes(
                             msisdn,
-                            event.requestedBucketBytes)
+                            event.request?.getMscc(0)?.requested?.totalOctets ?: 0L)
                     event.bundleId = msisdnToBundleIdMap[msisdn]
                     event.bundleBytes = bundleBalanceMap[event.bundleId] ?: 0
                 }
@@ -54,7 +54,7 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<OcsEvent> {
                         logger.error("Received null as bundleId")
                         return
                     }
-                    event.bundleBytes = addDataBundleBytes(bundleId, event.requestedBucketBytes)
+                    event.bundleBytes = addDataBundleBytes(bundleId, event.topUpBytes ?: 0L)
                     event.msisdnToppedUp = bundleIdToMsisdnMap[bundleId]?.toList()
                 }
                 RELEASE_RESERVED_BUCKET -> {

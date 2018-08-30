@@ -27,14 +27,6 @@ class OcsEvent {
     var msisdnToppedUp: List<String>? = null
 
     /**
-     * Origin of word 'bucket' - P-GW consumes data in `buckets` of 10 MB ~ 100 MB at a time
-     * This field is used in.
-     * Request to reserve a new bucket of bytes
-     */
-    var requestedBucketBytes: Long = 0
-
-
-    /**
      * Buckets that has been reserved from the bundle.
      */
     var reservedBucketBytes: Long = 0
@@ -55,21 +47,22 @@ class OcsEvent {
      */
     var request: CreditControlRequestInfo? = null;
 
+    /**
+     * Topup amount for bundle
+     */
+    var topUpBytes: Long? = 0;
+
     fun clear() {
         messageType = null
-
         msisdn = null
         bundleId = null
-
         msisdnToppedUp = null
-
         bundleBytes = 0
-        requestedBucketBytes = 0
         reservedBucketBytes = 0
         bundleBytes = 0
-
         ocsgwStreamId = null
         request = null
+        topUpBytes = 0;
     }
 
     //FIXME vihang: We need to think about roaming!!!
@@ -80,18 +73,18 @@ class OcsEvent {
             bundleId: String?,
             msisdnToppedUp: List<String>,
             bundleBytes: Long,
-            requestedBytes: Long,
             reservedBucketBytes: Long,
             ocsgwStreamId: String?,
-            request: CreditControlRequestInfo?) {
+            request: CreditControlRequestInfo?,
+            topUpBytes: Long?) {
         this.messageType = messageType
         this.msisdn = msisdn
         this.bundleId = bundleId
         this.msisdnToppedUp = msisdnToppedUp
         this.bundleBytes = bundleBytes
-        this.requestedBucketBytes = requestedBytes
         this.reservedBucketBytes = reservedBucketBytes
         this.ocsgwStreamId = ocsgwStreamId
         this.request = request
+        this.topUpBytes = topUpBytes
     }
 }

@@ -77,7 +77,7 @@ class PrimeEventProducerTest {
 
         // Verify some behavior
         assertEquals(BUNDLE_ID, event.bundleId)
-        assertEquals(NO_OF_TOPUP_BYTES, event.requestedBucketBytes)
+        assertEquals(NO_OF_TOPUP_BYTES, event.topUpBytes)
         assertEquals(TOPUP_DATA_BUNDLE_BALANCE, event.messageType)
     }
 
@@ -98,7 +98,7 @@ class PrimeEventProducerTest {
 
         val event = collectedEvent
         assertEquals(MSISDN, event.msisdn)
-        assertEquals(REQUESTED_BYTES, event.requestedBucketBytes)
+        assertEquals(REQUESTED_BYTES, event.request?.getMscc(0)?.requested?.totalOctets ?: 0L)
         assertEquals(USED_BYTES, event.request?.getMscc(0)?.used?.totalOctets ?: 0L)
         assertEquals(RATING_GROUP, event.request?.getMscc(0)?.ratingGroup)
         assertEquals(SERVICE_IDENTIFIER, event.request?.getMscc(0)?.serviceIdentifier)
