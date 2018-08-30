@@ -54,7 +54,7 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
         logger.info("MSISDN: {}", event.msisdn)
         logger.info("requested bytes: {}", event.requestedBucketBytes)
         logger.info("reserved bytes: {}", event.reservedBucketBytes)
-        logger.info("used bytes: {}", event.usedBucketBytes)
+        logger.info("used bytes: {}", event.request?.getMscc(0)?.used?.totalOctets ?: 0L)
         logger.info("bundle bytes: {}", event.bundleBytes)
         logger.info("request id: {} ",event.request?.requestId)
     }

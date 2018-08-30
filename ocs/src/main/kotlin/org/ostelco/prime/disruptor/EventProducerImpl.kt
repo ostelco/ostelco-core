@@ -47,7 +47,6 @@ class EventProducerImpl(private val ringBuffer: RingBuffer<OcsEvent>) : EventPro
             bundleId: String? = null,
             bundleBytes: Long = 0,
             requestedBytes: Long = 0,
-            usedBytes: Long = 0,
             reservedBytes: Long = 0,
             streamId: String? = null,
             request: CreditControlRequestInfo? = null) {
@@ -60,7 +59,6 @@ class EventProducerImpl(private val ringBuffer: RingBuffer<OcsEvent>) : EventPro
                             emptyList(),
                             bundleBytes,
                             requestedBytes,
-                            usedBytes,
                             reservedBytes,
                             streamId,
                             request)
@@ -101,7 +99,6 @@ class EventProducerImpl(private val ringBuffer: RingBuffer<OcsEvent>) : EventPro
             injectIntoRingBuffer(CREDIT_CONTROL_REQUEST,
                     msisdn = request.msisdn,
                     requestedBytes = request.getMscc(0).requested.totalOctets,
-                    usedBytes = request.getMscc(0).used.totalOctets,
                     reservedBytes = 0,
                     streamId = streamId,
                     request = request)

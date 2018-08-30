@@ -41,7 +41,7 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<OcsEvent> {
                         logger.error("Received null as msisdn")
                         return
                     }
-                    consumeDataBytes(msisdn, event.usedBucketBytes)
+                    consumeDataBytes(msisdn, event.request?.getMscc(0)?.used?.totalOctets ?: 0L)
                     event.reservedBucketBytes = reserveDataBytes(
                             msisdn,
                             event.requestedBucketBytes)

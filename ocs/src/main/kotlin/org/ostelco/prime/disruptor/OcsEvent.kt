@@ -33,11 +33,6 @@ class OcsEvent {
      */
     var requestedBucketBytes: Long = 0
 
-    /**
-     * Bytes that has been used from the bucket (previously reserved).
-     */
-    var usedBucketBytes: Long = 0
-
 
     /**
      * Buckets that has been reserved from the bundle.
@@ -70,7 +65,6 @@ class OcsEvent {
 
         bundleBytes = 0
         requestedBucketBytes = 0
-        usedBucketBytes = 0
         reservedBucketBytes = 0
         bundleBytes = 0
 
@@ -87,7 +81,6 @@ class OcsEvent {
             msisdnToppedUp: List<String>,
             bundleBytes: Long,
             requestedBytes: Long,
-            usedBytes: Long,
             reservedBucketBytes: Long,
             ocsgwStreamId: String?,
             request: CreditControlRequestInfo?) {
@@ -97,7 +90,6 @@ class OcsEvent {
         this.msisdnToppedUp = msisdnToppedUp
         this.bundleBytes = bundleBytes
         this.requestedBucketBytes = requestedBytes
-        this.usedBucketBytes = usedBytes
         this.reservedBucketBytes = reservedBucketBytes
         this.ocsgwStreamId = ocsgwStreamId
         this.request = request

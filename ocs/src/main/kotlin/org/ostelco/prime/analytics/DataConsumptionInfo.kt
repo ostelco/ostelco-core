@@ -30,11 +30,11 @@ class DataConsumptionInfo() : EventHandler<OcsEvent> {
             logger.info("Sent DataConsumptionInfo event to analytics")
             analyticsReporter.reportTrafficInfo(
                     msisdn = event.msisdn!!,
-                    usedBytes = event.usedBucketBytes,
+                    usedBytes = event.request?.getMscc(0)?.used?.totalOctets ?: 0L,
                     bundleBytes = event.bundleBytes)
             analyticsReporter.reportMetric(
                     primeMetric = MEGABYTES_CONSUMED,
-                    value = event.usedBucketBytes / 1_000_000)
+                    value = (event.request?.getMscc(0)?.used?.totalOctets ?: 0L) / 1_000_000)
 
             event.request?.let {
                 if(it.type == CreditControlRequestType.INITIAL_REQUEST) {
