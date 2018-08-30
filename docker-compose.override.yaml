@@ -35,9 +35,9 @@ services:
     image: gcr.io/endpoints-release/endpoints-runtime:1
     volumes:
     - "./prime/config:/esp"
-    - "./certs/ocs.ostelco.org:/etc/nginx/ssl"
+    - "./certs/ocs.dev.ostelco.org:/etc/nginx/ssl"
     command: >
-      --service=ocs.ostelco.org
+      --service=ocs.dev.ostelco.org
       --rollout_strategy=managed
       --http2_port=80
       --ssl_port=443
@@ -46,11 +46,35 @@ services:
     networks:
       net:
         aliases:
-        - "ocs.ostelco.org"
+        - "ocs.dev.ostelco.org"
         ipv4_address: 172.16.238.4
       default:
 
+
+  metrics-esp:
+    container_name: metrics-esp
+    image: gcr.io/endpoints-release/endpoints-runtime:1
+    volumes:
+    - "./prime/config:/esp"
+    - "./certs/metrics.dev.ostelco.org:/etc/nginx/ssl"
+    command: >
+      --service=metrics.dev.ostelco.org
+      --rollout_strategy=managed
+      --http2_port=80
+      --ssl_port=443
+      --backend=grpc://172.16.238.5:8083
+      --service_account_key=/esp/pantel-prod.json
+    networks:
+      net:
+        aliases:
+        - "metrics.dev.ostelco.org"
+        ipv4_address: 172.16.238.6
+      default:
+
   ocsgw:
+    environment:
+    - OCS_GRPC_SERVER=ocs.dev.ostelco.org
+    - METRICS_GRPC_SERVER=metrics.dev.ostelco.org
     depends_on:
     - "prime"
     command: ["./wait.sh"]
@@ -91,7 +115,7 @@ services:
 
   datastore-emulator:
     container_name: datastore-emulator
-    image: google/cloud-sdk
+    image: google/cloud-sdk:206.0.0
     expose:
     - "8081"
     environment:

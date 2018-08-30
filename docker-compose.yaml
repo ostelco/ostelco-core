@@ -6,10 +6,7 @@ services:
     build: ocsgw
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/config/pantel-prod.json
-      - GRPC_SERVER=ocs.ostelco.org
-      - GRPC_ENCRYPTION=true
       - GOOGLE_CLOUD_PROJECT=pantel-2decb
-
   auth-server:
     container_name: auth-server
     build: auth-server

@@ -5,7 +5,7 @@ import org.ostelco.prime.model.Bundle
 
 interface EventProducer {
     fun topupDataBundleBalanceEvent(
-            subscriberId: String,
+            bundleId: String,
             bytes: Long)
 
     fun releaseReservedDataBucketEvent(

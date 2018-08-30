@@ -80,7 +80,7 @@ Reference:
 
 ## Endpoint
 
-Generate self-contained protobuf descriptor file - api_descriptor.pb
+Generate self-contained protobuf descriptor file - `ocs_descriptor.pb` & `metrics_descriptor.pb`
 
 ```bash
 pip install grpcio grpcio-tools
@@ -88,15 +88,23 @@ pip install grpcio grpcio-tools
 python -m grpc_tools.protoc \
   --include_imports \
   --include_source_info \
-  --proto_path=ocs-api/src/main/proto \
-  --descriptor_set_out=api_descriptor.pb \
+  --proto_path=ocs-grpc-api/src/main/proto \
+  --descriptor_set_out=ocs_descriptor.pb \
   ocs.proto
+
+python -m grpc_tools.protoc \
+  --include_imports \
+  --include_source_info \
+  --proto_path=analytics-grpc-api/src/main/proto \
+  --descriptor_set_out=metrics_descriptor.pb \
+  prime_metrics.proto
 ```
 
 Deploy endpoints
 
 ```bash
-gcloud endpoints services deploy api_descriptor.pb prime/infra/prod/ocs-api.yaml
+gcloud endpoints services deploy ocs_descriptor.pb prime/infra/prod/ocs-api.yaml
+gcloud endpoints services deploy metrics_descriptor.pb prime/infra/prod/metrics-api.yaml
 ```
 
 ## Deployment & Service
@@ -142,7 +150,7 @@ kubectl describe service prime-service
 gcloud endpoints services deploy prime/infra/prod/prime-client-api.yaml
 ```
 
-## SSL secrets for api.ostelco.org & ocs.ostelco.org
+## SSL secrets for api.ostelco.org, ocs.ostelco.org & metrics.ostelco.org
 The endpoints runtime expects the SSL configuration to be named
 as `nginx.crt` and `nginx.key`. Sample command to create the secret:
 ```bash
@@ -150,8 +158,10 @@ kubectl create secret generic api-ostelco-ssl \
   --from-file=./nginx.crt \
   --from-file=./nginx.key
 ```
-The secret for api.ostelco.org is in `api-ostelco-ssl` & the one for
-ocs.ostelco.org is in `ocs-ostelco-ssl`
+The secret for ...
+ * `api.ostelco.org` is in `api-ostelco-ssl`
+ * `ocs.ostelco.org` is in `ocs-ostelco-ssl`
+ * `metrics.ostelco.org` is in `metrics-ostelco-ssl`
 
 # For Dev cluster
 
@@ -208,11 +218,17 @@ kubectl create secret generic api-ostelco-ssl \
   --from-file=certs/dev.ostelco.org/nginx.key
 ```
 
+```bash
+kubectl create secret generic metrics-ostelco-ssl \
+  --from-file=certs/dev.ostelco.org/nginx.crt \
+  --from-file=certs/dev.ostelco.org/nginx.key
+```
+
 ### Endpoints
 
  * OCS gRPC endpoint
 
-Generate self-contained protobuf descriptor file - api_descriptor.pb
+Generate self-contained protobuf descriptor file - ocs_descriptor.pb
 
 ```bash
 pip install grpcio grpcio-tools
@@ -221,14 +237,22 @@ python -m grpc_tools.protoc \
   --include_imports \
   --include_source_info \
   --proto_path=ocs-api/src/main/proto \
-  --descriptor_set_out=api_descriptor.pb \
+  --descriptor_set_out=ocs_descriptor.pb \
   ocs.proto
+
+python -m grpc_tools.protoc \
+  --include_imports \
+  --include_source_info \
+  --proto_path=analytics-grpc-api/src/main/proto \
+  --descriptor_set_out=metrics_descriptor.pb \
+  prime_metrics.proto
 ```
 
 Deploy endpoints
 
 ```bash
-gcloud endpoints services deploy api_descriptor.pb prime/infra/dev/ocs-api.yaml
+gcloud endpoints services deploy ocs_descriptor.pb prime/infra/dev/ocs-api.yaml
+gcloud endpoints services deploy metrics_descriptor.pb prime/infra/dev/metrics-api.yaml
 ```
 
  * Client API HTTP endpoint
@@ -258,7 +282,7 @@ Then, import initial data into neo4j using `tools/neo4j-admin-tools`.
 ### Deploy prime
 
 ```bash
-prime/script/deploy-dev.sh
+prime/script/deploy-dev-direct.sh
 ```
 
 OR

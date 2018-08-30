@@ -67,12 +67,16 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
 
     private val executor = Executors.newFixedThreadPool(3)
 
-    fun init() {
+    fun init(bq: BigQuery? = null) {
         datastore = getDatastore(ConfigRegistry.config)
-        if(System.getenv("LOCAL_TESTING") != "true") {
-            bigquery = BigQueryOptions.getDefaultInstance().service
+        if (bq != null) {
+            bigquery = bq
         } else {
-            logger.info("Local testing, BigQuery is not available...")
+            if (System.getenv("LOCAL_TESTING") != "true") {
+                bigquery = BigQueryOptions.getDefaultInstance().service
+            } else {
+                logger.info("Local testing, BigQuery is not available...")
+            }
         }
     }
 

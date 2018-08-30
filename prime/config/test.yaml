@@ -10,10 +10,12 @@ modules:
     config:
       host: neo4j
       protocol: bolt
-  - type: ocs
+  - type: analytics
     config:
       projectId: pantel-2decb
       topicId: data-traffic
+  - type: ocs
+    config:
       lowBalanceThreshold: 0
   - type: pseudonymizer
   - type: api

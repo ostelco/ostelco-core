@@ -137,6 +137,10 @@ interface AdminGraphStore {
     // updating an Offer and Product is not allowed
     fun updateSegment(segment: Segment): Either<StoreError, Unit>
 
+    fun getSubscriberCount(): Long
+    fun getReferredSubscriberCount(): Long
+    fun getPaidSubscriberCount(): Long
+
     // simple getAll
     // fun getOffers(): Collection<Offer>
     // fun getSegments(): Collection<Segment>
