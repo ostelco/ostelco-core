@@ -1,4 +1,4 @@
-package org.ostelco.analytics
+package org.ostelco.dataflow.pipelines.dsl
 
 import org.apache.beam.sdk.transforms.DoFn
 import org.apache.beam.sdk.transforms.ParDo
