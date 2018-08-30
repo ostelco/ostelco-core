@@ -1,8 +1,8 @@
-version: "3.6"
+version: "3.7"
 
 services:
   analytics:
-    container_name: analytics
+    container_name: dataflow-pipelines
     build: .
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/config/pantel-prod.json
