@@ -71,7 +71,8 @@ object BigquerySample : MetricBuilder {
         System.out.printf("Dataset %s created.%n", dataset!!.getDatasetId().getDataset())
     }
 
-    // XXX Next step is to get this metric via the bigquery
+    // XXX Next step is to rewrite the code below to get an actual metric by querying
+    //     something in bigquery.
     override fun buildMetric(registry: CollectorRegistry) {
         val duration: Gauge = build()
                 .name("my_batch_job_duration_seconds")
