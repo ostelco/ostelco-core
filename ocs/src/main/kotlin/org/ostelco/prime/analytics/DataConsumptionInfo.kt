@@ -36,11 +36,17 @@ class DataConsumptionInfo() : EventHandler<OcsEvent> {
                     primeMetric = MEGABYTES_CONSUMED,
                     value = (event.request?.getMscc(0)?.used?.totalOctets ?: 0L) / 1_000_000)
 
-            event.request?.let {
-                if(it.type == CreditControlRequestType.INITIAL_REQUEST) {
-                   logger.info("MSISDN : {} connected", it.msisdn)
-                } else if (it.type == CreditControlRequestType.TERMINATION_REQUEST) {
-                    logger.info("MSISDN : {} disconnected", it.msisdn)
+            event.request?.let { request ->
+                if(request.type == CreditControlRequestType.INITIAL_REQUEST) {
+                   logger.info("MSISDN : {} connected apn {} sgsn_mcc_mnc {}",
+                           request.msisdn,
+                           request.serviceInformation.psInformation.calledStationId,
+                           request.serviceInformation.psInformation.sgsnMccMnc)
+                } else if (request.type == CreditControlRequestType.TERMINATION_REQUEST) {
+                    logger.info("MSISDN : {} disconnected apn {} sgsn_mcc_mnc",
+                            request.msisdn,
+                            request.serviceInformation.psInformation.calledStationId,
+                            request.serviceInformation.psInformation.sgsnMccMnc)
                 }
             }
         }
