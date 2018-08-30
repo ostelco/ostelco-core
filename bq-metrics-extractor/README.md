@@ -39,9 +39,9 @@ TODO
           docker run -d -p 9091:9091 prom/pushgateway
   
 * Send something from the program to a pushgateway running somewhere [Done]
-* Make it testable to send send metrics to pushgatway. [In progress (or not, we'll see)]
 * Make the skeleton code read something (anything) from BigQuery, using config
-  that is production-like.
+  that is production-like. [In progress]
+* Make it testable to send send metrics to pushgatway.
 * Build a docker image.
 * Run a proper metric and push it to test-pushgateway.
 * Package up as kubernetes component and introduce cronjob into cluster,
