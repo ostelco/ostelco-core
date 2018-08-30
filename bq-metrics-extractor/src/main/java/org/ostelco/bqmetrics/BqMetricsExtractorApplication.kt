@@ -91,7 +91,7 @@ object BigquerySample : MetricBuilder {
 /**
  * Adapter class that will push metrics to the Prometheus push gateway.
  */
-class PrometheusPusher {
+class PrometheusPusher (val job: String){
 
     val registry = CollectorRegistry()
 
@@ -107,8 +107,7 @@ class PrometheusPusher {
         val pg = PushGateway("127.0.0.1:9091")
         metricSources.forEach({ it.buildMetric(registry) })
 
-        pg.pushAdd(registry, "my_batch_job")
-
+        pg.pushAdd(registry, job)
     }
 }
 
@@ -118,6 +117,6 @@ class CollectAndPushMetrics : Command("query", "query BigQuery for a metric") {
 
     override fun run(bootstrap: Bootstrap<*>?, namespace: Namespace?) {
         println("Running query")
-        PrometheusPusher().publishMetrics()
+        PrometheusPusher("bq_metrics_extractor").publishMetrics()
     }
 }
