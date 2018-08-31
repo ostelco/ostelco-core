@@ -1,4 +1,4 @@
-package org.ostelco.pseudonym.managed
+package org.ostelco.pseudonym.service
 
 import com.google.cloud.bigquery.BigQuery
 import com.google.cloud.bigquery.Field
