@@ -17,7 +17,7 @@ class PseudonymModule : PrimeModule {
     }
 
     override fun init(env: Environment) {
-        PseudonymizerServiceSingleton.init()
+        PseudonymizerServiceSingleton.init(env = env)
         env.jersey().register(PseudonymResource())
     }
 }
