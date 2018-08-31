@@ -19,21 +19,21 @@ class PurchaseRequestHandler(
         logger.info("Handling purchase request - subscriberId: {} sku = {}", subscriberId, productSku)
 
         // get Product by SKU
-        val product = storage.getProduct(subscriberId, productSku)
+        storage.getProduct(subscriberId, productSku)
+                .map { product ->
+                    val noOfBytes = product.properties["noOfBytes"]?.replace("_", "")?.toLong()
 
-        if (product.isLeft()) {
-            throw Exception("Not a valid SKU: $productSku")
-        }
+                    val bundleId = storage.getBundles(subscriberId).map { it?.first()?.id }.getOrElse { null }
 
-        val noOfBytes = product.get().properties["noOfBytes"]?.replace("_", "")?.toLong()
+                    if (bundleId != null && noOfBytes != null && noOfBytes > 0) {
 
-        val bundleId = storage.getBundles(subscriberId).map { it?.first()?.id }.getOrElse { null }
+                        logger.info("Handling topup product - bundleId: {} topup: {}", bundleId, noOfBytes)
 
-        if (bundleId != null && noOfBytes != null && noOfBytes > 0) {
-
-            logger.info("Handling topup product - bundleId: {} topup: {}", bundleId, noOfBytes)
-
-            producer.topupDataBundleBalanceEvent(bundleId, noOfBytes)
-        }
+                        producer.topupDataBundleBalanceEvent(bundleId, noOfBytes)
+                    }
+                }.mapLeft {
+                    // TODO vihang: instead of throwing exception, return arrow.Either.left
+                    throw Exception("Not a valid SKU: $productSku")
+                }
     }
 }

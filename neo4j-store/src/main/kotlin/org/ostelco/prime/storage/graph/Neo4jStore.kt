@@ -5,7 +5,6 @@ import arrow.core.flatMap
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.logger
 import org.ostelco.prime.model.Bundle
-import org.ostelco.prime.model.Entity
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.ProductClass
@@ -154,7 +153,7 @@ object Neo4jStoreSingleton : GraphStore {
                                 .flatMap {
                                     createPurchaseRecordRelation(
                                             subscriber.id,
-                                            PurchaseRecord(id = UUID.randomUUID().toString(), product = it, timestamp = Instant.now().toEpochMilli()),
+                                            PurchaseRecord(id = UUID.randomUUID().toString(), product = it, timestamp = Instant.now().toEpochMilli(), msisdn = ""),
                                             transaction)
                                 }
                     }
@@ -172,7 +171,7 @@ object Neo4jStoreSingleton : GraphStore {
                                 .flatMap {
                                     createPurchaseRecordRelation(
                                             subscriber.id,
-                                            PurchaseRecord(id = UUID.randomUUID().toString(), product = it, timestamp = Instant.now().toEpochMilli()),
+                                            PurchaseRecord(id = UUID.randomUUID().toString(), product = it, timestamp = Instant.now().toEpochMilli(), msisdn = ""),
                                             transaction)
                                 }
                     }
@@ -327,11 +326,6 @@ object Neo4jStoreSingleton : GraphStore {
 
         return subscriberStore.get(subscriberId, transaction).flatMap { subscriber ->
             productStore.get(purchase.product.sku, transaction).flatMap { product ->
-
-                if (purchase.id.isBlank()) {
-                    logger.warn("Purchase Id not set, generating a UUID")
-                    purchase.id = UUID.randomUUID().toString()
-                }
                 purchaseRecordRelationStore.create(subscriber, purchase, product, transaction)
                         .map { purchase.id }
             }
@@ -411,10 +405,48 @@ object Neo4jStoreSingleton : GraphStore {
         }
     }
 
-    private val offerEntity = EntityType(Entity::class.java, "Offer")
+    //
+    // For metrics
+    //
+    override fun getSubscriberCount(): Long = readTransaction {
+        read("""
+                MATCH (subscriber:${subscriberEntity.name})
+                RETURN count(subscriber) AS count
+                """.trimIndent(),
+                transaction) { result ->
+            result.single().get("count").asLong()
+        }
+    }
+
+    override fun getReferredSubscriberCount(): Long = readTransaction {
+        read("""
+                MATCH (:${subscriberEntity.name})-[:${referredRelation.relation.name}]->(subscriber:${subscriberEntity.name})
+                RETURN count(subscriber) AS count
+                """.trimIndent(),
+                transaction) { result ->
+            result.single().get("count").asLong()
+        }
+    }
+
+    override fun getPaidSubscriberCount(): Long = readTransaction {
+        read("""
+                MATCH (subscriber:${subscriberEntity.name})-[:${purchaseRecordRelation.relation.name}]->(product:${productEntity.name})
+                WHERE product.`price/amount` > 0
+                RETURN count(subscriber) AS count
+                """.trimIndent(),
+                transaction) { result ->
+            result.single().get("count").asLong()
+        }
+    }
+
+    //
+    // Stores
+    //
+
+    private val offerEntity = EntityType(Offer::class.java)
     private val offerStore = EntityStore(offerEntity)
 
-    private val segmentEntity = EntityType(Entity::class.java, "Segment")
+    private val segmentEntity = EntityType(Segment::class.java)
     private val segmentStore = EntityStore(segmentEntity)
 
     private val offerToSegmentRelation = RelationType(OFFERED_TO_SEGMENT, offerEntity, segmentEntity, Void::class.java)

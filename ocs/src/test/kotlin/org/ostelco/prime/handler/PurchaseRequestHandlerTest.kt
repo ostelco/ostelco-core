@@ -37,7 +37,7 @@ class PurchaseRequestHandlerTest {
     @Before
     fun setUp() {
 
-        `when`< Either<StoreError, Product>>(storage.getProduct("id", DATA_TOPUP_3GB.sku))
+        `when`< Either<StoreError, Product>>(storage.getProduct(SUBSCRIBER_ID, DATA_TOPUP_3GB.sku))
                 .thenReturn(Either.right(DATA_TOPUP_3GB))
 
         this.purchaseRequestHandler = PurchaseRequestHandler(producer, storage)
@@ -61,12 +61,14 @@ class PurchaseRequestHandlerTest {
 
         assertEquals(DATA_TOPUP_3GB, capturedPurchaseRecord.value.product)
 
-        verify<EventProducer>(producer).topupDataBundleBalanceEvent(MSISDN, topupBytes)
+        verify<EventProducer>(producer).topupDataBundleBalanceEvent(BUNDLE_ID, topupBytes)
     }
 
     companion object {
 
         private const val MSISDN = "12345678"
+        private const val SUBSCRIBER_ID = "foo@bar.com"
+        private const val BUNDLE_ID = "foo@bar.com"
 
     }
 

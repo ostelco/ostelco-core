@@ -35,4 +35,5 @@ secrets/*
 .nb-gradle
 .swagger_gen_dir
 
-api_descriptor.pb
+ocs_descriptor.pb
+metrics_descriptor.pb

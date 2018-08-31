@@ -2,9 +2,11 @@ package org.ostelco.pseudonym
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.google.cloud.bigquery.BigQuery
 import io.dropwizard.testing.junit.ResourceTestRule
 import org.junit.ClassRule
 import org.junit.Test
+import org.mockito.Mockito.mock
 import org.ostelco.prime.model.ActivePseudonyms
 import org.ostelco.prime.model.PseudonymEntity
 import org.ostelco.pseudonym.resources.PseudonymResource
@@ -32,7 +34,7 @@ class PseudonymResourceTest {
         init {
             ConfigRegistry.config = PseudonymServerConfig()
                     .apply { this.datastoreType = "inmemory-emulator" }
-            PseudonymizerServiceSingleton.init()
+            PseudonymizerServiceSingleton.init(env = null, bq = mock(BigQuery::class.java))
         }
 
         @ClassRule
@@ -214,7 +216,7 @@ class PseudonymResourceTest {
             assertEquals(Status.OK.statusCode, result.status)
             val json = result.readEntity(String::class.java)
             val pseudonymEntity2 = mapper.readValue<PseudonymEntity>(json)
-            assertEquals(testMsisdn1, pseudonymEntity.msisdn)
+            assertEquals(testMsisdn1, pseudonymEntity2.msisdn)
         }
     }
 

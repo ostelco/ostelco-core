@@ -6,7 +6,6 @@ plugins {
 dependencies {
   implementation project(':prime-api')
 
-  implementation "com.google.cloud:google-cloud-pubsub:$googleCloudVersion"
   implementation 'com.lmax:disruptor:3.4.2'
 
   testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
