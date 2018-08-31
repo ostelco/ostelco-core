@@ -11,6 +11,8 @@ import io.dropwizard.lifecycle.Managed
 import org.ostelco.analytics.api.DataTrafficInfo
 import org.ostelco.prime.analytics.ConfigRegistry.config
 import org.ostelco.prime.logger
+import org.ostelco.prime.module.getResource
+import org.ostelco.prime.pseudonymizer.PseudonymizerService
 import java.io.IOException
 import java.time.Instant
 
@@ -20,6 +22,8 @@ import java.time.Instant
 object DataConsumptionInfoPublisher : Managed {
 
     private val logger by logger()
+
+    private val pseudonymizerService by lazy { getResource<PseudonymizerService>() }
 
     private lateinit var publisher: Publisher
 
@@ -40,11 +44,18 @@ object DataConsumptionInfoPublisher : Managed {
 
     fun publish(msisdn: String, usedBucketBytes: Long, bundleBytes: Long) {
 
+        if (usedBucketBytes == 0L) {
+            return
+        }
+        
+        val now = Instant.now().toEpochMilli()
+        val pseudonym = pseudonymizerService.getPseudonymEntityFor(msisdn, now).pseudonym
+
         val data = DataTrafficInfo.newBuilder()
-                .setMsisdn(msisdn)
+                .setMsisdn(pseudonym)
                 .setBucketBytes(usedBucketBytes)
                 .setBundleBytes(bundleBytes)
-                .setTimestamp(Timestamps.fromMillis(Instant.now().toEpochMilli()))
+                .setTimestamp(Timestamps.fromMillis(now))
                 .build()
                 .toByteString()
 
