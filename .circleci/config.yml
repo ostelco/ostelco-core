@@ -58,9 +58,9 @@ jobs:
           name: Generate self signed certs
           command: |
             scripts/generate-selfsigned-ssl-certs.sh   ocs.dev.ostelco.org 
-            cp certs/ocs.dev.ostelco.org/nginx.crt ../ocsgw/config/ocs.crt
+            cp certs/ocs.dev.ostelco.org/nginx.crt ocsgw/config/ocs.crt
             scripts/generate-selfsigned-ssl-certs.sh   metrics.dev.ostelco.org 
-            cp certs/metrics.dev.ostelco.org/nginx.crt ../ocsgw/config/metrics.crt
+            cp certs/metrics.dev.ostelco.org/nginx.crt ocsgw/config/metrics.crt
       - run: 
           name: Acceptance Tests
           command: docker-compose up --build --abort-on-container-exit
