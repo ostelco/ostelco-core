@@ -37,15 +37,14 @@ TODO
   * Pushgateway: https://hub.docker.com/r/prom/pushgateway/
           docker pull prom/pushgateway
           docker run -d -p 9091:9091 prom/pushgateway
-  
+
 * Send something from the program to a pushgateway running somewhere [Done]
 * Make the skeleton code read something (anything) from BigQuery, using config
-  that is production-like. [In progress]
-* Make it testable to send send metrics to pushgatway.
+  that is production-like.  [Done]
+* Make a sensible metric encodedin SQL, read it from BQ and push it to pushgateway. [In progress]
+* Make command to run metric every N seconds.
 * Build a docker image.
-* Run a proper metric and push it to test-pushgateway.
-* Package up as kubernetes component and introduce cronjob into cluster,
-  use the cluster config scripts (XXX Reconsider the whole cronjob thing,
-  perhaps this should run as a proper dropwizard application that is
-  periodically invoked using a REST invocation from a cronjob?)
-* Deploy to production.
+* Push the first metric to production, use kubernetes setup to ensure
+  that one instance is always running.
+* Make it testable to send send metrics to pushgatway.
+* Extend to more metrics.
