@@ -8,7 +8,7 @@ import kotlin.test.assertEquals
  * Class for unit testing DateUtils.
  */
 class DateUtilsTest {
-    val dateBounds = WeeklyBounds()
+    private val dateBounds = WeeklyBounds()
     /**
      * Test the most common use case, find next start period
      */
@@ -19,7 +19,7 @@ class DateUtilsTest {
         // GMT: Monday, May 14, 2018 12:00:00 AM
         val expectedNextTimestamp =  1526256000000
         val nextTimestamp = dateBounds.getNextPeriodStart(timestamp)
-        print("Expected Timestamp ${expectedNextTimestamp} Next timestamp ${nextTimestamp}");
+        print("Expected Timestamp $expectedNextTimestamp Next timestamp $nextTimestamp");
         assertEquals(expectedNextTimestamp, nextTimestamp)
     }
     /**

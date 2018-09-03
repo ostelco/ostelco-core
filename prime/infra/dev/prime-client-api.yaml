@@ -3,7 +3,7 @@ info:
   title: "Ostelco API"
   description: "The client API for Panacea."
   version: "1.0.0"
-host: "api.endpoints.pantel-2decb.cloud.goog"
+host: "api.dev.ostelco.org"
 schemes:
   - "https"
 paths:
@@ -433,7 +433,7 @@ definitions:
     type: object
     properties:
       id:
-        desctiption: "The identifier for the source"
+        description: "The identifier for the source"
         type: string
   ConsentList:
     type: array

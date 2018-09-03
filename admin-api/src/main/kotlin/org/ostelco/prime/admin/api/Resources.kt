@@ -82,7 +82,12 @@ class SegmentResource {
             @PathParam("segment-id") segmentId: String,
             segment: Segment): Response {
 
-        segment.id = segmentId
+        if (segment.id != segmentId) {
+            return Response
+                    .status(Response.Status.FORBIDDEN)
+                    .entity("segment id in path and body do not match")
+                    .build()
+        }
 
         return adminDataSource.updateSegment(segment)
                 .fold({ Response.status(Response.Status.NOT_MODIFIED).entity(it.message).build() },

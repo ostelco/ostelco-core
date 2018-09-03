@@ -24,6 +24,7 @@ import org.ostelco.prime.storage.firebase.initFirebaseConfigRegistry
 import org.ostelco.prime.storage.graph.Products.DATA_TOPUP_3GB
 import java.lang.Thread.sleep
 import java.time.Instant
+import java.util.*
 
 class Neo4jStorageTest {
 
@@ -79,9 +80,10 @@ class Neo4jStorageTest {
 
         val now = Instant.now().toEpochMilli()
         val purchase = PurchaseRecord(
-                msisdn = MSISDN,
                 product = DATA_TOPUP_3GB,
-                timestamp = now)
+                timestamp = now,
+                id = UUID.randomUUID().toString(),
+                msisdn = "")
         storage.addPurchaseRecord(EPHERMERAL_EMAIL, purchase)
     }
 

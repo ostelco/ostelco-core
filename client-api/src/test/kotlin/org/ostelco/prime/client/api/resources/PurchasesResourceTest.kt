@@ -1,10 +1,12 @@
 package org.ostelco.prime.client.api.resources
 
 import arrow.core.Either
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import io.dropwizard.auth.AuthDynamicFeature
 import io.dropwizard.auth.AuthValueFactoryProvider
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter.Builder
+import io.dropwizard.jackson.Jackson
 import io.dropwizard.testing.junit.ResourceTestRule
 import org.assertj.core.api.Assertions
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory
@@ -15,9 +17,9 @@ import org.mockito.ArgumentMatchers
 import org.mockito.Mockito
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.auth.OAuthAuthenticator
-import org.ostelco.prime.core.ApiError
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
+import org.ostelco.prime.core.ApiError
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
@@ -52,7 +54,11 @@ class PurchasesResourceTest {
 
         val product = Product("1", Price(10, "NOK"), Collections.emptyMap(), Collections.emptyMap())
         val now = Instant.now().toEpochMilli()
-        val purchaseRecord = PurchaseRecord(msisdn = "msisdn", product = product, timestamp = now)
+        val purchaseRecord = PurchaseRecord(
+                product = product,
+                timestamp = now,
+                id = UUID.randomUUID().toString(),
+                msisdn = "")
 
         Mockito.`when`<Either<ApiError, Collection<PurchaseRecord>>>(DAO.getPurchaseHistory(arg1.capture()))
                 .thenReturn(Either.right(listOf(purchaseRecord)))
@@ -74,6 +80,7 @@ class PurchasesResourceTest {
         @JvmField
         @ClassRule
         val RULE = ResourceTestRule.builder()
+                .setMapper(Jackson.newObjectMapper().registerModule(KotlinModule()))
                 .addResource(AuthDynamicFeature(
                         Builder<AccessTokenPrincipal>()
                                 .setAuthenticator(AUTHENTICATOR)

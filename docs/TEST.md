@@ -18,9 +18,15 @@ grep -i pantel $(find . -name '.gitignore') | awk -F: '{print $1}' | sort | uniq
    * In `ocsgw/config`, keep `nginx.cert`.
 
 ```bash
-cd certs/ocs.ostelco.org
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./nginx.key -out ./nginx.crt -subj '/CN=ocs.ostelco.org'
-cp nginx.crt ../../ocsgw/config
+cd certs/ocs.dev.ostelco.org
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./nginx.key -out ./nginx.crt -subj '/CN=ocs.dev.ostelco.org'
+cp nginx.crt ../../ocsgw/config/ocs.crt
+```
+
+```bash
+cd certs/metrics.dev.ostelco.org
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./nginx.key -out ./nginx.crt -subj '/CN=metrics.dev.ostelco.org'
+cp nginx.crt ../../ocsgw/config/metrics.crt
 ```
    
 ### Test ext-pgw -- ocsgw -- prime --firebase
