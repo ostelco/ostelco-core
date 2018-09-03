@@ -1,13 +1,13 @@
 plugins {
     id "java-library"
-    id 'net.ltgt.apt' version '0.17'
+    id 'io.franzbecker.gradle-lombok' version '1.14'
 }
 
 dependencies {
     implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
     implementation "io.dropwizard:dropwizard-auth:$dropwizardVersion"
     // Match netty via ocs-api
-    implementation 'com.google.firebase:firebase-admin:6.2.0'
+    implementation 'com.google.firebase:firebase-admin:6.4.0'
     implementation 'com.lmax:disruptor:3.4.2'
     implementation 'com.google.guava:guava:25.1-jre'
 
@@ -24,9 +24,11 @@ dependencies {
 
     // https://mvnrepository.com/artifact/org.jetbrains/annotations
     implementation 'org.jetbrains:annotations:16.0.2'
+}
 
-    compileOnly 'org.projectlombok:lombok:1.18.0'
-    apt 'org.projectlombok:lombok:1.18.0'
+lombok {
+    version = '1.18.2'
+    sha256 = ""
 }
 
 configurations {

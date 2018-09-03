@@ -55,9 +55,10 @@ jobs:
             echo ''
 
       - run:
-          name: Generate self signed certs for ocs.ostelco.org .
-          command: scripts/generate-selfsigned-ssl-certs.sh   ocs.ostelco.org 
-    
+          name: Generate self signed certs
+          command: |
+            scripts/generate-selfsigned-ssl-certs.sh   ocs.dev.ostelco.org 
+            scripts/generate-selfsigned-ssl-certs.sh   metrics.dev.ostelco.org 
       - run: 
           name: Acceptance Tests
           command: docker-compose up --build --abort-on-container-exit

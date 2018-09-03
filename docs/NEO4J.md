@@ -4,13 +4,22 @@
 
 This is a temporary solution till we have a proper means of setup:
 
+### Read / Write Access
+
+Using `:sysinfo` command, check the roles for the cluster nodes.<br>
+For a 3-node Core cluster, one node is `LEADER` and 2 nodes are `FOLLOWER`s.<br>
+Only `LEADER` has _read/write_ access, whereas `FOLLOWER` has _read-only_ access.<br>
+Choose appropriate node instead of _neo4j-core-2_ based on intent.
+
 ### Set neo4j -> localhost entry in your `/etc/hosts`
  * On your developer machine, to `/etc/hosts` file, add `neo4j` entry pointing to `localhost`.
 
 Your `/etc/hosts` should have this line.
 ```text
-127.0.0.1	localhost  neo4j
+127.0.0.1	localhost  neo4j  neo4j-core-2.neo4j.default.svc.cluster.local
 ```
+
+This is assuming `neo4j-core-2` is `LEADER` in _Neo4j Casual Cluster_.
 
 ### Set proper cluster in `kubectl` config
 
@@ -39,13 +48,14 @@ kubectl port-forward neo4j-core-2 7474:7474 7687:7687
 ``` 
 
 Here, `neo4j browser` web-app is exposed over port `7474`.
+
 The client-side/in-browser web-app then tries to connect to neo4j database over `bolt protocol`, exposed over port `7687`.
 
 ### Login
 
-In the browser, use connection URL as: `bolt://neo4j:7687`.
-User name and password will be ignored.
-
+In the browser, goto `http://localhost:7474`.<br>
+Use connection URL as: `bolt://neo4j:7687`.<br>
+User name and password will be ignored.<br>
 The database will expects connections only for hostname `neo4j`, and hence the setup in `/etc/hosts`.
 
 ### Fetch entire graph
@@ -58,9 +68,9 @@ MATCH (n) RETURN n;
 
 ### Write Access
 
-The current setup for Neo4j is a 3 node `casual cluster`.
-In this setup, there is only one instance which does `read + write` whereas other 2 instances are `read only`.
-In the Neo4j browser web-app, you may check this using command `:sysinfo`.
+The current setup for Neo4j is a 3 node `casual cluster`.<br>
+In this setup, there is only one instance which does `read + write` whereas other 2 instances are `read only`.<br>
+In the Neo4j browser web-app, you may check this using command `:sysinfo`.<br>
 The cluster members with role as `Leader` will have `read + write` access, and those with the role `Follower` will
 have `read only` access.
 

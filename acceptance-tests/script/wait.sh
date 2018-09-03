@@ -18,14 +18,6 @@ done
 
 echo "Prime launched"
 
-echo "Waiting for pseudonym-server to launch on pseudonym-server:8080..."
-
-while ! nc -z pseudonym-server 8080; do
-  sleep 0.1 # wait for 1/10 of the second before check again
-done
-
-echo "pseudonym-server launched"
-
 java -cp '/acceptance-tests.jar' org.junit.runner.JUnitCore \
      org.ostelco.at.okhttp.GetPseudonymsTest \
      org.ostelco.at.okhttp.GetProductsTest \

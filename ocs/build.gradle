@@ -1,12 +1,11 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.60"
+  id "org.jetbrains.kotlin.jvm" version "1.2.61"
   id "java-library"
 }
 
 dependencies {
   implementation project(':prime-api')
 
-  implementation "com.google.cloud:google-cloud-pubsub:$googleCloudVersion"
   implementation 'com.lmax:disruptor:3.4.2'
 
   testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"

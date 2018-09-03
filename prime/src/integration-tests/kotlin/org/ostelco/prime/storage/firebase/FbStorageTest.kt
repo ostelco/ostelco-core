@@ -29,21 +29,24 @@ class FbStorageTest {
     fun addApplicationNotificationTokenTest() {
 
         val token = "ThisIsTheToken"
-        val applicaitonId = "thisIsTheApplicationId"
+        val applicationId = "thisIsTheApplicationId"
         val tokenType = "FCM"
 
-        val applicationToken = ApplicationToken(token,applicaitonId,tokenType)
+        val applicationToken = ApplicationToken(
+                token = token,
+                applicationID = applicationId,
+                tokenType = tokenType)
 
         assertTrue(storage.addNotificationToken(MSISDN, applicationToken))
-        val reply = storage.getNotificationToken(MSISDN, applicaitonId)
+        val reply = storage.getNotificationToken(MSISDN, applicationId)
         Assert.assertNotNull(reply)
         Assert.assertEquals(reply?.token, token)
-        Assert.assertEquals(reply?.applicationID, applicaitonId)
+        Assert.assertEquals(reply?.applicationID, applicationId)
         Assert.assertEquals(reply?.tokenType, tokenType)
 
         Assert.assertEquals(storage.getNotificationTokens(MSISDN).size, 1)
 
-        assertTrue(storage.removeNotificationToken(MSISDN, applicaitonId))
+        assertTrue(storage.removeNotificationToken(MSISDN, applicationId))
         Assert.assertEquals(storage.getNotificationTokens(MSISDN).size, 0)
     }
 

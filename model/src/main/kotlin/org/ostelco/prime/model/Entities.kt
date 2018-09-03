@@ -1,114 +1,95 @@
 package org.ostelco.prime.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.google.firebase.database.Exclude
 
 interface HasId {
-    var id: String
-}
-
-open class Entity : HasId {
-    @JsonIgnore
-    override var id: String = ""
+    val id: String
 }
 
 data class Offer(
-        var segments: Collection<String> = emptyList(),
-        var products: Collection<String> = emptyList()) : Entity()
+        override val id: String,
+        @JsonIgnore val segments: Collection<String> = emptyList(),
+        @JsonIgnore val products: Collection<String> = emptyList()) : HasId
 
 data class Segment(
-        var subscribers: Collection<String> = emptyList()) : Entity()
+        override val id: String,
+        @JsonIgnore val subscribers: Collection<String> = emptyList()) : HasId
 
 data class Subscriber(
-        var email: String = "",
-        var name: String = "",
-        var address: String = "",
-        var postCode: String = "",
-        var city: String = "",
-        var country: String = "",
-        var referralId: String = email) : HasId {
+        val email: String,
+        val name: String = "",
+        val address: String = "",
+        val postCode: String = "",
+        val city: String = "",
+        val country: String = "",
+        private val referralId: String = email) : HasId {
 
-    constructor(email: String) : this() {
-        this.email = email
-    }
+    constructor(email: String): this(email = email, referralId = email)
 
-    override var id: String
+    fun getReferralId() = email
+
+    override val id: String
         @JsonIgnore
         get() = email
-        @JsonIgnore
-        set(value) {
-            email = value
-        }
 }
 
+// TODO vihang: make ApplicationToken data class immutable
+// this data class is treated differently since it is stored in Firebase.
 data class ApplicationToken(
         var token: String = "",
         var applicationID: String = "",
         var tokenType: String = "") : HasId {
 
-    constructor(applicationID: String) : this() {
-        this.applicationID = applicationID
-    }
-
-    override var id: String
+    override val id: String
+        @Exclude
         @JsonIgnore
         get() = applicationID
-        @JsonIgnore
-        set(value) {
-            applicationID = value
-        }
 }
 
 data class Subscription(
-        var msisdn: String = "") : HasId {
+        val msisdn: String) : HasId {
 
-    override var id: String
+    override val id: String
         @JsonIgnore
         get() = msisdn
-        @JsonIgnore
-        set(value) {
-            msisdn = value
-        }
 }
 
 data class Bundle(
-        override var id: String = "",
-        var balance: Long = 0) : HasId
+        override val id: String,
+        val balance: Long) : HasId
 
 data class Price(
-        var amount: Int = 0,
-        var currency: String = "")
+        val amount: Int,
+        val currency: String)
 
 data class Product(
-        var sku: String = "",
-        var price: Price = Price(0, ""),
-        var properties: Map<String, String> = mapOf(),
-        var presentation: Map<String, String> = mapOf()) : HasId {
+        val sku: String,
+        val price: Price,
+        val properties: Map<String, String> = emptyMap(),
+        val presentation: Map<String, String> = emptyMap()) : HasId {
 
-    override var id: String
+    override val id: String
         @JsonIgnore
         get() = sku
-        @JsonIgnore
-        set(value) {
-            sku = value
-        }
 }
 
 data class ProductClass(
-        override var id: String = "",
-        var properties: List<String> = listOf()) : HasId
+        override val id: String,
+        val properties: List<String> = listOf()) : HasId
 
 data class PurchaseRecord(
-        override var id: String = "",
-        @Deprecated("Will be removed in future") var msisdn: String = "",
-        var product: Product = Product(),
-        var timestamp: Long = 0L) : HasId
+        override val id: String,
+        @Deprecated("Will be removed in future") val msisdn: String,
+        val product: Product,
+        val timestamp: Long) : HasId
 
 data class PseudonymEntity(
-        var msisdn: String,
-        var pseudonym: String,
-        var start: Long,
-        var end: Long)
+        val msisdn: String,
+        val pseudonym: String,
+        val start: Long,
+        val end: Long)
 
 data class ActivePseudonyms(
-        var current: PseudonymEntity,
-        var next: PseudonymEntity)
+        val current: PseudonymEntity,
+        val next: PseudonymEntity)

@@ -4,8 +4,6 @@ import io.dropwizard.auth.Auth
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.model.Subscriber
-import org.ostelco.prime.module.getResource
-import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import javax.validation.constraints.NotNull
 import javax.ws.rs.Consumes
 import javax.ws.rs.GET
@@ -22,8 +20,6 @@ import javax.ws.rs.core.Response
  */
 @Path("/profile")
 class ProfileResource(private val dao: SubscriberDAO) {
-
-    private val paymentProcessor by lazy { getResource<PaymentProcessor>() }
 
     @GET
     @Produces("application/json")

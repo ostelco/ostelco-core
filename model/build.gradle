@@ -1,10 +1,13 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.60"
+  id "org.jetbrains.kotlin.jvm" version "1.2.61"
   id "java-library"
 }
 
 dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
   implementation "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
+
+  // TODO vihang: this dependency is added only for @Exclude annotation for firebase
+  implementation 'com.google.firebase:firebase-admin:6.4.0'
   implementation "org.slf4j:slf4j-api:1.7.25"
 }

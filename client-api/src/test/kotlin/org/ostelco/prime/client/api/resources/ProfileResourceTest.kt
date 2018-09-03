@@ -1,10 +1,12 @@
 package org.ostelco.prime.client.api.resources
 
 import arrow.core.Either
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import io.dropwizard.auth.AuthDynamicFeature
 import io.dropwizard.auth.AuthValueFactoryProvider
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter
+import io.dropwizard.jackson.Jackson
 import io.dropwizard.testing.junit.ResourceTestRule
 import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory
@@ -18,8 +20,6 @@ import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.auth.OAuthAuthenticator
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
-import org.ostelco.prime.core.ApiError
-import org.ostelco.prime.core.NotFoundError
 import org.ostelco.prime.model.Subscriber
 import java.util.*
 import javax.ws.rs.client.Entity
@@ -38,7 +38,7 @@ class ProfileResourceTest {
     private val postCode = "132 23"
     private val city = "Oslo"
 
-    private val profile = Subscriber()
+    private val profile = Subscriber(email)
 
     @Before
     @Throws(Exception::class)
@@ -62,10 +62,6 @@ class ProfileResourceTest {
         assertThat(resp.status).isEqualTo(Response.Status.OK.statusCode)
         assertThat(resp.mediaType.toString()).isEqualTo(MediaType.APPLICATION_JSON)
 
-        /* Requires that:
-               lombok.anyConstructor.addConstructorProperties=true
-           is added to the lombok config file ('lombok.config').
-           Ref.: lombok changelog for ver. 1.16.20. */
         assertThat(resp.readEntity(Subscriber::class.java)).isEqualTo(profile)
         assertThat(arg.firstValue).isEqualTo(email)
     }
@@ -174,12 +170,6 @@ class ProfileResourceTest {
     @Test
     @Throws(Exception::class)
     fun updateWithIncompleteProfile() {
-        val arg1 = argumentCaptor<String>()
-        val arg2 = argumentCaptor<Subscriber>()
-
-        `when`(DAO.updateProfile(arg1.capture(), arg2.capture()))
-                .thenReturn(Either.left(NotFoundError("No profile found")))
-
         val resp = RULE.target("/profile")
                 .request(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
@@ -187,8 +177,7 @@ class ProfileResourceTest {
                         "    \"name\": \"" + name + "\"\n" +
                         "}\n"))
 
-        assertThat(resp.status).isEqualTo(Response.Status.NOT_FOUND.statusCode)
-        assertThat(arg1.firstValue).isEqualTo(email)
+        assertThat(resp.status).isEqualTo(Response.Status.BAD_REQUEST.statusCode)
     }
 
     companion object {
@@ -199,6 +188,7 @@ class ProfileResourceTest {
         @JvmField
         @ClassRule
         val RULE = ResourceTestRule.builder()
+                .setMapper(Jackson.newObjectMapper().registerModule(KotlinModule()))
                 .addResource(AuthDynamicFeature(
                         OAuthCredentialAuthFilter.Builder<AccessTokenPrincipal>()
                                 .setAuthenticator(AUTHENTICATOR)

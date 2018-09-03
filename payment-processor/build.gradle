@@ -1,5 +1,5 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.50"
+  id "org.jetbrains.kotlin.jvm" version "1.2.61"
   id "java-library"
   id "idea"
 }
@@ -8,7 +8,6 @@ sourceSets {
   test {
     java.srcDirs = ['src/test/kotlin']
   }
-
   integration {
     java.srcDirs = ['src/test/kotlin', 'src/integration-tests/kotlin']
     resources.srcDir 'src/integration-tests/resources'
@@ -22,7 +21,7 @@ dependencies {
 
   implementation project(":prime-api")
 
-  implementation "com.stripe:stripe-java:5.51.0"
+  implementation "com.stripe:stripe-java:6.8.0"
 
   testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
@@ -43,11 +42,17 @@ task integration(type: Test, description: 'Runs the integration tests.', group: 
   classpath = sourceSets.integration.runtimeClasspath
 }
 
+if (System.getenv("BUILD_ENV") != "CI_CD") {
+  build.dependsOn integration
+}
+
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
   kotlinOptions {
     jvmTarget = "1.8"
   }
 }
+
+apply from: '../jacoco.gradle'
 
 idea {
   module {
