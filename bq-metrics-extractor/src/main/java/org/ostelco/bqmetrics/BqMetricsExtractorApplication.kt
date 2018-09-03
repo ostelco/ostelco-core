@@ -1,5 +1,6 @@
 package org.ostelco.bqmetrics
 
+import com.google.cloud.bigquery.*
 import io.dropwizard.Application
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
@@ -7,13 +8,13 @@ import io.prometheus.client.exporter.PushGateway
 import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Gauge.*
 import io.dropwizard.cli.Command
-import com.google.cloud.bigquery.DatasetInfo
-import com.google.cloud.bigquery.BigQueryOptions
-import com.google.cloud.bigquery.Dataset
 import io.dropwizard.Configuration
 import io.prometheus.client.Gauge
 import net.sourceforge.argparse4j.inf.Namespace
 import net.sourceforge.argparse4j.inf.Subparser
+import java.util.*
+
+
 
 
 /**
@@ -49,7 +50,9 @@ interface MetricBuilder {
 //     add an actual query and we're essentially done.   Adding abstractions for
 //     fun and beauty can then be done.
 
-object BigquerySample : MetricBuilder {
+class  BigquerySample : MetricBuilder {
+
+/*
     @Throws(Exception::class)
     @JvmStatic
     fun countSubscribers(args: Array<String>) {
@@ -69,6 +72,48 @@ object BigquerySample : MetricBuilder {
         dataset = bigquery.create(datasetInfo)
 
         System.out.printf("Dataset %s created.%n", dataset!!.getDatasetId().getDataset())
+    }
+
+*/
+
+    fun  foobar() {
+        val bigquery = BigQueryOptions.getDefaultInstance().service
+        val queryConfig: QueryJobConfiguration =
+        QueryJobConfiguration.newBuilder(
+                "SELECT "
+                        + "CONCAT('https://stackoverflow.com/questions/', CAST(id as STRING)) as url, "
+                        + "view_count "
+                        + "FROM `bigquery-public-data.stackoverflow.posts_questions` "
+                        + "WHERE tags like '%google-bigquery%' "
+                        + "ORDER BY favorite_count DESC LIMIT 10")
+                // Use standard SQL syntax for queries.
+                // See: https://cloud.google.com/bigquery/sql-reference/
+                .setUseLegacySql(false)
+                .build();
+
+        // Create a job ID so that we can safely retry.
+        val  jobId: JobId = JobId . of (UUID.randomUUID().toString());
+        var  queryJob: Job = bigquery . create (JobInfo.newBuilder(queryConfig).setJobId(jobId).build());
+
+        // Wait for the query to complete.
+        queryJob = queryJob.waitFor();
+
+        // Check for errors
+        if (queryJob == null) {
+            throw  RuntimeException ("Job no longer exists");
+        } else if (queryJob.getStatus().getError() != null) {
+            // You can also look at queryJob.getStatus().getExecutionErrors() for all
+            // errors, not just the latest one.
+            throw RuntimeException (queryJob.getStatus().getError().toString());
+        }
+        val result = queryJob.getQueryResults()
+        System.out.println("Total # of rows = ${result.totalRows}")
+        // Print all pages of the results.
+        for (row in result.iterateAll()) {
+            val url = row.get("url").stringValue
+            val viewCount = row.get("view_count").longValue
+            System.out.printf("url: %s views: %d%n", url, viewCount)
+        }
     }
 
     // XXX Next step is to rewrite the code below to get an actual metric by querying
@@ -103,7 +148,7 @@ class PrometheusPusher (val job: String){
     fun publishMetrics() {
 
         val metricSources:MutableList<MetricBuilder> = mutableListOf()
-        metricSources.add(BigquerySample)
+        // metricSources.add(BigquerySample)
 
         val pg = PushGateway("127.0.0.1:9091")
         metricSources.forEach({ it.buildMetric(registry) })
@@ -118,6 +163,7 @@ class CollectAndPushMetrics : Command("query", "query BigQuery for a metric") {
 
     override fun run(bootstrap: Bootstrap<*>?, namespace: Namespace?) {
         println("Running query")
-        PrometheusPusher("bq_metrics_extractor").publishMetrics()
+        BigquerySample().foobar()
+        // PrometheusPusher("bq_metrics_extractor").publishMetrics()
     }
 }
