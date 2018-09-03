@@ -2,10 +2,12 @@ package org.ostelco.at.common
 
 import com.stripe.Stripe
 import com.stripe.model.Customer
+import com.stripe.model.Source
 import com.stripe.model.Token
 
 object StripePayment {
-    fun createPaymentSourceId(): String {
+
+    fun createPaymentTokenId(): String {
 
         // https://stripe.com/docs/api/java#create_card_token
         Stripe.apiKey = System.getenv("STRIPE_API_KEY")
@@ -19,6 +21,17 @@ object StripePayment {
         val tokenMap = mapOf("card" to cardMap)
         val token = Token.create(tokenMap)
         return token.id
+    }
+
+    fun createPaymentSourceId(): String {
+
+        // https://stripe.com/docs/api/java#create_source
+        Stripe.apiKey = System.getenv("STRIPE_API_KEY")
+
+        // TODO martin: set valid map values
+        val sourceMap = mapOf<String,Any>()
+        val source = Source.create(sourceMap)
+        return source.id
     }
 
     fun deleteAllCustomers() {

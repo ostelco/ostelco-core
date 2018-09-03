@@ -177,7 +177,7 @@ class PurchaseTest {
 
         val balanceBefore = client.subscriptionStatus.remaining
 
-        val sourceId = StripePayment.createPaymentSourceId()
+        val sourceId = StripePayment.createPaymentTokenId()
 
         client.purchaseProduct("1GB_249NOK", sourceId, false)
 

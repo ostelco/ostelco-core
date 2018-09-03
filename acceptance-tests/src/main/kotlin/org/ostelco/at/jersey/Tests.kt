@@ -10,6 +10,7 @@ import org.ostelco.at.common.randomInt
 import org.ostelco.prime.client.model.ActivePseudonyms
 import org.ostelco.prime.client.model.ApplicationToken
 import org.ostelco.prime.client.model.Consent
+import org.ostelco.prime.client.model.PaymentSource
 import org.ostelco.prime.client.model.Person
 import org.ostelco.prime.client.model.Price
 import org.ostelco.prime.client.model.Product
@@ -240,12 +241,64 @@ class PurchaseTest {
         val balanceBefore = subscriptionStatusBefore.remaining
 
         val productSku = "1GB_249NOK"
-        val sourceId = StripePayment.createPaymentSourceId()
+        val sourceId = StripePayment.createPaymentTokenId()
 
         post<String> {
             path = "/products/$productSku/purchase"
             subscriberId = email
             queryParams = mapOf( "sourceId" to sourceId)
+        }
+
+        Thread.sleep(100) // wait for 100 ms for balance to be updated in db
+
+        val subscriptionStatusAfter: SubscriptionStatus = get {
+            path = "/subscription/status"
+            subscriberId = email
+        }
+        val balanceAfter = subscriptionStatusAfter.remaining
+
+        assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
+
+        val purchaseRecords: PurchaseRecordList = get {
+            path = "/purchases"
+            subscriberId = email
+        }
+
+        purchaseRecords.sortBy { it.timestamp }
+
+        assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
+        assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
+    }
+
+    @Test
+    fun `jersey test - POST products purchase using default source`() {
+
+        StripePayment.deleteAllCustomers()
+
+        val email = "purchase-${randomInt()}@test.com"
+        createProfile(name = "Test Purchase User with Default Payment Source", email = email)
+
+        val sourceId = StripePayment.createPaymentTokenId()
+
+        val paymentSource:PaymentSource = post {
+            path = "/paymentSources"
+            subscriberId = email
+            queryParams = mapOf("sourceId" to sourceId)
+        }
+
+        assertNotNull(paymentSource.id, message = "Failed to create payment source")
+
+        val subscriptionStatusBefore: SubscriptionStatus = get {
+            path = "/subscription/status"
+            subscriberId = email
+        }
+        val balanceBefore = subscriptionStatusBefore.remaining
+
+        val productSku = "1GB_249NOK"
+
+        post<String> {
+            path = "/products/$productSku/purchase"
+            subscriberId = email
         }
 
         Thread.sleep(100) // wait for 100 ms for balance to be updated in db

@@ -12,7 +12,11 @@ import org.ostelco.prime.core.BadGatewayError
 import org.ostelco.prime.core.ForbiddenError
 import org.ostelco.prime.core.NotFoundError
 import org.ostelco.prime.logger
-import org.ostelco.prime.paymentprocessor.core.*
+import org.ostelco.prime.paymentprocessor.core.PlanInfo
+import org.ostelco.prime.paymentprocessor.core.ProductInfo
+import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.paymentprocessor.core.SourceInfo
+import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
 
 class StripePaymentProcessor : PaymentProcessor {
 
@@ -139,7 +143,7 @@ class StripePaymentProcessor : PaymentProcessor {
         }
     }
 
-    override fun captureCharge(chargeId: String, customerId: String, sourceId: String?): Either<ApiError, String> {
+    override fun captureCharge(chargeId: String, customerId: String): Either<ApiError, String> {
         val errorMessage = "Failed to capture charge for customerId $customerId chargeId $chargeId"
         return either(ForbiddenError(errorMessage)) {
             Charge.retrieve(chargeId)
@@ -159,6 +163,10 @@ class StripePaymentProcessor : PaymentProcessor {
                 Either.left(BadGatewayError(errorMessage))
             }
         }
+    }
+
+    override fun refundCharge(chargeId: String, customerId: String): Either<ApiError, String> {
+        TODO("payment")
     }
 
     override fun removeSource(customerId: String, sourceId: String): Either<ApiError, String> =
