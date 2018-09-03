@@ -6,7 +6,7 @@ COPY script/start.sh /start.sh
 
 COPY config /config
 
-COPY build/libs/analytics-uber.jar /analytics.jar
+COPY build/libs/dataflow-pipelines-uber.jar /dataflow-pipelines.jar
 
 EXPOSE 8080
 EXPOSE 8081

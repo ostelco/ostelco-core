@@ -1,5 +1,6 @@
 package org.ostelco.pseudonym.service
 
+import com.codahale.metrics.health.HealthCheck
 import com.google.cloud.bigquery.BigQuery
 import com.google.cloud.bigquery.BigQueryOptions
 import com.google.cloud.datastore.Datastore
@@ -9,7 +10,10 @@ import com.google.cloud.datastore.Key
 import com.google.cloud.datastore.Query
 import com.google.cloud.datastore.StructuredQuery.PropertyFilter
 import com.google.cloud.datastore.testing.LocalDatastoreHelper
-import org.hibernate.validator.constraints.NotBlank
+import com.google.cloud.http.HttpTransportOptions
+import com.google.common.cache.Cache
+import com.google.common.cache.CacheBuilder
+import io.dropwizard.setup.Environment
 import org.ostelco.prime.logger
 import org.ostelco.prime.model.ActivePseudonyms
 import org.ostelco.prime.model.PseudonymEntity
@@ -17,11 +21,9 @@ import org.ostelco.prime.pseudonymizer.PseudonymizerService
 import org.ostelco.pseudonym.ConfigRegistry
 import org.ostelco.pseudonym.ExportTaskKind
 import org.ostelco.pseudonym.PseudonymEntityKind
-import org.ostelco.pseudonym.PseudonymServerConfig
 import org.ostelco.pseudonym.endPropertyName
 import org.ostelco.pseudonym.errorPropertyName
 import org.ostelco.pseudonym.exportIdPropertyName
-import org.ostelco.pseudonym.managed.PseudonymExport
 import org.ostelco.pseudonym.msisdnPropertyName
 import org.ostelco.pseudonym.pseudonymPropertyName
 import org.ostelco.pseudonym.resources.ExportTask
@@ -62,21 +64,24 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
     private val logger by logger()
 
     private lateinit var datastore: Datastore
-    private lateinit var bigquery: BigQuery
+    private var bigQuery: BigQuery? = null
     private val dateBounds: DateBounds = WeeklyBounds()
 
     private val executor = Executors.newFixedThreadPool(3)
 
-    fun init(bq: BigQuery? = null) {
-        datastore = getDatastore(ConfigRegistry.config)
-        if (bq != null) {
-            bigquery = bq
+    val pseudonymCache: Cache<String, PseudonymEntity> = CacheBuilder.newBuilder()
+            .maximumSize(5000)
+            .build()
+
+    fun init(env: Environment?, bq: BigQuery? = null) {
+
+        initDatastore(env)
+
+        bigQuery = bq ?: if (System.getenv("LOCAL_TESTING") != "true") {
+            BigQueryOptions.getDefaultInstance().service
         } else {
-            if (System.getenv("LOCAL_TESTING") != "true") {
-                bigquery = BigQueryOptions.getDefaultInstance().service
-            } else {
-                logger.info("Local testing, BigQuery is not available...")
-            }
+            logger.info("Local testing, BigQuery is not available...")
+            null
         }
     }
 
@@ -87,6 +92,14 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
         val current = getPseudonymEntityFor(msisdn, currentTimestamp)
         val next = getPseudonymEntityFor(msisdn, nextTimestamp)
         return ActivePseudonyms(current, next)
+    }
+
+    override fun getPseudonymEntityFor(msisdn: String, timestamp: Long): PseudonymEntity {
+        val (bounds, keyPrefix) = dateBounds.getBoundsNKeyPrefix(msisdn, timestamp)
+        // Retrieves the element from cache.
+        return pseudonymCache.get(keyPrefix) {
+            getPseudonymEntity(keyPrefix) ?: createPseudonym(msisdn, bounds, keyPrefix)
+        }
     }
 
     fun findPseudonym(pseudonym: String): PseudonymEntity? {
@@ -121,37 +134,60 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
     }
 
     fun exportPseudonyms(exportId: String) {
-        logger.info("GET export all pseudonyms to the table $exportId")
-        val exporter = PseudonymExport(exportId, bigquery, datastore)
-        executor.execute(exporter.getRunnable())
+        bigQuery?.apply {
+            logger.info("GET export all pseudonyms to the table $exportId")
+            val exporter = PseudonymExport(exportId = exportId, bigquery = this, datastore = datastore)
+            executor.execute(exporter.getRunnable())
+        }
     }
 
     // Integration testing helper for Datastore.
-    private fun getDatastore(config: PseudonymServerConfig): Datastore {
-        val datastore: Datastore?
-        if (config.datastoreType == "inmemory-emulator") {
-            logger.info("Starting with in-memory datastore emulator...")
-            val helper: LocalDatastoreHelper = LocalDatastoreHelper.create(1.0)
-            helper.start()
-            datastore = helper.options.service
-        } else {
-            datastore = DatastoreOptions.getDefaultInstance().service
-            logger.info("Created default instance of datastore client")
-
-            // TODO vihang: make this part of health-check
-            val testKey = datastore.newKeyFactory().setKind("TestKind").newKey("testKey")
-            val testPropertyKey = "testPropertyKey"
-            val testPropertyValue = "testPropertyValue"
-            val testEntity = Entity.newBuilder(testKey).set(testPropertyKey, testPropertyValue).build()
-            datastore.put(testEntity)
-            val value = datastore.get(testKey).getString(testPropertyKey)
-            if (testPropertyValue != value) {
-                logger.warn("Unable to fetch test property value from datastore")
+    private fun initDatastore(env: Environment?) {
+        datastore = when (ConfigRegistry.config.datastoreType) {
+            "inmemory-emulator" -> {
+                logger.info("Starting with in-memory datastore emulator")
+                val helper: LocalDatastoreHelper = LocalDatastoreHelper.create(1.0)
+                helper.start()
+                helper.options
             }
-            datastore.delete(testKey)
-            // END
-        }
-        return datastore
+            "emulator" -> {
+                // When prime running in GCP by hosted CI/CD, Datastore client library assumes it is running in
+                // production and ignore our instruction to connect to the datastore emulator. So, we are explicitly
+                // connecting to emulator
+                logger.info("Connecting to datastore emulator")
+                DatastoreOptions
+                        .newBuilder()
+                        .setHost("localhost:9090")
+                        .setTransportOptions(HttpTransportOptions.newBuilder().build())
+                        .build()
+            }
+            else -> {
+                logger.info("Created default instance of datastore client")
+                DatastoreOptions.getDefaultInstance()
+            }
+        }.service
+
+        // health-check for datastore
+        env?.healthChecks()?.register("datastore", object : HealthCheck() {
+            override fun check(): Result {
+                try {
+                    val testKey = datastore.newKeyFactory().setKind("TestKind").newKey("testKey")
+                    val testPropertyKey = "testPropertyKey"
+                    val testPropertyValue = "testPropertyValue"
+                    val testEntity = Entity.newBuilder(testKey).set(testPropertyKey, testPropertyValue).build()
+                    datastore.put(testEntity)
+                    val value = datastore.get(testKey).getString(testPropertyKey)
+                    datastore.delete(testKey)
+                    if (testPropertyValue != value) {
+                        logger.warn("Unable to fetch test property value from datastore")
+                        return Result.builder().unhealthy().build()
+                    }
+                    return Result.builder().healthy().build()
+                } catch (e: Exception) {
+                    return Result.builder().unhealthy(e).build()
+                }
+            }
+        })
     }
 
     fun getExportTask(exportId: String): ExportTask? {
@@ -179,15 +215,6 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
             return convertToPseudonymEntity(value)
         }
         return null
-    }
-
-    fun getPseudonymEntityFor(@NotBlank msisdn: String, timestamp: Long): PseudonymEntity {
-        val (bounds, keyPrefix) = dateBounds.getBoundsNKeyPrefix(msisdn, timestamp)
-        var entity = getPseudonymEntity(keyPrefix)
-        if (entity == null) {
-            entity = createPseudonym(msisdn, bounds, keyPrefix)
-        }
-        return entity
     }
 
     private fun createPseudonym(msisdn: String, bounds: Bounds, keyPrefix: String): PseudonymEntity {

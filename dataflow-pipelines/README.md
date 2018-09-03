@@ -15,4 +15,4 @@ With unit testing:
 
 ## Deploy to GCP
 
-    sudo docker-compose up --build
+    docker-compose up --build

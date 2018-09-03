@@ -1,4 +1,4 @@
-package org.ostelco.analytics
+package org.ostelco.dataflow.pipelines
 
 import com.google.protobuf.util.Timestamps
 import org.apache.beam.sdk.extensions.protobuf.ProtoCoder
@@ -13,11 +13,12 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.ostelco.analytics.api.AggregatedDataTrafficInfo
 import org.ostelco.analytics.api.DataTrafficInfo
+import org.ostelco.dataflow.pipelines.definitions.consumptionPerMsisdn
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
-class PipelineTest {
+class ConsumptionPerMsisdnTest {
 
     @Rule
     @Transient
@@ -73,7 +74,9 @@ class PipelineTest {
         if (pipeline != null) {
             val currentHourDateTime = getCurrentHourDateTime()
 
-            val out: PCollection<AggregatedDataTrafficInfo> = appendTransformations(pipeline.apply(testStream))
+            val out: PCollection<AggregatedDataTrafficInfo> = pipeline
+                    .apply(testStream)
+                    .apply(consumptionPerMsisdn)
                     .setCoder(ProtoCoder.of(AggregatedDataTrafficInfo::class.java))
 
             PAssert.that(out).containsInAnyOrder(

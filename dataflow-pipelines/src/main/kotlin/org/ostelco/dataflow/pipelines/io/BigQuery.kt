@@ -1,19 +1,26 @@
-package org.ostelco.analytics
+package org.ostelco.dataflow.pipelines.io
 
 import com.google.api.services.bigquery.model.TableFieldSchema
 import com.google.api.services.bigquery.model.TableRow
 import com.google.api.services.bigquery.model.TableSchema
+import com.google.protobuf.util.Timestamps
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO
-import org.ostelco.analytics.Table.DAILY_CONSUMPTION
-import org.ostelco.analytics.Table.HOURLY_CONSUMPTION
-import org.ostelco.analytics.Table.RAW_CONSUMPTION
+import org.ostelco.analytics.api.AggregatedDataTrafficInfo
+import org.ostelco.analytics.api.DataTrafficInfo
+import org.ostelco.dataflow.pipelines.dsl.ParDoFn
+import org.ostelco.dataflow.pipelines.io.Table.DAILY_CONSUMPTION
+import org.ostelco.dataflow.pipelines.io.Table.HOURLY_CONSUMPTION
+import org.ostelco.dataflow.pipelines.io.Table.RAW_CONSUMPTION
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import java.util.*
 
 // This code is an attempt to keep all database schema in one place.
 
 // This may be moved to config.
-const val project = "pantel-2decb"
-const val dataset = "data_consumption"
+private const val project = "pantel-2decb"
+private const val dataset = "data_consumption"
 
 
 /**
@@ -31,7 +38,7 @@ enum class Table {
 /**
  * Schemas for tables.
  */
-class TableSchemas {
+private object TableSchemas {
 
     /**
      * Getting a table schema for the tables
@@ -58,20 +65,47 @@ class TableSchemas {
     }
 }
 
+//
+// convert to BigQuery table rows
+//
+val convertToRawTableRows = ParDoFn.transform<DataTrafficInfo, TableRow> {
+    TableRow()
+            .set("msisdn", it.msisdn)
+            .set("bucketBytes", it.bucketBytes)
+            .set("bundleBytes", it.bundleBytes)
+            .set("timestamp", ZonedDateTime.ofInstant(
+                    Instant.ofEpochMilli(Timestamps.toMillis(it.timestamp)),
+                    ZoneOffset.UTC).toString())
+}
+
+val convertToHourlyTableRows = ParDoFn.transform<AggregatedDataTrafficInfo, TableRow> {
+    TableRow()
+            .set("msisdn", it.msisdn)
+            .set("bytes", it.dataBytes)
+            .set("timestamp", it.dateTime)
+}
+
+//
+// Save to BigQuery Table
+//
+
 /**
  * Helpers for accessing BigTable
  */
-class BigQueryIOUtils {
+object BigQueryIOUtils {
 
     /**
      * Create a [BigQueryIO.Write<TableRow>] query for writing all the
      * rows in a [Table] - denoted table.
      */
-    fun writeTo(table: Table) : BigQueryIO.Write<TableRow> {
+    fun saveToBigQuery(table: Table): BigQueryIO.Write<TableRow> {
         return BigQueryIO.writeTableRows()
                 .to("$project:$dataset.${table.name.toLowerCase()}")
-                .withSchema(TableSchemas().getTableSchema(table))
+                .withSchema(TableSchemas.getTableSchema(table))
                 .withCreateDisposition(BigQueryIO.Write.CreateDisposition.CREATE_IF_NEEDED)
                 .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_APPEND)
     }
 }
+
+
+

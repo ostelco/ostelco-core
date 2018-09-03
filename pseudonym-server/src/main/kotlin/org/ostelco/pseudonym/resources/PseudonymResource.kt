@@ -2,8 +2,6 @@ package org.ostelco.pseudonym.resources
 
 import org.hibernate.validator.constraints.NotBlank
 import org.ostelco.pseudonym.service.PseudonymizerServiceSingleton
-import org.ostelco.pseudonym.service.PseudonymizerServiceSingleton.getExportTask
-import org.ostelco.pseudonym.service.PseudonymizerServiceSingleton.getPseudonymEntityFor
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import javax.ws.rs.DELETE
@@ -53,7 +51,7 @@ class PseudonymResource {
     fun getPseudonym(@NotBlank @PathParam("msisdn") msisdn: String): Response {
         val timestamp = Instant.now().toEpochMilli()
         logger.info("GET pseudonym for Msisdn = $msisdn at current time, timestamp = $timestamp")
-        val entity = getPseudonymEntityFor(msisdn, timestamp)
+        val entity = PseudonymizerServiceSingleton.getPseudonymEntityFor(msisdn, timestamp)
         return Response.ok(entity, MediaType.APPLICATION_JSON).build()
     }
 
@@ -119,7 +117,7 @@ class PseudonymResource {
     @Path("/exportstatus/{exportId}")
     fun getExportStatus(@NotBlank @PathParam("exportId") exportId: String): Response {
         logger.info("GET status of export $exportId")
-        return getExportTask(exportId)
+        return PseudonymizerServiceSingleton.getExportTask(exportId)
                 ?.let { Response.ok(it, MediaType.APPLICATION_JSON).build() }
                 ?: Response.status(Status.NOT_FOUND).build()
     }

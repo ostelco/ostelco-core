@@ -50,7 +50,6 @@ services:
         ipv4_address: 172.16.238.4
       default:
 
-
   metrics-esp:
     container_name: metrics-esp
     image: gcr.io/endpoints-release/endpoints-runtime:1
