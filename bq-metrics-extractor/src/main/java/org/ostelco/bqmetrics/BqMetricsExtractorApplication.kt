@@ -96,6 +96,7 @@ class  BigquerySample : MetricBuilder {
                 .name("foo_active_users")
                 .help("Number of active users").register(registry)
 
+        // XXX How about updates?
         myGauge.set(countNumberOfActiveUsers() * 1.0)
     }
 }
