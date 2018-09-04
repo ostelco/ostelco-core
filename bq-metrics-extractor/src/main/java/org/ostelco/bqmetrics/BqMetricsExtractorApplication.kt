@@ -92,11 +92,11 @@ class  BigquerySample : MetricBuilder {
 
 
     override fun buildMetric(registry: CollectorRegistry) {
-        val duration: Gauge = build()
-                .name("active_users")
+        val myGauge: Gauge = build()
+                .name("foo_active_users")
                 .help("Number of active users").register(registry)
 
-        duration.set(countNumberOfActiveUsers() * 1.0)
+        myGauge.set(countNumberOfActiveUsers() * 1.0)
     }
 }
 
