@@ -114,10 +114,9 @@ interface PaymentProcessor {
 
     /**
      * @param chargeId ID of the of the authorized charge to refund from authorizeCharge()
-     * @param customerId Customer id in the payment system
      * @return id of the charge
      */
-    fun refundCharge(chargeId: String, customerId: String): Either<ApiError, String>
+    fun refundCharge(chargeId: String): Either<ApiError, String>
 
     /**
      * @param customerId Customer id in the payment system

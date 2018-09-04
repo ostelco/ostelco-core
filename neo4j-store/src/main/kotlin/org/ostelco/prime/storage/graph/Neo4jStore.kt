@@ -395,7 +395,7 @@ object Neo4jStoreSingleton : GraphStore {
                     // Create purchase record
                     createPurchaseRecordRelation(subscriberId, purchaseRecord, transaction)
                             .mapLeft { storeError ->
-                                paymentProcessor.refundCharge(chargeId, profileInfo.id)
+                                paymentProcessor.refundCharge(chargeId)
                                 logger.error("failed to save purchase record, for customerId ${profileInfo.id}, chargeId $chargeId, payment will be unclaimed in Stripe")
                                 BadGatewayError(storeError.message)
                             }

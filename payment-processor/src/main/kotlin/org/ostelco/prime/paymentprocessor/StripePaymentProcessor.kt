@@ -17,6 +17,10 @@ import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
+import com.stripe.model.Refund
+import java.util.HashMap
+
+
 
 class StripePaymentProcessor : PaymentProcessor {
 
@@ -156,9 +160,11 @@ class StripePaymentProcessor : PaymentProcessor {
         }
     }
 
-    override fun refundCharge(chargeId: String, customerId: String): Either<ApiError, String> {
-        TODO("payment")
-    }
+    override fun refundCharge(chargeId: String): Either<ApiError, String> =
+            either(NotFoundError("Failed to refund charge $chargeId")) {
+                val refundParams = mapOf("charge" to chargeId)
+                Refund.create(refundParams).charge
+            }
 
     override fun removeSource(customerId: String, sourceId: String): Either<ApiError, String> =
             either(ForbiddenError("Failed to remove source $sourceId from customer $customerId")) {
