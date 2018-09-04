@@ -41,7 +41,9 @@ TODO
 * Send something from the program to a pushgateway running somewhere [Done]
 * Make the skeleton code read something (anything) from BigQuery, using config
   that is production-like.  [Done]
-* Make a sensible metric encodedin SQL, read it from BQ and push it to pushgateway. [In progress]
+* Make a sensible metric encodedin SQL, read it from BQ and push it to pushgateway. [Done]
+* Test that this works all the way in docker compose [in progress]
+* MOdify to accept reasonable parameters for location of pushgateway.
 * Make command to run metric every N seconds.
 * Build a docker image.
 * Push the first metric to production, use kubernetes setup to ensure

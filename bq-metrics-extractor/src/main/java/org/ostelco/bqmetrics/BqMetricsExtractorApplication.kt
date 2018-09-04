@@ -45,47 +45,20 @@ interface MetricBuilder {
     fun buildMetric(Registry: CollectorRegistry)
 }
 
-// XXX Make a query class that when invoked will return a metric that is pushed.
-//     Start by refactoring the code we already have into that shape, then
-//     add an actual query and we're essentially done.   Adding abstractions for
-//     fun and beauty can then be done.
 
 class  BigquerySample : MetricBuilder {
 
-/*
-    @Throws(Exception::class)
-    @JvmStatic
-    fun countSubscribers(args: Array<String>) {
+    fun  countNumberOfActiveUsers(): Long {
         // Instantiate a client. If you don't specify credentials when constructing a client, the
         // client library will look for credentials in the environment, such as the
         // GOOGLE_APPLICATION_CREDENTIALS environment variable.
         val bigquery = BigQueryOptions.getDefaultInstance().service
-
-        // The name for the new dataset
-        val datasetName = "my_new_dataset"
-
-        // Prepares a new dataset
-        var dataset: Dataset? = null
-        val datasetInfo = DatasetInfo.newBuilder(datasetName).build()
-
-        // Creates the dataset
-        dataset = bigquery.create(datasetInfo)
-
-        System.out.printf("Dataset %s created.%n", dataset!!.getDatasetId().getDataset())
-    }
-
-*/
-
-    fun  foobar() {
-        val bigquery = BigQueryOptions.getDefaultInstance().service
         val queryConfig: QueryJobConfiguration =
         QueryJobConfiguration.newBuilder(
-                "SELECT "
-                        + "CONCAT('https://stackoverflow.com/questions/', CAST(id as STRING)) as url, "
-                        + "view_count "
-                        + "FROM `bigquery-public-data.stackoverflow.posts_questions` "
-                        + "WHERE tags like '%google-bigquery%' "
-                        + "ORDER BY favorite_count DESC LIMIT 10")
+                """
+                    SELECT count(distinct user_pseudo_id) AS count FROM `pantel-2decb.analytics_160712959.events_*`
+                    WHERE event_name = "first_open"
+                    LIMIT 1000""".trimIndent())
                 // Use standard SQL syntax for queries.
                 // See: https://cloud.google.com/bigquery/sql-reference/
                 .setUseLegacySql(false)
@@ -108,29 +81,22 @@ class  BigquerySample : MetricBuilder {
         }
         val result = queryJob.getQueryResults()
         System.out.println("Total # of rows = ${result.totalRows}")
-        // Print all pages of the results.
-        for (row in result.iterateAll()) {
-            val url = row.get("url").stringValue
-            val viewCount = row.get("view_count").longValue
-            System.out.printf("url: %s views: %d%n", url, viewCount)
+        if (result.totalRows != 1L) {
+            throw RuntimeException("Number of results was ${result.totalRows} which is different from the expected single row")
         }
+
+        val count = result.iterateAll().iterator().next().get("count").longValue
+
+        return count
     }
 
-    // XXX Next step is to rewrite the code below to get an actual metric by querying
-    //     something in bigquery.
+
     override fun buildMetric(registry: CollectorRegistry) {
         val duration: Gauge = build()
-                .name("my_batch_job_duration_seconds")
-                .help("Duration of my batch job in seconds.").register(registry)
-        val durationTimer = duration.startTimer()
-        try {
-            val lastSuccess = build()
-                    .name("my_batch_job_last_success")
-                    .help("Last time my batch job succeeded, in unixtime.").register(registry)
-            lastSuccess.setToCurrentTime()
-        } finally {
-            durationTimer.setDuration()
-        }
+                .name("active_users")
+                .help("Number of active users").register(registry)
+
+        duration.set(countNumberOfActiveUsers() * 1.0)
     }
 }
 
@@ -148,7 +114,7 @@ class PrometheusPusher (val job: String){
     fun publishMetrics() {
 
         val metricSources:MutableList<MetricBuilder> = mutableListOf()
-        // metricSources.add(BigquerySample)
+        metricSources.add(BigquerySample())
 
         val pg = PushGateway("127.0.0.1:9091")
         metricSources.forEach({ it.buildMetric(registry) })
@@ -163,7 +129,6 @@ class CollectAndPushMetrics : Command("query", "query BigQuery for a metric") {
 
     override fun run(bootstrap: Bootstrap<*>?, namespace: Namespace?) {
         println("Running query")
-        BigquerySample().foobar()
-        // PrometheusPusher("bq_metrics_extractor").publishMetrics()
+        PrometheusPusher("bq_metrics_extractor").publishMetrics()
     }
 }
