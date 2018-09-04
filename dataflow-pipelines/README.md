@@ -7,11 +7,7 @@
 
 ## Package
  
-    gradle clean shadowJar
-
-With unit testing:
-    
-    gradle clean test shadowJar
+    gradle clean build
 
 ## Deploy to GCP
 
