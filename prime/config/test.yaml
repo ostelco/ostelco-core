@@ -18,6 +18,8 @@ modules:
     config:
       lowBalanceThreshold: 0
   - type: pseudonymizer
+    config:
+      datastoreType: emulator
   - type: api
     config:
       authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m

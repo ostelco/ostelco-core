@@ -5,6 +5,7 @@ import org.apache.beam.sdk.Pipeline
 import org.apache.beam.sdk.coders.KvCoder
 import org.apache.beam.sdk.coders.VarLongCoder
 import org.apache.beam.sdk.extensions.protobuf.ProtoCoder
+import org.apache.beam.sdk.io.gcp.bigquery.TableRowJsonCoder
 import org.apache.beam.sdk.transforms.Combine
 import org.apache.beam.sdk.transforms.Filter
 import org.apache.beam.sdk.transforms.GroupByKey
@@ -27,9 +28,6 @@ import org.ostelco.dataflow.pipelines.io.Table.RAW_CONSUMPTION
 import org.ostelco.dataflow.pipelines.io.convertToHourlyTableRows
 import org.ostelco.dataflow.pipelines.io.convertToRawTableRows
 import org.ostelco.dataflow.pipelines.io.readFromPubSub
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 
 object DataConsumptionPipelineDefinition : PipelineDefinition {
 
@@ -53,12 +51,14 @@ object DataConsumptionPipelineDefinition : PipelineDefinition {
         // PubSubEvents -> raw_consumption big-query
         dataTrafficInfoEvents
                 .apply("convertToRawTableRows", convertToRawTableRows)
+                .setCoder(TableRowJsonCoder.of())
                 .apply("saveRawEventsToBigQuery", saveToBigQuery(RAW_CONSUMPTION))
 
         // PubSubEvents -> aggregate by hour -> hourly_consumption big-query
         dataTrafficInfoEvents
                 .apply("TotalDataConsumptionGroupByMsisdn", consumptionPerMsisdn)
                 .apply("convertToHourlyTableRows", convertToHourlyTableRows)
+                .setCoder(TableRowJsonCoder.of())
                 .apply("saveToBigQueryGroupedByHour", saveToBigQuery(HOURLY_CONSUMPTION))
     }
 }
@@ -80,16 +80,11 @@ val consumptionPerMsisdn = object : PTransform<PCollection<DataTrafficInfo>, PCo
                 .discardingFiredPanes()
 
         val toKeyValuePair = ParDoFn.transform<DataTrafficInfo, KV<AggregatedDataTrafficInfo, Long>> {
-            val zonedDateTime = ZonedDateTime
-                    .ofInstant(java.time.Instant.ofEpochMilli(Timestamps.toMillis(it.timestamp)), ZoneOffset.UTC)
-                    .withMinute(0)
-                    .withSecond(0)
-                    .withNano(0)
-            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:SS")
+            val hoursSinceEpoch: Long = it.timestamp.seconds / 3600
             KV.of(
                     AggregatedDataTrafficInfo.newBuilder()
                             .setMsisdn(it.msisdn)
-                            .setDateTime(formatter.format(zonedDateTime))
+                            .setTimestamp(Timestamps.fromSeconds(hoursSinceEpoch * 3600))
                             .setDataBytes(0)
                             .build(),
                     it.bucketBytes)
@@ -100,7 +95,7 @@ val consumptionPerMsisdn = object : PTransform<PCollection<DataTrafficInfo>, PCo
         val kvToSingleObject = ParDoFn.transform<KV<AggregatedDataTrafficInfo, Long>, AggregatedDataTrafficInfo> {
             AggregatedDataTrafficInfo.newBuilder()
                     .setMsisdn(it.key?.msisdn)
-                    .setDateTime(it.key?.dateTime)
+                    .setTimestamp(it.key?.timestamp)
                     .setDataBytes(it.value)
                     .build()
         }
@@ -119,5 +114,6 @@ val consumptionPerMsisdn = object : PTransform<PCollection<DataTrafficInfo>, PCo
                 // sum for each group
                 .apply("reduceToSumOfBucketBytes", reduceToSumOfBucketBytes)
                 .apply("kvToSingleObject", kvToSingleObject)
+                .setCoder(ProtoCoder.of(AggregatedDataTrafficInfo::class.java))
     }
 }

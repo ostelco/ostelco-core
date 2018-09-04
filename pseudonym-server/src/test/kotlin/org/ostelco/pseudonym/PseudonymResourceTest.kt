@@ -34,7 +34,7 @@ class PseudonymResourceTest {
         init {
             ConfigRegistry.config = PseudonymServerConfig()
                     .apply { this.datastoreType = "inmemory-emulator" }
-            PseudonymizerServiceSingleton.init(mock(BigQuery::class.java))
+            PseudonymizerServiceSingleton.init(env = null, bq = mock(BigQuery::class.java))
         }
 
         @ClassRule
