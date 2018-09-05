@@ -12,6 +12,7 @@ prime:
   pullPolicy: Always
   env: 
     FIREBASE_ROOT_PATH: dev
+    NEO4J_HOST: neo4j-neo4j.neo4j.svc.cluster.local
   ports:
     - 8080
     - 8081
