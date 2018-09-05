@@ -27,7 +27,7 @@ jobs:
 
       - run:
           name: Build entire repo
-          command: ./gradlew clean build -s -x :neo4j-store:test -x :payment-processor:integration -x :prime:integration
+          command: ./gradlew clean build -s -x :neo4j-store:test 
 
       - persist_to_workspace:
           root: ~/project/
@@ -61,9 +61,9 @@ jobs:
             cp certs/ocs.dev.ostelco.org/nginx.crt ocsgw/config/ocs.crt
             scripts/generate-selfsigned-ssl-certs.sh   metrics.dev.ostelco.org 
             cp certs/metrics.dev.ostelco.org/nginx.crt ocsgw/config/metrics.crt
-      # - run: 
-      #     name: Acceptance Tests
-      #     command: docker-compose up --build --abort-on-container-exit
+      - run: 
+          name: Acceptance Tests
+          command: docker-compose up --build --abort-on-container-exit
 
   code-coverage:
 
