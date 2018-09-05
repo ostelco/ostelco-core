@@ -204,6 +204,8 @@ jobs:
       - checkout
       - run:
           name: update endpoints spec
+          environment:
+            CLOUDSDK_CORE_PROJECT: pi-ostelco-dev
           command: |  
             git checkout develop 
             echo $GOOGLE_DEV_ENDPOINTS_CREDENTIALS > ${HOME}/gcloud-service-key.json
@@ -288,15 +290,15 @@ workflows:
     - build-image:
         requires:
           - build-code
-    - update-endpoints:
-        requires:
-          - build-image        
+    # - update-endpoints:
+    #     requires:
+    #       - build-image        
     - deploy-to-dev:
         requires:
-          - update-endpoints
-    - create-PR-to-master:
-        requires:
-          - deploy-to-dev
+          - build-image
+    # - create-PR-to-master:
+    #     requires:
+    #       - deploy-to-dev
 
   deploy-to-prod:
     jobs:
