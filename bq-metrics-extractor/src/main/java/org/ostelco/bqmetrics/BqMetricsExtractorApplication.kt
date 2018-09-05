@@ -9,7 +9,7 @@ import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Gauge.*
 import io.dropwizard.cli.Command
 import io.dropwizard.Configuration
-import io.prometheus.client.Gauge
+import io.prometheus.client.Summary
 import net.sourceforge.argparse4j.inf.Namespace
 import net.sourceforge.argparse4j.inf.Subparser
 import java.util.*
@@ -91,13 +91,14 @@ class  BigquerySample : MetricBuilder {
     }
 
 
+
     override fun buildMetric(registry: CollectorRegistry) {
-        val myGauge: Gauge = build()
+        val activeUsersSummary: Summary = Summary.build()
                 .name("foo_active_users")
                 .help("Number of active users").register(registry)
 
-        // XXX How about updates?
-        myGauge.set(countNumberOfActiveUsers() * 1.0)
+
+        activeUsersSummary.observe(countNumberOfActiveUsers() * 1.0)
     }
 }
 
