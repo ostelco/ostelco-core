@@ -50,14 +50,17 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
     }
 
     private fun logEventProcessing(msg: String, event: OcsEvent) {
-        logger.info("{}", msg)
-        logger.info("MSISDN: {}", event.msisdn)
-        logger.info("requested bytes: {}", event.requestedBucketBytes)
-        logger.info("reserved bytes: {}", event.reservedBucketBytes)
-        logger.info("used bytes: {}", event.usedBucketBytes)
-        logger.info("bundle bytes: {}", event.bundleBytes)
-        logger.info("Reporting reason: {}", event.reportingReason)
-        logger.info("request id: {} ",event.ocsgwRequestId)
+        val logString = """
+            ${msg}
+            Msisdn: ${event.msisdn}
+            Requested bytes: ${event.requestedBucketBytes}
+            Used bytes: ${event.usedBucketBytes}
+            Bundle bytes: ${event.bundleBytes}
+            Reporting reason: ${event.reportingReason}
+            Request id: ${event.ocsgwRequestId}
+        """.trimIndent()
+
+        logger.info(logString)
     }
 
     private fun handleCreditControlRequest(event: OcsEvent) {
