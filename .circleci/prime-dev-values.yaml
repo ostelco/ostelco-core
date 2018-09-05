@@ -7,16 +7,18 @@ firebaseServiceAccount: ""
   
 
 prime:
-  image: eu.gcr.io/pi-ostelco-dev/prime
+  image: gcr.io/pi-ostelco-dev/prime
   tag: 8d6884cfb
   pullPolicy: Always
   env: 
     FIREBASE_ROOT_PATH: dev
     NEO4J_HOST: neo4j-neo4j.neo4j.svc.cluster.local
+    STRIPE_API_KEY: ""
   ports:
     - 8080
     - 8081
-    - 8082  
+    - 8082 
+    - 8083 
   resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
@@ -34,27 +36,31 @@ prime:
   readinessProbe: {}
     # path: /
     # port: 8081  
+  annotations: {}
+    # prometheus.io/scrape: 'true'
+    # prometheus.io/path: '/prometheus-metrics'
+    # prometheus.io/port: '8081'  
 
-
-
-esp: 
-  enabled: true
+esp:
   image: gcr.io/endpoints-release/endpoints-runtime
   tag: 1
   pullPolicy: IfNotPresent
+
+ocsEsp: 
+  enabled: true
   env: {}
-  endpointAddress: ocs.endpoints.pantel-2decb.cloud.goog 
+  endpointAddress: ocs.dev.ostelco.org
   ports:
     - 9000
     - 8443
   secrets: 
     - secretName: ocs-ostelco-ssl
-      containerMountPath: /etc/nginx/ssl 
+      containerMountPath: /etc/nginx/ssl  
 
 apiEsp: 
   enabled: true
   env: {}
-  endpointAddress: api.endpoints.pantel-2decb.cloud.goog
+  endpointAddress: api.dev.ostelco.org
   ports:
     - 9002
     - 443
@@ -62,16 +68,39 @@ apiEsp:
     - secretName: api-ostelco-ssl
       containerMountPath: /etc/nginx/ssl 
 
+metricsEsp:
+  enabled: true
+  env: {}
+  endpointAddress: metrics.dev.ostelco.org
+  ports:
+    - 9004
+    - 9443
+  secrets: 
+    - secretName: metrics-ostelco-ssl
+      containerMountPath: /etc/nginx/ssl   
 
-service:
+services:
   prime:
+    name: prime-service
     type: LoadBalancer
     port: 443
     targetPort: 8443
+    portName: grpc 
+   # loadBalancerIP: x.y.z.n
   api:
+    name: prime-api
     type: LoadBalancer
     port: 443
     targetPort: 443
+    portName: https
+    # loadBalancerIP: x.y.z.n
+  metrics: 
+    name: prime-metrics
+    type: LoadBalancer
+    port: 443
+    targetPort: 9443  
+    portName: grpc
+    # loadBalancerIP: x.y.z.n
 
 ingress:
   enabled: false
