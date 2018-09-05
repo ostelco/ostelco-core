@@ -2,7 +2,7 @@ type: google.api.Service
 
 config_version: 3
 
-name: metrics.dev.ostelco.org
+name: metrics.new.dev.ostelco.org
 
 title: Prime Metrics Reporter Service gRPC API
 

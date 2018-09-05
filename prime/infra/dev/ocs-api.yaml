@@ -2,7 +2,7 @@ type: google.api.Service
 
 config_version: 3
 
-name: ocs.dev.ostelco.org
+name: ocs.new.dev.ostelco.org
 
 title: OCS Service gRPC API
 
