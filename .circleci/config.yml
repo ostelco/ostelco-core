@@ -61,9 +61,9 @@ jobs:
             cp certs/ocs.dev.ostelco.org/nginx.crt ocsgw/config/ocs.crt
             scripts/generate-selfsigned-ssl-certs.sh   metrics.dev.ostelco.org 
             cp certs/metrics.dev.ostelco.org/nginx.crt ocsgw/config/metrics.crt
-      - run: 
-          name: Acceptance Tests
-          command: docker-compose up --build --abort-on-container-exit
+      # - run: 
+      #     name: Acceptance Tests
+      #     command: docker-compose up --build --abort-on-container-exit
 
   code-coverage:
 
@@ -210,8 +210,8 @@ jobs:
 
             python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=analytics-grpc-api/src/main/proto --descriptor_set_out=metrics_descriptor.pb prime_metrics.proto
 
-            gcloud endpoints services deploy ocs_descriptor.pb prime/infra/prod/ocs-api.yaml
-            gcloud endpoints services deploy metrics_descriptor.pb prime/infra/prod/metrics-api.yaml
+            gcloud endpoints services deploy ocs_descriptor.pb prime/infra/dev/ocs-api.yaml
+            gcloud endpoints services deploy metrics_descriptor.pb prime/infra/dev/metrics-api.yaml
             
 
   deploy-to-dev:
