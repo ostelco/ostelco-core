@@ -217,6 +217,7 @@ jobs:
 
             gcloud endpoints services deploy ocs_descriptor.pb prime/infra/dev/ocs-api.yaml
             gcloud endpoints services deploy metrics_descriptor.pb prime/infra/dev/metrics-api.yaml
+            gcloud endpoints services deploy prime/infra/dev/prime-client-api.yaml
             
 
   deploy-to-dev:
@@ -290,12 +291,12 @@ workflows:
     - build-image:
         requires:
           - build-code
-    # - update-endpoints:
-    #     requires:
-    #       - build-image        
+    - update-endpoints:
+        requires:
+          - build-image        
     - deploy-to-dev:
         requires:
-          - build-image
+          - update-endpoints
     # - create-PR-to-master:
     #     requires:
     #       - deploy-to-dev
