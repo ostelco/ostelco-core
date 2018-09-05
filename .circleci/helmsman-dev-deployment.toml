@@ -52,3 +52,4 @@ ostelco="https://storage.googleapis.com/pi-ostelco-helm-charts-repo/"
     [apps.prime.set]
     "prime.tag"="\"$TAG\"" # double quotes are needed to avoid helm converting git SHA into scientific numbers format 
     "firebaseServiceAccount"="$PANTEL_SECRETS_FILE"
+    "prime.env.STRIPE_API_KEY"="$STRIPE_API_KEY"
