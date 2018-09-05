@@ -143,11 +143,14 @@ jobs:
     steps:
       - checkout 
       - run:
-          name: Gradle Build 
+          name: Gradle Build Prime 
           command: |
-            java -version
-            ./gradlew clean prime:build -s -x :neo4j-store:test -x :payment-processor:integration -x :prime:integration
-
+            ./gradlew clean prime:build  -s -x :neo4j-store:test -x :payment-processor:integration -x :prime:integration
+      - run:
+          name: Gradle Build OCSGW 
+          command: |
+            ./gradlew clean ocsgwprime:build  -s 
+      
       - persist_to_workspace:
           root: ~/project/
           paths:
