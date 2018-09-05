@@ -11,7 +11,7 @@ prime:
   tag: 2f47ab570
   pullPolicy: Always
   env: 
-    FIREBASE_ROOT_PATH: dev
+    FIREBASE_ROOT_PATH: dev_new
     NEO4J_HOST: neo4j-neo4j.neo4j.svc.cluster.local
     STRIPE_API_KEY: ""
   ports:
@@ -49,35 +49,41 @@ esp:
 ocsEsp: 
   enabled: true
   env: {}
-  endpointAddress: ocs.dev.ostelco.org
+  endpointAddress: ocs.new.dev.ostelco.org
   ports:
     - 9000
     - 8443
   secrets: 
     - secretName: ocs-ostelco-ssl
       containerMountPath: /etc/nginx/ssl  
+    - secretName: esp-sa-creds
+      containerMountPath: /etc/nginx/creds  
 
 apiEsp: 
   enabled: true
   env: {}
-  endpointAddress: api.dev.ostelco.org
+  endpointAddress: api.new.dev.ostelco.org
   ports:
     - 9002
     - 443
   secrets: 
     - secretName: api-ostelco-ssl
       containerMountPath: /etc/nginx/ssl 
+    - secretName: esp-sa-creds
+      containerMountPath: /etc/nginx/creds  
 
 metricsEsp:
   enabled: true
   env: {}
-  endpointAddress: metrics.dev.ostelco.org
+  endpointAddress: metrics.new.dev.ostelco.org
   ports:
     - 9004
     - 9443
   secrets: 
     - secretName: metrics-ostelco-ssl
-      containerMountPath: /etc/nginx/ssl   
+      containerMountPath: /etc/nginx/ssl 
+    - secretName: esp-sa-creds
+      containerMountPath: /etc/nginx/creds    
 
 services:
   prime:
