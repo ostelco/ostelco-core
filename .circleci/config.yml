@@ -143,11 +143,14 @@ jobs:
     steps:
       - checkout 
       - run:
-          name: Gradle Build 
+          name: Gradle Build Prime 
           command: |
-            java -version
-            ./gradlew clean prime:build -s -x :neo4j-store:test -x :payment-processor:integration -x :prime:integration
-
+            ./gradlew clean prime:build  -x test -s
+      # - run:
+      #     name: Gradle Build OCSGW 
+      #     command: |
+      #       ./gradlew clean ocsgw:build  -s 
+      
       - persist_to_workspace:
           root: ~/project/
           paths:
@@ -185,14 +188,14 @@ jobs:
             docker build -t eu.gcr.io/pi-ostelco-dev/prime:$TAG .
             docker push eu.gcr.io/pi-ostelco-dev/prime:$TAG  
       
-      - run:
-          name: build OCSGW docker image and push image to GCR
-          command: |
-            gcloud auth configure-docker --quiet
-            TAG=${CIRCLE_SHA1:0:9}
-            cd ocsgw
-            docker build -t eu.gcr.io/pi-ostelco-dev/ocsgw:$TAG .
-            docker push eu.gcr.io/pi-ostelco-dev/ocsgw:$TAG      
+      # - run:
+      #     name: build OCSGW docker image and push image to GCR
+      #     command: |
+      #       gcloud auth configure-docker --quiet
+      #       TAG=${CIRCLE_SHA1:0:9}
+      #       cd ocsgw
+      #       docker build -t eu.gcr.io/pi-ostelco-dev/ocsgw:$TAG .
+      #       docker push eu.gcr.io/pi-ostelco-dev/ocsgw:$TAG      
             
   update-endpoints:
     docker:
