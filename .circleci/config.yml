@@ -198,7 +198,6 @@ jobs:
     docker:
     - image: praqma/gcloud-kubectl-helm:v2.8.1
       environment: 
-        GOOGLE_CREDENTIALS: ${PI_DEV_CLUSTER_CREDENTIALS}
         PROJECT: pi-ostelco-dev
         CLUSTER: pi-dev
         ZONE: europe-west1-c
@@ -209,7 +208,7 @@ jobs:
       - run:
           name: deploy prime and needed apps to the dev cluster
           command: |
-            # export TAG=${CIRCLE_SHA1:0:9}
+            export GOOGLE_CREDENTIALS=${PI_DEV_CLUSTER_CREDENTIALS}
             /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
             helm repo update
@@ -218,8 +217,7 @@ jobs:
              --set prime.env.STRIPE_API_KEY=${STRIPE_API_KEY} \
              --set prime.tag=${CIRCLE_SHA1:0:9}
              --set firebaseServiceAccount=${PANTEL_SECRETS_FILE}
-            # cd .circleci/
-            # helmsman --debug --apply -f helmsman-dev-deployment.toml
+           
 
   create-PR-to-master:
     working_directory: ~/project
