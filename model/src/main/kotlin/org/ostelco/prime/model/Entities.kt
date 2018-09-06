@@ -84,6 +84,19 @@ data class PurchaseRecord(
         val product: Product,
         val timestamp: Long) : HasId
 
+data class PurchaseRecordInfo(override val id: String,
+                              val subscriberId: String,
+                              val product: Product,
+                              val timestamp: Long,
+                              val status: String) : HasId {
+    constructor(purchaseRecord: PurchaseRecord, subscriberId: String, status: String = "success") : this(
+            purchaseRecord.id,
+            subscriberId,
+            purchaseRecord.product,
+            purchaseRecord.timestamp,
+            status)
+}
+
 data class PseudonymEntity(
         val msisdn: String,
         val pseudonym: String,

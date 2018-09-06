@@ -35,8 +35,12 @@ class AnalyticsConfig {
     lateinit var projectId: String
 
     @NotEmpty
-    @JsonProperty("topicId")
-    lateinit var topicId: String
+    @JsonProperty("dataTrafficTopicId")
+    lateinit var dataTrafficTopicId: String
+
+    @NotEmpty
+    @JsonProperty("purchaseInfoTopicId")
+    lateinit var purchaseInfoTopicId: String
 }
 
 object ConfigRegistry {

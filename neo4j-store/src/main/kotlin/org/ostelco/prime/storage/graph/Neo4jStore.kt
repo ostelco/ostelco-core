@@ -3,6 +3,7 @@ package org.ostelco.prime.storage.graph
 import arrow.core.Either
 import arrow.core.flatMap
 import org.neo4j.driver.v1.Transaction
+import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.logger
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Offer
@@ -49,6 +50,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     private val ocs: OcsAdminService by lazy { getResource<OcsAdminService>() }
     private val logger by logger()
+    private val analyticsReporter by lazy { getResource<AnalyticsService>() }
 
     //
     // Entity
