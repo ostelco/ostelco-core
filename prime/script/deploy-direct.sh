@@ -14,6 +14,8 @@ if [ ! -f ${CHECK_REPO} ]; then
     exit 1
 fi
 
+kubectl config use-context $(kubectl config get-contexts --output name | grep private-cluster)
+
 BRANCH_NAME=$(git branch | grep \* | cut -d ' ' -f2)
 echo BRANCH_NAME=${BRANCH_NAME}
 ${CHECK_REPO} ${BRANCH_NAME}

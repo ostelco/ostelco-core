@@ -273,6 +273,11 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                             }
                             // Notify OCS
                             .flatMap {
+                                //TODO: While aborting transactions, send a record with "reverted" status
+                                analyticsReporter.reportPurchaseInfo(
+                                        purchaseRecord = purchaseRecord,
+                                        subscriberId = subscriberId,
+                                        status = "success")
                                 //TODO: Handle errors (when it becomes available)
                                 ocsSubscriberService.topup(subscriberId, sku)
                                 Either.right(Tuple4(profileInfo, savedSourceId, chargeId, product))
