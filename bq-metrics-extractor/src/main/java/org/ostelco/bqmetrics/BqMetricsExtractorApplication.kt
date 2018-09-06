@@ -10,6 +10,7 @@ import io.prometheus.client.exporter.PushGateway
 import io.prometheus.client.CollectorRegistry
 import io.dropwizard.cli.Command
 import io.dropwizard.Configuration
+import io.dropwizard.cli.ConfiguredCommand
 import io.prometheus.client.Summary
 import net.sourceforge.argparse4j.inf.Namespace
 import net.sourceforge.argparse4j.inf.Subparser
@@ -33,7 +34,6 @@ class BqMetricsExtractorApplication : Application<Configuration>() {
 
     override fun initialize(bootstrap: Bootstrap<Configuration>) {
         bootstrap.addCommand(CollectAndPushMetrics())
-        bootstrapLogging()
     }
 
     override fun run(
@@ -48,37 +48,37 @@ interface MetricBuilder {
 }
 
 
-class  BigquerySample(val metricName: String, val help: String, val sql: String, val resultColumn: String) : MetricBuilder {
+class BigquerySample(val metricName: String, val help: String, val sql: String, val resultColumn: String) : MetricBuilder {
 
-    private val log:Logger = LoggerFactory.getLogger(BigquerySample::class.java)
+    private val log: Logger = LoggerFactory.getLogger(BigquerySample::class.java)
 
-    fun  countNumberOfActiveUsers(): Long {
+    fun countNumberOfActiveUsers(): Long {
         // Instantiate a client. If you don't specify credentials when constructing a client, the
         // client library will look for credentials in the environment, such as the
         // GOOGLE_APPLICATION_CREDENTIALS environment variable.
         val bigquery = BigQueryOptions.getDefaultInstance().service
         val queryConfig: QueryJobConfiguration =
-        QueryJobConfiguration.newBuilder(
-                sql.trimIndent())
-                // Use standard SQL syntax for queries.
-                // See: https://cloud.google.com/bigquery/sql-reference/
-                .setUseLegacySql(false)
-                .build();
+                QueryJobConfiguration.newBuilder(
+                        sql.trimIndent())
+                        // Use standard SQL syntax for queries.
+                        // See: https://cloud.google.com/bigquery/sql-reference/
+                        .setUseLegacySql(false)
+                        .build();
 
         // Create a job ID so that we can safely retry.
-        val  jobId: JobId = JobId . of (UUID.randomUUID().toString());
-        var  queryJob: Job = bigquery . create (JobInfo.newBuilder(queryConfig).setJobId(jobId).build());
+        val jobId: JobId = JobId.of(UUID.randomUUID().toString());
+        var queryJob: Job = bigquery.create(JobInfo.newBuilder(queryConfig).setJobId(jobId).build());
 
         // Wait for the query to complete.
         queryJob = queryJob.waitFor();
 
         // Check for errors
         if (queryJob == null) {
-            throw  RuntimeException ("Job no longer exists");
+            throw  RuntimeException("Job no longer exists");
         } else if (queryJob.getStatus().getError() != null) {
             // You can also look at queryJob.getStatus().getExecutionErrors() for all
             // errors, not just the latest one.
-            throw RuntimeException (queryJob.getStatus().getError().toString());
+            throw RuntimeException(queryJob.getStatus().getError().toString());
         }
         val result = queryJob.getQueryResults()
         if (result.totalRows != 1L) {
@@ -103,9 +103,9 @@ class  BigquerySample(val metricName: String, val help: String, val sql: String,
 /**
  * Adapter class that will push metrics to the Prometheus push gateway.
  */
-class PrometheusPusher (val pushGateway: String, val job: String){
+class PrometheusPusher(val pushGateway: String, val job: String) {
 
-    private val log:Logger = LoggerFactory.getLogger(PrometheusPusher::class.java)
+    private val log: Logger = LoggerFactory.getLogger(PrometheusPusher::class.java)
 
     val registry = CollectorRegistry()
 
@@ -118,7 +118,7 @@ class PrometheusPusher (val pushGateway: String, val job: String){
 
         // XXX Pick this up from the config file, and iterate over all the queries
         //     your heart desires.
-        val metricSources:MutableList<MetricBuilder> = mutableListOf()
+        val metricSources: MutableList<MetricBuilder> = mutableListOf()
         metricSources.add(BigquerySample(
                 "active_users",
                 "Number of active users",
@@ -138,21 +138,21 @@ class PrometheusPusher (val pushGateway: String, val job: String){
     }
 }
 
-class CollectAndPushMetrics : Command("query", "query BigQuery for a metric") {
+class CollectAndPushMetrics : ConfiguredCommand<Configuration>("query", "query BigQuery for a metric") {
+    override fun run(bootstrap: Bootstrap<Configuration>?, namespace: Namespace?, configuration: Configuration?) {
+        val pgw = namespace!!.get<String>(pushgatewayKey)
+        PrometheusPusher(pgw,
+                "bq_metrics_extractor").publishMetrics()
+    }
 
     val pushgatewayKey = "pushgateway"
 
     override fun configure(subparser: Subparser?) {
+        super.configure(subparser)
         subparser!!.addArgument("-p", "--pushgateway")
                 .dest(pushgatewayKey)
                 .type(String::class.java)
                 .required(true)
                 .help("The pushgateway to report metrics to, format is hostname:portnumber")
-    }
-
-    override fun run(bootstrap: Bootstrap<*>?, namespace: Namespace?) {
-        val pgw = namespace!!.get<String>(pushgatewayKey)
-        PrometheusPusher(pgw,
-                "bq_metrics_extractor").publishMetrics()
     }
 }
