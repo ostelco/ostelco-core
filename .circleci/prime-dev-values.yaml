@@ -131,8 +131,7 @@ disruptionBudget:
   enabled: false
   minAvailable: 1
 
-nodeSelector: 
-  env: dev2
+nodeSelector: {}
 
 tolerations: []
 
