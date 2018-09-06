@@ -97,12 +97,18 @@ data class PurchaseRecordInfo(override val id: String,
             status)
 }
 
-data class PseudonymEntity(
+data class MsisdnPseudonymEntity(
         val msisdn: String,
         val pseudonym: String,
         val start: Long,
         val end: Long)
 
-data class ActivePseudonyms(
-        val current: PseudonymEntity,
-        val next: PseudonymEntity)
+data class SubscriberIdPseudonymEntity(
+        val subscriberId: String,
+        val pseudonym: String,
+        val start: Long,
+        val end: Long)
+
+data class ActiveMsisdnPseudonyms(
+        val current: MsisdnPseudonymEntity,
+        val next: MsisdnPseudonymEntity)

@@ -23,10 +23,10 @@ import org.ostelco.prime.client.api.auth.OAuthAuthenticator
 import org.ostelco.prime.client.api.model.SubscriptionStatus
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
-import org.ostelco.prime.model.ActivePseudonyms
+import org.ostelco.prime.model.ActiveMsisdnPseudonyms
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
-import org.ostelco.prime.model.PseudonymEntity
+import org.ostelco.prime.model.MsisdnPseudonymEntity
 import org.ostelco.prime.model.PurchaseRecord
 import java.time.Instant
 import java.util.*
@@ -79,8 +79,8 @@ class SubscriptionResourceTest {
         val arg = argumentCaptor<String>()
 
         val msisdn = "4790300001"
-        val pseudonym = PseudonymEntity(msisdn, "random", 0, 1)
-        val activePseudonyms = ActivePseudonyms(pseudonym, pseudonym)
+        val pseudonym = MsisdnPseudonymEntity(msisdn, "random", 0, 1)
+        val activePseudonyms = ActiveMsisdnPseudonyms(pseudonym, pseudonym)
 
         `when`(DAO.getActivePseudonymOfMsisdnForSubscriber(arg.capture()))
                 .thenReturn(Either.right(activePseudonyms))

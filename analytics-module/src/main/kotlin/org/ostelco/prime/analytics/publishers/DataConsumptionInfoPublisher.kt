@@ -49,7 +49,7 @@ object DataConsumptionInfoPublisher : Managed {
         }
         
         val now = Instant.now().toEpochMilli()
-        val pseudonym = pseudonymizerService.getPseudonymEntityFor(msisdn, now).pseudonym
+        val pseudonym = pseudonymizerService.getMsisdnPseudonymEntityFor(msisdn, now).pseudonym
 
         val data = DataTrafficInfo.newBuilder()
                 .setMsisdn(pseudonym)

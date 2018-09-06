@@ -37,7 +37,7 @@ class PseudonymResource {
     fun getPseudonym(@NotBlank @PathParam("msisdn") msisdn: String,
                      @NotBlank @PathParam("timestamp") timestamp: String): Response {
         logger.info("GET pseudonym for Msisdn = $msisdn at timestamp = $timestamp")
-        val entity = PseudonymizerServiceSingleton.getPseudonymEntityFor(msisdn, timestamp.toLong())
+        val entity = PseudonymizerServiceSingleton.getMsisdnPseudonymEntityFor(msisdn, timestamp.toLong())
         return Response.ok(entity, MediaType.APPLICATION_JSON).build()
     }
 
@@ -51,7 +51,7 @@ class PseudonymResource {
     fun getPseudonym(@NotBlank @PathParam("msisdn") msisdn: String): Response {
         val timestamp = Instant.now().toEpochMilli()
         logger.info("GET pseudonym for Msisdn = $msisdn at current time, timestamp = $timestamp")
-        val entity = PseudonymizerServiceSingleton.getPseudonymEntityFor(msisdn, timestamp)
+        val entity = PseudonymizerServiceSingleton.getMsisdnPseudonymEntityFor(msisdn, timestamp)
         return Response.ok(entity, MediaType.APPLICATION_JSON).build()
     }
 
@@ -76,7 +76,7 @@ class PseudonymResource {
     @Path("/find/{pseudonym}")
     fun findPseudonym(@NotBlank @PathParam("pseudonym") pseudonym: String): Response {
         logger.info("Find details for pseudonym = $pseudonym")
-        return PseudonymizerServiceSingleton.findPseudonym(pseudonym = pseudonym)
+        return PseudonymizerServiceSingleton.findMsisdnPseudonym(pseudonym = pseudonym)
                 ?.let { Response.ok(it, MediaType.APPLICATION_JSON).build() }
                 ?: Response.status(Status.NOT_FOUND).build()
     }
@@ -90,7 +90,7 @@ class PseudonymResource {
     @Path("/delete/{msisdn}")
     fun deleteAllPseudonyms(@NotBlank @PathParam("msisdn") msisdn: String): Response {
         logger.info("delete all pseudonyms for Msisdn = $msisdn")
-        val count = PseudonymizerServiceSingleton.deleteAllPseudonyms(msisdn = msisdn)
+        val count = PseudonymizerServiceSingleton.deleteAllMsisdnPseudonyms(msisdn = msisdn)
         // Return a Json object with number of records deleted.
         val countMap = mapOf("count" to count)
         logger.info("deleted $count records for Msisdn = $msisdn")
@@ -106,7 +106,7 @@ class PseudonymResource {
     @Path("/export/{exportId}")
     fun exportPseudonyms(@NotBlank @PathParam("exportId") exportId: String): Response {
         logger.info("GET export all pseudonyms to the table $exportId")
-        PseudonymizerServiceSingleton.exportPseudonyms(exportId = exportId)
+        PseudonymizerServiceSingleton.exportMsisdnPseudonyms(exportId = exportId)
         return Response.ok("Started Exporting", MediaType.TEXT_PLAIN).build()
     }
 

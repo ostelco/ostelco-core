@@ -72,7 +72,7 @@ object PurchaseInfoPublisher : Managed {
     fun publish(purchaseRecord: PurchaseRecord, subscriberId: String, status: String) {
 
         val encodedSubscriberId = URLEncoder.encode(subscriberId,"UTF-8")
-        val pseudonym = pseudonymizerService.getPseudonymEntityFor(encodedSubscriberId, purchaseRecord.timestamp).pseudonym
+        val pseudonym = pseudonymizerService.getMsisdnPseudonymEntityFor(encodedSubscriberId, purchaseRecord.timestamp).pseudonym
 
         val pubsubMessage = PubsubMessage.newBuilder()
                 .setData(convertToJson(PurchaseRecordInfo(purchaseRecord, pseudonym, status)))

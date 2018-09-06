@@ -1,11 +1,11 @@
 package org.ostelco.prime.pseudonymizer
 
-import org.ostelco.prime.model.ActivePseudonyms
-import org.ostelco.prime.model.PseudonymEntity
+import org.ostelco.prime.model.ActiveMsisdnPseudonyms
+import org.ostelco.prime.model.MsisdnPseudonymEntity
 
 interface PseudonymizerService {
 
-    fun getActivePseudonymsForMsisdn(msisdn: String): ActivePseudonyms
+    fun getActivePseudonymsForMsisdn(msisdn: String): ActiveMsisdnPseudonyms
 
-    fun getPseudonymEntityFor(msisdn: String, timestamp: Long): PseudonymEntity
+    fun getMsisdnPseudonymEntityFor(msisdn: String, timestamp: Long): MsisdnPseudonymEntity
 }
