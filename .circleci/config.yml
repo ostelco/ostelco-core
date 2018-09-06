@@ -25,34 +25,22 @@ jobs:
       # Show the java version installed.
       - run: java -version
 
+      # run gradle build. Skipping neo4j tests as they fail
       - run:
           name: Build entire repo
           command: ./gradlew clean build -s -x :neo4j-store:test 
 
+      # persisting the entire project with its generated artifacts. They are needed in the build-image job below.
       - persist_to_workspace:
           root: ~/project/
           paths:
             - .    
 
-      # The following two commands are just to show which exact versions of docker and docker-compose will be used.
-      # - run: docker version
-      # - run: docker-compose version
-
-      # # Put in docker-compose up command below:
-      # # The following docker-compose command will fail without proper secrets.
-      # # The docker-compose command will also include the docker-compose.override.yaml file
+      # Copying pantel prod secret to locations where it is needed for docker compose tests.
       - run:
-          # This is needed for docker compose acceptance test
-          name: Create pantel-prod.json file using the PANTEL_SECRETS_FILE env var. 
+          name: Distribute pantel-prod.json secret from env var. 
           command: |
-            echo; echo "======> Creating pantel-prod.json file, using the env variable PANTEL_SECRETS_FILE"
-            for LOCATION in $(find . -name .gitignore  -exec grep pantel-prod.json  '{}' '+' ); do 
-              DIR_NAME=$(dirname $LOCATION)
-              echo "Creating secrets file: ${DIR_NAME}/pantel-prod.json ..."
-              echo ${PANTEL_SECRETS_FILE} | base64 -d >  ${DIR_NAME}/pantel-prod.json
-              ls -l ${DIR_NAME}/pantel-prod.json 
-            done
-            echo ''
+            scripts/distribute-pantel-secrets.sh
 
       - run:
           name: Generate self signed certs
@@ -115,23 +103,6 @@ jobs:
               echo "This means tests were not run in the previous build job."
               echo "... so, not uploading any code-coverage reports to CODACY website. "
             fi
-  
-  # merge-to-develop:
-  #   docker:
-  #     - image: alpine/git
-  #       entrypoint: /bin/sh
-  #   steps:
-  #     - checkout
-  #     - run: 
-  #         name: merging the feature branch into develop
-  #         command: |
-  #           git config --global user.email "you@example.com" # TODO: to be replaced with some CI github user
-  #           git config --global user.name "Your Name"
-  #           git checkout ${CIRCLE_BRANCH}
-  #           git checkout circleci-dev # TODO: to be replaced with "develop" later
-  #           git merge ${CIRCLE_BRANCH} 
-  #           git push origin circleci-dev # TODO: to be replaced with "develop" later
-  #           # git branch -d ${CIRCLE_BRANCH}
 
   
   # jobs for on-PR-merge-to-dev 
@@ -226,18 +197,18 @@ jobs:
 
     docker:
     - image: praqma/gcloud-kubectl-helm:v2.8.1
-
+      environment: 
+        GOOGLE_CREDENTIALS: ${PI_DEV_CLUSTER_CREDENTIALS}
+        PROJECT: pi-ostelco-dev
+        CLUSTER: pi-dev
+        ZONE: europe-west1-c
+        SERVICE_ACCOUNT: terraform-dev-cluster@pi-ostelco-dev.iam.gserviceaccount.com
+      entrypoint: /authenticate.bash
     steps:
       - checkout
       
       - run:
           name: deploy prime and needed apps to the dev cluster
-          environment: 
-            GOOGLE_CREDENTIALS: ${PI_DEV_CLUSTER_CREDENTIALS}
-            PROJECT: pi-ostelco-dev
-            CLUSTER: pi-dev
-            ZONE: europe-west1-c
-            SERVICE_ACCOUNT: terraform-dev-cluster@pi-ostelco-dev.iam.gserviceaccount.com
           command: |
             # export TAG=${CIRCLE_SHA1:0:9}
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
