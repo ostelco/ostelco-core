@@ -46,6 +46,8 @@ TODO
 * MOdify to accept reasonable parameters for location of pushgateway [Done].
 * Build a docker image. [DONE]
 * Run the docker image as a kubernetes cronjob [done]
+* Use the config.yaml for the dropwizard app to configure
+  the next metrics to be computed.
 * Make an acceptance tests that runs a roundtrip test ub
   in docker compose, based on something like this: curl http://localhost:9091/metrics | grep -i active
 * Push the first metric to production, use Kubernetes crontab
