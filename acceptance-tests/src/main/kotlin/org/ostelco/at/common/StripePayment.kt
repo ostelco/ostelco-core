@@ -34,6 +34,15 @@ object StripePayment {
         return source.id
     }
 
+    fun getCardIdForTokenId(tokenId: String) : String {
+
+        // https://stripe.com/docs/api/java#create_source
+        Stripe.apiKey = System.getenv("STRIPE_API_KEY")
+
+        val token = Token.retrieve(tokenId)
+        return token.card.id
+    }
+
     fun deleteAllCustomers() {
         // https://stripe.com/docs/api/java#create_card_token
         Stripe.apiKey = System.getenv("STRIPE_API_KEY")

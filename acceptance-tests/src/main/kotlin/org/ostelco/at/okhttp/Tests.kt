@@ -163,6 +163,33 @@ class GetProductsTest {
     }
 }
 
+class SourceTest {
+
+    @Test
+    fun `okhttp test - POST source create`() {
+
+        StripePayment.deleteAllCustomers()
+
+        val email = "purchase-${randomInt()}@test.com"
+        createProfile(name = "Test Payment Source", email = email)
+
+        val client = clientForSubject(subject = email)
+
+        val sourceId = StripePayment.createPaymentTokenId()
+
+        // Ties source with user profile both local and with Stripe
+        client.createSource(sourceId)
+
+        Thread.sleep(200)
+
+        val sources = client.listSources()
+        assert(sources.size > 0) { "Expected at least one payment source for profile $email" }
+
+        val cardId = StripePayment.getCardIdForTokenId(sourceId)
+        assertNotNull(sources.first { it.id == cardId }, "Expected card $cardId in list of payment sources for profile $email")
+    }
+}
+
 class PurchaseTest {
 
     @Test
