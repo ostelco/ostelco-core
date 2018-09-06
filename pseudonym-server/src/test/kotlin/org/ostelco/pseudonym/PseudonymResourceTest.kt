@@ -7,8 +7,8 @@ import io.dropwizard.testing.junit.ResourceTestRule
 import org.junit.ClassRule
 import org.junit.Test
 import org.mockito.Mockito.mock
-import org.ostelco.prime.model.ActiveMsisdnPseudonyms
-import org.ostelco.prime.model.MsisdnPseudonymEntity
+import org.ostelco.prime.model.ActivePseudonyms
+import org.ostelco.prime.model.PseudonymEntity
 import org.ostelco.pseudonym.resources.PseudonymResource
 import org.ostelco.pseudonym.service.PseudonymizerServiceSingleton
 import javax.ws.rs.core.Response.Status
@@ -81,7 +81,7 @@ class PseudonymResourceTest {
     @Test
     fun testGetPseudonym() {
 
-        lateinit var msisdnPseudonymEntity:MsisdnPseudonymEntity
+        lateinit var pseudonymEntity:PseudonymEntity
         run {
             val result = resources
                     ?.target("$pathForCurrent/$testMsisdn1")
@@ -91,21 +91,21 @@ class PseudonymResourceTest {
             if (result == null) return
             assertEquals(Status.OK.statusCode, result.status)
             val json = result.readEntity(String::class.java)
-            msisdnPseudonymEntity = mapper.readValue(json)
-            assertEquals(testMsisdn1, msisdnPseudonymEntity.sourceId)
+            pseudonymEntity = mapper.readValue(json)
+            assertEquals(testMsisdn1, pseudonymEntity.sourceId)
         }
 
         run {
             val result = resources
-                    ?.target("$pathForGet/$testMsisdn1/${msisdnPseudonymEntity.start}")
+                    ?.target("$pathForGet/$testMsisdn1/${pseudonymEntity.start}")
                     ?.request()
                     ?.get()
             assertNotNull(result)
             if (result == null) return
             assertEquals(Status.OK.statusCode, result.status)
             val json = result.readEntity(String::class.java)
-            val pseudonymEntity2 = mapper.readValue<MsisdnPseudonymEntity>(json)
-            assertEquals(msisdnPseudonymEntity.pseudonym, pseudonymEntity2.pseudonym)
+            val pseudonymEntity2 = mapper.readValue<PseudonymEntity>(json)
+            assertEquals(pseudonymEntity.pseudonym, pseudonymEntity2.pseudonym)
         }
     }
 
@@ -115,7 +115,7 @@ class PseudonymResourceTest {
     @Test
     fun testActivePseudonyms() {
 
-        lateinit var msisdnPseudonymEntity:MsisdnPseudonymEntity
+        lateinit var pseudonymEntity:PseudonymEntity
         run {
             val result = resources
                     ?.target("$pathForCurrent/$testMsisdn1")
@@ -125,8 +125,8 @@ class PseudonymResourceTest {
             if (result == null) return
             assertEquals(Status.OK.statusCode, result.status)
             val json = result.readEntity(String::class.java)
-            msisdnPseudonymEntity = mapper.readValue(json)
-            assertEquals(testMsisdn1, msisdnPseudonymEntity.sourceId)
+            pseudonymEntity = mapper.readValue(json)
+            assertEquals(testMsisdn1, pseudonymEntity.sourceId)
         }
 
         run {
@@ -139,13 +139,13 @@ class PseudonymResourceTest {
             assertEquals(Status.OK.statusCode, result.status)
             val json = result.readEntity(String::class.java)
             // This is how the client will recieve the output.
-            val mapOfPseudonyms: Map<String, MsisdnPseudonymEntity> = mapper.readValue(json)
+            val mapOfPseudonyms: Map<String, PseudonymEntity> = mapper.readValue(json)
             val current = mapOfPseudonyms["current"]
             val next = mapOfPseudonyms["next"]
             assertNotNull(current)
             assertNotNull(next)
             if (current != null && next != null) {
-                assertEquals(current.pseudonym, msisdnPseudonymEntity.pseudonym)
+                assertEquals(current.pseudonym, pseudonymEntity.pseudonym)
                 assertEquals(current.end + 1, next.start)
             }
         }
@@ -157,7 +157,7 @@ class PseudonymResourceTest {
     @Test
     fun testActivePseudonymUsingModel() {
 
-        lateinit var msisdnPseudonymEntity:MsisdnPseudonymEntity
+        lateinit var pseudonymEntity:PseudonymEntity
         run {
             val result = resources
                     ?.target("$pathForCurrent/$testMsisdn1")
@@ -167,8 +167,8 @@ class PseudonymResourceTest {
             if (result == null) return
             assertEquals(Status.OK.statusCode, result.status)
             val json = result.readEntity(String::class.java)
-            msisdnPseudonymEntity = mapper.readValue(json)
-            assertEquals(testMsisdn1, msisdnPseudonymEntity.sourceId)
+            pseudonymEntity = mapper.readValue(json)
+            assertEquals(testMsisdn1, pseudonymEntity.sourceId)
         }
 
         run {
@@ -180,8 +180,8 @@ class PseudonymResourceTest {
             if (result == null) return
             assertEquals(Status.OK.statusCode, result.status)
             val json = result.readEntity(String::class.java)
-            val active = mapper.readValue<ActiveMsisdnPseudonyms>(json)
-            assertEquals(active.current.pseudonym, msisdnPseudonymEntity.pseudonym)
+            val active = mapper.readValue<ActivePseudonyms>(json)
+            assertEquals(active.current.pseudonym, pseudonymEntity.pseudonym)
             assertEquals(active.current.end + 1, active.next.start)
         }
     }
@@ -192,7 +192,7 @@ class PseudonymResourceTest {
     @Test
     fun testFindPseudonym() {
 
-        lateinit var msisdnPseudonymEntity:MsisdnPseudonymEntity
+        lateinit var pseudonymEntity:PseudonymEntity
         run {
             val result = resources
                     ?.target("$pathForCurrent/$testMsisdn1")
@@ -202,20 +202,20 @@ class PseudonymResourceTest {
             if (result == null) return
             assertEquals(Status.OK.statusCode, result.status)
             val json = result.readEntity(String::class.java)
-            msisdnPseudonymEntity = mapper.readValue(json)
-            assertEquals(testMsisdn1, msisdnPseudonymEntity.sourceId)
+            pseudonymEntity = mapper.readValue(json)
+            assertEquals(testMsisdn1, pseudonymEntity.sourceId)
         }
 
         run {
             val result = resources
-                    ?.target("$pathForFind/${msisdnPseudonymEntity.pseudonym}")
+                    ?.target("$pathForFind/${pseudonymEntity.pseudonym}")
                     ?.request()
                     ?.get()
             assertNotNull(result)
             if (result == null) return
             assertEquals(Status.OK.statusCode, result.status)
             val json = result.readEntity(String::class.java)
-            val pseudonymEntity2 = mapper.readValue<MsisdnPseudonymEntity>(json)
+            val pseudonymEntity2 = mapper.readValue<PseudonymEntity>(json)
             assertEquals(testMsisdn1, pseudonymEntity2.sourceId)
         }
     }
@@ -225,7 +225,7 @@ class PseudonymResourceTest {
      */
     @Test
     fun testDeletePseudonym() {
-        lateinit var msisdnPseudonymEntity:MsisdnPseudonymEntity
+        lateinit var pseudonymEntity:PseudonymEntity
         run {
             val result = resources
                     ?.target("$pathForCurrent/$testMsisdn2")
@@ -235,8 +235,8 @@ class PseudonymResourceTest {
             if (result == null) return
             assertEquals(Status.OK.statusCode, result.status)
             val json = result.readEntity(String::class.java)
-            msisdnPseudonymEntity = mapper.readValue(json)
-            assertEquals(testMsisdn2, msisdnPseudonymEntity.sourceId)
+            pseudonymEntity = mapper.readValue(json)
+            assertEquals(testMsisdn2, pseudonymEntity.sourceId)
         }
 
         run {
@@ -255,7 +255,7 @@ class PseudonymResourceTest {
 
         run {
             val result = resources
-                    ?.target("$pathForFind/${msisdnPseudonymEntity.pseudonym}")
+                    ?.target("$pathForFind/${pseudonymEntity.pseudonym}")
                     ?.request()
                     ?.get()
             assertNotNull(result)

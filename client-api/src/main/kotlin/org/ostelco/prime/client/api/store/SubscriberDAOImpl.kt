@@ -17,7 +17,7 @@ import org.ostelco.prime.core.ForbiddenError
 import org.ostelco.prime.core.InsuffientStorageError
 import org.ostelco.prime.core.NotFoundError
 import org.ostelco.prime.logger
-import org.ostelco.prime.model.ActiveMsisdnPseudonyms
+import org.ostelco.prime.model.ActivePseudonyms
 import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
@@ -144,7 +144,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         }
     }
 
-    override fun getActivePseudonymOfMsisdnForSubscriber(subscriberId: String): Either<ApiError, ActiveMsisdnPseudonyms> {
+    override fun getActivePseudonymOfMsisdnForSubscriber(subscriberId: String): Either<ApiError, ActivePseudonyms> {
         return storage.getMsisdn(subscriberId)
                 .mapLeft { NotFoundError("Failed to msisdn for user. ${it.message}") }
                 .map { msisdn -> pseudonymizer.getActivePseudonymsForMsisdn(msisdn) }

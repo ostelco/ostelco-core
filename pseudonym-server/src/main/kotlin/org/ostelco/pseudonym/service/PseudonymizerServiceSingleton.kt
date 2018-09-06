@@ -15,8 +15,8 @@ import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import io.dropwizard.setup.Environment
 import org.ostelco.prime.logger
-import org.ostelco.prime.model.ActiveMsisdnPseudonyms
-import org.ostelco.prime.model.MsisdnPseudonymEntity
+import org.ostelco.prime.model.ActivePseudonyms
+import org.ostelco.prime.model.PseudonymEntity
 import org.ostelco.prime.pseudonymizer.PseudonymizerService
 import org.ostelco.pseudonym.ConfigRegistry
 import org.ostelco.pseudonym.ExportTaskKind
@@ -69,7 +69,7 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
 
     private val executor = Executors.newFixedThreadPool(3)
 
-    val msisdnPseudonymCache: Cache<String, MsisdnPseudonymEntity> = CacheBuilder.newBuilder()
+    val PSEUDONYM_CACHE: Cache<String, PseudonymEntity> = CacheBuilder.newBuilder()
             .maximumSize(5000)
             .build()
 
@@ -85,24 +85,24 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
         }
     }
 
-    override fun getActivePseudonymsForMsisdn(msisdn: String): ActiveMsisdnPseudonyms {
+    override fun getActivePseudonymsForMsisdn(msisdn: String): ActivePseudonyms {
         val currentTimestamp = Instant.now().toEpochMilli()
         val nextTimestamp = dateBounds.getNextPeriodStart(currentTimestamp)
         logger.info("GET pseudonym for Msisdn = $msisdn at timestamps = $currentTimestamp & $nextTimestamp")
         val current = getMsisdnPseudonymEntityFor(msisdn, currentTimestamp)
         val next = getMsisdnPseudonymEntityFor(msisdn, nextTimestamp)
-        return ActiveMsisdnPseudonyms(current, next)
+        return ActivePseudonyms(current, next)
     }
 
-    override fun getMsisdnPseudonymEntityFor(msisdn: String, timestamp: Long): MsisdnPseudonymEntity {
+    override fun getMsisdnPseudonymEntityFor(msisdn: String, timestamp: Long): PseudonymEntity {
         val (bounds, keyPrefix) = dateBounds.getBoundsNKeyPrefix(msisdn, timestamp)
         // Retrieves the element from cache.
-        return msisdnPseudonymCache.get(keyPrefix) {
+        return PSEUDONYM_CACHE.get(keyPrefix) {
             getMsisdnPseudonymEntity(keyPrefix) ?: createMsisdnPseudonym(msisdn, bounds, keyPrefix)
         }
     }
 
-    fun findMsisdnPseudonym(pseudonym: String): MsisdnPseudonymEntity? {
+    fun findMsisdnPseudonym(pseudonym: String): PseudonymEntity? {
         val query = Query.newEntityQueryBuilder()
                 .setKind(MsisdnPseudonymEntityKind)
                 .setFilter(PropertyFilter.eq(pseudonymPropertyName, pseudonym))
@@ -207,7 +207,7 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
         return datastore.newKeyFactory().setKind(MsisdnPseudonymEntityKind).newKey(keyPrefix)
     }
 
-    private fun getMsisdnPseudonymEntity(keyPrefix: String): MsisdnPseudonymEntity? {
+    private fun getMsisdnPseudonymEntity(keyPrefix: String): PseudonymEntity? {
         val pseudonymKey = getMsisdnPseudonymKey(keyPrefix)
         val value = datastore.get(pseudonymKey)
         if (value != null) {
@@ -217,9 +217,9 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
         return null
     }
 
-    private fun createMsisdnPseudonym(msisdn: String, bounds: Bounds, keyPrefix: String): MsisdnPseudonymEntity {
+    private fun createMsisdnPseudonym(msisdn: String, bounds: Bounds, keyPrefix: String): PseudonymEntity {
         val uuid = UUID.randomUUID().toString()
-        var entity = MsisdnPseudonymEntity(msisdn, uuid, bounds.start, bounds.end)
+        var entity = PseudonymEntity(msisdn, uuid, bounds.start, bounds.end)
         val pseudonymKey = getMsisdnPseudonymKey(keyPrefix)
 
         val transaction = datastore.newTransaction()
@@ -248,8 +248,8 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
         return entity
     }
 
-    private fun convertToMsisdnPseudonymEntity(entity: Entity): MsisdnPseudonymEntity {
-        return MsisdnPseudonymEntity(
+    private fun convertToMsisdnPseudonymEntity(entity: Entity): PseudonymEntity {
+        return PseudonymEntity(
                 entity.getString(msisdnPropertyName),
                 entity.getString(pseudonymPropertyName),
                 entity.getLong(startPropertyName),
