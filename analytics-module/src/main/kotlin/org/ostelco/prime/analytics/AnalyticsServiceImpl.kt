@@ -2,7 +2,9 @@ package org.ostelco.prime.analytics
 
 import org.ostelco.prime.analytics.metrics.CustomMetricsRegistry
 import org.ostelco.prime.analytics.publishers.DataConsumptionInfoPublisher
+import org.ostelco.prime.analytics.publishers.PurchaseInfoPublisher
 import org.ostelco.prime.logger
+import org.ostelco.prime.model.PurchaseRecord
 
 class AnalyticsServiceImpl : AnalyticsService {
 
@@ -15,5 +17,9 @@ class AnalyticsServiceImpl : AnalyticsService {
 
     override fun reportMetric(primeMetric: PrimeMetric, value: Long) {
         CustomMetricsRegistry.updateMetricValue(primeMetric, value)
+    }
+
+    override fun reportPurchaseInfo(purchaseRecord: PurchaseRecord, subscriberId: String, status: String) {
+        PurchaseInfoPublisher.publish(purchaseRecord, subscriberId, status)
     }
 }

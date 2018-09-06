@@ -21,7 +21,6 @@ Mono Repository for core protocols and services around a OCS/BSS for packet data
  * [diameter-stack](./diameter-stack/README.md)
  * [diameter-test](./diameter-test/README.md)
  * [exporter](./exporter/README.md)
- * [ext-pgw](./ext-pgw/README.md)
  * [ocs-api](./ocs-api/README.md)
  * [ocsgw](./ocsgw/README.md)
  * [ostelco-lib](./ostelco-lib/README.md)

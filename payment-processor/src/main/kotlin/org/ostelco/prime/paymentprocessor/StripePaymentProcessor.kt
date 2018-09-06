@@ -19,7 +19,7 @@ class StripePaymentProcessor : PaymentProcessor {
     private val LOG by logger()
 
     override fun getSavedSources(customerId: String): Either<ApiError, List<SourceInfo>> =
-            either (NotFoundError("Failed to get sources for customer ${customerId}")) {
+            either (NotFoundError("Failed to get sources for customer $customerId")) {
                 val sources = mutableListOf<SourceInfo>()
                 val customer = Customer.retrieve(customerId)
                 customer.sources.data.forEach {
@@ -29,14 +29,14 @@ class StripePaymentProcessor : PaymentProcessor {
             }
 
     override fun createPaymentProfile(userEmail: String): Either<ApiError, ProfileInfo> =
-            either(ForbiddenError("Failed to create profile for user ${userEmail}")) {
+            either(ForbiddenError("Failed to create profile for user $userEmail")) {
                 val customerParams = HashMap<String, Any>()
                 customerParams.put("email", userEmail)
                 ProfileInfo(Customer.create(customerParams).id)
             }
 
     override fun createPlan(productId: String, amount: Int, currency: String, interval: PaymentProcessor.Interval): Either<ApiError, PlanInfo> =
-            either(ForbiddenError("Failed to create plan with product id ${productId} amount ${amount} currency ${currency} interval ${interval.value}")) {
+            either(ForbiddenError("Failed to create plan with product id $productId amount $amount currency $currency interval ${interval.value}")) {
                 val planParams = HashMap<String, Any>()
                 planParams["amount"] = amount
                 planParams["interval"] = interval.value
@@ -46,13 +46,13 @@ class StripePaymentProcessor : PaymentProcessor {
             }
 
     override fun removePlan(planId: String): Either<ApiError, PlanInfo> =
-            either(NotFoundError("Failed to delete plan ${planId}")) {
+            either(NotFoundError("Failed to delete plan $planId")) {
                 val plan = Plan.retrieve(planId)
                 PlanInfo(plan.delete().id)
             }
 
     override fun createProduct(sku: String): Either<ApiError, ProductInfo> =
-            either(ForbiddenError("Failed to create product with sku ${sku}")) {
+            either(ForbiddenError("Failed to create product with sku $sku")) {
                 val productParams = HashMap<String, Any>()
                 productParams["name"] = sku
                 productParams["type"] = "service"
@@ -60,13 +60,13 @@ class StripePaymentProcessor : PaymentProcessor {
             }
 
     override fun removeProduct(productId: String): Either<ApiError, ProductInfo> =
-            either(NotFoundError("Failed to delete product ${productId}")) {
+            either(NotFoundError("Failed to delete product $productId")) {
                 val product = Product.retrieve(productId)
                 ProductInfo(product.delete().id)
             }
 
     override fun addSource(customerId: String, sourceId: String): Either<ApiError, SourceInfo> =
-            either(ForbiddenError("Failed to add source ${sourceId} to customer ${customerId}")) {
+            either(ForbiddenError("Failed to add source $sourceId to customer $customerId")) {
                 val customer = Customer.retrieve(customerId)
                 val params = HashMap<String, Any>()
                 params["source"] = sourceId
@@ -74,7 +74,7 @@ class StripePaymentProcessor : PaymentProcessor {
             }
 
     override fun setDefaultSource(customerId: String, sourceId: String): Either<ApiError, SourceInfo> =
-            either(ForbiddenError("Failed to set default source ${sourceId} for customer ${customerId}")) {
+            either(ForbiddenError("Failed to set default source $sourceId for customer $customerId")) {
                 val customer = Customer.retrieve(customerId)
                 val updateParams = HashMap<String, Any>()
                 updateParams.put("default_source", sourceId)
@@ -83,18 +83,18 @@ class StripePaymentProcessor : PaymentProcessor {
             }
 
     override fun getDefaultSource(customerId: String): Either<ApiError, SourceInfo> =
-            either(NotFoundError( "Failed to get default source for customer ${customerId}")) {
+            either(NotFoundError( "Failed to get default source for customer $customerId")) {
                 SourceInfo(Customer.retrieve(customerId).defaultSource)
             }
 
     override fun deletePaymentProfile(customerId: String): Either<ApiError, ProfileInfo> =
-            either(NotFoundError("Failed to delete customer ${customerId}")) {
+            either(NotFoundError("Failed to delete customer $customerId")) {
                 val customer = Customer.retrieve(customerId)
                 ProfileInfo(customer.delete().id)
             }
 
     override fun subscribeToPlan(planId: String, customerId: String): Either<ApiError, SubscriptionInfo> =
-            either(ForbiddenError("Failed to subscribe customer ${customerId} to plan ${planId}")) {
+            either(ForbiddenError("Failed to subscribe customer $customerId to plan $planId")) {
                 val item = HashMap<String, Any>()
                 item["plan"] = planId
 
@@ -109,7 +109,7 @@ class StripePaymentProcessor : PaymentProcessor {
             }
 
     override fun cancelSubscription(subscriptionId: String, atIntervalEnd: Boolean): Either<ApiError, SubscriptionInfo> =
-            either(ForbiddenError("Failed to unsubscribe subscription Id : ${subscriptionId} atIntervalEnd ${atIntervalEnd}")) {
+            either(ForbiddenError("Failed to unsubscribe subscription Id : $subscriptionId atIntervalEnd $atIntervalEnd")) {
                 val subscription = Subscription.retrieve(subscriptionId)
                 val subscriptionParams = HashMap<String, Any>()
                 subscriptionParams["at_period_end"] = atIntervalEnd
@@ -162,7 +162,7 @@ class StripePaymentProcessor : PaymentProcessor {
     }
 
     override fun removeSource(customerId: String, sourceId: String): Either<ApiError, String> =
-            either(ForbiddenError("Failed to remove source ${sourceId} from customer ${customerId}")) {
+            either(ForbiddenError("Failed to remove source $sourceId from customer $customerId")) {
                 Customer.retrieve(customerId).sources.retrieve(sourceId).delete().id
             }
 

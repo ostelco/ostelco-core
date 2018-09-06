@@ -7,7 +7,7 @@ if [ ! -f prime/script/deploy.sh ]; then
     exit 1
 fi
 
-# TODO vihang: check if the kubectl config points to dev cluster
+kubectl config use-context $(kubectl config get-contexts --output name | grep dev-cluster)
 
 PROJECT_ID="$(gcloud config get-value project -q)"
 PRIME_VERSION="$(gradle prime:properties -q | grep "version:" | awk '{print $2}' | tr -d '[:space:]')"
