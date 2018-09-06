@@ -116,11 +116,12 @@ jobs:
       - run:
           name: Pulling Gradle cache
           command: |
+            sudo rm -f /etc/boto.cfg # needed to fix gsutil issue in circleci https://github.com/travis-ci/travis-ci/issues/7940
             gcloud config set project pi-ostelco-dev
             echo $GOOGLE_GCR_CREDENTIALS > ${HOME}/gcloud-service-key.json
             gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
-            gsutil cp gs://pi-ostelco-core-gradle-cache/caches.tar.gz /root/in_zip/
-            tar -xzvf /root/in_zip/caches.tar.gz -C /root/.gradle/caches/ .
+            # sudo gsutil cp gs://pi-ostelco-core-gradle-cache/caches.tar.gz /root/in_zip/caches.tar.gz
+            # sudo tar -xzvf /root/in_zip/caches.tar.gz -C /root/.gradle/caches/ .
       - run:
           name: Gradle Build Prime
           command:  ./gradlew clean prime:build  -x test -s
@@ -131,10 +132,10 @@ jobs:
       - run:
           name: Push Gradle cache
           command: |
-            rm -f /root/.gradle/caches/modules-2/modules-2.lock
-            rm -fr /root/.gradle/caches/*/plugin-resolution/
-            tar -czvf  /root/out_zip/caches.tar.gz -C  /root/.gradle/caches .
-            gsutil cp  /root/out_zip/caches.tar.gz gs://pi-ostelco-core-gradle-cache
+            sudo rm -f /root/.gradle/caches/modules-2/modules-2.lock
+            sudo rm -fr /root/.gradle/caches/*/plugin-resolution/
+            sudo tar -czvf  /root/out_zip/caches.tar.gz -C  /root/.gradle/caches .
+            sudo gsutil cp  /root/out_zip/caches.tar.gz gs://pi-ostelco-core-gradle-cache
       
       
       - persist_to_workspace:
