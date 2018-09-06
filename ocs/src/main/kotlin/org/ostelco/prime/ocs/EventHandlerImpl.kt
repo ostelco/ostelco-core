@@ -51,7 +51,7 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
 
     private fun logEventProcessing(msg: String, event: OcsEvent) {
         val logString = """
-            ${msg}
+            $msg
             Msisdn: ${event.msisdn}
             Requested bytes: ${event.requestedBucketBytes}
             Used bytes: ${event.usedBucketBytes}
