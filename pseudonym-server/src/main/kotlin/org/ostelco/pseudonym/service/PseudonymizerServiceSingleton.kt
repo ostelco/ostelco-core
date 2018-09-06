@@ -69,7 +69,7 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
 
     private val executor = Executors.newFixedThreadPool(3)
 
-    val PSEUDONYM_CACHE: Cache<String, PseudonymEntity> = CacheBuilder.newBuilder()
+    val pseudonymCache: Cache<String, PseudonymEntity> = CacheBuilder.newBuilder()
             .maximumSize(5000)
             .build()
 
@@ -97,7 +97,7 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
     override fun getMsisdnPseudonymEntityFor(msisdn: String, timestamp: Long): PseudonymEntity {
         val (bounds, keyPrefix) = dateBounds.getBoundsNKeyPrefix(msisdn, timestamp)
         // Retrieves the element from cache.
-        return PSEUDONYM_CACHE.get(keyPrefix) {
+        return pseudonymCache.get(keyPrefix) {
             getMsisdnPseudonymEntity(keyPrefix) ?: createMsisdnPseudonym(msisdn, bounds, keyPrefix)
         }
     }
