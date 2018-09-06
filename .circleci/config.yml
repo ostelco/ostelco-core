@@ -215,7 +215,7 @@ jobs:
             helm upgrade prime ostelco/prime --install --tiller-namespace dev --namespace dev \
              -f .circleci/prime-dev-values.yaml \
              --set prime.env.STRIPE_API_KEY=${STRIPE_API_KEY} \
-             --set prime.tag=${CIRCLE_SHA1:0:9}
+             --set prime.tag=${CIRCLE_SHA1:0:9} \
              --set firebaseServiceAccount=${PANTEL_SECRETS_FILE}
            
 
