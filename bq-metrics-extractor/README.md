@@ -53,4 +53,3 @@ TODO
 * Make command to run metric every N seconds.
 * Make it testable to send send metrics to pushgateway.
 * Extend to more metrics.
-kubectl apply -f cronjob/config.yaml

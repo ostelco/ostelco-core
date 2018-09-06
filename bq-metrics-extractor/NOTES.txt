@@ -1,8 +1,10 @@
 
 gcloud container clusters get-credentials dev-cluster --zone europe-west1-b --project pantel-2decb
-  609  gcloud components update
-  610  gradle build
-  611  docker build .
-  612  gcloud auth configure-docker
-  615  docker tag bc7a5b932f34 eu.gcr.io/pantel-2decb/bq-metrics-extractor
-  616  docker push eu.gcr.io/pantel-2decb/bq-metrics-extractor
+gcloud components update
+gradle build
+docker build .
+gcloud auth configure-docker
+docker tag bc7a5b932f34 eu.gcr.io/pantel-2decb/bq-metrics-extractor
+docker push eu.gcr.io/pantel-2decb/bq-metrics-extractor
+kubectl apply -f cronjob/config.yaml
+kubectl describe cronjob bq-metrics-extractor
