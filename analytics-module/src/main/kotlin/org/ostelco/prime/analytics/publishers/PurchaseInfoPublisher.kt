@@ -14,7 +14,10 @@ import org.ostelco.prime.analytics.ConfigRegistry
 import org.ostelco.prime.logger
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.PurchaseRecordInfo
+import org.ostelco.prime.module.getResource
+import org.ostelco.prime.pseudonymizer.PseudonymizerService
 import java.io.IOException
+import java.net.URLEncoder
 
 
 /**
@@ -23,6 +26,8 @@ import java.io.IOException
 object PurchaseInfoPublisher : Managed {
 
     private val logger by logger()
+
+    private val pseudonymizerService by lazy { getResource<PseudonymizerService>() }
 
     private var gson: Gson = createGson()
 
@@ -66,8 +71,11 @@ object PurchaseInfoPublisher : Managed {
 
     fun publish(purchaseRecord: PurchaseRecord, subscriberId: String, status: String) {
 
+        val encodedSubscriberId = URLEncoder.encode(subscriberId,"UTF-8")
+        val pseudonym = pseudonymizerService.getPseudonymEntityFor(encodedSubscriberId, purchaseRecord.timestamp).pseudonym
+
         val pubsubMessage = PubsubMessage.newBuilder()
-                .setData(convertToJson(PurchaseRecordInfo(purchaseRecord, subscriberId, status)))
+                .setData(convertToJson(PurchaseRecordInfo(purchaseRecord, pseudonym, status)))
                 .build()
 
         //schedule a message to be published, messages are automatically batched
