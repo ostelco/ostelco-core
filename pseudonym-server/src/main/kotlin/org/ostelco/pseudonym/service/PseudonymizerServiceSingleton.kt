@@ -18,17 +18,8 @@ import org.ostelco.prime.logger
 import org.ostelco.prime.model.ActivePseudonyms
 import org.ostelco.prime.model.PseudonymEntity
 import org.ostelco.prime.pseudonymizer.PseudonymizerService
-import org.ostelco.pseudonym.ConfigRegistry
-import org.ostelco.pseudonym.ExportTaskKind
-import org.ostelco.pseudonym.MsisdnPseudonymEntityKind
-import org.ostelco.pseudonym.endPropertyName
-import org.ostelco.pseudonym.errorPropertyName
-import org.ostelco.pseudonym.exportIdPropertyName
-import org.ostelco.pseudonym.msisdnPropertyName
-import org.ostelco.pseudonym.pseudonymPropertyName
+import org.ostelco.pseudonym.*
 import org.ostelco.pseudonym.resources.ExportTask
-import org.ostelco.pseudonym.startPropertyName
-import org.ostelco.pseudonym.statusPropertyName
 import org.ostelco.pseudonym.utils.WeeklyBounds
 import java.time.Instant
 import java.util.*
@@ -68,9 +59,13 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
     private val dateBounds: DateBounds = WeeklyBounds()
 
     private val msisdnPseudonymiser: Pseudonymizer = Pseudonymizer(MsisdnPseudonymEntityKind, msisdnPropertyName)
+    private val subscriberIdPseudonymiser: Pseudonymizer = Pseudonymizer(SubscriberIdPseudonymEntityKind, subscriberIdPropertyName)
     private val executor = Executors.newFixedThreadPool(3)
 
-    val pseudonymCache: Cache<String, PseudonymEntity> = CacheBuilder.newBuilder()
+    val msisdnPseudonymCache: Cache<String, PseudonymEntity> = CacheBuilder.newBuilder()
+            .maximumSize(5000)
+            .build()
+    val subscriberIdPseudonymCache: Cache<String, PseudonymEntity> = CacheBuilder.newBuilder()
             .maximumSize(5000)
             .build()
 
@@ -85,22 +80,33 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
             null
         }
         msisdnPseudonymiser.init(datastore, bigQuery, dateBounds)
+        subscriberIdPseudonymiser.init(datastore, bigQuery, dateBounds)
     }
 
     override fun getActivePseudonymsForMsisdn(msisdn: String): ActivePseudonyms {
         val currentTimestamp = Instant.now().toEpochMilli()
         val nextTimestamp = dateBounds.getNextPeriodStart(currentTimestamp)
         logger.info("GET pseudonym for Msisdn = $msisdn at timestamps = $currentTimestamp & $nextTimestamp")
-        val current = getMsisdnPseudonymEntityFor(msisdn, currentTimestamp)
-        val next = getMsisdnPseudonymEntityFor(msisdn, nextTimestamp)
+        val current = getMsisdnPseudonym(msisdn, currentTimestamp)
+        val next = getMsisdnPseudonym(msisdn, nextTimestamp)
         return ActivePseudonyms(current, next)
     }
 
-    override fun getMsisdnPseudonymEntityFor(msisdn: String, timestamp: Long): PseudonymEntity {
+    override fun getMsisdnPseudonym(msisdn: String, timestamp: Long): PseudonymEntity {
         val (bounds, keyPrefix) = dateBounds.getBoundsNKeyPrefix(msisdn, timestamp)
         // Retrieves the element from cache.
-        return pseudonymCache.get(keyPrefix) {
-            msisdnPseudonymiser.getPseudonymEntity(keyPrefix) ?: msisdnPseudonymiser.createPseudonym(msisdn, bounds, keyPrefix)
+        return msisdnPseudonymCache.get(keyPrefix) {
+            msisdnPseudonymiser.getPseudonymEntity(keyPrefix)
+                    ?: msisdnPseudonymiser.createPseudonym(msisdn, bounds, keyPrefix)
+        }
+    }
+
+    override fun getSubscriberIdPseudonym(subscriberId: String, timestamp: Long): PseudonymEntity {
+        val (bounds, keyPrefix) = dateBounds.getBoundsNKeyPrefix(subscriberId, timestamp)
+        // Retrieves the element from cache.
+        return subscriberIdPseudonymCache.get(keyPrefix) {
+            subscriberIdPseudonymiser.getPseudonymEntity(keyPrefix)
+                    ?: subscriberIdPseudonymiser.createPseudonym(subscriberId, bounds, keyPrefix)
         }
     }
 

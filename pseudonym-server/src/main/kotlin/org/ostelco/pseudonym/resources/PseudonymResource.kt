@@ -37,7 +37,7 @@ class PseudonymResource {
     fun getPseudonym(@NotBlank @PathParam("msisdn") msisdn: String,
                      @NotBlank @PathParam("timestamp") timestamp: String): Response {
         logger.info("GET pseudonym for Msisdn = $msisdn at timestamp = $timestamp")
-        val entity = PseudonymizerServiceSingleton.getMsisdnPseudonymEntityFor(msisdn, timestamp.toLong())
+        val entity = PseudonymizerServiceSingleton.getMsisdnPseudonym(msisdn, timestamp.toLong())
         return Response.ok(entity, MediaType.APPLICATION_JSON).build()
     }
 
@@ -51,7 +51,7 @@ class PseudonymResource {
     fun getPseudonym(@NotBlank @PathParam("msisdn") msisdn: String): Response {
         val timestamp = Instant.now().toEpochMilli()
         logger.info("GET pseudonym for Msisdn = $msisdn at current time, timestamp = $timestamp")
-        val entity = PseudonymizerServiceSingleton.getMsisdnPseudonymEntityFor(msisdn, timestamp)
+        val entity = PseudonymizerServiceSingleton.getMsisdnPseudonym(msisdn, timestamp)
         return Response.ok(entity, MediaType.APPLICATION_JSON).build()
     }
 
