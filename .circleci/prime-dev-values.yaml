@@ -56,8 +56,8 @@ ocsEsp:
   secrets: 
     - secretName: ocs-ostelco-ssl
       containerMountPath: /etc/nginx/ssl  
-    - secretName: esp-sa-creds
-      containerMountPath: /etc/nginx/creds  
+    # - secretName: esp-sa-creds
+    #   containerMountPath: /etc/nginx/creds  
 
 apiEsp: 
   enabled: true
@@ -69,8 +69,8 @@ apiEsp:
   secrets: 
     - secretName: api-ostelco-ssl
       containerMountPath: /etc/nginx/ssl 
-    - secretName: esp-sa-creds
-      containerMountPath: /etc/nginx/creds  
+    # - secretName: esp-sa-creds
+    #   containerMountPath: /etc/nginx/creds  
 
 metricsEsp:
   enabled: true
@@ -82,8 +82,8 @@ metricsEsp:
   secrets: 
     - secretName: metrics-ostelco-ssl
       containerMountPath: /etc/nginx/ssl 
-    - secretName: esp-sa-creds
-      containerMountPath: /etc/nginx/creds    
+    # - secretName: esp-sa-creds
+    #   containerMountPath: /etc/nginx/creds    
 
 services:
   prime:
