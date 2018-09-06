@@ -3,7 +3,6 @@ package org.ostelco.prime.analytics
 import org.ostelco.prime.analytics.MetricType.COUNTER
 import org.ostelco.prime.analytics.MetricType.GAUGE
 import org.ostelco.prime.model.PurchaseRecord
-import org.ostelco.prime.model.Subscriber
 
 interface AnalyticsService {
     fun reportTrafficInfo(msisdn: String, usedBytes: Long, bundleBytes: Long)
