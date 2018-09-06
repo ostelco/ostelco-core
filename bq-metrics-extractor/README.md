@@ -44,9 +44,13 @@ TODO
 * Make a sensible metric encodedin SQL, read it from BQ and push it to pushgateway. [Done]
 * Test that this works all the way in docker compose [Done]
 * MOdify to accept reasonable parameters for location of pushgateway [Done].
-* Build a docker image.
+* Build a docker image. [DONE]
+* Run the docker image as a kubernetes cronjob [done]
+* Make an acceptance tests that runs a roundtrip test ub
+  in docker compose, based on something like this: curl http://localhost:9091/metrics | grep -i active
 * Push the first metric to production, use Kubernetes crontab
   to ensure periodic execution.
 * Make command to run metric every N seconds.
 * Make it testable to send send metrics to pushgateway.
 * Extend to more metrics.
+kubectl apply -f cronjob/config.yaml
