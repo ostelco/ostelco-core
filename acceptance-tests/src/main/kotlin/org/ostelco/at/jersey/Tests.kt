@@ -12,6 +12,7 @@ import org.ostelco.prime.client.model.ActivePseudonyms
 import org.ostelco.prime.client.model.ApplicationToken
 import org.ostelco.prime.client.model.Consent
 import org.ostelco.prime.client.model.PaymentSource
+import org.ostelco.prime.client.model.PaymentSourceList
 import org.ostelco.prime.client.model.Person
 import org.ostelco.prime.client.model.Price
 import org.ostelco.prime.client.model.Product
@@ -225,6 +226,38 @@ class GetProductsTest {
     }
 }
 
+class SourceTest {
+
+    @Test
+    fun `jersey test - POST source create`() {
+
+        StripePayment.deleteAllCustomers()
+        Firebase.deleteAllPaymentCustomers()
+
+        val email = "purchase-${randomInt()}@test.com"
+        createProfile(name = "Test Payment Source", email = email)
+
+        val sourceId = StripePayment.createPaymentTokenId()
+
+        // Ties source with user profile both local and with Stripe
+        post<PaymentSource> {
+            path = "/paymentSources"
+            subscriberId = email
+        }
+
+        Thread.sleep(200)
+
+        val sources: PaymentSourceList = get {
+            path = "/paymentSources"
+            subscriberId = email
+        }
+        assert(sources.isNotEmpty()) { "Expected at least one payment source for profile $email" }
+
+        val cardId = StripePayment.getCardIdForTokenId(sourceId)
+        assertNotNull(sources.first { it.id == cardId }, "Expected card $cardId in list of payment sources for profile $email")
+    }
+}
+
 class PurchaseTest {
 
     @Test
@@ -248,7 +281,7 @@ class PurchaseTest {
         post<String> {
             path = "/products/$productSku/purchase"
             subscriberId = email
-            queryParams = mapOf( "sourceId" to sourceId)
+            queryParams = mapOf("sourceId" to sourceId)
         }
 
         Thread.sleep(100) // wait for 100 ms for balance to be updated in db
@@ -276,13 +309,14 @@ class PurchaseTest {
     fun `jersey test - POST products purchase using default source`() {
 
         StripePayment.deleteAllCustomers()
+        Firebase.deleteAllPaymentCustomers()
 
         val email = "purchase-${randomInt()}@test.com"
         createProfile(name = "Test Purchase User with Default Payment Source", email = email)
 
         val sourceId = StripePayment.createPaymentTokenId()
 
-        val paymentSource:PaymentSource = post {
+        val paymentSource: PaymentSource = post {
             path = "/paymentSources"
             subscriberId = email
             queryParams = mapOf("sourceId" to sourceId)
