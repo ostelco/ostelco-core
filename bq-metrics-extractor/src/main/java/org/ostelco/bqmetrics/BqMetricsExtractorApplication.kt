@@ -1,26 +1,20 @@
 package org.ostelco.bqmetrics
 
 
-import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.cloud.bigquery.*
 import io.dropwizard.Application
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 import io.prometheus.client.exporter.PushGateway
 import io.prometheus.client.CollectorRegistry
-import io.dropwizard.cli.Command
 import io.dropwizard.Configuration
 import io.dropwizard.cli.ConfiguredCommand
 import io.prometheus.client.Summary
 import net.sourceforge.argparse4j.inf.Namespace
 import net.sourceforge.argparse4j.inf.Subparser
-import org.jetbrains.annotations.NotNull
 import org.slf4j.LoggerFactory
 import java.util.*
-import javax.validation.Valid
-import net.sourceforge.argparse4j.impl.Arguments.help
 import org.slf4j.Logger
-import java.io.File
 
 
 fun main(args: Array<String>) {
@@ -48,11 +42,11 @@ interface MetricBuilder {
 }
 
 
-class BigquerySample(val metricName: String, val help: String, val sql: String, val resultColumn: String) : MetricBuilder {
+class SummaryMetricBuilder(val metricName: String, val help: String, val sql: String, val resultColumn: String) : MetricBuilder {
 
-    private val log: Logger = LoggerFactory.getLogger(BigquerySample::class.java)
+    private val log: Logger = LoggerFactory.getLogger(SummaryMetricBuilder::class.java)
 
-    fun countNumberOfActiveUsers(): Long {
+    fun getSummaryViaSql(): Long {
         // Instantiate a client. If you don't specify credentials when constructing a client, the
         // client library will look for credentials in the environment, such as the
         // GOOGLE_APPLICATION_CREDENTIALS environment variable.
@@ -95,8 +89,11 @@ class BigquerySample(val metricName: String, val help: String, val sql: String, 
         val activeUsersSummary: Summary = Summary.build()
                 .name(metricName)
                 .help(help).register(registry)
+        val value: Long = getSummaryViaSql()
 
-        activeUsersSummary.observe(countNumberOfActiveUsers() * 1.0)
+        log.info("Summarizing metric $metricName  to be $value")
+
+        activeUsersSummary.observe(value * 1.0)
     }
 }
 
@@ -119,7 +116,7 @@ class PrometheusPusher(val pushGateway: String, val job: String) {
         // XXX Pick this up from the config file, and iterate over all the queries
         //     your heart desires.
         val metricSources: MutableList<MetricBuilder> = mutableListOf()
-        metricSources.add(BigquerySample(
+        metricSources.add(SummaryMetricBuilder(
                 "active_users",
                 "Number of active users",
                 """
