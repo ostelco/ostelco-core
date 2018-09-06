@@ -7,5 +7,8 @@ interface PseudonymizerService {
 
     fun getActivePseudonymsForMsisdn(msisdn: String): ActivePseudonyms
 
-    fun getPseudonymEntityFor(msisdn: String, timestamp: Long): PseudonymEntity
+    fun getMsisdnPseudonym(msisdn: String, timestamp: Long): PseudonymEntity
+
+    fun getSubscriberIdPseudonym(subscriberId: String, timestamp: Long): PseudonymEntity
+
 }

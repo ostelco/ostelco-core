@@ -6,6 +6,7 @@ import io.dropwizard.setup.Environment
 import org.hibernate.validator.constraints.NotEmpty
 import org.ostelco.prime.analytics.metrics.CustomMetricsRegistry
 import org.ostelco.prime.analytics.publishers.DataConsumptionInfoPublisher
+import org.ostelco.prime.analytics.publishers.PurchaseInfoPublisher
 import org.ostelco.prime.module.PrimeModule
 
 @JsonTypeName("analytics")
@@ -26,6 +27,7 @@ class AnalyticsModule : PrimeModule {
 
         // dropwizard starts Analytics events publisher
         env.lifecycle().manage(DataConsumptionInfoPublisher)
+        env.lifecycle().manage(PurchaseInfoPublisher)
     }
 }
 
@@ -35,8 +37,12 @@ class AnalyticsConfig {
     lateinit var projectId: String
 
     @NotEmpty
-    @JsonProperty("topicId")
-    lateinit var topicId: String
+    @JsonProperty("dataTrafficTopicId")
+    lateinit var dataTrafficTopicId: String
+
+    @NotEmpty
+    @JsonProperty("purchaseInfoTopicId")
+    lateinit var purchaseInfoTopicId: String
 }
 
 object ConfigRegistry {

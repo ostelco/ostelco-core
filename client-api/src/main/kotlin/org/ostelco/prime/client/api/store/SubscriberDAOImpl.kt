@@ -1,6 +1,7 @@
 package org.ostelco.prime.client.api.store
 
 import arrow.core.Either
+import arrow.core.Tuple4
 import arrow.core.flatMap
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.analytics.PrimeMetric.REVENUE
@@ -53,7 +54,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                         BadRequestError("Incomplete profile description. ${it.message}")
                     }
         } catch (e: Exception) {
-            logger.error("Failed to fetch profile", e)
+            logger.error("Failed to fetch profile for subscriberId $subscriberId", e)
             Either.left(NotFoundError("Failed to fetch profile"))
         }
     }
@@ -71,7 +72,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                         getProfile(subscriberId)
                     }
         } catch (e: Exception) {
-            logger.error("Failed to create profile", e)
+            logger.error("Failed to create profile for subscriberId $subscriberId", e)
             Either.left(ForbiddenError("Failed to create profile"))
         }
     }
@@ -85,7 +86,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         try {
             storage.addNotificationToken(msisdn, applicationToken)
         } catch (e: Exception) {
-            logger.error("Failed to store ApplicationToken", e)
+            logger.error("Failed to store ApplicationToken for msisdn $msisdn", e)
             return Either.left(InsuffientStorageError("Failed to store ApplicationToken"))
         }
         return getNotificationToken(msisdn, applicationToken.applicationID)
@@ -97,7 +98,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                     ?.let { Either.right(it) }
                     ?: return Either.left(NotFoundError("Failed to get ApplicationToken"))
         } catch (e: Exception) {
-            logger.error("Failed to get ApplicationToken", e)
+            logger.error("Failed to get ApplicationToken for msisdn $msisdn", e)
             return Either.left(NotFoundError("Failed to get ApplicationToken"))
         }
     }
@@ -109,7 +110,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         try {
             storage.updateSubscriber(profile)
         } catch (e: Exception) {
-            logger.error("Failed to update profile", e)
+            logger.error("Failed to update profile for subscriberId $subscriberId", e)
             return Either.left(NotFoundError("Failed to update profile"))
         }
 
@@ -126,7 +127,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                     }
                     .mapLeft { NotFoundError(it.message) }
         } catch (e: Exception) {
-            logger.error("Failed to get balance", e)
+            logger.error("Failed to get balance for subscriber $subscriberId", e)
             return Either.left(NotFoundError("Failed to get balance"))
         }
     }
@@ -137,7 +138,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                NotFoundError("Failed to get subscriptions. ${it.message}")
             }
         } catch (e: Exception) {
-            logger.error("Failed to get subscriptions", e)
+            logger.error("Failed to get subscriptions for subscriberId $subscriberId", e)
             return Either.left(NotFoundError("Failed to get subscriptions"))
         }
     }
@@ -154,7 +155,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                     { NotFoundError("Failed to get purchase history. ${it.message}") },
                     { it.toList() })
         } catch (e: Exception) {
-            logger.error("Failed to get purchase history", e)
+            logger.error("Failed to get purchase history for subscriberId $subscriberId", e)
             Either.left(NotFoundError("Failed to get purchase history"))
         }
     }
@@ -165,7 +166,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                 NotFoundError("Did not find msisdn for this subscription. ${it.message}")
             }
         } catch (e: Exception) {
-            logger.error("Did not find msisdn for this subscription", e)
+            logger.error("Did not find msisdn for subscriberId $subscriberId", e)
             Either.left(NotFoundError("Did not find subscription"))
         }
     }
@@ -176,7 +177,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                     { NotFoundError(it.message) },
                     { products -> products.values })
         } catch (e: Exception) {
-            logger.error("Failed to get Products", e)
+            logger.error("Failed to get Products for subscriberId $subscriberId", e)
             Either.left(NotFoundError("Failed to get Products"))
         }
 
@@ -241,7 +242,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                     { NotFoundError("Failed to get referral list. ${it.message}") },
                     { list -> list.map { Person(it) } })
         } catch (e: Exception) {
-            logger.error("Failed to get referral list", e)
+            logger.error("Failed to get referral list for subscriberId $subscriberId", e)
             Either.left(NotFoundError("Failed to get referral list"))
         }
     }
@@ -252,7 +253,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                     { NotFoundError("Failed to get referred-by. ${it.message}") },
                     { Person(name = it) })
         } catch (e: Exception) {
-            logger.error("Failed to get referred-by", e)
+            logger.error("Failed to get referred-by for subscriberId $subscriberId", e)
             Either.left(NotFoundError("Failed to get referred-by"))
         }
     }
