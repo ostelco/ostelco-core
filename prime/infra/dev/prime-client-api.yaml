@@ -485,7 +485,7 @@ definitions:
   PseudonymEntity:
     type: object
     properties:
-      msisdn:
+      sourceId:
         type: string
       pseudonym:
         type: string
@@ -498,7 +498,7 @@ definitions:
         type: integer
         format: int64
     required:
-      - msisdn
+      - sourceId
       - pseudonym
       - start
       - end
