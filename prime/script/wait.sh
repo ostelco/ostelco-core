@@ -38,6 +38,7 @@ echo "Creating topics and subscriptions...."
 curl  -X PUT pubsub-emulator:8085/v1/projects/pantel-2decb/topics/data-traffic
 curl  -X PUT pubsub-emulator:8085/v1/projects/pantel-2decb/topics/pseudo-traffic
 curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/pantel-2decb/topics/data-traffic","ackDeadlineSeconds":10}' pubsub-emulator:8085/v1/projects/pantel-2decb/subscriptions/test-pseudo
+curl  -X PUT pubsub-emulator:8085/v1/projects/pantel-2decb/topics/purchase-info
 
 echo "Done creating topics and subscriptions"
 
