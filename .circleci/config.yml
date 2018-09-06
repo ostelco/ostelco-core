@@ -225,16 +225,30 @@ jobs:
     working_directory: ~/project
 
     docker:
-    - image: praqma/helmsman:test-1.4.0
+    - image: praqma/gcloud-kubectl-helm:v2.8.1
 
     steps:
       - checkout
+      
       - run:
           name: deploy prime and needed apps to the dev cluster
+          environment: 
+            GOOGLE_CREDENTIALS: ${PI_DEV_CLUSTER_CREDENTIALS}
+            PROJECT: pi-ostelco-dev
+            CLUSTER: pi-dev
+            ZONE: europe-west1-c
+            SERVICE_ACCOUNT: terraform-dev-cluster@pi-ostelco-dev.iam.gserviceaccount.com
           command: |
-            export TAG=${CIRCLE_SHA1:0:9}
-            cd .circleci/
-            helmsman --debug --apply -f helmsman-dev-deployment.toml
+            # export TAG=${CIRCLE_SHA1:0:9}
+            helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
+            helm repo update
+            helm upgrade prime ostelco/prime --install --tiller-namespace dev --namespace dev \
+             -f .circleci/prime-dev-values.yaml \
+             --set prime.env.STRIPE_API_KEY=${STRIPE_API_KEY} \
+             --set prime.tag=${CIRCLE_SHA1:0:9}
+             --set firebaseServiceAccount=${PANTEL_SECRETS_FILE}
+            # cd .circleci/
+            # helmsman --debug --apply -f helmsman-dev-deployment.toml
 
   create-PR-to-master:
     working_directory: ~/project
