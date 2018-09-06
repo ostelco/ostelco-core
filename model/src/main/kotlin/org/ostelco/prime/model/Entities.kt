@@ -98,7 +98,7 @@ data class PurchaseRecordInfo(override val id: String,
 }
 
 data class MsisdnPseudonymEntity(
-        val msisdn: String,
+        val sourceId: String,
         val pseudonym: String,
         val start: Long,
         val end: Long)

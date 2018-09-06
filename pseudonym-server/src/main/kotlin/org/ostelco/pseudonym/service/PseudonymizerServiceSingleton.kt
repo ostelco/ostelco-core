@@ -229,7 +229,7 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
             if (currentEntity == null) {
                 // Prepare the new datastore entity
                 val pseudonym = Entity.newBuilder(pseudonymKey)
-                        .set(msisdnPropertyName, entity.msisdn)
+                        .set(msisdnPropertyName, entity.sourceId)
                         .set(pseudonymPropertyName, entity.pseudonym)
                         .set(startPropertyName, entity.start)
                         .set(endPropertyName, entity.end)
