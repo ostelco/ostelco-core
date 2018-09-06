@@ -4,6 +4,9 @@ info:
   description: "The client API for Panacea."
   version: "1.0.0"
 host: "api.dev.ostelco.org"
+x-google-endpoints:
+  - name: "api.dev.ostelco.org"
+    allowCors: true
 schemes:
   - "https"
 paths:

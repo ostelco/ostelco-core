@@ -35,6 +35,13 @@ server:
       port: 8080
       maxConcurrentStreams: 1024
       initialStreamRecvWindow: 65535
+  requestLog:
+    appenders:
+      - type: console
+        layout:
+          type: json
+          customFieldNames:
+            level: severity
 
 logging:
   level: INFO
@@ -44,4 +51,5 @@ logging:
     - type: console
       layout:
         type: json
-
+        customFieldNames:
+           level: severity

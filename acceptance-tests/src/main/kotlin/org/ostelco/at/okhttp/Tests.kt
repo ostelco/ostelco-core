@@ -1,6 +1,7 @@
 package org.ostelco.at.okhttp
 
 import org.junit.Test
+import org.ostelco.at.common.Firebase
 import org.ostelco.at.common.StripePayment
 import org.ostelco.at.common.createProfile
 import org.ostelco.at.common.createSubscription
@@ -169,6 +170,7 @@ class PurchaseTest {
     fun `okhttp test - POST products purchase`() {
 
         StripePayment.deleteAllCustomers()
+        Firebase.deleteAllPaymentCustomers()
 
         val email = "purchase-${randomInt()}@test.com"
         createProfile(name = "Test Purchase User", email = email)
