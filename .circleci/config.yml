@@ -120,8 +120,8 @@ jobs:
             gcloud config set project pi-ostelco-dev
             echo $GOOGLE_GCR_CREDENTIALS > ${HOME}/gcloud-service-key.json
             gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
-            # sudo gsutil cp gs://pi-ostelco-core-gradle-cache/caches.tar.gz /root/in_zip/caches.tar.gz
-            # sudo tar -xzvf /root/in_zip/caches.tar.gz -C /root/.gradle/caches/ .
+            gsutil cp gs://pi-ostelco-core-gradle-cache/caches.tar.gz ~/caches.tar.gz
+            tar -xzvf ~/caches.tar.gz -C ~/.gradle/caches/ .
       - run:
           name: Gradle Build Prime
           command:  ./gradlew clean prime:build  -x test -s
@@ -132,10 +132,10 @@ jobs:
       - run:
           name: Push Gradle cache
           command: |
-            sudo rm -f /root/.gradle/caches/modules-2/modules-2.lock
-            sudo rm -fr /root/.gradle/caches/*/plugin-resolution/
-            sudo tar -czvf  /root/out_zip/caches.tar.gz -C  /root/.gradle/caches .
-            sudo gsutil cp  /root/out_zip/caches.tar.gz gs://pi-ostelco-core-gradle-cache
+            rm -f ~/.gradle/caches/modules-2/modules-2.lock
+            rm -fr ~/.gradle/caches/*/plugin-resolution/
+            tar -czvf  ~/caches.tar.gz  -C ~/.gradle/caches .
+            gsutil cp  ~/caches.tar.gz gs://pi-ostelco-core-gradle-cache
       
       
       - persist_to_workspace:
