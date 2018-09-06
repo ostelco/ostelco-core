@@ -114,13 +114,28 @@ jobs:
     steps:
       - checkout 
       - run:
-          name: Gradle Build Prime 
+          name: Pulling Gradle cache
           command: |
-            ./gradlew clean prime:build  -x test -s
+            gcloud config set project pi-ostelco-dev
+            echo $GOOGLE_GCR_CREDENTIALS > ${HOME}/gcloud-service-key.json
+            gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
+            gsutil cp gs://pi-ostelco-core-gradle-cache/caches.tar.gz /root/in_zip/
+            tar -xzvf /root/in_zip/caches.tar.gz -C /root/.gradle/caches/ .
+      - run:
+          name: Gradle Build Prime
+          command:  ./gradlew clean prime:build  -x test -s
       # - run:
       #     name: Gradle Build OCSGW 
       #     command: |
-      #       ./gradlew clean ocsgw:build  -s 
+      #       ./gradlew clean ocsgw:build  -s     
+      - run:
+          name: Push Gradle cache
+          command: |
+            rm -f /root/.gradle/caches/modules-2/modules-2.lock
+            rm -fr /root/.gradle/caches/*/plugin-resolution/
+            tar -czvf  /root/out_zip/caches.tar.gz -C  /root/.gradle/caches .
+            gsutil cp  /root/out_zip/caches.tar.gz gs://pi-ostelco-core-gradle-cache
+      
       
       - persist_to_workspace:
           root: ~/project/
