@@ -121,6 +121,7 @@ jobs:
             echo $GOOGLE_GCR_CREDENTIALS > ${HOME}/gcloud-service-key.json
             gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
             gsutil cp gs://pi-ostelco-core-gradle-cache/caches.tar.gz ~/caches.tar.gz
+            mkdir -p ~/.gradle.caches/
             tar -xzvf ~/caches.tar.gz -C ~/.gradle/caches/ .
       - run:
           name: Gradle Build Prime
