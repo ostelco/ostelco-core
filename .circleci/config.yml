@@ -203,7 +203,6 @@ jobs:
         CLUSTER: pi-dev
         ZONE: europe-west1-c
         SERVICE_ACCOUNT: terraform-dev-cluster@pi-ostelco-dev.iam.gserviceaccount.com
-      entrypoint: /authenticate.bash
     steps:
       - checkout
       
@@ -211,6 +210,7 @@ jobs:
           name: deploy prime and needed apps to the dev cluster
           command: |
             # export TAG=${CIRCLE_SHA1:0:9}
+            /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
             helm repo update
             helm upgrade prime ostelco/prime --install --tiller-namespace dev --namespace dev \
