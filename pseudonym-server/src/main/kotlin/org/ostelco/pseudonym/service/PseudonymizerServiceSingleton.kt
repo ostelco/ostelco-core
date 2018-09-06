@@ -67,6 +67,7 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
     private var bigQuery: BigQuery? = null
     private val dateBounds: DateBounds = WeeklyBounds()
 
+    private val msisdnPseudonymiser: Pseudonymizer = Pseudonymizer(MsisdnPseudonymEntityKind, msisdnPropertyName)
     private val executor = Executors.newFixedThreadPool(3)
 
     val pseudonymCache: Cache<String, PseudonymEntity> = CacheBuilder.newBuilder()
@@ -83,6 +84,7 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
             logger.info("Local testing, BigQuery is not available...")
             null
         }
+        msisdnPseudonymiser.init(datastore, bigQuery, dateBounds)
     }
 
     override fun getActivePseudonymsForMsisdn(msisdn: String): ActivePseudonyms {
@@ -98,39 +100,16 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
         val (bounds, keyPrefix) = dateBounds.getBoundsNKeyPrefix(msisdn, timestamp)
         // Retrieves the element from cache.
         return pseudonymCache.get(keyPrefix) {
-            getMsisdnPseudonymEntity(keyPrefix) ?: createMsisdnPseudonym(msisdn, bounds, keyPrefix)
+            msisdnPseudonymiser.getPseudonymEntity(keyPrefix) ?: msisdnPseudonymiser.createPseudonym(msisdn, bounds, keyPrefix)
         }
     }
 
     fun findMsisdnPseudonym(pseudonym: String): PseudonymEntity? {
-        val query = Query.newEntityQueryBuilder()
-                .setKind(MsisdnPseudonymEntityKind)
-                .setFilter(PropertyFilter.eq(pseudonymPropertyName, pseudonym))
-                .setLimit(1)
-                .build()
-        val results = datastore.run(query)
-        if (results.hasNext()) {
-            val entity = results.next()
-            return convertToMsisdnPseudonymEntity(entity)
-        }
-        logger.info("Couldn't find, pseudonym = $pseudonym")
-        return null
+        return msisdnPseudonymiser.findPseudonym(pseudonym)
     }
 
     fun deleteAllMsisdnPseudonyms(msisdn: String): Int {
-        val query = Query.newEntityQueryBuilder()
-                .setKind(MsisdnPseudonymEntityKind)
-                .setFilter(PropertyFilter.eq(msisdnPropertyName, msisdn))
-                .setLimit(1)
-                .build()
-        val results = datastore.run(query)
-        var count = 0
-        while (results.hasNext()) {
-            val entity = results.next()
-            datastore.delete(entity.key)
-            count++
-        }
-        return count
+        return msisdnPseudonymiser.deleteAllPseudonyms(msisdn)
     }
 
     fun exportMsisdnPseudonyms(exportId: String) {
@@ -202,25 +181,70 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
         }
         return null
     }
+}
 
-    private fun getMsisdnPseudonymKey(keyPrefix: String): Key {
-        return datastore.newKeyFactory().setKind(MsisdnPseudonymEntityKind).newKey(keyPrefix)
+
+class Pseudonymizer(val entityKind: String, val sourcePropertyName: String) {
+    private val logger by logger()
+    private lateinit var datastore: Datastore
+    private var bigQuery: BigQuery? = null
+    private lateinit var dateBounds: DateBounds
+
+    fun init(ds: Datastore, bq: BigQuery? = null, bounds: DateBounds) {
+        datastore = ds
+        bigQuery = bq
+        dateBounds = bounds
     }
 
-    private fun getMsisdnPseudonymEntity(keyPrefix: String): PseudonymEntity? {
-        val pseudonymKey = getMsisdnPseudonymKey(keyPrefix)
+    fun findPseudonym(pseudonym: String): PseudonymEntity? {
+        val query = Query.newEntityQueryBuilder()
+                .setKind(entityKind)
+                .setFilter(PropertyFilter.eq(pseudonymPropertyName, pseudonym))
+                .setLimit(1)
+                .build()
+        val results = datastore.run(query)
+        if (results.hasNext()) {
+            val entity = results.next()
+            return convertToPseudonymEntity(entity)
+        }
+        logger.info("Couldn't find, pseudonym = $pseudonym")
+        return null
+    }
+
+    fun deleteAllPseudonyms(sourceId: String): Int {
+        val query = Query.newEntityQueryBuilder()
+                .setKind(entityKind)
+                .setFilter(PropertyFilter.eq(sourcePropertyName, sourceId))
+                .setLimit(1)
+                .build()
+        val results = datastore.run(query)
+        var count = 0
+        while (results.hasNext()) {
+            val entity = results.next()
+            datastore.delete(entity.key)
+            count++
+        }
+        return count
+    }
+
+    private fun getPseudonymKey(keyPrefix: String): Key {
+        return datastore.newKeyFactory().setKind(entityKind).newKey(keyPrefix)
+    }
+
+    fun getPseudonymEntity(keyPrefix: String): PseudonymEntity? {
+        val pseudonymKey = getPseudonymKey(keyPrefix)
         val value = datastore.get(pseudonymKey)
         if (value != null) {
             // Create the object from datastore entity
-            return convertToMsisdnPseudonymEntity(value)
+            return convertToPseudonymEntity(value)
         }
         return null
     }
 
-    private fun createMsisdnPseudonym(msisdn: String, bounds: Bounds, keyPrefix: String): PseudonymEntity {
+    fun createPseudonym(sourceId: String, bounds: Bounds, keyPrefix: String): PseudonymEntity {
         val uuid = UUID.randomUUID().toString()
-        var entity = PseudonymEntity(msisdn, uuid, bounds.start, bounds.end)
-        val pseudonymKey = getMsisdnPseudonymKey(keyPrefix)
+        var entity = PseudonymEntity(sourceId, uuid, bounds.start, bounds.end)
+        val pseudonymKey = getPseudonymKey(keyPrefix)
 
         val transaction = datastore.newTransaction()
         try {
@@ -229,7 +253,7 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
             if (currentEntity == null) {
                 // Prepare the new datastore entity
                 val pseudonym = Entity.newBuilder(pseudonymKey)
-                        .set(msisdnPropertyName, entity.sourceId)
+                        .set(sourcePropertyName, entity.sourceId)
                         .set(pseudonymPropertyName, entity.pseudonym)
                         .set(startPropertyName, entity.start)
                         .set(endPropertyName, entity.end)
@@ -238,7 +262,7 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
                 transaction.commit()
             } else {
                 // Use the existing one
-                entity = convertToMsisdnPseudonymEntity(currentEntity)
+                entity = convertToPseudonymEntity(currentEntity)
             }
         } finally {
             if (transaction.isActive) {
@@ -248,9 +272,9 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
         return entity
     }
 
-    private fun convertToMsisdnPseudonymEntity(entity: Entity): PseudonymEntity {
+    private fun convertToPseudonymEntity(entity: Entity): PseudonymEntity {
         return PseudonymEntity(
-                entity.getString(msisdnPropertyName),
+                entity.getString(sourcePropertyName),
                 entity.getString(pseudonymPropertyName),
                 entity.getLong(startPropertyName),
                 entity.getLong(endPropertyName))
