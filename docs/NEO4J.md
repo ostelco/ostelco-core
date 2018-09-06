@@ -32,7 +32,7 @@ kubectl config get-contexts
 
 If name of the cluster, where neo4j is deployed, is `private-cluster`, then change `kubectl config`. 
 ```bash
-kubectl config set-context $(kubectl config get-contexts --output name | grep private-cluster) 
+kubectl config use-context $(kubectl config get-contexts --output name | grep private-cluster) 
 ```
 
 ### Port forward from neo4j pods
