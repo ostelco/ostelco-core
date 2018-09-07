@@ -261,7 +261,7 @@ workflows:
       - build-test-repo:
           filters:
             branches:
-              only: feature/*
+              only: /feature/.*/
       - code-coverage:
          requires:
            - build-test-repo
