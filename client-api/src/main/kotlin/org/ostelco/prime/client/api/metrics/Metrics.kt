@@ -20,6 +20,3 @@ fun updateMetricsOnNewSubscriber() {
     analyticsService.reportMetric(TOTAL_USERS, adminStore.getSubscriberCount())
     analyticsService.reportMetric(USERS_ACQUIRED_THROUGH_REFERRALS, adminStore.getReferredSubscriberCount())
 }
-fun updateMetricsOnPurchase() {
-    analyticsService.reportMetric(USERS_PAID_AT_LEAST_ONCE, adminStore.getPaidSubscriberCount())
-}

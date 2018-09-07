@@ -1,8 +1,14 @@
 package org.ostelco.prime.storage.graph
 
 import arrow.core.Either
+import arrow.core.Tuple4
 import arrow.core.flatMap
 import org.neo4j.driver.v1.Transaction
+import org.ostelco.prime.analytics.AnalyticsService
+import org.ostelco.prime.analytics.PrimeMetric.REVENUE
+import org.ostelco.prime.analytics.PrimeMetric.USERS_PAID_AT_LEAST_ONCE
+import org.ostelco.prime.core.ApiError
+import org.ostelco.prime.core.BadGatewayError
 import org.ostelco.prime.logger
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Offer
@@ -14,6 +20,11 @@ import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.ocs.OcsAdminService
+import org.ostelco.prime.ocs.OcsSubscriberService
+import org.ostelco.prime.paymentprocessor.PaymentProcessor
+import org.ostelco.prime.paymentprocessor.core.ProductInfo
+import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.storage.DocumentStore
 import org.ostelco.prime.storage.GraphStore
 import org.ostelco.prime.storage.NotFoundError
 import org.ostelco.prime.storage.StoreError
@@ -47,7 +58,7 @@ class Neo4jStore : GraphStore by Neo4jStoreSingleton
 
 object Neo4jStoreSingleton : GraphStore {
 
-    private val ocs: OcsAdminService by lazy { getResource<OcsAdminService>() }
+    private val ocsAdminService: OcsAdminService by lazy { getResource<OcsAdminService>() }
     private val logger by logger()
 
     //
@@ -130,6 +141,7 @@ object Neo4jStoreSingleton : GraphStore {
             readTransaction { subscriberStore.get(subscriberId, transaction) }
 
     // TODO vihang: Move this logic to DSL + Rule Engine + Triggers, when they are ready
+    // >> BEGIN
     override fun addSubscriber(subscriber: Subscriber, referredBy: String?): Either<StoreError, Unit> = writeTransaction {
 
         if (subscriber.id == referredBy) {
@@ -158,7 +170,7 @@ object Neo4jStoreSingleton : GraphStore {
                                 }
                     }
                     .flatMap {
-                        ocs.addBundle(Bundle(bundleId, 1_000_000_000))
+                        ocsAdminService.addBundle(Bundle(bundleId, 1_000_000_000))
                         Either.right(Unit)
                     }
         } else {
@@ -176,14 +188,15 @@ object Neo4jStoreSingleton : GraphStore {
                                 }
                     }
                     .flatMap {
-                        ocs.addBundle(Bundle(bundleId, 100_000_000))
+                        ocsAdminService.addBundle(Bundle(bundleId, 100_000_000))
                         Either.right(Unit)
                     }
         }.flatMap { subscriberToBundleStore.create(subscriber.id, bundleId, transaction) }
                 .flatMap { subscriberToSegmentStore.create(subscriber.id, "all", transaction) }
                 .ifFailedThenRollback(transaction)
     }
-
+    // << END
+    
     override fun updateSubscriber(subscriber: Subscriber): Either<StoreError, Unit> = writeTransaction {
         subscriberStore.update(subscriber, transaction)
                 .ifFailedThenRollback(transaction)
@@ -232,7 +245,7 @@ object Neo4jStoreSingleton : GraphStore {
                         either.flatMap { _ ->
                             subscriptionToBundleStore.create(subscription, bundle, transaction)
                                     .flatMap {
-                                        ocs.addMsisdnToBundleMapping(msisdn, bundle.id)
+                                        ocsAdminService.addMsisdnToBundleMapping(msisdn, bundle.id)
                                         Either.right(Unit)
                                     }
                         }
@@ -282,29 +295,146 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun getProduct(subscriberId: String, sku: String): Either<StoreError, Product> {
         return readTransaction {
-            subscriberStore.exists(subscriberId, transaction)
-                    .flatMap {
-                        read("""
+            getProduct(subscriberId, sku, transaction)
+        }
+    }
+
+    private fun getProduct(subscriberId: String, sku: String, transaction: Transaction): Either<StoreError, Product> {
+        return subscriberStore.exists(subscriberId, transaction)
+                .flatMap {
+                    read("""
                             MATCH (:${subscriberEntity.name} {id: '$subscriberId'})
                             -[:${subscriberToSegmentRelation.relation.name}]->(:${segmentEntity.name})
                             <-[:${offerToSegmentRelation.relation.name}]-(:${offerEntity.name})
                             -[:${offerToProductRelation.relation.name}]->(product:${productEntity.name} {sku: '$sku'})
                             RETURN product;
                             """.trimIndent(),
-                                transaction) { statementResult ->
-                            if (statementResult.hasNext()) {
-                                Either.right(productEntity.createEntity(statementResult.single().get("product").asMap()))
-                            } else {
-                                Either.left(NotFoundError(type = productEntity.name, id = sku))
-                            }
+                            transaction) { statementResult ->
+                        if (statementResult.hasNext()) {
+                            Either.right(productEntity.createEntity(statementResult.single().get("product").asMap()))
+                        } else {
+                            Either.left(NotFoundError(type = productEntity.name, id = sku))
                         }
                     }
-        }
+                }
     }
 
     //
     // Purchase Records
     //
+
+    // TODO vihang: Move this logic to DSL + Rule Engine + Triggers, when they are ready
+    // >> BEGIN
+    private val documentStore by lazy { getResource<DocumentStore>() }
+    private val paymentProcessor by lazy { getResource<PaymentProcessor>() }
+    private val ocs by lazy { getResource<OcsSubscriberService>() }
+    private val analyticsReporter by lazy { getResource<AnalyticsService>() }
+
+    private fun getPaymentProfile(name: String): Either<ApiError, ProfileInfo> =
+            documentStore.getPaymentId(name)
+                    ?.let { profileInfoId -> Either.right(ProfileInfo(profileInfoId)) }
+                    ?: Either.left(BadGatewayError("Failed to fetch payment customer ID"))
+
+    private fun createAndStorePaymentProfile(name: String): Either<ApiError, ProfileInfo> {
+        return paymentProcessor.createPaymentProfile(name)
+                .flatMap { profileInfo ->
+                    setPaymentProfile(name, profileInfo)
+                            .map { profileInfo }
+                }
+    }
+
+    private fun setPaymentProfile(name: String, profileInfo: ProfileInfo): Either<ApiError, Unit> =
+            Either.cond(
+                    test = documentStore.createPaymentId(name, profileInfo.id),
+                    ifTrue = { Unit },
+                    ifFalse = { BadGatewayError("Failed to save payment customer ID") })
+
+    override fun purchaseProduct(
+            subscriberId: String,
+            sku: String,
+            sourceId: String?,
+            saveCard: Boolean): Either<ApiError, ProductInfo> = writeTransaction {
+
+        val result = getProduct(subscriberId, sku, transaction)
+                // If we can't find the product, return not-found
+                .mapLeft { org.ostelco.prime.core.NotFoundError("Product unavailable") }
+                .flatMap { product: Product ->
+                    // Fetch/Create stripe payment profile for the subscriber.
+                    getPaymentProfile(subscriberId)
+                            .fold(
+                                    { createAndStorePaymentProfile(subscriberId) },
+                                    { profileInfo -> Either.right(profileInfo) }
+                            )
+                            .map { profileInfo -> Pair(product, profileInfo) }
+                }
+                .flatMap { (product, profileInfo) ->
+                    // Add payment source
+                    if (sourceId != null) {
+                        paymentProcessor.addSource(profileInfo.id, sourceId).map { sourceInfo -> Triple(product, profileInfo, sourceInfo.id) }
+                    } else {
+                        Either.right(Triple(product, profileInfo, null))
+                    }
+                }
+                .flatMap { (product, profileInfo, savedSourceId) ->
+                    // Authorize stripe charge for this purchase
+                    val price = product.price
+                    //TODO: If later steps fail, then refund the authorized charge
+                    paymentProcessor.authorizeCharge(profileInfo.id, savedSourceId, price.amount, price.currency)
+                            .mapLeft { apiError ->
+                                logger.error("failed to authorize purchase for customerId ${profileInfo.id}, sourceId $savedSourceId, sku $sku")
+                                apiError
+                            }
+                            .map { chargeId -> Tuple4(profileInfo, savedSourceId, chargeId, product) }
+                }
+                .flatMap { (profileInfo, savedSourceId, chargeId, product) ->
+                    val purchaseRecord = PurchaseRecord(
+                            id = chargeId,
+                            product = product,
+                            timestamp = Instant.now().toEpochMilli(),
+                            msisdn = "")
+                    // Create purchase record
+                    createPurchaseRecordRelation(subscriberId, purchaseRecord, transaction)
+                            .mapLeft { storeError ->
+                                paymentProcessor.refundCharge(chargeId)
+                                logger.error("failed to save purchase record, for customerId ${profileInfo.id}, chargeId $chargeId, payment will be unclaimed in Stripe")
+                                BadGatewayError(storeError.message)
+                            }
+                            // Notify OCS
+                            .flatMap {
+                                //TODO vihang: Handle errors (when it becomes available)
+                                ocs.topup(subscriberId, sku)
+                                // TODO vihang: handle currency conversion
+                                analyticsReporter.reportMetric(REVENUE, product.price.amount.toLong())
+                                analyticsReporter.reportMetric(USERS_PAID_AT_LEAST_ONCE, getPaidSubscriberCount(transaction))
+                                Either.right(Tuple4(profileInfo, savedSourceId, chargeId, product))
+                            }
+                }
+                .mapLeft { error ->
+                    transaction.failure()
+                    error
+                }
+
+        result.map { (profileInfo, _, chargeId, _) ->
+            // Capture the charge, our database have been updated.
+            paymentProcessor.captureCharge(chargeId, profileInfo.id)
+                    .mapLeft {
+                        // TODO payment: retry capture charge
+                        logger.error("Capture failed for customerId ${profileInfo.id}, chargeId $chargeId, Fix this in Stripe Dashboard")
+                    }
+        }
+        result.map { (profileInfo, savedSourceId, _, _) ->
+            // Remove the payment source
+            if (!saveCard && savedSourceId != null) {
+                paymentProcessor.removeSource(profileInfo.id, savedSourceId)
+                        .mapLeft { apiError ->
+                            logger.error("Failed to remove card, for customerId ${profileInfo.id}, sourceId $sourceId")
+                            apiError
+                        }
+            }
+        }
+        result.map { (_, _, _, product) -> ProductInfo(product.sku) }
+    }
+    // << END
 
     override fun getPurchaseRecords(subscriberId: String): Either<StoreError, Collection<PurchaseRecord>> {
         return readTransaction {
@@ -429,7 +559,11 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     override fun getPaidSubscriberCount(): Long = readTransaction {
-        read("""
+        getPaidSubscriberCount(transaction)
+    }
+
+    private fun getPaidSubscriberCount(transaction: Transaction): Long {
+        return read("""
                 MATCH (subscriber:${subscriberEntity.name})-[:${purchaseRecordRelation.relation.name}]->(product:${productEntity.name})
                 WHERE product.`price/amount` > 0
                 RETURN count(subscriber) AS count
@@ -438,7 +572,6 @@ object Neo4jStoreSingleton : GraphStore {
             result.single().get("count").asLong()
         }
     }
-
     //
     // Stores
     //

@@ -24,7 +24,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-public class OcsgwMetrics {
+class OcsgwMetrics {
 
     private static final Logger LOG = LoggerFactory.getLogger(OcsgwMetrics.class);
 
@@ -40,9 +40,11 @@ public class OcsgwMetrics {
 
     private ScheduledFuture initAnalyticsFuture = null;
 
+    private ScheduledFuture keepAliveFuture = null;
+
     private int lastActiveSessions = 0;
 
-    public OcsgwMetrics(String metricsServerHostname, ServiceAccountJwtAccessCredentials credentials) {
+    OcsgwMetrics(String metricsServerHostname, ServiceAccountJwtAccessCredentials credentials) {
 
         try {
             final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder
@@ -82,6 +84,13 @@ public class OcsgwMetrics {
         }
     }
 
+    private void reconnectKeepAlive() {
+        LOG.info("reconnectKeepAlive called");
+        if (keepAliveFuture != null) {
+            keepAliveFuture.cancel(true);
+        }
+    }
+
     private void reconnectAnalyticsReport() {
         LOG.info("reconnectAnalyticsReport called");
 
@@ -91,6 +100,7 @@ public class OcsgwMetrics {
 
         LOG.info("Schedule new Callable initAnalyticsRequest");
         initAnalyticsFuture = executorService.schedule((Callable<Object>) () -> {
+                    reconnectKeepAlive();
                     LOG.info("Calling initAnalyticsRequest");
                     initAnalyticsRequest();
                     sendAnalytics(lastActiveSessions);
@@ -100,7 +110,7 @@ public class OcsgwMetrics {
                 TimeUnit.SECONDS);
     }
 
-    public void initAnalyticsRequest() {
+    void initAnalyticsRequest() {
         ocsgwAnalyticsReport = ocsgwAnalyticsServiceStub.ocsgwAnalyticsEvent(
                 new AnalyticsRequestObserver<OcsgwAnalyticsReply>() {
 
@@ -110,11 +120,21 @@ public class OcsgwMetrics {
                     }
                 }
         );
+        initKeepAlive();
     }
 
-    public void sendAnalytics(int size) {
+    private void initKeepAlive() {
+        // this is used to keep connection alive
+        keepAliveFuture = executorService.scheduleWithFixedDelay(() -> {
+                    sendAnalytics(lastActiveSessions);
+                },
+                15,
+                50,
+                TimeUnit.SECONDS);
+    }
+
+    void sendAnalytics(int size) {
         ocsgwAnalyticsReport.onNext(OcsgwAnalyticsReport.newBuilder().setActiveSessions(size).build());
         lastActiveSessions = size;
     }
-
 }
