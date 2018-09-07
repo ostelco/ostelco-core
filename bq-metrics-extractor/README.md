@@ -24,6 +24,37 @@ XXX NOTE: This code was initiated using yeoman, and while functional that seems 
 have been a mistake.  It will have to be refactored into something much
 leaner asap, and certainly before merging to develop.
 
+
+How to build and deploy the cronjob manually
+===
+
+##First get credentials (upgrade gcloud for good measure):
+
+    gcloud components update
+    gcloud container clusters get-credentials dev-cluster --zone europe-west1-b --project pantel-2decb
+
+##Build the artefact:
+
+    gradle build
+    docker build .
+
+##Authorize tag and push to docker registry in google cloud:
+
+    gcloud auth configure-docker
+    docker tag foobarbaz eu.gcr.io/pantel-2decb/bq-metrics-extractor
+    docker push eu.gcr.io/pantel-2decb/bq-metrics-extractor
+
+... where foobarbaz is the id of the container built by docker build.
+
+## Then start the cronjob in kubernetes
+    kubectl apply -f cronjob/config.yaml
+    kubectl describe cronjob bq-metrics-extractor
+
+## To talk to the prometheus in the monitoring namespace & watch the users metrics evolve
+    kubectl port-forward --namespace=monitoring $(kubectl get pods --namespace=monitoring | grep prometheus-core | awk '{print $1}') 9090
+    watch 'curl -s localhost:9090/metrics | grep users'
+
+
 TODO
 ===
 
@@ -37,7 +68,6 @@ TODO
   * Pushgateway: https://hub.docker.com/r/prom/pushgateway/
           docker pull prom/pushgateway
           docker run -d -p 9091:9091 prom/pushgateway
-
 * Send something from the program to a pushgateway running somewhere [Done]
 * Make the skeleton code read something (anything) from BigQuery, using config
   that is production-like.  [Done]
@@ -47,11 +77,13 @@ TODO
 * Build a docker image. [DONE]
 * Run the docker image as a kubernetes cronjob [done]
 * Use the config.yaml for the dropwizard app to configure
-  the next metrics to be computed.
+  the next metrics to be computed. [done]
+* Make command to run metric every N seconds. [done]
+
 * Make an acceptance tests that runs a roundtrip test ub
   in docker compose, based on something like this: curl http://localhost:9091/metrics | grep -i active
 * Push the first metric to production, use Kubernetes crontab
   to ensure periodic execution.
-* Make command to run metric every N seconds.
 * Make it testable to send send metrics to pushgateway.
 * Extend to more metrics.
+* remove the TODO list and declare victory :-)

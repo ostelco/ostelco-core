@@ -8,11 +8,7 @@ docker tag bc7a5b932f34 eu.gcr.io/pantel-2decb/bq-metrics-extractor
 docker push eu.gcr.io/pantel-2decb/bq-metrics-extractor
 kubectl apply -f cronjob/config.yaml
 kubectl describe cronjob bq-metrics-extractor
-
 kubectl port-forward --namespace=monitoring $(kubectl get pods --namespace=monitoring | grep prometheus-core | awk '{print $1}') 9090
-
 watch 'curl -s localhost:9090/metrics | grep users'
-
 ImagePullBackOff   means image can't be read.
-
 kubectl apply -f cronjob/config.yaml --namespace=monitoring
