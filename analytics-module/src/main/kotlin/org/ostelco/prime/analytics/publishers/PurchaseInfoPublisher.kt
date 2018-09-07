@@ -12,6 +12,8 @@ import com.google.pubsub.v1.PubsubMessage
 import io.dropwizard.lifecycle.Managed
 import org.ostelco.prime.analytics.ConfigRegistry
 import org.ostelco.prime.logger
+import org.ostelco.prime.model.Price
+import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.PurchaseRecordInfo
 import org.ostelco.prime.module.getResource
@@ -48,10 +50,12 @@ object PurchaseInfoPublisher : Managed {
         publisher.shutdown()
     }
 
-    private fun createGson(): Gson {
+    internal fun createGson(): Gson {
         val builder = GsonBuilder()
-        val mapType = object : TypeToken<Map<String, String>>() {}.type
-        val serializer = JsonSerializer<Map<String, String>> { src, _, _ ->
+        // Type for this conversion is explicitly set to java.util.Map
+        // This is needed because of kotlin's own Map interface
+        val mapType = object : TypeToken<java.util.Map<String, String>>() {}.type
+        val serializer = JsonSerializer<java.util.Map<String, String>> { src, _, _ ->
             val array = JsonArray()
             src.forEach { k, v ->
                 val property = JsonObject()
@@ -65,7 +69,7 @@ object PurchaseInfoPublisher : Managed {
         return builder.create()
     }
 
-    private fun convertToJson(purchaseRecordInfo: PurchaseRecordInfo): ByteString =
+    fun convertToJson(purchaseRecordInfo: PurchaseRecordInfo): ByteString =
             ByteString.copyFromUtf8(gson.toJson(purchaseRecordInfo))
 
 
