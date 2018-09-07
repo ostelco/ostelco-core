@@ -3,7 +3,7 @@ info:
   title: "Ostelco API"
   description: "The client API for Panacea."
   version: "1.0.0"
-host: "api.new.ostelco.org"
+host: "api.new.dev.ostelco.org"
 schemes:
   - "https"
 paths:
