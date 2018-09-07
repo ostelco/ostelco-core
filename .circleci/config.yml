@@ -311,11 +311,15 @@ workflows:
 
   deploy-to-prod:
     jobs:
-    - update-prod-endpoints:
+    # - update-prod-endpoints:
+    #     filters:
+    #       branches:
+    #         only: 
+    #         - circleci-prod
+    - deploy-to-prod:
+        # requires:
+        #   - update-prod-endpoints  
         filters:
           branches:
             only: 
-            - circleci-prod
-    - deploy-to-prod:
-        requires:
-          - update-prod-endpoints                      
+            - circleci-prod                    
