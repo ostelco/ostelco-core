@@ -6,7 +6,6 @@ import arrow.core.flatMap
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.analytics.PrimeMetric.REVENUE
 import org.ostelco.prime.client.api.metrics.updateMetricsOnNewSubscriber
-import org.ostelco.prime.client.api.metrics.updateMetricsOnPurchase
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.Person
 import org.ostelco.prime.client.api.model.SubscriptionStatus
@@ -198,7 +197,6 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                 }
     }
 
-
     @Deprecated("use purchaseProduct", ReplaceWith("purchaseProduct"))
     override fun purchaseProductWithoutPayment(subscriberId: String, sku: String): Either<ApiError,Unit> {
         return getProduct(subscriberId, sku)
@@ -227,90 +225,16 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                 }
     }
 
-    override fun purchaseProduct(subscriberId: String, sku: String, sourceId: String?, saveCard: Boolean): Either<ApiError, ProductInfo> {
-        return getProduct(subscriberId, sku)
-                // If we can't find the product, return not-found
-                .mapLeft { NotFoundError("Product unavailable") }
-                .flatMap { product: Product ->
-                    // Fetch/Create stripe payment profile for the subscriber.
-                    getPaymentProfile(subscriberId)
-                            .fold(
-                                    { createAndStorePaymentProfile(subscriberId) },
-                                    { profileInfo -> Either.right(profileInfo) }
-                            )
-                            .map { profileInfo -> Pair(product, profileInfo) }
-                }
-                .flatMap { (product, profileInfo) ->
-                    // Add payment source
-                    if (sourceId != null) {
-                        paymentProcessor.addSource(profileInfo.id, sourceId).
-                                map {sourceInfo -> Triple(product, profileInfo, sourceInfo.id)}
-                    } else {
-                        Either.right(Triple(product, profileInfo, null))
-                    }
-                }
-                .flatMap { (product, profileInfo, savedSourceId) ->
-                    // Authorize stripe charge for this purchase
-                    val price = product.price
-                    paymentProcessor.authorizeCharge(profileInfo.id, savedSourceId, price.amount, price.currency)
-                            .mapLeft { apiError ->
-                                logger.error("failed to authorize purchase for customerId ${profileInfo.id}, sourceId $savedSourceId, sku $sku")
-                                apiError
-                            }
-                            .map { chargeId -> Tuple4(profileInfo, savedSourceId, chargeId, product) }
-                }
-                .flatMap { (profileInfo, savedSourceId, chargeId, product) ->
-                    val purchaseRecord = PurchaseRecord(
-                            id = chargeId,
-                            product = product,
-                            timestamp = Instant.now().toEpochMilli(),
-                            msisdn = "")
-                    // Create purchase record
-                    storage.addPurchaseRecord(subscriberId, purchaseRecord)
-                            .mapLeft { storeError ->
-                                logger.error("failed to save purchase record, for customerId ${profileInfo.id}, chargeId $chargeId, payment will be unclaimed in Stripe")
-                                BadGatewayError(storeError.message)
-                            }
-                            // Notify OCS
-                            .flatMap {
-                                //TODO: While aborting transactions, send a record with "reverted" status
-                                analyticsReporter.reportPurchaseInfo(
-                                        purchaseRecord = purchaseRecord,
-                                        subscriberId = subscriberId,
-                                        status = "success")
-                                //TODO: Handle errors (when it becomes available)
-                                ocsSubscriberService.topup(subscriberId, sku)
-                                Either.right(Tuple4(profileInfo, savedSourceId, chargeId, product))
-                            }
-                }
-                .flatMap { (profileInfo, savedSourceId, chargeId, product) ->
-                    // Capture the charge, our database have been updated.
-                    paymentProcessor.captureCharge(chargeId, profileInfo.id, sourceId)
-                            .mapLeft { apiError ->
-                                logger.error("Capture failed for customerId ${profileInfo.id}, chargeId $chargeId, Fix this in Stripe Dashborad")
-                                apiError
-                            }
-                            .map {
-                                // TODO vihang: handle currency conversion
-                                analyticsReporter.reportMetric(REVENUE, product.price.amount.toLong())
-                                updateMetricsOnPurchase()
-                                Triple(profileInfo, savedSourceId, ProductInfo(product.sku))
-                            }
-                }
-                .flatMap { (profileInfo, savedSourceId, productInfo) ->
-                    // Remove the payment source
-                    if (!saveCard && savedSourceId != null) {
-                        paymentProcessor.removeSource(profileInfo.id, savedSourceId)
-                                .mapLeft { apiError ->
-                                    logger.error("Failed to remove card, for customerId ${profileInfo.id}, sourceId $sourceId")
-                                    apiError
-                                }
-                                .map { productInfo }
-                    } else {
-                        Either.Right(productInfo)
-                    }
-                }
-    }
+    override fun purchaseProduct(
+            subscriberId: String,
+            sku: String,
+            sourceId: String?,
+            saveCard: Boolean): Either<ApiError, ProductInfo> =
+        storage.purchaseProduct(
+                subscriberId,
+                sku,
+                sourceId,
+                saveCard)
 
     override fun getReferrals(subscriberId: String): Either<ApiError, Collection<Person>> {
         return try {

@@ -33,11 +33,15 @@ paths:
         - application/json
       operationId: "createProfile"
       parameters:
-        - in: body
-          name: profile
+        - name: profile
+          in: body
           description: The profile to create.
           schema:
             $ref: '#/definitions/Profile'
+        - name: referred_by
+          in: query
+          description: "Referral ID of user who has invited this user"
+          type: string
       responses:
         201:
           description: "Successfully created the profile."

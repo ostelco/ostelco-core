@@ -12,14 +12,22 @@ import org.ostelco.prime.core.BadGatewayError
 import org.ostelco.prime.core.ForbiddenError
 import org.ostelco.prime.core.NotFoundError
 import org.ostelco.prime.logger
-import org.ostelco.prime.paymentprocessor.core.*
+import org.ostelco.prime.paymentprocessor.core.PlanInfo
+import org.ostelco.prime.paymentprocessor.core.ProductInfo
+import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.paymentprocessor.core.SourceInfo
+import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
+import com.stripe.model.Refund
+import java.util.HashMap
+
+
 
 class StripePaymentProcessor : PaymentProcessor {
 
-    private val LOG by logger()
+    private val logger by logger()
 
     override fun getSavedSources(customerId: String): Either<ApiError, List<SourceInfo>> =
-            either (NotFoundError("Failed to get sources for customer $customerId")) {
+            either(NotFoundError("Failed to get sources for customer $customerId")) {
                 val sources = mutableListOf<SourceInfo>()
                 val customer = Customer.retrieve(customerId)
                 customer.sources.data.forEach {
@@ -30,18 +38,17 @@ class StripePaymentProcessor : PaymentProcessor {
 
     override fun createPaymentProfile(userEmail: String): Either<ApiError, ProfileInfo> =
             either(ForbiddenError("Failed to create profile for user $userEmail")) {
-                val customerParams = HashMap<String, Any>()
-                customerParams.put("email", userEmail)
+                val customerParams = mapOf("email" to userEmail)
                 ProfileInfo(Customer.create(customerParams).id)
             }
 
     override fun createPlan(productId: String, amount: Int, currency: String, interval: PaymentProcessor.Interval): Either<ApiError, PlanInfo> =
             either(ForbiddenError("Failed to create plan with product id $productId amount $amount currency $currency interval ${interval.value}")) {
-                val planParams = HashMap<String, Any>()
-                planParams["amount"] = amount
-                planParams["interval"] = interval.value
-                planParams["product"] = productId
-                planParams["currency"] = currency
+                val planParams = mapOf(
+                        "amount" to amount,
+                        "interval" to interval.value,
+                        "product" to productId,
+                        "currency" to currency)
                 PlanInfo(Plan.create(planParams).id)
             }
 
@@ -53,9 +60,9 @@ class StripePaymentProcessor : PaymentProcessor {
 
     override fun createProduct(sku: String): Either<ApiError, ProductInfo> =
             either(ForbiddenError("Failed to create product with sku $sku")) {
-                val productParams = HashMap<String, Any>()
-                productParams["name"] = sku
-                productParams["type"] = "service"
+                val productParams = mapOf(
+                        "name" to sku,
+                        "type" to "service")
                 ProductInfo(Product.create(productParams).id)
             }
 
@@ -68,22 +75,20 @@ class StripePaymentProcessor : PaymentProcessor {
     override fun addSource(customerId: String, sourceId: String): Either<ApiError, SourceInfo> =
             either(ForbiddenError("Failed to add source $sourceId to customer $customerId")) {
                 val customer = Customer.retrieve(customerId)
-                val params = HashMap<String, Any>()
-                params["source"] = sourceId
+                val params = mapOf("source" to sourceId)
                 SourceInfo(customer.sources.create(params).id)
             }
 
     override fun setDefaultSource(customerId: String, sourceId: String): Either<ApiError, SourceInfo> =
             either(ForbiddenError("Failed to set default source $sourceId for customer $customerId")) {
                 val customer = Customer.retrieve(customerId)
-                val updateParams = HashMap<String, Any>()
-                updateParams.put("default_source", sourceId)
+                val updateParams = mapOf("default_source" to sourceId)
                 val customerUpdated = customer.update(updateParams)
                 SourceInfo(customerUpdated.defaultSource)
             }
 
     override fun getDefaultSource(customerId: String): Either<ApiError, SourceInfo> =
-            either(NotFoundError( "Failed to get default source for customer $customerId")) {
+            either(NotFoundError("Failed to get default source for customer $customerId")) {
                 SourceInfo(Customer.retrieve(customerId).defaultSource)
             }
 
@@ -95,15 +100,10 @@ class StripePaymentProcessor : PaymentProcessor {
 
     override fun subscribeToPlan(planId: String, customerId: String): Either<ApiError, SubscriptionInfo> =
             either(ForbiddenError("Failed to subscribe customer $customerId to plan $planId")) {
-                val item = HashMap<String, Any>()
-                item["plan"] = planId
-
-                val items = HashMap<String, Any>()
-                items["0"] = item
-
-                val params = HashMap<String, Any>()
-                params["customer"] = customerId
-                params["items"] = items
+                val item =  mapOf("plan" to planId)
+                val params = mapOf(
+                        "customer" to customerId,
+                        "items" to mapOf("0" to item))
 
                 SubscriptionInfo(Subscription.create(params).id)
             }
@@ -111,8 +111,7 @@ class StripePaymentProcessor : PaymentProcessor {
     override fun cancelSubscription(subscriptionId: String, atIntervalEnd: Boolean): Either<ApiError, SubscriptionInfo> =
             either(ForbiddenError("Failed to unsubscribe subscription Id : $subscriptionId atIntervalEnd $atIntervalEnd")) {
                 val subscription = Subscription.retrieve(subscriptionId)
-                val subscriptionParams = HashMap<String, Any>()
-                subscriptionParams["at_period_end"] = atIntervalEnd
+                val subscriptionParams = mapOf("at_period_end" to atIntervalEnd)
                 SubscriptionInfo(subscription.cancel(subscriptionParams).id)
             }
 
@@ -120,11 +119,11 @@ class StripePaymentProcessor : PaymentProcessor {
     override fun authorizeCharge(customerId: String, sourceId: String?, amount: Int, currency: String): Either<ApiError, String> {
         val errorMessage = "Failed to authorize the charge for customerId $customerId sourceId $sourceId amount $amount currency $currency"
         return either(ForbiddenError(errorMessage)) {
-            val chargeParams = HashMap<String, Any>()
-            chargeParams["amount"] = amount
-            chargeParams["currency"] = currency
-            chargeParams["customer"] = customerId
-            chargeParams["capture"] = false
+            val chargeParams = mutableMapOf(
+                    "amount" to amount,
+                    "currency" to currency,
+                    "customer" to customerId,
+                    "capture" to false)
             if (sourceId != null) {
                 chargeParams["source"] = sourceId
             }
@@ -139,7 +138,7 @@ class StripePaymentProcessor : PaymentProcessor {
         }
     }
 
-    override fun captureCharge(chargeId: String, customerId: String, sourceId: String?): Either<ApiError, String> {
+    override fun captureCharge(chargeId: String, customerId: String): Either<ApiError, String> {
         val errorMessage = "Failed to capture charge for customerId $customerId chargeId $chargeId"
         return either(ForbiddenError(errorMessage)) {
             Charge.retrieve(chargeId)
@@ -155,11 +154,17 @@ class StripePaymentProcessor : PaymentProcessor {
                 charge.capture()
                 Either.right(charge.id)
             } catch (e: Exception) {
-                LOG.warn(errorMessage, e)
+                logger.warn(errorMessage, e)
                 Either.left(BadGatewayError(errorMessage))
             }
         }
     }
+
+    override fun refundCharge(chargeId: String): Either<ApiError, String> =
+            either(NotFoundError("Failed to refund charge $chargeId")) {
+                val refundParams = mapOf("charge" to chargeId)
+                Refund.create(refundParams).charge
+            }
 
     override fun removeSource(customerId: String, sourceId: String): Either<ApiError, String> =
             either(ForbiddenError("Failed to remove source $sourceId from customer $customerId")) {
@@ -170,7 +175,7 @@ class StripePaymentProcessor : PaymentProcessor {
         return try {
             Either.right(action())
         } catch (e: Exception) {
-            LOG.warn(apiError.description, e)
+            logger.warn(apiError.description, e)
             Either.left(apiError)
         }
     }
