@@ -53,8 +53,8 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
         val logString = """
             $msg
             Msisdn: ${event.msisdn}
-            Requested bytes: ${event.request?.msccList?.first()?.requested?.totalOctets ?: 0L}
-            Used bytes: ${event.request?.msccList?.first()?.used?.totalOctets ?: 0L}
+            Requested bytes: ${event.request?.msccList?.firstOrNull()?.requested?.totalOctets ?: 0L}
+            Used bytes: ${event.request?.msccList?.firstOrNull()?.used?.totalOctets ?: 0L}
             Bundle bytes: ${event.bundleBytes}
             Topup bytes: ${event.topUpBytes}
             Request id: ${event.request?.requestId}
