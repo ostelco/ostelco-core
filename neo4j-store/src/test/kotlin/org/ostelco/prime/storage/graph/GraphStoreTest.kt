@@ -17,6 +17,7 @@ import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.ocs.OcsAdminService
 import java.time.Instant
+import java.util.*
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -47,8 +48,7 @@ class GraphStoreTest {
                         price = Price(0, "NOK"),
                         properties = mapOf("noOfBytes" to "1_000_000_000")))
 
-        val allSegment = Segment()
-        allSegment.id = "all"
+        val allSegment = Segment(id = "all")
         Neo4jStoreSingleton.createSegment(allSegment)
     }
 
@@ -115,7 +115,7 @@ class GraphStoreTest {
         Neo4jStoreSingleton.createProduct(product)
                 .mapLeft { fail(it.message) }
 
-        val purchaseRecord = PurchaseRecord(product = product, timestamp = now)
+        val purchaseRecord = PurchaseRecord(product = product, timestamp = now, id = UUID.randomUUID().toString(), msisdn = "")
         Neo4jStoreSingleton.addPurchaseRecord(EMAIL, purchaseRecord).bimap(
                 { fail(it.message) },
                 { assertNotNull(it) }
@@ -136,15 +136,15 @@ class GraphStoreTest {
         Neo4jStoreSingleton.createProduct(createProduct("3GB_349NOK", 34900))
         Neo4jStoreSingleton.createProduct(createProduct("5GB_399NOK", 39900))
 
-        val segment = Segment()
-        segment.id = "NEW_SEGMENT"
-        segment.subscribers = listOf(EMAIL)
+        val segment = Segment(
+                id = "NEW_SEGMENT",
+                subscribers = listOf(EMAIL))
         Neo4jStoreSingleton.createSegment(segment)
 
-        val offer = Offer()
-        offer.id = "NEW_OFFER"
-        offer.segments = listOf("NEW_SEGMENT")
-        offer.products = listOf("3GB_349NOK")
+        val offer = Offer(
+                id = "NEW_OFFER",
+                segments = listOf("NEW_SEGMENT"),
+                products = listOf("3GB_349NOK"))
         Neo4jStoreSingleton.createOffer(offer)
 
         Neo4jStoreSingleton.getProducts(EMAIL).bimap(

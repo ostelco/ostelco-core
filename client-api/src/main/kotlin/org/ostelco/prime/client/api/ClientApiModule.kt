@@ -1,6 +1,5 @@
 package org.ostelco.prime.client.api
 
-import com.codahale.metrics.SharedMetricRegistries
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonTypeName
 import com.fasterxml.jackson.databind.DeserializationFeature
@@ -11,8 +10,10 @@ import io.dropwizard.auth.CachingAuthenticator
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter.Builder
 import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.setup.Environment
+import org.eclipse.jetty.servlets.CrossOriginFilter
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.auth.OAuthAuthenticator
+import org.ostelco.prime.client.api.metrics.reportMetricsAtStartUp
 import org.ostelco.prime.client.api.resources.AnalyticsResource
 import org.ostelco.prime.client.api.resources.ApplicationTokenResource
 import org.ostelco.prime.client.api.resources.ConsentsResource
@@ -28,7 +29,10 @@ import org.ostelco.prime.module.PrimeModule
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.ocs.OcsSubscriberService
 import org.ostelco.prime.storage.ClientDataSource
+import java.util.*
+import javax.servlet.DispatcherType
 import javax.ws.rs.client.Client
+
 
 /**
  * Provides API for client.
@@ -44,6 +48,16 @@ class ClientApiModule : PrimeModule {
     private val ocsSubscriberService by lazy { getResource<OcsSubscriberService>() }
 
     override fun init(env: Environment) {
+
+        // Allow CORS
+        val corsFilterRegistration = env.servlets().addFilter("CORS", CrossOriginFilter::class.java)
+        // Configure CORS parameters
+        corsFilterRegistration.setInitParameter("allowedOrigins", "*")
+        corsFilterRegistration.setInitParameter("allowedHeaders",
+                "Cache-Control,If-Modified-Since,Pragma,Content-Type,Authorization,X-Requested-With,Content-Length,Accept,Origin")
+        corsFilterRegistration.setInitParameter("allowedMethods", "OPTIONS,GET,PUT,POST,DELETE,HEAD")
+        corsFilterRegistration.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType::class.java), true, "/*")
+
 
         val dao = SubscriberDAOImpl(storage, ocsSubscriberService)
         val jerseyEnv = env.jersey()
@@ -62,18 +76,12 @@ class ClientApiModule : PrimeModule {
         jerseyEnv.register(ProfileResource(dao))
         jerseyEnv.register(ReferralResource(dao))
         jerseyEnv.register(PaymentResource(dao))
-        jerseyEnv.register(SubscriptionResource(
-                dao = dao,
-                pseudonymEndpoint = config.pseudonymEndpoint ?: "", // this will never be empty
-                client = client))
+        jerseyEnv.register(SubscriptionResource(dao))
         jerseyEnv.register(SubscriptionsResource(dao))
         jerseyEnv.register(ApplicationTokenResource(dao))
 
-        /* For reporting OAuth2 caching events. */
-        val metrics = SharedMetricRegistries.getOrCreate(env.name)
-
         /* OAuth2 with cache. */
-        val authenticator = CachingAuthenticator(metrics,
+        val authenticator = CachingAuthenticator(env.metrics(),
                 OAuthAuthenticator(client),
                 config.authenticationCachePolicy)
 
@@ -83,5 +91,7 @@ class ClientApiModule : PrimeModule {
                         .setPrefix("Bearer")
                         .buildAuthFilter()))
         jerseyEnv.register(AuthValueFactoryProvider.Binder(AccessTokenPrincipal::class.java))
+
+        reportMetricsAtStartUp()
     }
 }

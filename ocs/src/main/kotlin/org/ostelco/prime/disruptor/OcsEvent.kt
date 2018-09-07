@@ -1,5 +1,6 @@
 package org.ostelco.prime.disruptor
 
+import org.ostelco.ocs.api.CreditControlRequestInfo
 import org.ostelco.ocs.api.ReportingReason
 
 class OcsEvent {
@@ -26,19 +27,6 @@ class OcsEvent {
     var msisdnToppedUp: List<String>? = null
 
     /**
-     * Origin of word 'bucket' - P-GW consumes data in `buckets` of 10 MB ~ 100 MB at a time
-     * This field is used in.
-     * Request to reserve a new bucket of bytes
-     */
-    var requestedBucketBytes: Long = 0
-
-    /**
-     * Bytes that has been used from the bucket (previously reserved).
-     */
-    var usedBucketBytes: Long = 0
-
-
-    /**
      * Buckets that has been reserved from the bundle.
      */
     var reservedBucketBytes: Long = 0
@@ -55,46 +43,25 @@ class OcsEvent {
     var ocsgwStreamId: String? = null
 
     /**
-     * Request ID used by OCS gateway to correlate response with requests
+     * Credit-Control-Request from OCS
      */
-    var ocsgwRequestId: String? = null
-
-
-    /**
-     * Service-Identifier is used to classify traffic
-     */
-    var serviceIdentifier: Long = 0
+    var request: CreditControlRequestInfo? = null;
 
     /**
-     * Rating-Group is used to classify traffic
+     * Topup amount for bundle
      */
-    var ratingGroup: Long = 0
-
-    /**
-     * Reporting-Reason
-     * // FIXME martin: This is the Reporting-Reason for the MSCC. The PrimeEvent might be to generic since there is also Reporting-Reason used on ServiceUnit level
-     */
-    var reportingReason: ReportingReason = ReportingReason.UNRECOGNIZED
+    var topUpBytes: Long? = 0;
 
     fun clear() {
         messageType = null
-
         msisdn = null
         bundleId = null
-
         msisdnToppedUp = null
-
         bundleBytes = 0
-        requestedBucketBytes = 0
-        usedBucketBytes = 0
         reservedBucketBytes = 0
-        bundleBytes = 0
-
         ocsgwStreamId = null
-        ocsgwRequestId = null
-        serviceIdentifier = 0
-        ratingGroup = 0
-        reportingReason = ReportingReason.UNRECOGNIZED
+        request = null
+        topUpBytes = 0;
     }
 
     //FIXME vihang: We need to think about roaming!!!
@@ -105,26 +72,18 @@ class OcsEvent {
             bundleId: String?,
             msisdnToppedUp: List<String>,
             bundleBytes: Long,
-            requestedBytes: Long,
-            usedBytes: Long,
             reservedBucketBytes: Long,
-            serviceIdentifier: Long,
-            ratingGroup: Long,
-            reportingReason: ReportingReason,
             ocsgwStreamId: String?,
-            ocsgwRequestId: String?) {
+            request: CreditControlRequestInfo?,
+            topUpBytes: Long?) {
         this.messageType = messageType
         this.msisdn = msisdn
         this.bundleId = bundleId
         this.msisdnToppedUp = msisdnToppedUp
         this.bundleBytes = bundleBytes
-        this.requestedBucketBytes = requestedBytes
-        this.usedBucketBytes = usedBytes
         this.reservedBucketBytes = reservedBucketBytes
-        this.serviceIdentifier = serviceIdentifier
-        this.ratingGroup = ratingGroup
-        this.reportingReason = reportingReason
         this.ocsgwStreamId = ocsgwStreamId
-        this.ocsgwRequestId = ocsgwRequestId
+        this.request = request
+        this.topUpBytes = topUpBytes
     }
 }

@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package org.ostelco.prime.metrics.api;
+
+option java_multiple_files = true;
+option java_package = "org.ostelco.prime.metrics.api";
+
+// This is used to report Analytics events from OCSgw to Prime
+
+service OcsgwAnalyticsService {
+    rpc OcsgwAnalyticsEvent (stream OcsgwAnalyticsReport) returns (OcsgwAnalyticsReply) {}
+}
+
+message OcsgwAnalyticsReport {
+    uint32 activeSessions = 1;
+}
+
+message OcsgwAnalyticsReply {
+}

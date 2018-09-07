@@ -6,17 +6,20 @@ modules:
       rootPath: ${FIREBASE_ROOT_PATH}
   - type: neo4j
     config:
-      host: neo4j
+      host: ${NEO4J_HOST}
       protocol: bolt+routing
-  - type: ocs
+  - type: analytics
     config:
       projectId: pantel-2decb
-      topicId: data-traffic
+      dataTrafficTopicId: data-traffic
+      purchaseInfoTopicId: purchase-info
+  - type: ocs
+    config:
       lowBalanceThreshold: 100000000
+  - type: pseudonymizer
   - type: api
     config:
       authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
-      pseudonymEndpoint: http://pseudonym-server-service.default.svc.cluster.local
       jerseyClient:
         timeout: 2s
   - type: stripe-payment-processor
@@ -32,6 +35,13 @@ server:
       port: 8080
       maxConcurrentStreams: 1024
       initialStreamRecvWindow: 65535
+  requestLog:
+    appenders:
+      - type: console
+        layout:
+          type: json
+          customFieldNames:
+            level: severity
 
 logging:
   level: INFO
@@ -41,4 +51,5 @@ logging:
     - type: console
       layout:
         type: json
-
+        customFieldNames:
+           level: severity

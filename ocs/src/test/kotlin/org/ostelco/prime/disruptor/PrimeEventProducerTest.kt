@@ -77,7 +77,7 @@ class PrimeEventProducerTest {
 
         // Verify some behavior
         assertEquals(BUNDLE_ID, event.bundleId)
-        assertEquals(NO_OF_TOPUP_BYTES, event.requestedBucketBytes)
+        assertEquals(NO_OF_TOPUP_BYTES, event.topUpBytes)
         assertEquals(TOPUP_DATA_BUNDLE_BALANCE, event.messageType)
     }
 
@@ -89,8 +89,8 @@ class PrimeEventProducerTest {
                         .setTotalOctets(REQUESTED_BYTES)
                         .build())
                 .setUsed(ServiceUnit.newBuilder().setTotalOctets(USED_BYTES).build())
-                .setRatingGroup(10)
-                .setServiceIdentifier(1)
+                .setRatingGroup(RATING_GROUP)
+                .setServiceIdentifier(SERVICE_IDENTIFIER)
                 .build()
         ).build()
 
@@ -98,10 +98,10 @@ class PrimeEventProducerTest {
 
         val event = collectedEvent
         assertEquals(MSISDN, event.msisdn)
-        assertEquals(REQUESTED_BYTES, event.requestedBucketBytes)
-        assertEquals(USED_BYTES, event.usedBucketBytes)
-        assertEquals(10, event.ratingGroup)
-        assertEquals(1, event.serviceIdentifier)
+        assertEquals(REQUESTED_BYTES, event.request?.getMscc(0)?.requested?.totalOctets ?: 0L)
+        assertEquals(USED_BYTES, event.request?.getMscc(0)?.used?.totalOctets ?: 0L)
+        assertEquals(RATING_GROUP, event.request?.getMscc(0)?.ratingGroup)
+        assertEquals(SERVICE_IDENTIFIER, event.request?.getMscc(0)?.serviceIdentifier)
         assertEquals(STREAM_ID, event.ocsgwStreamId)
         assertEquals(CREDIT_CONTROL_REQUEST, event.messageType)
     }
@@ -123,6 +123,10 @@ class PrimeEventProducerTest {
         private const val RING_BUFFER_SIZE = 256
 
         private const val TIMEOUT = 10
+
+        private const val RATING_GROUP = 10L;
+
+        private const val SERVICE_IDENTIFIER = 1L;
     }
 }
 

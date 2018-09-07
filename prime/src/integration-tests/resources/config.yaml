@@ -8,15 +8,18 @@ modules:
     config:
       host: 0.0.0.0
       protocol: bolt
-  - type: ocs
+  - type: analytics
     config:
       projectId: pantel-2decb
-      topicId: data-traffic
+      dataTrafficTopicId: data-traffic
+      purchaseInfoTopicId: purchase-info
+  - type: ocs
+    config:
       lowBalanceThreshold: 0
+  - type: pseudonymizer
   - type: api
     config:
       authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
-      pseudonymEndpoint: http://pseudonym-server:8080
       jerseyClient:
         timeout: 3s
   - type: stripe-payment-processor

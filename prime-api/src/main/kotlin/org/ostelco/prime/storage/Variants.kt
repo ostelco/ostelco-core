@@ -1,6 +1,7 @@
 package org.ostelco.prime.storage
 
 import arrow.core.Either
+import org.ostelco.prime.core.ApiError
 import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Offer
@@ -10,6 +11,7 @@ import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Segment
 import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.model.Subscription
+import org.ostelco.prime.paymentprocessor.core.ProductInfo
 
 interface ClientDocumentStore {
 
@@ -118,6 +120,11 @@ interface ClientGraphStore {
      * Get user who has referred this user.
      */
     fun getReferredBy(subscriberId: String): Either<StoreError, String?>
+
+    /**
+     * Temporary method to perform purchase as atomic transaction
+     */
+    fun purchaseProduct(subscriberId: String, sku: String, sourceId: String?, saveCard: Boolean): Either<ApiError, ProductInfo>
 }
 
 interface AdminGraphStore {
@@ -136,6 +143,10 @@ interface AdminGraphStore {
     // simple update
     // updating an Offer and Product is not allowed
     fun updateSegment(segment: Segment): Either<StoreError, Unit>
+
+    fun getSubscriberCount(): Long
+    fun getReferredSubscriberCount(): Long
+    fun getPaidSubscriberCount(): Long
 
     // simple getAll
     // fun getOffers(): Collection<Offer>

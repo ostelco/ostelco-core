@@ -3,6 +3,9 @@ package org.ostelco.prime.client.api.store
 import arrow.core.Either
 import arrow.core.Tuple4
 import arrow.core.flatMap
+import org.ostelco.prime.analytics.AnalyticsService
+import org.ostelco.prime.analytics.PrimeMetric.REVENUE
+import org.ostelco.prime.client.api.metrics.updateMetricsOnNewSubscriber
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.Person
 import org.ostelco.prime.client.api.model.SubscriptionStatus
@@ -13,6 +16,7 @@ import org.ostelco.prime.core.ForbiddenError
 import org.ostelco.prime.core.InsuffientStorageError
 import org.ostelco.prime.core.NotFoundError
 import org.ostelco.prime.logger
+import org.ostelco.prime.model.ActivePseudonyms
 import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
@@ -24,8 +28,10 @@ import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
+import org.ostelco.prime.pseudonymizer.PseudonymizerService
 import org.ostelco.prime.storage.ClientDataSource
 import java.time.Instant
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -36,6 +42,8 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
     private val logger by logger()
 
     private val paymentProcessor by lazy { getResource<PaymentProcessor>() }
+    private val pseudonymizer by lazy { getResource<PseudonymizerService>() }
+    private val analyticsReporter by lazy { getResource<AnalyticsService>() }
 
     /* Table for 'profiles'. */
     private val consentMap = ConcurrentHashMap<String, ConcurrentHashMap<String, Boolean>>()
@@ -46,7 +54,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                         BadRequestError("Incomplete profile description. ${it.message}")
                     }
         } catch (e: Exception) {
-            logger.error("Failed to fetch profile", e)
+            logger.error("Failed to fetch profile for subscriberId $subscriberId", e)
             Either.left(NotFoundError("Failed to fetch profile"))
         }
     }
@@ -56,14 +64,16 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
             logger.error("Failed to create profile. Invalid profile.")
             return Either.left(BadRequestError("Incomplete profile description"))
         }
-        try {
-            profile.referralId = profile.email
-            return storage.addSubscriber(profile, referredBy)
+        return try {
+            storage.addSubscriber(profile, referredBy)
                     .mapLeft { ForbiddenError("Failed to create profile. ${it.message}") }
-                    .flatMap { getProfile(subscriberId) }
+                    .flatMap {
+                        updateMetricsOnNewSubscriber()
+                        getProfile(subscriberId)
+                    }
         } catch (e: Exception) {
-            logger.error("Failed to create profile", e)
-            return Either.left(ForbiddenError("Failed to create profile"))
+            logger.error("Failed to create profile for subscriberId $subscriberId", e)
+            Either.left(ForbiddenError("Failed to create profile"))
         }
     }
 
@@ -76,7 +86,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         try {
             storage.addNotificationToken(msisdn, applicationToken)
         } catch (e: Exception) {
-            logger.error("Failed to store ApplicationToken", e)
+            logger.error("Failed to store ApplicationToken for msisdn $msisdn", e)
             return Either.left(InsuffientStorageError("Failed to store ApplicationToken"))
         }
         return getNotificationToken(msisdn, applicationToken.applicationID)
@@ -88,7 +98,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                     ?.let { Either.right(it) }
                     ?: return Either.left(NotFoundError("Failed to get ApplicationToken"))
         } catch (e: Exception) {
-            logger.error("Failed to get ApplicationToken", e)
+            logger.error("Failed to get ApplicationToken for msisdn $msisdn", e)
             return Either.left(NotFoundError("Failed to get ApplicationToken"))
         }
     }
@@ -98,10 +108,9 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
             return Either.left(BadRequestError("Incomplete profile description"))
         }
         try {
-            profile.referralId = profile.email
             storage.updateSubscriber(profile)
         } catch (e: Exception) {
-            logger.error("Failed to update profile", e)
+            logger.error("Failed to update profile for subscriberId $subscriberId", e)
             return Either.left(NotFoundError("Failed to update profile"))
         }
 
@@ -118,7 +127,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                     }
                     .mapLeft { NotFoundError(it.message) }
         } catch (e: Exception) {
-            logger.error("Failed to get balance", e)
+            logger.error("Failed to get balance for subscriber $subscriberId", e)
             return Either.left(NotFoundError("Failed to get balance"))
         }
     }
@@ -129,9 +138,15 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                NotFoundError("Failed to get subscriptions. ${it.message}")
             }
         } catch (e: Exception) {
-            logger.error("Failed to get subscriptions", e)
+            logger.error("Failed to get subscriptions for subscriberId $subscriberId", e)
             return Either.left(NotFoundError("Failed to get subscriptions"))
         }
+    }
+
+    override fun getActivePseudonymOfMsisdnForSubscriber(subscriberId: String): Either<ApiError, ActivePseudonyms> {
+        return storage.getMsisdn(subscriberId)
+                .mapLeft { NotFoundError("Failed to msisdn for user. ${it.message}") }
+                .map { msisdn -> pseudonymizer.getActivePseudonymsForMsisdn(msisdn) }
     }
 
     override fun getPurchaseHistory(subscriberId: String): Either<ApiError, Collection<PurchaseRecord>> {
@@ -140,33 +155,30 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                     { NotFoundError("Failed to get purchase history. ${it.message}") },
                     { it.toList() })
         } catch (e: Exception) {
-            logger.error("Failed to get purchase history", e)
+            logger.error("Failed to get purchase history for subscriberId $subscriberId", e)
             Either.left(NotFoundError("Failed to get purchase history"))
         }
     }
 
     override fun getMsisdn(subscriberId: String): Either<ApiError, String> {
-        try {
-            return storage.getMsisdn(subscriberId).mapLeft {
+        return try {
+            storage.getMsisdn(subscriberId).mapLeft {
                 NotFoundError("Did not find msisdn for this subscription. ${it.message}")
             }
         } catch (e: Exception) {
-            logger.error("Did not find msisdn for this subscription", e)
-            return Either.left(NotFoundError("Did not find subscription"))
+            logger.error("Did not find msisdn for subscriberId $subscriberId", e)
+            Either.left(NotFoundError("Did not find subscription"))
         }
     }
 
     override fun getProducts(subscriberId: String): Either<ApiError, Collection<Product>> {
-        try {
-            return storage.getProducts(subscriberId).bimap(
+        return try {
+            storage.getProducts(subscriberId).bimap(
                     { NotFoundError(it.message) },
-                    { products ->
-                        products.forEach { key, value -> value.sku = key }
-                        products.values
-                    })
+                    { products -> products.values })
         } catch (e: Exception) {
-            logger.error("Failed to get Products", e)
-            return Either.left(NotFoundError("Failed to get Products"))
+            logger.error("Failed to get Products for subscriberId $subscriberId", e)
+            Either.left(NotFoundError("Failed to get Products"))
         }
 
     }
@@ -185,81 +197,44 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                 }
     }
 
-
-    override fun purchaseProduct(subscriberId: String, sku: String, sourceId: String?, saveCard: Boolean): Either<ApiError, ProductInfo> {
+    @Deprecated("use purchaseProduct", ReplaceWith("purchaseProduct"))
+    override fun purchaseProductWithoutPayment(subscriberId: String, sku: String): Either<ApiError,Unit> {
         return getProduct(subscriberId, sku)
                 // If we can't find the product, return not-found
                 .mapLeft { NotFoundError("Product unavailable") }
-                .flatMap { product: Product ->
-                    // Fetch/Create stripe payment profile for the subscriber.
-                    getPaymentProfile(subscriberId)
-                            .fold(
-                                    { createAndStorePaymentProfile(subscriberId) },
-                                    { profileInfo -> Either.right(profileInfo) }
-                            )
-                            .map { profileInfo -> Pair(product, profileInfo) }
-                }
-                .flatMap { (product, profileInfo) ->
-                    // Add payment source
-                    if (sourceId != null) {
-                        paymentProcessor.addSource(profileInfo.id, sourceId).
-                                map {sourceInfo -> Triple(product, profileInfo, sourceInfo.id)}
-                    } else {
-                        Either.right(Triple(product, profileInfo, null))
-                    }
-                }
-                .flatMap { (product, profileInfo, savedSourceId) ->
-                    // Authorize stripe charge for this purchase
-                    val price = product.price
-                    paymentProcessor.authorizeCharge(profileInfo.id, savedSourceId, price.amount, price.currency)
-                            .mapLeft { apiError ->
-                                logger.error("failed to authorize purchase for customerId ${profileInfo.id}, sourceId $savedSourceId, sku $sku")
-                                apiError
-                            }
-                            .map { chargeId -> Tuple4(profileInfo, savedSourceId, chargeId, product) }
-                }
-                .flatMap { (profileInfo, savedSourceId, chargeId, product) ->
-                    product.sku = sku
+                .flatMap { product ->
                     val purchaseRecord = PurchaseRecord(
-                            id = chargeId,
+                            id = UUID.randomUUID().toString(),
                             product = product,
-                            timestamp = Instant.now().toEpochMilli())
+                            timestamp = Instant.now().toEpochMilli(),
+                            msisdn = "")
                     // Create purchase record
                     storage.addPurchaseRecord(subscriberId, purchaseRecord)
                             .mapLeft { storeError ->
-                                logger.error("failed to save purchase record, for customerId ${profileInfo.id}, chargeId $chargeId, payment will be unclaimed in Stripe")
+                                logger.error("failed to save purchase record, for subscriberId $subscriberId, sku $sku")
                                 BadGatewayError(storeError.message)
                             }
                             // Notify OCS
                             .flatMap {
                                 //TODO: Handle errors (when it becomes available)
                                 ocsSubscriberService.topup(subscriberId, sku)
-                                Either.right(Tuple4(profileInfo, savedSourceId, chargeId, ProductInfo(sku)))
+                                // TODO vihang: handle currency conversion
+                                analyticsReporter.reportMetric(REVENUE, product.price.amount.toLong())
+                                Either.right(Unit)
                             }
-                }
-                .flatMap { (profileInfo, savedSourceId, chargeId, productInfo) ->
-                    // Capture the charge, our database have been updated.
-                    paymentProcessor.captureCharge(chargeId, profileInfo.id, sourceId)
-                            .mapLeft { apiError ->
-                                logger.error("Capture failed for customerId ${profileInfo.id}, chargeId $chargeId, Fix this in Stripe Dashborad")
-                                apiError
-                            }
-                            .map { Triple(profileInfo, savedSourceId, productInfo) }
-                }
-                .flatMap { (profileInfo, savedSourceId, productInfo) ->
-                    // Remove the payment source
-                    if (saveCard == false && savedSourceId != null) {
-                        paymentProcessor.removeSource(profileInfo.id, savedSourceId)
-                                .mapLeft { apiError ->
-                                    logger.error("Failed to remove card, for customerId ${profileInfo.id}, sourceId $sourceId")
-                                    apiError
-                                }
-                                .map { productInfo }
-                    } else {
-                        Either.Right(productInfo)
-                    }
                 }
     }
+
+    override fun purchaseProduct(
+            subscriberId: String,
+            sku: String,
+            sourceId: String?,
+            saveCard: Boolean): Either<ApiError, ProductInfo> =
+        storage.purchaseProduct(
+                subscriberId,
+                sku,
+                sourceId,
+                saveCard)
 
     override fun getReferrals(subscriberId: String): Either<ApiError, Collection<Person>> {
         return try {
@@ -267,7 +242,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                     { NotFoundError("Failed to get referral list. ${it.message}") },
                     { list -> list.map { Person(it) } })
         } catch (e: Exception) {
-            logger.error("Failed to get referral list", e)
+            logger.error("Failed to get referral list for subscriberId $subscriberId", e)
             Either.left(NotFoundError("Failed to get referral list"))
         }
     }
@@ -278,7 +253,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                     { NotFoundError("Failed to get referred-by. ${it.message}") },
                     { Person(name = it) })
         } catch (e: Exception) {
-            logger.error("Failed to get referred-by", e)
+            logger.error("Failed to get referred-by for subscriberId $subscriberId", e)
             Either.left(NotFoundError("Failed to get referred-by"))
         }
     }

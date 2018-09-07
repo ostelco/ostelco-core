@@ -47,8 +47,9 @@ ostelco="https://storage.googleapis.com/pi-ostelco-helm-charts-repo/"
     namespace = "dev"
     enabled = true
     chart = "ostelco/prime"
-    version = "0.2.1"
+    version = "0.3.0"
     valuesFile = "prime-dev-values.yaml"
     [apps.prime.set]
     "prime.tag"="\"$TAG\"" # double quotes are needed to avoid helm converting git SHA into scientific numbers format 
     "firebaseServiceAccount"="$PANTEL_SECRETS_FILE"
+    "prime.env.STRIPE_API_KEY"="$STRIPE_API_KEY"

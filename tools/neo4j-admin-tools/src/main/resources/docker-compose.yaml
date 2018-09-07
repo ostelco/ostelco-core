@@ -1,0 +1,12 @@
+version: "3.7"
+
+services:
+  neo4j:
+    container_name: "neo4j"
+    image: neo4j:3.4.4-enterprise
+    environment:
+    - NEO4J_AUTH=none
+    - NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
+    ports:
+    - "7687:7687"
+    - "7474:7474"

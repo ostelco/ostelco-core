@@ -1,7 +1,0 @@
-serviceAccountKey: /config/pantel-prod.json
-databaseName: pantel-2decb
-
-logging:
-  level: INFO
-  loggers:
-    org.ostelco: DEBUG
