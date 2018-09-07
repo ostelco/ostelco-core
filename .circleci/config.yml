@@ -204,6 +204,7 @@ jobs:
           name: deploy prime to the dev cluster
           command: |
             export GOOGLE_CREDENTIALS=${PI_DEV_CLUSTER_CREDENTIALS}
+            /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
             helm repo update
             helm upgrade prime ostelco/prime --install --tiller-namespace dev --namespace dev \
@@ -244,6 +245,7 @@ jobs:
           command: |
             export GOOGLE_CREDENTIALS=${PI_PROD_CLUSTER_CREDENTIALS}
             export TAG=$(git rev-parse --short=9 origin/circleci-dev)
+            /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
             helm repo update
             helm upgrade prime ostelco/prime --install --tiller-namespace prod --namespace prod \
