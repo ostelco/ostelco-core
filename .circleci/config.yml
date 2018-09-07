@@ -165,7 +165,7 @@ jobs:
       #       docker build -t eu.gcr.io/pi-ostelco-dev/ocsgw:$TAG .
       #       docker push eu.gcr.io/pi-ostelco-dev/ocsgw:$TAG      
             
-  update-endpoints:
+  update-dev-endpoints:
     docker:
       - image: eu.gcr.io/pi-ostelco-dev/python-gcloud
     steps: 
@@ -228,7 +228,27 @@ jobs:
             git checkout circleci-dev
             hub pull-request -m "merging circle-dev into circleci-prod" -b circleci-prod
 
-  # jobs for on-PR-merge-to-master 
+  ### JOBS FOR  on-PR-merge-to-master PIPELINE
+  update-prod-endpoints:
+    docker:
+      - image: eu.gcr.io/pi-ostelco-dev/python-gcloud
+    steps: 
+      - checkout
+      - run:
+          name: update endpoints spec
+          command: |  
+            export CLOUDSDK_CORE_PROJECT=${PROD_PROJECT}
+            echo $GOOGLE_PROD_ENDPOINTS_CREDENTIALS > ${HOME}/gcloud-service-key.json
+            gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
+            
+            python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=ocs-grpc-api/src/main/proto --descriptor_set_out=ocs_descriptor.pb ocs.proto
+
+            python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=analytics-grpc-api/src/main/proto --descriptor_set_out=metrics_descriptor.pb prime_metrics.proto
+
+            gcloud endpoints services deploy ocs_descriptor.pb prime/infra/new-prod/ocs-api.yaml
+            gcloud endpoints services deploy metrics_descriptor.pb prime/infra/new-prod/metrics-api.yaml
+            gcloud endpoints services deploy prime/infra/new-prod/prime-client-api.yaml
+  
   deploy-to-prod:
     docker:
     - image: praqma/gcloud-kubectl-helm:v2.8.1
@@ -279,20 +299,23 @@ workflows:
     - build-image:
         requires:
           - build-code
-    - update-endpoints:
+    - update-dev-endpoints:
         requires:
           - build-image        
     - deploy-to-dev:
         requires:
-          - update-endpoints
+          - update-dev-endpoints
     # - create-PR-to-master:
     #     requires:
     #       - deploy-to-dev
 
   deploy-to-prod:
     jobs:
-    - deploy-to-prod:
+    - update-prod-endpoints:
         filters:
           branches:
-            only:
-            - circleci-prod                       
+            only: 
+            - circleci-prod
+    - deploy-to-prod:
+        requires:
+          - update-prod-endpoints                      
