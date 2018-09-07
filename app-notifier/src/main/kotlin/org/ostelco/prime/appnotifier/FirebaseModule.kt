@@ -17,7 +17,6 @@ class FirebaseModule : PrimeModule {
 
     @JsonProperty("config")
     fun setConfig(config: FirebaseConfig) {
-        println("Config set for AppNotifier")
         setupFirebaseApp(config.databaseName, config.configFile)
     }
 
@@ -26,7 +25,6 @@ class FirebaseModule : PrimeModule {
             configFile: String) {
 
         try {
-            println("Setting up Firebase for FirebaseAppNotifier. databaseName : $databaseName , configFile : $configFile ")
             val credentials: GoogleCredentials = if (Files.exists(Paths.get(configFile))) {
                 FileInputStream(configFile).use { serviceAccount -> GoogleCredentials.fromStream(serviceAccount) }
             } else {

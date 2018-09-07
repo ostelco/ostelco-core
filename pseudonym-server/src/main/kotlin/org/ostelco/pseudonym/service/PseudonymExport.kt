@@ -17,7 +17,7 @@ import com.google.cloud.datastore.StructuredQuery
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import org.ostelco.pseudonym.ExportTaskKind
-import org.ostelco.pseudonym.PseudonymEntityKind
+import org.ostelco.pseudonym.MsisdnPseudonymEntityKind
 import org.ostelco.pseudonym.errorPropertyName
 import org.ostelco.pseudonym.exportIdPropertyName
 import org.ostelco.pseudonym.msisdnPropertyName
@@ -83,7 +83,7 @@ class PseudonymExport(private val exportId: String, private val bigquery: BigQue
         // Dump pseudonyms to BQ, one page at a time. Since all records in a
         // page are inserted at once, use a small page size
         val queryBuilder = Query.newEntityQueryBuilder()
-                .setKind(PseudonymEntityKind)
+                .setKind(MsisdnPseudonymEntityKind)
                 .setOrderBy(StructuredQuery.OrderBy.asc(msisdnPropertyName))
                 .setLimit(pageSize)
         if (cursor != null) {
