@@ -1,0 +1,30 @@
+type: google.api.Service
+
+config_version: 3
+
+name: metrics.new.dev.ostelco.org
+
+title: Prime Metrics Reporter Service gRPC API
+
+apis:
+  - name: org.ostelco.prime.metrics.api.OcsgwAnalyticsService
+
+usage:
+  rules:
+  # All methods can be called without an API Key.
+  - selector: "*"
+    allow_unregistered_calls: true
+
+authentication:
+  providers:
+  - id: google_service_account
+    issuer: esp-credentials@pi-ostelco-dev.iam.gserviceaccount.com
+    jwks_uri: https://www.googleapis.com/robot/v1/metadata/x509/esp-credentials@pi-ostelco-dev.iam.gserviceaccount.com
+    audiences: >
+      https://metrics.new.dev.ostelco.org/org.ostelco.prime.metrics.api.OcsgwAnalyticsService,
+      metrics.new.dev.ostelco.org/org.ostelco.prime.metrics.api.OcsgwAnalyticsService,
+      metrics.new.dev.ostelco.org
+  rules:
+  - selector: "*"
+    requirements:
+      - provider_id: google_service_account
