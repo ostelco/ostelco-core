@@ -93,6 +93,7 @@ services:
     environment:
     - PRIME_SOCKET=prime:8080
     - STRIPE_API_KEY=${STRIPE_API_KEY}
+    - GOOGLE_APPLICATION_CREDENTIALS=/secret/pantel-prod.json
     networks:
       net:
         ipv4_address: 172.16.238.2

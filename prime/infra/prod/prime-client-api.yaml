@@ -4,6 +4,9 @@ info:
   description: "The client API for Panacea."
   version: "1.0.0"
 host: "api.ostelco.org"
+x-google-endpoints:
+  - name: "api.ostelco.org"
+    allowCors: true
 schemes:
   - "https"
 paths:
@@ -30,11 +33,15 @@ paths:
         - application/json
       operationId: "createProfile"
       parameters:
-        - in: body
-          name: profile
+        - name: profile
+          in: body
           description: The profile to create.
           schema:
             $ref: '#/definitions/Profile'
+        - name: referred_by
+          in: query
+          description: "Referral ID of user who has invited this user"
+          type: string
       responses:
         201:
           description: "Successfully created the profile."
@@ -482,7 +489,7 @@ definitions:
   PseudonymEntity:
     type: object
     properties:
-      msisdn:
+      sourceId:
         type: string
       pseudonym:
         type: string
@@ -495,7 +502,7 @@ definitions:
         type: integer
         format: int64
     required:
-      - msisdn
+      - sourceId
       - pseudonym
       - start
       - end
