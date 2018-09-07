@@ -1,0 +1,86 @@
+// Dumped using `bq show --schema --format=prettyjson pantel-2decb:purchases.raw_purchases`
+[
+  {
+    "mode": "REQUIRED", 
+    "name": "id", 
+    "type": "STRING"
+  }, 
+  {
+    "mode": "REQUIRED", 
+    "name": "subscriberId", 
+    "type": "STRING"
+  }, 
+  {
+    "mode": "REQUIRED", 
+    "name": "timestamp", 
+    "type": "INTEGER"
+  }, 
+  {
+    "mode": "REQUIRED", 
+    "name": "status", 
+    "type": "STRING"
+  }, 
+  {
+    "fields": [
+      {
+        "mode": "REQUIRED", 
+        "name": "sku", 
+        "type": "STRING"
+      }, 
+      {
+        "fields": [
+          {
+            "mode": "REQUIRED", 
+            "name": "amount", 
+            "type": "INTEGER"
+          }, 
+          {
+            "mode": "REQUIRED", 
+            "name": "currency", 
+            "type": "STRING"
+          }
+        ], 
+        "mode": "REQUIRED", 
+        "name": "price", 
+        "type": "RECORD"
+      }, 
+      {
+        "fields": [
+          {
+            "mode": "REQUIRED", 
+            "name": "key", 
+            "type": "STRING"
+          }, 
+          {
+            "mode": "REQUIRED", 
+            "name": "value", 
+            "type": "STRING"
+          }
+        ], 
+        "mode": "REPEATED", 
+        "name": "properties", 
+        "type": "RECORD"
+      }, 
+      {
+        "fields": [
+          {
+            "mode": "REQUIRED", 
+            "name": "key", 
+            "type": "STRING"
+          }, 
+          {
+            "mode": "NULLABLE", 
+            "name": "value", 
+            "type": "STRING"
+          }
+        ], 
+        "mode": "REPEATED", 
+        "name": "presentation", 
+        "type": "RECORD"
+      }
+    ], 
+    "mode": "REQUIRED", 
+    "name": "product", 
+    "type": "RECORD"
+  }
+]
