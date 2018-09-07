@@ -98,10 +98,10 @@ class PrimeEventProducerTest {
 
         val event = collectedEvent
         assertEquals(MSISDN, event.msisdn)
-        assertEquals(REQUESTED_BYTES, event.request?.getMscc(0)?.requested?.totalOctets ?: 0L)
-        assertEquals(USED_BYTES, event.request?.getMscc(0)?.used?.totalOctets ?: 0L)
-        assertEquals(RATING_GROUP, event.request?.getMscc(0)?.ratingGroup)
-        assertEquals(SERVICE_IDENTIFIER, event.request?.getMscc(0)?.serviceIdentifier)
+        assertEquals(REQUESTED_BYTES, event.request?.msccList?.first()?.requested?.totalOctets ?: 0L)
+        assertEquals(USED_BYTES, event.request?.msccList?.first()?.used?.totalOctets ?: 0L)
+        assertEquals(RATING_GROUP, event.request?.msccList?.first()?.ratingGroup)
+        assertEquals(SERVICE_IDENTIFIER, event.request?.msccList?.first()?.serviceIdentifier)
         assertEquals(STREAM_ID, event.ocsgwStreamId)
         assertEquals(CREDIT_CONTROL_REQUEST, event.messageType)
     }
