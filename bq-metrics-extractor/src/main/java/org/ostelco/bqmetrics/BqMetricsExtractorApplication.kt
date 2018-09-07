@@ -1,6 +1,7 @@
 package org.ostelco.bqmetrics
 
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.cloud.bigquery.*
 import io.dropwizard.Application
 import io.dropwizard.setup.Bootstrap
@@ -15,23 +16,62 @@ import net.sourceforge.argparse4j.inf.Subparser
 import org.slf4j.LoggerFactory
 import java.util.*
 import org.slf4j.Logger
+import javax.validation.Valid
+import javax.validation.constraints.NotNull
 
 
 fun main(args: Array<String>) {
     BqMetricsExtractorApplication().run(*args)
 }
 
+class  MetricConfig {
+
+    @Valid
+    @NotNull
+    @JsonProperty
+    lateinit var type: String
+
+    @Valid
+    @NotNull
+    @JsonProperty
+    lateinit var name: String
+
+    @Valid
+    @NotNull
+    @JsonProperty
+    lateinit var help: String
+
+    @Valid
+    @NotNull
+    @JsonProperty
+    lateinit var resultColumn: String
+
+    @Valid
+    @NotNull
+    @JsonProperty
+    lateinit var sql:  String
+}
+
+
+class BqMetricsExtractorConfig: Configuration() {
+    @Valid
+    @NotNull
+    @JsonProperty("bqmetrics")
+    lateinit var metrics: List<MetricConfig>
+}
+
+
 /**
  * Main entry point to the bq-metrics-extractor API server.
  */
-class BqMetricsExtractorApplication : Application<Configuration>() {
+class BqMetricsExtractorApplication : Application<BqMetricsExtractorConfig>() {
 
-    override fun initialize(bootstrap: Bootstrap<Configuration>) {
+    override fun initialize(bootstrap: Bootstrap<BqMetricsExtractorConfig>) {
         bootstrap.addCommand(CollectAndPushMetrics())
     }
 
     override fun run(
-            configuration: Configuration,
+            configuration: BqMetricsExtractorConfig,
             environment: Environment) {
     }
 }
@@ -106,24 +146,21 @@ class PrometheusPusher(val pushGateway: String, val job: String) {
 
     val registry = CollectorRegistry()
 
-
-    // Example code for  pushing to pushgateway (from https://github.com/prometheus/client_java#exporting-to-a-pushgateway,
-    // translated to Kotlin)
     @Throws(Exception::class)
-    fun publishMetrics() {
+    fun publishMetrics(metrics: List<MetricConfig>) {
 
-
-        // XXX Pick this up from the config file, and iterate over all the queries
-        //     your heart desires.
         val metricSources: MutableList<MetricBuilder> = mutableListOf()
-        metricSources.add(SummaryMetricBuilder(
-                "active_users",
-                "Number of active users",
-                """
-                    SELECT count(distinct user_pseudo_id) AS count FROM `pantel-2decb.analytics_160712959.events_*`
-                    WHERE event_name = "first_open"
-                    LIMIT 1000""",
-                "count"))
+        metrics.forEach{
+            if (it.type.trim().toUpperCase().equals("SUMMARY")) {
+                metricSources.add(SummaryMetricBuilder(
+                        it.name,
+                        it.help,
+                        it.sql,
+                        it.resultColumn))
+            } else {
+                log.error("Unknown metrics type '${it.type}'")
+            }
+        }
 
         log.info("Querying bigquery for metric values")
         val pg = PushGateway(pushGateway)
@@ -135,11 +172,11 @@ class PrometheusPusher(val pushGateway: String, val job: String) {
     }
 }
 
-class CollectAndPushMetrics : ConfiguredCommand<Configuration>("query", "query BigQuery for a metric") {
-    override fun run(bootstrap: Bootstrap<Configuration>?, namespace: Namespace?, configuration: Configuration?) {
+class CollectAndPushMetrics : ConfiguredCommand<BqMetricsExtractorConfig>("query","query BigQuery for a metric") {
+    override fun run(bootstrap: Bootstrap<BqMetricsExtractorConfig>?, namespace: Namespace?, configuration: BqMetricsExtractorConfig?) {
         val pgw = namespace!!.get<String>(pushgatewayKey)
         PrometheusPusher(pgw,
-                "bq_metrics_extractor").publishMetrics()
+                "bq_metrics_extractor").publishMetrics(configuration!!.metrics)
     }
 
     val pushgatewayKey = "pushgateway"
