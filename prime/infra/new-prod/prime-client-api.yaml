@@ -433,7 +433,7 @@ definitions:
     type: object
     properties:
       id:
-        desctiption: "The identifier for the source"
+        description: "The identifier for the source"
         type: string
   ConsentList:
     type: array
