@@ -36,6 +36,7 @@ class DataConsumptionInfo() : EventHandler<OcsEvent> {
                     primeMetric = MEGABYTES_CONSUMED,
                     value = (event.request?.getMscc(0)?.used?.totalOctets ?: 0L) / 1_000_000)
 
+            //ToDo: Send to analytics and build pipeline
             event.request?.let { request ->
                 if(request.type == CreditControlRequestType.INITIAL_REQUEST) {
                    logger.info("MSISDN : {} connected apn {} sgsn_mcc_mnc {}",
