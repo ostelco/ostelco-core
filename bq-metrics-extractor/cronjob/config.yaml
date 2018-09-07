@@ -3,12 +3,13 @@ kind: CronJob
 metadata:
   name: bq-metrics-extractor
 spec:
-  schedule: "*/20 * * * *"
+  schedule: "*/30 * * * *"
   jobTemplate:
     spec:
       template:
         spec:
           containers:
           - name:  bq-metrics-extractor
-            image: bq-metrics-extractor
-          restartPolicy: OnFailure
+            image: eu.gcr.io/pantel-2decb/bq-metrics-extractor:latest
+            imagePullPolicy: Always
+          restartPolicy: Never

@@ -4,5 +4,7 @@ logging:
     org.ostelco: DEBUG
   appenders:
     - type: console
-
-
+      layout:
+        type: json
+        customFieldNames:
+           level: severity
