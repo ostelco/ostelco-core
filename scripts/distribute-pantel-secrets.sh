@@ -1,7 +1,5 @@
 #!/bin/bash
 
-PANTEL_SECRETS_FILE=$(cat /tmp/pantel-prod.json | base64 -w 0)
-
 if [ -z "${PANTEL_SECRETS_FILE}" ] ; then
   echo "the PANTEL_SECRETS_FILE env var is empty. Can't proceed. Exiting ..."
   exit 1
