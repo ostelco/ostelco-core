@@ -1,16 +1,12 @@
 version: 2
 jobs:
+  ### JOBS FOR on-feature-branch-commit PIPELINE
   build-test-repo:
-
+    # machine is needed to run Gradle build and to run docker compose tests
     machine:
       enabled: true
 
-    # By default, the working_directory in circleci is: '~/project'. So it will work without even specifying it.
-    # I defined it, just to be explicit.
-    working_directory: ~/project
-
     steps:
-
       - checkout
       - run: 
           # checking for merge conflicts and merging locally if none exist
@@ -25,12 +21,23 @@ jobs:
       # Show the java version installed.
       - run: java -version
 
+      - run:
+          name: Pulling Gradle cache
+          command: |
+            sudo rm -f /etc/boto.cfg # needed to fix gsutil issue in circleci https://github.com/travis-ci/travis-ci/issues/7940
+            export CLOUDSDK_CORE_PROJECT=${DEV_PROJECT}
+            echo $GOOGLE_GCR_CREDENTIALS > ${HOME}/gcloud-service-key.json
+            gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
+            gsutil cp gs://pi-ostelco-core-gradle-cache/caches.tar.gz ~/caches.tar.gz
+            mkdir -p ~/.gradle/caches/
+            tar -xzvf ~/caches.tar.gz -C ~/.gradle/caches/ .
       # run gradle build. Skipping neo4j tests as they fail
       - run:
           name: Build entire repo
           command: ./gradlew clean build -s -x :neo4j-store:test 
 
       # persisting the entire project with its generated artifacts. They are needed in the build-image job below.
+      # the default working directory in circleci is ~/project/
       - persist_to_workspace:
           root: ~/project/
           paths:
@@ -41,7 +48,7 @@ jobs:
           name: Distribute pantel-prod.json secret from env var. 
           command: |
             scripts/distribute-pantel-secrets.sh
-
+      # generating selfsigned certs. Needed for docker compose tests
       - run:
           name: Generate self signed certs
           command: |
@@ -54,7 +61,6 @@ jobs:
           command: docker-compose up --build --abort-on-container-exit
 
   code-coverage:
-
     environment:
       CODACY_DOWNLOAD_URL: https://github.com/codacy/codacy-coverage-reporter/releases/download
       CODACY_VERSION: 4.0.1
@@ -74,42 +80,18 @@ jobs:
       - attach_workspace:
           # Must be absolute path or relative path from working_directory
           at: ~/project  
-                  
+               
+      # the commands below need "CODACY_PROJECT_TOKEN" to be present as (circleci) ENV variable.            
       - run:
-          # the commands below need "CODACY_PROJECT_TOKEN" to be present as (circleci) ENV variable.
           name: Generate Codacy code-coverage report
           command: |
-            REPORT_TARGETS=$(find . -name jacocoTestReport.xml)
-            
-            if [ -n "${REPORT_TARGETS}" ]; then
-              echo "Found 'jacocoTestReport.xml' file under 'build' directories in the following modules,"
-              echo ", implying - tests were run for them."
-              echo "${REPORT_TARGETS}" ; echo 
-            else
-              echo "There were no 'build' directories found under each module." 
-              echo "This means tests were not run in the previous build job."
-            fi
-
-            for REPORT_TARGET in ${REPORT_TARGETS}; do
-              echo "======> Processing code-coverage report for ======> ${REPORT_TARGET} <======"
-              java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} report -l Java -r ${REPORT_TARGET} --partial
-            done
-
-            if [ -n "${REPORT_TARGETS}" ]; then
-              echo "======> Uploading final code-coverage report to CODACY website. <======"
-              java -cp ~/${CODACY_JAR_FILE} ${CODACY_MODULE} final
-            else
-              echo "There were no 'jacocoTestReport.xml' files found under 'build' directories in each module." 
-              echo "This means tests were not run in the previous build job."
-              echo "... so, not uploading any code-coverage reports to CODACY website. "
-            fi
+            scripts/generate-codacy-coverage.sh
 
   
-  # jobs for on-PR-merge-to-dev 
+  ### JOBS FOR  on-PR-merge-to-dev PIPELINE 
   build-code:
     machine:
       enabled: true
-    working_directory: ~/project
 
     steps:
       - checkout 
@@ -117,7 +99,7 @@ jobs:
           name: Pulling Gradle cache
           command: |
             sudo rm -f /etc/boto.cfg # needed to fix gsutil issue in circleci https://github.com/travis-ci/travis-ci/issues/7940
-            gcloud config set project pi-ostelco-dev
+            export CLOUDSDK_CORE_PROJECT=${DEV_PROJECT}
             echo $GOOGLE_GCR_CREDENTIALS > ${HOME}/gcloud-service-key.json
             gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
             gsutil cp gs://pi-ostelco-core-gradle-cache/caches.tar.gz ~/caches.tar.gz
@@ -137,14 +119,12 @@ jobs:
             rm -fr ~/.gradle/caches/*/plugin-resolution/
             tar -czvf  ~/caches.tar.gz  -C ~/.gradle/caches .
             gsutil cp  ~/caches.tar.gz gs://pi-ostelco-core-gradle-cache
-      
-      
+       
       - persist_to_workspace:
           root: ~/project/
           paths:
             - .
       
-
   build-image:
     docker:
       - image: google/cloud-sdk:latest
@@ -159,7 +139,7 @@ jobs:
             # with permission to write to Google container registry
             echo $GOOGLE_GCR_CREDENTIALS > ${HOME}/gcloud-service-key.json
             gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
-      # if authentication succeeded - attach workspace
+
       - attach_workspace:
           # Must be absolute path or relative path from working_directory
           at: ~/project    
@@ -192,10 +172,8 @@ jobs:
       - checkout
       - run:
           name: update endpoints spec
-          environment:
-            CLOUDSDK_CORE_PROJECT: pi-ostelco-dev
           command: |  
-            git checkout develop 
+            export CLOUDSDK_CORE_PROJECT=${DEV_PROJECT}
             echo $GOOGLE_DEV_ENDPOINTS_CREDENTIALS > ${HOME}/gcloud-service-key.json
             gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
             
@@ -223,10 +201,9 @@ jobs:
       - checkout
       
       - run:
-          name: deploy prime and needed apps to the dev cluster
+          name: deploy prime to the dev cluster
           command: |
             export GOOGLE_CREDENTIALS=${PI_DEV_CLUSTER_CREDENTIALS}
-            /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
             helm repo update
             helm upgrade prime ostelco/prime --install --tiller-namespace dev --namespace dev \
@@ -253,27 +230,36 @@ jobs:
   # jobs for on-PR-merge-to-master 
   deploy-to-prod:
     docker:
-    - image: praqma/helmsman:test-1.4.0
+    - image: praqma/gcloud-kubectl-helm:v2.8.1
+      environment: 
+        PROJECT: pi-ostelco-prod
+        CLUSTER: pi-prod
+        ZONE: europe-west1-c
+        SERVICE_ACCOUNT: terraform-manage-cluster-from@pi-ostelco-prod.iam.gserviceaccount.com
 
     steps:
       - checkout
       - run:
-          name: deploy prime and needed apps to the prod cluster
+          name: deploy prime to the prod cluster
           command: |
+            export GOOGLE_CREDENTIALS=${PI_PROD_CLUSTER_CREDENTIALS}
             export TAG=$(git rev-parse --short=9 origin/circleci-dev)
-            echo $GOOGLE_GCS_PROD_CREDENTIALS > ${HOME}/serviceacccount.json
-            export GOOGLE_APPLICATION_CREDENTIALS=${HOME}/serviceacccount.json
-            cd .circleci/
-            helmsman --debug --apply -f helmsman-prod-deployment.toml
+            helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
+            helm repo update
+            helm upgrade prime ostelco/prime --install --tiller-namespace prod --namespace prod \
+             -f .circleci/prime-prod-values.yaml \
+             --set prime.env.STRIPE_API_KEY=${STRIPE_API_KEY} \
+             --set prime.tag=${TAG} \
+             --set firebaseServiceAccount=${PANTEL_SECRETS_FILE}
  
 workflows:
   version: 2
-  on-feature-branch-PR:
+  on-feature-branch-commit:
     jobs:
       - build-test-repo:
           filters:
             branches:
-              only: feature/circleci-integration
+              only: feature/*
       - code-coverage:
          requires:
            - build-test-repo
