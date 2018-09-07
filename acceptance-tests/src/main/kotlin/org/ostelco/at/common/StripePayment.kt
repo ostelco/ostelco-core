@@ -43,6 +43,25 @@ object StripePayment {
         return token.card.id
     }
 
+    fun getDefaultSourceForCustomer(customerId: String) : String {
+
+        // https://stripe.com/docs/api/java#create_source
+        Stripe.apiKey = System.getenv("STRIPE_API_KEY")
+
+        val customer = Customer.retrieve(customerId)
+        return customer.defaultSource
+    }
+
+    fun getCustomerIdForEmail(email: String) : String {
+
+        // https://stripe.com/docs/api/java#create_card_token
+        Stripe.apiKey = System.getenv("STRIPE_API_KEY")
+
+        val customers = Customer.list(emptyMap()).data
+
+        return customers.filter { it.email.equals(email) }.first().id
+    }
+
     fun deleteAllCustomers() {
         // https://stripe.com/docs/api/java#create_card_token
         Stripe.apiKey = System.getenv("STRIPE_API_KEY")
