@@ -19,5 +19,5 @@ message DataTrafficInfo {
 message AggregatedDataTrafficInfo {
     string msisdn = 1;
     uint64 dataBytes = 2;
-    string dateTime = 3;
+    google.protobuf.Timestamp timestamp = 3;
 }

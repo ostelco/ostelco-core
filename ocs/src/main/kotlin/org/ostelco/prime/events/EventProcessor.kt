@@ -31,8 +31,8 @@ class EventProcessor(
                     || event.messageType == RELEASE_RESERVED_BUCKET
                     || event.messageType == TOPUP_DATA_BUNDLE_BALANCE
                     || event.messageType == REMOVE_MSISDN_TO_BUNDLE_MAPPING) {
-                logger.info("Updating data bundle balance for {} : {} to {} bytes",
-                        event.msisdn, event.bundleId, event.bundleBytes)
+                logger.info("Updating data bundle balance for bundleId : {} to {} bytes",
+                        event.bundleId, event.bundleBytes)
                 val bundleId = event.bundleId
                 if (bundleId != null) {
                     storage.updateBundle(Bundle(bundleId, event.bundleBytes))

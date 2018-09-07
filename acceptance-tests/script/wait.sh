@@ -22,6 +22,7 @@ java -cp '/acceptance-tests.jar' org.junit.runner.JUnitCore \
      org.ostelco.at.okhttp.GetPseudonymsTest \
      org.ostelco.at.okhttp.GetProductsTest \
      org.ostelco.at.okhttp.GetSubscriptionStatusTest \
+     org.ostelco.at.okhttp.SourceTest \
      org.ostelco.at.okhttp.PurchaseTest \
      org.ostelco.at.okhttp.ConsentTest \
      org.ostelco.at.okhttp.ProfileTest \
