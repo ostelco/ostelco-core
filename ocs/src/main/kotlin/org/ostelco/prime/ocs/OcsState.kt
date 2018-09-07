@@ -44,7 +44,7 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<OcsEvent> {
                     consumeDataBytes(msisdn, event.request?.getMscc(0)?.used?.totalOctets ?: 0L)
                     event.reservedBucketBytes = reserveDataBytes(
                             msisdn,
-                            event.request?.getMscc(0)?.requested?.totalOctets ?: 0L)
+                            event.request?.msccList?.first()?.requested?.totalOctets ?: 0L)
                     event.bundleId = msisdnToBundleIdMap[msisdn]
                     event.bundleBytes = bundleBalanceMap[event.bundleId] ?: 0
                 }
