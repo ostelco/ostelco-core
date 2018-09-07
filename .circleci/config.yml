@@ -264,15 +264,15 @@ jobs:
           name: deploy prime to the prod cluster
           command: |
             export GOOGLE_CREDENTIALS=${PI_PROD_CLUSTER_CREDENTIALS}
-            export TAG=$(git rev-parse --short=9 origin/circleci-dev)
+            # export TAG=$(git rev-parse --short=9 origin/circleci-dev)
             /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
             helm repo update
             helm upgrade prime ostelco/prime --install --tiller-namespace prod --namespace prod \
              -f .circleci/prime-prod-values.yaml \
              --set prime.env.STRIPE_API_KEY=${STRIPE_API_KEY} \
-             --set prime.tag=${TAG} \
              --set firebaseServiceAccount=${PANTEL_SECRETS_FILE}
+             #--set prime.tag=${TAG} 
  
 workflows:
   version: 2
