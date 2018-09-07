@@ -243,6 +243,7 @@ class SourceTest {
         post<PaymentSource> {
             path = "/paymentSources"
             subscriberId = email
+            queryParams = mapOf("sourceId" to sourceId)
         }
 
         Thread.sleep(200)
@@ -255,6 +256,54 @@ class SourceTest {
 
         val cardId = StripePayment.getCardIdForTokenId(sourceId)
         assertNotNull(sources.first { it.id == cardId }, "Expected card $cardId in list of payment sources for profile $email")
+    }
+
+    @Test
+    fun `jersey test - PUT source set default`() {
+
+        StripePayment.deleteAllCustomers()
+        Firebase.deleteAllPaymentCustomers()
+
+        val email = "purchase-${randomInt()}@test.com"
+        createProfile(name = "Test Payment Source", email = email)
+
+        val sourceId = StripePayment.createPaymentTokenId()
+        val cardId = StripePayment.getCardIdForTokenId(sourceId)
+
+        // Ties source with user profile both local and with Stripe
+        post<PaymentSource> {
+            path = "/paymentSources"
+            subscriberId = email
+            queryParams = mapOf("sourceId" to sourceId)
+        }
+
+        Thread.sleep(200)
+
+        val newSourceId = StripePayment.createPaymentTokenId()
+        val newCardId = StripePayment.getCardIdForTokenId(newSourceId)
+
+        post<PaymentSource> {
+            path = "/paymentSources"
+            subscriberId = email
+            queryParams = mapOf("sourceId" to newSourceId)
+        }
+
+        // TODO: Update to fetch the Stripe customerId from 'admin' API when ready.
+        val customerId = StripePayment.getCustomerIdForEmail(email)
+
+        // Verify that original 'sourceId/card' is default.
+        assertEquals(cardId, StripePayment.getDefaultSourceForCustomer(customerId),
+                "Expected $cardId to be default source for $customerId")
+
+        // Set new default card.
+        put<PaymentSource> {
+            path = "/paymentSources"
+            subscriberId = email
+            queryParams = mapOf("sourceId" to newCardId)
+        }
+
+        assertEquals(newCardId, StripePayment.getDefaultSourceForCustomer(customerId),
+                "Expected $newCardId to be default source for $customerId")
     }
 }
 
