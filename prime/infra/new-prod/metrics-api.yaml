@@ -18,8 +18,8 @@ usage:
 authentication:
   providers:
   - id: google_service_account
-    issuer: esp-credentials@pi-ostelco-dev.iam.gserviceaccount.com
-    jwks_uri: https://www.googleapis.com/robot/v1/metadata/x509/esp-credentials@pi-ostelco-dev.iam.gserviceaccount.com
+    issuer: ci-endpoint-update@pi-ostelco-prod.iam.gserviceaccount.com
+    jwks_uri: https://www.googleapis.com/robot/v1/metadata/x509/ci-endpoint-update@pi-ostelco-prod.iam.gserviceaccount.com
     audiences: >
       https://metrics.new.dev.ostelco.org/org.ostelco.prime.metrics.api.OcsgwAnalyticsService,
       metrics.new.dev.ostelco.org/org.ostelco.prime.metrics.api.OcsgwAnalyticsService,
