@@ -216,6 +216,10 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                             }
                             // Notify OCS
                             .flatMap {
+                                analyticsReporter.reportPurchaseInfo(
+                                        purchaseRecord = purchaseRecord,
+                                        subscriberId = subscriberId,
+                                        status = "success")
                                 //TODO: Handle errors (when it becomes available)
                                 ocsSubscriberService.topup(subscriberId, sku)
                                 // TODO vihang: handle currency conversion
