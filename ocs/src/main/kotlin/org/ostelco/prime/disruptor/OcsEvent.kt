@@ -59,7 +59,6 @@ class OcsEvent {
         msisdnToppedUp = null
         bundleBytes = 0
         reservedBucketBytes = 0
-        bundleBytes = 0
         ocsgwStreamId = null
         request = null
         topUpBytes = 0;
