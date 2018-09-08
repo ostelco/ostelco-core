@@ -2,7 +2,10 @@ package org.ostelco.prime.analytics.publishers
 
 import com.google.api.core.ApiFutureCallback
 import com.google.api.core.ApiFutures
+import com.google.api.gax.core.NoCredentialsProvider
+import com.google.api.gax.grpc.GrpcTransportChannel
 import com.google.api.gax.rpc.ApiException
+import com.google.api.gax.rpc.FixedTransportChannelProvider
 import com.google.cloud.pubsub.v1.Publisher
 import com.google.gson.*
 import com.google.gson.reflect.TypeToken
@@ -10,10 +13,9 @@ import com.google.protobuf.ByteString
 import com.google.pubsub.v1.ProjectTopicName
 import com.google.pubsub.v1.PubsubMessage
 import io.dropwizard.lifecycle.Managed
+import io.grpc.ManagedChannelBuilder
 import org.ostelco.prime.analytics.ConfigRegistry
 import org.ostelco.prime.logger
-import org.ostelco.prime.model.Price
-import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.PurchaseRecordInfo
 import org.ostelco.prime.module.getResource
@@ -39,9 +41,20 @@ object PurchaseInfoPublisher : Managed {
     override fun start() {
 
         val topicName = ProjectTopicName.of(ConfigRegistry.config.projectId, ConfigRegistry.config.purchaseInfoTopicId)
+        val hostport = System.getenv("PUBSUB_EMULATOR_HOST")
+        if (!hostport.isNullOrEmpty()) {
+            val channel = ManagedChannelBuilder.forTarget(hostport).usePlaintext(true).build()
+            // Create a publisher instance with default settings bound to the topic
+            val channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel))
+            val credentialsProvider = NoCredentialsProvider()
+            publisher = Publisher.newBuilder(topicName)
+                    .setChannelProvider(channelProvider)
+                    .setCredentialsProvider(credentialsProvider)
+                    .build();
+        } else {
+            publisher = Publisher.newBuilder(topicName).build()
+        }
 
-        // Create a publisher instance with default settings bound to the topic
-        publisher = Publisher.newBuilder(topicName).build()
     }
 
     @Throws(Exception::class)
