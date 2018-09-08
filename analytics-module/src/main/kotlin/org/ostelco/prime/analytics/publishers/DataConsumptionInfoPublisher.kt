@@ -2,12 +2,16 @@ package org.ostelco.prime.analytics.publishers
 
 import com.google.api.core.ApiFutureCallback
 import com.google.api.core.ApiFutures
+import com.google.api.gax.core.NoCredentialsProvider
+import com.google.api.gax.grpc.GrpcTransportChannel
 import com.google.api.gax.rpc.ApiException
+import com.google.api.gax.rpc.FixedTransportChannelProvider
 import com.google.cloud.pubsub.v1.Publisher
 import com.google.protobuf.util.Timestamps
 import com.google.pubsub.v1.ProjectTopicName
 import com.google.pubsub.v1.PubsubMessage
 import io.dropwizard.lifecycle.Managed
+import io.grpc.ManagedChannelBuilder
 import org.ostelco.analytics.api.DataTrafficInfo
 import org.ostelco.prime.analytics.ConfigRegistry.config
 import org.ostelco.prime.logger
@@ -29,11 +33,21 @@ object DataConsumptionInfoPublisher : Managed {
 
     @Throws(IOException::class)
     override fun start() {
-
         val topicName = ProjectTopicName.of(config.projectId, config.dataTrafficTopicId)
+        val hostport = System.getenv("PUBSUB_EMULATOR_HOST")
+        if (!hostport.isNullOrEmpty()) {
+            val channel = ManagedChannelBuilder.forTarget(hostport).usePlaintext(true).build()
+            // Create a publisher instance with default settings bound to the topic
+            val channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel))
+            val credentialsProvider = NoCredentialsProvider()
+            publisher = Publisher.newBuilder(topicName)
+                    .setChannelProvider(channelProvider)
+                    .setCredentialsProvider(credentialsProvider)
+                    .build();
+        } else {
+            publisher = Publisher.newBuilder(topicName).build()
+        }
 
-        // Create a publisher instance with default settings bound to the topic
-        publisher = Publisher.newBuilder(topicName).build()
     }
 
     @Throws(Exception::class)
