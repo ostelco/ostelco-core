@@ -16,7 +16,7 @@ dependencies {
 
   implementation 'com.google.firebase:firebase-admin:6.4.0'
 
-  implementation "com.stripe:stripe-java:6.8.0"
+  implementation "com.stripe:stripe-java:$stripeVersion"
   implementation 'io.jsonwebtoken:jjwt:0.9.1'
   // tests fail when updated to 2.27
   implementation "org.glassfish.jersey.media:jersey-media-json-jackson:2.25.1"
