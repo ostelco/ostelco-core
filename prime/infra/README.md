@@ -223,6 +223,11 @@ kubectl create secret generic metrics-ostelco-ssl \
   --from-file=certs/dev.ostelco.org/nginx.crt \
   --from-file=certs/dev.ostelco.org/nginx.key
 ```
+### Cloud Pub/Sub
+
+```bash
+gcloud pubsub topics create purchase-info
+```
 
 ### Endpoints
 
