@@ -1,0 +1,20 @@
+logging:
+  level: INFO
+  loggers:
+    org.ostelco: DEBUG
+  appenders:
+    - type: console
+      layout:
+        type: json
+        customFieldNames:
+           level: severity
+
+bqmetrics:
+  - type: summary
+    name: active_users
+    help: Number of active users
+    resultColumn: count
+    sql: >
+        SELECT count(distinct user_pseudo_id) AS count FROM `pantel-2decb.analytics_160712959.events_*`
+        WHERE event_name = "first_open"
+        LIMIT 1000
