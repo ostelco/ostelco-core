@@ -211,11 +211,11 @@ class SourceTest {
 
         val client = clientForSubject(subject = email)
 
-        val sourceId = StripePayment.createPaymentTokenId()
-        val cardId = StripePayment.getCardIdForTokenId(sourceId)
+        val tokenId = StripePayment.createPaymentTokenId()
+        val cardId = StripePayment.getCardIdForTokenId(tokenId)
 
         // Ties source with user profile both local and with Stripe
-        client.createSource(sourceId)
+        client.createSource(tokenId)
 
         Thread.sleep(200)
 
@@ -237,18 +237,18 @@ class SourceTest {
 
         val client = clientForSubject(subject = email)
 
-        val sourceId = StripePayment.createPaymentTokenId()
-        val cardId = StripePayment.getCardIdForTokenId(sourceId)
+        val tokenId = StripePayment.createPaymentTokenId()
+        val cardId = StripePayment.getCardIdForTokenId(tokenId)
 
         // Ties source with user profile both local and with Stripe
-        client.createSource(sourceId)
+        client.createSource(tokenId)
 
         Thread.sleep(200)
 
-        val newSourceId = StripePayment.createPaymentTokenId()
-        val newCardId = StripePayment.getCardIdForTokenId(newSourceId)
+        val newTokenId = StripePayment.createPaymentTokenId()
+        val newCardId = StripePayment.getCardIdForTokenId(newTokenId)
 
-        client.createSource(newSourceId)
+        client.createSource(newTokenId)
 
         val sources = client.listSources()
 
@@ -268,18 +268,18 @@ class SourceTest {
 
         val client = clientForSubject(subject = email)
 
-        val sourceId = StripePayment.createPaymentTokenId()
-        val cardId = StripePayment.getCardIdForTokenId(sourceId)
+        val tokenId = StripePayment.createPaymentTokenId()
+        val cardId = StripePayment.getCardIdForTokenId(tokenId)
 
         // Ties source with user profile both local and with Stripe
-        client.createSource(sourceId)
+        client.createSource(tokenId)
 
         Thread.sleep(200)
 
-        val newSourceId = StripePayment.createPaymentTokenId()
-        val newCardId = StripePayment.getCardIdForTokenId(newSourceId)
+        val newTokenId = StripePayment.createPaymentTokenId()
+        val newCardId = StripePayment.getCardIdForTokenId(newTokenId)
 
-        client.createSource(newSourceId)
+        client.createSource(newTokenId)
 
         // TODO: Update to fetch the Stripe customerId from 'admin' API when ready.
         val customerId = StripePayment.getCustomerIdForEmail(email)

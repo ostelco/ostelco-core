@@ -237,13 +237,13 @@ class SourceTest {
         val email = "purchase-${randomInt()}@test.com"
         createProfile(name = "Test Payment Source", email = email)
 
-        val sourceId = StripePayment.createPaymentTokenId()
+        val tokenId = StripePayment.createPaymentTokenId()
 
         // Ties source with user profile both local and with Stripe
         post<PaymentSource> {
             path = "/paymentSources"
             subscriberId = email
-            queryParams = mapOf("sourceId" to sourceId)
+            queryParams = mapOf("sourceId" to tokenId)
         }
 
         Thread.sleep(200)
@@ -254,7 +254,7 @@ class SourceTest {
         }
         assert(sources.isNotEmpty()) { "Expected at least one payment source for profile $email" }
 
-        val cardId = StripePayment.getCardIdForTokenId(sourceId)
+        val cardId = StripePayment.getCardIdForTokenId(tokenId)
         assertNotNull(sources.first { it.id == cardId }, "Expected card $cardId in list of payment sources for profile $email")
     }
 
@@ -267,25 +267,25 @@ class SourceTest {
         val email = "purchase-${randomInt()}@test.com"
         createProfile(name = "Test Payment Source", email = email)
 
-        val sourceId = StripePayment.createPaymentTokenId()
-        val cardId = StripePayment.getCardIdForTokenId(sourceId)
+        val tokenId = StripePayment.createPaymentTokenId()
+        val cardId = StripePayment.getCardIdForTokenId(tokenId)
 
         // Ties source with user profile both local and with Stripe
         post<PaymentSource> {
             path = "/paymentSources"
             subscriberId = email
-            queryParams = mapOf("sourceId" to sourceId)
+            queryParams = mapOf("sourceId" to tokenId)
         }
 
         Thread.sleep(200)
 
-        val newSourceId = StripePayment.createPaymentTokenId()
-        val newCardId = StripePayment.getCardIdForTokenId(newSourceId)
+        val newTokenId = StripePayment.createPaymentTokenId()
+        val newCardId = StripePayment.getCardIdForTokenId(newTokenId)
 
         post<PaymentSource> {
             path = "/paymentSources"
             subscriberId = email
-            queryParams = mapOf("sourceId" to newSourceId)
+            queryParams = mapOf("sourceId" to newTokenId)
         }
 
         val sources : PaymentSourceList = get {
@@ -307,25 +307,25 @@ class SourceTest {
         val email = "purchase-${randomInt()}@test.com"
         createProfile(name = "Test Payment Source", email = email)
 
-        val sourceId = StripePayment.createPaymentTokenId()
-        val cardId = StripePayment.getCardIdForTokenId(sourceId)
+        val tokenId = StripePayment.createPaymentTokenId()
+        val cardId = StripePayment.getCardIdForTokenId(tokenId)
 
         // Ties source with user profile both local and with Stripe
         post<PaymentSource> {
             path = "/paymentSources"
             subscriberId = email
-            queryParams = mapOf("sourceId" to sourceId)
+            queryParams = mapOf("sourceId" to tokenId)
         }
 
         Thread.sleep(200)
 
-        val newSourceId = StripePayment.createPaymentTokenId()
-        val newCardId = StripePayment.getCardIdForTokenId(newSourceId)
+        val newTokenId = StripePayment.createPaymentTokenId()
+        val newCardId = StripePayment.getCardIdForTokenId(newTokenId)
 
         post<PaymentSource> {
             path = "/paymentSources"
             subscriberId = email
-            queryParams = mapOf("sourceId" to newSourceId)
+            queryParams = mapOf("sourceId" to newTokenId)
         }
 
         // TODO: Update to fetch the Stripe customerId from 'admin' API when ready.
