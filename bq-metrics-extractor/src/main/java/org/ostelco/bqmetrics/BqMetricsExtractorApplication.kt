@@ -206,9 +206,9 @@ private class SummaryMetricBuilder(
  * execution immediately.  No cleanup of anything will be done.
  */
 private class BqMetricsExtractionException: RuntimeException {
-    constructor(message: String, ex: Exception?): super(message, ex) {}
-    constructor(message: String): super(message) {}
-    constructor(ex: Exception): super(ex) {}
+    constructor(message: String, ex: Exception?): super(message, ex)
+    constructor(message: String): super(message)
+    constructor(ex: Exception): super(ex)
 }
 
 
@@ -275,7 +275,10 @@ private class CollectAndPushMetrics : ConfiguredCommand<BqMetricsExtractorConfig
 
     override fun configure(subparser: Subparser?) {
         super.configure(subparser)
-        subparser!!.addArgument("-p", "--pushgateway")
+        if (subparser == null) {
+            throw BqMetricsExtractionException("subparser is null")
+        }
+        subparser.addArgument("-p", "--pushgateway")
                 .dest(pushgatewayKey)
                 .type(String::class.java)
                 .required(true)
