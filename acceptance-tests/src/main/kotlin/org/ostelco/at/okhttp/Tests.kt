@@ -227,6 +227,37 @@ class SourceTest {
     }
 
     @Test
+    fun `okhttp test - GET list sources`() {
+
+        StripePayment.deleteAllCustomers()
+        Firebase.deleteAllPaymentCustomers()
+
+        val email = "purchase-${randomInt()}@test.com"
+        createProfile(name = "Test Payment Source", email = email)
+
+        val client = clientForSubject(subject = email)
+
+        val sourceId = StripePayment.createPaymentTokenId()
+        val cardId = StripePayment.getCardIdForTokenId(sourceId)
+
+        // Ties source with user profile both local and with Stripe
+        client.createSource(sourceId)
+
+        Thread.sleep(200)
+
+        val newSourceId = StripePayment.createPaymentTokenId()
+        val newCardId = StripePayment.getCardIdForTokenId(newSourceId)
+
+        client.createSource(newSourceId)
+
+        val sources = client.listSources()
+
+        assert(sources.isNotEmpty()) { "Expected at least one payment source for profile $email" }
+        assert(sources.map{ it.id }.containsAll(listOf(cardId, newCardId)))
+        { "Expected to find both $cardId and $newCardId in list of sources for profile $email" }
+    }
+
+    @Test
     fun `okhttp test - PUT source set default`() {
 
         StripePayment.deleteAllCustomers()

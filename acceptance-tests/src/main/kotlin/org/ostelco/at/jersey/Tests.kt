@@ -259,6 +259,46 @@ class SourceTest {
     }
 
     @Test
+    fun `okhttp test - GET list sources`() {
+
+        StripePayment.deleteAllCustomers()
+        Firebase.deleteAllPaymentCustomers()
+
+        val email = "purchase-${randomInt()}@test.com"
+        createProfile(name = "Test Payment Source", email = email)
+
+        val sourceId = StripePayment.createPaymentTokenId()
+        val cardId = StripePayment.getCardIdForTokenId(sourceId)
+
+        // Ties source with user profile both local and with Stripe
+        post<PaymentSource> {
+            path = "/paymentSources"
+            subscriberId = email
+            queryParams = mapOf("sourceId" to sourceId)
+        }
+
+        Thread.sleep(200)
+
+        val newSourceId = StripePayment.createPaymentTokenId()
+        val newCardId = StripePayment.getCardIdForTokenId(newSourceId)
+
+        post<PaymentSource> {
+            path = "/paymentSources"
+            subscriberId = email
+            queryParams = mapOf("sourceId" to newSourceId)
+        }
+
+        val sources : PaymentSourceList = get {
+            path = "/paymentSources"
+            subscriberId = email
+        }
+
+        assert(sources.isNotEmpty()) { "Expected at least one payment source for profile $email" }
+        assert(sources.map{ it.id }.containsAll(listOf(cardId, newCardId)))
+        { "Expected to find both $cardId and $newCardId in list of sources for profile $email" }
+    }
+
+    @Test
     fun `jersey test - PUT source set default`() {
 
         StripePayment.deleteAllCustomers()
