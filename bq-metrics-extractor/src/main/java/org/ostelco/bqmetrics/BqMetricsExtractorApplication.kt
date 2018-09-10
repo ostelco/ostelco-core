@@ -49,6 +49,9 @@ import javax.validation.constraints.NotNull
  */
 
 
+/**
+ * Main entry point, invoke dropwizard application.
+ */
 fun main(args: Array<String>) {
     BqMetricsExtractorApplication().run(*args)
 }
@@ -57,7 +60,7 @@ fun main(args: Array<String>) {
  * Config of a single metric that will be extracted using a BigQuery
  * query.
  */
-class  MetricConfig {
+private class  MetricConfig {
 
     /**
      * Type of the metric.  Currently the only permitted type is
@@ -108,7 +111,7 @@ class  MetricConfig {
  * Configuration for the extractor, default config
  * plus a list of metrics descriptions.
  */
-class BqMetricsExtractorConfig: Configuration() {
+private class BqMetricsExtractorConfig: Configuration() {
     @Valid
     @NotNull
     @JsonProperty("bqmetrics")
@@ -119,7 +122,7 @@ class BqMetricsExtractorConfig: Configuration() {
 /**
  * Main entry point to the bq-metrics-extractor API server.
  */
-class BqMetricsExtractorApplication : Application<BqMetricsExtractorConfig>() {
+private class BqMetricsExtractorApplication : Application<BqMetricsExtractorConfig>() {
 
     override fun initialize(bootstrap: Bootstrap<BqMetricsExtractorConfig>) {
         bootstrap.addCommand(CollectAndPushMetrics())
@@ -132,12 +135,12 @@ class BqMetricsExtractorApplication : Application<BqMetricsExtractorConfig>() {
 }
 
 
-interface MetricBuilder {
+private interface MetricBuilder {
     fun buildMetric(registry: CollectorRegistry)
 }
 
 
-class SummaryMetricBuilder(
+private class SummaryMetricBuilder(
         val metricName: String,
         val help: String,
         val sql: String,
@@ -197,7 +200,7 @@ class SummaryMetricBuilder(
 /**
  * Adapter class that will push metrics to the Prometheus push gateway.
  */
-class PrometheusPusher(val pushGateway: String, val job: String) {
+private class PrometheusPusher(val pushGateway: String, val job: String) {
 
     private val log: Logger = LoggerFactory.getLogger(PrometheusPusher::class.java)
 
@@ -233,7 +236,7 @@ class PrometheusPusher(val pushGateway: String, val job: String) {
     }
 }
 
-class CollectAndPushMetrics : ConfiguredCommand<BqMetricsExtractorConfig>(
+private class CollectAndPushMetrics : ConfiguredCommand<BqMetricsExtractorConfig>(
         "query",
         "query BigQuery for a metric") {
     override fun run(bootstrap: Bootstrap<BqMetricsExtractorConfig>?, namespace: Namespace?, configuration: BqMetricsExtractorConfig?) {
