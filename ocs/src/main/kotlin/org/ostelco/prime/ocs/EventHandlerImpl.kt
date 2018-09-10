@@ -75,9 +75,7 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
                     .setMsisdn(event.msisdn)
 
             event.request?.let { request ->
-                // This is a hack to know when we have received an MSCC in the request or not.
-                // For Terminate request we might not have any MSCC and therefore no serviceIdentifier.
-                if (request.getMscc(0).serviceIdentifier > 0) {
+                if (request.msccCount > 0) {
                     val msccBuilder = MultipleServiceCreditControl.newBuilder()
                     msccBuilder.setServiceIdentifier(request.getMscc(0).serviceIdentifier)
                             .setRatingGroup(request.getMscc(0).ratingGroup)
