@@ -2,7 +2,10 @@ package org.ostelco.prime.analytics.publishers
 
 import com.google.api.core.ApiFutureCallback
 import com.google.api.core.ApiFutures
+import com.google.api.gax.core.NoCredentialsProvider
+import com.google.api.gax.grpc.GrpcTransportChannel
 import com.google.api.gax.rpc.ApiException
+import com.google.api.gax.rpc.FixedTransportChannelProvider
 import com.google.cloud.pubsub.v1.Publisher
 import com.google.gson.*
 import com.google.gson.reflect.TypeToken
@@ -10,6 +13,7 @@ import com.google.protobuf.ByteString
 import com.google.pubsub.v1.ProjectTopicName
 import com.google.pubsub.v1.PubsubMessage
 import io.dropwizard.lifecycle.Managed
+import io.grpc.ManagedChannelBuilder
 import org.ostelco.prime.analytics.ConfigRegistry
 import org.ostelco.prime.logger
 import org.ostelco.prime.model.PurchaseRecord
@@ -37,9 +41,20 @@ object PurchaseInfoPublisher : Managed {
     override fun start() {
 
         val topicName = ProjectTopicName.of(ConfigRegistry.config.projectId, ConfigRegistry.config.purchaseInfoTopicId)
+        val hostport = System.getenv("PUBSUB_EMULATOR_HOST")
+        if (!hostport.isNullOrEmpty()) {
+            val channel = ManagedChannelBuilder.forTarget(hostport).usePlaintext(true).build()
+            // Create a publisher instance with default settings bound to the topic
+            val channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel))
+            val credentialsProvider = NoCredentialsProvider()
+            publisher = Publisher.newBuilder(topicName)
+                    .setChannelProvider(channelProvider)
+                    .setCredentialsProvider(credentialsProvider)
+                    .build();
+        } else {
+            publisher = Publisher.newBuilder(topicName).build()
+        }
 
-        // Create a publisher instance with default settings bound to the topic
-        publisher = Publisher.newBuilder(topicName).build()
     }
 
     @Throws(Exception::class)
@@ -48,10 +63,12 @@ object PurchaseInfoPublisher : Managed {
         publisher.shutdown()
     }
 
-    private fun createGson(): Gson {
+    internal fun createGson(): Gson {
         val builder = GsonBuilder()
-        val mapType = object : TypeToken<Map<String, String>>() {}.type
-        val serializer = JsonSerializer<Map<String, String>> { src, _, _ ->
+        // Type for this conversion is explicitly set to java.util.Map
+        // This is needed because of kotlin's own Map interface
+        val mapType = object : TypeToken<java.util.Map<String, String>>() {}.type
+        val serializer = JsonSerializer<java.util.Map<String, String>> { src, _, _ ->
             val array = JsonArray()
             src.forEach { k, v ->
                 val property = JsonObject()
@@ -65,7 +82,7 @@ object PurchaseInfoPublisher : Managed {
         return builder.create()
     }
 
-    private fun convertToJson(purchaseRecordInfo: PurchaseRecordInfo): ByteString =
+    fun convertToJson(purchaseRecordInfo: PurchaseRecordInfo): ByteString =
             ByteString.copyFromUtf8(gson.toJson(purchaseRecordInfo))
 
 

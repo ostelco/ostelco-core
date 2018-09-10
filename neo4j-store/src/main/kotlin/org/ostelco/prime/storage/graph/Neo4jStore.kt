@@ -401,6 +401,11 @@ object Neo4jStoreSingleton : GraphStore {
                             }
                             // Notify OCS
                             .flatMap {
+                                //TODO: While aborting transactions, send a record with "reverted" status
+                                analyticsReporter.reportPurchaseInfo(
+                                        purchaseRecord = purchaseRecord,
+                                        subscriberId = subscriberId,
+                                        status = "success")
                                 //TODO vihang: Handle errors (when it becomes available)
                                 ocs.topup(subscriberId, sku)
                                 // TODO vihang: handle currency conversion
