@@ -35,11 +35,13 @@ services:
     ports:
     - '9090:9090'
 
+  # Pushgateway exposes external port 8080, since that is the port
+  # that is exposed by the pushgateway in the kubernetes clusters
   pushgateway:
     container_name: pushgateway
     image: prom/pushgateway
     ports:
-    - '9091:9091'
+    - '8080:9091'
 
   grafana:
     container_name: grafana

@@ -19,33 +19,84 @@ import org.slf4j.Logger
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
 
+/**
+ * Bridge between "latent metrics" stored in BigQuery and Prometheus
+ * metrics available for instrumentation ana alerting services.
+ *
+ * Common usecase:
+ *
+ *       java -jar /bq-metrics-extractor.jar query --pushgateway pushgateway:8080 config/config.yaml
+ *
+ * the pushgateway:8080 is the hostname  (dns resolvable) and portnumber of the
+ * Prometheus Push Gateway.
+ *
+ * The config.yaml file contains specifications of queries and how they map
+ * to metrics:
+ *
+ *      bqmetrics:
+ *      - type: summary
+ *        name: active_users
+ *        help: Number of active users
+ *        resultColumn: count
+ *        sql: >
+ *        SELECT count(distinct user_pseudo_id) AS count FROM `pantel-2decb.analytics_160712959.events_*`
+ *        WHERE event_name = "first_open"
+ *        LIMIT 1000
+ *
+ *  Use standard SQL syntax  (not legacy) for queries.
+ *  See: https://cloud.google.com/bigquery/sql-reference/
+ *
+ */
+
 
 fun main(args: Array<String>) {
     BqMetricsExtractorApplication().run(*args)
 }
 
+/**
+ * Config of a single metric that will be extracted using a BigQuery
+ * query.
+ */
 class  MetricConfig {
 
+    /**
+     * Type of the metric.  Currently the only permitted type is
+     * "summary", the intent is to extend this as more types
+     * of metrics (counters, gauges, ...) are added.
+     */
     @Valid
     @NotNull
     @JsonProperty
     lateinit var type: String
 
+    /**
+     * The name of the metric, as it will be seen by Prometheus.
+     */
     @Valid
     @NotNull
     @JsonProperty
     lateinit var name: String
 
+    /**
+     * A help string, used to describe the metric.
+     */
     @Valid
     @NotNull
     @JsonProperty
     lateinit var help: String
 
+    /**
+     * When running the query, the result should be placed in a named
+     * column, and this field contains the name of that column.
+     */
     @Valid
     @NotNull
     @JsonProperty
     lateinit var resultColumn: String
 
+    /**
+     * The SQL used to extract the value of the metric from BigQuery.
+     */
     @Valid
     @NotNull
     @JsonProperty
@@ -53,6 +104,10 @@ class  MetricConfig {
 }
 
 
+/**
+ * Configuration for the extractor, default config
+ * plus a list of metrics descriptions.
+ */
 class BqMetricsExtractorConfig: Configuration() {
     @Valid
     @NotNull
@@ -82,7 +137,11 @@ interface MetricBuilder {
 }
 
 
-class SummaryMetricBuilder(val metricName: String, val help: String, val sql: String, val resultColumn: String) : MetricBuilder {
+class SummaryMetricBuilder(
+        val metricName: String,
+        val help: String,
+        val sql: String,
+        val resultColumn: String) : MetricBuilder {
 
     private val log: Logger = LoggerFactory.getLogger(SummaryMetricBuilder::class.java)
 
@@ -94,8 +153,6 @@ class SummaryMetricBuilder(val metricName: String, val help: String, val sql: St
         val queryConfig: QueryJobConfiguration =
                 QueryJobConfiguration.newBuilder(
                         sql.trimIndent())
-                        // Use standard SQL syntax for queries.
-                        // See: https://cloud.google.com/bigquery/sql-reference/
                         .setUseLegacySql(false)
                         .build();
 
@@ -150,15 +207,19 @@ class PrometheusPusher(val pushGateway: String, val job: String) {
     fun publishMetrics(metrics: List<MetricConfig>) {
 
         val metricSources: MutableList<MetricBuilder> = mutableListOf()
-        metrics.forEach{
-            if (it.type.trim().toUpperCase().equals("SUMMARY")) {
-                metricSources.add(SummaryMetricBuilder(
-                        it.name,
-                        it.help,
-                        it.sql,
-                        it.resultColumn))
-            } else {
-                log.error("Unknown metrics type '${it.type}'")
+        metrics.forEach {
+            val typeString: String = it.type.trim().toUpperCase()
+            when (typeString) {
+                "SUMMARY" -> {
+                    metricSources.add(SummaryMetricBuilder(
+                            it.name,
+                            it.help,
+                            it.sql,
+                            it.resultColumn))
+                }
+                else -> {
+                    log.error("Unknown metrics type '${it.type}'")
+                }
             }
         }
 
@@ -172,7 +233,9 @@ class PrometheusPusher(val pushGateway: String, val job: String) {
     }
 }
 
-class CollectAndPushMetrics : ConfiguredCommand<BqMetricsExtractorConfig>("query","query BigQuery for a metric") {
+class CollectAndPushMetrics : ConfiguredCommand<BqMetricsExtractorConfig>(
+        "query",
+        "query BigQuery for a metric") {
     override fun run(bootstrap: Bootstrap<BqMetricsExtractorConfig>?, namespace: Namespace?, configuration: BqMetricsExtractorConfig?) {
         val pgw = namespace!!.get<String>(pushgatewayKey)
         PrometheusPusher(pgw,

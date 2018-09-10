@@ -16,13 +16,34 @@ that will:
 
 The component will be built as a docker component, and will then be periodically
 run as a command line application, as a
-[Kubernetes cron job](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/)
-(or perhaps some other meaningful deployment architecture that we will dream up eventually).
+[Kubernetes cron job](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/).
 
 
-XXX NOTE: This code was initiated using yeoman, and while functional that seems to be
-have been a mistake.  It will have to be refactored into something much
-leaner asap, and certainly before merging to develop.
+The component is packaged as an individual docker artefact (details below),
+and deployed as a cronjob (also described below). 
+
+To run the program from the command line, which is useful when debugging and
+necessary to know when constructing a Docker file, do this:
+
+         java -jar /bq-metrics-extractor.jar query --pushgateway pushgateway:8080 config/config.yaml
+  
+the pushgateway:8080 is the hostname  (dns resolvable) and portnumber of the Prometheus Push Gateway.
+  
+The config.yaml file contains specifications of queries and how they map to metrics:
+  
+        bqmetrics:
+        - type: summary
+          name: active_users
+          help: Number of active users
+          resultColumn: count
+          sql: >
+          SELECT count(distinct user_pseudo_id) AS count FROM `pantel-2decb.analytics_160712959.events_*`
+          WHERE event_name = "first_open"
+          LIMIT 1000
+  
+The idea being that to add queries of a type that is already know by the extractor program,
+only an addition to the bqmetrics list.   
+Use [standardSQL syntax  (not legacy)](https://cloud.google.com/bigquery/sql-reference/) for queries.
 
 
 How to build and deploy the cronjob manually
@@ -58,28 +79,20 @@ How to build and deploy the cronjob manually
 TODO
 ===
 
-* Set up skeleton kotlin code. [Done]
-* Move to standard gradle setup [Done]
-* Reduce the gradle stuff to something simple (with Vihang).[done]
-* Run something from the command line ("hello world") [done]
-* Set up a pushgateway running in a test environment using
-  * Prometheus: https://github.com/evnsio/prom-stack. [done]
-          docker run -p 9090:9090 -v $(pwd)/tmp/prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus
-  * Pushgateway: https://hub.docker.com/r/prom/pushgateway/
-          docker pull prom/pushgateway
-          docker run -d -p 9091:9091 prom/pushgateway
-* Send something from the program to a pushgateway running somewhere [Done]
-* Make the skeleton code read something (anything) from BigQuery, using config
-  that is production-like.  [Done]
-* Make a sensible metric encodedin SQL, read it from BQ and push it to pushgateway. [Done]
-* Test that this works all the way in docker compose [Done]
-* MOdify to accept reasonable parameters for location of pushgateway [Done].
-* Build a docker image. [DONE]
-* Run the docker image as a kubernetes cronjob [done]
-* Use the config.yaml for the dropwizard app to configure
-  the next metrics to be computed. [done]
-* Make command to run metric every N seconds. [done]
+* Rewrite the SQL so that it will pick up only today/yesterday's data,
+  use a template language, either premade or ad-hoc.
+  As of now, the sql in config is static.
+  We need to make it as a template.
+  Table name to be changed from events_* to events_${yyyyMMdd}
 
+  Here, the suffix is yesterday’s date in yyyyMMdd format. (edited)
+  There are some libraries which we can use, which enable f
+  reemarker expressions in dropwizard config file 
+  (this comment is @vihangpatil 's I just nicked it from 
+  slack where he made the comment)
+
+
+* Add more metrics.  
 * Make an acceptance tests that runs a roundtrip test ub
   in docker compose, based on something like this: curl http://localhost:9091/metrics | grep -i active
 * Push the first metric to production, use Kubernetes crontab
