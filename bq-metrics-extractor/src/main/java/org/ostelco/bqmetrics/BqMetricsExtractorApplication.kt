@@ -168,15 +168,15 @@ private class SummaryMetricBuilder(
 
         // Check for errors
         if (queryJob == null) {
-            throw  RuntimeException("Job no longer exists");
+            throw  BqMetricsExtractionException("Job no longer exists");
         } else if (queryJob.getStatus().getError() != null) {
             // You can also look at queryJob.getStatus().getExecutionErrors() for all
             // errors, not just the latest one.
-            throw RuntimeException(queryJob.getStatus().getError().toString());
+            throw BqMetricsExtractionException(queryJob.getStatus().getError().toString());
         }
         val result = queryJob.getQueryResults()
         if (result.totalRows != 1L) {
-            throw RuntimeException("Number of results was ${result.totalRows} which is different from the expected single row")
+            throw BqMetricsExtractionException("Number of results was ${result.totalRows} which is different from the expected single row")
         }
 
         val count = result.iterateAll().iterator().next().get(resultColumn).longValue
@@ -196,6 +196,17 @@ private class SummaryMetricBuilder(
         activeUsersSummary.observe(value * 1.0)
     }
 }
+
+/**
+ * Thrown when something really bad is detected and it's necessary to terminate
+ * execution immediately.  No cleanup of anything will be done.
+ */
+private class BqMetricsExtractionException: RuntimeException {
+    constructor(message: String, ex: Exception?): super(message, ex) {}
+    constructor(message: String): super(message) {}
+    constructor(ex: Exception): super(ex) {}
+}
+
 
 /**
  * Adapter class that will push metrics to the Prometheus push gateway.
@@ -240,9 +251,20 @@ private class CollectAndPushMetrics : ConfiguredCommand<BqMetricsExtractorConfig
         "query",
         "query BigQuery for a metric") {
     override fun run(bootstrap: Bootstrap<BqMetricsExtractorConfig>?, namespace: Namespace?, configuration: BqMetricsExtractorConfig?) {
-        val pgw = namespace!!.get<String>(pushgatewayKey)
+
+        if (configuration == null) {
+            throw BqMetricsExtractionException("Configuration is null")
+        }
+
+
+        if (namespace == null) {
+            throw BqMetricsExtractionException("Namespace from config is null")
+        }
+
+
+        val pgw = namespace.get<String>(pushgatewayKey)
         PrometheusPusher(pgw,
-                "bq_metrics_extractor").publishMetrics(configuration!!.metrics)
+                "bq_metrics_extractor").publishMetrics(configuration.metrics)
     }
 
     val pushgatewayKey = "pushgateway"
