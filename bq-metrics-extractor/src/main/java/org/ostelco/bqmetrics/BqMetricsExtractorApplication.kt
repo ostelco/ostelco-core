@@ -265,7 +265,6 @@ private class CollectAndPushMetrics : ConfiguredCommand<BqMetricsExtractorConfig
             throw BqMetricsExtractionException("Namespace from config is null")
         }
 
-
         val pgw = namespace.get<String>(pushgatewayKey)
         PrometheusPusher(pgw,
                 "bq_metrics_extractor").publishMetrics(configuration.metrics)
