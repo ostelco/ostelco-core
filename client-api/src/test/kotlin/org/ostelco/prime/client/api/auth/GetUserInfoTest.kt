@@ -71,7 +71,7 @@ class GetUserInfoTest {
         }
 
         if (counter == 0) {
-            fail("Couldn't connect to RULE server")
+            fail<Nothing>("Couldn't connect to RULE server")
         }
     }
 
