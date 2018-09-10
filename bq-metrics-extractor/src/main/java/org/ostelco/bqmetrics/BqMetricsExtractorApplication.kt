@@ -46,6 +46,10 @@ import javax.validation.constraints.NotNull
  *  Use standard SQL syntax  (not legacy) for queries.
  *  See: https://cloud.google.com/bigquery/sql-reference/
  *
+ *  If not running in a google kubernetes cluster (e.g. in docker compose, or from the command line),
+ *  it's necessary to set the environment variable GOOGLE_APPLICATION_CREDENTIALS to point to
+ *  a credentials file that will provide access for the BigQuery library.
+ *
  */
 
 

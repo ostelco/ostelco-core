@@ -45,6 +45,11 @@ The idea being that to add queries of a type that is already know by the extract
 only an addition to the bqmetrics list.   
 Use [standardSQL syntax  (not legacy)](https://cloud.google.com/bigquery/sql-reference/) for queries.
 
+If not running in a google kubernetes cluster (e.g. in docker compose, or from the command line),
+it's necessary to set the environment variable GOOGLE_APPLICATION_CREDENTIALS to point to 
+a credentials file that will provide access for the BigQuery library.
+
+
 
 How to build and deploy the cronjob manually
 ===
