@@ -190,9 +190,9 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
 
     private fun createAndStorePaymentProfile(name: String): Either<ApiError, ProfileInfo> {
         return paymentProcessor.createPaymentProfile(name)
+                .mapLeft { ForbiddenError(it.description) }
                 .flatMap { profileInfo ->
-                    setPaymentProfile(name, profileInfo)
-                            .map { profileInfo }
+                    setPaymentProfile(name, profileInfo).map { profileInfo }
                 }
     }
 
