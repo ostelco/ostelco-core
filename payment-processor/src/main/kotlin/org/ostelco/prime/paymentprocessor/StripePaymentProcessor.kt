@@ -17,7 +17,7 @@ class StripePaymentProcessor : PaymentProcessor {
     private val logger by logger()
 
     override fun getSavedSources(customerId: String): Either<PaymentError, List<SourceInfo>> =
-            either(NotFoundError("Failed to get sources for customer $customerId")) {
+            either(NotFoundError("Failed to retrieve sources for customer $customerId")) {
                 val sources = mutableListOf<SourceInfo>()
                 val customer = Customer.retrieve(customerId)
                 customer.sources.data.forEach {
@@ -165,6 +165,7 @@ class StripePaymentProcessor : PaymentProcessor {
         return try {
             Either.right(action())
         } catch (e: Exception) {
+            paymentError.externalErrorMessage = e.message
             logger.warn(paymentError.description, e)
             Either.left(paymentError)
         }

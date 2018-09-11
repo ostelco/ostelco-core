@@ -4,6 +4,7 @@ import javax.ws.rs.core.Response
 
 sealed class PaymentError(val description: String) {
     open var status : Int = 0
+    var externalErrorMessage : String? = ""
 }
 
 class ForbiddenError(description: String) : PaymentError(description) {
