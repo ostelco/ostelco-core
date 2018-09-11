@@ -1,7 +1,6 @@
 package org.ostelco.prime.client.api.store
 
 import arrow.core.Either
-import arrow.core.Tuple4
 import arrow.core.flatMap
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.analytics.PrimeMetric.REVENUE
@@ -238,7 +237,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                 subscriberId,
                 sku,
                 sourceId,
-                saveCard)
+                saveCard).mapLeft { NotFoundError(it.description) }
 
     override fun getReferrals(subscriberId: String): Either<ApiError, Collection<Person>> {
         return try {
@@ -302,7 +301,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                         { createAndStorePaymentProfile(subscriberId) },
                         { profileInfo -> Either.right(profileInfo) }
                 )
-                .flatMap { profileInfo -> paymentProcessor.addSource(profileInfo.id, sourceId) }
+                .flatMap { profileInfo -> paymentProcessor.addSource(profileInfo.id, sourceId).mapLeft { NotFoundError(it.description) } }
     }
 
     override fun setDefaultSource(subscriberId: String, sourceId: String): Either<ApiError, SourceInfo> {
@@ -311,7 +310,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                         { createAndStorePaymentProfile(subscriberId) },
                         { profileInfo -> Either.right(profileInfo) }
                 )
-                .flatMap { profileInfo -> paymentProcessor.setDefaultSource(profileInfo.id, sourceId) }
+                .flatMap { profileInfo -> paymentProcessor.setDefaultSource(profileInfo.id, sourceId).mapLeft { NotFoundError(it.description) } }
     }
 
     override fun listSources(subscriberId: String): Either<ApiError, List<SourceInfo>> {
@@ -320,7 +319,8 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                         { createAndStorePaymentProfile(subscriberId) },
                         { profileInfo -> Either.right(profileInfo) }
                 )
-                .flatMap { profileInfo -> paymentProcessor.getSavedSources(profileInfo.id) }
+                .flatMap { profileInfo -> paymentProcessor.getSavedSources(profileInfo.id).mapLeft { NotFoundError(it.description) } }
+
     }
 
 
