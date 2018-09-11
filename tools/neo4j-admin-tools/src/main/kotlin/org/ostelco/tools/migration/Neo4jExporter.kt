@@ -41,7 +41,9 @@ fun importFromNeo4j(txn: Transaction, handleCypher: (String) -> Unit) {
 
             sb.append(
 """
-MATCH (n:${fromNode.labels().first()} {id: '${fromNode.get("id")}'}), (m:${toNode.labels().first()} {id: '${toNode.get("id")}'})
+MATCH (n:${fromNode.labels().first()} {id: '${fromNode.asMap()["id"]}'})
+  WITH n
+MATCH (m:${toNode.labels().first()} {id: '${toNode.asMap()["id"]}'})
 CREATE (n)-[:$type$props]->(m);
 """)
         }
