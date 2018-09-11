@@ -45,5 +45,5 @@ echo "Built container $CONTAINER_ID"
 # Tag and push the docker container to the google repo
 echo "Tagging and pushing container"
 THE_TAG="${GCLOUD_REPO_NAME}/${GCLOUD_PROJECT_NAME}/${CONTAINER_NAME}"
-docker tag $CONTAINER_ID ${THE_TAG}
+docker tag ${CONTAINER_ID} ${THE_TAG}
 docker push ${THE_TAG}
