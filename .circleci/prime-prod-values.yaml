@@ -50,7 +50,7 @@ esp:
 ocsEsp: 
   enabled: true
   env: {}
-  endpointAddress: ocs.new.dev.ostelco.org
+  endpointAddress: prod-ocs.new.dev.ostelco.org
 
   ports:
     - 9000
@@ -73,7 +73,7 @@ apiEsp:
 metricsEsp:
   enabled: true
   env: {}
-  endpointAddress: metrics.new.dev.ostelco.org
+  endpointAddress: prod-metrics.new.dev.ostelco.org
   ports:
     - 9004
     - 9443
