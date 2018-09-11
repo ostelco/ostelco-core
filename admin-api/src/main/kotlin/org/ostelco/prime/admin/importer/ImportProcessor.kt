@@ -1,9 +1,9 @@
 package org.ostelco.prime.admin.importer
 
 import arrow.core.Either
-import org.ostelco.prime.core.ApiError
-import org.ostelco.prime.core.ApiErrorCode
-import org.ostelco.prime.core.BadRequestError
+import org.ostelco.prime.apierror.ApiError
+import org.ostelco.prime.apierror.ApiErrorCode
+import org.ostelco.prime.apierror.BadRequestError
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.AdminDataSource
 

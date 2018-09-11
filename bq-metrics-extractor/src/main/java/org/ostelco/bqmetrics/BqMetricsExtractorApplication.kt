@@ -2,21 +2,25 @@ package org.ostelco.bqmetrics
 
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.google.cloud.bigquery.*
+import com.google.cloud.bigquery.BigQueryOptions
+import com.google.cloud.bigquery.Job
+import com.google.cloud.bigquery.JobId
+import com.google.cloud.bigquery.JobInfo
+import com.google.cloud.bigquery.QueryJobConfiguration
 import io.dropwizard.Application
-import io.dropwizard.setup.Bootstrap
-import io.dropwizard.setup.Environment
-import io.prometheus.client.exporter.PushGateway
-import io.prometheus.client.CollectorRegistry
 import io.dropwizard.Configuration
 import io.dropwizard.cli.ConfiguredCommand
+import io.dropwizard.setup.Bootstrap
+import io.dropwizard.setup.Environment
+import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Gauge
 import io.prometheus.client.Summary
+import io.prometheus.client.exporter.PushGateway
 import net.sourceforge.argparse4j.inf.Namespace
 import net.sourceforge.argparse4j.inf.Subparser
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
-import org.slf4j.Logger
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
 
@@ -248,7 +252,6 @@ private class PrometheusPusher(val pushGateway: String, val job: String) {
 
     val registry = CollectorRegistry()
 
-    @Throws(Exception::class)
     fun publishMetrics(metrics: List<MetricConfig>) {
 
         val metricSources: MutableList<MetricBuilder> = mutableListOf()

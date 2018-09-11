@@ -1,4 +1,4 @@
-# Pseudonym Server
+# Module Pseudonym Server
 
 SQL for joining dataconsumption and pseudonyms table
 

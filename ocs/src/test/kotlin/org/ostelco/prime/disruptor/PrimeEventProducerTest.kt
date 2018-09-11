@@ -1,5 +1,6 @@
 package org.ostelco.prime.disruptor
 
+import com.lmax.disruptor.EventFactory
 import com.lmax.disruptor.EventHandler
 import com.lmax.disruptor.dsl.Disruptor
 import junit.framework.TestCase.assertEquals
@@ -20,21 +21,20 @@ import java.util.concurrent.TimeUnit
 
 class PrimeEventProducerTest {
 
-    private var primeEventProducer: EventProducerImpl? = null
+    private lateinit var primeEventProducer: EventProducerImpl
 
     private var disruptor: Disruptor<OcsEvent>? = null
 
-    private var countDownLatch: CountDownLatch? = null
+    private lateinit var countDownLatch: CountDownLatch
 
-    private var result: MutableSet<OcsEvent>? = null
+    private lateinit var result: MutableSet<OcsEvent>
 
     private// Wait a short while for the thing to process.
     val collectedEvent: OcsEvent
-        @Throws(InterruptedException::class)
         get() {
-            assertTrue(countDownLatch!!.await(TIMEOUT.toLong(), TimeUnit.SECONDS))
-            assertFalse(result!!.isEmpty())
-            val event = result!!.iterator().next()
+            assertTrue(countDownLatch.await(TIMEOUT.toLong(), TimeUnit.SECONDS))
+            assertFalse(result.isEmpty())
+            val event = result.iterator().next()
             assertNotNull(event)
             return event
         }
@@ -42,22 +42,22 @@ class PrimeEventProducerTest {
 
     @Before
     fun setUp() {
-        this.disruptor = Disruptor<OcsEvent>(
-                OcsEventFactory(),
+        this.disruptor = Disruptor(
+                EventFactory<OcsEvent> { OcsEvent() },
                 RING_BUFFER_SIZE,
                 Executors.defaultThreadFactory())
-        val ringBuffer = disruptor!!.ringBuffer
+        val ringBuffer = disruptor?.ringBuffer ?: throw Exception("Failed to init disruptor")
         this.primeEventProducer = EventProducerImpl(ringBuffer)
 
         this.countDownLatch = CountDownLatch(1)
         this.result = HashSet()
         val eh = EventHandler<OcsEvent> { event, _, _ ->
-            result!!.add(event)
-            countDownLatch?.countDown()
+            result.add(event)
+            countDownLatch.countDown()
         }
 
-        disruptor!!.handleEventsWith(eh)
-        disruptor!!.start()
+        disruptor?.handleEventsWith(eh)
+        disruptor?.start()
     }
 
     @After
@@ -66,23 +66,24 @@ class PrimeEventProducerTest {
     }
 
     @Test
-    @Throws(Exception::class)
     fun topupDataBundleBalanceEvent() {
 
         // Stimulating a response
-        primeEventProducer!!.topupDataBundleBalanceEvent(BUNDLE_ID, NO_OF_TOPUP_BYTES)
+        primeEventProducer.topupDataBundleBalanceEvent(
+                requestId = TOPUP_REQUEST_ID,
+                bundleId = BUNDLE_ID,
+                bytes = NO_OF_TOPUP_BYTES)
 
         // Collect an event (or fail trying).
         val event = collectedEvent
 
         // Verify some behavior
         assertEquals(BUNDLE_ID, event.bundleId)
-        assertEquals(NO_OF_TOPUP_BYTES, event.topUpBytes)
+        assertEquals(NO_OF_TOPUP_BYTES, event.topupContext?.topUpBytes)
         assertEquals(TOPUP_DATA_BUNDLE_BALANCE, event.messageType)
     }
 
     @Test
-    @Throws(Exception::class)
     fun creditControlRequestEvent() {
         val request = CreditControlRequestInfo.newBuilder().setMsisdn(MSISDN).addMscc(MultipleServiceCreditControl.newBuilder()
                 .setRequested(ServiceUnit.newBuilder()
@@ -94,7 +95,7 @@ class PrimeEventProducerTest {
                 .build()
         ).build()
 
-        primeEventProducer!!.injectCreditControlRequestIntoRingbuffer(request, STREAM_ID)
+        primeEventProducer.injectCreditControlRequestIntoRingbuffer(STREAM_ID, request)
 
         val event = collectedEvent
         assertEquals(MSISDN, event.msisdn)
@@ -127,6 +128,8 @@ class PrimeEventProducerTest {
         private const val RATING_GROUP = 10L;
 
         private const val SERVICE_IDENTIFIER = 1L;
+
+        private const val TOPUP_REQUEST_ID = "req-id"
     }
 }
 

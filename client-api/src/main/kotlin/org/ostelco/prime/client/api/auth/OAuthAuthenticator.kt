@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.dropwizard.auth.AuthenticationException
 import io.dropwizard.auth.Authenticator
 import org.ostelco.prime.client.api.core.UserInfo
-import org.ostelco.prime.logger
+import org.ostelco.prime.getLogger
 import java.io.IOException
 import java.util.*
 import javax.ws.rs.client.Client
@@ -27,11 +27,10 @@ private const val DEFAULT_USER_INFO_ENDPOINT = "https://ostelco.eu.auth0.com/use
 
 class OAuthAuthenticator(private val client: Client) : Authenticator<String, AccessTokenPrincipal> {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     private val mapper = ObjectMapper()
 
-    @Throws(AuthenticationException::class)
     override fun authenticate(accessToken: String): Optional<AccessTokenPrincipal> {
 
         var userInfoEndpoint: String
@@ -54,7 +53,6 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
         return Optional.of(AccessTokenPrincipal(email))
     }
 
-    @Throws(AuthenticationException::class)
     private fun getUserInfo(userInfoEndpoint: String, accessToken: String): UserInfo {
 
         val response = client.target(userInfoEndpoint)

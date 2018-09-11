@@ -48,7 +48,8 @@ data class ApplicationToken(
 }
 
 data class Subscription(
-        val msisdn: String) : HasId {
+        val msisdn: String,
+        val alias: String = "") : HasId {
 
     override val id: String
         @JsonIgnore

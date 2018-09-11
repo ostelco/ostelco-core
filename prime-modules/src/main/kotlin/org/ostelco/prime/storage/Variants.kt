@@ -89,7 +89,7 @@ interface ClientGraphStore {
     /**
      * Get balance for Client
      */
-    fun getBundles(subscriberId: String): Either<StoreError, Collection<Bundle>?>
+    fun getBundles(subscriberId: String): Either<StoreError, Collection<Bundle>>
 
     /**
      * Set balance after OCS Topup or Consumption

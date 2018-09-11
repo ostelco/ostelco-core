@@ -1,11 +1,11 @@
 package org.ostelco.prime.disruptor
 
 import com.lmax.disruptor.EventHandler
-import org.ostelco.prime.logger
+import org.ostelco.prime.getLogger
 
-class ClearingEventHandler : EventHandler<OcsEvent> {
+object ClearingEvent : EventHandler<OcsEvent> {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     override fun onEvent(
             event: OcsEvent,

@@ -1,6 +1,5 @@
 package org.ostelco.prime.ocs
 
-import com.lmax.disruptor.TimeoutException
 import com.palantir.docker.compose.DockerComposeRule
 import com.palantir.docker.compose.connection.waiting.HealthChecks
 import io.grpc.ManagedChannelBuilder
@@ -21,14 +20,15 @@ import org.ostelco.ocs.api.MultipleServiceCreditControl
 import org.ostelco.ocs.api.OcsServiceGrpc
 import org.ostelco.ocs.api.OcsServiceGrpc.OcsServiceStub
 import org.ostelco.ocs.api.ServiceUnit
+import org.ostelco.prime.consumption.OcsGrpcServer
+import org.ostelco.prime.consumption.OcsService
 import org.ostelco.prime.disruptor.EventProducerImpl
 import org.ostelco.prime.disruptor.OcsDisruptor
-import org.ostelco.prime.logger
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.storage.firebase.initFirebaseConfigRegistry
 import org.ostelco.prime.storage.graph.Config
 import org.ostelco.prime.storage.graph.ConfigRegistry
 import org.ostelco.prime.storage.graph.Neo4jClient
-import java.io.IOException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -40,11 +40,11 @@ import java.util.concurrent.TimeUnit
  */
 class OcsTest {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     abstract class AbstractObserver<T> : StreamObserver<T> {
 
-        private val logger by logger()
+        private val logger by getLogger()
 
         override fun onError(t: Throwable) {
             // Ignore errors
@@ -75,7 +75,6 @@ class OcsTest {
      * the gRPC interface.
      */
     @Test
-    @Throws(InterruptedException::class)
     fun testFetchDataRequest() {
 
         // If this latch reaches zero, then things went well.
@@ -115,7 +114,6 @@ class OcsTest {
      * @throws InterruptedException
      */
     @Test
-    @Throws(InterruptedException::class)
     fun testActivateMsisdn() {
 
         val cdl = CountDownLatch(2)
@@ -142,7 +140,10 @@ class OcsTest {
 
         // Send a report using the producer to the pipeline that will
         // inject a PrimeEvent that will top up the data bundle balance.
-        producer.topupDataBundleBalanceEvent(BUNDLE_ID, NO_OF_BYTES_TO_ADD)
+        producer.topupDataBundleBalanceEvent(
+                requestId = TOPUP_REQ_ID,
+                bundleId = BUNDLE_ID,
+                bytes = NO_OF_BYTES_TO_ADD)
 
         // Now wait, again, for the latch to reach zero, and fail the test
         // ff it hasn't.
@@ -164,6 +165,8 @@ class OcsTest {
         private const val MSISDN = "4790300017"
 
         private const val BUNDLE_ID = "foo@bar.com"
+
+        private const val TOPUP_REQ_ID = "req-id"
 
         // Default chunk of byte used in various test cases
         private const val BYTES: Long = 100
@@ -219,7 +222,6 @@ class OcsTest {
 
         @BeforeClass
         @JvmStatic
-        @Throws(IOException::class)
         fun setUp() {
             ConfigRegistry.config = Config().apply {
                 this.host = "0.0.0.0"
@@ -236,7 +238,7 @@ class OcsTest {
             // Set up the gRPC server at a particular port with a particular
             // service, that is connected to the processing pipeline.
             val ocsService = OcsService(producer)
-            ocsServer = OcsGrpcServer(PORT, ocsService.asOcsServiceImplBase())
+            ocsServer = OcsGrpcServer(PORT, ocsService.ocsGrpcService)
 
             val ocsState = OcsState()
             ocsState.msisdnToBundleIdMap[MSISDN] = BUNDLE_ID
@@ -248,7 +250,7 @@ class OcsTest {
             //      Producer:(OcsService, Subscriber)
             //          -> Handler:(OcsState)
             //              -> Handler:(OcsService, Subscriber)
-            disruptor.disruptor.handleEventsWith(ocsState).then(ocsService.asEventHandler())
+            disruptor.disruptor.handleEventsWith(ocsState).then(ocsService.eventHandler)
 
             // start disruptor and ocs services.
             disruptor.start()
@@ -268,7 +270,6 @@ class OcsTest {
 
         @AfterClass
         @JvmStatic
-        @Throws(InterruptedException::class, TimeoutException::class)
         fun tearDown() {
             disruptor.stop()
             ocsServer.forceStop()

@@ -4,9 +4,10 @@ import arrow.core.Either
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.Person
 import org.ostelco.prime.client.api.model.SubscriptionStatus
-import org.ostelco.prime.core.ApiError
+import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.model.ActivePseudonyms
 import org.ostelco.prime.model.ApplicationToken
+import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
@@ -31,6 +32,8 @@ interface SubscriberDAO {
     fun getSubscriptionStatus(subscriberId: String): Either<ApiError, SubscriptionStatus>
 
     fun getSubscriptions(subscriberId: String): Either<ApiError, Collection<Subscription>>
+
+    fun getBundles(subscriberId: String): Either<ApiError, Collection<Bundle>>
 
     fun getPurchaseHistory(subscriberId: String): Either<ApiError, Collection<PurchaseRecord>>
 

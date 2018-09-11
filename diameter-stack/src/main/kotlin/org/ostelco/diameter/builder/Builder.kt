@@ -6,7 +6,7 @@ import java.net.InetAddress
 import java.util.*
 
 /**
- * DSL style helper class to populate values into {@link org.jdiameter.api.AvpSet}
+ * DSL style helper class to populate values into [org.jdiameter.api.AvpSet]
  */
 fun set(avpSet: AvpSet, init: AvpSetContext.() -> Unit) {
     val avpSetContext = AvpSetContext(avpSet)

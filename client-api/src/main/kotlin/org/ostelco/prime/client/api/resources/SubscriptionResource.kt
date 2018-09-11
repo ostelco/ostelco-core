@@ -14,7 +14,7 @@ import javax.ws.rs.core.Response
  */
 
 @Path("/subscription")
-@Deprecated("use SubscriptionsResource", ReplaceWith("SubscriptionsResource", "org.ostelco.prime.client.api.resources.SubscriptionsResource"))
+@Deprecated("use SubscriptionsResource and/or BundlesResource", ReplaceWith("SubscriptionsResource", "org.ostelco.prime.client.api.resources.SubscriptionsResource"))
 class SubscriptionResource(private val dao: SubscriberDAO) {
 
     @GET

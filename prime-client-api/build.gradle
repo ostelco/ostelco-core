@@ -1,7 +1,7 @@
 plugins {
   id "org.jetbrains.kotlin.jvm" version "1.2.70"
   id 'java-library'
-  id 'org.hidetake.swagger.generator' version '2.12.0'
+  id 'org.hidetake.swagger.generator' version '2.13.0'
   id "idea"
 }
 
@@ -42,7 +42,7 @@ dependencies {
   swaggerCodegen 'io.swagger:swagger-codegen-cli:2.3.1'
 
   // taken from build/swagger-code-java-client/build.gradle
-  implementation 'io.swagger:swagger-annotations:1.5.15'
+  implementation 'io.swagger:swagger-annotations:1.5.21'
   implementation 'com.google.code.gson:gson:2.8.5'
   implementation 'com.squareup.okhttp:okhttp:2.7.5'
   implementation 'com.squareup.okhttp:logging-interceptor:2.7.5'

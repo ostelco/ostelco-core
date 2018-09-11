@@ -20,9 +20,8 @@ import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.auth.OAuthAuthenticator
 import org.ostelco.prime.client.api.resources.ProfileResource
 import org.ostelco.prime.client.api.store.SubscriberDAO
-import org.ostelco.prime.core.ApiErrorCode
-import org.ostelco.prime.core.NotFoundError
-import java.io.IOException
+import org.ostelco.prime.apierror.ApiErrorCode
+import org.ostelco.prime.apierror.NotFoundError
 
 class TestApp : Application<TestConfig>() {
 
@@ -30,13 +29,12 @@ class TestApp : Application<TestConfig>() {
         return "test"
     }
 
-    override fun initialize(bootstrap: Bootstrap<TestConfig>?) {
-        bootstrap!!.configurationSourceProvider = SubstitutingSourceProvider(
+    override fun initialize(bootstrap: Bootstrap<TestConfig>) {
+        bootstrap.configurationSourceProvider = SubstitutingSourceProvider(
                 bootstrap.configurationSourceProvider,
                 EnvironmentVariableSubstitutor())
     }
 
-    @Throws(IOException::class)
     override fun run(config: TestConfig, env: Environment) {
 
         val DAO = mock(SubscriberDAO::class.java)
@@ -58,7 +56,7 @@ class TestApp : Application<TestConfig>() {
         /* OAuth2 with cache. */
         val authenticator = CachingAuthenticator(env.metrics(),
                 OAuthAuthenticator(client),
-                config.authenticationCachePolicy!!)
+                config.authenticationCachePolicy)
 
         /* OAuth2. */
         env.jersey().register(AuthDynamicFeature(

@@ -9,7 +9,7 @@ import org.ostelco.prime.disruptor.EventMessageType.REMOVE_MSISDN_TO_BUNDLE_MAPP
 import org.ostelco.prime.disruptor.EventMessageType.TOPUP_DATA_BUNDLE_BALANCE
 import org.ostelco.prime.disruptor.EventMessageType.UPDATE_BUNDLE
 import org.ostelco.prime.disruptor.OcsEvent
-import org.ostelco.prime.logger
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.AdminDataSource
 import java.util.*
@@ -19,7 +19,7 @@ import java.util.*
  */
 class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<OcsEvent> {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     // this is public for prime:integration tests
     val msisdnToBundleIdMap = HashMap<String, String>()
@@ -27,6 +27,12 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<OcsEvent> {
 
     private val bundleBalanceMap = HashMap<String, Long>()
     private val bucketReservedMap = HashMap<String, Long>()
+
+    init {
+        if (loadSubscriberInfo) {
+            loadDatabaseToInMemoryStructure()
+        }
+    }
 
     override fun onEvent(
             event: OcsEvent,
@@ -41,21 +47,30 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<OcsEvent> {
                         logger.error("Received null as msisdn")
                         return
                     }
-                    consumeDataBytes(msisdn, event.request?.msccList?.firstOrNull()?.used?.totalOctets ?: 0L)
+                    consumeDataBytes(
+                            msisdn = msisdn,
+                            usedBytes = event.request?.msccList?.firstOrNull()?.used?.totalOctets ?: 0L)
                     event.reservedBucketBytes = reserveDataBytes(
-                            msisdn,
-                            event.request?.msccList?.firstOrNull()?.requested?.totalOctets ?: 0L)
+                            msisdn = msisdn,
+                            bytes = event.request?.msccList?.firstOrNull()?.requested?.totalOctets ?: 0L)
                     event.bundleId = msisdnToBundleIdMap[msisdn]
                     event.bundleBytes = bundleBalanceMap[event.bundleId] ?: 0
                 }
                 TOPUP_DATA_BUNDLE_BALANCE -> {
-                    val bundleId = event.bundleId
-                    if (bundleId == null) {
-                        logger.error("Received null as bundleId")
-                        return
+                    try {
+                        val bundleId = event.bundleId
+                        if (bundleId == null) {
+                            logger.error("Received null as bundleId")
+                            event.topupContext?.errorMessage = "Received null as bundleId"
+                            return
+                        }
+                        event.bundleBytes = addDataBundleBytes(
+                                bundleId = bundleId,
+                                bytes = event.topupContext?.topUpBytes ?: 0L)
+                        event.topupContext?.msisdnToppedUp = bundleIdToMsisdnMap[bundleId]?.toList() ?: emptyList()
+                    } catch (e: Exception) {
+                        event.topupContext?.errorMessage = e.message ?: "Failed to perform topup"
                     }
-                    event.bundleBytes = addDataBundleBytes(bundleId, event.topUpBytes ?: 0L)
-                    event.msisdnToppedUp = bundleIdToMsisdnMap[bundleId]?.toList()
                 }
                 RELEASE_RESERVED_BUCKET -> {
                     val msisdn = event.msisdn
@@ -135,7 +150,7 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<OcsEvent> {
                 "Number of bytes must be positive")
 
         bundleBalanceMap.putIfAbsent(bundleId, 0L)
-        val newDataSize = bundleBalanceMap[bundleId]!! + bytes
+        val newDataSize = (bundleBalanceMap[bundleId] ?: 0) + bytes
         bundleBalanceMap[bundleId] = newDataSize
         return newDataSize
     }
@@ -268,12 +283,6 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<OcsEvent> {
         bucketReservedMap[msisdn] = consumed
         bundleBalanceMap[bundleId] = existing - consumed
         return consumed
-    }
-
-    init {
-        if (loadSubscriberInfo) {
-            loadDatabaseToInMemoryStructure()
-        }
     }
 
     private fun loadDatabaseToInMemoryStructure() {

@@ -1,4 +1,4 @@
-# Admin API
+# Module Admin API
 
  * Admin API is for back-office admin management.
  * Each of the _Resources_ are listed below shall have Create-Read-Update-Delete operations.
