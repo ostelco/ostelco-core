@@ -9,7 +9,7 @@ firebaseServiceAccount: ""
 prime:
   image: eu.gcr.io/pi-ostelco-dev/prime
 
-  tag: 695546ced
+  tag: 5990ea1d6
   pullPolicy: Always
   env: 
     FIREBASE_ROOT_PATH: dev_new
