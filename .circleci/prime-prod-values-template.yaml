@@ -8,6 +8,7 @@ firebaseServiceAccount: ""
 
 prime:
   image: eu.gcr.io/pi-ostelco-dev/prime
+
   tag: ${PRIME_TAG}
   pullPolicy: Always
   env: 
@@ -49,41 +50,36 @@ esp:
 ocsEsp: 
   enabled: true
   env: {}
-  endpointAddress: ocs.new.dev.ostelco.org
+  endpointAddress: prod-ocs.new.dev.ostelco.org
+
   ports:
     - 9000
     - 8443
   secrets: 
     - secretName: ocs-ostelco-ssl
-      containerMountPath: /etc/nginx/ssl  
-    # - secretName: esp-sa-creds
-    #   containerMountPath: /etc/nginx/creds  
+      containerMountPath: /etc/nginx/ssl    
 
 apiEsp: 
   enabled: true
   env: {}
-  endpointAddress: api.new.dev.ostelco.org
+  endpointAddress: prod-api.new.dev.ostelco.org
   ports:
     - 9002
     - 443
   secrets: 
     - secretName: api-ostelco-ssl
       containerMountPath: /etc/nginx/ssl 
-    # - secretName: esp-sa-creds
-    #   containerMountPath: /etc/nginx/creds  
 
 metricsEsp:
   enabled: true
   env: {}
-  endpointAddress: metrics.new.dev.ostelco.org
+  endpointAddress: prod-metrics.new.dev.ostelco.org
   ports:
     - 9004
     - 9443
   secrets: 
     - secretName: metrics-ostelco-ssl
-      containerMountPath: /etc/nginx/ssl 
-    # - secretName: esp-sa-creds
-    #   containerMountPath: /etc/nginx/creds    
+      containerMountPath: /etc/nginx/ssl    
 
 services:
   prime:
@@ -107,6 +103,7 @@ services:
     targetPort: 9443  
     portName: grpc
     # loadBalancerIP: x.y.z.n
+
 
 ingress:
   enabled: false
