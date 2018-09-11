@@ -192,7 +192,8 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         return paymentProcessor.createPaymentProfile(name)
                 .mapLeft { ForbiddenError(it.description) }
                 .flatMap { profileInfo ->
-                    setPaymentProfile(name, profileInfo).map { profileInfo }
+                    setPaymentProfile(name, profileInfo)
+                            .map { profileInfo }
                 }
     }
 
