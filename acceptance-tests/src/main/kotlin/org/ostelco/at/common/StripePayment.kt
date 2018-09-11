@@ -43,6 +43,33 @@ object StripePayment {
         return token.card.id
     }
 
+    /**
+     * Obtains 'default source' directly from Stripe. Use in tests to
+     * verify that the correspondng 'setDefaultSource' API works as
+     * intended.
+     */
+    fun getDefaultSourceForCustomer(customerId: String) : String {
+
+        // https://stripe.com/docs/api/java#create_source
+        Stripe.apiKey = System.getenv("STRIPE_API_KEY")
+
+        val customer = Customer.retrieve(customerId)
+        return customer.defaultSource
+    }
+
+    /**
+     * Obtains the Stripe 'customerId' directly from Stripe.
+     */
+    fun getCustomerIdForEmail(email: String) : String {
+
+        // https://stripe.com/docs/api/java#create_card_token
+        Stripe.apiKey = System.getenv("STRIPE_API_KEY")
+
+        val customers = Customer.list(emptyMap()).data
+
+        return customers.filter { it.email.equals(email) }.first().id
+    }
+
     fun deleteAllCustomers() {
         // https://stripe.com/docs/api/java#create_card_token
         Stripe.apiKey = System.getenv("STRIPE_API_KEY")
