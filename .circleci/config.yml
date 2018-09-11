@@ -12,8 +12,8 @@ jobs:
           # checking for merge conflicts and merging locally if none exist
           name: merging ${CIRCLE_BRANCH} into circleci-dev locally
           command: |
-            git config --global user.email "you@example.com" 
-            git config --global user.name "Your Name"
+            git config --global user.email "${GIT_USER_EMAIL}" 
+            git config --global user.name "${GIT_USER_NAME}"
             git checkout ${CIRCLE_BRANCH}
             git checkout circleci-dev 
             git merge ${CIRCLE_BRANCH} -m "Merging ${CIRCLE_BRANCH} into circleci-dev."
@@ -229,6 +229,8 @@ jobs:
             export PRIME_TAG=${CIRCLE_SHA1:0:9}
             cd .circleci 
             ./substitute_prime_tag.sh
+            git config --global user.email "${GIT_USER_EMAIL}"
+            git config --global user.name "${GIT_USER_NAME}"
             git add prime-prod-values.yaml
             git commit -m "updating prime image tag to the latest built image."
             git push https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/ostelco/ostelco-core.git circleci-dev
