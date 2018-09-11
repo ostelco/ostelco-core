@@ -6,7 +6,7 @@ modules:
       rootPath: ${FIREBASE_ROOT_PATH}
   - type: neo4j
     config:
-      host: neo4j
+      host: ${NEO4J_HOST}
       protocol: bolt+routing
   - type: analytics
     config:
