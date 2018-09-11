@@ -17,7 +17,6 @@ bqmetrics:
     sql: >
         SELECT count(distinct user_pseudo_id) AS count FROM `pantel-2decb.analytics_160712959.events_*`
         WHERE event_name = "first_open"
-        LIMIT 1000
   - type: summary
     name: revenue_last24hours
     help: Revenue for last 24 hours
