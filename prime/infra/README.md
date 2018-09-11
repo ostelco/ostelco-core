@@ -273,6 +273,10 @@ gcloud endpoints services deploy prime/infra/dev/prime-client-api.yaml
 ```bash
 kubectl apply -f prime/infra/dev/monitoring.yaml
 
+# If the above command fails on creating clusterroles / clusterbindings you need to add a role to the user you are using to deploy
+# You can read more about it here https://github.com/coreos/prometheus-operator/issues/357
+kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user $(gcloud config get-value account)
+
 #
 kubectl apply -f prime/infra/dev/monitoring-pushgateway.yaml 
 ```
