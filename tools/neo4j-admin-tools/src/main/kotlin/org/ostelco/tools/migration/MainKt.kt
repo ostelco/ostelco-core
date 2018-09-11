@@ -1,54 +1,9 @@
 package org.ostelco.tools.migration
 
 import org.neo4j.driver.v1.AccessMode
-import java.nio.file.Files
-import java.nio.file.Paths
 
 fun main(args: Array<String>) {
-    neo4jExporterToCypherFile()
-    // cypherFileToNeo4jImporter()
-}
-
-fun neo4jExporterToCypherFile() {
-
-    Neo4jClient.init()
-
-    Neo4jClient.driver.session(AccessMode.READ).use { session ->
-
-        val txn = session.beginTransaction()
-
-        println("Import from Neo4j to file")
-
-        importFromNeo4j(txn) { str ->
-            Files.write(Paths.get("src/main/resources/backup.cypher"), str.toByteArray())
-        }
-
-        println("Done")
-        txn.success()
-    }
-
-    Neo4jClient.stop()
-}
-
-fun cypherFileToNeo4jImporter() {
-
-    Neo4jClient.init()
-
-    Neo4jClient.driver.session(AccessMode.WRITE).use { session ->
-
-        val txn = session.beginTransaction()
-
-        println("Import from file to Neo4j")
-
-        importFromCypherFile("src/main/resources/backup.prod.cypher") { query ->
-            txn.run(query)
-        }
-
-        println("Done")
-        txn.success()
-    }
-
-    Neo4jClient.stop()
+    cypherFileToNeo4jImporter()
 }
 
 fun cypherFileAndFirebaseToNeo4jMigration() {
@@ -56,25 +11,43 @@ fun cypherFileAndFirebaseToNeo4jMigration() {
 
     Neo4jClient.init()
 
-    Neo4jClient.driver.session(AccessMode.WRITE).use { session ->
+    Neo4jClient.driver.session(AccessMode.WRITE).use {
 
-        val txn = session.beginTransaction()
+        val txn = it.beginTransaction()
 
         println("Import from file to Neo4j")
 
-        importFromCypherFile("src/main/resources/init.cypher") { query ->
-            txn.run(query)
+        importFromCypherFile("src/main/resources/init.cypher") {
+            query -> txn.run(query)
         }
 
         println("Exporting from firebase and import it to Neo4j")
-        importFromFirebase { createQuery ->
-            txn.run(createQuery)
+        importFromFirebase {
+            createQuery -> txn.run(createQuery)
         }
 
         println("Done")
         txn.success()
     }
-
     Neo4jClient.stop()
 }
 
+fun cypherFileToNeo4jImporter() {
+
+    Neo4jClient.init()
+
+    Neo4jClient.driver.session(AccessMode.WRITE).use {
+
+        val txn = it.beginTransaction()
+
+        println("Import from file to Neo4j")
+
+        importFromCypherFile("src/main/resources/init.cypher") {
+            query -> txn.run(query)
+        }
+
+        println("Done")
+        txn.success()
+    }
+    Neo4jClient.stop()
+}

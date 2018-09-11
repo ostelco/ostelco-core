@@ -44,7 +44,7 @@ dependencies {
   implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
   implementation "io.dropwizard:dropwizard-http2:$dropwizardVersion"
   runtimeOnly "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
-  implementation "com.google.guava:guava:$guavaVersion"
+  implementation 'com.google.guava:guava:25.1-jre'
   implementation 'org.dhatim:dropwizard-prometheus:2.2.0'
 
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"

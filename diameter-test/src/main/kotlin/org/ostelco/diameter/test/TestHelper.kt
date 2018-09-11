@@ -153,11 +153,4 @@ object TestHelper {
         addTerminateRequest(ccrAvps, ratingGroup = 10, serviceIdentifier = 1, bucketSize = bucketSize)
         addServiceInformation(ccrAvps, apn = APN, sgsnMncMcc = SGSN_MCC_MNC)
     }
-
-    @JvmStatic
-    fun createTerminateRequest(ccrAvps: AvpSet, msisdn: String) {
-        buildBasicRequest(ccrAvps, RequestType.TERMINATION_REQUEST, requestNumber = 2)
-        addUser(ccrAvps, msisdn = msisdn, imsi = IMSI)
-        addServiceInformation(ccrAvps, apn = APN, sgsnMncMcc = SGSN_MCC_MNC)
-    }
 }

@@ -229,7 +229,7 @@ public class GrpcDataSource implements DataSource {
 
     private void handleGrpcCcrAnswer(CreditControlAnswerInfo answer) {
         try {
-            LOG.info("[<<] CreditControlAnswer for {}", answer.getMsisdn());
+            LOG.info("[<<] Received data bucket for {}", answer.getMsisdn());
             final CreditControlContext ccrContext = ccrMap.remove(answer.getRequestId());
             if (ccrContext != null) {
                 final ServerCCASession session = OcsServer.getInstance().getStack().getSession(ccrContext.getSessionId(), ServerCCASession.class);
@@ -329,7 +329,7 @@ public class GrpcDataSource implements DataSource {
     public void handleRequest(final CreditControlContext context) {
         ccrMap.put(context.getSessionId(), context);
         addToSessionMap(context);
-        LOG.info("[>>] creditControlRequest for {}", context.getCreditControlRequest().getMsisdn());
+        LOG.info("[>>] Requesting bytes for {}", context.getCreditControlRequest().getMsisdn());
 
         if (creditControlRequest != null) {
             try {

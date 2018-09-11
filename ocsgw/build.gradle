@@ -3,8 +3,6 @@ plugins {
     id "com.github.johnrengelman.shadow" version "2.0.4"
 }
 
-ext.junit5Version = "5.3.0"
-
 dependencies {
     implementation project(':ocs-grpc-api')
     implementation project(':analytics-grpc-api')
@@ -15,14 +13,14 @@ dependencies {
     implementation 'ch.qos.logback:logback-classic:1.2.3'
 
     // log to gcp stack-driver
-    implementation 'com.google.cloud:google-cloud-logging-logback:0.61.0-alpha'
+    implementation 'com.google.cloud:google-cloud-logging-logback:0.59.0-alpha'
 
     testImplementation project(':diameter-test')
-    testImplementation "org.junit.jupiter:junit-jupiter-api:$junit5Version"
-    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junit5Version"
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.2.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.2.0'
 
     testImplementation 'junit:junit:4.12'
-    testRuntimeOnly "org.junit.vintage:junit-vintage-engine:$junit5Version"
+    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.2.0'
 }
 
 test {

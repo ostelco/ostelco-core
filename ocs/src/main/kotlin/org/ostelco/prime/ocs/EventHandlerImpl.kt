@@ -53,8 +53,8 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
         val logString = """
             $msg
             Msisdn: ${event.msisdn}
-            Requested bytes: ${event.request?.msccList?.firstOrNull()?.requested?.totalOctets ?: 0L}
-            Used bytes: ${event.request?.msccList?.firstOrNull()?.used?.totalOctets ?: 0L}
+            Requested bytes: ${event.request?.getMscc(0)?.requested?.totalOctets ?: 0L}
+            Used bytes: ${event.request?.getMscc(0)?.used?.totalOctets ?: 0L}
             Bundle bytes: ${event.bundleBytes}
             Topup bytes: ${event.topUpBytes}
             Request id: ${event.request?.requestId}
@@ -75,7 +75,9 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
                     .setMsisdn(event.msisdn)
 
             event.request?.let { request ->
-                if (request.msccCount > 0) {
+                // This is a hack to know when we have received an MSCC in the request or not.
+                // For Terminate request we might not have any MSCC and therefore no serviceIdentifier.
+                if (request.getMscc(0).serviceIdentifier > 0) {
                     val msccBuilder = MultipleServiceCreditControl.newBuilder()
                     msccBuilder.setServiceIdentifier(request.getMscc(0).serviceIdentifier)
                             .setRatingGroup(request.getMscc(0).ratingGroup)

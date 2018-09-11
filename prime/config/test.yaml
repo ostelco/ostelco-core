@@ -45,5 +45,3 @@ logging:
   level: INFO
   loggers:
     org.ostelco: DEBUG
-    # suppress exception logged while connecting to real bigQuery 3 times before connecting to emulator
-    com.google.auth.oauth2.ComputeEngineCredentials: ERROR

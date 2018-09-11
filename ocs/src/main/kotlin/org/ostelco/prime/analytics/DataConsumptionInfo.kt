@@ -30,11 +30,11 @@ class DataConsumptionInfo() : EventHandler<OcsEvent> {
             logger.info("Sent DataConsumptionInfo event to analytics")
             analyticsReporter.reportTrafficInfo(
                     msisdn = event.msisdn!!,
-                    usedBytes = event.request?.msccList?.firstOrNull()?.used?.totalOctets ?: 0L,
+                    usedBytes = event.request?.getMscc(0)?.used?.totalOctets ?: 0L,
                     bundleBytes = event.bundleBytes)
             analyticsReporter.reportMetric(
                     primeMetric = MEGABYTES_CONSUMED,
-                    value = (event.request?.msccList?.firstOrNull()?.used?.totalOctets ?: 0L) / 1_000_000)
+                    value = (event.request?.getMscc(0)?.used?.totalOctets ?: 0L) / 1_000_000)
 
             //ToDo: Send to analytics and build pipeline
             event.request?.let { request ->

@@ -21,7 +21,7 @@ dependencies {
 
   implementation project(":prime-api")
 
-  implementation "com.stripe:stripe-java:$stripeVersion"
+  implementation "com.stripe:stripe-java:6.8.0"
 
   testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"

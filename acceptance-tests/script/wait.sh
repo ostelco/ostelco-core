@@ -29,7 +29,6 @@ java -cp '/acceptance-tests.jar' org.junit.runner.JUnitCore \
      org.ostelco.at.jersey.GetPseudonymsTest \
      org.ostelco.at.jersey.GetProductsTest \
      org.ostelco.at.jersey.GetSubscriptionStatusTest \
-     org.ostelco.at.jersey.SourceTest \
      org.ostelco.at.jersey.PurchaseTest \
      org.ostelco.at.jersey.AnalyticsTest \
      org.ostelco.at.jersey.ConsentTest \
