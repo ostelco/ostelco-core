@@ -1,0 +1,12 @@
+version: "3.7"
+
+services:
+  neo4j:
+    container_name: "neo4j"
+    image: neo4j:3.4.7
+    environment:
+    - NEO4J_AUTH=none
+    ports:
+    - "7687:7687"
+    - "7474:7474"
+    tmpfs: "/data"

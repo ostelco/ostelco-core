@@ -47,6 +47,7 @@ logging:
   level: INFO
   loggers:
     org.ostelco: DEBUG
+    org.dhatim.dropwizard.prometheus.DropwizardMetricsExporter: ERROR
   appenders:
     - type: console
       layout:

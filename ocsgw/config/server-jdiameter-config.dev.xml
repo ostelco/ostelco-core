@@ -5,7 +5,7 @@
     <IPAddresses>
       <IPAddress value="10.6.4.69" />
     </IPAddresses>
-    <Realm value="loltel" />
+    <Realm value="loltel_dev" />
     <VendorID value="10415" />
     <ProductName value="jDiameter" />
     <FirmwareRevision value="1" />
