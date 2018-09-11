@@ -1,4 +1,5 @@
-# Derived from ./manifests
+# Based on https://github.com/giantswarm/kubernetes-prometheus
+# According to Praqma this is an outdated way to setup prometheus stack
 ---
 apiVersion: v1
 kind: Namespace
@@ -230,7 +231,7 @@ data:
       smtp_auth_password: 'barfoo'
 
       # The API URL to use for Slack notifications.
-      slack_api_url: 'https://hooks.slack.com/services/some/api/token'
+      slack_api_url: 'https://hooks.slack.com/services/insert-secret-token-here/
 
     # # The directory from which notification templates are read.
     templates:
@@ -309,8 +310,16 @@ spec:
       name: alertmanager
       labels:
         app: alertmanager
+        triggerUpdate: "3"
     spec:
       containers:
+      - name: watch
+        image: weaveworks/watch:master-5b2a6e5
+        imagePullPolicy: IfNotPresent
+        args: ["-v", "-t", "-p=/etc/alertmanager", "curl", "-X", "POST", "--fail", "-o", "-", "-sS", "http://alertmanager:9093/-/reload"]
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/alertmanager
       - name: alertmanager
         image: quay.io/prometheus/alertmanager:v0.7.1
         args:
@@ -2438,6 +2447,21 @@ data:
           - source_labels: [__meta_kubernetes_service_name]
             target_label: kubernetes_name
 
+      - job_name: 'kubernetes-cadvisor'
+        metrics_path: /metrics/cadvisor
+        #metrics_path: /cadvisor
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - source_labels: [__address__]
+            regex: '(.*):10250'
+            replacement: '${1}:10255'
+            #replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
+            target_label: __address__
+
       # https://github.com/prometheus/prometheus/blob/master/documentation/examples/prometheus-kubernetes.yml#L156
       - job_name: 'kubernetes-pods'
         kubernetes_sd_configs:
@@ -2480,7 +2504,12 @@ metadata:
   labels:
     app: prometheus
     component: core
+    triggerUpdate: "2"
 spec:
+  strategy:
+    rollingUpdate:
+       maxSurge: 1
+    type: RollingUpdate
   replicas: 1
   template:
     metadata:
@@ -2491,6 +2520,13 @@ spec:
     spec:
       serviceAccountName: prometheus-k8s
       containers:
+      - name: watch
+        image: weaveworks/watch:master-5b2a6e5
+        imagePullPolicy: IfNotPresent
+        args: ["-v", "-t", "-p=/etc/prometheus-rules", "curl", "-X", "POST", "--fail", "-o", "-", "-sS", "--max-time", "3602", "http://prometheus:9090/-/reload"]
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/prometheus-rules
       - name: prometheus
         image: prom/prometheus:v1.7.0
         args:
@@ -2723,7 +2759,7 @@ apiVersion: v1
 data:
   cpu-usage.rules: |
     ALERT NodeCPUUsage
-      IF (100 - (avg by (instance) (irate(node_cpu{name="node-exporter",mode="idle"}[5m])) * 100)) > 75
+      IF (100 - (avg by (instance) (irate(node_cpu{kubernetes_name="prometheus-node-exporter",mode="idle"}[5m])) * 100)) > 75
       FOR 2m
       LABELS {
         severity="page"
@@ -2742,30 +2778,20 @@ data:
         description = "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 1 minute.",
       }
   low-disk-space.rules: |
-    ALERT NodeLowRootDisk
-      IF ((node_filesystem_size{mountpoint="/root-disk"} - node_filesystem_free{mountpoint="/root-disk"} ) / node_filesystem_size{mountpoint="/root-disk"} * 100) > 75
-      FOR 2m
-      LABELS {
-        severity="page"
-      }
-      ANNOTATIONS {
-        SUMMARY = "{{$labels.instance}}: Low root disk space",
-        DESCRIPTION = "{{$labels.instance}}: Root disk usage is above 75% (current value is: {{ $value }})"
-      }
 
-    ALERT NodeLowDataDisk
-      IF ((node_filesystem_size{mountpoint="/data-disk"} - node_filesystem_free{mountpoint="/data-disk"} ) / node_filesystem_size{mountpoint="/data-disk"} * 100) > 75
+    ALERT NodeLowDisk
+      IF ((node_filesystem_size{mountpoint="/"} - node_filesystem_free{mountpoint="/"} ) / node_filesystem_size{mountpoint="/"} * 100) > 75
       FOR 2m
       LABELS {
         severity="page"
       }
       ANNOTATIONS {
-        SUMMARY = "{{$labels.instance}}: Low data disk space",
-        DESCRIPTION = "{{$labels.instance}}: Data disk usage is above 75% (current value is: {{ $value }})"
+        SUMMARY = "{{$labels.instance}}: Low disk space",
+        DESCRIPTION = "{{$labels.instance}}: Disk usage is above 75% (current value is: {{ $value }})"
       }
   mem-usage.rules: |
     ALERT NodeSwapUsage
-      IF (((node_memory_SwapTotal-node_memory_SwapFree)/node_memory_SwapTotal)*100) > 75
+      IF (((node_memory_SwapTotal-node_memory_SwapFree)/node_memory_SwapTotal)*100) > 7
       FOR 2m
       LABELS {
         severity="page"
@@ -2815,6 +2841,7 @@ rules:
   - services
   - endpoints
   - pods
+  - nodes/metrics
   verbs: ["get", "list", "watch"]
 - apiGroups: [""]
   resources:

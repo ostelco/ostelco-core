@@ -79,6 +79,7 @@ nodes, endpoints, services, pods
 
 Given that they set the required annotations which tells prometheus that they should be scaped, see below:
 
+`add the annotations to the pods, that means the config with type Deployment, StatefulSet, DaemonSet`
 ```yaml
 metadata:
   annotations:
