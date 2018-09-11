@@ -232,7 +232,7 @@ jobs:
             git config --global user.email "${GIT_USER_EMAIL}"
             git config --global user.name "${GIT_USER_NAME}"
             git add prime-prod-values.yaml
-            git commit -m "updating prime image tag to the latest built image."
+            git commit -m "[ci skip] updating prime image tag to the latest built image."
             git push https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/ostelco/ostelco-core.git circleci-dev
             hub pull-request -m "merging circle-dev into circleci-prod" -b circleci-prod
 
@@ -279,7 +279,6 @@ jobs:
             helm upgrade prime ostelco/prime --install --tiller-namespace prod --namespace prod \
              -f .circleci/prime-prod-values.yaml \
              --set prime.env.STRIPE_API_KEY=${STRIPE_API_KEY} \
-             --set prime.tag=${TAG} \
              --set firebaseServiceAccount=${PANTEL_SECRETS_FILE}
  
 workflows:
