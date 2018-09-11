@@ -29,7 +29,7 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./nginx.key -out ./n
 cp nginx.crt ../../ocsgw/config/metrics.crt
 ```
    
-### Test ext-pgw -- ocsgw -- prime --firebase
+### Test acceptance-tests
 
 ```bash
 gradle clean build  
@@ -40,12 +40,6 @@ docker-compose up --build --abort-on-container-exit
 
 ```bash
 gradle prime:integration
-``` 
- 
- * Test pubsub -- pseudonymiser(--datastore) -- pubsub
-
-```bash
-docker-compose up --build -f docker-compose.yaml -f docker-compose.pseu.yaml --abort-on-container-exit
 ``` 
 
 ## Configuring emulators

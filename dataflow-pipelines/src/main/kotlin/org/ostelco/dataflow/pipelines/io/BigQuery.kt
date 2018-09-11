@@ -3,6 +3,7 @@ package org.ostelco.dataflow.pipelines.io
 import com.google.api.services.bigquery.model.TableFieldSchema
 import com.google.api.services.bigquery.model.TableRow
 import com.google.api.services.bigquery.model.TableSchema
+import com.google.protobuf.Timestamp
 import com.google.protobuf.util.Timestamps
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO
 import org.ostelco.analytics.api.AggregatedDataTrafficInfo
@@ -58,7 +59,7 @@ private object TableSchemas {
                 val fields = ArrayList<TableFieldSchema>()
                 fields.add(TableFieldSchema().setName("msisdn").setType("STRING"))
                 fields.add(TableFieldSchema().setName("bytes").setType("INTEGER"))
-                fields.add(TableFieldSchema().setName("timestamp").setType("DATETIME"))
+                fields.add(TableFieldSchema().setName("timestamp").setType("TIMESTAMP"))
                 TableSchema().setFields(fields)
             }
         }
@@ -73,18 +74,19 @@ val convertToRawTableRows = ParDoFn.transform<DataTrafficInfo, TableRow> {
             .set("msisdn", it.msisdn)
             .set("bucketBytes", it.bucketBytes)
             .set("bundleBytes", it.bundleBytes)
-            .set("timestamp", ZonedDateTime.ofInstant(
-                    Instant.ofEpochMilli(Timestamps.toMillis(it.timestamp)),
-                    ZoneOffset.UTC).toString())
+            .set("timestamp", protobufTimestampToZonedDateTime(it.timestamp))
 }
 
 val convertToHourlyTableRows = ParDoFn.transform<AggregatedDataTrafficInfo, TableRow> {
     TableRow()
             .set("msisdn", it.msisdn)
             .set("bytes", it.dataBytes)
-            .set("timestamp", it.dateTime)
+            .set("timestamp", protobufTimestampToZonedDateTime(it.timestamp))
 }
 
+fun protobufTimestampToZonedDateTime(timestamp: Timestamp) = ZonedDateTime.ofInstant(
+        Instant.ofEpochMilli(Timestamps.toMillis(timestamp)),
+        ZoneOffset.UTC).toString()
 //
 // Save to BigQuery Table
 //
@@ -102,7 +104,6 @@ object BigQueryIOUtils {
         return BigQueryIO.writeTableRows()
                 .to("$project:$dataset.${table.name.toLowerCase()}")
                 .withSchema(TableSchemas.getTableSchema(table))
-                .withCreateDisposition(BigQueryIO.Write.CreateDisposition.CREATE_IF_NEEDED)
                 .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_APPEND)
     }
 }

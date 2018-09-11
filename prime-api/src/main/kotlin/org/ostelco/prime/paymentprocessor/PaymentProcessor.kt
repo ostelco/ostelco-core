@@ -2,7 +2,11 @@ package org.ostelco.prime.paymentprocessor
 
 import arrow.core.Either
 import org.ostelco.prime.core.ApiError
-import org.ostelco.prime.paymentprocessor.core.*
+import org.ostelco.prime.paymentprocessor.core.PlanInfo
+import org.ostelco.prime.paymentprocessor.core.ProductInfo
+import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.paymentprocessor.core.SourceInfo
+import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
 
 interface PaymentProcessor {
 
@@ -104,10 +108,15 @@ interface PaymentProcessor {
     /**
      * @param chargeId ID of the of the authorized charge from authorizeCharge()
      * @param customerId Customer id in the payment system
-     * @param sourceId id of the payment source
      * @return id of the charge if authorization was successful
      */
-    fun captureCharge(chargeId: String, customerId: String, sourceId: String?): Either<ApiError, String>
+    fun captureCharge(chargeId: String, customerId: String): Either<ApiError, String>
+
+    /**
+     * @param chargeId ID of the of the authorized charge to refund from authorizeCharge()
+     * @return id of the charge
+     */
+    fun refundCharge(chargeId: String): Either<ApiError, String>
 
     /**
      * @param customerId Customer id in the payment system

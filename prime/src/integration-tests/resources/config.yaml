@@ -11,7 +11,8 @@ modules:
   - type: analytics
     config:
       projectId: pantel-2decb
-      topicId: data-traffic
+      dataTrafficTopicId: data-traffic
+      purchaseInfoTopicId: purchase-info
   - type: ocs
     config:
       lowBalanceThreshold: 0
