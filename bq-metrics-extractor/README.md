@@ -73,7 +73,7 @@ How to build and deploy the cronjob manually
 ... where foobarbaz is the id of the container built by docker build.
 
 ## Then start the cronjob in kubernetes
-    kubectl apply -f cronjob/config.yaml
+    kubectl apply -f cronjob/extractor.yaml
     kubectl describe cronjob bq-metrics-extractor
 
 ## To talk to the prometheus in the monitoring namespace & watch the users metrics evolve
