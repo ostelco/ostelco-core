@@ -7,13 +7,13 @@ sealed class PaymentError(val description: String) {
 }
 
 class ForbiddenError(description: String) : PaymentError(description) {
-    override var status : Int = Response.Status.NOT_FOUND.getStatusCode()
+    override var status : Int = Response.Status.FORBIDDEN.statusCode
 }
 
 class NotFoundError(description: String) : PaymentError(description) {
-    override var status : Int = Response.Status.NOT_FOUND.getStatusCode()
+    override var status : Int = Response.Status.NOT_FOUND.statusCode
 }
 
 class BadGatewayError(description: String) : PaymentError(description) {
-    override var status : Int = Response.Status.BAD_REQUEST.getStatusCode()
+    override var status : Int = Response.Status.BAD_REQUEST.statusCode
 }
