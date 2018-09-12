@@ -29,7 +29,7 @@ class ProductsResource(private val dao: SubscriberDAO) {
         }
 
         return dao.getProducts(token.name).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
     }
@@ -49,7 +49,7 @@ class ProductsResource(private val dao: SubscriberDAO) {
 
         return dao.purchaseProductWithoutPayment(token.name, sku)
                 .fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { productInfo -> Response.status(CREATED).entity(productInfo) }
                 ).build()
     }
@@ -72,7 +72,7 @@ class ProductsResource(private val dao: SubscriberDAO) {
 
         return dao.purchaseProduct(token.name, sku, sourceId, saveCard)
                 .fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { productInfo -> Response.status(CREATED).entity(productInfo) }
                 ).build()
     }

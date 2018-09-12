@@ -9,6 +9,7 @@ import com.stripe.model.Product
 import com.stripe.model.Subscription
 import org.ostelco.prime.logger
 import com.stripe.model.Refund
+import org.ostelco.prime.core.ApiErrorCode
 import org.ostelco.prime.paymentprocessor.core.*
 
 
@@ -165,8 +166,8 @@ class StripePaymentProcessor : PaymentProcessor {
         return try {
             Either.right(action())
         } catch (e: Exception) {
-            paymentError.externalErrorMessage = e.message
             logger.warn(paymentError.description, e)
+            paymentError.externalErrorMessage = e.message
             Either.left(paymentError)
         }
     }

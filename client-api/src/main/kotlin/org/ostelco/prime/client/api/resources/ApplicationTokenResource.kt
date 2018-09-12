@@ -29,10 +29,10 @@ class ApplicationTokenResource(private val dao: SubscriberDAO) {
         }
 
         return dao.getMsisdn(authToken.name).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { msisdn ->
                     dao.storeApplicationToken(msisdn, applicationToken).fold(
-                            { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                            { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                             { Response.status(Response.Status.CREATED).entity(asJson(it)) })
                 })
                 .build()
