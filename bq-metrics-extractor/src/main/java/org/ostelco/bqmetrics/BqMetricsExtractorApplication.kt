@@ -292,4 +292,5 @@ private class CollectAndPushMetrics : ConfiguredCommand<BqMetricsExtractorConfig
                          configuration: BqMetricsExtractorConfig?) {
             // Doing nothing, as advertised.
         }
+    }
 }
