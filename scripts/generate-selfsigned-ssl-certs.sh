@@ -1,10 +1,17 @@
 #!/bin/bash
 
+# This script generates a slefsigned SSL certificate for a given input domain.
+
+#### input 
 DOMAIN_NAME=$1
+####
+
+#### sanity check 
 if [ -z "${DOMAIN_NAME}" ]; then
-  echo "No domain-name was provided. Abnormal exit ..."
+  echo "ERROR: No domain-name was provided in input. Aborting!"
   exit 1
 fi
+####
 
 # Real path is not on every linux distribution.
 
