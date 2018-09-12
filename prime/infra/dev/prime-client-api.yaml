@@ -442,6 +442,41 @@ definitions:
       id:
         description: "The identifier for the source"
         type: string
+      details:
+        description: "All information stored with the source"
+        type: object
+        properties:
+          id:
+            type: string
+          accountType:
+            type: string
+          addressLine1:
+            type: string
+          addressLine2:
+            type: string
+          zip:
+            type: string
+          city:
+            type: string
+          state:
+            type: string
+          country:
+            type: string
+          currency:
+            type: string
+          brand:
+            type: string
+          last4:
+            type: string
+          expireMonth:
+            type: integer
+          expireYear:
+            type: integer
+          funding:
+            type: string
+        required:
+          - id
+          - accountType
   ConsentList:
     type: array
     items:

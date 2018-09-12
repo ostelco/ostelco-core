@@ -2,13 +2,8 @@ package org.ostelco.prime.paymentprocessor
 
 import arrow.core.Either
 import arrow.core.flatMap
-import com.stripe.model.Charge
-import com.stripe.model.Customer
-import com.stripe.model.Plan
-import com.stripe.model.Product
-import com.stripe.model.Subscription
 import org.ostelco.prime.logger
-import com.stripe.model.Refund
+import com.stripe.model.*
 import org.ostelco.prime.paymentprocessor.core.*
 
 
@@ -21,10 +16,41 @@ class StripePaymentProcessor : PaymentProcessor {
                 val sources = mutableListOf<SourceInfo>()
                 val customer = Customer.retrieve(customerId)
                 customer.sources.data.forEach {
-                    sources.add(SourceInfo(it.id))
+                    sources.add(SourceInfo(it.id, getAccountDetails(it)))
                 }
                 sources
             }
+
+    /* Returns detailed 'account details' for the given Stripe source/account.
+       Note that the fields 'id' and 'accountType' are manadatory. */
+    private fun getAccountDetails(accountInfo: ExternalAccount) : Map<String, Any> {
+        when (accountInfo) {
+            is Card -> {
+                return mapOf("id" to accountInfo.id,
+                             "accountType" to "card",
+                             "addressLine1" to accountInfo.addressLine1,
+                             "addressLine2" to accountInfo.addressLine2,
+                             "zip" to accountInfo.addressZip,
+                             "city" to accountInfo.addressCity,
+                             "state" to accountInfo.addressState,
+                             "country" to accountInfo.country,
+                             "currency" to accountInfo.currency,
+                             "brand" to accountInfo.brand,              // "Visa", "Mastercard" etc.
+                             "last4" to accountInfo.last4,
+                             "expireMonth" to accountInfo.expMonth,
+                             "expireYear" to accountInfo.expYear,
+                             "funding" to accountInfo.funding)          // Typ.: "credit" or "debit"
+                        .filterValues { it != null }        // Unfortunately the 'swagger' def. will removed fields back again.
+            }
+            // To add support for other Stripe source/account types, see
+            //    https://stripe.com/docs/api/java#sources
+            else -> {
+                logger.error("Received unsupported Stripe source/account type: {}", accountInfo)
+                return mapOf("id" to accountInfo.id,
+                             "accountType" to "unsupported")
+            }
+        }
+    }
 
     override fun createPaymentProfile(userEmail: String): Either<PaymentError, ProfileInfo> =
             either(ForbiddenError("Failed to create profile for user $userEmail")) {
