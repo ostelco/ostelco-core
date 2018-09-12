@@ -310,4 +310,14 @@ private class CollectAndPushMetrics : ConfiguredCommand<BqMetricsExtractorConfig
                 .required(true)
                 .help("The pushgateway to report metrics to, format is hostname:portnumber")
     }
+
+    private class CollectAndPushMetrics : ConfiguredCommand<BqMetricsExtractorConfig>(
+            "quit",
+            "Do nothing, only used to prime caches") {
+        override fun run(bootstrap: Bootstrap<BqMetricsExtractorConfig>?,
+                         namespace: Namespace?,
+                         configuration: BqMetricsExtractorConfig?) {
+            // Doing nothing, as advertised.
+        }
+    }
 }
