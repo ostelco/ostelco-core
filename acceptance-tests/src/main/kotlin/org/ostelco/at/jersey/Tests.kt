@@ -296,6 +296,12 @@ class SourceTest {
         assert(sources.isNotEmpty()) { "Expected at least one payment source for profile $email" }
         assert(sources.map{ it.id }.containsAll(listOf(cardId, newCardId)))
         { "Expected to find both $cardId and $newCardId in list of sources for profile $email" }
+
+        sources.forEach {
+            assert(it.details.id.isNotEmpty()) { "Expected 'id' to be set in source account details for profile $email" }
+            assertEquals("card", it.details.accountType,
+                    "Unexpected source account type ${it.details.accountType} for profile $email")
+        }
     }
 
     @Test
