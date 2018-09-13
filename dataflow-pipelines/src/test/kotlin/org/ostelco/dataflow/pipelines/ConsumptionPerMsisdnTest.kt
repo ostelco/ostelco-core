@@ -1,5 +1,6 @@
 package org.ostelco.dataflow.pipelines
 
+import com.google.protobuf.Timestamp
 import com.google.protobuf.util.Timestamps
 import org.apache.beam.sdk.extensions.protobuf.ProtoCoder
 import org.apache.beam.sdk.testing.NeedsRunner
@@ -14,9 +15,6 @@ import org.junit.experimental.categories.Category
 import org.ostelco.analytics.api.AggregatedDataTrafficInfo
 import org.ostelco.analytics.api.DataTrafficInfo
 import org.ostelco.dataflow.pipelines.definitions.consumptionPerMsisdn
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 
 class ConsumptionPerMsisdnTest {
 
@@ -80,21 +78,13 @@ class ConsumptionPerMsisdnTest {
                     .setCoder(ProtoCoder.of(AggregatedDataTrafficInfo::class.java))
 
             PAssert.that(out).containsInAnyOrder(
-                    AggregatedDataTrafficInfo.newBuilder().setMsisdn("123").setDataBytes(300).setDateTime(currentHourDateTime).build(),
-                    AggregatedDataTrafficInfo.newBuilder().setMsisdn("456").setDataBytes(200).setDateTime(currentHourDateTime).build(),
-                    AggregatedDataTrafficInfo.newBuilder().setMsisdn("789").setDataBytes(100).setDateTime(currentHourDateTime).build())
+                    AggregatedDataTrafficInfo.newBuilder().setMsisdn("123").setDataBytes(300).setTimestamp(currentHourDateTime).build(),
+                    AggregatedDataTrafficInfo.newBuilder().setMsisdn("456").setDataBytes(200).setTimestamp(currentHourDateTime).build(),
+                    AggregatedDataTrafficInfo.newBuilder().setMsisdn("789").setDataBytes(100).setTimestamp(currentHourDateTime).build())
 
             pipeline.run().waitUntilFinish()
         }
     }
 
-    private fun getCurrentHourDateTime(): String {
-        val zonedDateTime = ZonedDateTime
-                .ofInstant(java.time.Instant.now(), ZoneOffset.UTC)
-                .withMinute(0)
-                .withSecond(0)
-                .withNano(0)
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:SS")
-        return formatter.format(zonedDateTime)
-    }
+    private fun getCurrentHourDateTime(): Timestamp = Timestamps.fromSeconds((java.time.Instant.now().epochSecond / 3600) * 3600)
 }

@@ -9,10 +9,13 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
     implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
     implementation "com.google.cloud:google-cloud-pubsub:$googleCloudVersion"
+    implementation 'com.google.code.gson:gson:2.8.5'
+    //compile group: 'com.google.api', name: 'gax-grpc', version: '0.14.0'
+    testCompile group: 'com.google.api', name: 'gax-grpc', version: '1.30.0'
 
     testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
-    testImplementation 'org.mockito:mockito-core:2.18.3'
-    testImplementation 'org.assertj:assertj-core:3.10.0'
+    testImplementation "org.mockito:mockito-core:$mockitoVersion"
+    testImplementation "org.assertj:assertj-core:$assertJVersion"
 }
 
 apply from: '../jacoco.gradle'

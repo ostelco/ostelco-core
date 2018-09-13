@@ -150,7 +150,7 @@ class OcsTest {
 
 
     @Test
-    fun creditControlRequestInitNoCredit() {
+    fun creditControlRequestInitTerminateNoCredit() {
 
         val client = testClient ?: fail("Test client is null")
 
@@ -181,8 +181,6 @@ class OcsTest {
         }
         // There is 2 step in graceful shutdown. First OCS send terminate, then P-GW report used units in a final update
 
-        assertEquals(INITIAL_BALANCE, getBalance(), message = "Incorrect balance after init using wrong msisdn")
-
         val updateRequest = client.createRequest(
                 DEST_REALM,
                 DEST_HOST,
@@ -208,7 +206,25 @@ class OcsTest {
             assertEquals(86400L, validTime.unsigned32)
         }
 
-        assertEquals(INITIAL_BALANCE, getBalance(), message = "Incorrect balance after update using wrong msisdn")
+        // Last step is user disconnecting connection forcing a terminate
+        val terminateRequest = client.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        ) ?: fail("Failed to create request")
+        TestHelper.createTerminateRequest(terminateRequest.avps, "4333333333")
+
+        client.sendNextRequest(terminateRequest, session)
+
+        waitForAnswer()
+
+        run {
+            assertEquals(2001L, client.resultCodeAvp?.integer32?.toLong())
+            val resultAvps = client.resultAvps ?: fail("Missing AVPs")
+            assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
+            assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
+            assertEquals(RequestType.TERMINATION_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+        }
     }
 
 

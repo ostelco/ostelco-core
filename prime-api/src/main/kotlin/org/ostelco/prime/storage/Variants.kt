@@ -10,6 +10,8 @@ import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Segment
 import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.model.Subscription
+import org.ostelco.prime.paymentprocessor.core.PaymentError
+import org.ostelco.prime.paymentprocessor.core.ProductInfo
 
 interface ClientDocumentStore {
 
@@ -118,6 +120,11 @@ interface ClientGraphStore {
      * Get user who has referred this user.
      */
     fun getReferredBy(subscriberId: String): Either<StoreError, String?>
+
+    /**
+     * Temporary method to perform purchase as atomic transaction
+     */
+    fun purchaseProduct(subscriberId: String, sku: String, sourceId: String?, saveCard: Boolean): Either<PaymentError, ProductInfo>
 }
 
 interface AdminGraphStore {

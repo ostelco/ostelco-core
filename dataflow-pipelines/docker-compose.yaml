@@ -1,7 +1,7 @@
 version: "3.7"
 
 services:
-  analytics:
+  dataflow-pipelines:
     container_name: dataflow-pipelines
     build: .
     environment:

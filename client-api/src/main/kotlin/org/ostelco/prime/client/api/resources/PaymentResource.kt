@@ -52,7 +52,7 @@ class PaymentResource(private val dao: SubscriberDAO) {
         return dao.listSources(token.name)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
-                        { sourceList -> Response.status(Response.Status.CREATED).entity(sourceList)}
+                        { sourceList -> Response.status(Response.Status.OK).entity(sourceList)}
                 ).build()
     }
 
@@ -69,7 +69,7 @@ class PaymentResource(private val dao: SubscriberDAO) {
         return dao.setDefaultSource(token.name, sourceId)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
-                        { sourceInfo -> Response.status(Response.Status.CREATED).entity(sourceInfo)}
+                        { sourceInfo -> Response.status(Response.Status.OK).entity(sourceInfo)}
                 ).build()
     }
 }

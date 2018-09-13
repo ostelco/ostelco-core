@@ -50,14 +50,17 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
     }
 
     private fun logEventProcessing(msg: String, event: OcsEvent) {
-        logger.info("{}", msg)
-        logger.info("MSISDN: {}", event.msisdn)
-        logger.info("requested bytes: {}", event.requestedBucketBytes)
-        logger.info("reserved bytes: {}", event.reservedBucketBytes)
-        logger.info("used bytes: {}", event.usedBucketBytes)
-        logger.info("bundle bytes: {}", event.bundleBytes)
-        logger.info("Reporting reason: {}", event.reportingReason)
-        logger.info("request id: {} ",event.ocsgwRequestId)
+        val logString = """
+            $msg
+            Msisdn: ${event.msisdn}
+            Requested bytes: ${event.request?.msccList?.firstOrNull()?.requested?.totalOctets ?: 0L}
+            Used bytes: ${event.request?.msccList?.firstOrNull()?.used?.totalOctets ?: 0L}
+            Bundle bytes: ${event.bundleBytes}
+            Topup bytes: ${event.topUpBytes}
+            Request id: ${event.request?.requestId}
+        """.trimIndent()
+
+        logger.info(logString)
     }
 
     private fun handleCreditControlRequest(event: OcsEvent) {
@@ -70,33 +73,33 @@ internal class EventHandlerImpl(private val ocsService: OcsService) : EventHandl
         try {
             val creditControlAnswer = CreditControlAnswerInfo.newBuilder()
                     .setMsisdn(event.msisdn)
-                    .setRequestId(event.ocsgwRequestId)
 
-            // This is a hack to know when we have received an MSCC in the request or not.
-            // For Terminate request we might not have any MSCC and therefore no serviceIdentifier.
-            if (event.serviceIdentifier > 0) {
-                val msccBuilder = MultipleServiceCreditControl.newBuilder()
-                msccBuilder.setServiceIdentifier(event.serviceIdentifier)
-                        .setRatingGroup(event.ratingGroup)
-                        .setValidityTime(86400)
+            event.request?.let { request ->
+                if (request.msccCount > 0) {
+                    val msccBuilder = MultipleServiceCreditControl.newBuilder()
+                    msccBuilder.setServiceIdentifier(request.getMscc(0).serviceIdentifier)
+                            .setRatingGroup(request.getMscc(0).ratingGroup)
+                            .setValidityTime(86400)
 
-                if ((event.reportingReason != ReportingReason.FINAL) && (event.requestedBucketBytes > 0)) {
-                    msccBuilder.granted = ServiceUnit.newBuilder()
-                            .setTotalOctets(event.reservedBucketBytes)
-                            .build()
-                    if (event.reservedBucketBytes < event.requestedBucketBytes) {
-                        msccBuilder.finalUnitIndication = FinalUnitIndication.newBuilder()
-                                .setFinalUnitAction(FinalUnitAction.TERMINATE)
-                                .setIsSet(true)
+                    if ((request.getMscc(0).reportingReason != ReportingReason.FINAL) && (request.getMscc(0).requested.totalOctets > 0)) {
+                        msccBuilder.granted = ServiceUnit.newBuilder()
+                                .setTotalOctets(event.reservedBucketBytes)
+                                .build()
+                        if (event.reservedBucketBytes < request.getMscc(0).requested.totalOctets) {
+                            msccBuilder.finalUnitIndication = FinalUnitIndication.newBuilder()
+                                    .setFinalUnitAction(FinalUnitAction.TERMINATE)
+                                    .setIsSet(true)
+                                    .build()
+                        }
+                    } else {
+                        // Use -1 to indicate no granted service unit should be included in the answer
+                        msccBuilder.granted = ServiceUnit.newBuilder()
+                                .setTotalOctets(-1)
                                 .build()
                     }
-                } else {
-                    // Use -1 to indicate no granted service unit should be included in the answer
-                    msccBuilder.granted = ServiceUnit.newBuilder()
-                            .setTotalOctets(-1)
-                            .build()
+                    creditControlAnswer.addMscc(msccBuilder.build())
                 }
-                creditControlAnswer.addMscc(msccBuilder.build())
+                creditControlAnswer.setRequestId(request.requestId)
             }
 
             val streamId = event.ocsgwStreamId

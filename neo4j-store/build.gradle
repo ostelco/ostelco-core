@@ -32,7 +32,7 @@ dependencies {
   testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
 
-  testImplementation "org.mockito:mockito-core:2.18.3"
+  testImplementation "org.mockito:mockito-core:$mockitoVersion"
 }
 
 apply from: '../jacoco.gradle'
