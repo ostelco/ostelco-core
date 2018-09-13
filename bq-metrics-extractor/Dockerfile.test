@@ -1,4 +1,4 @@
-FROM alpine:3.7
+FROM openjdk:8u171
 
 MAINTAINER CSI "csi@telenordigital.com"
 
