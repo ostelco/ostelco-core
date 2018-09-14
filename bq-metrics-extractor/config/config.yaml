@@ -52,14 +52,3 @@ bqmetrics:
     sql: >
         SELECT count(DISTINCT msisdn) AS count FROM `pantel-2decb.data_consumption.raw_consumption`
         WHERE timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 MINUTE)
-  - type: gauge
-    name: average_data_consumed
-    help: Average data consumed in last 24 hours 
-    resultColumn: average
-    sql: >
-        SELECT CAST(t.bytes / t.count AS INT64) AS average
-        FROM (
-         SELECT sum(bucketBytes) as bytes, count(DISTINCT msisdn) AS count 
-         FROM `pantel-2decb.data_consumption.raw_consumption` 
-         WHERE timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 DAY)
-       ) AS t
