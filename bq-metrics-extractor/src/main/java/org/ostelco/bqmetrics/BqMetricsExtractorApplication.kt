@@ -10,6 +10,7 @@ import io.prometheus.client.exporter.PushGateway
 import io.prometheus.client.CollectorRegistry
 import io.dropwizard.Configuration
 import io.dropwizard.cli.ConfiguredCommand
+import io.prometheus.client.Gauge
 import io.prometheus.client.Summary
 import net.sourceforge.argparse4j.inf.Namespace
 import net.sourceforge.argparse4j.inf.Subparser
@@ -141,18 +142,8 @@ private class BqMetricsExtractorApplication : Application<BqMetricsExtractorConf
 
 private interface MetricBuilder {
     fun buildMetric(registry: CollectorRegistry)
-}
 
-
-private class SummaryMetricBuilder(
-        val metricName: String,
-        val help: String,
-        val sql: String,
-        val resultColumn: String) : MetricBuilder {
-
-    private val log: Logger = LoggerFactory.getLogger(SummaryMetricBuilder::class.java)
-
-    fun getSummaryViaSql(): Long {
+    fun getNumberValueViaSql(sql: String, resultColumn: String): Long {
         // Instantiate a client. If you don't specify credentials when constructing a client, the
         // client library will look for credentials in the environment, such as the
         // GOOGLE_APPLICATION_CREDENTIALS environment variable.
@@ -187,17 +178,46 @@ private class SummaryMetricBuilder(
 
         return count
     }
+}
+
+private class SummaryMetricBuilder(
+        val metricName: String,
+        val help: String,
+        val sql: String,
+        val resultColumn: String) : MetricBuilder {
+
+    private val log: Logger = LoggerFactory.getLogger(SummaryMetricBuilder::class.java)
 
 
     override fun buildMetric(registry: CollectorRegistry) {
-        val activeUsersSummary: Summary = Summary.build()
+        val summary: Summary = Summary.build()
                 .name(metricName)
                 .help(help).register(registry)
-        val value: Long = getSummaryViaSql()
+        val value: Long = getNumberValueViaSql(sql, resultColumn)
 
         log.info("Summarizing metric $metricName  to be $value")
 
-        activeUsersSummary.observe(value * 1.0)
+        summary.observe(value * 1.0)
+    }
+}
+
+private class GaugeMetricBuilder(
+        val metricName: String,
+        val help: String,
+        val sql: String,
+        val resultColumn: String) : MetricBuilder {
+
+    private val log: Logger = LoggerFactory.getLogger(SummaryMetricBuilder::class.java)
+
+    override fun buildMetric(registry: CollectorRegistry) {
+        val gauge: Gauge = Gauge.build()
+                .name(metricName)
+                .help(help).register(registry)
+        val value: Long = getNumberValueViaSql(sql, resultColumn)
+
+        log.info("Gauge metric $metricName = $value")
+
+        gauge.set(value * 1.0)
     }
 }
 
@@ -230,6 +250,13 @@ private class PrometheusPusher(val pushGateway: String, val job: String) {
             when (typeString) {
                 "SUMMARY" -> {
                     metricSources.add(SummaryMetricBuilder(
+                            it.name,
+                            it.help,
+                            it.sql,
+                            it.resultColumn))
+                }
+                "GAUGE" -> {
+                    metricSources.add(GaugeMetricBuilder(
                             it.name,
                             it.help,
                             it.sql,
@@ -282,5 +309,15 @@ private class CollectAndPushMetrics : ConfiguredCommand<BqMetricsExtractorConfig
                 .type(String::class.java)
                 .required(true)
                 .help("The pushgateway to report metrics to, format is hostname:portnumber")
+    }
+
+    private class CollectAndPushMetrics : ConfiguredCommand<BqMetricsExtractorConfig>(
+            "quit",
+            "Do nothing, only used to prime caches") {
+        override fun run(bootstrap: Bootstrap<BqMetricsExtractorConfig>?,
+                         namespace: Namespace?,
+                         configuration: BqMetricsExtractorConfig?) {
+            // Doing nothing, as advertised.
+        }
     }
 }
