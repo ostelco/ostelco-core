@@ -332,7 +332,7 @@ workflows:
         filters:
           branches:
             only:
-            - develop
+            - circleci-dev
     - build-image:
         requires:
           - build-code
@@ -352,7 +352,7 @@ workflows:
         filters:
           branches:
             only: 
-            - master
+            - circleci-prod
     - deploy-to-prod:
         requires:
           - update-prod-endpoints
