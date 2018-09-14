@@ -1,4 +1,21 @@
 #!/bin/bash
+
+# This script finds all instances of jacocoTestReport.xml and generates a code coverage report 
+# and uploads it to Codacy wherever that file is found. This script needs a set of environment 
+# variables which are defined in the pipeline config (.circleci/config.yml).
+
+#### sanity checks 
+if [ -z "${CODACY_JAR_FILE}" ]; then
+ echo "ERROR: CODACY_JAR_FILE is not set in the environment! Aborting!"
+  exit 1
+fi  
+
+if [ -z "${CODACY_MODULE}" ]; then
+  echo "ERROR: CODACY_MODULE is not set in the environment! Aborting!"
+  exit 1
+fi  
+####
+
 REPORT_TARGETS=$(find . -name jacocoTestReport.xml)
             
 if [ -n "${REPORT_TARGETS}" ]; then

@@ -10,14 +10,13 @@ jobs:
       - checkout
       - run: 
           # checking for merge conflicts and merging locally if none exist
-          name: merging ${CIRCLE_BRANCH} into circleci-dev locally
+          name: merging ${CIRCLE_BRANCH} into develop locally
           command: |
             git config --global user.email "${GIT_USER_EMAIL}" 
             git config --global user.name "${GIT_USER_NAME}"
             git checkout ${CIRCLE_BRANCH}
-            git checkout circleci-dev 
-            git merge ${CIRCLE_BRANCH} -m "Merging ${CIRCLE_BRANCH} into circleci-dev."
-
+            git checkout develop 
+            git merge ${CIRCLE_BRANCH} -m "Merging ${CIRCLE_BRANCH} into develop."
       # Show the java version installed.
       - run: java -version
 
@@ -59,6 +58,11 @@ jobs:
       - run: 
           name: Acceptance Tests
           command: docker-compose up --build --abort-on-container-exit
+      
+      - run:
+           name: notify slack on failure
+           when: on_fail
+           command: .circleci/notify-slack.sh on-feature-branch-commit false    
 
   code-coverage:
     environment:
@@ -76,7 +80,6 @@ jobs:
           command: |
             wget -O ~/${CODACY_JAR_FILE} \
               ${CODACY_DOWNLOAD_URL}/${CODACY_VERSION}/codacy-coverage-reporter-${CODACY_VERSION}-assembly.jar
-
       - attach_workspace:
           # Must be absolute path or relative path from working_directory
           at: ~/project  
@@ -87,6 +90,10 @@ jobs:
           command: |
             scripts/generate-codacy-coverage.sh
 
+      - run:
+           name: notify slack on failure
+           when: on_fail
+           command: .circleci/notify-slack.sh on-feature-branch-commit false       
   
   ### JOBS FOR  on-PR-merge-to-dev PIPELINE 
   build-code:
@@ -124,6 +131,11 @@ jobs:
           root: ~/project/
           paths:
             - .
+
+      - run:
+           name: notify slack on failure
+           when: on_fail
+           command: .circleci/notify-slack.sh on-PR-merge-to-dev false       
       
   build-image:
     docker:
@@ -139,7 +151,6 @@ jobs:
             # with permission to write to Google container registry
             echo $GOOGLE_GCR_CREDENTIALS > ${HOME}/gcloud-service-key.json
             gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
-
       - attach_workspace:
           # Must be absolute path or relative path from working_directory
           at: ~/project    
@@ -163,7 +174,11 @@ jobs:
       #       TAG=${CIRCLE_SHA1:0:9}
       #       cd ocsgw
       #       docker build -t eu.gcr.io/pi-ostelco-dev/ocsgw:$TAG .
-      #       docker push eu.gcr.io/pi-ostelco-dev/ocsgw:$TAG      
+      #       docker push eu.gcr.io/pi-ostelco-dev/ocsgw:$TAG   
+      - run:
+           name: notify slack on failure
+           when: on_fail
+           command: .circleci/notify-slack.sh on-PR-merge-to-dev false    
             
   update-dev-endpoints:
     docker:
@@ -178,14 +193,16 @@ jobs:
             gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
             
             python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=ocs-grpc-api/src/main/proto --descriptor_set_out=ocs_descriptor.pb ocs.proto
-
             python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=analytics-grpc-api/src/main/proto --descriptor_set_out=metrics_descriptor.pb prime_metrics.proto
-
             gcloud endpoints services deploy ocs_descriptor.pb prime/infra/new-dev/ocs-api.yaml
             gcloud endpoints services deploy metrics_descriptor.pb prime/infra/new-dev/metrics-api.yaml
             gcloud endpoints services deploy prime/infra/new-dev/prime-client-api.yaml
+      
+      - run:
+           name: notify slack on failure
+           when: on_fail
+           command: .circleci/notify-slack.sh on-PR-merge-to-dev false       
             
-
   deploy-to-dev:
 
     working_directory: ~/project
@@ -212,8 +229,12 @@ jobs:
              --set prime.env.STRIPE_API_KEY=${STRIPE_API_KEY} \
              --set prime.tag=${CIRCLE_SHA1:0:9} \
              --set firebaseServiceAccount=${PANTEL_SECRETS_FILE}
+       
+      - run:
+           name: notify slack on failure
+           when: on_fail
+           command: .circleci/notify-slack.sh on-PR-merge-to-dev false        
            
-
   create-PR-to-master:
     working_directory: ~/project
 
@@ -225,7 +246,6 @@ jobs:
       - run:
           name: create PR to merge develop into master
           command: |
-            git checkout circleci-dev
             export PRIME_TAG=${CIRCLE_SHA1:0:9}
             cd .circleci 
             ./substitute_prime_tag.sh
@@ -234,7 +254,12 @@ jobs:
             git add prime-prod-values.yaml
             git commit -m "[ci skip] updating prime image tag to the latest built image."
             git push https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/ostelco/ostelco-core.git circleci-dev
-            hub pull-request -m "merging circle-dev into circleci-prod" -b circleci-prod
+            hub pull-request -m "merging develop into master" -b master
+      
+      - run:
+           name: notify slack on failure
+           when: on_fail
+           command: .circleci/notify-slack.sh on-PR-merge-to-dev false 
 
   ### JOBS FOR  on-PR-merge-to-master PIPELINE
   update-prod-endpoints:
@@ -250,12 +275,15 @@ jobs:
             gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
             
             python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=ocs-grpc-api/src/main/proto --descriptor_set_out=ocs_descriptor.pb ocs.proto
-
             python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=analytics-grpc-api/src/main/proto --descriptor_set_out=metrics_descriptor.pb prime_metrics.proto
-
             gcloud endpoints services deploy ocs_descriptor.pb prime/infra/new-prod/ocs-api.yaml
             gcloud endpoints services deploy metrics_descriptor.pb prime/infra/new-prod/metrics-api.yaml
             gcloud endpoints services deploy prime/infra/new-prod/prime-client-api.yaml
+      
+      - run:
+           name: notify slack on failure
+           when: on_fail
+           command: .circleci/notify-slack.sh on-PR-merge-to-master false       
   
   deploy-to-prod:
     docker:
@@ -280,6 +308,11 @@ jobs:
              -f .circleci/prime-prod-values.yaml \
              --set prime.env.STRIPE_API_KEY=${STRIPE_API_KEY} \
              --set firebaseServiceAccount=${PANTEL_SECRETS_FILE}
+
+      - run:
+           name: notify slack on failure
+           when: on_fail
+           command: .circleci/notify-slack.sh on-PR-merge-to-master false        
  
 workflows:
   version: 2
@@ -299,7 +332,7 @@ workflows:
         filters:
           branches:
             only:
-            - circleci-dev
+            - develop
     - build-image:
         requires:
           - build-code
@@ -319,7 +352,7 @@ workflows:
         filters:
           branches:
             only: 
-            - circleci-prod
+            - master
     - deploy-to-prod:
         requires:
-          - update-prod-endpoints                      
+          - update-prod-endpoints
