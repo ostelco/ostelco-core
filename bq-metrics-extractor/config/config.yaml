@@ -45,3 +45,10 @@ bqmetrics:
     sql: >
       SELECT COUNT(DISTINCT subscriberId) as count FROM `pantel-2decb.purchases.raw_purchases`
       WHERE TIMESTAMP_MILLIS(timestamp) > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 24 HOUR)
+  - type: gauge
+    name: active_users_right_now
+    help: Number of active users rigth now (with 1 minute interval)
+    resultColumn: count
+    sql: >
+        SELECT count(DISTINCT msisdn) AS count FROM `pantel-2decb.data_consumption.raw_consumption`
+        WHERE timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 MINUTE)
