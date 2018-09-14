@@ -256,6 +256,100 @@ class SourceTest {
         val cardId = StripePayment.getCardIdForTokenId(sourceId)
         assertNotNull(sources.first { it.id == cardId }, "Expected card $cardId in list of payment sources for profile $email")
     }
+
+    @Test
+    fun `okhttp test - GET list sources`() {
+
+        StripePayment.deleteAllCustomers()
+        Firebase.deleteAllPaymentCustomers()
+
+        val email = "purchase-${randomInt()}@test.com"
+        createProfile(name = "Test Payment Source", email = email)
+
+        val tokenId = StripePayment.createPaymentTokenId()
+        val cardId = StripePayment.getCardIdForTokenId(tokenId)
+
+        // Ties source with user profile both local and with Stripe
+        post<PaymentSource> {
+            path = "/paymentSources"
+            subscriberId = email
+            queryParams = mapOf("sourceId" to tokenId)
+        }
+
+        Thread.sleep(200)
+
+        val newTokenId = StripePayment.createPaymentTokenId()
+        val newCardId = StripePayment.getCardIdForTokenId(newTokenId)
+
+        post<PaymentSource> {
+            path = "/paymentSources"
+            subscriberId = email
+            queryParams = mapOf("sourceId" to newTokenId)
+        }
+
+        val sources : PaymentSourceList = get {
+            path = "/paymentSources"
+            subscriberId = email
+        }
+
+        assert(sources.isNotEmpty()) { "Expected at least one payment source for profile $email" }
+        assert(sources.map{ it.id }.containsAll(listOf(cardId, newCardId)))
+        { "Expected to find both $cardId and $newCardId in list of sources for profile $email" }
+
+        sources.forEach {
+            assert(it.details.id.isNotEmpty()) { "Expected 'id' to be set in source account details for profile $email" }
+            assertEquals("card", it.details.accountType,
+                    "Unexpected source account type ${it.details.accountType} for profile $email")
+        }
+    }
+
+    @Test
+    fun `jersey test - PUT source set default`() {
+
+        StripePayment.deleteAllCustomers()
+        Firebase.deleteAllPaymentCustomers()
+
+        val email = "purchase-${randomInt()}@test.com"
+        createProfile(name = "Test Payment Source", email = email)
+
+        val tokenId = StripePayment.createPaymentTokenId()
+        val cardId = StripePayment.getCardIdForTokenId(tokenId)
+
+        // Ties source with user profile both local and with Stripe
+        post<PaymentSource> {
+            path = "/paymentSources"
+            subscriberId = email
+            queryParams = mapOf("sourceId" to tokenId)
+        }
+
+        Thread.sleep(200)
+
+        val newTokenId = StripePayment.createPaymentTokenId()
+        val newCardId = StripePayment.getCardIdForTokenId(newTokenId)
+
+        post<PaymentSource> {
+            path = "/paymentSources"
+            subscriberId = email
+            queryParams = mapOf("sourceId" to newTokenId)
+        }
+
+        // TODO: Update to fetch the Stripe customerId from 'admin' API when ready.
+        val customerId = StripePayment.getCustomerIdForEmail(email)
+
+        // Verify that original 'sourceId/card' is default.
+        assertEquals(cardId, StripePayment.getDefaultSourceForCustomer(customerId),
+                "Expected $cardId to be default source for $customerId")
+
+        // Set new default card.
+        put<PaymentSource> {
+            path = "/paymentSources"
+            subscriberId = email
+            queryParams = mapOf("sourceId" to newCardId)
+        }
+
+        assertEquals(newCardId, StripePayment.getDefaultSourceForCustomer(customerId),
+                "Expected $newCardId to be default source for $customerId")
+    }
 }
 
 class PurchaseTest {

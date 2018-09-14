@@ -1,7 +1,6 @@
 package org.ostelco.prime.storage
 
 import arrow.core.Either
-import org.ostelco.prime.core.ApiError
 import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Offer
@@ -11,6 +10,7 @@ import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Segment
 import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.model.Subscription
+import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 
 interface ClientDocumentStore {
@@ -124,7 +124,7 @@ interface ClientGraphStore {
     /**
      * Temporary method to perform purchase as atomic transaction
      */
-    fun purchaseProduct(subscriberId: String, sku: String, sourceId: String?, saveCard: Boolean): Either<ApiError, ProductInfo>
+    fun purchaseProduct(subscriberId: String, sku: String, sourceId: String?, saveCard: Boolean): Either<PaymentError, ProductInfo>
 }
 
 interface AdminGraphStore {

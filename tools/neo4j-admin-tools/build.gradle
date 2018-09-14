@@ -17,7 +17,7 @@ dependencies {
 }
 
 shadowJar {
-  mainClassName = 'org.ostelco.tools.migration.MainKt'
+  mainClassName = 'org.ostelco.tools.migration.MainKtKt'
   mergeServiceFiles()
   classifier = "uber"
   version = null

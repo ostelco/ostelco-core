@@ -8,7 +8,6 @@ import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.analytics.PrimeMetric.REVENUE
 import org.ostelco.prime.analytics.PrimeMetric.USERS_PAID_AT_LEAST_ONCE
 import org.ostelco.prime.core.ApiError
-import org.ostelco.prime.core.BadGatewayError
 import org.ostelco.prime.logger
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Offer
@@ -22,6 +21,8 @@ import org.ostelco.prime.module.getResource
 import org.ostelco.prime.ocs.OcsAdminService
 import org.ostelco.prime.ocs.OcsSubscriberService
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
+import org.ostelco.prime.paymentprocessor.core.BadGatewayError
+import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.storage.DocumentStore
@@ -330,12 +331,12 @@ object Neo4jStoreSingleton : GraphStore {
     private val ocs by lazy { getResource<OcsSubscriberService>() }
     private val analyticsReporter by lazy { getResource<AnalyticsService>() }
 
-    private fun getPaymentProfile(name: String): Either<ApiError, ProfileInfo> =
+    private fun getPaymentProfile(name: String): Either<PaymentError, ProfileInfo> =
             documentStore.getPaymentId(name)
                     ?.let { profileInfoId -> Either.right(ProfileInfo(profileInfoId)) }
                     ?: Either.left(BadGatewayError("Failed to fetch payment customer ID"))
 
-    private fun createAndStorePaymentProfile(name: String): Either<ApiError, ProfileInfo> {
+    private fun createAndStorePaymentProfile(name: String): Either<PaymentError, ProfileInfo> {
         return paymentProcessor.createPaymentProfile(name)
                 .flatMap { profileInfo ->
                     setPaymentProfile(name, profileInfo)
@@ -343,7 +344,7 @@ object Neo4jStoreSingleton : GraphStore {
                 }
     }
 
-    private fun setPaymentProfile(name: String, profileInfo: ProfileInfo): Either<ApiError, Unit> =
+    private fun setPaymentProfile(name: String, profileInfo: ProfileInfo): Either<PaymentError, Unit> =
             Either.cond(
                     test = documentStore.createPaymentId(name, profileInfo.id),
                     ifTrue = { Unit },
@@ -353,11 +354,11 @@ object Neo4jStoreSingleton : GraphStore {
             subscriberId: String,
             sku: String,
             sourceId: String?,
-            saveCard: Boolean): Either<ApiError, ProductInfo> = writeTransaction {
+            saveCard: Boolean): Either<PaymentError, ProductInfo> = writeTransaction {
 
         val result = getProduct(subscriberId, sku, transaction)
                 // If we can't find the product, return not-found
-                .mapLeft { org.ostelco.prime.core.NotFoundError("Product unavailable") }
+                .mapLeft { org.ostelco.prime.paymentprocessor.core.NotFoundError("Product unavailable") }
                 .flatMap { product: Product ->
                     // Fetch/Create stripe payment profile for the subscriber.
                     getPaymentProfile(subscriberId)
@@ -426,9 +427,9 @@ object Neo4jStoreSingleton : GraphStore {
             // Remove the payment source
             if (!saveCard && savedSourceId != null) {
                 paymentProcessor.removeSource(profileInfo.id, savedSourceId)
-                        .mapLeft { apiError ->
+                        .mapLeft { paymentError ->
                             logger.error("Failed to remove card, for customerId ${profileInfo.id}, sourceId $sourceId")
-                            apiError
+                            paymentError
                         }
             }
         }
