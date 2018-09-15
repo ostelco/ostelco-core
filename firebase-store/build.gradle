@@ -5,9 +5,7 @@ plugins {
 
 dependencies {
   implementation project(":prime-api")
-  // Match netty via ocs-api
-  api 'com.google.firebase:firebase-admin:6.4.0'
-  implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
+  api project(":firebase-extensions")
 
   testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"

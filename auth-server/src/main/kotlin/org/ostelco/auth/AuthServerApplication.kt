@@ -1,14 +1,17 @@
 package org.ostelco.auth
 
-import com.google.auth.oauth2.GoogleCredentials
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import io.dropwizard.Application
+import io.dropwizard.Configuration
+import io.dropwizard.configuration.EnvironmentVariableSubstitutor
+import io.dropwizard.configuration.SubstitutingSourceProvider
+import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
-import org.ostelco.auth.config.AuthServerConfig
 import org.ostelco.auth.resources.AuthResource
+import org.ostelco.common.firebasex.usingCredentialsFile
 import org.slf4j.LoggerFactory
-import java.io.FileInputStream
 
 /**
  * Entry point for running the authentiation server application
@@ -27,6 +30,13 @@ class AuthServerApplication : Application<AuthServerConfig>() {
 
     override fun getName(): String = "AuthServer"
 
+    override fun initialize(bootstrap: Bootstrap<AuthServerConfig>) {
+        bootstrap.configurationSourceProvider = SubstitutingSourceProvider(
+                bootstrap.configurationSourceProvider,
+                EnvironmentVariableSubstitutor())
+        bootstrap.objectMapper.registerModule(KotlinModule())
+    }
+
     /**
      * Run the dropwizard application (called by the kotlin [main] wrapper).
      */
@@ -34,11 +44,8 @@ class AuthServerApplication : Application<AuthServerConfig>() {
             config: AuthServerConfig,
             env: Environment) {
 
-        val serviceAccount = FileInputStream(config.serviceAccountKey)
-
         val options = FirebaseOptions.Builder()
-                .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                .setDatabaseUrl("https://${config.databaseName}.firebaseio.com/")
+                .usingCredentialsFile(config.serviceAccountKey)
                 .build()
 
         FirebaseApp.initializeApp(options)
@@ -46,3 +53,5 @@ class AuthServerApplication : Application<AuthServerConfig>() {
         env.jersey().register(AuthResource())
     }
 }
+
+data class AuthServerConfig(val serviceAccountKey: String) : Configuration()
