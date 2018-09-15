@@ -21,8 +21,8 @@ echo TAG=${TAG}
 
 
 gradle prime:clean prime:build
-docker build -t gcr.io/${PROJECT_ID}/prime:${TAG} prime
-gcloud docker -- push gcr.io/${PROJECT_ID}/prime:${TAG}
+docker build -t eu.gcr.io/${PROJECT_ID}/prime:${TAG} prime
+docker push eu.gcr.io/${PROJECT_ID}/prime:${TAG}
 
 echo "Deploying prime to GKE"
 
