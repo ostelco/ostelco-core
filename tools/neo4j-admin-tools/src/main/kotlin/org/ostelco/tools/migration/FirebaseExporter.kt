@@ -8,11 +8,9 @@ import org.ostelco.prime.storage.firebase.FirebaseConfig
 import org.ostelco.prime.storage.firebase.FirebaseConfigRegistry
 
 fun initFirebase() {
-    val config = FirebaseConfig()
-    config.configFile = "../../prime/config/pantel-prod.json"
-    config.databaseName = "pantel-2decb"
-    config.rootPath = "v2"
-    FirebaseConfigRegistry.firebaseConfig = config
+    FirebaseConfigRegistry.firebaseConfig = FirebaseConfig(
+            configFile = "../../prime/config/pantel-prod.json",
+            rootPath = "v2")
 }
 
 // Code moved here from FirebaseStorageSingleton

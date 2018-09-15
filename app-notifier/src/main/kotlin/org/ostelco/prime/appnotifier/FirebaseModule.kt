@@ -2,38 +2,25 @@ package org.ostelco.prime.appnotifier
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonTypeName
-import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
-import org.hibernate.validator.constraints.NotEmpty
+import org.ostelco.common.firebasex.usingCredentialsFile
 import org.ostelco.prime.module.PrimeModule
-import java.io.FileInputStream
 import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.Paths
 
 @JsonTypeName("firebase-app-notifier")
 class FirebaseModule : PrimeModule {
 
     @JsonProperty("config")
     fun setConfig(config: FirebaseConfig) {
-        setupFirebaseApp(config.databaseName, config.configFile)
+        setupFirebaseApp(config.configFile)
     }
 
-    private fun setupFirebaseApp(
-            databaseName: String,
-            configFile: String) {
+    private fun setupFirebaseApp(configFile: String) {
 
         try {
-            val credentials: GoogleCredentials = if (Files.exists(Paths.get(configFile))) {
-                FileInputStream(configFile).use { serviceAccount -> GoogleCredentials.fromStream(serviceAccount) }
-            } else {
-                GoogleCredentials.getApplicationDefault()
-            }
-
             val options = FirebaseOptions.Builder()
-                    .setCredentials(credentials)
-                    .setDatabaseUrl("https://$databaseName.firebaseio.com/")
+                    .usingCredentialsFile(configFile)
                     .build()
             try {
                 FirebaseApp.getInstance("fcm")
@@ -50,13 +37,4 @@ class FirebaseModule : PrimeModule {
     }
 }
 
-class FirebaseConfig {
-
-    @NotEmpty
-    @JsonProperty("databaseName")
-    lateinit var databaseName: String
-
-    @NotEmpty
-    @JsonProperty("configFile")
-    lateinit var configFile: String
-}
+data class FirebaseConfig(val configFile: String)
