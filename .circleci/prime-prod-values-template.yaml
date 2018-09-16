@@ -4,11 +4,9 @@
 
 replicaCount: 1
 firebaseServiceAccount: ""
-  
 
 prime:
   image: eu.gcr.io/pi-ostelco-dev/prime
-
   tag: ${PRIME_TAG}
   pullPolicy: Always
   env: 
@@ -20,27 +18,23 @@ prime:
     - 8081
     - 8082 
     - 8083 
-  resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #  cpu: 100m
-  #  memory: 128Mi
-  # requests:
-  #  cpu: 100m
-  #  memory: 128Mi  
+  resources: 
+    limits:
+      cpu: 200m
+      memory: 350Mi
+    requests:
+      cpu: 100m
+      memory: 200Mi  
   livenessProbe: {}
     # path: /
     # port: 8081
   readinessProbe: {}
     # path: /
     # port: 8081  
-  annotations: {}
-    # prometheus.io/scrape: 'true'
-    # prometheus.io/path: '/prometheus-metrics'
-    # prometheus.io/port: '8081'  
+  annotations: 
+    prometheus.io/scrape: 'true'
+    prometheus.io/path: '/prometheus-metrics'
+    prometheus.io/port: '8081'  
 
 esp:
   image: gcr.io/endpoints-release/endpoints-runtime
@@ -51,13 +45,10 @@ ocsEsp:
   enabled: true
   env: {}
   endpointAddress: prod-ocs.new.dev.ostelco.org
-
   ports:
     - 9000
     - 8443
-  secrets: 
-    - secretName: ocs-ostelco-ssl
-      containerMountPath: /etc/nginx/ssl    
+  
 
 apiEsp: 
   enabled: true
@@ -65,10 +56,7 @@ apiEsp:
   endpointAddress: prod-api.new.dev.ostelco.org
   ports:
     - 9002
-    - 443
-  secrets: 
-    - secretName: api-ostelco-ssl
-      containerMountPath: /etc/nginx/ssl 
+    - 443  
 
 metricsEsp:
   enabled: true
@@ -77,9 +65,7 @@ metricsEsp:
   ports:
     - 9004
     - 9443
-  secrets: 
-    - secretName: metrics-ostelco-ssl
-      containerMountPath: /etc/nginx/ssl    
+   
 
 services:
   prime:
@@ -104,7 +90,6 @@ services:
     portName: grpc
     # loadBalancerIP: x.y.z.n
 
-
 ingress:
   enabled: false
   annotations: {}
@@ -117,12 +102,16 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
-
 certs: 
-  enabled: false
-  issuer: letsencrypt-staging # or letsencrypt-production
-  apiDns: []
-  ocsDns: []
+  enabled: true
+  dnsProvider: dev-clouddns
+  issuer: letsencrypt-production # or letsencrypt-staging
+  apiDns: 
+    - prod-api.new.dev.ostelco.org
+  ocsDns: 
+    - prod-ocs.new.dev.ostelco.org
+  metricsDns: 
+    - prod-metrics.new.dev.ostelco.org
 
 disruptionBudget: 
   enabled: false
