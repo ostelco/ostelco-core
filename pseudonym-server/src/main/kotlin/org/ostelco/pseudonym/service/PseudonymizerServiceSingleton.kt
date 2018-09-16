@@ -74,10 +74,10 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
     private val subscriberIdPseudonymiser: Pseudonymizer = Pseudonymizer(SubscriberIdPseudonymEntityKind, subscriberIdPropertyName)
     private val executor = Executors.newFixedThreadPool(3)
 
-    val msisdnPseudonymCache: Cache<String, PseudonymEntity> = CacheBuilder.newBuilder()
+    private val msisdnPseudonymCache: Cache<String, PseudonymEntity> = CacheBuilder.newBuilder()
             .maximumSize(5000)
             .build()
-    val subscriberIdPseudonymCache: Cache<String, PseudonymEntity> = CacheBuilder.newBuilder()
+    private val subscriberIdPseudonymCache: Cache<String, PseudonymEntity> = CacheBuilder.newBuilder()
             .maximumSize(5000)
             .build()
 
@@ -161,7 +161,10 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
             }
             else -> {
                 logger.info("Created default instance of datastore client")
-                DatastoreOptions.getDefaultInstance()
+                DatastoreOptions
+                        .newBuilder()
+                        .setNamespace(ConfigRegistry.config.namespace)
+                        .build()
             }
         }.service
 
