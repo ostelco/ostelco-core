@@ -1,5 +1,5 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.61"
+  id "org.jetbrains.kotlin.jvm" version "1.2.70"
   id "application"
   id "com.github.johnrengelman.shadow" version "2.0.4"
 }
@@ -13,8 +13,7 @@ dependencies {
   implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
   implementation project(":prime-client-api")
   implementation project(':diameter-test')
-
-  implementation 'com.google.firebase:firebase-admin:6.4.0'
+  implementation project(':firebase-extensions')
 
   implementation "com.stripe:stripe-java:6.8.0"
   implementation 'io.jsonwebtoken:jjwt:0.9.1'

@@ -90,7 +90,8 @@ spec:
           name: api-ostelco-ssl
           readOnly: true
       - name: prime
-        image: gcr.io/pantel-2decb/prime:PRIME_VERSION
+        image: eu.gcr.io/pantel-2decb/prime:PRIME_VERSION
+        imagePullPolicy: Always
         env:
         - name: FIREBASE_ROOT_PATH
           value: v2

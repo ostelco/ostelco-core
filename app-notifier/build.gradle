@@ -1,12 +1,11 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.61"
+  id "org.jetbrains.kotlin.jvm" version "1.2.70"
   id "java-library"
 }
 
 dependencies {
   implementation project(":prime-api")
-  // Keep it to 6.4.0 to match netty via ocs-api
-  implementation 'com.google.firebase:firebase-admin:6.4.0'
+  implementation project(":firebase-extensions")
 
   testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"

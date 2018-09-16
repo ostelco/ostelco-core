@@ -114,13 +114,13 @@ Increment the docker image tag (version) for next two steps.
 Build the Docker image (In the folder with Dockerfile)
 
 ```bash
-docker build -t gcr.io/${PROJECT_ID}/prime:${PRIME_VERSION} prime
+docker build -t eu.gcr.io/${PROJECT_ID}/prime:${PRIME_VERSION} prime
 ```
 
 Push to the registry
 
 ```bash
-gcloud docker -- push gcr.io/${PROJECT_ID}/prime:${PRIME_VERSION}
+docker push eu.gcr.io/${PROJECT_ID}/prime:${PRIME_VERSION}
 ```
 
 Update the tag (version) of prime's docker image in `infra/prod/prime.yaml`.
@@ -319,8 +319,8 @@ export SHORT_SHA="$(git log -1 --pretty=format:%h)"
 echo PROJECT_ID=${PROJECT_ID}
 echo SHORT_SHA=${SHORT_SHA}
 
-docker build -t gcr.io/${PROJECT_ID}/prime:${SHORT_SHA} .
-gcloud docker -- push gcr.io/${PROJECT_ID}/prime:${SHORT_SHA}
+docker build -t eu.gcr.io/${PROJECT_ID}/prime:${SHORT_SHA} .
+docker push eu.gcr.io/${PROJECT_ID}/prime:${SHORT_SHA}
 sed -e s/PRIME_VERSION/${SHORT_SHA}/g prime/infra/dev/prime.yaml | kubectl apply -f -
 ```
 

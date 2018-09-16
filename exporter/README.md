@@ -26,10 +26,10 @@ gcloud container clusters create private-cluster --scopes=default,bigquery,datas
 gcloud container clusters get-credentials private-cluster
 
 # Build the Docker image (In the folder with Dockerfile)
-docker build -t gcr.io/${PROJECT_ID}/exporter:v1 .
+docker build -t eu.gcr.io/${PROJECT_ID}/exporter:v1 .
 
 # Push to the registry
-gcloud docker -- push gcr.io/${PROJECT_ID}/exporter:v1
+docker push eu.gcr.io/${PROJECT_ID}/exporter:v1
 
 # Apply the deployment
 kubectl apply -f ./exporter.yaml

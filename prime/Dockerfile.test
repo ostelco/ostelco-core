@@ -1,11 +1,14 @@
 # This Dockerfile is used when running locally using docker-compose for Acceptance Testing.
 
-FROM openjdk:8u171
+FROM azul/zulu-openjdk:8u181-8.31.0.1
 
 MAINTAINER CSI "csi@telenordigital.com"
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends netcat socat=1.7.3.1-2+deb9u1 \
+ && apt-get install -y --no-install-recommends \
+    netcat \
+    socat \
+    curl \
  && rm -rf /var/lib/apt/lists/*
 
 COPY script/start.sh /start.sh

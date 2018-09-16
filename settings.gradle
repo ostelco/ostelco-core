@@ -12,6 +12,7 @@ include ':diameter-stack'
 include ':diameter-test'
 include ':ext-auth-provider'
 include ':firebase-store'
+include ':firebase-extensions'
 include ':model'
 include ':neo4j-admin-tools'
 include ':neo4j-store'
@@ -37,6 +38,7 @@ project(':diameter-stack').projectDir = "$rootDir/diameter-stack" as File
 project(':diameter-test').projectDir = "$rootDir/diameter-test" as File
 project(':ext-auth-provider').projectDir = "$rootDir/ext-auth-provider" as File
 project(':firebase-store').projectDir = "$rootDir/firebase-store" as File
+project(':firebase-extensions').projectDir = "$rootDir/firebase-extensions" as File
 project(':model').projectDir = "$rootDir/model" as File
 project(':neo4j-admin-tools').projectDir = "$rootDir/tools/neo4j-admin-tools" as File
 project(':neo4j-store').projectDir = "$rootDir/neo4j-store" as File

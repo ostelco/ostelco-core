@@ -1,14 +1,11 @@
 package org.ostelco.prime.storage.firebase
 
-import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.database.FirebaseDatabase
+import org.ostelco.common.firebasex.usingCredentialsFile
 import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.storage.DocumentStore
-import java.io.FileInputStream
-import java.nio.file.Files
-import java.nio.file.Paths
 
 /**
  * This class is using the singleton class as delegate.
@@ -29,18 +26,10 @@ object FirebaseStorageSingleton : DocumentStore {
     private fun setupFirebaseInstance(): FirebaseDatabase {
 
         val config: FirebaseConfig = FirebaseConfigRegistry.firebaseConfig
-        val databaseName: String = config.databaseName
         val configFile: String = config.configFile
 
-        val credentials: GoogleCredentials = if (Files.exists(Paths.get(configFile))) {
-            FileInputStream(configFile).use { serviceAccount -> GoogleCredentials.fromStream(serviceAccount) }
-        } else {
-            GoogleCredentials.getApplicationDefault()
-        }
-
         val options = FirebaseOptions.Builder()
-                .setCredentials(credentials)
-                .setDatabaseUrl("https://$databaseName.firebaseio.com/")
+                .usingCredentialsFile(configFile)
                 .build()
         try {
             FirebaseApp.getInstance()
