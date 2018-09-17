@@ -2,7 +2,6 @@ package org.ostelco.prime.storage.firebase
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonTypeName
-import org.hibernate.validator.constraints.NotEmpty
 import org.ostelco.prime.module.PrimeModule
 
 @JsonTypeName("firebase")
@@ -18,17 +17,4 @@ object FirebaseConfigRegistry {
     lateinit var firebaseConfig: FirebaseConfig
 }
 
-class FirebaseConfig {
-
-    @NotEmpty
-    @JsonProperty("databaseName")
-    lateinit var databaseName: String
-
-    @NotEmpty
-    @JsonProperty("configFile")
-    lateinit var configFile: String
-
-    @NotEmpty
-    @JsonProperty("rootPath")
-    lateinit var rootPath: String
-}
+data class FirebaseConfig(val configFile: String, val rootPath: String)

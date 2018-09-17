@@ -77,11 +77,11 @@ If cluster already exists, fetch authentication credentials for the Kubernetes c
 
 Build the Docker image (In the folder with Dockerfile)
 
-    docker build -t gcr.io/${PROJECT_ID}/<app>:<version> .
+    docker build -t eu.gcr.io/${PROJECT_ID}/<app>:<version> .
 
 Push to the registry
 
-    gcloud docker -- push gcr.io/${PROJECT_ID}/<app>:<version>
+    docker push eu.gcr.io/${PROJECT_ID}/<app>:<version>
 
 Apply the deployment
 
