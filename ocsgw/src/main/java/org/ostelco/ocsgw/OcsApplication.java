@@ -1,7 +1,5 @@
 package org.ostelco.ocsgw;
 
-import org.ostelco.ocsgw.utils.AppConfig;
-import org.ostelco.diameter.model.RequestType;
 import org.jdiameter.api.Answer;
 import org.jdiameter.api.ApplicationId;
 import org.jdiameter.api.Configuration;
@@ -19,6 +17,8 @@ import org.jdiameter.common.impl.app.cca.CCASessionFactoryImpl;
 import org.jdiameter.server.impl.StackImpl;
 import org.jdiameter.server.impl.app.cca.ServerCCASessionImpl;
 import org.jdiameter.server.impl.helpers.XMLConfiguration;
+import org.ostelco.diameter.model.RequestType;
+import org.ostelco.ocsgw.utils.AppConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,9 +35,7 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
 
     public static void main(String[] args) {
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            OcsApplication.shutdown();
-        }));
+        Runtime.getRuntime().addShutdownHook(new Thread(OcsApplication::shutdown));
 
         OcsApplication app = new OcsApplication();
         app.start("/config/");
@@ -101,7 +99,7 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
             case RequestType.INITIAL_REQUEST:
             case RequestType.UPDATE_REQUEST:
             case RequestType.TERMINATION_REQUEST:
-                LOG.info("<< Received Credit-Control-Request [ {} ]", RequestType.getTypeAsString(request.getRequestTypeAVPValue()));
+                LOG.info("<< Received Credit-Control-Request from P-GW [ {} ]", RequestType.getTypeAsString(request.getRequestTypeAVPValue()));
                 try {
                     OcsServer.getInstance().handleRequest(session, request);
                 } catch (Exception e) {

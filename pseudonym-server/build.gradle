@@ -1,75 +1,30 @@
 plugins {
-  id "application"
-  id "jacoco"
-  id "com.github.johnrengelman.shadow" version "2.0.4"
-  id "org.jetbrains.kotlin.jvm" version "1.2.41"
-  id "idea"
+  id "org.jetbrains.kotlin.jvm" version "1.2.70"
+  id "java-library"
 }
 
 dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
-  implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
+
+  implementation project(':ocs-grpc-api')
+  implementation project(':prime-api')
+  implementation project(':model')
+  implementation project(':analytics-grpc-api')
+
   implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
-  implementation project(':ocs-api')
-  implementation 'com.google.guava:guava:24.1-jre'
+  implementation "com.google.guava:guava:$guavaVersion"
   // Match with grpc-netty-shaded via PubSub
-  // implementation 'io.grpc:grpc-netty-shaded:1.10.1'
-  implementation 'com.google.cloud:google-cloud-bigquery:1.28.0'
-  implementation 'com.google.cloud:google-cloud-datastore:1.28.0'
-  implementation 'com.google.cloud:google-cloud-pubsub:0.46.0-beta'
-  implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.9.5'
+  // removing io.grpc:grpc-netty-shaded:1.14.0 causes ALPN error
+  implementation 'io.grpc:grpc-netty-shaded:1.14.0'
+  implementation "com.google.cloud:google-cloud-bigquery:$googleCloudVersion"
+  implementation "com.google.cloud:google-cloud-datastore:$googleCloudVersion"
+  implementation "com.google.cloud:google-cloud-pubsub:$googleCloudVersion"
+  implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
+
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
-  testCompile group: 'org.mockito', name: 'mockito-all', version: '1.10.19'
-  testRuntime 'org.hamcrest:hamcrest-all:1.3'
+  testImplementation "org.mockito:mockito-all:1.10.19"
+  testRuntimeOnly 'org.hamcrest:hamcrest-all:1.3'
 }
 
-shadowJar {
-  mainClassName = 'org.ostelco.pseudonym.PseudonymServerApplicationKt'
-  mergeServiceFiles()
-  classifier = "uber"
-  version = null
-}
-
-sourceSets {
-  integrationTest {
-    kotlin {
-      compileClasspath += main.output + test.output
-      runtimeClasspath += main.output + test.output
-      srcDirs += file('src/integration-test/kotlin')
-    }
-    resources.srcDir file('src/integration-test/resources')
-  }
-}
-
-configurations {
-  integrationTestImplementation.extendsFrom testImplementation
-  integrationTestCompile.extendsFrom testCompile
-  integrationTestRuntime.extendsFrom testRuntime
-}
-
-task integrationTest(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
-  testClassesDir = sourceSets.integrationTest.output.classesDir
-  classpath = sourceSets.integrationTest.runtimeClasspath
-}
-
-check.dependsOn integrationTest
-integrationTest.mustRunAfter test
-
-jacocoTestReport {
-  group = "Reporting"
-  description = "Generate Jacoco coverage reports after running tests."
-  additionalSourceDirs = files(sourceSets.main.allJava.srcDirs)
-  reports {
-    xml.enabled = true
-    html.enabled = true
-  }
-}
-
-check.dependsOn jacocoTestReport
-
-idea {
-  module {
-    testSourceDirs += file('src/integration-test/kotlin')
-  }
-}
+apply from: '../jacoco.gradle'

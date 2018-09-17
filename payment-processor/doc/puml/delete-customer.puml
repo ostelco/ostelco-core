@@ -1,0 +1,60 @@
+@startuml
+
+actor Client
+participant Client
+
+box "Prime"
+    participant "client-api"
+    participant "payment-processor"
+    participant OCS
+    participant DAO
+end box
+participant Stripe
+
+activate Client
+
+    Client -> "client-api": DELETE /profile
+    activate "client-api"
+    note right of "client-api"
+       {name} identifies the user (from Oauth2 auth.)
+       and is equivalent to the users email address
+    end note
+
+    "client-api" -> DAO : getCustomerId(name)
+    activate DAO
+    DAO -> "client-api" : {customerId}
+    deactivate DAO
+
+    "client-api" -> "payment-processor" : deletePaymentProfile(customerId)
+    activate "payment-processor"
+
+    alt successful case
+        "payment-processor" -> Stripe : DELETE /v1/customers {customerId}
+        activate Stripe
+        "Stripe" -> "payment-processor" : {result}
+        deactivate Stripe
+
+        "payment-processor" -> OCS : clearBucket(customerId)
+        activate OCS
+        OCS -> "payment-processor" : {result}
+        deactivate OCS
+
+        "payment-processor" -> "client-api" : {result}
+        deactivate "payment-processor"
+
+    else error
+        note right of "payment-processor" : Unroll etc. (TBD)
+
+    end
+
+    "client-api" -> DAO : deleteProfile(name)
+    activate DAO
+    DAO -> "client-api" : {result}
+    deactivate DAO
+
+    "client-api" -> Client : {result}
+    deactivate "client-api"
+
+deactivate Client
+
+@enduml

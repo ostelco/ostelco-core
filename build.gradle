@@ -1,18 +1,20 @@
+// these are needed only in top-level module
 plugins {
   id "java"
-  id "maven"
   id "project-report"
-  id "com.github.ben-manes.versions" version "0.17.0"
+  id "com.github.ben-manes.versions" version "0.20.0"
+  id "jacoco"
 }
 
 allprojects {
+  apply plugin: 'jacoco'
 
   group = 'org.ostelco'
   version = '1.0.0-SNAPSHOT'
 
   repositories {
-    mavenLocal()
     mavenCentral()
+    jcenter()
     maven { url = "https://repository.jboss.org/nexus/content/repositories/releases/" }
     maven { url = "https://maven.repository.redhat.com/ga/" }
     maven { url = "http://clojars.org/repo/" }
@@ -26,17 +28,35 @@ subprojects {
     options.encoding = 'UTF-8'
   }
   ext {
-    kotlinVersion = "1.2.41"
-    dropwizardVersion = "1.3.1"
+    kotlinVersion = "1.2.70"
+    dropwizardVersion = "1.3.5"
+    googleCloudVersion = "1.43.0"
+    jacksonVersion = "2.9.6"
+    stripeVersion = "6.12.0"
+    guavaVersion = "26.0-jre"
+    assertJVersion = "3.11.1"
+    mockitoVersion = "2.21.0"
   }
 }
 
-task pack(type: Zip, dependsOn: [':ocsgw:pack', ':auth-server:pack']) {
-  from zipTree('ocsgw/build/deploy/ocsgw.zip')
+task pack(dependsOn: ['packDev', 'packProd'])
+
+task packDev(type: Zip, dependsOn: [':ocsgw:packDev', ':auth-server:pack']) {
+  from zipTree('ocsgw/build/deploy/dev/ocsgw.zip')
+  from zipTree('auth-server/build/deploy/auth-server.zip')
+  from 'docker-compose.yaml'
+  from 'docker-compose.dev.yaml'
+  rename 'docker-compose.dev.yaml','docker-compose.override.yaml'
+  archiveName = 'ostelco-core-dev.zip'
+  destinationDir = file('build/deploy/')
+}
+
+task packProd(type: Zip, dependsOn: [':ocsgw:packProd', ':auth-server:pack']) {
+  from zipTree('ocsgw/build/deploy/prod/ocsgw.zip')
   from zipTree('auth-server/build/deploy/auth-server.zip')
   from 'docker-compose.yaml'
   from 'docker-compose.prod.yaml'
   rename 'docker-compose.prod.yaml','docker-compose.override.yaml'
-  archiveName = 'ostelco-core.zip'
+  archiveName = 'ostelco-core-prod.zip'
   destinationDir = file('build/deploy/')
 }

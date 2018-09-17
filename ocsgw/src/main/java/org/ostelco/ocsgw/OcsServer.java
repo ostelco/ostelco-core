@@ -27,6 +27,7 @@ import org.ostelco.ocsgw.utils.AppConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.naming.ConfigurationException;
 import java.io.IOException;
 
 
@@ -46,7 +47,12 @@ public class OcsServer {
 
     public synchronized void handleRequest(ServerCCASession session, JCreditControlRequest request) {
 
-        final CreditControlContext ccrContext = new CreditControlContext(session.getSessionId(), request, stack.getMetaData().getLocalPeer().getUri().getFQDN());
+        final CreditControlContext ccrContext = new CreditControlContext(
+                session.getSessionId(),
+                request,
+                stack.getMetaData().getLocalPeer().getUri().getFQDN(),
+                stack.getMetaData().getLocalPeer().getRealmName()
+        );
         source.handleRequest(ccrContext);
     }
 
@@ -60,7 +66,7 @@ public class OcsServer {
         try {
             ServerCCASessionImpl ccaSession = stack.getSession(sessionContext.getSessionId(), ServerCCASessionImpl.class);
             if (ccaSession != null && ccaSession.isValid()) {
-                // ToDo: Not sure why there are multiple sessions for one session Id.
+                // TODO martin: Not sure why there are multiple sessions for one session Id.
                 for (Session session : ccaSession.getSessions()) {
                     if (session.isValid()) {
                         Request request = session.createRequest(258,
@@ -90,7 +96,7 @@ public class OcsServer {
         switch (appConfig.getDataStoreType()) {
             case DataSourceType.GRPC:
                 LOG.info("Using GrpcDataSource");
-                source = new GrpcDataSource(appConfig.getGrpcServer(), appConfig.encryptGrpc());
+                source = new GrpcDataSource(appConfig.getGrpcServer(), appConfig.getMetricsServer());
                 break;
             case DataSourceType.LOCAL:
                 LOG.info("Using LocalDataSource");
@@ -98,7 +104,7 @@ public class OcsServer {
                 break;
             case DataSourceType.PROXY:
                 LOG.info("Using ProxyDataSource");
-                GrpcDataSource secondary = new GrpcDataSource(appConfig.getGrpcServer(), appConfig.encryptGrpc());
+                GrpcDataSource secondary = new GrpcDataSource(appConfig.getGrpcServer(), appConfig.getMetricsServer());
                 secondary.init();
                 source = new ProxyDataSource(secondary);
                 break;

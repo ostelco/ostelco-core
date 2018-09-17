@@ -38,13 +38,19 @@ class CreditControlRequest() {
     @AvpField(Avp.CC_REQUEST_NUMBER)
     var ccRequestNumber: Avp? = null
 
+    @AvpField(Avp.ORIGIN_HOST)
+    var originHost: String? = ""
+
+    @AvpField(Avp.ORIGIN_REALM)
+    var originRealm: String? = ""
+
     var ccrAvps: AvpSet? = null
 
-    // ToDo: This should be connected to rating groups
+    // TODO martin: This should be connected to rating groups
     val requestedUnits: Long
         get() = this.multipleServiceCreditControls.first().requested[0].total
 
-    // ToDo: This only get the total. There is also input/output if needed
+    // TODO martin: This only get the total. There is also input/output if needed
     val usedUnits: Long
         get() = this.multipleServiceCreditControls.first().used.total
 }

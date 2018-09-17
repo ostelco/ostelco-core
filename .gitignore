@@ -1,6 +1,10 @@
 # Compiled class file
 *.class
 
+.classpath
+.project
+.settings
+
 # Log file
 *.log
 
@@ -11,7 +15,6 @@
 .mtj.tmp/
 
 # Package Files #
-*.jar
 *.war
 *.ear
 *.zip
@@ -30,3 +33,7 @@ out
 target
 secrets/*
 .nb-gradle
+.swagger_gen_dir
+
+ocs_descriptor.pb
+metrics_descriptor.pb

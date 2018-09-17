@@ -65,8 +65,7 @@ public class LocalDataSource implements DataSource {
                         new ArrayList<>(),
                         new RedirectServer(
                                 RedirectAddressType.IPV4_ADDRESS,
-                                ""
-                                )
+                                "")
                 );
             }
 

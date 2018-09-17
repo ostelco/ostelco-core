@@ -1,18 +1,9 @@
 package org.ostelco.pseudonym.resources
 
-import com.google.cloud.bigquery.BigQuery
-import com.google.cloud.bigquery.BigQueryOptions
-import com.google.cloud.datastore.Datastore
-import com.google.cloud.datastore.Entity
-import com.google.cloud.datastore.Key
-import com.google.cloud.datastore.Query
-import com.google.cloud.datastore.StructuredQuery.PropertyFilter
 import org.hibernate.validator.constraints.NotBlank
-import org.ostelco.pseudonym.managed.PseudonymExport
+import org.ostelco.pseudonym.service.PseudonymizerServiceSingleton
 import org.slf4j.LoggerFactory
 import java.time.Instant
-import java.util.*
-import java.util.concurrent.Executors
 import javax.ws.rs.DELETE
 import javax.ws.rs.GET
 import javax.ws.rs.Path
@@ -20,57 +11,21 @@ import javax.ws.rs.PathParam
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.Response.Status
-import kotlin.collections.HashMap
 
-
-/**
- * Class representing the Pseudonym entity in Datastore.
- */
-data class PseudonymEntity(val msisdn: String, val pseudonym: String, val start: Long, val end: Long)
-
-const val PseudonymEntityKind = "Pseudonym"
-const val msisdnPropertyName = "msisdn"
-const val pseudonymPropertyName = "pseudonym"
-const val startPropertyName = "start"
-const val endPropertyName = "end"
 
 /**
  * Class representing the Export task entity in Datastore.
  */
 data class ExportTask(val exportId: String, val status: String, val error: String)
 
-const val ExportTaskKind = "ExportTask"
-const val exportIdPropertyName = "exportId"
-const val statusPropertyName = "status"
-const val errorPropertyName = "error"
-
-
-/**
- * Class representing the boundary timestamps.
- */
-data class Bounds(val start: Long, val end: Long)
-
-/**
- * Interface which provides the method to retrieve the boundary timestamps.
- */
-interface DateBounds {
-    /**
-     * Returns the boundaries for the period of the given timestamp.
-     * (start <= timestamp <= end). Timestamps are in UTC
-     * Also returns the key prefix
-     */
-    fun getBoundsNKeyPrefix(msisdn: String, timestamp: Long): Pair<Bounds, String>
-}
-
 /**
  * Resource used to handle the pseudonym related REST calls. The map of pseudonym objects
  * are store in datastore. The key for the object is made from "<msisdn>-<start timestamp ms>.
  */
 @Path("/pseudonym")
-class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, val bigquery: BigQuery) {
+class PseudonymResource {
 
-    private val LOG = LoggerFactory.getLogger(PseudonymResource::class.java)
-    private val executor = Executors.newFixedThreadPool(3)
+    private val logger = LoggerFactory.getLogger(PseudonymResource::class.java)
 
     /**
      * Get the pseudonym which is valid at the timestamp for the given
@@ -81,12 +36,8 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, va
     @Path("/get/{msisdn}/{timestamp}")
     fun getPseudonym(@NotBlank @PathParam("msisdn") msisdn: String,
                      @NotBlank @PathParam("timestamp") timestamp: String): Response {
-        LOG.info("GET pseudonym for Msisdn = $msisdn at timestamp = $timestamp")
-        val (bounds, keyPrefix) = dateBounds.getBoundsNKeyPrefix(msisdn, timestamp.toLong())
-        var entity = getPseudonymEntity(keyPrefix)
-        if (entity == null) {
-            entity = createPseudonym(msisdn, bounds, keyPrefix)
-        }
+        logger.info("GET pseudonym for Msisdn = $msisdn at timestamp = $timestamp")
+        val entity = PseudonymizerServiceSingleton.getMsisdnPseudonym(msisdn, timestamp.toLong())
         return Response.ok(entity, MediaType.APPLICATION_JSON).build()
     }
 
@@ -99,13 +50,22 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, va
     @Path("/current/{msisdn}")
     fun getPseudonym(@NotBlank @PathParam("msisdn") msisdn: String): Response {
         val timestamp = Instant.now().toEpochMilli()
-        LOG.info("GET pseudonym for Msisdn = $msisdn at current time, timestamp = $timestamp")
-        val (bounds, keyPrefix) = dateBounds.getBoundsNKeyPrefix(msisdn, timestamp)
-        var entity = getPseudonymEntity(keyPrefix)
-        if (entity == null) {
-            entity = createPseudonym(msisdn, bounds, keyPrefix)
-        }
+        logger.info("GET pseudonym for Msisdn = $msisdn at current time, timestamp = $timestamp")
+        val entity = PseudonymizerServiceSingleton.getMsisdnPseudonym(msisdn, timestamp)
         return Response.ok(entity, MediaType.APPLICATION_JSON).build()
+    }
+
+    /**
+     * Get the pseudonyms valid for current & next time periods for the given
+     * msisdn. In case pseudonym doesn't exist, a new one will be created
+     * for the periods
+     */
+    @GET
+    @Path("/active/{msisdn}")
+    fun getActivePseudonyms(@NotBlank @PathParam("msisdn") msisdn: String): Response {
+        return Response.ok(
+                PseudonymizerServiceSingleton.getActivePseudonymsForMsisdn(msisdn = msisdn),
+                MediaType.APPLICATION_JSON).build()
     }
 
     /**
@@ -115,19 +75,10 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, va
     @GET
     @Path("/find/{pseudonym}")
     fun findPseudonym(@NotBlank @PathParam("pseudonym") pseudonym: String): Response {
-        LOG.info("Find details for pseudonym = $pseudonym")
-        val query = Query.newEntityQueryBuilder()
-                .setKind(PseudonymEntityKind)
-                .setFilter(PropertyFilter.eq(pseudonymPropertyName, pseudonym))
-                .setLimit(1)
-                .build()
-        val results = datastore.run(query)
-        if (results.hasNext()) {
-            val entity = results.next()
-            return Response.ok(convertToPseudonymEntity(entity), MediaType.APPLICATION_JSON).build()
-        }
-        LOG.info("Couldn't find, pseudonym = ${pseudonym}")
-        return Response.status(Status.NOT_FOUND).build()
+        logger.info("Find details for pseudonym = $pseudonym")
+        return PseudonymizerServiceSingleton.findMsisdnPseudonym(pseudonym = pseudonym)
+                ?.let { Response.ok(it, MediaType.APPLICATION_JSON).build() }
+                ?: Response.status(Status.NOT_FOUND).build()
     }
 
     /**
@@ -138,23 +89,11 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, va
     @DELETE
     @Path("/delete/{msisdn}")
     fun deleteAllPseudonyms(@NotBlank @PathParam("msisdn") msisdn: String): Response {
-        LOG.info("delete all pseudonyms for Msisdn = $msisdn")
-        val query = Query.newEntityQueryBuilder()
-                .setKind(PseudonymEntityKind)
-                .setFilter(PropertyFilter.eq(msisdnPropertyName, msisdn))
-                .setLimit(1)
-                .build()
-        val results = datastore.run(query)
-        var count = 0;
-        while (results.hasNext()) {
-            val entity = results.next()
-            datastore.delete(entity.key)
-            count++
-        }
+        logger.info("delete all pseudonyms for Msisdn = $msisdn")
+        val count = PseudonymizerServiceSingleton.deleteAllMsisdnPseudonyms(msisdn = msisdn)
         // Return a Json object with number of records deleted.
-        val countMap = HashMap<String, Int>()
-        countMap["count"] = count
-        LOG.info("deleted $count records for Msisdn = $msisdn")
+        val countMap = mapOf("count" to count)
+        logger.info("deleted $count records for Msisdn = $msisdn")
         return Response.ok(countMap, MediaType.APPLICATION_JSON).build()
     }
 
@@ -166,9 +105,8 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, va
     @GET
     @Path("/export/{exportId}")
     fun exportPseudonyms(@NotBlank @PathParam("exportId") exportId: String): Response {
-        LOG.info("GET export all pseudonyms to the table $exportId")
-        val exporter = PseudonymExport(exportId, bigquery, datastore)
-        executor.execute(exporter.getRunnable())
+        logger.info("GET export all pseudonyms to the table $exportId")
+        PseudonymizerServiceSingleton.exportMsisdnPseudonyms(exportId = exportId)
         return Response.ok("Started Exporting", MediaType.TEXT_PLAIN).build()
     }
 
@@ -178,77 +116,9 @@ class PseudonymResource(val datastore: Datastore, val dateBounds: DateBounds, va
     @GET
     @Path("/exportstatus/{exportId}")
     fun getExportStatus(@NotBlank @PathParam("exportId") exportId: String): Response {
-        LOG.info("GET status of export $exportId")
-        val exportTask = getExportTask(exportId)
-        if (exportTask != null) {
-            return Response.ok(exportTask, MediaType.APPLICATION_JSON).build()
-        }
-        return Response.status(Status.NOT_FOUND).build()
-    }
-
-    private fun getExportTask(exportId: String): ExportTask? {
-        val exportKey = datastore.newKeyFactory().setKind(ExportTaskKind).newKey(exportId)
-        val value = datastore.get(exportKey)
-        if (value != null) {
-            // Create the object from datastore entity
-            return ExportTask(
-                    value.getString(exportIdPropertyName),
-                    value.getString(statusPropertyName),
-                    value.getString(errorPropertyName))
-        }
-        return null
-    }
-
-    private fun getPseudonymKey(keyPrefix: String): Key {
-        return datastore.newKeyFactory().setKind(PseudonymEntityKind).newKey(keyPrefix)
-    }
-
-    private fun getPseudonymEntity(keyPrefix: String): PseudonymEntity? {
-        val pseudonymKey = getPseudonymKey(keyPrefix)
-        val value = datastore.get(pseudonymKey)
-        if (value != null) {
-            // Create the object from datastore entity
-            return convertToPseudonymEntity(value)
-        }
-        return null
-    }
-
-    private fun convertToPseudonymEntity(entity: Entity): PseudonymEntity {
-        return PseudonymEntity(
-                entity.getString(msisdnPropertyName),
-                entity.getString(pseudonymPropertyName),
-                entity.getLong(startPropertyName),
-                entity.getLong(endPropertyName))
-    }
-
-    private fun createPseudonym(msisdn: String, bounds: Bounds, keyPrefix: String): PseudonymEntity {
-        val uuid = UUID.randomUUID().toString();
-        var entity = PseudonymEntity(msisdn, uuid, bounds.start, bounds.end)
-        val pseudonymKey = getPseudonymKey(keyPrefix)
-
-        val transaction = datastore.newTransaction()
-        try {
-            // Verify before writing a new value.
-            val currentEntity = transaction.get(pseudonymKey);
-            if (currentEntity == null) {
-                // Prepare the new datastore entity
-                val pseudonym = Entity.newBuilder(pseudonymKey)
-                        .set(msisdnPropertyName, entity.msisdn)
-                        .set(pseudonymPropertyName, entity.pseudonym)
-                        .set(startPropertyName, entity.start)
-                        .set(endPropertyName, entity.end)
-                        .build()
-                transaction.put(pseudonym)
-                transaction.commit()
-            } else {
-                // Use the existing one
-                entity = convertToPseudonymEntity(currentEntity)
-            }
-        } finally {
-            if (transaction.isActive) {
-                transaction.rollback()
-            }
-        }
-        return entity
+        logger.info("GET status of export $exportId")
+        return PseudonymizerServiceSingleton.getExportTask(exportId)
+                ?.let { Response.ok(it, MediaType.APPLICATION_JSON).build() }
+                ?: Response.status(Status.NOT_FOUND).build()
     }
 }

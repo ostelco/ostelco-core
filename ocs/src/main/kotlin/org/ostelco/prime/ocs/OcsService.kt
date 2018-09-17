@@ -6,12 +6,12 @@ import org.ostelco.ocs.api.ActivateResponse
 import org.ostelco.ocs.api.CreditControlAnswerInfo
 import org.ostelco.ocs.api.CreditControlRequestInfo
 import org.ostelco.ocs.api.OcsServiceGrpc
-import org.ostelco.prime.disruptor.PrimeEvent
-import org.ostelco.prime.disruptor.PrimeEventProducer
+import org.ostelco.prime.disruptor.EventProducer
+import org.ostelco.prime.disruptor.OcsEvent
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
-class OcsService(private val producer: PrimeEventProducer) {
+class OcsService(private val producer: EventProducer) {
 
     private val creditControlClientMap: ConcurrentMap<String, StreamObserver<CreditControlAnswerInfo>>
 
@@ -22,18 +22,18 @@ class OcsService(private val producer: PrimeEventProducer) {
      */
     private val activateResponseHolder: ActivateResponseHolder
 
-    private val eventHandler: EventHandler<PrimeEvent>
+    private val eventHandler: EventHandler<OcsEvent>
 
     private val ocsServerImplBaseImpl: OcsServiceGrpc.OcsServiceImplBase
 
     init {
         this.creditControlClientMap = ConcurrentHashMap()
         this.eventHandler = EventHandlerImpl(this)
-        this.ocsServerImplBaseImpl = OcsGRPCService(this)
+        this.ocsServerImplBaseImpl = OcsGrpcService(this)
         this.activateResponseHolder = ActivateResponseHolder()
     }
 
-    fun asEventHandler(): EventHandler<PrimeEvent> {
+    fun asEventHandler(): EventHandler<OcsEvent> {
         return eventHandler
     }
 
@@ -56,7 +56,7 @@ class OcsService(private val producer: PrimeEventProducer) {
      * build();
     ` *
      *
-     * @return The service that can receive incoming GPRS messages
+     * @return The service that can receive incoming GRPC messages
      */
     fun asOcsServiceImplBase(): OcsServiceGrpc.OcsServiceImplBase {
         return this.ocsServerImplBaseImpl

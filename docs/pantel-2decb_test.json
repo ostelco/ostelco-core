@@ -1,0 +1,68 @@
+{
+  "balance": {
+    "4747900184": 1000000000
+  },
+  "products": {
+    "1GB_249NOK": {
+      "price": {
+        "amount": 24900,
+        "currency": "NOK"
+      },
+      "properties": {
+        "noOfBytes": "1_000_000_000"
+      },
+      "presentation": {
+        "label": "1 GB for 249"
+      }
+    },
+    "2GB_299NOK": {
+      "price": {
+        "amount": 29900,
+        "currency": "NOK"
+      },
+      "properties": {
+        "noOfBytes": "2_000_000_000"
+      },
+      "presentation": {
+        "label": "2 GB for 299"
+      }
+    },
+    "3GB_349NOK": {
+      "price": {
+        "amount": 34900,
+        "currency": "NOK"
+      },
+      "properties": {
+        "noOfBytes": "3_000_000_000"
+      },
+      "presentation": {
+        "label": "3 GB for 349"
+      }
+    },
+    "5GB_399NOK": {
+      "price": {
+        "amount": 39900,
+        "currency": "NOK"
+      },
+      "properties": {
+        "noOfBytes": "5_000_000_000"
+      },
+      "presentation": {
+        "label": "5 GB for 399"
+      }
+    }
+  },
+  "subscriptions": {
+    "foo%40bar%2Ecom": "4747900184"
+  },
+  "subscribers": {
+    "foo%40bar%2Ecom": {
+      "name": "Test User",
+      "address": "",
+      "postcode": "",
+      "city": ""
+    }
+  },
+  "purchaseHistory": {
+  }
+}

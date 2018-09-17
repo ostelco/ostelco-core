@@ -6,10 +6,10 @@ import java.util.*
 import javax.ws.rs.GET
 import javax.ws.rs.HeaderParam
 import javax.ws.rs.Path
+import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.Response.Status
-import javax.ws.rs.WebApplicationException
 
 /**
  * Resource used to authentiation using an X-MSISDN (injected header)
@@ -20,7 +20,7 @@ import javax.ws.rs.WebApplicationException
 @Path("/auth")
 class AuthResource {
 
-    private val LOG = LoggerFactory.getLogger(AuthResource::class.java)
+    private val logger = LoggerFactory.getLogger(AuthResource::class.java)
 
 
     /**
@@ -47,9 +47,6 @@ class AuthResource {
                         additionalClaims)
                 .get()
 
-        // TODO: Missing explicit handling of error-situation where
-        //       firebase response gives error, times out or
-        //       something else that shouldn't be interpreted as success.
         return Response.ok(customToken, MediaType.TEXT_PLAIN_TYPE).build()
     }
 
@@ -57,7 +54,5 @@ class AuthResource {
      * As of now, `msisdn` is considered as `user-id`.
      * This is subjected to change in future.
      */
-    private fun getUid(msisdn: String): String {
-        return msisdn;
-    }
+    private fun getUid(msisdn: String) = msisdn
 }

@@ -7,18 +7,31 @@ import org.jdiameter.api.Request
 import org.jdiameter.api.ResultCode
 import org.jdiameter.api.cca.events.JCreditControlRequest
 import org.jdiameter.common.impl.app.cca.JCreditControlAnswerImpl
-import org.ostelco.diameter.model.*
+import org.ostelco.diameter.model.CreditControlAnswer
+import org.ostelco.diameter.model.CreditControlRequest
+import org.ostelco.diameter.model.FinalUnitAction
+import org.ostelco.diameter.model.FinalUnitIndication
+import org.ostelco.diameter.model.MultipleServiceCreditControl
+import org.ostelco.diameter.model.RequestType
 import org.ostelco.diameter.parser.AvpParser
 import org.ostelco.diameter.util.DiameterUtilities
 
+/**
+ * @param sessionId
+ * @param originalCreditControlRequest
+ * @param originHost
+ * @param originRealm
+ */
 class CreditControlContext(
         val sessionId: String,
         val originalCreditControlRequest: JCreditControlRequest,
-        val originHost: String) {
+        val originHost: String,
+        val originRealm: String) {
 
-    private val LOG by logger()
+    private val logger by logger()
 
-    val originRealm:String = originalCreditControlRequest.destinationRealm
+    // Set to true, when answer to not to be sent to PGw. Default value is false.
+    var skipAnswer: Boolean = false
 
     val creditControlRequest: CreditControlRequest = AvpParser().parse(
             CreditControlRequest::class,
@@ -29,9 +42,8 @@ class CreditControlContext(
     }
 
     fun createCCA(creditControlAnswer: CreditControlAnswer): JCreditControlAnswerImpl? {
-
         var answer: JCreditControlAnswerImpl? = null
-        var resultCode = ResultCode.SUCCESS
+        val resultCode = ResultCode.SUCCESS
 
         try {
             answer = JCreditControlAnswerImpl(originalCreditControlRequest.message as Request, ResultCode.SUCCESS.toLong())
@@ -74,11 +86,11 @@ class CreditControlContext(
                 answerMSCC.addAvp(Avp.RESULT_CODE, resultCode, true, false)
                 answerMSCC.addAvp(Avp.VALIDITY_TIME, mscc.validityTime, true, false)
             }
-            LOG.info("Credit-Control-Answer")
+            logger.info("Credit-Control-Answer")
             DiameterUtilities().printAvps(ccaAvps)
 
         } catch (e: InternalException) {
-            LOG.error("Failed to convert to Credit-Control-Answer", e)
+            logger.error("Failed to convert to Credit-Control-Answer", e)
         }
 
         return answer

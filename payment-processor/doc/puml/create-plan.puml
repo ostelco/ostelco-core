@@ -1,0 +1,41 @@
+@startuml
+
+actor Admin
+participant Admin
+
+box "Prime"
+    participant "admin-api"
+    participant "DAO"
+    participant "payment-processor"
+end box
+participant Stripe
+
+activate Admin
+    "Admin" -> "admin-api" : POST /plans {sku}
+    activate "admin-api"
+    "admin-api" -> "DAO" : Read product {sku}
+    activate "DAO"
+    "DAO" -> "admin-api" : {prodId}  (e.g. Stripe prod-id)
+    deactivate "DAO"
+
+    "admin-api" -> "payment-processor" : createPlan { productId, amount, currency, interval }
+    activate "payment-processor"
+    "payment-processor" -> "Stripe" : POST /v1/plans {productId}  (create plan with Stripe)
+    activate "Stripe"
+    "Stripe" -> "payment-processor" : {planId}
+    deactivate "Stripe"
+    "payment-processor" -> "admin-api" : {planId}
+    deactivate "payment-processor"
+
+
+'    "admin-api" -> "DAO" : Save plan as a subscription {planId}
+'    activate "DAO"
+'    "DAO" -> "admin-api" : {subscription-id}
+'    deactivate "DAO"
+'
+'    "admin-api" -> "Admin" : {subscription-id}
+    "admin-api" -> "Admin" : {plan-id}
+    deactivate "admin-api"
+deactivate Admin
+
+@enduml

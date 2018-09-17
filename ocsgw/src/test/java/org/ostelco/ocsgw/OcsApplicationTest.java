@@ -1,17 +1,21 @@
 package org.ostelco.ocsgw;
 
-import org.apache.log4j.Logger;
-import org.jdiameter.api.*;
+import org.jdiameter.api.Avp;
+import org.jdiameter.api.AvpDataException;
+import org.jdiameter.api.AvpSet;
+import org.jdiameter.api.Request;
+import org.jdiameter.api.Session;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.ostelco.diameter.model.SessionContext;
-import org.ostelco.diameter.model.FinalUnitAction;
 import org.ostelco.diameter.model.ReAuthRequestType;
 import org.ostelco.diameter.model.RequestType;
+import org.ostelco.diameter.model.SessionContext;
 import org.ostelco.diameter.test.TestClient;
 import org.ostelco.diameter.test.TestHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.UnsupportedEncodingException;
@@ -29,7 +33,7 @@ import static org.junit.Assert.assertEquals;
 @DisplayName("OcsApplicationTest")
 public class OcsApplicationTest {
 
-    private static final Logger LOG = Logger.getLogger(OcsApplicationTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OcsApplicationTest.class);
 
     private static final int VENDOR_ID_3GPP = 10415;
 

@@ -1,17 +1,26 @@
 # This Dockerfile is used when running locally using docker-compose for Acceptance Testing.
 
-FROM openjdk:8u151
+FROM azul/zulu-openjdk:8u181-8.31.0.1
 
 MAINTAINER CSI "csi@telenordigital.com"
 
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+    netcat \
+    socat \
+    curl \
+ && rm -rf /var/lib/apt/lists/*
+
 COPY script/start.sh /start.sh
+COPY script/wait.sh /wait.sh
 
 # test.yaml is copied as config.yaml for AT.
 COPY config/test.yaml /config/config.yaml
-COPY config/pantel-prod.json /secret/
+COPY config/pantel-prod.json /secret/pantel-prod.json
 
 COPY build/libs/prime-uber.jar /prime.jar
 
+EXPOSE 7687
 EXPOSE 8080
 EXPOSE 8081
 EXPOSE 8082

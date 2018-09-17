@@ -1,0 +1,16 @@
+@startuml
+package "Docker" {
+ [Acceptance Test Runner]
+ [ocsgw]
+ [ESP]
+ [Prime]
+ database DB
+}
+
+[Acceptance Test Runner] --> [ocsgw] : diameter
+[Acceptance Test Runner] -> [Prime] : http @ 8080
+[ocsgw] -> [ESP] : gRPC
+[ESP] -> [Prime] : gRPC @ 8082
+[Prime] ->  DB
+
+@enduml

@@ -28,7 +28,7 @@ import kotlin.reflect.full.declaredMemberProperties
 
 class AvpParser {
 
-    private val LOG by logger()
+    private val logger by logger()
 
     /**
      * @param kclazz Kotlin class representing the data type of the AVP set getting parsed.
@@ -65,7 +65,7 @@ class AvpParser {
                     val avpId: Int? = it.getAnnotation(AvpField::class.java)?.avpId
                             ?: it.getAnnotation(AvpList::class.java)?.avpId
 
-                    LOG.trace("${it.name} id: ($avpId)")
+                    logger.trace("${it.name} id: ($avpId)")
                     if (avpId != null) {
 
                         // Check the data type of the field
@@ -77,7 +77,7 @@ class AvpParser {
 
                         if (avp != null) {
 
-                            LOG.trace("${it.name} has type ${it.type}")
+                            logger.trace("${it.name} has type ${it.type}")
 
                             val avpValue = when {
                                 // if the target class is Avp itself, the avp object itself is target value
@@ -89,7 +89,7 @@ class AvpParser {
                                     val list = ArrayList<Any?>()
                                     if (avp.grouped != null && collectionType != null) {
                                         val avpValue = parse(collectionType, avp.grouped)
-                                        LOG.trace("To list of ${collectionType.simpleName} adding: $avpValue")
+                                        logger.trace("To list of ${collectionType.simpleName} adding: $avpValue")
                                         list.add(avpValue)
                                     }
                                     list
@@ -104,14 +104,14 @@ class AvpParser {
                                     try {
                                         // using try block, check if the Enum class has 'value' property
                                         val valueField = it.type.getDeclaredField("value")
-                                         enumArray.filter { valueField.getInt(it) == intEnum }.first()
+                                        enumArray.first { valueField.getInt(it) == intEnum }
                                     } catch (e : Exception) {
                                         // int value is ordinal of enum. So, directly using the enum const array
                                         enumArray[intEnum]
                                     }
                                 }
                                 else ->  {
-                                    LOG.trace("Field: ${it.name}")
+                                    logger.trace("Field: ${it.name}")
                                     // for simple case, fetch target value for given Avp
                                     getAvpValue(it.type.kotlin, avp)
                                 }
@@ -120,8 +120,8 @@ class AvpParser {
                             // This map is then used in the 2nd loop, where the value is "set" on object field using
                             // Kotlin reflection
                             if (avpValue != null) {
-                                LOG.trace("${it.name} will be set to $avpValue")
-                                map.put(it.name, avpValue)
+                                logger.trace("${it.name} will be set to $avpValue")
+                                map[it.name] = avpValue
                             }
                         }
                     }
@@ -135,7 +135,7 @@ class AvpParser {
                 .forEach {
                     if (it is KMutableProperty<*>) {
                         val avpValue = map.getValue(it.name)
-                        LOG.trace("${it.name} set to $avpValue")
+                        logger.trace("${it.name} set to $avpValue")
                         try {
                             // If the field is of type list, then merge the existing values with new value from the map.
                             // The set the merged list back.
@@ -157,21 +157,21 @@ class AvpParser {
                                 it.setter.call(instance, avpValue)
                             }
                         } catch (e: Exception) {
-                            LOG.error("Failed to set $avpValue to ${it.name} for ${kclazz.simpleName}", e)
+                            logger.error("Failed to set $avpValue to ${it.name} for ${kclazz.simpleName}", e)
                         }
                     }
                 }
-        return instance;
+        return instance
     }
 
     private fun getAvpValue(kclazz: KClass<*>, avp: Avp): Any? {
 
         val type = AvpDictionary.getType(avp)
 
-        LOG.trace("Type: $type")
+        logger.trace("Type: $type")
 
         if (type == null) {
-            LOG.error("Unknown type: $type for avpCode: ${avp.code}")
+            logger.error("Unknown type: $type for avpCode: ${avp.code}")
             return avp.utF8String
         }
         return when (type) {

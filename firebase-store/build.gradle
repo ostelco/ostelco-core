@@ -1,0 +1,12 @@
+plugins {
+  id "org.jetbrains.kotlin.jvm" version "1.2.70"
+  id "java-library"
+}
+
+dependencies {
+  implementation project(":prime-api")
+  api project(":firebase-extensions")
+
+  testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
+  testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
+}

@@ -1,0 +1,31 @@
+plugins {
+  id "org.jetbrains.kotlin.jvm" version "1.2.70"
+  id "application"
+  id "com.github.johnrengelman.shadow" version "2.0.4"
+}
+
+dependencies {
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+  implementation ("org.jetbrains.kotlin:kotlin-test:$kotlinVersion") {
+    exclude module: 'kotlin-stdlib-common'
+  }
+
+  implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
+  implementation project(":prime-client-api")
+  implementation project(':diameter-test')
+  implementation project(':firebase-extensions')
+
+  implementation "com.stripe:stripe-java:$stripeVersion"
+  implementation 'io.jsonwebtoken:jjwt:0.9.1'
+  // tests fail when updated to 2.27
+  implementation "org.glassfish.jersey.media:jersey-media-json-jackson:2.25.1"
+
+  implementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
+  implementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
+}
+
+shadowJar {
+  mainClassName = ""
+  classifier = "uber"
+  version = null
+}
