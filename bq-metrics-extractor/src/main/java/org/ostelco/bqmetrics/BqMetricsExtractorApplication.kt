@@ -65,7 +65,7 @@ fun main(args: Array<String>) {
  * Config of a single metric that will be extracted using a BigQuery
  * query.
  */
-private class  MetricConfig {
+private class MetricConfig {
 
     /**
      * Type of the metric.  Currently the only permitted type is
@@ -108,7 +108,7 @@ private class  MetricConfig {
     @Valid
     @NotNull
     @JsonProperty
-    lateinit var sql:  String
+    lateinit var sql: String
 }
 
 
@@ -116,7 +116,7 @@ private class  MetricConfig {
  * Configuration for the extractor, default config
  * plus a list of metrics descriptions.
  */
-private class BqMetricsExtractorConfig: Configuration() {
+private class BqMetricsExtractorConfig : Configuration() {
     @Valid
     @NotNull
     @JsonProperty("bqmetrics")
@@ -175,7 +175,6 @@ private interface MetricBuilder {
         }
 
         val count = result.iterateAll().iterator().next().get(resultColumn).longValue
-
         return count
     }
 }
@@ -190,14 +189,18 @@ private class SummaryMetricBuilder(
 
 
     override fun buildMetric(registry: CollectorRegistry) {
-        val summary: Summary = Summary.build()
-                .name(metricName)
-                .help(help).register(registry)
-        val value: Long = getNumberValueViaSql(sql, resultColumn)
+        try {
+            val summary: Summary = Summary.build()
+                    .name(metricName)
+                    .help(help).register(registry)
+            val value: Long = getNumberValueViaSql(sql, resultColumn)
 
-        log.info("Summarizing metric $metricName  to be $value")
+            log.info("Summarizing metric $metricName  to be $value")
 
-        summary.observe(value * 1.0)
+            summary.observe(value * 1.0)
+        } catch (e: Exception) {
+            log.error(e.toString())
+        }
     }
 }
 
@@ -210,14 +213,18 @@ private class GaugeMetricBuilder(
     private val log: Logger = LoggerFactory.getLogger(SummaryMetricBuilder::class.java)
 
     override fun buildMetric(registry: CollectorRegistry) {
-        val gauge: Gauge = Gauge.build()
-                .name(metricName)
-                .help(help).register(registry)
-        val value: Long = getNumberValueViaSql(sql, resultColumn)
+        try {
+            val gauge: Gauge = Gauge.build()
+                    .name(metricName)
+                    .help(help).register(registry)
+            val value: Long = getNumberValueViaSql(sql, resultColumn)
 
-        log.info("Gauge metric $metricName = $value")
+            log.info("Gauge metric $metricName = $value")
 
-        gauge.set(value * 1.0)
+            gauge.set(value * 1.0)
+        } catch (e: Exception) {
+            log.error(e.toString())
+        }
     }
 }
 
@@ -225,10 +232,10 @@ private class GaugeMetricBuilder(
  * Thrown when something really bad is detected and it's necessary to terminate
  * execution immediately.  No cleanup of anything will be done.
  */
-private class BqMetricsExtractionException: RuntimeException {
-    constructor(message: String, ex: Exception?): super(message, ex)
-    constructor(message: String): super(message)
-    constructor(ex: Exception): super(ex)
+private class BqMetricsExtractionException : RuntimeException {
+    constructor(message: String, ex: Exception?) : super(message, ex)
+    constructor(message: String) : super(message)
+    constructor(ex: Exception) : super(ex)
 }
 
 
