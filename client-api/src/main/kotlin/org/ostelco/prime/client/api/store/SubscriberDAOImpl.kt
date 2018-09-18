@@ -25,7 +25,6 @@ import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
 import org.ostelco.prime.pseudonymizer.PseudonymizerService
 import org.ostelco.prime.storage.ClientDataSource
-import org.ostelco.prime.storage.NotCreatedError
 import org.ostelco.prime.storage.StoreError
 import java.time.Instant
 import java.util.*
@@ -190,15 +189,6 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                         { Either.right(it) })
     }
 
-    private fun createAndStorePaymentProfile(name: String): Either<StoreError, ProfileInfo> {
-        return paymentProcessor.createPaymentProfile(name)
-                .mapLeft { NotCreatedError(it.description) }
-                .flatMap { profileInfo ->
-                    setPaymentProfile(name, profileInfo)
-                            .map { profileInfo }
-                }
-    }
-
     @Deprecated("use purchaseProduct", ReplaceWith("purchaseProduct"))
     override fun purchaseProductWithoutPayment(subscriberId: String, sku: String): Either<ApiError,Unit> {
         return getProduct(subscriberId, sku)
@@ -299,27 +289,27 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
     override fun reportAnalytics(subscriberId: String, events: String): Either<ApiError, Unit> = Either.right(Unit)
 
     override fun createSource(subscriberId: String, sourceId: String): Either<ApiError, SourceInfo> {
-        return getPaymentProfile(subscriberId)
+        return paymentProcessor.getPaymentProfile(subscriberId)
                 .fold(
-                        { createAndStorePaymentProfile(subscriberId).mapLeft { error -> BadGatewayError(error.message, ApiErrorCode.FAILED_TO_STORE_PAYMENT_SOURCE) } },
+                        { paymentProcessor.createPaymentProfile(subscriberId).mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_STORE_PAYMENT_SOURCE, error) } },
                         { profileInfo -> Either.right(profileInfo) }
                 )
                 .flatMap { profileInfo -> paymentProcessor.addSource(profileInfo.id, sourceId).mapLeft { mapPaymentErrorToApiError("Failed to store payment source", ApiErrorCode.FAILED_TO_STORE_PAYMENT_SOURCE, it) } }
     }
 
     override fun setDefaultSource(subscriberId: String, sourceId: String): Either<ApiError, SourceInfo> {
-        return getPaymentProfile(subscriberId)
+        return paymentProcessor.getPaymentProfile(subscriberId)
                 .fold(
-                        { createAndStorePaymentProfile(subscriberId).mapLeft { error -> BadGatewayError(error.message, ApiErrorCode.FAILED_TO_SET_DEFAULT_PAYMENT_SOURCE) }  },
+                        { paymentProcessor.createPaymentProfile(subscriberId).mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_SET_DEFAULT_PAYMENT_SOURCE, error) }  },
                         { profileInfo -> Either.right(profileInfo) }
                 )
                 .flatMap { profileInfo -> paymentProcessor.setDefaultSource(profileInfo.id, sourceId).mapLeft { mapPaymentErrorToApiError("Failed to set default payment source", ApiErrorCode.FAILED_TO_SET_DEFAULT_PAYMENT_SOURCE, it) } }
     }
 
     override fun listSources(subscriberId: String): Either<ApiError, List<SourceInfo>> {
-        return getPaymentProfile(subscriberId)
+        return paymentProcessor.getPaymentProfile(subscriberId)
                 .fold(
-                        { createAndStorePaymentProfile(subscriberId).mapLeft { error -> BadGatewayError(error.message, ApiErrorCode.FAILED_TO_FETCH_PAYMENT_SOURCES_LIST) } },
+                        { paymentProcessor.createPaymentProfile(subscriberId).mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_FETCH_PAYMENT_SOURCES_LIST, error) } },
                         { profileInfo -> Either.right(profileInfo) }
                 )
                 .flatMap { profileInfo -> paymentProcessor.getSavedSources(profileInfo.id).mapLeft { mapPaymentErrorToApiError("Failed to list sources", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_SOURCES_LIST, it) } }
