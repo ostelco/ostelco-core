@@ -105,7 +105,7 @@ class ProfileTest {
     }
 
     @Test
-    fun `jersey test - GET application token`() {
+    fun `jersey test - POST application token`() {
 
         val email = "token-${randomInt()}@test.com"
         createProfile("Test Token User", email)
@@ -259,7 +259,7 @@ class SourceTest {
     }
 
     @Test
-    fun `okhttp test - GET list sources`() {
+    fun `jersey test - GET list sources`() {
 
         StripePayment.deleteAllCustomers()
         Firebase.deleteAllPaymentCustomers()
