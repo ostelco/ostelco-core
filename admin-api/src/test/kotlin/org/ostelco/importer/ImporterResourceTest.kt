@@ -1,10 +1,13 @@
 package org.ostelco.importer
 
 import io.dropwizard.testing.junit.ResourceTestRule
-import junit.framework.Assert.assertEquals
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Test
+import org.ostelco.prime.admin.api.ImporterResource
+import org.ostelco.prime.admin.importer.ImportDeclaration
+import org.ostelco.prime.admin.importer.ImportProcessor
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.Response.Status
 
@@ -20,7 +23,7 @@ class ImporterResourceTest {
         var importedResource: ImportDeclaration? = null
 
         val processor: ImportProcessor = object : ImportProcessor {
-            public override fun import(decl: ImportDeclaration) : Boolean {
+            override fun import(decl: ImportDeclaration) : Boolean {
                 importedResource = decl
                 return true
             }
@@ -36,21 +39,6 @@ class ImporterResourceTest {
     @Before
     fun setUp() {
         importedResource = null
-    }
-
-    /**
-     * Test status API
-     */
-    @Test
-    fun testGettingStatus() {
-
-        val statusCode = resources
-                ?.target("$pathForGetStatus")
-                ?.request()
-                ?.get()
-                ?.status ?: -1
-
-        assertEquals(Status.OK.statusCode, statusCode)
     }
 
     /**

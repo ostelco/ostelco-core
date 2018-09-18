@@ -148,6 +148,9 @@ interface AdminGraphStore {
     fun getReferredSubscriberCount(): Long
     fun getPaidSubscriberCount(): Long
 
+    // atomic import of Offer + Product + Segment
+    fun atomicImport(offer: Offer, segments: Collection<Segment>, products: Collection<Product>) : Either<StoreError, Unit>
+
     // simple getAll
     // fun getOffers(): Collection<Offer>
     // fun getSegments(): Collection<Segment>
