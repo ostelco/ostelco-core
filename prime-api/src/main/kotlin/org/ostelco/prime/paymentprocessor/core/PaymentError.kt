@@ -1,20 +1,11 @@
 package org.ostelco.prime.paymentprocessor.core
 
-import javax.ws.rs.core.Response
+import org.ostelco.prime.core.InternalError
 
-sealed class PaymentError(val description: String) {
-    open var status : Int = 0
-    var externalErrorMessage : String? = null
-}
+sealed class PaymentError(val description: String, var externalErrorMessage : String? = null) : InternalError()
 
-class ForbiddenError(description: String) : PaymentError(description) {
-    override var status : Int = Response.Status.FORBIDDEN.statusCode
-}
+class ForbiddenError(description: String, externalErrorMessage: String? = null) : PaymentError(description, externalErrorMessage)
 
-class NotFoundError(description: String) : PaymentError(description) {
-    override var status : Int = Response.Status.NOT_FOUND.statusCode
-}
+class NotFoundError(description: String, externalErrorMessage: String? = null) : PaymentError(description, externalErrorMessage )
 
-class BadGatewayError(description: String) : PaymentError(description) {
-    override var status : Int = Response.Status.BAD_REQUEST.statusCode
-}
+class BadGatewayError(description: String, externalErrorMessage: String? = null) : PaymentError(description, externalErrorMessage)

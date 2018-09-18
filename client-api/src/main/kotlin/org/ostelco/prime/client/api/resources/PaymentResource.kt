@@ -4,7 +4,6 @@ import io.dropwizard.auth.Auth
 import org.ostelco.prime.logger
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.store.SubscriberDAO
-import org.ostelco.prime.module.getResource
 import javax.validation.constraints.NotNull
 import javax.ws.rs.GET
 import javax.ws.rs.POST
@@ -36,7 +35,7 @@ class PaymentResource(private val dao: SubscriberDAO) {
 
         return dao.createSource(token.name, sourceId)
                 .fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { sourceInfo -> Response.status(Response.Status.CREATED).entity(sourceInfo)}
                 ).build()
     }
@@ -51,7 +50,7 @@ class PaymentResource(private val dao: SubscriberDAO) {
         }
         return dao.listSources(token.name)
                 .fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { sourceList -> Response.status(Response.Status.OK).entity(sourceList)}
                 ).build()
     }
@@ -68,7 +67,7 @@ class PaymentResource(private val dao: SubscriberDAO) {
 
         return dao.setDefaultSource(token.name, sourceId)
                 .fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { sourceInfo -> Response.status(Response.Status.OK).entity(sourceInfo)}
                 ).build()
     }
