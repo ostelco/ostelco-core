@@ -19,6 +19,7 @@ import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.ocs.OcsSubscriberService
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
+import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
@@ -63,10 +64,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         return try {
             storage.addSubscriber(profile, referredBy)
                     .mapLeft {
-                            when(it.errorType) {
-                                ErrorType.SERVER_ERROR -> BadGatewayError("Failed to create profile. ", ApiErrorCode.FAILED_TO_CREATE_PAYMENT_PROFILE)
-                                else -> BadRequestError("Failed to create profile.", ApiErrorCode.FAILED_TO_CREATE_PAYMENT_PROFILE, it)
-                            }
+                        mapStorageErrorToApiError("Failed to create profile.", ApiErrorCode.FAILED_TO_CREATE_PAYMENT_PROFILE, it)
                     }
                     .flatMap {
                         updateMetricsOnNewSubscriber()
@@ -127,10 +125,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                                 .map { purchaseRecords -> SubscriptionStatus(balance, purchaseRecords.toList()) }
                     }
                     .mapLeft {
-                        when (it.errorType) {
-                            ErrorType.SERVER_ERROR -> BadGatewayError("Failed to fetch subscription status. ", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTION_STATUS)
-                            else -> BadRequestError("Failed to fetch subscription status.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTION_STATUS, it)
-                        }
+                        mapStorageErrorToApiError("Failed to fetch subscription status.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTION_STATUS, it)
                     }
         } catch (e: Exception) {
             logger.error("Failed to get balance for subscriber $subscriberId", e)
@@ -245,12 +240,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                 subscriberId,
                 sku,
                 sourceId,
-                saveCard).mapLeft {
-            when (it.errorType) {
-                ErrorType.SERVER_ERROR -> BadGatewayError("Failed to purchase product. ", ApiErrorCode.FAILED_TO_PURCHASE_PRODUCT)
-                else -> BadRequestError("Failed to purchase product.", ApiErrorCode.FAILED_TO_PURCHASE_PRODUCT, it)
-            }
-        }
+                saveCard).mapLeft { mapPaymentErrorToApiError("Failed to purchase product. ", ApiErrorCode.FAILED_TO_PURCHASE_PRODUCT, it) }
 
     override fun getReferrals(subscriberId: String): Either<ApiError, Collection<Person>> {
         return try {
@@ -314,7 +304,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                         { createAndStorePaymentProfile(subscriberId).mapLeft { error -> BadGatewayError(error.message, ApiErrorCode.FAILED_TO_STORE_PAYMENT_SOURCE) } },
                         { profileInfo -> Either.right(profileInfo) }
                 )
-                .flatMap { profileInfo -> paymentProcessor.addSource(profileInfo.id, sourceId).mapLeft { NotFoundError("Failed to store payment source", ApiErrorCode.FAILED_TO_STORE_PAYMENT_SOURCE, it) } }
+                .flatMap { profileInfo -> paymentProcessor.addSource(profileInfo.id, sourceId).mapLeft { mapPaymentErrorToApiError("Failed to store payment source", ApiErrorCode.FAILED_TO_STORE_PAYMENT_SOURCE, it) } }
     }
 
     override fun setDefaultSource(subscriberId: String, sourceId: String): Either<ApiError, SourceInfo> {
@@ -323,7 +313,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                         { createAndStorePaymentProfile(subscriberId).mapLeft { error -> BadGatewayError(error.message, ApiErrorCode.FAILED_TO_SET_DEFAULT_PAYMENT_SOURCE) }  },
                         { profileInfo -> Either.right(profileInfo) }
                 )
-                .flatMap { profileInfo -> paymentProcessor.setDefaultSource(profileInfo.id, sourceId).mapLeft { NotFoundError("Failed to set default payment source", ApiErrorCode.FAILED_TO_SET_DEFAULT_PAYMENT_SOURCE, it) } }
+                .flatMap { profileInfo -> paymentProcessor.setDefaultSource(profileInfo.id, sourceId).mapLeft { mapPaymentErrorToApiError("Failed to set default payment source", ApiErrorCode.FAILED_TO_SET_DEFAULT_PAYMENT_SOURCE, it) } }
     }
 
     override fun listSources(subscriberId: String): Either<ApiError, List<SourceInfo>> {
@@ -332,6 +322,26 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                         { createAndStorePaymentProfile(subscriberId).mapLeft { error -> BadGatewayError(error.message, ApiErrorCode.FAILED_TO_FETCH_PAYMENT_SOURCES_LIST) } },
                         { profileInfo -> Either.right(profileInfo) }
                 )
-                .flatMap { profileInfo -> paymentProcessor.getSavedSources(profileInfo.id).mapLeft { NotFoundError("Failed to list sources", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_SOURCES_LIST, it) } }
+                .flatMap { profileInfo -> paymentProcessor.getSavedSources(profileInfo.id).mapLeft { mapPaymentErrorToApiError("Failed to list sources", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_SOURCES_LIST, it) } }
+    }
+
+
+    private fun mapPaymentErrorToApiError(description: String, errorCode: ApiErrorCode, paymentError: PaymentError ) : ApiError {
+        return when(paymentError) {
+            is org.ostelco.prime.paymentprocessor.core.ForbiddenError  ->  org.ostelco.prime.core.ForbiddenError(description, errorCode, paymentError)
+            is org.ostelco.prime.paymentprocessor.core.BadGatewayError -> org.ostelco.prime.core.BadGatewayError(description, errorCode)
+            is org.ostelco.prime.paymentprocessor.core.NotFoundError -> org.ostelco.prime.core.NotFoundError(description, errorCode, paymentError)
+        }
+    }
+
+    private fun mapStorageErrorToApiError(description: String, errorCode: ApiErrorCode, storeError: StoreError ) : ApiError {
+        return when(storeError) {
+            is org.ostelco.prime.storage.NotFoundError  ->  org.ostelco.prime.core.NotFoundError(description, errorCode, storeError)
+            is org.ostelco.prime.storage.AlreadyExistsError  ->  org.ostelco.prime.core.ForbiddenError(description, errorCode, storeError)
+            is org.ostelco.prime.storage.NotCreatedError  ->  org.ostelco.prime.core.BadGatewayError(description, errorCode)
+            is org.ostelco.prime.storage.NotUpdatedError  ->  org.ostelco.prime.core.BadGatewayError(description, errorCode)
+            is org.ostelco.prime.storage.NotDeletedError  ->  org.ostelco.prime.core.BadGatewayError(description, errorCode)
+            is org.ostelco.prime.storage.ValidationError  ->  org.ostelco.prime.core.ForbiddenError(description, errorCode, storeError)
+        }
     }
 }
