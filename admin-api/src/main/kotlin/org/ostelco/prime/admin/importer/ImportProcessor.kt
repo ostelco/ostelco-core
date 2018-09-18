@@ -2,6 +2,7 @@ package org.ostelco.prime.admin.importer
 
 import arrow.core.Either
 import org.ostelco.prime.core.ApiError
+import org.ostelco.prime.core.ApiErrorCode
 import org.ostelco.prime.core.BadRequestError
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.AdminDataSource
@@ -20,6 +21,6 @@ class ImportAdapter : ImportProcessor {
                 offer = importDeclaration.offer,
                 products = importDeclaration.products,
                 segments = importDeclaration.segments)
-                .mapLeft { BadRequestError(it.message) }
+                .mapLeft { BadRequestError(it.message, ApiErrorCode.FAILED_TO_IMPORT_OFFER) }
     }
 }

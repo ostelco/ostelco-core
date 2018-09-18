@@ -34,7 +34,7 @@ class ImporterResource(val processor: ImportProcessor) {
         logger.info("POST status for importer")
 
         return processor.import(declaration).fold(
-                    { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                    { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                     { Response.status(Response.Status.CREATED) }
         ).build()
     }
