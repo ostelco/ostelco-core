@@ -12,8 +12,9 @@ import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
-import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
+import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
+
 
 /**
  *
@@ -59,7 +60,7 @@ interface SubscriberDAO {
 
     fun setDefaultSource(subscriberId: String, sourceId: String): Either<ApiError, SourceInfo>
 
-    fun listSources(subscriberId: String): Either<ApiError, List<SourceInfo>>
+    fun listSources(subscriberId: String): Either<ApiError, List<SourceDetailsInfo>>
 
     companion object {
 
