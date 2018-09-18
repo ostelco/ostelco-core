@@ -647,7 +647,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     private fun createOffer(offer: Offer, transaction: Transaction): Either<StoreError, Unit> {
         return offerStore
-                .create(offer, transaction)
+                .create(offer.id, transaction)
                 .flatMap { offerToSegmentStore.create(offer.id, offer.segments, transaction) }
                 .flatMap { offerToProductStore.create(offer.id, offer.products, transaction) }
     }
@@ -655,7 +655,10 @@ object Neo4jStoreSingleton : GraphStore {
     //
     // Atomic Import of Offer + Product + Segment
     //
-    override fun atomicImport(offer: Offer, segments: Collection<Segment>, products: Collection<Product>): Either<StoreError, Unit> = writeTransaction {
+    override fun atomicImport(
+            offer: Offer,
+            segments: Collection<Segment>,
+            products: Collection<Product>): Either<StoreError, Unit> = writeTransaction {
 
         // validation
         val productIds = (offer.products + products.map { it.sku }).toSet()

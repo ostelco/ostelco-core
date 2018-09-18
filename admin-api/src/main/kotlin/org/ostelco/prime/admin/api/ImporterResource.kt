@@ -1,23 +1,22 @@
 package org.ostelco.prime.admin.api
 
+import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.ostelco.prime.admin.importer.ImportDeclaration
 import org.ostelco.prime.admin.importer.ImportProcessor
 import org.ostelco.prime.logger
+import java.io.InputStream
+import java.lang.reflect.Type
 import javax.ws.rs.Consumes
 import javax.ws.rs.POST
 import javax.ws.rs.Path
-import javax.ws.rs.core.Response
-import jdk.nashorn.internal.runtime.ScriptingFunctions.readLine
-import java.io.InputStreamReader
-import java.io.BufferedReader
-import java.io.IOException
-import java.io.InputStream
-import java.lang.reflect.Type
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.MultivaluedMap
+import javax.ws.rs.core.Response
+import javax.ws.rs.core.Response.Status.BAD_REQUEST
 import javax.ws.rs.ext.MessageBodyReader
 
 
@@ -34,18 +33,10 @@ class ImporterResource(val processor: ImportProcessor) {
     fun postStatus(declaration: ImportDeclaration): Response {
         logger.info("POST status for importer")
 
-        return try {
-            val result: Boolean = processor.import(declaration)
-
-            if (result) {
-                Response.ok().build()
-            } else {
-                Response.status(Response.Status.BAD_REQUEST).build()
-            }
-        } catch (e: Exception) {
-            logger.error("Failed to Import", e)
-            Response.serverError().build()
-        }
+        return processor.import(declaration).fold(
+                    { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                    { Response.status(Response.Status.CREATED) }
+        ).build()
     }
 }
 
@@ -53,6 +44,8 @@ class ImporterResource(val processor: ImportProcessor) {
 //      be available anywhere we read yaml files.
 @Consumes("text/vnd.yaml")
 class YamlMessageBodyReader : MessageBodyReader<Any> {
+
+    private val logger by logger()
 
     override fun isReadable(
             type: Class<*>,
@@ -67,7 +60,28 @@ class YamlMessageBodyReader : MessageBodyReader<Any> {
             httpHeaders: MultivaluedMap<String, String>,
             inputStream: InputStream): Any {
 
-        val mapper = ObjectMapper(YAMLFactory())
-        return mapper.readValue(inputStream, type)
+        try {
+            val mapper = ObjectMapper(YAMLFactory()).registerKotlinModule()
+            return mapper.readValue(inputStream, type)
+        } catch (e: Exception) {
+            logger.error("Failed to parse yaml: ${e.message}")
+            throw WebApplicationException(e.message, BAD_REQUEST.statusCode)
+        }
     }
+}
+
+/**
+ * Common 'helper' functions for resources.
+ *
+ */
+val objectMapper = ObjectMapper()
+
+fun <R : Any> R.asJson(`object`: Any): String {
+    try {
+        return objectMapper.writeValueAsString(`object`)
+    } catch (e: JsonProcessingException) {
+        val logger by logger()
+        logger.error("Error in json response {}", e)
+    }
+    return ""
 }

@@ -1,20 +1,22 @@
 package org.ostelco.prime.admin.importer
 
-import java.math.BigDecimal
-import java.math.BigInteger
+import org.ostelco.prime.model.Offer
+import org.ostelco.prime.model.Product
+import org.ostelco.prime.model.Segment
 
 /**
  * The input classes being parsed (as yaml).
  */
 
-class ProducingAgent(var name: String? = null, var version: String? = null)
+data class ProducingAgent(val name: String, val version: String)
 
 class ImportDeclaration(
-        var producingAgent: ProducingAgent? = null,
-        var offer: Offer? = null,
-        var segment: Segment? = null
-)
+        val producingAgent: ProducingAgent,
+        val offer: Offer,
+        val segments: Collection<Segment> = emptyList(),
+        val products: Collection<Product> = emptyList())
 
+/*
 class TimeInterval(var from: String?= null, var to: String? = null)
 
 class Presentation(
@@ -63,3 +65,4 @@ class Offer(
         var financial: OfferFinancials? = null,
         var product: Product? = null
 )
+*/
