@@ -19,7 +19,7 @@ COPY build/libs/bq-metrics-extractor-uber.jar /bq-metrics-extractor.jar
 # classes that should be cached.
 #
 
-CMD ["java", "-Dfile.encoding=UTF-8", "-Xshare:on", "-Xshare:dump", "-jar", "/bq-metrics-extractor.jar", "quit", "config/config.yaml"]
+RUN ["java", "-Dfile.encoding=UTF-8", "-Xshare:on", "-Xshare:dump", "-jar", "/bq-metrics-extractor.jar", "quit", "config/config.yaml"]
 
 
 #
