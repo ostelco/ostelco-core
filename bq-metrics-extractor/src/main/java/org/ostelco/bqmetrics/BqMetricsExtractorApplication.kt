@@ -198,7 +198,7 @@ private class SummaryMetricBuilder(
             log.info("Summarizing metric $metricName  to be $value")
 
             summary.observe(value * 1.0)
-        } catch (e: Exception) {
+        } catch (e: NullPointerException) {
             log.error(e.toString())
         }
     }
@@ -222,7 +222,7 @@ private class GaugeMetricBuilder(
             log.info("Gauge metric $metricName = $value")
 
             gauge.set(value * 1.0)
-        } catch (e: Exception) {
+        } catch (e: NullPointerException) {
             log.error(e.toString())
         }
     }
