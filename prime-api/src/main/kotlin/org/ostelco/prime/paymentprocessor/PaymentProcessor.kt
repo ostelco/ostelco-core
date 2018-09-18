@@ -1,7 +1,6 @@
 package org.ostelco.prime.paymentprocessor
 
 import arrow.core.Either
-import org.ostelco.prime.core.ApiError
 import org.ostelco.prime.paymentprocessor.core.*
 
 interface PaymentProcessor {
@@ -83,7 +82,7 @@ interface PaymentProcessor {
      * @param customerId Stripe customer id
      * @return List of Stripe sourceId
      */
-    fun getSavedSources(customerId: String): Either<PaymentError, List<SourceInfo>>
+    fun getSavedSources(customerId: String): Either<PaymentError, List<SourceDetailsInfo>>
 
     /**
      * @param customerId Stripe customer id
