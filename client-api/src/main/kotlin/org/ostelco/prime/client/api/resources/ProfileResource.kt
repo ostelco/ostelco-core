@@ -30,7 +30,7 @@ class ProfileResource(private val dao: SubscriberDAO) {
         }
 
         return dao.getProfile(token.name).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
     }
@@ -48,7 +48,7 @@ class ProfileResource(private val dao: SubscriberDAO) {
         }
 
         return dao.createProfile(token.name, profile, referredBy).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.CREATED).entity(asJson(it)) })
                 .build()
     }
@@ -64,7 +64,7 @@ class ProfileResource(private val dao: SubscriberDAO) {
         }
 
         return dao.updateProfile(token.name, profile).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
     }

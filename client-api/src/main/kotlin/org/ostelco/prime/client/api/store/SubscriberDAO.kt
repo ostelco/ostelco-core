@@ -51,10 +51,6 @@ interface SubscriberDAO {
 
     fun storeApplicationToken(msisdn: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken>
 
-    fun getPaymentProfile(name: String): Either<ApiError, ProfileInfo>
-
-    fun setPaymentProfile(name: String, profileInfo: ProfileInfo): Either<ApiError, Unit>
-
     fun getReferrals(subscriberId: String): Either<ApiError, Collection<Person>>
 
     fun getReferredBy(subscriberId: String): Either<ApiError, Person>
