@@ -5,6 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Test
+import org.ostelco.prime.admin.api.YamlMessageBodyReader
 import org.ostelco.prime.admin.api.ImporterResource
 import org.ostelco.prime.admin.importer.ImportDeclaration
 import org.ostelco.prime.admin.importer.ImportProcessor
@@ -33,6 +34,7 @@ class ImporterResourceTest {
         @JvmField
         val resources = ResourceTestRule.builder()
                 .addResource(ImporterResource(processor))
+                .addProvider(YamlMessageBodyReader::class.java)
                 .build()
     }
 
