@@ -1,7 +1,7 @@
 package org.ostelco.pseudonym.service
 
 import com.codahale.metrics.health.HealthCheck
-import com.google.api.gax.core.NoCredentialsProvider
+import com.google.cloud.NoCredentials
 import com.google.cloud.bigquery.BigQuery
 import com.google.cloud.bigquery.BigQueryOptions
 import com.google.cloud.datastore.Datastore
@@ -155,7 +155,7 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
                 DatastoreOptions
                         .newBuilder()
                         .setHost("localhost:9090")
-                        .setCredentials(NoCredentialsProvider().credentials)
+                        .setCredentials(NoCredentials.getInstance())
                         .setTransportOptions(HttpTransportOptions.newBuilder().build())
                         .build()
             }
