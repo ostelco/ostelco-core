@@ -6,6 +6,9 @@ import com.stripe.exception.*
 import org.ostelco.prime.logger
 import com.stripe.model.*
 import org.ostelco.prime.paymentprocessor.core.*
+import com.stripe.model.Customer
+
+
 
 
 class StripePaymentProcessor : PaymentProcessor {
@@ -58,6 +61,20 @@ class StripePaymentProcessor : PaymentProcessor {
                 val customerParams = mapOf("email" to userEmail)
                 ProfileInfo(Customer.create(customerParams).id)
             }
+
+    override fun getPaymentProfile(userEmail: String): Either<PaymentError, ProfileInfo> {
+            val customerParams = mapOf(
+                    "limit" to "1",
+                    "email" to userEmail)
+            val customerList = Customer.list(customerParams)
+            if (customerList.data.isEmpty()) {
+                 return Either.left(NotFoundError("Could not find a payment profile for user  $userEmail"))
+            } else if (customerList.data.size > 1){
+                 return Either.left(NotFoundError("Multiple profiles for user $userEmail found"))
+            } else {
+                 return Either.right(ProfileInfo(customerList.data.first().id))
+            }
+    }
 
     override fun createPlan(productId: String, amount: Int, currency: String, interval: PaymentProcessor.Interval): Either<PaymentError, PlanInfo> =
             either("Failed to create plan with product id $productId amount $amount currency $currency interval ${interval.value}") {
