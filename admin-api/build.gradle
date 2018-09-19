@@ -4,6 +4,6 @@ plugins {
 }
 
 dependencies {
-  implementation project(":prime-api")
+  implementation project(":prime-modules")
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
 }
