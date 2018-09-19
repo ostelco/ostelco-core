@@ -33,6 +33,12 @@ interface PaymentProcessor {
     fun deletePaymentProfile(customerId: String): Either<PaymentError, ProfileInfo>
 
     /**
+     * @param userEmail: user email (Prime unique identifier for customer)
+     * @return Stripe customerId if exist
+     */
+    fun getPaymentProfile(userEmail: String): Either<PaymentError, ProfileInfo>
+
+    /**
      * @param productId Stripe product id
      * @param amount The amount to be charged in the interval specified
      * @param currency Three-letter ISO currency code in lowercase

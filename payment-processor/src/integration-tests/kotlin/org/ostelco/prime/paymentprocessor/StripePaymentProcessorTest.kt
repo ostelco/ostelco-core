@@ -56,6 +56,19 @@ class StripePaymentProcessorTest {
     }
 
     @Test
+    fun getPaymentProfile() {
+        val result = paymentProcessor.getPaymentProfile(testCustomer)
+        assertEquals(true, result.isRight())
+        assertEquals(stripeCustomerId, result.fold({""}, {it.id}))
+    }
+
+    @Test
+    fun getUnknownPaymentProfile() {
+        val result = paymentProcessor.getPaymentProfile("not@fail.com")
+        assertEquals(false, result.isRight())
+    }
+
+    @Test
     fun addSourceToCustomerAndRemove() {
 
         val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentSourceId())

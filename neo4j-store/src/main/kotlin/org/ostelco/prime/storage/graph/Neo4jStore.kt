@@ -326,29 +326,9 @@ object Neo4jStoreSingleton : GraphStore {
 
     // TODO vihang: Move this logic to DSL + Rule Engine + Triggers, when they are ready
     // >> BEGIN
-    private val documentStore by lazy { getResource<DocumentStore>() }
     private val paymentProcessor by lazy { getResource<PaymentProcessor>() }
     private val ocs by lazy { getResource<OcsSubscriberService>() }
     private val analyticsReporter by lazy { getResource<AnalyticsService>() }
-
-    private fun getPaymentProfile(name: String): Either<PaymentError, ProfileInfo> =
-            documentStore.getPaymentId(name)
-                    ?.let { profileInfoId -> Either.right(ProfileInfo(profileInfoId)) }
-                    ?: Either.left(BadGatewayError("Failed to fetch payment customer ID"))
-
-    private fun createAndStorePaymentProfile(name: String): Either<PaymentError, ProfileInfo> {
-        return paymentProcessor.createPaymentProfile(name)
-                .flatMap { profileInfo ->
-                    setPaymentProfile(name, profileInfo)
-                            .map { profileInfo }
-                }
-    }
-
-    private fun setPaymentProfile(name: String, profileInfo: ProfileInfo): Either<PaymentError, Unit> =
-            Either.cond(
-                    test = documentStore.createPaymentId(name, profileInfo.id),
-                    ifTrue = { Unit },
-                    ifFalse = { BadGatewayError("Failed to save payment customer ID") })
 
     override fun purchaseProduct(
             subscriberId: String,
@@ -361,9 +341,9 @@ object Neo4jStoreSingleton : GraphStore {
                 .mapLeft { org.ostelco.prime.paymentprocessor.core.NotFoundError("Product unavailable") }
                 .flatMap { product: Product ->
                     // Fetch/Create stripe payment profile for the subscriber.
-                    getPaymentProfile(subscriberId)
+                    paymentProcessor.getPaymentProfile(subscriberId)
                             .fold(
-                                    { createAndStorePaymentProfile(subscriberId) },
+                                    { paymentProcessor.createPaymentProfile(subscriberId) },
                                     { profileInfo -> Either.right(profileInfo) }
                             )
                             .map { profileInfo -> Pair(product, profileInfo) }

@@ -1,6 +1,8 @@
 package org.ostelco.prime.storage
 
-sealed class StoreError(val type: String, val id: String) {
+import org.ostelco.prime.core.InternalError
+
+sealed class StoreError(val type: String, val id: String) : InternalError() {
     open var message: String = ""
         protected set
 }
