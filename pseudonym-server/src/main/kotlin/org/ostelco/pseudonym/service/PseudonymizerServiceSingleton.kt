@@ -1,6 +1,7 @@
 package org.ostelco.pseudonym.service
 
 import com.codahale.metrics.health.HealthCheck
+import com.google.cloud.NoCredentials
 import com.google.cloud.bigquery.BigQuery
 import com.google.cloud.bigquery.BigQueryOptions
 import com.google.cloud.datastore.Datastore
@@ -18,8 +19,19 @@ import org.ostelco.prime.logger
 import org.ostelco.prime.model.ActivePseudonyms
 import org.ostelco.prime.model.PseudonymEntity
 import org.ostelco.prime.pseudonymizer.PseudonymizerService
-import org.ostelco.pseudonym.*
+import org.ostelco.pseudonym.ConfigRegistry
+import org.ostelco.pseudonym.ExportTaskKind
+import org.ostelco.pseudonym.MsisdnPseudonymEntityKind
+import org.ostelco.pseudonym.SubscriberIdPseudonymEntityKind
+import org.ostelco.pseudonym.endPropertyName
+import org.ostelco.pseudonym.errorPropertyName
+import org.ostelco.pseudonym.exportIdPropertyName
+import org.ostelco.pseudonym.msisdnPropertyName
+import org.ostelco.pseudonym.pseudonymPropertyName
 import org.ostelco.pseudonym.resources.ExportTask
+import org.ostelco.pseudonym.startPropertyName
+import org.ostelco.pseudonym.statusPropertyName
+import org.ostelco.pseudonym.subscriberIdPropertyName
 import org.ostelco.pseudonym.utils.WeeklyBounds
 import java.time.Instant
 import java.util.*
@@ -143,6 +155,7 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
                 DatastoreOptions
                         .newBuilder()
                         .setHost("localhost:9090")
+                        .setCredentials(NoCredentials.getInstance())
                         .setTransportOptions(HttpTransportOptions.newBuilder().build())
                         .build()
             }
