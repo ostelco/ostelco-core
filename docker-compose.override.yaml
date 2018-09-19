@@ -8,6 +8,8 @@ services:
       dockerfile: Dockerfile.test
     environment:
     - FIREBASE_ROOT_PATH=test
+    # need when prime is running in GCP of CI server
+    - GOOGLE_APPLICATION_CREDENTIALS=/secret/pantel-prod.json
     - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
     - PUBSUB_PROJECT_ID=pantel-2decb
     - STRIPE_API_KEY=${STRIPE_API_KEY}

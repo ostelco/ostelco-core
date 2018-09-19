@@ -72,9 +72,7 @@ task integration(type: Test, description: 'Runs the integration tests.', group: 
   classpath = sourceSets.integration.runtimeClasspath
 }
 
-if (System.getenv("BUILD_ENV") != "CI_CD") {
-  build.dependsOn integration
-}
+build.dependsOn integration
 
 shadowJar {
   mainClassName = 'org.ostelco.prime.PrimeApplicationKt'
