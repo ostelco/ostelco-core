@@ -8,6 +8,8 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/d15007ecfc2942f7901673177e147d09)](https://www.codacy.com/app/vihang.patil/ostelco-core?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ostelco/ostelco-core&amp;utm_campaign=Badge_Grade)
 [![Codacy Badge](https://api.codacy.com/project/badge/Coverage/d15007ecfc2942f7901673177e147d09)](https://www.codacy.com/app/vihang.patil/ostelco-core?utm_source=github.com&utm_medium=referral&utm_content=ostelco/ostelco-core&utm_campaign=Badge_Coverage)
 
+[![CircleCI](https://circleci.com/gh/ostelco/ostelco-core/tree/develop.svg?style=svg&circle-token=f6bf824c3910dcf1551bf3b2776715dabfc7dc41)](https://circleci.com/gh/ostelco/ostelco-core/tree/develop)
+
 # ostelco-core
 
 Mono Repository for core protocols and services around a OCS/BSS for packet data. For each service please see the individual Readme.md files.
