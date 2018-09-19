@@ -64,7 +64,9 @@ __`TODO: Figure out a better way / automatic way to backup dashboards and automa
 
 Contains a Deployment and Service configuration and a ConfigMap with predefined dashboards.
 
-Grafana is exposed using a LoadBalancer. 
+Grafana is exposed using a LoadBalancer.
+
+The current dashboard is saved in `grafana-dashboard.json` in this folder
 
 ### [](#prometheus)[Prometheus](https://prometheus.io/)
 
