@@ -58,7 +58,7 @@ class PsInformation() {
 
     // 3GPP-SGSN-MCC-MNC ( Avp 18)
     @AvpField(Avp.GPP_SGSN_MCC_MNC)
-    var sgsnMncMcc: String? = null
+    var sgsnMccMnc: String? = null
 
     // 3GPP-MS-TimeZone ( Avp 23 )
     @AvpField(Avp.TGPP_MS_TIMEZONE)
