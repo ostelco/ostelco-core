@@ -159,7 +159,7 @@ data class RedirectServer(
  * Service-Information  AVP ( 873 )
  * http://www.3gpp.org/ftp/Specs/html-info/32299.htm
  */
-class ServiceInformation() {
+class ServiceInformation {
 
     @AvpList(Avp.PS_INFORMATION, PsInformation::class)
     var psInformation: List<PsInformation> = emptyList()
@@ -179,7 +179,7 @@ enum class SubscriptionType {
 /**
  * https://tools.ietf.org/html/rfc4006#section-8.46
  */
-class SubscriptionId() {
+class SubscriptionId {
 
     @AvpField(Avp.SUBSCRIPTION_ID_TYPE)
     var idType: SubscriptionType? = null
@@ -191,7 +191,7 @@ class SubscriptionId() {
 /**
  * https://tools.ietf.org/html/rfc4006#page-78
  */
-class UserEquipmentInfo() {
+class UserEquipmentInfo {
 
     @AvpField(Avp.USER_EQUIPMENT_INFO_TYPE)
     var userEquipmentInfoType: UserEquipmentInfoType? = null

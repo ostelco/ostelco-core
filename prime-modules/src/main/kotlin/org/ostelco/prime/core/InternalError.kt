@@ -1,3 +1,3 @@
 package org.ostelco.prime.core
 
-open class InternalError()
+open class InternalError
