@@ -22,7 +22,7 @@ object DataConsumptionInfoPublisher :
 
     private val pseudonymizerService by lazy { getResource<PseudonymizerService>() }
 
-    fun publish(msisdn: String, usedBucketBytes: Long, bundleBytes: Long) {
+    fun publish(msisdn: String, usedBucketBytes: Long, bundleBytes: Long, apn: String?, mncMcc: String?) {
 
         if (usedBucketBytes == 0L) {
             return
@@ -36,6 +36,8 @@ object DataConsumptionInfoPublisher :
                 .setBucketBytes(usedBucketBytes)
                 .setBundleBytes(bundleBytes)
                 .setTimestamp(Timestamps.fromMillis(now))
+                .setApn(apn)
+                .setMncMcc(mncMcc)
                 .build()
                 .toByteString()
 

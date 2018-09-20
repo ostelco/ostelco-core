@@ -10,9 +10,9 @@ class AnalyticsServiceImpl : AnalyticsService {
 
     private val logger by logger()
 
-    override fun reportTrafficInfo(msisdn: String, usedBytes: Long, bundleBytes: Long) {
-        logger.info("reportTrafficInfo : msisdn {} usedBytes {} bundleBytes {}", msisdn, usedBytes, bundleBytes)
-        DataConsumptionInfoPublisher.publish(msisdn, usedBytes, bundleBytes)
+    override fun reportTrafficInfo(msisdn: String, usedBytes: Long, bundleBytes: Long, apn: String?, mncMcc: String?) {
+        logger.info("reportTrafficInfo : msisdn {} usedBytes {} bundleBytes {} apn {} mncMcc {}", msisdn, usedBytes, bundleBytes, apn, mncMcc)
+        DataConsumptionInfoPublisher.publish(msisdn, usedBytes, bundleBytes, apn, mncMcc)
     }
 
     override fun reportMetric(primeMetric: PrimeMetric, value: Long) {
