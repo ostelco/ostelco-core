@@ -13,7 +13,7 @@ class GetSubscriptions {
 
         val theBody = fixture("sample-offer-products-segments.yaml")
 
-        // XXX Preferably, chec, return code on this one.
+        // XXX Preferably, check, return code on this one.
         post<Unit> {
             path = "/imports"
             body = theBody
