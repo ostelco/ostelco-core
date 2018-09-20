@@ -28,7 +28,6 @@ object StripePayment {
         // https://stripe.com/docs/api/java#create_source
         Stripe.apiKey = System.getenv("STRIPE_API_KEY")
 
-        // TODO martin: set valid map values
         val sourceMap = mapOf(
                 "type" to "card",
                 "card" to mapOf(
