@@ -133,6 +133,8 @@ spec:
           value: dev
         - name: DATASTORE_NAMESPACE
           value: dev
+        - name: NEO4J_HOST
+          value: neo4j
         - name: STRIPE_API_KEY
           valueFrom:
             secretKeyRef:
