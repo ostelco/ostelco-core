@@ -48,19 +48,19 @@ class GraphStoreTest {
                         price = Price(0, "NOK"),
                         properties = mapOf("noOfBytes" to "1_000_000_000")))
 
-        val allSegment = Segment(id = "all")
+        val allSegment = Segment(id = "no")
         Neo4jStoreSingleton.createSegment(allSegment)
     }
 
     @Test
     fun `add subscriber`() {
 
-        Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null)
+        Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null)
                 .mapLeft { fail(it.message) }
 
         Neo4jStoreSingleton.getSubscriber(EMAIL).bimap(
                 { fail(it.message) },
-                { assertEquals(Subscriber(email = EMAIL, name = NAME, referralId = EMAIL), it) })
+                { assertEquals(Subscriber(email = EMAIL, name = NAME, referralId = EMAIL, country = COUNTRY), it) })
 
         // TODO vihang: fix argument captor for neo4j-store tests
 //        val bundleArgCaptor: ArgumentCaptor<Bundle> = ArgumentCaptor.forClass(Bundle::class.java)
@@ -71,7 +71,7 @@ class GraphStoreTest {
     @Test
     fun `fail to add subscriber with invalid referred by`() {
 
-        Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = "blah")
+        Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = "blah")
                 .fold({
                     assertEquals(
                             expected = "Failed to create REFERRED - blah -> foo@bar.com",
@@ -83,7 +83,7 @@ class GraphStoreTest {
     @Test
     fun `add subscription`() {
 
-        Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null)
+        Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null)
                 .mapLeft { fail(it.message) }
 
         Neo4jStoreSingleton.addSubscription(EMAIL, MSISDN)
@@ -107,7 +107,7 @@ class GraphStoreTest {
 
     @Test
     fun `set and get Purchase record`() {
-        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null).isRight())
+        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null).isRight())
 
         val product = createProduct("1GB_249NOK", 24900)
         val now = Instant.now().toEpochMilli()
@@ -129,7 +129,7 @@ class GraphStoreTest {
 
     @Test
     fun `create products, offer, segment and then get products for a subscriber`() {
-        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME), referredBy = null).isRight())
+        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null).isRight())
 
         Neo4jStoreSingleton.createProduct(createProduct("1GB_249NOK", 24900))
         Neo4jStoreSingleton.createProduct(createProduct("2GB_299NOK", 29900))
@@ -215,6 +215,7 @@ class GraphStoreTest {
     companion object {
         const val EMAIL = "foo@bar.com"
         const val NAME = "Test User"
+        const val COUNTRY = "NO"
         const val MSISDN = "4712345678"
 
         @ClassRule

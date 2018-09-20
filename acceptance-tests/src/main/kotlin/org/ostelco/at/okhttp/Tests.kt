@@ -9,6 +9,7 @@ import org.ostelco.at.common.getLogger
 import org.ostelco.at.common.randomInt
 import org.ostelco.at.okhttp.ClientFactory.clientForSubject
 import org.ostelco.prime.client.api.DefaultApi
+import org.ostelco.prime.client.ApiException
 import org.ostelco.prime.client.model.ApplicationToken
 import org.ostelco.prime.client.model.Consent
 import org.ostelco.prime.client.model.PaymentSource
@@ -20,10 +21,7 @@ import org.ostelco.prime.client.model.Profile
 import org.ostelco.prime.client.model.SubscriptionStatus
 import java.time.Instant
 import java.util.*
-import kotlin.test.assertEquals
-import kotlin.test.assertFails
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
+import kotlin.test.*
 
 class ProfileTest {
 
@@ -39,7 +37,7 @@ class ProfileTest {
                 .name("Test Profile User")
                 .address("")
                 .city("")
-                .country("")
+                .country("NO")
                 .postCode("")
                 .referralId("")
 
@@ -70,7 +68,6 @@ class ProfileTest {
                 .address("")
                 .postCode("")
                 .city("")
-                .country("")
 
         val clearedProfile: Profile = client.updateProfile(updatedProfile)
 
@@ -79,7 +76,13 @@ class ProfileTest {
         assertEquals("", clearedProfile.address, "Incorrect 'address' in response after clearing profile")
         assertEquals("", clearedProfile.postCode, "Incorrect 'postcode' in response after clearing profile")
         assertEquals("", clearedProfile.city, "Incorrect 'city' in response after clearing profile")
-        assertEquals("", clearedProfile.country, "Incorrect 'country' in response after clearing profile")
+
+        updatedProfile
+                .country("")
+
+        assertFailsWith(ApiException::class, "Incorrectly accepts that 'country' is cleared/not set") {
+            client.updateProfile(updatedProfile)
+        }
     }
 
     @Test

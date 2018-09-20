@@ -152,6 +152,7 @@ object Neo4jStoreSingleton : GraphStore {
         val bundleId = subscriber.id
 
         val either = subscriberStore.create(subscriber, transaction)
+                .flatMap { subscriberToSegmentStore.create(subscriber.id, subscriber.country.toLowerCase(), transaction) }
         if (referredBy != null) {
             // Give 1 GB if subscriber is referred
             either
@@ -190,7 +191,6 @@ object Neo4jStoreSingleton : GraphStore {
                         Either.right(Unit)
                     }
         }.flatMap { subscriberToBundleStore.create(subscriber.id, bundleId, transaction) }
-                .flatMap { subscriberToSegmentStore.create(subscriber.id, "all", transaction) }
                 .ifFailedThenRollback(transaction)
     }
     // << END
