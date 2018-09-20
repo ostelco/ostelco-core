@@ -42,6 +42,7 @@ inline fun <reified T> post(execute: HttpRequest.() -> Unit): T {
     return response.readEntity(object : GenericType<T>() {})
 }
 
+
 /**
  * DSL function for PUT operation
  */
