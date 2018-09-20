@@ -28,7 +28,7 @@ repositories {
 
 dependencies {
   // interface module between prime and prime-modules
-  implementation project(':prime-api')
+  implementation project(':prime-modules')
 
   // prime-modules
   runtimeOnly project(':ocs')
