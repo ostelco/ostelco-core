@@ -17,7 +17,7 @@ class PrimeApplication : Application<PrimeConfiguration>() {
     override fun initialize(bootstrap: Bootstrap<PrimeConfiguration>) {
         bootstrap.configurationSourceProvider = SubstitutingSourceProvider(
                 bootstrap.configurationSourceProvider,
-                EnvironmentVariableSubstitutor())
+                EnvironmentVariableSubstitutor(false))
         bootstrap.objectMapper.registerModule(KotlinModule())
         bootstrap.addBundle(PrometheusBundle())
     }
