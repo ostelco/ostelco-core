@@ -37,7 +37,7 @@ class Neo4jStorageTest {
 
         sleep(MILLIS_TO_WAIT_WHEN_STARTING_UP.toLong())
         storage.removeSubscriber(EPHERMERAL_EMAIL)
-        storage.addSubscriber(Subscriber(EPHERMERAL_EMAIL), referredBy = null)
+        storage.addSubscriber(Subscriber(EPHERMERAL_EMAIL, country = COUNTRY), referredBy = null)
                 .mapLeft { fail(it.message) }
         storage.addSubscription(EPHERMERAL_EMAIL, MSISDN)
                 .mapLeft { fail(it.message) }
@@ -91,6 +91,7 @@ class Neo4jStorageTest {
 
         private const val EPHERMERAL_EMAIL = "attherate@dotcom.com"
         private const val MSISDN = "4747116996"
+        private const val COUNTRY = "NO"
 
         private const val MILLIS_TO_WAIT_WHEN_STARTING_UP = 3000
 
