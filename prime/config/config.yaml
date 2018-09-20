@@ -16,6 +16,8 @@ modules:
     config:
       lowBalanceThreshold: 100000000
   - type: pseudonymizer
+    config:
+      namespace: ${DATASTORE_NAMESPACE:-""}
   - type: api
     config:
       authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m

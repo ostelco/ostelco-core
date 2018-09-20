@@ -31,4 +31,5 @@ object ConfigRegistry {
  */
 class PseudonymServerConfig : Configuration() {
     var datastoreType = "default"
+    var namespace = ""
 }
