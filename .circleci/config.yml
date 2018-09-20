@@ -30,23 +30,23 @@ jobs:
             gsutil cp gs://pi-ostelco-core-gradle-cache/caches.tar.gz ~/caches.tar.gz
             mkdir -p ~/.gradle/caches/
             tar -xzvf ~/caches.tar.gz -C ~/.gradle/caches/ .
+      # Copying pantel prod secret to locations where it is needed for docker compose tests.
+      - run:
+          name: Distribute pantel-prod.json secret from env var.
+          command: |
+            scripts/distribute-pantel-secrets.sh
       # run gradle build. Skipping neo4j tests as they fail
       - run:
           name: Build entire repo
-          command: ./gradlew clean build -s -x :neo4j-store:test 
+          command: ./gradlew clean build -info -s -x :neo4j-store:test
 
       # persisting the entire project with its generated artifacts. They are needed in the build-image job below.
       # the default working directory in circleci is ~/project/
       - persist_to_workspace:
           root: ~/project/
           paths:
-            - .    
+            - .
 
-      # Copying pantel prod secret to locations where it is needed for docker compose tests.
-      - run:
-          name: Distribute pantel-prod.json secret from env var. 
-          command: |
-            scripts/distribute-pantel-secrets.sh
       # generating selfsigned certs. Needed for docker compose tests
       - run:
           name: Generate self signed certs
@@ -114,7 +114,7 @@ jobs:
             tar -xzvf ~/caches.tar.gz -C ~/.gradle/caches/ .
       - run:
           name: Gradle Build Prime
-          command:  ./gradlew clean prime:build  -x test -s
+          command:  ./gradlew clean prime:build -info -s -x test -x integration
       # - run:
       #     name: Gradle Build OCSGW 
       #     command: |
