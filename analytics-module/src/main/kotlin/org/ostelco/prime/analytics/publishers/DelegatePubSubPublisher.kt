@@ -30,10 +30,9 @@ class DelegatePubSubPublisher(
             val channel = ManagedChannelBuilder.forTarget(strSocketAddress).usePlaintext().build()
             // Create a publisher instance with default settings bound to the topic
             val channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel))
-            val credentialsProvider = NoCredentialsProvider()
             Publisher.newBuilder(topicName)
                     .setChannelProvider(channelProvider)
-                    .setCredentialsProvider(credentialsProvider)
+                    .setCredentialsProvider(NoCredentialsProvider())
                     .build();
         } else {
             Publisher.newBuilder(topicName).build()
