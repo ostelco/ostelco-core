@@ -460,7 +460,7 @@
           },
           "targets": [
             {
-              "expr": "total_data_used_today  / 1048576",
+              "expr": "total_data_used_today  / 1000000",
               "intervalFactor": 2,
               "legendFormat": "",
               "metric": "total_data_used_today",
@@ -924,7 +924,7 @@
           },
           "targets": [
             {
-              "expr": "total_data_used_yesterday / 1048576",
+              "expr": "total_data_used_yesterday / 1000000",
               "intervalFactor": 2,
               "legendFormat": "",
               "metric": "total_data_used_yesterday",
@@ -1290,5 +1290,5 @@
   },
   "timezone": "browser",
   "title": "Dashboard",
-  "version": 19
+  "version": 21
 }
