@@ -315,24 +315,4 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                 )
                 .flatMap { profileInfo -> paymentProcessor.getSavedSources(profileInfo.id).mapLeft { mapPaymentErrorToApiError("Failed to list sources", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_SOURCES_LIST, it) } }
     }
-
-
-    private fun mapPaymentErrorToApiError(description: String, errorCode: ApiErrorCode, paymentError: PaymentError ) : ApiError {
-        return when(paymentError) {
-            is org.ostelco.prime.paymentprocessor.core.ForbiddenError  ->  org.ostelco.prime.core.ForbiddenError(description, errorCode, paymentError)
-            is org.ostelco.prime.paymentprocessor.core.BadGatewayError -> org.ostelco.prime.core.BadGatewayError(description, errorCode)
-            is org.ostelco.prime.paymentprocessor.core.NotFoundError -> org.ostelco.prime.core.NotFoundError(description, errorCode, paymentError)
-        }
-    }
-
-    private fun mapStorageErrorToApiError(description: String, errorCode: ApiErrorCode, storeError: StoreError ) : ApiError {
-        return when(storeError) {
-            is org.ostelco.prime.storage.NotFoundError  ->  org.ostelco.prime.core.NotFoundError(description, errorCode, storeError)
-            is org.ostelco.prime.storage.AlreadyExistsError  ->  org.ostelco.prime.core.ForbiddenError(description, errorCode, storeError)
-            is org.ostelco.prime.storage.NotCreatedError  ->  org.ostelco.prime.core.BadGatewayError(description, errorCode)
-            is org.ostelco.prime.storage.NotUpdatedError  ->  org.ostelco.prime.core.BadGatewayError(description, errorCode)
-            is org.ostelco.prime.storage.NotDeletedError  ->  org.ostelco.prime.core.BadGatewayError(description, errorCode)
-            is org.ostelco.prime.storage.ValidationError  ->  org.ostelco.prime.core.ForbiddenError(description, errorCode, storeError)
-        }
-    }
 }
