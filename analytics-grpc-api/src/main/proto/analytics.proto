@@ -15,11 +15,13 @@ message DataTrafficInfo {
     uint64 bundleBytes = 3;
     google.protobuf.Timestamp timestamp = 4;
     string apn = 5;
-    string mncMcc = 6;
+    string mccMnc = 6;
 }
 
 message AggregatedDataTrafficInfo {
     string msisdn = 1;
     uint64 dataBytes = 2;
     google.protobuf.Timestamp timestamp = 3;
+    string apn = 4;
+    string mccMnc = 5;
 }

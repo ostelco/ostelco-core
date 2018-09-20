@@ -53,6 +53,8 @@ private object TableSchemas {
                 fields.add(TableFieldSchema().setName("bucketBytes").setType("INTEGER"))
                 fields.add(TableFieldSchema().setName("bundleBytes").setType("INTEGER"))
                 fields.add(TableFieldSchema().setName("timestamp").setType("TIMESTAMP"))
+                fields.add(TableFieldSchema().setName("apn").setType("STRING"))
+                fields.add(TableFieldSchema().setName("mccMnc").setType("STRING"))
                 TableSchema().setFields(fields)
             }
             HOURLY_CONSUMPTION, DAILY_CONSUMPTION -> {
@@ -60,6 +62,8 @@ private object TableSchemas {
                 fields.add(TableFieldSchema().setName("msisdn").setType("STRING"))
                 fields.add(TableFieldSchema().setName("bytes").setType("INTEGER"))
                 fields.add(TableFieldSchema().setName("timestamp").setType("TIMESTAMP"))
+                fields.add(TableFieldSchema().setName("apn").setType("STRING"))
+                fields.add(TableFieldSchema().setName("mccMnc").setType("STRING"))
                 TableSchema().setFields(fields)
             }
         }
@@ -75,6 +79,8 @@ val convertToRawTableRows = ParDoFn.transform<DataTrafficInfo, TableRow> {
             .set("bucketBytes", it.bucketBytes)
             .set("bundleBytes", it.bundleBytes)
             .set("timestamp", protobufTimestampToZonedDateTime(it.timestamp))
+            .set("apn", it.apn)
+            .set("mccMnc", it.mccMnc)
 }
 
 val convertToHourlyTableRows = ParDoFn.transform<AggregatedDataTrafficInfo, TableRow> {
@@ -82,6 +88,8 @@ val convertToHourlyTableRows = ParDoFn.transform<AggregatedDataTrafficInfo, Tabl
             .set("msisdn", it.msisdn)
             .set("bytes", it.dataBytes)
             .set("timestamp", protobufTimestampToZonedDateTime(it.timestamp))
+            .set("apn", it.apn)
+            .set("mccMnc", it.mccMnc)
 }
 
 fun protobufTimestampToZonedDateTime(timestamp: Timestamp) = ZonedDateTime.ofInstant(

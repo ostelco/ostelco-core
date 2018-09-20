@@ -5,7 +5,7 @@ import org.ostelco.prime.analytics.MetricType.GAUGE
 import org.ostelco.prime.model.PurchaseRecord
 
 interface AnalyticsService {
-    fun reportTrafficInfo(msisdn: String, usedBytes: Long, bundleBytes: Long, apn: String?, mncMcc: String?)
+    fun reportTrafficInfo(msisdn: String, usedBytes: Long, bundleBytes: Long, apn: String?, mccMnc: String?)
     fun reportMetric(primeMetric: PrimeMetric, value: Long)
     fun reportPurchaseInfo(purchaseRecord: PurchaseRecord, subscriberId: String, status: String)
 }

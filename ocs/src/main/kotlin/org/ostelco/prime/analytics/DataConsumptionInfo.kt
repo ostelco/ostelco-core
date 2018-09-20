@@ -33,7 +33,7 @@ class DataConsumptionInfo() : EventHandler<OcsEvent> {
                     usedBytes = event.request?.msccList?.firstOrNull()?.used?.totalOctets ?: 0L,
                     bundleBytes = event.bundleBytes,
                     apn = event.request?.serviceInformation?.psInformation?.calledStationId,
-                    mncMcc = event.request?.serviceInformation?.psInformation?.sgsnMccMnc)
+                    mccMnc = event.request?.serviceInformation?.psInformation?.sgsnMccMnc)
             analyticsReporter.reportMetric(
                     primeMetric = MEGABYTES_CONSUMED,
                     value = (event.request?.msccList?.firstOrNull()?.used?.totalOctets ?: 0L) / 1_000_000)
