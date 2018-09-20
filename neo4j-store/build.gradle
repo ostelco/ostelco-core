@@ -19,7 +19,7 @@ repositories {
 }
 dependencies {
 
-  implementation project(":prime-api")
+  implementation project(":prime-modules")
   implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
   implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
 

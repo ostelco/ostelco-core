@@ -131,6 +131,8 @@ spec:
         env:
         - name: FIREBASE_ROOT_PATH
           value: dev
+        - name: DATASTORE_NAMESPACE
+          value: dev
         - name: STRIPE_API_KEY
           valueFrom:
             secretKeyRef:
