@@ -21,3 +21,14 @@ message AggregatedDataTrafficInfo {
     uint64 dataBytes = 2;
     google.protobuf.Timestamp timestamp = 3;
 }
+
+message User {
+    string msisdn = 1;
+    string apn = 2;
+    string mnc_mcc = 3;
+}
+
+message ActiveUsersInfo {
+    repeated User users = 1;
+    google.protobuf.Timestamp timestamp = 2;
+}

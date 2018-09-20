@@ -10,16 +10,16 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonSerializer
 import com.google.gson.reflect.TypeToken
 import com.google.protobuf.ByteString
+import com.google.protobuf.util.Timestamps
 import com.google.pubsub.v1.PubsubMessage
+import org.ostelco.analytics.api.ActiveUsersInfo
 import org.ostelco.prime.analytics.ConfigRegistry
 import org.ostelco.prime.logger
 import org.ostelco.prime.metrics.api.User
-import org.ostelco.prime.model.PurchaseRecord
-import org.ostelco.prime.model.PurchaseRecordInfo
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.pseudonymizer.PseudonymizerService
 import java.net.URLEncoder
-
+import java.time.Instant
 
 /**
  * This class publishes the active users information events to the Google Cloud Pub/Sub.
@@ -52,19 +52,23 @@ object ActiveUsersPublisher :
         return builder.create()
     }
 
-    private fun convertToJson(purchaseRecordInfo: PurchaseRecordInfo): ByteString =
-            ByteString.copyFromUtf8(gson.toJson(purchaseRecordInfo))
+    private fun convertToJson(activeUsersInfo: ActiveUsersInfo): ByteString =
+            ByteString.copyFromUtf8(gson.toJson(activeUsersInfo))
 
 
     fun publish(userList: List<User>) {
+        val activeUsersInfoBuilder = ActiveUsersInfo.newBuilder().setTimestamp(Timestamps.fromMillis(Instant.now().toEpochMilli()))
+        val timestamp = Instant.now().toEpochMilli()
         for (user in userList) {
+            val userBuilder = org.ostelco.analytics.api.User.newBuilder()
             val encodedSubscriberId = URLEncoder.encode(user.msisdn, "UTF-8")
-            val pseudonym = pseudonymizerService.getSubscriberIdPseudonym(encodedSubscriberId, purchaseRecord.timestamp).pseudonym
+            val pseudonym = pseudonymizerService.getSubscriberIdPseudonym(encodedSubscriberId, timestamp).pseudonym
+            activeUsersInfoBuilder.addUsers(userBuilder.setApn(user.apn).setMncMcc(user.mncMcc).setMsisdn(pseudonym).build())
         }
 
 
         val pubsubMessage = PubsubMessage.newBuilder()
-                .setData(convertToJson(PurchaseRecordInfo(purchaseRecord, pseudonym, status)))
+                .setData(convertToJson(activeUsersInfoBuilder.build()))
                 .build()
 
         //schedule a message to be published, messages are automatically batched
@@ -79,7 +83,7 @@ object ActiveUsersPublisher :
                     logger.warn("Status code: {}", throwable.statusCode.code)
                     logger.warn("Retrying: {}", throwable.isRetryable)
                 }
-                logger.warn("Error publishing purchase record for msisdn: {}", purchaseRecord.msisdn)
+                logger.warn("Error publishing active users list")
             }
 
             override fun onSuccess(messageId: String) {
