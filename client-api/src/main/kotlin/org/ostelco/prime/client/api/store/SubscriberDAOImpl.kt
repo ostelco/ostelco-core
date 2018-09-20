@@ -23,6 +23,7 @@ import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
+import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
 import org.ostelco.prime.pseudonymizer.PseudonymizerService
 import org.ostelco.prime.storage.ClientDataSource
 import org.ostelco.prime.storage.StoreError
@@ -306,7 +307,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                 .flatMap { profileInfo -> paymentProcessor.setDefaultSource(profileInfo.id, sourceId).mapLeft { mapPaymentErrorToApiError("Failed to set default payment source", ApiErrorCode.FAILED_TO_SET_DEFAULT_PAYMENT_SOURCE, it) } }
     }
 
-    override fun listSources(subscriberId: String): Either<ApiError, List<SourceInfo>> {
+    override fun listSources(subscriberId: String): Either<ApiError, List<SourceDetailsInfo>> {
         return paymentProcessor.getPaymentProfile(subscriberId)
                 .fold(
                         { paymentProcessor.createPaymentProfile(subscriberId).mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_FETCH_PAYMENT_SOURCES_LIST, error) } },
