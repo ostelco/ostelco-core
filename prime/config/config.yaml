@@ -12,6 +12,7 @@ modules:
       projectId: pantel-2decb
       dataTrafficTopicId: data-traffic
       purchaseInfoTopicId: purchase-info
+      activeUsersTopicId: active-users
   - type: ocs
     config:
       lowBalanceThreshold: 100000000

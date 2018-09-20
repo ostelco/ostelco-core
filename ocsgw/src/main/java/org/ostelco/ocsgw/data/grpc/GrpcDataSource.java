@@ -25,6 +25,8 @@ import org.ostelco.diameter.model.SessionContext;
 import org.ostelco.ocs.api.*;
 import org.ostelco.ocsgw.OcsServer;
 import org.ostelco.ocsgw.data.DataSource;
+import org.ostelco.prime.metrics.api.OcsgwAnalyticsReport;
+import org.ostelco.prime.metrics.api.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -281,7 +283,18 @@ public class GrpcDataSource implements DataSource {
     private void updateAnalytics() {
         LOG.info("Number of active sesssions is {}", sessionIdMap.size());
 
-        ocsgwAnalytics.sendAnalytics(sessionIdMap.size());
+
+        OcsgwAnalyticsReport.Builder builder = OcsgwAnalyticsReport.newBuilder().setActiveSessions(sessionIdMap.size());
+        sessionIdMap.forEach((msisdn, sessionContext) -> {
+            try {
+                String apn = ccrMap.get(msisdn).getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0).getCalledStationId();
+                String mncMcc = ccrMap.get(msisdn).getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0).getSgsnMncMcc();
+                builder.addUsers(User.newBuilder().setApn(apn).setMncMcc(mncMcc).build());
+            } catch (Exception e) {
+                LOG.info("Failed to match session info to ccr map");
+            }
+        });
+        ocsgwAnalytics.sendAnalytics(builder.build());
     }
 
     private void initActivate() {

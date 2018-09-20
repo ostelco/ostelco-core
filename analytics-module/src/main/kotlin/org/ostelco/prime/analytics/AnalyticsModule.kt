@@ -43,6 +43,10 @@ class AnalyticsConfig {
     @NotEmpty
     @JsonProperty("purchaseInfoTopicId")
     lateinit var purchaseInfoTopicId: String
+
+    @NotEmpty
+    @JsonProperty("activeUsersTopicId")
+    lateinit var activeUsersTopicId: String
 }
 
 object ConfigRegistry {
