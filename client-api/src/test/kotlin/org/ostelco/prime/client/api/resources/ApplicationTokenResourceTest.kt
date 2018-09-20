@@ -69,11 +69,11 @@ class ApplicationTokenResourceTest {
                 .request(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
-                .post(Entity.json("{\n" +
-                        "    \"token\": \"" + token + "\",\n" +
-                        "    \"applicationID\": \"" + applicationID + "\",\n" +
-                        "    \"tokenType\": \"" + tokenType + "\"\n" +
-                        "}\n"))
+                .post(Entity.json("""{
+                    "token": "$token",
+                    "applicationID": "$applicationID",
+                    "tokenType": "$tokenType"
+                }""".trimIndent()))
 
         assertThat(resp.status).isEqualTo(Response.Status.CREATED.statusCode)
         assertThat(resp.mediaType.toString()).isEqualTo(MediaType.APPLICATION_JSON)
