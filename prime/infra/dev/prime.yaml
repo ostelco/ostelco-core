@@ -133,6 +133,10 @@ spec:
           value: dev
         - name: DATASTORE_NAMESPACE
           value: dev
+        - name: DATA_TRAFFIC_TOPIC
+          value: data-traffic-dev
+        - name: PURCHASE_INFO_TOPIC
+          value: purchase-info-dev
         - name: STRIPE_API_KEY
           valueFrom:
             secretKeyRef:

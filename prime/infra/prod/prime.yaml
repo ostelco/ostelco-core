@@ -95,6 +95,10 @@ spec:
         env:
         - name: FIREBASE_ROOT_PATH
           value: v2
+        - name: DATA_TRAFFIC_TOPIC
+          value: data-traffic
+        - name: PURCHASE_INFO_TOPIC
+          value: purchase-info
         - name: STRIPE_API_KEY
           valueFrom:
             secretKeyRef:
