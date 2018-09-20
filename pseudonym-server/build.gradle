@@ -7,7 +7,7 @@ dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
 
   implementation project(':ocs-grpc-api')
-  implementation project(':prime-api')
+  implementation project(':prime-modules')
   implementation project(':model')
   implementation project(':analytics-grpc-api')
 
