@@ -58,16 +58,12 @@ object CustomMetricsRegistry {
         }
     }
 
-    /**
-     * Register counter with value from counterMap
-     */
+    // Register counter with value from counterMap
     private fun registerCounter(primeMetric: PrimeMetric) {
         registry.register(primeMetric.metricName, counterMap[primeMetric])
     }
 
-    /**
-     * Register gauge with value from gaugeValueMap as its source
-     */
+    // Register gauge with value from gaugeValueMap as its source
     private fun registerGauge(primeMetric: PrimeMetric) {
         registry.register(primeMetric.metricName, Gauge<Long> { gaugeValueMap[primeMetric] })
     }
