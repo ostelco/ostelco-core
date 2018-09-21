@@ -50,9 +50,6 @@ class AuthResource {
         return Response.ok(customToken, MediaType.TEXT_PLAIN_TYPE).build()
     }
 
-    /**
-     * As of now, `msisdn` is considered as `user-id`.
-     * This is subjected to change in future.
-     */
+    // As of now, `msisdn` is considered as `user-id`. This is subjected to change in future.
     private fun getUid(msisdn: String) = msisdn
 }

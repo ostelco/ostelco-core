@@ -4,7 +4,7 @@ plugins {
 }
 
 dependencies {
-  implementation project(":prime-api")
+  implementation project(":prime-modules")
   implementation project(":firebase-extensions")
 
   testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"

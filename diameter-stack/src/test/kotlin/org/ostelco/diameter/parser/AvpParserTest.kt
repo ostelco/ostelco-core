@@ -16,24 +16,24 @@ class AvpParserTest {
     @Test
     fun parsePsInformation() {
         val calledStationIdAvp = Mockito.mock(Avp::class.java)
-        val sgsnMncMccAvp = Mockito.mock(Avp::class.java)
+        val sgsnMccMncAvp = Mockito.mock(Avp::class.java)
 
         `when`(calledStationIdAvp.utF8String).thenReturn("panacea")
         `when`(calledStationIdAvp.code).thenReturn(30)
         `when`(calledStationIdAvp.vendorId).thenReturn(0)
 
-        `when`(sgsnMncMccAvp.utF8String).thenReturn("24201")
-        `when`(sgsnMncMccAvp.code).thenReturn(Avp.GPP_SGSN_MCC_MNC)
-        `when`(sgsnMncMccAvp.vendorId).thenReturn(VENDOR_ID_3GPP)
+        `when`(sgsnMccMncAvp.utF8String).thenReturn("24201")
+        `when`(sgsnMccMncAvp.code).thenReturn(Avp.GPP_SGSN_MCC_MNC)
+        `when`(sgsnMccMncAvp.vendorId).thenReturn(VENDOR_ID_3GPP)
 
         val set = Mockito.mock(AvpSet::class.java)
         `when`(set.getAvp(30)).thenReturn(calledStationIdAvp)
-        `when`(set.getAvp(Avp.GPP_SGSN_MCC_MNC)).thenReturn(sgsnMncMccAvp)
+        `when`(set.getAvp(Avp.GPP_SGSN_MCC_MNC)).thenReturn(sgsnMccMncAvp)
 
         val psInformation = AvpParser().parse(PsInformation::class, set)
 
         assertEquals("panacea", psInformation.calledStationId)
-        assertEquals("24201", psInformation.sgsnMncMcc)
+        assertEquals("24201", psInformation.sgsnMccMnc)
     }
 
     @Test
