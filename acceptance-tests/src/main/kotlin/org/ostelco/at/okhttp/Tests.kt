@@ -77,8 +77,7 @@ class ProfileTest {
         assertEquals("", clearedProfile.postCode, "Incorrect 'postcode' in response after clearing profile")
         assertEquals("", clearedProfile.city, "Incorrect 'city' in response after clearing profile")
 
-        updatedProfile
-                .country("")
+        updatedProfile.country("")
 
         assertFailsWith(ApiException::class, "Incorrectly accepts that 'country' is cleared/not set") {
             client.updateProfile(updatedProfile)
