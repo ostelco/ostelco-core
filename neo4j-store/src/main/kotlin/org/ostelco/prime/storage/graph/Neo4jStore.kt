@@ -355,7 +355,6 @@ object Neo4jStoreSingleton : GraphStore {
                                 {
                                     var linkedSource = sourceId
                                     if (!it.any{ sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
-                                        //paymentProcessor.addSource(profileInfo.id, sourceId).map { sourceInfo -> Triple(product, profileInfo, sourceInfo.id) }
                                         paymentProcessor.addSource(profileInfo.id, sourceId).map { sourceInfo -> linkedSource = sourceInfo.id }
                                     }
                                     Either.right(Triple(product,profileInfo, linkedSource))
