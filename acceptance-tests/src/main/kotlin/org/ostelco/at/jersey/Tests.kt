@@ -96,8 +96,7 @@ class ProfileTest {
         assertEquals("", clearedProfile.postCode, "Incorrect 'postcode' in response after clearing profile")
         assertEquals("", clearedProfile.city, "Incorrect 'city' in response after clearing profile")
 
-        updatedProfile
-                .country("")
+        updatedProfile.country("")
 
         // A test in 'HttpClientUtil' checks for status code 200 while the
         // expected status code is actually 400.

@@ -7,7 +7,6 @@ import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.analytics.PrimeMetric.REVENUE
 import org.ostelco.prime.analytics.PrimeMetric.USERS_PAID_AT_LEAST_ONCE
-import org.ostelco.prime.core.ApiError
 import org.ostelco.prime.logger
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Offer
@@ -24,8 +23,6 @@ import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.BadGatewayError
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
-import org.ostelco.prime.paymentprocessor.core.ProfileInfo
-import org.ostelco.prime.storage.DocumentStore
 import org.ostelco.prime.storage.GraphStore
 import org.ostelco.prime.storage.NotFoundError
 import org.ostelco.prime.storage.StoreError
@@ -155,7 +152,23 @@ object Neo4jStoreSingleton : GraphStore {
         val bundleId = subscriber.id
 
         val either = subscriberStore.create(subscriber, transaction)
-                .flatMap { subscriberToSegmentStore.create(subscriber.id, subscriber.country.toLowerCase(), transaction) }
+                .flatMap {
+                    subscriberToSegmentStore
+                            .create(subscriber.id,
+                                    getSegmentNameFromCountryCode(subscriber.country),
+                                    transaction)
+                            .mapLeft { storeError ->
+                                if (storeError is NotFoundError && storeError.type == segmentEntity.name) {
+                                    ValidationError(
+                                            type = subscriberEntity.name,
+                                            id = subscriber.id,
+                                            message = "Unsupported country: ${subscriber.country}")
+                                } else {
+                                    storeError
+                                }
+                            }
+                }
+
         if (referredBy != null) {
             // Give 1 GB if subscriber is referred
             either
@@ -197,7 +210,18 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
     // << END
-    
+
+    // Helper for naming of default segments based on country code.
+
+    fun getSegmentNameFromCountryCode(country: String) : String {
+        val segmentName = when (country.toUpperCase()) {
+            "NO" -> "Norway_${country}"
+            "SG" -> "Singapore_${country}"
+            else -> ""
+        }
+        return segmentName.toLowerCase()
+    }
+
     override fun updateSubscriber(subscriber: Subscriber): Either<StoreError, Unit> = writeTransaction {
         subscriberStore.update(subscriber, transaction)
                 .ifFailedThenRollback(transaction)

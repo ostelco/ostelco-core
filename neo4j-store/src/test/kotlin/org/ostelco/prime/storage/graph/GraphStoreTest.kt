@@ -40,15 +40,15 @@ class GraphStoreTest {
 
         Neo4jStoreSingleton.createProduct(
                 Product(sku = "100MB_FREE_ON_JOINING",
-                        price = Price(0, "NOK"),
+                        price = Price(0, CURRENCY),
                         properties = mapOf("noOfBytes" to "100_000_000")))
 
         Neo4jStoreSingleton.createProduct(
                 Product(sku = "1GB_FREE_ON_REFERRED",
-                        price = Price(0, "NOK"),
+                        price = Price(0, CURRENCY),
                         properties = mapOf("noOfBytes" to "1_000_000_000")))
 
-        val allSegment = Segment(id = "no")
+        val allSegment = Segment(id = Neo4jStoreSingleton.getSegmentNameFromCountryCode(COUNTRY))
         Neo4jStoreSingleton.createSegment(allSegment)
     }
 
@@ -162,6 +162,7 @@ class GraphStoreTest {
     companion object {
         const val EMAIL = "foo@bar.com"
         const val NAME = "Test User"
+        const val CURRENCY = "NOK"
         const val COUNTRY = "NO"
         const val MSISDN = "4712345678"
 
