@@ -21,6 +21,13 @@ class StripePaymentProcessor : PaymentProcessor {
                     sources.add(SourceDetailsInfo(it.id, getAccountType(details), details))
                 }
                 sources
+//                sources.sortWith(Comparator<SourceDetailsInfo> {
+//                    override fun compare(p1: SourceDetailsInfo, p2: SourceDetailsInfo) : Int when {
+//                            p1.id > p2.id -> 1
+//                            p1.id == p2.id -> 0
+//                            else -> -1
+//                    }
+//                })
             }
 
     private fun getAccountType(details: Map<String, Any>) : String {
@@ -30,6 +37,7 @@ class StripePaymentProcessor : PaymentProcessor {
     /* Returns detailed 'account details' for the given Stripe source/account.
        Note that including the fields 'id' and 'type' are manadatory. */
     private fun getAccountDetails(accountInfo: ExternalAccount) : Map<String, Any> {
+        logger.info(">>> details: {}", accountInfo)
         when (accountInfo) {
             is Card -> {
                 return mapOf("id" to accountInfo.id,
@@ -43,6 +51,9 @@ class StripePaymentProcessor : PaymentProcessor {
                              "country" to accountInfo.country,
                              "currency" to accountInfo.currency,
                              "cvcCheck" to accountInfo.cvcCheck,
+                             "created" to accountInfo.metadata.getOrElse("created") {
+                                 "${System.currentTimeMillis() / 1000}"
+                              },
                              "expMonth" to accountInfo.expMonth,
                              "expYear" to accountInfo.expYear,
                              "fingerprint" to accountInfo.fingerprint,
@@ -119,7 +130,8 @@ class StripePaymentProcessor : PaymentProcessor {
     override fun addSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo> =
             either("Failed to add source $sourceId to customer $customerId") {
                 val customer = Customer.retrieve(customerId)
-                val params = mapOf("source" to sourceId)
+                val params = mapOf("source" to sourceId,
+                        "metadata" to mapOf("created" to "${System.currentTimeMillis() / 1000}"))
                 SourceInfo(customer.sources.create(params).id)
             }
 
