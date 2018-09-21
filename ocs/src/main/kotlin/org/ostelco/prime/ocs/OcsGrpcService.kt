@@ -59,11 +59,6 @@ class OcsGrpcService(private val ocsService: OcsService) : OcsServiceGrpc.OcsSer
         return StreamObserverForStreamWithId(streamId)
     }
 
-    /**
-     * Return an unique ID based on Java's UUID generator that uniquely
-     * identifies a stream of values.
-     * @return A new unique identifier.
-     */
     private fun newUniqueStreamId(): String {
         return UUID.randomUUID().toString()
     }

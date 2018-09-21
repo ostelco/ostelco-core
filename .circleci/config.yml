@@ -67,7 +67,7 @@ jobs:
   code-coverage:
     environment:
       CODACY_DOWNLOAD_URL: https://github.com/codacy/codacy-coverage-reporter/releases/download
-      CODACY_VERSION: 4.0.1
+      CODACY_VERSION: 4.0.3
       CODACY_JAR_FILE: codacy-coverage-reporter-assembly-latest.jar
       CODACY_MODULE: com.codacy.CodacyCoverageReporter
   

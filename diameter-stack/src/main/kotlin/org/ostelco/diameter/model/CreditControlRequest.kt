@@ -7,7 +7,7 @@ import org.ostelco.diameter.model.SubscriptionType.END_USER_IMSI
 import org.ostelco.diameter.parser.AvpField
 import org.ostelco.diameter.parser.AvpList
 
-class CreditControlRequest() {
+class CreditControlRequest {
 
     @AvpList(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL, MultipleServiceCreditControl::class)
     var multipleServiceCreditControls: List<MultipleServiceCreditControl> = emptyList()

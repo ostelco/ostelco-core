@@ -35,10 +35,10 @@ class PurchasesResourceTest {
     private val email = "mw@internet.org"
 
     private val userInfo = Base64.getEncoder().encodeToString(
-            """|{
-               |  "issuer": "someone",
-               |  "email": "mw@internet.org"
-               |}""".trimMargin()
+            """{
+                 "issuer": "someone",
+                 "email": "mw@internet.org"
+               }""".trimIndent()
                     .toByteArray())
 
     @Before
