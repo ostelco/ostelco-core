@@ -14,8 +14,8 @@ dependencies {
   implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
   implementation "com.google.guava:guava:$guavaVersion"
   // Match with grpc-netty-shaded via PubSub
-  // removing io.grpc:grpc-netty-shaded:1.14.0 causes ALPN error
-  implementation 'io.grpc:grpc-netty-shaded:1.14.0'
+  // removing io.grpc:grpc-netty-shaded causes ALPN error
+  implementation "io.grpc:grpc-netty-shaded:$grpcVersion"
   implementation "com.google.cloud:google-cloud-bigquery:$googleCloudVersion"
   implementation "com.google.cloud:google-cloud-datastore:$googleCloudVersion"
   implementation "com.google.cloud:google-cloud-pubsub:$googleCloudVersion"
