@@ -21,10 +21,7 @@ import org.ostelco.prime.module.getResource
 import org.ostelco.prime.ocs.OcsAdminService
 import org.ostelco.prime.ocs.OcsSubscriberService
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
-import org.ostelco.prime.paymentprocessor.core.BadGatewayError
-import org.ostelco.prime.paymentprocessor.core.PaymentError
-import org.ostelco.prime.paymentprocessor.core.ProductInfo
-import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.paymentprocessor.core.*
 import org.ostelco.prime.storage.DocumentStore
 import org.ostelco.prime.storage.GraphStore
 import org.ostelco.prime.storage.NotFoundError
@@ -351,7 +348,20 @@ object Neo4jStoreSingleton : GraphStore {
                 .flatMap { (product, profileInfo) ->
                     // Add payment source
                     if (sourceId != null) {
-                        paymentProcessor.addSource(profileInfo.id, sourceId).map { sourceInfo -> Triple(product, profileInfo, sourceInfo.id) }
+                paymentProcessor.getSavedSources(profileInfo.id)
+                        .fold(
+                                {
+                                    Either.left(org.ostelco.prime.paymentprocessor.core.BadGatewayError("Failed to fetch sources for user", it.description))
+                                },
+                                {
+                                    var linkedSource = sourceId
+                                    if (!it.any{ sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
+                                        //paymentProcessor.addSource(profileInfo.id, sourceId).map { sourceInfo -> Triple(product, profileInfo, sourceInfo.id) }
+                                        paymentProcessor.addSource(profileInfo.id, sourceId).map { sourceInfo -> linkedSource = sourceInfo.id }
+                                    }
+                                    Either.right(Triple(product,profileInfo, linkedSource))
+                                }
+                        )
                     } else {
                         Either.right(Triple(product, profileInfo, null))
                     }
@@ -413,7 +423,7 @@ object Neo4jStoreSingleton : GraphStore {
             if (!saveCard && savedSourceId != null) {
                 paymentProcessor.removeSource(profileInfo.id, savedSourceId)
                         .mapLeft { paymentError ->
-                            logger.error("Failed to remove card, for customerId ${profileInfo.id}, sourceId $sourceId")
+                            logger.error("Failed to remove card, for customerId ${profileInfo.id}, sourceId $savedSourceId")
                             paymentError
                         }
             }

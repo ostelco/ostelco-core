@@ -8,9 +8,6 @@ import com.stripe.model.*
 import org.ostelco.prime.paymentprocessor.core.*
 import com.stripe.model.Customer
 
-
-
-
 class StripePaymentProcessor : PaymentProcessor {
 
     private val logger by logger()
@@ -81,7 +78,7 @@ class StripePaymentProcessor : PaymentProcessor {
                     "email" to userEmail)
             val customerList = Customer.list(customerParams)
             if (customerList.data.isEmpty()) {
-                 return Either.left(NotFoundError("Could not find a payment profile for user  $userEmail"))
+                 return Either.left(NotFoundError("Could not find a payment profile for user $userEmail"))
             } else if (customerList.data.size > 1){
                  return Either.left(NotFoundError("Multiple profiles for user $userEmail found"))
             } else {
