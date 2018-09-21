@@ -19,20 +19,20 @@ This phase contains the following jobs:
 
 ## Environment variables
 
-| Env Var | Description | Phase(s) |
-|---------|-------------|----------|
-|     BUILD_ENV    |             |          |
-|     CODACY_PROJECT_TOKEN    |             |          |
-|     DEV_PROJECT    |             |          |
-|      GITHUB_TOKEN   |             |          |
-|     GITHUB_USER    |             |          |
-|     GIT_USER_EMAIL    |             |          |
-|      GIT_USER_NAME | | |
-| GOOGLE_DEV_ENDPOINTS_CREDENTIALS | | |
-| GOOGLE_GCR_CREDENTIALS | | |
-| GOOGLE_PROD_ENDPOINTS_CREDENTIALS | | |
-| PANTEL_SECRETS_FILE | | |
-| PI_DEV_CLUSTER_CREDENTIALS | | |
-| PI_PROD_CLUSTER_CREDENTIALS | | |
-| PROD_PROJECT | | |
-| STRIPE_API_KEY | | |
+| Env Var                           | Description   | Phase(s)   |
+| --------------------------------- | ------------- | ---------- |
+| BUILD_ENV                         |               |            |
+| CODACY_PROJECT_TOKEN              |               |            |
+| DEV_PROJECT                       |               |            |
+| GITHUB_TOKEN                      |               |            |
+| GITHUB_USER                       |               |            |
+| GIT_USER_EMAIL                    |               |            |
+| GIT_USER_NAME                     |               |            |
+| GOOGLE_DEV_ENDPOINTS_CREDENTIALS  |               |            |
+| GOOGLE_GCR_CREDENTIALS            |               |            |
+| GOOGLE_PROD_ENDPOINTS_CREDENTIALS |               |            |
+| PANTEL_SECRETS_FILE               |               |            |
+| PI_DEV_CLUSTER_CREDENTIALS        |               |            |
+| PI_PROD_CLUSTER_CREDENTIALS       |               |            |
+| PROD_PROJECT                      |               |            |
+| STRIPE_API_KEY                    |               |            |

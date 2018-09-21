@@ -94,14 +94,8 @@ class EntityStore<E>(
             URLDecoder.decode(value, StandardCharsets.UTF_8.name())
                     .replace(oldValue = "%2E", newValue = ".")
 
-    /**
-     * Check if entity exists for a given value
-     */
     private fun exists(id: String, reference: EntityStore<E>.() -> DatabaseReference = { databaseReference }) = get(id, reference) != null
 
-    /**
-     * Inverse of exists
-     */
     private fun dontExists(id: String, reference: EntityStore<E>.() -> DatabaseReference = { databaseReference }) = !exists(id, reference)
 
     /**

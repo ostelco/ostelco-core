@@ -107,14 +107,14 @@ object TestHelper {
         }
     }
 
-    private fun addServiceInformation(ccrAvps: AvpSet, apn: String, sgsnMncMcc: String) {
+    private fun addServiceInformation(ccrAvps: AvpSet, apn: String, sgsnMccMnc: String) {
 
         set(ccrAvps) {
 
             group(Avp.SERVICE_INFORMATION, vendorId = VENDOR_ID_3GPP) {
                 group(PS_INFORMATION, vendorId = VENDOR_ID_3GPP) {
                     avp(CALLED_STATION_ID, apn, pFlag = true)
-                    avp(Avp.GPP_SGSN_MCC_MNC, sgsnMncMcc, vendorId = VENDOR_ID_3GPP, asOctetString = true)
+                    avp(Avp.GPP_SGSN_MCC_MNC, sgsnMccMnc, vendorId = VENDOR_ID_3GPP, asOctetString = true)
                 }
             }
         }
@@ -127,7 +127,7 @@ object TestHelper {
         buildBasicRequest(ccrAvps, RequestType.INITIAL_REQUEST, requestNumber = 0)
         addUser(ccrAvps, msisdn = msisdn, imsi = IMSI)
         addBucketRequest(ccrAvps, ratingGroup = 10, serviceIdentifier = 1, bucketSize = bucketSize)
-        addServiceInformation(ccrAvps, apn = APN, sgsnMncMcc = SGSN_MCC_MNC)
+        addServiceInformation(ccrAvps, apn = APN, sgsnMccMnc = SGSN_MCC_MNC)
     }
 
     @JvmStatic
@@ -135,7 +135,7 @@ object TestHelper {
         buildBasicRequest(ccrAvps, RequestType.UPDATE_REQUEST, requestNumber = 1)
         addUser(ccrAvps, msisdn = msisdn, imsi = IMSI)
         addBucketRequest(ccrAvps, ratingGroup = 10, serviceIdentifier = 1, bucketSize = bucketSize, usedBucketSize = usedBucketSize)
-        addServiceInformation(ccrAvps, apn = APN, sgsnMncMcc = SGSN_MCC_MNC)
+        addServiceInformation(ccrAvps, apn = APN, sgsnMccMnc = SGSN_MCC_MNC)
     }
 
     @JvmStatic
@@ -143,7 +143,7 @@ object TestHelper {
         buildBasicRequest(ccrAvps, RequestType.UPDATE_REQUEST, requestNumber = 1)
         addUser(ccrAvps, msisdn = msisdn, imsi = IMSI)
         addFinalBucketRequest(ccrAvps, ratingGroup = 10, serviceIdentifier = 1)
-        addServiceInformation(ccrAvps, apn = APN, sgsnMncMcc = SGSN_MCC_MNC)
+        addServiceInformation(ccrAvps, apn = APN, sgsnMccMnc = SGSN_MCC_MNC)
     }
 
     @JvmStatic
@@ -151,13 +151,13 @@ object TestHelper {
         buildBasicRequest(ccrAvps, RequestType.TERMINATION_REQUEST, requestNumber = 2)
         addUser(ccrAvps, msisdn = msisdn, imsi = IMSI)
         addTerminateRequest(ccrAvps, ratingGroup = 10, serviceIdentifier = 1, bucketSize = bucketSize)
-        addServiceInformation(ccrAvps, apn = APN, sgsnMncMcc = SGSN_MCC_MNC)
+        addServiceInformation(ccrAvps, apn = APN, sgsnMccMnc = SGSN_MCC_MNC)
     }
 
     @JvmStatic
     fun createTerminateRequest(ccrAvps: AvpSet, msisdn: String) {
         buildBasicRequest(ccrAvps, RequestType.TERMINATION_REQUEST, requestNumber = 2)
         addUser(ccrAvps, msisdn = msisdn, imsi = IMSI)
-        addServiceInformation(ccrAvps, apn = APN, sgsnMncMcc = SGSN_MCC_MNC)
+        addServiceInformation(ccrAvps, apn = APN, sgsnMccMnc = SGSN_MCC_MNC)
     }
 }

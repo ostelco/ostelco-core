@@ -124,14 +124,10 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<OcsEvent> {
         return bundleBalanceMap[bundleId] ?: 0
     }
 
-    /**
+    /*
      * Add to subscriber's data bundle balance in bytes.
      * This is called when subscriber top ups. or, P-GW returns
      * unused data after subscriber disconnects data.
-     *
-     * @param bundleId Bundle ID
-     * @param bytes Number of bytes we want to add
-     * @return bytes data bundle balance in bytes
      */
     private fun addDataBundleBytes(bundleId: String, bytes: Long): Long {
 
