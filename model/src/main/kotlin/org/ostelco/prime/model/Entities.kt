@@ -9,12 +9,12 @@ interface HasId {
 
 data class Offer(
         override val id: String,
-        @JsonIgnore val segments: Collection<String> = emptyList(),
-        @JsonIgnore val products: Collection<String> = emptyList()) : HasId
+        val segments: Collection<String> = emptyList(),
+        val products: Collection<String> = emptyList()) : HasId
 
 data class Segment(
         override val id: String,
-        @JsonIgnore val subscribers: Collection<String> = emptyList()) : HasId
+        val subscribers: Collection<String> = emptyList()) : HasId
 
 data class Subscriber(
         val email: String,

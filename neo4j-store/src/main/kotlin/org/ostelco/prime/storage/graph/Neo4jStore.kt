@@ -7,7 +7,6 @@ import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.analytics.PrimeMetric.REVENUE
 import org.ostelco.prime.analytics.PrimeMetric.USERS_PAID_AT_LEAST_ONCE
-import org.ostelco.prime.core.ApiError
 import org.ostelco.prime.logger
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Offer
@@ -194,7 +193,7 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
     // << END
-    
+
     override fun updateSubscriber(subscriber: Subscriber): Either<StoreError, Unit> = writeTransaction {
         subscriberStore.update(subscriber, transaction)
                 .ifFailedThenRollback(transaction)
@@ -568,6 +567,7 @@ object Neo4jStoreSingleton : GraphStore {
             result.single().get("count").asLong()
         }
     }
+
     //
     // Stores
     //
@@ -590,34 +590,106 @@ object Neo4jStoreSingleton : GraphStore {
     private val productClassEntity = EntityType(ProductClass::class.java)
     private val productClassStore = EntityStore(productClassEntity)
 
+    //
+    // Product Class
+    //
     override fun createProductClass(productClass: ProductClass): Either<StoreError, Unit> = writeTransaction {
         productClassStore.create(productClass, transaction)
                 .ifFailedThenRollback(transaction)
     }
 
+    //
+    // Product
+    //
     override fun createProduct(product: Product): Either<StoreError, Unit> = writeTransaction {
-        productStore.create(product, transaction)
+        createProduct(product, transaction)
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun createSegment(segment: Segment): Either<StoreError, Unit> {
-        return writeTransaction {
-            segmentStore.create(segment, transaction)
-                    .flatMap { subscriberToSegmentStore.create(segment.subscribers, segment.id, transaction) }
-                    .ifFailedThenRollback(transaction)
-        }
+    private fun createProduct(product: Product, transaction: Transaction): Either<StoreError, Unit> =
+            productStore.create(product, transaction)
+
+    //
+    // Segment
+    //
+    override fun createSegment(segment: Segment): Either<StoreError, Unit> = writeTransaction {
+        createSegment(segment, transaction)
+                .ifFailedThenRollback(transaction)
     }
 
-    override fun createOffer(offer: Offer): Either<StoreError, Unit> = writeTransaction {
-        offerStore
-                .create(offer, transaction)
-                .flatMap { offerToSegmentStore.create(offer.id, offer.segments, transaction) }
-                .flatMap { offerToProductStore.create(offer.id, offer.products, transaction) }
-                .ifFailedThenRollback(transaction)
+    private fun createSegment(segment: Segment, transaction: Transaction): Either<StoreError, Unit> {
+        return segmentStore.create(segment, transaction)
+                .flatMap { subscriberToSegmentStore.create(segment.subscribers, segment.id, transaction) }
     }
 
     override fun updateSegment(segment: Segment): Either<StoreError, Unit> = writeTransaction {
         subscriberToSegmentStore.create(segment.id, segment.subscribers, transaction)
+                .ifFailedThenRollback(transaction)
+    }
+
+    //
+    // Offer
+    //
+    override fun createOffer(offer: Offer): Either<StoreError, Unit> = writeTransaction {
+        createOffer(offer, transaction)
+                .ifFailedThenRollback(transaction)
+    }
+
+    private fun createOffer(offer: Offer, transaction: Transaction): Either<StoreError, Unit> {
+        return offerStore
+                .create(offer.id, transaction)
+                .flatMap { offerToSegmentStore.create(offer.id, offer.segments, transaction) }
+                .flatMap { offerToProductStore.create(offer.id, offer.products, transaction) }
+    }
+
+    //
+    // Atomic Import of Offer + Product + Segment
+    //
+    override fun atomicImport(
+            offer: Offer,
+            segments: Collection<Segment>,
+            products: Collection<Product>): Either<StoreError, Unit> = writeTransaction {
+
+        // validation
+        val productIds = (offer.products + products.map { it.sku }).toSet()
+        val segmentIds = (offer.segments + segments.map { it.id }).toSet()
+
+        if (productIds.isEmpty()) {
+            return@writeTransaction Either.left(ValidationError(
+                    type = productEntity.name,
+                    id = offer.id,
+                    message = "Cannot create Offer without new/existing Product(s)"))
+        }
+
+        if (segmentIds.isEmpty()) {
+            return@writeTransaction Either.left(ValidationError(
+                    type = offerEntity.name,
+                    id = offer.id,
+                    message = "Cannot create Offer without new/existing Segment(s)"))
+        }
+        // end of validation
+
+        var result = Either.right(Unit) as Either<StoreError, Unit>
+
+        result = products.fold(
+                initial = result,
+                operation = { acc, product ->
+                    acc.flatMap { createProduct(product, transaction) }
+                })
+
+        result = segments.fold(
+                initial = result,
+                operation = { acc, segment ->
+                    acc.flatMap { createSegment(segment, transaction) }
+                })
+
+        val actualOffer = Offer(
+                id = offer.id,
+                products = productIds,
+                segments = segmentIds)
+
+        result
+                .flatMap { createOffer(actualOffer, transaction) }
                 .ifFailedThenRollback(transaction)
     }
 

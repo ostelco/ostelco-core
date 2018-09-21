@@ -1,0 +1,77 @@
+#
+# This is a sample YAML format to be used by
+# agents that produce offers.  The general idea
+# is that an offer has a set of parameters,
+# and also a set of selected subscribers that will
+# get it.
+#
+# YAML was chosen since it's more human readable than
+# e.g. json or protobuffers, while still being
+# easy to produce by an agent, and relatively compact,
+# in particular when gzipped.
+#
+
+producingAgent:
+  name: Simple agent
+  version: 1.0
+
+# # All of the parameters below are just copied from the firebasr
+# # realtime database we used in the demo, converted to
+# # camel case.  All the fields should be documented
+# # in this document, and we should think through if this is
+# # the best set of parameters we went.
+
+offer:
+     # XXX This offer does not have an ID, but if we were just
+     #     updating the list of members of the segment, it would
+     #     make sense to have an OfferID, or something that refers
+     #     to a previously created offer.  That id should be created
+     #     by the importer, and used by the agent when updating
+     #     membership.   If any other parameters are going to be
+     #     changed, it is necessary to produce a new offer.
+     #     It may make sense to put the ID in the url when
+     #     when we update (PUT method) changes, but then the
+     #     ID in the yaml will be redundant.   Figure out how to
+     #     do this one way or another and just do it.
+     visibility:
+        from: "2018-02-22T12:41:49.871Z"
+        to: "2018-02-22T12:41:49.871Z"
+     presentation:
+        badgeLabel: "mbop"
+        description: "Best offer you will get today"
+        shortDescription: "Best offer!"
+        label: "3 GB"
+        name: "3 GB"
+        priceLabel: "49 NOK"
+        hidden: false
+        imageUrl: https://www.ft-associates.com/wp-content/uploads/2015/08/Best-Offer.jpg
+     financial:
+        repurchability: 1
+        currencyLabel: "NOK"
+        price: 4900
+        taxRate: 10.0
+     product:
+        sku: 2
+        # A possibly very long list of product parameters that are all
+        # dependent on the SKU's requirement.   Details ignored here,
+        # that may pop up later. Deal with them then.
+        noOfBytes: 3000000000
+
+# # We put the segment last, since it may have a long list of
+# # members in it. We want that list to be last, since it contains
+# # little information that humans are interested in, and we want
+# # humans to start reading the file at the top.
+
+segment:
+   type: agent-specific-segment
+   description: "This is how this segment should be described"
+   members:
+     # The decryption key is what the de-anonymizer will use to
+     # make proper  identifiers out of the members listed below.
+     # The special purpose key "none" indicatest that the member list
+     # is in clear text.
+     decryptionKey: none
+     members:
+        - 4790300157
+        - 4790300144
+        - 4333333333
