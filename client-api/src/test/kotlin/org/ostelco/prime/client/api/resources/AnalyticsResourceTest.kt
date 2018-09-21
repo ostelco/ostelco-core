@@ -52,17 +52,17 @@ class AnalyticsResourceTest {
         `when`(DAO.reportAnalytics(arg1.capture(), arg2.capture())).thenReturn(Either.right(Unit))
 
         val events = """
-            |[
-            |  {
-            |    "eventType": "PURCHASES_A_PRODUCT",
-            |    "sku": "1",
-            |    "time": "1524734549"
-            |  },
-            |  {
-            |    "eventType": "EXITS_APPLICATION",
-            |    "time": "1524742549"
-            |  }
-            |]""".trimMargin()
+            [
+              {
+                "eventType": "PURCHASES_A_PRODUCT",
+                "sku": "1",
+                "time": "1524734549"
+              },
+              {
+                "eventType": "EXITS_APPLICATION",
+                "time": "1524742549"
+              }
+            ]""".trimIndent()
 
         assertThat(isValidJson(events)).isTrue()
 

@@ -50,10 +50,10 @@ class ProductsResourceTest {
             Product("3", Price(20, "NOK"), emptyMap(), emptyMap()))
 
     private val userInfo = Base64.getEncoder().encodeToString(
-            """|{
-               |  "issuer": "someone",
-               |  "email": "mw@internet.org"
-               |}""".trimMargin()
+            """{
+                 "issuer": "someone",
+                 "email": "mw@internet.org"
+               }""".trimIndent()
                     .toByteArray())
 
     @Before

@@ -264,41 +264,61 @@ class SourceTest {
         val email = "purchase-${randomInt()}@test.com"
         createProfile(name = "Test Payment Source", email = email)
 
-        val tokenId = StripePayment.createPaymentTokenId()
-        val cardId = StripePayment.getCardIdForTokenId(tokenId)
-
-        // Ties source with user profile both local and with Stripe
-        post<PaymentSource> {
-            path = "/paymentSources"
-            subscriberId = email
-            queryParams = mapOf("sourceId" to tokenId)
-        }
-
         Thread.sleep(200)
 
-        val newTokenId = StripePayment.createPaymentTokenId()
-        val newCardId = StripePayment.getCardIdForTokenId(newTokenId)
-
-        post<PaymentSource> {
-            path = "/paymentSources"
-            subscriberId = email
-            queryParams = mapOf("sourceId" to newTokenId)
-        }
+        val createdIds = listOf(createTokenWithStripe(email),
+                createSourceWithStripe(email),
+                createTokenWithStripe(email),
+                createSourceWithStripe(email))
 
         val sources : PaymentSourceList = get {
             path = "/paymentSources"
             subscriberId = email
         }
 
+        val ids = createdIds.map { getIdFromStripe(it) }
+
         assert(sources.isNotEmpty()) { "Expected at least one payment source for profile $email" }
-        assert(sources.map{ it.id }.containsAll(listOf(cardId, newCardId)))
-        { "Expected to find both $cardId and $newCardId in list of sources for profile $email" }
+        assert(sources.map{ it.id }.containsAll(ids))
+        { "Expected to find all of $ids in list of sources for profile $email" }
 
         sources.forEach {
-            assert(it.details.id.isNotEmpty()) { "Expected 'id' to be set in source account details for profile $email" }
-            assertEquals("card", it.details.accountType,
-                    "Unexpected source account type ${it.details.accountType} for profile $email")
+            assert(it.id.isNotEmpty()) { "Expected 'id' to be set in source account details for profile $email" }
+            assert(arrayOf("card", "source").contains(it.type)) {
+                "Unexpected source account type ${it.type} for profile $email"
+            }
         }
+    }
+
+    private fun getIdFromStripe(tokenId : String) : String {
+        if (tokenId.startsWith("src_")) {
+            return StripePayment.getCardIdForSourceId(tokenId)
+        }
+        return StripePayment.getCardIdForTokenId(tokenId)
+    }
+
+    private fun createTokenWithStripe(email: String) : String {
+        val tokenId = StripePayment.createPaymentTokenId()
+
+        post<PaymentSource> {
+            path = "/paymentSources"
+            subscriberId = email
+            queryParams = mapOf("sourceId" to tokenId)
+        }
+
+        return tokenId
+    }
+
+    private fun createSourceWithStripe(email: String) : String {
+        val sourceId = StripePayment.createPaymentSourceId()
+
+        post<PaymentSource> {
+            path = "/paymentSources"
+            subscriberId = email
+            queryParams = mapOf("sourceId" to sourceId)
+        }
+
+        return sourceId
     }
 
     @Test

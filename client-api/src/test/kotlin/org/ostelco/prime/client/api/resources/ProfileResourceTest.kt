@@ -80,13 +80,13 @@ class ProfileResourceTest {
         val resp = RULE.target("/profile")
                 .request(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
-                .post(Entity.json("{\n" +
-                        "    \"name\": \"" + name + "\",\n" +
-                        "    \"address\": \"" + address + "\",\n" +
-                        "    \"postCode\": \"" + postCode + "\",\n" +
-                        "    \"city\": \"" + city + "\",\n" +
-                        "    \"email\": \"" + email + "\"\n" +
-                        "}\n"))
+                .post(Entity.json("""{
+                        "name": "$name",
+                        "address": "$address",
+                        "postCode": "$postCode",
+                        "city": "$city",
+                        "email": "$email"
+                }""".trimIndent()))
 
         assertThat(resp.status).isEqualTo(Response.Status.CREATED.statusCode)
         assertThat(resp.mediaType.toString()).isEqualTo(MediaType.APPLICATION_JSON)
@@ -115,13 +115,13 @@ class ProfileResourceTest {
                 .queryParam("referred_by", referredBy)
                 .request(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
-                .post(Entity.json("{\n" +
-                        "    \"name\": \"" + name + "\",\n" +
-                        "    \"address\": \"" + address + "\",\n" +
-                        "    \"postCode\": \"" + postCode + "\",\n" +
-                        "    \"city\": \"" + city + "\",\n" +
-                        "    \"email\": \"" + email + "\"\n" +
-                        "}\n"))
+                .post(Entity.json("""{
+                    "name": "$name",
+                    "address": "$address",
+                    "postCode": "$postCode",
+                    "city": "$city",
+                    "email": "$email"
+                }""".trimIndent()))
 
         assertThat(resp.status).isEqualTo(Response.Status.CREATED.statusCode)
         assertThat(resp.mediaType.toString()).isEqualTo(MediaType.APPLICATION_JSON)
@@ -149,13 +149,13 @@ class ProfileResourceTest {
         val resp = RULE.target("/profile")
                 .request(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
-                .put(Entity.json("{\n" +
-                        "    \"name\": \"" + name + "\",\n" +
-                        "    \"address\": \"" + newAddress + "\",\n" +
-                        "    \"postCode\": \"" + newPostCode + "\",\n" +
-                        "    \"city\": \"" + city + "\",\n" +
-                        "    \"email\": \"" + email + "\"\n" +
-                        "}\n"))
+                .put(Entity.json("""{
+                    "name": "$name",
+                    "address": "$newAddress",
+                    "postCode": "$newPostCode",
+                    "city": "$city",
+                    "email": "$email"
+                }""".trimIndent()))
 
         assertThat(resp.status).isEqualTo(Response.Status.OK.statusCode)
         assertThat(resp.mediaType.toString()).isEqualTo(MediaType.APPLICATION_JSON)
@@ -173,9 +173,7 @@ class ProfileResourceTest {
         val resp = RULE.target("/profile")
                 .request(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
-                .put(Entity.json("{\n" +
-                        "    \"name\": \"" + name + "\"\n" +
-                        "}\n"))
+                .put(Entity.json("""{ "name": "$name" }"""))
 
         assertThat(resp.status).isEqualTo(Response.Status.BAD_REQUEST.statusCode)
     }
