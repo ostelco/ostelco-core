@@ -1,9 +1,9 @@
 package org.ostelco.prime.client.api.resources
 
 import io.dropwizard.auth.Auth
-import org.ostelco.prime.logger
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.store.SubscriberDAO
+import org.ostelco.prime.logger
 import javax.validation.constraints.NotNull
 import javax.ws.rs.GET
 import javax.ws.rs.POST
@@ -56,6 +56,7 @@ class PaymentResource(private val dao: SubscriberDAO) {
     }
 
     @PUT
+    @Produces("application/json")
     fun setDefaultSource(@Auth token: AccessTokenPrincipal?,
                          @NotNull
                          @QueryParam("sourceId")
