@@ -79,8 +79,8 @@ object HttpClient {
         var target = jerseyClient.target(url).path(path)
         queryParams.forEach { target = target.queryParam(it.key, it.value) }
         return target.request(MediaType.APPLICATION_JSON_TYPE)
-                .header("Authorization", "Bearer ${generateAccessToken(subscriberId)}")
                 .headers(MultivaluedHashMap<String, Any>().apply { this.putAll(headerParams) })
+                .header("Authorization", "Bearer ${generateAccessToken(subscriberId)}")
     }
 
     fun send(path: String, queryParams: Map<String, String>, headerParams: Map<String, List<String>>, subscriberId: String): JerseyInvocation.Builder =
