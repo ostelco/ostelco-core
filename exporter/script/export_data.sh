@@ -55,7 +55,7 @@ FROM
    \`$hourlyConsumptionTable\` as hc
 JOIN
   \`$pseudonymsTable\` as ps
-ON  ps.msisdn = hc.msisdn
+ON  ps.pseudonym = hc.msisdn
 EOM
 # Run the query using bq & dump results to the new table
 bq --location=EU --format=none query --destination_table $dataConsumptionTable --replace --use_legacy_sql=false $sqlForJoin
