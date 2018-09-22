@@ -35,6 +35,22 @@ spec:
     app: prime
     tier: backend
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pseudonym-server-service
+  labels:
+    app: prime
+    tier: backend
+spec:
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  selector:
+    app: prime
+    tier: backend
+---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
