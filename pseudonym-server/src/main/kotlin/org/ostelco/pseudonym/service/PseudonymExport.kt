@@ -135,6 +135,7 @@ class DS2BQExporter(
             .maximumSize(5000)
             .build()
     private var error: String = ""
+    private var totalRows = 0
 
     private fun createTable(): Table {
         // Delete existing table
@@ -180,11 +181,12 @@ class DS2BQExporter(
         while (pseudonyms.hasNext()) {
             val entity = pseudonyms.next()
             totalPseudonyms++
+            totalRows++
             val row = hashMapOf(
                     sourceField to entity.getString(sourceField),
                     pseudonymPropertyName to entity.getString(pseudonymPropertyName),
                     idFieldName to getIdForKey(entity.getString(sourceField)))
-            val rowId = "rowId$totalPseudonyms"
+            val rowId = "rowId$totalRows"
             rows.add(RowToInsert.of(rowId, row))
         }
         if (totalPseudonyms != 0) {
@@ -194,11 +196,7 @@ class DS2BQExporter(
                 error = "$error${response.insertErrors}\n"
             }
         }
-        return if (totalPseudonyms < pageSize) {
-            null
-        } else {
-            pseudonyms.cursorAfter
-        }
+        return pseudonyms.cursorAfter
     }
     /**
      * Export the Datastore table to BQ.
