@@ -10,7 +10,7 @@ import java.util.*
  */
 class WeeklyBounds : DateBounds {
     private val timeZone = TimeZone.getTimeZone("UTC")
-    private val locale  = java.util.Locale.UK
+    private val locale = java.util.Locale.UK
     /**
      * Returns the boundaries for the week of the given timestamp.
      */

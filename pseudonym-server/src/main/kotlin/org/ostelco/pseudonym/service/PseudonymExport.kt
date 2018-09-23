@@ -62,7 +62,7 @@ class PseudonymExport(private val exportId: String, private val bigquery: BigQue
         upsertTaskStatus()
     }
 
-    private fun tableName(suffix:String) = "${exportId.replace("-", "")}_$suffix"
+    private fun tableName(suffix: String) = "${exportId.replace("-", "")}_$suffix"
 
     private fun start() {
         logger.info("Starting to export Pseudonyms for $exportId")
@@ -204,6 +204,7 @@ class DS2BQExporter(
         }
 
     }
+
     /**
      * Export the Datastore table to BQ.
      * This is done in pages of 100 records.
