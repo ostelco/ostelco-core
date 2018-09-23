@@ -9,7 +9,7 @@ exportId=${exportId//-}
 exportId=${exportId,,}
 projectId=pantel-2decb
 
-pseudonymsTable=$projectId.exported_pseudonyms.$exportId
+msisdnPseudonymsTable=$projectId.exported_pseudonyms.${exportId}_msisdn
 hourlyConsumptionTable=$projectId.data_consumption.hourly_consumption
 dataConsumptionTable=exported_data_consumption.$exportId
 csvfile=$projectId-dataconsumption-export/$exportId.csv
@@ -43,7 +43,7 @@ if [[ $jsonResult != FINISHED ]]; then
   echo "Table creation failed $(curl -X GET $queryUrl  2> /dev/null)"
   exit
 fi
-echo "Created Table $pseudonymsTable"
+echo "Created Table $msisdnPseudonymsTable"
 
 
 echo "Creating table $dataConsumptionTable"
@@ -54,7 +54,7 @@ SELECT
 FROM
    \`$hourlyConsumptionTable\` as hc
 JOIN
-  \`$pseudonymsTable\` as ps
+  \`$msisdnPseudonymsTable\` as ps
 ON  ps.pseudonym = hc.msisdn
 EOM
 # Run the query using bq & dump results to the new table
