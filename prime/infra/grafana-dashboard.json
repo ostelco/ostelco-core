@@ -143,8 +143,9 @@
           },
           "targets": [
             {
-              "expr": "total_users",
+              "expr": "scalar(total_users)",
               "intervalFactor": 2,
+              "legendFormat": "",
               "metric": "total_users",
               "refId": "A",
               "step": 600
@@ -219,8 +220,9 @@
           },
           "targets": [
             {
-              "expr": "users_acquired_through_referrals",
+              "expr": "scalar(users_acquired_through_referrals)",
               "intervalFactor": 2,
+              "legendFormat": "",
               "metric": "users_acquired_through_referrals",
               "refId": "A",
               "step": 600
@@ -294,8 +296,9 @@
           },
           "targets": [
             {
-              "expr": "users_paid_at_least_once",
+              "expr": "scalar(users_paid_at_least_once)",
               "intervalFactor": 2,
+              "legendFormat": "",
               "metric": "users_paid_at_least_once",
               "refId": "A",
               "step": 600
@@ -1290,5 +1293,5 @@
   },
   "timezone": "browser",
   "title": "Dashboard",
-  "version": 21
+  "version": 22
 }
