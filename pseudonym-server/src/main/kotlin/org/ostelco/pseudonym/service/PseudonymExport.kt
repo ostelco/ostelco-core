@@ -177,10 +177,10 @@ class DS2BQExporter(
         }
         val rows = ArrayList<RowToInsert>()
         val pseudonyms = datastore.run(queryBuilder.build())
-        var totalPseudonyms = 0
+        var pseudonymsInPage = 0
         while (pseudonyms.hasNext()) {
             val entity = pseudonyms.next()
-            totalPseudonyms++
+            pseudonymsInPage++
             totalRows++
             val row = hashMapOf(
                     sourceField to entity.getString(sourceField),
@@ -189,14 +189,19 @@ class DS2BQExporter(
             val rowId = "rowId$totalRows"
             rows.add(RowToInsert.of(rowId, row))
         }
-        if (totalPseudonyms != 0) {
+        if (pseudonymsInPage != 0) {
             val response = table.insert(rows, true, true)
             if (response.hasErrors()) {
                 logger.error("Failed to insert Records to '$tableName'", response.insertErrors)
                 error = "$error${response.insertErrors}\n"
             }
         }
-        return pseudonyms.cursorAfter
+        return if (pseudonymsInPage < pageSize) {
+            null
+        } else {
+            pseudonyms.cursorAfter
+        }
+
     }
     /**
      * Export the Datastore table to BQ.
