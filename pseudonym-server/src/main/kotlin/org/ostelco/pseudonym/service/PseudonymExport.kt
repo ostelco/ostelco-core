@@ -190,6 +190,7 @@ class DS2BQExporter(
             rows.add(RowToInsert.of(rowId, row))
         }
         if (pseudonymsInPage != 0) {
+            logger.info("Inserting  ${pseudonymsInPage} to ${tableName}")
             val response = table.insert(rows, true, true)
             if (response.hasErrors()) {
                 logger.error("Failed to insert Records to '$tableName'", response.insertErrors)
@@ -208,11 +209,13 @@ class DS2BQExporter(
      * This is done in pages of 100 records.
      */
     fun doExport() {
+        logger.info("Starting export to ${tableName}")
         val table = createTable()
         var cursor: Cursor? = null
         do {
             cursor = exportPage(100, cursor, table)
         } while (cursor != null)
+        logger.info("Exported ${totalRows} to ${tableName}")
     }
 
 }
