@@ -205,7 +205,7 @@ class DS2BQExporter(
     }
     /**
      * Export the Datastore table to BQ.
-     * his is done in pages of 100 records.
+     * This is done in pages of 100 records.
      */
     fun doExport() {
         val table = createTable()
