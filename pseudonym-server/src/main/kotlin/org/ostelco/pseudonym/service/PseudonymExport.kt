@@ -40,11 +40,13 @@ class PseudonymExport(private val exportId: String, private val bigquery: BigQue
 
     private var status = Status.INITIAL
     private var error: String = ""
+    private val randomKey = "$exportId-${UUID.randomUUID().toString()}"
     private val msisdnExporter: DS2BQExporter = DS2BQExporter(
             tableName = tableName("msisdn"),
             sourceEntity = MsisdnPseudonymEntityKind,
             sourceField = msisdnPropertyName,
             datasetName = datasetName,
+            randomKey = randomKey,
             datastore = datastore,
             bigquery = bigquery)
     private val subscriberIdExporter: DS2BQExporter = DS2BQExporter(
@@ -52,6 +54,7 @@ class PseudonymExport(private val exportId: String, private val bigquery: BigQue
             sourceEntity = SubscriberIdPseudonymEntityKind,
             sourceField = subscriberIdPropertyName,
             datasetName = datasetName,
+            randomKey = randomKey,
             datastore = datastore,
             bigquery = bigquery)
 
@@ -121,11 +124,11 @@ class DS2BQExporter(
         private val sourceEntity: String,
         private val sourceField: String,
         private val datasetName: String,
+        private val randomKey: String,
         private val datastore: Datastore,
         private val bigquery: BigQuery) {
 
     private val logger = LoggerFactory.getLogger(DS2BQExporter::class.java)
-    private val randomKey = UUID.randomUUID().toString();
     private val digest = MessageDigest.getInstance("SHA-256")
 
     private val idCache: Cache<String, String> = CacheBuilder.newBuilder()
