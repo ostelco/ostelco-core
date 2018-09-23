@@ -74,7 +74,7 @@ class PseudonymExport(private val exportId: String, private val bigquery: BigQue
             status = Status.FINISHED
             upsertTaskStatus()
         }
-        logger.info("Exported Pseudonyms for $exportId")
+        logger.info("Exported msisdn and subscriber pseudonyms for $exportId")
     }
 
     /**
@@ -135,6 +135,7 @@ class DS2BQExporter(
             .maximumSize(5000)
             .build()
     private var error: String = ""
+    private var totalRows = 0
 
     private fun createTable(): Table {
         // Delete existing table
@@ -176,40 +177,45 @@ class DS2BQExporter(
         }
         val rows = ArrayList<RowToInsert>()
         val pseudonyms = datastore.run(queryBuilder.build())
-        var totalPseudonyms = 0
+        var pseudonymsInPage = 0
         while (pseudonyms.hasNext()) {
             val entity = pseudonyms.next()
-            totalPseudonyms++
+            pseudonymsInPage++
+            totalRows++
             val row = hashMapOf(
                     sourceField to entity.getString(sourceField),
                     pseudonymPropertyName to entity.getString(pseudonymPropertyName),
                     idFieldName to getIdForKey(entity.getString(sourceField)))
-            val rowId = "rowId$totalPseudonyms"
+            val rowId = "rowId$totalRows"
             rows.add(RowToInsert.of(rowId, row))
         }
-        if (totalPseudonyms != 0) {
+        if (pseudonymsInPage != 0) {
+            logger.info("Inserting  ${pseudonymsInPage} to ${tableName}")
             val response = table.insert(rows, true, true)
             if (response.hasErrors()) {
                 logger.error("Failed to insert Records to '$tableName'", response.insertErrors)
                 error = "$error${response.insertErrors}\n"
             }
         }
-        return if (totalPseudonyms < pageSize) {
+        return if (pseudonymsInPage < pageSize) {
             null
         } else {
             pseudonyms.cursorAfter
         }
+
     }
     /**
      * Export the Datastore table to BQ.
-     * his is done in pages of 100 records.
+     * This is done in pages of 100 records.
      */
     fun doExport() {
+        logger.info("Starting export to ${tableName}")
         val table = createTable()
         var cursor: Cursor? = null
         do {
             cursor = exportPage(100, cursor, table)
         } while (cursor != null)
+        logger.info("Exported ${totalRows} rows to ${tableName}")
     }
 
 }
