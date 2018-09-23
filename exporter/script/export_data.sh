@@ -50,7 +50,7 @@ echo "Creating table $dataConsumptionTable"
 # SQL for joining pseudonym & hourly consumption tables.
 read -r -d '' sqlForJoin << EOM
 SELECT
-   hc.bytes, ps.msisdnid, hc.timestamp
+   hc.bytes, ps.pseudoid as msisdnid, hc.timestamp
 FROM
    \`$hourlyConsumptionTable\` as hc
 JOIN

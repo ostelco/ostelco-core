@@ -16,10 +16,10 @@ dataConsumptionTable=exported_data_consumption.$exportId
 csvfile=$projectId-dataconsumption-export/$exportId.csv
 
 echo "Cleaning all data for export $exportId"
-echo "Deleting Table msisdnPseudonymsTable"
-bq rm -f -t msisdnPseudonymsTable
-echo "Deleting Table subscriberPseudonymsTable"
-bq rm -f -t subscriberPseudonymsTable
+echo "Deleting Table $msisdnPseudonymsTable"
+bq rm -f -t $msisdnPseudonymsTable
+echo "Deleting Table $subscriberPseudonymsTable"
+bq rm -f -t $subscriberPseudonymsTable
 echo "Deleting Table $dataConsumptionTable"
 bq rm -f -t $dataConsumptionTable
 echo "Deleting csv gs://$csvfile"
