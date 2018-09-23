@@ -10,6 +10,7 @@ exportId=${exportId,,}
 projectId=pantel-2decb
 
 msisdnPseudonymsTable=$projectId.exported_pseudonyms.${exportId}_msisdn
+subscriberPseudonymsTable=$projectId.exported_pseudonyms.${exportId}_subscriber
 hourlyConsumptionTable=$projectId.data_consumption.hourly_consumption
 dataConsumptionTable=exported_data_consumption.$exportId
 csvfile=$projectId-dataconsumption-export/$exportId.csv
@@ -44,6 +45,7 @@ if [[ $jsonResult != FINISHED ]]; then
   exit
 fi
 echo "Created Table $msisdnPseudonymsTable"
+echo "Created Table $subscriberPseudonymsTable"
 
 
 echo "Creating table $dataConsumptionTable"
