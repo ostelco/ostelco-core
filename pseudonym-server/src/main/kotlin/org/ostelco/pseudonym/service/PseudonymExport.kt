@@ -74,7 +74,7 @@ class PseudonymExport(private val exportId: String, private val bigquery: BigQue
             status = Status.FINISHED
             upsertTaskStatus()
         }
-        logger.info("Exported Pseudonyms for $exportId")
+        logger.info("Exported msisdn and subscriber pseudonyms for $exportId")
     }
 
     /**
@@ -215,7 +215,7 @@ class DS2BQExporter(
         do {
             cursor = exportPage(100, cursor, table)
         } while (cursor != null)
-        logger.info("Exported ${totalRows} to ${tableName}")
+        logger.info("Exported ${totalRows} rows to ${tableName}")
     }
 
 }
