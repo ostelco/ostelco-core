@@ -159,6 +159,59 @@ class GraphStoreTest {
                 { fail("Expected get product to fail since it is not linked to any subscriber --> segment --> offer") })
     }
 
+    @Test
+    fun `import offer + product + segment`() {
+
+        // existing products
+        Neo4jStoreSingleton.createProduct(createProduct("1GB_249NOK", 24900))
+                .mapLeft { fail(it.message) }
+        Neo4jStoreSingleton.createProduct(createProduct("2GB_299NOK", 29900))
+                .mapLeft { fail(it.message) }
+
+        val products = listOf(
+                createProduct("3GB_349NOK", 34900),
+                createProduct("5GB_399NOK", 39900))
+
+        val segments = listOf(Segment(id = "segment_1"), Segment(id = "segment_2"))
+
+        val offer = Offer(id = "some_offer", products = listOf("1GB_249NOK", "2GB_299NOK"))
+
+        Neo4jStoreSingleton.atomicImport(offer = offer, products = products, segments = segments)
+                .mapLeft { fail(it.message) }
+    }
+
+    @Test
+    fun `failed on import duplicate offer`() {
+
+        // existing products
+        Neo4jStoreSingleton.createProduct(createProduct("1GB_249NOK", 24900))
+                .mapLeft { fail(it.message) }
+        Neo4jStoreSingleton.createProduct(createProduct("2GB_299NOK", 29900))
+                .mapLeft { fail(it.message) }
+
+        // new products in the offer
+        val products = listOf(
+                createProduct("3GB_349NOK", 34900),
+                createProduct("5GB_399NOK", 39900))
+
+        // new segment in the offer
+        val segments = listOf(Segment(id = "segment_1"), Segment(id = "segment_2"))
+
+        val offer = Offer(id = "some_offer", products = listOf("1GB_249NOK", "2GB_299NOK"))
+
+        Neo4jStoreSingleton.atomicImport(offer = offer, products = products, segments = segments)
+                .mapLeft { fail(it.message) }
+
+        val duplicateOffer = Offer(
+                id = offer.id,
+                products = (products.map { it.sku } + offer.products).toSet(),
+                segments = segments.map { it.id })
+
+        Neo4jStoreSingleton.atomicImport(offer = duplicateOffer).bimap(
+                { assertEquals("Offer - some_offer already exists.", it.message) },
+                { fail("Expected import to fail since offer already exists.") })
+    }
+
     companion object {
         const val EMAIL = "foo@bar.com"
         const val NAME = "Test User"

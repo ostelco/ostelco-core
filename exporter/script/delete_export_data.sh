@@ -10,13 +10,16 @@ exportId=${exportId//-}
 exportId=${exportId,,}
 projectId=pantel-2decb
 
-pseudonymsTable=exported_pseudonyms.$exportId
+msisdnPseudonymsTable=exported_pseudonyms.${exportId}_msisdn
+subscriberPseudonymsTable=exported_pseudonyms.${exportId}_subscriber
 dataConsumptionTable=exported_data_consumption.$exportId
 csvfile=$projectId-dataconsumption-export/$exportId.csv
 
 echo "Cleaning all data for export $exportId"
-echo "Deleting Table $pseudonymsTable"
-bq rm -f -t $pseudonymsTable
+echo "Deleting Table $msisdnPseudonymsTable"
+bq rm -f -t $msisdnPseudonymsTable
+echo "Deleting Table $subscriberPseudonymsTable"
+bq rm -f -t $subscriberPseudonymsTable
 echo "Deleting Table $dataConsumptionTable"
 bq rm -f -t $dataConsumptionTable
 echo "Deleting csv gs://$csvfile"

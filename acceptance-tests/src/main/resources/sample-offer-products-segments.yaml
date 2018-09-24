@@ -1,0 +1,35 @@
+producingAgent:
+  name: Simple agent
+  version: 1.0
+
+offer:
+  id: test-offer
+
+  # list of existing products
+  # listing products to be created in this yaml is OPTIONAL
+
+#  products:
+#    - 1GB_249NOK
+
+  # list of existing segments
+  # listing segments to be created in this yaml is OPTIONAL
+
+#  segments:
+#    - test-segment
+
+# These products will be created and linked to offer - 'test-offer'
+products:
+  - sku: 1GB_249NOK
+    price:
+      amount: 249
+      currency: NOK
+    properties:
+      noOfBytes: 1_000_000_000
+    presentation:
+      isDefault: true
+      offerLabel: Default Offer
+      priceLabel: 249 NOK
+
+# These segments will be created and linked to offer - 'test-offer'
+segments:
+  - id: test-segment
