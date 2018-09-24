@@ -19,8 +19,8 @@ import org.ostelco.prime.client.api.auth.OAuthAuthenticator
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
-import org.ostelco.prime.core.ApiErrorCode
-import org.ostelco.prime.core.NotFoundError
+import org.ostelco.prime.apierror.ApiErrorCode
+import org.ostelco.prime.apierror.NotFoundError
 import java.util.*
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.GenericType
@@ -40,14 +40,12 @@ class ConsentsResourceTest {
             Consent("2", "blabla", true))
 
     @Before
-    @Throws(Exception::class)
     fun setUp() {
         `when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
                 .thenReturn(Optional.of(AccessTokenPrincipal(email)))
     }
 
     @Test
-    @Throws(Exception::class)
     fun getConsents() {
         val arg = argumentCaptor<String>()
 
@@ -67,7 +65,6 @@ class ConsentsResourceTest {
     }
 
     @Test
-    @Throws(Exception::class)
     fun acceptConsent() {
         val arg1 = argumentCaptor<String>()
         val arg2 = argumentCaptor<String>()
@@ -90,7 +87,6 @@ class ConsentsResourceTest {
     }
 
     @Test
-    @Throws(Exception::class)
     fun rejectConsent() {
         val arg1 = argumentCaptor<String>()
         val arg2 = argumentCaptor<String>()

@@ -41,14 +41,12 @@ class ProfileResourceTest {
     private val profile = Subscriber(email)
 
     @Before
-    @Throws(Exception::class)
     fun setUp() {
         `when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
                 .thenReturn(Optional.of(AccessTokenPrincipal(email)))
     }
 
     @Test
-    @Throws(Exception::class)
     fun getProfile() {
         val arg = argumentCaptor<String>()
 
@@ -67,7 +65,6 @@ class ProfileResourceTest {
     }
 
     @Test
-    @Throws(Exception::class)
     fun createProfile() {
         val arg1 = argumentCaptor<String>()
         val arg2 = argumentCaptor<Subscriber>()
@@ -100,7 +97,6 @@ class ProfileResourceTest {
     }
 
     @Test
-    @Throws(Exception::class)
     fun createProfileWithReferral() {
         val arg1 = argumentCaptor<String>()
         val arg2 = argumentCaptor<Subscriber>()
@@ -135,7 +131,6 @@ class ProfileResourceTest {
     }
 
     @Test
-    @Throws(Exception::class)
     fun updateProfile() {
         val arg1 = argumentCaptor<String>()
         val arg2 = argumentCaptor<Subscriber>()
@@ -168,7 +163,6 @@ class ProfileResourceTest {
     }
 
     @Test
-    @Throws(Exception::class)
     fun updateWithIncompleteProfile() {
         val resp = RULE.target("/profile")
                 .request(MediaType.APPLICATION_JSON)

@@ -10,7 +10,7 @@ import org.ostelco.prime.admin.api.ImporterResource
 import org.ostelco.prime.admin.api.YamlMessageBodyReader
 import org.ostelco.prime.admin.importer.ImportDeclaration
 import org.ostelco.prime.admin.importer.ImportProcessor
-import org.ostelco.prime.core.ApiError
+import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.model.Price
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.Response.Status

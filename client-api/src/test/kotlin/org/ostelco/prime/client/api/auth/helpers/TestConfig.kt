@@ -12,12 +12,12 @@ class TestConfig : Configuration() {
     @Valid
     @get:JsonProperty("secret")
     @set:JsonProperty("secret")
-    var secret: String? = null
+    lateinit var secret: String
 
     @Valid
     @NotNull
     @get:JsonProperty("authenticationCachePolicy")
-    var authenticationCachePolicy: CacheBuilderSpec? = null
+    lateinit var authenticationCachePolicy: CacheBuilderSpec
         private set
 
     @Valid

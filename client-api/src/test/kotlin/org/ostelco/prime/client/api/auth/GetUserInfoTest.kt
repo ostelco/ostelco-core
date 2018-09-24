@@ -28,7 +28,6 @@ class GetUserInfoTest {
             "http://localhost:${RULE.localPort}/userinfo")
 
     @Test
-    @Throws(Exception::class)
     fun getProfileNotFound() {
 
 
@@ -39,7 +38,7 @@ class GetUserInfoTest {
         waitForServer()
 
 
-        val response = client!!.target(
+        val response = client.target(
                 "http://localhost:${RULE.localPort}/profile")
                 .request()
                 .property(ClientProperties.CONNECT_TIMEOUT, 30000)
@@ -55,7 +54,7 @@ class GetUserInfoTest {
         var counter = 40  // Max wait time, ten seconds.
         while (counter > 0) {
             try {
-                val r = client!!.target(
+                val r = client.target(
                         "http://localhost:${RULE.adminPort}/healthcheck")
                         .request()
                         .get(Response::class.java)
@@ -78,7 +77,7 @@ class GetUserInfoTest {
     companion object {
         private val key = "secret"
 
-        private var client: Client? = null
+        private lateinit var client: Client
 
         @JvmField
         @ClassRule

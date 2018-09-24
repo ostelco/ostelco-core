@@ -5,7 +5,7 @@ import org.ostelco.at.common.StripePayment
 import org.ostelco.at.common.createProfile
 import org.ostelco.at.common.createSubscription
 import org.ostelco.at.common.expectedProducts
-import org.ostelco.at.common.logger
+import org.ostelco.at.common.getLogger
 import org.ostelco.at.common.randomInt
 import org.ostelco.at.okhttp.ClientFactory.clientForSubject
 import org.ostelco.prime.client.api.DefaultApi
@@ -128,7 +128,7 @@ class GetSubscriptions {
 
 class GetSubscriptionStatusTest {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     @Test
     fun `okhttp test - GET subscription status`() {
@@ -160,7 +160,7 @@ class GetSubscriptionStatusTest {
 
 class GetPseudonymsTest {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     @Test
     fun `okhttp test - GET active pseudonyms`() {
@@ -331,7 +331,7 @@ class PurchaseTest {
 
         val client = clientForSubject(subject = email)
 
-        val balanceBefore = client.subscriptionStatus.remaining
+        val balanceBefore = client.bundles.first().balance
 
         val sourceId = StripePayment.createPaymentTokenId()
 
@@ -339,7 +339,7 @@ class PurchaseTest {
 
         Thread.sleep(200) // wait for 200 ms for balance to be updated in db
 
-        val balanceAfter = client.subscriptionStatus.remaining
+        val balanceAfter = client.bundles.first().balance
 
         assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
 
@@ -367,7 +367,7 @@ class PurchaseTest {
 
         assertNotNull(paymentSource.id, message = "Failed to create payment source")
 
-        val balanceBefore = client.subscriptionStatus.remaining
+        val balanceBefore = client.bundles.first().balance
 
         val productSku = "1GB_249NOK"
 
@@ -375,7 +375,7 @@ class PurchaseTest {
 
         Thread.sleep(200) // wait for 200 ms for balance to be updated in db
 
-        val balanceAfter = client.subscriptionStatus.remaining
+        val balanceAfter = client.bundles.first().balance
 
         assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
 
@@ -431,13 +431,13 @@ class PurchaseTest {
 
         val client = clientForSubject(subject = email)
 
-        val balanceBefore = client.subscriptionStatus.remaining
+        val balanceBefore = client.bundles.first().balance
 
         client.buyProductDeprecated("1GB_249NOK")
 
         Thread.sleep(200) // wait for 200 ms for balance to be updated in db
 
-        val balanceAfter = client.subscriptionStatus.remaining
+        val balanceAfter = client.bundles.first().balance
 
         assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
 

@@ -5,10 +5,11 @@ import org.ostelco.at.common.StripePayment
 import org.ostelco.at.common.createProfile
 import org.ostelco.at.common.createSubscription
 import org.ostelco.at.common.expectedProducts
-import org.ostelco.at.common.logger
+import org.ostelco.at.common.getLogger
 import org.ostelco.at.common.randomInt
 import org.ostelco.prime.client.model.ActivePseudonyms
 import org.ostelco.prime.client.model.ApplicationToken
+import org.ostelco.prime.client.model.Bundle
 import org.ostelco.prime.client.model.Consent
 import org.ostelco.prime.client.model.PaymentSource
 import org.ostelco.prime.client.model.PaymentSourceList
@@ -152,7 +153,7 @@ class GetSubscriptions {
 
 class GetSubscriptionStatusTest {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     @Test
     fun `jersey test - GET subscription status`() {
@@ -185,7 +186,7 @@ class GetSubscriptionStatusTest {
 
 class GetPseudonymsTest {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     @Test
     fun `jersey test - GET active pseudonyms`() {
@@ -379,11 +380,10 @@ class PurchaseTest {
         val email = "purchase-${randomInt()}@test.com"
         createProfile(name = "Test Purchase User", email = email)
 
-        val subscriptionStatusBefore: SubscriptionStatus = get {
-            path = "/subscription/status"
+        val balanceBefore = get<List<Bundle>> {
+            path = "/bundles"
             subscriberId = email
-        }
-        val balanceBefore = subscriptionStatusBefore.remaining
+        }.first().balance
 
         val productSku = "1GB_249NOK"
         val sourceId = StripePayment.createPaymentTokenId()
@@ -396,11 +396,10 @@ class PurchaseTest {
 
         Thread.sleep(100) // wait for 100 ms for balance to be updated in db
 
-        val subscriptionStatusAfter: SubscriptionStatus = get {
-            path = "/subscription/status"
+        val balanceAfter = get<List<Bundle>> {
+            path = "/bundles"
             subscriberId = email
-        }
-        val balanceAfter = subscriptionStatusAfter.remaining
+        }.first().balance
 
         assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
 
@@ -433,11 +432,10 @@ class PurchaseTest {
 
         assertNotNull(paymentSource.id, message = "Failed to create payment source")
 
-        val subscriptionStatusBefore: SubscriptionStatus = get {
-            path = "/subscription/status"
+        val balanceBefore = get<List<Bundle>> {
+            path = "/bundles"
             subscriberId = email
-        }
-        val balanceBefore = subscriptionStatusBefore.remaining
+        }.first().balance
 
         val productSku = "1GB_249NOK"
 
@@ -448,11 +446,10 @@ class PurchaseTest {
 
         Thread.sleep(100) // wait for 100 ms for balance to be updated in db
 
-        val subscriptionStatusAfter: SubscriptionStatus = get {
-            path = "/subscription/status"
+        val balanceAfter = get<List<Bundle>> {
+            path = "/bundles"
             subscriberId = email
-        }
-        val balanceAfter = subscriptionStatusAfter.remaining
+        }.first().balance
 
         assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
 
@@ -529,11 +526,10 @@ class PurchaseTest {
         val email = "purchase-legacy-${randomInt()}@test.com"
         createProfile(name = "Test Legacy Purchase User", email = email)
 
-        val subscriptionStatusBefore: SubscriptionStatus = get {
-            path = "/subscription/status"
+        val balanceBefore = get<List<Bundle>> {
+            path = "/bundles"
             subscriberId = email
-        }
-        val balanceBefore = subscriptionStatusBefore.remaining
+        }.first().balance
 
         val productSku = "1GB_249NOK"
 
@@ -544,11 +540,10 @@ class PurchaseTest {
 
         Thread.sleep(100) // wait for 100 ms for balance to be updated in db
 
-        val subscriptionStatusAfter: SubscriptionStatus = get {
-            path = "/subscription/status"
+        val balanceAfter = get<List<Bundle>> {
+            path = "/bundles"
             subscriberId = email
-        }
-        val balanceAfter = subscriptionStatusAfter.remaining
+        }.first().balance
 
         assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
 
