@@ -9,28 +9,18 @@ import org.ostelco.prime.paymentprocessor.core.*
 import com.stripe.model.Customer
 
 
-
-
 class StripePaymentProcessor : PaymentProcessor {
 
     private val logger by logger()
 
     override fun getSavedSources(customerId: String): Either<PaymentError, List<SourceDetailsInfo>> =
             either("Failed to retrieve sources for customer $customerId") {
-                val sources = mutableListOf<SourceDetailsInfo>()
                 val customer = Customer.retrieve(customerId)
-                customer.sources.data.forEach {
+                val sources: List<SourceDetailsInfo> = customer.sources.data.map {
                     val details = getAccountDetails(it)
-                    sources.add(SourceDetailsInfo(it.id, getAccountType(details), details))
+                    SourceDetailsInfo(it.id, getAccountType(details), details)
                 }
-                sources
-//                sources.sortWith(Comparator<SourceDetailsInfo> {
-//                    override fun compare(p1: SourceDetailsInfo, p2: SourceDetailsInfo) : Int when {
-//                            p1.id > p2.id -> 1
-//                            p1.id == p2.id -> 0
-//                            else -> -1
-//                    }
-//                })
+                sources.sortedByDescending { it.details.get("created") as String }
             }
 
     private fun getAccountType(details: Map<String, Any>) : String {
@@ -55,7 +45,7 @@ class StripePaymentProcessor : PaymentProcessor {
                              "currency" to accountInfo.currency,
                              "cvcCheck" to accountInfo.cvcCheck,
                              "created" to accountInfo.metadata.getOrElse("created") {
-                                 "${System.currentTimeMillis() / 1000}"
+                                 getSecondsSinceEpoch()
                               },
                              "expMonth" to accountInfo.expMonth,
                              "expYear" to accountInfo.expYear,
@@ -78,6 +68,10 @@ class StripePaymentProcessor : PaymentProcessor {
                              "type" to "unsupported")
             }
         }
+    }
+
+    private fun getSecondsSinceEpoch() : Long {
+        return System.currentTimeMillis() / 1000L
     }
 
     override fun createPaymentProfile(userEmail: String): Either<PaymentError, ProfileInfo> =
@@ -134,7 +128,7 @@ class StripePaymentProcessor : PaymentProcessor {
             either("Failed to add source $sourceId to customer $customerId") {
                 val customer = Customer.retrieve(customerId)
                 val params = mapOf("source" to sourceId,
-                        "metadata" to mapOf("created" to "${System.currentTimeMillis() / 1000}"))
+                        "metadata" to mapOf("created" to getSecondsSinceEpoch()))
                 SourceInfo(customer.sources.create(params).id)
             }
 
