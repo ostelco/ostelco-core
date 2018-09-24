@@ -9,7 +9,7 @@ import org.ostelco.prime.storage.DocumentStore
 
 /**
  * This class is using the singleton class as delegate.
- * This is done because the {@link java.util.ServiceLoader} expects public no-args constructor, which is absent in Singleton.
+ * This is done because the [java.util.ServiceLoader] expects public no-args constructor, which is absent in Singleton.
  */
 class FirebaseStorage : DocumentStore by FirebaseStorageSingleton
 

@@ -3,14 +3,14 @@ package org.ostelco.prime.paymentprocessor
 import arrow.core.Either
 import arrow.core.flatMap
 import com.stripe.exception.*
-import org.ostelco.prime.logger
+import org.ostelco.prime.getLogger
 import com.stripe.model.*
 import org.ostelco.prime.paymentprocessor.core.*
 import com.stripe.model.Customer
 
 class StripePaymentProcessor : PaymentProcessor {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     override fun getSavedSources(customerId: String): Either<PaymentError, List<SourceDetailsInfo>> =
             either("Failed to retrieve sources for customer $customerId") {

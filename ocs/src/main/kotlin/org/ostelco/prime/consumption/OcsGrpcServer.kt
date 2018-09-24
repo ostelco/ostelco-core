@@ -1,11 +1,10 @@
-package org.ostelco.prime.ocs
+package org.ostelco.prime.consumption
 
 import io.dropwizard.lifecycle.Managed
 import io.grpc.BindableService
 import io.grpc.Server
 import io.grpc.ServerBuilder
-import org.ostelco.prime.logger
-import java.io.IOException
+import org.ostelco.prime.getLogger
 
 /**
  * This is OCS Server running on gRPC protocol.
@@ -15,36 +14,24 @@ import java.io.IOException
  */
 class OcsGrpcServer(private val port: Int, service: BindableService) : Managed {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     // may add Transport Security with Certificates if needed.
     // may add executor for control over number of threads
     private val server: Server = ServerBuilder.forPort(port).addService(service).build()
 
-    /**
-     * Startup is managed by Dropwizard's lifecycle.
-     *
-     * @throws IOException ... sometimes, perhaps.
-     */
     override fun start() {
         server.start()
         logger.info("OcsServer Server started, listening for incoming gRPC traffic on {}", port)
     }
 
-    /**
-     * Shutdown is managed by Dropwizard's lifecycle.
-     *
-     * @throws InterruptedException When something goes wrong.
-     */
     override fun stop() {
         logger.info("Stopping OcsServer Server listening for gRPC traffic on  {}", port)
         server.shutdown()
         blockUntilShutdown()
     }
 
-    /**
-     * Used for unit testing
-     */
+    // Used for unit testing
     fun forceStop() {
         logger.info("Stopping forcefully OcsServer Server listening for gRPC traffic on  {}", port)
         server.shutdownNow()

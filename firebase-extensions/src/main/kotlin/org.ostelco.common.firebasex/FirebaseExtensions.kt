@@ -15,9 +15,9 @@ private val genericMapType = object : TypeReference<Map<String, String>>() {}
 private val objectMapper = ObjectMapper().registerKotlinModule()
 
 /**
- * Extension function added into {@link com.google.firebase.FirebaseOptions.Builder} which accepts Firebase Credentials
+ * Extension function added into [com.google.firebase.FirebaseOptions.Builder] which accepts Firebase Credentials
  * file and sets credentials as well as database URL. Database URL needs database name, which is extracted from the same
- * credentials file. If the credentials file does not exists, it throws ConfigurationException.
+ * credentials file. If the credentials file does not exists, it throws [ConfigurationException].
  */
 fun Builder.usingCredentialsFile(credentialsFile: String): Builder {
     if (Files.exists(Paths.get(credentialsFile))) {

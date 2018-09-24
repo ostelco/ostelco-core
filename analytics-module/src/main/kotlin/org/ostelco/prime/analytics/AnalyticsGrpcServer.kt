@@ -4,7 +4,7 @@ import io.dropwizard.lifecycle.Managed
 import io.grpc.BindableService
 import io.grpc.Server
 import io.grpc.ServerBuilder
-import org.ostelco.prime.logger
+import org.ostelco.prime.getLogger
 import java.io.IOException
 
 /**
@@ -15,7 +15,7 @@ import java.io.IOException
  */
 class AnalyticsGrpcServer(private val port: Int, service: BindableService) : Managed {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     // may add Transport Security with Certificates if needed.
     // may add executor for control over number of threads

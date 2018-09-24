@@ -8,13 +8,13 @@ import org.junit.BeforeClass
 import org.junit.Test
 import org.ostelco.at.common.createProfile
 import org.ostelco.at.common.createSubscription
-import org.ostelco.at.common.logger
+import org.ostelco.at.common.getLogger
 import org.ostelco.at.common.randomInt
 import org.ostelco.at.jersey.get
 import org.ostelco.diameter.model.RequestType
 import org.ostelco.diameter.test.TestClient
 import org.ostelco.diameter.test.TestHelper
-import org.ostelco.prime.client.model.SubscriptionStatus
+import org.ostelco.prime.client.model.Bundle
 import java.lang.Thread.sleep
 import kotlin.test.assertEquals
 import kotlin.test.fail
@@ -27,7 +27,7 @@ import kotlin.test.fail
  */
 class OcsTest {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     private var testClient: TestClient? = null
 
@@ -102,11 +102,10 @@ class OcsTest {
     private fun getBalance(): Long {
         sleep(200) // wait for 200 ms for balance to be updated in db
 
-        val subscriptionStatus: SubscriptionStatus = get {
-            path = "/subscription/status"
+        return get<List<Bundle>> {
+            path = "/bundles"
             subscriberId = EMAIL
-        }
-        return subscriptionStatus.remaining
+        }.first().balance
     }
 
     @Test

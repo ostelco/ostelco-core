@@ -7,7 +7,7 @@ import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.analytics.PrimeMetric.REVENUE
 import org.ostelco.prime.analytics.PrimeMetric.USERS_PAID_AT_LEAST_ONCE
-import org.ostelco.prime.logger
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Product
@@ -20,8 +20,9 @@ import org.ostelco.prime.module.getResource
 import org.ostelco.prime.ocs.OcsAdminService
 import org.ostelco.prime.ocs.OcsSubscriberService
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
-import org.ostelco.prime.paymentprocessor.core.*
-import org.ostelco.prime.storage.DocumentStore
+import org.ostelco.prime.paymentprocessor.core.BadGatewayError
+import org.ostelco.prime.paymentprocessor.core.PaymentError
+import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.storage.GraphStore
 import org.ostelco.prime.storage.NotFoundError
 import org.ostelco.prime.storage.StoreError
@@ -56,7 +57,7 @@ class Neo4jStore : GraphStore by Neo4jStoreSingleton
 object Neo4jStoreSingleton : GraphStore {
 
     private val ocsAdminService: OcsAdminService by lazy { getResource<OcsAdminService>() }
-    private val logger by logger()
+    private val logger by getLogger()
 
     //
     // Entity
@@ -121,7 +122,7 @@ object Neo4jStoreSingleton : GraphStore {
     // Balance (Subscriber - Bundle)
     //
 
-    override fun getBundles(subscriberId: String): Either<StoreError, Collection<Bundle>?> = readTransaction {
+    override fun getBundles(subscriberId: String): Either<StoreError, Collection<Bundle>> = readTransaction {
         subscriberStore.getRelated(subscriberId, subscriberToBundleRelation, transaction)
     }
 
@@ -260,7 +261,15 @@ object Neo4jStoreSingleton : GraphStore {
     override fun getMsisdn(subscriptionId: String): Either<StoreError, String> {
         return readTransaction {
             subscriberStore.getRelated(subscriptionId, subscriptionRelation, transaction)
-                    .map { it.first().msisdn }
+                    .flatMap {
+                        if (it.isEmpty()) {
+                            Either.left(NotFoundError(
+                                    type = subscriptionEntity.name,
+                                    id = "for ${subscriberEntity.name} = $subscriptionId"))
+                        } else {
+                            Either.right(it.first().msisdn)
+                        }
+                    }
         }
     }
 

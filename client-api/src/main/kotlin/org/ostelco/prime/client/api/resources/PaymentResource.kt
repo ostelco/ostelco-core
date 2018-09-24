@@ -3,7 +3,7 @@ package org.ostelco.prime.client.api.resources
 import io.dropwizard.auth.Auth
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.store.SubscriberDAO
-import org.ostelco.prime.logger
+import org.ostelco.prime.getLogger
 import javax.validation.constraints.NotNull
 import javax.ws.rs.GET
 import javax.ws.rs.POST
@@ -20,7 +20,7 @@ import javax.ws.rs.core.Response
 @Path("/paymentSources")
 class PaymentResource(private val dao: SubscriberDAO) {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     @POST
     @Produces("application/json")

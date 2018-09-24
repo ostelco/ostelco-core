@@ -61,7 +61,10 @@ class PurchaseRequestHandlerTest {
 
         assertEquals(DATA_TOPUP_3GB, capturedPurchaseRecord.value.product)
 
-        verify<EventProducer>(producer).topupDataBundleBalanceEvent(BUNDLE_ID, topupBytes)
+        verify<EventProducer>(producer).topupDataBundleBalanceEvent(
+                requestId = TOPUP_REQUEST_ID,
+                bundleId = BUNDLE_ID,
+                bytes = topupBytes)
     }
 
     companion object {
@@ -69,7 +72,7 @@ class PurchaseRequestHandlerTest {
         private const val MSISDN = "12345678"
         private const val SUBSCRIBER_ID = "foo@bar.com"
         private const val BUNDLE_ID = "foo@bar.com"
-
+        private const val TOPUP_REQUEST_ID = "req-id"
     }
 
     // https://github.com/mockito/mockito/issues/1255
