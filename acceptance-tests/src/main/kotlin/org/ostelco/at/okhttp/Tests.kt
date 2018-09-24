@@ -388,6 +388,42 @@ class PurchaseTest {
     }
 
     @Test
+    fun `okhttp test - POST products purchase add source then pay with it`() {
+
+        StripePayment.deleteAllCustomers()
+
+        val email = "purchase-${randomInt()}@test.com"
+        createProfile(name = "Test Purchase User with Default Payment Source", email = email)
+
+        val sourceId = StripePayment.createPaymentTokenId()
+
+        val client = clientForSubject(subject = email)
+
+        val paymentSource: PaymentSource = client.createSource(sourceId)
+
+        assertNotNull(paymentSource.id, message = "Failed to create payment source")
+
+        val balanceBefore = client.subscriptionStatus.remaining
+
+        val productSku = "1GB_249NOK"
+
+        client.purchaseProduct(productSku, paymentSource.id, null)
+
+        Thread.sleep(200) // wait for 200 ms for balance to be updated in db
+
+        val balanceAfter = client.subscriptionStatus.remaining
+
+        assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
+
+        val purchaseRecords = client.purchaseHistory
+
+        purchaseRecords.sortBy { it.timestamp }
+
+        assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
+        assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
+    }
+
+    @Test
     fun `okhttp test - POST products purchase without payment`() {
 
         val email = "purchase-legacy-${randomInt()}@test.com"
