@@ -4,6 +4,10 @@ plugins {
 }
 
 dependencies {
-  implementation project(":prime-api")
+  implementation project(":prime-modules")
+  implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
+
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
 }
+
+apply from: '../jacoco.gradle'

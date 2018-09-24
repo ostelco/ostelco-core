@@ -18,7 +18,7 @@ sourceSets {
   }
 }
 
-version = "1.14.0"
+version = "1.15.0"
 
 repositories {
   maven {
@@ -28,7 +28,7 @@ repositories {
 
 dependencies {
   // interface module between prime and prime-modules
-  implementation project(':prime-api')
+  implementation project(':prime-modules')
 
   // prime-modules
   runtimeOnly project(':ocs')
@@ -48,13 +48,13 @@ dependencies {
   implementation 'org.dhatim:dropwizard-prometheus:2.2.0'
 
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
-  testImplementation 'org.mockito:mockito-core:2.18.3'
+  testImplementation "org.mockito:mockito-core:$mockitoVersion"
   testImplementation 'com.lmax:disruptor:3.4.2'
   testImplementation 'com.palantir.docker.compose:docker-compose-rule-junit4:0.34.0'
   testImplementation 'org.dhatim:dropwizard-prometheus:2.2.0'
 
   integrationImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
-  integrationImplementation 'org.mockito:mockito-core:2.18.3'
+  integrationImplementation "org.mockito:mockito-core:$mockitoVersion"
   integrationImplementation 'com.lmax:disruptor:3.4.2'
   integrationImplementation 'com.palantir.docker.compose:docker-compose-rule-junit4:0.34.0'
 }
@@ -72,9 +72,7 @@ task integration(type: Test, description: 'Runs the integration tests.', group: 
   classpath = sourceSets.integration.runtimeClasspath
 }
 
-if (System.getenv("BUILD_ENV") != "CI_CD") {
-  build.dependsOn integration
-}
+build.dependsOn integration
 
 shadowJar {
   mainClassName = 'org.ostelco.prime.PrimeApplicationKt'

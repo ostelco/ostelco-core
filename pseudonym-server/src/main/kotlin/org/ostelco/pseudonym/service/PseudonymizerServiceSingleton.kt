@@ -1,13 +1,10 @@
 package org.ostelco.pseudonym.service
 
 import com.codahale.metrics.health.HealthCheck
+import com.google.cloud.NoCredentials
 import com.google.cloud.bigquery.BigQuery
 import com.google.cloud.bigquery.BigQueryOptions
-import com.google.cloud.datastore.Datastore
-import com.google.cloud.datastore.DatastoreOptions
-import com.google.cloud.datastore.Entity
-import com.google.cloud.datastore.Key
-import com.google.cloud.datastore.Query
+import com.google.cloud.datastore.*
 import com.google.cloud.datastore.StructuredQuery.PropertyFilter
 import com.google.cloud.datastore.testing.LocalDatastoreHelper
 import com.google.cloud.http.HttpTransportOptions
@@ -62,10 +59,10 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
     private val subscriberIdPseudonymiser: Pseudonymizer = Pseudonymizer(SubscriberIdPseudonymEntityKind, subscriberIdPropertyName)
     private val executor = Executors.newFixedThreadPool(3)
 
-    val msisdnPseudonymCache: Cache<String, PseudonymEntity> = CacheBuilder.newBuilder()
+    private val msisdnPseudonymCache: Cache<String, PseudonymEntity> = CacheBuilder.newBuilder()
             .maximumSize(5000)
             .build()
-    val subscriberIdPseudonymCache: Cache<String, PseudonymEntity> = CacheBuilder.newBuilder()
+    private val subscriberIdPseudonymCache: Cache<String, PseudonymEntity> = CacheBuilder.newBuilder()
             .maximumSize(5000)
             .build()
 
@@ -143,12 +140,16 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
                 DatastoreOptions
                         .newBuilder()
                         .setHost("localhost:9090")
+                        .setCredentials(NoCredentials.getInstance())
                         .setTransportOptions(HttpTransportOptions.newBuilder().build())
                         .build()
             }
             else -> {
                 logger.info("Created default instance of datastore client")
-                DatastoreOptions.getDefaultInstance()
+                DatastoreOptions
+                        .newBuilder()
+                        .setNamespace(ConfigRegistry.config.namespace)
+                        .build()
             }
         }.service
 

@@ -8,50 +8,60 @@ import com.stripe.model.*
 import org.ostelco.prime.paymentprocessor.core.*
 import com.stripe.model.Customer
 
-
-
-
 class StripePaymentProcessor : PaymentProcessor {
 
     private val logger by logger()
 
-    override fun getSavedSources(customerId: String): Either<PaymentError, List<SourceInfo>> =
+    override fun getSavedSources(customerId: String): Either<PaymentError, List<SourceDetailsInfo>> =
             either("Failed to retrieve sources for customer $customerId") {
-                val sources = mutableListOf<SourceInfo>()
+                val sources = mutableListOf<SourceDetailsInfo>()
                 val customer = Customer.retrieve(customerId)
                 customer.sources.data.forEach {
-                    sources.add(SourceInfo(it.id, getAccountDetails(it)))
+                    val details = getAccountDetails(it)
+                    sources.add(SourceDetailsInfo(it.id, getAccountType(details), details))
                 }
                 sources
             }
 
+    private fun getAccountType(details: Map<String, Any>) : String {
+        return details.get("type").toString()
+    }
+
     /* Returns detailed 'account details' for the given Stripe source/account.
-       Note that the fields 'id' and 'accountType' are manadatory. */
+       Note that including the fields 'id' and 'type' are manadatory. */
     private fun getAccountDetails(accountInfo: ExternalAccount) : Map<String, Any> {
         when (accountInfo) {
             is Card -> {
                 return mapOf("id" to accountInfo.id,
-                             "accountType" to "card",
+                             "type" to "card",
                              "addressLine1" to accountInfo.addressLine1,
                              "addressLine2" to accountInfo.addressLine2,
-                             "zip" to accountInfo.addressZip,
-                             "city" to accountInfo.addressCity,
-                             "state" to accountInfo.addressState,
+                             "addressZip" to accountInfo.addressZip,
+                             "addressCity" to accountInfo.addressCity,
+                             "addressState" to accountInfo.addressState,
+                             "brand" to accountInfo.brand,              // "Visa", "Mastercard" etc.
                              "country" to accountInfo.country,
                              "currency" to accountInfo.currency,
-                             "brand" to accountInfo.brand,              // "Visa", "Mastercard" etc.
-                             "last4" to accountInfo.last4,
-                             "expireMonth" to accountInfo.expMonth,
-                             "expireYear" to accountInfo.expYear,
-                             "funding" to accountInfo.funding)          // Typ.: "credit" or "debit"
-                        .filterValues { it != null }        // Unfortunately the 'swagger' def. will removed fields back again.
+                             "cvcCheck" to accountInfo.cvcCheck,
+                             "expMonth" to accountInfo.expMonth,
+                             "expYear" to accountInfo.expYear,
+                             "fingerprint" to accountInfo.fingerprint,
+                             "funding" to accountInfo.funding,
+                             "last4" to accountInfo.last4,              // Typ.: "credit" or "debit"
+                             "threeDSecure" to accountInfo.threeDSecure)
+                            .filterValues { it != null }
             }
-            // To add support for other Stripe source/account types, see
-            //    https://stripe.com/docs/api/java#sources
-            else -> {
-                logger.error("Received unsupported Stripe source/account type: {}", accountInfo)
+            is Source -> {
                 return mapOf("id" to accountInfo.id,
-                             "accountType" to "unsupported")
+                             "type" to "source",
+                             "typeData" to accountInfo.typeData,
+                             "owner" to accountInfo.owner)
+            }
+            else -> {
+                logger.error("Received unsupported Stripe source/account type: {}",
+                        accountInfo)
+                return mapOf("id" to accountInfo.id,
+                             "type" to "unsupported")
             }
         }
     }
@@ -68,7 +78,7 @@ class StripePaymentProcessor : PaymentProcessor {
                     "email" to userEmail)
             val customerList = Customer.list(customerParams)
             if (customerList.data.isEmpty()) {
-                 return Either.left(NotFoundError("Could not find a payment profile for user  $userEmail"))
+                 return Either.left(NotFoundError("Could not find a payment profile for user $userEmail"))
             } else if (customerList.data.size > 1){
                  return Either.left(NotFoundError("Multiple profiles for user $userEmail found"))
             } else {

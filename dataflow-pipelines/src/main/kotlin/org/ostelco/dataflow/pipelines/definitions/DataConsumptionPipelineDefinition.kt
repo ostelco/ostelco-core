@@ -86,6 +86,8 @@ val consumptionPerMsisdn = object : PTransform<PCollection<DataTrafficInfo>, PCo
                             .setMsisdn(it.msisdn)
                             .setTimestamp(Timestamps.fromSeconds(hoursSinceEpoch * 3600))
                             .setDataBytes(0)
+                            .setApn(it.apn)
+                            .setMccMnc(it.mccMnc)
                             .build(),
                     it.bucketBytes)
         }
@@ -97,6 +99,8 @@ val consumptionPerMsisdn = object : PTransform<PCollection<DataTrafficInfo>, PCo
                     .setMsisdn(it.key?.msisdn)
                     .setTimestamp(it.key?.timestamp)
                     .setDataBytes(it.value)
+                    .setApn(it.key?.apn)
+                    .setMccMnc(it.key?.mccMnc)
                     .build()
         }
 

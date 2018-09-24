@@ -72,6 +72,21 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
         }
     }
 
+    fun create(id: String, transaction: Transaction): Either<StoreError, Unit> {
+
+        if (get(id, transaction).isRight()) {
+            return Either.left(AlreadyExistsError(type = entityType.name, id = id))
+        }
+
+        return write("""CREATE (node:${entityType.name} { id:"$id"});""",
+                transaction) {
+            if (it.summary().counters().nodesCreated() == 1)
+                Either.right(Unit)
+            else
+                Either.left(NotCreatedError(type = entityType.name, id = id))
+        }
+    }
+
     fun <TO : HasId> getRelated(
             id: String,
             relationType: RelationType<E, *, TO>,

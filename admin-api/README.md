@@ -47,4 +47,14 @@
     validity (visibility):
       start_date: <start date of an offer>
       end_date: <end date of an offer>
-  
+
+
+# Importer API
+
+Documentation: TBD
+
+To test towards the docker-compose instance, do:
+
+      curl -X POST -H "Content-Type: text/vnd.yaml"  --data-binary  @admin-api/src/test/resources/sample-offer-products-segments.yaml  http://localhost:9090/importer
+
+(_very_ important to use the --data-binary option or else linebreaks will be broken, and that will mess up the input)

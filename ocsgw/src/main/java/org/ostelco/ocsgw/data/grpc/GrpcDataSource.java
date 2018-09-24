@@ -395,13 +395,13 @@ public class GrpcDataSource implements DataSource {
 
                     if (psInformation != null
                             && psInformation.getCalledStationId() != null
-                            && psInformation.getSgsnMncMcc() != null) {
+                            && psInformation.getSgsnMccMnc() != null) {
 
                         builder.setServiceInformation(
                                 ServiceInfo.newBuilder()
                                         .setPsInformation(PsInformation.newBuilder()
                                                 .setCalledStationId(psInformation.getCalledStationId())
-                                                .setSgsnMccMnc(psInformation.getSgsnMncMcc())
+                                                .setSgsnMccMnc(psInformation.getSgsnMccMnc())
                                                 .build()).build());
                     }
                 }

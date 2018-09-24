@@ -15,6 +15,7 @@ spec:
     spec:
       containers:
       - name: exporter
-        image: eu.gcr.io/pantel-2decb/exporter:v2.1
+        image: eu.gcr.io/pantel-2decb/exporter:EXPORTER_VERSION
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080

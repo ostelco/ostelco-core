@@ -35,6 +35,22 @@ spec:
     app: prime
     tier: backend
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pseudonym-server-service
+  labels:
+    app: prime
+    tier: backend
+spec:
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  selector:
+    app: prime
+    tier: backend
+---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
@@ -93,8 +109,14 @@ spec:
         image: eu.gcr.io/pantel-2decb/prime:PRIME_VERSION
         imagePullPolicy: Always
         env:
+        - name: NEO4J_HOST
+          value: neo4j
         - name: FIREBASE_ROOT_PATH
           value: v2
+        - name: DATA_TRAFFIC_TOPIC
+          value: data-traffic
+        - name: PURCHASE_INFO_TOPIC
+          value: purchase-info
         - name: STRIPE_API_KEY
           valueFrom:
             secretKeyRef:
