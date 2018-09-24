@@ -1,5 +1,7 @@
 package org.ostelco.prime.paymentprocessor
 
+import arrow.core.flatMap
+import arrow.core.right
 import com.stripe.Stripe
 import com.stripe.model.Token
 import org.junit.After
@@ -66,6 +68,23 @@ class StripePaymentProcessorTest {
     fun getUnknownPaymentProfile() {
         val result = paymentProcessor.getPaymentProfile("not@fail.com")
         assertEquals(false, result.isRight())
+    }
+
+    @Test
+    fun ensureSortedSourceList() {
+
+        val addedSources = listOf(
+                paymentProcessor.addSource(stripeCustomerId, createPaymentSourceId()),
+                paymentProcessor.addSource(stripeCustomerId, createPaymentSourceId()),
+                paymentProcessor.addSource(stripeCustomerId, createPaymentSourceId())
+        )
+
+        // Should now be sorted descending by the "created" timestamp.
+        val sortedSources = paymentProcessor.getSavedSources(stripeCustomerId)
+
+        assertEquals(true, sortedSources.isRight())
+
+        println(">>> stored sources: ${sortedSources}")
     }
 
     @Test
