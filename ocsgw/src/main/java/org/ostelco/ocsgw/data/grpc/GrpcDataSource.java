@@ -281,7 +281,7 @@ public class GrpcDataSource implements DataSource {
     }
 
     private void updateAnalytics() {
-        LOG.info("Number of active sesssions is {}", sessionIdMap.size());
+        LOG.info("Number of active sessions is {}", sessionIdMap.size());
 
 
         OcsgwAnalyticsReport.Builder builder = OcsgwAnalyticsReport.newBuilder().setActiveSessions(sessionIdMap.size());
@@ -289,7 +289,7 @@ public class GrpcDataSource implements DataSource {
             try {
                 String apn = ccrMap.get(msisdn).getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0).getCalledStationId();
                 String mncMcc = ccrMap.get(msisdn).getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0).getSgsnMccMnc();
-                builder.addUsers(User.newBuilder().setApn(apn).setMncMcc(mncMcc).build());
+                builder.addUsers(User.newBuilder().setApn(apn).setMncMcc(mncMcc).setMsisdn(msisdn).build());
             } catch (Exception e) {
                 LOG.info("Failed to match session info to ccr map");
             }
