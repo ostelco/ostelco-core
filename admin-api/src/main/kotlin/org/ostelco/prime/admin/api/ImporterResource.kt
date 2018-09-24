@@ -6,7 +6,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.ostelco.prime.admin.importer.ImportDeclaration
 import org.ostelco.prime.admin.importer.ImportProcessor
-import org.ostelco.prime.logger
+import org.ostelco.prime.getLogger
 import java.io.InputStream
 import java.lang.reflect.Type
 import javax.ws.rs.Consumes
@@ -26,7 +26,7 @@ import javax.ws.rs.ext.MessageBodyReader
 @Path("/importer")
 class ImporterResource(val processor: ImportProcessor) {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     @POST
     @Consumes("text/vnd.yaml")
@@ -45,7 +45,7 @@ class ImporterResource(val processor: ImportProcessor) {
 @Consumes("text/vnd.yaml")
 class YamlMessageBodyReader : MessageBodyReader<Any> {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     override fun isReadable(
             type: Class<*>,
@@ -80,7 +80,7 @@ fun <R : Any> R.asJson(`object`: Any): String {
     try {
         return objectMapper.writeValueAsString(`object`)
     } catch (e: JsonProcessingException) {
-        val logger by logger()
+        val logger by getLogger()
         logger.error("Error in json response {}", e)
     }
     return ""

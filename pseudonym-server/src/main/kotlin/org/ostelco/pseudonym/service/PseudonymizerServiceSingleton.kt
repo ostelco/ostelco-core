@@ -11,7 +11,7 @@ import com.google.cloud.http.HttpTransportOptions
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import io.dropwizard.setup.Environment
-import org.ostelco.prime.logger
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.ActivePseudonyms
 import org.ostelco.prime.model.PseudonymEntity
 import org.ostelco.prime.pseudonymizer.PseudonymizerService
@@ -49,7 +49,7 @@ interface DateBounds {
 
 object PseudonymizerServiceSingleton : PseudonymizerService {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     private lateinit var datastore: Datastore
     private var bigQuery: BigQuery? = null
@@ -192,7 +192,7 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
 
 
 class Pseudonymizer(val entityKind: String, val sourcePropertyName: String) {
-    private val logger by logger()
+    private val logger by getLogger()
     private lateinit var datastore: Datastore
     private var bigQuery: BigQuery? = null
     private lateinit var dateBounds: DateBounds

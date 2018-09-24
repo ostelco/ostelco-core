@@ -1,4 +1,4 @@
-package org.ostelco.prime.ocs
+package org.ostelco.prime.consumption
 
 import io.grpc.stub.StreamObserver
 import org.ostelco.ocs.api.ActivateRequest
@@ -7,7 +7,7 @@ import org.ostelco.ocs.api.CreditControlAnswerInfo
 import org.ostelco.ocs.api.CreditControlRequestInfo
 import org.ostelco.ocs.api.CreditControlRequestType.NONE
 import org.ostelco.ocs.api.OcsServiceGrpc
-import org.ostelco.prime.logger
+import org.ostelco.prime.getLogger
 import java.util.*
 
 
@@ -38,32 +38,24 @@ import java.util.*
  * see that a client invokes a method, and listens for a stream of information related to
  * that particular stream.
  */
-class OcsGrpcService(private val ocsService: OcsService) : OcsServiceGrpc.OcsServiceImplBase() {
+class OcsGrpcService(private val ocsAsyncRequestConsumer: OcsAsyncRequestConsumer) : OcsServiceGrpc.OcsServiceImplBase() {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     /**
      * Method to handle Credit-Control-Requests
      *
      * @param creditControlAnswer Stream used to send Credit-Control-Answer back to requester
      */
-    override fun creditControlRequest(
-            creditControlAnswer: StreamObserver<CreditControlAnswerInfo>): StreamObserver<CreditControlRequestInfo> {
+    override fun creditControlRequest(creditControlAnswer: StreamObserver<CreditControlAnswerInfo>): StreamObserver<CreditControlRequestInfo> {
 
         val streamId = newUniqueStreamId()
-
         logger.info("Starting Credit-Control-Request with streamId: {}", streamId)
-
-        ocsService.putCreditControlClient(streamId, creditControlAnswer)
-
+        ocsAsyncRequestConsumer.putCreditControlClient(streamId, creditControlAnswer)
         return StreamObserverForStreamWithId(streamId)
     }
 
-    private fun newUniqueStreamId(): String {
-        return UUID.randomUUID().toString()
-    }
-
-    private inner class StreamObserverForStreamWithId internal constructor(private val streamId: String) : StreamObserver<CreditControlRequestInfo> {
+    private inner class StreamObserverForStreamWithId(private val streamId: String) : StreamObserver<CreditControlRequestInfo> {
 
         /**
          * This method gets called every time a Credit-Control-Request is received
@@ -78,7 +70,7 @@ class OcsGrpcService(private val ocsService: OcsService) : OcsServiceGrpc.OcsSer
             logger.info("Received Credit-Control-Request request :: " + "for MSISDN: {} with request id: {}",
                     request.msisdn, request.requestId)
 
-            ocsService.creditControlRequestEvent(request, streamId)
+            ocsAsyncRequestConsumer.creditControlRequestEvent(streamId = streamId, request = request)
         }
 
         override fun onError(t: Throwable) {
@@ -87,7 +79,7 @@ class OcsGrpcService(private val ocsService: OcsService) : OcsServiceGrpc.OcsSer
 
         override fun onCompleted() {
             logger.info("Credit-Control-Request with streamId: {} completed", streamId)
-            ocsService.deleteCreditControlClient(streamId)
+            ocsAsyncRequestConsumer.deleteCreditControlClient(streamId)
         }
     }
 
@@ -107,17 +99,15 @@ class OcsGrpcService(private val ocsService: OcsService) : OcsServiceGrpc.OcsSer
             request: ActivateRequest,
             activateResponse: StreamObserver<ActivateResponse>) {
 
-        // The session we have with the OCS will only have one
-        // activation invocation. Thus it makes sense to keep the
-        // return channel (the activateResponse instance) in a
-        // particular place, so that's what we do.  The reason this
-        // code looks brittle is that if we ever get multiple activate
-        // requests, it will break.   The reason it never breaks
-        // is that we never do get more than one.  So yes, it's brittle.
-        ocsService.updateActivateResponse(activateResponse)
+        val streamId = newUniqueStreamId()
+        logger.info("Starting Activate-Response stream with streamId: {}", streamId)
+        ocsAsyncRequestConsumer.updateActivateResponse(streamId, activateResponse)
 
-        val response = ActivateResponse.newBuilder().setMsisdn("").build()
+        val initialDummyResponse = ActivateResponse.newBuilder().setMsisdn("").build()
+        activateResponse.onNext(initialDummyResponse)
+    }
 
-        activateResponse.onNext(response)
+    private fun newUniqueStreamId(): String {
+        return UUID.randomUUID().toString()
     }
 }

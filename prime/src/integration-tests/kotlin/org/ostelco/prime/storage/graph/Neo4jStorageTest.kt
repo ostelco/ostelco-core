@@ -31,7 +31,6 @@ class Neo4jStorageTest {
     private lateinit var storage: GraphStore
 
     @Before
-    @Throws(InterruptedException::class)
     fun setUp() {
         this.storage = Neo4jStore()
 
@@ -61,7 +60,7 @@ class Neo4jStorageTest {
                 { fail(it.message) },
                 { bundles ->
                     assertEquals(RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS,
-                            bundles?.first { it.id == EPHERMERAL_EMAIL }?.balance)
+                            bundles.firstOrNull { it.id == EPHERMERAL_EMAIL }?.balance)
                 })
 
         storage.updateBundle(Bundle(EPHERMERAL_EMAIL, 0))
@@ -69,7 +68,7 @@ class Neo4jStorageTest {
                 { fail(it.message) },
                 { bundles ->
                     assertEquals(0L,
-                            bundles?.first { it.id == EPHERMERAL_EMAIL }?.balance)
+                            bundles.firstOrNull { it.id == EPHERMERAL_EMAIL }?.balance)
                 })
     }
 

@@ -1,7 +1,6 @@
 package org.ostelco.prime.disruptor
 
 import com.lmax.disruptor.EventFactory
-import com.lmax.disruptor.TimeoutException
 import com.lmax.disruptor.dsl.Disruptor
 import io.dropwizard.lifecycle.Managed
 import java.util.concurrent.Executors
@@ -28,7 +27,6 @@ class OcsDisruptor : Managed {
         disruptor.start()
     }
 
-    @Throws(TimeoutException::class)
     override fun stop() {
         disruptor.shutdown(TIMEOUT_IN_SECONDS.toLong(), TimeUnit.SECONDS)
     }

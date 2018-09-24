@@ -2,19 +2,18 @@ package org.ostelco.prime.disruptor
 
 import com.lmax.disruptor.RingBuffer
 import org.ostelco.ocs.api.CreditControlRequestInfo
-import org.ostelco.ocs.api.ReportingReason
 import org.ostelco.prime.disruptor.EventMessageType.ADD_MSISDN_TO_BUNDLE_MAPPING
 import org.ostelco.prime.disruptor.EventMessageType.CREDIT_CONTROL_REQUEST
 import org.ostelco.prime.disruptor.EventMessageType.RELEASE_RESERVED_BUCKET
 import org.ostelco.prime.disruptor.EventMessageType.TOPUP_DATA_BUNDLE_BALANCE
 import org.ostelco.prime.disruptor.EventMessageType.UPDATE_BUNDLE
-import org.ostelco.prime.logger
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.Bundle
 import java.util.function.Consumer
 
 class EventProducerImpl(private val ringBuffer: RingBuffer<OcsEvent>) : EventProducer {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     private fun processNextEventOnTheRingBuffer(consumer: Consumer<OcsEvent>) {
 
@@ -42,37 +41,39 @@ class EventProducerImpl(private val ringBuffer: RingBuffer<OcsEvent>) : EventPro
     }
 
     private fun injectIntoRingBuffer(
-            type: EventMessageType,
+            eventMessageType: EventMessageType,
             msisdn: String? = null,
             bundleId: String? = null,
             bundleBytes: Long = 0,
             reservedBytes: Long = 0,
             streamId: String? = null,
             request: CreditControlRequestInfo? = null,
-            topUpBytes: Long? = 0) {
+            topupContext: TopupContext? = null) {
 
         processNextEventOnTheRingBuffer(
                 Consumer { event ->
-                    event.update(type,
-                            msisdn,
-                            bundleId,
-                            emptyList(),
-                            bundleBytes,
-                            reservedBytes,
-                            streamId,
-                            request,
-                            topUpBytes)
+                    event.update(messageType = eventMessageType,
+                            msisdn = msisdn,
+                            bundleId = bundleId,
+                            bundleBytes = bundleBytes,
+                            reservedBucketBytes = reservedBytes,
+                            ocsgwStreamId = streamId,
+                            request = request,
+                            topupContext = topupContext)
                 })
     }
 
     override fun topupDataBundleBalanceEvent(
+            requestId: String,
             bundleId: String,
             bytes: Long) {
 
         injectIntoRingBuffer(
-                type = TOPUP_DATA_BUNDLE_BALANCE,
+                eventMessageType = TOPUP_DATA_BUNDLE_BALANCE,
                 bundleId = bundleId,
-                topUpBytes = bytes)
+                topupContext = TopupContext(
+                        requestId = requestId,
+                        topUpBytes = bytes))
     }
 
     override fun releaseReservedDataBucketEvent(
@@ -80,26 +81,32 @@ class EventProducerImpl(private val ringBuffer: RingBuffer<OcsEvent>) : EventPro
             bytes: Long) {
 
         injectIntoRingBuffer(
-                type = RELEASE_RESERVED_BUCKET,
+                eventMessageType = RELEASE_RESERVED_BUCKET,
                 msisdn = msisdn)
     }
 
     override fun injectCreditControlRequestIntoRingbuffer(
-            request: CreditControlRequestInfo,
-            streamId: String) {
+            streamId: String,
+            request: CreditControlRequestInfo) {
 
-        injectIntoRingBuffer(CREDIT_CONTROL_REQUEST,
+        injectIntoRingBuffer(
+                eventMessageType =CREDIT_CONTROL_REQUEST,
                 msisdn = request.msisdn,
-                reservedBytes = 0,
                 streamId = streamId,
                 request = request)
     }
 
     override fun addBundle(bundle: Bundle) {
-        injectIntoRingBuffer(UPDATE_BUNDLE, bundleId = bundle.id, bundleBytes = bundle.balance)
+        injectIntoRingBuffer(
+                eventMessageType = UPDATE_BUNDLE,
+                bundleId = bundle.id,
+                bundleBytes = bundle.balance)
     }
 
     override fun addMsisdnToBundleMapping(msisdn: String, bundleId: String) {
-        injectIntoRingBuffer(ADD_MSISDN_TO_BUNDLE_MAPPING, msisdn = msisdn, bundleId = bundleId)
+        injectIntoRingBuffer(
+                eventMessageType = ADD_MSISDN_TO_BUNDLE_MAPPING,
+                msisdn = msisdn,
+                bundleId = bundleId)
     }
 }

@@ -4,11 +4,13 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonTypeName
 import io.dropwizard.setup.Environment
 import org.hibernate.validator.constraints.NotEmpty
-import org.ostelco.prime.analytics.DataConsumptionInfo
-import org.ostelco.prime.disruptor.ClearingEventHandler
+import org.ostelco.prime.analytics.AnalyticsReporter
+import org.ostelco.prime.consumption.OcsGrpcServer
+import org.ostelco.prime.consumption.OcsService
+import org.ostelco.prime.disruptor.BundleBalanceStore
+import org.ostelco.prime.disruptor.ClearingEvent
 import org.ostelco.prime.disruptor.EventProducerImpl
 import org.ostelco.prime.disruptor.OcsDisruptor
-import org.ostelco.prime.events.EventProcessor
 import org.ostelco.prime.module.PrimeModule
 import org.ostelco.prime.thresholds.ThresholdChecker
 
@@ -32,11 +34,7 @@ class OcsModule : PrimeModule {
         val ocsService = OcsService(producer)
 
         // OcsServer assigns OcsService as handler for gRPC requests
-        val server = OcsGrpcServer(8082, ocsService.asOcsServiceImplBase())
-
-        val dataConsumptionInfo = DataConsumptionInfo()
-
-        val thresholdChecker = ThresholdChecker(config.lowBalanceThreshold)
+        val server = OcsGrpcServer(8082, ocsService.ocsGrpcService)
 
         // Events flow:
         //      Producer:(OcsService, Subscriber)
@@ -46,8 +44,12 @@ class OcsModule : PrimeModule {
 
         disruptor.disruptor
                 .handleEventsWith(OcsState())
-                .then(ocsService.asEventHandler(), EventProcessor(), thresholdChecker, dataConsumptionInfo)
-                .then(ClearingEventHandler())
+                .then(ocsService.eventHandler,
+                        BundleBalanceStore(),
+                        OcsPrimeServiceSingleton.purchaseRequestHandler,
+                        ThresholdChecker(config.lowBalanceThreshold),
+                        AnalyticsReporter)
+                .then(ClearingEvent)
 
         // dropwizard starts disruptor
         env.lifecycle().manage(disruptor)

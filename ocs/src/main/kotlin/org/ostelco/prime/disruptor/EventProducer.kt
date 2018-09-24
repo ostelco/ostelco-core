@@ -5,6 +5,7 @@ import org.ostelco.prime.model.Bundle
 
 interface EventProducer {
     fun topupDataBundleBalanceEvent(
+            requestId: String,
             bundleId: String,
             bytes: Long)
 
@@ -13,8 +14,8 @@ interface EventProducer {
             bytes: Long)
     
     fun injectCreditControlRequestIntoRingbuffer(
-            request: CreditControlRequestInfo,
-            streamId: String)
+            streamId: String,
+            request: CreditControlRequestInfo)
 
     fun addBundle(bundle: Bundle)
 

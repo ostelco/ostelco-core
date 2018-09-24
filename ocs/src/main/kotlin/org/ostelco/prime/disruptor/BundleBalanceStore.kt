@@ -1,10 +1,9 @@
-package org.ostelco.prime.events
+package org.ostelco.prime.disruptor
 
 import com.lmax.disruptor.EventHandler
 import org.ostelco.prime.disruptor.EventMessageType.ADD_MSISDN_TO_BUNDLE_MAPPING
 import org.ostelco.prime.disruptor.EventMessageType.UPDATE_BUNDLE
-import org.ostelco.prime.disruptor.OcsEvent
-import org.ostelco.prime.logger
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.ClientDataSource
@@ -14,10 +13,9 @@ import org.ostelco.prime.storage.ClientDataSource
  * It will be initialized properly using `getResource()`.
  * Storage is parameterized into constructor to be able to pass mock for unit testing.
  */
-class EventProcessor(
-        private val storage: ClientDataSource = getResource()) : EventHandler<OcsEvent> {
+class BundleBalanceStore(private val storage: ClientDataSource = getResource()) : EventHandler<OcsEvent> {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     override fun onEvent(
             event: OcsEvent,

@@ -12,7 +12,7 @@ import com.google.gson.reflect.TypeToken
 import com.google.protobuf.ByteString
 import com.google.pubsub.v1.PubsubMessage
 import org.ostelco.prime.analytics.ConfigRegistry
-import org.ostelco.prime.logger
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.PurchaseRecordInfo
 import org.ostelco.prime.module.getResource
@@ -26,7 +26,7 @@ import java.net.URLEncoder
 object PurchaseInfoPublisher :
         PubSubPublisher by DelegatePubSubPublisher(topicId = ConfigRegistry.config.purchaseInfoTopicId) {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     private val pseudonymizerService by lazy { getResource<PseudonymizerService>() }
 

@@ -7,7 +7,7 @@ import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.analytics.PrimeMetric.REVENUE
 import org.ostelco.prime.analytics.PrimeMetric.USERS_PAID_AT_LEAST_ONCE
-import org.ostelco.prime.logger
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Product
@@ -57,7 +57,7 @@ class Neo4jStore : GraphStore by Neo4jStoreSingleton
 object Neo4jStoreSingleton : GraphStore {
 
     private val ocsAdminService: OcsAdminService by lazy { getResource<OcsAdminService>() }
-    private val logger by logger()
+    private val logger by getLogger()
 
     //
     // Entity
@@ -122,7 +122,7 @@ object Neo4jStoreSingleton : GraphStore {
     // Balance (Subscriber - Bundle)
     //
 
-    override fun getBundles(subscriberId: String): Either<StoreError, Collection<Bundle>?> = readTransaction {
+    override fun getBundles(subscriberId: String): Either<StoreError, Collection<Bundle>> = readTransaction {
         subscriberStore.getRelated(subscriberId, subscriberToBundleRelation, transaction)
     }
 
@@ -288,7 +288,15 @@ object Neo4jStoreSingleton : GraphStore {
     override fun getMsisdn(subscriptionId: String): Either<StoreError, String> {
         return readTransaction {
             subscriberStore.getRelated(subscriptionId, subscriptionRelation, transaction)
-                    .map { it.first().msisdn }
+                    .flatMap {
+                        if (it.isEmpty()) {
+                            Either.left(NotFoundError(
+                                    type = subscriptionEntity.name,
+                                    id = "for ${subscriberEntity.name} = $subscriptionId"))
+                        } else {
+                            Either.right(it.first().msisdn)
+                        }
+                    }
         }
     }
 
@@ -375,7 +383,19 @@ object Neo4jStoreSingleton : GraphStore {
                 .flatMap { (product, profileInfo) ->
                     // Add payment source
                     if (sourceId != null) {
-                        paymentProcessor.addSource(profileInfo.id, sourceId).map { sourceInfo -> Triple(product, profileInfo, sourceInfo.id) }
+                paymentProcessor.getSavedSources(profileInfo.id)
+                        .fold(
+                                {
+                                    Either.left(org.ostelco.prime.paymentprocessor.core.BadGatewayError("Failed to fetch sources for user", it.description))
+                                },
+                                {
+                                    var linkedSource = sourceId
+                                    if (!it.any{ sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
+                                        paymentProcessor.addSource(profileInfo.id, sourceId).map { sourceInfo -> linkedSource = sourceInfo.id }
+                                    }
+                                    Either.right(Triple(product,profileInfo, linkedSource))
+                                }
+                        )
                     } else {
                         Either.right(Triple(product, profileInfo, null))
                     }
@@ -437,7 +457,7 @@ object Neo4jStoreSingleton : GraphStore {
             if (!saveCard && savedSourceId != null) {
                 paymentProcessor.removeSource(profileInfo.id, savedSourceId)
                         .mapLeft { paymentError ->
-                            logger.error("Failed to remove card, for customerId ${profileInfo.id}, sourceId $sourceId")
+                            logger.error("Failed to remove card, for customerId ${profileInfo.id}, sourceId $savedSourceId")
                             paymentError
                         }
             }

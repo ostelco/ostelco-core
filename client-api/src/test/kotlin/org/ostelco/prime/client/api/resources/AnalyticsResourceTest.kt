@@ -37,14 +37,12 @@ class AnalyticsResourceTest {
     private val email = "mw@internet.org"
 
     @Before
-    @Throws(Exception::class)
     fun setUp() {
         `when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
                 .thenReturn(Optional.of(AccessTokenPrincipal(email)))
     }
 
     @Test
-    @Throws(Exception::class)
     fun reportAnalytics() {
         val arg1 = argumentCaptor<String>()
         val arg2 = argumentCaptor<String>()

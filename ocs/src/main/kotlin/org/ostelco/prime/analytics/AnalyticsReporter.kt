@@ -4,15 +4,15 @@ import com.lmax.disruptor.EventHandler
 import org.ostelco.prime.analytics.PrimeMetric.MEGABYTES_CONSUMED
 import org.ostelco.prime.disruptor.EventMessageType.CREDIT_CONTROL_REQUEST
 import org.ostelco.prime.disruptor.OcsEvent
-import org.ostelco.prime.logger
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.module.getResource
 
 /**
  * This class publishes the data consumption information events analytics.
  */
-class DataConsumptionInfo : EventHandler<OcsEvent> {
+object AnalyticsReporter : EventHandler<OcsEvent> {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     private val analyticsReporter by lazy { getResource<AnalyticsService>() }
 
@@ -25,10 +25,11 @@ class DataConsumptionInfo : EventHandler<OcsEvent> {
             return
         }
 
-        if (event.msisdn != null) {
-            logger.info("Sent DataConsumptionInfo event to analytics")
+        val msisdn = event.msisdn
+        if (msisdn != null) {
+            logger.info("Sent Data Consumption info event to analytics")
             analyticsReporter.reportTrafficInfo(
-                    msisdn = event.msisdn!!,
+                    msisdn = msisdn,
                     usedBytes = event.request?.msccList?.firstOrNull()?.used?.totalOctets ?: 0L,
                     bundleBytes = event.bundleBytes,
                     apn = event.request?.serviceInformation?.psInformation?.calledStationId,

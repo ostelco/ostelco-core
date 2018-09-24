@@ -1,6 +1,6 @@
 package org.ostelco.prime.paymentprocessor.core
 
-import org.ostelco.prime.core.InternalError
+import org.ostelco.prime.apierror.InternalError
 
 sealed class PaymentError(val description: String, var externalErrorMessage : String? = null) : InternalError()
 
