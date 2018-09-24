@@ -14,7 +14,7 @@ import com.google.protobuf.util.Timestamps
 import com.google.pubsub.v1.PubsubMessage
 import org.ostelco.analytics.api.ActiveUsersInfo
 import org.ostelco.prime.analytics.ConfigRegistry
-import org.ostelco.prime.logger
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.metrics.api.User
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.pseudonymizer.PseudonymizerService
@@ -27,7 +27,7 @@ import java.time.Instant
 object ActiveUsersPublisher :
         PubSubPublisher by DelegatePubSubPublisher(topicId = ConfigRegistry.config.activeUsersTopicId) {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     private val pseudonymizerService by lazy { getResource<PseudonymizerService>() }
 

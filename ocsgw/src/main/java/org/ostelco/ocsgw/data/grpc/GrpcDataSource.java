@@ -288,7 +288,7 @@ public class GrpcDataSource implements DataSource {
         sessionIdMap.forEach((msisdn, sessionContext) -> {
             try {
                 String apn = ccrMap.get(msisdn).getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0).getCalledStationId();
-                String mncMcc = ccrMap.get(msisdn).getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0).getSgsnMncMcc();
+                String mncMcc = ccrMap.get(msisdn).getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0).getSgsnMccMnc();
                 builder.addUsers(User.newBuilder().setApn(apn).setMncMcc(mncMcc).build());
             } catch (Exception e) {
                 LOG.info("Failed to match session info to ccr map");
