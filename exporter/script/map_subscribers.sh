@@ -33,7 +33,7 @@ CREATE TEMP FUNCTION URLDECODE(url STRING) AS ((
 ));
 
 SELECT
-   DISTINCT(sub.subscriberId) as pseudoId, URLDECODE(ps.subscriberId)
+   DISTINCT(sub.subscriberId) as pseudoId, URLDECODE(ps.subscriberId) as subscriberId
 FROM
    \`$inputSubscriberTable\` as sub
 JOIN
