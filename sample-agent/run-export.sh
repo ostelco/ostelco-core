@@ -64,24 +64,24 @@ fi
 #TEMPFILE="$(mktemp /tmp/abc-script.XXXXXX)"
 TEMPFILE="tmpfile.txt"
 
-# kubectl exec -it "${EXPORTER_PODNAME}" -- /bin/bash -c /export_data.sh > "$TEMPFILE"
+kubectl exec -it "${EXPORTER_PODNAME}" -- /bin/bash -c /export_data.sh > "$TEMPFILE"
 
-# # Fail if the exec failed
-# retVal=$?
-# if [ $retVal -ne 0 ]; then
-#     echo "ERROR: Failed to export data:"
-#     cat $TMPFILE
-#     rm $TMPFILE
-#     exit 1
-# fi
+# Fail if the exec failed
+retVal=$?
+if [ $retVal -ne 0 ]; then
+    echo "ERROR: Failed to export data:"
+    cat $TMPFILE
+    rm $TMPFILE
+    exit 1
+fi
 
 #
-# Parse the output of the tmpfile
+# Parse the output of the tmpfile, getting the export ID, and
+# the google filestore URLs for the output files.
 #
 
 
 EXPORT_ID=$(grep "Starting export job for" $TEMPFILE | awk '{print $5}' |  sed 's/\r$//' )
-
 
 PURCHASES_GS="gs://${PROJECT_ID}-dataconsumption-export/$EXPORT_ID-purchases.csv"
 SUB_2_MSISSDN_MAPPING_GS="gs://${PROJECT_ID}-dataconsumption-export/$EXPORT_ID-sub2msisdn.csv"
@@ -96,8 +96,16 @@ gsutil cp $SUB_2_MSISSDN_MAPPING_GS $TARGET_DIR
 gsutil cp $CONSUMPTION_GS $TARGET_DIR
 
 #
+# Clean up the tempfile
+#
+
+rm "$TEMPFILE"
+
+#
 # Finally output the ID of the export, since that's
 # what will be used by users of this script to access
 # the output
 #
+
 echo $EXPORT_ID
+exit 0
