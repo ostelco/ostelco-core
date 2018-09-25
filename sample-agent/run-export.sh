@@ -1,9 +1,10 @@
 #!/bin/bash
 
 ##
-## Exploratory code to run an export using bigquery.
+## Run an export, return the identifier for the export, put the
+## files from the export in a directory denoted as the single
+## command line parameter.
 ##
-
 
 #
 #  Get command line parameter, which should be an existing
@@ -16,7 +17,6 @@ if [[ -z "$TARGET_DIR" ]] ; then
     echo "usage  $0 target-dir"
     exit 1
 fi
-
 
 if [[ ! -d "$TARGET_DIR" ]] ; then
     echo "$0  parameter does not designate an existing directory"
