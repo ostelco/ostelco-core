@@ -14,6 +14,13 @@ SCRIPTPATH=$(dirname "$SCRIPT")
 echo $SCRIPTPATH
 
 
+#
+# Get coordinates telling the script where in this world
+# it is, and what files it should relate to and so on.
+#
+
+. $SCRIPTPATH/check_dependencies_get_environment_coordinates.sh
+
 ## Check that credentials are set up
 
   #  tbd
@@ -23,22 +30,7 @@ echo $SCRIPTPATH
 EXPORT_ID=0802c66be1ce4e2dba22f988b3ce24f7
 # EXPORT_ID=$($SCRIPTPATH/run-export.sh target-dir)
 
-if [[ -z "$EXPORT_ID" ]] ; then
-    echo "$0  Could not determine export ID, bailing out"
-    exit 1
-fi
-
-## Calculate the output, and put into a file
-## that will be a single-column CSV file containing the
-## members of the updated segment
-
-PROJECT_ID=$(gcloud config get-value project)
-
-PURCHASES_GS="gs://${PROJECT_ID}-dataconsumption-export/$EXPORT_ID-purchases.csv"
-SUB_2_MSISSDN_MAPPING_GS="gs://${PROJECT_ID}-dataconsumption-export/$EXPORT_ID-sub2msisdn.csv"
-CONSUMPTION_GS="gs://${PROJECT_ID}-dataconsumption-export/$EXPORT_ID.csv"
-RESULT_SEGMENT_PSEUDO_GS="gs://${PROJECT_ID}-dataconsumption-export/$EXPORT_ID-resultsegment-pseudoanonymized.csv"
-RESULT_SEGMENT_CLEAR_GS="gs://${PROJECT_ID}-dataconsumption-export/$EXPORT_ID-resultsegment-cleartext.csv"
+. $SCRIPTPATH/check_dependencies_get_environment_coordinates.sh
 
 SEGMENT_TMPFILE_PSEUDO="tmpsegment-pseudo.csv"
 SEGMENT_TMPFILE_CLEAR="tmpsegment-clear.csv"
@@ -57,9 +49,9 @@ gsutil cp $SEGMENT_TMPFILE_PSEUDO $RESULT_SEGMENT_PSEUDO_GS
 gsutil cp $RESULT_SEGMENT_PSEUDO_GS $SEGMENT_TMPFILE_CLEAR
 
 
-TMPFILE=tmpfile.yml
+IMPORTFILE_YML=tmpfile.yml
 
-cat > $TMPFILE <<EOF
+cat > $IMPORTFILE_YML <<EOF
 producingAgent:
   name: Simple agent
   version: 1.0
@@ -77,9 +69,7 @@ segment:
 EOF
 
 
-awk '{print "      - " $1}'  $SEGMENT_TMPFILE_CLEAR >> $TMPFILE 
-# for x in $ALLSUBSCRIBERIDS ; do echo "      - $x" >> $TMPFILE ;  done
-
+awk '{print "      - " $1}'  $SEGMENT_IMPORTFILE_CLEAR >> $IMPORTFILE_YML 
 
 ## Send it to the importer
-echo curl --data-binary @$TMPFILE $IMPORTER_URL
+echo curl --data-binary @$IMPORTFILE_YML $IMPORTER_URL

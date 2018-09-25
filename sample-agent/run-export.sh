@@ -6,6 +6,15 @@
 ## command line parameter.
 ##
 
+
+
+# Absolute path to this script, e.g. /home/user/bin/foo.sh
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+SCRIPTPATH=$(dirname "$SCRIPT")
+echo $SCRIPTPATH
+
+
 #
 #  Get command line parameter, which should be an existing
 #  directory in which to store the results
@@ -24,38 +33,7 @@ if [[ ! -d "$TARGET_DIR" ]] ; then
     exit 1
 fi
 
-#
-# Check for dependencies
-#
-
-DEPENDENCIES="gcloud kubectl gsutil"
-
-for dep in $DEPENDENCIES ; do
-    if [[ -z $(which $dep) ]] ; then
-	echo "ERROR: Could not find dependency $dep"
-    fi
-done
-
-#
-#  Figure out relevant parts of the environment and check their
-#  sanity.
-#
-
-
-PROJECT_ID=$(gcloud config get-value project)
-
-if [[ -z "$PROJECT_ID" ]] ; then
-    echo "ERROR: Unknown google project ID"
-    exit 1
-fi
-
-
-EXPORTER_PODNAME=$(kubectl get pods | grep exporter- | awk '{print $1}')
-if [[ -z "$EXPORTER_PODNAME" ]] ; then
-    echo "ERROR: Unknown exporter podname"
-    exit 1
-fi
-
+$SCRIPTPATH/check_dependencies_get_environment_coordinates.sh
 
 #
 # Run an export inside the kubernetes cluster, then parse
