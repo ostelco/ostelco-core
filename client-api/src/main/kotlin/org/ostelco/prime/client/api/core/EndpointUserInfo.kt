@@ -1,12 +1,9 @@
 package org.ostelco.prime.client.api.core
 
-import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.ostelco.prime.logger
-import java.io.IOException
+import org.ostelco.prime.getLogger
 import java.util.*
-import javax.validation.constraints.NotNull
 
 
 /**
@@ -26,61 +23,23 @@ import javax.validation.constraints.NotNull
  */
 class EndpointUserInfo(enc: String) {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     private val mapper = ObjectMapper()
 
-    /* Causes an error if decoding of the base64 encoded json doc fails. */
-    @NotNull
-    private val obj: JsonNode?
+    private val obj: JsonNode = mapper.readTree(decode(enc))
+    private fun decode(enc: String): String = String(Base64.getDecoder().decode(enc))
 
-    val issuer: Optional<String>
+    val issuer: String?
         get() = get("issuer")
 
-    val id: Optional<String>
+    val id: String?
         get() = get("id")
 
-    val email: Optional<String>
+    val email: String?
         get() = get("email")
 
-    init {
-        var obj: JsonNode? = null
-        try {
-            obj = mapper.readTree(decode(enc))
-        } catch (e: JsonParseException) {
-            logger.error("Parsing of the provided json doc {} failed: {}", enc, e)
-        } catch (e: IOException) {
-            logger.error("Unexpected error when parsing the json doc {}: {}", enc, e)
-        }
+    private operator fun get(key: String): String? = obj.get(key)?.textValue()
 
-        this.obj = obj
-    }
-
-    fun hasIssuer(): Boolean {
-        return has("issuer")
-    }
-
-    fun hasId(): Boolean {
-        return has("id")
-    }
-
-    fun hasEmail(): Boolean {
-        return has("email")
-    }
-
-    private fun has(key: String): Boolean {
-        return obj != null && obj.has(key)
-    }
-
-    private operator fun get(key: String): Optional<String> {
-        return if (has(key)) Optional.of(obj!!.get(key).textValue()) else Optional.empty()
-    }
-
-    private fun decode(enc: String): String {
-        return String(Base64.getDecoder().decode(enc))
-    }
-
-    override fun toString(): String {
-        return obj!!.toString()
-    }
+    override fun toString(): String = obj.toString()
 }

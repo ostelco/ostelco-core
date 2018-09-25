@@ -1,4 +1,4 @@
-FROM alpine:3.7
+FROM azul/zulu-openjdk:8u181-8.31.0.1
 
 MAINTAINER CSI "csi@telenordigital.com"
 
@@ -18,7 +18,7 @@ COPY build/libs/bq-metrics-extractor-uber.jar /bq-metrics-extractor.jar
 # classes that should be cached.
 #
 
-CMD ["java", "-Dfile.encoding=UTF-8", "-Xshare:on", "-Xshare:dump", "-jar", "/bq-metrics-extractor.jar", "quit", "config/config.yaml"]
+RUN ["java", "-Dfile.encoding=UTF-8", "-Xshare:on", "-Xshare:dump", "-jar", "/bq-metrics-extractor.jar", "quit", "config/config.yaml"]
 
 
 #

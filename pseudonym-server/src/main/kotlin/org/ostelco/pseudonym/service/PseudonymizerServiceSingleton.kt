@@ -1,20 +1,17 @@
 package org.ostelco.pseudonym.service
 
 import com.codahale.metrics.health.HealthCheck
+import com.google.cloud.NoCredentials
 import com.google.cloud.bigquery.BigQuery
 import com.google.cloud.bigquery.BigQueryOptions
-import com.google.cloud.datastore.Datastore
-import com.google.cloud.datastore.DatastoreOptions
-import com.google.cloud.datastore.Entity
-import com.google.cloud.datastore.Key
-import com.google.cloud.datastore.Query
+import com.google.cloud.datastore.*
 import com.google.cloud.datastore.StructuredQuery.PropertyFilter
 import com.google.cloud.datastore.testing.LocalDatastoreHelper
 import com.google.cloud.http.HttpTransportOptions
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import io.dropwizard.setup.Environment
-import org.ostelco.prime.logger
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.ActivePseudonyms
 import org.ostelco.prime.model.PseudonymEntity
 import org.ostelco.prime.pseudonymizer.PseudonymizerService
@@ -52,7 +49,7 @@ interface DateBounds {
 
 object PseudonymizerServiceSingleton : PseudonymizerService {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     private lateinit var datastore: Datastore
     private var bigQuery: BigQuery? = null
@@ -62,10 +59,10 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
     private val subscriberIdPseudonymiser: Pseudonymizer = Pseudonymizer(SubscriberIdPseudonymEntityKind, subscriberIdPropertyName)
     private val executor = Executors.newFixedThreadPool(3)
 
-    val msisdnPseudonymCache: Cache<String, PseudonymEntity> = CacheBuilder.newBuilder()
+    private val msisdnPseudonymCache: Cache<String, PseudonymEntity> = CacheBuilder.newBuilder()
             .maximumSize(5000)
             .build()
-    val subscriberIdPseudonymCache: Cache<String, PseudonymEntity> = CacheBuilder.newBuilder()
+    private val subscriberIdPseudonymCache: Cache<String, PseudonymEntity> = CacheBuilder.newBuilder()
             .maximumSize(5000)
             .build()
 
@@ -143,12 +140,16 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
                 DatastoreOptions
                         .newBuilder()
                         .setHost("localhost:9090")
+                        .setCredentials(NoCredentials.getInstance())
                         .setTransportOptions(HttpTransportOptions.newBuilder().build())
                         .build()
             }
             else -> {
                 logger.info("Created default instance of datastore client")
-                DatastoreOptions.getDefaultInstance()
+                DatastoreOptions
+                        .newBuilder()
+                        .setNamespace(ConfigRegistry.config.namespace)
+                        .build()
             }
         }.service
 
@@ -191,7 +192,7 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
 
 
 class Pseudonymizer(val entityKind: String, val sourcePropertyName: String) {
-    private val logger by logger()
+    private val logger by getLogger()
     private lateinit var datastore: Datastore
     private var bigQuery: BigQuery? = null
     private lateinit var dateBounds: DateBounds

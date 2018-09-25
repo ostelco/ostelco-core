@@ -1,10 +1,9 @@
 package org.ostelco.prime.client.api.resources
 
 import io.dropwizard.auth.Auth
-import org.ostelco.prime.logger
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.store.SubscriberDAO
-import org.ostelco.prime.module.getResource
+import org.ostelco.prime.getLogger
 import javax.validation.constraints.NotNull
 import javax.ws.rs.GET
 import javax.ws.rs.POST
@@ -21,7 +20,7 @@ import javax.ws.rs.core.Response
 @Path("/paymentSources")
 class PaymentResource(private val dao: SubscriberDAO) {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     @POST
     @Produces("application/json")
@@ -36,7 +35,7 @@ class PaymentResource(private val dao: SubscriberDAO) {
 
         return dao.createSource(token.name, sourceId)
                 .fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { sourceInfo -> Response.status(Response.Status.CREATED).entity(sourceInfo)}
                 ).build()
     }
@@ -51,12 +50,13 @@ class PaymentResource(private val dao: SubscriberDAO) {
         }
         return dao.listSources(token.name)
                 .fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { sourceList -> Response.status(Response.Status.OK).entity(sourceList)}
                 ).build()
     }
 
     @PUT
+    @Produces("application/json")
     fun setDefaultSource(@Auth token: AccessTokenPrincipal?,
                          @NotNull
                          @QueryParam("sourceId")
@@ -68,7 +68,7 @@ class PaymentResource(private val dao: SubscriberDAO) {
 
         return dao.setDefaultSource(token.name, sourceId)
                 .fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { sourceInfo -> Response.status(Response.Status.OK).entity(sourceInfo)}
                 ).build()
     }

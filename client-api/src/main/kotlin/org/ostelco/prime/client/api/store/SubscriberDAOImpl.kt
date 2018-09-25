@@ -8,15 +8,18 @@ import org.ostelco.prime.client.api.metrics.updateMetricsOnNewSubscriber
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.Person
 import org.ostelco.prime.client.api.model.SubscriptionStatus
-import org.ostelco.prime.core.ApiError
-import org.ostelco.prime.core.BadGatewayError
-import org.ostelco.prime.core.BadRequestError
-import org.ostelco.prime.core.ForbiddenError
-import org.ostelco.prime.core.InsuffientStorageError
-import org.ostelco.prime.core.NotFoundError
-import org.ostelco.prime.logger
+import org.ostelco.prime.apierror.ApiError
+import org.ostelco.prime.apierror.ApiErrorCode
+import org.ostelco.prime.apierror.BadGatewayError
+import org.ostelco.prime.apierror.BadRequestError
+import org.ostelco.prime.apierror.InsufficientStorageError
+import org.ostelco.prime.apierror.NotFoundError
+import org.ostelco.prime.apierror.mapPaymentErrorToApiError
+import org.ostelco.prime.apierror.mapStorageErrorToApiError
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.ActivePseudonyms
 import org.ostelco.prime.model.ApplicationToken
+import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
@@ -26,9 +29,11 @@ import org.ostelco.prime.ocs.OcsSubscriberService
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
 import org.ostelco.prime.pseudonymizer.PseudonymizerService
 import org.ostelco.prime.storage.ClientDataSource
+import org.ostelco.prime.storage.StoreError
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -38,7 +43,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSubscriberService: OcsSubscriberService) : SubscriberDAO {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     private val paymentProcessor by lazy { getResource<PaymentProcessor>() }
     private val pseudonymizer by lazy { getResource<PseudonymizerService>() }
@@ -50,43 +55,45 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
     override fun getProfile(subscriberId: String): Either<ApiError, Subscriber> {
         return try {
             storage.getSubscriber(subscriberId).mapLeft {
-                        BadRequestError("Incomplete profile description. ${it.message}")
-                    }
+                NotFoundError("Failed to fetch profile.", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_PROFILE, it)
+            }
         } catch (e: Exception) {
             logger.error("Failed to fetch profile for subscriberId $subscriberId", e)
-            Either.left(NotFoundError("Failed to fetch profile"))
+            Either.left(NotFoundError("Failed to fetch profile", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_PROFILE))
         }
     }
 
     override fun createProfile(subscriberId: String, profile: Subscriber, referredBy: String?): Either<ApiError, Subscriber> {
         if (!SubscriberDAO.isValidProfile(profile)) {
             logger.error("Failed to create profile. Invalid profile.")
-            return Either.left(BadRequestError("Incomplete profile description"))
+            return Either.left(BadRequestError("Incomplete profile description. Profile must contain name and email", ApiErrorCode.FAILED_TO_CREATE_PAYMENT_PROFILE))
         }
         return try {
             storage.addSubscriber(profile, referredBy)
-                    .mapLeft { ForbiddenError("Failed to create profile. ${it.message}") }
+                    .mapLeft {
+                        mapStorageErrorToApiError("Failed to create profile.", ApiErrorCode.FAILED_TO_CREATE_PAYMENT_PROFILE, it)
+                    }
                     .flatMap {
                         updateMetricsOnNewSubscriber()
                         getProfile(subscriberId)
                     }
         } catch (e: Exception) {
             logger.error("Failed to create profile for subscriberId $subscriberId", e)
-            Either.left(ForbiddenError("Failed to create profile"))
+            Either.left(BadGatewayError("Failed to create profile", ApiErrorCode.FAILED_TO_CREATE_PAYMENT_PROFILE))
         }
     }
 
     override fun storeApplicationToken(msisdn: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken> {
 
         if (!SubscriberDAO.isValidApplicationToken(applicationToken)) {
-            return Either.left(BadRequestError("Incomplete ApplicationToken"))
+            return Either.left(BadRequestError("Incomplete ApplicationToken", ApiErrorCode.FAILED_TO_STORE_APPLICATION_TOKEN))
         }
 
         try {
             storage.addNotificationToken(msisdn, applicationToken)
         } catch (e: Exception) {
             logger.error("Failed to store ApplicationToken for msisdn $msisdn", e)
-            return Either.left(InsuffientStorageError("Failed to store ApplicationToken"))
+            return Either.left(InsufficientStorageError("Failed to store ApplicationToken", ApiErrorCode.FAILED_TO_STORE_APPLICATION_TOKEN))
         }
         return getNotificationToken(msisdn, applicationToken.applicationID)
     }
@@ -95,113 +102,117 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         try {
             return storage.getNotificationToken(msisdn, applicationId)
                     ?.let { Either.right(it) }
-                    ?: return Either.left(NotFoundError("Failed to get ApplicationToken"))
+                    ?: return Either.left(NotFoundError("Failed to get ApplicationToken", ApiErrorCode.FAILED_TO_STORE_APPLICATION_TOKEN))
         } catch (e: Exception) {
             logger.error("Failed to get ApplicationToken for msisdn $msisdn", e)
-            return Either.left(NotFoundError("Failed to get ApplicationToken"))
+            return Either.left(BadGatewayError("Failed to get ApplicationToken", ApiErrorCode.FAILED_TO_STORE_APPLICATION_TOKEN))
         }
     }
 
     override fun updateProfile(subscriberId: String, profile: Subscriber): Either<ApiError, Subscriber> {
         if (!SubscriberDAO.isValidProfile(profile)) {
-            return Either.left(BadRequestError("Incomplete profile description"))
+            return Either.left(BadRequestError("Incomplete profile description", ApiErrorCode.FAILED_TO_UPDATE_PROFILE))
         }
         try {
             storage.updateSubscriber(profile)
         } catch (e: Exception) {
             logger.error("Failed to update profile for subscriberId $subscriberId", e)
-            return Either.left(NotFoundError("Failed to update profile"))
+            return Either.left(BadGatewayError("Failed to update profile", ApiErrorCode.FAILED_TO_UPDATE_PROFILE))
         }
 
         return getProfile(subscriberId)
     }
 
     override fun getSubscriptionStatus(subscriberId: String): Either<ApiError, SubscriptionStatus> {
-        try {
-            return storage.getBundles(subscriberId)
-                    .map { bundles -> bundles?.first()?.balance ?: 0 }
+        return try {
+            storage.getBundles(subscriberId)
+                    .map { bundles -> bundles.firstOrNull()?.balance ?: 0 }
                     .flatMap { balance ->
                         storage.getPurchaseRecords(subscriberId)
                                 .map { purchaseRecords -> SubscriptionStatus(balance, purchaseRecords.toList()) }
                     }
-                    .mapLeft { NotFoundError(it.message) }
+                    .mapLeft {
+                        mapStorageErrorToApiError("Failed to fetch subscription status.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTION_STATUS, it)
+                    }
         } catch (e: Exception) {
             logger.error("Failed to get balance for subscriber $subscriberId", e)
-            return Either.left(NotFoundError("Failed to get balance"))
+            return Either.left(BadGatewayError("Failed to get balance", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTION_STATUS))
         }
     }
 
     override fun getSubscriptions(subscriberId: String): Either<ApiError, Collection<Subscription>> {
         try {
             return storage.getSubscriptions(subscriberId).mapLeft {
-               NotFoundError("Failed to get subscriptions. ${it.message}")
+                NotFoundError("Failed to get subscriptions.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS, it)
             }
         } catch (e: Exception) {
             logger.error("Failed to get subscriptions for subscriberId $subscriberId", e)
-            return Either.left(NotFoundError("Failed to get subscriptions"))
+            return Either.left(BadGatewayError("Failed to get subscriptions", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS))
+        }
+    }
+
+    override fun getBundles(subscriberId: String): Either<ApiError, Collection<Bundle>> {
+        return try {
+            storage.getBundles(subscriberId).mapLeft {
+                NotFoundError("Failed to get bundles. ${it.message}", ApiErrorCode.FAILED_TO_FETCH_BUNDLES)
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to get bundles for subscriberId $subscriberId", e)
+            Either.left(NotFoundError("Failed to get bundles", ApiErrorCode.FAILED_TO_FETCH_BUNDLES))
         }
     }
 
     override fun getActivePseudonymOfMsisdnForSubscriber(subscriberId: String): Either<ApiError, ActivePseudonyms> {
         return storage.getMsisdn(subscriberId)
-                .mapLeft { NotFoundError("Failed to msisdn for user. ${it.message}") }
+                .mapLeft { NotFoundError("Failed to get pseudonym for user.", ApiErrorCode.FAILED_TO_FETCH_PSEUDONYM_FOR_SUBSCRIBER, it) }
                 .map { msisdn -> pseudonymizer.getActivePseudonymsForMsisdn(msisdn) }
     }
 
     override fun getPurchaseHistory(subscriberId: String): Either<ApiError, Collection<PurchaseRecord>> {
         return try {
             return storage.getPurchaseRecords(subscriberId).bimap(
-                    { NotFoundError("Failed to get purchase history. ${it.message}") },
+                    { NotFoundError("Failed to get purchase history.", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_HISTORY, it) },
                     { it.toList() })
         } catch (e: Exception) {
             logger.error("Failed to get purchase history for subscriberId $subscriberId", e)
-            Either.left(NotFoundError("Failed to get purchase history"))
+            Either.left(BadGatewayError("Failed to get purchase history", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_HISTORY))
         }
     }
 
     override fun getMsisdn(subscriberId: String): Either<ApiError, String> {
         return try {
             storage.getMsisdn(subscriberId).mapLeft {
-                NotFoundError("Did not find msisdn for this subscription. ${it.message}")
+                NotFoundError("Did not find msisdn for this subscription.", ApiErrorCode.FAILED_TO_STORE_APPLICATION_TOKEN, it)
             }
         } catch (e: Exception) {
             logger.error("Did not find msisdn for subscriberId $subscriberId", e)
-            Either.left(NotFoundError("Did not find subscription"))
+            Either.left(BadGatewayError("Did not find subscription", ApiErrorCode.FAILED_TO_STORE_APPLICATION_TOKEN))
         }
     }
 
     override fun getProducts(subscriberId: String): Either<ApiError, Collection<Product>> {
         return try {
             storage.getProducts(subscriberId).bimap(
-                    { NotFoundError(it.message) },
+                    { NotFoundError("Failed to fetch products", ApiErrorCode.FAILED_TO_FETCH_PRODUCT_LIST, it) },
                     { products -> products.values })
         } catch (e: Exception) {
             logger.error("Failed to get Products for subscriberId $subscriberId", e)
-            Either.left(NotFoundError("Failed to get Products"))
+            Either.left(BadGatewayError("Failed to get Products", ApiErrorCode.FAILED_TO_FETCH_PRODUCT_LIST))
         }
 
     }
 
     override fun getProduct(subscriptionId: String, sku: String): Either<ApiError, Product> {
         return storage.getProduct(subscriptionId, sku)
-                .fold({ Either.left(NotFoundError("Failed to get products for sku $sku")) },
+                .fold({ Either.left(NotFoundError("Failed to get products for sku $sku", ApiErrorCode.FAILED_TO_FETCH_PRODUCT_INFORMATION)) },
                         { Either.right(it) })
     }
 
-    private fun createAndStorePaymentProfile(name: String): Either<ApiError, ProfileInfo> {
-        return paymentProcessor.createPaymentProfile(name)
-                .mapLeft { ForbiddenError(it.description) }
-                .flatMap { profileInfo ->
-                    setPaymentProfile(name, profileInfo)
-                            .map { profileInfo }
-                }
-    }
-
     @Deprecated("use purchaseProduct", ReplaceWith("purchaseProduct"))
-    override fun purchaseProductWithoutPayment(subscriberId: String, sku: String): Either<ApiError,Unit> {
+    override fun purchaseProductWithoutPayment(subscriberId: String, sku: String): Either<ApiError, Unit> {
         return getProduct(subscriberId, sku)
                 // If we can't find the product, return not-found
-                .mapLeft { NotFoundError("Product unavailable") }
+                .mapLeft { NotFoundError("Product unavailable", ApiErrorCode.FAILED_TO_PURCHASE_PRODUCT) }
                 .flatMap { product ->
                     val purchaseRecord = PurchaseRecord(
                             id = UUID.randomUUID().toString(),
@@ -212,7 +223,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                     storage.addPurchaseRecord(subscriberId, purchaseRecord)
                             .mapLeft { storeError ->
                                 logger.error("failed to save purchase record, for subscriberId $subscriberId, sku $sku")
-                                BadGatewayError(storeError.message)
+                                BadGatewayError("Failed to store purchase record", ApiErrorCode.FAILED_TO_PURCHASE_PRODUCT, storeError)
                             }
                             // Notify OCS
                             .flatMap {
@@ -234,37 +245,37 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
             sku: String,
             sourceId: String?,
             saveCard: Boolean): Either<ApiError, ProductInfo> =
-        storage.purchaseProduct(
-                subscriberId,
-                sku,
-                sourceId,
-                saveCard).mapLeft { NotFoundError(it.description) }
+            storage.purchaseProduct(
+                    subscriberId,
+                    sku,
+                    sourceId,
+                    saveCard).mapLeft { mapPaymentErrorToApiError("Failed to purchase product. ", ApiErrorCode.FAILED_TO_PURCHASE_PRODUCT, it) }
 
     override fun getReferrals(subscriberId: String): Either<ApiError, Collection<Person>> {
         return try {
             storage.getReferrals(subscriberId).bimap(
-                    { NotFoundError("Failed to get referral list. ${it.message}") },
+                    { NotFoundError("Failed to get referral list.", ApiErrorCode.FAILED_TO_FETCH_REFERRALS, it) },
                     { list -> list.map { Person(it) } })
         } catch (e: Exception) {
             logger.error("Failed to get referral list for subscriberId $subscriberId", e)
-            Either.left(NotFoundError("Failed to get referral list"))
+            Either.left(BadGatewayError("Failed to get referral list", ApiErrorCode.FAILED_TO_FETCH_REFERRALS))
         }
     }
 
     override fun getReferredBy(subscriberId: String): Either<ApiError, Person> {
         return try {
             storage.getReferredBy(subscriberId).bimap(
-                    { NotFoundError("Failed to get referred-by. ${it.message}") },
+                    { NotFoundError("Failed to get referred-by.", ApiErrorCode.FAILED_TO_FETCH_REFERRED_BY_LIST, it) },
                     { Person(name = it) })
         } catch (e: Exception) {
             logger.error("Failed to get referred-by for subscriberId $subscriberId", e)
-            Either.left(NotFoundError("Failed to get referred-by"))
+            Either.left(BadGatewayError("Failed to get referred-by", ApiErrorCode.FAILED_TO_FETCH_REFERRED_BY_LIST))
         }
     }
 
     override fun getConsents(subscriberId: String): Either<ApiError, Collection<Consent>> {
         consentMap.putIfAbsent(subscriberId, ConcurrentHashMap())
-        consentMap[subscriberId]!!.putIfAbsent("privacy", false)
+        consentMap[subscriberId]?.putIfAbsent("privacy", false)
         return Either.right(listOf(Consent(
                 consentId = "privacy",
                 description = "Grant permission to process personal data",
@@ -273,56 +284,71 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
 
     override fun acceptConsent(subscriberId: String, consentId: String): Either<ApiError, Consent> {
         consentMap.putIfAbsent(subscriberId, ConcurrentHashMap())
-        consentMap[subscriberId]!![consentId] = true
+        consentMap[subscriberId]?.put(consentId, true)
         return Either.right(Consent(consentId, "Grant permission to process personal data", true))
     }
 
     override fun rejectConsent(subscriberId: String, consentId: String): Either<ApiError, Consent> {
         consentMap.putIfAbsent(subscriberId, ConcurrentHashMap())
-        consentMap[subscriberId]!![consentId] = false
+        consentMap[subscriberId]?.put(consentId, false)
         return Either.right(Consent(consentId, "Grant permission to process personal data", false))
     }
 
-    override fun getPaymentProfile(name: String): Either<ApiError, ProfileInfo> =
+    private fun getPaymentProfile(name: String): Either<StoreError, ProfileInfo> =
             storage.getPaymentId(name)
                     ?.let { profileInfoId -> Either.right(ProfileInfo(profileInfoId)) }
-                    ?: Either.left(BadGatewayError("Failed to fetch payment customer ID"))
+                    ?: Either.left(org.ostelco.prime.storage.NotFoundError("Failed to fetch payment customer ID", name))
 
-    override fun setPaymentProfile(name: String, profileInfo: ProfileInfo): Either<ApiError, Unit> =
-        Either.cond(
-                test = storage.createPaymentId(name, profileInfo.id),
-                ifTrue = { Unit },
-                ifFalse = { BadGatewayError("Failed to save payment customer ID") })
+    private fun setPaymentProfile(name: String, profileInfo: ProfileInfo): Either<StoreError, Unit> =
+            Either.cond(
+                    test = storage.createPaymentId(name, profileInfo.id),
+                    ifTrue = { Unit },
+                    ifFalse = { org.ostelco.prime.storage.NotCreatedError("Failed to store payment customer ID") })
 
     override fun reportAnalytics(subscriberId: String, events: String): Either<ApiError, Unit> = Either.right(Unit)
 
     override fun createSource(subscriberId: String, sourceId: String): Either<ApiError, SourceInfo> {
-        return getPaymentProfile(subscriberId)
+        return paymentProcessor.getPaymentProfile(subscriberId)
                 .fold(
-                        { createAndStorePaymentProfile(subscriberId) },
+                        {
+                            paymentProcessor.createPaymentProfile(subscriberId)
+                                    .mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_STORE_PAYMENT_SOURCE, error) }
+                        },
                         { profileInfo -> Either.right(profileInfo) }
                 )
-                .flatMap { profileInfo -> paymentProcessor.addSource(profileInfo.id, sourceId).mapLeft { NotFoundError(it.description) } }
+                .flatMap { profileInfo ->
+                    paymentProcessor.addSource(profileInfo.id, sourceId)
+                            .mapLeft { mapPaymentErrorToApiError("Failed to store payment source", ApiErrorCode.FAILED_TO_STORE_PAYMENT_SOURCE, it) }
+                }
     }
 
     override fun setDefaultSource(subscriberId: String, sourceId: String): Either<ApiError, SourceInfo> {
-        return getPaymentProfile(subscriberId)
+        return paymentProcessor.getPaymentProfile(subscriberId)
                 .fold(
-                        { createAndStorePaymentProfile(subscriberId) },
+                        {
+                            paymentProcessor.createPaymentProfile(subscriberId)
+                                    .mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_SET_DEFAULT_PAYMENT_SOURCE, error) }
+                        },
                         { profileInfo -> Either.right(profileInfo) }
                 )
-                .flatMap { profileInfo -> paymentProcessor.setDefaultSource(profileInfo.id, sourceId).mapLeft { NotFoundError(it.description) } }
+                .flatMap { profileInfo ->
+                    paymentProcessor.setDefaultSource(profileInfo.id, sourceId)
+                            .mapLeft { mapPaymentErrorToApiError("Failed to set default payment source", ApiErrorCode.FAILED_TO_SET_DEFAULT_PAYMENT_SOURCE, it) }
+                }
     }
 
-    override fun listSources(subscriberId: String): Either<ApiError, List<SourceInfo>> {
-        return getPaymentProfile(subscriberId)
+    override fun listSources(subscriberId: String): Either<ApiError, List<SourceDetailsInfo>> {
+        return paymentProcessor.getPaymentProfile(subscriberId)
                 .fold(
-                        { createAndStorePaymentProfile(subscriberId) },
+                        {
+                            paymentProcessor.createPaymentProfile(subscriberId)
+                                    .mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_FETCH_PAYMENT_SOURCES_LIST, error) }
+                        },
                         { profileInfo -> Either.right(profileInfo) }
                 )
-                .flatMap { profileInfo -> paymentProcessor.getSavedSources(profileInfo.id).mapLeft { NotFoundError(it.description) } }
-
+                .flatMap { profileInfo ->
+                    paymentProcessor.getSavedSources(profileInfo.id)
+                            .mapLeft { mapPaymentErrorToApiError("Failed to list sources", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_SOURCES_LIST, it) }
+                }
     }
-
-
 }

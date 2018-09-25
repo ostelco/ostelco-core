@@ -30,42 +30,13 @@ class ConsumptionPerMsisdnTest {
         val testStream: TestStream<DataTrafficInfo> =
                 TestStream.create(ProtoCoder.of(DataTrafficInfo::class.java))
                         .addElements(
-                                DataTrafficInfo.newBuilder()
-                                        .setMsisdn("123")
-                                        .setBucketBytes(100)
-                                        .setBundleBytes(900)
-                                        .setTimestamp(Timestamps.fromMillis(Instant.now().millis))
-                                        .build(),
-                                DataTrafficInfo.newBuilder()
-                                        .setMsisdn("123")
-                                        .setBucketBytes(100)
-                                        .setBundleBytes(800)
-                                        .setTimestamp(Timestamps.fromMillis(Instant.now().millis))
-                                        .build(),
-                                DataTrafficInfo.newBuilder()
-                                        .setMsisdn("123")
-                                        .setBucketBytes(100)
-                                        .setBundleBytes(700)
-                                        .setTimestamp(Timestamps.fromMillis(Instant.now().millis))
-                                        .build(),
-                                DataTrafficInfo.newBuilder()
-                                        .setMsisdn("456")
-                                        .setBucketBytes(100)
-                                        .setBundleBytes(900)
-                                        .setTimestamp(Timestamps.fromMillis(Instant.now().millis))
-                                        .build(),
-                                DataTrafficInfo.newBuilder()
-                                        .setMsisdn("456")
-                                        .setBucketBytes(100)
-                                        .setBundleBytes(800)
-                                        .setTimestamp(Timestamps.fromMillis(Instant.now().millis))
-                                        .build(),
-                                DataTrafficInfo.newBuilder()
-                                        .setMsisdn("789")
-                                        .setBucketBytes(100)
-                                        .setBundleBytes(900)
-                                        .setTimestamp(Timestamps.fromMillis(Instant.now().millis))
-                                        .build())
+                                createDataTrafficInfo(msisdn = "123", bucketBytes = 100, bundleBytes = 900, apn = "ostelco", mccMnc = "242_02"),
+                                createDataTrafficInfo(msisdn = "123", bucketBytes = 100, bundleBytes = 800, apn = "ostelco", mccMnc = "242_02"),
+                                createDataTrafficInfo(msisdn = "123", bucketBytes = 100, bundleBytes = 700, apn = "ostelco", mccMnc = "242_02"),
+                                createDataTrafficInfo(msisdn = "123", bucketBytes = 100, bundleBytes = 600, apn = "pi", mccMnc = "242_02"),
+                                createDataTrafficInfo(msisdn = "456", bucketBytes = 100, bundleBytes = 900, apn = "ostelco", mccMnc = "242_02"),
+                                createDataTrafficInfo(msisdn = "456", bucketBytes = 100, bundleBytes = 800, apn = "ostelco", mccMnc = "242_02"),
+                                createDataTrafficInfo(msisdn = "789", bucketBytes = 100, bundleBytes = 900, apn = "ostelco", mccMnc = "242_02"))
                         .advanceWatermarkToInfinity()
 
 
@@ -78,13 +49,45 @@ class ConsumptionPerMsisdnTest {
                     .setCoder(ProtoCoder.of(AggregatedDataTrafficInfo::class.java))
 
             PAssert.that(out).containsInAnyOrder(
-                    AggregatedDataTrafficInfo.newBuilder().setMsisdn("123").setDataBytes(300).setTimestamp(currentHourDateTime).build(),
-                    AggregatedDataTrafficInfo.newBuilder().setMsisdn("456").setDataBytes(200).setTimestamp(currentHourDateTime).build(),
-                    AggregatedDataTrafficInfo.newBuilder().setMsisdn("789").setDataBytes(100).setTimestamp(currentHourDateTime).build())
+                    createAggregatedDataTrafficInfo(msisdn = "123", dataBytes = 300, timestamp = currentHourDateTime, apn = "ostelco", mccMnc = "242_02"),
+                    createAggregatedDataTrafficInfo(msisdn = "123", dataBytes = 100, timestamp = currentHourDateTime, apn = "pi", mccMnc = "242_02"),
+                    createAggregatedDataTrafficInfo(msisdn = "456", dataBytes = 200, timestamp = currentHourDateTime, apn = "ostelco", mccMnc = "242_02"),
+                    createAggregatedDataTrafficInfo(msisdn = "789", dataBytes = 100, timestamp = currentHourDateTime, apn = "ostelco", mccMnc = "242_02"))
 
             pipeline.run().waitUntilFinish()
         }
     }
 
     private fun getCurrentHourDateTime(): Timestamp = Timestamps.fromSeconds((java.time.Instant.now().epochSecond / 3600) * 3600)
+
+    private fun createDataTrafficInfo(
+            msisdn: String,
+            bucketBytes: Long,
+            bundleBytes: Long,
+            apn: String,
+            mccMnc: String): DataTrafficInfo =
+
+            DataTrafficInfo.newBuilder()
+                    .setMsisdn(msisdn)
+                    .setBucketBytes(bucketBytes)
+                    .setBundleBytes(bundleBytes)
+                    .setTimestamp(Timestamps.fromMillis(Instant.now().millis))
+                    .setApn(apn)
+                    .setMccMnc(mccMnc)
+                    .build()
+
+    private fun createAggregatedDataTrafficInfo(
+            msisdn: String,
+            dataBytes: Long,
+            timestamp: Timestamp,
+            apn: String,
+            mccMnc: String): AggregatedDataTrafficInfo =
+
+            AggregatedDataTrafficInfo.newBuilder()
+                    .setMsisdn(msisdn)
+                    .setDataBytes(dataBytes)
+                    .setTimestamp(timestamp)
+                    .setApn(apn)
+                    .setMccMnc(mccMnc)
+                    .build()
 }

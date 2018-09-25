@@ -2,21 +2,25 @@ package org.ostelco.bqmetrics
 
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.google.cloud.bigquery.*
+import com.google.cloud.bigquery.BigQueryOptions
+import com.google.cloud.bigquery.Job
+import com.google.cloud.bigquery.JobId
+import com.google.cloud.bigquery.JobInfo
+import com.google.cloud.bigquery.QueryJobConfiguration
 import io.dropwizard.Application
-import io.dropwizard.setup.Bootstrap
-import io.dropwizard.setup.Environment
-import io.prometheus.client.exporter.PushGateway
-import io.prometheus.client.CollectorRegistry
 import io.dropwizard.Configuration
 import io.dropwizard.cli.ConfiguredCommand
+import io.dropwizard.setup.Bootstrap
+import io.dropwizard.setup.Environment
+import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Gauge
 import io.prometheus.client.Summary
+import io.prometheus.client.exporter.PushGateway
 import net.sourceforge.argparse4j.inf.Namespace
 import net.sourceforge.argparse4j.inf.Subparser
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
-import org.slf4j.Logger
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
 
@@ -65,7 +69,7 @@ fun main(args: Array<String>) {
  * Config of a single metric that will be extracted using a BigQuery
  * query.
  */
-private class  MetricConfig {
+private class MetricConfig {
 
     /**
      * Type of the metric.  Currently the only permitted type is
@@ -108,7 +112,7 @@ private class  MetricConfig {
     @Valid
     @NotNull
     @JsonProperty
-    lateinit var sql:  String
+    lateinit var sql: String
 }
 
 
@@ -116,7 +120,7 @@ private class  MetricConfig {
  * Configuration for the extractor, default config
  * plus a list of metrics descriptions.
  */
-private class BqMetricsExtractorConfig: Configuration() {
+private class BqMetricsExtractorConfig : Configuration() {
     @Valid
     @NotNull
     @JsonProperty("bqmetrics")
@@ -175,7 +179,6 @@ private interface MetricBuilder {
         }
 
         val count = result.iterateAll().iterator().next().get(resultColumn).longValue
-
         return count
     }
 }
@@ -190,14 +193,18 @@ private class SummaryMetricBuilder(
 
 
     override fun buildMetric(registry: CollectorRegistry) {
-        val summary: Summary = Summary.build()
-                .name(metricName)
-                .help(help).register(registry)
-        val value: Long = getNumberValueViaSql(sql, resultColumn)
+        try {
+            val summary: Summary = Summary.build()
+                    .name(metricName)
+                    .help(help).register(registry)
+            val value: Long = getNumberValueViaSql(sql, resultColumn)
 
-        log.info("Summarizing metric $metricName  to be $value")
+            log.info("Summarizing metric $metricName  to be $value")
 
-        summary.observe(value * 1.0)
+            summary.observe(value * 1.0)
+        } catch (e: NullPointerException) {
+            log.error(e.toString())
+        }
     }
 }
 
@@ -210,14 +217,18 @@ private class GaugeMetricBuilder(
     private val log: Logger = LoggerFactory.getLogger(SummaryMetricBuilder::class.java)
 
     override fun buildMetric(registry: CollectorRegistry) {
-        val gauge: Gauge = Gauge.build()
-                .name(metricName)
-                .help(help).register(registry)
-        val value: Long = getNumberValueViaSql(sql, resultColumn)
+        try {
+            val gauge: Gauge = Gauge.build()
+                    .name(metricName)
+                    .help(help).register(registry)
+            val value: Long = getNumberValueViaSql(sql, resultColumn)
 
-        log.info("Gauge metric $metricName = $value")
+            log.info("Gauge metric $metricName = $value")
 
-        gauge.set(value * 1.0)
+            gauge.set(value * 1.0)
+        } catch (e: NullPointerException) {
+            log.error(e.toString())
+        }
     }
 }
 
@@ -225,10 +236,10 @@ private class GaugeMetricBuilder(
  * Thrown when something really bad is detected and it's necessary to terminate
  * execution immediately.  No cleanup of anything will be done.
  */
-private class BqMetricsExtractionException: RuntimeException {
-    constructor(message: String, ex: Exception?): super(message, ex)
-    constructor(message: String): super(message)
-    constructor(ex: Exception): super(ex)
+private class BqMetricsExtractionException : RuntimeException {
+    constructor(message: String, ex: Exception?) : super(message, ex)
+    constructor(message: String) : super(message)
+    constructor(ex: Exception) : super(ex)
 }
 
 
@@ -241,7 +252,6 @@ private class PrometheusPusher(val pushGateway: String, val job: String) {
 
     val registry = CollectorRegistry()
 
-    @Throws(Exception::class)
     fun publishMetrics(metrics: List<MetricConfig>) {
 
         val metricSources: MutableList<MetricBuilder> = mutableListOf()

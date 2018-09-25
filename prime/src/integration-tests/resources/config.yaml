@@ -2,7 +2,6 @@ modules:
   - type: firebase
     config:
       configFile: config/pantel-prod.json
-      databaseName: pantel-2decb
       rootPath: test
   - type: neo4j
     config:
@@ -26,7 +25,6 @@ modules:
   - type: firebase-app-notifier
     config:
       configFile: config/pantel-prod.json
-      databaseName: pantel-2decb
   - type: admin
 
 server:

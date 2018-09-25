@@ -1,5 +1,5 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.61"
+  id "org.jetbrains.kotlin.jvm" version "1.2.70"
   id "java-library"
   id "idea"
 }
@@ -19,7 +19,7 @@ sourceSets {
 dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
 
-  implementation project(":prime-api")
+  implementation project(":prime-modules")
 
   implementation "com.stripe:stripe-java:$stripeVersion"
 
@@ -42,9 +42,7 @@ task integration(type: Test, description: 'Runs the integration tests.', group: 
   classpath = sourceSets.integration.runtimeClasspath
 }
 
-if (System.getenv("BUILD_ENV") != "CI_CD") {
-  build.dependsOn integration
-}
+build.dependsOn integration
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
   kotlinOptions {

@@ -238,19 +238,34 @@ paths:
       - auth0_jwt: []
   "/subscriptions":
     get:
-      description: "Get subscription (msisdn, balance) for the user (identified by bearer token)."
+      description: "Get subscription (msisdn) for the user (identified by bearer token)."
       produces:
       - application/json
       operationId: "getSubscriptions"
       responses:
         200:
-          description: "Get the subscription for this user."
+          description: "Get subscriptions for this user."
           schema:
             $ref: '#/definitions/SubscriptionList'
         404:
           description: "No subscription found for this user."
       security:
       - auth0_jwt: []
+  "/bundles":
+    get:
+      description: "Get bundles (balance) for the user (identified by bearer token)."
+      produces:
+        - application/json
+      operationId: "getBundles"
+      responses:
+        200:
+          description: "Get bundles for this user."
+          schema:
+            $ref: '#/definitions/BundleList'
+        404:
+          description: "No bundle found for this user."
+      security:
+        - auth0_jwt: []
   "/subscription/status":
     get:
       description: "Get subscription status for the user (identified by bearer token)."
@@ -377,8 +392,22 @@ definitions:
     type: object
     properties:
       msisdn:
-        description: "The MSISDN for which the purchase was made."
+        description: "Mobile number for this subscription"
         type: string
+  BundleList:
+    type: array
+    items:
+      $ref: '#/definitions/Bundle'
+  Bundle:
+    type: object
+    properties:
+      id:
+        description: "Bundle ID"
+        type: string
+      balance:
+        description: "Balance units in this bundle"
+        type: integer
+        format: int64
   SubscriptionStatus:
     type: object
     properties:
@@ -442,41 +471,16 @@ definitions:
       id:
         description: "The identifier for the source"
         type: string
+      type:
+        description: "The type of source"
+        type: string
       details:
         description: "All information stored with the source"
         type: object
-        properties:
-          id:
-            type: string
-          accountType:
-            type: string
-          addressLine1:
-            type: string
-          addressLine2:
-            type: string
-          zip:
-            type: string
-          city:
-            type: string
-          state:
-            type: string
-          country:
-            type: string
-          currency:
-            type: string
-          brand:
-            type: string
-          last4:
-            type: string
-          expireMonth:
-            type: integer
-          expireYear:
-            type: integer
-          funding:
-            type: string
-        required:
-          - id
-          - accountType
+        additionalProperties: true
+    required:
+      - id
+      - type
   ConsentList:
     type: array
     items:

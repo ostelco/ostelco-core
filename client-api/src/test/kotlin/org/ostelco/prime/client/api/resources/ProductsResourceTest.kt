@@ -21,7 +21,7 @@ import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.auth.OAuthAuthenticator
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
-import org.ostelco.prime.core.ApiError
+import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
@@ -50,21 +50,19 @@ class ProductsResourceTest {
             Product("3", Price(20, "NOK"), emptyMap(), emptyMap()))
 
     private val userInfo = Base64.getEncoder().encodeToString(
-            """|{
-               |  "issuer": "someone",
-               |  "email": "mw@internet.org"
-               |}""".trimMargin()
+            """{
+                 "issuer": "someone",
+                 "email": "mw@internet.org"
+               }""".trimIndent()
                     .toByteArray())
 
     @Before
-    @Throws(Exception::class)
     fun setUp() {
         `when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
                 .thenReturn(Optional.of(AccessTokenPrincipal(email)))
     }
 
     @Test
-    @Throws(Exception::class)
     fun getProducts() {
         val arg = argumentCaptor<String>()
 
@@ -87,7 +85,6 @@ class ProductsResourceTest {
     }
 
     @Test
-    @Throws(Exception::class)
     fun purchaseProduct() {
         val emailArg = argumentCaptor<String>()
         val skuArg = argumentCaptor<String>()

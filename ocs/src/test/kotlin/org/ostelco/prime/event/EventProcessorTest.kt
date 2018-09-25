@@ -11,7 +11,7 @@ import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
 import org.ostelco.prime.disruptor.EventMessageType.RELEASE_RESERVED_BUCKET
 import org.ostelco.prime.disruptor.OcsEvent
-import org.ostelco.prime.events.EventProcessor
+import org.ostelco.prime.disruptor.BundleBalanceStore
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.storage.ClientDataSource
@@ -30,7 +30,7 @@ class EventProcessorTest  {
     @Mock
     lateinit var storage: ClientDataSource
 
-    private lateinit var processor: EventProcessor
+    private lateinit var processor: BundleBalanceStore
 
     @Before
     fun setUp() {
@@ -38,7 +38,7 @@ class EventProcessorTest  {
         Mockito.`when`<Either<StoreError, Product>>(storage.getProduct("id", Products.DATA_TOPUP_3GB.sku))
                 .thenReturn(Either.right(Products.DATA_TOPUP_3GB))
 
-        this.processor = EventProcessor(storage)
+        this.processor = BundleBalanceStore(storage)
     }
 
     @Test

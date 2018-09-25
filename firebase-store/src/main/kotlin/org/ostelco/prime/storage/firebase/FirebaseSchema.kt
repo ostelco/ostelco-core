@@ -5,7 +5,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import org.ostelco.prime.logger
+import org.ostelco.prime.getLogger
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -24,7 +24,7 @@ class EntityStore<E>(
         firebaseDatabase: FirebaseDatabase,
         private val entityType: EntityType<E>) {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     val databaseReference: DatabaseReference = firebaseDatabase.getReference("/${config.rootPath}/${entityType.path}")
 
@@ -94,14 +94,8 @@ class EntityStore<E>(
             URLDecoder.decode(value, StandardCharsets.UTF_8.name())
                     .replace(oldValue = "%2E", newValue = ".")
 
-    /**
-     * Check if entity exists for a given value
-     */
     private fun exists(id: String, reference: EntityStore<E>.() -> DatabaseReference = { databaseReference }) = get(id, reference) != null
 
-    /**
-     * Inverse of exists
-     */
     private fun dontExists(id: String, reference: EntityStore<E>.() -> DatabaseReference = { databaseReference }) = !exists(id, reference)
 
     /**

@@ -9,10 +9,16 @@ exportId=${exportId//-}
 exportId=${exportId,,}
 projectId=pantel-2decb
 
-pseudonymsTable=$projectId.exported_pseudonyms.$exportId
+msisdnPseudonymsTable=$projectId.exported_pseudonyms.${exportId}_msisdn
+subscriberPseudonymsTable=$projectId.exported_pseudonyms.${exportId}_subscriber
+sub2msisdnMappingsTable=exported_data_consumption.${exportId}_sub2msisdn
 hourlyConsumptionTable=$projectId.data_consumption.hourly_consumption
 dataConsumptionTable=exported_data_consumption.$exportId
+rawPurchasesTable=$projectId.purchases.raw_purchases
+purchaseRecordsTable=exported_data_consumption.${exportId}_purchases
 csvfile=$projectId-dataconsumption-export/$exportId.csv
+purchasesCsvfile=$projectId-dataconsumption-export/$exportId-purchases.csv
+sub2msisdnCsvfile=$projectId-dataconsumption-export/$exportId-sub2msisdn.csv
 
 # Generate the pseudonym tables for this export
 echo "Starting export job for $exportId"
@@ -43,19 +49,20 @@ if [[ $jsonResult != FINISHED ]]; then
   echo "Table creation failed $(curl -X GET $queryUrl  2> /dev/null)"
   exit
 fi
-echo "Created Table $pseudonymsTable"
+echo "Created Table $msisdnPseudonymsTable"
+echo "Created Table $subscriberPseudonymsTable"
 
 
 echo "Creating table $dataConsumptionTable"
 # SQL for joining pseudonym & hourly consumption tables.
 read -r -d '' sqlForJoin << EOM
 SELECT
-   hc.bytes, ps.msisdnid, hc.timestamp
+   hc.bytes, ps.pseudoid as msisdnid, hc.timestamp
 FROM
    \`$hourlyConsumptionTable\` as hc
 JOIN
-  \`$pseudonymsTable\` as ps
-ON  ps.msisdn = hc.msisdn
+  \`$msisdnPseudonymsTable\` as ps
+ON  ps.pseudonym = hc.msisdn
 EOM
 # Run the query using bq & dump results to the new table
 bq --location=EU --format=none query --destination_table $dataConsumptionTable --replace --use_legacy_sql=false $sqlForJoin
@@ -64,3 +71,27 @@ echo "Created table $dataConsumptionTable"
 echo "Exporting data to csv $csvfile"
 bq --location=EU extract --destination_format=CSV $dataConsumptionTable gs://$csvfile
 echo "Exported data to gs://$csvfile"
+
+echo "Creating table $purchaseRecordsTable"
+# SQL for joining subscriber pseudonym & purchase record tables.
+read -r -d '' sqlForJoin2 << EOM
+SELECT
+   TIMESTAMP_MILLIS(pr.timestamp) as timestamp , ps.pseudoid as subscriberId, pr.product.sku, pr.product.price.amount, product.price.currency
+FROM
+   \`$rawPurchasesTable\` as pr
+JOIN
+  \`$subscriberPseudonymsTable\` as ps
+ON  ps.pseudonym = pr.subscriberId
+EOM
+
+# Run the query using bq & dump results to the new table
+bq --location=EU --format=none query --destination_table $purchaseRecordsTable --replace --use_legacy_sql=false $sqlForJoin2
+echo "Created table $purchaseRecordsTable"
+
+echo "Exporting data to csv $purchasesCsvfile"
+bq --location=EU extract --destination_format=CSV $purchaseRecordsTable gs://$purchasesCsvfile
+echo "Exported data to gs://$purchasesCsvfile"
+
+echo "Exporting data to csv $sub2msisdnCsvfile"
+bq --location=EU extract --destination_format=CSV $sub2msisdnMappingsTable gs://$sub2msisdnCsvfile
+echo "Exported data to gs://$sub2msisdnCsvfile"

@@ -16,7 +16,6 @@ class FbStorageTest {
     private lateinit var prids: MutableCollection<String>
 
     @Before
-    @Throws(InterruptedException::class)
     fun setUp() {
         initFirebaseConfigRegistry()
         this.storage = FirebaseStorage()

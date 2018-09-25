@@ -1,5 +1,5 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.61"
+  id "org.jetbrains.kotlin.jvm" version "1.2.70"
   id "java-library"
 }
 
@@ -7,15 +7,15 @@ dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
 
   implementation project(':ocs-grpc-api')
-  implementation project(':prime-api')
+  implementation project(':prime-modules')
   implementation project(':model')
   implementation project(':analytics-grpc-api')
 
   implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
   implementation "com.google.guava:guava:$guavaVersion"
   // Match with grpc-netty-shaded via PubSub
-  // removing io.grpc:grpc-netty-shaded:1.14.0 causes ALPN error
-  implementation 'io.grpc:grpc-netty-shaded:1.14.0'
+  // removing io.grpc:grpc-netty-shaded causes ALPN error
+  implementation "io.grpc:grpc-netty-shaded:$grpcVersion"
   implementation "com.google.cloud:google-cloud-bigquery:$googleCloudVersion"
   implementation "com.google.cloud:google-cloud-datastore:$googleCloudVersion"
   implementation "com.google.cloud:google-cloud-pubsub:$googleCloudVersion"

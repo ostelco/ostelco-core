@@ -20,7 +20,7 @@ import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.auth.OAuthAuthenticator
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
-import org.ostelco.prime.core.ApiError
+import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.model.ApplicationToken
 import java.util.*
 import javax.ws.rs.client.Client
@@ -46,14 +46,12 @@ class ApplicationTokenResourceTest {
             tokenType = tokenType)
 
     @Before
-    @Throws(Exception::class)
     fun setUp() {
         `when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
                 .thenReturn(Optional.of(AccessTokenPrincipal(email)))
     }
 
     @Test
-    @Throws(Exception::class)
     fun storeApplicationToken() {
         val arg1 = argumentCaptor<String>()
         val arg2 = argumentCaptor<ApplicationToken>()
@@ -69,11 +67,11 @@ class ApplicationTokenResourceTest {
                 .request(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
-                .post(Entity.json("{\n" +
-                        "    \"token\": \"" + token + "\",\n" +
-                        "    \"applicationID\": \"" + applicationID + "\",\n" +
-                        "    \"tokenType\": \"" + tokenType + "\"\n" +
-                        "}\n"))
+                .post(Entity.json("""{
+                    "token": "$token",
+                    "applicationID": "$applicationID",
+                    "tokenType": "$tokenType"
+                }""".trimIndent()))
 
         assertThat(resp.status).isEqualTo(Response.Status.CREATED.statusCode)
         assertThat(resp.mediaType.toString()).isEqualTo(MediaType.APPLICATION_JSON)

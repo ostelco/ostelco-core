@@ -37,14 +37,12 @@ class AnalyticsResourceTest {
     private val email = "mw@internet.org"
 
     @Before
-    @Throws(Exception::class)
     fun setUp() {
         `when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
                 .thenReturn(Optional.of(AccessTokenPrincipal(email)))
     }
 
     @Test
-    @Throws(Exception::class)
     fun reportAnalytics() {
         val arg1 = argumentCaptor<String>()
         val arg2 = argumentCaptor<String>()
@@ -52,17 +50,17 @@ class AnalyticsResourceTest {
         `when`(DAO.reportAnalytics(arg1.capture(), arg2.capture())).thenReturn(Either.right(Unit))
 
         val events = """
-            |[
-            |  {
-            |    "eventType": "PURCHASES_A_PRODUCT",
-            |    "sku": "1",
-            |    "time": "1524734549"
-            |  },
-            |  {
-            |    "eventType": "EXITS_APPLICATION",
-            |    "time": "1524742549"
-            |  }
-            |]""".trimMargin()
+            [
+              {
+                "eventType": "PURCHASES_A_PRODUCT",
+                "sku": "1",
+                "time": "1524734549"
+              },
+              {
+                "eventType": "EXITS_APPLICATION",
+                "time": "1524742549"
+              }
+            ]""".trimIndent()
 
         assertThat(isValidJson(events)).isTrue()
 

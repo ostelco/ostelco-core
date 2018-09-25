@@ -14,7 +14,7 @@ import javax.ws.rs.core.Response
  */
 
 @Path("/subscription")
-@Deprecated("use SubscriptionsResource", ReplaceWith("SubscriptionsResource", "org.ostelco.prime.client.api.resources.SubscriptionsResource"))
+@Deprecated("use SubscriptionsResource and/or BundlesResource", ReplaceWith("SubscriptionsResource", "org.ostelco.prime.client.api.resources.SubscriptionsResource"))
 class SubscriptionResource(private val dao: SubscriberDAO) {
 
     @GET
@@ -27,7 +27,7 @@ class SubscriptionResource(private val dao: SubscriberDAO) {
         }
 
         return dao.getSubscriptionStatus(token.name).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
     }
@@ -42,7 +42,7 @@ class SubscriptionResource(private val dao: SubscriberDAO) {
         }
 
         return dao.getActivePseudonymOfMsisdnForSubscriber(token.name).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { pseudonym -> Response.status(Response.Status.OK).entity(pseudonym) })
                 .build()
     }
@@ -60,7 +60,7 @@ class SubscriptionsResource(private val dao: SubscriberDAO) {
         }
 
         return dao.getSubscriptions(token.name).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
     }

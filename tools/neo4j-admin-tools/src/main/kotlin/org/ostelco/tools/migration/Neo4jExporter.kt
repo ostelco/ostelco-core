@@ -12,7 +12,7 @@ fun importFromNeo4j(txn: Transaction, handleCypher: (String) -> Unit) {
             val node = record["n"].asNode()
             val labels = node.labels().joinToString(separator = "", prefix = ":")
 
-            val props = node.asMap().map { entry ->
+            val props = node.asMap().toSortedMap().map { entry ->
                 "`${entry.key}`: '${entry.value}'"
             }.joinToString(separator = ",\n")
 
@@ -29,7 +29,7 @@ fun importFromNeo4j(txn: Transaction, handleCypher: (String) -> Unit) {
 
             val type = relation.type()
 
-            var props = relation.asMap().map { entry ->
+            var props = relation.asMap().toSortedMap().map { entry ->
                 "`${entry.key}`: '${entry.value}'"
             }.joinToString(separator = ",\n")
 

@@ -26,7 +26,7 @@ class AnalyticsResource(private val dao: SubscriberDAO) {
         }
 
         return dao.reportAnalytics(token.name, event).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError.description)) },
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.CREATED) }
         ).build()
     }

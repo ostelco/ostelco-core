@@ -1,7 +1,6 @@
 package org.ostelco.prime.disruptor
 
 import org.ostelco.ocs.api.CreditControlRequestInfo
-import org.ostelco.ocs.api.ReportingReason
 
 class OcsEvent {
 
@@ -22,11 +21,6 @@ class OcsEvent {
     var bundleId: String? = null
 
     /**
-     * Phone numbers linked to a bundle which is topped up.
-     */
-    var msisdnToppedUp: List<String>? = null
-
-    /**
      * Buckets that has been reserved from the bundle.
      */
     var reservedBucketBytes: Long = 0
@@ -45,45 +39,45 @@ class OcsEvent {
     /**
      * Credit-Control-Request from OCS
      */
-    var request: CreditControlRequestInfo? = null;
+    var request: CreditControlRequestInfo? = null
 
-    /**
-     * Topup amount for bundle
-     */
-    var topUpBytes: Long? = 0;
+    var topupContext: TopupContext? = null
 
     fun clear() {
         messageType = null
         msisdn = null
         bundleId = null
-        msisdnToppedUp = null
         bundleBytes = 0
         reservedBucketBytes = 0
         ocsgwStreamId = null
         request = null
-        topUpBytes = 0;
+        topupContext = null;
     }
 
-    //FIXME vihang: We need to think about roaming!!!
+    //FIXME vihang: We need to think about roaming
 
     fun update(
             messageType: EventMessageType?,
             msisdn: String?,
             bundleId: String?,
-            msisdnToppedUp: List<String>,
             bundleBytes: Long,
             reservedBucketBytes: Long,
             ocsgwStreamId: String?,
             request: CreditControlRequestInfo?,
-            topUpBytes: Long?) {
+            topupContext: TopupContext?) {
         this.messageType = messageType
         this.msisdn = msisdn
         this.bundleId = bundleId
-        this.msisdnToppedUp = msisdnToppedUp
         this.bundleBytes = bundleBytes
         this.reservedBucketBytes = reservedBucketBytes
         this.ocsgwStreamId = ocsgwStreamId
         this.request = request
-        this.topUpBytes = topUpBytes
+        this.topupContext = topupContext
     }
 }
+
+class TopupContext(
+        val requestId: String,
+        val topUpBytes: Long,
+        var msisdnToppedUp: List<String> = emptyList(),
+        var errorMessage: String = "")

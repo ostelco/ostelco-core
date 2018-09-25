@@ -56,6 +56,19 @@ class StripePaymentProcessorTest {
     }
 
     @Test
+    fun getPaymentProfile() {
+        val result = paymentProcessor.getPaymentProfile(testCustomer)
+        assertEquals(true, result.isRight())
+        assertEquals(stripeCustomerId, result.fold({""}, {it.id}))
+    }
+
+    @Test
+    fun getUnknownPaymentProfile() {
+        val result = paymentProcessor.getPaymentProfile("not@fail.com")
+        assertEquals(false, result.isRight())
+    }
+
+    @Test
     fun addSourceToCustomerAndRemove() {
 
         val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentSourceId())
@@ -68,6 +81,26 @@ class StripePaymentProcessorTest {
                 assertEquals(addedSource.id, storedSources.first().id)
             }.mapLeft { fail() }
         }.mapLeft { fail() }
+
+        val resultDeleteSource = paymentProcessor.removeSource(stripeCustomerId, resultAddSource.fold({ "" }, { it.id }))
+        assertEquals(true, resultDeleteSource.isRight())
+    }
+
+    @Test
+    fun addSourceToCustomerTwise() {
+        val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentSourceId())
+
+        val resultStoredSources = paymentProcessor.getSavedSources(stripeCustomerId)
+        assertEquals(1, resultStoredSources.fold({ 0 }, { it.size }))
+
+        resultAddSource.map { addedSource ->
+            resultStoredSources.map { storedSources ->
+                assertEquals(addedSource.id, storedSources.first().id)
+            }.mapLeft { fail() }
+        }.mapLeft { fail() }
+
+        val resultAddSecondSource = paymentProcessor.addSource(stripeCustomerId, resultStoredSources.fold({ "" }, { it.first().id }))
+        assertEquals(true, resultAddSecondSource.isLeft())
 
         val resultDeleteSource = paymentProcessor.removeSource(stripeCustomerId, resultAddSource.fold({ "" }, { it.id }))
         assertEquals(true, resultDeleteSource.isRight())

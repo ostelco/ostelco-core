@@ -1,0 +1,18 @@
+plugins {
+  id "org.jetbrains.kotlin.jvm" version "1.2.70"
+  id "java-library"
+}
+
+dependencies {
+  api "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+  api "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
+
+  api "io.jsonwebtoken:jjwt:0.9.1"
+
+  api project(':ocs-grpc-api')
+  api project(':analytics-grpc-api')
+  api project(':model')
+
+  api "io.dropwizard:dropwizard-core:$dropwizardVersion"
+  api "io.arrow-kt:arrow-core:0.7.3"
+}

@@ -20,7 +20,7 @@ import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.auth.OAuthAuthenticator
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
-import org.ostelco.prime.core.ApiError
+import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.model.Subscription
 import java.util.*
 import javax.ws.rs.client.Invocation
@@ -38,14 +38,12 @@ class SubscriptionsResourceTest {
     private val subscription  = Subscription(MSISDN)
 
     @Before
-    @Throws(Exception::class)
     fun setUp() {
         `when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
                 .thenReturn(Optional.of(AccessTokenPrincipal(email)))
     }
 
     @Test
-    @Throws(Exception::class)
     fun getSubscriptions() {
         val arg = argumentCaptor<String>()
 

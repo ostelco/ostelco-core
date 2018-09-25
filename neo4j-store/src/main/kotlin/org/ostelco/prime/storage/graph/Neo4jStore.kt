@@ -7,8 +7,7 @@ import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.analytics.PrimeMetric.REVENUE
 import org.ostelco.prime.analytics.PrimeMetric.USERS_PAID_AT_LEAST_ONCE
-import org.ostelco.prime.core.ApiError
-import org.ostelco.prime.logger
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Product
@@ -24,8 +23,6 @@ import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.BadGatewayError
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
-import org.ostelco.prime.paymentprocessor.core.ProfileInfo
-import org.ostelco.prime.storage.DocumentStore
 import org.ostelco.prime.storage.GraphStore
 import org.ostelco.prime.storage.NotFoundError
 import org.ostelco.prime.storage.StoreError
@@ -60,7 +57,7 @@ class Neo4jStore : GraphStore by Neo4jStoreSingleton
 object Neo4jStoreSingleton : GraphStore {
 
     private val ocsAdminService: OcsAdminService by lazy { getResource<OcsAdminService>() }
-    private val logger by logger()
+    private val logger by getLogger()
 
     //
     // Entity
@@ -125,7 +122,7 @@ object Neo4jStoreSingleton : GraphStore {
     // Balance (Subscriber - Bundle)
     //
 
-    override fun getBundles(subscriberId: String): Either<StoreError, Collection<Bundle>?> = readTransaction {
+    override fun getBundles(subscriberId: String): Either<StoreError, Collection<Bundle>> = readTransaction {
         subscriberStore.getRelated(subscriberId, subscriberToBundleRelation, transaction)
     }
 
@@ -197,7 +194,7 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
     // << END
-    
+
     override fun updateSubscriber(subscriber: Subscriber): Either<StoreError, Unit> = writeTransaction {
         subscriberStore.update(subscriber, transaction)
                 .ifFailedThenRollback(transaction)
@@ -264,7 +261,15 @@ object Neo4jStoreSingleton : GraphStore {
     override fun getMsisdn(subscriptionId: String): Either<StoreError, String> {
         return readTransaction {
             subscriberStore.getRelated(subscriptionId, subscriptionRelation, transaction)
-                    .map { it.first().msisdn }
+                    .flatMap {
+                        if (it.isEmpty()) {
+                            Either.left(NotFoundError(
+                                    type = subscriptionEntity.name,
+                                    id = "for ${subscriberEntity.name} = $subscriptionId"))
+                        } else {
+                            Either.right(it.first().msisdn)
+                        }
+                    }
         }
     }
 
@@ -326,29 +331,9 @@ object Neo4jStoreSingleton : GraphStore {
 
     // TODO vihang: Move this logic to DSL + Rule Engine + Triggers, when they are ready
     // >> BEGIN
-    private val documentStore by lazy { getResource<DocumentStore>() }
     private val paymentProcessor by lazy { getResource<PaymentProcessor>() }
     private val ocs by lazy { getResource<OcsSubscriberService>() }
     private val analyticsReporter by lazy { getResource<AnalyticsService>() }
-
-    private fun getPaymentProfile(name: String): Either<PaymentError, ProfileInfo> =
-            documentStore.getPaymentId(name)
-                    ?.let { profileInfoId -> Either.right(ProfileInfo(profileInfoId)) }
-                    ?: Either.left(BadGatewayError("Failed to fetch payment customer ID"))
-
-    private fun createAndStorePaymentProfile(name: String): Either<PaymentError, ProfileInfo> {
-        return paymentProcessor.createPaymentProfile(name)
-                .flatMap { profileInfo ->
-                    setPaymentProfile(name, profileInfo)
-                            .map { profileInfo }
-                }
-    }
-
-    private fun setPaymentProfile(name: String, profileInfo: ProfileInfo): Either<PaymentError, Unit> =
-            Either.cond(
-                    test = documentStore.createPaymentId(name, profileInfo.id),
-                    ifTrue = { Unit },
-                    ifFalse = { BadGatewayError("Failed to save payment customer ID") })
 
     override fun purchaseProduct(
             subscriberId: String,
@@ -361,9 +346,9 @@ object Neo4jStoreSingleton : GraphStore {
                 .mapLeft { org.ostelco.prime.paymentprocessor.core.NotFoundError("Product unavailable") }
                 .flatMap { product: Product ->
                     // Fetch/Create stripe payment profile for the subscriber.
-                    getPaymentProfile(subscriberId)
+                    paymentProcessor.getPaymentProfile(subscriberId)
                             .fold(
-                                    { createAndStorePaymentProfile(subscriberId) },
+                                    { paymentProcessor.createPaymentProfile(subscriberId) },
                                     { profileInfo -> Either.right(profileInfo) }
                             )
                             .map { profileInfo -> Pair(product, profileInfo) }
@@ -371,7 +356,19 @@ object Neo4jStoreSingleton : GraphStore {
                 .flatMap { (product, profileInfo) ->
                     // Add payment source
                     if (sourceId != null) {
-                        paymentProcessor.addSource(profileInfo.id, sourceId).map { sourceInfo -> Triple(product, profileInfo, sourceInfo.id) }
+                paymentProcessor.getSavedSources(profileInfo.id)
+                        .fold(
+                                {
+                                    Either.left(org.ostelco.prime.paymentprocessor.core.BadGatewayError("Failed to fetch sources for user", it.description))
+                                },
+                                {
+                                    var linkedSource = sourceId
+                                    if (!it.any{ sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
+                                        paymentProcessor.addSource(profileInfo.id, sourceId).map { sourceInfo -> linkedSource = sourceInfo.id }
+                                    }
+                                    Either.right(Triple(product,profileInfo, linkedSource))
+                                }
+                        )
                     } else {
                         Either.right(Triple(product, profileInfo, null))
                     }
@@ -433,7 +430,7 @@ object Neo4jStoreSingleton : GraphStore {
             if (!saveCard && savedSourceId != null) {
                 paymentProcessor.removeSource(profileInfo.id, savedSourceId)
                         .mapLeft { paymentError ->
-                            logger.error("Failed to remove card, for customerId ${profileInfo.id}, sourceId $sourceId")
+                            logger.error("Failed to remove card, for customerId ${profileInfo.id}, sourceId $savedSourceId")
                             paymentError
                         }
             }
@@ -578,6 +575,7 @@ object Neo4jStoreSingleton : GraphStore {
             result.single().get("count").asLong()
         }
     }
+
     //
     // Stores
     //
@@ -600,34 +598,106 @@ object Neo4jStoreSingleton : GraphStore {
     private val productClassEntity = EntityType(ProductClass::class.java)
     private val productClassStore = EntityStore(productClassEntity)
 
+    //
+    // Product Class
+    //
     override fun createProductClass(productClass: ProductClass): Either<StoreError, Unit> = writeTransaction {
         productClassStore.create(productClass, transaction)
                 .ifFailedThenRollback(transaction)
     }
 
+    //
+    // Product
+    //
     override fun createProduct(product: Product): Either<StoreError, Unit> = writeTransaction {
-        productStore.create(product, transaction)
+        createProduct(product, transaction)
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun createSegment(segment: Segment): Either<StoreError, Unit> {
-        return writeTransaction {
-            segmentStore.create(segment, transaction)
-                    .flatMap { subscriberToSegmentStore.create(segment.subscribers, segment.id, transaction) }
-                    .ifFailedThenRollback(transaction)
-        }
+    private fun createProduct(product: Product, transaction: Transaction): Either<StoreError, Unit> =
+            productStore.create(product, transaction)
+
+    //
+    // Segment
+    //
+    override fun createSegment(segment: Segment): Either<StoreError, Unit> = writeTransaction {
+        createSegment(segment, transaction)
+                .ifFailedThenRollback(transaction)
     }
 
-    override fun createOffer(offer: Offer): Either<StoreError, Unit> = writeTransaction {
-        offerStore
-                .create(offer, transaction)
-                .flatMap { offerToSegmentStore.create(offer.id, offer.segments, transaction) }
-                .flatMap { offerToProductStore.create(offer.id, offer.products, transaction) }
-                .ifFailedThenRollback(transaction)
+    private fun createSegment(segment: Segment, transaction: Transaction): Either<StoreError, Unit> {
+        return segmentStore.create(segment, transaction)
+                .flatMap { subscriberToSegmentStore.create(segment.subscribers, segment.id, transaction) }
     }
 
     override fun updateSegment(segment: Segment): Either<StoreError, Unit> = writeTransaction {
         subscriberToSegmentStore.create(segment.id, segment.subscribers, transaction)
+                .ifFailedThenRollback(transaction)
+    }
+
+    //
+    // Offer
+    //
+    override fun createOffer(offer: Offer): Either<StoreError, Unit> = writeTransaction {
+        createOffer(offer, transaction)
+                .ifFailedThenRollback(transaction)
+    }
+
+    private fun createOffer(offer: Offer, transaction: Transaction): Either<StoreError, Unit> {
+        return offerStore
+                .create(offer.id, transaction)
+                .flatMap { offerToSegmentStore.create(offer.id, offer.segments, transaction) }
+                .flatMap { offerToProductStore.create(offer.id, offer.products, transaction) }
+    }
+
+    //
+    // Atomic Import of Offer + Product + Segment
+    //
+    override fun atomicImport(
+            offer: Offer,
+            segments: Collection<Segment>,
+            products: Collection<Product>): Either<StoreError, Unit> = writeTransaction {
+
+        // validation
+        val productIds = (offer.products + products.map { it.sku }).toSet()
+        val segmentIds = (offer.segments + segments.map { it.id }).toSet()
+
+        if (productIds.isEmpty()) {
+            return@writeTransaction Either.left(ValidationError(
+                    type = productEntity.name,
+                    id = offer.id,
+                    message = "Cannot create Offer without new/existing Product(s)"))
+        }
+
+        if (segmentIds.isEmpty()) {
+            return@writeTransaction Either.left(ValidationError(
+                    type = offerEntity.name,
+                    id = offer.id,
+                    message = "Cannot create Offer without new/existing Segment(s)"))
+        }
+        // end of validation
+
+        var result = Either.right(Unit) as Either<StoreError, Unit>
+
+        result = products.fold(
+                initial = result,
+                operation = { acc, product ->
+                    acc.flatMap { createProduct(product, transaction) }
+                })
+
+        result = segments.fold(
+                initial = result,
+                operation = { acc, segment ->
+                    acc.flatMap { createSegment(segment, transaction) }
+                })
+
+        val actualOffer = Offer(
+                id = offer.id,
+                products = productIds,
+                segments = segmentIds)
+
+        result
+                .flatMap { createOffer(actualOffer, transaction) }
                 .ifFailedThenRollback(transaction)
     }
 

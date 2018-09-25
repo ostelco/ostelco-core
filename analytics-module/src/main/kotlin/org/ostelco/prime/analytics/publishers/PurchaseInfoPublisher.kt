@@ -12,7 +12,7 @@ import com.google.gson.reflect.TypeToken
 import com.google.protobuf.ByteString
 import com.google.pubsub.v1.PubsubMessage
 import org.ostelco.prime.analytics.ConfigRegistry
-import org.ostelco.prime.logger
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.PurchaseRecordInfo
 import org.ostelco.prime.module.getResource
@@ -26,7 +26,7 @@ import java.net.URLEncoder
 object PurchaseInfoPublisher :
         PubSubPublisher by DelegatePubSubPublisher(topicId = ConfigRegistry.config.purchaseInfoTopicId) {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     private val pseudonymizerService by lazy { getResource<PseudonymizerService>() }
 
@@ -36,7 +36,9 @@ object PurchaseInfoPublisher :
         val builder = GsonBuilder()
         // Type for this conversion is explicitly set to java.util.Map
         // This is needed because of kotlin's own Map interface
+        @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
         val mapType = object : TypeToken<java.util.Map<String, String>>() {}.type
+        @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
         val serializer = JsonSerializer<java.util.Map<String, String>> { src, _, _ ->
             val array = JsonArray()
             src.forEach { k, v ->

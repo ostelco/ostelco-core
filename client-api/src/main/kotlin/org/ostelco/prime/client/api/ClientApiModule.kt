@@ -16,6 +16,7 @@ import org.ostelco.prime.client.api.auth.OAuthAuthenticator
 import org.ostelco.prime.client.api.metrics.reportMetricsAtStartUp
 import org.ostelco.prime.client.api.resources.AnalyticsResource
 import org.ostelco.prime.client.api.resources.ApplicationTokenResource
+import org.ostelco.prime.client.api.resources.BundlesResource
 import org.ostelco.prime.client.api.resources.ConsentsResource
 import org.ostelco.prime.client.api.resources.PaymentResource
 import org.ostelco.prime.client.api.resources.ProductsResource
@@ -77,6 +78,7 @@ class ClientApiModule : PrimeModule {
         jerseyEnv.register(ReferralResource(dao))
         jerseyEnv.register(PaymentResource(dao))
         jerseyEnv.register(SubscriptionResource(dao))
+        jerseyEnv.register(BundlesResource(dao))
         jerseyEnv.register(SubscriptionsResource(dao))
         jerseyEnv.register(ApplicationTokenResource(dao))
 

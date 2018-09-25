@@ -41,14 +41,12 @@ class ProfileResourceTest {
     private val profile = Subscriber(email)
 
     @Before
-    @Throws(Exception::class)
     fun setUp() {
         `when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
                 .thenReturn(Optional.of(AccessTokenPrincipal(email)))
     }
 
     @Test
-    @Throws(Exception::class)
     fun getProfile() {
         val arg = argumentCaptor<String>()
 
@@ -67,7 +65,6 @@ class ProfileResourceTest {
     }
 
     @Test
-    @Throws(Exception::class)
     fun createProfile() {
         val arg1 = argumentCaptor<String>()
         val arg2 = argumentCaptor<Subscriber>()
@@ -80,13 +77,13 @@ class ProfileResourceTest {
         val resp = RULE.target("/profile")
                 .request(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
-                .post(Entity.json("{\n" +
-                        "    \"name\": \"" + name + "\",\n" +
-                        "    \"address\": \"" + address + "\",\n" +
-                        "    \"postCode\": \"" + postCode + "\",\n" +
-                        "    \"city\": \"" + city + "\",\n" +
-                        "    \"email\": \"" + email + "\"\n" +
-                        "}\n"))
+                .post(Entity.json("""{
+                        "name": "$name",
+                        "address": "$address",
+                        "postCode": "$postCode",
+                        "city": "$city",
+                        "email": "$email"
+                }""".trimIndent()))
 
         assertThat(resp.status).isEqualTo(Response.Status.CREATED.statusCode)
         assertThat(resp.mediaType.toString()).isEqualTo(MediaType.APPLICATION_JSON)
@@ -100,7 +97,6 @@ class ProfileResourceTest {
     }
 
     @Test
-    @Throws(Exception::class)
     fun createProfileWithReferral() {
         val arg1 = argumentCaptor<String>()
         val arg2 = argumentCaptor<Subscriber>()
@@ -115,13 +111,13 @@ class ProfileResourceTest {
                 .queryParam("referred_by", referredBy)
                 .request(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
-                .post(Entity.json("{\n" +
-                        "    \"name\": \"" + name + "\",\n" +
-                        "    \"address\": \"" + address + "\",\n" +
-                        "    \"postCode\": \"" + postCode + "\",\n" +
-                        "    \"city\": \"" + city + "\",\n" +
-                        "    \"email\": \"" + email + "\"\n" +
-                        "}\n"))
+                .post(Entity.json("""{
+                    "name": "$name",
+                    "address": "$address",
+                    "postCode": "$postCode",
+                    "city": "$city",
+                    "email": "$email"
+                }""".trimIndent()))
 
         assertThat(resp.status).isEqualTo(Response.Status.CREATED.statusCode)
         assertThat(resp.mediaType.toString()).isEqualTo(MediaType.APPLICATION_JSON)
@@ -135,7 +131,6 @@ class ProfileResourceTest {
     }
 
     @Test
-    @Throws(Exception::class)
     fun updateProfile() {
         val arg1 = argumentCaptor<String>()
         val arg2 = argumentCaptor<Subscriber>()
@@ -149,13 +144,13 @@ class ProfileResourceTest {
         val resp = RULE.target("/profile")
                 .request(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
-                .put(Entity.json("{\n" +
-                        "    \"name\": \"" + name + "\",\n" +
-                        "    \"address\": \"" + newAddress + "\",\n" +
-                        "    \"postCode\": \"" + newPostCode + "\",\n" +
-                        "    \"city\": \"" + city + "\",\n" +
-                        "    \"email\": \"" + email + "\"\n" +
-                        "}\n"))
+                .put(Entity.json("""{
+                    "name": "$name",
+                    "address": "$newAddress",
+                    "postCode": "$newPostCode",
+                    "city": "$city",
+                    "email": "$email"
+                }""".trimIndent()))
 
         assertThat(resp.status).isEqualTo(Response.Status.OK.statusCode)
         assertThat(resp.mediaType.toString()).isEqualTo(MediaType.APPLICATION_JSON)
@@ -168,14 +163,11 @@ class ProfileResourceTest {
     }
 
     @Test
-    @Throws(Exception::class)
     fun updateWithIncompleteProfile() {
         val resp = RULE.target("/profile")
                 .request(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
-                .put(Entity.json("{\n" +
-                        "    \"name\": \"" + name + "\"\n" +
-                        "}\n"))
+                .put(Entity.json("""{ "name": "$name" }"""))
 
         assertThat(resp.status).isEqualTo(Response.Status.BAD_REQUEST.statusCode)
     }

@@ -3,7 +3,7 @@ package org.ostelco.prime.analytics
 import io.grpc.stub.StreamObserver
 import org.ostelco.prime.analytics.PrimeMetric.ACTIVE_SESSIONS
 import org.ostelco.prime.analytics.metrics.CustomMetricsRegistry
-import org.ostelco.prime.logger
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.metrics.api.OcsgwAnalyticsReply
 import org.ostelco.prime.metrics.api.OcsgwAnalyticsReport
 import org.ostelco.prime.metrics.api.OcsgwAnalyticsServiceGrpc
@@ -24,7 +24,7 @@ import java.util.*
 
 class AnalyticsGrpcService : OcsgwAnalyticsServiceGrpc.OcsgwAnalyticsServiceImplBase() {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     /**
      * Handles the OcsgwAnalyticsEvent message.
@@ -34,11 +34,6 @@ class AnalyticsGrpcService : OcsgwAnalyticsServiceGrpc.OcsgwAnalyticsServiceImpl
         return StreamObserverForStreamWithId(streamId)
     }
 
-    /**
-     * Return an unique ID based on Java's UUID generator that uniquely
-     * identifies a stream of values.
-     * @return A new unique identifier.
-     */
     private fun newUniqueStreamId(): String {
         return UUID.randomUUID().toString()
     }

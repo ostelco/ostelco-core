@@ -2,9 +2,8 @@ package org.ostelco.prime.thresholds
 
 import com.lmax.disruptor.EventHandler
 import org.ostelco.prime.appnotifier.AppNotifier
-import org.ostelco.prime.disruptor.OcsEvent
 import org.ostelco.prime.disruptor.EventMessageType.CREDIT_CONTROL_REQUEST
-import org.ostelco.prime.logger
+import org.ostelco.prime.disruptor.OcsEvent
 import org.ostelco.prime.module.getResource
 
 /**
@@ -12,10 +11,7 @@ import org.ostelco.prime.module.getResource
  */
 class ThresholdChecker(private val lowBalanceThreshold: Long) : EventHandler<OcsEvent> {
 
-    private val logger by logger()
-
     private val appNotifier by lazy { getResource<AppNotifier>() }
-     // private val appNotifier by getResource<AppNotifier>()
 
     override fun onEvent(
             event: OcsEvent,

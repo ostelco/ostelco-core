@@ -1,14 +1,14 @@
 package org.ostelco.at.okhttp
 
 import org.junit.Test
-import org.ostelco.at.common.Firebase
 import org.ostelco.at.common.StripePayment
 import org.ostelco.at.common.createProfile
 import org.ostelco.at.common.createSubscription
 import org.ostelco.at.common.expectedProducts
-import org.ostelco.at.common.logger
+import org.ostelco.at.common.getLogger
 import org.ostelco.at.common.randomInt
 import org.ostelco.at.okhttp.ClientFactory.clientForSubject
+import org.ostelco.prime.client.api.DefaultApi
 import org.ostelco.prime.client.model.ApplicationToken
 import org.ostelco.prime.client.model.Consent
 import org.ostelco.prime.client.model.PaymentSource
@@ -128,7 +128,7 @@ class GetSubscriptions {
 
 class GetSubscriptionStatusTest {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     @Test
     fun `okhttp test - GET subscription status`() {
@@ -160,7 +160,7 @@ class GetSubscriptionStatusTest {
 
 class GetPseudonymsTest {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     @Test
     fun `okhttp test - GET active pseudonyms`() {
@@ -204,7 +204,6 @@ class SourceTest {
     fun `okhttp test - POST source create`() {
 
         StripePayment.deleteAllCustomers()
-        Firebase.deleteAllPaymentCustomers()
 
         val email = "purchase-${randomInt()}@test.com"
         createProfile(name = "Test Payment Source", email = email)
@@ -230,44 +229,62 @@ class SourceTest {
     fun `okhttp test - GET list sources`() {
 
         StripePayment.deleteAllCustomers()
-        Firebase.deleteAllPaymentCustomers()
 
         val email = "purchase-${randomInt()}@test.com"
         createProfile(name = "Test Payment Source", email = email)
 
         val client = clientForSubject(subject = email)
 
-        val tokenId = StripePayment.createPaymentTokenId()
-        val cardId = StripePayment.getCardIdForTokenId(tokenId)
-
-        // Ties source with user profile both local and with Stripe
-        client.createSource(tokenId)
-
         Thread.sleep(200)
 
-        val newTokenId = StripePayment.createPaymentTokenId()
-        val newCardId = StripePayment.getCardIdForTokenId(newTokenId)
-
-        client.createSource(newTokenId)
+        val createdIds = listOf(createTokenWithStripe(client),
+                createSourceWithStripe(client),
+                createTokenWithStripe(client),
+                createSourceWithStripe(client))
 
         val sources = client.listSources()
 
+        val ids = createdIds.map { getIdFromStripe(it) }
+
         assert(sources.isNotEmpty()) { "Expected at least one payment source for profile $email" }
-        assert(sources.map{ it.id }.containsAll(listOf(cardId, newCardId)))
-        { "Expected to find both $cardId and $newCardId in list of sources for profile $email" }
+        assert(sources.map{ it.id }.containsAll(ids))
+        { "Expected to find all of $ids in list of sources for profile $email" }
 
         sources.forEach {
-            assert(it.details.id.isNotEmpty()) { "Expected 'id' to be set in source account details for profile $email" }
-            assertEquals("card", it.details.accountType,
-                    "Unexpected source account type ${it.details.accountType} for profile $email")
+            assert(it.id.isNotEmpty()) { "Expected 'id' to be set in source account details for profile $email" }
+            assert(arrayOf("card", "source").contains(it.type)) {
+                "Unexpected source account type ${it.type} for profile $email"
+            }
         }
+    }
+
+    private fun getIdFromStripe(tokenId : String) : String {
+        if (tokenId.startsWith("src_")) {
+            return StripePayment.getCardIdForSourceId(tokenId)
+        }
+        return StripePayment.getCardIdForTokenId(tokenId)
+    }
+
+    private fun createTokenWithStripe(client : DefaultApi) : String {
+        val tokenId = StripePayment.createPaymentTokenId()
+
+        client.createSource(tokenId)
+
+        return tokenId
+    }
+
+    private fun createSourceWithStripe(client : DefaultApi) : String {
+        val sourceId = StripePayment.createPaymentSourceId()
+
+        client.createSource(sourceId)
+
+        return sourceId
     }
 
     @Test
     fun `okhttp test - PUT source set default`() {
 
         StripePayment.deleteAllCustomers()
-        Firebase.deleteAllPaymentCustomers()
 
         val email = "purchase-${randomInt()}@test.com"
         createProfile(name = "Test Payment Source", email = email)
@@ -308,14 +325,13 @@ class PurchaseTest {
     fun `okhttp test - POST products purchase`() {
 
         StripePayment.deleteAllCustomers()
-        Firebase.deleteAllPaymentCustomers()
 
         val email = "purchase-${randomInt()}@test.com"
         createProfile(name = "Test Purchase User", email = email)
 
         val client = clientForSubject(subject = email)
 
-        val balanceBefore = client.subscriptionStatus.remaining
+        val balanceBefore = client.bundles.first().balance
 
         val sourceId = StripePayment.createPaymentTokenId()
 
@@ -323,7 +339,7 @@ class PurchaseTest {
 
         Thread.sleep(200) // wait for 200 ms for balance to be updated in db
 
-        val balanceAfter = client.subscriptionStatus.remaining
+        val balanceAfter = client.bundles.first().balance
 
         assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
 
@@ -339,7 +355,42 @@ class PurchaseTest {
     fun `okhttp test - POST products purchase using default source`() {
 
         StripePayment.deleteAllCustomers()
-        Firebase.deleteAllPaymentCustomers()
+
+        val email = "purchase-${randomInt()}@test.com"
+        createProfile(name = "Test Purchase User with Default Payment Source", email = email)
+
+        val sourceId = StripePayment.createPaymentTokenId()
+
+        val client = clientForSubject(subject = email)
+
+        val paymentSource: PaymentSource = client.createSource(sourceId)
+
+        assertNotNull(paymentSource.id, message = "Failed to create payment source")
+
+        val balanceBefore = client.bundles.first().balance
+
+        val productSku = "1GB_249NOK"
+
+        client.purchaseProduct(productSku, null, null)
+
+        Thread.sleep(200) // wait for 200 ms for balance to be updated in db
+
+        val balanceAfter = client.bundles.first().balance
+
+        assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
+
+        val purchaseRecords = client.purchaseHistory
+
+        purchaseRecords.sortBy { it.timestamp }
+
+        assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
+        assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
+    }
+
+    @Test
+    fun `okhttp test - POST products purchase add source then pay with it`() {
+
+        StripePayment.deleteAllCustomers()
 
         val email = "purchase-${randomInt()}@test.com"
         createProfile(name = "Test Purchase User with Default Payment Source", email = email)
@@ -356,7 +407,7 @@ class PurchaseTest {
 
         val productSku = "1GB_249NOK"
 
-        client.purchaseProduct(productSku, null, null)
+        client.purchaseProduct(productSku, paymentSource.id, null)
 
         Thread.sleep(200) // wait for 200 ms for balance to be updated in db
 
@@ -380,13 +431,13 @@ class PurchaseTest {
 
         val client = clientForSubject(subject = email)
 
-        val balanceBefore = client.subscriptionStatus.remaining
+        val balanceBefore = client.bundles.first().balance
 
         client.buyProductDeprecated("1GB_249NOK")
 
         Thread.sleep(200) // wait for 200 ms for balance to be updated in db
 
-        val balanceAfter = client.subscriptionStatus.remaining
+        val balanceAfter = client.bundles.first().balance
 
         assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
 

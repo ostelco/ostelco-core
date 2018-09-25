@@ -10,7 +10,7 @@ import java.net.InetAddress
  *
  * TODO martin: Add 3GPP-GPRS-Negotiated-QoS-Profile ( Avp 5 )
  */
-class PsInformation() {
+class PsInformation {
 
     // 3GPP-Charging-Id (Avp 2)
     @AvpField(Avp.TGPP_CHARGING_ID)
@@ -58,7 +58,7 @@ class PsInformation() {
 
     // 3GPP-SGSN-MCC-MNC ( Avp 18)
     @AvpField(Avp.GPP_SGSN_MCC_MNC)
-    var sgsnMncMcc: String? = null
+    var sgsnMccMnc: String? = null
 
     // 3GPP-MS-TimeZone ( Avp 23 )
     @AvpField(Avp.TGPP_MS_TIMEZONE)

@@ -19,7 +19,7 @@ import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.auth.OAuthAuthenticator
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
-import org.ostelco.prime.core.ApiError
+import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
@@ -35,14 +35,13 @@ class PurchasesResourceTest {
     private val email = "mw@internet.org"
 
     private val userInfo = Base64.getEncoder().encodeToString(
-            """|{
-               |  "issuer": "someone",
-               |  "email": "mw@internet.org"
-               |}""".trimMargin()
+            """{
+                 "issuer": "someone",
+                 "email": "mw@internet.org"
+               }""".trimIndent()
                     .toByteArray())
 
     @Before
-    @Throws(Exception::class)
     fun setUp() {
         Mockito.`when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
                 .thenReturn(Optional.of(AccessTokenPrincipal(email)))

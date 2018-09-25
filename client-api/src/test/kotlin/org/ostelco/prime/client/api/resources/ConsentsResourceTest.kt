@@ -19,7 +19,8 @@ import org.ostelco.prime.client.api.auth.OAuthAuthenticator
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
-import org.ostelco.prime.core.NotFoundError
+import org.ostelco.prime.apierror.ApiErrorCode
+import org.ostelco.prime.apierror.NotFoundError
 import java.util.*
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.GenericType
@@ -39,14 +40,12 @@ class ConsentsResourceTest {
             Consent("2", "blabla", true))
 
     @Before
-    @Throws(Exception::class)
     fun setUp() {
         `when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
                 .thenReturn(Optional.of(AccessTokenPrincipal(email)))
     }
 
     @Test
-    @Throws(Exception::class)
     fun getConsents() {
         val arg = argumentCaptor<String>()
 
@@ -66,7 +65,6 @@ class ConsentsResourceTest {
     }
 
     @Test
-    @Throws(Exception::class)
     fun acceptConsent() {
         val arg1 = argumentCaptor<String>()
         val arg2 = argumentCaptor<String>()
@@ -75,7 +73,7 @@ class ConsentsResourceTest {
 
         `when`(DAO.acceptConsent(arg1.capture(), arg2.capture())).thenReturn(Either.right(consents[0]))
         `when`(DAO.rejectConsent(arg1.capture(), arg2.capture())).thenReturn(Either.left(
-                NotFoundError("No consents found")))
+                NotFoundError("No consents found", ApiErrorCode.FAILED_TO_FETCH_CONSENT)))
 
         val resp = RULE.target("/consents/$consentId")
                 .queryParam("accepted", true)
@@ -89,7 +87,6 @@ class ConsentsResourceTest {
     }
 
     @Test
-    @Throws(Exception::class)
     fun rejectConsent() {
         val arg1 = argumentCaptor<String>()
         val arg2 = argumentCaptor<String>()
@@ -97,7 +94,7 @@ class ConsentsResourceTest {
         val consentId = consents[0].consentId
 
         `when`(DAO.acceptConsent(arg1.capture(), arg2.capture())).thenReturn(Either.left(
-                NotFoundError("No consents found")))
+                NotFoundError("No consents found", ApiErrorCode.FAILED_TO_FETCH_CONSENT)))
         `when`(DAO.rejectConsent(arg1.capture(), arg2.capture())).thenReturn(Either.right(consents[0]))
 
         val resp = RULE.target("/consents/$consentId")

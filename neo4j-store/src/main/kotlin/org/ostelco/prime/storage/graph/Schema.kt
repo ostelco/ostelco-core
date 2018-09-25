@@ -9,7 +9,7 @@ import org.neo4j.driver.v1.AccessMode.READ
 import org.neo4j.driver.v1.AccessMode.WRITE
 import org.neo4j.driver.v1.StatementResult
 import org.neo4j.driver.v1.Transaction
-import org.ostelco.prime.logger
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.HasId
 import org.ostelco.prime.storage.AlreadyExistsError
 import org.ostelco.prime.storage.NotCreatedError
@@ -69,6 +69,21 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
                 Either.right(Unit)
             else
                 Either.left(NotCreatedError(type = entityType.name, id = entity.id))
+        }
+    }
+
+    fun create(id: String, transaction: Transaction): Either<StoreError, Unit> {
+
+        if (get(id, transaction).isRight()) {
+            return Either.left(AlreadyExistsError(type = entityType.name, id = id))
+        }
+
+        return write("""CREATE (node:${entityType.name} { id:"$id"});""",
+                transaction) {
+            if (it.summary().counters().nodesCreated() == 1)
+                Either.right(Unit)
+            else
+                Either.left(NotCreatedError(type = entityType.name, id = id))
         }
     }
 
@@ -269,7 +284,7 @@ class RelationStore<FROM : HasId, TO : HasId>(private val relationType: Relation
 //
 object Graph {
 
-    private val LOG by logger()
+    private val LOG by getLogger()
 
     fun <R> write(query: String, transaction: Transaction, transform: (StatementResult) -> R): R {
         LOG.trace("write:[\n$query\n]")
