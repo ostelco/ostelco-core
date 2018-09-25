@@ -25,7 +25,7 @@ echo "Creating table $dataConsumptionTable"
 # SQL for joining pseudonym & hourly consumption tables.
 read -r -d '' sqlForJoin << EOM
 SELECT
-   DISTINCT(sub.subscriberId), ps.subscriberId as email
+   DISTINCT(sub.subscriberId) as pseudoId, ps.subscriberId
 FROM
    \`$inputSubscriberTable\` as sub
 JOIN
