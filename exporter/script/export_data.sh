@@ -11,9 +11,14 @@ projectId=pantel-2decb
 
 msisdnPseudonymsTable=$projectId.exported_pseudonyms.${exportId}_msisdn
 subscriberPseudonymsTable=$projectId.exported_pseudonyms.${exportId}_subscriber
+sub2msisdnMappingsTable=$projectId.exported_pseudonyms.${exportId}_sub2msisdn
 hourlyConsumptionTable=$projectId.data_consumption.hourly_consumption
 dataConsumptionTable=exported_data_consumption.$exportId
+rawPurchasesTable=$projectId.purchases.raw_purchases
+purchaseRecordsTable=exported_data_consumption.${exportId}_purchases
 csvfile=$projectId-dataconsumption-export/$exportId.csv
+purchasesCsvfile=$projectId-dataconsumption-export/$exportId-purchases.csv
+sub2msisdnCsvfile=$projectId-dataconsumption-export/$exportId-sub2msisdn.csv
 
 # Generate the pseudonym tables for this export
 echo "Starting export job for $exportId"
@@ -66,3 +71,26 @@ echo "Created table $dataConsumptionTable"
 echo "Exporting data to csv $csvfile"
 bq --location=EU extract --destination_format=CSV $dataConsumptionTable gs://$csvfile
 echo "Exported data to gs://$csvfile"
+
+echo "Creating table purchaseRecordsTable"
+# SQL for joining subscriber pseudonym & purchase record tables.
+read -r -d '' sqlForJoin2 << EOM
+SELECT
+   TIMESTAMP_MILLIS(pr.timestamp) as timestamp , ps.pseudoid as subscriberId, pr.product.sku, pr.product.price.amount, product.price.currency
+FROM
+   `$rawPurchasesTable` as pr
+JOIN
+  `$subscriberPseudonymsTable` as ps
+ON  ps.pseudonym = pr.subscriberId
+EOM
+# Run the query using bq & dump results to the new table
+bq --location=EU --format=none query --destination_table $purchaseRecordsTable --replace --use_legacy_sql=false $sqlForJoin2
+echo "Created table $purchaseRecordsTable"
+
+echo "Exporting data to csv $purchasesCsvfile"
+bq --location=EU extract --destination_format=CSV $purchaseRecordsTable gs://$purchasesCsvfile
+echo "Exported data to gs://$purchasesCsvfile"
+
+echo "Exporting data to csv $sub2msisdnCsvfile"
+bq --location=EU extract --destination_format=CSV $sub2msisdnMappingsTable gs://$sub2msisdnCsvfile
+echo "Exported data to gs://$sub2msisdnCsvfile"
