@@ -6,10 +6,7 @@
 # Figure out where this script is running from
 #
 
-
-# Absolute path to this script, e.g. /home/user/bin/foo.sh
 SCRIPT=$(readlink -f "$0")
-# Absolute path this script is in, thus /home/user/bin
 SCRIPTPATH=$(dirname "$SCRIPT")
 echo $SCRIPTPATH
 
@@ -20,10 +17,6 @@ echo $SCRIPTPATH
 #
 
 . $SCRIPTPATH/check_dependencies_get_environment_coordinates.sh
-
-## Check that credentials are set up
-
-  #  tbd
 
 ## Fetch the input data form the exporter
 
@@ -45,9 +38,7 @@ gsutil cp $SEGMENT_TMPFILE_PSEUDO $RESULT_SEGMENT_PSEUDO_GS
 ## (so we should rally copy back $RESULT_SEGMENT_CLEARTEXT_GS insted of the _PSEUDO_
 ##  file)
 
-
 gsutil cp $RESULT_SEGMENT_PSEUDO_GS $SEGMENT_TMPFILE_CLEAR
-
 
 IMPORTFILE_YML=tmpfile.yml
 
@@ -73,3 +64,6 @@ awk '{print "      - " $1}'  $SEGMENT_IMPORTFILE_CLEAR >> $IMPORTFILE_YML
 
 ## Send it to the importer
 echo curl --data-binary @$IMPORTFILE_YML $IMPORTER_URL
+
+rm $SEGMENT_TMPFILE_PSEUDO
+rm $SEGMENT_TMPFILE_CLEAR
