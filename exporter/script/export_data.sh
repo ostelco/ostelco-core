@@ -11,9 +11,9 @@ projectId=pantel-2decb
 
 msisdnPseudonymsTable=$projectId.exported_pseudonyms.${exportId}_msisdn
 subscriberPseudonymsTable=$projectId.exported_pseudonyms.${exportId}_subscriber
-sub2msisdnMappingsTable=$projectId.exported_data_consumption.${exportId}_sub2msisdn
+sub2msisdnMappingsTable=exported_data_consumption.${exportId}_sub2msisdn
 hourlyConsumptionTable=$projectId.data_consumption.hourly_consumption
-dataConsumptionTable=$projectId.exported_data_consumption.$exportId
+dataConsumptionTable=exported_data_consumption.$exportId
 rawPurchasesTable=$projectId.purchases.raw_purchases
 purchaseRecordsTable=exported_data_consumption.${exportId}_purchases
 csvfile=$projectId-dataconsumption-export/$exportId.csv
