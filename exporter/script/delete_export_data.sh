@@ -10,11 +10,11 @@ exportId=${exportId//-}
 exportId=${exportId,,}
 projectId=pantel-2decb
 
-msisdnPseudonymsTable=exported_pseudonyms.${exportId}_msisdn
-subscriberPseudonymsTable=exported_pseudonyms.${exportId}_subscriber
-sub2msisdnMappingsTable=$projectId.exported_pseudonyms.${exportId}_sub2msisdn
-dataConsumptionTable=exported_data_consumption.$exportId
-purchaseRecordsTable=exported_data_consumption.${exportId}_purchases
+msisdnPseudonymsTable=$projectId.exported_pseudonyms.${exportId}_msisdn
+subscriberPseudonymsTable=$projectId.exported_pseudonyms.${exportId}_subscriber
+sub2msisdnMappingsTable=$projectId.exported_data_consumption.${exportId}_sub2msisdn
+dataConsumptionTable=$projectId.exported_data_consumption.$exportId
+purchaseRecordsTable=$projectId.exported_data_consumption.${exportId}_purchases
 csvfile=$projectId-dataconsumption-export/$exportId.csv
 purchasesCsvfile=$projectId-dataconsumption-export/$exportId-purchases.csv
 sub2msisdnCsvfile=$projectId-dataconsumption-export/$exportId-sub2msisdn.csv
