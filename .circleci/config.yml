@@ -39,7 +39,13 @@ jobs:
       - run:
           name: Build entire repo
           command: ./gradlew clean build -info -s -x :neo4j-store:test
-
+      - run:
+          name: Push Gradle cache
+          command: |
+            rm -f ~/.gradle/caches/modules-2/modules-2.lock
+            rm -fr ~/.gradle/caches/*/plugin-resolution/
+            tar -czvf  ~/caches.tar.gz  -C ~/.gradle/caches .
+            gsutil cp  ~/caches.tar.gz gs://pi-ostelco-core-gradle-cache
       # persisting the entire project with its generated artifacts. They are needed in the build-image job below.
       # the default working directory in circleci is ~/project/
       - persist_to_workspace:
@@ -342,9 +348,9 @@ workflows:
     - deploy-to-dev:
         requires:
           - update-dev-endpoints
-    - create-PR-to-master:
-        requires:
-          - deploy-to-dev
+#    - create-PR-to-master:
+#        requires:
+#          - deploy-to-dev
 
   deploy-to-prod:
     jobs:

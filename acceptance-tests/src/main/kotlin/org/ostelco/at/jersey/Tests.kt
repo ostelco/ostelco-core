@@ -20,14 +20,10 @@ import org.ostelco.prime.client.model.Profile
 import org.ostelco.prime.client.model.PurchaseRecordList
 import org.ostelco.prime.client.model.Subscription
 import org.ostelco.prime.client.model.SubscriptionStatus
+import java.lang.AssertionError
 import java.time.Instant
 import java.util.*
-import kotlin.test.assertEquals
-import kotlin.test.assertFails
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 
 class ProfileTest {
@@ -42,7 +38,7 @@ class ProfileTest {
                 .name("Test Profile User")
                 .address("")
                 .city("")
-                .country("")
+                .country("NO")
                 .postCode("")
                 .referralId("")
 
@@ -88,7 +84,6 @@ class ProfileTest {
                 .address("")
                 .postCode("")
                 .city("")
-                .country("")
 
         val clearedProfile: Profile = put {
             path = "/profile"
@@ -101,7 +96,18 @@ class ProfileTest {
         assertEquals("", clearedProfile.address, "Incorrect 'address' in response after clearing profile")
         assertEquals("", clearedProfile.postCode, "Incorrect 'postcode' in response after clearing profile")
         assertEquals("", clearedProfile.city, "Incorrect 'city' in response after clearing profile")
-        assertEquals("", clearedProfile.country, "Incorrect 'country' in response after clearing profile")
+
+        updatedProfile.country("")
+
+        // A test in 'HttpClientUtil' checks for status code 200 while the
+        // expected status code is actually 400.
+        assertFailsWith(AssertionError::class, "Incorrectly accepts that 'country' is cleared/not set") {
+            put {
+                path = "/profile"
+                body = updatedProfile
+                subscriberId = email
+            }
+        }
     }
 
     @Test

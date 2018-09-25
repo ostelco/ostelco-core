@@ -51,15 +51,21 @@ fun initDatabase() {
             price = Price(0, "NOK"),
             properties = mapOf("noOfBytes" to "1_000_000_000")))
 
-    val segment = Segment(id = "all")
-    Neo4jStoreSingleton.createSegment(segment)
+    val segments = listOf(
+            Segment(id = getSegmentNameFromCountryCode("NO")),
+            Segment(id = getSegmentNameFromCountryCode("SG"))
+    )
+    segments.map { Neo4jStoreSingleton.createSegment(it) }
 
     val offer = Offer(
             id = "default_offer",
-            segments = listOf("all"),
+            segments = listOf(getSegmentNameFromCountryCode("NO")),
             products = listOf("1GB_249NOK", "2GB_299NOK", "3GB_349NOK", "5GB_399NOK"))
     Neo4jStoreSingleton.createOffer(offer)
 }
+
+// Helper for naming of default segments based on country code.
+fun getSegmentNameFromCountryCode(countryCode: String) : String = "country-$countryCode".toLowerCase()
 
 class Config {
     lateinit var host: String

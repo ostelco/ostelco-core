@@ -73,7 +73,8 @@ interface SubscriberDAO {
         fun isValidProfile(profile: Subscriber?): Boolean {
             return (profile != null
                     && !profile.name.isEmpty()
-                    && !profile.email.isEmpty())
+                    && !profile.email.isEmpty()
+                    && !profile.country.isEmpty())
         }
 
         /**

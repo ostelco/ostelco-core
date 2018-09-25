@@ -12,7 +12,7 @@ fun createProfile(name: String, email: String) {
             .name(name)
             .address("")
             .city("")
-            .country("")
+            .country("NO")
             .postCode("")
             .referralId("")
 
