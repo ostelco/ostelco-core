@@ -10,8 +10,8 @@ exportId=${exportId//-}
 exportId=${exportId,,}
 projectId=pantel-2decb
 
-msisdnPseudonymsTable=$projectId.exported_pseudonyms.${exportId}_msisdn
-subscriberPseudonymsTable=$projectId.exported_pseudonyms.${exportId}_subscriber
+msisdnPseudonymsTable=exported_pseudonyms.${exportId}_msisdn
+subscriberPseudonymsTable=exported_pseudonyms.${exportId}_subscriber
 sub2msisdnMappingsTable=exported_data_consumption.${exportId}_sub2msisdn
 dataConsumptionTable=exported_data_consumption.$exportId
 purchaseRecordsTable=exported_data_consumption.${exportId}_purchases
