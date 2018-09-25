@@ -24,8 +24,16 @@ echo "Exported data to $inputSubscriberTable"
 echo "Creating table $outputSubscriberTable"
 # SQL for joining pseudonym & hourly consumption tables.
 read -r -d '' sqlForJoin << EOM
+CREATE TEMP FUNCTION URLDECODE(url STRING) AS ((
+  SELECT SAFE_CONVERT_BYTES_TO_STRING(
+    ARRAY_TO_STRING(ARRAY_AGG(
+        IF(STARTS_WITH(y, '%'), FROM_HEX(SUBSTR(y, 2)), CAST(y AS BYTES)) ORDER BY i
+      ), b''))
+  FROM UNNEST(REGEXP_EXTRACT_ALL(url, r"%[0-9a-fA-F]{2}|[^%]+")) AS y WITH OFFSET AS i
+));
+
 SELECT
-   DISTINCT(sub.subscriberId) as pseudoId, ps.subscriberId
+   DISTINCT(sub.subscriberId) as pseudoId, URLDECODE(ps.subscriberId)
 FROM
    \`$inputSubscriberTable\` as sub
 JOIN
