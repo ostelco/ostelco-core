@@ -72,17 +72,18 @@ echo "Exporting data to csv $csvfile"
 bq --location=EU extract --destination_format=CSV $dataConsumptionTable gs://$csvfile
 echo "Exported data to gs://$csvfile"
 
-echo "Creating table purchaseRecordsTable"
+echo "Creating table $purchaseRecordsTable"
 # SQL for joining subscriber pseudonym & purchase record tables.
 read -r -d '' sqlForJoin2 << EOM
 SELECT
    TIMESTAMP_MILLIS(pr.timestamp) as timestamp , ps.pseudoid as subscriberId, pr.product.sku, pr.product.price.amount, product.price.currency
 FROM
-   `$rawPurchasesTable` as pr
+   \`$rawPurchasesTable\` as pr
 JOIN
-  `$subscriberPseudonymsTable` as ps
+  \`$subscriberPseudonymsTable\` as ps
 ON  ps.pseudonym = pr.subscriberId
 EOM
+
 # Run the query using bq & dump results to the new table
 bq --location=EU --format=none query --destination_table $purchaseRecordsTable --replace --use_legacy_sql=false $sqlForJoin2
 echo "Created table $purchaseRecordsTable"
