@@ -3,7 +3,9 @@ CREATE TABLE IF NOT EXISTS
 (
   msisdn STRING NOT NULL,
   bytes INT64 NOT NULL,
-  timestamp TIMESTAMP NOT NULL
+  timestamp TIMESTAMP NOT NULL,
+  apn STRING NOT NULL,
+  mccMnc STRING NOT NULL
 )
 PARTITION BY DATE(timestamp);
 
@@ -14,6 +16,8 @@ CREATE TABLE IF NOT EXISTS
   msisdn STRING NOT NULL,
   bucketBytes INT64 NOT NULL,
   bundleBytes INT64 NOT NULL,
-  timestamp TIMESTAMP NOT NULL
+  timestamp TIMESTAMP NOT NULL,
+  apn STRING NOT NULL,
+  mccMnc STRING NOT NULL
 )
 PARTITION BY DATE(timestamp);
