@@ -21,7 +21,7 @@ echo "Importing data from csv $csvfile"
 bq --location=EU load --replace --source_format=CSV $projectId:$inputSubscriberTable gs://$csvfile /subscriber-schema.json
 echo "Exported data to $inputSubscriberTable"
 
-echo "Creating table $dataConsumptionTable"
+echo "Creating table $outputSubscriberTable"
 # SQL for joining pseudonym & hourly consumption tables.
 read -r -d '' sqlForJoin << EOM
 SELECT
