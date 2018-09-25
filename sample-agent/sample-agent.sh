@@ -20,20 +20,43 @@ echo $SCRIPTPATH
 
 ## Fetch the input data form the exporter
 
-EXPORTID=0802c66be1ce4e2dba22f988b3ce24f7
-# EXPORTID=$($SCRIPTPATH/run-export.sh target-dir)
+EXPORT_ID=0802c66be1ce4e2dba22f988b3ce24f7
+# EXPORT_ID=$($SCRIPTPATH/run-export.sh target-dir)
 
-if [[ -z "$EXPORTID" ]] ; then
+if [[ -z "$EXPORT_ID" ]] ; then
     echo "$0  Could not determine export ID, bailing out"
     exit 1
 fi
 
 ## Calculate the output, and put into a file
+## that will be a single-column CSV file containing the
+## members of the updated segment
 
-ALLSUBSCRIBERIDS=$(awk -F, '!/^subscriberId/{print $1'} "target-dir/$EXPORTID-sub2msisdn.csv")
+PROJECT_ID=$(gcloud config get-value project)
 
-echo $ALLSUBSCRIBERIDS
-											      
+PURCHASES_GS="gs://${PROJECT_ID}-dataconsumption-export/$EXPORT_ID-purchases.csv"
+SUB_2_MSISSDN_MAPPING_GS="gs://${PROJECT_ID}-dataconsumption-export/$EXPORT_ID-sub2msisdn.csv"
+CONSUMPTION_GS="gs://${PROJECT_ID}-dataconsumption-export/$EXPORT_ID.csv"
+RESULT_SEGMENT_PSEUDO_GS="gs://${PROJECT_ID}-dataconsumption-export/$EXPORT_ID-resultsegment-pseudoanonymized.csv"
+RESULT_SEGMENT_CLEAR_GS="gs://${PROJECT_ID}-dataconsumption-export/$EXPORT_ID-resultsegment-cleartext.csv"
+
+SEGMENT_TMPFILE_PSEUDO="tmpsegment-pseudo.csv"
+SEGMENT_TMPFILE_CLEAR="tmpsegment-clear.csv"
+awk -F, '!/^subscriberId/{print $1'} "target-dir/$EXPORT_ID-sub2msisdn.csv" > $SEGMENT_TMPFILE_PSEUDO
+gsutil cp $SEGMENT_TMPFILE_PSEUDO $RESULT_SEGMENT_PSEUDO_GS
+
+## Run some script to make sure that we can get deanonumized pseudothing.
+## At this point we give the actual content of that file, since we copy it back
+## but eventually we may in fact send the URL instead of the actual data, letting
+## the Prime read the dataset from google cloud storage instead.
+
+## (so we should rally copy back $RESULT_SEGMENT_CLEARTEXT_GS insted of the _PSEUDO_
+##  file)
+
+
+gsutil cp $RESULT_SEGMENT_PSEUDO_GS $SEGMENT_TMPFILE_CLEAR
+
+
 TMPFILE=tmpfile.yml
 
 cat > $TMPFILE <<EOF
@@ -53,9 +76,9 @@ segment:
     subscribers:
 EOF
 
-for x in $ALLSUBSCRIBERIDS ; do echo "      - $x" >> $TMPFILE ;  done
 
-
+awk '{print "      - " $1}'  $SEGMENT_TMPFILE_CLEAR >> $TMPFILE 
+# for x in $ALLSUBSCRIBERIDS ; do echo "      - $x" >> $TMPFILE ;  done
 
 
 ## Send it to the importer
