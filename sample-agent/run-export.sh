@@ -11,7 +11,7 @@
 #
 
 TARGET_DIR=$1
-if [[ ! -z "$TARGET_DIR" ]] ; then
+if [[ -z "$TARGET_DIR" ]] ; then
     echo "$0  Missing parameter"
     echo "usage  $0 target-dir"
     exit 1
