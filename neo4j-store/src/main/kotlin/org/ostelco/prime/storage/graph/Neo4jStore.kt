@@ -211,17 +211,6 @@ object Neo4jStoreSingleton : GraphStore {
     }
     // << END
 
-    // Helper for naming of default segments based on country code.
-
-    fun getSegmentNameFromCountryCode(country: String) : String {
-        val segmentName = when (country.toUpperCase()) {
-            "NO" -> "Norway_${country}"
-            "SG" -> "Singapore_${country}"
-            else -> ""
-        }
-        return segmentName.toLowerCase()
-    }
-
     override fun updateSubscriber(subscriber: Subscriber): Either<StoreError, Unit> = writeTransaction {
         subscriberStore.update(subscriber, transaction)
                 .ifFailedThenRollback(transaction)
