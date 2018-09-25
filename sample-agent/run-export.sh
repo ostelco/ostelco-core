@@ -1,9 +1,28 @@
 #!/bin/bash
 
+##
+## Exploratory code to run an export using bigquery.
+##
+
+
 #
-# Exploratory code to run an export using bigquery.
+#  Get command line parameter, which should be an existing
+#  directory in which to store the results
 #
 
+TARGET_DIR=$1
+if [[ ! -z "$TARGET_DIR" ]] ; then
+    echo "$0  Missing parameter"
+    echo "usage  $0 target-dir"
+    exit 1
+fi
+
+
+if [[ ! -d "$TARGET_DIR" ]] ; then
+    echo "$0  parameter does not designate an existing directory"
+    echo "usage  $0 target-dir"
+    exit 1
+fi
 
 #
 # Check for dependencies
@@ -42,8 +61,8 @@ fi
 # Run an export inside the kubernetes cluster, then parse
 # the output of the script thar ran the export
 #
-TEMPFILE=tmpfile.txt
-# mpfile=$(mktemp /tmp/abc-script.XXXXXX)
+#TEMPFILE="$(mktemp /tmp/abc-script.XXXXXX)"
+TEMPFILE="tmpfile.txt"
 
 # kubectl exec -it "${EXPORTER_PODNAME}" -- /bin/bash -c /export_data.sh > "$TEMPFILE"
 
@@ -63,7 +82,6 @@ TEMPFILE=tmpfile.txt
 
 EXPORT_ID=$(grep "Starting export job for" $TEMPFILE | awk '{print $5}' |  sed 's/\r$//' )
 
-echo "export id = $EXPORT_ID"
 
 PURCHASES_GS="gs://${PROJECT_ID}-dataconsumption-export/$EXPORT_ID-purchases.csv"
 SUB_2_MSISSDN_MAPPING_GS="gs://${PROJECT_ID}-dataconsumption-export/$EXPORT_ID-sub2msisdn.csv"
@@ -73,8 +91,13 @@ CONSUMPTION_GS="gs://${PROJECT_ID}-dataconsumption-export/$EXPORT_ID.csv"
 # Then copy the CSV files to local storage (current directory)
 #
 
+gsutil cp $PURCHASES_GS $TARGET_DIR
+gsutil cp $SUB_2_MSISSDN_MAPPING_GS $TARGET_DIR
+gsutil cp $CONSUMPTION_GS $TARGET_DIR
 
-gsutil cp $PURCHASES_GS .
-gsutil cp $SUB_2_MSISSDN_MAPPING_GS .
-gsutil cp $CONSUMPTION_GS .
-
+#
+# Finally output the ID of the export, since that's
+# what will be used by users of this script to access
+# the output
+#
+echo $EXPORT_ID
