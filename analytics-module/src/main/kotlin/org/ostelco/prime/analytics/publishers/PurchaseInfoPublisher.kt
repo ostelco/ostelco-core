@@ -36,7 +36,9 @@ object PurchaseInfoPublisher :
         val builder = GsonBuilder()
         // Type for this conversion is explicitly set to java.util.Map
         // This is needed because of kotlin's own Map interface
+        @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
         val mapType = object : TypeToken<java.util.Map<String, String>>() {}.type
+        @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
         val serializer = JsonSerializer<java.util.Map<String, String>> { src, _, _ ->
             val array = JsonArray()
             src.forEach { k, v ->

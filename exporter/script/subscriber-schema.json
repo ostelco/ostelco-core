@@ -1,0 +1,7 @@
+[
+  {
+    "mode": "REQUIRED", 
+    "name": "subscriberId", 
+    "type": "STRING"
+  }
+]

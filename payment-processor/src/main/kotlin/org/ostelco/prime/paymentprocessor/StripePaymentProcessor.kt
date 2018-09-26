@@ -8,19 +8,19 @@ import com.stripe.model.*
 import org.ostelco.prime.paymentprocessor.core.*
 import com.stripe.model.Customer
 
+
 class StripePaymentProcessor : PaymentProcessor {
 
     private val logger by getLogger()
 
     override fun getSavedSources(customerId: String): Either<PaymentError, List<SourceDetailsInfo>> =
             either("Failed to retrieve sources for customer $customerId") {
-                val sources = mutableListOf<SourceDetailsInfo>()
                 val customer = Customer.retrieve(customerId)
-                customer.sources.data.forEach {
+                val sources: List<SourceDetailsInfo> = customer.sources.data.map {
                     val details = getAccountDetails(it)
-                    sources.add(SourceDetailsInfo(it.id, getAccountType(details), details))
+                    SourceDetailsInfo(it.id, getAccountType(details), details)
                 }
-                sources
+                sources.sortedByDescending { it.details.get("created") as Long }
             }
 
     private fun getAccountType(details: Map<String, Any>) : String {
@@ -28,7 +28,7 @@ class StripePaymentProcessor : PaymentProcessor {
     }
 
     /* Returns detailed 'account details' for the given Stripe source/account.
-       Note that including the fields 'id' and 'type' are manadatory. */
+       Note that including the fields 'id', 'type' and 'created' are manadatory. */
     private fun getAccountDetails(accountInfo: ExternalAccount) : Map<String, Any> {
         when (accountInfo) {
             is Card -> {
@@ -43,6 +43,8 @@ class StripePaymentProcessor : PaymentProcessor {
                              "country" to accountInfo.country,
                              "currency" to accountInfo.currency,
                              "cvcCheck" to accountInfo.cvcCheck,
+                             "created" to getCreatedTimestampFromMetadata(accountInfo.id,
+                                     accountInfo.metadata),
                              "expMonth" to accountInfo.expMonth,
                              "expYear" to accountInfo.expYear,
                              "fingerprint" to accountInfo.fingerprint,
@@ -54,6 +56,7 @@ class StripePaymentProcessor : PaymentProcessor {
             is Source -> {
                 return mapOf("id" to accountInfo.id,
                              "type" to "source",
+                             "created" to accountInfo.created,
                              "typeData" to accountInfo.typeData,
                              "owner" to accountInfo.owner)
             }
@@ -61,9 +64,28 @@ class StripePaymentProcessor : PaymentProcessor {
                 logger.error("Received unsupported Stripe source/account type: {}",
                         accountInfo)
                 return mapOf("id" to accountInfo.id,
-                             "type" to "unsupported")
+                             "type" to "unsupported",
+                             "created" to getSecondsSinceEpoch())
             }
         }
+    }
+
+    /* Handle type conversion when reading the 'created' field from the
+       metadata returned from Stripe. (It might seem like that Stripe
+       returns stored metadata values as strings, even if they where stored
+       using an another type. Needs to be verified.) */
+    private fun getCreatedTimestampFromMetadata(id: String, metadata: Map<String, Any>) : Long {
+        val created: String? = metadata.get("created") as? String
+        return created?.toLongOrNull() ?: run {
+            logger.warn("No 'created' timestamp found in metadata for Stripe account {}",
+                    id)
+            getSecondsSinceEpoch()
+        }
+    }
+
+    /* Seconds since Epoch in UTC zone. */
+    private fun getSecondsSinceEpoch() : Long {
+        return System.currentTimeMillis() / 1000L
     }
 
     override fun createPaymentProfile(userEmail: String): Either<PaymentError, ProfileInfo> =
@@ -119,7 +141,8 @@ class StripePaymentProcessor : PaymentProcessor {
     override fun addSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo> =
             either("Failed to add source $sourceId to customer $customerId") {
                 val customer = Customer.retrieve(customerId)
-                val params = mapOf("source" to sourceId)
+                val params = mapOf("source" to sourceId,
+                        "metadata" to mapOf("created" to getSecondsSinceEpoch()))
                 SourceInfo(customer.sources.create(params).id)
             }
 

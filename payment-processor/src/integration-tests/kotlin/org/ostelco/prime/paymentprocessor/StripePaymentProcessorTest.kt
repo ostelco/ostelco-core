@@ -1,5 +1,6 @@
 package org.ostelco.prime.paymentprocessor
 
+import arrow.core.getOrElse
 import com.stripe.Stripe
 import com.stripe.model.Token
 import org.junit.After
@@ -66,6 +67,29 @@ class StripePaymentProcessorTest {
     fun getUnknownPaymentProfile() {
         val result = paymentProcessor.getPaymentProfile("not@fail.com")
         assertEquals(false, result.isRight())
+    }
+
+    @Test
+    fun ensureSourcesSorted() {
+
+        run {
+            paymentProcessor.addSource(stripeCustomerId, createPaymentSourceId())
+            // Ensure that not all sources falls within the same second.
+            Thread.sleep(1_001)
+            paymentProcessor.addSource(stripeCustomerId, createPaymentSourceId())
+        }
+
+        // Should be in descending sorted order by the "created" timestamp.
+        val sources = paymentProcessor.getSavedSources(stripeCustomerId)
+
+        val createdTimestamps = sources.getOrElse {
+            fail("The 'created' field is missing from the list of sources: ${sources}")
+        }.map { it.details["created"] as Long  }
+
+        val createdTimestampsSorted = createdTimestamps.sortedByDescending { it }
+
+        assertEquals(createdTimestampsSorted, createdTimestamps,
+                "The list of sources is not in descending sorted order by 'created' timestamp: ${sources}")
     }
 
     @Test
