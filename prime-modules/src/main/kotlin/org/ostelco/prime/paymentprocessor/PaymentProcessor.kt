@@ -124,6 +124,5 @@ interface PaymentProcessor {
      * @param sourceId id of the payment source
      * @return id if removed
      */
-    fun removeSource(customerId: String, sourceId: String): Either<PaymentError, String>
-
+    fun removeSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo>
 }

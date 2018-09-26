@@ -233,9 +233,16 @@ class StripePaymentProcessor : PaymentProcessor {
                 Refund.create(refundParams).charge
             }
 
-    override fun removeSource(customerId: String, sourceId: String): Either<PaymentError, String> =
+    override fun removeSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo> =
             either("Failed to remove source $sourceId from customer $customerId") {
-                Customer.retrieve(customerId).sources.retrieve(sourceId).delete().id
+                val accountInfo = Customer.retrieve(customerId).sources.retrieve(sourceId)
+                when (accountInfo) {
+                    is Card -> accountInfo.delete()
+                    is Source -> accountInfo.detach()
+                    else ->
+                        Either.left(BadGatewayError("Attempt to remove unsupported account-type ${accountInfo}"))
+                }
+                SourceInfo(sourceId)
             }
 
     private fun <RETURN> either(errorDescription: String, action: () -> RETURN): Either<PaymentError, RETURN> {
