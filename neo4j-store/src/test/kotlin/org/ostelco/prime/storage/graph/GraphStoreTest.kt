@@ -48,7 +48,7 @@ class GraphStoreTest {
                         price = Price(0, CURRENCY),
                         properties = mapOf("noOfBytes" to "1_000_000_000")))
 
-        val allSegment = Segment(id = Neo4jStoreSingleton.getSegmentNameFromCountryCode(COUNTRY))
+        val allSegment = Segment(id = getSegmentNameFromCountryCode(COUNTRY))
         Neo4jStoreSingleton.createSegment(allSegment)
     }
 
