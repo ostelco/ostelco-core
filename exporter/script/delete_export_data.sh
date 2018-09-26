@@ -19,6 +19,9 @@ csvfile=$projectId-dataconsumption-export/$exportId.csv
 purchasesCsvfile=$projectId-dataconsumption-export/$exportId-purchases.csv
 sub2msisdnCsvfile=$projectId-dataconsumption-export/$exportId-sub2msisdn.csv
 
+inputSubscriberTable=exported_pseudonyms.${exportId}_pseudo_subscriber
+outputSubscriberTable=exported_pseudonyms.${exportId}_clear_subscriber
+
 echo "Cleaning all data for export $exportId"
 echo "Deleting Table $msisdnPseudonymsTable"
 bq rm -f -t $msisdnPseudonymsTable
@@ -34,6 +37,12 @@ bq rm -f -t $dataConsumptionTable
 
 echo "Deleting Table $purchaseRecordsTable"
 bq rm -f -t $purchaseRecordsTable
+
+echo "Deleting Table $inputSubscriberTable"
+bq rm -f -t $inputSubscriberTable
+
+echo "Deleting Table $outputSubscriberTable"
+bq rm -f -t $outputSubscriberTable
 
 echo "Deleting csv gs://$csvfile"
 gsutil rm gs://$csvfile
