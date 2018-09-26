@@ -59,7 +59,8 @@ segment:
     subscribers:
 EOF
 
-
+# Adding the list of subscribers in clear text (indented six spaces
+# with a leading "-" as per YAML list syntax.
 awk '{print "      - " $1}'  $SEGMENT_IMPORTFILE_CLEAR >> $IMPORTFILE_YML 
 
 ## Send it to the importer
