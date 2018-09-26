@@ -70,8 +70,10 @@ class StripePaymentProcessor : PaymentProcessor {
         }
     }
 
-    /* As Stripe returns stored metadata as String, check for and return the 'created' timestamp from metadata. If not
-       found log and return current time as the timestamp. */
+    /* Handle type conversion when reading the 'created' field from the
+       metadata returned from Stripe. (It might seem like that Stripe
+       returns stored metadata values as strings, even if they where stored
+       using an another type. Needs to be verified.) */
     private fun getCreatedTimestampFromMetadata(id: String, metadata: Map<String, Any>) : Long {
         val created: String? = metadata.get("created") as? String
         return created?.toLongOrNull() ?: run {
