@@ -1,7 +1,10 @@
 package org.ostelco.prime.paymentprocessor
 
 import arrow.core.getOrElse
+import arrow.core.right
+import arrow.core.some
 import com.stripe.Stripe
+import com.stripe.model.Source
 import com.stripe.model.Token
 import org.junit.After
 import org.junit.Before
@@ -18,17 +21,38 @@ class StripePaymentProcessorTest {
 
     private var stripeCustomerId = ""
 
-    fun createPaymentSourceId(): String {
+    private fun createPaymentTokenId() : String {
 
         val cardMap = mapOf(
                 "number" to "4242424242424242",
                 "exp_month" to 8,
                 "exp_year" to 2019,
                 "cvc" to "314")
-
         val tokenMap = mapOf("card" to cardMap)
+
         val token = Token.create(tokenMap)
         return token.id
+    }
+
+    private fun createPaymentSourceId() : String {
+
+        val sourceMap = mapOf(
+                "type" to "card",
+                "card" to mapOf(
+                        "number" to "4242424242424242",
+                        "exp_month" to 8,
+                        "exp_year" to 2019,
+                        "cvc" to "314"),
+                "owner" to mapOf(
+                        "address" to mapOf(
+                                "city" to "Oslo",
+                                "country" to "Norway"
+                        ),
+                        "email" to "me@somewhere.com")
+                )
+
+        val source = Source.create(sourceMap)
+        return source.id
     }
 
     private fun addCustomer() {
@@ -73,7 +97,7 @@ class StripePaymentProcessorTest {
     fun ensureSourcesSorted() {
 
         run {
-            paymentProcessor.addSource(stripeCustomerId, createPaymentSourceId())
+            paymentProcessor.addSource(stripeCustomerId, createPaymentTokenId())
             // Ensure that not all sources falls within the same second.
             Thread.sleep(1_001)
             paymentProcessor.addSource(stripeCustomerId, createPaymentSourceId())
@@ -84,18 +108,37 @@ class StripePaymentProcessorTest {
 
         val createdTimestamps = sources.getOrElse {
             fail("The 'created' field is missing from the list of sources: ${sources}")
-        }.map { it.details["created"] as Long  }
+        }.map { it.details["created"] as Long }
 
         val createdTimestampsSorted = createdTimestamps.sortedByDescending { it }
 
-        assertEquals(createdTimestampsSorted, createdTimestamps,
+        assertEquals(createdTimestamps, createdTimestampsSorted,
                 "The list of sources is not in descending sorted order by 'created' timestamp: ${sources}")
+    }
+
+    @Test
+    fun addAndRemoveMultipleSources() {
+
+        val sources= listOf(
+            paymentProcessor.addSource(stripeCustomerId, createPaymentTokenId()),
+            paymentProcessor.addSource(stripeCustomerId, createPaymentSourceId())
+        )
+
+        val sourcesRemoved = sources.map {
+            paymentProcessor.removeSource(stripeCustomerId, it.getOrElse {
+                fail("Failed to remove source ${it}")
+            }.id)
+        }
+
+        sourcesRemoved.forEach { it ->
+            assertEquals(true, it.isRight(), "Unexpected failure when removing source ${it}")
+        }
     }
 
     @Test
     fun addSourceToCustomerAndRemove() {
 
-        val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentSourceId())
+        val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentTokenId())
 
         val resultStoredSources = paymentProcessor.getSavedSources(stripeCustomerId)
         assertEquals(1, resultStoredSources.fold({ 0 }, { it.size }))
@@ -111,8 +154,8 @@ class StripePaymentProcessorTest {
     }
 
     @Test
-    fun addSourceToCustomerTwise() {
-        val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentSourceId())
+    fun addSourceToCustomerTwice() {
+        val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentTokenId())
 
         val resultStoredSources = paymentProcessor.getSavedSources(stripeCustomerId)
         assertEquals(1, resultStoredSources.fold({ 0 }, { it.size }))
@@ -133,7 +176,7 @@ class StripePaymentProcessorTest {
     @Test
     fun addDefaultSourceAndRemove() {
 
-        val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentSourceId())
+        val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentTokenId())
         assertEquals(true, resultAddSource.isRight())
 
         val resultAddDefault = paymentProcessor.setDefaultSource(stripeCustomerId, resultAddSource.fold({ "" }, { it.id }))
@@ -149,7 +192,7 @@ class StripePaymentProcessorTest {
 
     @Test
     fun createAuthorizeChargeAndRefund() {
-        val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentSourceId())
+        val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentTokenId())
         assertEquals(true, resultAddSource.isRight())
 
         val resultAuthorizeCharge = paymentProcessor.authorizeCharge(stripeCustomerId, resultAddSource.fold({ "" }, { it.id }), 1000, "nok")
@@ -176,7 +219,7 @@ class StripePaymentProcessorTest {
     @Test
     fun subscribeAndUnsubscribePlan() {
 
-        val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentSourceId())
+        val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentTokenId())
         assertEquals(true, resultAddSource.isRight())
 
         val resultCreateProduct = paymentProcessor.createProduct("TestSku")

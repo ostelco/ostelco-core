@@ -55,15 +55,6 @@ object StripePayment {
         return token.card.id
     }
 
-    fun getCardIdForSourceId(sourceId: String) : String {
-
-        // https://stripe.com/docs/api/java#create_source
-        Stripe.apiKey = System.getenv("STRIPE_API_KEY")
-
-        val source = Source.retrieve(sourceId)
-        return source.id
-    }
-
     /**
      * Obtains 'default source' directly from Stripe. Use in tests to
      * verify that the correspondng 'setDefaultSource' API works as

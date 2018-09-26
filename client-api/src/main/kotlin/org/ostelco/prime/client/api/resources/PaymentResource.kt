@@ -5,12 +5,7 @@ import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.getLogger
 import javax.validation.constraints.NotNull
-import javax.ws.rs.GET
-import javax.ws.rs.POST
-import javax.ws.rs.PUT
-import javax.ws.rs.Path
-import javax.ws.rs.Produces
-import javax.ws.rs.QueryParam
+import javax.ws.rs.*
 import javax.ws.rs.core.Response
 
 /**
@@ -67,6 +62,24 @@ class PaymentResource(private val dao: SubscriberDAO) {
         }
 
         return dao.setDefaultSource(token.name, sourceId)
+                .fold(
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                        { sourceInfo -> Response.status(Response.Status.OK).entity(sourceInfo)}
+                ).build()
+    }
+
+    @DELETE
+    @Produces("application/json")
+    fun removeSource(@Auth token: AccessTokenPrincipal?,
+                     @NotNull
+                     @QueryParam("sourceId")
+                     sourceId: String): Response {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .build()
+        }
+
+        return dao.removeSource(token.name, sourceId)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { sourceInfo -> Response.status(Response.Status.OK).entity(sourceInfo)}

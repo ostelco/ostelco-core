@@ -350,4 +350,19 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                             .mapLeft { mapPaymentErrorToApiError("Failed to list sources", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_SOURCES_LIST, it) }
                 }
     }
+
+    override fun removeSource(subscriberId: String, sourceId: String): Either<ApiError, SourceInfo> {
+        return paymentProcessor.getPaymentProfile(subscriberId)
+                .fold(
+                        {
+                            paymentProcessor.createPaymentProfile(subscriberId)
+                                    .mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_SET_DEFAULT_PAYMENT_SOURCE, error) }
+                        },
+                        { profileInfo -> Either.right(profileInfo) }
+                )
+                .flatMap { profileInfo ->
+                    paymentProcessor.removeSource(profileInfo.id, sourceId)
+                            .mapLeft { mapPaymentErrorToApiError("Failed to remove payment source", ApiErrorCode.FAILED_TO_REMOVE_PAYMENT_SOURCE, it) }
+                }
+    }
 }
