@@ -80,7 +80,7 @@ class PurchaseRequestHandler(
         val future = CompletableFuture<String>()
         requestMap[requestId] = future
         producer.topupDataBundleBalanceEvent(requestId = requestId, bundleId = bundleId, bytes = noOfBytes)
-        val error = future.get(5, MILLISECONDS)
+        val error = future.get(100, MILLISECONDS)
         if (error.isNotBlank()) {
             return Either.left(error)
         }
