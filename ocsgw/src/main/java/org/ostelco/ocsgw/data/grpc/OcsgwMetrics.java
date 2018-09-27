@@ -42,7 +42,7 @@ class OcsgwMetrics {
 
     private ScheduledFuture keepAliveFuture = null;
 
-    private int lastActiveSessions = 0;
+    private OcsgwAnalyticsReport lastActiveSessions = OcsgwAnalyticsReport.newBuilder().setKeepAlive(true).build();
 
     OcsgwMetrics(String metricsServerHostname, ServiceAccountJwtAccessCredentials credentials) {
 
@@ -126,15 +126,15 @@ class OcsgwMetrics {
     private void initKeepAlive() {
         // this is used to keep connection alive
         keepAliveFuture = executorService.scheduleWithFixedDelay(() -> {
-                    sendAnalytics(lastActiveSessions);
+                    sendAnalytics(OcsgwAnalyticsReport.newBuilder().setKeepAlive(true).build());
                 },
                 15,
                 50,
                 TimeUnit.SECONDS);
     }
 
-    void sendAnalytics(int size) {
-        ocsgwAnalyticsReport.onNext(OcsgwAnalyticsReport.newBuilder().setActiveSessions(size).build());
-        lastActiveSessions = size;
+    void sendAnalytics(OcsgwAnalyticsReport report) {
+        ocsgwAnalyticsReport.onNext(report);
+        lastActiveSessions = report;
     }
 }

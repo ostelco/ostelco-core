@@ -1,12 +1,10 @@
 package org.ostelco.prime.storage.graph
 
 import arrow.core.Either
-import arrow.core.Tuple4
+import arrow.core.Tuple3
 import arrow.core.flatMap
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
-import org.ostelco.prime.analytics.PrimeMetric.REVENUE
-import org.ostelco.prime.analytics.PrimeMetric.USERS_PAID_AT_LEAST_ONCE
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Offer
@@ -357,7 +355,7 @@ object Neo4jStoreSingleton : GraphStore {
             sourceId: String?,
             saveCard: Boolean): Either<PaymentError, ProductInfo> = writeTransaction {
 
-        val result = getProduct(subscriberId, sku, transaction)
+        getProduct(subscriberId, sku, transaction)
                 // If we can't find the product, return not-found
                 .mapLeft { org.ostelco.prime.paymentprocessor.core.NotFoundError("Product unavailable") }
                 .flatMap { product: Product ->
@@ -367,40 +365,52 @@ object Neo4jStoreSingleton : GraphStore {
                                     { paymentProcessor.createPaymentProfile(subscriberId) },
                                     { profileInfo -> Either.right(profileInfo) }
                             )
-                            .map { profileInfo -> Pair(product, profileInfo) }
+                            .map { profileInfo -> Pair(product, profileInfo.id) }
                 }
-                .flatMap { (product, profileInfo) ->
+                .flatMap { (product, paymentCustomerId) ->
                     // Add payment source
                     if (sourceId != null) {
-                paymentProcessor.getSavedSources(profileInfo.id)
-                        .fold(
-                                {
-                                    Either.left(org.ostelco.prime.paymentprocessor.core.BadGatewayError("Failed to fetch sources for user", it.description))
-                                },
-                                {
-                                    var linkedSource = sourceId
-                                    if (!it.any{ sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
-                                        paymentProcessor.addSource(profileInfo.id, sourceId).map { sourceInfo -> linkedSource = sourceInfo.id }
-                                    }
-                                    Either.right(Triple(product,profileInfo, linkedSource))
-                                }
-                        )
+                        // First fetch all existing saved sources
+                        paymentProcessor.getSavedSources(paymentCustomerId)
+                                .fold(
+                                        {
+                                            Either.left(org.ostelco.prime.paymentprocessor.core.BadGatewayError("Failed to fetch sources for user", it.description))
+                                        },
+                                        {
+                                            // If the sourceId is not found in existing list of saved sources,
+                                            // then save the source
+                                            if (!it.any { sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
+                                                paymentProcessor.addSource(paymentCustomerId, sourceId)
+                                                        // TODO payment: Should we remove the sourceId for saveCard == false even when captureCharge has failed?
+                                                        // For success case, saved source is removed after "capture charge" is saveCard == false.
+                                                        // Making sure same happens even for failure case by linking reversal action to transaction
+                                                        .finallyDo(transaction) { _ -> removePaymentSource(saveCard, paymentCustomerId, sourceId) }
+                                                        .map { sourceInfo -> Triple(product, paymentCustomerId, sourceInfo.id) }
+                                            } else {
+                                                Either.right(Triple(product, paymentCustomerId, sourceId))
+                                            }
+                                        }
+                                )
                     } else {
-                        Either.right(Triple(product, profileInfo, null))
+                        Either.right(Triple(product, paymentCustomerId, null))
                     }
                 }
-                .flatMap { (product, profileInfo, savedSourceId) ->
+                .flatMap { (product, paymentCustomerId, sourceId) ->
                     // Authorize stripe charge for this purchase
                     val price = product.price
                     //TODO: If later steps fail, then refund the authorized charge
-                    paymentProcessor.authorizeCharge(profileInfo.id, savedSourceId, price.amount, price.currency)
+                    paymentProcessor.authorizeCharge(paymentCustomerId, sourceId, price.amount, price.currency)
                             .mapLeft { apiError ->
-                                logger.error("failed to authorize purchase for customerId ${profileInfo.id}, sourceId $savedSourceId, sku $sku")
+                                logger.error("failed to authorize purchase for paymentCustomerId $paymentCustomerId, sourceId $sourceId, sku $sku")
                                 apiError
                             }
-                            .map { chargeId -> Tuple4(profileInfo, savedSourceId, chargeId, product) }
+                            .linkReversalActionToTransaction(transaction) { chargeId ->
+                                paymentProcessor.refundCharge(chargeId)
+                                logger.error("failed to refund charge for paymentCustomerId $paymentCustomerId, chargeId $chargeId. Fix this in Stripe dashboard")
+                            }
+                            .map { chargeId -> Tuple3(product, paymentCustomerId, chargeId) }
                 }
-                .flatMap { (profileInfo, savedSourceId, chargeId, product) ->
+                .flatMap { (product, paymentCustomerId, chargeId) ->
                     val purchaseRecord = PurchaseRecord(
                             id = chargeId,
                             product = product,
@@ -409,51 +419,54 @@ object Neo4jStoreSingleton : GraphStore {
                     // Create purchase record
                     createPurchaseRecordRelation(subscriberId, purchaseRecord, transaction)
                             .mapLeft { storeError ->
-                                paymentProcessor.refundCharge(chargeId)
-                                logger.error("failed to save purchase record, for customerId ${profileInfo.id}, chargeId $chargeId, payment will be unclaimed in Stripe")
+                                logger.error("failed to save purchase record, for paymentCustomerId $paymentCustomerId, chargeId $chargeId, payment will be unclaimed in Stripe")
                                 BadGatewayError(storeError.message)
                             }
-                            // Notify OCS
                             .flatMap {
                                 //TODO: While aborting transactions, send a record with "reverted" status
                                 analyticsReporter.reportPurchaseInfo(
                                         purchaseRecord = purchaseRecord,
                                         subscriberId = subscriberId,
                                         status = "success")
-                                //TODO vihang: Handle errors (when it becomes available)
-                                ocs.topup(subscriberId, sku)
-                                // TODO vihang: handle currency conversion
-                                analyticsReporter.reportMetric(REVENUE, product.price.amount.toLong())
-                                analyticsReporter.reportMetric(USERS_PAID_AT_LEAST_ONCE, getPaidSubscriberCount(transaction))
-                                Either.right(Tuple4(profileInfo, savedSourceId, chargeId, product))
+
+                                Either.right(Tuple3(product, paymentCustomerId, chargeId))
                             }
                 }
-                .mapLeft { error ->
-                    transaction.failure()
-                    error
+                .flatMap { (product, paymentCustomerId, chargeId) ->
+                    // Notify OCS
+                    ocs.topup(subscriberId, sku)
+                            .bimap({ BadGatewayError(description = "Failed to perform topup", externalErrorMessage = it) },
+                                    { Tuple3(product, paymentCustomerId, chargeId) })
                 }
+                .map { (product, paymentCustomerId, chargeId) ->
 
-        result.map { (profileInfo, _, chargeId, _) ->
-            // Capture the charge, our database have been updated.
-            paymentProcessor.captureCharge(chargeId, profileInfo.id)
-                    .mapLeft {
-                        // TODO payment: retry capture charge
-                        logger.error("Capture failed for customerId ${profileInfo.id}, chargeId $chargeId, Fix this in Stripe Dashboard")
-                    }
-        }
-        result.map { (profileInfo, savedSourceId, _, _) ->
-            // Remove the payment source
-            if (!saveCard && savedSourceId != null) {
-                paymentProcessor.removeSource(profileInfo.id, savedSourceId)
-                        .mapLeft { paymentError ->
-                            logger.error("Failed to remove card, for customerId ${profileInfo.id}, sourceId $savedSourceId")
-                            paymentError
-                        }
-            }
-        }
-        result.map { (_, _, _, product) -> ProductInfo(product.sku) }
+                    // Even if the "capture charge operation" failed, we do not want to rollback.
+                    // In that case, we just want to log it at error level.
+                    // These transactions can then me manually changed before they are auto rollback'ed in 'X' days.
+                    paymentProcessor.captureCharge(chargeId, paymentCustomerId)
+                            .mapLeft {
+                                // TODO payment: retry capture charge
+                                logger.error("Capture failed for paymentCustomerId $paymentCustomerId, chargeId $chargeId, Fix this in Stripe Dashboard")
+                            }
+
+                    // Ignore failure to capture charge and always send Either.right()
+                    ProductInfo(product.sku)
+                }
+                .ifFailedThenRollback(transaction)
     }
     // << END
+
+    private fun removePaymentSource(saveCard: Boolean, paymentCustomerId: String, sourceId: String) {
+        // In case we fail to remove saved source, we log it at error level.
+        // These saved sources can then me manually removed.
+        if (!saveCard) {
+            paymentProcessor.removeSource(paymentCustomerId, sourceId)
+                    .mapLeft { paymentError ->
+                        logger.error("Failed to remove card, for customerId $paymentCustomerId, sourceId $sourceId")
+                        paymentError
+                    }
+        }
+    }
 
     override fun getPurchaseRecords(subscriberId: String): Either<StoreError, Collection<PurchaseRecord>> {
         return readTransaction {
@@ -726,11 +739,4 @@ object Neo4jStoreSingleton : GraphStore {
 // override fun getSegment(id: String): Segment? = segmentStore.get(id)?.let { Segment().apply { this.id = it.id } }
 
 // override fun getProductClass(id: String): ProductClass? = productClassStore.get(id)
-}
-
-fun <L, R> Either<L, R>.ifFailedThenRollback(transaction: Transaction): Either<L, R> {
-    if (this.isLeft()) {
-        transaction.failure()
-    }
-    return this
 }

@@ -15,6 +15,7 @@ prime:
     STRIPE_API_KEY: ""
     DATA_TRAFFIC_TOPIC: "data-traffic"
     PURCHASE_INFO_TOPIC: "purchase-info"
+    ACTIVE_USERS_TOPIC: "active-users"
 
   ports:
     - 8080
