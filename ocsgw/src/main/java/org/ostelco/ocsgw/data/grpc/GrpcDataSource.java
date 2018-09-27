@@ -258,18 +258,12 @@ public class GrpcDataSource implements DataSource {
     }
 
     private void addToSessionMap(CreditControlContext creditControlContext) {
-        switch (getRequestType(creditControlContext)) {
-            case INITIAL_REQUEST:
-            case UPDATE_REQUEST:
-            case TERMINATION_REQUEST:
-                sessionIdMap.put(creditControlContext.getCreditControlRequest().getMsisdn(), new SessionContext(creditControlContext.getSessionId(), creditControlContext.getCreditControlRequest().getOriginHost(), creditControlContext.getCreditControlRequest().getOriginRealm()));
-                updateAnalytics();
-                break;
-            case EVENT_REQUEST:
-                break;
-            default:
-                LOG.warn("Unknown request type");
-                break;
+
+        SessionContext sessionContext = new SessionContext(creditControlContext.getSessionId(),
+                creditControlContext.getCreditControlRequest().getOriginHost(),
+                creditControlContext.getCreditControlRequest().getOriginRealm());
+        if (sessionIdMap.put(creditControlContext.getCreditControlRequest().getMsisdn(), sessionContext) == null) {
+            updateAnalytics();
         }
     }
 
@@ -283,14 +277,13 @@ public class GrpcDataSource implements DataSource {
     private void updateAnalytics() {
         LOG.info("Number of active sessions is {}", sessionIdMap.size());
 
-
         OcsgwAnalyticsReport.Builder builder = OcsgwAnalyticsReport.newBuilder().setActiveSessions(sessionIdMap.size());
         builder.setKeepAlive(false);
         sessionIdMap.forEach((msisdn, sessionContext) -> {
             try {
                 String apn = ccrMap.get(sessionContext.getSessionId()).getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0).getCalledStationId();
-                String mncMcc = ccrMap.get(sessionContext.getSessionId()).getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0).getSgsnMccMnc();
-                builder.addUsers(User.newBuilder().setApn(apn).setMncMcc(mncMcc).setMsisdn(msisdn).build());
+                String mccMnc = ccrMap.get(sessionContext.getSessionId()).getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0).getSgsnMccMnc();
+                builder.addUsers(User.newBuilder().setApn(apn).setMccMnc(mccMnc).setMsisdn(msisdn).build());
             } catch (Exception e) {
                 LOG.error("Failed to match session info to ccr map", e);
             }
