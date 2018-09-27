@@ -117,6 +117,8 @@ spec:
           value: data-traffic
         - name: PURCHASE_INFO_TOPIC
           value: purchase-info
+        - name: ACTIVE_USERS_TOPIC
+          value: active-users
         - name: STRIPE_API_KEY
           valueFrom:
             secretKeyRef:

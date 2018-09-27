@@ -13,6 +13,13 @@ service OcsgwAnalyticsService {
 
 message OcsgwAnalyticsReport {
     uint32 activeSessions = 1;
+    repeated User users = 2;
+}
+
+message User {
+    string msisdn = 1;
+    string apn = 2;
+    string mnc_mcc = 3;
 }
 
 message OcsgwAnalyticsReply {

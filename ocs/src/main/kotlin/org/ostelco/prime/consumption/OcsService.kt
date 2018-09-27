@@ -72,7 +72,6 @@ class OcsService(private val producer: EventProducer) : OcsAsyncRequestConsumer,
     }
 
     override fun activateOnNextResponse(response: ActivateResponse) {
-        // TODO martin: send activate MSISDN to selective ocsgw instead of all
         this.activateMsisdnClientMap.forEach { _ , responseStream ->
             responseStream.onNext(response)
         }
