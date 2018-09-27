@@ -5,10 +5,6 @@ import com.google.api.core.ApiFutures
 import com.google.api.gax.rpc.ApiException
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.google.gson.JsonArray
-import com.google.gson.JsonObject
-import com.google.gson.JsonSerializer
-import com.google.gson.reflect.TypeToken
 import com.google.protobuf.ByteString
 import com.google.protobuf.util.Timestamps
 import com.google.pubsub.v1.PubsubMessage
@@ -18,7 +14,6 @@ import org.ostelco.prime.getLogger
 import org.ostelco.prime.metrics.api.User
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.pseudonymizer.PseudonymizerService
-import java.net.URLEncoder
 import java.time.Instant
 
 /**
