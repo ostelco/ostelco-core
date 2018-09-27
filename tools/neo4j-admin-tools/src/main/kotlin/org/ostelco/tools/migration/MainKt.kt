@@ -5,8 +5,8 @@ import java.nio.file.Files
 import java.nio.file.Paths
 
 fun main(args: Array<String>) {
-    neo4jExporterToCypherFile()
-    // cypherFileToNeo4jImporter()
+    // neo4jExporterToCypherFile()
+    cypherFileToNeo4jImporter()
 }
 
 fun neo4jExporterToCypherFile() {
@@ -40,7 +40,7 @@ fun cypherFileToNeo4jImporter() {
 
         println("Import from file to Neo4j")
 
-        importFromCypherFile("src/main/resources/backup.prod.cypher") { query ->
+        importFromCypherFile("src/main/resources/init.cypher") { query ->
             txn.run(query)
         }
 
