@@ -31,26 +31,7 @@ object ActiveUsersPublisher :
 
     private val pseudonymizerService by lazy { getResource<PseudonymizerService>() }
 
-    private var gson: Gson = createGson()
-
-    private fun createGson(): Gson {
-        val builder = GsonBuilder()
-        // Type for this conversion is explicitly set to java.util.Map
-        // This is needed because of kotlin's own Map interface
-        val mapType = object : TypeToken<java.util.Map<String, String>>() {}.type
-        val serializer = JsonSerializer<java.util.Map<String, String>> { src, _, _ ->
-            val array = JsonArray()
-            src.forEach { k, v ->
-                val property = JsonObject()
-                property.addProperty("key", k)
-                property.addProperty("value", v)
-                array.add(property)
-            }
-            array
-        }
-        builder.registerTypeAdapter(mapType, serializer)
-        return builder.create()
-    }
+    private var gson: Gson = GsonBuilder().create()
 
     private fun convertToJson(activeUsersInfo: ActiveUsersInfo): ByteString =
             ByteString.copyFromUtf8(gson.toJson(activeUsersInfo))
