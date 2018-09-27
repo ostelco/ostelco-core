@@ -5,6 +5,9 @@ import com.google.api.core.ApiFutures
 import com.google.api.gax.rpc.ApiException
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.TypeAdapter
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
 import com.google.protobuf.ByteString
 import com.google.protobuf.util.Timestamps
 import com.google.pubsub.v1.PubsubMessage
@@ -15,7 +18,7 @@ import org.ostelco.prime.metrics.api.User
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.pseudonymizer.PseudonymizerService
 import java.time.Instant
-
+import com.google.protobuf.util.JsonFormat
 /**
  * This class publishes the active users information events to the Google Cloud Pub/Sub.
  */
@@ -29,7 +32,7 @@ object ActiveUsersPublisher :
     private var gson: Gson = GsonBuilder().create()
 
     private fun convertToJson(activeUsersInfo: ActiveUsersInfo): ByteString =
-            ByteString.copyFromUtf8(gson.toJson(activeUsersInfo))
+            ByteString.copyFromUtf8(JsonFormat.printer().print(activeUsersInfo))
 
 
     fun publish(userList: List<User>) {
@@ -67,3 +70,16 @@ object ActiveUsersPublisher :
         }, singleThreadScheduledExecutor)
     }
 }
+
+//class ActiveUsersInfoAdapter : TypeAdapter<ActiveUsersInfo>() {
+//    override fun read(reader: JsonReader?): ActiveUsersInfo {
+//        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+//        return ActiveUsersInfo.newBuilder().build()
+//    }
+//
+//    override fun write(jsonWriter: JsonWriter?, usersInfo: ActiveUsersInfo?) {
+//        if( usersInfo != null) {
+//            jsonWriter?.jsonValue(JsonFormat.printer().print(usersInfo));
+//        }
+//    }
+//}
