@@ -258,18 +258,12 @@ public class GrpcDataSource implements DataSource {
     }
 
     private void addToSessionMap(CreditControlContext creditControlContext) {
-        switch (getRequestType(creditControlContext)) {
-            case INITIAL_REQUEST:
-            case UPDATE_REQUEST:
-            case TERMINATION_REQUEST:
-                sessionIdMap.put(creditControlContext.getCreditControlRequest().getMsisdn(), new SessionContext(creditControlContext.getSessionId(), creditControlContext.getCreditControlRequest().getOriginHost(), creditControlContext.getCreditControlRequest().getOriginRealm()));
-                updateAnalytics();
-                break;
-            case EVENT_REQUEST:
-                break;
-            default:
-                LOG.warn("Unknown request type");
-                break;
+
+        SessionContext sessionContext = new SessionContext(creditControlContext.getSessionId(),
+                creditControlContext.getCreditControlRequest().getOriginHost(),
+                creditControlContext.getCreditControlRequest().getOriginRealm());
+        if (sessionIdMap.put(creditControlContext.getCreditControlRequest().getMsisdn(), sessionContext) == null) {
+            updateAnalytics();
         }
     }
 
@@ -282,7 +276,6 @@ public class GrpcDataSource implements DataSource {
 
     private void updateAnalytics() {
         LOG.info("Number of active sessions is {}", sessionIdMap.size());
-
 
         OcsgwAnalyticsReport.Builder builder = OcsgwAnalyticsReport.newBuilder().setActiveSessions(sessionIdMap.size());
         builder.setKeepAlive(false);
