@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -e
-# IMPORTER_URL=http://127.00.1:8080/importer
+
 
 #
 ## Todo:
@@ -85,6 +85,15 @@ if [[ -z "$EXPORTER_PODNAME" ]] ; then
     exit 1
 fi
 
+PRIME_PODNAME=$(kubectl get pods | grep prime- | awk '{print $1}')
+if [[ -z "$PRIME_PODNAME" ]] ; then
+    echo "ERROR: Unknown prime podname"
+    exit 1
+fi
+
+echo "$0: Assuming that prime is running at $PRIME_PODNAME"
+echo "$0: and that you have done"
+echo "$0: kubectl port-forward $PRIME_PODNAME 8080:8080"
 
 
 ###
@@ -311,7 +320,10 @@ EOF
 awk '{print "      - " $1}'  $RESULT_SEGMENT_SINGLE_COLUMN >> $IMPORTFILE_YML 
 
 ## Send it to the importer
-echo curl --data-binary @$IMPORTFILE_YML $IMPORTER_URL
+
+echo "XXX TODO:   Make it so that this thing actually does something useful"
+IMPORTER_URL=http://127.0.0.1:8080/importer
+curl --data-binary @$IMPORTFILE_YML $IMPORTER_URL
 
 ## And whatever else, some obviousl missing.
 rm $SEGMENT_TMPFILE_PSEUDO
