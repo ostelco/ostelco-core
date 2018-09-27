@@ -2,23 +2,9 @@
 
 set -e
 
-
-#
-## Todo:
-##   o Refactor using methods, adding comments and structure
-##   o Make it work (again).
-##   o add invocation of map_subscribers.sh in the pseudoanonymizer-pod to get
-##     a result back, using that for generating the yaml.
-##   o Declare victory with respect to closing the loop, merge the branch,
-##     then start improving the loop on a daily basis.
-
-
-
-
 ###
 ### VALIDATING AND PARSING COMMAND LINE PARAMETERS
 ### 
-
 
 #
 #  Get command line parameter, which should be an existing
@@ -38,12 +24,9 @@ if [[ ! -d "$TARGET_DIR" ]] ; then
     exit 1
 fi
 
-
-
 ###
 ### PRELIMINARIES
 ###
-
 
 # Be able to die from inside procedures
 
@@ -65,7 +48,6 @@ for dep in $DEPENDENCIES ; do
      echo "ERROR: Could not find dependency $dep"
    fi
 done
-
 
 #
 #  Figure out relevant parts of the environment and check their
@@ -116,9 +98,12 @@ function runScriptOnExporterPod {
     local scriptname=$1
     local intentDescription=$2
 
-    #TEMPFILE="$(mktemp /tmp/abc-script.XXXXXX)"
-    # XXX Also should be lowercase
+    #  TEMPFILE="$(mktemp /tmp/abc-script.XXXXXX)"
+    # XXX The tmpfile is the same thing all the time, bad practice, but
+    #     until I figure out how to make tempfiles dependent on the top
+    #     level process's lifetime, I'll do it this way.
     TEMPFILE="tmpfile.txt"
+    [[ -f "$TMPFILE" ]]  && rm "$TMPFILE"
     
     kubectl exec -it "${EXPORTER_PODNAME}" -- /bin/bash -c "$scriptname" > "$TEMPFILE"
     
@@ -159,8 +144,7 @@ function exportDataFromExporterPod {
 
 function mapPseudosToUserids {
     local tmpfile="$(runScriptOnExporterPod /map_subscribers.sh "mapping pseudoids to subscriber ids")"
-    # XXX Should doe some more checking here before deleting the file
-    # rm $tmpfile
+    [[ -f "$tmpfile" ]] && rm "$tmpfile"
 }
 
 #
@@ -189,7 +173,9 @@ function gsExportCsvFilename {
 }
 
 
-
+#
+# Generate a filename 
+#
 function importedCsvFilename {
     if [[ $# -ne 3 ]] ; then
 	echo "$0 ERROR:  importedCsvFilename requires exactly three parameters, got $@"
@@ -319,12 +305,18 @@ EOF
 # with a leading "-" as per YAML list syntax.
 awk '{print "      - " $1}'  $RESULT_SEGMENT_SINGLE_COLUMN >> $IMPORTFILE_YML 
 
+##
 ## Send it to the importer
+## (assuming the kubectl port forwarding is enabled)
 
-echo "XXX TODO:   Make it so that this thing actually does something useful"
 IMPORTER_URL=http://127.0.0.1:8080/importer
 curl --data-binary @$IMPORTFILE_YML $IMPORTER_URL
 
-## And whatever else, some obviousl missing.
-rm $SEGMENT_TMPFILE_PSEUDO
-rm $SEGMENT_TMPFILE_CLEAR
+
+##
+## Remove tempfiles
+##
+
+#  .... eventually
+
+
