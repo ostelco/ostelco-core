@@ -3,11 +3,6 @@ package org.ostelco.prime.client.api.store
 import arrow.core.Either
 import arrow.core.flatMap
 import org.ostelco.prime.analytics.AnalyticsService
-import org.ostelco.prime.analytics.PrimeMetric.REVENUE
-import org.ostelco.prime.client.api.metrics.updateMetricsOnNewSubscriber
-import org.ostelco.prime.client.api.model.Consent
-import org.ostelco.prime.client.api.model.Person
-import org.ostelco.prime.client.api.model.SubscriptionStatus
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
 import org.ostelco.prime.apierror.BadGatewayError
@@ -16,6 +11,10 @@ import org.ostelco.prime.apierror.InsufficientStorageError
 import org.ostelco.prime.apierror.NotFoundError
 import org.ostelco.prime.apierror.mapPaymentErrorToApiError
 import org.ostelco.prime.apierror.mapStorageErrorToApiError
+import org.ostelco.prime.client.api.metrics.updateMetricsOnNewSubscriber
+import org.ostelco.prime.client.api.model.Consent
+import org.ostelco.prime.client.api.model.Person
+import org.ostelco.prime.client.api.model.SubscriptionStatus
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.ActivePseudonyms
 import org.ostelco.prime.model.ApplicationToken
@@ -231,12 +230,12 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                                         purchaseRecord = purchaseRecord,
                                         subscriberId = subscriberId,
                                         status = "success")
-                                //TODO: Handle errors (when it becomes available)
-                                ocsSubscriberService.topup(subscriberId, sku)
-                                // TODO vihang: handle currency conversion
-                                analyticsReporter.reportMetric(REVENUE, product.price.amount.toLong())
                                 Either.right(Unit)
                             }
+                }
+                .flatMap {
+                    ocsSubscriberService.topup(subscriberId, sku)
+                            .mapLeft { errorReason -> BadGatewayError(description = errorReason, errorCode = ApiErrorCode.FAILED_TO_PURCHASE_PRODUCT) }
                 }
     }
 
