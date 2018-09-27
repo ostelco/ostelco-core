@@ -5,8 +5,6 @@ import arrow.core.Tuple3
 import arrow.core.flatMap
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
-import org.ostelco.prime.analytics.PrimeMetric.REVENUE
-import org.ostelco.prime.analytics.PrimeMetric.USERS_PAID_AT_LEAST_ONCE
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Offer
@@ -431,9 +429,6 @@ object Neo4jStoreSingleton : GraphStore {
                                         subscriberId = subscriberId,
                                         status = "success")
 
-                                // TODO vihang: handle currency conversion
-                                analyticsReporter.reportMetric(REVENUE, product.price.amount.toLong())
-                                analyticsReporter.reportMetric(USERS_PAID_AT_LEAST_ONCE, getPaidSubscriberCount(transaction))
                                 Either.right(Tuple3(product, paymentCustomerId, chargeId))
                             }
                 }

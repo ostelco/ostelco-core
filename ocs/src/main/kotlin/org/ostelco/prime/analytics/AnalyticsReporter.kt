@@ -1,7 +1,6 @@
 package org.ostelco.prime.analytics
 
 import com.lmax.disruptor.EventHandler
-import org.ostelco.prime.analytics.PrimeMetric.MEGABYTES_CONSUMED
 import org.ostelco.prime.disruptor.EventMessageType.CREDIT_CONTROL_REQUEST
 import org.ostelco.prime.disruptor.OcsEvent
 import org.ostelco.prime.getLogger
@@ -34,10 +33,6 @@ object AnalyticsReporter : EventHandler<OcsEvent> {
                     bundleBytes = event.bundleBytes,
                     apn = event.request?.serviceInformation?.psInformation?.calledStationId,
                     mccMnc = event.request?.serviceInformation?.psInformation?.sgsnMccMnc)
-            analyticsReporter.reportMetric(
-                    primeMetric = MEGABYTES_CONSUMED,
-                    value = (event.request?.msccList?.firstOrNull()?.used?.totalOctets ?: 0L) / 1_000_000)
-
         }
     }
 }
