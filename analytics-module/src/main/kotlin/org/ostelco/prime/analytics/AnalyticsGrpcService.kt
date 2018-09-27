@@ -48,8 +48,10 @@ class AnalyticsGrpcService : OcsgwAnalyticsServiceGrpc.OcsgwAnalyticsServiceImpl
          * @param request provides current active session as a counter with a timestamp
          */
         override fun onNext(request: OcsgwAnalyticsReport) {
-            CustomMetricsRegistry.updateMetricValue(ACTIVE_SESSIONS, request.activeSessions.toLong())
-            ActiveUsersPublisher.publish(request.usersList)
+            if (!request.keepAlive) {
+                CustomMetricsRegistry.updateMetricValue(ACTIVE_SESSIONS, request.activeSessions.toLong())
+                ActiveUsersPublisher.publish(request.usersList)
+            }
         }
 
         override fun onError(t: Throwable) {

@@ -14,6 +14,7 @@ service OcsgwAnalyticsService {
 message OcsgwAnalyticsReport {
     uint32 activeSessions = 1;
     repeated User users = 2;
+    bool keepAlive = 3;
 }
 
 message User {
