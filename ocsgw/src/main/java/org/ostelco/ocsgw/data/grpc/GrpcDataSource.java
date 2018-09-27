@@ -285,6 +285,7 @@ public class GrpcDataSource implements DataSource {
 
 
         OcsgwAnalyticsReport.Builder builder = OcsgwAnalyticsReport.newBuilder().setActiveSessions(sessionIdMap.size());
+        builder.setKeepAlive(false);
         sessionIdMap.forEach((msisdn, sessionContext) -> {
             try {
                 String apn = ccrMap.get(sessionContext.getSessionId()).getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0).getCalledStationId();
