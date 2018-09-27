@@ -24,10 +24,10 @@ object ActiveUsersPublisher :
     private val logger by getLogger()
 
     private val pseudonymizerService by lazy { getResource<PseudonymizerService>() }
+    private val jsonPrinter = JsonFormat.printer().includingDefaultValueFields()
 
     private fun convertToJson(activeUsersInfo: ActiveUsersInfo): ByteString =
-            ByteString.copyFromUtf8(JsonFormat.printer().includingDefaultValueFields().print(activeUsersInfo))
-
+            ByteString.copyFromUtf8(jsonPrinter.print(activeUsersInfo))
 
     fun publish(userList: List<User>) {
         val timestamp = Instant.now().toEpochMilli()
