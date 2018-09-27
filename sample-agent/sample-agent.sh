@@ -12,6 +12,32 @@
 
 
 
+
+###
+### VALIDATING AND PARSING COMMAND LINE PARAMETERS
+### 
+
+
+#
+#  Get command line parameter, which should be an existing
+#  directory in which to store the results
+#
+
+TARGET_DIR=$1
+if [[ -z "$TARGET_DIR" ]] ; then
+    echo "$0  Missing parameter"
+    echo "usage  $0 target-dir"
+    exit 1
+fi
+
+if [[ ! -d "$TARGET_DIR" ]] ; then
+    echo "$0  $TARGET_DIR is not a directory"
+    echo "usage  $0 target-dir"
+    exit 1
+fi
+
+
+
 ###
 ### PRELIMINARIES
 ###
@@ -59,34 +85,8 @@ fi
 
 
 ###
-### VALIDATING AND PARSING COMMAND LINE PARAMETERS
-### 
-
-
-#
-#  Get command line parameter, which should be an existing
-#  directory in which to store the results
-#
-
-TARGET_DIR=$1
-if [[ -z "$TARGET_DIR" ]] ; then
-    echo "$0  Missing parameter"
-    echo "usage  $0 target-dir"
-    exit 1
-fi
-
-if [[ ! -d "$TARGET_DIR" ]] ; then
-    echo "$0  parameter does not designate an existing directory"
-    echo "usage  $0 target-dir"
-    exit 1
-fi
-
-
-###
 ### COMMUNICATION WITH EXPORTER SCRIPTS RUNNING IN A KUBERNETES PODS
 ###
-
-
 
 #
 # Run named script on the inside of the kubernetes exporter pod,
@@ -95,15 +95,15 @@ fi
 # The second argument is the intent of the invocation, and is used
 # when producing error messages:
 #
-#    runScriptOnExporterPod /export_data.sh "export data"
+#    runScriptOnExporterPod  /export_data.sh "export data"
 #
-function runScriptOnExportrerPod {
+function runScriptOnExporterPod {
     local scriptname=$1
     local intentDescription=$2
 
     #TEMPFILE="$(mktemp /tmp/abc-script.XXXXXX)"
+    # XXX Also should be lowercase
     TEMPFILE="tmpfile.txt"
-
     
     kubectl exec -it "${EXPORTER_PODNAME}" -- /bin/bash -c "$scriptname" > "$TEMPFILE"
     
@@ -111,29 +111,39 @@ function runScriptOnExportrerPod {
     retVal=$?
     if [[ $retVal -ne 0 ]]; then
 	echo "ERROR: Failed to $intentDescription"
-	cat $TMPFILE
-	rm $TMPFILE
+	cat $TEMPFILE
+	rm $TEMPFILE
 	exit 1
     fi
-    echo $TMPFILE
+
+    # Return result by setting resutlvar to be the temporary filename
+    echo $TEMPFILE
 }
+
 
 #
 # Create a data export batch, return a string identifying that
 # batch.  Typical usage:
-#    EXPORT_ID=$(exportDataFromExporterPad)
+#    EXPORT_ID=$(exportDataFromExporterPod)
 #
 function exportDataFromExporterPod {
-    local tmpfilename=$(runScriptOnExporterPod /export_data.sh "export data")
-    local exportId=$(grep "Starting export job for" $tmpfilename | awk '{print $5}' |  sed 's/\r$//' )
+    local tmpfilename="$(runScriptOnExporterPod /export_data.sh "export data")"
+    if [[ -z "$tmpfilename" ]] ; then
+	echo "$0 ERROR: Running the runScriptOnExporterPod failed to return the name of a resultfile."
+	exit 1
+    fi
+    
+    local exportId="$(grep "Starting export job for" $tmpfilename | awk '{print $5}' |  sed 's/\r$//' )"
+    
     if [[ -z "$exportId" ]] ; then
 	echo "$0  Could not get export  batch from exporter pod"
     fi
-    echo exportId
+    rm $tmpfilename
+    echo $exportId
 }
 
 function mapPseudosToUserids {
-    local tmpfile=$(runScriptOnExporterPod /map_subscribers.sh "mapping pseudoids to subscriber ids")
+    local tmpfile="$(runScriptOnExporterPod /map_subscribers.sh "mapping pseudoids to subscriber ids")"
 
     # XXX Map, then transform$(runScriptOnExporterPod /export_data.sh "export data")$(runScriptOnExporterPod /export_data.sh "export data")
 }
@@ -142,25 +152,42 @@ function mapPseudosToUserids {
 # Generate the Google filesystem names of components associated with
 # a particular export ID:   Typical usage
 # 
-#    PURCHASES_GS=$(gsExportCsvFilename "purchases")
+#    PURCHASES_GS="$(gsExportCsvFilename "ab234245cvsr" "purchases")"
 
 function gsExportCsvFilename {
-    local componentName=$1
-    if [[ -n "$componentName" ]] ; then
+    local exportId=$1
+    local componentName=$2
+    if [[ -z "$exportId" ]] ; then
+       echo "$0 Internal error:  gsExportCsvFilename got a null exportId"
+       exit 1
+    fi
+    if [[ -z "$componentName" ]] ; then
 	componentName="-$componentName"
     fi
-    return "gs://${PROJECT_ID}-dataconsumption-export/${EXPORT_ID}${componentName}.csv"
+    echo "gs://${PROJECT_ID}-dataconsumption-export/${exportId}${componentName}.csv"
 }
 
 
 
 function importedCsvFilename {
-    local importDirectory=$1
-    local componentName=$2
+    local exportId=$1
+    local importDirectory=$2
+    local componentName=$3
+
+    if [[ -z "$exportId" ]] ; then
+       echo "$0 Internal error:  importedCsvFilename got a null exportId"
+       exit 1
+    fi
+
+    if [[ -z "$importDirectory" ]] ; then
+       echo "$0 Internal error:  importDirectory got a null exportId"
+       exit 1
+    fi
+
     if [[ -n "$componentName" ]] ; then
 	componentName="-$componentName"
     fi
-    return "${importDirectory}/${EXPORT_ID}${componentName}.csv"
+    echo "${importDirectory}/${exportId}${componentName}.csv"
 }
 
 
@@ -168,22 +195,24 @@ function importedCsvFilename {
 ###  MAIN SCRIPT
 ### 
 
-# EXPORT_ID=0802c66be1ce4e2dba22f988b3ce24f7
-EXPORT_ID=$(exportDataFromExporterPad)
 
+# EXPORT_ID=0802c66be1ce4e2dba22f988b3ce24f7
+EXPORT_ID="$(exportDataFromExporterPod)"
+echo "EXPORT_ID = $EXPORT_ID"
 
 #
 #  Get the IDs of the various parts being exported
 #
 
-
 for component in "purchases" "sub2msisdn" "" ; do
-   gsutil cp $(gsExportCsvFilename $component) $(importedCsvFilename $TARGET_DIR $component)
+    source="$(gsExportCsvFilename $EXPORT_ID $component)"
+    destination="$(importedCsvFilename $EXPORT_ID $TARGET_DIR $component)"
+    gsutil cp $source $destination 
 done
 
 
-echo $EXPORT_ID
-
+echo "EXITING AT LINE $LINENO"
+exit 
 
 ##
 ## Generate the yaml output
