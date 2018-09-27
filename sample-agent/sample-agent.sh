@@ -258,37 +258,29 @@ awk -F, '!/^subscriberId/{print $1'} $(importedCsvFilename "$EXPORT_ID" "$TARGET
 ## Convert from pseudos to actual IDs
 ##
 
+
+RESULTSEG_PSEUDO_BASENAME="resultsegment-pseudoanonymized"
+RESULTSEG_CLEARTEXT_BASENAME="resultsegment-cleartext"
+RESULT_SEGMENT_PSEUDO_GS="$(gsExportCsvFilename "$EXPORT_ID" "$RESULTSEG_PSEUDO_BASENAME")"
+RESULT_SEGMENT_CLEAR_GS="$(gsExportCsvFilename "$EXPORT_ID" "$RESULTSEG_CLEARTEXT_BASENAME")"
+RESULT_SEGMENT_CLEAR="$(importedCsvFilename "$EXPORT_ID" "$TARGET_DIR"  "$RESULTSEG_CLEARTEXT_BASENAME")"
+RESULT_SEGMENT_SINGLE_COLUMN="$(importedCsvFilename "$EXPORT_ID" "$TARGET_DIR"  "$RESULTSEG_CLEARTEXT_BASENAME")"
+
 # Copy the  segment pseudo file to gs
-RESULT_SEGMENT_PSEUDO_GS="$(gsExportCsvFilename "$EXPORT_ID" "resultsegment-pseudoanonymized")"
+
 gsutil cp $SEGMENT_TMPFILE_PSEUDO $RESULT_SEGMENT_PSEUDO_GS
 
 # Then run the script that will convert it into a none-anonymized
 # file and fetch the results from gs:/
 mapPseudosToUserids
-RESULT_SEGMENT_CLEAR_GS="$(gsExportCsvFilename "$EXPORT_ID" "resultsegment-cleartext")"
-RESULT_SEGMENT_CLEAR="$(importedCsvFilename "$EXPORT_ID" "$TARGET_DIR"  "resultsegment-cleartext")"
+
 gsutil cp "$RESULT_SEGMENT_CLEAR_GS" "$RESULT_SEGMENT_CLEAR"
 
 echo "Just placed the results in the file $RESULT_SEGMENT_CLEAR"
-exit
-
 # Then extract only the column we need (the real userids)
 
-RESULT_SEGMENT_SINGLE_COLUMN="$(importedCsvFilename "$EXPORT_ID" "$TARGET_DIR"  "resultsegment-cleartext")"
-awk -F, '!/^subscriberId/{print $1'} $RESULT_SEGMENT_CLEAR > $RESULT_SEGMENT_SINGLE_COLUMN
+awk -F, '!/^pseudoId/{print $2'} $RESULT_SEGMENT_CLEAR > $RESULT_SEGMENT_SINGLE_COLUMN
 
-## Run some script to make sure that we can get deanonumized pseudothing.
-## At this point we give the actual content of that file, since we copy it back
-## but eventually we may in fact send the URL instead of the actual data, letting
-
-## the Prime read the dataset from google cloud storage instead.
-
-## (so we should rally copy back $RESULT_SEGMENT_CLEARTEXT_GS insted of the _PSEUDO_
-##  file)
-
-gsutil cp "$RESULT_SEGMENT_PSEUDO_GS" "$SEGMENT_TMPFILE_CLEAR"
-
-exit
 
 ##
 ## Generate the yaml output
@@ -316,10 +308,11 @@ EOF
 
 # Adding the list of subscribers in clear text (indented six spaces
 # with a leading "-" as per YAML list syntax.
-awk '{print "      - " $1}'  $SEGMENT_IMPORTFILE_CLEAR >> $IMPORTFILE_YML 
+awk '{print "      - " $1}'  $RESULT_SEGMENT_SINGLE_COLUMN >> $IMPORTFILE_YML 
 
 ## Send it to the importer
 echo curl --data-binary @$IMPORTFILE_YML $IMPORTER_URL
 
+## And whatever else, some obviousl missing.
 rm $SEGMENT_TMPFILE_PSEUDO
 rm $SEGMENT_TMPFILE_CLEAR
