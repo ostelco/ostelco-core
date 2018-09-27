@@ -3,9 +3,8 @@ package org.ostelco.prime.analytics.publishers
 import com.google.api.core.ApiFutureCallback
 import com.google.api.core.ApiFutures
 import com.google.api.gax.rpc.ApiException
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import com.google.protobuf.ByteString
+import com.google.protobuf.util.JsonFormat
 import com.google.protobuf.util.Timestamps
 import com.google.pubsub.v1.PubsubMessage
 import org.ostelco.analytics.api.ActiveUsersInfo
@@ -25,12 +24,10 @@ object ActiveUsersPublisher :
     private val logger by getLogger()
 
     private val pseudonymizerService by lazy { getResource<PseudonymizerService>() }
-
-    private var gson: Gson = GsonBuilder().create()
+    private val jsonPrinter = JsonFormat.printer().includingDefaultValueFields()
 
     private fun convertToJson(activeUsersInfo: ActiveUsersInfo): ByteString =
-            ByteString.copyFromUtf8(gson.toJson(activeUsersInfo))
-
+            ByteString.copyFromUtf8(jsonPrinter.print(activeUsersInfo))
 
     fun publish(userList: List<User>) {
         val timestamp = Instant.now().toEpochMilli()

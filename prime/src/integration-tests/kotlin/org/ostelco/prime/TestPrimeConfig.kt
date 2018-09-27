@@ -39,7 +39,7 @@ class TestPrimeConfig {
                         HealthChecks.toRespond2xxOverHttp(7474) {
                             port -> port.inFormat("http://\$HOST:\$EXTERNAL_PORT/browser")
                         },
-                        Duration.standardSeconds(20L))
+                        Duration.standardSeconds(40L))
                 .build()
 
         @JvmStatic
