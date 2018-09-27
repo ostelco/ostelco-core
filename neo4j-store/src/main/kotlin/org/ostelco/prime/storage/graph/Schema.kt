@@ -301,7 +301,7 @@ fun <R> readTransaction(action: ReadTransaction.() -> R): R =
         Neo4jClient.driver.session(READ)
                 .use { session ->
                     session.readTransaction {
-                        action(ReadTransaction(it))
+                        action(ReadTransaction(PrimeTransaction(it)))
                     }
                 }
 
@@ -309,12 +309,12 @@ fun <R> writeTransaction(action: WriteTransaction.() -> R): R =
         Neo4jClient.driver.session(WRITE)
                 .use { session ->
                     session.writeTransaction {
-                        action(WriteTransaction(it))
+                        action(WriteTransaction(PrimeTransaction(it)))
                     }
                 }
 
-data class ReadTransaction(val transaction: Transaction)
-data class WriteTransaction(val transaction: Transaction)
+data class ReadTransaction(val transaction: PrimeTransaction)
+data class WriteTransaction(val transaction: PrimeTransaction)
 
 //
 // Object mapping functions
