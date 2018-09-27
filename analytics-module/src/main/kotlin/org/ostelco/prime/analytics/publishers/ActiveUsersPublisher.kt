@@ -34,7 +34,7 @@ object ActiveUsersPublisher :
         val activeUsersInfoBuilder = ActiveUsersInfo.newBuilder().setTimestamp(Timestamps.fromMillis(timestamp))
         for (user in userList) {
             val userBuilder = org.ostelco.analytics.api.User.newBuilder()
-            val pseudonym = pseudonymizerService.getSubscriberIdPseudonym(user.msisdn, timestamp).pseudonym
+            val pseudonym = pseudonymizerService.getMsisdnPseudonym(user.msisdn, timestamp).pseudonym
             activeUsersInfoBuilder.addUsers(userBuilder.setApn(user.apn).setMccMnc(user.mccMnc).setMsisdn(pseudonym).build())
         }
 
