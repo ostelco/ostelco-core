@@ -18,6 +18,11 @@ echo "Starting to deploy OCSGW to $variant"
 echo "The last thing this script will do is to look  at logs from the ocsgw"
 echo "It will continue to do so until terminated by ^C"
 
+if [ ! -f build/deploy/ostelco-core-${variant}.zip ]; then
+    echo "build/deploy/ostelco-core-${variant}.zip not found!"
+    echo "Did you forget gradle pack ?"
+    exit 1
+fi
 
 scp -oProxyJump=loltel@10.6.101.1 build/deploy/ostelco-core-${variant}.zip  ubuntu@${host_ip}:.
 ssh -A -Jloltel@10.6.101.1 ubuntu@${host_ip} <<EOF

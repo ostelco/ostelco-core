@@ -105,7 +105,7 @@ class Neo4jStorageTest {
                         HealthChecks.toRespond2xxOverHttp(7474) { port ->
                             port.inFormat("http://\$HOST:\$EXTERNAL_PORT/browser")
                         },
-                        Duration.standardSeconds(30L))
+                        Duration.standardSeconds(40L))
                 .build()
 
         @JvmStatic
