@@ -262,7 +262,7 @@ public class GrpcDataSource implements DataSource {
         SessionContext sessionContext = new SessionContext(creditControlContext.getSessionId(),
                 creditControlContext.getCreditControlRequest().getOriginHost(),
                 creditControlContext.getCreditControlRequest().getOriginRealm());
-        if (sessionIdMap.put(creditControlContext.getCreditControlRequest().getMsisdn(), sessionContext) != null) {
+        if (sessionIdMap.put(creditControlContext.getCreditControlRequest().getMsisdn(), sessionContext) == null) {
             updateAnalytics();
         }
     }
