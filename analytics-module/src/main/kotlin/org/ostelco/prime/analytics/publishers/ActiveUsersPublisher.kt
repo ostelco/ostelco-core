@@ -3,8 +3,6 @@ package org.ostelco.prime.analytics.publishers
 import com.google.api.core.ApiFutureCallback
 import com.google.api.core.ApiFutures
 import com.google.api.gax.rpc.ApiException
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import com.google.protobuf.ByteString
 import com.google.protobuf.util.JsonFormat
 import com.google.protobuf.util.Timestamps
