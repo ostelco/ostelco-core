@@ -158,12 +158,13 @@ function gsExportCsvFilename {
     local exportId=$1
     local componentName=$2
     if [[ -z "$exportId" ]] ; then
-       echo "$0 Internal error:  gsExportCsvFilename got a null exportId"
+       echo "$0 ERROR:  gsExportCsvFilename got a null exportId"
        exit 1
     fi
-    if [[ -z "$componentName" ]] ; then
+    if [[ -n "$componentName" ]] ; then
 	componentName="-$componentName"
     fi
+    
     echo "gs://${PROJECT_ID}-dataconsumption-export/${exportId}${componentName}.csv"
 }
 
@@ -175,18 +176,19 @@ function importedCsvFilename {
     local componentName=$3
 
     if [[ -z "$exportId" ]] ; then
-       echo "$0 Internal error:  importedCsvFilename got a null exportId"
+       echo "$0 ERROR:  importedCsvFilename got a null exportId"
        exit 1
     fi
 
     if [[ -z "$importDirectory" ]] ; then
-       echo "$0 Internal error:  importDirectory got a null exportId"
+       echo "$0 ERROR:  importDirectory got a null exportId"
        exit 1
     fi
 
     if [[ -n "$componentName" ]] ; then
 	componentName="-$componentName"
     fi
+    
     echo "${importDirectory}/${exportId}${componentName}.csv"
 }
 
@@ -201,22 +203,29 @@ EXPORT_ID="$(exportDataFromExporterPod)"
 echo "EXPORT_ID = $EXPORT_ID"
 
 #
-#  Get the IDs of the various parts being exported
+# Copy all the  export artifacts from gs:/ to local filesystem storage
 #
 
 for component in "purchases" "sub2msisdn" "" ; do
+
     source="$(gsExportCsvFilename $EXPORT_ID $component)"
-    destination="$(importedCsvFilename $EXPORT_ID $TARGET_DIR $component)"
-    gsutil cp $source $destination 
+    if [[ -z "$source" ]] ; then
+	echo "$0 ERROR: Could not determine source file for export component '$component'"
+    fi
+    
+    destination="$(importedCsvFilename "$EXPORT_ID" "$TARGET_DIR" "$component")"
+    if [[ -z "$destination" ]] ; then
+	echo "$0 ERROR: Could not determine destination file for export component '$component'"
+    fi
+    
+    gsutil cp "$source" "$destination"
 done
 
-
-echo "EXITING AT LINE $LINENO"
-exit 
 
 ##
 ## Generate the yaml output
 ##
+exit
 
 
 SEGMENT_TMPFILE_PSEUDO="tmpsegment-pseudo.csv"
@@ -229,6 +238,7 @@ mapPseudosToUserids # Or some such
 ## Run some script to make sure that we can get deanonumized pseudothing.
 ## At this point we give the actual content of that file, since we copy it back
 ## but eventually we may in fact send the URL instead of the actual data, letting
+
 ## the Prime read the dataset from google cloud storage instead.
 
 ## (so we should rally copy back $RESULT_SEGMENT_CLEARTEXT_GS insted of the _PSEUDO_
