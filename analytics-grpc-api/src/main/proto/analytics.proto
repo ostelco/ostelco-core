@@ -29,7 +29,7 @@ message AggregatedDataTrafficInfo {
 message User {
     string msisdn = 1;
     string apn = 2;
-    string mnc_mcc = 3;
+    string mccMnc = 3;
 }
 
 message ActiveUsersInfo {
