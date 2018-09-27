@@ -310,22 +310,25 @@ class SourceTest {
     @Test
     fun `okhttp test - DELETE source`() {
 
-        StripePayment.deleteAllCustomers()
-
         val email = "purchase-${randomInt()}@test.com"
-        createProfile(name = "Test Payment Source", email = email)
 
-        val client = clientForSubject(subject = email)
+        try {
+            createProfile(name = "Test Payment Source", email = email)
 
-        Thread.sleep(200)
+            val client = clientForSubject(subject = email)
 
-        val createdIds = listOf(getCardIdForTokenFromStripe(createTokenWithStripe(client)),
-                createSourceWithStripe(client))
+            Thread.sleep(200)
 
-        val deletedIds = createdIds.map { it -> deleteSourceWithStripe(client, it)  }
+            val createdIds = listOf(getCardIdForTokenFromStripe(createTokenWithStripe(client)),
+                    createSourceWithStripe(client))
+
+            val deletedIds = createdIds.map { it -> deleteSourceWithStripe(client, it)  }
         
-        assert(createdIds.containsAll(deletedIds.toSet())) {
-            "Failed to delete one or more sources: ${createdIds.toSet() - deletedIds.toSet()}"
+            assert(createdIds.containsAll(deletedIds.toSet())) {
+                "Failed to delete one or more sources: ${createdIds.toSet() - deletedIds.toSet()}"
+            }
+        } finally {
+            StripePayment.deleteCustomer(email = email)
         }
     }
 
