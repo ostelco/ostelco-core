@@ -3,6 +3,8 @@ package org.ostelco.prime.analytics
 import io.grpc.stub.StreamObserver
 import org.ostelco.prime.analytics.PrimeMetric.ACTIVE_SESSIONS
 import org.ostelco.prime.analytics.metrics.CustomMetricsRegistry
+
+import org.ostelco.prime.analytics.publishers.ActiveUsersPublisher
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.metrics.api.OcsgwAnalyticsReply
 import org.ostelco.prime.metrics.api.OcsgwAnalyticsReport
@@ -11,7 +13,7 @@ import java.util.*
 
 
 /**
- * Serves incoming GRPC analytcs requests.
+ * Serves incoming GRPC analytics requests.
  *
  * It's implemented as a subclass of [OcsServiceGrpc.OcsServiceImplBase] overriding
  * methods that together implements the protocol described in the  analytics protobuf
@@ -47,6 +49,7 @@ class AnalyticsGrpcService : OcsgwAnalyticsServiceGrpc.OcsgwAnalyticsServiceImpl
          */
         override fun onNext(request: OcsgwAnalyticsReport) {
             CustomMetricsRegistry.updateMetricValue(ACTIVE_SESSIONS, request.activeSessions.toLong())
+            ActiveUsersPublisher.publish(request.usersList)
         }
 
         override fun onError(t: Throwable) {
