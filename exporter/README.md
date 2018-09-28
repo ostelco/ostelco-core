@@ -1,4 +1,4 @@
-# Exporter
+## Exporter
 
 This contains a set of scripts to generate the data for analayis. The export script
 `export_data.sh` creates a new big query table with a new uuid which maps the pseudonyms to
@@ -46,3 +46,8 @@ kubectl exec -it <exporter pod name> -- /bin/bash
 kubectl delete  deployment exporter
 
 ```
+
+
+## How to get data from the exporter
+
+  .... tbd
