@@ -65,12 +65,12 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
     override fun createProfile(subscriberId: String, profile: Subscriber, referredBy: String?): Either<ApiError, Subscriber> {
         if (!SubscriberDAO.isValidProfile(profile)) {
             logger.error("Failed to create profile. Invalid profile.")
-            return Either.left(BadRequestError("Incomplete profile description. Profile must contain name and email", ApiErrorCode.FAILED_TO_CREATE_PAYMENT_PROFILE))
+            return Either.left(BadRequestError("Incomplete profile description. Profile must contain name and email", ApiErrorCode.FAILED_TO_CREATE_PROFILE))
         }
         return try {
             storage.addSubscriber(profile, referredBy)
                     .mapLeft {
-                        mapStorageErrorToApiError("Failed to create profile.", ApiErrorCode.FAILED_TO_CREATE_PAYMENT_PROFILE, it)
+                        mapStorageErrorToApiError("Failed to create profile.", ApiErrorCode.FAILED_TO_CREATE_PROFILE, it)
                     }
                     .flatMap {
                         updateMetricsOnNewSubscriber()
@@ -78,7 +78,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                     }
         } catch (e: Exception) {
             logger.error("Failed to create profile for subscriberId $subscriberId", e)
-            Either.left(BadGatewayError("Failed to create profile", ApiErrorCode.FAILED_TO_CREATE_PAYMENT_PROFILE))
+            Either.left(BadGatewayError("Failed to create profile", ApiErrorCode.FAILED_TO_CREATE_PROFILE))
         }
     }
 

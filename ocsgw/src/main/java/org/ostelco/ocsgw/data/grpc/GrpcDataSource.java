@@ -35,13 +35,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -258,12 +252,17 @@ public class GrpcDataSource implements DataSource {
     }
 
     private void addToSessionMap(CreditControlContext creditControlContext) {
-
-        SessionContext sessionContext = new SessionContext(creditControlContext.getSessionId(),
-                creditControlContext.getCreditControlRequest().getOriginHost(),
-                creditControlContext.getCreditControlRequest().getOriginRealm());
-        if (sessionIdMap.put(creditControlContext.getCreditControlRequest().getMsisdn(), sessionContext) == null) {
-            updateAnalytics();
+        try {
+            SessionContext sessionContext = new SessionContext(creditControlContext.getSessionId(),
+                    creditControlContext.getCreditControlRequest().getOriginHost(),
+                    creditControlContext.getCreditControlRequest().getOriginRealm(),
+                    creditControlContext.getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0).getCalledStationId(),
+                    creditControlContext.getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0).getSgsnMccMnc());
+            if (sessionIdMap.put(creditControlContext.getCreditControlRequest().getMsisdn(), sessionContext) == null) {
+                updateAnalytics();
+            }
+        } catch (Exception e) {
+            LOG.error("Failed to update session map", e);
         }
     }
 
@@ -280,13 +279,7 @@ public class GrpcDataSource implements DataSource {
         OcsgwAnalyticsReport.Builder builder = OcsgwAnalyticsReport.newBuilder().setActiveSessions(sessionIdMap.size());
         builder.setKeepAlive(false);
         sessionIdMap.forEach((msisdn, sessionContext) -> {
-            try {
-                String apn = ccrMap.get(sessionContext.getSessionId()).getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0).getCalledStationId();
-                String mccMnc = ccrMap.get(sessionContext.getSessionId()).getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0).getSgsnMccMnc();
-                builder.addUsers(User.newBuilder().setApn(apn).setMccMnc(mccMnc).setMsisdn(msisdn).build());
-            } catch (Exception e) {
-                LOG.error("Failed to match session info to ccr map", e);
-            }
+            builder.addUsers(User.newBuilder().setApn(sessionContext.getApn()).setMccMnc(sessionContext.getMccMnc()).setMsisdn(msisdn).build());
         });
         ocsgwAnalytics.sendAnalytics(builder.build());
     }

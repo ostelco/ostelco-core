@@ -93,8 +93,8 @@ bqmetrics:
           AND timestamp < TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY) ), 0) as count
 
   - type: gauge
-    name: total_data_used_today_loltel_test
-    help: Total data used today loltel-test
+    name: total_data_used_today_local_loltel_test
+    help: Total data used today local loltel-test
     resultColumn: count
     sql: >
       SELECT COALESCE (
@@ -103,8 +103,8 @@ bqmetrics:
         AND apn = "loltel-test"
         AND mccMnc = "24201"), 0) as count
   - type: gauge
-    name: total_data_used_yesterday_lotlel_test
-    help: Total data used yesterday loltel-test
+    name: total_data_used_yesterday_local_lotlel_test
+    help: Total data used yesterday local loltel-test
     resultColumn: count
     sql: >
       SELECT COALESCE (
@@ -116,8 +116,8 @@ bqmetrics:
 
 
   - type: gauge
-    name: total_roaming_data_used_today_loltel_test
-    help: Total roaming data used today loltel-test
+    name: total_data_used_today_roaming_loltel_test
+    help: Total data used today roaming loltel-test
     resultColumn: count
     sql: >
       SELECT COALESCE (
@@ -126,8 +126,8 @@ bqmetrics:
         AND apn = "loltel-test"
         AND mccMnc != "24201"), 0) as count
   - type: gauge
-    name: total_roaming_data_used_yesterday_lotlel_test
-    help: Total roaming data used yesterday loltel-test
+    name: total_data_used_yesterday_roaming_lotlel_test
+    help: Total data used yesterday roaming loltel-test
     resultColumn: count
     sql: >
       SELECT COALESCE (
