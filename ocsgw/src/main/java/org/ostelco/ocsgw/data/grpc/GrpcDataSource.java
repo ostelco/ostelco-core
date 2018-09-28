@@ -262,7 +262,7 @@ public class GrpcDataSource implements DataSource {
                 updateAnalytics();
             }
         } catch (Exception e) {
-            LOG.error("Failed to update session map");
+            LOG.error("Failed to update session map", e);
         }
     }
 
