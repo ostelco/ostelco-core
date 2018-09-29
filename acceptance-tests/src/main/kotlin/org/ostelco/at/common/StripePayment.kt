@@ -55,15 +55,6 @@ object StripePayment {
         return token.card.id
     }
 
-    fun getCardIdForSourceId(sourceId: String) : String {
-
-        // https://stripe.com/docs/api/java#create_source
-        Stripe.apiKey = System.getenv("STRIPE_API_KEY")
-
-        val source = Source.retrieve(sourceId)
-        return source.id
-    }
-
     /**
      * Obtains 'default source' directly from Stripe. Use in tests to
      * verify that the correspondng 'setDefaultSource' API works as
@@ -91,15 +82,11 @@ object StripePayment {
         return customers.filter { it.email.equals(email) }.first().id
     }
 
-    fun deleteAllCustomers() {
+    fun deleteCustomer(email: String) {
         // https://stripe.com/docs/api/java#create_card_token
         Stripe.apiKey = System.getenv("STRIPE_API_KEY")
-
-        do {
-            val customers = Customer.list(emptyMap()).data
-            customers.forEach { customer ->
-                customer.delete()
-            }
-        } while (customers.isNotEmpty())
+        val customers = Customer.list(emptyMap()).data
+        customers.filter { it.email == email }
+                .forEach { it.delete() }
     }
 }

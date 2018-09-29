@@ -25,6 +25,8 @@ import org.ostelco.diameter.model.SessionContext;
 import org.ostelco.ocs.api.*;
 import org.ostelco.ocsgw.OcsServer;
 import org.ostelco.ocsgw.data.DataSource;
+import org.ostelco.prime.metrics.api.OcsgwAnalyticsReport;
+import org.ostelco.prime.metrics.api.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,13 +35,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -256,18 +252,17 @@ public class GrpcDataSource implements DataSource {
     }
 
     private void addToSessionMap(CreditControlContext creditControlContext) {
-        switch (getRequestType(creditControlContext)) {
-            case INITIAL_REQUEST:
-            case UPDATE_REQUEST:
-            case TERMINATION_REQUEST:
-                sessionIdMap.put(creditControlContext.getCreditControlRequest().getMsisdn(), new SessionContext(creditControlContext.getSessionId(), creditControlContext.getCreditControlRequest().getOriginHost(), creditControlContext.getCreditControlRequest().getOriginRealm()));
+        try {
+            SessionContext sessionContext = new SessionContext(creditControlContext.getSessionId(),
+                    creditControlContext.getCreditControlRequest().getOriginHost(),
+                    creditControlContext.getCreditControlRequest().getOriginRealm(),
+                    creditControlContext.getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0).getCalledStationId(),
+                    creditControlContext.getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0).getSgsnMccMnc());
+            if (sessionIdMap.put(creditControlContext.getCreditControlRequest().getMsisdn(), sessionContext) == null) {
                 updateAnalytics();
-                break;
-            case EVENT_REQUEST:
-                break;
-            default:
-                LOG.warn("Unknown request type");
-                break;
+            }
+        } catch (Exception e) {
+            LOG.error("Failed to update session map", e);
         }
     }
 
@@ -279,9 +274,14 @@ public class GrpcDataSource implements DataSource {
     }
 
     private void updateAnalytics() {
-        LOG.info("Number of active sesssions is {}", sessionIdMap.size());
+        LOG.info("Number of active sessions is {}", sessionIdMap.size());
 
-        ocsgwAnalytics.sendAnalytics(sessionIdMap.size());
+        OcsgwAnalyticsReport.Builder builder = OcsgwAnalyticsReport.newBuilder().setActiveSessions(sessionIdMap.size());
+        builder.setKeepAlive(false);
+        sessionIdMap.forEach((msisdn, sessionContext) -> {
+            builder.addUsers(User.newBuilder().setApn(sessionContext.getApn()).setMccMnc(sessionContext.getMccMnc()).setMsisdn(msisdn).build());
+        });
+        ocsgwAnalytics.sendAnalytics(builder.build());
     }
 
     private void initActivate() {

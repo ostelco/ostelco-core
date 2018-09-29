@@ -2,11 +2,33 @@ package org.ostelco.prime.paymentprocessor
 
 import arrow.core.Either
 import arrow.core.flatMap
-import com.stripe.exception.*
-import org.ostelco.prime.getLogger
-import com.stripe.model.*
-import org.ostelco.prime.paymentprocessor.core.*
+import com.stripe.exception.ApiConnectionException
+import com.stripe.exception.AuthenticationException
+import com.stripe.exception.CardException
+import com.stripe.exception.InvalidRequestException
+import com.stripe.exception.RateLimitException
+import com.stripe.exception.StripeException
+import com.stripe.model.Card
+import com.stripe.model.Charge
 import com.stripe.model.Customer
+import com.stripe.model.ExternalAccount
+import com.stripe.model.Plan
+import com.stripe.model.Product
+import com.stripe.model.Refund
+import com.stripe.model.Source
+import com.stripe.model.Subscription
+import org.ostelco.prime.getLogger
+import org.ostelco.prime.paymentprocessor.core.BadGatewayError
+import org.ostelco.prime.paymentprocessor.core.ForbiddenError
+import org.ostelco.prime.paymentprocessor.core.NotFoundError
+import org.ostelco.prime.paymentprocessor.core.PaymentError
+import org.ostelco.prime.paymentprocessor.core.PlanInfo
+import org.ostelco.prime.paymentprocessor.core.ProductInfo
+import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
+import org.ostelco.prime.paymentprocessor.core.SourceInfo
+import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
+
 
 class StripePaymentProcessor : PaymentProcessor {
 
@@ -14,21 +36,20 @@ class StripePaymentProcessor : PaymentProcessor {
 
     override fun getSavedSources(customerId: String): Either<PaymentError, List<SourceDetailsInfo>> =
             either("Failed to retrieve sources for customer $customerId") {
-                val sources = mutableListOf<SourceDetailsInfo>()
                 val customer = Customer.retrieve(customerId)
-                customer.sources.data.forEach {
+                val sources: List<SourceDetailsInfo> = customer.sources.data.map {
                     val details = getAccountDetails(it)
-                    sources.add(SourceDetailsInfo(it.id, getAccountType(details), details))
+                    SourceDetailsInfo(it.id, getAccountType(details), details)
                 }
-                sources
+                sources.sortedByDescending { it.details["created"] as Long }
             }
 
     private fun getAccountType(details: Map<String, Any>) : String {
-        return details.get("type").toString()
+        return details["type"].toString()
     }
 
     /* Returns detailed 'account details' for the given Stripe source/account.
-       Note that including the fields 'id' and 'type' are manadatory. */
+       Note that including the fields 'id', 'type' and 'created' are mandatory. */
     private fun getAccountDetails(accountInfo: ExternalAccount) : Map<String, Any> {
         when (accountInfo) {
             is Card -> {
@@ -43,6 +64,8 @@ class StripePaymentProcessor : PaymentProcessor {
                              "country" to accountInfo.country,
                              "currency" to accountInfo.currency,
                              "cvcCheck" to accountInfo.cvcCheck,
+                             "created" to getCreatedTimestampFromMetadata(accountInfo.id,
+                                     accountInfo.metadata),
                              "expMonth" to accountInfo.expMonth,
                              "expYear" to accountInfo.expYear,
                              "fingerprint" to accountInfo.fingerprint,
@@ -54,6 +77,7 @@ class StripePaymentProcessor : PaymentProcessor {
             is Source -> {
                 return mapOf("id" to accountInfo.id,
                              "type" to "source",
+                             "created" to accountInfo.created,
                              "typeData" to accountInfo.typeData,
                              "owner" to accountInfo.owner)
             }
@@ -61,9 +85,28 @@ class StripePaymentProcessor : PaymentProcessor {
                 logger.error("Received unsupported Stripe source/account type: {}",
                         accountInfo)
                 return mapOf("id" to accountInfo.id,
-                             "type" to "unsupported")
+                             "type" to "unsupported",
+                             "created" to getSecondsSinceEpoch())
             }
         }
+    }
+
+    /* Handle type conversion when reading the 'created' field from the
+       metadata returned from Stripe. (It might seem like that Stripe
+       returns stored metadata values as strings, even if they where stored
+       using an another type. Needs to be verified.) */
+    private fun getCreatedTimestampFromMetadata(id: String, metadata: Map<String, Any>) : Long {
+        val created: String? = metadata["created"] as? String
+        return created?.toLongOrNull() ?: run {
+            logger.warn("No 'created' timestamp found in metadata for Stripe account {}",
+                    id)
+            getSecondsSinceEpoch()
+        }
+    }
+
+    /* Seconds since Epoch in UTC zone. */
+    private fun getSecondsSinceEpoch() : Long {
+        return System.currentTimeMillis() / 1000L
     }
 
     override fun createPaymentProfile(userEmail: String): Either<PaymentError, ProfileInfo> =
@@ -77,13 +120,11 @@ class StripePaymentProcessor : PaymentProcessor {
                     "limit" to "1",
                     "email" to userEmail)
             val customerList = Customer.list(customerParams)
-            if (customerList.data.isEmpty()) {
-                 return Either.left(NotFoundError("Could not find a payment profile for user $userEmail"))
-            } else if (customerList.data.size > 1){
-                 return Either.left(NotFoundError("Multiple profiles for user $userEmail found"))
-            } else {
-                 return Either.right(ProfileInfo(customerList.data.first().id))
-            }
+        return when {
+            customerList.data.isEmpty() -> Either.left(NotFoundError("Could not find a payment profile for user $userEmail"))
+            customerList.data.size > 1 -> Either.left(NotFoundError("Multiple profiles for user $userEmail found"))
+            else -> Either.right(ProfileInfo(customerList.data.first().id))
+        }
     }
 
     override fun createPlan(productId: String, amount: Int, currency: String, interval: PaymentProcessor.Interval): Either<PaymentError, PlanInfo> =
@@ -119,7 +160,8 @@ class StripePaymentProcessor : PaymentProcessor {
     override fun addSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo> =
             either("Failed to add source $sourceId to customer $customerId") {
                 val customer = Customer.retrieve(customerId)
-                val params = mapOf("source" to sourceId)
+                val params = mapOf("source" to sourceId,
+                        "metadata" to mapOf("created" to getSecondsSinceEpoch()))
                 SourceInfo(customer.sources.create(params).id)
             }
 
@@ -210,9 +252,16 @@ class StripePaymentProcessor : PaymentProcessor {
                 Refund.create(refundParams).charge
             }
 
-    override fun removeSource(customerId: String, sourceId: String): Either<PaymentError, String> =
+    override fun removeSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo> =
             either("Failed to remove source $sourceId from customer $customerId") {
-                Customer.retrieve(customerId).sources.retrieve(sourceId).delete().id
+                val accountInfo = Customer.retrieve(customerId).sources.retrieve(sourceId)
+                when (accountInfo) {
+                    is Card -> accountInfo.delete()
+                    is Source -> accountInfo.detach()
+                    else ->
+                        Either.left(BadGatewayError("Attempt to remove unsupported account-type $accountInfo"))
+                }
+                SourceInfo(sourceId)
             }
 
     private fun <RETURN> either(errorDescription: String, action: () -> RETURN): Either<PaymentError, RETURN> {
@@ -220,28 +269,28 @@ class StripePaymentProcessor : PaymentProcessor {
             Either.right(action())
         } catch (e: CardException) {
             // If something is decline with a card purchase, CardException will be caught
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.getCode()}", e)
+            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
             Either.left(ForbiddenError(errorDescription, e.message))
         } catch (e: RateLimitException) {
             // Too many requests made to the API too quickly
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.getCode()}", e)
+            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
             Either.left(BadGatewayError(errorDescription, e.message))
         } catch (e: InvalidRequestException) {
             // Invalid parameters were supplied to Stripe's API
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.getCode()}", e)
+            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
             Either.left(NotFoundError(errorDescription, e.message))
         } catch (e: AuthenticationException) {
             // Authentication with Stripe's API failed
             // (maybe you changed API keys recently)
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.getCode()}", e)
+            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
             Either.left(BadGatewayError(errorDescription))
         } catch (e: ApiConnectionException) {
             // Network communication with Stripe failed
-            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.getCode()}", e)
+            logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
             Either.left(BadGatewayError(errorDescription))
         } catch (e: StripeException) {
             // Unknown Stripe error
-            logger.error("Payment error : $errorDescription , Stripe Error Code: ${e.getCode()}", e)
+            logger.error("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
             Either.left(BadGatewayError(errorDescription))
         } catch (e: Exception) {
             // Something else happened, could be completely unrelated to Stripe

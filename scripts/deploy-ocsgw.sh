@@ -14,6 +14,15 @@ if [ "$1" = prod ] ; then
    variant=prod
 fi
 
+echo "Starting update.."
+echo "Creating zip files"
+gradle pack
+
+if [ ! -f build/deploy/ostelco-core-${variant}.zip ]; then
+    echo "build/deploy/ostelco-core-${variant}.zip not found!"
+    exit 1
+fi
+
 echo "Starting to deploy OCSGW to $variant"
 echo "The last thing this script will do is to look  at logs from the ocsgw"
 echo "It will continue to do so until terminated by ^C"

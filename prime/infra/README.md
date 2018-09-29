@@ -83,6 +83,8 @@ Reference:
 Generate self-contained protobuf descriptor file - `ocs_descriptor.pb` & `metrics_descriptor.pb`
 
 ```bash
+pyenv versions
+pyenv local 3.5.2
 pip install grpcio grpcio-tools
 
 python -m grpc_tools.protoc \
@@ -342,3 +344,25 @@ logName="projects/pantel-2decb/logs/prime"
 ## Connect using Neo4j Browser
 
 Check [docs/NEO4J.md](../docs/NEO4J.md)
+
+## Deploy dataflow pipeline for raw_activeusers
+
+```bash
+# For dev cluster
+gcloud dataflow jobs run active-users-dev \
+    --gcs-location gs://dataflow-templates/latest/PubSub_to_BigQuery \
+    --region europe-west1 \
+    --parameters \
+inputTopic=projects/pantel-2decb/topics/active-users-dev,\
+outputTableSpec=pantel-2decb:ocs_gateway_dev.raw_activeusers
+
+
+# For production cluster
+gcloud dataflow jobs run active-users \
+    --gcs-location gs://dataflow-templates/latest/PubSub_to_BigQuery \
+    --region europe-west1 \
+    --parameters \
+inputTopic=projects/pantel-2decb/topics/active-users,\
+outputTableSpec=pantel-2decb:ocs_gateway.raw_activeusers
+
+```

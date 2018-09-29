@@ -41,6 +41,8 @@ public class OcsApplicationTest {
     private static final String OCS_HOST = "ocs";
     private static final String PGW_HOST = "testclient";
     private static final String PGW_REALM = "loltel";
+    private static final String APN = "loltel-test";
+    private static final String MCC_MNC = "24201";
 
     private static final String MSISDN = "4790300123";
 
@@ -162,7 +164,7 @@ public class OcsApplicationTest {
 
 
         client.initRequestTest();
-        OcsServer.getInstance().sendReAuthRequest(new SessionContext(session.getSessionId(), PGW_HOST, PGW_REALM));
+        OcsServer.getInstance().sendReAuthRequest(new SessionContext(session.getSessionId(), PGW_HOST, PGW_REALM, APN, MCC_MNC));
         waitForRequest();
         try {
             AvpSet resultAvps = client.getResultAvps();

@@ -7,6 +7,7 @@ import org.ostelco.prime.model.ProductClass
 import org.ostelco.prime.model.Segment
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.AdminDataSource
+import javax.ws.rs.DELETE
 import javax.ws.rs.POST
 import javax.ws.rs.PUT
 import javax.ws.rs.Path
@@ -69,6 +70,9 @@ class SegmentResource {
 //    @Path("/{segment-id}")
 //    fun getSegment(@PathParam("segment-id") segmentId: String) = adminDataSource.getSegment(segmentId)
 
+    /**
+     * Create new [Segment]
+     */
     @POST
     fun createSegment(segment: Segment): Response {
         return adminDataSource.createSegment(segment)
@@ -76,6 +80,9 @@ class SegmentResource {
                         { Response.status(Response.Status.CREATED).build() })
     }
 
+    /**
+     * Update existing [Segment]. Replace existing subscriber list with new list.
+     */
     @PUT
     @Path("/{segment-id}")
     fun updateSegment(
@@ -92,6 +99,24 @@ class SegmentResource {
         return adminDataSource.updateSegment(segment)
                 .fold({ Response.status(Response.Status.NOT_MODIFIED).entity(it.message).build() },
                         { Response.ok().build() })
+    }
+
+    /**
+     * Add individual subscriber to a [Segment]
+     */
+    @POST
+    @Path("/{segment-id}/subscriber/{subscriber-id}")
+    fun addSubscriberToSegment(segment: Segment): Response {
+        TODO("Vihang: Needs implementation")
+    }
+
+    /**
+     * Add individual subscriber to a [Segment]
+     */
+    @DELETE
+    @Path("/{segment-id}/subscriber/{subscriber-id}")
+    fun removeSubscriberFromSegment(segment: Segment): Response {
+        TODO("Vihang: Needs implementation")
     }
 
 //    private fun toStoredSegment(segment: Segment): org.ostelco.prime.model.Segment {

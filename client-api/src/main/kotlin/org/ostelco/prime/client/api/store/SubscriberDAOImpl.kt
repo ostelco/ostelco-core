@@ -3,11 +3,6 @@ package org.ostelco.prime.client.api.store
 import arrow.core.Either
 import arrow.core.flatMap
 import org.ostelco.prime.analytics.AnalyticsService
-import org.ostelco.prime.analytics.PrimeMetric.REVENUE
-import org.ostelco.prime.client.api.metrics.updateMetricsOnNewSubscriber
-import org.ostelco.prime.client.api.model.Consent
-import org.ostelco.prime.client.api.model.Person
-import org.ostelco.prime.client.api.model.SubscriptionStatus
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
 import org.ostelco.prime.apierror.BadGatewayError
@@ -16,6 +11,10 @@ import org.ostelco.prime.apierror.InsufficientStorageError
 import org.ostelco.prime.apierror.NotFoundError
 import org.ostelco.prime.apierror.mapPaymentErrorToApiError
 import org.ostelco.prime.apierror.mapStorageErrorToApiError
+import org.ostelco.prime.client.api.metrics.updateMetricsOnNewSubscriber
+import org.ostelco.prime.client.api.model.Consent
+import org.ostelco.prime.client.api.model.Person
+import org.ostelco.prime.client.api.model.SubscriptionStatus
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.ActivePseudonyms
 import org.ostelco.prime.model.ApplicationToken
@@ -66,12 +65,12 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
     override fun createProfile(subscriberId: String, profile: Subscriber, referredBy: String?): Either<ApiError, Subscriber> {
         if (!SubscriberDAO.isValidProfile(profile)) {
             logger.error("Failed to create profile. Invalid profile.")
-            return Either.left(BadRequestError("Incomplete profile description. Profile must contain name and email", ApiErrorCode.FAILED_TO_CREATE_PAYMENT_PROFILE))
+            return Either.left(BadRequestError("Incomplete profile description. Profile must contain name and email", ApiErrorCode.FAILED_TO_CREATE_PROFILE))
         }
         return try {
             storage.addSubscriber(profile, referredBy)
                     .mapLeft {
-                        mapStorageErrorToApiError("Failed to create profile.", ApiErrorCode.FAILED_TO_CREATE_PAYMENT_PROFILE, it)
+                        mapStorageErrorToApiError("Failed to create profile.", ApiErrorCode.FAILED_TO_CREATE_PROFILE, it)
                     }
                     .flatMap {
                         updateMetricsOnNewSubscriber()
@@ -79,7 +78,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                     }
         } catch (e: Exception) {
             logger.error("Failed to create profile for subscriberId $subscriberId", e)
-            Either.left(BadGatewayError("Failed to create profile", ApiErrorCode.FAILED_TO_CREATE_PAYMENT_PROFILE))
+            Either.left(BadGatewayError("Failed to create profile", ApiErrorCode.FAILED_TO_CREATE_PROFILE))
         }
     }
 
@@ -231,12 +230,12 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                                         purchaseRecord = purchaseRecord,
                                         subscriberId = subscriberId,
                                         status = "success")
-                                //TODO: Handle errors (when it becomes available)
-                                ocsSubscriberService.topup(subscriberId, sku)
-                                // TODO vihang: handle currency conversion
-                                analyticsReporter.reportMetric(REVENUE, product.price.amount.toLong())
                                 Either.right(Unit)
                             }
+                }
+                .flatMap {
+                    ocsSubscriberService.topup(subscriberId, sku)
+                            .mapLeft { errorReason -> BadGatewayError(description = errorReason, errorCode = ApiErrorCode.FAILED_TO_PURCHASE_PRODUCT) }
                 }
     }
 
@@ -339,16 +338,19 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
 
     override fun listSources(subscriberId: String): Either<ApiError, List<SourceDetailsInfo>> {
         return paymentProcessor.getPaymentProfile(subscriberId)
-                .fold(
-                        {
-                            paymentProcessor.createPaymentProfile(subscriberId)
-                                    .mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_FETCH_PAYMENT_SOURCES_LIST, error) }
-                        },
-                        { profileInfo -> Either.right(profileInfo) }
-                )
+                .mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_FETCH_PAYMENT_SOURCES_LIST, error) }
                 .flatMap { profileInfo ->
                     paymentProcessor.getSavedSources(profileInfo.id)
                             .mapLeft { mapPaymentErrorToApiError("Failed to list sources", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_SOURCES_LIST, it) }
+                }
+    }
+
+    override fun removeSource(subscriberId: String, sourceId: String): Either<ApiError, SourceInfo> {
+        return paymentProcessor.getPaymentProfile(subscriberId)
+                .mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_REMOVE_PAYMENT_SOURCE, error) }
+                .flatMap { profileInfo ->
+                    paymentProcessor.removeSource(profileInfo.id, sourceId)
+                            .mapLeft { mapPaymentErrorToApiError("Failed to remove payment source", ApiErrorCode.FAILED_TO_REMOVE_PAYMENT_SOURCE, it) }
                 }
     }
 }

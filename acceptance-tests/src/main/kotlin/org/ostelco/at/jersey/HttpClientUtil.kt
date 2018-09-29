@@ -54,6 +54,17 @@ inline fun <reified T> put(execute: HttpRequest.() -> Unit): T {
     return response.readEntity(object : GenericType<T>() {})
 }
 
+/**
+ * DSL function for DELETE operation
+ */
+inline fun <reified T> delete(execute: HttpRequest.() -> Unit): T {
+    val request = HttpRequest().apply(execute)
+    val response = HttpClient.send(request.path, request.queryParams, request.headerParams, request.subscriberId)
+            .delete()
+    assertEquals(200, response.status) { response.readEntity(String::class.java) }
+    return response.readEntity(object : GenericType<T>() {})
+}
+
 fun <T> assertEquals(expected: T, actual: T, lazyMessage: () -> String) {
     var message = ""
     if (expected != actual) {

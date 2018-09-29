@@ -38,6 +38,25 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  name: prime-metrics
+  labels:
+    app: prime
+    tier: backend
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 35.240.23.167
+  ports:
+  - name: grpc
+    port: 443
+    targetPort: 9443
+    protocol: TCP
+  selector:
+    app: prime
+    tier: backend
+---
+apiVersion: v1
+kind: Service
+metadata:
   name: pseudonym-server-service
   labels:
     app: prime
@@ -71,7 +90,7 @@ spec:
         prometheus.io/port: '8081'
     spec:
       containers:
-      - name: esp
+      - name: ocs-esp
         image: gcr.io/endpoints-release/endpoints-runtime:1
         args: [
           "--http2_port=9000",
@@ -105,6 +124,23 @@ spec:
         - mountPath: /etc/nginx/ssl
           name: api-ostelco-ssl
           readOnly: true
+      - name: metrics-esp
+        image: gcr.io/endpoints-release/endpoints-runtime:1
+        args: [
+          "--http2_port=9004",
+          "--ssl_port=9443",
+          "--status_port=8094",
+          "--service=metrics.ostelco.org",
+          "--rollout_strategy=managed",
+          "--backend=grpc://127.0.0.1:8083"
+        ]
+        ports:
+        - containerPort: 9004
+        - containerPort: 9443
+        volumeMounts:
+        - mountPath: /etc/nginx/ssl
+          name: metrics-ostelco-ssl
+          readOnly: true
       - name: prime
         image: eu.gcr.io/pantel-2decb/prime:PRIME_VERSION
         imagePullPolicy: Always
@@ -117,6 +153,8 @@ spec:
           value: data-traffic
         - name: PURCHASE_INFO_TOPIC
           value: purchase-info
+        - name: ACTIVE_USERS_TOPIC
+          value: active-users
         - name: STRIPE_API_KEY
           valueFrom:
             secretKeyRef:
@@ -130,6 +168,7 @@ spec:
         - containerPort: 8080
         - containerPort: 8081
         - containerPort: 8082
+        - containerPort: 8083
       volumes:
       - name: secret-config
         secret:
@@ -140,3 +179,6 @@ spec:
       - name: ocs-ostelco-ssl
         secret:
           secretName: ocs-ostelco-ssl
+      - name: metrics-ostelco-ssl
+        secret:
+          secretName: metrics-ostelco-ssl

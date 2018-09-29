@@ -25,3 +25,14 @@ message AggregatedDataTrafficInfo {
     string apn = 4;
     string mccMnc = 5;
 }
+
+message User {
+    string msisdn = 1;
+    string apn = 2;
+    string mccMnc = 3;
+}
+
+message ActiveUsersInfo {
+    repeated User users = 1;
+    google.protobuf.Timestamp timestamp = 2;
+}

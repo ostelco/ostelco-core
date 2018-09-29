@@ -65,6 +65,8 @@ interface SubscriberDAO {
 
     fun listSources(subscriberId: String): Either<ApiError, List<SourceDetailsInfo>>
 
+    fun removeSource(subscriberId: String, sourceId: String): Either<ApiError, SourceInfo>
+
     companion object {
 
         /**
@@ -73,7 +75,8 @@ interface SubscriberDAO {
         fun isValidProfile(profile: Subscriber?): Boolean {
             return (profile != null
                     && !profile.name.isEmpty()
-                    && !profile.email.isEmpty())
+                    && !profile.email.isEmpty()
+                    && !profile.country.isEmpty())
         }
 
         /**

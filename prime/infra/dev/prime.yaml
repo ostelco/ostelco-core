@@ -155,6 +155,8 @@ spec:
           value: data-traffic-dev
         - name: PURCHASE_INFO_TOPIC
           value: purchase-info-dev
+        - name: ACTIVE_USERS_TOPIC
+          value: active-users-dev
         - name: STRIPE_API_KEY
           valueFrom:
             secretKeyRef:
