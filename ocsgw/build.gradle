@@ -1,5 +1,6 @@
 plugins {
     id "application"
+    // FIXME: unable to update to 4.0.0
     id "com.github.johnrengelman.shadow" version "2.0.4"
 }
 
@@ -18,7 +19,7 @@ dependencies {
     implementation 'ch.qos.logback:logback-classic:1.2.3'
 
     // log to gcp stack-driver
-    implementation 'com.google.cloud:google-cloud-logging-logback:0.63.0-alpha'
+    implementation 'com.google.cloud:google-cloud-logging-logback:0.64.0-alpha'
 
     testImplementation project(':diameter-test')
     testImplementation "org.junit.jupiter:junit-jupiter-api:$junit5Version"
@@ -26,6 +27,13 @@ dependencies {
 
     testImplementation 'junit:junit:4.12'
     testRuntimeOnly "org.junit.vintage:junit-vintage-engine:$junit5Version"
+}
+
+shadowJar {
+    mainClassName = 'org.ostelco.ocsgw.OcsApplication'
+    mergeServiceFiles()
+    classifier = "uber"
+    version = null
 }
 
 test {
@@ -37,13 +45,6 @@ test {
         exceptionFormat = 'full'
         events "PASSED", "FAILED", "SKIPPED"
     }
-}
-
-shadowJar {
-    mainClassName = 'org.ostelco.ocsgw.OcsApplication'
-    mergeServiceFiles()
-    classifier = "uber"
-    version = null
 }
 
 task pack(dependsOn: ['packDev', 'packProd'])

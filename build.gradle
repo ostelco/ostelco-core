@@ -32,15 +32,16 @@ subprojects {
     options.encoding = 'UTF-8'
   }
   ext {
-    kotlinVersion = "1.2.70"
+    kotlinVersion = "1.2.71"
     dropwizardVersion = "1.3.5"
-    googleCloudVersion = "1.45.0"
+    googleCloudVersion = "1.46.0"
     jacksonVersion = "2.9.7"
-    stripeVersion = "6.12.0"
+    stripeVersion = "7.0.0"
     guavaVersion = "26.0-jre"
     assertJVersion = "3.11.1"
     mockitoVersion = "2.22.0"
     firebaseVersion = "6.5.0"
+    beamVersion = "2.6.0"
     // Keeping it version 1.15.0 to be consistent with grpc via PubSub client lib
     // Keeping it version 1.15.0 to be consistent with netty via Firebase lib
     grpcVersion = "1.15.0"

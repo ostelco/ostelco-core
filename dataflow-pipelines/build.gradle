@@ -1,7 +1,7 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.70"
+  id "org.jetbrains.kotlin.jvm" version "1.2.71"
   id "application"
-  id "com.github.johnrengelman.shadow" version "2.0.4"
+  id "com.github.johnrengelman.shadow" version "4.0.0"
   id "idea"
 }
 
@@ -13,8 +13,8 @@ dependencies {
 
   implementation "com.google.cloud:google-cloud-pubsub:$googleCloudVersion"
 
-  implementation 'com.google.cloud.dataflow:google-cloud-dataflow-java-sdk-all:2.5.0'
-  runtimeOnly 'org.apache.beam:beam-runners-google-cloud-dataflow-java:2.5.0'
+  implementation "org.apache.beam:beam-sdks-java-core:$beamVersion"
+  implementation "org.apache.beam:beam-runners-google-cloud-dataflow-java:$beamVersion"
 
   implementation 'ch.qos.logback:logback-classic:1.2.3'
 
