@@ -95,20 +95,6 @@ task packDev(type: Zip, dependsOn: 'shadowJar') {
             fileName.replace('dev.', '')
         }
     }
-    // TODO vihang: figure out why wild-card certs fail to verify
-    from ('../certs/dev.ostelco.org/nginx.crt') {
-        into (project.name + '/config/')
-        rename { String fileName ->
-            fileName.replace('nginx', 'ocs')
-        }
-    }
-    from ('../certs/dev.ostelco.org/nginx.crt') {
-        into (project.name + '/config/')
-        rename { String fileName ->
-            fileName.replace('nginx', 'metrics')
-        }
-    }
-    // END of certs
     from ('config/pantel-prod.json') {
         into (project.name + '/config/')
     }
