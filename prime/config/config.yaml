@@ -40,9 +40,10 @@ server:
     appenders:
       - type: console
         layout:
-          type: json
-          customFieldNames:
-            level: severity
+          type: access-json
+        filterFactories:
+          - type: URI
+            uri: prometheus-metrics
 
 logging:
   level: INFO
