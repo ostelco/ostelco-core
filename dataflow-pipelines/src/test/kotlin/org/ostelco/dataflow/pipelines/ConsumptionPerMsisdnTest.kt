@@ -12,6 +12,8 @@ import org.joda.time.Instant
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import org.junit.jupiter.api.condition.EnabledOnJre
+import org.junit.jupiter.api.condition.JRE.JAVA_8
 import org.ostelco.analytics.api.AggregatedDataTrafficInfo
 import org.ostelco.analytics.api.DataTrafficInfo
 import org.ostelco.dataflow.pipelines.definitions.consumptionPerMsisdn
@@ -19,11 +21,11 @@ import org.ostelco.dataflow.pipelines.definitions.consumptionPerMsisdn
 class ConsumptionPerMsisdnTest {
 
     @Rule
-    @Transient
     @JvmField
     val pipeline: TestPipeline? = TestPipeline.create()
 
     @Test
+    @EnabledOnJre(JAVA_8)
     @Category(NeedsRunner::class)
     fun testPipeline() {
 

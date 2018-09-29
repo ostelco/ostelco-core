@@ -18,8 +18,11 @@ dependencies {
 
   implementation 'ch.qos.logback:logback-classic:1.2.3'
 
-  testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
   testRuntimeOnly 'org.hamcrest:hamcrest-all:1.3'
+  testRuntimeOnly "org.apache.beam:beam-runners-direct-java:$beamVersion"
+
+  testImplementation "org.junit.jupiter:junit-jupiter-api:$junit5Version"
+  testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junit5Version"
 }
 
 shadowJar {
@@ -27,6 +30,17 @@ shadowJar {
   mergeServiceFiles()
   classifier = "uber"
   version = null
+}
+
+test {
+  // native support to Junit5 in Gradle 4.6+
+  useJUnitPlatform {
+    includeEngines 'junit-jupiter'
+  }
+  testLogging {
+    exceptionFormat = 'full'
+    events "PASSED", "FAILED", "SKIPPED"
+  }
 }
 
 apply from: '../jacoco.gradle'

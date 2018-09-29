@@ -38,10 +38,11 @@ subprojects {
     jacksonVersion = "2.9.7"
     stripeVersion = "7.0.0"
     guavaVersion = "26.0-jre"
+    junit5Version = "5.3.1"
     assertJVersion = "3.11.1"
     mockitoVersion = "2.22.0"
     firebaseVersion = "6.5.0"
-    beamVersion = "2.6.0"
+    beamVersion = "2.7.0"
     // Keeping it version 1.15.0 to be consistent with grpc via PubSub client lib
     // Keeping it version 1.15.0 to be consistent with netty via Firebase lib
     grpcVersion = "1.15.0"

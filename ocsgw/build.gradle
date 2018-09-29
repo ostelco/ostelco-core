@@ -4,8 +4,6 @@ plugins {
     id "com.github.johnrengelman.shadow" version "2.0.4"
 }
 
-ext.junit5Version = "5.3.1"
-
 dependencies {
     implementation project(':ocs-grpc-api')
     implementation project(':analytics-grpc-api')
