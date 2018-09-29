@@ -1,5 +1,5 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.70"
+  id "org.jetbrains.kotlin.jvm" version "1.2.71"
   id "java-library"
 }
 
@@ -13,7 +13,7 @@ dependencies {
   implementation project(':prime-modules')
 
   implementation 'com.lmax:disruptor:3.4.2'
-  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:0.26.1"
+  // implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:0.30.0"
 
   testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
