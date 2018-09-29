@@ -65,6 +65,8 @@ interface SubscriberDAO {
 
     fun listSources(subscriberId: String): Either<ApiError, List<SourceDetailsInfo>>
 
+    fun removeSource(subscriberId: String, sourceId: String): Either<ApiError, SourceInfo>
+
     companion object {
 
         /**

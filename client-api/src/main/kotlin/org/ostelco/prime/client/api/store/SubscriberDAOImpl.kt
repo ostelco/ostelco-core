@@ -338,16 +338,19 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
 
     override fun listSources(subscriberId: String): Either<ApiError, List<SourceDetailsInfo>> {
         return paymentProcessor.getPaymentProfile(subscriberId)
-                .fold(
-                        {
-                            paymentProcessor.createPaymentProfile(subscriberId)
-                                    .mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_FETCH_PAYMENT_SOURCES_LIST, error) }
-                        },
-                        { profileInfo -> Either.right(profileInfo) }
-                )
+                .mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_FETCH_PAYMENT_SOURCES_LIST, error) }
                 .flatMap { profileInfo ->
                     paymentProcessor.getSavedSources(profileInfo.id)
                             .mapLeft { mapPaymentErrorToApiError("Failed to list sources", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_SOURCES_LIST, it) }
+                }
+    }
+
+    override fun removeSource(subscriberId: String, sourceId: String): Either<ApiError, SourceInfo> {
+        return paymentProcessor.getPaymentProfile(subscriberId)
+                .mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_REMOVE_PAYMENT_SOURCE, error) }
+                .flatMap { profileInfo ->
+                    paymentProcessor.removeSource(profileInfo.id, sourceId)
+                            .mapLeft { mapPaymentErrorToApiError("Failed to remove payment source", ApiErrorCode.FAILED_TO_REMOVE_PAYMENT_SOURCE, it) }
                 }
     }
 }

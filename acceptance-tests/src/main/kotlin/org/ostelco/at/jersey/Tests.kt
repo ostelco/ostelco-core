@@ -275,6 +275,7 @@ class SourceTest {
     fun `jersey test - GET list sources`() {
 
         val email = "purchase-${randomInt()}@test.com"
+
         try {
             createProfile(name = "Test Payment Source", email = email)
 
@@ -290,7 +291,7 @@ class SourceTest {
                 subscriberId = email
             }
 
-            val ids = createdIds.map { getIdFromStripe(it) }
+            val ids = createdIds.map { getCardIdForTokenFromStripe(it) }
 
             assert(sources.isNotEmpty()) { "Expected at least one payment source for profile $email" }
             assert(sources.map { it.id }.containsAll(ids))
@@ -305,37 +306,6 @@ class SourceTest {
         } finally {
             StripePayment.deleteCustomer(email = email)
         }
-    }
-
-    private fun getIdFromStripe(tokenId: String): String {
-        if (tokenId.startsWith("src_")) {
-            return StripePayment.getCardIdForSourceId(tokenId)
-        }
-        return StripePayment.getCardIdForTokenId(tokenId)
-    }
-
-    private fun createTokenWithStripe(email: String): String {
-        val tokenId = StripePayment.createPaymentTokenId()
-
-        post<PaymentSource> {
-            path = "/paymentSources"
-            subscriberId = email
-            queryParams = mapOf("sourceId" to tokenId)
-        }
-
-        return tokenId
-    }
-
-    private fun createSourceWithStripe(email: String): String {
-        val sourceId = StripePayment.createPaymentSourceId()
-
-        post<PaymentSource> {
-            path = "/paymentSources"
-            subscriberId = email
-            queryParams = mapOf("sourceId" to sourceId)
-        }
-
-        return sourceId
     }
 
     @Test
@@ -385,6 +355,73 @@ class SourceTest {
         } finally {
             StripePayment.deleteCustomer(email = email)
         }
+    }
+
+    @Test
+    fun `okhttp test - DELETE source`() {
+
+        val email = "purchase-${randomInt()}@test.com"
+
+        try {
+
+            createProfile(name = "Test Payment Source", email = email)
+
+            Thread.sleep(200)
+
+            val createdIds = listOf(getCardIdForTokenFromStripe(createTokenWithStripe(email)),
+                    createSourceWithStripe(email))
+
+            val deletedIds = createdIds.map { it -> removeSourceWithStripe(email, it)  }
+
+            assert(createdIds.containsAll(deletedIds.toSet())) {
+                "Failed to delete one or more sources: ${createdIds.toSet() - deletedIds.toSet()}"
+            }
+        } finally {
+            StripePayment.deleteCustomer(email = email)
+        }
+    }
+
+    // Helpers for source handling with Stripe.
+
+    private fun getCardIdForTokenFromStripe(id: String) : String {
+        if (id.startsWith("tok_")) {
+            return StripePayment.getCardIdForTokenId(id)
+        }
+        return id
+    }
+
+    private fun createTokenWithStripe(email: String) : String {
+        val tokenId = StripePayment.createPaymentTokenId()
+
+        post<PaymentSource> {
+            path = "/paymentSources"
+            subscriberId = email
+            queryParams = mapOf("sourceId" to tokenId)
+        }
+
+        return tokenId
+    }
+
+    private fun createSourceWithStripe(email: String) : String {
+        val sourceId = StripePayment.createPaymentSourceId()
+
+        post<PaymentSource> {
+            path = "/paymentSources"
+            subscriberId = email
+            queryParams = mapOf("sourceId" to sourceId)
+        }
+
+        return sourceId
+    }
+
+    private fun removeSourceWithStripe(email: String, sourceId: String) : String {
+        val removedSource = delete<PaymentSource> {
+            path = "/paymentSources"
+            subscriberId = email
+            queryParams = mapOf("sourceId" to sourceId)
+        }
+
+        return removedSource.id
     }
 }
 
