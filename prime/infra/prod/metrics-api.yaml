@@ -2,7 +2,7 @@ type: google.api.Service
 
 config_version: 3
 
-name: metrics.dev.ostelco.org
+name: metrics.ostelco.org
 
 title: Prime Metrics Reporter Service gRPC API
 
@@ -21,9 +21,9 @@ authentication:
     issuer: prime-service-account@pantel-2decb.iam.gserviceaccount.com
     jwks_uri: https://www.googleapis.com/robot/v1/metadata/x509/prime-service-account@pantel-2decb.iam.gserviceaccount.com
     audiences: >
-      https://metrics.dev.ostelco.org/org.ostelco.prime.metrics.api.OcsgwAnalyticsService,
-      metrics.dev.ostelco.org/org.ostelco.prime.metrics.api.OcsgwAnalyticsService,
-      metrics.dev.ostelco.org
+      https://metrics.ostelco.org/org.ostelco.prime.metrics.api.OcsgwAnalyticsService,
+      metrics.ostelco.org/org.ostelco.prime.metrics.api.OcsgwAnalyticsService,
+      metrics.ostelco.org
   rules:
   - selector: "*"
     requirements:

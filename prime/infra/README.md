@@ -83,6 +83,8 @@ Reference:
 Generate self-contained protobuf descriptor file - `ocs_descriptor.pb` & `metrics_descriptor.pb`
 
 ```bash
+pyenv versions
+pyenv local 3.5.2
 pip install grpcio grpcio-tools
 
 python -m grpc_tools.protoc \
