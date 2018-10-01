@@ -42,6 +42,8 @@ class OcsgwMetrics {
 
     private ScheduledFuture keepAliveFuture = null;
 
+    private ScheduledFuture autoReportAnalyticsFuture = null;
+
     private OcsgwAnalyticsReport lastActiveSessions = OcsgwAnalyticsReport.newBuilder().setKeepAlive(true).build();
 
     OcsgwMetrics(String metricsServerHostname, ServiceAccountJwtAccessCredentials credentials) {
@@ -110,6 +112,15 @@ class OcsgwMetrics {
                 TimeUnit.SECONDS);
     }
 
+    private void initAutoReportAnalyticsReport() {
+        autoReportAnalyticsFuture = executorService.scheduleAtFixedRate((Runnable) () -> {
+                    sendAnalytics(lastActiveSessions);
+                },
+                30,
+                30,
+                TimeUnit.MINUTES);
+    }
+
     void initAnalyticsRequest() {
         ocsgwAnalyticsReport = ocsgwAnalyticsServiceStub.ocsgwAnalyticsEvent(
                 new AnalyticsRequestObserver<OcsgwAnalyticsReply>() {
@@ -121,6 +132,7 @@ class OcsgwMetrics {
                 }
         );
         initKeepAlive();
+        initAutoReportAnalyticsReport();
     }
 
     private void initKeepAlive() {
