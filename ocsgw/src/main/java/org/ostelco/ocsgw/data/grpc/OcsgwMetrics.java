@@ -44,7 +44,7 @@ class OcsgwMetrics {
 
     private ScheduledFuture autoReportAnalyticsFuture = null;
 
-    private OcsgwAnalyticsReport lastActiveSessions = OcsgwAnalyticsReport.newBuilder().setKeepAlive(true).build();
+    private OcsgwAnalyticsReport lastActiveSessions = null;
 
     OcsgwMetrics(String metricsServerHostname, ServiceAccountJwtAccessCredentials credentials) {
 
@@ -146,7 +146,9 @@ class OcsgwMetrics {
     }
 
     void sendAnalytics(OcsgwAnalyticsReport report) {
-        ocsgwAnalyticsReport.onNext(report);
-        lastActiveSessions = report;
+        if (report != null) {
+            ocsgwAnalyticsReport.onNext(report);
+            lastActiveSessions = report;
+        }
     }
 }
