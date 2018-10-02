@@ -282,6 +282,8 @@ class SourceTest {
 
             assert(sources.isEmpty()) { "Expected no payment source for profile $email" }
 
+            assertNotNull(StripePayment.getCustomerIdForEmail(email)) { "Customer Id should have been created" }
+
         } finally {
             StripePayment.deleteCustomer(email = email)
         }
