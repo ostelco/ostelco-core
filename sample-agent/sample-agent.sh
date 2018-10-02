@@ -315,7 +315,7 @@ awk '{print "      - " $1}'  $RESULT_SEGMENT_SINGLE_COLUMN >> $IMPORTFILE_YML
 ## (assuming the kubectl port forwarding is enabled)
 
 IMPORTER_URL=http://127.0.0.1:8080/importer
-curl --data-binary @$IMPORTFILE_YML $IMPORTER_URL
+curl -H "Content-type: text/vnd.yaml" --data-binary @$IMPORTFILE_YML $IMPORTER_URL
 
 
 ##
