@@ -338,7 +338,13 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
 
     override fun listSources(subscriberId: String): Either<ApiError, List<SourceDetailsInfo>> {
         return paymentProcessor.getPaymentProfile(subscriberId)
-                .mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_FETCH_PAYMENT_SOURCES_LIST, error) }
+                .fold(
+                        {
+                            paymentProcessor.createPaymentProfile(subscriberId)
+                                    .mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_FETCH_PAYMENT_SOURCES_LIST, error) }
+                        },
+                        { profileInfo -> Either.right(profileInfo) }
+                )
                 .flatMap { profileInfo ->
                     paymentProcessor.getSavedSources(profileInfo.id)
                             .mapLeft { mapPaymentErrorToApiError("Failed to list sources", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_SOURCES_LIST, it) }
