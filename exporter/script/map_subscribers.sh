@@ -1,11 +1,51 @@
 #!/bin/bash
-#set -x
+
+
+##
+## Map a list of pseudo-anonymized subscriber IDs into clear text
+## subscriber identifiers.
+##
+## Takes a single parameter, the exportID, so usage is:
+##
+##     ./map_subscribers.sh  8972789sd897987rwefsa9879
+##
+## Based on the command line parameter, an input file is imported from
+## the file storage.  The input is a file named
+##
+##     gs://$projectId-dataconsumption-export/${exportId}-resultsegment-pseudoanonymized.csv$exportId/
+##
+## This input file contains a single column, containing pseudoanonymized
+## subscriber identifiers.
+##
+## The script proeduces a single output in the file:
+##
+##     gs://$projectId-dataconsumption-export/${exportId}-resultsegment-cleartext.csv
+##
+## It contains two columns, with headers, containing pseudo IDs, and the corresponding
+## clear text subscriber ID.
+##
+##
+
+
+##
+## Check input parameters
+##
+
+if [[ $# -ne 1 ]] ; then
+    echo "$0 ERROR:  Requires one command line parameter dentifying the export ID"
+    exit 1
+fi
 
 exportId=$1
-if [ -z "$1" ]; then
-    echo "To convert subscribers, specify the id of the export operation"
-    exit
+if [[ -z "$1" ]]; then
+    echo "$0 ERROR: To convert subscribers, specify the id of the export operation"
+    exit 1
 fi
+
+##
+## Calculate locations of things to use.
+##
+
 exportId=${exportId//-}
 exportId=${exportId,,}
 projectId=pantel-2decb
@@ -16,12 +56,19 @@ inputSubscriberTable=exported_pseudonyms.${exportId}_pseudo_subscriber
 subscriberPseudonymsTable=exported_pseudonyms.${exportId}_subscriber
 outputSubscriberTable=exported_pseudonyms.${exportId}_clear_subscriber
 
+##
+## Import the from the csv file.
+##
 
-echo "Importing data from csv $csvfile"
+echo "$0: INFO Importing data from csv $csvfile"
 bq --location=EU load --replace --source_format=CSV $projectId:$inputSubscriberTable gs://$csvfile /subscriber-schema.json
 echo "Exported data to $inputSubscriberTable"
 
-echo "Creating table $outputSubscriberTable"
+
+##
+## Calculate the translation table
+##
+echo "$0: INFO Creating table $outputSubscriberTable"
 # SQL for joining pseudonym & hourly consumption tables.
 read -r -d '' sqlForJoin << EOM
 CREATE TEMP FUNCTION URLDECODE(url STRING) AS ((
@@ -43,8 +90,13 @@ EOM
 
 # Run the query using bq & dump results to the new table
 bq --location=EU --format=none query --destination_table $outputSubscriberTable --replace --use_legacy_sql=false $sqlForJoin
-echo "Created table $outputSubscriberTable"
+echo "$0 INFO: Created table $outputSubscriberTable"
 
-echo "Exporting data to csv $outputCsvfile"
+
+##
+## Export data to the outut CSV file
+##
+
+echo "$0 INFO: Exporting data to csv $outputCsvfile"
 bq --location=EU extract --destination_format=CSV $outputSubscriberTable gs://$outputCsvfile
-echo "Exported data to gs://$outputCsvfile"
+echo "$0 INFO: Exported data to gs://$outputCsvfile"
