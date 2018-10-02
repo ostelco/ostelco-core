@@ -144,7 +144,7 @@ function exportDataFromExporterPod {
 }
 
 function mapPseudosToUserids {
-    # XXX TODO: Test correct number of parameters 
+    # XXX TODO: Test correct number of parameters
     local exportid=$1
     local tmpfile="$(runScriptOnExporterPod "/map_subscribers.sh $exportid" "mapping pseudoids to subscriber ids")"
     ##    [[ -f "$tmpfile" ]] && rm "$tmpfile"
