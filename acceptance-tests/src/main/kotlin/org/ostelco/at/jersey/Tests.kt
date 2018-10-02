@@ -314,7 +314,7 @@ class SourceTest {
         val email = "purchase-${randomInt()}@test.com"
 
         try {
-            
+
             val sources: PaymentSourceList = get {
                 path = "/paymentSources"
                 subscriberId = email
@@ -378,7 +378,7 @@ class SourceTest {
     }
 
     @Test
-    fun `okhttp test - DELETE source`() {
+    fun `jersey test - DELETE source`() {
 
         val email = "purchase-${randomInt()}@test.com"
 

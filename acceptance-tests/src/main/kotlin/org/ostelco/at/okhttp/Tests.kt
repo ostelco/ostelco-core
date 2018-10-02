@@ -269,6 +269,25 @@ class SourceTest {
     }
 
     @Test
+    fun `okhttp test - GET list sources no profile`() {
+
+        val email = "purchase-${randomInt()}@test.com"
+        try {
+
+            val client = clientForSubject(subject = email)
+
+            Thread.sleep(200)
+
+            val sources = client.listSources()
+
+            assert(sources.isEmpty()) { "Expected no payment source for profile $email" }
+
+        } finally {
+            StripePayment.deleteCustomer(email = email)
+        }
+    }
+
+    @Test
     fun `okhttp test - PUT source set default`() {
 
         val email = "purchase-${randomInt()}@test.com"
