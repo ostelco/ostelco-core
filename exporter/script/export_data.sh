@@ -33,9 +33,6 @@ csvfile=$projectId-dataconsumption-export/$exportId.csv
 purchasesCsvfile=$projectId-dataconsumption-export/$exportId-purchases.csv
 sub2msisdnCsvfile=$projectId-dataconsumption-export/$exportId-sub2msisdn.csv
 
-echo $rawPurchasesTable
-echo $hourlyConsumptionTable
-
 # Generate the pseudonym tables for this export
 echo "Starting export job for $exportId"
 pseudonymHost="pseudonym-server-service.default.svc.cluster.local"
