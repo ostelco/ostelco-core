@@ -15,14 +15,14 @@ bqmetrics:
     help: Number of active users
     resultColumn: count
     sql: >
-        SELECT count(distinct user_pseudo_id) AS count FROM `pantel-2decb.analytics_160712959.events_*`
+        SELECT count(distinct user_pseudo_id) AS count FROM `${DATASET_PROJECT}.analytics_160712959.events_*`
         WHERE event_name = "first_open"
   - type: gauge
     name: sims_who_have_used_data
     help: Number of SIMs that has used data last 24 hours
     resultColumn: count
     sql: >
-        SELECT count(DISTINCT msisdn) AS count FROM `pantel-2decb.data_consumption.raw_consumption`
+        SELECT count(DISTINCT msisdn) AS count FROM `${DATASET_PROJECT}.data_consumption${DATASET_MODIFIER}.raw_consumption`
         WHERE timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 DAY)
   - type: gauge
     name: total_data_used
@@ -30,7 +30,7 @@ bqmetrics:
     resultColumn: count
     sql: >
       SELECT COALESCE (
-        (SELECT sum(bucketBytes) AS count FROM `pantel-2decb.data_consumption.raw_consumption`
+        (SELECT sum(bucketBytes) AS count FROM `${DATASET_PROJECT}.data_consumption${DATASET_MODIFIER}.raw_consumption`
         WHERE timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 DAY)), 0) as count
   - type: gauge
     name: revenue_last24hours
@@ -38,21 +38,21 @@ bqmetrics:
     resultColumn: revenue
     sql: >
       SELECT COALESCE (
-        (SELECT SUM(product.price.amount) as revenue FROM `pantel-2decb.purchases.raw_purchases`
+        (SELECT SUM(product.price.amount) as revenue FROM `${DATASET_PROJECT}.purchases${DATASET_MODIFIER}.raw_purchases`
         WHERE TIMESTAMP_MILLIS(timestamp) > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 24 HOUR)), 0) as revenue
   - type: gauge
     name: total_paid_users
     help: Number of users who have purchased in last 24 hours
     resultColumn: count
     sql: >
-      SELECT COUNT(DISTINCT subscriberId) as count FROM `pantel-2decb.purchases.raw_purchases`
+      SELECT COUNT(DISTINCT subscriberId) as count FROM `${DATASET_PROJECT}.purchases${DATASET_MODIFIER}.raw_purchases`
       WHERE TIMESTAMP_MILLIS(timestamp) > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 24 HOUR)
   - type: gauge
     name: active_users_right_now
     help: Number of active users rigth now (with 1 minute interval)
     resultColumn: count
     sql: >
-        SELECT count(DISTINCT msisdn) AS count FROM `pantel-2decb.data_consumption.raw_consumption`
+        SELECT count(DISTINCT msisdn) AS count FROM `${DATASET_PROJECT}.data_consumption${DATASET_MODIFIER}.raw_consumption`
         WHERE timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 MINUTE)
 #-----------------------------------------------
 # Metrics values split at day boundary.
@@ -63,14 +63,14 @@ bqmetrics:
     help: Number of SIMs that has used data today
     resultColumn: count
     sql: >
-      SELECT count(DISTINCT msisdn) AS count FROM `pantel-2decb.data_consumption.raw_consumption`
+      SELECT count(DISTINCT msisdn) AS count FROM `${DATASET_PROJECT}.data_consumption${DATASET_MODIFIER}.raw_consumption`
       WHERE timestamp >= TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)
   - type: gauge
     name: sims_who_have_used_data_yesterday
     help: Number of SIMs that has used data yesterday
     resultColumn: count
     sql: >
-      SELECT count(DISTINCT msisdn) AS count FROM `pantel-2decb.data_consumption.raw_consumption`
+      SELECT count(DISTINCT msisdn) AS count FROM `${DATASET_PROJECT}.data_consumption${DATASET_MODIFIER}.raw_consumption`
       WHERE timestamp >= TIMESTAMP_SUB(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY), INTERVAL 1 DAY)
       AND timestamp < TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)
 
@@ -95,7 +95,7 @@ bqmetrics:
     resultColumn: count
     sql: >
       SELECT COALESCE (
-        (SELECT sum(bucketBytes) AS count FROM `pantel-2decb.data_consumption.raw_consumption`
+        (SELECT sum(bucketBytes) AS count FROM `${DATASET_PROJECT}.data_consumption${DATASET_MODIFIER}.raw_consumption`
         WHERE timestamp >= TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)), 0) as count
   - type: gauge
     name: total_data_used_yesterday
@@ -103,7 +103,7 @@ bqmetrics:
     resultColumn: count
     sql: >
       SELECT COALESCE (
-        ( SELECT sum(bucketBytes) AS count FROM `pantel-2decb.data_consumption.raw_consumption`
+        ( SELECT sum(bucketBytes) AS count FROM `${DATASET_PROJECT}.data_consumption${DATASET_MODIFIER}.raw_consumption`
           WHERE timestamp >= TIMESTAMP_SUB(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY), INTERVAL 1 DAY)
           AND timestamp < TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY) ), 0) as count
 
@@ -113,7 +113,7 @@ bqmetrics:
     resultColumn: count
     sql: >
       SELECT COALESCE (
-        (SELECT sum(bucketBytes) AS count FROM `pantel-2decb.data_consumption.raw_consumption`
+        (SELECT sum(bucketBytes) AS count FROM `${DATASET_PROJECT}.data_consumption${DATASET_MODIFIER}.raw_consumption`
         WHERE timestamp >= TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)
         AND apn = "loltel-test"
         AND mccMnc = "24201"), 0) as count
@@ -123,7 +123,7 @@ bqmetrics:
     resultColumn: count
     sql: >
       SELECT COALESCE (
-        ( SELECT sum(bucketBytes) AS count FROM `pantel-2decb.data_consumption.raw_consumption`
+        ( SELECT sum(bucketBytes) AS count FROM `${DATASET_PROJECT}.data_consumption${DATASET_MODIFIER}.raw_consumption`
           WHERE timestamp >= TIMESTAMP_SUB(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY), INTERVAL 1 DAY)
           AND timestamp < TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)
           AND apn = "loltel-test"
@@ -136,7 +136,7 @@ bqmetrics:
     resultColumn: count
     sql: >
       SELECT COALESCE (
-        (SELECT sum(bucketBytes) AS count FROM `pantel-2decb.data_consumption.raw_consumption`
+        (SELECT sum(bucketBytes) AS count FROM `${DATASET_PROJECT}.data_consumption${DATASET_MODIFIER}.raw_consumption`
         WHERE timestamp >= TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)
         AND apn = "loltel-test"
         AND mccMnc != "24201"), 0) as count
@@ -146,7 +146,7 @@ bqmetrics:
     resultColumn: count
     sql: >
       SELECT COALESCE (
-        ( SELECT sum(bucketBytes) AS count FROM `pantel-2decb.data_consumption.raw_consumption`
+        ( SELECT sum(bucketBytes) AS count FROM `${DATASET_PROJECT}.data_consumption${DATASET_MODIFIER}.raw_consumption`
           WHERE timestamp >= TIMESTAMP_SUB(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY), INTERVAL 1 DAY)
           AND timestamp < TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)
           AND apn = "loltel-test"
@@ -158,7 +158,7 @@ bqmetrics:
     resultColumn: revenue
     sql: >
       SELECT COALESCE (
-        ( SELECT SUM(product.price.amount) as revenue FROM `pantel-2decb.purchases.raw_purchases`
+        ( SELECT SUM(product.price.amount) as revenue FROM `${DATASET_PROJECT}.purchases${DATASET_MODIFIER}.raw_purchases`
           WHERE TIMESTAMP_MILLIS(timestamp) >= TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY) ), 0) as revenue
   - type: gauge
     name: revenue_yesterday
@@ -166,7 +166,7 @@ bqmetrics:
     resultColumn: revenue
     sql: >
       SELECT COALESCE (
-        ( SELECT SUM(product.price.amount) as revenue FROM `pantel-2decb.purchases.raw_purchases`
+        ( SELECT SUM(product.price.amount) as revenue FROM `${DATASET_PROJECT}.purchases${DATASET_MODIFIER}.raw_purchases`
           WHERE TIMESTAMP_MILLIS(timestamp) >= TIMESTAMP_SUB(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY), INTERVAL 1 DAY)
           AND TIMESTAMP_MILLIS(timestamp) < TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY) ), 0) as revenue
 
@@ -175,13 +175,13 @@ bqmetrics:
     help: Number of users who have purchased today
     resultColumn: count
     sql: >
-      SELECT COUNT(DISTINCT subscriberId) as count FROM `pantel-2decb.purchases.raw_purchases`
+      SELECT COUNT(DISTINCT subscriberId) as count FROM `${DATASET_PROJECT}.purchases${DATASET_MODIFIER}.raw_purchases`
       WHERE TIMESTAMP_MILLIS(timestamp) >= TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)
   - type: gauge
     name: total_paid_users_yesterday
     help: Number of users who have purchased yesterday
     resultColumn: count
     sql: >
-      SELECT COUNT(DISTINCT subscriberId) as count FROM `pantel-2decb.purchases.raw_purchases`
+      SELECT COUNT(DISTINCT subscriberId) as count FROM `${DATASET_PROJECT}.purchases${DATASET_MODIFIER}.raw_purchases`
       WHERE TIMESTAMP_MILLIS(timestamp) >= TIMESTAMP_SUB(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY), INTERVAL 1 DAY)
       AND TIMESTAMP_MILLIS(timestamp) < TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)
