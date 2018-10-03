@@ -47,6 +47,12 @@ paths:
           description: "Successfully created the profile."
           schema:
               $ref: '#/definitions/Profile'
+        400:
+          description: "Incomplete profile"
+        403:
+          description: "Profile invalid or already created"
+        502:
+          description: "Failed to store profile"
       security:
         - auth0_jwt: []
     put:
@@ -67,8 +73,12 @@ paths:
           description: "Successfully updated the profile."
           schema:
               $ref: '#/definitions/Profile'
+        400:
+           description: "Incomplete profile"
         404:
           description: "Profile not found."
+        502:
+          description: "Failed to store profile"
       security:
         - auth0_jwt: []
   "/applicationtoken":
@@ -90,6 +100,8 @@ paths:
           description: "Successfully stored token."
           schema:
             $ref: '#/definitions/ApplicationToken'
+        400:
+          descripton: "Token malformed. Not able to store"
         404:
           description: "User not found."
         507:
@@ -109,6 +121,8 @@ paths:
             $ref: '#/definitions/PaymentSourceList'
         404:
           description: "No user found."
+        503:
+          description: "Service Unavailable"
       security:
         - auth0_jwt: []
     post:
@@ -127,8 +141,12 @@ paths:
           description: "Successfully added source to user"
           schema:
             $ref: '#/definitions/PaymentSource'
+        403:
+          description: "Invalid source"
         404:
           description: "User not found."
+        503:
+          description: "Service Unavailable"
       security:
       - auth0_jwt: []
     put:
@@ -147,8 +165,12 @@ paths:
           description: "Successfully set as default source to user"
           schema:
             $ref: '#/definitions/PaymentSource'
+        403:
+          description: "Invalid source"
         404:
           description: "User not found."
+        503:
+          description: "Service Unavailable"
       security:
       - auth0_jwt: []
     delete:
@@ -169,8 +191,12 @@ paths:
             $ref: '#/definitions/PaymentSource'
         400:
           description: "The source could not be removed"
+        403:
+          description: "Invalid source"
         404:
           description: "No such source for user"
+        503:
+          description: "Service Unavailable"
       security:
       - auth0_jwt: []
   "/products":
@@ -200,8 +226,12 @@ paths:
           description: "Successfully purchased the product."
           schema:
             $ref: '#/definitions/Product'
+        403:
+          description: "Not allowed to charge this source"
         404:
           description: "Product not found."
+        503:
+          description: "Service Unavailable"
       security:
         - auth0_jwt: []
       parameters:
@@ -254,8 +284,12 @@ paths:
           description: "List of Purchase Records."
           schema:
             $ref: '#/definitions/PurchaseRecordList'
+        403:
+          description: "Not allowed to charge this source"
         404:
-          description: "No Purchase Records found for the user."
+          description: "Product not found."
+        503:
+          description: "Service Unavailable"
       security:
       - auth0_jwt: []
   "/subscriptions":
