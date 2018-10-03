@@ -6,6 +6,9 @@ import kotlin.test.assertEquals
 import org.mockito.Mockito.`when`
 import kotlin.test.assertNotEquals
 
+/**
+ * Class for testing the SQL expander.
+ */
 class MetricBuildersTest {
 
     @Test

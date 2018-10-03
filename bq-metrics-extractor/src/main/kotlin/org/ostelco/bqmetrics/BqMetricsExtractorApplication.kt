@@ -145,19 +145,34 @@ private class BqMetricsExtractorApplication : Application<BqMetricsExtractorConf
     }
 }
 
-// Helper class for testing
+/**
+ * Helper class for getting environment variables.
+ * Introduced to help testing.
+ */
 open class EnvironmentVars {
+    /**
+     * Retrieve the value of the environbment variable.
+     */
     open fun getVar(name: String): String? = System.getenv(name)
 }
 
+/**
+ * Base class for all types of metrics.
+ */
 abstract class MetricBuilder(
         val metricName: String,
         val help: String,
         val sql: String,
         val resultColumn: String,
         val env: EnvironmentVars) {
+    /**
+     * Function which will add the current value of the metric to registry.
+     */
     abstract fun buildMetric(registry: CollectorRegistry)
 
+    /**
+     * Function to expand the environment variables in the SQL.
+     */
     fun expandSql(): String {
         val regex:Regex = "\\$\\{\\S*?\\}".toRegex(RegexOption.MULTILINE);
         val expandedSql = regex.replace(sql) {it: MatchResult ->
@@ -173,6 +188,9 @@ abstract class MetricBuilder(
         return expandedSql.trimIndent()
     }
 
+    /**
+     * Execute the SQL and get a single number value.
+     */
     fun getNumberValueViaSql(): Long {
         // Instantiate a client. If you don't specify credentials when constructing a client, the
         // client library will look for credentials in the environment, such as the
@@ -215,6 +233,9 @@ abstract class MetricBuilder(
     }
 }
 
+/**
+ * Class for capturing value in a summary metric.
+ */
 class SummaryMetricBuilder(
         metricName: String,
         help: String,
@@ -241,6 +262,9 @@ class SummaryMetricBuilder(
     }
 }
 
+/**
+ * Class for capturing value in a Gauge metric.
+ */
 class GaugeMetricBuilder(
         metricName: String,
         help: String,
