@@ -2,6 +2,7 @@ package org.ostelco.bqmetrics
 
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.google.cloud.RetryOption
 import com.google.cloud.bigquery.BigQueryOptions
 import com.google.cloud.bigquery.Job
 import com.google.cloud.bigquery.JobId
@@ -20,6 +21,7 @@ import net.sourceforge.argparse4j.inf.Namespace
 import net.sourceforge.argparse4j.inf.Subparser
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.threeten.bp.Duration
 import java.util.*
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
@@ -163,7 +165,13 @@ private interface MetricBuilder {
         var queryJob: Job = bigquery.create(JobInfo.newBuilder(queryConfig).setJobId(jobId).build());
 
         // Wait for the query to complete.
-        queryJob = queryJob.waitFor();
+        // Retry maximum 4 times for up to 2 minutes.
+        queryJob = queryJob.waitFor(
+                RetryOption.initialRetryDelay(Duration.ofSeconds(10)),
+                RetryOption.retryDelayMultiplier(2.0),
+                RetryOption.maxRetryDelay(Duration.ofSeconds(20)),
+                RetryOption.maxAttempts(5),
+                RetryOption.totalTimeout(Duration.ofMinutes(2)));
 
         // Check for errors
         if (queryJob == null) {
