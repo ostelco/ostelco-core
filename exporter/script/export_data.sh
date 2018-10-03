@@ -7,18 +7,34 @@ if [ -z "$1" ]; then
 fi
 exportId=${exportId//-}
 exportId=${exportId,,}
-projectId=pantel-2decb
+
+# Set the projectId
+if [[ -z "${PROJECT_ID}" ]]; then
+  projectId=pantel-2decb
+else
+  projectId="${PROJECT_ID}"
+fi
+
+# Set the datasetModifier
+if [[ -z "${DATASET_MODIFIER}" ]]; then
+  datasetModifier=""
+else
+  datasetModifier="${DATASET_MODIFIER}"
+fi
 
 msisdnPseudonymsTable=$projectId.exported_pseudonyms.${exportId}_msisdn
 subscriberPseudonymsTable=$projectId.exported_pseudonyms.${exportId}_subscriber
 sub2msisdnMappingsTable=exported_data_consumption.${exportId}_sub2msisdn
-hourlyConsumptionTable=$projectId.data_consumption.hourly_consumption
+hourlyConsumptionTable=$projectId.data_consumption${datasetModifier}.hourly_consumption
 dataConsumptionTable=exported_data_consumption.$exportId
-rawPurchasesTable=$projectId.purchases.raw_purchases
+rawPurchasesTable=$projectId.purchases${datasetModifier}.raw_purchases
 purchaseRecordsTable=exported_data_consumption.${exportId}_purchases
 csvfile=$projectId-dataconsumption-export/$exportId.csv
 purchasesCsvfile=$projectId-dataconsumption-export/$exportId-purchases.csv
 sub2msisdnCsvfile=$projectId-dataconsumption-export/$exportId-sub2msisdn.csv
+
+echo $rawPurchasesTable
+echo $hourlyConsumptionTable
 
 # Generate the pseudonym tables for this export
 echo "Starting export job for $exportId"
