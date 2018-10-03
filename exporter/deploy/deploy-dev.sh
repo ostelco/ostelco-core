@@ -22,4 +22,4 @@ docker push eu.gcr.io/${PROJECT_ID}/exporter:${TAG}
 
 echo "Deploying exporter to GKE"
 
-sed -e s/EXPORTER_VERSION/${TAG}/g exporter/exporter.yaml | kubectl apply -f -
+sed -e s/EXPORTER_VERSION/${TAG}/g exporter/deploy/exporter-dev.yaml | kubectl apply -f -
