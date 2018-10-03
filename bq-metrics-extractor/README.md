@@ -54,26 +54,18 @@ a credentials file that will provide access for the BigQuery library.
 How to build and deploy the cronjob manually
 ===
 
-##First get credentials (upgrade gcloud for good measure):
+##Build and deploy the artifact:
 
-    gcloud components update
-    gcloud container clusters get-credentials dev-cluster --zone europe-west1-b --project pantel-2decb
+Build and deploy to dev cluster
 
-##Build the artefact:
+    bq-metrics-extractor/cronjob/deploy-dev-direct.sh
 
-    gradle build
-    docker build .
+Build and deploy to prod cluster
 
-##Authorize tag and push to docker registry in google cloud:
+    bq-metrics-extractor/cronjob/deploy-direct.sh
 
-    gcloud auth configure-docker
-    docker tag foobarbaz eu.gcr.io/pantel-2decb/bq-metrics-extractor
-    docker push eu.gcr.io/pantel-2decb/bq-metrics-extractor
+## Display the cronjob status in kubernetes
 
-... where foobarbaz is the id of the container built by docker build.
-
-## Then start the cronjob in kubernetes
-    kubectl apply -f cronjob/extractor.yaml
     kubectl describe cronjob bq-metrics-extractor
 
 ## To talk to the prometheus in the monitoring namespace & watch the users metrics evolve
