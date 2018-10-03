@@ -232,7 +232,6 @@ class SummaryMetricBuilder(
                     .help(help).register(registry)
             val value: Long = getNumberValueViaSql()
 
-            log.info("Summarizing metric $metricName  SQL = ${expandSql()}")
             log.info("Summarizing metric $metricName  to be $value")
 
             summary.observe(value * 1.0)
@@ -258,7 +257,6 @@ class GaugeMetricBuilder(
                     .help(help).register(registry)
             val value: Long = getNumberValueViaSql()
 
-            log.info("Gauge metric $metricName = SQL = ${expandSql()}")
             log.info("Gauge metric $metricName = $value")
 
             gauge.set(value * 1.0)
