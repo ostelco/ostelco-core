@@ -1,7 +1,7 @@
 package org.ostelco.prime.storage.graph
 
 import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.palantir.docker.compose.DockerComposeRule
 import com.palantir.docker.compose.connection.waiting.HealthChecks
 import org.joda.time.Duration
@@ -186,7 +186,7 @@ class SchemaTest {
 
     @Test
     fun `json to map`() {
-        val objectMapper = ObjectMapper()
+        val objectMapper = jacksonObjectMapper()
         val map = objectMapper.readValue<Map<String, String>>("""{"label":"3GB for 300 NOK"}""", object : TypeReference<LinkedHashMap<String, String>>() {})
         assertEquals("3GB for 300 NOK", map["label"])
     }

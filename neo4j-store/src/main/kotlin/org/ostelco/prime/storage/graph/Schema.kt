@@ -3,8 +3,7 @@ package org.ostelco.prime.storage.graph
 import arrow.core.Either
 import arrow.core.flatMap
 import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.neo4j.driver.v1.AccessMode.READ
 import org.neo4j.driver.v1.AccessMode.WRITE
 import org.neo4j.driver.v1.StatementResult
@@ -198,6 +197,7 @@ class RelationStore<FROM : HasId, TO : HasId>(private val relationType: Relation
                 CREATE (from)-[:${relationType.relation.name} { $strProps } ]->(to);
                 """.trimIndent(),
                 transaction) {
+            // TODO vihang: validate if 'from' and 'to' node exists
             Either.cond(
                     test = it.summary().counters().relationshipsCreated() == 1,
                     ifTrue = {},
@@ -210,6 +210,7 @@ class RelationStore<FROM : HasId, TO : HasId>(private val relationType: Relation
                 CREATE (from)-[:${relationType.relation.name}]->(to);
                 """.trimIndent(),
             transaction) {
+        // TODO vihang: validate if 'from' and 'to' node exists
         Either.cond(
                 test = it.summary().counters().relationshipsCreated() == 1,
                 ifTrue = {},
@@ -221,6 +222,7 @@ class RelationStore<FROM : HasId, TO : HasId>(private val relationType: Relation
                 CREATE (from)-[:${relationType.relation.name}]->(to);
                 """.trimIndent(),
             transaction) {
+        // TODO vihang: validate if 'from' and 'to' node exists
         Either.cond(
                 test = it.summary().counters().relationshipsCreated() == 1,
                 ifTrue = {},
@@ -232,6 +234,7 @@ class RelationStore<FROM : HasId, TO : HasId>(private val relationType: Relation
                 CREATE (from)-[:${relationType.relation.name}]->(to);
                 """.trimIndent(),
             transaction) {
+        // TODO vihang: validate if 'from' and 'to' node exists
         Either.cond(
                 test = it.summary().counters().relationshipsCreated() == 1,
                 ifTrue = {},
@@ -323,7 +326,7 @@ object ObjectHandler {
 
     private const val SEPARATOR = '/'
 
-    private val objectMapper = ObjectMapper().registerKotlinModule()
+    private val objectMapper = jacksonObjectMapper()
 
     //
     // Object to Map

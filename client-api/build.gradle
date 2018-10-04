@@ -19,7 +19,6 @@ dependencies {
 
     testImplementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
     testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
-    testImplementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
     testImplementation "org.mockito:mockito-core:$mockitoVersion"
     testImplementation "org.assertj:assertj-core:$assertJVersion"
 

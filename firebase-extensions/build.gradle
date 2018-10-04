@@ -7,5 +7,4 @@ dependencies {
   implementation project(":prime-modules")
   // Match netty via ocs-api
   api "com.google.firebase:firebase-admin:$firebaseVersion"
-  api "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
 }
