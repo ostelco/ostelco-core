@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 set -e
 
@@ -34,7 +34,7 @@ trap "exit 1" TERM
 export TOP_PID=$$
 
 function die() {
-   kill -s TERM $TOP_PID
+    kill -s TERM $TOP_PID
 }
 
 #
@@ -44,9 +44,9 @@ function die() {
 DEPENDENCIES="gcloud kubectl gsutil"
 
 for dep in $DEPENDENCIES ; do
-   if [[ -z $(which $dep) ]] ; then
-     echo "ERROR: Could not find dependency $dep"
-   fi
+    if [[ -z $(which $dep) ]] ; then
+        echo "ERROR: Could not find dependency $dep"
+    fi
 done
 
 #
@@ -293,7 +293,6 @@ cat > $IMPORTFILE_YML <<EOF
 producingAgent:
   name: Simple agent
   version: 1.0
-
 offer:
   id: test-offer
   # use existing product
