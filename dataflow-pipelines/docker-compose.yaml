@@ -10,4 +10,4 @@ services:
       - JOB_NAME=data-traffic
       - PUBSUB_TOPIC=data-traffic
       - DATASET=data_consumption
-      - UPDATING=false
+      - UPDATING=true
