@@ -32,6 +32,9 @@ shadowJar {
   version = null
 }
 
+sourceCompatibility = "1.8"
+targetCompatibility = "1.8"
+
 test {
   // native support to Junit5 in Gradle 4.6+
   useJUnitPlatform {
