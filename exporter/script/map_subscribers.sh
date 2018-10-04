@@ -48,7 +48,12 @@ fi
 
 exportId=${exportId//-}
 exportId=${exportId,,}
-projectId=pantel-2decb
+# Set the projectId
+if [[ -z "${PROJECT_ID}" ]]; then
+  projectId=pantel-2decb
+else
+  projectId="${PROJECT_ID}"
+fi
 
 csvfile=$projectId-dataconsumption-export/${exportId}-resultsegment-pseudoanonymized.csv
 outputCsvfile=$projectId-dataconsumption-export/${exportId}-resultsegment-cleartext.csv

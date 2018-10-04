@@ -5,30 +5,26 @@ plugins {
   id "idea"
 }
 
+version = "2.1.0"
 
 dependencies {
 
   implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
   implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
-
-  testImplementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
-  testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
-  testImplementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
-  testImplementation "org.mockito:mockito-core:$mockitoVersion"
-  testImplementation 'org.assertj:assertj-core:3.11.1'
+  implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
 
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
-  // Bigquery dependency
   implementation "com.google.cloud:google-cloud-bigquery:$googleCloudVersion"
+  implementation 'io.prometheus:simpleclient_pushgateway:0.5.0'
 
   runtimeOnly "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
 
-  // Prometheus pushgateway dependencies (we might not need all of these)
-  // implementation 'io.prometheus:simpleclient:0.5.0'
-  // implementation 'io.prometheus:simpleclient_hotspot:0.5.0'
-  // implementation 'io.prometheus:simpleclient_httpserver:0.5.0'
-  implementation 'io.prometheus:simpleclient_pushgateway:0.5.0'
-  // implementation 'com.google.apis:google-api-services-pubsub:v1-rev401-1.25.0'
+
+  testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+  testImplementation "org.mockito:mockito-core:$mockitoVersion"
+  testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
+  testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
+
 }
 
 shadowJar {

@@ -8,6 +8,7 @@ import com.google.protobuf.util.Timestamps
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO
 import org.ostelco.analytics.api.AggregatedDataTrafficInfo
 import org.ostelco.analytics.api.DataTrafficInfo
+import org.ostelco.dataflow.pipelines.ConsumptionPipelineOptions
 import org.ostelco.dataflow.pipelines.dsl.ParDoFn
 import org.ostelco.dataflow.pipelines.io.Table.DAILY_CONSUMPTION
 import org.ostelco.dataflow.pipelines.io.Table.HOURLY_CONSUMPTION
@@ -18,11 +19,6 @@ import java.time.ZonedDateTime
 import java.util.*
 
 // This code is an attempt to keep all database schema in one place.
-
-// This may be moved to config.
-private const val project = "pantel-2decb"
-private const val dataset = "data_consumption"
-
 
 /**
  * Enum containing identifiers for three tables
@@ -108,7 +104,7 @@ object BigQueryIOUtils {
      * Create a [BigQueryIO.Write<TableRow>] query for writing all the
      * rows in a [Table] - denoted table.
      */
-    fun saveToBigQuery(table: Table): BigQueryIO.Write<TableRow> {
+    fun saveToBigQuery(project: String, dataset: String, table: Table): BigQueryIO.Write<TableRow> {
         return BigQueryIO.writeTableRows()
                 .to("$project:$dataset.${table.name.toLowerCase()}")
                 .withSchema(TableSchemas.getTableSchema(table))
