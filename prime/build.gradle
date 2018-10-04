@@ -41,7 +41,6 @@ dependencies {
   runtimeOnly project(':payment-processor')
   runtimeOnly project(':analytics-module')
 
-  implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
   implementation "io.dropwizard:dropwizard-http2:$dropwizardVersion"
   runtimeOnly "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
   implementation "com.google.guava:guava:$guavaVersion"

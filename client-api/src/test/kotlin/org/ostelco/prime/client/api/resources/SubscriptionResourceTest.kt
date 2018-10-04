@@ -1,13 +1,11 @@
 package org.ostelco.prime.client.api.resources
 
 import arrow.core.Either
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import io.dropwizard.auth.AuthDynamicFeature
 import io.dropwizard.auth.AuthValueFactoryProvider
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter
-import io.dropwizard.jackson.Jackson
 import io.dropwizard.testing.junit.ResourceTestRule
 import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory
@@ -85,7 +83,7 @@ class SubscriptionResourceTest {
         `when`(DAO.getActivePseudonymOfMsisdnForSubscriber(arg.capture()))
                 .thenReturn(Either.right(activePseudonyms))
 
-        val responseJsonString = ObjectMapper().writeValueAsString(activePseudonyms)
+        val responseJsonString = jacksonObjectMapper().writeValueAsString(activePseudonyms)
 
         val resp = RULE.target("/subscription/activePseudonyms")
                 .request()
@@ -106,7 +104,7 @@ class SubscriptionResourceTest {
         @JvmField
         @ClassRule
         val RULE: ResourceTestRule = ResourceTestRule.builder()
-                .setMapper(Jackson.newObjectMapper().registerModule(KotlinModule()))
+                .setMapper(jacksonObjectMapper())
                 .addResource(AuthDynamicFeature(
                         OAuthCredentialAuthFilter.Builder<AccessTokenPrincipal>()
                                 .setAuthenticator(AUTHENTICATOR)

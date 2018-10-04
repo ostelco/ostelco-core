@@ -22,6 +22,7 @@ import org.ostelco.prime.paymentprocessor.core.BadGatewayError
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.storage.GraphStore
+import org.ostelco.prime.storage.NotCreatedError
 import org.ostelco.prime.storage.NotFoundError
 import org.ostelco.prime.storage.StoreError
 import org.ostelco.prime.storage.ValidationError
@@ -156,7 +157,7 @@ object Neo4jStoreSingleton : GraphStore {
                                     getSegmentNameFromCountryCode(subscriber.country),
                                     transaction)
                             .mapLeft { storeError ->
-                                if (storeError is NotFoundError && storeError.type == segmentEntity.name) {
+                                if (storeError is NotCreatedError && storeError.type == subscriberToSegmentRelation.relation.name) {
                                     ValidationError(
                                             type = subscriberEntity.name,
                                             id = subscriber.id,

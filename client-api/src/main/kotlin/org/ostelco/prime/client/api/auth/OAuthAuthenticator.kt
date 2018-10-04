@@ -2,7 +2,7 @@ package org.ostelco.prime.client.api.auth
 
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.dropwizard.auth.AuthenticationException
 import io.dropwizard.auth.Authenticator
 import org.ostelco.prime.client.api.core.UserInfo
@@ -29,7 +29,7 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
 
     private val logger by getLogger()
 
-    private val mapper = ObjectMapper()
+    private val mapper = jacksonObjectMapper()
 
     override fun authenticate(accessToken: String): Optional<AccessTokenPrincipal> {
 

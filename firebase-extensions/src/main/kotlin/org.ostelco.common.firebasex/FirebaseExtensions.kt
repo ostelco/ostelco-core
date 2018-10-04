@@ -1,8 +1,7 @@
 package org.ostelco.common.firebasex
 
 import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.FirebaseOptions.Builder
 import java.io.File
@@ -12,7 +11,7 @@ import java.nio.file.Paths
 import javax.naming.ConfigurationException
 
 private val genericMapType = object : TypeReference<Map<String, String>>() {}
-private val objectMapper = ObjectMapper().registerKotlinModule()
+private val objectMapper = jacksonObjectMapper()
 
 /**
  * Extension function added into [com.google.firebase.FirebaseOptions.Builder] which accepts Firebase Credentials
