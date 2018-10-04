@@ -261,10 +261,11 @@ awk -F, '!/^subscriberId/{print $1'} $(importedCsvFilename "$EXPORT_ID" "$TARGET
 
 RESULTSEG_PSEUDO_BASENAME="resultsegment-pseudoanonymized"
 RESULTSEG_CLEARTEXT_BASENAME="resultsegment-cleartext"
+RESULTSEG_CLEARTEXT_SUBSCRIBERS="resultsegment-cleartext-subscribers"
 RESULT_SEGMENT_PSEUDO_GS="$(gsExportCsvFilename "$EXPORT_ID" "$RESULTSEG_PSEUDO_BASENAME")"
 RESULT_SEGMENT_CLEAR_GS="$(gsExportCsvFilename "$EXPORT_ID" "$RESULTSEG_CLEARTEXT_BASENAME")"
 RESULT_SEGMENT_CLEAR="$(importedCsvFilename "$EXPORT_ID" "$TARGET_DIR"  "$RESULTSEG_CLEARTEXT_BASENAME")"
-RESULT_SEGMENT_SINGLE_COLUMN="$(importedCsvFilename "$EXPORT_ID" "$TARGET_DIR"  "$RESULTSEG_CLEARTEXT_BASENAME")"
+RESULT_SEGMENT_SINGLE_COLUMN="$(importedCsvFilename "$EXPORT_ID" "$TARGET_DIR"  "$RESULTSEG_CLEARTEXT_SUBSCRIBERS")"
 
 # Copy the  segment pseudo file to gs
 
