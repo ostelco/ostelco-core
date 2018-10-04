@@ -8,7 +8,13 @@ if [ -z "$1" ]; then
 fi
 exportId=${exportId//-}
 exportId=${exportId,,}
-projectId=pantel-2decb
+
+# Set the projectId
+if [[ -z "${PROJECT_ID}" ]]; then
+  projectId=pantel-2decb
+else
+  projectId="${PROJECT_ID}"
+fi
 
 msisdnPseudonymsTable=exported_pseudonyms.${exportId}_msisdn
 subscriberPseudonymsTable=exported_pseudonyms.${exportId}_subscriber

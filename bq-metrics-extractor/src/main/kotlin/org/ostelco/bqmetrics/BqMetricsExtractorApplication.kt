@@ -2,6 +2,7 @@ package org.ostelco.bqmetrics
 
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.google.cloud.RetryOption
 import com.google.cloud.bigquery.BigQueryOptions
 import com.google.cloud.bigquery.Job
 import com.google.cloud.bigquery.JobId
@@ -20,6 +21,7 @@ import net.sourceforge.argparse4j.inf.Namespace
 import net.sourceforge.argparse4j.inf.Subparser
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.threeten.bp.Duration
 import java.util.*
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
@@ -143,18 +145,60 @@ private class BqMetricsExtractorApplication : Application<BqMetricsExtractorConf
     }
 }
 
+/**
+ * Helper class for getting environment variables.
+ * Introduced to help testing.
+ */
+open class EnvironmentVars {
+    /**
+     * Retrieve the value of the environbment variable.
+     */
+    open fun getVar(name: String): String? = System.getenv(name)
+}
 
-private interface MetricBuilder {
-    fun buildMetric(registry: CollectorRegistry)
+/**
+ * Base class for all types of metrics.
+ */
+abstract class MetricBuilder(
+        val metricName: String,
+        val help: String,
+        val sql: String,
+        val resultColumn: String,
+        val env: EnvironmentVars) {
+    /**
+     * Function which will add the current value of the metric to registry.
+     */
+    abstract fun buildMetric(registry: CollectorRegistry)
 
-    fun getNumberValueViaSql(sql: String, resultColumn: String): Long {
+    /**
+     * Function to expand the environment variables in the SQL.
+     */
+    fun expandSql(): String {
+        val regex:Regex = "\\$\\{\\S*?\\}".toRegex(RegexOption.MULTILINE);
+        val expandedSql = regex.replace(sql) {it: MatchResult ->
+            // The variable is of the format ${VAR}
+            // extract variable name
+            val envVar = it.value.drop(2).dropLast(1)
+            // return the value of the environment variable
+            var result = env.getVar(envVar) ?: ""
+            // Remove all spaces and ;
+            result = result.replace("\\s".toRegex(), "")
+            result.replace(";".toRegex(), "")
+        }
+        return expandedSql.trimIndent()
+    }
+
+    /**
+     * Execute the SQL and get a single number value.
+     */
+    fun getNumberValueViaSql(): Long {
         // Instantiate a client. If you don't specify credentials when constructing a client, the
         // client library will look for credentials in the environment, such as the
         // GOOGLE_APPLICATION_CREDENTIALS environment variable.
         val bigquery = BigQueryOptions.getDefaultInstance().service
         val queryConfig: QueryJobConfiguration =
                 QueryJobConfiguration.newBuilder(
-                        sql.trimIndent())
+                        expandSql())
                         .setUseLegacySql(false)
                         .build();
 
@@ -163,7 +207,13 @@ private interface MetricBuilder {
         var queryJob: Job = bigquery.create(JobInfo.newBuilder(queryConfig).setJobId(jobId).build());
 
         // Wait for the query to complete.
-        queryJob = queryJob.waitFor();
+        // Retry maximum 4 times for up to 2 minutes.
+        queryJob = queryJob.waitFor(
+                RetryOption.initialRetryDelay(Duration.ofSeconds(10)),
+                RetryOption.retryDelayMultiplier(2.0),
+                RetryOption.maxRetryDelay(Duration.ofSeconds(20)),
+                RetryOption.maxAttempts(5),
+                RetryOption.totalTimeout(Duration.ofMinutes(2)));
 
         // Check for errors
         if (queryJob == null) {
@@ -183,11 +233,15 @@ private interface MetricBuilder {
     }
 }
 
-private class SummaryMetricBuilder(
-        val metricName: String,
-        val help: String,
-        val sql: String,
-        val resultColumn: String) : MetricBuilder {
+/**
+ * Class for capturing value in a summary metric.
+ */
+class SummaryMetricBuilder(
+        metricName: String,
+        help: String,
+        sql: String,
+        resultColumn: String,
+        env: EnvironmentVars) : MetricBuilder(metricName, help, sql, resultColumn, env) {
 
     private val log: Logger = LoggerFactory.getLogger(SummaryMetricBuilder::class.java)
 
@@ -197,7 +251,7 @@ private class SummaryMetricBuilder(
             val summary: Summary = Summary.build()
                     .name(metricName)
                     .help(help).register(registry)
-            val value: Long = getNumberValueViaSql(sql, resultColumn)
+            val value: Long = getNumberValueViaSql()
 
             log.info("Summarizing metric $metricName  to be $value")
 
@@ -208,20 +262,24 @@ private class SummaryMetricBuilder(
     }
 }
 
-private class GaugeMetricBuilder(
-        val metricName: String,
-        val help: String,
-        val sql: String,
-        val resultColumn: String) : MetricBuilder {
+/**
+ * Class for capturing value in a Gauge metric.
+ */
+class GaugeMetricBuilder(
+        metricName: String,
+        help: String,
+        sql: String,
+        resultColumn: String,
+        env: EnvironmentVars) : MetricBuilder(metricName, help, sql, resultColumn, env) {
 
-    private val log: Logger = LoggerFactory.getLogger(SummaryMetricBuilder::class.java)
+    private val log: Logger = LoggerFactory.getLogger(GaugeMetricBuilder::class.java)
 
     override fun buildMetric(registry: CollectorRegistry) {
         try {
             val gauge: Gauge = Gauge.build()
                     .name(metricName)
                     .help(help).register(registry)
-            val value: Long = getNumberValueViaSql(sql, resultColumn)
+            val value: Long = getNumberValueViaSql()
 
             log.info("Gauge metric $metricName = $value")
 
@@ -251,6 +309,7 @@ private class PrometheusPusher(val pushGateway: String, val job: String) {
     private val log: Logger = LoggerFactory.getLogger(PrometheusPusher::class.java)
 
     val registry = CollectorRegistry()
+    val env: EnvironmentVars = EnvironmentVars()
 
     fun publishMetrics(metrics: List<MetricConfig>) {
 
@@ -263,14 +322,16 @@ private class PrometheusPusher(val pushGateway: String, val job: String) {
                             it.name,
                             it.help,
                             it.sql,
-                            it.resultColumn))
+                            it.resultColumn,
+                            env))
                 }
                 "GAUGE" -> {
                     metricSources.add(GaugeMetricBuilder(
                             it.name,
                             it.help,
                             it.sql,
-                            it.resultColumn))
+                            it.resultColumn,
+                            env))
                 }
                 else -> {
                     log.error("Unknown metrics type '${it.type}'")
