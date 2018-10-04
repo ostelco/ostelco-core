@@ -1,3 +1,24 @@
+INTRODUCTION
+====
+
+
+This document contains two attempts at generating yaml representations
+that would be useful to guide us through the tech due-dil demo.
+
+The steps ahead would be:
+
+  1.  Determine which of these paths to take.
+  2.  Separate them into actual yaml files that dan be executed
+      using the apply-yaml.sh script
+  3.  Implement changes in prime so that the changes are actually done.
+
+The one thing missing in the descriptions below is how to reset the
+simulation to its intial state.   We'll fix that in a day or two
+tand then we're basically done.
+
+
+
+
 TAKE ONE
 *******
 
