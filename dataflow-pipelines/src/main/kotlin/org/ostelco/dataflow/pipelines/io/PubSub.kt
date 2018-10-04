@@ -4,6 +4,6 @@ import org.apache.beam.sdk.io.gcp.pubsub.PubsubIO
 import org.ostelco.analytics.api.DataTrafficInfo
 
 // Read from PubSub
-fun readFromPubSub(topic: String) = PubsubIO
+fun readFromPubSub(project:String, topic: String) = PubsubIO
         .readProtos(DataTrafficInfo::class.java)
-        .fromSubscription("projects/pantel-2decb/subscriptions/$topic")
+        .fromSubscription("projects/$project/subscriptions/$topic")

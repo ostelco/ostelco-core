@@ -21,6 +21,7 @@ import org.joda.time.Duration
 import org.joda.time.Instant
 import org.ostelco.analytics.api.AggregatedDataTrafficInfo
 import org.ostelco.analytics.api.DataTrafficInfo
+import org.ostelco.dataflow.pipelines.ConsumptionPipelineOptions
 import org.ostelco.dataflow.pipelines.dsl.ParDoFn
 import org.ostelco.dataflow.pipelines.io.BigQueryIOUtils.saveToBigQuery
 import org.ostelco.dataflow.pipelines.io.Table.HOURLY_CONSUMPTION
@@ -31,7 +32,7 @@ import org.ostelco.dataflow.pipelines.io.readFromPubSub
 
 object DataConsumptionPipelineDefinition : PipelineDefinition {
 
-    override fun define(pipeline: Pipeline) {
+    override fun define(pipeline: Pipeline, options: ConsumptionPipelineOptions) {
 
         // Filter events with empty buckets
         val filterEmptyBucketEvents = Filter.by(SerializableFunction { dataTrafficInfo: DataTrafficInfo ->
@@ -42,24 +43,29 @@ object DataConsumptionPipelineDefinition : PipelineDefinition {
         // Construct pipeline chain
         //
 
-
         // First two common steps of pipeline, before it gets forked.
         val dataTrafficInfoEvents = pipeline
-                .apply("readFromPubSub", readFromPubSub("data-traffic"))
+                .apply("readFromPubSub", readFromPubSub(project = options.project, topic = options.pubsubTopic))
                 .apply("filterEmptyBucketEvents", filterEmptyBucketEvents)
 
         // PubSubEvents -> raw_consumption big-query
         dataTrafficInfoEvents
                 .apply("convertToRawTableRows", convertToRawTableRows)
                 .setCoder(TableRowJsonCoder.of())
-                .apply("saveRawEventsToBigQuery", saveToBigQuery(RAW_CONSUMPTION))
+                .apply("saveRawEventsToBigQuery", saveToBigQuery(
+                        project = options.project,
+                        dataset = options.dataset,
+                        table = RAW_CONSUMPTION))
 
         // PubSubEvents -> aggregate by hour -> hourly_consumption big-query
         dataTrafficInfoEvents
                 .apply("TotalDataConsumptionGroupByMsisdn", consumptionPerMsisdn)
                 .apply("convertToHourlyTableRows", convertToHourlyTableRows)
                 .setCoder(TableRowJsonCoder.of())
-                .apply("saveToBigQueryGroupedByHour", saveToBigQuery(HOURLY_CONSUMPTION))
+                .apply("saveToBigQueryGroupedByHour", saveToBigQuery(
+                        project = options.project,
+                        dataset = options.dataset,
+                        table = HOURLY_CONSUMPTION))
     }
 }
 

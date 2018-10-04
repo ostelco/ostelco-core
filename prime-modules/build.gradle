@@ -8,6 +8,7 @@ dependencies {
   api "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
 
   api "io.jsonwebtoken:jjwt:0.9.1"
+  api "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
 
   api project(':ocs-grpc-api')
   api project(':analytics-grpc-api')

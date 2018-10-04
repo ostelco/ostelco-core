@@ -3,6 +3,7 @@ package org.ostelco.prime.admin.api
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.ostelco.prime.admin.importer.ImportDeclaration
 import org.ostelco.prime.admin.importer.ImportProcessor
@@ -74,7 +75,7 @@ class YamlMessageBodyReader : MessageBodyReader<Any> {
  * Common 'helper' functions for resources.
  *
  */
-val objectMapper = ObjectMapper()
+val objectMapper = jacksonObjectMapper()
 
 fun <R : Any> R.asJson(`object`: Any): String {
     try {

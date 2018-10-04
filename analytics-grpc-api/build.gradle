@@ -26,6 +26,9 @@ protobuf {
   }
 }
 
+sourceCompatibility = "1.8"
+targetCompatibility = "1.8"
+
 idea {
   module {
     sourceDirs += files("${protobuf.generatedFilesBaseDir}/main/java")

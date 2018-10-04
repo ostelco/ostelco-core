@@ -3,7 +3,7 @@ package org.ostelco.prime.client.api
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonTypeName
 import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.dropwizard.auth.AuthDynamicFeature
 import io.dropwizard.auth.AuthValueFactoryProvider
 import io.dropwizard.auth.CachingAuthenticator
@@ -65,7 +65,7 @@ class ClientApiModule : PrimeModule {
 
         val client: Client = JerseyClientBuilder(env)
                 .using(config.jerseyClientConfiguration)
-                .using(ObjectMapper()
+                .using(jacksonObjectMapper()
                         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false))
                 .build(env.name)
 
