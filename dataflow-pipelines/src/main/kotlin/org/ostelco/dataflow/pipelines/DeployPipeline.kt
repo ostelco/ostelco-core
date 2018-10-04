@@ -35,17 +35,11 @@ fun main(args: Array<String>) {
 class DeployPipeline {
 
     private fun parseOptions(args: Array<String>): ConsumptionPipelineOptions {
-
         PipelineOptionsFactory.register(ConsumptionPipelineOptions::class.java)
-
-        val options = PipelineOptionsFactory
+        return PipelineOptionsFactory
                 .fromArgs(*args)
                 .withValidation()
                 .`as`(ConsumptionPipelineOptions::class.java)
-
-        println("${options.dataset}, ${options.pubsubTopic}, ${options.jobName}, ${options.isUpdate} ")
-
-        return options
     }
 
     fun deploy(pipelineName: String, args: Array<String>) {
