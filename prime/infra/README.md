@@ -249,7 +249,7 @@ pip install grpcio grpcio-tools
 python -m grpc_tools.protoc \
   --include_imports \
   --include_source_info \
-  --proto_path=ocs-api/src/main/proto \
+  --proto_path=ocs-grpc-api/src/main/proto \
   --descriptor_set_out=ocs_descriptor.pb \
   ocs.proto
 

@@ -8,15 +8,15 @@ note left of prime
     other via disruptor api.
 end note
 
-interface "prime-api" as primeApi
-[prime] --> primeApi : <<compile-time>>
+interface "prime-modules" as primeModules
+[prime] --> primeModules : <<compile-time>>
 
-note left of primeApi
+note left of primeModules
     Code needed by modules for them
     to be aggregated into prime.
 end note
 
-[module(s)] --> primeApi : <<compile-time>>
+[module(s)] --> primeModules : <<compile-time>>
 [module(s)] ..> [module(s)] : <<runtime>>
 [prime] ..> [module(s)] : <<runtime>>
 
