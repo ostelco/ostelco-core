@@ -6,6 +6,9 @@ plugins {
 dependencies {
   implementation project(":prime-modules")
 
+  implementation "javax.xml.bind:jaxb-api:$jaxbVersion"
+  implementation "javax.activation:activation:$javaxActivationVersion"
+  
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
 }
 
