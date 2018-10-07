@@ -1,12 +1,6 @@
-producingAgent:
-  name: Simple agent
-  version: 1.0
-
-offer:
+createOffer:
   id: test-offer
-  # use existing product
-  products:
+  existingProducts:
     - 1GB_249NOK
-  # use existing segment
-  segments:
+  existingSegments:
     - test-segment
