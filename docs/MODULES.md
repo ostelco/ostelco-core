@@ -17,22 +17,26 @@
  - `prime` acts has a single deployable unit.
  - But, `prime` has minimal boilerplate code needed for it to act as an aggregator.
  - All the `functions` in `prime` are moved to separate libraries.
- - `prime-api` is an library which acts as a **bridge** between `prime` and all the modules.
+ - `prime-modules` is an library which acts as a **bridge** between `prime` and all the modules.
  - Modules are of different types:
-   - Modules which are need access to Dropwizard's environment or configuration, which is provided via `prime-api`. 
-   - Modules which implement an interface, which is defined in `prime-api`.
+   - Modules which are need access to Dropwizard's environment or configuration, which is provided via `prime-modules`. 
+   - Modules which implement an interface, which is defined in `prime-modules`.
 
 ### Dependency
 
-```text
-[prime] --(compile-time dependency)--> [prime-api] <--(compile-time dependency)-- [Component] <--(runtime dependency)
-    \                                                                                ^   \           /
-     \__________________________(runtime dependency)________________________________/     \_________/
-
+```text  
++-------+                              +---------------+                              +-----------+
+|       |                              |               |                              |           |
+| PRIME +--(compile-time dependency)-->| prime-modules |<--(compile-time-dependency)--+ Component |<-----------+
+|       |                              |               |                              |           |            |
++---+---+                              +---------------+                              +-----+---+-+            |
+    |                                                                                       ^   |     (runtime dependency)
+    |                                                                                       |   |              |
+    +--------------------------------(runtime dependency)-----------------------------------+   +--------------+
 ```
 
 ### Implementation
- - New module library will have `prime-api` as `implementation` dependency (which is `compile` dependency in gradle).   
+ - New module library will have `prime-modules` as `implementation` dependency (which is `compile` dependency in gradle).   
  - Add the new module library as `runtimeOnly` dependency in `prime`.
 
 ##### Modules needing Dropwizard environment or configuration
@@ -44,15 +48,15 @@
    - File named `org.ostelco.prime.module.PrimeModule` which contains name of class (including package name) which implements `org.ostelco.prime.module.PrimeModule`. 
 
 ##### Modules implementing an interface
- - These components act as a **provider** for a **service** defined by an `interface` in `prime-api`.
+ - These components act as a **provider** for a **service** defined by an `interface` in `prime-modules`.
  - Other components **consume service provided** by these components.
- - Implement the `interface` defined in `prime-api`.
+ - Implement the `interface` defined in `prime-modules`.
  - The implementing class should have a `public no-arg constructor`.
  - Add a file in `src/main/resources/META-INF/services`:
     - Name of the file should be name of interface including package name.
     - File should contain 1 line - name of the class (including package name) which implements the interface.
  - Care should be taken that there is only one such implementing class.
- - The object of implementing class can then be injected using `getResource()` defined in `ResourceRegistry.kt` in `prime-api` as:
+ - The object of implementing class can then be injected using `getResource()` defined in `ResourceRegistry.kt` in `prime-modules` as:
 
 ```kotlin
 private val instance: InterfaceName = getResource()

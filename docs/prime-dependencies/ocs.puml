@@ -7,27 +7,27 @@ note left of prime
     deployable component.
 end note
 
-interface "prime-api" as primeApi
-[prime] --> primeApi : <<implements>>
+interface "prime-modules" as primeModules
+[prime] --> primeModules : <<implements>>
 
-interface "ocs-api" as ocsApi
+interface "ocs-grpc-api" as ocsApi
 note left of ocsApi: gRPC interface for OCS
 
 [ocs]
 note right of ocs
     Online Charging System.
-    Implements ocs-api
+    Implements ocs-grpc-api
     for consumption.
 end note
 
-primeApi ..> ocsApi : <<extends>>
+primeModules ..> ocsApi : <<extends>>
 note left of primeApi
     Code needed by modules
     for them to be
     aggregated into prime.
 end note
 
-[ocs] ..> primeApi : <<uses>>
+[ocs] ..> primeModules : <<uses>>
 [ocs] ..> ocsApi : <<implements>>
 
 @enduml
