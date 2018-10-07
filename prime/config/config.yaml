@@ -1,16 +1,16 @@
 modules:
 - type: slack
-    config:
-      notifications:
-        channel: ${SLACK_CHANNEL}
-        webHookUri: ${SLACK_WEBHOOK_URI}
-        httpClient:
-          timeout: 3s
-          connectionRequestTimeout: 1s
+  config:
+    notifications:
+      channel: ${SLACK_CHANNEL}
+      webHookUri: ${SLACK_WEBHOOK_URI}
+      httpClient:
+        timeout: 3s
+        connectionRequestTimeout: 1s
 - type: firebase
-    config:
-      configFile: /secret/pantel-prod.json
-      rootPath: ${FIREBASE_ROOT_PATH}
+  config:
+    configFile: /secret/pantel-prod.json
+    rootPath: ${FIREBASE_ROOT_PATH}
 - type: neo4j
   config:
     host: ${NEO4J_HOST}
