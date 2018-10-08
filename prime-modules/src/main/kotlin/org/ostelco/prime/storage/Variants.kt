@@ -3,6 +3,7 @@ package org.ostelco.prime.storage
 import arrow.core.Either
 import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Bundle
+import org.ostelco.prime.model.ChangeSegment
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.ProductClass
@@ -149,10 +150,17 @@ interface AdminGraphStore {
     fun getPaidSubscriberCount(): Long
 
     // atomic import of Offer + Product + Segment
-    fun atomicImport(
+    fun atomicCreateOffer(
             offer: Offer,
             segments: Collection<Segment> = emptyList(),
             products: Collection<Product> = emptyList()) : Either<StoreError, Unit>
+
+    fun atomicCreateSegments(createSegments: Collection<Segment>): Either<StoreError, Unit>
+
+    fun atomicUpdateSegments(updateSegments: Collection<Segment>): Either<StoreError, Unit>
+    fun atomicAddToSegments(addToSegments: Collection<Segment>): Either<StoreError, Unit>
+    fun atomicRemoveFromSegments(removeFromSegments: Collection<Segment>): Either<StoreError, Unit>
+    fun atomicChangeSegments(changeSegments: Collection<ChangeSegment>): Either<StoreError, Unit>
 
     // simple getAll
     // fun getOffers(): Collection<Offer>

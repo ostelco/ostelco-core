@@ -7,6 +7,7 @@ import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.Bundle
+import org.ostelco.prime.model.ChangeSegment
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.ProductClass
@@ -665,8 +666,13 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     override fun updateSegment(segment: Segment): Either<StoreError, Unit> = writeTransaction {
-        subscriberToSegmentStore.create(segment.id, segment.subscribers, transaction)
+        updateSegment(segment, transaction)
                 .ifFailedThenRollback(transaction)
+    }
+
+    private fun updateSegment(segment: Segment, transaction: Transaction): Either<StoreError, Unit> {
+        return subscriberToSegmentStore.removeAll(toId = segment.id, transaction = transaction)
+                .flatMap { subscriberToSegmentStore.create(segment.subscribers, segment.id, transaction) }
     }
 
     //
@@ -685,9 +691,13 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     //
-    // Atomic Import of Offer + Product + Segment
+    // Atomic Imports
     //
-    override fun atomicImport(
+
+    /**
+     * Create of Offer + Product + Segment
+     */
+    override fun atomicCreateOffer(
             offer: Offer,
             segments: Collection<Segment>,
             products: Collection<Product>): Either<StoreError, Unit> = writeTransaction {
@@ -735,13 +745,45 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
 
-// override fun getOffers(): Collection<Offer> = offerStore.getAll().values.map { Offer().apply { id = it.id } }
+    /**
+     * Create Segments
+     */
+    override fun atomicCreateSegments(createSegments: Collection<Segment>): Either<StoreError, Unit> = writeTransaction {
 
-// override fun getSegments(): Collection<Segment> = segmentStore.getAll().values.map { Segment().apply { id = it.id } }
+        createSegments.fold(
+                initial = Either.right(Unit) as Either<StoreError, Unit>,
+                operation = { acc, segment ->
+                    acc.flatMap { createSegment(segment, transaction) }
+                })
+                .ifFailedThenRollback(transaction)
+    }
 
-// override fun getOffer(id: String): Offer? = offerStore.get(id)?.let { Offer().apply { this.id = it.id } }
+    /**
+     * Update segments
+     */
+    override fun atomicUpdateSegments(updateSegments: Collection<Segment>): Either<StoreError, Unit> = writeTransaction {
 
-// override fun getSegment(id: String): Segment? = segmentStore.get(id)?.let { Segment().apply { this.id = it.id } }
+        updateSegments.fold(
+                initial = Either.right(Unit) as Either<StoreError, Unit>,
+                operation = { acc, segment ->
+                    acc.flatMap { updateSegment(segment, transaction) }
+                })
+                .ifFailedThenRollback(transaction)
+    }
 
-// override fun getProductClass(id: String): ProductClass? = productClassStore.get(id)
+    override fun atomicAddToSegments(addToSegments: Collection<Segment>): Either<StoreError, Unit> { TODO() }
+
+    override fun atomicRemoveFromSegments(removeFromSegments: Collection<Segment>): Either<StoreError, Unit> { TODO() }
+
+    override fun atomicChangeSegments(changeSegments: Collection<ChangeSegment>): Either<StoreError, Unit> { TODO() }
+
+    // override fun getOffers(): Collection<Offer> = offerStore.getAll().values.map { Offer().apply { id = it.id } }
+
+    // override fun getSegments(): Collection<Segment> = segmentStore.getAll().values.map { Segment().apply { id = it.id } }
+
+    // override fun getOffer(id: String): Offer? = offerStore.get(id)?.let { Offer().apply { this.id = it.id } }
+
+    // override fun getSegment(id: String): Segment? = segmentStore.get(id)?.let { Segment().apply { this.id = it.id } }
+
+    // override fun getProductClass(id: String): ProductClass? = productClassStore.get(id)
 }

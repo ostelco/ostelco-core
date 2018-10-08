@@ -176,7 +176,7 @@ class GraphStoreTest {
 
         val offer = Offer(id = "some_offer", products = listOf("1GB_249NOK", "2GB_299NOK"))
 
-        Neo4jStoreSingleton.atomicImport(offer = offer, products = products, segments = segments)
+        Neo4jStoreSingleton.atomicCreateOffer(offer = offer, products = products, segments = segments)
                 .mapLeft { fail(it.message) }
     }
 
@@ -199,7 +199,7 @@ class GraphStoreTest {
 
         val offer = Offer(id = "some_offer", products = listOf("1GB_249NOK", "2GB_299NOK"))
 
-        Neo4jStoreSingleton.atomicImport(offer = offer, products = products, segments = segments)
+        Neo4jStoreSingleton.atomicCreateOffer(offer = offer, products = products, segments = segments)
                 .mapLeft { fail(it.message) }
 
         val duplicateOffer = Offer(
@@ -207,7 +207,7 @@ class GraphStoreTest {
                 products = (products.map { it.sku } + offer.products).toSet(),
                 segments = segments.map { it.id })
 
-        Neo4jStoreSingleton.atomicImport(offer = duplicateOffer).bimap(
+        Neo4jStoreSingleton.atomicCreateOffer(offer = duplicateOffer).bimap(
                 { assertEquals("Offer - some_offer already exists.", it.message) },
                 { fail("Expected import to fail since offer already exists.") })
     }
