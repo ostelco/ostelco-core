@@ -145,6 +145,13 @@ spec:
         image: eu.gcr.io/pantel-2decb/prime:PRIME_VERSION
         imagePullPolicy: Always
         env:
+        - name: SLACK_CHANNEL
+          value: prime-alerts
+        - name: SLACK_WEBHOOK_URI
+          valueFrom:
+            secretKeyRef:
+              name: slack-secrets
+              key: slackWebHookUri
         - name: NEO4J_HOST
           value: neo4j
         - name: DATASTORE_NAMESPACE

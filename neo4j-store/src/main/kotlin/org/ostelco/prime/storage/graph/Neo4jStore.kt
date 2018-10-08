@@ -15,6 +15,7 @@ import org.ostelco.prime.model.Segment
 import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
+import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.ocs.OcsAdminService
 import org.ostelco.prime.ocs.OcsSubscriberService
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
@@ -205,8 +206,12 @@ object Neo4jStoreSingleton : GraphStore {
                         ocsAdminService.addBundle(Bundle(bundleId, 100_000_000))
                         Either.right(Unit)
                     }
-        }.flatMap { subscriberToBundleStore.create(subscriber.id, bundleId, transaction) }
-                .ifFailedThenRollback(transaction)
+        }.flatMap { subscriberToBundleStore.create(subscriber.id, bundleId, transaction)
+        }.map {
+            if(subscriber.country.equals("sg", ignoreCase = true)) {
+                logger.info(NOTIFY_OPS_MARKER, "Created a new user with email: ${subscriber.email} for Singapore.\nProvision a SIM card for this user.")
+            }
+        }.ifFailedThenRollback(transaction)
     }
     // << END
 
@@ -382,7 +387,6 @@ object Neo4jStoreSingleton : GraphStore {
                                             // then save the source
                                             if (!it.any { sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
                                                 paymentProcessor.addSource(paymentCustomerId, sourceId)
-                                                        // TODO payment: Should we remove the sourceId for saveCard == false even when captureCharge has failed?
                                                         // For success case, saved source is removed after "capture charge" is saveCard == false.
                                                         // Making sure same happens even for failure case by linking reversal action to transaction
                                                         .finallyDo(transaction) { _ -> removePaymentSource(saveCard, paymentCustomerId, sourceId) }
@@ -407,7 +411,7 @@ object Neo4jStoreSingleton : GraphStore {
                             }
                             .linkReversalActionToTransaction(transaction) { chargeId ->
                                 paymentProcessor.refundCharge(chargeId)
-                                logger.error("failed to refund charge for paymentCustomerId $paymentCustomerId, chargeId $chargeId. Fix this in Stripe dashboard")
+                                logger.error(NOTIFY_OPS_MARKER, "Failed to refund charge for paymentCustomerId $paymentCustomerId, chargeId $chargeId.\nFix this in Stripe dashboard.")
                             }
                             .map { chargeId -> Tuple3(product, paymentCustomerId, chargeId) }
                 }
@@ -447,7 +451,7 @@ object Neo4jStoreSingleton : GraphStore {
                     paymentProcessor.captureCharge(chargeId, paymentCustomerId)
                             .mapLeft {
                                 // TODO payment: retry capture charge
-                                logger.error("Capture failed for paymentCustomerId $paymentCustomerId, chargeId $chargeId, Fix this in Stripe Dashboard")
+                                logger.error(NOTIFY_OPS_MARKER, "Capture failed for paymentCustomerId $paymentCustomerId, chargeId $chargeId.\nFix this in Stripe Dashboard")
                             }
 
                     // Ignore failure to capture charge and always send Either.right()

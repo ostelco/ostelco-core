@@ -204,8 +204,14 @@ gcloud container node-pools delete default-pool \
 kubectl create secret generic pantel-prod.json --from-file prime/config/pantel-prod.json
 ```
 
+Note: To update the secrets defined using yaml, delete and created them again. They are not updated.
+ 
 ```bash
 sed -e s/STRIPE_API_KEY/$(echo -n 'keep-stripe-api-key-here' | base64)/g prime/infra/dev/stripe-secrets.yaml | kubectl apply -f -
+```
+
+```bash
+sed -e s/SLACK_WEBHOOK_URI/$(echo -n 'https://hooks.slack.com/services/.../.../...' | base64)/g prime/infra/dev/slack-secrets.yaml | kubectl apply -f -
 ```
 
 ```bash
@@ -243,7 +249,7 @@ pip install grpcio grpcio-tools
 python -m grpc_tools.protoc \
   --include_imports \
   --include_source_info \
-  --proto_path=ocs-api/src/main/proto \
+  --proto_path=ocs-grpc-api/src/main/proto \
   --descriptor_set_out=ocs_descriptor.pb \
   ocs.proto
 
