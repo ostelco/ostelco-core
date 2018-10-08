@@ -13,6 +13,7 @@ import io.dropwizard.setup.Environment
 import org.eclipse.jetty.servlets.CrossOriginFilter
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.auth.OAuthAuthenticator
+import org.ostelco.prime.logging.TrackRequestsLoggingFilter
 import org.ostelco.prime.client.api.metrics.reportMetricsAtStartUp
 import org.ostelco.prime.client.api.resources.AnalyticsResource
 import org.ostelco.prime.client.api.resources.ApplicationTokenResource
@@ -68,6 +69,9 @@ class ClientApiModule : PrimeModule {
                 .using(jacksonObjectMapper()
                         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false))
                 .build(env.name)
+
+        /* Add filters/interceptors. */
+        jerseyEnv.register(TrackRequestsLoggingFilter())
 
         /* APIs. */
         jerseyEnv.register(AnalyticsResource(dao))
