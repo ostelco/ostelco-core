@@ -372,3 +372,25 @@ inputTopic=projects/pantel-2decb/topics/active-users,\
 outputTableSpec=pantel-2decb:ocs_gateway.raw_activeusers
 
 ```
+
+## Deploy dataflow pipeline for raw_purchases
+
+```bash
+# For dev cluster
+gcloud dataflow jobs run purchase-records-dev \
+    --gcs-location gs://dataflow-templates/latest/PubSub_to_BigQuery \
+    --region europe-west1 \
+    --parameters \
+inputTopic=projects/pantel-2decb/topics/purchase-info-dev,\
+outputTableSpec=pantel-2decb:purchases_dev.raw_purchases
+
+
+# For production cluster
+gcloud dataflow jobs run purchase-records \
+    --gcs-location gs://dataflow-templates/latest/PubSub_to_BigQuery \
+    --region europe-west1 \
+    --parameters \
+inputTopic=projects/pantel-2decb/topics/purchase-info,\
+outputTableSpec=pantel-2decb:purchases.raw_purchases
+
+```
