@@ -171,7 +171,7 @@ abstract class MetricBuilder(
     /**
      * Function which will add the current value of the metric to registry.
      */
-    abstract suspend fun buildMetric(registry: CollectorRegistry)
+    abstract fun buildMetric(registry: CollectorRegistry)
 
     /**
      * Function to expand the environment variables in the SQL.
@@ -251,13 +251,13 @@ class SummaryMetricBuilder(
     private val log: Logger = LoggerFactory.getLogger(SummaryMetricBuilder::class.java)
 
 
-    override suspend fun buildMetric(registry: CollectorRegistry) = coroutineScope {
+    override fun buildMetric(registry: CollectorRegistry) {
         try {
             val summary: Summary = Summary.build()
                     .name(metricName)
                     .help(help).register(registry)
             log.info("Fetch async Summarizing metric $metricName")
-            val value: Long = async { getNumberValueViaSql() }.await()
+            val value: Long = getNumberValueViaSql()
             log.info("Summarizing metric $metricName  to be $value")
             summary.observe(value * 1.0)
         } catch (e: NullPointerException) {
@@ -278,13 +278,13 @@ class GaugeMetricBuilder(
 
     private val log: Logger = LoggerFactory.getLogger(GaugeMetricBuilder::class.java)
 
-    override suspend fun buildMetric(registry: CollectorRegistry) = coroutineScope {
+    override fun buildMetric(registry: CollectorRegistry) {
         try {
             val gauge: Gauge = Gauge.build()
                     .name(metricName)
                     .help(help).register(registry)
             log.info("Fetch async Gauge metric $metricName")
-            val value: Long = async { getNumberValueViaSql() }.await()
+            val value: Long = getNumberValueViaSql()
             log.info("Gauge metric $metricName = $value")
             gauge.set(value * 1.0)
         } catch (e: NullPointerException) {
@@ -314,7 +314,7 @@ private class PrometheusPusher(val pushGateway: String, val jobName: String) {
     val registry = CollectorRegistry()
     val env: EnvironmentVars = EnvironmentVars()
 
-    suspend fun publishMetrics(metrics: List<MetricConfig>) = coroutineScope {
+    suspend fun publishMetrics(metrics: List<MetricConfig>) {
         val metricSources: MutableList<MetricBuilder> = mutableListOf()
         metrics.forEach {
             val typeString: String = it.type.trim().toUpperCase()
@@ -347,7 +347,9 @@ private class PrometheusPusher(val pushGateway: String, val jobName: String) {
         log.info("Starting ${metricSources.size} Queries")
         coroutineScope {
             metricSources.forEach { builder ->
-                launch {
+                log.info("Queue metric ${builder.metricName}")
+                async {
+                    log.info("Starting fetch async metric ${builder.metricName}")
                     builder.buildMetric(registry)
                 }
             }
