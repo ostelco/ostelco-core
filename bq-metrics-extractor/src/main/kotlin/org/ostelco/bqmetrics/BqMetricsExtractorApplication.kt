@@ -171,7 +171,7 @@ abstract class MetricBuilder(
     /**
      * Function which will add the current value of the metric to registry.
      */
-    abstract fun buildMetric(registry: CollectorRegistry)
+    abstract suspend fun buildMetric(registry: CollectorRegistry)
 
     /**
      * Function to expand the environment variables in the SQL.
@@ -194,7 +194,7 @@ abstract class MetricBuilder(
     /**
      * Execute the SQL and get a single number value.
      */
-    fun getNumberValueViaSql(): Long {
+    suspend fun getNumberValueViaSql(): Long = coroutineScope<Long> {
         // Instantiate a client. If you don't specify credentials when constructing a client, the
         // client library will look for credentials in the environment, such as the
         // GOOGLE_APPLICATION_CREDENTIALS environment variable.
@@ -212,12 +212,14 @@ abstract class MetricBuilder(
         log.info("Waiting for $metricName Query")
         // Wait for the query to complete.
         // Retry maximum 4 times for up to 2 minutes.
-        queryJob = queryJob.waitFor(
-                RetryOption.initialRetryDelay(Duration.ofSeconds(10)),
-                RetryOption.retryDelayMultiplier(2.0),
-                RetryOption.maxRetryDelay(Duration.ofSeconds(20)),
-                RetryOption.maxAttempts(5),
-                RetryOption.totalTimeout(Duration.ofMinutes(2)));
+        queryJob = async {
+            queryJob.waitFor(
+                    RetryOption.initialRetryDelay(Duration.ofSeconds(10)),
+                    RetryOption.retryDelayMultiplier(2.0),
+                    RetryOption.maxRetryDelay(Duration.ofSeconds(20)),
+                    RetryOption.maxAttempts(5),
+                    RetryOption.totalTimeout(Duration.ofMinutes(2)));
+        }.await()
         log.info("Finished waiting for $metricName Query")
 
         // Check for errors
@@ -234,7 +236,7 @@ abstract class MetricBuilder(
         }
 
         val count = result.iterateAll().iterator().next().get(resultColumn).longValue
-        return count
+        count
     }
 }
 
@@ -251,14 +253,12 @@ class SummaryMetricBuilder(
     private val log: Logger = LoggerFactory.getLogger(SummaryMetricBuilder::class.java)
 
 
-    override fun buildMetric(registry: CollectorRegistry) {
+    override suspend fun buildMetric(registry: CollectorRegistry) {
         try {
             val summary: Summary = Summary.build()
                     .name(metricName)
                     .help(help).register(registry)
-            log.info("Fetch async Summarizing metric $metricName")
             val value: Long = getNumberValueViaSql()
-            log.info("Summarizing metric $metricName  to be $value")
             summary.observe(value * 1.0)
         } catch (e: NullPointerException) {
             log.error(e.toString())
@@ -278,14 +278,12 @@ class GaugeMetricBuilder(
 
     private val log: Logger = LoggerFactory.getLogger(GaugeMetricBuilder::class.java)
 
-    override fun buildMetric(registry: CollectorRegistry) {
+    override suspend fun buildMetric(registry: CollectorRegistry) {
         try {
             val gauge: Gauge = Gauge.build()
                     .name(metricName)
                     .help(help).register(registry)
-            log.info("Fetch async Gauge metric $metricName")
             val value: Long = getNumberValueViaSql()
-            log.info("Gauge metric $metricName = $value")
             gauge.set(value * 1.0)
         } catch (e: NullPointerException) {
             log.error(e.toString())
@@ -347,15 +345,12 @@ private class PrometheusPusher(val pushGateway: String, val jobName: String) {
         log.info("Starting ${metricSources.size} Queries")
         coroutineScope {
             metricSources.forEach { builder ->
-                log.info("Queue metric ${builder.metricName}")
-                async {
-                    log.info("Starting fetch async metric ${builder.metricName}")
+                launch {
                     builder.buildMetric(registry)
                 }
             }
         }
-        // Wait for the SQL queries to finish.
-        log.info("Started ${metricSources.size} Queries")
+        // coroutineScope waits for all children to finish.
         val end = System.currentTimeMillis()
         log.info("Queries finished in ${(end - start)/1000} seconds")
 
