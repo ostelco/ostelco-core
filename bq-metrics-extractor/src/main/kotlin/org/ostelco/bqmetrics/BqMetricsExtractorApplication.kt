@@ -166,7 +166,6 @@ abstract class MetricBuilder(
         val sql: String,
         val resultColumn: String,
         val env: EnvironmentVars) {
-    private val log: Logger = LoggerFactory.getLogger(MetricBuilder::class.java)
 
     /**
      * Function which will add the current value of the metric to registry.
@@ -209,8 +208,7 @@ abstract class MetricBuilder(
         val jobId: JobId = JobId.of(UUID.randomUUID().toString());
         var queryJob: BQJob = bigquery.create(JobInfo.newBuilder(queryConfig).setJobId(jobId).build());
 
-        log.info("Waiting for $metricName Query")
-        // Wait for the query to complete.
+       // Wait for the query to complete.
         // Retry maximum 4 times for up to 2 minutes.
         queryJob = async {
             queryJob.waitFor(
@@ -220,7 +218,6 @@ abstract class MetricBuilder(
                     RetryOption.maxAttempts(5),
                     RetryOption.totalTimeout(Duration.ofMinutes(2)));
         }.await()
-        log.info("Finished waiting for $metricName Query")
 
         // Check for errors
         if (queryJob == null) {
@@ -259,6 +256,7 @@ class SummaryMetricBuilder(
                     .name(metricName)
                     .help(help).register(registry)
             val value: Long = getNumberValueViaSql()
+            log.info("Summarizing metric $metricName  to be $value")
             summary.observe(value * 1.0)
         } catch (e: NullPointerException) {
             log.error(e.toString())
@@ -284,6 +282,7 @@ class GaugeMetricBuilder(
                     .name(metricName)
                     .help(help).register(registry)
             val value: Long = getNumberValueViaSql()
+            log.info("Gauge metric $metricName = $value")
             gauge.set(value * 1.0)
         } catch (e: NullPointerException) {
             log.error(e.toString())
