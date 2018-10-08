@@ -14,7 +14,7 @@
 ## applied.
 ##
 
-if [[ $# -ne 2 ]] ; then
+if [[ $# -ne 3 ]] ; then
     echo "$0 ERROR:  requires exactly three parameters"
     echo "$0 ERROR:  $0 target-dir  userid1 userid2"
    exit 1
