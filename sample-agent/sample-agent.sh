@@ -4,7 +4,7 @@ set -e
 
 ###
 ### VALIDATING AND PARSING COMMAND LINE PARAMETERS
-### 
+###
 
 #
 #  Get command line parameter, which should be an existing
@@ -34,7 +34,7 @@ trap "exit 1" TERM
 export TOP_PID=$$
 
 function die() {
-   kill -s TERM $TOP_PID
+    kill -s TERM $TOP_PID
 }
 
 #
@@ -44,9 +44,9 @@ function die() {
 DEPENDENCIES="gcloud kubectl gsutil"
 
 for dep in $DEPENDENCIES ; do
-   if [[ -z $(which $dep) ]] ; then
-     echo "ERROR: Could not find dependency $dep"
-   fi
+    if [[ -z $(which $dep) ]] ; then
+        echo "ERROR: Could not find dependency $dep"
+    fi
 done
 
 #
@@ -94,6 +94,7 @@ echo "$0: kubectl port-forward $PRIME_PODNAME 8080:8080"
 function runScriptOnExporterPod {
     if [[ $# -ne 2 ]] ; then
 	echo "$0 ERROR:  runScriptOnExporterPod requires exactly two parameters"
+        die
     fi
     local scriptname=$1
     local intentDescription=$2
@@ -104,9 +105,9 @@ function runScriptOnExporterPod {
     #     level process's lifetime, I'll do it this way.
     TEMPFILE="tmpfile.txt"
     [[ -f "$TMPFILE" ]]  && rm "$TMPFILE"
-    
+
     kubectl exec -it "${EXPORTER_PODNAME}" -- /bin/bash -c "$scriptname" > "$TEMPFILE"
-    
+
     # Fail if the exec failed
     retVal=$?
     if [[ $retVal -ne 0 ]]; then
@@ -132,9 +133,9 @@ function exportDataFromExporterPod {
 	echo "$0 ERROR: Running the runScriptOnExporterPod failed to return the name of a resultfile."
 	die
     fi
-    
+
     local exportId="$(grep "Starting export job for" $tmpfilename | awk '{print $5}' |  sed 's/\r$//' )"
-    
+
     if [[ -z "$exportId" ]] ; then
 	echo "$0  Could not get export  batch from exporter pod"
     fi
@@ -143,14 +144,18 @@ function exportDataFromExporterPod {
 }
 
 function mapPseudosToUserids {
-    local tmpfile="$(runScriptOnExporterPod /map_subscribers.sh "mapping pseudoids to subscriber ids")"
-    [[ -f "$tmpfile" ]] && rm "$tmpfile"
+    # XXX TODO: Test correct number of parameters
+    local exportid=$1
+    local tmpfile="$(runScriptOnExporterPod "/map_subscribers.sh $exportid" "mapping pseudoids to subscriber ids")"
+    ##    [[ -f "$tmpfile" ]] && rm "$tmpfile"
+    echo "LOG FROM MAPPING IS:"
+    cat $tmpfile
 }
 
 #
 # Generate the Google filesystem names of components associated with
 # a particular export ID:   Typical usage
-# 
+#
 #    PURCHASES_GS="$(gsExportCsvFilename "ab234245cvsr" "purchases")"
 
 function gsExportCsvFilename {
@@ -158,7 +163,7 @@ function gsExportCsvFilename {
 	echo "$0 ERROR:  gsExportCsvFilename requires exactly two parameters, got '$@'"
 	die
     fi
-    
+
     local exportId=$1
     local componentName=$2
     if [[ -z "$exportId" ]] ; then
@@ -168,13 +173,13 @@ function gsExportCsvFilename {
     if [[ -n "$componentName" ]] ; then
 	componentName="-$componentName"
     fi
-    
+
     echo "gs://${PROJECT_ID}-dataconsumption-export/${exportId}${componentName}.csv"
 }
 
 
 #
-# Generate a filename 
+# Generate a filename
 #
 function importedCsvFilename {
     if [[ $# -ne 3 ]] ; then
@@ -199,14 +204,14 @@ function importedCsvFilename {
     if [[ -n "$componentName" ]] ; then
 	componentName="-$componentName"
     fi
-    
+
     echo "${importDirectory}/${exportId}${componentName}.csv"
 }
 
 
 ###
 ###  MAIN SCRIPT
-### 
+###
 
 
 
@@ -226,12 +231,12 @@ for component in "purchases" "sub2msisdn" "" ; do
     if [[ -z "$source" ]] ; then
 	echo "$0 ERROR: Could not determine source file for export component '$component'"
     fi
-    
+
     destination="$(importedCsvFilename "$EXPORT_ID" "$TARGET_DIR" "$component")"
     if [[ -z "$destination" ]] ; then
 	echo "$0 ERROR: Could not determine destination file for export component '$component'"
     fi
-    
+
     gsutil cp "$source" "$destination"
 done
 
@@ -256,10 +261,11 @@ awk -F, '!/^subscriberId/{print $1'} $(importedCsvFilename "$EXPORT_ID" "$TARGET
 
 RESULTSEG_PSEUDO_BASENAME="resultsegment-pseudoanonymized"
 RESULTSEG_CLEARTEXT_BASENAME="resultsegment-cleartext"
+RESULTSEG_CLEARTEXT_SUBSCRIBERS="resultsegment-cleartext-subscribers"
 RESULT_SEGMENT_PSEUDO_GS="$(gsExportCsvFilename "$EXPORT_ID" "$RESULTSEG_PSEUDO_BASENAME")"
 RESULT_SEGMENT_CLEAR_GS="$(gsExportCsvFilename "$EXPORT_ID" "$RESULTSEG_CLEARTEXT_BASENAME")"
 RESULT_SEGMENT_CLEAR="$(importedCsvFilename "$EXPORT_ID" "$TARGET_DIR"  "$RESULTSEG_CLEARTEXT_BASENAME")"
-RESULT_SEGMENT_SINGLE_COLUMN="$(importedCsvFilename "$EXPORT_ID" "$TARGET_DIR"  "$RESULTSEG_CLEARTEXT_BASENAME")"
+RESULT_SEGMENT_SINGLE_COLUMN="$(importedCsvFilename "$EXPORT_ID" "$TARGET_DIR"  "$RESULTSEG_CLEARTEXT_SUBSCRIBERS")"
 
 # Copy the  segment pseudo file to gs
 
@@ -267,7 +273,7 @@ gsutil cp $SEGMENT_TMPFILE_PSEUDO $RESULT_SEGMENT_PSEUDO_GS
 
 # Then run the script that will convert it into a none-anonymized
 # file and fetch the results from gs:/
-mapPseudosToUserids
+mapPseudosToUserids "$EXPORT_ID"
 
 gsutil cp "$RESULT_SEGMENT_CLEAR_GS" "$RESULT_SEGMENT_CLEAR"
 
@@ -288,7 +294,6 @@ cat > $IMPORTFILE_YML <<EOF
 producingAgent:
   name: Simple agent
   version: 1.0
-
 offer:
   id: test-offer
   # use existing product
@@ -303,14 +308,14 @@ EOF
 
 # Adding the list of subscribers in clear text (indented six spaces
 # with a leading "-" as per YAML list syntax.
-awk '{print "      - " $1}'  $RESULT_SEGMENT_SINGLE_COLUMN >> $IMPORTFILE_YML 
+awk '{print "      - " $1}'  $RESULT_SEGMENT_SINGLE_COLUMN >> $IMPORTFILE_YML
 
 ##
 ## Send it to the importer
 ## (assuming the kubectl port forwarding is enabled)
 
 IMPORTER_URL=http://127.0.0.1:8080/importer
-curl --data-binary @$IMPORTFILE_YML $IMPORTER_URL
+curl -H "Content-type: text/vnd.yaml" --data-binary @$IMPORTFILE_YML $IMPORTER_URL
 
 
 ##
@@ -318,5 +323,3 @@ curl --data-binary @$IMPORTFILE_YML $IMPORTER_URL
 ##
 
 #  .... eventually
-
-

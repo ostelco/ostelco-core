@@ -1,0 +1,169 @@
+INTRODUCTION
+====
+
+
+This document contains two attempts at generating yaml representations
+that would be useful to guide us through the tech due-dil demo.
+
+The steps ahead would be:
+
+  1.  Determine which of these paths to take.
+  2.  Separate them into actual yaml files that dan be executed
+      using the apply-yaml.sh script
+  3.  Implement changes in prime so that the changes are actually done.
+
+The one thing missing in the descriptions below is how to reset the
+simulation to its intial state.   We'll fix that in a day or two
+tand then we're basically done.
+
+
+
+
+TAKE ONE
+*******
+
+
+====: Script 1 (initialization, may or not actually be run, but should represent the situation the later scripts operate on)
+
+createProducts:
+  - sku: 1GB_200NOK
+    price:
+      amount: 200
+      currency: NOK
+    properties:
+      productClass: SIMPLE_DATA
+      noOfBytes: 1_000_000_000
+    presentation:
+      productClass: SIMPLE_PRESENTATION
+      isDefault: true
+      offerLabel: Top Up
+      priceLabel: 200 NOK
+
+  - sku: 2GB_200NOK
+    price:
+      amount: 200
+      currency: NOK
+    properties:
+      noOfBytes: 2_000_000_000
+    presentation:
+      isDefault: true
+      offerLabel: Top Up
+      priceLabel: 200 NOK
+
+  - sku: 1GB_50NOK
+    price:
+      amount: 50
+      currency: NOK
+    properties:
+      noOfBytes: 1_000_000_000
+    presentation:
+      isDefault: true
+      offerLabel: Special offer
+      priceLabel: 50 NOK
+
+createSegments:
+  - id: onlySignedUp_Demo
+  - id: hasUsedLotsOfData_Demo
+  - id: hasUsedEvenMoreData_Demo
+
+createOffers:
+  - id: initialOffer
+    segments:
+      - onlySignedUp_Demo
+    products:
+      - 1GB_200NOK
+  - id: offerForBigDataUsers
+    segments:
+      - onlySignedUp_Demo
+    products:
+      - 2GB_200NOK
+  - id: specialOffer
+    segments:
+      - hasUsedEvenMoreData_Demo
+    products:
+      - 1GB_50NOK
+
+moveToSegment:
+ source: any
+ target: onlySignedUp_Demo
+ subscribers:
+  - foo@baz.com
+  - bar@baz.com
+
+
+==== Script 2: Promote SH from onlySignedUp_Demo to offerForBigDataUser segment
+moveToSegment:
+ source: onlySignedUp_Demo
+ target: hasUsedLotsOfData_Demo
+ subscribers:
+  - foo@baz.com
+
+
+==== Script 3: Promote SH from onlySignedUp_Demo to offerForBigDataUser segment
+
+moveToSegment:
+ source: hasUsedLotsOfData_Demo
+ target: hasUsedEvenMoreData_Demo
+ subscribers:
+  - foo@baz.com
+
+
+TAKE 2
+******
+
+== script 1 (initialization, may or not actually be run, but should represent the situation the later scripts operate on)
+createOffer:
+  id: demoOffer1
+  createProducts:
+  - sku: 1GB_200NOK
+    price:
+      amount: 200
+      currency: NOK
+    properties:
+      noOfBytes: 1_000_000_000
+    presentation:
+      isDefault: true
+      offerLabel: Top Up
+      priceLabel: 200 NOK
+  createSegments:
+    - id: demoSegment1
+      subscribers:
+        - foo@baz.com
+	- bar@baz.com
+
+== script 2
+createOffer:
+  id: demoOffer2
+  createProducts:
+  - sku: 2GB_200NOK
+    price:
+      amount: 200
+      currency: NOK
+    properties:
+      noOfBytes: 2_000_000_000
+    presentation:
+      isDefault: true
+      offerLabel: Top Up
+      priceLabel: 200 NOK
+  createSegments:
+    - id: demoSegment2
+
+
+== script 3
+createOffer:
+  id: demoOffer3
+  createProducts:
+  - sku: 1GB_50NOK
+    price:
+      amount: 50
+      currency: NOK
+    properties:
+      noOfBytes: 1_000_000_000
+    presentation:
+      isDefault: true
+      offerLabel: Special offer
+      priceLabel: 50 NOK
+  createSegments:
+    - id: demoSegment3
+      subscribers:
+	- bar@baz.com
