@@ -16,9 +16,7 @@ import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Gauge
 import io.prometheus.client.Summary
 import io.prometheus.client.exporter.PushGateway
-import kotlinx.coroutines.experimental.Job
-import kotlinx.coroutines.experimental.launch
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.experimental.*
 import net.sourceforge.argparse4j.inf.Namespace
 import net.sourceforge.argparse4j.inf.Subparser
 import org.slf4j.Logger
@@ -168,10 +166,12 @@ abstract class MetricBuilder(
         val sql: String,
         val resultColumn: String,
         val env: EnvironmentVars) {
+    private val log: Logger = LoggerFactory.getLogger(MetricBuilder::class.java)
+
     /**
      * Function which will add the current value of the metric to registry.
      */
-    abstract fun buildMetric(registry: CollectorRegistry)
+    abstract suspend fun buildMetric(registry: CollectorRegistry)
 
     /**
      * Function to expand the environment variables in the SQL.
@@ -209,6 +209,7 @@ abstract class MetricBuilder(
         val jobId: JobId = JobId.of(UUID.randomUUID().toString());
         var queryJob: BQJob = bigquery.create(JobInfo.newBuilder(queryConfig).setJobId(jobId).build());
 
+        log.info("Waiting for $metricName Query")
         // Wait for the query to complete.
         // Retry maximum 4 times for up to 2 minutes.
         queryJob = queryJob.waitFor(
@@ -217,6 +218,7 @@ abstract class MetricBuilder(
                 RetryOption.maxRetryDelay(Duration.ofSeconds(20)),
                 RetryOption.maxAttempts(5),
                 RetryOption.totalTimeout(Duration.ofMinutes(2)));
+        log.info("Finished waiting for $metricName Query")
 
         // Check for errors
         if (queryJob == null) {
@@ -249,15 +251,14 @@ class SummaryMetricBuilder(
     private val log: Logger = LoggerFactory.getLogger(SummaryMetricBuilder::class.java)
 
 
-    override fun buildMetric(registry: CollectorRegistry) {
+    override suspend fun buildMetric(registry: CollectorRegistry) = coroutineScope {
         try {
             val summary: Summary = Summary.build()
                     .name(metricName)
                     .help(help).register(registry)
-            val value: Long = getNumberValueViaSql()
-
+            log.info("Fetch async Summarizing metric $metricName")
+            val value: Long = async { getNumberValueViaSql() }.await()
             log.info("Summarizing metric $metricName  to be $value")
-
             summary.observe(value * 1.0)
         } catch (e: NullPointerException) {
             log.error(e.toString())
@@ -277,15 +278,14 @@ class GaugeMetricBuilder(
 
     private val log: Logger = LoggerFactory.getLogger(GaugeMetricBuilder::class.java)
 
-    override fun buildMetric(registry: CollectorRegistry) {
+    override suspend fun buildMetric(registry: CollectorRegistry) = coroutineScope {
         try {
             val gauge: Gauge = Gauge.build()
                     .name(metricName)
                     .help(help).register(registry)
-            val value: Long = getNumberValueViaSql()
-
+            log.info("Fetch async Gauge metric $metricName")
+            val value: Long = async { getNumberValueViaSql() }.await()
             log.info("Gauge metric $metricName = $value")
-
             gauge.set(value * 1.0)
         } catch (e: NullPointerException) {
             log.error(e.toString())
@@ -314,7 +314,7 @@ private class PrometheusPusher(val pushGateway: String, val jobName: String) {
     val registry = CollectorRegistry()
     val env: EnvironmentVars = EnvironmentVars()
 
-    fun publishMetrics(metrics: List<MetricConfig>) = runBlocking {
+    suspend fun publishMetrics(metrics: List<MetricConfig>) = coroutineScope {
         val metricSources: MutableList<MetricBuilder> = mutableListOf()
         metrics.forEach {
             val typeString: String = it.type.trim().toUpperCase()
@@ -342,16 +342,18 @@ private class PrometheusPusher(val pushGateway: String, val jobName: String) {
         }
 
         log.info("Querying bigquery for metric values")
-        val jobs = mutableListOf<Job>()
         val start = System.currentTimeMillis()
         val pg = PushGateway(pushGateway)
-        metricSources.forEach { builder ->
-            jobs += launch {
-                builder.buildMetric(registry)
+        log.info("Starting ${metricSources.size} Queries")
+        coroutineScope {
+            metricSources.forEach { builder ->
+                launch {
+                    builder.buildMetric(registry)
+                }
             }
         }
         // Wait for the SQL queries to finish.
-        jobs.forEach { it.join() }
+        log.info("Started ${metricSources.size} Queries")
         val end = System.currentTimeMillis()
         log.info("Queries finished in ${(end - start)/1000} seconds")
 
@@ -376,8 +378,9 @@ private class CollectAndPushMetrics : ConfiguredCommand<BqMetricsExtractorConfig
         }
 
         val pgw = namespace.get<String>(pushgatewayKey)
-        PrometheusPusher(pgw,
-                "bq_metrics_extractor").publishMetrics(configuration.metrics)
+        runBlocking {
+            PrometheusPusher(pgw, "bq_metrics_extractor").publishMetrics(configuration.metrics)
+        }
     }
 
     val pushgatewayKey = "pushgateway"
