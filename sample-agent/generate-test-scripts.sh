@@ -53,8 +53,6 @@ createOffer:
   createSegments:
     - id: $SEGMENT_1
       subscribers:
-        - $USER_1
-	- $USER_2
 EOF
 
 
@@ -93,8 +91,6 @@ createOffer:
   createSegments:
     - id: $SEGMENT_3
       subscribers:
-	- $USER_2
-
 EOF
 
 cat > $TARGET_DIR/step1.yml <<EOF

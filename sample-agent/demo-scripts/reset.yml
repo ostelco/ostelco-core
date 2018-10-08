@@ -1,9 +1,0 @@
-updateSegments:
- - id: s1
-    subscribers:
-      - u1
-      - u2
-  - id: s2
-    subscribers:
-  - id: s3
-    subscribers:

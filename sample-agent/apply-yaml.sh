@@ -67,7 +67,7 @@ fi
 ##
 
 EXPECTED_FROM_GET_TO_IMPORT='{"code":405,"message":"HTTP 405 Method Not Allowed"}'
-RESULT_FROM_GET_PROBE="$(curl http://127.0.0.1:8080/importer 2>/dev/null)"
+RESULT_FROM_GET_PROBE="$(curl http://127.0.0.1:8080/import/offer 2>/dev/null)"
 
 if [[ "$EXPECTED_FROM_GET_TO_IMPORT"  != "$RESULT_FROM_GET_PROBE" ]] ; then
     echo "$0  ERROR: Did not get expected result when probing importer, bailing out"
@@ -83,5 +83,9 @@ fi
 ## Send it to the importer
 ## (assuming the kubectl port forwarding is enabled)
 
-IMPORTER_URL=http://127.0.0.1:8080/importer
-curl -H "Content-type: text/vnd.yaml" --data-binary @$YAML_SCRIPTNAME $IMPORTER_URL
+# SEGMENT_IMPORTER_URL=http://127.0.0.1:8080/import/segments
+# curl -X PUT -H "Content-type: text/vnd.yaml" --data-binary @$YAML_SCRIPTNAME $SEGMENT_IMPORTER_URL
+
+
+IMPORTER_URL=http://127.0.0.1:8080/import/offer
+curl -X POST -H "Content-type: text/vnd.yaml" --data-binary @$YAML_SCRIPTNAME $IMPORTER_URL
