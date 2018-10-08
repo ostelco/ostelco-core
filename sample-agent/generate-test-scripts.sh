@@ -34,8 +34,8 @@ createOffer:
   createSegments:
     - id: demoSegment1
       subscribers:
-        - foo@baz.com
-	- bar@baz.com
+        - $USER_1
+	- $USER_2
 EOF
 
 
@@ -74,7 +74,7 @@ createOffer:
   createSegments:
     - id: demoSegment3
       subscribers:
-	- bar@baz.com
+	- $USER_2
 
 EOF
 
@@ -82,10 +82,10 @@ cat > $TARGET_DIR/step1.yml <<EOF
 updateSegments:
   - id: s1
     subscribers:
-      - u1
+      - $USER_1
   - id: s2
     subscribers:
-      - u2
+      - $USER_2
   - id: s3
     subscribers:
 EOF
@@ -95,13 +95,13 @@ cat > $TARGET_DIR/step2.yml <<EOF
 updateSegments:
  - id: s1
     subscribers:
-      - u1
+      - $USER_1
   - id: s2
     subscribers:
-      - u2
+      - $USER_2
   - id: s3
     subscribers:
-      - u2
+      - $USER_2
 EOF
 
 
@@ -109,8 +109,8 @@ cat > $TARGET_DIR/reset.yml <<EOF
 updateSegments:
  - id: s1
     subscribers:
-      - u1
-      - u2
+      - $USER_1
+      - $USER_2
   - id: s2
     subscribers:
   - id: s3
