@@ -1,0 +1,17 @@
+createOffer:
+  id: demoOffer2
+  createProducts:
+  - sku: 2GB_200NOK
+    price:
+      amount: 200
+      currency: NOK
+    properties:
+      noOfBytes: 2_000_000_000
+    presentation:
+      isDefault: true
+      offerLabel: Top Up
+      priceLabel: 200 NOK
+  createSegments:
+    - id: demoSegment2
+
+      

@@ -1,0 +1,17 @@
+createOffer:
+  id: demoOffer3
+  createProducts:
+  - sku: 1GB_50NOK
+    price:
+      amount: 50
+      currency: NOK
+    properties:
+      noOfBytes: 1_000_000_000
+    presentation:
+      isDefault: true
+      offerLabel: Special offer
+      priceLabel: 50 NOK
+  createSegments:
+    - id: demoSegment3
+      subscribers:
+	- bar@baz.com

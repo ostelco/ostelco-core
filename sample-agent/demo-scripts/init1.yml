@@ -1,0 +1,21 @@
+createOffer:
+  id: demoOffer1
+  createProducts:
+  - sku: 1GB_200NOK
+    price:
+      amount: 200
+      currency: NOK
+    properties:
+      noOfBytes: 1_000_000_000
+    presentation:
+      isDefault: true
+      offerLabel: Top Up
+      priceLabel: 200 NOK
+  createSegments:
+    - id: demoSegment1
+      subscribers:
+        - foo@baz.com
+	- bar@baz.com
+
+
+  
