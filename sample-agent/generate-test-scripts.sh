@@ -100,13 +100,12 @@ updateSegments:
     subscribers:
       - $USER_2
   - id: $SEGMENT_3
-    subscribers:
 EOF
 
 
 cat > $TARGET_DIR/step2.yml <<EOF
 updateSegments:
- - id: $SEGMENT_1
+  - id: $SEGMENT_1
     subscribers:
       - $USER_1
   - id: $SEGMENT_2
