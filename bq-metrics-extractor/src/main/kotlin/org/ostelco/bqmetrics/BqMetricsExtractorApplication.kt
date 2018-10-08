@@ -338,10 +338,9 @@ private class PrometheusPusher(val pushGateway: String, val jobName: String) {
             }
         }
 
-        log.info("Querying bigquery for metric values")
+        log.info("Querying BQ for total ${metricSources.size} metric values")
         val start = System.currentTimeMillis()
         val pg = PushGateway(pushGateway)
-        log.info("Starting ${metricSources.size} Queries")
         coroutineScope {
             metricSources.forEach { builder ->
                 launch {
