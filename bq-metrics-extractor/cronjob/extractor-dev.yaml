@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: bq-metrics-extractor
 spec:
-  schedule: "*/1 * * * *"
+  schedule: "*/30 * * * *"
   jobTemplate:
     spec:
       template:
