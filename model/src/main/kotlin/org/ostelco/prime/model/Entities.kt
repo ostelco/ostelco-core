@@ -16,6 +16,11 @@ data class Segment(
         override val id: String,
         val subscribers: Collection<String> = emptyList()) : HasId
 
+data class ChangeSegment(
+        val sourceSegmentId: String,
+        val targetSegmentId: String,
+        val subscribers: Collection<String>)
+
 data class Subscriber(
         val email: String,
         val name: String = "",
