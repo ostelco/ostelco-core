@@ -52,7 +52,6 @@ createOffer:
       priceLabel: 200 NOK
   createSegments:
     - id: $SEGMENT_1
-      subscribers:
 EOF
 
 
@@ -90,7 +89,6 @@ createOffer:
       priceLabel: 50 NOK
   createSegments:
     - id: $SEGMENT_3
-      subscribers:
 EOF
 
 cat > $TARGET_DIR/step1.yml <<EOF
