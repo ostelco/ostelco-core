@@ -120,28 +120,26 @@ EOF
 
 cat > $TARGET_DIR/reset.yml <<EOF
 updateSegments:
- - id: $SEGMENT_1
+  - id: $SEGMENT_1
     subscribers:
       - $USER_1
       - $USER_2
   - id: $SEGMENT_2
-    subscribers:
   - id: $SEGMENT_3
-    subscribers:
 EOF
 
 echo "$0: INFO Successfully created demo scripts in directyory $TARGET_DIR"
 echo "$0: INFO To initialize run initialization scripts:"
 echo "$0: INFO"
-echo "$0: INFO    apply_yaml.sh  $TARGET_DIR/init1.yml"
-echo "$0: INFO    apply_yaml.sh  $TARGET_DIR/init2.yml"
-echo "$0: INFO    apply_yaml.sh  $TARGET_DIR/init3.yml"
+echo "$0: INFO    apply_yaml.sh  offer $TARGET_DIR/init1.yml"
+echo "$0: INFO    apply_yaml.sh  offer $TARGET_DIR/init2.yml"
+echo "$0: INFO    apply_yaml.sh  offer $TARGET_DIR/init3.yml"
 echo "$0: INFO"
 echo "$0: INFO During the test, run the test steps:"
 echo "$0: INFO"
-echo "$0: INFO    apply_yaml.sh  $TARGET_DIR/step1.yml"
-echo "$0: INFO    apply_yaml.sh  $TARGET_DIR/setep2.yml"
+echo "$0: INFO    apply_yaml.sh  segments $TARGET_DIR/step1.yml"
+echo "$0: INFO    apply_yaml.sh  segments $TARGET_DIR/setep2.yml"
 echo "$0: INFO"
 echo "$0: INFO To reset to initial state (e.g. before running a demo/test again):"
 echo "$0: INFO"
-echo "$0: INFO    apply_yaml.sh  $TARGET_DIR/reset.yml"
+echo "$0: INFO    apply_yaml.sh  segments $TARGET_DIR/reset.yml"

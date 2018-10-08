@@ -11,7 +11,15 @@ set -e
 #  file containing a yaml file.
 #
 
-YAML_SCRIPTNAME=$1
+IMPORT_TYPE=$1
+
+if [[  "$IMPORT_TYPE" != "offer" &&  "$IMPORT_TYPE" != "segments"  ]] ; then
+    echo "$0: ERROR Import type must be 'offer' or 'segments'"
+    echo "usage  $0 {offer,segment} yaml-script"
+    exit 1
+fi
+
+YAML_SCRIPTNAME=$2
 if [[ -z "$YAML_SCRIPTNAME" ]] ; then
     echo "$0  Missing script"
     echo "usage  $0 yaml-script"
@@ -78,14 +86,18 @@ if [[ "$EXPECTED_FROM_GET_TO_IMPORT"  != "$RESULT_FROM_GET_PROBE" ]] ; then
     exit 1
 fi
 
-
 ##
 ## Send it to the importer
 ## (assuming the kubectl port forwarding is enabled)
 
-# SEGMENT_IMPORTER_URL=http://127.0.0.1:8080/import/segments
-# curl -X PUT -H "Content-type: text/vnd.yaml" --data-binary @$YAML_SCRIPTNAME $SEGMENT_IMPORTER_URL
+if [[ "$IMPORT_TYPE" = "segments" ]] ; then
+    SEGMENT_IMPORTER_URL=http://127.0.0.1:8080/import/segments
+    curl -X PUT -H "Content-type: text/vnd.yaml" --data-binary @$YAML_SCRIPTNAME $SEGMENT_IMPORTER_URL
+    exit 0
+fi
 
-
-IMPORTER_URL=http://127.0.0.1:8080/import/offer
-curl -X POST -H "Content-type: text/vnd.yaml" --data-binary @$YAML_SCRIPTNAME $IMPORTER_URL
+if [[ "$IMPORT_TYPE" = "offer" ]] ; then
+    IMPORTER_URL=http://127.0.0.1:8080/import/offer
+    curl -X POST -H "Content-type: text/vnd.yaml" --data-binary @$YAML_SCRIPTNAME $IMPORTER_URL
+    exit 0
+fi
