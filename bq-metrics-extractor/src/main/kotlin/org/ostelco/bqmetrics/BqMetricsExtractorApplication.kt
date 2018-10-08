@@ -3,8 +3,10 @@ package org.ostelco.bqmetrics
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.cloud.RetryOption
-import com.google.cloud.bigquery.*
-import com.google.cloud.bigquery.Job as BQJob
+import com.google.cloud.bigquery.BigQueryOptions
+import com.google.cloud.bigquery.JobId
+import com.google.cloud.bigquery.JobInfo
+import com.google.cloud.bigquery.QueryJobConfiguration
 import io.dropwizard.Application
 import io.dropwizard.Configuration
 import io.dropwizard.cli.ConfiguredCommand
@@ -14,9 +16,9 @@ import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Gauge
 import io.prometheus.client.Summary
 import io.prometheus.client.exporter.PushGateway
+import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.runBlocking
-import kotlinx.coroutines.experimental.Job
 import net.sourceforge.argparse4j.inf.Namespace
 import net.sourceforge.argparse4j.inf.Subparser
 import org.slf4j.Logger
@@ -25,6 +27,7 @@ import org.threeten.bp.Duration
 import java.util.*
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
+import com.google.cloud.bigquery.Job as BQJob
 
 /**
  * Bridge between "latent metrics" stored in BigQuery and Prometheus
@@ -311,12 +314,7 @@ private class PrometheusPusher(val pushGateway: String, val jobName: String) {
     val registry = CollectorRegistry()
     val env: EnvironmentVars = EnvironmentVars()
 
-    fun publishMetrics(metrics: List<MetricConfig>) {
-        publishMetricsAsync(metrics)
-        publishMetricsSync(metrics)
-    }
-
-    fun publishMetricsAsync(metrics: List<MetricConfig>) = runBlocking {
+    fun publishMetrics(metrics: List<MetricConfig>) = runBlocking {
         val metricSources: MutableList<MetricBuilder> = mutableListOf()
         metrics.forEach {
             val typeString: String = it.type.trim().toUpperCase()
@@ -355,53 +353,13 @@ private class PrometheusPusher(val pushGateway: String, val jobName: String) {
         // Wait for the SQL queries to finish.
         jobs.forEach { it.join() }
         val end = System.currentTimeMillis()
-        log.info("Queries finished in ${end - start} ms")
+        log.info("Queries finished in ${(end - start)/1000} seconds")
 
         log.info("Pushing metrics to pushgateway")
         pg.pushAdd(registry, jobName)
         log.info("Done transmitting metrics to pushgateway")
     }
-
-    fun publishMetricsSync(metrics: List<MetricConfig>) {
-        val metricSources: MutableList<MetricBuilder> = mutableListOf()
-        metrics.forEach {
-            val typeString: String = it.type.trim().toUpperCase()
-            when (typeString) {
-                "SUMMARY" -> {
-                    metricSources.add(SummaryMetricBuilder(
-                            it.name,
-                            it.help,
-                            it.sql,
-                            it.resultColumn,
-                            env))
-                }
-                "GAUGE" -> {
-                    metricSources.add(GaugeMetricBuilder(
-                            it.name,
-                            it.help,
-                            it.sql,
-                            it.resultColumn,
-                            env))
-                }
-                else -> {
-                    log.error("Unknown metrics type '${it.type}'")
-                }
-            }
-        }
-
-        log.info("Querying bigquery for metric values")
-        val start = System.currentTimeMillis()
-        val pg = PushGateway(pushGateway)
-        metricSources.forEach { builder ->
-                builder.buildMetric(registry)
-        }
-        val end = System.currentTimeMillis()
-        log.info("Queries finished in ${end - start} ms")
-
-        log.info("Pushing metrics to pushgateway")
-        pg.pushAdd(registry, jobName)
-        log.info("Done transmitting metrics to pushgateway")
-    }}
+}
 
 private class CollectAndPushMetrics : ConfiguredCommand<BqMetricsExtractorConfig>(
         "query",
