@@ -11,13 +11,13 @@ dependencies {
     implementation project(':diameter-stack')
     implementation "com.google.cloud:google-cloud-core-grpc:$googleCloudVersion"
 
-    implementation 'javax.xml.bind:jaxb-api:2.3.0'
-    implementation 'javax.activation:activation:1.1.1'
+    implementation "javax.xml.bind:jaxb-api:$jaxbVersion"
+    implementation "javax.activation:activation:$javaxActivationVersion"
 
     implementation 'ch.qos.logback:logback-classic:1.2.3'
 
     // log to gcp stack-driver
-    implementation 'com.google.cloud:google-cloud-logging-logback:0.64.0-alpha'
+    implementation 'com.google.cloud:google-cloud-logging-logback:0.66.0-alpha'
 
     testImplementation project(':diameter-test')
     testImplementation "org.junit.jupiter:junit-jupiter-api:$junit5Version"

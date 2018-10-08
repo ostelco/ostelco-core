@@ -6,10 +6,16 @@ import io.dropwizard.testing.junit.ResourceTestRule
 import org.junit.Assert.assertEquals
 import org.junit.ClassRule
 import org.junit.Test
+import org.ostelco.prime.admin.YamlMessageBodyReader
 import org.ostelco.prime.admin.api.ImporterResource
-import org.ostelco.prime.admin.api.YamlMessageBodyReader
-import org.ostelco.prime.admin.importer.ImportDeclaration
+import org.ostelco.prime.admin.importer.AddToSegments
+import org.ostelco.prime.admin.importer.ChangeSegments
+import org.ostelco.prime.admin.importer.CreateOffer
+import org.ostelco.prime.admin.importer.CreateSegments
 import org.ostelco.prime.admin.importer.ImportProcessor
+import org.ostelco.prime.admin.importer.Offer
+import org.ostelco.prime.admin.importer.RemoveFromSegments
+import org.ostelco.prime.admin.importer.UpdateSegments
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.model.Price
 import javax.ws.rs.client.Entity
@@ -23,11 +29,31 @@ class ImporterResourceTest {
 
     companion object {
 
-        lateinit var importedResource: ImportDeclaration
+        lateinit var offer: Offer
 
         private val processor: ImportProcessor = object : ImportProcessor {
-            override fun import(importDeclaration: ImportDeclaration): Either<ApiError, Unit> {
-                importedResource = importDeclaration
+            override fun createOffer(createOffer: CreateOffer): Either<ApiError, Unit> {
+                Companion.offer = createOffer.createOffer
+                return Either.right(Unit)
+            }
+
+            override fun createSegments(createSegments: CreateSegments): Either<ApiError, Unit> {
+                return Either.right(Unit)
+            }
+
+            override fun updateSegments(updateSegments: UpdateSegments): Either<ApiError, Unit> {
+                return Either.right(Unit)
+            }
+
+            override fun addToSegments(addToSegments: AddToSegments): Either<ApiError, Unit> {
+                return Either.right(Unit)
+            }
+
+            override fun removeFromSegments(removeFromSegments: RemoveFromSegments): Either<ApiError, Unit> {
+                return Either.right(Unit)
+            }
+
+            override fun changeSegments(changeSegments: ChangeSegments): Either<ApiError, Unit> {
                 return Either.right(Unit)
             }
         }
@@ -46,35 +72,33 @@ class ImporterResourceTest {
         val text: String = fixture("sample-offer-products-segments.yaml")
 
         val response = resources
-                ?.target("/importer")
+                ?.target("/import/offer")
                 ?.request("text/vnd.yaml")
                 ?.post(Entity.entity(text, "text/vnd.yaml"))
 
         assertEquals(response?.readEntity(String::class.java), Status.CREATED.statusCode, response?.status)
-        assertEquals("Simple agent", importedResource.producingAgent.name)
-        assertEquals("1.0", importedResource.producingAgent.version)
 
         // check offer
-        assertEquals("test-offer", importedResource.offer.id)
-        assertEquals(emptyList<String>(), importedResource.offer.products)
-        assertEquals(emptyList<String>(), importedResource.offer.segments)
+        assertEquals("test-offer", offer.id)
+        assertEquals(listOf("1GB_249NOK"), offer.existingProducts)
+        assertEquals(listOf("test-segment"), offer.existingSegments)
 
         // check product
-        assertEquals(1, importedResource.products.size)
-        val product = importedResource.products.first()
-        assertEquals("1GB_249NOK", product.sku)
-        assertEquals(Price(249, "NOK"), product.price)
-        assertEquals(mapOf("noOfBytes" to "1_000_000_000"), product.properties)
+        assertEquals(1, offer.createProducts.size)
+        val product = offer.createProducts.first()
+        assertEquals("10GB_449NOK", product.sku)
+        assertEquals(Price(449, "NOK"), product.price)
+        assertEquals(mapOf("noOfBytes" to "10_000_000_000"), product.properties)
         assertEquals(
                 mapOf("isDefault" to "true",
                         "offerLabel" to "Default Offer",
-                        "priceLabel" to "249 NOK"),
+                        "priceLabel" to "449 NOK"),
                 product.presentation)
 
         // check segment
-        assertEquals(1, importedResource.segments.size)
-        val segment = importedResource.segments.first()
-        assertEquals("test-segment", segment.id)
+        assertEquals(1, offer.createSegments.size)
+        val segment = offer.createSegments.first()
+        assertEquals("test-new-segment", segment.id)
         assertEquals(emptyList<String>(), segment.subscribers)
     }
 
@@ -84,24 +108,22 @@ class ImporterResourceTest {
         val text: String = fixture("sample-offer-only.yaml")
 
         val response = resources
-                ?.target("/importer")
+                ?.target("/import/offer")
                 ?.request("text/vnd.yaml")
                 ?.post(Entity.entity(text, "text/vnd.yaml"))
 
         assertEquals(response?.readEntity(String::class.java), Status.CREATED.statusCode, response?.status)
-        assertEquals("Simple agent", importedResource.producingAgent.name)
-        assertEquals("1.0", importedResource.producingAgent.version)
 
         // check offer
-        assertEquals("test-offer", importedResource.offer.id)
-        assertEquals(listOf("1GB_249NOK"), importedResource.offer.products)
-        assertEquals(listOf("test-segment"), importedResource.offer.segments)
+        assertEquals("test-offer", offer.id)
+        assertEquals(listOf("1GB_249NOK"), offer.existingProducts)
+        assertEquals(listOf("test-segment"), offer.existingSegments)
 
         // check product
-        assertEquals(0, importedResource.products.size)
+        assertEquals(0, offer.createProducts.size)
 
         // check segment
-        assertEquals(0, importedResource.segments.size)
+        assertEquals(0, offer.createSegments.size)
     }
 
     /**

@@ -2,6 +2,7 @@ package org.ostelco.prime.admin.api
 
 import com.fasterxml.jackson.annotation.JsonTypeName
 import io.dropwizard.setup.Environment
+import org.ostelco.prime.admin.YamlMessageBodyReader
 import org.ostelco.prime.admin.importer.ImportAdapter
 import org.ostelco.prime.module.PrimeModule
 

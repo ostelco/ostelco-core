@@ -28,6 +28,8 @@ data class EntityType<ENTITY : HasId>(
         private val dataClass: Class<ENTITY>,
         val name: String = dataClass.simpleName) {
 
+    var entityStore: EntityStore<ENTITY>? = null
+
     fun createEntity(map: Map<String, Any>): ENTITY = ObjectHandler.getObject(map, dataClass)
 }
 
@@ -43,6 +45,10 @@ data class RelationType<FROM : HasId, RELATION, TO : HasId>(
 }
 
 class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
+
+    init {
+        entityType.entityStore = this
+    }
 
     fun get(id: String, transaction: Transaction): Either<StoreError, E> {
         return read("""MATCH (node:${entityType.name} {id: '$id'}) RETURN node;""", transaction) {
@@ -249,6 +255,7 @@ class RelationStore<FROM : HasId, TO : HasId>(private val relationType: Relation
                 CREATE (from)-[:${relationType.relation.name}]->(to);
                 """.trimIndent(),
             transaction) {
+        // TODO vihang: validate if 'from' and 'to' node exists
         val actualCount = it.summary().counters().relationshipsCreated()
         Either.cond(
                 test = actualCount == toIds.size,
@@ -269,6 +276,7 @@ class RelationStore<FROM : HasId, TO : HasId>(private val relationType: Relation
                 CREATE (from)-[:${relationType.relation.name}]->(to);
                 """.trimIndent(),
             transaction) {
+        // TODO vihang: validate if 'from' and 'to' node exists
         val actualCount = it.summary().counters().relationshipsCreated()
         Either.cond(
                 test = actualCount == fromIds.size,
@@ -279,6 +287,15 @@ class RelationStore<FROM : HasId, TO : HasId>(private val relationType: Relation
                             expectedCount = fromIds.size,
                             actualCount = actualCount)
                 })
+    }
+
+    fun removeAll(toId: String, transaction: Transaction): Either<StoreError, Unit> = write("""
+                MATCH (from:${relationType.from.name})-[r:${relationType.relation.name}]->(to:${relationType.to.name} { id: '$toId' })
+                DELETE r;
+        """.trimIndent(),
+            transaction) {
+        // TODO vihang: validate if 'to' node exists
+        Either.right(Unit)
     }
 }
 
