@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<packaging>jar</packaging>
+
+	<parent>
+		<groupId>org.mobicents</groupId>
+		<artifactId>mobicents-parent</artifactId>
+		<version>2.20</version>
+	</parent>
+
+	<groupId>org.mobicents.commons</groupId>
+	<artifactId>commons</artifactId>
+	<version>1.0.0.CR1</version>
+	<name>Mobicents :: Commons :: ${pom.artifactId}</name>
+
+	<profiles>
+		<profile>
+			<id>maven-release</id>
+			<modules />
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-release-plugin</artifactId>
+						<version>2.0-beta-9</version>
+						<configuration>
+							<autoVersionSubmodules>
+								true
+							</autoVersionSubmodules>
+							<tagBase>
+								https://mobicents.googlecode.com/svn/tags/commons
+							</tagBase>
+							<preparationGoals>
+								clean install
+							</preparationGoals>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		<profile>
+			<id>release</id>
+			<modules />
+		</profile>
+	</profiles>
+	<distributionManagement>
+		<repository>
+			<id>jboss-releases-repository</id>
+			<name>JBoss Releases Repository</name>
+			<url>
+				https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/
+			</url>
+		</repository>
+		<snapshotRepository>
+			<id>jboss-snapshots-repository</id>
+			<name>JBoss Snapshots Repository</name>
+			<url>
+				https://repository.jboss.org/nexus/content/repositories/snapshots/
+			</url>
+		</snapshotRepository>
+	</distributionManagement>
+	<!-- -->
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-eclipse-plugin</artifactId>
+				<groupId>org.mobicents.tools</groupId>
+				<version>
+					${mobicents.tools.mavenplugin.eclipse.version}
+				</version>
+				<inherited>false</inherited>
+				<executions />
+				<configuration>
+					<classpathExcludes>
+						<exclude>xml-apis:xml-apis</exclude>
+						<exclude>jtidy:jtidy</exclude>
+					</classpathExcludes>
+					<resolveTransitiveDependencies>
+						true
+					</resolveTransitiveDependencies>
+					<eclipseProjectName>
+						mobicents-commons
+					</eclipseProjectName>
+				</configuration>
+			</plugin>
+		</plugins>
+		<finalName>mobicents-commons-${pom.version}</finalName>
+	</build>
+	<scm>
+		<connection>
+			scm:svn:https://mobicents.googlecode.com/svn/tags/commons/1.0.0.CR1
+		</connection>
+		<developerConnection>
+			scm:svn:https://mobicents.googlecode.com/svn/tags/commons/1.0.0.CR1
+		</developerConnection>
+		<url>
+			http://mobicents.googlecode.com/svn/tags/commons/1.0.0.CR1
+		</url>
+	</scm>
+</project>
