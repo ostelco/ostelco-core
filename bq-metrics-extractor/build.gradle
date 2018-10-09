@@ -1,3 +1,7 @@
+buildscript {
+  ext.kotlin_version = "$kotlinVersion"
+}
+
 plugins {
   id "org.jetbrains.kotlin.jvm" version "1.2.71"
   id "application"
@@ -11,6 +15,7 @@ dependencies {
 
   implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
   implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
+  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinXCoroutinesVersion"
   implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
 
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
@@ -18,7 +23,6 @@ dependencies {
   implementation 'io.prometheus:simpleclient_pushgateway:0.5.0'
 
   runtimeOnly "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
-
 
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation "org.mockito:mockito-core:$mockitoVersion"
