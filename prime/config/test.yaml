@@ -5,6 +5,9 @@ modules:
   config:
     configFile: /secret/pantel-prod.json
     rootPath: test
+- type: Imei-lookup
+  config:
+    csvFile: /imei/imeiDb.csv
 - type: neo4j
   config:
     host: neo4j

@@ -7,6 +7,9 @@ modules:
       httpClient:
         timeout: 3s
         connectionRequestTimeout: 1s
+- type: Imei-lookup
+  config:
+    csvFile: secret/imeiDb.txt
 - type: firebase
   config:
     configFile: /secret/pantel-prod.json

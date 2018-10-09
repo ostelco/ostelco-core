@@ -173,6 +173,9 @@ spec:
         - name: secret-config
           mountPath: "/secret"
           readOnly: true
+        - name: imei-db
+          mountPath: "/imei"
+          readOnly: true
         ports:
         - containerPort: 8080
         - containerPort: 8081
@@ -182,6 +185,9 @@ spec:
       - name: secret-config
         secret:
           secretName: pantel-prod.json
+      - type: Imei-lookup
+        config:
+          csvFile: /imei/imeiDb.csv
       - name: api-ostelco-ssl
         secret:
           secretName: api-ostelco-ssl

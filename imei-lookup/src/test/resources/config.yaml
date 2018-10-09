@@ -1,7 +1,7 @@
 modules:
 - type: Imei-lookup
   config:
-    csvFile: config/testDB.txt
+    csvFile: src/test/resources/testDB.csv
 logging:
   level: INFO
   loggers:
