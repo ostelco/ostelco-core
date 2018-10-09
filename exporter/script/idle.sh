@@ -11,7 +11,7 @@ cleanup ()
 
 trap cleanup SIGINT SIGTERM
 
-while [ 1 ]
+while [[ 1 ]]
 do
   sleep 60 &
   wait $!
