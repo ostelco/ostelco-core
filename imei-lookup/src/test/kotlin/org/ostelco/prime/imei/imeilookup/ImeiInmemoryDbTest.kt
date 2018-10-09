@@ -7,9 +7,7 @@ import io.dropwizard.configuration.EnvironmentVariableSubstitutor
 import io.dropwizard.configuration.SubstitutingSourceProvider
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
-import org.junit.Before
 import org.junit.Test
-import org.ostelco.prime.getLogger
 import org.ostelco.prime.imei.ImeiLookup
 import org.ostelco.prime.module.PrimeModule
 import org.ostelco.prime.module.getResource
@@ -36,7 +34,7 @@ class TestConfig: Configuration() {
 }
 
 
-class ImeiSqliteDbTest {
+class ImeiInmemoryDbTest {
 
     private val imeiLookup by lazy { getResource<ImeiLookup>() }
 
@@ -48,8 +46,7 @@ class ImeiSqliteDbTest {
 
     @Test
     fun getImeiResult() {
-        val result = imeiLookup.getImeiInformation("3550900831237501")
+        val result = imeiLookup.getImeiInformation("0010073231237501")
         assertEquals(true, result.isRight())
     }
-
 }

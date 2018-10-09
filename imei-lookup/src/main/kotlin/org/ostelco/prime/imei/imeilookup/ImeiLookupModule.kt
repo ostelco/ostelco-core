@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName
 import io.dropwizard.setup.Environment
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.module.PrimeModule
+import org.ostelco.prime.imei.imeilookup.ImeiDb
 
 
 @JsonTypeName("Imei-lookup")
@@ -16,19 +17,14 @@ class ImeiLookupModule : PrimeModule {
     var config: Config? = null
 
     override fun init(env: Environment) {
-
-        logger.info("ImeiLookupModule env: $env")
-        logger.info("CSV file set to ${config?.imeiLookupConfig?.csvFile}")
+        
+        val fileName = config?.csvFile  ?: ""
+        logger.info("CSV file set to $fileName")
+        ImeiDb.ImeiDdSingleton.loadFile(fileName);
     }
 }
 
-
 class Config {
-    @JsonProperty("sqlite")
-    lateinit var imeiLookupConfig: ImeiLookupConfig
-}
-
-class ImeiLookupConfig {
     @JsonProperty
     var csvFile: String = "default.txt"
 }
