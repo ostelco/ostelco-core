@@ -1,8 +1,6 @@
 package org.ostelco.prime.paymentprocessor
 
 import arrow.core.getOrElse
-import arrow.core.right
-import arrow.core.some
 import com.stripe.Stripe
 import com.stripe.model.Source
 import com.stripe.model.Token

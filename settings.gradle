@@ -27,6 +27,8 @@ include ':prime-modules'
 include ':prime-client-api'
 include ':pseudonym-server'
 include ':slack'
+include ':imei-lookup'
+
 
 
 project(':acceptance-tests').projectDir = "$rootDir/acceptance-tests" as File
@@ -56,3 +58,4 @@ project(':prime-modules').projectDir = "$rootDir/prime-modules" as File
 project(':prime-client-api').projectDir = "$rootDir/prime-client-api" as File
 project(':pseudonym-server').projectDir = "$rootDir/pseudonym-server" as File
 project(':slack').projectDir = "$rootDir/slack" as File
+project(':imei-lookup').projectDir = "$rootDir/imei-lookup" as File
