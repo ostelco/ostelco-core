@@ -163,6 +163,7 @@ spec:
       - name: houston-api-esp
         image: gcr.io/endpoints-release/endpoints-runtime:1
         args: [
+          "--http2_port=9006",
           "--ssl_port", "10443",
           "--status_port=8095",
           "--service=houston-api.dev.ostelco.org",
@@ -170,6 +171,7 @@ spec:
           "--backend=127.0.0.1:8080"
         ]
         ports:
+        - containerPort: 9006
         - containerPort: 10443
         volumeMounts:
         - mountPath: /etc/nginx/ssl
