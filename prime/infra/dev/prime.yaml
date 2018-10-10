@@ -47,7 +47,7 @@ spec:
   ports:
   - name: https
     port: 443
-    targetPort: 7443
+    targetPort: 10443
     protocol: TCP
   selector:
     app: prime
@@ -142,21 +142,6 @@ spec:
         - mountPath: /etc/nginx/ssl
           name: api-ostelco-ssl
           readOnly: true
-      - name: houston-api-esp
-        image: gcr.io/endpoints-release/endpoints-runtime:1
-        args: [
-          "--ssl_port", "7443",
-          "--status_port=8092",
-          "--service=houston-api.dev.ostelco.org",
-          "--rollout_strategy=managed",
-          "--backend=127.0.0.1:8080"
-        ]
-        ports:
-        - containerPort: 7443
-        volumeMounts:
-        - mountPath: /etc/nginx/ssl
-          name: api-ostelco-ssl
-          readOnly: true
       - name: metrics-esp
         image: gcr.io/endpoints-release/endpoints-runtime:1
         args: [
@@ -173,6 +158,21 @@ spec:
         volumeMounts:
         - mountPath: /etc/nginx/ssl
           name: metrics-ostelco-ssl
+          readOnly: true
+      - name: houston-api-esp
+        image: gcr.io/endpoints-release/endpoints-runtime:1
+        args: [
+          "--ssl_port", "10443",
+          "--status_port=8095",
+          "--service=houston-api.dev.ostelco.org",
+          "--rollout_strategy=managed",
+          "--backend=127.0.0.1:8080"
+        ]
+        ports:
+        - containerPort: 7443
+        volumeMounts:
+        - mountPath: /etc/nginx/ssl
+          name: api-ostelco-ssl
           readOnly: true
       - name: prime
         image: eu.gcr.io/pantel-2decb/prime:PRIME_VERSION
