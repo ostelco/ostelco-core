@@ -30,3 +30,15 @@
     transform: rotate(360deg);
   }
 }
+
+.btn-margin {
+  margin: 7px 3px;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+}
+.navbar-brand>img {
+  padding: 7px 14px;
+}
