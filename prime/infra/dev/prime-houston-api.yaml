@@ -1,0 +1,56 @@
+swagger: "2.0"
+info:
+  title: "Houston Admin API"
+  description: "The APIs for the Houston Admin Client."
+  version: "1.0.0"
+host: "houston-api.dev.ostelco.org"
+x-google-endpoints:
+  - name: "houston-api.dev.ostelco.org"
+    allowCors: true
+schemes:
+  - "https"
+paths:
+  "/profile":
+    get:
+      description: "Get profile for the user (email-id present in the bearer token)."
+      produces:
+        - application/json
+      operationId: "getProfile"
+      responses:
+        200:
+          description: "Get the profile for this user."
+          schema:
+            $ref: '#/definitions/Profile'
+        404:
+          description: "Profile not found."
+      security:
+        - auth0_jwt: []
+definitions:
+  Profile:
+    type: object
+    properties:
+      name:
+        type: string
+      address:
+        type: string
+      postCode:
+        type: string
+      city:
+        type: string
+      country:
+        type: string
+      email:
+        type: string
+        format: email
+      referralId:
+        type: string
+    required:
+      - email
+securityDefinitions:
+  auth0_jwt:
+    authorizationUrl: "https://redotter-admin-dev.eu.auth0.com/authorize"
+    flow: "implicit"
+    type: "oauth2"
+    x-google-issuer: "https://redotter-admin-dev.eu.auth0.com/"
+    x-google-jwks_uri: "https://redotter-admin-dev.eu.auth0.com/.well-known/jwks.json"
+    x-google-audiences: "http://google_api"
