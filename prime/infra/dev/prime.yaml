@@ -48,7 +48,7 @@ spec:
   ports:
   - name: https
     port: 443
-    targetPort: 10443
+    targetPort: 7443
     protocol: TCP
   selector:
     app: prime
@@ -163,8 +163,8 @@ spec:
       - name: houston-api-esp
         image: gcr.io/endpoints-release/endpoints-runtime:1
         args: [
-          "--http2_port=9006",
-          "--ssl_port", "10443",
+          "--http_port=9006",
+          "--ssl_port=7443",
           "--status_port=8095",
           "--service=houston-api.dev.ostelco.org",
           "--rollout_strategy=managed",
@@ -172,7 +172,7 @@ spec:
         ]
         ports:
         - containerPort: 9006
-        - containerPort: 10443
+        - containerPort: 7443
         volumeMounts:
         - mountPath: /etc/nginx/ssl
           name: api-ostelco-ssl
