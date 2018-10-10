@@ -170,7 +170,7 @@ spec:
           "--backend=127.0.0.1:8080"
         ]
         ports:
-        - containerPort: 7443
+        - containerPort: 10443
         volumeMounts:
         - mountPath: /etc/nginx/ssl
           name: api-ostelco-ssl
