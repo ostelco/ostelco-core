@@ -138,6 +138,10 @@ spec:
         ports:
         - containerPort: 9002
         - containerPort: 443
+        volumeMounts:
+        - mountPath: /etc/nginx/ssl
+          name: api-ostelco-ssl
+          readOnly: true
       - name: houston-api-esp
         image: gcr.io/endpoints-release/endpoints-runtime:1
         args: [
