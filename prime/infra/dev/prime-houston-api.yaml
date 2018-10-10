@@ -10,42 +10,48 @@ x-google-endpoints:
 schemes:
   - "https"
 paths:
-  "/profile":
+  "/pseudonym/current/{msisdn}":
     get:
-      description: "Get profile for the user (email-id present in the bearer token)."
+      description: "Get the pseudonym which is valid at the time of the call."
       produces:
-        - application/json
-      operationId: "getProfile"
+      - application/json
+      operationId: "getPseudonym"
       responses:
         200:
-          description: "Get the profile for this user."
+          description: "pseudonym for this msisdn."
           schema:
-            $ref: '#/definitions/Profile'
+            $ref: '#/definitions/PseudonymEntity'
         404:
-          description: "Profile not found."
+          description: "Not found."
       security:
-        - auth0_jwt: []
+      - auth0_jwt: []
+      parameters:
+      - name: msisdn
+        in: path
+        description: msisdn to be pseudonymised
+        required: true
+        type: string
 definitions:
-  Profile:
+  PseudonymEntity:
     type: object
     properties:
-      name:
+      sourceId:
         type: string
-      address:
+      pseudonym:
         type: string
-      postCode:
-        type: string
-      city:
-        type: string
-      country:
-        type: string
-      email:
-        type: string
-        format: email
-      referralId:
-        type: string
+      start:
+        description: "The start time stamp for this pseudonym"
+        type: integer
+        format: int64
+      end:
+        description: "The start time stamp for this pseudonym"
+        type: integer
+        format: int64
     required:
-      - email
+    - sourceId
+    - pseudonym
+    - start
+    - end
 securityDefinitions:
   auth0_jwt:
     authorizationUrl: "https://redotter-admin-dev.eu.auth0.com/authorize"
