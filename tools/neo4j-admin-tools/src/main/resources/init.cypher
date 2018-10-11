@@ -78,7 +78,6 @@ CREATE (:Product {`id`:                        '1GB_1SGD',
 
 CREATE (:Product {`id`:                        '3GB_1.5SGD',
                   `presentation/isDefault`:    'true',
-                  `presentation/isOffer`:      'true',
                   `presentation/offerLabel`:   'Default Offer',
                   `presentation/priceLabel`:   '1.5 SGD',
                   `presentation/productLabel`: '+3GB',

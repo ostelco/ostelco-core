@@ -50,6 +50,7 @@ createOffer:
       isDefault: true
       offerLabel: Top Up
       priceLabel: 200 NOK
+      productLabel: +1GB
   createSegments:
     - id: $SEGMENT_1
 EOF
@@ -69,6 +70,7 @@ createOffer:
       isDefault: true
       offerLabel: Top Up
       priceLabel: 200 NOK
+      productLabel: +2GB
   createSegments:
     - id: $SEGMENT_2
 EOF
@@ -87,6 +89,7 @@ createOffer:
       isDefault: true
       offerLabel: Special offer
       priceLabel: 50 NOK
+      productLabel: +1GB
   createSegments:
     - id: $SEGMENT_3
 EOF
