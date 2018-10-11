@@ -3,6 +3,7 @@ import { history, authHeader } from '../helpers';
 import auth0 from 'auth0-js';
 import { AUTH_CONFIG } from './auth0-variables';
 import { userActions } from '../actions';
+import { store } from '../helpers';
 
 class Auth {
   auth0 = new auth0.WebAuth({
@@ -20,7 +21,9 @@ class Auth {
     this.login = this.login.bind(this);
     this.logout = this.logout.bind(this);
     this.handleAuthentication = this.handleAuthentication.bind(this);
+    this.loadCurrentSession = this.loadCurrentSession.bind(this);
     this.isAuthenticated = this.isAuthenticated.bind(this);
+    setTimeout(this.loadCurrentSession, 10);
   }
 
   login() {
@@ -31,7 +34,6 @@ class Auth {
     this.auth0.parseHash((err, authResult) => {
       if (authResult && authResult.accessToken) {
         this.setSession(authResult);
-        history.replace('/home');
         dispatch(userActions.loginSuccess(this.user));
       } else if (err) {
         console.log(err);
@@ -54,14 +56,16 @@ class Auth {
     this.user = { accessToken, expiresAt };
   }
 
-  loadCurrentSession(dispatch) {
+  loadCurrentSession() {
+    console.log("loadCurrentSession");
     const accessToken = localStorage.getItem('access_token');
     const expiresAt = localStorage.getItem('expires_at');
     this.user = { accessToken, expiresAt };
     if (this.isAuthenticated()) {
-      dispatch(userActions.loginSuccess(this.user));
+      history.replace('/home');
+      store.dispatch(userActions.loginSuccess(this.user));
     } else {
-
+      store.dispatch(userActions.logout())
     }
   }
 
