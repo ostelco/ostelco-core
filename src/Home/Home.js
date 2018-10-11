@@ -1,12 +1,15 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import *as _ from 'lodash';
+import { userActions } from '../actions';
 
 class Home extends Component {
   login() {
-    this.props.auth.login();
+    this.props.dispatch(userActions.login());
   }
 
   testAPI() {
-    let accessToken = localStorage.getItem('access_token');
+    let accessToken = this.props.user.accessToken;
     var url = 'https://houston-api.dev.ostelco.org/pseudonym/current/4790300168';
     console.log(`testAPI with header : Bearer ${accessToken}`)
     fetch(url, {
@@ -20,11 +23,11 @@ class Home extends Component {
   }
 
   render() {
-    const { isAuthenticated } = this.props.auth;
+    const { isAuthenticated } = this.props;
     return (
       <div className="container">
         {
-          isAuthenticated() && (
+          isAuthenticated && (
               <h4>
                 You are logged in!<br></br><br></br>
                 Test the Houston API. {' '}
@@ -39,7 +42,7 @@ class Home extends Component {
             )
         }
         {
-          !isAuthenticated() && (
+          !isAuthenticated && (
             <h4>
               You are not logged in! Please{' '}
               <a
@@ -56,5 +59,15 @@ class Home extends Component {
     );
   }
 }
+function mapStateToProps(state) {
+  const { loggingIn, user } = state.authentication;
+  const isAuthenticated = _.get(state, "authentication.loggedIn", false);
+  return {
+      loggingIn,
+      user,
+      isAuthenticated
+  };}
 
-export default Home;
+const connectedHome = connect(mapStateToProps)(Home);
+export default connectedHome;
+

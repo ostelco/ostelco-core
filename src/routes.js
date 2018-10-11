@@ -3,16 +3,14 @@ import { Route, Router } from 'react-router-dom';
 import App from './App';
 import Home from './Home/Home';
 import Callback from './Callback/Callback';
-import Auth from './Auth/Auth';
 import { history } from './helpers';
 import { Provider } from 'react-redux';
 import { store } from './helpers';
-
-const auth = new Auth();
+import { userService } from './services';
 
 const handleAuthentication = ({location}) => {
   if (/access_token|id_token|error/.test(location.hash)) {
-    auth.handleAuthentication();
+      userService.handleAuthentication(store.dispatch);
   }
 }
 
@@ -21,8 +19,8 @@ export const makeMainRoutes = () => {
     <Provider store={store}>
         <Router history={history}>
             <div>
-            <Route path="/" render={(props) => <App auth={auth} {...props} />} />
-            <Route path="/home" render={(props) => <Home auth={auth} {...props} />} />
+            <Route path="/" render={(props) => <App {...props} />} />
+            <Route path="/home" render={(props) => <Home {...props} />} />
             <Route path="/callback" render={(props) => {
                 handleAuthentication(props);
                 return <Callback {...props} /> 

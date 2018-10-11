@@ -1,5 +1,9 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import { Navbar, Button } from 'react-bootstrap';
+import * as _ from 'lodash';
+
+import { userActions } from './actions';
 import './App.css';
 
 class App extends Component {
@@ -8,15 +12,16 @@ class App extends Component {
   }
 
   login() {
-    this.props.auth.login();
+    this.props.dispatch(userActions.login());
   }
 
   logout() {
-    this.props.auth.logout();
+    this.props.dispatch(userActions.logout());
   }
 
   render() {
-    const { isAuthenticated } = this.props.auth;
+    console.log(JSON.stringify(this.props));
+    const { isAuthenticated } = this.props;
 
     return (
       <div>
@@ -36,7 +41,7 @@ class App extends Component {
               Home
             </Button>
             {
-              !isAuthenticated() && (
+              !isAuthenticated && (
                   <Button
                     id="qsLoginBtn"
                     bsStyle="primary"
@@ -48,7 +53,7 @@ class App extends Component {
                 )
             }
             {
-              isAuthenticated() && (
+              isAuthenticated && (
                   <Button
                     id="qsLogoutBtn"
                     bsStyle="primary"
@@ -66,4 +71,15 @@ class App extends Component {
   }
 }
 
-export default App;
+function mapStateToProps(state) {
+  console.log(JSON.stringify(state));
+  const { loggingIn } = state.authentication;
+  const isAuthenticated = _.get(state, "authentication.loggedIn", false);
+  return {
+      loggingIn,
+      isAuthenticated
+  };
+}
+
+const connectedApp = connect(mapStateToProps)(App);
+export default connectedApp;
