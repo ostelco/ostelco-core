@@ -4,7 +4,9 @@ import App from './App';
 import Home from './Home/Home';
 import Callback from './Callback/Callback';
 import Auth from './Auth/Auth';
-import history from './history';
+import { history } from './helpers';
+import { Provider } from 'react-redux';
+import { store } from './helpers';
 
 const auth = new Auth();
 
@@ -16,15 +18,17 @@ const handleAuthentication = ({location}) => {
 
 export const makeMainRoutes = () => {
   return (
-      <Router history={history}>
-        <div>
-          <Route path="/" render={(props) => <App auth={auth} {...props} />} />
-          <Route path="/home" render={(props) => <Home auth={auth} {...props} />} />
-          <Route path="/callback" render={(props) => {
-            handleAuthentication(props);
-            return <Callback {...props} /> 
-          }}/>
-        </div>
-      </Router>
+    <Provider store={store}>
+        <Router history={history}>
+            <div>
+            <Route path="/" render={(props) => <App auth={auth} {...props} />} />
+            <Route path="/home" render={(props) => <Home auth={auth} {...props} />} />
+            <Route path="/callback" render={(props) => {
+                handleAuthentication(props);
+                return <Callback {...props} /> 
+            }}/>
+            </div>
+        </Router>
+      </Provider>
   );
 }
