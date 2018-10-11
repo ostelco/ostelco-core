@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import *as _ from 'lodash';
+import * as _ from 'lodash';
 import { userActions } from '../actions';
 
 class Home extends Component {
@@ -23,7 +23,7 @@ class Home extends Component {
   }
 
   render() {
-    const { isAuthenticated } = this.props;
+    const isAuthenticated = this.props.loggedIn || false;
     return (
       <div className="container">
         {
@@ -60,12 +60,11 @@ class Home extends Component {
   }
 }
 function mapStateToProps(state) {
-  const { loggingIn, user } = state.authentication;
-  const isAuthenticated = _.get(state, "authentication.loggedIn", false);
+  console.log("Home  " + JSON.stringify(state.authentication));
+  const { loggedIn, user } = state.authentication;
   return {
-      loggingIn,
-      user,
-      isAuthenticated
+      loggedIn,
+      user
   };}
 
 const connectedHome = connect(mapStateToProps)(Home);

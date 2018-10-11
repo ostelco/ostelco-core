@@ -60,8 +60,9 @@ class Auth {
     console.log("loadCurrentSession");
     const accessToken = localStorage.getItem('access_token');
     const expiresAt = localStorage.getItem('expires_at');
+    const isAuthenticated = this.isAuthenticated(expiresAt);
     this.user = { accessToken, expiresAt };
-    if (this.isAuthenticated()) {
+    if (isAuthenticated) {
       history.replace('/home');
       store.dispatch(userActions.loginSuccess(this.user));
     } else {
@@ -78,11 +79,11 @@ class Auth {
     history.replace('/home');
   }
 
-  isAuthenticated() {
+  isAuthenticated(expiresAt) {
     // Check whether the current time is past the
     // access token's expiry time
-    let expiresAt = JSON.parse(this.user.expiresAt);
-    return new Date().getTime() < expiresAt;
+    let expiry = JSON.parse(expiresAt);
+    return new Date().getTime() < expiry;
   }
 }
 const auth = new Auth();

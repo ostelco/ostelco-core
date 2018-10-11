@@ -21,7 +21,7 @@ class App extends Component {
 
   render() {
     console.log(JSON.stringify(this.props));
-    const { isAuthenticated } = this.props;
+    const isAuthenticated = this.props.loggedIn || false;
 
     return (
       <div>
@@ -72,12 +72,10 @@ class App extends Component {
 }
 
 function mapStateToProps(state) {
-  console.log(JSON.stringify(state));
-  const { loggingIn } = state.authentication;
-  const isAuthenticated = _.get(state, "authentication.loggedIn", false);
+  console.log(JSON.stringify(state.authentication));
+  const { loggedIn } = state.authentication;
   return {
-      loggingIn,
-      isAuthenticated
+    loggedIn
   };
 }
 
