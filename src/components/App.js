@@ -19,8 +19,9 @@ class App extends Component {
   }
 
   render() {
-    const isAuthenticated = this.props.loggedIn || false;
-
+    const { props } = this
+    const isAuthenticated = props.loggedIn || false;
+    const userName = props.user ? props.user.name + ' : ' + props.user.email : '';
     return (
       <div>
         <Navbar fluid>
@@ -31,13 +32,6 @@ class App extends Component {
                 Houston
               </a>
             </Navbar.Brand>
-            <Button
-              bsStyle="primary"
-              className="btn-margin"
-              onClick={this.goTo.bind(this, 'home')}
-            >
-              Home
-            </Button>
             {
               !isAuthenticated && (
                 <Button
@@ -47,22 +41,21 @@ class App extends Component {
                   onClick={this.login.bind(this)}
                 >
                   Log In
-                  </Button>
-              )
-            }
-            {
-              isAuthenticated && (
-                <Button
-                  id="qsLogoutBtn"
-                  bsStyle="primary"
-                  className="btn-margin"
-                  onClick={this.logout.bind(this)}
-                >
-                  Log Out
-                  </Button>
+                </Button>
               )
             }
           </Navbar.Header>
+          {
+            isAuthenticated && (
+              <Navbar.Collapse>
+                <Navbar.Text pullRight>
+                  <Navbar.Link href="" onClick={(e) => { e.preventDefault(); props.logout(); }}>
+                    {' '+ userName + ' '}
+                  </Navbar.Link>
+                </Navbar.Text>
+              </Navbar.Collapse>
+            )
+          }
         </Navbar>
       </div>
     );
@@ -70,9 +63,10 @@ class App extends Component {
 }
 
 function mapStateToProps(state) {
-  const { loggedIn } = state.authentication;
+  const { loggedIn, user } = state.authentication;
   return {
-    loggedIn
+    loggedIn,
+    user
   };
 }
 const mapDispatchToProps = {

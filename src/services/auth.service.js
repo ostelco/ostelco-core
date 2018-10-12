@@ -12,7 +12,7 @@ class Auth {
     clientID: authConfig.clientId,
     redirectUri: authConfig.callbackUrl,
     responseType: 'token id_token',
-    scope: 'openid',
+    scope: 'openid profile email',
     audience: 'http://google_api'
   });
 
@@ -45,22 +45,33 @@ class Auth {
   }
 
   setSession(authResult) {
+    console.log(authResult);
     // Set the time that the access token will expire at
     let expiresAt = JSON.stringify((authResult.expiresIn * 1000) + new Date().getTime());
     localStorage.setItem('access_token', authResult.accessToken);
     localStorage.setItem('expires_at', expiresAt);
+    const name = _.get(authResult, 'idTokenPayload.name');
+    localStorage.setItem('name', name);
+    const email = _.get(authResult, 'idTokenPayload.email')
+    localStorage.setItem('email', email);
+    const picture = _.get(authResult, 'idTokenPayload.picture')
+    localStorage.setItem('picture', picture);
+
     // navigate to the home route
     history.replace('/home');
     const { accessToken } = authResult;
-    this.user = { accessToken, expiresAt };
+    this.user = { accessToken, expiresAt, name, email, picture };
   }
 
   loadCurrentSession() {
     console.log("loadCurrentSession");
     const accessToken = localStorage.getItem('access_token');
     const expiresAt = localStorage.getItem('expires_at');
+    const name = localStorage.getItem('name');
+    const email = localStorage.getItem('email');
+    const picture = localStorage.getItem('picture');
     const isAuthenticated = this.isAuthenticated(expiresAt);
-    this.user = { accessToken, expiresAt };
+    this.user = { accessToken, expiresAt, name, email, picture };
     if (isAuthenticated) {
       history.replace('/home');
       store.dispatch(authActions.loginSuccess(this.user));
@@ -74,6 +85,9 @@ class Auth {
     // Clear access token and ID token from local storage
     localStorage.removeItem('access_token');
     localStorage.removeItem('expires_at');
+    localStorage.removeItem('name');
+    localStorage.removeItem('email');
+    localStorage.removeItem('picture');
     // navigate to the home route
     history.replace('/home');
   }
