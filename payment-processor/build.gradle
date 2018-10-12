@@ -5,11 +5,8 @@ plugins {
 }
 
 sourceSets {
-  test {
-    java.srcDirs = ['src/test/kotlin']
-  }
   integration {
-    java.srcDirs = ['src/test/kotlin', 'src/integration-tests/kotlin']
+    java.srcDirs = ['src/integration-tests/kotlin']
     resources.srcDir 'src/integration-tests/resources'
     compileClasspath += main.output + test.output
     runtimeClasspath += main.output + test.output
