@@ -3,7 +3,7 @@ import { history, authHeader } from '../helpers';
 import auth0 from 'auth0-js';
 import * as _ from 'lodash';
 import { AUTH_CONFIG } from './auth0-variables';
-import { userActions } from '../actions';
+import { authActions } from '../actions';
 import { store } from '../helpers';
 
 class Auth {
@@ -35,12 +35,12 @@ class Auth {
     this.auth0.parseHash((err, authResult) => {
       if (authResult && authResult.accessToken) {
         this.setSession(authResult);
-        dispatch(userActions.loginSuccess(this.user));
+        dispatch(authActions.loginSuccess(this.user));
       } else if (err) {
         console.log(err);
         alert(`Error: ${err.error}. Check the console for further details.`);
         this.logout()
-        dispatch(userActions.loginFailure(err));
+        dispatch(authActions.loginFailure(err));
       }
     });
   }
@@ -65,9 +65,9 @@ class Auth {
     this.user = { accessToken, expiresAt };
     if (isAuthenticated) {
       history.replace('/home');
-      store.dispatch(userActions.loginSuccess(this.user));
+      store.dispatch(authActions.loginSuccess(this.user));
     } else {
-      store.dispatch(userActions.logout())
+      store.dispatch(authActions.logout())
     }
   }
 
@@ -97,15 +97,4 @@ class Auth {
   }
 }
 const auth = new Auth();
-
-export default auth;
-export const userService = auth;
-
-function getAll() {
-  // const requestOptions = {
-  //   method: 'GET',
-  //   headers: authHeader()
-  // };
-
-  // return fetch(`${config.apiUrl}/users`, requestOptions).then(handleResponse);
-}
+export const authService = auth;

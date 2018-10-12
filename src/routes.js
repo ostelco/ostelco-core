@@ -6,11 +6,11 @@ import Callback from './Callback/Callback';
 import { history } from './helpers';
 import { Provider } from 'react-redux';
 import { store } from './helpers';
-import { userService } from './services';
+import { authService } from './services';
 
 const handleAuthentication = ({location}) => {
   if (/access_token|id_token|error/.test(location.hash)) {
-      userService.handleAuthentication(store.dispatch);
+      authService.handleAuthentication(store.dispatch);
   }
 }
 

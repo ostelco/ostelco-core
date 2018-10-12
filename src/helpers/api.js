@@ -1,4 +1,4 @@
-import { userService } from '../services';
+import { authService } from '../services';
 
 const API_ROOT = 'https://houston-api.dev.ostelco.org/';
 
@@ -9,7 +9,7 @@ const callApi = async (endpoint, method, body, allowEmptyResponse, params = []) 
   if (params.length > 0) {
     fullUrl += `?${params.join('&')}`;
   }
-  const authHeader = userService.authHeader();
+  const authHeader = authService.authHeader();
   if (!authHeader) {
     return Promise.reject("Authentication failed");
   }

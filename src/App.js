@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { Navbar, Button } from 'react-bootstrap';
 import * as _ from 'lodash';
 
-import { userActions } from './actions';
+import { authActions } from './actions';
 import './App.css';
 
 class App extends Component {
@@ -20,7 +20,6 @@ class App extends Component {
   }
 
   render() {
-    console.log("App: " + JSON.stringify(this.props));
     const isAuthenticated = this.props.loggedIn || false;
 
     return (
@@ -78,8 +77,8 @@ function mapStateToProps(state) {
   };
 }
 const mapDispatchToProps = {
-  login: userActions.login,
-  logout: userActions.logout
+  login: authActions.login,
+  logout: authActions.logout
 }
 
 const connectedApp = connect(mapStateToProps, mapDispatchToProps)(App);

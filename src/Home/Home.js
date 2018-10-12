@@ -4,7 +4,7 @@ import { withRouter } from 'react-router-dom'
 import PropTypes from 'prop-types';
 
 import * as _ from 'lodash';
-import { userActions, pseudoActions } from '../actions';
+import { authActions, pseudoActions } from '../actions';
 
 const Home = props => {
   const isAuthenticated = props.loggedIn || false;
@@ -61,7 +61,7 @@ function mapStateToProps(state) {
   };
 }
 const mapDispatchToProps = {
-  login: userActions.login,
+  login: authActions.login,
   getPseudonym: pseudoActions.getPseudonym
 }
 export default connect(mapStateToProps, mapDispatchToProps)(Home);
