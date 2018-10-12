@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router-dom'
 import PropTypes from 'prop-types';
 
 import * as _ from 'lodash';
-import { authActions, pseudoActions } from '../actions';
+import { authActions, pseudoActions } from '../../actions';
 
 const Home = props => {
   const isAuthenticated = props.loggedIn || false;

@@ -1,8 +1,8 @@
 import React from 'react';
 import { Route, Router } from 'react-router-dom';
-import App from './App';
-import Home from './Home/Home';
-import Callback from './Callback/Callback';
+import App from './components/App';
+import Home from './components/Home/Home';
+import Callback from './components/Callback/Callback';
 import { history } from './helpers';
 import { Provider } from 'react-redux';
 import { store } from './helpers';
