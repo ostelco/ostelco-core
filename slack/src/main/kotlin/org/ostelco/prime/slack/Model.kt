@@ -5,12 +5,13 @@ import com.fasterxml.jackson.annotation.JsonProperty
 data class Message(
         val channel: String,
         @JsonProperty("username") val userName: String? = null,
-        val text: String ?= null,
-        @JsonProperty("icon_emoji") val iconEmoji: String ?= null,
+        val text: String = "",
+        @JsonProperty("icon_emoji") val iconEmoji: String? = null,
         val attachments: List<Attachment> = emptyList()) {
 
     fun format(): Message = this.copy(
             channel = "#$channel",
+            text = "<!channel> $text",
             iconEmoji = iconEmoji?.let { ":$it:" })
 }
 

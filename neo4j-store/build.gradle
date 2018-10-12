@@ -3,7 +3,7 @@ plugins {
   id "java-library"
 }
 
-ext.neo4jVersion="3.4.7"
+ext.neo4jVersion="3.4.8"
 ext.neo4jDriverVersion="1.6.3"
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {

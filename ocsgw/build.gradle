@@ -1,6 +1,6 @@
 plugins {
     id "application"
-    // FIXME: unable to update to 4.0.0
+    // FIXME martin: unable to update to 4.0.1
     id "com.github.johnrengelman.shadow" version "2.0.4"
 }
 
@@ -17,7 +17,7 @@ dependencies {
     implementation 'ch.qos.logback:logback-classic:1.2.3'
 
     // log to gcp stack-driver
-    implementation 'com.google.cloud:google-cloud-logging-logback:0.66.0-alpha'
+    implementation 'com.google.cloud:google-cloud-logging-logback:0.67.0-alpha'
 
     testImplementation project(':diameter-test')
     testImplementation "org.junit.jupiter:junit-jupiter-api:$junit5Version"

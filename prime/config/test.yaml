@@ -1,10 +1,14 @@
 # This config is used as config.yaml when prime is running using docker-compose for Acceptance Testing
 
 modules:
+- type: jersey
 - type: firebase
   config:
     configFile: /secret/pantel-prod.json
     rootPath: test
+- type: Imei-lookup
+  config:
+    csvFile: /config-data/imeiDb.csv
 - type: neo4j
   config:
     host: neo4j
