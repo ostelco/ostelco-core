@@ -50,6 +50,7 @@ createOffer:
       isDefault: true
       offerLabel: Top Up
       priceLabel: 200 NOK
+      productLabel: +1GB
   createSegments:
     - id: $SEGMENT_1
 EOF
@@ -69,6 +70,7 @@ createOffer:
       isDefault: true
       offerLabel: Top Up
       priceLabel: 200 NOK
+      productLabel: +2GB
   createSegments:
     - id: $SEGMENT_2
 EOF
@@ -87,6 +89,7 @@ createOffer:
       isDefault: true
       offerLabel: Special offer
       priceLabel: 50 NOK
+      productLabel: +1GB
   createSegments:
     - id: $SEGMENT_3
 EOF
@@ -130,15 +133,15 @@ EOF
 echo "$0: INFO Successfully created demo scripts in directyory $TARGET_DIR"
 echo "$0: INFO To initialize run initialization scripts:"
 echo "$0: INFO"
-echo "$0: INFO    apply_yaml.sh  offer $TARGET_DIR/init1.yml"
-echo "$0: INFO    apply_yaml.sh  offer $TARGET_DIR/init2.yml"
-echo "$0: INFO    apply_yaml.sh  offer $TARGET_DIR/init3.yml"
+echo "$0: INFO    ./apply_yaml.sh  offer $TARGET_DIR/init1.yml"
+echo "$0: INFO    ./apply_yaml.sh  offer $TARGET_DIR/init2.yml"
+echo "$0: INFO    ./apply_yaml.sh  offer $TARGET_DIR/init3.yml"
 echo "$0: INFO"
 echo "$0: INFO During the test, run the test steps:"
 echo "$0: INFO"
-echo "$0: INFO    apply_yaml.sh  segments $TARGET_DIR/step1.yml"
-echo "$0: INFO    apply_yaml.sh  segments $TARGET_DIR/setep2.yml"
+echo "$0: INFO    ./apply_yaml.sh  segments $TARGET_DIR/step1.yml"
+echo "$0: INFO    ./apply_yaml.sh  segments $TARGET_DIR/step2.yml"
 echo "$0: INFO"
 echo "$0: INFO To reset to initial state (e.g. before running a demo/test again):"
 echo "$0: INFO"
-echo "$0: INFO    apply_yaml.sh  segments $TARGET_DIR/reset.yml"
+echo "$0: INFO    ./apply_yaml.sh  segments $TARGET_DIR/reset.yml"
