@@ -89,6 +89,13 @@ spec:
         prometheus.io/path: '/prometheus-metrics'
         prometheus.io/port: '8081'
     spec:
+      initContainers:
+      - name: "init-downloader"
+        image: "google/cloud-sdk:latest"
+        command: ['sh', '-c', 'gsutil cp gs://prime-files/dev/*.* /config-data/']
+        volumeMounts:
+        - name: config-data
+          mountPath: /config-data/
       containers:
       - name: ocs-esp
         image: gcr.io/endpoints-release/endpoints-runtime:1
@@ -173,8 +180,8 @@ spec:
         - name: secret-config
           mountPath: "/secret"
           readOnly: true
-        - name: imei-db
-          mountPath: "/imei"
+        - name: config-data
+          mountPath: "/config-data"
           readOnly: true
         ports:
         - containerPort: 8080
@@ -185,9 +192,6 @@ spec:
       - name: secret-config
         secret:
           secretName: pantel-prod.json
-      - type: Imei-lookup
-        config:
-          csvFile: /imei/imeiDb.csv
       - name: api-ostelco-ssl
         secret:
           secretName: api-ostelco-ssl
@@ -197,3 +201,5 @@ spec:
       - name: metrics-ostelco-ssl
         secret:
           secretName: metrics-ostelco-ssl
+      - name: config-data
+        emptyDir: {}

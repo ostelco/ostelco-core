@@ -5,5 +5,5 @@ import org.ostelco.prime.imei.core.Imei
 import org.ostelco.prime.imei.core.ImeiLookupError
 
 interface ImeiLookup {
-    fun getImeiInformation(imeisv: String) : Either<ImeiLookupError, Imei>
+    fun getImeiInformation(imei: String) : Either<ImeiLookupError, Imei>
 }
