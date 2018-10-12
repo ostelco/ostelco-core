@@ -21,7 +21,7 @@ object SlackNotificationReporter {
                             channel = Registry.channel,
                             // text = message,
                             // userName = Registry.userName,
-                            iconEmoji = levelToEmoji(level),
+                            // iconEmoji = levelToEmoji(level),
                             attachments = listOf(
                                     Attachment(
                                             fallback = message,
@@ -53,12 +53,16 @@ object SlackNotificationReporter {
         TRACE -> "#C0C0C0"
     }
 
-    private fun levelToTitle(level: Level): String = when (level) {
-        ERROR -> "Error"
-        WARN -> "Warning"
-        INFO -> "Info"
-        DEBUG -> "Debug"
-        TRACE -> "Trace"
+    private fun levelToTitle(level: Level): String {
+        val emoji = levelToEmoji(level)
+        val title = when (level) {
+            ERROR -> "Error"
+            WARN -> "Warning"
+            INFO -> "Info"
+            DEBUG -> "Debug"
+            TRACE -> "Trace"
+        }
+        return ":$emoji: $title"
     }
 }
 
