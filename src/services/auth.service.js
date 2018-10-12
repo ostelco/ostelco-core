@@ -17,7 +17,6 @@ class Auth {
   });
 
   constructor() {
-    console.log("Constructing Auth", getAuthConfig());
     this.user = {};
     this.login = this.login.bind(this);
     this.logout = this.logout.bind(this);
@@ -46,7 +45,6 @@ class Auth {
   }
 
   setSession(authResult) {
-    console.log(JSON.stringify(authResult));
     // Set the time that the access token will expire at
     let expiresAt = JSON.stringify((authResult.expiresIn * 1000) + new Date().getTime());
     localStorage.setItem('access_token', authResult.accessToken);

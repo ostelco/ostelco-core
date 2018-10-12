@@ -12,10 +12,11 @@ const DEPLOYED_DEV_AUTH_CONFIG = {
 
 export function getAuthConfig() {
   console.log(JSON.stringify(process.env));
-  if (process.env.NODE_ENV === "development") {
-    return DEV_AUTH_CONFIG;
-  } else if (process.env.REACT_APP_DEPLOYMENT_ENV === "development") {
+  if (process.env.REACT_APP_DEPLOYMENT_ENV === "development") {
+    console.log(DEPLOYED_DEV_AUTH_CONFIG.callbackUrl);
     return DEPLOYED_DEV_AUTH_CONFIG;
+  } else if (process.env.NODE_ENV === "development") {
+    return DEV_AUTH_CONFIG;
   } else {
     return {}
   }
@@ -23,9 +24,9 @@ export function getAuthConfig() {
 
 export function getAPIRoot(){
   const API_ROOT = 'https://houston-api.dev.ostelco.org/';
-  if (process.env.NODE_ENV === "development") {
+  if (process.env.REACT_APP_DEPLOYMENT_ENV === "development") {
     return API_ROOT;
-  } else if (process.env.REACT_APP_DEPLOYMENT_ENV === "development") {
+  } else if (process.env.NODE_ENV === "development") {
     return API_ROOT;
   } else {
     return API_ROOT;
