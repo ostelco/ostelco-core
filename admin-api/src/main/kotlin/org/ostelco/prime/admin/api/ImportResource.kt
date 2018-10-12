@@ -1,6 +1,5 @@
 package org.ostelco.prime.admin.api
 
-import org.ostelco.prime.admin.asJson
 import org.ostelco.prime.admin.importer.AddToSegments
 import org.ostelco.prime.admin.importer.ChangeSegments
 import org.ostelco.prime.admin.importer.CreateOffer
@@ -9,6 +8,7 @@ import org.ostelco.prime.admin.importer.ImportProcessor
 import org.ostelco.prime.admin.importer.RemoveFromSegments
 import org.ostelco.prime.admin.importer.UpdateSegments
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.jsonmapper.asJson
 import javax.ws.rs.Consumes
 import javax.ws.rs.DELETE
 import javax.ws.rs.POST

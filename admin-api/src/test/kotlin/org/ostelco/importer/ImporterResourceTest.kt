@@ -6,7 +6,6 @@ import io.dropwizard.testing.junit.ResourceTestRule
 import org.junit.Assert.assertEquals
 import org.junit.ClassRule
 import org.junit.Test
-import org.ostelco.prime.admin.YamlMessageBodyReader
 import org.ostelco.prime.admin.api.ImporterResource
 import org.ostelco.prime.admin.importer.AddToSegments
 import org.ostelco.prime.admin.importer.ChangeSegments
@@ -17,6 +16,7 @@ import org.ostelco.prime.admin.importer.Offer
 import org.ostelco.prime.admin.importer.RemoveFromSegments
 import org.ostelco.prime.admin.importer.UpdateSegments
 import org.ostelco.prime.apierror.ApiError
+import org.ostelco.prime.jersey.YamlMessageBodyReader
 import org.ostelco.prime.model.Price
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.Response.Status

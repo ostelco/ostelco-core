@@ -14,6 +14,7 @@ include ':diameter-test'
 include ':ext-auth-provider'
 include ':firebase-store'
 include ':firebase-extensions'
+include ':jersey'
 include ':model'
 include ':neo4j-admin-tools'
 include ':neo4j-store'
@@ -27,6 +28,8 @@ include ':prime-modules'
 include ':prime-client-api'
 include ':pseudonym-server'
 include ':slack'
+include ':imei-lookup'
+
 
 
 project(':acceptance-tests').projectDir = "$rootDir/acceptance-tests" as File
@@ -43,6 +46,7 @@ project(':diameter-test').projectDir = "$rootDir/diameter-test" as File
 project(':ext-auth-provider').projectDir = "$rootDir/ext-auth-provider" as File
 project(':firebase-store').projectDir = "$rootDir/firebase-store" as File
 project(':firebase-extensions').projectDir = "$rootDir/firebase-extensions" as File
+project(':jersey').projectDir = "$rootDir/jersey" as File
 project(':model').projectDir = "$rootDir/model" as File
 project(':neo4j-admin-tools').projectDir = "$rootDir/tools/neo4j-admin-tools" as File
 project(':neo4j-store').projectDir = "$rootDir/neo4j-store" as File
@@ -56,3 +60,4 @@ project(':prime-modules').projectDir = "$rootDir/prime-modules" as File
 project(':prime-client-api').projectDir = "$rootDir/prime-client-api" as File
 project(':pseudonym-server').projectDir = "$rootDir/pseudonym-server" as File
 project(':slack').projectDir = "$rootDir/slack" as File
+project(':imei-lookup').projectDir = "$rootDir/imei-lookup" as File
