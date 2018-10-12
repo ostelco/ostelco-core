@@ -1,4 +1,5 @@
 modules:
+- type: jersey
 - type: slack
   config:
     notifications:

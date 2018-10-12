@@ -42,6 +42,7 @@ dependencies {
   runtimeOnly project(':analytics-module')
   runtimeOnly project(':slack')
   runtimeOnly project(':imei-lookup')
+  runtimeOnly project(':jersey')
 
   implementation "io.dropwizard:dropwizard-http2:$dropwizardVersion"
   runtimeOnly "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"

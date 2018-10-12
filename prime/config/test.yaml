@@ -1,6 +1,7 @@
 # This config is used as config.yaml when prime is running using docker-compose for Acceptance Testing
 
 modules:
+- type: jersey
 - type: firebase
   config:
     configFile: /secret/pantel-prod.json
