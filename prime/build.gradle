@@ -1,7 +1,7 @@
 plugins {
   id "org.jetbrains.kotlin.jvm" version "1.2.71"
   id "application"
-  id "com.github.johnrengelman.shadow" version "4.0.0"
+  id "com.github.johnrengelman.shadow" version "4.0.1"
   id "idea"
 }
 
@@ -18,7 +18,7 @@ sourceSets {
   }
 }
 
-version = "1.16.0"
+version = "1.17.0"
 
 repositories {
   maven {
@@ -40,8 +40,10 @@ dependencies {
   runtimeOnly project(':app-notifier')
   runtimeOnly project(':payment-processor')
   runtimeOnly project(':analytics-module')
+  runtimeOnly project(':slack')
+  runtimeOnly project(':imei-lookup')
+  runtimeOnly project(':jersey')
 
-  implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
   implementation "io.dropwizard:dropwizard-http2:$dropwizardVersion"
   runtimeOnly "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
   implementation "com.google.guava:guava:$guavaVersion"

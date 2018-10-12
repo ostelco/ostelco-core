@@ -103,9 +103,8 @@ jobs:
   
   ### JOBS FOR  on-PR-merge-to-dev PIPELINE 
   build-code:
-
-    docker:
-      - image: circleci/openjdk:11-jdk-sid
+    machine:
+      enabled: true
 
     steps:
       - checkout 

@@ -1,17 +1,19 @@
 plugins {
   id "org.jetbrains.kotlin.jvm" version "1.2.71"
   id "application"
-  id "com.github.johnrengelman.shadow" version "4.0.0"
+  id "com.github.johnrengelman.shadow" version "4.0.1"
   id "idea"
 }
 
 dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
   implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
-  implementation project(":firebase-extensions")
 
-  implementation 'javax.xml.bind:jaxb-api:2.3.0'
-  implementation 'javax.activation:activation:1.1.1'
+  implementation project(":firebase-extensions")
+  implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
+  
+  implementation "javax.xml.bind:jaxb-api:$jaxbVersion"
+  implementation "javax.activation:activation:$javaxActivationVersion"
   
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"

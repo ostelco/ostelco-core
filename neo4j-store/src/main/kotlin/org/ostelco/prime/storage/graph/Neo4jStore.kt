@@ -7,6 +7,7 @@ import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.Bundle
+import org.ostelco.prime.model.ChangeSegment
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.ProductClass
@@ -15,6 +16,7 @@ import org.ostelco.prime.model.Segment
 import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
+import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.ocs.OcsAdminService
 import org.ostelco.prime.ocs.OcsSubscriberService
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
@@ -22,6 +24,7 @@ import org.ostelco.prime.paymentprocessor.core.BadGatewayError
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.storage.GraphStore
+import org.ostelco.prime.storage.NotCreatedError
 import org.ostelco.prime.storage.NotFoundError
 import org.ostelco.prime.storage.StoreError
 import org.ostelco.prime.storage.ValidationError
@@ -156,7 +159,7 @@ object Neo4jStoreSingleton : GraphStore {
                                     getSegmentNameFromCountryCode(subscriber.country),
                                     transaction)
                             .mapLeft { storeError ->
-                                if (storeError is NotFoundError && storeError.type == segmentEntity.name) {
+                                if (storeError is NotCreatedError && storeError.type == subscriberToSegmentRelation.relation.name) {
                                     ValidationError(
                                             type = subscriberEntity.name,
                                             id = subscriber.id,
@@ -204,8 +207,12 @@ object Neo4jStoreSingleton : GraphStore {
                         ocsAdminService.addBundle(Bundle(bundleId, 100_000_000))
                         Either.right(Unit)
                     }
-        }.flatMap { subscriberToBundleStore.create(subscriber.id, bundleId, transaction) }
-                .ifFailedThenRollback(transaction)
+        }.flatMap { subscriberToBundleStore.create(subscriber.id, bundleId, transaction)
+        }.map {
+            if(subscriber.country.equals("sg", ignoreCase = true)) {
+                logger.info(NOTIFY_OPS_MARKER, "Created a new user with email: ${subscriber.email} for Singapore.\nProvision a SIM card for this user.")
+            }
+        }.ifFailedThenRollback(transaction)
     }
     // << END
 
@@ -381,7 +388,6 @@ object Neo4jStoreSingleton : GraphStore {
                                             // then save the source
                                             if (!it.any { sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
                                                 paymentProcessor.addSource(paymentCustomerId, sourceId)
-                                                        // TODO payment: Should we remove the sourceId for saveCard == false even when captureCharge has failed?
                                                         // For success case, saved source is removed after "capture charge" is saveCard == false.
                                                         // Making sure same happens even for failure case by linking reversal action to transaction
                                                         .finallyDo(transaction) { _ -> removePaymentSource(saveCard, paymentCustomerId, sourceId) }
@@ -406,7 +412,7 @@ object Neo4jStoreSingleton : GraphStore {
                             }
                             .linkReversalActionToTransaction(transaction) { chargeId ->
                                 paymentProcessor.refundCharge(chargeId)
-                                logger.error("failed to refund charge for paymentCustomerId $paymentCustomerId, chargeId $chargeId. Fix this in Stripe dashboard")
+                                logger.error(NOTIFY_OPS_MARKER, "Failed to refund charge for paymentCustomerId $paymentCustomerId, chargeId $chargeId.\nFix this in Stripe dashboard.")
                             }
                             .map { chargeId -> Tuple3(product, paymentCustomerId, chargeId) }
                 }
@@ -446,7 +452,7 @@ object Neo4jStoreSingleton : GraphStore {
                     paymentProcessor.captureCharge(chargeId, paymentCustomerId)
                             .mapLeft {
                                 // TODO payment: retry capture charge
-                                logger.error("Capture failed for paymentCustomerId $paymentCustomerId, chargeId $chargeId, Fix this in Stripe Dashboard")
+                                logger.error(NOTIFY_OPS_MARKER, "Capture failed for paymentCustomerId $paymentCustomerId, chargeId $chargeId.\nFix this in Stripe Dashboard")
                             }
 
                     // Ignore failure to capture charge and always send Either.right()
@@ -660,8 +666,13 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     override fun updateSegment(segment: Segment): Either<StoreError, Unit> = writeTransaction {
-        subscriberToSegmentStore.create(segment.id, segment.subscribers, transaction)
+        updateSegment(segment, transaction)
                 .ifFailedThenRollback(transaction)
+    }
+
+    private fun updateSegment(segment: Segment, transaction: Transaction): Either<StoreError, Unit> {
+        return subscriberToSegmentStore.removeAll(toId = segment.id, transaction = transaction)
+                .flatMap { subscriberToSegmentStore.create(segment.subscribers, segment.id, transaction) }
     }
 
     //
@@ -680,9 +691,13 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     //
-    // Atomic Import of Offer + Product + Segment
+    // Atomic Imports
     //
-    override fun atomicImport(
+
+    /**
+     * Create of Offer + Product + Segment
+     */
+    override fun atomicCreateOffer(
             offer: Offer,
             segments: Collection<Segment>,
             products: Collection<Product>): Either<StoreError, Unit> = writeTransaction {
@@ -730,13 +745,45 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
 
-// override fun getOffers(): Collection<Offer> = offerStore.getAll().values.map { Offer().apply { id = it.id } }
+    /**
+     * Create Segments
+     */
+    override fun atomicCreateSegments(createSegments: Collection<Segment>): Either<StoreError, Unit> = writeTransaction {
 
-// override fun getSegments(): Collection<Segment> = segmentStore.getAll().values.map { Segment().apply { id = it.id } }
+        createSegments.fold(
+                initial = Either.right(Unit) as Either<StoreError, Unit>,
+                operation = { acc, segment ->
+                    acc.flatMap { createSegment(segment, transaction) }
+                })
+                .ifFailedThenRollback(transaction)
+    }
 
-// override fun getOffer(id: String): Offer? = offerStore.get(id)?.let { Offer().apply { this.id = it.id } }
+    /**
+     * Update segments
+     */
+    override fun atomicUpdateSegments(updateSegments: Collection<Segment>): Either<StoreError, Unit> = writeTransaction {
 
-// override fun getSegment(id: String): Segment? = segmentStore.get(id)?.let { Segment().apply { this.id = it.id } }
+        updateSegments.fold(
+                initial = Either.right(Unit) as Either<StoreError, Unit>,
+                operation = { acc, segment ->
+                    acc.flatMap { updateSegment(segment, transaction) }
+                })
+                .ifFailedThenRollback(transaction)
+    }
 
-// override fun getProductClass(id: String): ProductClass? = productClassStore.get(id)
+    override fun atomicAddToSegments(addToSegments: Collection<Segment>): Either<StoreError, Unit> { TODO() }
+
+    override fun atomicRemoveFromSegments(removeFromSegments: Collection<Segment>): Either<StoreError, Unit> { TODO() }
+
+    override fun atomicChangeSegments(changeSegments: Collection<ChangeSegment>): Either<StoreError, Unit> { TODO() }
+
+    // override fun getOffers(): Collection<Offer> = offerStore.getAll().values.map { Offer().apply { id = it.id } }
+
+    // override fun getSegments(): Collection<Segment> = segmentStore.getAll().values.map { Segment().apply { id = it.id } }
+
+    // override fun getOffer(id: String): Offer? = offerStore.get(id)?.let { Offer().apply { this.id = it.id } }
+
+    // override fun getSegment(id: String): Segment? = segmentStore.get(id)?.let { Segment().apply { this.id = it.id } }
+
+    // override fun getProductClass(id: String): ProductClass? = productClassStore.get(id)
 }

@@ -6,3 +6,8 @@ services:
     build: .
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/config/pantel-prod.json
+      - PROJECT=pantel-2decb
+      - JOB_NAME=data-traffic
+      - PUBSUB_TOPIC=data-traffic
+      - DATASET=data_consumption
+      - UPDATING=true

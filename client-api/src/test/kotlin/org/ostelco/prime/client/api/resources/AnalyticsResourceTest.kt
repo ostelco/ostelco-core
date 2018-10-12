@@ -2,7 +2,7 @@ package org.ostelco.prime.client.api.resources
 
 import arrow.core.Either
 import com.fasterxml.jackson.core.JsonParseException
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import io.dropwizard.auth.AuthDynamicFeature
 import io.dropwizard.auth.AuthValueFactoryProvider
@@ -32,7 +32,7 @@ import javax.ws.rs.core.Response
  */
 class AnalyticsResourceTest {
 
-    private val MAPPER = ObjectMapper()
+    private val MAPPER = jacksonObjectMapper()
 
     private val email = "mw@internet.org"
 

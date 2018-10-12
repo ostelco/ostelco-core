@@ -5,12 +5,12 @@ import arrow.core.flatMap
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
+import org.ostelco.prime.apierror.ApiErrorMapper.mapPaymentErrorToApiError
+import org.ostelco.prime.apierror.ApiErrorMapper.mapStorageErrorToApiError
 import org.ostelco.prime.apierror.BadGatewayError
 import org.ostelco.prime.apierror.BadRequestError
 import org.ostelco.prime.apierror.InsufficientStorageError
 import org.ostelco.prime.apierror.NotFoundError
-import org.ostelco.prime.apierror.mapPaymentErrorToApiError
-import org.ostelco.prime.apierror.mapStorageErrorToApiError
 import org.ostelco.prime.client.api.metrics.updateMetricsOnNewSubscriber
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.Person
@@ -338,7 +338,13 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
 
     override fun listSources(subscriberId: String): Either<ApiError, List<SourceDetailsInfo>> {
         return paymentProcessor.getPaymentProfile(subscriberId)
-                .mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_FETCH_PAYMENT_SOURCES_LIST, error) }
+                .fold(
+                        {
+                            paymentProcessor.createPaymentProfile(subscriberId)
+                                    .mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_FETCH_PAYMENT_SOURCES_LIST, error) }
+                        },
+                        { profileInfo -> Either.right(profileInfo) }
+                )
                 .flatMap { profileInfo ->
                     paymentProcessor.getSavedSources(profileInfo.id)
                             .mapLeft { mapPaymentErrorToApiError("Failed to list sources", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_SOURCES_LIST, it) }

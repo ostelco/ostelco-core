@@ -7,22 +7,22 @@ note left of prime
     deployable component.
 end note
 
-interface "prime-api" as primeApi
-[prime] --> primeApi
+interface "prime-modules" as primeModules
+[prime] --> primeModules
 
-note left of primeApi
+note left of primeModules
     Code needed by modules
     for themto be aggregated
     into prime.
 end note
 
-note right of primeApi
+note right of primeModules
     Interfaces which are
     implemented by the
     modules.
 end note
 
-[module(s)] ..> primeApi : <<implements>>
-[module(s)] ..> primeApi : <<consumes>>
+[module(s)] ..> primeModules : <<implements>>
+[module(s)] ..> primeModules : <<consumes>>
 
 @enduml

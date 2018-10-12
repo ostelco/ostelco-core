@@ -15,7 +15,6 @@ class AdminModule : PrimeModule {
         jerseySever.register(SegmentResource())
         jerseySever.register(ProductResource())
         jerseySever.register(ProductClassResource())
-        jerseySever.register(YamlMessageBodyReader::class.java)
         jerseySever.register(ImporterResource(ImportAdapter()))
     }
 }

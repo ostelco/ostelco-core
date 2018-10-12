@@ -1,0 +1,10 @@
+modules:
+- type: Imei-lookup
+  config:
+    csvFile: src/test/resources/testDB.csv
+logging:
+  level: INFO
+  loggers:
+    org.ostelco: DEBUG
+  appenders:
+  - type: console

@@ -1,0 +1,20 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: bq-metrics-extractor
+spec:
+  schedule: "*/30 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name:  bq-metrics-extractor
+            image: eu.gcr.io/pantel-2decb/bq-metrics-extractor:EXTRACTOR_VERSION
+            imagePullPolicy: Always
+            env:
+            - name: DATASET_PROJECT
+              value: pantel-2decb
+            - name: DATASET_MODIFIER
+              value: _dev
+          restartPolicy: Never

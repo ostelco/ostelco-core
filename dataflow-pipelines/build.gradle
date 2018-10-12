@@ -1,7 +1,7 @@
 plugins {
   id "org.jetbrains.kotlin.jvm" version "1.2.71"
   id "application"
-  id "com.github.johnrengelman.shadow" version "4.0.0"
+  id "com.github.johnrengelman.shadow" version "4.0.1"
   id "idea"
 }
 
@@ -31,6 +31,9 @@ shadowJar {
   classifier = "uber"
   version = null
 }
+
+sourceCompatibility = "1.8"
+targetCompatibility = "1.8"
 
 test {
   // native support to Junit5 in Gradle 4.6+

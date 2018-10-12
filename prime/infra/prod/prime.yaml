@@ -89,6 +89,13 @@ spec:
         prometheus.io/path: '/prometheus-metrics'
         prometheus.io/port: '8081'
     spec:
+      initContainers:
+      - name: "init-downloader"
+        image: "google/cloud-sdk:latest"
+        command: ['sh', '-c', 'gsutil cp gs://prime-files/prod/*.* /config-data/']
+        volumeMounts:
+        - name: config-data
+          mountPath: /config-data/
       containers:
       - name: ocs-esp
         image: gcr.io/endpoints-release/endpoints-runtime:1
@@ -145,6 +152,13 @@ spec:
         image: eu.gcr.io/pantel-2decb/prime:PRIME_VERSION
         imagePullPolicy: Always
         env:
+        - name: SLACK_CHANNEL
+          value: prime-alerts
+        - name: SLACK_WEBHOOK_URI
+          valueFrom:
+            secretKeyRef:
+              name: slack-secrets
+              key: slackWebHookUri
         - name: NEO4J_HOST
           value: neo4j
         - name: FIREBASE_ROOT_PATH
@@ -163,6 +177,8 @@ spec:
         volumeMounts:
         - name: secret-config
           mountPath: "/secret"
+        - name: config-data
+          mountPath: "/config-data"
           readOnly: true
         ports:
         - containerPort: 8080
@@ -182,3 +198,5 @@ spec:
       - name: metrics-ostelco-ssl
         secret:
           secretName: metrics-ostelco-ssl
+      - name: config-data
+        emptyDir: {}

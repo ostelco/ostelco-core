@@ -309,6 +309,28 @@ class SourceTest {
     }
 
     @Test
+    fun `jersey test - GET list sources no profile `() {
+
+        val email = "purchase-${randomInt()}@test.com"
+
+        try {
+
+            val sources: PaymentSourceList = get {
+                path = "/paymentSources"
+                subscriberId = email
+            }
+
+            assert(sources.isEmpty()) { "Expected no payment source for profile $email" }
+
+            assertNotNull(StripePayment.getCustomerIdForEmail(email)) { "Customer Id should have been created" }
+
+        } finally {
+            StripePayment.deleteCustomer(email = email)
+        }
+    }
+
+
+    @Test
     fun `jersey test - PUT source set default`() {
 
         val email = "purchase-${randomInt()}@test.com"
@@ -358,7 +380,7 @@ class SourceTest {
     }
 
     @Test
-    fun `okhttp test - DELETE source`() {
+    fun `jersey test - DELETE source`() {
 
         val email = "purchase-${randomInt()}@test.com"
 

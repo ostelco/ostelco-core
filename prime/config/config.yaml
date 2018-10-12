@@ -1,48 +1,61 @@
 modules:
-  - type: firebase
-    config:
-      configFile: /secret/pantel-prod.json
-      rootPath: ${FIREBASE_ROOT_PATH}
-  - type: neo4j
-    config:
-      host: ${NEO4J_HOST}
-      protocol: bolt+routing
-  - type: analytics
-    config:
-      projectId: pantel-2decb
-      dataTrafficTopicId: ${DATA_TRAFFIC_TOPIC}
-      purchaseInfoTopicId: ${PURCHASE_INFO_TOPIC}
-      activeUsersTopicId: ${ACTIVE_USERS_TOPIC}
-  - type: ocs
-    config:
-      lowBalanceThreshold: 100000000
-  - type: pseudonymizer
-    config:
-      namespace: ${DATASTORE_NAMESPACE:-""}
-  - type: api
-    config:
-      authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
-      jerseyClient:
-        timeout: 2s
-  - type: stripe-payment-processor
-  - type: firebase-app-notifier
-    config:
-      configFile: /secret/pantel-prod.json
-  - type: admin
+- type: jersey
+- type: slack
+  config:
+    notifications:
+      channel: ${SLACK_CHANNEL}
+      webHookUri: ${SLACK_WEBHOOK_URI}
+      httpClient:
+        timeout: 3s
+        connectionRequestTimeout: 1s
+- type: Imei-lookup
+  config:
+    csvFile: /config-data/imeiDb.csv
+- type: firebase
+  config:
+    configFile: /secret/pantel-prod.json
+    rootPath: ${FIREBASE_ROOT_PATH}
+- type: neo4j
+  config:
+    host: ${NEO4J_HOST}
+    protocol: bolt+routing
+- type: analytics
+  config:
+    projectId: pantel-2decb
+    dataTrafficTopicId: ${DATA_TRAFFIC_TOPIC}
+    purchaseInfoTopicId: ${PURCHASE_INFO_TOPIC}
+    activeUsersTopicId: ${ACTIVE_USERS_TOPIC}
+- type: ocs
+  config:
+    lowBalanceThreshold: 100000000
+- type: pseudonymizer
+  config:
+    namespace: ${DATASTORE_NAMESPACE:-""}
+- type: api
+  config:
+    authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
+    jerseyClient:
+      timeout: 2s
+- type: stripe-payment-processor
+- type: firebase-app-notifier
+  config:
+    configFile: /secret/pantel-prod.json
+- type: admin
 
 server:
   applicationConnectors:
-    - type: h2c
-      port: 8080
-      maxConcurrentStreams: 1024
-      initialStreamRecvWindow: 65535
+  - type: h2c
+    port: 8080
+    maxConcurrentStreams: 1024
+    initialStreamRecvWindow: 65535
   requestLog:
     appenders:
-      - type: console
-        layout:
-          type: json
-          customFieldNames:
-            level: severity
+    - type: console
+      layout:
+        type: access-json
+      filterFactories:
+      - type: URI
+        uri: prometheus-metrics
 
 logging:
   level: INFO
@@ -50,8 +63,9 @@ logging:
     org.ostelco: DEBUG
     org.dhatim.dropwizard.prometheus.DropwizardMetricsExporter: ERROR
   appenders:
-    - type: console
-      layout:
-        type: json
-        customFieldNames:
-           level: severity
+  - type: slack
+  - type: console
+    layout:
+      type: json
+      customFieldNames:
+        level: severity

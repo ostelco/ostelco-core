@@ -327,7 +327,7 @@
     },
     {
       "collapse": false,
-      "height": 279,
+      "height": 274,
       "panels": [
         {
           "cacheTimeout": null,
@@ -715,7 +715,7 @@
         {
           "aliasColors": {},
           "bars": false,
-          "datasource": null,
+          "datasource": "prometheus",
           "fill": 1,
           "id": 18,
           "legend": {
@@ -741,18 +741,25 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "total_data_used_today",
+              "expr": "total_data_used_today_local_loltel_test",
               "intervalFactor": 2,
               "legendFormat": "",
-              "metric": "total_data_used_today",
+              "metric": "total_data_used_today_local_loltel_test",
               "refId": "A",
+              "step": 60
+            },
+            {
+              "expr": "total_data_used_today_roaming_loltel_test",
+              "intervalFactor": 2,
+              "metric": "total_data_used_today_roaming_loltel_test",
+              "refId": "B",
               "step": 60
             }
           ],
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Data Usage today",
+          "title": "Data Usage Today",
           "tooltip": {
             "shared": false,
             "sort": 0,
@@ -783,6 +790,83 @@
               "show": true
             }
           ]
+        },
+        {
+          "cacheTimeout": null,
+          "colorBackground": false,
+          "colorValue": false,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "datasource": null,
+          "decimals": null,
+          "format": "decmbytes",
+          "gauge": {
+            "maxValue": 100,
+            "minValue": 0,
+            "show": false,
+            "thresholdLabels": false,
+            "thresholdMarkers": true
+          },
+          "id": 20,
+          "interval": null,
+          "links": [],
+          "mappingType": 1,
+          "mappingTypes": [
+            {
+              "name": "value to text",
+              "value": 1
+            },
+            {
+              "name": "range to text",
+              "value": 2
+            }
+          ],
+          "maxDataPoints": 100,
+          "nullPointMode": "connected",
+          "nullText": null,
+          "postfix": "",
+          "postfixFontSize": "50%",
+          "prefix": "",
+          "prefixFontSize": "50%",
+          "rangeMaps": [
+            {
+              "from": "null",
+              "text": "N/A",
+              "to": "null"
+            }
+          ],
+          "span": 2,
+          "sparkline": {
+            "fillColor": "rgba(31, 118, 189, 0.18)",
+            "full": false,
+            "lineColor": "rgb(31, 120, 193)",
+            "show": false
+          },
+          "targets": [
+            {
+              "expr": "total_data_used_today_roaming_loltel_test / 1000000",
+              "intervalFactor": 2,
+              "legendFormat": "",
+              "metric": "total_data_used_today_roaming_loltel_test",
+              "refId": "A",
+              "step": 600
+            }
+          ],
+          "thresholds": "",
+          "title": "Total Data Used Today Roaming",
+          "type": "singlestat",
+          "valueFontSize": "80%",
+          "valueMaps": [
+            {
+              "op": "=",
+              "text": "N/A",
+              "value": "null"
+            }
+          ],
+          "valueName": "avg"
         }
       ],
       "repeat": null,
@@ -794,7 +878,7 @@
     },
     {
       "collapse": false,
-      "height": 286,
+      "height": 242,
       "panels": [
         {
           "cacheTimeout": null,
@@ -1178,7 +1262,7 @@
         {
           "aliasColors": {},
           "bars": false,
-          "datasource": null,
+          "datasource": "prometheus",
           "fill": 1,
           "id": 19,
           "legend": {
@@ -1210,12 +1294,20 @@
               "metric": "total_data_used_yesterday",
               "refId": "A",
               "step": 60
+            },
+            {
+              "expr": "total_data_used_yesterday_roaming_lotlel_test",
+              "intervalFactor": 2,
+              "legendFormat": "",
+              "metric": "total_data_used_yesterday_roaming_lotlel_test",
+              "refId": "B",
+              "step": 60
             }
           ],
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
-          "title": "Data Used yesterday",
+          "title": "Data Used Yesterday",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -1246,6 +1338,83 @@
               "show": true
             }
           ]
+        },
+        {
+          "cacheTimeout": null,
+          "colorBackground": false,
+          "colorValue": false,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "datasource": null,
+          "decimals": null,
+          "format": "decmbytes",
+          "gauge": {
+            "maxValue": 100,
+            "minValue": 0,
+            "show": false,
+            "thresholdLabels": false,
+            "thresholdMarkers": true
+          },
+          "id": 21,
+          "interval": null,
+          "links": [],
+          "mappingType": 1,
+          "mappingTypes": [
+            {
+              "name": "value to text",
+              "value": 1
+            },
+            {
+              "name": "range to text",
+              "value": 2
+            }
+          ],
+          "maxDataPoints": 100,
+          "nullPointMode": "connected",
+          "nullText": null,
+          "postfix": "",
+          "postfixFontSize": "50%",
+          "prefix": "",
+          "prefixFontSize": "50%",
+          "rangeMaps": [
+            {
+              "from": "null",
+              "text": "N/A",
+              "to": "null"
+            }
+          ],
+          "span": 2,
+          "sparkline": {
+            "fillColor": "rgba(31, 118, 189, 0.18)",
+            "full": false,
+            "lineColor": "rgb(31, 120, 193)",
+            "show": false
+          },
+          "targets": [
+            {
+              "expr": "total_data_used_yesterday_roaming_lotlel_test / 1000000",
+              "intervalFactor": 2,
+              "legendFormat": "",
+              "metric": "total_data_used_yesterday_roaming_lotlel_test",
+              "refId": "A",
+              "step": 600
+            }
+          ],
+          "thresholds": "",
+          "title": "Total Data Used Yesterday Roaming",
+          "type": "singlestat",
+          "valueFontSize": "80%",
+          "valueMaps": [
+            {
+              "op": "=",
+              "text": "N/A",
+              "value": "null"
+            }
+          ],
+          "valueName": "avg"
         }
       ],
       "repeat": null,
@@ -1253,6 +1422,17 @@
       "repeatRowId": null,
       "showTitle": true,
       "title": "Yesterday",
+      "titleSize": "h6"
+    },
+    {
+      "collapse": false,
+      "height": 250,
+      "panels": [],
+      "repeat": null,
+      "repeatIteration": null,
+      "repeatRowId": null,
+      "showTitle": false,
+      "title": "Dashboard Row",
       "titleSize": "h6"
     }
   ],
@@ -1293,5 +1473,5 @@
   },
   "timezone": "browser",
   "title": "Dashboard",
-  "version": 22
+  "version": 27
 }

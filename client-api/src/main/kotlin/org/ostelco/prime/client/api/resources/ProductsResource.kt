@@ -3,6 +3,7 @@ package org.ostelco.prime.client.api.resources
 import io.dropwizard.auth.Auth
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.store.SubscriberDAO
+import org.ostelco.prime.jsonmapper.asJson
 import javax.validation.constraints.NotNull
 import javax.ws.rs.GET
 import javax.ws.rs.POST
