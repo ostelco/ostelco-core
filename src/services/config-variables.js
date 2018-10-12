@@ -11,9 +11,7 @@ const DEPLOYED_DEV_AUTH_CONFIG = {
 }
 
 export function getAuthConfig() {
-  console.log(JSON.stringify(process.env));
   if (process.env.REACT_APP_DEPLOYMENT_ENV === "development") {
-    console.log(DEPLOYED_DEV_AUTH_CONFIG.callbackUrl);
     return DEPLOYED_DEV_AUTH_CONFIG;
   } else if (process.env.NODE_ENV === "development") {
     return DEV_AUTH_CONFIG;
