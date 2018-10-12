@@ -1,8 +1,6 @@
-import React, { Component } from 'react';
+import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-
-import * as _ from 'lodash';
 import { authActions, pseudoActions } from '../../actions';
 
 const Home = props => {

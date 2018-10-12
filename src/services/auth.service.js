@@ -1,23 +1,23 @@
-import config from 'config';
-import { history, authHeader } from '../helpers';
+import { history } from '../helpers';
 import auth0 from 'auth0-js';
 import * as _ from 'lodash';
-import { AUTH_CONFIG } from './auth0-variables';
+import { getAuthConfig } from './config-variables';
 import { authActions } from '../actions';
 import { store } from '../helpers';
 
+const authConfig  = getAuthConfig();
 class Auth {
   auth0 = new auth0.WebAuth({
-    domain: AUTH_CONFIG.domain,
-    clientID: AUTH_CONFIG.clientId,
-    redirectUri: AUTH_CONFIG.callbackUrl,
+    domain: authConfig.domain,
+    clientID: authConfig.clientId,
+    redirectUri: authConfig.callbackUrl,
     responseType: 'token id_token',
     scope: 'openid',
     audience: 'http://google_api'
   });
 
   constructor() {
-    console.log("Constructing Auth");
+    console.log("Constructing Auth", getAuthConfig());
     this.user = {};
     this.login = this.login.bind(this);
     this.logout = this.logout.bind(this);

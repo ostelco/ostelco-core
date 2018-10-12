@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Navbar, Button } from 'react-bootstrap';
-import * as _ from 'lodash';
 
 import { authActions } from '../actions';
 import './App.css';

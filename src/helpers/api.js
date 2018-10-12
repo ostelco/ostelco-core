@@ -1,6 +1,7 @@
 import { authService } from '../services';
+import { getAPIRoot } from '../services/config-variables';
 
-const API_ROOT = 'https://houston-api.dev.ostelco.org/';
+const API_ROOT = getAPIRoot();
 
 const callApi = async (endpoint, method, body, allowEmptyResponse, params = []) => {
   let fullUrl = (endpoint.indexOf(API_ROOT) === -1) ? API_ROOT + endpoint : endpoint
