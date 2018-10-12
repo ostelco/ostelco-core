@@ -1,6 +1,7 @@
 import config from 'config';
 import { history, authHeader } from '../helpers';
 import auth0 from 'auth0-js';
+import * as _ from 'lodash';
 import { AUTH_CONFIG } from './auth0-variables';
 import { userActions } from '../actions';
 import { store } from '../helpers';
@@ -23,7 +24,7 @@ class Auth {
     this.handleAuthentication = this.handleAuthentication.bind(this);
     this.loadCurrentSession = this.loadCurrentSession.bind(this);
     this.isAuthenticated = this.isAuthenticated.bind(this);
-    setTimeout(this.loadCurrentSession, 10);
+    setTimeout(this.loadCurrentSession, 1);
   }
 
   login() {
@@ -71,7 +72,7 @@ class Auth {
   }
 
   logout() {
-    this.user = { };
+    this.user = {};
     // Clear access token and ID token from local storage
     localStorage.removeItem('access_token');
     localStorage.removeItem('expires_at');
@@ -84,6 +85,15 @@ class Auth {
     // access token's expiry time
     let expiry = JSON.parse(expiresAt);
     return new Date().getTime() < expiry;
+  }
+
+  authHeader() {
+    const state = store.getState();
+    const user = _.get(state, "authentication.user");
+    if (user && this.isAuthenticated(user.expiresAt)) {
+      return `Bearer ${user.accessToken}`;
+    }
+    return null;
   }
 }
 const auth = new Auth();

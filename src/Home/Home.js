@@ -1,45 +1,32 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import { withRouter } from 'react-router-dom'
+import PropTypes from 'prop-types';
+
 import * as _ from 'lodash';
-import { userActions } from '../actions';
+import { userActions, pseudoActions } from '../actions';
 
-class Home extends Component {
-  login() {
-    this.props.dispatch(userActions.login());
-  }
-
-  testAPI() {
-    let accessToken = this.props.user.accessToken;
-    var url = 'https://houston-api.dev.ostelco.org/pseudonym/current/4790300168';
-    console.log(`testAPI with header : Bearer ${accessToken}`)
-    fetch(url, {
-      method: 'GET', // or 'PUT'
-      headers:{
-        'authorization': `Bearer ${accessToken}`
-      }
-    }).then(res => res.json())
-    .then(response => console.log('Success:', JSON.stringify(response)))
-    .catch(error => console.error('Error:', error));
-  }
-
-  render() {
-    const isAuthenticated = this.props.loggedIn || false;
-    return (
+const Home = props => {
+  const isAuthenticated = props.loggedIn || false;
+  const pseudonym = JSON.stringify(props.pseudonym);
+  return (
       <div className="container">
         {
           isAuthenticated && (
-              <h4>
-                You are logged in!<br></br><br></br>
-                Test the Houston API. {' '}
-                <a
-                  style={{ cursor: 'pointer' }}
-                  onClick={this.testAPI.bind(this)}
-                >
-                  Click here
+            <h4>
+              You are logged in!<br/><br/>
+              Test the Houston API. {' '}
+              <a
+                style={{ cursor: 'pointer' }}
+                onClick={() => {props.getPseudonym('4790300168')}}
+              >
+                Click here
                 </a>
-                {' '}to test.
+              {' '}to test.
+              <br/><br/>
+              Last Result {`   ${pseudonym}`}
               </h4>
-            )
+          )
         }
         {
           !isAuthenticated && (
@@ -47,26 +34,35 @@ class Home extends Component {
               You are not logged in! Please{' '}
               <a
                 style={{ cursor: 'pointer' }}
-                onClick={this.login.bind(this)}
+                onClick={() => {props.login()}}
               >
                 Log In
               </a>
               {' '}to continue.
             </h4>
-            )
+          )
         }
       </div>
     );
   }
-}
-function mapStateToProps(state) {
-  console.log("Home  " + JSON.stringify(state.authentication));
-  const { loggedIn, user } = state.authentication;
-  return {
-      loggedIn,
-      user
-  };}
 
-const connectedHome = connect(mapStateToProps)(Home);
-export default connectedHome;
+Home.propTypes = {
+  loggedIn : PropTypes.bool,
+  pseudonym: PropTypes.object,
+};
+
+function mapStateToProps(state) {
+  const { loggedIn } = state.authentication;
+  const { pseudonym } = state;
+
+  return {
+    loggedIn,
+    pseudonym,
+  };
+}
+const mapDispatchToProps = {
+  login: userActions.login,
+  getPseudonym: pseudoActions.getPseudonym
+}
+export default connect(mapStateToProps, mapDispatchToProps)(Home);
 

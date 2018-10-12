@@ -12,15 +12,15 @@ class App extends Component {
   }
 
   login() {
-    this.props.dispatch(userActions.login());
+    this.props.login();
   }
 
   logout() {
-    this.props.dispatch(userActions.logout());
+    this.props.logout();
   }
 
   render() {
-    console.log(JSON.stringify(this.props));
+    console.log("App: " + JSON.stringify(this.props));
     const isAuthenticated = this.props.loggedIn || false;
 
     return (
@@ -29,8 +29,8 @@ class App extends Component {
           <Navbar.Header>
             <Navbar.Brand>
               <a href="#">
-              <img src="redotter.png" style={{width:100, marginTop: 5}} />
-              Houston
+                <img src="redotter.png" style={{ width: 100, marginTop: 5 }} />
+                Houston
               </a>
             </Navbar.Brand>
             <Button
@@ -42,27 +42,27 @@ class App extends Component {
             </Button>
             {
               !isAuthenticated && (
-                  <Button
-                    id="qsLoginBtn"
-                    bsStyle="primary"
-                    className="btn-margin"
-                    onClick={this.login.bind(this)}
-                  >
-                    Log In
+                <Button
+                  id="qsLoginBtn"
+                  bsStyle="primary"
+                  className="btn-margin"
+                  onClick={this.login.bind(this)}
+                >
+                  Log In
                   </Button>
-                )
+              )
             }
             {
               isAuthenticated && (
-                  <Button
-                    id="qsLogoutBtn"
-                    bsStyle="primary"
-                    className="btn-margin"
-                    onClick={this.logout.bind(this)}
-                  >
-                    Log Out
+                <Button
+                  id="qsLogoutBtn"
+                  bsStyle="primary"
+                  className="btn-margin"
+                  onClick={this.logout.bind(this)}
+                >
+                  Log Out
                   </Button>
-                )
+              )
             }
           </Navbar.Header>
         </Navbar>
@@ -72,12 +72,15 @@ class App extends Component {
 }
 
 function mapStateToProps(state) {
-  console.log(JSON.stringify(state.authentication));
   const { loggedIn } = state.authentication;
   return {
     loggedIn
   };
 }
+const mapDispatchToProps = {
+  login: userActions.login,
+  logout: userActions.logout
+}
 
-const connectedApp = connect(mapStateToProps)(App);
+const connectedApp = connect(mapStateToProps, mapDispatchToProps)(App);
 export default connectedApp;
