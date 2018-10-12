@@ -38,3 +38,6 @@ secrets/*
 
 ocs_descriptor.pb
 metrics_descriptor.pb
+
+.Mac
+*.DS_Store

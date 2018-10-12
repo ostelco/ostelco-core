@@ -71,6 +71,7 @@ gcloud container builds submit \
 
 ```bash
 kubectl create secret generic pantel-prod.json --from-file prime/config/pantel-prod.json
+kubectl create secret generic imeiDb.csv.zip --from-file imeiDb.csv.zip
 ```
 
 Reference:
@@ -207,11 +208,11 @@ kubectl create secret generic pantel-prod.json --from-file prime/config/pantel-p
 Note: To update the secrets defined using yaml, delete and created them again. They are not updated.
  
 ```bash
-sed -e s/STRIPE_API_KEY/$(echo -n 'keep-stripe-api-key-here' | base64)/g prime/infra/dev/stripe-secrets.yaml | kubectl apply -f -
+kubectl create secret generic stripe-secrets --from-literal=stripeApiKey='keep-stripe-api-key-here'
 ```
 
 ```bash
-sed -e s/SLACK_WEBHOOK_URI/$(echo -n 'https://hooks.slack.com/services/.../.../...' | base64)/g prime/infra/dev/slack-secrets.yaml | kubectl apply -f -
+kubectl create secret generic slack-secrets --from-literal=slackWebHookUri='https://hooks.slack.com/services/.../.../...'
 ```
 
 ```bash
