@@ -16,7 +16,7 @@ COPY script/wait.sh /wait.sh
 
 # test.yaml is copied as config.yaml for AT.
 COPY config/pantel-prod.json /secret/pantel-prod.json
-COPY config/testDb.csv /imei/imeiDb.csv
+COPY config/testDb.csv /config-data/imeiDb.csv
 COPY config/test.yaml /config/config.yaml
 
 COPY build/libs/prime-uber.jar /prime.jar
