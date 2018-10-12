@@ -1,7 +1,7 @@
 plugins {
   id "org.jetbrains.kotlin.jvm" version "1.2.71"
   id 'java-library'
-  id 'org.hidetake.swagger.generator' version '2.13.0'
+  id 'org.hidetake.swagger.generator' version '2.14.0'
   id "idea"
 }
 
