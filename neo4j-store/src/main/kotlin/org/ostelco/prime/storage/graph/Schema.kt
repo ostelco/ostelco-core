@@ -3,12 +3,12 @@ package org.ostelco.prime.storage.graph
 import arrow.core.Either
 import arrow.core.flatMap
 import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.neo4j.driver.v1.AccessMode.READ
 import org.neo4j.driver.v1.AccessMode.WRITE
 import org.neo4j.driver.v1.StatementResult
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.HasId
 import org.ostelco.prime.storage.AlreadyExistsError
 import org.ostelco.prime.storage.NotCreatedError
@@ -342,8 +342,6 @@ data class WriteTransaction(val transaction: PrimeTransaction)
 object ObjectHandler {
 
     private const val SEPARATOR = '/'
-
-    private val objectMapper = jacksonObjectMapper()
 
     //
     // Object to Map

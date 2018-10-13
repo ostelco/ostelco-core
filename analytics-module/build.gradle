@@ -6,8 +6,6 @@ plugins {
 dependencies {
     implementation project(":prime-modules")
 
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
-    implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
     implementation "com.google.cloud:google-cloud-pubsub:$googleCloudVersion"
     implementation 'com.google.code.gson:gson:2.8.5'
 

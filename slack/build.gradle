@@ -8,8 +8,8 @@ dependencies {
 
   implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
 
-  testImplementation "javax.xml.bind:jaxb-api:$jaxbVersion"
-  testImplementation "javax.activation:activation:$javaxActivationVersion"
+  testRuntimeOnly "javax.xml.bind:jaxb-api:$jaxbVersion"
+  testRuntimeOnly "javax.activation:activation:$javaxActivationVersion"
   
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
 

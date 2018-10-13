@@ -1,7 +1,6 @@
 package org.ostelco.prime.client.api.resources
 
 import arrow.core.Either
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import io.dropwizard.auth.AuthDynamicFeature
 import io.dropwizard.auth.AuthValueFactoryProvider
@@ -19,6 +18,7 @@ import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.auth.OAuthAuthenticator
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
+import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.Subscriber
 import java.util.*
 import javax.ws.rs.client.Entity
@@ -179,7 +179,7 @@ class ProfileResourceTest {
         @JvmField
         @ClassRule
         val RULE = ResourceTestRule.builder()
-                .setMapper(jacksonObjectMapper())
+                .setMapper(objectMapper)
                 .addResource(AuthDynamicFeature(
                         OAuthCredentialAuthFilter.Builder<AccessTokenPrincipal>()
                                 .setAuthenticator(AUTHENTICATOR)

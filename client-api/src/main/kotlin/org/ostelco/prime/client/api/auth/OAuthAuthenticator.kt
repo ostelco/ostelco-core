@@ -2,11 +2,11 @@ package org.ostelco.prime.client.api.auth
 
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.dropwizard.auth.AuthenticationException
 import io.dropwizard.auth.Authenticator
 import org.ostelco.prime.client.api.core.UserInfo
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.jsonmapper.objectMapper
 import java.io.IOException
 import java.util.*
 import javax.ws.rs.client.Client
@@ -28,8 +28,6 @@ private const val DEFAULT_USER_INFO_ENDPOINT = "https://ostelco.eu.auth0.com/use
 class OAuthAuthenticator(private val client: Client) : Authenticator<String, AccessTokenPrincipal> {
 
     private val logger by getLogger()
-
-    private val mapper = jacksonObjectMapper()
 
     override fun authenticate(accessToken: String): Optional<AccessTokenPrincipal> {
 
@@ -120,7 +118,7 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
     private fun decodeClaims(claims: String): JsonNode? {
         var obj: JsonNode? = null
         try {
-            obj = mapper.readTree(claims)
+            obj = objectMapper.readTree(claims)
         } catch (e: JsonParseException) {
             logger.error("Parsing of the provided json doc {} failed: {}", claims, e)
         } catch (e: IOException) {
