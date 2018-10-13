@@ -12,7 +12,7 @@ dependencies {
     implementation "com.google.cloud:google-cloud-core-grpc:$googleCloudVersion"
 
     implementation "javax.xml.bind:jaxb-api:$jaxbVersion"
-    implementation "javax.activation:activation:$javaxActivationVersion"
+    runtimeOnly "javax.activation:activation:$javaxActivationVersion"
 
     implementation 'ch.qos.logback:logback-classic:1.2.3'
 
