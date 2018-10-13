@@ -80,7 +80,7 @@ class SubscriptionResourceTest {
         val pseudonym = PseudonymEntity(msisdn, "random", 0, 1)
         val activePseudonyms = ActivePseudonyms(pseudonym, pseudonym)
 
-        `when`(DAO.getActivePseudonymOfMsisdnForSubscriber(arg.capture()))
+        `when`(DAO.getActivePseudonymForSubscriber(arg.capture()))
                 .thenReturn(Either.right(activePseudonyms))
 
         val responseJsonString = objectMapper.writeValueAsString(activePseudonyms)

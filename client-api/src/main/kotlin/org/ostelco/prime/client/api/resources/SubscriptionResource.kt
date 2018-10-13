@@ -42,7 +42,7 @@ class SubscriptionResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        return dao.getActivePseudonymOfMsisdnForSubscriber(token.name).fold(
+        return dao.getActivePseudonymForSubscriber(token.name).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { pseudonym -> Response.status(Response.Status.OK).entity(pseudonym) })
                 .build()

@@ -1,15 +1,19 @@
 package org.ostelco.pseudonym
 
-const val MsisdnPseudonymEntityKind = "Pseudonym"
-const val msisdnPropertyName = "msisdn"
-const val pseudonymPropertyName = "pseudonym"
-const val startPropertyName = "start"
-const val endPropertyName = "end"
-const val SubscriberIdPseudonymEntityKind = "SubscriberPseudonym"
-const val subscriberIdPropertyName = "subscriberId"
+open class Kind(val kindName: String, val idPropertyName: String)
 
-const val ExportTaskKind = "ExportTask"
-const val exportIdPropertyName = "exportId"
-const val statusPropertyName = "status"
-const val errorPropertyName = "error"
+class PseudonymKind(kindName: String, idPropertyName: String) : Kind(kindName = kindName, idPropertyName = idPropertyName) {
+    val pseudonymPropertyName = "pseudonym"
+    val startPropertyName = "start"
+    val endPropertyName = "end"
+}
 
+enum class PseudonymKindEnum(val kindInfo: PseudonymKind) {
+    MSISDN(PseudonymKind(kindName = "Pseudonym", idPropertyName = "msisdn")),
+    SUBSCRIBER_ID(PseudonymKind(kindName = "SubscriberPseudonym", idPropertyName = "subscriberId"))
+}
+
+object ExportTaskKind : Kind (kindName = "ExportTask", idPropertyName = "exportId") {
+    const val statusPropertyName = "status"
+    const val errorPropertyName = "error"
+}

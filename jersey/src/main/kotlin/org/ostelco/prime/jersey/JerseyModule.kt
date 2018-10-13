@@ -9,9 +9,13 @@ class JerseyModule : PrimeModule {
 
     override fun init(env: Environment) {
 
+        // Read incoming YAML requests
         env.jersey().register(YamlMessageBodyReader::class.java)
 
-        /* Add filters/interceptors. */
+        // filter to set TraceID in Logging MDC
         env.jersey().register(TrackRequestsLoggingFilter())
+
+        // ping resource to check connectivity
+        env.jersey().register(PingResource())
     }
 }
