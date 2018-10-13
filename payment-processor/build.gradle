@@ -14,8 +14,6 @@ sourceSets {
 }
 
 dependencies {
-  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
-
   implementation project(":prime-modules")
 
   implementation "com.stripe:stripe-java:$stripeVersion"
