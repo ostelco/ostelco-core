@@ -207,9 +207,10 @@ object Neo4jStoreSingleton : GraphStore {
                         ocsAdminService.addBundle(Bundle(bundleId, 100_000_000))
                         Either.right(Unit)
                     }
-        }.flatMap { subscriberToBundleStore.create(subscriber.id, bundleId, transaction)
+        }.flatMap {
+            subscriberToBundleStore.create(subscriber.id, bundleId, transaction)
         }.map {
-            if(subscriber.country.equals("sg", ignoreCase = true)) {
+            if (subscriber.country.equals("sg", ignoreCase = true)) {
                 logger.info(NOTIFY_OPS_MARKER, "Created a new user with email: ${subscriber.email} for Singapore.\nProvision a SIM card for this user.")
             }
         }.ifFailedThenRollback(transaction)
@@ -271,7 +272,11 @@ object Neo4jStoreSingleton : GraphStore {
                     }.map { Pair(subscription, subscriber) }
                 }
                 .flatMap { (subscription, subscriber) ->
-                    subscriptionRelationStore.create(subscriber, subscription, transaction)
+                    subscriptionRelationStore.create(subscriber, subscription, transaction).map {
+                        if (subscriber.country.equals("sg", ignoreCase = true)) {
+                            logger.info(NOTIFY_OPS_MARKER, "Assigned +${subscription.msisdn} to the user: ${subscriber.email} in Singapore.")
+                        }
+                    }
                 }
                 .ifFailedThenRollback(transaction)
     }
@@ -771,11 +776,17 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun atomicAddToSegments(addToSegments: Collection<Segment>): Either<StoreError, Unit> { TODO() }
+    override fun atomicAddToSegments(addToSegments: Collection<Segment>): Either<StoreError, Unit> {
+        TODO()
+    }
 
-    override fun atomicRemoveFromSegments(removeFromSegments: Collection<Segment>): Either<StoreError, Unit> { TODO() }
+    override fun atomicRemoveFromSegments(removeFromSegments: Collection<Segment>): Either<StoreError, Unit> {
+        TODO()
+    }
 
-    override fun atomicChangeSegments(changeSegments: Collection<ChangeSegment>): Either<StoreError, Unit> { TODO() }
+    override fun atomicChangeSegments(changeSegments: Collection<ChangeSegment>): Either<StoreError, Unit> {
+        TODO()
+    }
 
     // override fun getOffers(): Collection<Offer> = offerStore.getAll().values.map { Offer().apply { id = it.id } }
 
