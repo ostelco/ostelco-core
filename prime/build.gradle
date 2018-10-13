@@ -54,11 +54,6 @@ dependencies {
   testImplementation 'com.lmax:disruptor:3.4.2'
   testImplementation 'com.palantir.docker.compose:docker-compose-rule-junit4:0.34.0'
   testImplementation 'org.dhatim:dropwizard-prometheus:2.2.0'
-
-  integrationImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
-  integrationImplementation "org.mockito:mockito-core:$mockitoVersion"
-  integrationImplementation 'com.lmax:disruptor:3.4.2'
-  integrationImplementation 'com.palantir.docker.compose:docker-compose-rule-junit4:0.34.0'
 }
 
 configurations {
@@ -66,6 +61,7 @@ configurations {
   integrationImplementation.extendsFrom implementation
   integrationImplementation.extendsFrom runtime
   integrationImplementation.extendsFrom runtimeOnly
+  integrationImplementation.extendsFrom testImplementation
 }
 
 task integration(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
