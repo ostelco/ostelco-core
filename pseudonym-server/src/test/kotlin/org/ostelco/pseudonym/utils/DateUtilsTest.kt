@@ -1,7 +1,6 @@
-package org.ostelco.pseudonym
+package org.ostelco.pseudonym.utils
 
 import org.junit.Test
-import org.ostelco.pseudonym.utils.WeeklyBounds
 import kotlin.test.assertEquals
 
 /**
