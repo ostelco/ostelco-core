@@ -1,12 +1,12 @@
 package org.ostelco.pseudonym
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.cloud.bigquery.BigQuery
 import io.dropwizard.testing.junit.ResourceTestRule
 import org.junit.ClassRule
 import org.junit.Test
 import org.mockito.Mockito.mock
+import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.ActivePseudonyms
 import org.ostelco.prime.model.PseudonymEntity
 import org.ostelco.pseudonym.resources.PseudonymResource
@@ -43,8 +43,6 @@ class PseudonymResourceTest {
                 .addResource(PseudonymResource())
                 .build()
     }
-
-    private val mapper = jacksonObjectMapper()
 
     /**
      * Test what happens when parameter is not given
@@ -91,7 +89,7 @@ class PseudonymResourceTest {
             if (result == null) return
             assertEquals(Status.OK.statusCode, result.status)
             val json = result.readEntity(String::class.java)
-            pseudonymEntity = mapper.readValue(json)
+            pseudonymEntity = objectMapper.readValue(json)
             assertEquals(testMsisdn1, pseudonymEntity.sourceId)
         }
 
@@ -104,7 +102,7 @@ class PseudonymResourceTest {
             if (result == null) return
             assertEquals(Status.OK.statusCode, result.status)
             val json = result.readEntity(String::class.java)
-            val pseudonymEntity2 = mapper.readValue<PseudonymEntity>(json)
+            val pseudonymEntity2 = objectMapper.readValue<PseudonymEntity>(json)
             assertEquals(pseudonymEntity.pseudonym, pseudonymEntity2.pseudonym)
         }
     }
@@ -125,7 +123,7 @@ class PseudonymResourceTest {
             if (result == null) return
             assertEquals(Status.OK.statusCode, result.status)
             val json = result.readEntity(String::class.java)
-            pseudonymEntity = mapper.readValue(json)
+            pseudonymEntity = objectMapper.readValue(json)
             assertEquals(testMsisdn1, pseudonymEntity.sourceId)
         }
 
@@ -139,7 +137,7 @@ class PseudonymResourceTest {
             assertEquals(Status.OK.statusCode, result.status)
             val json = result.readEntity(String::class.java)
             // This is how the client will recieve the output.
-            val mapOfPseudonyms: Map<String, PseudonymEntity> = mapper.readValue(json)
+            val mapOfPseudonyms: Map<String, PseudonymEntity> = objectMapper.readValue(json)
             val current = mapOfPseudonyms["current"]
             val next = mapOfPseudonyms["next"]
             assertNotNull(current)
@@ -167,7 +165,7 @@ class PseudonymResourceTest {
             if (result == null) return
             assertEquals(Status.OK.statusCode, result.status)
             val json = result.readEntity(String::class.java)
-            pseudonymEntity = mapper.readValue(json)
+            pseudonymEntity = objectMapper.readValue(json)
             assertEquals(testMsisdn1, pseudonymEntity.sourceId)
         }
 
@@ -180,7 +178,7 @@ class PseudonymResourceTest {
             if (result == null) return
             assertEquals(Status.OK.statusCode, result.status)
             val json = result.readEntity(String::class.java)
-            val active = mapper.readValue<ActivePseudonyms>(json)
+            val active = objectMapper.readValue<ActivePseudonyms>(json)
             assertEquals(active.current.pseudonym, pseudonymEntity.pseudonym)
             assertEquals(active.current.end + 1, active.next.start)
         }
@@ -202,7 +200,7 @@ class PseudonymResourceTest {
             if (result == null) return
             assertEquals(Status.OK.statusCode, result.status)
             val json = result.readEntity(String::class.java)
-            pseudonymEntity = mapper.readValue(json)
+            pseudonymEntity = objectMapper.readValue(json)
             assertEquals(testMsisdn1, pseudonymEntity.sourceId)
         }
 
@@ -215,7 +213,7 @@ class PseudonymResourceTest {
             if (result == null) return
             assertEquals(Status.OK.statusCode, result.status)
             val json = result.readEntity(String::class.java)
-            val pseudonymEntity2 = mapper.readValue<PseudonymEntity>(json)
+            val pseudonymEntity2 = objectMapper.readValue<PseudonymEntity>(json)
             assertEquals(testMsisdn1, pseudonymEntity2.sourceId)
         }
     }
@@ -235,7 +233,7 @@ class PseudonymResourceTest {
             if (result == null) return
             assertEquals(Status.OK.statusCode, result.status)
             val json = result.readEntity(String::class.java)
-            pseudonymEntity = mapper.readValue(json)
+            pseudonymEntity = objectMapper.readValue(json)
             assertEquals(testMsisdn2, pseudonymEntity.sourceId)
         }
 
@@ -248,7 +246,7 @@ class PseudonymResourceTest {
             if (result == null) return
             assertEquals(Status.OK.statusCode, result.status)
             val json = result.readEntity(String::class.java)
-            val countMap = mapper.readValue<Map<String, Int>>(json)
+            val countMap = objectMapper.readValue<Map<String, Int>>(json)
             val count = countMap["count"] ?: -1
             assertTrue(count >= 1)
         }

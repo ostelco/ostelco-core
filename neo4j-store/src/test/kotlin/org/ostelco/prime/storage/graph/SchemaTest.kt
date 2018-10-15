@@ -1,7 +1,6 @@
 package org.ostelco.prime.storage.graph
 
 import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.palantir.docker.compose.DockerComposeRule
 import com.palantir.docker.compose.connection.waiting.HealthChecks
 import org.joda.time.Duration
@@ -10,6 +9,7 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 import org.neo4j.driver.v1.AccessMode.WRITE
+import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.HasId
 import org.ostelco.prime.storage.graph.Relation.REFERRED
 import kotlin.test.BeforeTest
@@ -186,7 +186,6 @@ class SchemaTest {
 
     @Test
     fun `json to map`() {
-        val objectMapper = jacksonObjectMapper()
         val map = objectMapper.readValue<Map<String, String>>("""{"label":"3GB for 300 NOK"}""", object : TypeReference<LinkedHashMap<String, String>>() {})
         assertEquals("3GB for 300 NOK", map["label"])
     }
