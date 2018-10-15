@@ -161,10 +161,12 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         }
     }
 
-    override fun getActivePseudonymOfMsisdnForSubscriber(subscriberId: String): Either<ApiError, ActivePseudonyms> {
-        return storage.getMsisdn(subscriberId)
-                .mapLeft { NotFoundError("Failed to get pseudonym for user.", ApiErrorCode.FAILED_TO_FETCH_PSEUDONYM_FOR_SUBSCRIBER, it) }
-                .map { msisdn -> pseudonymizer.getActivePseudonymsForMsisdn(msisdn) }
+    override fun getActivePseudonymForSubscriber(subscriberId: String): Either<ApiError, ActivePseudonyms> {
+        return try {
+            Either.right(pseudonymizer.getActivePseudonymsForSubscriberId(subscriberId))
+        } catch (e: Exception) {
+            Either.left(NotFoundError("Failed to get pseudonym for user.", ApiErrorCode.FAILED_TO_FETCH_PSEUDONYM_FOR_SUBSCRIBER))
+        }
     }
 
     override fun getPurchaseHistory(subscriberId: String): Either<ApiError, Collection<PurchaseRecord>> {

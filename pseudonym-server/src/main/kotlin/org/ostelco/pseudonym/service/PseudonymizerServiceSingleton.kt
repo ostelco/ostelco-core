@@ -4,7 +4,11 @@ import com.codahale.metrics.health.HealthCheck
 import com.google.cloud.NoCredentials
 import com.google.cloud.bigquery.BigQuery
 import com.google.cloud.bigquery.BigQueryOptions
-import com.google.cloud.datastore.*
+import com.google.cloud.datastore.Datastore
+import com.google.cloud.datastore.DatastoreOptions
+import com.google.cloud.datastore.Entity
+import com.google.cloud.datastore.Key
+import com.google.cloud.datastore.Query
 import com.google.cloud.datastore.StructuredQuery.PropertyFilter
 import com.google.cloud.datastore.testing.LocalDatastoreHelper
 import com.google.cloud.http.HttpTransportOptions
@@ -15,7 +19,13 @@ import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.ActivePseudonyms
 import org.ostelco.prime.model.PseudonymEntity
 import org.ostelco.prime.pseudonymizer.PseudonymizerService
-import org.ostelco.pseudonym.*
+import org.ostelco.pseudonym.ConfigRegistry
+import org.ostelco.pseudonym.ExportTaskKind
+import org.ostelco.pseudonym.ExportTaskKind.errorPropertyName
+import org.ostelco.pseudonym.ExportTaskKind.statusPropertyName
+import org.ostelco.pseudonym.PseudonymKind
+import org.ostelco.pseudonym.PseudonymKindEnum.MSISDN
+import org.ostelco.pseudonym.PseudonymKindEnum.SUBSCRIBER_ID
 import org.ostelco.pseudonym.resources.ExportTask
 import org.ostelco.pseudonym.utils.WeeklyBounds
 import java.time.Instant
@@ -55,8 +65,8 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
     private var bigQuery: BigQuery? = null
     private val dateBounds: DateBounds = WeeklyBounds()
 
-    private val msisdnPseudonymiser: Pseudonymizer = Pseudonymizer(MsisdnPseudonymEntityKind, msisdnPropertyName)
-    private val subscriberIdPseudonymiser: Pseudonymizer = Pseudonymizer(SubscriberIdPseudonymEntityKind, subscriberIdPropertyName)
+    private val msisdnPseudonymiser: Pseudonymizer = Pseudonymizer(MSISDN.kindInfo)
+    private val subscriberIdPseudonymiser: Pseudonymizer = Pseudonymizer(SUBSCRIBER_ID.kindInfo)
     private val executor = Executors.newFixedThreadPool(3)
 
     private val msisdnPseudonymCache: Cache<String, PseudonymEntity> = CacheBuilder.newBuilder()
@@ -80,12 +90,12 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
         subscriberIdPseudonymiser.init(datastore, bigQuery, dateBounds)
     }
 
-    override fun getActivePseudonymsForMsisdn(msisdn: String): ActivePseudonyms {
+    override fun getActivePseudonymsForSubscriberId(subscriberId: String): ActivePseudonyms {
         val currentTimestamp = Instant.now().toEpochMilli()
         val nextTimestamp = dateBounds.getNextPeriodStart(currentTimestamp)
-        logger.info("GET pseudonym for Msisdn = $msisdn at timestamps = $currentTimestamp & $nextTimestamp")
-        val current = getMsisdnPseudonym(msisdn, currentTimestamp)
-        val next = getMsisdnPseudonym(msisdn, nextTimestamp)
+        logger.info("GET pseudonym for subscriberId = $subscriberId at timestamps = $currentTimestamp & $nextTimestamp")
+        val current = getSubscriberIdPseudonym(subscriberId, currentTimestamp)
+        val next = getSubscriberIdPseudonym(subscriberId, nextTimestamp)
         return ActivePseudonyms(current, next)
     }
 
@@ -118,7 +128,7 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
     fun exportMsisdnPseudonyms(exportId: String) {
         bigQuery?.apply {
             logger.info("GET export all pseudonyms to the table $exportId")
-            val exporter = PseudonymExport(exportId = exportId, bigquery = this, datastore = datastore)
+            val exporter = PseudonymExport(exportId = exportId, bigQuery = this, datastore = datastore)
             executor.execute(exporter.getRunnable())
         }
     }
@@ -177,12 +187,12 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
     }
 
     fun getExportTask(exportId: String): ExportTask? {
-        val exportKey = datastore.newKeyFactory().setKind(ExportTaskKind).newKey(exportId)
+        val exportKey = datastore.newKeyFactory().setKind(ExportTaskKind.kindName).newKey(exportId)
         val value = datastore.get(exportKey)
         if (value != null) {
             // Create the object from datastore entity
             return ExportTask(
-                    value.getString(exportIdPropertyName),
+                    value.getString(ExportTaskKind.idPropertyName),
                     value.getString(statusPropertyName),
                     value.getString(errorPropertyName))
         }
@@ -191,7 +201,7 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
 }
 
 
-class Pseudonymizer(val entityKind: String, val sourcePropertyName: String) {
+class Pseudonymizer(private val pseudonymKind: PseudonymKind) {
     private val logger by getLogger()
     private lateinit var datastore: Datastore
     private var bigQuery: BigQuery? = null
@@ -205,8 +215,8 @@ class Pseudonymizer(val entityKind: String, val sourcePropertyName: String) {
 
     fun findPseudonym(pseudonym: String): PseudonymEntity? {
         val query = Query.newEntityQueryBuilder()
-                .setKind(entityKind)
-                .setFilter(PropertyFilter.eq(pseudonymPropertyName, pseudonym))
+                .setKind(pseudonymKind.kindName)
+                .setFilter(PropertyFilter.eq(pseudonymKind.pseudonymPropertyName, pseudonym))
                 .setLimit(1)
                 .build()
         val results = datastore.run(query)
@@ -220,8 +230,8 @@ class Pseudonymizer(val entityKind: String, val sourcePropertyName: String) {
 
     fun deleteAllPseudonyms(sourceId: String): Int {
         val query = Query.newEntityQueryBuilder()
-                .setKind(entityKind)
-                .setFilter(PropertyFilter.eq(sourcePropertyName, sourceId))
+                .setKind(pseudonymKind.kindName)
+                .setFilter(PropertyFilter.eq(pseudonymKind.idPropertyName, sourceId))
                 .setLimit(1)
                 .build()
         val results = datastore.run(query)
@@ -235,7 +245,7 @@ class Pseudonymizer(val entityKind: String, val sourcePropertyName: String) {
     }
 
     private fun getPseudonymKey(keyPrefix: String): Key {
-        return datastore.newKeyFactory().setKind(entityKind).newKey(keyPrefix)
+        return datastore.newKeyFactory().setKind(pseudonymKind.kindName).newKey(keyPrefix)
     }
 
     fun getPseudonymEntity(keyPrefix: String): PseudonymEntity? {
@@ -260,10 +270,10 @@ class Pseudonymizer(val entityKind: String, val sourcePropertyName: String) {
             if (currentEntity == null) {
                 // Prepare the new datastore entity
                 val pseudonym = Entity.newBuilder(pseudonymKey)
-                        .set(sourcePropertyName, entity.sourceId)
-                        .set(pseudonymPropertyName, entity.pseudonym)
-                        .set(startPropertyName, entity.start)
-                        .set(endPropertyName, entity.end)
+                        .set(pseudonymKind.idPropertyName, entity.sourceId)
+                        .set(pseudonymKind.pseudonymPropertyName, entity.pseudonym)
+                        .set(pseudonymKind.startPropertyName, entity.start)
+                        .set(pseudonymKind.endPropertyName, entity.end)
                         .build()
                 transaction.put(pseudonym)
                 transaction.commit()
@@ -281,9 +291,9 @@ class Pseudonymizer(val entityKind: String, val sourcePropertyName: String) {
 
     private fun convertToPseudonymEntity(entity: Entity): PseudonymEntity {
         return PseudonymEntity(
-                entity.getString(sourcePropertyName),
-                entity.getString(pseudonymPropertyName),
-                entity.getLong(startPropertyName),
-                entity.getLong(endPropertyName))
+                sourceId = entity.getString(pseudonymKind.idPropertyName),
+                pseudonym = entity.getString(pseudonymKind.pseudonymPropertyName),
+                start = entity.getLong(pseudonymKind.startPropertyName),
+                end = entity.getLong(pseudonymKind.endPropertyName))
     }
 }
