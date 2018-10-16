@@ -85,6 +85,7 @@ createOffer:
     properties:
       noOfBytes: 1_000_000_000
     presentation:
+      offerDescription: Special offer for YOU!
       isDefault: true
       offerLabel: Special offer
       priceLabel: 50 NOK
