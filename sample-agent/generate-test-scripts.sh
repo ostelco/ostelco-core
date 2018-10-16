@@ -41,7 +41,7 @@ createOffer:
   createProducts:
   - sku: 1GB_200NOK
     price:
-      amount: 200
+      amount: 20000
       currency: NOK
     properties:
       noOfBytes: 1_000_000_000
@@ -61,7 +61,7 @@ createOffer:
   createProducts:
   - sku: 2GB_200NOK
     price:
-      amount: 200
+      amount: 20000
       currency: NOK
     properties:
       noOfBytes: 2_000_000_000
@@ -80,7 +80,7 @@ createOffer:
   createProducts:
   - sku: 1GB_50NOK
     price:
-      amount: 50
+      amount: 5000
       currency: NOK
     properties:
       noOfBytes: 1_000_000_000
