@@ -123,7 +123,7 @@ cat > $TARGET_DIR/reset.yml <<EOF
 updateSegments:
   - id: $SEGMENT_1
     subscribers:
-      - $USER_3
+      - $USER_1
       - $USER_2
   - id: $SEGMENT_2
   - id: $SEGMENT_3
