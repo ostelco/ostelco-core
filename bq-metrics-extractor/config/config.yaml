@@ -107,6 +107,27 @@ bqmetrics:
       SELECT COUNT (DISTINCT user.msisdn)  AS count FROM `${DATASET_PROJECT}.ocs_gateway${DATASET_MODIFIER}.raw_activeusers`, UNNEST(users) as user
       WHERE timestamp >= TIMESTAMP_SUB(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY), INTERVAL 1 DAY)
       AND timestamp < TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)
+
+  - type: gauge
+    name: sims_who_have_been_active_today_roaming
+    help: Number of SIMs that has had an active data session while roaming today
+    resultColumn: count
+    sql: >
+      SELECT COUNT (DISTINCT user.msisdn) AS count FROM `${DATASET_PROJECT}.ocs_gateway${DATASET_MODIFIER}.raw_activeusers`, UNNEST(users) as user
+      WHERE timestamp >= TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)
+      AND apn = "loltel-test"
+      AND mccMnc != "24201"
+  - type: gauge
+    name: sims_who_was_active_yesterday_roaming
+    help: Number of SIMs that has had an active data session while roaming yesterday
+    resultColumn: count
+    sql: >
+      SELECT COUNT (DISTINCT user.msisdn)  AS count FROM `${DATASET_PROJECT}.ocs_gateway${DATASET_MODIFIER}.raw_activeusers`, UNNEST(users) as user
+      WHERE timestamp >= TIMESTAMP_SUB(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY), INTERVAL 1 DAY)
+      AND timestamp < TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)
+      AND apn = "loltel-test"
+      AND mccMnc != "24201"
+
   - type: gauge
     name: total_data_used_today
     help: Total data used today
