@@ -167,32 +167,28 @@ object Neo4jStoreSingleton : GraphStore {
     private fun addSubscriberIO(subscriber: Subscriber, referredBy: String?, transaction: PrimeTransaction): IO<Either<StoreError, Unit>> = IO {
         ForEither<StoreError>() extensions {
             binding {
-                validateCreateSubscriberParams(subscriber, referredBy)
+                validateCreateSubscriberParams(subscriber, referredBy).bind()
                 val bundleId = subscriber.id
                 subscriberStore.create(subscriber, transaction).bind()
                 subscriberToSegmentStore.create(subscriber.id,
                         getSegmentNameFromCountryCode(subscriber.country),
                         transaction).bind()
+                // Give 100 MB as free initial balance
+                var productId: String = "100MB_FREE_ON_JOINING"
+                var balance: Long = 100_000_000
                 if (referredBy != null) {
                     // Give 1 GB if subscriber is referred
+                    productId = "1GB_FREE_ON_REFERRED"
+                    balance = 1_000_000_000
                     referredRelationStore.create(referredBy, subscriber.id, transaction).bind()
-                    bundleStore.create(Bundle(bundleId, 1_000_000_000), transaction).bind()
-                    val product = productStore.get("1GB_FREE_ON_REFERRED", transaction).bind()
-                    createPurchaseRecordRelation(
-                            subscriber.id,
-                            PurchaseRecord(id = UUID.randomUUID().toString(), product = product, timestamp = Instant.now().toEpochMilli(), msisdn = ""),
-                            transaction)
-                    ocsAdminService.addBundle(Bundle(bundleId, 1_000_000_000))
-                } else {
-                    // Give 100 MB as free initial balance
-                    bundleStore.create(Bundle(bundleId, 100_000_000), transaction).bind()
-                    val product = productStore.get("100MB_FREE_ON_JOINING", transaction).bind()
-                    createPurchaseRecordRelation(
-                            subscriber.id,
-                            PurchaseRecord(id = UUID.randomUUID().toString(), product = product, timestamp = Instant.now().toEpochMilli(), msisdn = ""),
-                            transaction).bind()
-                    ocsAdminService.addBundle(Bundle(bundleId, 100_000_000))
                 }
+                bundleStore.create(Bundle(bundleId, balance), transaction).bind()
+                val product = productStore.get(productId, transaction).bind()
+                createPurchaseRecordRelation(
+                        subscriber.id,
+                        PurchaseRecord(id = UUID.randomUUID().toString(), product = product, timestamp = Instant.now().toEpochMilli(), msisdn = ""),
+                        transaction)
+                ocsAdminService.addBundle(Bundle(bundleId, balance))
                 subscriberToBundleStore.create(subscriber.id, bundleId, transaction).bind()
                 if (subscriber.country.equals("sg", ignoreCase = true)) {
                     logger.info(NOTIFY_OPS_MARKER, "Created a new user with email: ${subscriber.email} for Singapore.\nProvision a SIM card for this user.")
