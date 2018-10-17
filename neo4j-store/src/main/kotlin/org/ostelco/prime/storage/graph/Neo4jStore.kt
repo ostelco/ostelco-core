@@ -348,26 +348,28 @@ object Neo4jStoreSingleton : GraphStore {
                             .bind()
                     val profileInfo = fetchOrCreatePaymentProfile(subscriberId).bind()
                     val paymentCustomerId = profileInfo.id
+                    var addedSourceId: String? = null
                     if (sourceId != null) {
                         // First fetch all existing saved sources
                         val sourceDetails = paymentProcessor.getSavedSources(paymentCustomerId)
                                 // If we can't find the product, return not-found
                                 .mapLeft { org.ostelco.prime.paymentprocessor.core.BadGatewayError("Failed to fetch sources for user", it.description) }
                                 .bind()
+                        addedSourceId = sourceId
                         // If the sourceId is not found in existing list of saved sources,
                         // then save the source
                         if (!sourceDetails.any { sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
-                            paymentProcessor.addSource(paymentCustomerId, sourceId)
+                            addedSourceId = paymentProcessor.addSource(paymentCustomerId, sourceId)
                                     // For success case, saved source is removed after "capture charge" is saveCard == false.
                                     // Making sure same happens even for failure case by linking reversal action to transaction
-                                    .finallyDo(transaction) { _ -> removePaymentSource(saveCard, paymentCustomerId, sourceId) }
-                                    .bind()
+                                    .finallyDo(transaction) { removePaymentSource(saveCard, paymentCustomerId, it.id) }
+                                    .bind().id
                         }
                     }
                     //TODO: If later steps fail, then refund the authorized charge
-                    val chargeId = paymentProcessor.authorizeCharge(paymentCustomerId, sourceId, product.price.amount, product.price.currency)
+                    val chargeId = paymentProcessor.authorizeCharge(paymentCustomerId, addedSourceId, product.price.amount, product.price.currency)
                             .mapLeft { apiError ->
-                                logger.error("failed to authorize purchase for paymentCustomerId $paymentCustomerId, sourceId $sourceId, sku $sku")
+                                logger.error("failed to authorize purchase for paymentCustomerId $paymentCustomerId, sourceId $addedSourceId, sku $sku")
                                 apiError
                             }.linkReversalActionToTransaction(transaction) { chargeId ->
                                 paymentProcessor.refundCharge(chargeId)
