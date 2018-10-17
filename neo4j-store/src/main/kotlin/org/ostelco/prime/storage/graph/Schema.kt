@@ -3,12 +3,12 @@ package org.ostelco.prime.storage.graph
 import arrow.core.Either
 import arrow.core.flatMap
 import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.neo4j.driver.v1.AccessMode.READ
 import org.neo4j.driver.v1.AccessMode.WRITE
 import org.neo4j.driver.v1.StatementResult
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.HasId
 import org.ostelco.prime.storage.AlreadyExistsError
 import org.ostelco.prime.storage.NotCreatedError
@@ -28,6 +28,8 @@ data class EntityType<ENTITY : HasId>(
         private val dataClass: Class<ENTITY>,
         val name: String = dataClass.simpleName) {
 
+    var entityStore: EntityStore<ENTITY>? = null
+
     fun createEntity(map: Map<String, Any>): ENTITY = ObjectHandler.getObject(map, dataClass)
 }
 
@@ -43,6 +45,10 @@ data class RelationType<FROM : HasId, RELATION, TO : HasId>(
 }
 
 class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
+
+    init {
+        entityType.entityStore = this
+    }
 
     fun get(id: String, transaction: Transaction): Either<StoreError, E> {
         return read("""MATCH (node:${entityType.name} {id: '$id'}) RETURN node;""", transaction) {
@@ -249,6 +255,7 @@ class RelationStore<FROM : HasId, TO : HasId>(private val relationType: Relation
                 CREATE (from)-[:${relationType.relation.name}]->(to);
                 """.trimIndent(),
             transaction) {
+        // TODO vihang: validate if 'from' and 'to' node exists
         val actualCount = it.summary().counters().relationshipsCreated()
         Either.cond(
                 test = actualCount == toIds.size,
@@ -269,6 +276,7 @@ class RelationStore<FROM : HasId, TO : HasId>(private val relationType: Relation
                 CREATE (from)-[:${relationType.relation.name}]->(to);
                 """.trimIndent(),
             transaction) {
+        // TODO vihang: validate if 'from' and 'to' node exists
         val actualCount = it.summary().counters().relationshipsCreated()
         Either.cond(
                 test = actualCount == fromIds.size,
@@ -279,6 +287,15 @@ class RelationStore<FROM : HasId, TO : HasId>(private val relationType: Relation
                             expectedCount = fromIds.size,
                             actualCount = actualCount)
                 })
+    }
+
+    fun removeAll(toId: String, transaction: Transaction): Either<StoreError, Unit> = write("""
+                MATCH (from:${relationType.from.name})-[r:${relationType.relation.name}]->(to:${relationType.to.name} { id: '$toId' })
+                DELETE r;
+        """.trimIndent(),
+            transaction) {
+        // TODO vihang: validate if 'to' node exists
+        Either.right(Unit)
     }
 }
 
@@ -325,8 +342,6 @@ data class WriteTransaction(val transaction: PrimeTransaction)
 object ObjectHandler {
 
     private const val SEPARATOR = '/'
-
-    private val objectMapper = jacksonObjectMapper()
 
     //
     // Object to Map

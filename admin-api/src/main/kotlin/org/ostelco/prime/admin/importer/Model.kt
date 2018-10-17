@@ -1,68 +1,78 @@
 package org.ostelco.prime.admin.importer
 
-import org.ostelco.prime.model.Offer
+import org.ostelco.prime.model.ChangeSegment
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.Segment
 
 /**
  * The input classes being parsed (as yaml).
  */
+data class CreateOffer(val createOffer: Offer)
 
-data class ProducingAgent(val name: String, val version: String)
+data class Offer(
+        val id:String,
+        val createProducts: Collection<Product> = emptyList(),
+        val existingProducts: Collection<String> = emptyList(),
+        val createSegments: Collection<Segment> = emptyList(),
+        val existingSegments: Collection<String> = emptyList())
 
-class ImportDeclaration(
-        val producingAgent: ProducingAgent,
-        val offer: Offer,
-        val segments: Collection<Segment> = emptyList(),
-        val products: Collection<Product> = emptyList())
+data class CreateSegments(val createSegments: Collection<Segment>)
+data class UpdateSegments(val updateSegments: Collection<Segment>)
+data class AddToSegments(val addToSegments: Collection<NonEmptySegment>)
+data class RemoveFromSegments(val removeFromSegments: Collection<NonEmptySegment>)
+data class ChangeSegments(val changeSegments: Collection<ChangeSegment>)
+
+data class NonEmptySegment(
+        val id: String,
+        val subscribers: Collection<String>)
 
 /*
-class TimeInterval(var from: String?= null, var to: String? = null)
+data class ProducingAgent(val name: String, val version: String)
 
-class Presentation(
-        var badgeLabel: String? = null,
-        var description: String? = null,
-        var shortDescription: String? = null,
-        var label: String? = null,
-        var name: String? = null,
-        var priceLabel: String? = null,
-        var hidden: Boolean? = null,
-        var imageUrl: String? = null
+data class TimeInterval(val from: String, val to: String)
+
+data class Presentation(
+        val badgeLabel: String,
+        val description: String,
+        val shortDescription: String,
+        val label: String,
+        val name: String,
+        val priceLabel: String,
+        val hidden: Boolean,
+        val imageUrl: String
 )
 
-class OfferFinancials(
-        var repurchability: String? = null,
-        var currencyLabel: String? = null,
-        var price: Int? = null,
-        var taxRate: BigDecimal? = null
+data class OfferFinancials(
+        val repurchability: String,
+        val currencyLabel: String,
+        val price: Int,
+        val taxRate: BigDecimal
 )
 
-class SubscriberIdCollection(
-        var decryptionKey: String? = null,
-        var members : MutableList<String>? = null
+data class SubscriberIdCollection(
+        val decryptionKey: String,
+        val members : MutableList<String>
 )
 
-
-class Segment(
-        var type: String? = null,
-        var description: String? = null,
-        var members: SubscriberIdCollection? = null
+data class Segment(
+        val type: String,
+        val description: String,
+        val members: SubscriberIdCollection
 )
 
 // XXX Should perhaps, apart from SKU, be a
 //     a keyword/value map, to be interpreted by
 //     something, somewhere that knows something about
 //     technical product parameters?
-class Product(
-        var sku: String? = null,
-        var noOfBytes: BigInteger? = null
+data class Product(
+        val sku: String,
+        val noOfBytes: BigInteger
 )
 
-
-class Offer(
-        var visibility: TimeInterval? = null,
-        var presentation: Presentation? = null,
-        var financial: OfferFinancials? = null,
-        var product: Product? = null
+data class Offer(
+        val visibility: TimeInterval,
+        val presentation: Presentation,
+        val financial: OfferFinancials,
+        val product: Product
 )
 */

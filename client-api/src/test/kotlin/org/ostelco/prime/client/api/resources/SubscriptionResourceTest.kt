@@ -1,7 +1,6 @@
 package org.ostelco.prime.client.api.resources
 
 import arrow.core.Either
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import io.dropwizard.auth.AuthDynamicFeature
 import io.dropwizard.auth.AuthValueFactoryProvider
@@ -21,6 +20,7 @@ import org.ostelco.prime.client.api.auth.OAuthAuthenticator
 import org.ostelco.prime.client.api.model.SubscriptionStatus
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
+import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.ActivePseudonyms
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
@@ -80,10 +80,10 @@ class SubscriptionResourceTest {
         val pseudonym = PseudonymEntity(msisdn, "random", 0, 1)
         val activePseudonyms = ActivePseudonyms(pseudonym, pseudonym)
 
-        `when`(DAO.getActivePseudonymOfMsisdnForSubscriber(arg.capture()))
+        `when`(DAO.getActivePseudonymForSubscriber(arg.capture()))
                 .thenReturn(Either.right(activePseudonyms))
 
-        val responseJsonString = jacksonObjectMapper().writeValueAsString(activePseudonyms)
+        val responseJsonString = objectMapper.writeValueAsString(activePseudonyms)
 
         val resp = RULE.target("/subscription/activePseudonyms")
                 .request()
@@ -104,7 +104,7 @@ class SubscriptionResourceTest {
         @JvmField
         @ClassRule
         val RULE: ResourceTestRule = ResourceTestRule.builder()
-                .setMapper(jacksonObjectMapper())
+                .setMapper(objectMapper)
                 .addResource(AuthDynamicFeature(
                         OAuthCredentialAuthFilter.Builder<AccessTokenPrincipal>()
                                 .setAuthenticator(AUTHENTICATOR)

@@ -6,7 +6,7 @@ plugins {
 dependencies {
     implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
     implementation "io.dropwizard:dropwizard-auth:$dropwizardVersion"
-    // Match netty via ocs-api
+    // Match netty via ocs-grpc-api
     implementation "com.google.firebase:firebase-admin:$firebaseVersion"
     implementation 'com.lmax:disruptor:3.4.2'
     implementation "com.google.guava:guava:$guavaVersion"

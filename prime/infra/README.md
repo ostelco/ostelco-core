@@ -71,6 +71,7 @@ gcloud container builds submit \
 
 ```bash
 kubectl create secret generic pantel-prod.json --from-file prime/config/pantel-prod.json
+kubectl create secret generic imeiDb.csv.zip --from-file imeiDb.csv.zip
 ```
 
 Reference:
@@ -204,8 +205,14 @@ gcloud container node-pools delete default-pool \
 kubectl create secret generic pantel-prod.json --from-file prime/config/pantel-prod.json
 ```
 
+Note: To update the secrets defined using yaml, delete and created them again. They are not updated.
+ 
 ```bash
-sed -e s/STRIPE_API_KEY/$(echo -n 'keep-stripe-api-key-here' | base64)/g prime/infra/dev/stripe-secrets.yaml | kubectl apply -f -
+kubectl create secret generic stripe-secrets --from-literal=stripeApiKey='keep-stripe-api-key-here'
+```
+
+```bash
+kubectl create secret generic slack-secrets --from-literal=slackWebHookUri='https://hooks.slack.com/services/.../.../...'
 ```
 
 ```bash
@@ -243,7 +250,7 @@ pip install grpcio grpcio-tools
 python -m grpc_tools.protoc \
   --include_imports \
   --include_source_info \
-  --proto_path=ocs-api/src/main/proto \
+  --proto_path=ocs-grpc-api/src/main/proto \
   --descriptor_set_out=ocs_descriptor.pb \
   ocs.proto
 
@@ -364,5 +371,27 @@ gcloud dataflow jobs run active-users \
     --parameters \
 inputTopic=projects/pantel-2decb/topics/active-users,\
 outputTableSpec=pantel-2decb:ocs_gateway.raw_activeusers
+
+```
+
+## Deploy dataflow pipeline for raw_purchases
+
+```bash
+# For dev cluster
+gcloud dataflow jobs run purchase-records-dev \
+    --gcs-location gs://dataflow-templates/latest/PubSub_to_BigQuery \
+    --region europe-west1 \
+    --parameters \
+inputTopic=projects/pantel-2decb/topics/purchase-info-dev,\
+outputTableSpec=pantel-2decb:purchases_dev.raw_purchases
+
+
+# For production cluster
+gcloud dataflow jobs run purchase-records \
+    --gcs-location gs://dataflow-templates/latest/PubSub_to_BigQuery \
+    --region europe-west1 \
+    --parameters \
+inputTopic=projects/pantel-2decb/topics/purchase-info,\
+outputTableSpec=pantel-2decb:purchases.raw_purchases
 
 ```

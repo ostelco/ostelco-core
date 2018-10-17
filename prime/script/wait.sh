@@ -44,7 +44,12 @@ curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/pantel-2d
 echo "Done creating topics and subscriptions"
 
 # Forward the local port 9090 to datastore-emulator:8081
-if [ -z $(type socat) ]; then echo "socat not installed."; exit 1; fi
+if ! hash socat 2>/dev/null
+then
+  echo "socat not installed."
+  exit 1
+fi
+
 socat TCP-LISTEN:9090,fork TCP:datastore-emulator:8081 &
 
 # Start app

@@ -4,7 +4,6 @@ package org.ostelco.bqmetrics
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.cloud.RetryOption
 import com.google.cloud.bigquery.BigQueryOptions
-import com.google.cloud.bigquery.Job
 import com.google.cloud.bigquery.JobId
 import com.google.cloud.bigquery.JobInfo
 import com.google.cloud.bigquery.QueryJobConfiguration
@@ -17,6 +16,7 @@ import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Gauge
 import io.prometheus.client.Summary
 import io.prometheus.client.exporter.PushGateway
+import kotlinx.coroutines.experimental.*
 import net.sourceforge.argparse4j.inf.Namespace
 import net.sourceforge.argparse4j.inf.Subparser
 import org.slf4j.Logger
@@ -25,6 +25,7 @@ import org.threeten.bp.Duration
 import java.util.*
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
+import com.google.cloud.bigquery.Job as BQJob
 
 /**
  * Bridge between "latent metrics" stored in BigQuery and Prometheus
@@ -165,10 +166,11 @@ abstract class MetricBuilder(
         val sql: String,
         val resultColumn: String,
         val env: EnvironmentVars) {
+
     /**
      * Function which will add the current value of the metric to registry.
      */
-    abstract fun buildMetric(registry: CollectorRegistry)
+    abstract suspend fun buildMetric(registry: CollectorRegistry)
 
     /**
      * Function to expand the environment variables in the SQL.
@@ -191,7 +193,7 @@ abstract class MetricBuilder(
     /**
      * Execute the SQL and get a single number value.
      */
-    fun getNumberValueViaSql(): Long {
+    suspend fun getNumberValueViaSql(): Long = coroutineScope<Long> {
         // Instantiate a client. If you don't specify credentials when constructing a client, the
         // client library will look for credentials in the environment, such as the
         // GOOGLE_APPLICATION_CREDENTIALS environment variable.
@@ -204,16 +206,18 @@ abstract class MetricBuilder(
 
         // Create a job ID so that we can safely retry.
         val jobId: JobId = JobId.of(UUID.randomUUID().toString());
-        var queryJob: Job = bigquery.create(JobInfo.newBuilder(queryConfig).setJobId(jobId).build());
+        var queryJob: BQJob = bigquery.create(JobInfo.newBuilder(queryConfig).setJobId(jobId).build());
 
-        // Wait for the query to complete.
+       // Wait for the query to complete.
         // Retry maximum 4 times for up to 2 minutes.
-        queryJob = queryJob.waitFor(
-                RetryOption.initialRetryDelay(Duration.ofSeconds(10)),
-                RetryOption.retryDelayMultiplier(2.0),
-                RetryOption.maxRetryDelay(Duration.ofSeconds(20)),
-                RetryOption.maxAttempts(5),
-                RetryOption.totalTimeout(Duration.ofMinutes(2)));
+        queryJob = async {
+            queryJob.waitFor(
+                    RetryOption.initialRetryDelay(Duration.ofSeconds(10)),
+                    RetryOption.retryDelayMultiplier(2.0),
+                    RetryOption.maxRetryDelay(Duration.ofSeconds(20)),
+                    RetryOption.maxAttempts(5),
+                    RetryOption.totalTimeout(Duration.ofMinutes(2)));
+        }.await()
 
         // Check for errors
         if (queryJob == null) {
@@ -229,7 +233,7 @@ abstract class MetricBuilder(
         }
 
         val count = result.iterateAll().iterator().next().get(resultColumn).longValue
-        return count
+        count
     }
 }
 
@@ -246,15 +250,13 @@ class SummaryMetricBuilder(
     private val log: Logger = LoggerFactory.getLogger(SummaryMetricBuilder::class.java)
 
 
-    override fun buildMetric(registry: CollectorRegistry) {
+    override suspend fun buildMetric(registry: CollectorRegistry) {
         try {
             val summary: Summary = Summary.build()
                     .name(metricName)
                     .help(help).register(registry)
             val value: Long = getNumberValueViaSql()
-
             log.info("Summarizing metric $metricName  to be $value")
-
             summary.observe(value * 1.0)
         } catch (e: NullPointerException) {
             log.error(e.toString())
@@ -274,15 +276,13 @@ class GaugeMetricBuilder(
 
     private val log: Logger = LoggerFactory.getLogger(GaugeMetricBuilder::class.java)
 
-    override fun buildMetric(registry: CollectorRegistry) {
+    override suspend fun buildMetric(registry: CollectorRegistry) {
         try {
             val gauge: Gauge = Gauge.build()
                     .name(metricName)
                     .help(help).register(registry)
             val value: Long = getNumberValueViaSql()
-
             log.info("Gauge metric $metricName = $value")
-
             gauge.set(value * 1.0)
         } catch (e: NullPointerException) {
             log.error(e.toString())
@@ -304,15 +304,14 @@ private class BqMetricsExtractionException : RuntimeException {
 /**
  * Adapter class that will push metrics to the Prometheus push gateway.
  */
-private class PrometheusPusher(val pushGateway: String, val job: String) {
+private class PrometheusPusher(val pushGateway: String, val jobName: String) {
 
     private val log: Logger = LoggerFactory.getLogger(PrometheusPusher::class.java)
 
     val registry = CollectorRegistry()
     val env: EnvironmentVars = EnvironmentVars()
 
-    fun publishMetrics(metrics: List<MetricConfig>) {
-
+    suspend fun publishMetrics(metrics: List<MetricConfig>) {
         val metricSources: MutableList<MetricBuilder> = mutableListOf()
         metrics.forEach {
             val typeString: String = it.type.trim().toUpperCase()
@@ -339,12 +338,22 @@ private class PrometheusPusher(val pushGateway: String, val job: String) {
             }
         }
 
-        log.info("Querying bigquery for metric values")
+        log.info("Querying BQ for total ${metricSources.size} metric values")
+        val start = System.currentTimeMillis()
         val pg = PushGateway(pushGateway)
-        metricSources.forEach({ it.buildMetric(registry) })
+        coroutineScope {
+            metricSources.forEach { builder ->
+                launch {
+                    builder.buildMetric(registry)
+                }
+            }
+        }
+        // coroutineScope waits for all children to finish.
+        val end = System.currentTimeMillis()
+        log.info("Queries finished in ${(end - start)/1000} seconds")
 
         log.info("Pushing metrics to pushgateway")
-        pg.pushAdd(registry, job)
+        pg.pushAdd(registry, jobName)
         log.info("Done transmitting metrics to pushgateway")
     }
 }
@@ -364,8 +373,9 @@ private class CollectAndPushMetrics : ConfiguredCommand<BqMetricsExtractorConfig
         }
 
         val pgw = namespace.get<String>(pushgatewayKey)
-        PrometheusPusher(pgw,
-                "bq_metrics_extractor").publishMetrics(configuration.metrics)
+        runBlocking {
+            PrometheusPusher(pgw, "bq_metrics_extractor").publishMetrics(configuration.metrics)
+        }
     }
 
     val pushgatewayKey = "pushgateway"

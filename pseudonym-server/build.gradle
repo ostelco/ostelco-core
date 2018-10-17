@@ -4,11 +4,9 @@ plugins {
 }
 
 dependencies {
-  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+  implementation project(':prime-modules')
 
   implementation project(':ocs-grpc-api')
-  implementation project(':prime-modules')
-  implementation project(':model')
   implementation project(':analytics-grpc-api')
 
   implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
@@ -19,7 +17,9 @@ dependencies {
   implementation "com.google.cloud:google-cloud-bigquery:$googleCloudVersion"
   implementation "com.google.cloud:google-cloud-datastore:$googleCloudVersion"
   implementation "com.google.cloud:google-cloud-pubsub:$googleCloudVersion"
-  
+
+  testRuntimeOnly "javax.xml.bind:jaxb-api:$jaxbVersion"
+  testRuntimeOnly "javax.activation:activation:$javaxActivationVersion"
 
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"

@@ -17,15 +17,23 @@ import com.google.cloud.datastore.StructuredQuery
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import org.apache.commons.codec.binary.Hex
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.AdminDataSource
-import org.ostelco.pseudonym.*
-import org.slf4j.LoggerFactory
+import org.ostelco.pseudonym.ExportTaskKind
+import org.ostelco.pseudonym.ExportTaskKind.errorPropertyName
+import org.ostelco.pseudonym.ExportTaskKind.statusPropertyName
+import org.ostelco.pseudonym.PseudonymKind
+import org.ostelco.pseudonym.PseudonymKindEnum.MSISDN
+import org.ostelco.pseudonym.PseudonymKindEnum.SUBSCRIBER_ID
 import java.net.URLEncoder
 import java.security.MessageDigest
 import java.util.UUID
+import kotlin.collections.ArrayList
+import kotlin.collections.component1
+import kotlin.collections.component2
 
 private const val datasetName = "exported_pseudonyms"
 private const val consumptionDatasetName = "exported_data_consumption"
@@ -34,10 +42,10 @@ private const val idFieldName = "pseudoid"
 private const val msisdnIdPropertyName = "msisdnId"
 
 /**
- * Exports pseudonym objects to a bigquery Table
+ * Exports pseudonym objects to a bigQuery Table
  */
-class PseudonymExport(private val exportId: String, private val bigquery: BigQuery, private val datastore: Datastore) {
-    private val logger = LoggerFactory.getLogger(PseudonymExport::class.java)
+class PseudonymExport(private val exportId: String, bigQuery: BigQuery, private val datastore: Datastore) {
+    private val logger by getLogger()
 
     /**
      * Status of the export operation in progress.
@@ -51,26 +59,24 @@ class PseudonymExport(private val exportId: String, private val bigquery: BigQue
     private val randomKey = "$exportId-${UUID.randomUUID()}"
     private val msisdnExporter: DS2BQExporter = DS2BQExporter(
             tableName = tableName("msisdn"),
-            sourceEntity = MsisdnPseudonymEntityKind,
-            sourceField = msisdnPropertyName,
+            pseudonymKind = MSISDN.kindInfo,
             datasetName = datasetName,
             randomKey = randomKey,
             datastore = datastore,
-            bigquery = bigquery)
+            bigQuery = bigQuery)
     private val subscriberIdExporter: DS2BQExporter = DS2BQExporter(
             tableName = tableName("subscriber"),
-            sourceEntity = SubscriberIdPseudonymEntityKind,
-            sourceField = subscriberIdPropertyName,
+            pseudonymKind = SUBSCRIBER_ID.kindInfo,
             datasetName = datasetName,
             randomKey = randomKey,
             datastore = datastore,
-            bigquery = bigquery)
+            bigQuery = bigQuery)
     private val msisdnMappingExporter: SubscriberMsisdnMappingExporter = SubscriberMsisdnMappingExporter(
             tableName = tableName("sub2msisdn"),
             msisdnExporter = msisdnExporter,
             subscriberIdExporter = subscriberIdExporter,
             datasetName = consumptionDatasetName,
-            bigquery = bigquery)
+            bigQuery = bigQuery)
 
     init {
         upsertTaskStatus()
@@ -103,7 +109,7 @@ class PseudonymExport(private val exportId: String, private val bigquery: BigQue
     }
 
     private fun upsertTaskStatus() {
-        val exportKey = datastore.newKeyFactory().setKind(ExportTaskKind).newKey(exportId)
+        val exportKey = datastore.newKeyFactory().setKind(ExportTaskKind.kindName).newKey(exportId)
         val transaction = datastore.newTransaction()
         try {
             // Verify before writing a new value.
@@ -116,7 +122,7 @@ class PseudonymExport(private val exportId: String, private val bigquery: BigQue
                     }
             // Prepare the new datastore entity
             val exportTask = builder
-                    .set(exportIdPropertyName, exportId)
+                    .set(ExportTaskKind.idPropertyName, exportId)
                     .set(statusPropertyName, status.toString())
                     .set(errorPropertyName, error)
                     .build()
@@ -137,14 +143,13 @@ class PseudonymExport(private val exportId: String, private val bigquery: BigQue
  */
 class DS2BQExporter(
         tableName: String,
-        private val sourceEntity: String,
-        private val sourceField: String,
+        private val pseudonymKind: PseudonymKind,
         datasetName: String,
         private val randomKey: String,
         private val datastore: Datastore,
-        bigquery: BigQuery): BQExporter(tableName, randomKey, datasetName, bigquery) {
+        bigQuery: BigQuery): BQExporter(tableName, datasetName, bigQuery) {
 
-    override val logger = LoggerFactory.getLogger(DS2BQExporter::class.java)
+    override val logger by getLogger()
     private val idCache: Cache<String, String> = CacheBuilder.newBuilder()
             .maximumSize(5000)
             .build()
@@ -152,8 +157,8 @@ class DS2BQExporter(
 
     override fun getSchema(): Schema {
         val id = Field.of(idFieldName, LegacySQLTypeName.STRING)
-        val pseudonym = Field.of(pseudonymPropertyName, LegacySQLTypeName.STRING)
-        val source = Field.of(sourceField, LegacySQLTypeName.STRING)
+        val pseudonym = Field.of(pseudonymKind.pseudonymPropertyName, LegacySQLTypeName.STRING)
+        val source = Field.of(pseudonymKind.idPropertyName, LegacySQLTypeName.STRING)
         return Schema.of(id, pseudonym, source)
     }
 
@@ -161,18 +166,18 @@ class DS2BQExporter(
         // Retrieves the element from cache.
         // Incase of cache miss, generate a new SHA
         return idCache.get(key) {
-            val keyString: String = "$randomKey-$key"
+            val keyString = "$randomKey-$key"
             val hash = digest.digest(keyString.toByteArray(Charsets.UTF_8))
             String(Hex.encodeHex(hash))
         }
     }
 
-    fun exportPage(pageSize: Int, cursor: Cursor?, table: Table): Cursor? {
+    private fun exportPage(pageSize: Int, cursor: Cursor?, table: Table): Cursor? {
         // Dump pseudonyms to BQ, one page at a time. Since all records in a
         // page are inserted at once, use a small page size
         val queryBuilder = Query.newEntityQueryBuilder()
-                .setKind(sourceEntity)
-                .setOrderBy(StructuredQuery.OrderBy.asc(sourceField))
+                .setKind(pseudonymKind.kindName)
+                .setOrderBy(StructuredQuery.OrderBy.asc(pseudonymKind.idPropertyName))
                 .setLimit(pageSize)
         if (cursor != null) {
             queryBuilder.setStartCursor(cursor)
@@ -183,9 +188,9 @@ class DS2BQExporter(
             val entity = pseudonyms.next()
             totalRows++
             val row = hashMapOf(
-                    sourceField to entity.getString(sourceField),
-                    pseudonymPropertyName to entity.getString(pseudonymPropertyName),
-                    idFieldName to getIdForKey(entity.getString(sourceField)))
+                    pseudonymKind.idPropertyName to entity.getString(pseudonymKind.idPropertyName),
+                    pseudonymKind.pseudonymPropertyName to entity.getString(pseudonymKind.pseudonymPropertyName),
+                    idFieldName to getIdForKey(entity.getString(pseudonymKind.idPropertyName)))
             val rowId = "rowId$totalRows"
             rows.add(RowToInsert.of(rowId, row))
         }
@@ -202,13 +207,13 @@ class DS2BQExporter(
      * This is done in pages of 100 records.
      */
     override fun doExport() {
-        logger.info("Starting export to ${tableName}")
+        logger.info("Starting export to $tableName")
         val table = createTable()
         var cursor: Cursor? = null
         do {
             cursor = exportPage(100, cursor, table)
         } while (cursor != null)
-        logger.info("Exported ${totalRows} rows to ${tableName}")
+        logger.info("Exported $totalRows rows to $tableName")
     }
 }
 
@@ -221,14 +226,14 @@ class SubscriberMsisdnMappingExporter(
         private val msisdnExporter: DS2BQExporter,
         private val subscriberIdExporter: DS2BQExporter,
         datasetName: String,
-        bigquery: BigQuery) :
-        BQExporter(tableName, "", datasetName, bigquery) {
+        bigQuery: BigQuery) :
+        BQExporter(tableName, datasetName, bigQuery) {
 
     private val storage by lazy { getResource<AdminDataSource>() }
-    override val logger = LoggerFactory.getLogger(SubscriberMsisdnMappingExporter::class.java)
+    override val logger by getLogger()
 
     override fun getSchema(): Schema {
-        val subscriberId = Field.of(subscriberIdPropertyName, LegacySQLTypeName.STRING)
+        val subscriberId = Field.of(SUBSCRIBER_ID.kindInfo.idPropertyName, LegacySQLTypeName.STRING)
         val msisdnId = Field.of(msisdnIdPropertyName, LegacySQLTypeName.STRING)
         return Schema.of(subscriberId, msisdnId)
     }
@@ -243,14 +248,14 @@ class SubscriberMsisdnMappingExporter(
             totalRows++
             val row = hashMapOf(
                     msisdnIdPropertyName to msisdnExporter.getIdForKey(subscription.msisdn),
-                    subscriberIdPropertyName to subscriberIdExporter.getIdForKey(encodedSubscriberId))
+                    SUBSCRIBER_ID.kindInfo.idPropertyName to subscriberIdExporter.getIdForKey(encodedSubscriberId))
             val rowId = "rowId$totalRows"
             rows.add(RowToInsert.of(rowId, row))
             if (rows.size == pageSize) {
                 // Insert current page to BQ
                 insertToBq(table, rows)
                 // Reset rows array.
-                rows = ArrayList<RowToInsert>()
+                rows = ArrayList()
             }
         }
         // Insert remaining rows to BQ
@@ -262,29 +267,28 @@ class SubscriberMsisdnMappingExporter(
      * This is done in pages of 100 records.
      */
     override fun doExport() {
-        logger.info("Starting export to ${tableName}")
+        logger.info("Starting export to $tableName")
         val table = createTable()
         exportAllPages(table, 100)
-        logger.info("Exported ${totalRows} rows to ${tableName}")
+        logger.info("Exported $totalRows rows to $tableName")
     }
 }
 
 /**
- * Class for exporting Subscriber -> Msisidn mapping.
+ * Class for exporting Subscriber -> Msisdn mapping.
  */
 abstract class BQExporter(
         val tableName: String,
-        private val randomKey: String,
         private val datasetName: String,
-        private val bigquery: BigQuery) {
+        private val bigQuery: BigQuery) {
 
-    open val logger = LoggerFactory.getLogger(BQExporter::class.java)
-    var error: String = ""
+    open val logger by getLogger()
+    private var error: String = ""
     var totalRows = 0
 
     fun createTable(): Table {
         // Delete existing table
-        val deleted = bigquery.delete(datasetName, tableName)
+        val deleted = bigQuery.delete(datasetName, tableName)
         if (deleted) {
             logger.info("Existing table '$tableName' deleted.")
         }
@@ -292,7 +296,7 @@ abstract class BQExporter(
         val schema = getSchema()
         val tableDefinition = StandardTableDefinition.of(schema)
         val tableInfo = TableInfo.newBuilder(tableId, tableDefinition).build()
-        return bigquery.create(tableInfo)
+        return bigQuery.create(tableInfo)
     }
 
     fun insertToBq(table: Table, rows: ArrayList<RowToInsert>) {

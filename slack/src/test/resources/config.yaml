@@ -1,0 +1,15 @@
+modules:
+- type: slack
+  config:
+    notifications:
+      channel: ${SLACK_CHANNEL}
+      webHookUri: ${SLACK_WEBHOOK_URI}
+      httpClient:
+        timeout: 3s
+        connectionRequestTimeout: 1s
+
+logging:
+  level: INFO
+  appenders:
+  - type: console
+  - type: slack

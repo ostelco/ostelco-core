@@ -4,8 +4,6 @@ plugins {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
-
     implementation project(":prime-modules")
 
     implementation "io.dropwizard:dropwizard-auth:$dropwizardVersion"
@@ -14,8 +12,8 @@ dependencies {
     implementation "com.google.guava:guava:$guavaVersion"
     implementation 'io.jsonwebtoken:jjwt:0.9.1'
 
-    implementation 'javax.xml.bind:jaxb-api:2.3.0'
-    implementation 'javax.activation:activation:1.1.1'
+    runtimeOnly "javax.xml.bind:jaxb-api:$jaxbVersion"
+    runtimeOnly "javax.activation:activation:$javaxActivationVersion"
 
     testImplementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
     testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
