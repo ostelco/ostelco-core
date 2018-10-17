@@ -1,8 +1,9 @@
 package org.ostelco.prime.storage.graph
 
-import arrow.core.Either
-import arrow.core.Tuple3
-import arrow.core.flatMap
+import arrow.core.*
+import arrow.effects.*
+import arrow.instances.*
+import arrow.typeclasses.*
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.getLogger
@@ -38,7 +39,7 @@ import org.ostelco.prime.storage.graph.Relation.OFFER_HAS_PRODUCT
 import org.ostelco.prime.storage.graph.Relation.PURCHASED
 import org.ostelco.prime.storage.graph.Relation.REFERRED
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 import java.util.stream.Collectors
 
 enum class Relation {
@@ -139,81 +140,65 @@ object Neo4jStoreSingleton : GraphStore {
     override fun getSubscriber(subscriberId: String): Either<StoreError, Subscriber> =
             readTransaction { subscriberStore.get(subscriberId, transaction) }
 
+
+    private fun transformCreateSubscriberError(subscriber: Subscriber, storeError: StoreError) =
+            if (storeError is NotCreatedError && storeError.type == subscriberToSegmentRelation.relation.name) {
+                ValidationError(type = subscriberEntity.name, id = subscriber.id, message = "Unsupported country: ${subscriber.country}")
+            } else {
+                storeError
+            }
+
+    private fun validateCreateSubscriberParams(subscriber: Subscriber, referredBy: String?): Either<StoreError, Unit> =
+            if (subscriber.id == referredBy) {
+                Either.left(ValidationError(type = subscriberEntity.name, id = subscriber.id, message = "Referred by self"))
+            } else {
+                Either.right(Unit)
+            }
+
+    override fun addSubscriber(subscriber: Subscriber, referredBy: String?): Either<StoreError, Unit> = writeTransaction {
+        addSubscriberIO(subscriber, referredBy, transaction)
+                .unsafeRunSync()
+                .mapLeft { transformCreateSubscriberError(subscriber, it) }
+                .ifFailedThenRollback(transaction)
+    }
+
     // TODO vihang: Move this logic to DSL + Rule Engine + Triggers, when they are ready
     // >> BEGIN
-    override fun addSubscriber(subscriber: Subscriber, referredBy: String?): Either<StoreError, Unit> = writeTransaction {
-
-        if (subscriber.id == referredBy) {
-            return@writeTransaction Either.left(ValidationError(
-                    type = subscriberEntity.name,
-                    id = subscriber.id,
-                    message = "Referred by self"))
-        }
-
-        val bundleId = subscriber.id
-
-        val either = subscriberStore.create(subscriber, transaction)
-                .flatMap {
-                    subscriberToSegmentStore
-                            .create(subscriber.id,
-                                    getSegmentNameFromCountryCode(subscriber.country),
-                                    transaction)
-                            .mapLeft { storeError ->
-                                if (storeError is NotCreatedError && storeError.type == subscriberToSegmentRelation.relation.name) {
-                                    ValidationError(
-                                            type = subscriberEntity.name,
-                                            id = subscriber.id,
-                                            message = "Unsupported country: ${subscriber.country}")
-                                } else {
-                                    storeError
-                                }
-                            }
+    private fun addSubscriberIO(subscriber: Subscriber, referredBy: String?, transaction: PrimeTransaction): IO<Either<StoreError, Unit>> = IO {
+        ForEither<StoreError>() extensions {
+            binding {
+                validateCreateSubscriberParams(subscriber, referredBy)
+                val bundleId = subscriber.id
+                subscriberStore.create(subscriber, transaction).bind()
+                subscriberToSegmentStore.create(subscriber.id,
+                        getSegmentNameFromCountryCode(subscriber.country),
+                        transaction).bind()
+                if (referredBy != null) {
+                    // Give 1 GB if subscriber is referred
+                    referredRelationStore.create(referredBy, subscriber.id, transaction).bind()
+                    bundleStore.create(Bundle(bundleId, 1_000_000_000), transaction).bind()
+                    val product = productStore.get("1GB_FREE_ON_REFERRED", transaction).bind()
+                    createPurchaseRecordRelation(
+                            subscriber.id,
+                            PurchaseRecord(id = UUID.randomUUID().toString(), product = product, timestamp = Instant.now().toEpochMilli(), msisdn = ""),
+                            transaction)
+                    ocsAdminService.addBundle(Bundle(bundleId, 1_000_000_000))
+                } else {
+                    // Give 100 MB as free initial balance
+                    bundleStore.create(Bundle(bundleId, 100_000_000), transaction).bind()
+                    val product = productStore.get("100MB_FREE_ON_JOINING", transaction).bind()
+                    createPurchaseRecordRelation(
+                            subscriber.id,
+                            PurchaseRecord(id = UUID.randomUUID().toString(), product = product, timestamp = Instant.now().toEpochMilli(), msisdn = ""),
+                            transaction).bind()
+                    ocsAdminService.addBundle(Bundle(bundleId, 100_000_000))
                 }
-
-        if (referredBy != null) {
-            // Give 1 GB if subscriber is referred
-            either
-                    .flatMap { referredRelationStore.create(referredBy, subscriber.id, transaction) }
-                    .flatMap { bundleStore.create(Bundle(bundleId, 1_000_000_000), transaction) }
-                    .flatMap { _ ->
-                        productStore
-                                .get("1GB_FREE_ON_REFERRED", transaction)
-                                .flatMap {
-                                    createPurchaseRecordRelation(
-                                            subscriber.id,
-                                            PurchaseRecord(id = UUID.randomUUID().toString(), product = it, timestamp = Instant.now().toEpochMilli(), msisdn = ""),
-                                            transaction)
-                                }
-                    }
-                    .flatMap {
-                        ocsAdminService.addBundle(Bundle(bundleId, 1_000_000_000))
-                        Either.right(Unit)
-                    }
-        } else {
-            // Give 100 MB as free initial balance
-            either
-                    .flatMap { bundleStore.create(Bundle(bundleId, 100_000_000), transaction) }
-                    .flatMap { _ ->
-                        productStore
-                                .get("100MB_FREE_ON_JOINING", transaction)
-                                .flatMap {
-                                    createPurchaseRecordRelation(
-                                            subscriber.id,
-                                            PurchaseRecord(id = UUID.randomUUID().toString(), product = it, timestamp = Instant.now().toEpochMilli(), msisdn = ""),
-                                            transaction)
-                                }
-                    }
-                    .flatMap {
-                        ocsAdminService.addBundle(Bundle(bundleId, 100_000_000))
-                        Either.right(Unit)
-                    }
-        }.flatMap {
-            subscriberToBundleStore.create(subscriber.id, bundleId, transaction)
-        }.map {
-            if (subscriber.country.equals("sg", ignoreCase = true)) {
-                logger.info(NOTIFY_OPS_MARKER, "Created a new user with email: ${subscriber.email} for Singapore.\nProvision a SIM card for this user.")
-            }
-        }.ifFailedThenRollback(transaction)
+                subscriberToBundleStore.create(subscriber.id, bundleId, transaction).bind()
+                if (subscriber.country.equals("sg", ignoreCase = true)) {
+                    logger.info(NOTIFY_OPS_MARKER, "Created a new user with email: ${subscriber.email} for Singapore.\nProvision a SIM card for this user.")
+                }
+            }.fix()
+        }
     }
     // << END
 

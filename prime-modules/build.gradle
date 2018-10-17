@@ -15,5 +15,22 @@ dependencies {
   api project(':model')
 
   api "io.dropwizard:dropwizard-core:$dropwizardVersion"
-  api "io.arrow-kt:arrow-core:0.7.3"
+  api "io.arrow-kt:arrow-core:$arrowVersion"
+  api "io.arrow-kt:arrow-core:$arrowVersion"
+  api "io.arrow-kt:arrow-syntax:$arrowVersion"
+  api "io.arrow-kt:arrow-typeclasses:$arrowVersion"
+  api "io.arrow-kt:arrow-data:$arrowVersion"
+  api "io.arrow-kt:arrow-instances-core:$arrowVersion"
+  api "io.arrow-kt:arrow-instances-data:$arrowVersion"
+  kapt    "io.arrow-kt:arrow-annotations-processor:$arrowVersion"
+
+  api "io.arrow-kt:arrow-free:$arrowVersion" //optional
+  api "io.arrow-kt:arrow-mtl:$arrowVersion" //optional
+  api "io.arrow-kt:arrow-effects:$arrowVersion" //optional
+  api "io.arrow-kt:arrow-effects-rx2:$arrowVersion" //optional
+  api "io.arrow-kt:arrow-effects-reactor:$arrowVersion" //optional
+  api "io.arrow-kt:arrow-effects-kotlinx-coroutines:$arrowVersion" //optional
+  api "io.arrow-kt:arrow-optics:$arrowVersion" //optional
+  api "io.arrow-kt:arrow-generic:$arrowVersion" //optional
+  api "io.arrow-kt:arrow-recursion:$arrowVersion" //optional
 }
