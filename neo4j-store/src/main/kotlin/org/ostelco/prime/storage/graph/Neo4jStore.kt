@@ -391,7 +391,7 @@ object Neo4jStoreSingleton : GraphStore {
                             subscriberId = subscriberId,
                             status = "success")
                     ocs.topup(subscriberId, sku)
-                            .mapLeft { BadGatewayError("Failed to perform topup", it)  }
+                            .mapLeft { BadGatewayError("Failed to perform topup", it) }
                             .bind()
                     // Even if the "capture charge operation" failed, we do not want to rollback.
                     // In that case, we just want to log it at error level.
