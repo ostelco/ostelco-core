@@ -379,10 +379,7 @@ object Neo4jStoreSingleton : GraphStore {
                                 BadGatewayError(storeError.message)
                             }.bind()
                     //TODO: While aborting transactions, send a record with "reverted" status
-                    analyticsReporter.reportPurchaseInfo(
-                            purchaseRecord = purchaseRecord,
-                            subscriberId = subscriberId,
-                            status = "success")
+                    analyticsReporter.reportPurchaseInfo(purchaseRecord, subscriberId, "success")
                     ocs.topup(subscriberId, sku)
                             .mapLeft { BadGatewayError("Failed to perform topup", it) }
                             .bind()
