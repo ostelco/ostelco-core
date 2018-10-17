@@ -21,9 +21,7 @@ import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.ocs.OcsAdminService
 import org.ostelco.prime.ocs.OcsSubscriberService
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
-import org.ostelco.prime.paymentprocessor.core.BadGatewayError
-import org.ostelco.prime.paymentprocessor.core.PaymentError
-import org.ostelco.prime.paymentprocessor.core.ProductInfo
+import org.ostelco.prime.paymentprocessor.core.*
 import org.ostelco.prime.storage.GraphStore
 import org.ostelco.prime.storage.NotCreatedError
 import org.ostelco.prime.storage.NotFoundError
@@ -328,7 +326,88 @@ object Neo4jStoreSingleton : GraphStore {
     private val ocs by lazy { getResource<OcsSubscriberService>() }
     private val analyticsReporter by lazy { getResource<AnalyticsService>() }
 
+    private fun fetchOrCreatePaymentProfile(subscriberId: String): Either<PaymentError, ProfileInfo> =
+            // Fetch/Create stripe payment profile for the subscriber.
+            paymentProcessor.getPaymentProfile(subscriberId)
+                    .fold(
+                            { paymentProcessor.createPaymentProfile(subscriberId) },
+                            { profileInfo -> Either.right(profileInfo) }
+                    )
+
     override fun purchaseProduct(
+            subscriberId: String,
+            sku: String,
+            sourceId: String?,
+            saveCard: Boolean): Either<PaymentError, ProductInfo> = writeTransaction {
+        IO {
+            ForEither<PaymentError>() extensions {
+                binding {
+                    val product = getProduct(subscriberId, sku, transaction)
+                            // If we can't find the product, return not-found
+                            .mapLeft { org.ostelco.prime.paymentprocessor.core.NotFoundError("Product unavailable") }
+                            .bind()
+                    val profileInfo = fetchOrCreatePaymentProfile(subscriberId).bind()
+                    val paymentCustomerId = profileInfo.id
+                    if (sourceId != null) {
+                        // First fetch all existing saved sources
+                        val sourceDetails = paymentProcessor.getSavedSources(paymentCustomerId)
+                                // If we can't find the product, return not-found
+                                .mapLeft { org.ostelco.prime.paymentprocessor.core.BadGatewayError("Failed to fetch sources for user", it.description) }
+                                .bind()
+                        // If the sourceId is not found in existing list of saved sources,
+                        // then save the source
+                        if (!sourceDetails.any { sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
+                            paymentProcessor.addSource(paymentCustomerId, sourceId)
+                                    // For success case, saved source is removed after "capture charge" is saveCard == false.
+                                    // Making sure same happens even for failure case by linking reversal action to transaction
+                                    .finallyDo(transaction) { _ -> removePaymentSource(saveCard, paymentCustomerId, sourceId) }
+                                    .bind()
+                        }
+                    }
+                    //TODO: If later steps fail, then refund the authorized charge
+                    val chargeId = paymentProcessor.authorizeCharge(paymentCustomerId, sourceId, product.price.amount, product.price.currency)
+                            .mapLeft { apiError ->
+                                logger.error("failed to authorize purchase for paymentCustomerId $paymentCustomerId, sourceId $sourceId, sku $sku")
+                                apiError
+                            }.linkReversalActionToTransaction(transaction) { chargeId ->
+                                paymentProcessor.refundCharge(chargeId)
+                                logger.error(NOTIFY_OPS_MARKER, "Failed to refund charge for paymentCustomerId $paymentCustomerId, chargeId $chargeId.\nFix this in Stripe dashboard.")
+                            }.bind()
+                    val purchaseRecord = PurchaseRecord(
+                            id = chargeId,
+                            product = product,
+                            timestamp = Instant.now().toEpochMilli(),
+                            msisdn = "")
+                    createPurchaseRecordRelation(subscriberId, purchaseRecord, transaction)
+                            .mapLeft { storeError ->
+                                logger.error("failed to save purchase record, for paymentCustomerId $paymentCustomerId, chargeId $chargeId, payment will be unclaimed in Stripe")
+                                BadGatewayError(storeError.message)
+                            }.bind()
+                    //TODO: While aborting transactions, send a record with "reverted" status
+                    analyticsReporter.reportPurchaseInfo(
+                            purchaseRecord = purchaseRecord,
+                            subscriberId = subscriberId,
+                            status = "success")
+                    ocs.topup(subscriberId, sku)
+                            .mapLeft { BadGatewayError("Failed to perform topup", it)  }
+                            .bind()
+                    // Even if the "capture charge operation" failed, we do not want to rollback.
+                    // In that case, we just want to log it at error level.
+                    // These transactions can then me manually changed before they are auto rollback'ed in 'X' days.
+                    paymentProcessor.captureCharge(chargeId, paymentCustomerId)
+                            .mapLeft {
+                                // TODO payment: retry capture charge
+                                logger.error(NOTIFY_OPS_MARKER, "Capture failed for paymentCustomerId $paymentCustomerId, chargeId $chargeId.\nFix this in Stripe Dashboard")
+                            }
+                    // Ignore failure to capture charge, by not calling bind()
+                    ProductInfo(product.sku)
+                }.fix()
+            }
+        }.unsafeRunSync()
+                .ifFailedThenRollback(transaction)
+   }
+
+    fun purchaseProductOld(
             subscriberId: String,
             sku: String,
             sourceId: String?,
