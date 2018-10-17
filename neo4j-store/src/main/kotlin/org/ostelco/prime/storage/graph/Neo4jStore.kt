@@ -218,47 +218,33 @@ object Neo4jStoreSingleton : GraphStore {
     //
     // Subscription
     //
+    private fun validateBundleList(bundles: List<Bundle>, subscriberId: String): Either<StoreError, Unit> =
+            if (bundles.isEmpty()) {
+                Either.left(NotFoundError(type = subscriberToBundleRelation.relation.name, id = "$subscriberId -> *"))
+            } else {
+                Either.right(Unit)
+            }
 
     override fun addSubscription(subscriberId: String, msisdn: String): Either<StoreError, Unit> = writeTransaction {
-
-        subscriberStore.getRelated(subscriberId, subscriberToBundleRelation, transaction)
-                .flatMap { bundles ->
-                    if (bundles.isEmpty()) {
-                        Either.left(NotFoundError(type = subscriberToBundleRelation.relation.name, id = "$subscriberId -> *"))
-                    } else {
-                        Either.right(bundles)
+        IO {
+            ForEither<StoreError>() extensions {
+                binding {
+                    val bundles = subscriberStore.getRelated(subscriberId, subscriberToBundleRelation, transaction).bind()
+                    validateBundleList(bundles, subscriberId).bind()
+                    subscriptionStore.create(Subscription(msisdn), transaction).bind()
+                    val subscription = subscriptionStore.get(msisdn, transaction).bind()
+                    val subscriber = subscriberStore.get(subscriberId, transaction).bind()
+                    bundles.forEach { bundle ->
+                        subscriptionToBundleStore.create(subscription, bundle, transaction).bind()
+                        ocsAdminService.addMsisdnToBundleMapping(msisdn, bundle.id)
                     }
-                }
-                .flatMap { bundles ->
-                    subscriptionStore.create(Subscription(msisdn), transaction)
-                            .map { bundles }
-                }
-                .flatMap { bundles ->
-                    subscriptionStore.get(msisdn, transaction)
-                            .map { subscription -> Pair(bundles, subscription) }
-                }
-                .flatMap { (bundles, subscription) ->
-                    subscriberStore.get(subscriberId, transaction)
-                            .map { subscriber -> Triple(bundles, subscription, subscriber) }
-                }
-                .flatMap { (bundles, subscription, subscriber) ->
-                    bundles.fold(Either.right(Unit) as Either<StoreError, Unit>) { either, bundle ->
-                        either.flatMap { _ ->
-                            subscriptionToBundleStore.create(subscription, bundle, transaction)
-                                    .flatMap {
-                                        ocsAdminService.addMsisdnToBundleMapping(msisdn, bundle.id)
-                                        Either.right(Unit)
-                                    }
-                        }
-                    }.map { Pair(subscription, subscriber) }
-                }
-                .flatMap { (subscription, subscriber) ->
-                    subscriptionRelationStore.create(subscriber, subscription, transaction).map {
-                        if (subscriber.country.equals("sg", ignoreCase = true)) {
-                            logger.info(NOTIFY_OPS_MARKER, "Assigned +${subscription.msisdn} to the user: ${subscriber.email} in Singapore.")
-                        }
+                    subscriptionRelationStore.create(subscriber, subscription, transaction).bind()
+                    if (subscriber.country.equals("sg", ignoreCase = true)) {
+                        logger.info(NOTIFY_OPS_MARKER, "Assigned +${subscription.msisdn} to the user: ${subscriber.email} in Singapore.")
                     }
-                }
+                }.fix()
+            }
+        }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
     }
 
