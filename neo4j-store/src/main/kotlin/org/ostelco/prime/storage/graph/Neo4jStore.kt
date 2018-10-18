@@ -139,7 +139,8 @@ object Neo4jStoreSingleton : GraphStore {
                 binding {
                     validateCreateSubscriberParams(subscriber, referredBy).bind()
                     val bundleId = subscriber.id
-                    subscriberStore.create(subscriber, transaction)
+                    subscriberStore.create(subscriber, transaction).bind()
+                    subscriberToSegmentStore.create(subscriber.id, getSegmentNameFromCountryCode(subscriber.country), transaction)
                             .mapLeft { storeError ->
                                 if (storeError is NotCreatedError && storeError.type == subscriberToSegmentRelation.relation.name) {
                                     ValidationError(type = subscriberEntity.name, id = subscriber.id, message = "Unsupported country: ${subscriber.country}")
@@ -147,7 +148,6 @@ object Neo4jStoreSingleton : GraphStore {
                                     storeError
                                 }
                             }.bind()
-                    subscriberToSegmentStore.create(subscriber.id, getSegmentNameFromCountryCode(subscriber.country), transaction).bind()
                     // Give 100 MB as free initial balance
                     var productId: String = "100MB_FREE_ON_JOINING"
                     var balance: Long = 100_000_000
