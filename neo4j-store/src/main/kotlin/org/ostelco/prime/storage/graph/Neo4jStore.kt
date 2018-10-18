@@ -169,6 +169,8 @@ object Neo4jStoreSingleton : GraphStore {
                             transaction)
                     ocsAdminService.addBundle(Bundle(bundleId, balance))
                     subscriberToBundleStore.create(subscriber.id, bundleId, transaction).bind()
+                    // TODO Remove hardcoded country code.
+                    // https://docs.oracle.com/javase/9/docs/api/java/util/Locale.IsoCountryCode.html
                     if (subscriber.country.equals("sg", ignoreCase = true)) {
                         logger.info(NOTIFY_OPS_MARKER, "Created a new user with email: ${subscriber.email} for Singapore.\nProvision a SIM card for this user.")
                     }
@@ -220,6 +222,8 @@ object Neo4jStoreSingleton : GraphStore {
                         ocsAdminService.addMsisdnToBundleMapping(msisdn, bundle.id)
                     }
                     subscriptionRelationStore.create(subscriber, subscription, transaction).bind()
+                    // TODO Remove hardcoded country code.
+                    // https://docs.oracle.com/javase/9/docs/api/java/util/Locale.IsoCountryCode.html
                     if (subscriber.country.equals("sg", ignoreCase = true)) {
                         logger.info(NOTIFY_OPS_MARKER, "Assigned +${subscription.msisdn} to the user: ${subscriber.email} in Singapore.")
                     }
