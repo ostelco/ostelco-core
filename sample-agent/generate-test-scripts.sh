@@ -29,7 +29,6 @@ SEGMENT_2="demoSegment2"
 SEGMENT_3="demoSegment3"
 
 
-
 if [[ ! -d "$TARGET_DIR" ]] ; then
     echo "$0 ERROR:  Target directory '$TARGET_DIR' does not exist or is not a directory"
     exit 1
@@ -42,7 +41,7 @@ createOffer:
   createProducts:
   - sku: 1GB_200NOK
     price:
-      amount: 200
+      amount: 20000
       currency: NOK
     properties:
       noOfBytes: 1_000_000_000
@@ -62,7 +61,7 @@ createOffer:
   createProducts:
   - sku: 2GB_200NOK
     price:
-      amount: 200
+      amount: 20000
       currency: NOK
     properties:
       noOfBytes: 2_000_000_000
@@ -81,11 +80,12 @@ createOffer:
   createProducts:
   - sku: 1GB_50NOK
     price:
-      amount: 50
+      amount: 5000
       currency: NOK
     properties:
       noOfBytes: 1_000_000_000
     presentation:
+      offerDescription: Need more data? Get 1GB for the special price of 50 NOK
       isDefault: true
       offerLabel: Special offer
       priceLabel: 50 NOK
@@ -98,10 +98,10 @@ cat > $TARGET_DIR/step1.yml <<EOF
 updateSegments:
   - id: $SEGMENT_1
     subscribers:
-      - $USER_1
+      - $USER_2
   - id: $SEGMENT_2
     subscribers:
-      - $USER_2
+      - $USER_1
   - id: $SEGMENT_3
 EOF
 
@@ -110,13 +110,13 @@ cat > $TARGET_DIR/step2.yml <<EOF
 updateSegments:
   - id: $SEGMENT_1
     subscribers:
-      - $USER_1
+      - $USER_2
   - id: $SEGMENT_2
     subscribers:
-      - $USER_2
+      - $USER_1
   - id: $SEGMENT_3
     subscribers:
-      - $USER_2
+      - $USER_1
 EOF
 
 
