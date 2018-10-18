@@ -1,10 +1,8 @@
 package org.ostelco.pseudonym.resources
 
 import org.hibernate.validator.constraints.NotBlank
+import org.ostelco.prime.getLogger
 import org.ostelco.pseudonym.service.PseudonymizerServiceSingleton
-import org.slf4j.LoggerFactory
-import java.time.Instant
-import javax.ws.rs.DELETE
 import javax.ws.rs.GET
 import javax.ws.rs.Path
 import javax.ws.rs.PathParam
@@ -25,77 +23,7 @@ data class ExportTask(val exportId: String, val status: String, val error: Strin
 @Path("/pseudonym")
 class PseudonymResource {
 
-    private val logger = LoggerFactory.getLogger(PseudonymResource::class.java)
-
-    /**
-     * Get the pseudonym which is valid at the timestamp for the given
-     * msisdn. In case pseudonym doesn't exist, a new one will be created
-     * for the period. Timestamps are in UTC
-     */
-    @GET
-    @Path("/get/{msisdn}/{timestamp}")
-    fun getPseudonym(@NotBlank @PathParam("msisdn") msisdn: String,
-                     @NotBlank @PathParam("timestamp") timestamp: String): Response {
-        logger.info("GET pseudonym for Msisdn = $msisdn at timestamp = $timestamp")
-        val entity = PseudonymizerServiceSingleton.getMsisdnPseudonym(msisdn, timestamp.toLong())
-        return Response.ok(entity, MediaType.APPLICATION_JSON).build()
-    }
-
-    /**
-     * Get the pseudonym which is valid at the time of the call for the given
-     * msisdn. In case pseudonym doesn't exist, a new one will be created
-     * for the period
-     */
-    @GET
-    @Path("/current/{msisdn}")
-    fun getPseudonym(@NotBlank @PathParam("msisdn") msisdn: String): Response {
-        val timestamp = Instant.now().toEpochMilli()
-        logger.info("GET pseudonym for Msisdn = $msisdn at current time, timestamp = $timestamp")
-        val entity = PseudonymizerServiceSingleton.getMsisdnPseudonym(msisdn, timestamp)
-        return Response.ok(entity, MediaType.APPLICATION_JSON).build()
-    }
-
-    /**
-     * Get the pseudonyms valid for current & next time periods for the given
-     * msisdn. In case pseudonym doesn't exist, a new one will be created
-     * for the periods
-     */
-    @GET
-    @Path("/active/{msisdn}")
-    fun getActivePseudonyms(@NotBlank @PathParam("msisdn") msisdn: String): Response {
-        return Response.ok(
-                PseudonymizerServiceSingleton.getActivePseudonymsForMsisdn(msisdn = msisdn),
-                MediaType.APPLICATION_JSON).build()
-    }
-
-    /**
-     * Find the msisdn and other details about the given pseudonym.
-     * In case pseudonym doesn't exist, it returns 404
-     */
-    @GET
-    @Path("/find/{pseudonym}")
-    fun findPseudonym(@NotBlank @PathParam("pseudonym") pseudonym: String): Response {
-        logger.info("Find details for pseudonym = $pseudonym")
-        return PseudonymizerServiceSingleton.findMsisdnPseudonym(pseudonym = pseudonym)
-                ?.let { Response.ok(it, MediaType.APPLICATION_JSON).build() }
-                ?: Response.status(Status.NOT_FOUND).build()
-    }
-
-    /**
-     * Delete all pseudonym entities for the given msisdn
-     * Returns a json object with no of records deleted.
-     *  { count : <no. of entities deleted> }
-     */
-    @DELETE
-    @Path("/delete/{msisdn}")
-    fun deleteAllPseudonyms(@NotBlank @PathParam("msisdn") msisdn: String): Response {
-        logger.info("delete all pseudonyms for Msisdn = $msisdn")
-        val count = PseudonymizerServiceSingleton.deleteAllMsisdnPseudonyms(msisdn = msisdn)
-        // Return a Json object with number of records deleted.
-        val countMap = mapOf("count" to count)
-        logger.info("deleted $count records for Msisdn = $msisdn")
-        return Response.ok(countMap, MediaType.APPLICATION_JSON).build()
-    }
+    private val logger by getLogger()
 
     /**
      * Exports all pseudonyms to a bigquery table. the name is generated from the exportId

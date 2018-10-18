@@ -11,7 +11,7 @@
   "rows": [
     {
       "collapse": false,
-      "height": "250px",
+      "height": 204,
       "panels": [
         {
           "cacheTimeout": null,
@@ -59,7 +59,7 @@
               "to": "null"
             }
           ],
-          "span": 3,
+          "span": 4,
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": false,
@@ -134,7 +134,7 @@
               "to": "null"
             }
           ],
-          "span": 3,
+          "span": 4,
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": false,
@@ -211,7 +211,7 @@
               "to": "null"
             }
           ],
-          "span": 3,
+          "span": 4,
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": false,
@@ -229,83 +229,7 @@
             }
           ],
           "thresholds": "",
-          "title": "Users acquired through referrals",
-          "type": "singlestat",
-          "valueFontSize": "80%",
-          "valueMaps": [
-            {
-              "op": "=",
-              "text": "N/A",
-              "value": "null"
-            }
-          ],
-          "valueName": "current"
-        },
-        {
-          "cacheTimeout": null,
-          "colorBackground": false,
-          "colorValue": false,
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "datasource": "prometheus",
-          "format": "none",
-          "gauge": {
-            "maxValue": 100,
-            "minValue": 0,
-            "show": false,
-            "thresholdLabels": false,
-            "thresholdMarkers": true
-          },
-          "id": 4,
-          "interval": null,
-          "links": [],
-          "mappingType": 1,
-          "mappingTypes": [
-            {
-              "name": "value to text",
-              "value": 1
-            },
-            {
-              "name": "range to text",
-              "value": 2
-            }
-          ],
-          "maxDataPoints": 100,
-          "nullPointMode": "connected",
-          "nullText": null,
-          "postfix": "",
-          "postfixFontSize": "50%",
-          "prefix": "",
-          "prefixFontSize": "50%",
-          "rangeMaps": [
-            {
-              "from": "null",
-              "text": "N/A",
-              "to": "null"
-            }
-          ],
-          "span": 3,
-          "sparkline": {
-            "fillColor": "rgba(31, 118, 189, 0.18)",
-            "full": false,
-            "lineColor": "rgb(31, 120, 193)",
-            "show": false
-          },
-          "targets": [
-            {
-              "expr": "scalar(users_paid_at_least_once)",
-              "intervalFactor": 2,
-              "legendFormat": "",
-              "metric": "users_paid_at_least_once",
-              "refId": "A",
-              "step": 600
-            }
-          ],
-          "thresholds": "",
-          "title": "Users paid at least once",
+          "title": "Users Acquired Through Referrals",
           "type": "singlestat",
           "valueFontSize": "80%",
           "valueMaps": [
@@ -321,169 +245,14 @@
       "repeat": null,
       "repeatIteration": null,
       "repeatRowId": null,
-      "showTitle": false,
-      "title": "Dashboard Row",
+      "showTitle": true,
+      "title": "Live Metrics",
       "titleSize": "h6"
     },
     {
       "collapse": false,
-      "height": 274,
+      "height": 210,
       "panels": [
-        {
-          "cacheTimeout": null,
-          "colorBackground": false,
-          "colorValue": false,
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(208, 134, 42, 0.94)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "datasource": null,
-          "format": "none",
-          "gauge": {
-            "maxValue": 100,
-            "minValue": 0,
-            "show": false,
-            "thresholdLabels": false,
-            "thresholdMarkers": true
-          },
-          "id": 8,
-          "interval": null,
-          "links": [],
-          "mappingType": 1,
-          "mappingTypes": [
-            {
-              "name": "value to text",
-              "value": 1
-            },
-            {
-              "name": "range to text",
-              "value": 2
-            }
-          ],
-          "maxDataPoints": 100,
-          "nullPointMode": "connected",
-          "nullText": null,
-          "postfix": "",
-          "postfixFontSize": "50%",
-          "prefix": "",
-          "prefixFontSize": "50%",
-          "rangeMaps": [
-            {
-              "from": "null",
-              "text": "N/A",
-              "to": "null"
-            }
-          ],
-          "span": 2,
-          "sparkline": {
-            "fillColor": "rgba(31, 118, 189, 0.18)",
-            "full": false,
-            "lineColor": "rgb(31, 120, 193)",
-            "show": false
-          },
-          "targets": [
-            {
-              "expr": "sims_who_have_used_data_today",
-              "hide": false,
-              "intervalFactor": 2,
-              "metric": "sims_who_have_used_data_today",
-              "refId": "A",
-              "step": 600
-            }
-          ],
-          "thresholds": "",
-          "timeFrom": null,
-          "timeShift": null,
-          "title": "Simcards using data today",
-          "type": "singlestat",
-          "valueFontSize": "80%",
-          "valueMaps": [
-            {
-              "op": "=",
-              "text": "N/A",
-              "value": "null"
-            }
-          ],
-          "valueName": "current"
-        },
-        {
-          "cacheTimeout": null,
-          "colorBackground": false,
-          "colorValue": false,
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "datasource": null,
-          "decimals": null,
-          "format": "none",
-          "gauge": {
-            "maxValue": 100,
-            "minValue": 0,
-            "show": false,
-            "thresholdLabels": false,
-            "thresholdMarkers": true
-          },
-          "id": 10,
-          "interval": null,
-          "links": [],
-          "mappingType": 1,
-          "mappingTypes": [
-            {
-              "name": "value to text",
-              "value": 1
-            },
-            {
-              "name": "range to text",
-              "value": 2
-            }
-          ],
-          "maxDataPoints": 100,
-          "nullPointMode": "connected",
-          "nullText": null,
-          "postfix": "  MB",
-          "postfixFontSize": "50%",
-          "prefix": "",
-          "prefixFontSize": "50%",
-          "rangeMaps": [
-            {
-              "from": "null",
-              "text": "N/A",
-              "to": "null"
-            }
-          ],
-          "span": 2,
-          "sparkline": {
-            "fillColor": "rgba(31, 118, 189, 0.18)",
-            "full": false,
-            "lineColor": "rgb(31, 120, 193)",
-            "show": false
-          },
-          "targets": [
-            {
-              "expr": "total_data_used_today  / 1000000",
-              "intervalFactor": 2,
-              "legendFormat": "",
-              "metric": "total_data_used_today",
-              "refId": "A",
-              "step": 600
-            }
-          ],
-          "thresholds": "",
-          "title": "Total data usage today",
-          "type": "singlestat",
-          "valueFontSize": "80%",
-          "valueMaps": [
-            {
-              "op": "=",
-              "text": "N/A",
-              "value": "null"
-            }
-          ],
-          "valueName": "current"
-        },
         {
           "cacheTimeout": null,
           "colorBackground": false,
@@ -519,9 +288,9 @@
           "maxDataPoints": 100,
           "nullPointMode": "connected",
           "nullText": null,
-          "postfix": "",
+          "postfix": " NOK ",
           "postfixFontSize": "50%",
-          "prefix": "NOK ",
+          "prefix": "",
           "prefixFontSize": "50%",
           "rangeMaps": [
             {
@@ -530,7 +299,7 @@
               "to": "null"
             }
           ],
-          "span": 2,
+          "span": 4,
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": false,
@@ -548,7 +317,7 @@
             }
           ],
           "thresholds": "",
-          "title": "Revenue today",
+          "title": "Revenue Today",
           "type": "singlestat",
           "valueFontSize": "80%",
           "valueMaps": [
@@ -595,9 +364,9 @@
           "maxDataPoints": 100,
           "nullPointMode": "connected",
           "nullText": null,
-          "postfix": "",
+          "postfix": " NOK ",
           "postfixFontSize": "50%",
-          "prefix": "NOK ",
+          "prefix": "",
           "prefixFontSize": "50%",
           "rangeMaps": [
             {
@@ -606,7 +375,7 @@
               "to": "null"
             }
           ],
-          "span": 2,
+          "span": 4,
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": false,
@@ -625,7 +394,7 @@
             }
           ],
           "thresholds": "",
-          "title": "ARPU today",
+          "title": "ARPU Today",
           "type": "singlestat",
           "valueFontSize": "80%",
           "valueMaps": [
@@ -683,7 +452,7 @@
               "to": "null"
             }
           ],
-          "span": 2,
+          "span": 4,
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": false,
@@ -700,7 +469,7 @@
             }
           ],
           "thresholds": "",
-          "title": "Paid users today",
+          "title": "Users Who Paid Today",
           "type": "singlestat",
           "valueFontSize": "80%",
           "valueMaps": [
@@ -736,24 +505,25 @@
           "points": false,
           "renderer": "flot",
           "seriesOverrides": [],
-          "span": 6,
+          "span": 8,
           "stack": false,
           "steppedLine": false,
           "targets": [
             {
               "expr": "total_data_used_today_local_loltel_test",
               "intervalFactor": 2,
-              "legendFormat": "",
+              "legendFormat": "Norway",
               "metric": "total_data_used_today_local_loltel_test",
               "refId": "A",
-              "step": 60
+              "step": 40
             },
             {
               "expr": "total_data_used_today_roaming_loltel_test",
               "intervalFactor": 2,
+              "legendFormat": "Roaming",
               "metric": "total_data_used_today_roaming_loltel_test",
               "refId": "B",
-              "step": 60
+              "step": 40
             }
           ],
           "thresholds": [],
@@ -775,7 +545,7 @@
           "yaxes": [
             {
               "format": "decbytes",
-              "label": "Bytes",
+              "label": "",
               "logBase": 1,
               "max": null,
               "min": null,
@@ -790,6 +560,83 @@
               "show": true
             }
           ]
+        },
+        {
+          "cacheTimeout": null,
+          "colorBackground": false,
+          "colorValue": false,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "datasource": null,
+          "decimals": null,
+          "format": "decmbytes",
+          "gauge": {
+            "maxValue": 100,
+            "minValue": 0,
+            "show": false,
+            "thresholdLabels": false,
+            "thresholdMarkers": true
+          },
+          "id": 10,
+          "interval": null,
+          "links": [],
+          "mappingType": 1,
+          "mappingTypes": [
+            {
+              "name": "value to text",
+              "value": 1
+            },
+            {
+              "name": "range to text",
+              "value": 2
+            }
+          ],
+          "maxDataPoints": 100,
+          "nullPointMode": "connected",
+          "nullText": null,
+          "postfix": "",
+          "postfixFontSize": "50%",
+          "prefix": "",
+          "prefixFontSize": "50%",
+          "rangeMaps": [
+            {
+              "from": "null",
+              "text": "N/A",
+              "to": "null"
+            }
+          ],
+          "span": 2,
+          "sparkline": {
+            "fillColor": "rgba(31, 118, 189, 0.18)",
+            "full": false,
+            "lineColor": "rgb(31, 120, 193)",
+            "show": false
+          },
+          "targets": [
+            {
+              "expr": "total_data_used_today  / 1000000",
+              "intervalFactor": 2,
+              "legendFormat": "",
+              "metric": "total_data_used_today",
+              "refId": "A",
+              "step": 600
+            }
+          ],
+          "thresholds": "",
+          "title": "Total Data Used Today",
+          "type": "singlestat",
+          "valueFontSize": "80%",
+          "valueMaps": [
+            {
+              "op": "=",
+              "text": "N/A",
+              "value": "null"
+            }
+          ],
+          "valueName": "current"
         },
         {
           "cacheTimeout": null,
@@ -866,26 +713,108 @@
               "value": "null"
             }
           ],
-          "valueName": "avg"
-        }
-      ],
-      "repeat": null,
-      "repeatIteration": null,
-      "repeatRowId": null,
-      "showTitle": true,
-      "title": "So far Today",
-      "titleSize": "h6"
-    },
-    {
-      "collapse": false,
-      "height": 242,
-      "panels": [
+          "valueName": "current"
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "datasource": null,
+          "fill": 1,
+          "id": 24,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": false,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "null",
+          "percentage": false,
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "span": 8,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "active_app_users_today",
+              "intervalFactor": 2,
+              "legendFormat": "Active App Users",
+              "metric": "active_app_users_today",
+              "refId": "A",
+              "step": 40
+            },
+            {
+              "expr": "sims_who_have_been_active_today",
+              "intervalFactor": 2,
+              "legendFormat": "Active SIMs",
+              "refId": "B",
+              "step": 40
+            },
+            {
+              "expr": "sims_who_have_used_data_today",
+              "intervalFactor": 2,
+              "legendFormat": "Sims That Has Used Data",
+              "refId": "C",
+              "step": 40
+            },
+            {
+              "expr": "sims_who_have_been_active_today_roaming",
+              "intervalFactor": 2,
+              "legendFormat": "Active SIMs Roaming",
+              "metric": "sims_who_have_been_active_today_roaming",
+              "refId": "D",
+              "step": 40
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Active Users Today",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ]
+        },
         {
           "cacheTimeout": null,
-          "colorBackground": true,
+          "colorBackground": false,
           "colorValue": false,
           "colors": [
-            "rgba(255, 0, 0, 0.9)",
+            "rgba(245, 54, 54, 0.9)",
             "rgba(237, 129, 40, 0.89)",
             "rgba(50, 172, 45, 0.97)"
           ],
@@ -898,7 +827,82 @@
             "thresholdLabels": false,
             "thresholdMarkers": true
           },
-          "id": 9,
+          "id": 22,
+          "interval": null,
+          "links": [],
+          "mappingType": 1,
+          "mappingTypes": [
+            {
+              "name": "value to text",
+              "value": 1
+            },
+            {
+              "name": "range to text",
+              "value": 2
+            }
+          ],
+          "maxDataPoints": 100,
+          "nullPointMode": "connected",
+          "nullText": null,
+          "postfix": "",
+          "postfixFontSize": "50%",
+          "prefix": "",
+          "prefixFontSize": "50%",
+          "rangeMaps": [
+            {
+              "from": "null",
+              "text": "N/A",
+              "to": "null"
+            }
+          ],
+          "span": 1,
+          "sparkline": {
+            "fillColor": "rgba(31, 118, 189, 0.18)",
+            "full": false,
+            "lineColor": "rgb(31, 120, 193)",
+            "show": false
+          },
+          "targets": [
+            {
+              "expr": "sims_who_have_been_active_today",
+              "intervalFactor": 2,
+              "metric": "sims_who_have_been_active_today",
+              "refId": "A",
+              "step": 600
+            }
+          ],
+          "thresholds": "",
+          "title": "Active Sims Today",
+          "type": "singlestat",
+          "valueFontSize": "80%",
+          "valueMaps": [
+            {
+              "op": "=",
+              "text": "N/A",
+              "value": "null"
+            }
+          ],
+          "valueName": "current"
+        },
+        {
+          "cacheTimeout": null,
+          "colorBackground": false,
+          "colorValue": false,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "datasource": null,
+          "format": "none",
+          "gauge": {
+            "maxValue": 100,
+            "minValue": 0,
+            "show": false,
+            "thresholdLabels": false,
+            "thresholdMarkers": true
+          },
+          "id": 26,
           "interval": null,
           "links": [],
           "mappingType": 1,
@@ -935,16 +939,15 @@
           },
           "targets": [
             {
-              "expr": "sims_who_have_used_data_yesterday",
-              "hide": false,
+              "expr": "sims_who_have_been_active_today_roaming",
               "intervalFactor": 2,
-              "metric": "sims_who_have_used_data_yesterday",
+              "metric": "sims_who_have_been_active_today",
               "refId": "A",
               "step": 600
             }
           ],
           "thresholds": "",
-          "title": "Sims used data yesterday",
+          "title": "Active Sims Today Roaming",
           "type": "singlestat",
           "valueFontSize": "80%",
           "valueMaps": [
@@ -958,11 +961,11 @@
         },
         {
           "cacheTimeout": null,
-          "colorBackground": true,
+          "colorBackground": false,
           "colorValue": false,
           "colors": [
             "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
+            "rgba(208, 134, 42, 0.94)",
             "rgba(50, 172, 45, 0.97)"
           ],
           "datasource": null,
@@ -974,7 +977,7 @@
             "thresholdLabels": false,
             "thresholdMarkers": true
           },
-          "id": 11,
+          "id": 8,
           "interval": null,
           "links": [],
           "mappingType": 1,
@@ -991,7 +994,7 @@
           "maxDataPoints": 100,
           "nullPointMode": "connected",
           "nullText": null,
-          "postfix": " MB",
+          "postfix": "",
           "postfixFontSize": "50%",
           "prefix": "",
           "prefixFontSize": "50%",
@@ -1002,7 +1005,7 @@
               "to": "null"
             }
           ],
-          "span": 2,
+          "span": 1,
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": false,
@@ -1011,16 +1014,18 @@
           },
           "targets": [
             {
-              "expr": "total_data_used_yesterday / 1000000",
+              "expr": "sims_who_have_used_data_today",
+              "hide": false,
               "intervalFactor": 2,
-              "legendFormat": "",
-              "metric": "total_data_used_yesterday",
+              "metric": "sims_who_have_used_data_today",
               "refId": "A",
               "step": 600
             }
           ],
           "thresholds": "",
-          "title": "Total data usage yesterday",
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Simcards Using Data Today",
           "type": "singlestat",
           "valueFontSize": "80%",
           "valueMaps": [
@@ -1031,7 +1036,19 @@
             }
           ],
           "valueName": "current"
-        },
+        }
+      ],
+      "repeat": null,
+      "repeatIteration": null,
+      "repeatRowId": null,
+      "showTitle": true,
+      "title": "So far Today",
+      "titleSize": "h6"
+    },
+    {
+      "collapse": false,
+      "height": 166,
+      "panels": [
         {
           "cacheTimeout": null,
           "colorBackground": true,
@@ -1067,9 +1084,9 @@
           "maxDataPoints": 100,
           "nullPointMode": "connected",
           "nullText": null,
-          "postfix": "",
+          "postfix": " NOK ",
           "postfixFontSize": "50%",
-          "prefix": "NOK ",
+          "prefix": "",
           "prefixFontSize": "50%",
           "rangeMaps": [
             {
@@ -1078,7 +1095,7 @@
               "to": "null"
             }
           ],
-          "span": 2,
+          "span": 4,
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": false,
@@ -1095,8 +1112,8 @@
               "step": 600
             }
           ],
-          "thresholds": "",
-          "title": "Revenue yesterday",
+          "thresholds": "0,",
+          "title": "Revenue Yesterday",
           "type": "singlestat",
           "valueFontSize": "80%",
           "valueMaps": [
@@ -1143,9 +1160,9 @@
           "maxDataPoints": 100,
           "nullPointMode": "connected",
           "nullText": null,
-          "postfix": "",
+          "postfix": " NOK ",
           "postfixFontSize": "50%",
-          "prefix": "NOK ",
+          "prefix": "",
           "prefixFontSize": "50%",
           "rangeMaps": [
             {
@@ -1154,7 +1171,7 @@
               "to": "null"
             }
           ],
-          "span": 2,
+          "span": 4,
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": false,
@@ -1171,8 +1188,8 @@
               "step": 600
             }
           ],
-          "thresholds": "",
-          "title": "ARPU yesterday",
+          "thresholds": "0,",
+          "title": "ARPU Yesterday",
           "type": "singlestat",
           "valueFontSize": "80%",
           "valueMaps": [
@@ -1230,7 +1247,7 @@
               "to": "null"
             }
           ],
-          "span": 2,
+          "span": 4,
           "sparkline": {
             "fillColor": "rgba(31, 118, 189, 0.18)",
             "full": false,
@@ -1246,8 +1263,8 @@
               "step": 600
             }
           ],
-          "thresholds": "",
-          "title": "Paid users yesterday",
+          "thresholds": "0,",
+          "title": "Users Who Paid Yesterday",
           "type": "singlestat",
           "valueFontSize": "80%",
           "valueMaps": [
@@ -1283,25 +1300,25 @@
           "points": false,
           "renderer": "flot",
           "seriesOverrides": [],
-          "span": 6,
+          "span": 8,
           "stack": false,
           "steppedLine": false,
           "targets": [
             {
-              "expr": "total_data_used_yesterday",
+              "expr": "total_data_used_yesterday_local_lotlel_test",
               "intervalFactor": 2,
-              "legendFormat": "",
-              "metric": "total_data_used_yesterday",
+              "legendFormat": "Norway",
+              "metric": "total_data_used_yesterday_local_lotlel_test",
               "refId": "A",
-              "step": 60
+              "step": 40
             },
             {
               "expr": "total_data_used_yesterday_roaming_lotlel_test",
               "intervalFactor": 2,
-              "legendFormat": "",
+              "legendFormat": "Roaming",
               "metric": "total_data_used_yesterday_roaming_lotlel_test",
               "refId": "B",
-              "step": 60
+              "step": 40
             }
           ],
           "thresholds": [],
@@ -1323,7 +1340,7 @@
           "yaxes": [
             {
               "format": "decbytes",
-              "label": "Bytes",
+              "label": "",
               "logBase": 1,
               "max": null,
               "min": null,
@@ -1331,7 +1348,7 @@
             },
             {
               "format": "short",
-              "label": null,
+              "label": "",
               "logBase": 1,
               "max": null,
               "min": null,
@@ -1341,7 +1358,83 @@
         },
         {
           "cacheTimeout": null,
-          "colorBackground": false,
+          "colorBackground": true,
+          "colorValue": false,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "datasource": null,
+          "format": "decmbytes",
+          "gauge": {
+            "maxValue": 100,
+            "minValue": 0,
+            "show": false,
+            "thresholdLabels": false,
+            "thresholdMarkers": true
+          },
+          "id": 11,
+          "interval": null,
+          "links": [],
+          "mappingType": 1,
+          "mappingTypes": [
+            {
+              "name": "value to text",
+              "value": 1
+            },
+            {
+              "name": "range to text",
+              "value": 2
+            }
+          ],
+          "maxDataPoints": 100,
+          "nullPointMode": "connected",
+          "nullText": null,
+          "postfix": "",
+          "postfixFontSize": "50%",
+          "prefix": "",
+          "prefixFontSize": "50%",
+          "rangeMaps": [
+            {
+              "from": "null",
+              "text": "N/A",
+              "to": "null"
+            }
+          ],
+          "span": 2,
+          "sparkline": {
+            "fillColor": "rgba(31, 118, 189, 0.18)",
+            "full": false,
+            "lineColor": "rgb(31, 120, 193)",
+            "show": false
+          },
+          "targets": [
+            {
+              "expr": "total_data_used_yesterday / 1000000",
+              "intervalFactor": 2,
+              "legendFormat": "",
+              "metric": "total_data_used_yesterday",
+              "refId": "A",
+              "step": 600
+            }
+          ],
+          "thresholds": "0,",
+          "title": "Total Data Used Yesterday",
+          "type": "singlestat",
+          "valueFontSize": "80%",
+          "valueMaps": [
+            {
+              "op": "=",
+              "text": "N/A",
+              "value": "null"
+            }
+          ],
+          "valueName": "current"
+        },
+        {
+          "cacheTimeout": null,
+          "colorBackground": true,
           "colorValue": false,
           "colors": [
             "rgba(245, 54, 54, 0.9)",
@@ -1403,7 +1496,7 @@
               "step": 600
             }
           ],
-          "thresholds": "",
+          "thresholds": "0,",
           "title": "Total Data Used Yesterday Roaming",
           "type": "singlestat",
           "valueFontSize": "80%",
@@ -1414,7 +1507,331 @@
               "value": "null"
             }
           ],
-          "valueName": "avg"
+          "valueName": "current"
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "datasource": null,
+          "fill": 1,
+          "id": 25,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": false,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "null",
+          "percentage": false,
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "span": 8,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "active_app_users_yesterday",
+              "intervalFactor": 2,
+              "legendFormat": "Active App Users",
+              "metric": "active_app_users_today",
+              "refId": "A",
+              "step": 40
+            },
+            {
+              "expr": "sims_who_was_active_yesterday",
+              "intervalFactor": 2,
+              "legendFormat": "Active SIMs",
+              "metric": "sims_who_was_active_yesterday",
+              "refId": "B",
+              "step": 40
+            },
+            {
+              "expr": "sims_who_have_used_data_yesterday",
+              "intervalFactor": 2,
+              "legendFormat": "Sims That Has Used Data",
+              "metric": "sims_who_have_used_data_yesterday",
+              "refId": "C",
+              "step": 40
+            },
+            {
+              "expr": "sims_who_was_active_yesterday_roaming",
+              "intervalFactor": 2,
+              "legendFormat": "Active SIMs Roaming",
+              "metric": "sims_who_was_active_yesterday_roaming",
+              "refId": "D",
+              "step": 40
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Active Users Yesterday",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ]
+        },
+        {
+          "cacheTimeout": null,
+          "colorBackground": true,
+          "colorValue": false,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "datasource": null,
+          "format": "none",
+          "gauge": {
+            "maxValue": 100,
+            "minValue": 0,
+            "show": false,
+            "thresholdLabels": false,
+            "thresholdMarkers": true
+          },
+          "id": 23,
+          "interval": null,
+          "links": [],
+          "mappingType": 1,
+          "mappingTypes": [
+            {
+              "name": "value to text",
+              "value": 1
+            },
+            {
+              "name": "range to text",
+              "value": 2
+            }
+          ],
+          "maxDataPoints": 100,
+          "nullPointMode": "connected",
+          "nullText": null,
+          "postfix": "",
+          "postfixFontSize": "50%",
+          "prefix": "",
+          "prefixFontSize": "50%",
+          "rangeMaps": [
+            {
+              "from": "null",
+              "text": "N/A",
+              "to": "null"
+            }
+          ],
+          "span": 1,
+          "sparkline": {
+            "fillColor": "rgba(31, 118, 189, 0.18)",
+            "full": false,
+            "lineColor": "rgb(31, 120, 193)",
+            "show": false
+          },
+          "targets": [
+            {
+              "expr": "sims_who_was_active_yesterday",
+              "intervalFactor": 2,
+              "metric": "sims_who_was_active_yesterday",
+              "refId": "A",
+              "step": 600
+            }
+          ],
+          "thresholds": "0,",
+          "title": "SIMs Active Yesterday",
+          "type": "singlestat",
+          "valueFontSize": "80%",
+          "valueMaps": [
+            {
+              "op": "=",
+              "text": "N/A",
+              "value": "null"
+            }
+          ],
+          "valueName": "current"
+        },
+        {
+          "cacheTimeout": null,
+          "colorBackground": true,
+          "colorValue": false,
+          "colors": [
+            "rgba(255, 0, 0, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "datasource": null,
+          "format": "none",
+          "gauge": {
+            "maxValue": 100,
+            "minValue": 0,
+            "show": false,
+            "thresholdLabels": false,
+            "thresholdMarkers": true
+          },
+          "id": 9,
+          "interval": null,
+          "links": [],
+          "mappingType": 1,
+          "mappingTypes": [
+            {
+              "name": "value to text",
+              "value": 1
+            },
+            {
+              "name": "range to text",
+              "value": 2
+            }
+          ],
+          "maxDataPoints": 100,
+          "nullPointMode": "connected",
+          "nullText": null,
+          "postfix": "",
+          "postfixFontSize": "50%",
+          "prefix": "",
+          "prefixFontSize": "50%",
+          "rangeMaps": [
+            {
+              "from": "null",
+              "text": "N/A",
+              "to": "null"
+            }
+          ],
+          "span": 2,
+          "sparkline": {
+            "fillColor": "rgba(31, 118, 189, 0.18)",
+            "full": false,
+            "lineColor": "rgb(31, 120, 193)",
+            "show": false
+          },
+          "targets": [
+            {
+              "expr": "sims_who_was_active_yesterday_roaming",
+              "hide": false,
+              "intervalFactor": 2,
+              "legendFormat": "",
+              "metric": "sims_who_was_active_yesterday_roaming",
+              "refId": "A",
+              "step": 600
+            }
+          ],
+          "thresholds": "0,",
+          "title": "Active Sims Yesterday Roaming",
+          "type": "singlestat",
+          "valueFontSize": "80%",
+          "valueMaps": [
+            {
+              "op": "=",
+              "text": "N/A",
+              "value": "null"
+            }
+          ],
+          "valueName": "current"
+        },
+        {
+          "cacheTimeout": null,
+          "colorBackground": true,
+          "colorValue": false,
+          "colors": [
+            "rgba(255, 0, 0, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "datasource": null,
+          "format": "none",
+          "gauge": {
+            "maxValue": 100,
+            "minValue": 0,
+            "show": false,
+            "thresholdLabels": false,
+            "thresholdMarkers": true
+          },
+          "id": 27,
+          "interval": null,
+          "links": [],
+          "mappingType": 1,
+          "mappingTypes": [
+            {
+              "name": "value to text",
+              "value": 1
+            },
+            {
+              "name": "range to text",
+              "value": 2
+            }
+          ],
+          "maxDataPoints": 100,
+          "nullPointMode": "connected",
+          "nullText": null,
+          "postfix": "",
+          "postfixFontSize": "50%",
+          "prefix": "",
+          "prefixFontSize": "50%",
+          "rangeMaps": [
+            {
+              "from": "null",
+              "text": "N/A",
+              "to": "null"
+            }
+          ],
+          "span": 1,
+          "sparkline": {
+            "fillColor": "rgba(31, 118, 189, 0.18)",
+            "full": false,
+            "lineColor": "rgb(31, 120, 193)",
+            "show": false
+          },
+          "targets": [
+            {
+              "expr": "sims_who_have_used_data_yesterday",
+              "hide": false,
+              "intervalFactor": 2,
+              "metric": "sims_who_have_used_data_yesterday",
+              "refId": "A",
+              "step": 600
+            }
+          ],
+          "thresholds": "0,",
+          "title": "Sims Used Data Yesterday",
+          "type": "singlestat",
+          "valueFontSize": "80%",
+          "valueMaps": [
+            {
+              "op": "=",
+              "text": "N/A",
+              "value": "null"
+            }
+          ],
+          "valueName": "current"
         }
       ],
       "repeat": null,
@@ -1422,17 +1839,6 @@
       "repeatRowId": null,
       "showTitle": true,
       "title": "Yesterday",
-      "titleSize": "h6"
-    },
-    {
-      "collapse": false,
-      "height": 250,
-      "panels": [],
-      "repeat": null,
-      "repeatIteration": null,
-      "repeatRowId": null,
-      "showTitle": false,
-      "title": "Dashboard Row",
       "titleSize": "h6"
     }
   ],
@@ -1443,7 +1849,7 @@
     "list": []
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-12h",
     "to": "now"
   },
   "timepicker": {
@@ -1473,5 +1879,5 @@
   },
   "timezone": "browser",
   "title": "Dashboard",
-  "version": 27
+  "version": 58
 }
