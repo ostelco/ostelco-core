@@ -134,6 +134,10 @@ object Neo4jStoreSingleton : GraphStore {
     // TODO vihang: Move this logic to DSL + Rule Engine + Triggers, when they are ready
     // >> BEGIN
     override fun addSubscriber(subscriber: Subscriber, referredBy: String?): Either<StoreError, Unit> = writeTransaction {
+        // IO is used to represent operations that can be executed lazily and are capable of failing.
+        // Here it runs IO synchronously and returning its result blocking the current thread.
+        // https://arrow-kt.io/docs/patterns/monad_comprehensions/#comprehensions-over-coroutines
+        // https://arrow-kt.io/docs/effects/io/#unsaferunsync
         IO {
             ForEither<StoreError>() extensions {
                 binding {
