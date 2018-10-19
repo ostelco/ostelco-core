@@ -208,6 +208,25 @@ class StripePaymentProcessorTest {
     }
 
     @Test
+    fun createAuthorizeChargeAndRefundWithZeroAmount() {
+        val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentTokenId())
+        assertEquals(true, resultAddSource.isRight())
+
+        val amount = 0
+        val currency = "NOK"
+
+        val resultAuthorizeCharge = paymentProcessor.authorizeCharge(stripeCustomerId, resultAddSource.fold({ "" }, { it.id }), amount, currency)
+        assertEquals(true, resultAuthorizeCharge.isRight())
+
+        val resultRefundCharge = paymentProcessor.refundCharge(resultAuthorizeCharge.fold({ "" }, { it } ), amount, currency)
+        assertEquals(true, resultRefundCharge.isRight())
+        assertEquals(resultAuthorizeCharge.fold({ "" }, { it } ), resultRefundCharge.fold({ "" }, { it } ))
+
+        val resultRemoveSource = paymentProcessor.removeSource(stripeCustomerId, resultAddSource.fold({ "" }, { it.id }))
+        assertEquals(true, resultRemoveSource.isRight())
+    }
+
+    @Test
     fun createAndRemoveProduct() {
         val resultCreateProduct = paymentProcessor.createProduct("TestSku")
         assertEquals(true, resultCreateProduct.isRight())
