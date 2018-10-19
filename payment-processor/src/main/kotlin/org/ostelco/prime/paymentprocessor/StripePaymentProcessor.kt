@@ -28,6 +28,7 @@ import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
+import java.util.*
 
 
 class StripePaymentProcessor : PaymentProcessor {
@@ -205,7 +206,7 @@ class StripePaymentProcessor : PaymentProcessor {
     override fun authorizeCharge(customerId: String, sourceId: String?, amount: Int, currency: String): Either<PaymentError, String> {
         val errorMessage = "Failed to authorize the charge for customerId $customerId sourceId $sourceId amount $amount currency $currency"
         return when {
-            amount == 0 -> Either.right("ZERO_CHARGE_IS_OK")
+            amount == 0 -> Either.right("ZERO_CHARGE_${UUID.randomUUID()}")
             else -> either(errorMessage) {
                 val chargeParams = mutableMapOf(
                         "amount" to amount,
@@ -227,10 +228,10 @@ class StripePaymentProcessor : PaymentProcessor {
         }
     }
 
-    override fun captureCharge(chargeId: String, customerId: String): Either<PaymentError, String> {
+    override fun captureCharge(chargeId: String, customerId: String, amount: Int, currency: String): Either<PaymentError, String> {
         val errorMessage = "Failed to capture charge for customerId $customerId chargeId $chargeId"
         return when {
-            chargeId == "ZERO_CHARGE_IS_OK" -> Either.right(chargeId)
+            amount == 0 -> Either.right(chargeId)
             else -> either(errorMessage) {
                 Charge.retrieve(chargeId)
             }.flatMap { charge: Charge ->
@@ -252,9 +253,9 @@ class StripePaymentProcessor : PaymentProcessor {
         }
     }
 
-    override fun refundCharge(chargeId: String): Either<PaymentError, String> =
+    override fun refundCharge(chargeId: String, amount: Int, currency: String): Either<PaymentError, String> =
             when {
-                chargeId == "ZERO_CHARGE_IS_OK" -> Either.right(chargeId)
+                amount == 0 -> Either.right(chargeId)
                 else -> either("Failed to refund charge $chargeId") {
                     val refundParams = mapOf("charge" to chargeId)
                     Refund.create(refundParams).charge

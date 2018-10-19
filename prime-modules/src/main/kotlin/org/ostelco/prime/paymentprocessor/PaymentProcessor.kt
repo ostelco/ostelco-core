@@ -111,13 +111,13 @@ interface PaymentProcessor {
      * @param customerId Customer id in the payment system
      * @return id of the charge if authorization was successful
      */
-    fun captureCharge(chargeId: String, customerId: String): Either<PaymentError, String>
+    fun captureCharge(chargeId: String, customerId: String, amount: Int, currency: String): Either<PaymentError, String>
 
     /**
      * @param chargeId ID of the of the authorized charge to refund from authorizeCharge()
      * @return id of the charge
      */
-    fun refundCharge(chargeId: String): Either<PaymentError, String>
+    fun refundCharge(chargeId: String, amount: Int, currency: String): Either<PaymentError, String>
 
     /**
      * @param customerId Customer id in the payment system
