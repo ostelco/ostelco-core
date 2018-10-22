@@ -359,7 +359,7 @@ object Neo4jStoreSingleton : GraphStore {
                                 logger.error("failed to authorize purchase for paymentCustomerId $paymentCustomerId, sourceId $addedSourceId, sku $sku")
                                 apiError
                             }.linkReversalActionToTransaction(transaction) { chargeId ->
-                                paymentProcessor.refundCharge(chargeId)
+                                paymentProcessor.refundCharge(chargeId, product.price.amount, product.price.currency)
                                 logger.error(NOTIFY_OPS_MARKER, "Failed to refund charge for paymentCustomerId $paymentCustomerId, chargeId $chargeId.\nFix this in Stripe dashboard.")
                             }.bind()
                     val purchaseRecord = PurchaseRecord(
@@ -380,7 +380,7 @@ object Neo4jStoreSingleton : GraphStore {
                     // Even if the "capture charge operation" failed, we do not want to rollback.
                     // In that case, we just want to log it at error level.
                     // These transactions can then me manually changed before they are auto rollback'ed in 'X' days.
-                    paymentProcessor.captureCharge(chargeId, paymentCustomerId)
+                    paymentProcessor.captureCharge(chargeId, paymentCustomerId, product.price.amount, product.price.currency)
                             .mapLeft {
                                 // TODO payment: retry capture charge
                                 logger.error(NOTIFY_OPS_MARKER, "Capture failed for paymentCustomerId $paymentCustomerId, chargeId $chargeId.\nFix this in Stripe Dashboard")

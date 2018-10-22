@@ -28,6 +28,7 @@ import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
+import java.util.*
 
 
 class StripePaymentProcessor : PaymentProcessor {
@@ -204,52 +205,61 @@ class StripePaymentProcessor : PaymentProcessor {
 
     override fun authorizeCharge(customerId: String, sourceId: String?, amount: Int, currency: String): Either<PaymentError, String> {
         val errorMessage = "Failed to authorize the charge for customerId $customerId sourceId $sourceId amount $amount currency $currency"
-        return either(errorMessage) {
-            val chargeParams = mutableMapOf(
-                    "amount" to amount,
-                    "currency" to currency,
-                    "customer" to customerId,
-                    "capture" to false)
-            if (sourceId != null) {
-                chargeParams["source"] = sourceId
+        return when {
+            amount == 0 -> Either.right("ZERO_CHARGE_${UUID.randomUUID()}")
+            else -> either(errorMessage) {
+                val chargeParams = mutableMapOf(
+                        "amount" to amount,
+                        "currency" to currency,
+                        "customer" to customerId,
+                        "capture" to false)
+                if (sourceId != null) {
+                    chargeParams["source"] = sourceId
+                }
+                Charge.create(chargeParams)
+            }.flatMap { charge: Charge ->
+                val review = charge.review
+                Either.cond(
+                        test = (review == null),
+                        ifTrue = { charge.id },
+                        ifFalse = { ForbiddenError("Review required, $errorMessage $review") }
+                )
             }
-            Charge.create(chargeParams)
-        }.flatMap { charge: Charge ->
-            val review = charge.review
-            Either.cond(
-                    test = (review == null),
-                    ifTrue = { charge.id },
-                    ifFalse = { ForbiddenError("Review required, $errorMessage $review") }
-            )
         }
     }
 
-    override fun captureCharge(chargeId: String, customerId: String): Either<PaymentError, String> {
+    override fun captureCharge(chargeId: String, customerId: String, amount: Int, currency: String): Either<PaymentError, String> {
         val errorMessage = "Failed to capture charge for customerId $customerId chargeId $chargeId"
-        return either(errorMessage) {
-            Charge.retrieve(chargeId)
-        }.flatMap { charge: Charge ->
-            val review = charge.review
-            Either.cond(
-                    test = (review == null),
-                    ifTrue = { charge },
-                    ifFalse = { ForbiddenError("Review required, $errorMessage $review") }
-            )
-        }.flatMap { charge ->
-            try {
-                charge.capture()
-                Either.right(charge.id)
-            } catch (e: Exception) {
-                logger.warn(errorMessage, e)
-                Either.left(BadGatewayError(errorMessage))
+        return when {
+            amount == 0 -> Either.right(chargeId)
+            else -> either(errorMessage) {
+                Charge.retrieve(chargeId)
+            }.flatMap { charge: Charge ->
+                val review = charge.review
+                Either.cond(
+                        test = (review == null),
+                        ifTrue = { charge },
+                        ifFalse = { ForbiddenError("Review required, $errorMessage $review") }
+                )
+            }.flatMap { charge ->
+                try {
+                    charge.capture()
+                    Either.right(charge.id)
+                } catch (e: Exception) {
+                    logger.warn(errorMessage, e)
+                    Either.left(BadGatewayError(errorMessage))
+                }
             }
         }
     }
 
-    override fun refundCharge(chargeId: String): Either<PaymentError, String> =
-            either("Failed to refund charge $chargeId") {
-                val refundParams = mapOf("charge" to chargeId)
-                Refund.create(refundParams).charge
+    override fun refundCharge(chargeId: String, amount: Int, currency: String): Either<PaymentError, String> =
+            when {
+                amount == 0 -> Either.right(chargeId)
+                else -> either("Failed to refund charge $chargeId") {
+                    val refundParams = mapOf("charge" to chargeId)
+                    Refund.create(refundParams).charge
+                }
             }
 
     override fun removeSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo> =
