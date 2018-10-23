@@ -1,0 +1,27 @@
+{
+"type" : "object", "properties" : {
+"transactionId" : {
+"type" : "string",
+"pattern" : "^[0-9,A-F]{2,32}$",
+"description" : "Hexadecimal representation of the TransactionID defined
+in Section 5.6.1"
+},
+"serverSigned1" : {
+"type" : "string",
+"format" : "base64",
+"description" : "The data object as required by ES10b.AuthenticateServer"
+},
+"serverSignature1" : {
+"type" : "string", "format" : "base64",
+"description" : "The signature as required by ES10b.AuthenticateServer" },
+"euiccCiPKIdToBeUsed" : { "type" : "string", "format" : "base64",
+"description" : "The CI Public Key to be used as required by ES10b.AuthenticateServer"
+},
+"serverCertificate" : {
+"type" : "string",
+"format" : "base64",
+"description" : "The server Certificate as required by
+ES10b.AuthenticateServer" }
+},
+"required" : ["transactionId", "serverSigned1", "serverSignature1", "euiccCiPKIdToBeUsed", "serverCertificate"]
+}
