@@ -26,6 +26,7 @@ java -cp '/acceptance-tests.jar' org.junit.runner.JUnitCore \
      org.ostelco.at.okhttp.PurchaseTest \
      org.ostelco.at.okhttp.ConsentTest \
      org.ostelco.at.okhttp.ProfileTest \
+     org.ostelco.at.okhttp.GraphQlTests \
      org.ostelco.at.jersey.GetPseudonymsTest \
      org.ostelco.at.jersey.GetProductsTest \
      org.ostelco.at.jersey.GetSubscriptionStatusTest \
@@ -34,4 +35,5 @@ java -cp '/acceptance-tests.jar' org.junit.runner.JUnitCore \
      org.ostelco.at.jersey.AnalyticsTest \
      org.ostelco.at.jersey.ConsentTest \
      org.ostelco.at.jersey.ProfileTest \
+     org.ostelco.at.jersey.GraphQlTests \
      org.ostelco.at.pgw.OcsTest

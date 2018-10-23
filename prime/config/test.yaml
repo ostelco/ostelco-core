@@ -36,6 +36,7 @@ modules:
   config:
     configFile: /secret/pantel-prod.json
 - type: admin
+- type: graphql
 
 server:
   applicationConnectors:

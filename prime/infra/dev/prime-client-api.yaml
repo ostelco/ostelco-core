@@ -385,6 +385,30 @@ paths:
         description: "Whether user accepted the consent (default = true)"
         required: false
         type: boolean
+  "/graphql":
+    post:
+      description: "GraphQL endpoint"
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      operationId: "graphql"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            type: object
+        404:
+          description: "Not found"
+      security:
+      - auth0_jwt: []
+      parameters:
+      - name: "request"
+        in: body
+        description: "GraphQL Request."
+        schema:
+          $ref: '#/definitions/GraphQLRequest'
+
 definitions:
   Profile:
     type: object
@@ -588,6 +612,18 @@ definitions:
     required:
       - current
       - next
+  GraphQLRequest:
+    type: object
+    properties:
+      query:
+        description: "GraphQL query."
+        type: string
+      operationName:
+        description: "GraphQL Operation Name."
+        type: string
+      variables:
+        description: "GraphQL query variables."
+        type: object
 securityDefinitions:
   auth0_jwt:
     authorizationUrl: "https://ostelco.eu.auth0.com/authorize"
