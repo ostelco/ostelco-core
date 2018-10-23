@@ -1,0 +1,45 @@
+type Query {
+    Offer: [Offer]
+    Segment: [Segment]
+    Product: [Product]
+    Subscriber: [Subscriber]
+    Subscription: [Subscription]
+    Bundle: [Bundle]
+}
+type Offer {
+    id: String!
+    segments: [Segment]!
+    products: [Product]!
+}
+type Segment {
+    id: String!
+    offers: [Offer]!
+    subscribers: [Subscriber]!
+}
+type Product {
+    sku: String!
+    offers: [Offer]!
+    purchasedBy: [Subscriber]!
+}
+type Subscriber {
+    id: String!
+    email: String!
+    name: String!
+    segments: [Segment]!
+    bundles: [Bundle]!
+    purchased: [Product]!
+    subscriptions: [Subscription]!
+    referred: [Subscriber]!
+    referredBy: Subscriber
+}
+type Subscription {
+    msisdn: String!
+    bundles: [Bundle]!
+    subscribers: [Subscriber]!
+}
+type Bundle {
+    id: String!
+    balance: Int!
+    subscribers: [Subscriber]!
+    subscriptions: [Subscription]!
+}
