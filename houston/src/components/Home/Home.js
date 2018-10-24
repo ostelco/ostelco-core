@@ -2,6 +2,16 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { authActions, pseudoActions } from '../../actions';
+import GraphiQL from 'graphiql';
+import './graphiql.css';
+
+function graphQLFetcher(graphQLParams) {
+  return fetch('http://localhost:62002' + '/graphql', {
+    method: 'post',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(graphQLParams),
+  }).then(response => response.json());
+}
 
 const Home = props => {
   const isAuthenticated = props.loggedIn || false;
@@ -22,6 +32,7 @@ const Home = props => {
             {' '}to test.
               <br /><br />
             Last Result {`   ${pseudonym}`}
+            <GraphiQL fetcher={graphQLFetcher} height="500px"/>
           </h4>
         )
       }
