@@ -49,6 +49,7 @@ subprojects {
     grpcVersion = "1.15.1"
     jaxbVersion = "2.3.0"
     javaxActivationVersion = "1.1.1"
+    arrowVersion = "0.7.3"
   }
 }
 
