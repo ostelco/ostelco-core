@@ -38,7 +38,7 @@ class StripeWebhookResource {
             return Response.status(Response.Status.BAD_REQUEST)
                     .build()
         } catch (e: SignatureVerificationException) {
-            logger.error("Invalid signature for Stipe event ${e}")
+            logger.error("Invalid signature for Stripe event ${e}")
             return Response.status(Response.Status.BAD_REQUEST)
                     .build()
         }
