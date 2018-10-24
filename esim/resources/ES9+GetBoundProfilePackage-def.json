@@ -1,15 +1,19 @@
 {
-"type" : "object", "properties" : {
-"transactionId" : { "type" : "string",
-"pattern" : "^[0-9,A-F]{2,32}$",
-"description" : "Hexadecimal representation of the TransactionID defined in Section 5.6.2"
-},
-"prepareDownloadResponse" : {
-"type" : "string",
-"format" : "base64",
-"description" : "base64 encoded binary data containing
-PrepareDownloadResponse defined in Section 5.6.2" }
-
-},
-"required" : ["transactionId", "prepareDownloadResponse"] }
-
+  "type": "object",
+  "properties": {
+    "transactionId": {
+      "type": "string",
+      "pattern": "^[0-9,A-F]{2,32}$",
+      "description": "Hexadecimal representation of the TransactionID defined in Section 5.6.2"
+    },
+    "prepareDownloadResponse": {
+      "type": "string",
+      "format": "base64",
+      "description": "base64 encoded binary data containing\nPrepareDownloadResponse defined in Section 5.6.2"
+    }
+  },
+  "required": [
+    "transactionId",
+    "prepareDownloadResponse"
+  ]
+}

@@ -1,9 +1,13 @@
 {
-"type" : "object", "properties" : {
-"pendingNotification" : {
-"type" : "string",
-"format" : "base64",
-"description" : "base64 encoded binary data containing the
-PendingNotification defined in section 5.7.10" }
-},
-"required" : ["pendingNotification"] }
+  "type": "object",
+  "properties": {
+    "pendingNotification": {
+      "type": "string",
+      "format": "base64",
+      "description": "base64 encoded binary data containing the\nPendingNotification defined in section 5.7.10"
+    }
+  },
+  "required": [
+    "pendingNotification"
+  ]
+}
