@@ -212,6 +212,11 @@ spec:
             secretKeyRef:
               name: stripe-secrets
               key: stripeApiKey
+        - name: STRIPE_ENDPOINT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: stripe-secrets
+              key: stripeEndpointSecret
         volumeMounts:
         - name: secret-config
           mountPath: "/secret"
