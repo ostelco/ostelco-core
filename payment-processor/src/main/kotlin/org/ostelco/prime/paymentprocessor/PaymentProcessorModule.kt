@@ -21,5 +21,4 @@ class PaymentProcessorModule : PrimeModule {
         /* APIs. */
         jerseyEnv.register(StripeWebhookResource())
     }
-
 }
