@@ -46,7 +46,7 @@ class StripeWebhookResource {
                     .build()
         }
 
-        logger.info(NOTIFY_OPS_MARKER, "Got Stripe event ${event.type}")
+        logger.info(NOTIFY_OPS_MARKER, "Got Stripe event ${event.type} : ${event.data.toString()}")
 
         return Response.status(Response.Status.OK)
                 .build()
