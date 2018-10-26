@@ -2,10 +2,10 @@ package org.ostelco.prime.paymentprocessor.resources
 
 import com.google.gson.JsonSyntaxException
 import com.stripe.exception.SignatureVerificationException
-import com.stripe.model.Event
+import com.stripe.model.*
 import com.stripe.net.Webhook
 import org.ostelco.prime.getLogger
-import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
+import org.ostelco.prime.paymentprocessor.StripeEventReporter
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
 import javax.ws.rs.HeaderParam
@@ -19,7 +19,7 @@ import javax.ws.rs.core.Response
  *
  */
 @Path("/stripe/event")
-class StripeWebhookResource {
+class StripeWebhookResource(val reporter: StripeEventReporter) {
 
     private val logger by getLogger()
 
@@ -46,9 +46,11 @@ class StripeWebhookResource {
                     .build()
         }
 
-        logger.info(NOTIFY_OPS_MARKER, "Got Stripe event ${event.type} : ${event.data.toString()}")
-
-        return Response.status(Response.Status.OK)
-                .build()
+        /* Report only HTTP status code back to Stripe. */
+        return reporter.reportEvent(event)
+                .fold(
+                        { _ -> Response.status(Response.Status.BAD_REQUEST) },
+                        { _ -> Response.status(Response.Status.OK) }
+                ).build()
     }
 }
