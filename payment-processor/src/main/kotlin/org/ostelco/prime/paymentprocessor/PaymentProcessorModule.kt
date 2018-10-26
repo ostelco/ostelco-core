@@ -16,9 +16,12 @@ class PaymentProcessorModule : PrimeModule {
         logger.info("PaymentProcessor init with $env")
         Stripe.apiKey = System.getenv("STRIPE_API_KEY") ?: throw Error("Missing environment variable STRIPE_API_KEY")
 
+        /* Reports Stripe events in human readable format. */
+        val reporter = StripeEventReporter()
+
         val jerseyEnv = env.jersey()
 
         /* APIs. */
-        jerseyEnv.register(StripeWebhookResource())
+        jerseyEnv.register(StripeWebhookResource(reporter))
     }
 }
