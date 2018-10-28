@@ -16,8 +16,10 @@ dependencies {
 
   implementation "com.stripe:stripe-java:$stripeVersion"
   implementation 'io.jsonwebtoken:jjwt:0.9.1'
-  // tests fail when updated to 2.27
-  implementation "org.glassfish.jersey.media:jersey-media-json-jackson:2.25.1"
+  
+  implementation (group: 'org.glassfish.jersey.media', name:'jersey-media-json-jackson', version:'2.25.1') {
+    because "Updating from 2.25.1 to 2.27 causes error. Keep the version matched with 'jersey-server' version from dropwizard."
+  }
 
   implementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
   implementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"

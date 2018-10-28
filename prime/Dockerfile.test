@@ -1,8 +1,8 @@
 # This Dockerfile is used when running locally using docker-compose for Acceptance Testing.
 
-FROM openjdk:11
+FROM openjdk:11.0.1-jdk
 
-MAINTAINER CSI "csi@telenordigital.com"
+LABEL maintainer="dev@redotter.sg"
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
