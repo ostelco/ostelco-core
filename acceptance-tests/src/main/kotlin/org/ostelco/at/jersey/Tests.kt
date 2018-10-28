@@ -10,6 +10,7 @@ import org.ostelco.at.common.randomInt
 import org.ostelco.prime.client.model.ActivePseudonyms
 import org.ostelco.prime.client.model.ApplicationToken
 import org.ostelco.prime.client.model.Bundle
+import org.ostelco.prime.client.model.BundleList
 import org.ostelco.prime.client.model.Consent
 import org.ostelco.prime.client.model.PaymentSource
 import org.ostelco.prime.client.model.PaymentSourceList
@@ -20,7 +21,6 @@ import org.ostelco.prime.client.model.Profile
 import org.ostelco.prime.client.model.PurchaseRecord
 import org.ostelco.prime.client.model.PurchaseRecordList
 import org.ostelco.prime.client.model.Subscription
-import org.ostelco.prime.client.model.SubscriptionStatus
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.Instant
@@ -32,7 +32,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-
 
 class ProfileTest {
 
@@ -165,22 +164,22 @@ class GetSubscriptions {
     }
 }
 
-class GetSubscriptionStatusTest {
+class BundlesAndPurchasesTest {
 
     private val logger by getLogger()
 
     @Test
-    fun `jersey test - GET subscription status`() {
+    fun `jersey test - GET bundles`() {
 
         val email = "balance-${randomInt()}@test.com"
         createProfile(name = "Test Balance User", email = email)
 
-        val subscriptionStatus: SubscriptionStatus = get {
-            path = "/subscription/status"
+        val bundles: BundleList = get {
+            path = "/bundles"
             subscriberId = email
         }
 
-        logger.info("Balance: ${subscriptionStatus.remaining}")
+        logger.info("Balance: ${bundles[0].balance}")
 
         val freeProduct = Product()
                 .sku("100MB_FREE_ON_JOINING")
@@ -191,7 +190,10 @@ class GetSubscriptionStatusTest {
                 .properties(mapOf("noOfBytes" to "100_000_000"))
                 .presentation(emptyMap<String, String>())
 
-        val purchaseRecords = subscriptionStatus.purchaseRecords
+        val purchaseRecords:PurchaseRecordList = get {
+            path = "/purchases"
+            subscriberId = email
+        }
         purchaseRecords.sortBy { it.timestamp }
 
         assertEquals(listOf(freeProduct), purchaseRecords.map { it.product }, "Incorrect first 'Product' in purchase record")
@@ -331,7 +333,6 @@ class SourceTest {
             StripePayment.deleteCustomer(email = email)
         }
     }
-
 
     @Test
     fun `jersey test - PUT source set default`() {
@@ -548,7 +549,6 @@ class PurchaseTest {
         }
     }
 
-
     @Test
     fun `jersey test - POST products purchase add source then pay with it`() {
 
@@ -566,11 +566,11 @@ class PurchaseTest {
 
             assertNotNull(paymentSource.id, message = "Failed to create payment source")
 
-            val subscriptionStatusBefore: SubscriptionStatus = get {
-                path = "/subscription/status"
+            val bundlesBefore: BundleList = get {
+                path = "/bundles"
                 subscriberId = email
             }
-            val balanceBefore = subscriptionStatusBefore.remaining
+            val balanceBefore = bundlesBefore[0].balance
 
             val productSku = "1GB_249NOK"
 
@@ -582,11 +582,11 @@ class PurchaseTest {
 
             Thread.sleep(100) // wait for 100 ms for balance to be updated in db
 
-            val subscriptionStatusAfter: SubscriptionStatus = get {
-                path = "/subscription/status"
+            val bundlesAfter: BundleList = get {
+                path = "/bundles"
                 subscriberId = email
             }
-            val balanceAfter = subscriptionStatusAfter.remaining
+            val balanceAfter = bundlesAfter[0].balance
 
             assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
 
@@ -602,45 +602,6 @@ class PurchaseTest {
         } finally {
             StripePayment.deleteCustomer(email = email)
         }
-    }
-
-
-    @Test
-    fun `jersey test - POST products purchase without payment`() {
-
-        val email = "purchase-legacy-${randomInt()}@test.com"
-        createProfile(name = "Test Legacy Purchase User", email = email)
-
-        val balanceBefore = get<List<Bundle>> {
-            path = "/bundles"
-            subscriberId = email
-        }.first().balance
-
-        val productSku = "1GB_249NOK"
-
-        post<String> {
-            path = "/products/$productSku"
-            subscriberId = email
-        }
-
-        Thread.sleep(100) // wait for 100 ms for balance to be updated in db
-
-        val balanceAfter = get<List<Bundle>> {
-            path = "/bundles"
-            subscriberId = email
-        }.first().balance
-
-        assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
-
-        val purchaseRecords: PurchaseRecordList = get {
-            path = "/purchases"
-            subscriberId = email
-        }
-
-        purchaseRecords.sortBy { it.timestamp }
-
-        assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
-        assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
     }
 }
 
@@ -794,12 +755,17 @@ class ReferralTest {
         }
         assertEquals("Test Referral First User", referredByForSecond.name)
 
-        val secondSubscriptionStatus: SubscriptionStatus = get {
-            path = "/subscription/status"
+        val secondSubscriberBundles: BundleList = get {
+            path = "/bundles"
             subscriberId = secondEmail
         }
 
-        assertEquals(1_000_000_000, secondSubscriptionStatus.remaining)
+        assertEquals(1_000_000_000, secondSubscriberBundles[0].balance)
+
+        val secondSubscriberPurchases: PurchaseRecordList = get {
+            path = "/purchases"
+            subscriberId = secondEmail
+        }
 
         val freeProductForReferred = Product()
                 .sku("1GB_FREE_ON_REFERRED")
@@ -810,7 +776,7 @@ class ReferralTest {
                 .properties(mapOf("noOfBytes" to "1_000_000_000"))
                 .presentation(emptyMap<String, String>())
 
-        assertEquals(listOf(freeProductForReferred), secondSubscriptionStatus.purchaseRecords.map { it.product })
+        assertEquals(listOf(freeProductForReferred), secondSubscriberPurchases.map { it.product })
     }
 }
 

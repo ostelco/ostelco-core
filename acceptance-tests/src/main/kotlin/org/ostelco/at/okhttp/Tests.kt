@@ -7,6 +7,7 @@ import org.ostelco.at.common.createSubscription
 import org.ostelco.at.common.expectedProducts
 import org.ostelco.at.common.getLogger
 import org.ostelco.at.common.randomInt
+import org.ostelco.at.jersey.post
 import org.ostelco.at.okhttp.ClientFactory.clientForSubject
 import org.ostelco.prime.client.ApiException
 import org.ostelco.prime.client.api.DefaultApi
@@ -19,7 +20,6 @@ import org.ostelco.prime.client.model.PersonList
 import org.ostelco.prime.client.model.Price
 import org.ostelco.prime.client.model.Product
 import org.ostelco.prime.client.model.Profile
-import org.ostelco.prime.client.model.SubscriptionStatus
 import java.time.Instant
 import java.util.*
 import kotlin.test.assertEquals
@@ -133,21 +133,21 @@ class GetSubscriptions {
     }
 }
 
-class GetSubscriptionStatusTest {
+class BundlesAndPurchasesTest {
 
     private val logger by getLogger()
 
     @Test
-    fun `okhttp test - GET subscription status`() {
+    fun `okhttp test - GET bundles`() {
 
         val email = "balance-${randomInt()}@test.com"
         createProfile(name = "Test Balance User", email = email)
 
         val client = clientForSubject(subject = email)
 
-        val subscriptionStatus = client.subscriptionStatus
+        val bundles = client.bundles
 
-        logger.info("Balance: ${subscriptionStatus.remaining}")
+        logger.info("Balance: ${bundles[0].balance}")
 
         val freeProduct = Product()
                 .sku("100MB_FREE_ON_JOINING")
@@ -158,7 +158,7 @@ class GetSubscriptionStatusTest {
                 .properties(mapOf("noOfBytes" to "100_000_000"))
                 .presentation(emptyMap<String, String>())
 
-        val purchaseRecords = subscriptionStatus.purchaseRecords
+        val purchaseRecords = client.purchaseHistory
         purchaseRecords.sortBy { it.timestamp }
 
         assertEquals(freeProduct, purchaseRecords.first().product, "Incorrect first 'Product' in purchase record")
@@ -212,6 +212,7 @@ class SourceTest {
 
         val email = "purchase-${randomInt()}@test.com"
         try {
+
             createProfile(name = "Test Payment Source", email = email)
 
             val client = clientForSubject(subject = email)
@@ -273,6 +274,7 @@ class SourceTest {
     fun `okhttp test - GET list sources no profile`() {
 
         val email = "purchase-${randomInt()}@test.com"
+
         try {
 
             val client = clientForSubject(subject = email)
@@ -335,6 +337,7 @@ class SourceTest {
         val email = "purchase-${randomInt()}@test.com"
 
         try {
+
             createProfile(name = "Test Payment Source", email = email)
 
             val client = clientForSubject(subject = email)
@@ -345,7 +348,7 @@ class SourceTest {
                     createSourceWithStripe(client))
 
             val deletedIds = createdIds.map { it -> deleteSourceWithStripe(client, it)  }
-        
+
             assert(createdIds.containsAll(deletedIds.toSet())) {
                 "Failed to delete one or more sources: ${createdIds.toSet() - deletedIds.toSet()}"
             }
@@ -474,7 +477,7 @@ class PurchaseTest {
 
             assertNotNull(paymentSource.id, message = "Failed to create payment source")
 
-            val balanceBefore = client.subscriptionStatus.remaining
+            val balanceBefore = client.bundles[0].balance
 
             val productSku = "1GB_249NOK"
 
@@ -482,7 +485,7 @@ class PurchaseTest {
 
             Thread.sleep(200) // wait for 200 ms for balance to be updated in db
 
-            val balanceAfter = client.subscriptionStatus.remaining
+            val balanceAfter = client.bundles[0].balance
 
             assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
 
@@ -496,31 +499,21 @@ class PurchaseTest {
             StripePayment.deleteCustomer(email = email)
         }
     }
+}
+
+class AnalyticsTest {
 
     @Test
-    fun `okhttp test - POST products purchase without payment`() {
+    fun testReportEvent() {
 
-        val email = "purchase-legacy-${randomInt()}@test.com"
-        createProfile(name = "Test Legacy Purchase User", email = email)
+        val email = "analytics-${randomInt()}@test.com"
+        createProfile(name = "Test Analytics User", email = email)
 
-        val client = clientForSubject(subject = email)
-
-        val balanceBefore = client.bundles.first().balance
-
-        client.buyProductDeprecated("1GB_249NOK")
-
-        Thread.sleep(200) // wait for 200 ms for balance to be updated in db
-
-        val balanceAfter = client.bundles.first().balance
-
-        assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
-
-        val purchaseRecords = client.purchaseHistory
-
-        purchaseRecords.sortBy { it.timestamp }
-
-        assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
-        assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
+        post<String> {
+            path = "/analytics"
+            body = "event"
+            subscriberId = email
+        }
     }
 }
 
@@ -634,9 +627,7 @@ class ReferralTest {
 
         assertEquals("Test Referral First User", referredByForSecond.name)
 
-        val secondSubscriptionStatus: SubscriptionStatus = secondEmailClient.subscriptionStatus
-
-        assertEquals(1_000_000_000, secondSubscriptionStatus.remaining)
+        assertEquals(1_000_000_000, secondEmailClient.bundles[0].balance)
 
         val freeProductForReferred = Product()
                 .sku("1GB_FREE_ON_REFERRED")
@@ -647,7 +638,7 @@ class ReferralTest {
                 .properties(mapOf("noOfBytes" to "1_000_000_000"))
                 .presentation(emptyMap<String, String>())
 
-        assertEquals(listOf(freeProductForReferred), secondSubscriptionStatus.purchaseRecords.map { it.product })
+        assertEquals(listOf(freeProductForReferred), secondEmailClient.purchaseHistory.map { it.product })
     }
 }
 

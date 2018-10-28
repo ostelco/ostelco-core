@@ -16,7 +16,6 @@ import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.auth.OAuthAuthenticator
-import org.ostelco.prime.client.api.model.SubscriptionStatus
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
 import org.ostelco.prime.jsonmapper.objectMapper
@@ -49,26 +48,6 @@ class SubscriptionResourceTest {
     fun setUp() {
         `when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
                 .thenReturn(Optional.of(AccessTokenPrincipal(email)))
-    }
-
-    @Test
-    fun getSubscriptionStatus() {
-        val subscriptionStatus = SubscriptionStatus(5, purchaseRecords)
-        val arg = argumentCaptor<String>()
-
-        `when`(DAO.getSubscriptionStatus(arg.capture())).thenReturn(Either.right(subscriptionStatus))
-
-        val resp = RULE.target("/subscription/status")
-                .request()
-                .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
-                .get(Response::class.java)
-
-        assertThat(resp.status).isEqualTo(Response.Status.OK.statusCode)
-        assertThat(resp.mediaType.toString()).isEqualTo(MediaType.APPLICATION_JSON)
-
-        // assertThat and assertEquals is not working
-        assertTrue(subscriptionStatus == resp.readEntity(SubscriptionStatus::class.java))
-        assertThat(arg.firstValue).isEqualTo(email)
     }
 
     @Test
