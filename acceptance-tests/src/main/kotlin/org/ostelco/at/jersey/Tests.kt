@@ -856,7 +856,7 @@ class GraphQlTests {
         val subscriber = get<GraphQlResponse> {
             path = "/graphql"
             subscriberId = email
-            queryParams = mapOf("query" to URLEncoder.encode("""{subscriber{profile{email}subscriptions{msisdn}}}""", StandardCharsets.UTF_8))
+            queryParams = mapOf("query" to URLEncoder.encode("""{subscriber{profile{email}subscriptions{msisdn}}}""", StandardCharsets.UTF_8.name()))
         }.data?.subscriber
 
         assertEquals(expected = email, actual = subscriber?.profile?.email)

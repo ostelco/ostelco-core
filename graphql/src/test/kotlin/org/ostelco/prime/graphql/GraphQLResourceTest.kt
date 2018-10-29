@@ -46,7 +46,7 @@ class GraphQLResourceTest {
     @Test
     fun `test handleGet`() {
         val resp = RULE.target("/graphql")
-                .queryParam("query", URLEncoder.encode("""{subscriber(id:"invalid@test.com"){profile{email}}}""", StandardCharsets.UTF_8))
+                .queryParam("query", URLEncoder.encode("""{subscriber(id:"invalid@test.com"){profile{email}}}""", StandardCharsets.UTF_8.name()))
                 .request(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
                 .get(GraphQlResponse::class.java)
