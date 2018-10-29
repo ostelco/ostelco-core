@@ -1,6 +1,6 @@
-FROM openjdk:11
+FROM openjdk:11.0.1-jdk
 
-MAINTAINER CSI "csi@telenordigital.com"
+LABEL maintainer="dev@redotter.sg"
 
 RUN apt-get update && apt-get install -y --no-install-recommends netcat-openbsd && rm -rf /var/lib/apt/lists/*
 

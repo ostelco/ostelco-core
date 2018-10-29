@@ -1,6 +1,6 @@
 FROM azul/zulu-openjdk:8u181-8.31.0.1
 
-MAINTAINER CSI "csi@telenordigital.com"
+LABEL maintainer="dev@redotter.sg"
 
 COPY script/start.sh /start.sh
 

@@ -21,7 +21,7 @@ dependencies {
     testImplementation "org.assertj:assertj-core:$assertJVersion"
 
     testImplementation (group: 'org.glassfish.jersey.test-framework.providers', name: 'jersey-test-framework-provider-grizzly2', version: '2.25.1') {
-        because "Updating from 2.25.1 to 2.27.1 causes error. Keep the version matched with 'jersey-server' version from dropwizard."
+        because "Updating from 2.25.1 to 2.27 causes error. Keep the version matched with 'jersey-server' version from dropwizard."
         exclude group: 'javax.servlet',  module: 'javax.servlet-api'
         exclude group: 'junit',  module: 'junit'
     }
