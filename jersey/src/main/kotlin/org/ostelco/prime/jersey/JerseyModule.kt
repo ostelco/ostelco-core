@@ -12,8 +12,8 @@ import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter.Builder
 import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.client.JerseyClientConfiguration
 import io.dropwizard.setup.Environment
-import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
-import org.ostelco.prime.client.api.auth.OAuthAuthenticator
+import org.ostelco.prime.auth.AccessTokenPrincipal
+import org.ostelco.prime.auth.OAuthAuthenticator
 import org.ostelco.prime.module.PrimeModule
 import javax.validation.Valid
 import javax.validation.constraints.NotNull

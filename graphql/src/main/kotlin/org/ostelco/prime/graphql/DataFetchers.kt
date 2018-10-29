@@ -13,7 +13,7 @@ val clientDataSource by lazy { getResource<ClientDataSource>() }
 class SubscriberDataFetcher : DataFetcher<Map<String, Any>> {
 
     override fun get(env: DataFetchingEnvironment): Map<String, Any>? {
-        return env.getArgument<String>("id")?.let { subscriberId ->
+        return env.getContext<String>()?.let { subscriberId ->
             val map = mutableMapOf<String, Any>()
             if (env.selectionSet.contains("profile/*")) {
                 clientDataSource.getSubscriber(subscriberId)

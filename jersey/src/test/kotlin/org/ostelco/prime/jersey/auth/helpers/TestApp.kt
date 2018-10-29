@@ -12,8 +12,8 @@ import io.dropwizard.configuration.EnvironmentVariableSubstitutor
 import io.dropwizard.configuration.SubstitutingSourceProvider
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
-import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
-import org.ostelco.prime.client.api.auth.OAuthAuthenticator
+import org.ostelco.prime.auth.AccessTokenPrincipal
+import org.ostelco.prime.auth.OAuthAuthenticator
 import org.ostelco.prime.jsonmapper.asJson
 import javax.ws.rs.Consumes
 import javax.ws.rs.GET

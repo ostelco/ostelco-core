@@ -837,8 +837,8 @@ class GraphQlTests {
 
         val subscriber = post<GraphQlResponse>(expectedResultCode = 200) {
             path = "/graphql"
-            subscriberId = "invalid@test.com"
-            body = mapOf("query" to """{ subscriber(id: "$email") { profile { email } subscriptions { msisdn } } }""")
+            subscriberId = email
+            body = mapOf("query" to """{ subscriber { profile { email } subscriptions { msisdn } } }""")
         }.data?.subscriber
 
         assertEquals(expected = email, actual = subscriber?.profile?.email)
@@ -855,8 +855,8 @@ class GraphQlTests {
 
         val subscriber = get<GraphQlResponse> {
             path = "/graphql"
-            subscriberId = "invalid@test.com"
-            queryParams = mapOf("query" to URLEncoder.encode("""{subscriber(id:"$email"){profile{email}subscriptions{msisdn}}}""", StandardCharsets.UTF_8))
+            subscriberId = email
+            queryParams = mapOf("query" to URLEncoder.encode("""{subscriber{profile{email}subscriptions{msisdn}}}""", StandardCharsets.UTF_8))
         }.data?.subscriber
 
         assertEquals(expected = email, actual = subscriber?.profile?.email)

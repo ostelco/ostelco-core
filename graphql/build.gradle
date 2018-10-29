@@ -8,21 +8,8 @@ dependencies {
   
   implementation 'com.graphql-java:graphql-java:10.0'
 
+  testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation "org.mockito:mockito-core:$mockitoVersion"
-  
-  testImplementation "org.junit.jupiter:junit-jupiter-api:$junit5Version"
-  testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junit5Version"
-}
-
-test {
-  // native support to Junit5 in Gradle 4.6+
-  useJUnitPlatform {
-    includeEngines 'junit-jupiter'
-  }
-  testLogging {
-    exceptionFormat = 'full'
-    events "PASSED", "FAILED", "SKIPPED"
-  }
 }
 
 apply from: '../jacoco.gradle'

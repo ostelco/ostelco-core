@@ -16,9 +16,10 @@ class QueryHandler(schemaFile: File) {
                     buildRuntimeWiring())
             .let { GraphQL.newGraphQL(it).build() }
 
-    fun execute(query: String, operationName: String? = null, variables: Map<String, Any>? = null): ExecutionResult{
+    fun execute(subscriberId: String, query: String, operationName: String? = null, variables: Map<String, Any>? = null): ExecutionResult{
         var executionInputBuilder = ExecutionInput.newExecutionInput()
                 .query(query)
+                .context(subscriberId)
         if (operationName != null) {
             executionInputBuilder = executionInputBuilder.operationName(operationName)
         }

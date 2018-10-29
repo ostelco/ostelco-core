@@ -21,4 +21,7 @@ dependencies {
   api "io.arrow-kt:arrow-typeclasses:$arrowVersion"
   api "io.arrow-kt:arrow-instances-core:$arrowVersion"
   api "io.arrow-kt:arrow-effects:$arrowVersion"
+
+  runtimeOnly "javax.xml.bind:jaxb-api:$jaxbVersion"
+  runtimeOnly "javax.activation:activation:$javaxActivationVersion"
 }

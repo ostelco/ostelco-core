@@ -440,6 +440,9 @@ definitions:
       msisdn:
         description: "Mobile number for this subscription"
         type: string
+      alias:
+        description: "Human readable optional alias for this subscription"
+        type: string
   BundleList:
     type: array
     items:
