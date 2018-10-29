@@ -7,9 +7,6 @@ plugins {
 dependencies {
   implementation project(":prime-modules")
 
-  testRuntimeOnly "javax.xml.bind:jaxb-api:$jaxbVersion"
-  testRuntimeOnly "javax.activation:activation:$javaxActivationVersion"
-  
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
 
   testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"

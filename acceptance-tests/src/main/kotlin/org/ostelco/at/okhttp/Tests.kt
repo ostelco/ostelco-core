@@ -12,6 +12,7 @@ import org.ostelco.prime.client.ApiException
 import org.ostelco.prime.client.api.DefaultApi
 import org.ostelco.prime.client.model.ApplicationToken
 import org.ostelco.prime.client.model.Consent
+import org.ostelco.prime.client.model.GraphQLRequest
 import org.ostelco.prime.client.model.PaymentSource
 import org.ostelco.prime.client.model.Person
 import org.ostelco.prime.client.model.PersonList
@@ -647,5 +648,27 @@ class ReferralTest {
                 .presentation(emptyMap<String, String>())
 
         assertEquals(listOf(freeProductForReferred), secondSubscriptionStatus.purchaseRecords.map { it.product })
+    }
+}
+
+class GraphQlTests {
+
+    @Test
+    fun `okhttp test - POST graphql`() {
+
+        val email = "graphql-${randomInt()}@test.com"
+        createProfile("Test GraphQL Endpoint", email)
+
+        createSubscription(email)
+
+        val client = clientForSubject(subject = "invalid@test.com")
+
+        val request = GraphQLRequest()
+        request.query = """{ subscriber(id: "$email") { profile { email } } }"""
+
+        val map = client.graphql(request)
+
+        println(map)
+
     }
 }

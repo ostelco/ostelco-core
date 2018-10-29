@@ -17,9 +17,12 @@ import org.ostelco.prime.client.model.Person
 import org.ostelco.prime.client.model.Price
 import org.ostelco.prime.client.model.Product
 import org.ostelco.prime.client.model.Profile
+import org.ostelco.prime.client.model.PurchaseRecord
 import org.ostelco.prime.client.model.PurchaseRecordList
 import org.ostelco.prime.client.model.Subscription
 import org.ostelco.prime.client.model.SubscriptionStatus
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.util.*
 import kotlin.test.assertEquals
@@ -393,7 +396,7 @@ class SourceTest {
             val createdIds = listOf(getCardIdForTokenFromStripe(createTokenWithStripe(email)),
                     createSourceWithStripe(email))
 
-            val deletedIds = createdIds.map { it -> removeSourceWithStripe(email, it)  }
+            val deletedIds = createdIds.map { it -> removeSourceWithStripe(email, it) }
 
             assert(createdIds.containsAll(deletedIds.toSet())) {
                 "Failed to delete one or more sources: ${createdIds.toSet() - deletedIds.toSet()}"
@@ -405,14 +408,14 @@ class SourceTest {
 
     // Helpers for source handling with Stripe.
 
-    private fun getCardIdForTokenFromStripe(id: String) : String {
+    private fun getCardIdForTokenFromStripe(id: String): String {
         if (id.startsWith("tok_")) {
             return StripePayment.getCardIdForTokenId(id)
         }
         return id
     }
 
-    private fun createTokenWithStripe(email: String) : String {
+    private fun createTokenWithStripe(email: String): String {
         val tokenId = StripePayment.createPaymentTokenId()
 
         post<PaymentSource> {
@@ -424,7 +427,7 @@ class SourceTest {
         return tokenId
     }
 
-    private fun createSourceWithStripe(email: String) : String {
+    private fun createSourceWithStripe(email: String): String {
         val sourceId = StripePayment.createPaymentSourceId()
 
         post<PaymentSource> {
@@ -436,7 +439,7 @@ class SourceTest {
         return sourceId
     }
 
-    private fun removeSourceWithStripe(email: String, sourceId: String) : String {
+    private fun removeSourceWithStripe(email: String, sourceId: String): String {
         val removedSource = delete<PaymentSource> {
             path = "/paymentSources"
             subscriberId = email
@@ -808,5 +811,55 @@ class ReferralTest {
                 .presentation(emptyMap<String, String>())
 
         assertEquals(listOf(freeProductForReferred), secondSubscriptionStatus.purchaseRecords.map { it.product })
+    }
+}
+
+class GraphQlTests {
+
+    data class Subscriber(
+            val profile: Profile? = null,
+            val bundles: Collection<Bundle>? = null,
+            val subscriptions: Collection<Subscription>? = null,
+            val products: Collection<Product>? = null,
+            val purchases: Collection<PurchaseRecord>? = null)
+
+    data class Data(var subscriber: Subscriber? = null)
+
+    data class GraphQlResponse(var data: Data? = null)
+
+    @Test
+    fun `jersey test - POST graphql`() {
+
+        val email = "graphql-${randomInt()}@test.com"
+        createProfile("Test GraphQL Endpoint", email)
+
+        val msisdn = createSubscription(email)
+
+        val subscriber = post<GraphQlResponse>(expectedResultCode = 200) {
+            path = "/graphql"
+            subscriberId = email
+            body = mapOf("query" to """{ subscriber { profile { email } subscriptions { msisdn } } }""")
+        }.data?.subscriber
+
+        assertEquals(expected = email, actual = subscriber?.profile?.email)
+        assertEquals(expected = msisdn, actual = subscriber?.subscriptions?.first()?.msisdn )
+    }
+
+    @Test
+    fun `jersey test - GET graphql`() {
+
+        val email = "graphql-${randomInt()}@test.com"
+        createProfile("Test GraphQL Endpoint", email)
+
+        val msisdn = createSubscription(email)
+
+        val subscriber = get<GraphQlResponse> {
+            path = "/graphql"
+            subscriberId = email
+            queryParams = mapOf("query" to URLEncoder.encode("""{subscriber{profile{email}subscriptions{msisdn}}}""", StandardCharsets.UTF_8.name()))
+        }.data?.subscriber
+
+        assertEquals(expected = email, actual = subscriber?.profile?.email)
+        assertEquals(expected = msisdn, actual = subscriber?.subscriptions?.first()?.msisdn )
     }
 }

@@ -1,0 +1,15 @@
+plugins {
+  id "org.jetbrains.kotlin.jvm" version "1.2.71"
+  id "java-library"
+}
+
+dependencies {
+  implementation project(':prime-modules')
+  
+  implementation 'com.graphql-java:graphql-java:10.0'
+
+  testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+  testImplementation "org.mockito:mockito-core:$mockitoVersion"
+}
+
+apply from: '../jacoco.gradle'
