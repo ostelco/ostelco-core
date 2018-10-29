@@ -11,6 +11,7 @@ import javax.ws.rs.Path
 import javax.ws.rs.PathParam
 import javax.ws.rs.Produces
 import javax.ws.rs.QueryParam
+import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.Response.Status.CREATED
 
@@ -22,7 +23,7 @@ import javax.ws.rs.core.Response.Status.CREATED
 class ProductsResource(private val dao: SubscriberDAO) {
 
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     fun getProducts(@Auth token: AccessTokenPrincipal?): Response {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
@@ -38,7 +39,7 @@ class ProductsResource(private val dao: SubscriberDAO) {
     @Deprecated("use purchaseProduct")
     @POST
     @Path("{sku}")
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     fun purchaseProductWithoutPayment(@Auth token: AccessTokenPrincipal?,
                                       @NotNull
                                       @PathParam("sku")
@@ -57,7 +58,7 @@ class ProductsResource(private val dao: SubscriberDAO) {
 
     @POST
     @Path("{sku}/purchase")
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     fun purchaseProduct(@Auth token: AccessTokenPrincipal?,
                         @NotNull
                         @PathParam("sku")

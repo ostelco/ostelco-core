@@ -6,16 +6,12 @@ plugins {
 dependencies {
     implementation project(":prime-modules")
 
-    implementation "io.dropwizard:dropwizard-auth:$dropwizardVersion"
-    implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
-
     implementation "com.google.guava:guava:$guavaVersion"
     implementation 'io.jsonwebtoken:jjwt:0.9.1'
 
     runtimeOnly "javax.xml.bind:jaxb-api:$jaxbVersion"
     runtimeOnly "javax.activation:activation:$javaxActivationVersion"
 
-    testImplementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
     testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
     testImplementation "org.mockito:mockito-core:$mockitoVersion"
     testImplementation "org.assertj:assertj-core:$assertJVersion"

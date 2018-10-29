@@ -1,4 +1,4 @@
-package org.ostelco.prime.client.api.auth.helpers
+package org.ostelco.prime.jersey.auth.helpers
 
 import javax.validation.Valid
 import javax.ws.rs.GET
@@ -18,7 +18,7 @@ class UserInfoResource {
 
     @GET
     @Produces("application/json")
-    fun getuserInfo(@Valid @HeaderParam("Authorization") token: String?): Response {
+    fun getUserInfo(@Valid @HeaderParam("Authorization") token: String?): Response {
 
         return if (token == null) {
             Response.status(Response.Status.NOT_FOUND)

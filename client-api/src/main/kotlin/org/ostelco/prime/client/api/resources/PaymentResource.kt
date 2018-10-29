@@ -6,7 +6,14 @@ import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
 import javax.validation.constraints.NotNull
-import javax.ws.rs.*
+import javax.ws.rs.DELETE
+import javax.ws.rs.GET
+import javax.ws.rs.POST
+import javax.ws.rs.PUT
+import javax.ws.rs.Path
+import javax.ws.rs.Produces
+import javax.ws.rs.QueryParam
+import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
 /**
@@ -19,7 +26,7 @@ class PaymentResource(private val dao: SubscriberDAO) {
     private val logger by getLogger()
 
     @POST
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     fun createSource(@Auth token: AccessTokenPrincipal?,
                      @NotNull
                      @QueryParam("sourceId")
@@ -38,7 +45,7 @@ class PaymentResource(private val dao: SubscriberDAO) {
 
 
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     fun listSources(@Auth token: AccessTokenPrincipal?): Response {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
@@ -52,7 +59,7 @@ class PaymentResource(private val dao: SubscriberDAO) {
     }
 
     @PUT
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     fun setDefaultSource(@Auth token: AccessTokenPrincipal?,
                          @NotNull
                          @QueryParam("sourceId")
@@ -70,7 +77,7 @@ class PaymentResource(private val dao: SubscriberDAO) {
     }
 
     @DELETE
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     fun removeSource(@Auth token: AccessTokenPrincipal?,
                      @NotNull
                      @QueryParam("sourceId")

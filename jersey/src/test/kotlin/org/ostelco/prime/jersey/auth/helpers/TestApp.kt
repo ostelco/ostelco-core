@@ -1,9 +1,7 @@
-package org.ostelco.prime.client.api.auth.helpers
+package org.ostelco.prime.jersey.auth.helpers
 
-import arrow.core.Either
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.nhaarman.mockito_kotlin.argumentCaptor
 import io.dropwizard.Application
 import io.dropwizard.auth.AuthDynamicFeature
 import io.dropwizard.auth.AuthValueFactoryProvider
@@ -14,14 +12,15 @@ import io.dropwizard.configuration.EnvironmentVariableSubstitutor
 import io.dropwizard.configuration.SubstitutingSourceProvider
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
-import org.mockito.Mockito.`when`
-import org.mockito.Mockito.mock
 import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.auth.OAuthAuthenticator
-import org.ostelco.prime.client.api.resources.ProfileResource
-import org.ostelco.prime.client.api.store.SubscriberDAO
-import org.ostelco.prime.apierror.ApiErrorCode
-import org.ostelco.prime.apierror.NotFoundError
+import org.ostelco.prime.jsonmapper.asJson
+import javax.ws.rs.Consumes
+import javax.ws.rs.GET
+import javax.ws.rs.Path
+import javax.ws.rs.Produces
+import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.Response
 
 class TestApp : Application<TestConfig>() {
 
@@ -37,15 +36,9 @@ class TestApp : Application<TestConfig>() {
 
     override fun run(config: TestConfig, env: Environment) {
 
-        val DAO = mock(SubscriberDAO::class.java)
-
-        val arg = argumentCaptor<String>()
-        `when`(DAO.getProfile(arg.capture()))
-                .thenReturn(Either.left(NotFoundError("No profile found", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_PROFILE)))
-
         /* APIs. */
-        env.jersey().register(ProfileResource(DAO))
         env.jersey().register(UserInfoResource())
+        env.jersey().register(FooResource())
 
         val client = JerseyClientBuilder(env)
                 .using(config.jerseyClientConfiguration)
@@ -66,4 +59,16 @@ class TestApp : Application<TestConfig>() {
                         .buildAuthFilter()))
         env.jersey().register(AuthValueFactoryProvider.Binder(AccessTokenPrincipal::class.java))
     }
+}
+
+@Path("/foo")
+class FooResource {
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    fun query(): Response = Response
+            .status(Response.Status.NOT_FOUND)
+            .entity(asJson(""))
+            .build()
 }

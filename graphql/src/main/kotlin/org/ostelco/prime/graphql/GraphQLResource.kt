@@ -19,10 +19,12 @@ class GraphQLResource(private val queryHandler: QueryHandler) {
     @GET
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    fun handleGet(@QueryParam("query") query: String): Any = executeOperation(GraphQLRequest(query = query))
+    fun handleGet(
+            @QueryParam("query") query: String,
+            @QueryParam("variables") variables: Map<String, Any>): Any = executeOperation(GraphQLRequest(query = query, variables = variables))
 
     private fun executeOperation(request: GraphQLRequest): Any {
-        val executionResult = queryHandler.execute(query = request.query)
+        val executionResult = queryHandler.execute(query = request.query, variables = request.variables)
         val result = mutableMapOf<String, Any>()
         if (executionResult.errors.isNotEmpty()) {
             result["errors"] = executionResult.errors

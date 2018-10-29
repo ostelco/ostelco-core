@@ -1,4 +1,4 @@
-package org.ostelco.prime.client.api.core
+package org.ostelco.prime.auth
 
 /**
  * Captures the user info data (consented claims) fetched from the OAuth2

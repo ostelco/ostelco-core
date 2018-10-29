@@ -13,6 +13,7 @@ import javax.ws.rs.Path
 import javax.ws.rs.PathParam
 import javax.ws.rs.Produces
 import javax.ws.rs.QueryParam
+import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
 /**
@@ -22,7 +23,7 @@ import javax.ws.rs.core.Response
 class ConsentsResource(private val dao: SubscriberDAO) {
 
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     fun getConsents(@Auth token: AccessTokenPrincipal?): Response {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
@@ -37,7 +38,7 @@ class ConsentsResource(private val dao: SubscriberDAO) {
 
     @PUT
     @Path("{consent-id}")
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     fun updateConsent(@Auth token: AccessTokenPrincipal?,
                       @NotNull
                       @PathParam("consent-id")

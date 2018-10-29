@@ -5,4 +5,10 @@ plugins {
 
 dependencies {
   implementation project(":prime-modules")
+  implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
+
+  runtimeOnly "javax.xml.bind:jaxb-api:$jaxbVersion"
+  runtimeOnly "javax.activation:activation:$javaxActivationVersion"
+  
+  testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
 }
