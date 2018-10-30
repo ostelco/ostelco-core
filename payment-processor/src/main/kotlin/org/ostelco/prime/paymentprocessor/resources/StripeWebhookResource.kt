@@ -46,11 +46,10 @@ class StripeWebhookResource(val reporter: StripeEventReporter) {
                     .build()
         }
 
-        /* Report only HTTP status code back to Stripe. */
-        return reporter.reportEvent(event)
-                .fold(
-                        { _ -> Response.status(Response.Status.BAD_REQUEST) },
-                        { _ -> Response.status(Response.Status.OK) }
-                ).build()
+        reporter.handleEvent(event)
+
+        /* Report only OK back to Stripe. */
+        return Response.status(Response.Status.OK)
+                .build()
     }
 }

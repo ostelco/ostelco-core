@@ -1,7 +1,6 @@
 package org.ostelco.prime.paymentprocessor
 
-import arrow.core.Either
-import com.stripe.model.Event
+import com.stripe.model.*
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 
@@ -9,132 +8,182 @@ class StripeEventReporter {
 
     private val logger by getLogger()
 
-    fun reportEvent(event: Event): Either<String, String> {
+    fun handleEvent(event: Event) {
 
-        logger.info(NOTIFY_OPS_MARKER, "Got Stripe event ${event.type}}")
+        val data = event.data.`object`
 
-        return Either.right("ok")
-    }
-
-    /* Ripped from https://github.com/stripe/stripe-webhook-monitor/blob/master/public/app.js */
-/*
-    private fun summary(event: Event): String {
-
-        return when {
-            event.type == "account.external_account.created" -> "A new external account was created."
-            event.type == "account.external_account.deleted" -> "A new external account was deleted."
-            event.type == "account.external_account.updated" -> "A new external account was updated."
-            event.type == "account.updated" -> "The Stripe account was updated."
-            event.type == "balance.available" -> "The balance for this Stripe account was updated: "  +
-                    "${currency(event.available[0].amount / 100, event.available.currency)} is available, " +
-                    "${currency(event.pending[0].amount / 100, event.pending.currency)} is pending."
-            event.type == "charge.captured" -> "Customer ${url('customers/' + event.customer, event.customer)}s\'" +
-                    "charge for ${currency(event.amount / 100, event.currency)} was " +
-                    "${url('charges/' + event.id, 'captured')}."
-            event.type == "charge.dispute.closed" -> "The ${url('disputes/' + event.id, 'dispute')} for a " +
-                    "${url('charges/' + event.charge, 'charge')} was closed."
-            event.type == "charge.dispute.created" -> "The ${url('disputes/' + event.id, 'dispute')} for a " +
-                    "${url('charges/' + event.charge, 'charge')} was created."
-            event.type == "charge.dispute.funds_reinstated" -> "${currency(event.amount / 100, event.currency)} " +
-                    "was reinstated to the Stripe account following a ${url('disputes/' + event.id, 'dispute')}."
-            event.type == "charge.dispute.funds_withdrawn" -> "${currency(event.amount / 100, event.currency)} was " +
-                    "withdrawn from the Stripe account following a ${url('disputes/ + event.id, 'dispute)}."
-            event.type == "charge.dispute.updated" -> "The ${url('disputes/' + event.id, 'dispute')} for a
-                ${url('charges/' + event.charge, 'charge')} was updated."
-                event.type == "charge.failed" -> "A recent ${url('charges/' + event.id, 'charge')} for " +
-                "${currency(event.amount / 100, event.currency)} failed."
-            event.type == "charge.pending" -> "A recent ${url('charges/' + event.id, 'charge')} for " +
-                    "${currency(event.amount / 100, event.currency)} is pending."
-            event.type == "charge.refund.updated" -> "A ${currency(event.amount / 100, event.currency)} refund for a " +
-                    "${url('charges/' + event.id, 'charge')} was updated."
-            event.type == "charge.refunded" -> "A ${currency(event.amount / 100, event.currency)} " +
-                    "${url('charges/' + event.id, 'charge')} was refunded."
-            event.type == "charge.succeeded" -> "A ${url('customers/' + event.customer, 'customer')} " +
-                    "was charged ${currency(event.amount / 100, event.currency)} " +
-                    "with a ${event.source.brand} ${event.source.funding} ${event.source.object}."
-            event.type == "charge.updated" -> "A ${currency(event.amount / 100, event.currency)} " +
-                    "${url('charges/' + event.id, 'charge')} was updated."
-            event.type == "coupon.created" -> "A coupon was created."
-            event.type == "coupon.deleted" -> "A coupon was deleted."
-            event.type == "coupon.updated" -> "A coupon was updated."
-            event.type == "customer.bank_account.deleted" -> "A ${url('customers/' + event.id, 'customer')}\'s bank account was deleted."
-            event.type == "customer.created" -> "A ${url('customers/' + event.id, 'new customer')} " +
-                    "${event.email ? '(' + event.email + ')' : ''} was created."
-            event.type == "customer.deleted" -> "A ${url('customers/' + event.id, ' customer')} " +
-                    "${event.email ? '(' + event.email + ')' : ''} was deleted."
-            event.type == "customer.discount.created" -> "A discount for a ${url('customers/' + event.id, 'customer')} was created."
-            event.type == "customer.discount.deleted" -> "A discount for a ${url('customers/' + event.id, 'customer')} was deleted."
-            event.type == "customer.discount.updated" -> "A discount for a ${url('customers/' + event.id, 'customer')} was updated."
-            event.type == "customer.source.created" -> "A ${url('customers/' + event.customer, 'customer')} added a new payment source."
-            event.type == "customer.source.deleted" -> "A ${url('customers/' + event.customer, 'customer')} deleted a payment source."
-            event.type == "customer.source.updated" -> "A ${url('customers/' + event.customer, 'customer')} updated a payment source."
-            event.type == "customer.subscription.created" -> "A ${url('customers/' + event.customer, 'customer')} " +
-                    "created a new ${url('subscriptions/' + event.id, 'subscription')} to the " +
-                    "${url('plans/' + event.plan.id, event.plan.name)} plan."
-            event.type == "customer.subscription.deleted" -> "A ${url('customers/' + event.customer, 'customer')} " +
-                    "deleted a ${url('subscriptions/' + event.id, 'subscription')} to the " +
-                    "${url('plans/' + event.plan.id, event.plan.name)} plan."
-            event.type == "customer.subscription.trial_will_end" -> "A ${url('customers/' + event.customer, 'customer')}\'s trial " +
-                    "${url('subscriptions/' + event.id, 'subscription')} will end on ${date(event.trial_end)}."
-            event.type == "customer.subscription.updated" -> "A ${url('customers/' + event.customer, 'customer')}\'s " +
-                    "${url('subscriptions/' + event.id, 'subscription')} was updated."
-            event.type == "customer.updated" -> "A ${url('customers/' + event.customer, 'customer')} was updated."
-            event.type == "file.created" -> "A new file was uploded."
-            event.type == "invoice.created" -> "A ${url('customers/' + event.customer, 'customer')}\'s " +
-                    "${url('invoices/' + event.id, 'invoice')} was created."
-            event.type == "invoice.payment_failed" -> "A ${url('customers/' + event.customer, 'customer')}\'s " +
-                    "${url('invoices/' + event.id, 'invoice')} invoice payment failed."
-            event.type == "invoice.payment_succeeded" -> "A ${url('customers/' + event.customer, 'customer')}\'s " +
-                    "${url('invoices/' + event.id, 'invoice')} was successfully charged."
-            event.type == "invoice.sent" -> "A ${url('customers/' + event.customer, 'customer')}\'s " +
-                    "${url('invoices/' + event.id, 'invoice')} was sent."
-            event.type == "invoice.upcoming" -> "A ${url('customers/' + event.customer, 'customer')}\'s " +
-                    "${url('invoices/' + event.id, 'invoice')} was updated."
-            event.type == "invoice.updated" -> "A ${url('customers/' + event.customer, 'customer')}\'s " +
-                    "${url('invoices/' + event.id, 'invoice')} was updated."
-            event.type == "invoiceitem.created" -> "A ${url('customers/' + event.customer, 'customer')} created an invoice " +
-                    "item${event.invoice ? ' for an ' + url('invoices/' + event.invoice, 'invoice') : ''}."
-            event.type == "invoiceitem.deleted" -> "A ${url('customers/' + event.customer, 'customer' )} deleted an invoice " +
-                    "item${event.invoice ? ' for an ' + url('invoices/' + event.invoice, 'invoice') : ''}."
-            event.type == "invoiceitem.updated" -> "A ${url('customers/' + event.customer, 'customer')} updated an invoice " +
-                    "item${event.invoice ? ' for an ' + url('invoices/' + event.invoice, 'invoice') : ''}."
-            event.type == "order.created" -> "A new ${url('orders/' + event.id, 'order')} for " +
-                    "${currency(event.amount / 100)} was created."
-            event.type == "order.payment_failed" -> "A payment failed for an ${url('orders/' + event.id, 'order')} for " +
-                    "${currency(event.amount / 100)}."
-            event.type == "order.payment_succeeded" -> "A payment succeeded for an ${url('orders/' + event.id, 'order')} for " +
-                    "${currency(event.amount / 100)}."
-            event.type == "order.updated" -> "An ${url('orders/' + event.id, 'order')} for ${currency(event.amount / 100)} was updated."
-            event.type == "order_return.created" -> "A return was created for an ${url('orders/' + event.order, 'order')} " +
-                    "for ${currency(event.amount / 100)}."
-            event.type == "payout.canceled" -> "A payout of ${currency(event.amount / 100)} was canceled."
-            event.type == "payout.created" -> "A payout of ${currency(event.amount / 100)} was initiated."
-            event.type == "payout.failed" -> "A payout of ${currency(event.amount / 100)} was failed."
-            event.type == "payout.paid" -> "A payout of ${currency(event.amount / 100)} was paid."
-            event.type == "payout.updated" -> "A payout of ${currency(event.amount / 100)} was updated."
-            event.type == "plan.created" -> "Plan ${url('plans/' + event.id, event.name)} was created."
-            event.type == "plan.deleted" -> "Plan ${event.name} was deleted."
-            event.type == "plan.updated" -> "Plan ${event.name} was updated."
-            event.type == "product.created" -> "A new ${url('products/' + event.id, 'product')} was created."
-            event.type == "product.deleted" -> "A ${url('products/' + event.id, 'product')} was deleted."
-            event.type == "product.updated" -> "A ${url('products/' + event.id, 'product')} was updated."
-            event.type == "recipient.created" -> "A new recipient was created."
-            event.type == "recipient.deleted" -> "A new recipient was deleted."
-            event.type == "recipient.updated" -> "A new recipient was updated."
-            event.type == "review.closed" -> "A fraud review was closed."
-            event.type == "review.opened" -> "A fraud review was opened."
-            event.type == "sku.created" -> "A ${url('products/' + event.product, 'product')} SKU was created."
-            event.type == "sku.deleted" -> "A ${url('products/' + event.product, 'product')} SKU was deleted."
-            event.type == "sku.updated" -> "A ${url('products/' + event.product, 'product')} SKU was updated."
-            event.type == "source.canceled" -> "A payment source was canceled."
-            event.type == "source.chargeable" -> "A payment source is now chargeable."
-            event.type == "source.failed" -> "A payment source failed."
-            event.type == "source.transaction_created" -> "A transaction was created for a payment source."
-            event.type == "transfer.created" -> "A transfer was created."
-            event.type == "transfer.reversed" -> "A transfer was reversed."
-            event.type == "transfer.updated" -> "A transfer was updated."
-            else -> ""
+        when (data) {
+            is Balance -> report(event, data)
+            is Card -> report(event, data)
+            is Charge -> report(event, data)
+            is Customer -> report(event, data)
+            is Dispute -> report(event, data)
+            is Payout -> report(event, data)
+            is Plan -> report(event, data)
+            is Product -> report(event, data)
+            is Refund -> report(event, data)
+            is Source -> report(event, data)
+            is Subscription -> report(event, data)
+            else -> {
+                logger.error(NOTIFY_OPS_MARKER, "No handler found for Stripe event ${event.type}")
+            }
         }
     }
-*/
+
+    private fun report(event: Event, balance: Balance) {
+        when {
+            event.type == "balance.available" -> logger.info(NOTIFY_OPS_MARKER,
+                    "Your balance has new available transactions" +
+                            "${currency(balance.available[0].amount, balance.available[0].currency)} is available, " +
+                            "${currency(balance.pending[0].amount, balance.pending[0].currency)} is pending." +
+                            url(event)
+            )
+            else -> logger.error(NOTIFY_OPS_MARKER,
+                    "Unhandled Stripe event ${event.type} (cat: Balance) " +
+                            url(event))
+        }
+    }
+
+    private fun report(event: Event, card: Card) {
+        when {
+            event.type == "customer.source.created" -> logger.info(NOTIFY_OPS_MARKER,
+                    "${email(card.customer)} added a new ${card.brand} ending in ${card.last4} " +
+                            url(event)
+            )
+            event.type == "customer.source.deleted" -> logger.info(NOTIFY_OPS_MARKER,
+                    "${email(card.customer)} deleted a ${card.brand} ending in ${card.last4} " +
+                            url(event)
+            )
+            else -> logger.error(NOTIFY_OPS_MARKER,
+                    "Unhandled Stripe event ${event.type} (cat: Card) " +
+                            url(event))
+        }
+    }
+
+    private fun report(event: Event, charge: Charge) {
+        when {
+            event.type == "charge.captured" -> logger.info(NOTIFY_OPS_MARKER,
+                    "${email(charge.customer)}'s payment was captured for ${currency(charge.amount, charge.currency)} " +
+                            url(event)
+            )
+            event.type == "charge.succeeded" -> logger.info(NOTIFY_OPS_MARKER,
+                    "An uncaptured payment for ${currency(charge.amount, charge.currency)} was created for ${email(charge.customer)} " +
+                            url(event)
+            )
+            event.type == "charge.refunded" -> logger.info(NOTIFY_OPS_MARKER,
+                    "A ${currency(charge.amount, charge.currency)} payment was refunded to ${email(charge.customer)} " +
+                            url(event)
+            )
+            else -> logger.error(NOTIFY_OPS_MARKER,
+                    "Unhandled Stripe event ${event.type} (cat: Charge) " +
+                            url(event))
+        }
+    }
+
+    private fun report(event: Event, customer: Customer) {
+        when {
+            event.type == "customer.created" -> logger.info(NOTIFY_OPS_MARKER,
+                    "${customer.email} is a new customer " +
+                            url(event)
+            )
+            event.type == "customer.deleted" -> logger.info(NOTIFY_OPS_MARKER,
+                    "${customer.email} had been deleted " +
+                            url(event)
+            )
+            event.type == "customer.updated" -> logger.info(NOTIFY_OPS_MARKER,
+                    "${customer.email}'s details where updated " +
+                            url(event)
+            )
+            else -> logger.error(NOTIFY_OPS_MARKER,
+                    "Unhandled Stripe event ${event.type} (cat: Customer) " +
+                            url(event))
+        }
+    }
+
+    private fun report(event: Event, dispute: Dispute) {
+        logger.error(NOTIFY_OPS_MARKER,
+                "Unhandled Stripe event ${event.type} (cat: Dispute) " +
+                        url(event))
+    }
+
+    private fun report(event: Event, payout: Payout) {
+        when {
+            event.type == "payout.created" -> logger.info(NOTIFY_OPS_MARKER,
+                    "A new payout for ${currency(payout.amount, payout.currency)} was created and will be deposited " +
+                            "on ${epochToDate(payout.arrivalDate)}" +
+                            url(event)
+            )
+            event.type == "payout.paid" -> logger.info(NOTIFY_OPS_MARKER,
+                    "A payout of ${currency(payout.amount, payout.currency)} should now appear on your bank account statement " +
+                            url(event)
+            )
+            else -> logger.error(NOTIFY_OPS_MARKER,
+                    "Unhandled Stripe event ${event.type} (cat: Payout) " +
+                            url(event))
+        }
+    }
+
+    private fun report(event: Event, plan: Plan) {
+        logger.error(NOTIFY_OPS_MARKER,
+                "Unhandled Stripe event ${event.type} (cat: Plan) " +
+                        url(event))
+    }
+
+    private fun report(event: Event, product: Product) {
+        logger.error(NOTIFY_OPS_MARKER,
+                "Unhandled Stripe event ${event.type} (cat: Product) " +
+                        url(event))
+    }
+
+    private fun report(event: Event, refund: Refund) {
+        logger.error(NOTIFY_OPS_MARKER,
+                "Unhandled Stripe event ${event.type} (cat: Refund) " +
+                        url(event))
+    }
+
+    private fun report(event: Event, source: Source) {
+        when {
+            event.type == "customer.source.created" -> logger.info(NOTIFY_OPS_MARKER,
+                    "${email(source.customer)} added a new payment source " +
+                            url(event)
+            )
+            event.type == "customer.source.deleted" -> logger.info(NOTIFY_OPS_MARKER,
+                    "Customer ${email(source.customer)} deleted a payment source " +
+                            url(event)
+            )
+            event.type == "source.chargeable" -> logger.info(NOTIFY_OPS_MARKER,
+                    "A source with ID ${source.id} is chargeable " +
+                            url(event)
+            )
+            else -> logger.error(NOTIFY_OPS_MARKER,
+                    "Unhandled Stripe event ${event.type} (cat: Source)" +
+                            url(event))
+        }
+    }
+
+    private fun report(event: Event, subscription: Subscription) {
+        logger.error("Unhandled Stripe event ${event.type} (cat: Subscription) " +
+                url(event))
+    }
+
+    private fun url(event: Event): String {
+        return "https://dashboard.stripe.com/events/${event.id}"
+    }
+
+    private fun currency(amount: Long, currency: String): String {
+        return when (currency.toUpperCase()) {
+            "SGD", "USD" -> "\$"
+            else -> ""
+        } + "${amount / 100} ${currency.toUpperCase()}"
+    }
+
+    private fun email(customerId: String): String {
+        val email = Customer.retrieve(customerId).email
+        return if (email.isNullOrEmpty()) "****" else email
+    }
+
+    // TODO: Fix this!
+    private fun epochToDate(ts: Long): String {
+        return "YYYY/MM/DD"
+    }
 }
