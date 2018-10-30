@@ -6,9 +6,6 @@ plugins {
 dependencies {
   implementation project(":prime-modules")
 
-  runtimeOnly "javax.xml.bind:jaxb-api:$jaxbVersion"
-  runtimeOnly "javax.activation:activation:$javaxActivationVersion"
-
   testImplementation project(":jersey")
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
 }

@@ -1,4 +1,4 @@
-package org.ostelco.prime.client.api.auth.helpers
+package org.ostelco.prime.jersey.auth.helpers
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.common.cache.CacheBuilderSpec
