@@ -6,7 +6,6 @@ plugins {
 
 dependencies {
   implementation project(":prime-modules")
-  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
 
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
 

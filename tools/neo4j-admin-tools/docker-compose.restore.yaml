@@ -3,7 +3,7 @@ version: "3.7"
 services:
   neo4j-online-restore:
     container_name: neo4j-online-restore
-    image: neo4j:3.4.7-enterprise
+    image: neo4j:3.4.9-enterprise
     command: >
       bin/neo4j-admin restore
       --from=/backup_dir/graph.db-backup

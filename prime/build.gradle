@@ -18,7 +18,7 @@ sourceSets {
   }
 }
 
-version = "1.17.0"
+version = "1.20.0"
 
 repositories {
   maven {
@@ -36,6 +36,7 @@ dependencies {
   runtimeOnly project(':neo4j-store')
   runtimeOnly project(':pseudonym-server')
   runtimeOnly project(':client-api')
+  runtimeOnly project(':graphql')
   runtimeOnly project(':admin-api')
   runtimeOnly project(':app-notifier')
   runtimeOnly project(':payment-processor')
@@ -46,6 +47,7 @@ dependencies {
 
   implementation "io.dropwizard:dropwizard-http2:$dropwizardVersion"
   runtimeOnly "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
+  implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
   implementation "com.google.guava:guava:$guavaVersion"
   implementation 'org.dhatim:dropwizard-prometheus:2.2.0'
 
@@ -54,11 +56,6 @@ dependencies {
   testImplementation 'com.lmax:disruptor:3.4.2'
   testImplementation 'com.palantir.docker.compose:docker-compose-rule-junit4:0.34.0'
   testImplementation 'org.dhatim:dropwizard-prometheus:2.2.0'
-
-  integrationImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
-  integrationImplementation "org.mockito:mockito-core:$mockitoVersion"
-  integrationImplementation 'com.lmax:disruptor:3.4.2'
-  integrationImplementation 'com.palantir.docker.compose:docker-compose-rule-junit4:0.34.0'
 }
 
 configurations {
@@ -66,6 +63,7 @@ configurations {
   integrationImplementation.extendsFrom implementation
   integrationImplementation.extendsFrom runtime
   integrationImplementation.extendsFrom runtimeOnly
+  integrationImplementation.extendsFrom testImplementation
 }
 
 task integration(type: Test, description: 'Runs the integration tests.', group: 'Verification') {

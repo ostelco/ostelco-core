@@ -2,6 +2,11 @@
 
 modules:
 - type: jersey
+  config:
+    authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
+    jerseyClient:
+      timeout: 3s
+      connectionRequestTimeout: 1s
 - type: firebase
   config:
     configFile: /secret/pantel-prod.json
@@ -26,16 +31,12 @@ modules:
   config:
     datastoreType: emulator
 - type: api
-  config:
-    authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
-    jerseyClient:
-      timeout: 3s
-      connectionRequestTimeout: 1s
 - type: stripe-payment-processor
 - type: firebase-app-notifier
   config:
     configFile: /secret/pantel-prod.json
 - type: admin
+- type: graphql
 
 server:
   applicationConnectors:

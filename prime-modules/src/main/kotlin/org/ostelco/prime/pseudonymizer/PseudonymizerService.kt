@@ -5,7 +5,7 @@ import org.ostelco.prime.model.PseudonymEntity
 
 interface PseudonymizerService {
 
-    fun getActivePseudonymsForMsisdn(msisdn: String): ActivePseudonyms
+    fun getActivePseudonymsForSubscriberId(subscriberId: String): ActivePseudonyms
 
     fun getMsisdnPseudonym(msisdn: String, timestamp: Long): PseudonymEntity
 

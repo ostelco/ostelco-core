@@ -1,14 +1,12 @@
 package org.ostelco.prime.client.api.resources
 
 import arrow.core.Either
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import io.dropwizard.auth.AuthDynamicFeature
 import io.dropwizard.auth.AuthValueFactoryProvider
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter
 import io.dropwizard.testing.junit.ResourceTestRule
 import org.assertj.core.api.Assertions.assertThat
-import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.ClassRule
@@ -16,11 +14,11 @@ import org.junit.Test
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
-import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
-import org.ostelco.prime.client.api.auth.OAuthAuthenticator
-import org.ostelco.prime.client.api.model.SubscriptionStatus
+import org.ostelco.prime.auth.AccessTokenPrincipal
+import org.ostelco.prime.auth.OAuthAuthenticator
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
+import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.ActivePseudonyms
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
@@ -53,26 +51,6 @@ class SubscriptionResourceTest {
     }
 
     @Test
-    fun getSubscriptionStatus() {
-        val subscriptionStatus = SubscriptionStatus(5, purchaseRecords)
-        val arg = argumentCaptor<String>()
-
-        `when`(DAO.getSubscriptionStatus(arg.capture())).thenReturn(Either.right(subscriptionStatus))
-
-        val resp = RULE.target("/subscription/status")
-                .request()
-                .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
-                .get(Response::class.java)
-
-        assertThat(resp.status).isEqualTo(Response.Status.OK.statusCode)
-        assertThat(resp.mediaType.toString()).isEqualTo(MediaType.APPLICATION_JSON)
-
-        // assertThat and assertEquals is not working
-        assertTrue(subscriptionStatus == resp.readEntity(SubscriptionStatus::class.java))
-        assertThat(arg.firstValue).isEqualTo(email)
-    }
-
-    @Test
     fun getActivePseudonyms() {
         val arg = argumentCaptor<String>()
 
@@ -80,10 +58,10 @@ class SubscriptionResourceTest {
         val pseudonym = PseudonymEntity(msisdn, "random", 0, 1)
         val activePseudonyms = ActivePseudonyms(pseudonym, pseudonym)
 
-        `when`(DAO.getActivePseudonymOfMsisdnForSubscriber(arg.capture()))
+        `when`(DAO.getActivePseudonymForSubscriber(arg.capture()))
                 .thenReturn(Either.right(activePseudonyms))
 
-        val responseJsonString = jacksonObjectMapper().writeValueAsString(activePseudonyms)
+        val responseJsonString = objectMapper.writeValueAsString(activePseudonyms)
 
         val resp = RULE.target("/subscription/activePseudonyms")
                 .request()
@@ -104,7 +82,7 @@ class SubscriptionResourceTest {
         @JvmField
         @ClassRule
         val RULE: ResourceTestRule = ResourceTestRule.builder()
-                .setMapper(jacksonObjectMapper())
+                .setMapper(objectMapper)
                 .addResource(AuthDynamicFeature(
                         OAuthCredentialAuthFilter.Builder<AccessTokenPrincipal>()
                                 .setAuthenticator(AUTHENTICATOR)
@@ -112,7 +90,6 @@ class SubscriptionResourceTest {
                                 .buildAuthFilter()))
                 .addResource(AuthValueFactoryProvider.Binder(AccessTokenPrincipal::class.java))
                 .addResource(SubscriptionResource(DAO))
-                .setTestContainerFactory(GrizzlyWebTestContainerFactory())
                 .build()
     }
 }

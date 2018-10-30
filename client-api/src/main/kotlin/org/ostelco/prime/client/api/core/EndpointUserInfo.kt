@@ -1,8 +1,8 @@
 package org.ostelco.prime.client.api.core
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.jsonmapper.objectMapper
 import java.util.*
 
 
@@ -25,9 +25,7 @@ class EndpointUserInfo(enc: String) {
 
     private val logger by getLogger()
 
-    private val mapper = jacksonObjectMapper()
-
-    private val obj: JsonNode = mapper.readTree(decode(enc))
+    private val obj: JsonNode = objectMapper.readTree(decode(enc))
     private fun decode(enc: String): String = String(Base64.getDecoder().decode(enc))
 
     val issuer: String?

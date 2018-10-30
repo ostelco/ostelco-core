@@ -1,14 +1,12 @@
 package org.ostelco.prime.client.api.resources
 
 import arrow.core.Either
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import io.dropwizard.auth.AuthDynamicFeature
 import io.dropwizard.auth.AuthValueFactoryProvider
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter
 import io.dropwizard.testing.junit.ResourceTestRule
 import org.assertj.core.api.Assertions.assertThat
-import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.ClassRule
@@ -17,10 +15,11 @@ import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.ostelco.prime.apierror.ApiError
-import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
-import org.ostelco.prime.client.api.auth.OAuthAuthenticator
+import org.ostelco.prime.auth.AccessTokenPrincipal
+import org.ostelco.prime.auth.OAuthAuthenticator
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
+import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
@@ -121,7 +120,7 @@ class ProductsResourceTest {
         @JvmField
         @ClassRule
         val RULE = ResourceTestRule.builder()
-                .setMapper(jacksonObjectMapper())
+                .setMapper(objectMapper)
                 .addResource(AuthDynamicFeature(
                         OAuthCredentialAuthFilter.Builder<AccessTokenPrincipal>()
                                 .setAuthenticator(AUTHENTICATOR)
@@ -129,7 +128,6 @@ class ProductsResourceTest {
                                 .buildAuthFilter()))
                 .addResource(AuthValueFactoryProvider.Binder(AccessTokenPrincipal::class.java))
                 .addResource(ProductsResource(DAO))
-                .setTestContainerFactory(GrizzlyWebTestContainerFactory())
                 .build()
     }
 }

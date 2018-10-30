@@ -14,7 +14,6 @@ import org.ostelco.prime.apierror.NotFoundError
 import org.ostelco.prime.client.api.metrics.updateMetricsOnNewSubscriber
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.Person
-import org.ostelco.prime.client.api.model.SubscriptionStatus
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.ActivePseudonyms
 import org.ostelco.prime.model.ApplicationToken
@@ -33,8 +32,6 @@ import org.ostelco.prime.paymentprocessor.core.SourceInfo
 import org.ostelco.prime.pseudonymizer.PseudonymizerService
 import org.ostelco.prime.storage.ClientDataSource
 import org.ostelco.prime.storage.StoreError
-import java.time.Instant
-import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -122,23 +119,6 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         return getProfile(subscriberId)
     }
 
-    override fun getSubscriptionStatus(subscriberId: String): Either<ApiError, SubscriptionStatus> {
-        return try {
-            storage.getBundles(subscriberId)
-                    .map { bundles -> bundles.firstOrNull()?.balance ?: 0 }
-                    .flatMap { balance ->
-                        storage.getPurchaseRecords(subscriberId)
-                                .map { purchaseRecords -> SubscriptionStatus(balance, purchaseRecords.toList()) }
-                    }
-                    .mapLeft {
-                        mapStorageErrorToApiError("Failed to fetch subscription status.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTION_STATUS, it)
-                    }
-        } catch (e: Exception) {
-            logger.error("Failed to get balance for subscriber $subscriberId", e)
-            return Either.left(BadGatewayError("Failed to get balance", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTION_STATUS))
-        }
-    }
-
     override fun getSubscriptions(subscriberId: String): Either<ApiError, Collection<Subscription>> {
         try {
             return storage.getSubscriptions(subscriberId).mapLeft {
@@ -161,10 +141,12 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         }
     }
 
-    override fun getActivePseudonymOfMsisdnForSubscriber(subscriberId: String): Either<ApiError, ActivePseudonyms> {
-        return storage.getMsisdn(subscriberId)
-                .mapLeft { NotFoundError("Failed to get pseudonym for user.", ApiErrorCode.FAILED_TO_FETCH_PSEUDONYM_FOR_SUBSCRIBER, it) }
-                .map { msisdn -> pseudonymizer.getActivePseudonymsForMsisdn(msisdn) }
+    override fun getActivePseudonymForSubscriber(subscriberId: String): Either<ApiError, ActivePseudonyms> {
+        return try {
+            Either.right(pseudonymizer.getActivePseudonymsForSubscriberId(subscriberId))
+        } catch (e: Exception) {
+            Either.left(NotFoundError("Failed to get pseudonym for user.", ApiErrorCode.FAILED_TO_FETCH_PSEUDONYM_FOR_SUBSCRIBER))
+        }
     }
 
     override fun getPurchaseHistory(subscriberId: String): Either<ApiError, Collection<PurchaseRecord>> {
@@ -205,38 +187,6 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
         return storage.getProduct(subscriptionId, sku)
                 .fold({ Either.left(NotFoundError("Failed to get products for sku $sku", ApiErrorCode.FAILED_TO_FETCH_PRODUCT_INFORMATION)) },
                         { Either.right(it) })
-    }
-
-    @Deprecated("use purchaseProduct", ReplaceWith("purchaseProduct"))
-    override fun purchaseProductWithoutPayment(subscriberId: String, sku: String): Either<ApiError, Unit> {
-        return getProduct(subscriberId, sku)
-                // If we can't find the product, return not-found
-                .mapLeft { NotFoundError("Product unavailable", ApiErrorCode.FAILED_TO_PURCHASE_PRODUCT) }
-                .flatMap { product ->
-                    val purchaseRecord = PurchaseRecord(
-                            id = UUID.randomUUID().toString(),
-                            product = product,
-                            timestamp = Instant.now().toEpochMilli(),
-                            msisdn = "")
-                    // Create purchase record
-                    storage.addPurchaseRecord(subscriberId, purchaseRecord)
-                            .mapLeft { storeError ->
-                                logger.error("failed to save purchase record, for subscriberId $subscriberId, sku $sku")
-                                BadGatewayError("Failed to store purchase record", ApiErrorCode.FAILED_TO_PURCHASE_PRODUCT, storeError)
-                            }
-                            // Notify OCS
-                            .flatMap {
-                                analyticsReporter.reportPurchaseInfo(
-                                        purchaseRecord = purchaseRecord,
-                                        subscriberId = subscriberId,
-                                        status = "success")
-                                Either.right(Unit)
-                            }
-                }
-                .flatMap {
-                    ocsSubscriberService.topup(subscriberId, sku)
-                            .mapLeft { errorReason -> BadGatewayError(description = errorReason, errorCode = ApiErrorCode.FAILED_TO_PURCHASE_PRODUCT) }
-                }
     }
 
     override fun purchaseProduct(

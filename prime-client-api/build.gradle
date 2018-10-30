@@ -1,7 +1,7 @@
 plugins {
   id "org.jetbrains.kotlin.jvm" version "1.2.71"
   id 'java-library'
-  id 'org.hidetake.swagger.generator' version '2.13.0'
+  id 'org.hidetake.swagger.generator' version '2.14.0'
   id "idea"
 }
 
@@ -24,7 +24,7 @@ sourceSets.main.resources.srcDir "${swaggerSources.'java-client'.code.outputDir}
 // if they ever fix kotlin
 //swaggerSources {
 //  'kotlin-client' {
-//    inputFile = file("${projectDir}/../prime/infra/prod/prime-client-api.yaml")
+//    inputFile = file("${projectDir}/../prime/infra/dev/prime-client-api.yaml")
 //    code {
 //      language = 'kotlin'
 //      configFile = file("${projectDir}/config.json")

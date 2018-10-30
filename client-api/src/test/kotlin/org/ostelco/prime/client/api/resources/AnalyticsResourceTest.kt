@@ -2,24 +2,23 @@ package org.ostelco.prime.client.api.resources
 
 import arrow.core.Either
 import com.fasterxml.jackson.core.JsonParseException
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import io.dropwizard.auth.AuthDynamicFeature
 import io.dropwizard.auth.AuthValueFactoryProvider
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter
 import io.dropwizard.testing.junit.ResourceTestRule
 import org.assertj.core.api.Assertions.assertThat
-import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory
 import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Test
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
-import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
-import org.ostelco.prime.client.api.auth.OAuthAuthenticator
+import org.ostelco.prime.auth.AccessTokenPrincipal
+import org.ostelco.prime.auth.OAuthAuthenticator
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
+import org.ostelco.prime.jsonmapper.objectMapper
 import java.io.IOException
 import java.util.*
 import javax.ws.rs.client.Entity
@@ -31,8 +30,6 @@ import javax.ws.rs.core.Response
  *
  */
 class AnalyticsResourceTest {
-
-    private val MAPPER = jacksonObjectMapper()
 
     private val email = "mw@internet.org"
 
@@ -79,7 +76,7 @@ class AnalyticsResourceTest {
     /* https://stackoverflow.com/questions/10226897/how-to-validate-json-with-jackson-json */
     private fun isValidJson(json: String): Boolean {
         try {
-            val parser = MAPPER.factory
+            val parser = objectMapper.factory
                     .createParser(json)
             while (parser.nextToken() != null) {
             }
@@ -108,7 +105,6 @@ class AnalyticsResourceTest {
                                 .buildAuthFilter()))
                 .addResource(AuthValueFactoryProvider.Binder(AccessTokenPrincipal::class.java))
                 .addResource(AnalyticsResource(DAO))
-                .setTestContainerFactory(GrizzlyWebTestContainerFactory())
                 .build()
     }
 }
