@@ -10,6 +10,7 @@ import org.ostelco.at.common.randomInt
 import org.ostelco.prime.client.model.ActivePseudonyms
 import org.ostelco.prime.client.model.ApplicationToken
 import org.ostelco.prime.client.model.Bundle
+import org.ostelco.prime.client.model.BundleList
 import org.ostelco.prime.client.model.Consent
 import org.ostelco.prime.client.model.PaymentSource
 import org.ostelco.prime.client.model.PaymentSourceList
@@ -17,9 +18,11 @@ import org.ostelco.prime.client.model.Person
 import org.ostelco.prime.client.model.Price
 import org.ostelco.prime.client.model.Product
 import org.ostelco.prime.client.model.Profile
+import org.ostelco.prime.client.model.PurchaseRecord
 import org.ostelco.prime.client.model.PurchaseRecordList
 import org.ostelco.prime.client.model.Subscription
-import org.ostelco.prime.client.model.SubscriptionStatus
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.util.*
 import kotlin.test.assertEquals
@@ -29,7 +32,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-
 
 class ProfileTest {
 
@@ -162,22 +164,22 @@ class GetSubscriptions {
     }
 }
 
-class GetSubscriptionStatusTest {
+class BundlesAndPurchasesTest {
 
     private val logger by getLogger()
 
     @Test
-    fun `jersey test - GET subscription status`() {
+    fun `jersey test - GET bundles`() {
 
         val email = "balance-${randomInt()}@test.com"
         createProfile(name = "Test Balance User", email = email)
 
-        val subscriptionStatus: SubscriptionStatus = get {
-            path = "/subscription/status"
+        val bundles: BundleList = get {
+            path = "/bundles"
             subscriberId = email
         }
 
-        logger.info("Balance: ${subscriptionStatus.remaining}")
+        logger.info("Balance: ${bundles[0].balance}")
 
         val freeProduct = Product()
                 .sku("100MB_FREE_ON_JOINING")
@@ -188,7 +190,10 @@ class GetSubscriptionStatusTest {
                 .properties(mapOf("noOfBytes" to "100_000_000"))
                 .presentation(emptyMap<String, String>())
 
-        val purchaseRecords = subscriptionStatus.purchaseRecords
+        val purchaseRecords:PurchaseRecordList = get {
+            path = "/purchases"
+            subscriberId = email
+        }
         purchaseRecords.sortBy { it.timestamp }
 
         assertEquals(listOf(freeProduct), purchaseRecords.map { it.product }, "Incorrect first 'Product' in purchase record")
@@ -329,7 +334,6 @@ class SourceTest {
         }
     }
 
-
     @Test
     fun `jersey test - PUT source set default`() {
 
@@ -393,7 +397,7 @@ class SourceTest {
             val createdIds = listOf(getCardIdForTokenFromStripe(createTokenWithStripe(email)),
                     createSourceWithStripe(email))
 
-            val deletedIds = createdIds.map { it -> removeSourceWithStripe(email, it)  }
+            val deletedIds = createdIds.map { it -> removeSourceWithStripe(email, it) }
 
             assert(createdIds.containsAll(deletedIds.toSet())) {
                 "Failed to delete one or more sources: ${createdIds.toSet() - deletedIds.toSet()}"
@@ -405,14 +409,14 @@ class SourceTest {
 
     // Helpers for source handling with Stripe.
 
-    private fun getCardIdForTokenFromStripe(id: String) : String {
+    private fun getCardIdForTokenFromStripe(id: String): String {
         if (id.startsWith("tok_")) {
             return StripePayment.getCardIdForTokenId(id)
         }
         return id
     }
 
-    private fun createTokenWithStripe(email: String) : String {
+    private fun createTokenWithStripe(email: String): String {
         val tokenId = StripePayment.createPaymentTokenId()
 
         post<PaymentSource> {
@@ -424,7 +428,7 @@ class SourceTest {
         return tokenId
     }
 
-    private fun createSourceWithStripe(email: String) : String {
+    private fun createSourceWithStripe(email: String): String {
         val sourceId = StripePayment.createPaymentSourceId()
 
         post<PaymentSource> {
@@ -436,7 +440,7 @@ class SourceTest {
         return sourceId
     }
 
-    private fun removeSourceWithStripe(email: String, sourceId: String) : String {
+    private fun removeSourceWithStripe(email: String, sourceId: String): String {
         val removedSource = delete<PaymentSource> {
             path = "/paymentSources"
             subscriberId = email
@@ -545,7 +549,6 @@ class PurchaseTest {
         }
     }
 
-
     @Test
     fun `jersey test - POST products purchase add source then pay with it`() {
 
@@ -563,11 +566,11 @@ class PurchaseTest {
 
             assertNotNull(paymentSource.id, message = "Failed to create payment source")
 
-            val subscriptionStatusBefore: SubscriptionStatus = get {
-                path = "/subscription/status"
+            val bundlesBefore: BundleList = get {
+                path = "/bundles"
                 subscriberId = email
             }
-            val balanceBefore = subscriptionStatusBefore.remaining
+            val balanceBefore = bundlesBefore[0].balance
 
             val productSku = "1GB_249NOK"
 
@@ -579,11 +582,11 @@ class PurchaseTest {
 
             Thread.sleep(100) // wait for 100 ms for balance to be updated in db
 
-            val subscriptionStatusAfter: SubscriptionStatus = get {
-                path = "/subscription/status"
+            val bundlesAfter: BundleList = get {
+                path = "/bundles"
                 subscriberId = email
             }
-            val balanceAfter = subscriptionStatusAfter.remaining
+            val balanceAfter = bundlesAfter[0].balance
 
             assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
 
@@ -599,45 +602,6 @@ class PurchaseTest {
         } finally {
             StripePayment.deleteCustomer(email = email)
         }
-    }
-
-
-    @Test
-    fun `jersey test - POST products purchase without payment`() {
-
-        val email = "purchase-legacy-${randomInt()}@test.com"
-        createProfile(name = "Test Legacy Purchase User", email = email)
-
-        val balanceBefore = get<List<Bundle>> {
-            path = "/bundles"
-            subscriberId = email
-        }.first().balance
-
-        val productSku = "1GB_249NOK"
-
-        post<String> {
-            path = "/products/$productSku"
-            subscriberId = email
-        }
-
-        Thread.sleep(100) // wait for 100 ms for balance to be updated in db
-
-        val balanceAfter = get<List<Bundle>> {
-            path = "/bundles"
-            subscriberId = email
-        }.first().balance
-
-        assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
-
-        val purchaseRecords: PurchaseRecordList = get {
-            path = "/purchases"
-            subscriberId = email
-        }
-
-        purchaseRecords.sortBy { it.timestamp }
-
-        assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
-        assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
     }
 }
 
@@ -791,12 +755,17 @@ class ReferralTest {
         }
         assertEquals("Test Referral First User", referredByForSecond.name)
 
-        val secondSubscriptionStatus: SubscriptionStatus = get {
-            path = "/subscription/status"
+        val secondSubscriberBundles: BundleList = get {
+            path = "/bundles"
             subscriberId = secondEmail
         }
 
-        assertEquals(1_000_000_000, secondSubscriptionStatus.remaining)
+        assertEquals(1_000_000_000, secondSubscriberBundles[0].balance)
+
+        val secondSubscriberPurchases: PurchaseRecordList = get {
+            path = "/purchases"
+            subscriberId = secondEmail
+        }
 
         val freeProductForReferred = Product()
                 .sku("1GB_FREE_ON_REFERRED")
@@ -807,6 +776,56 @@ class ReferralTest {
                 .properties(mapOf("noOfBytes" to "1_000_000_000"))
                 .presentation(emptyMap<String, String>())
 
-        assertEquals(listOf(freeProductForReferred), secondSubscriptionStatus.purchaseRecords.map { it.product })
+        assertEquals(listOf(freeProductForReferred), secondSubscriberPurchases.map { it.product })
+    }
+}
+
+class GraphQlTests {
+
+    data class Subscriber(
+            val profile: Profile? = null,
+            val bundles: Collection<Bundle>? = null,
+            val subscriptions: Collection<Subscription>? = null,
+            val products: Collection<Product>? = null,
+            val purchases: Collection<PurchaseRecord>? = null)
+
+    data class Data(var subscriber: Subscriber? = null)
+
+    data class GraphQlResponse(var data: Data? = null)
+
+    @Test
+    fun `jersey test - POST graphql`() {
+
+        val email = "graphql-${randomInt()}@test.com"
+        createProfile("Test GraphQL Endpoint", email)
+
+        val msisdn = createSubscription(email)
+
+        val subscriber = post<GraphQlResponse>(expectedResultCode = 200) {
+            path = "/graphql"
+            subscriberId = email
+            body = mapOf("query" to """{ subscriber { profile { email } subscriptions { msisdn } } }""")
+        }.data?.subscriber
+
+        assertEquals(expected = email, actual = subscriber?.profile?.email)
+        assertEquals(expected = msisdn, actual = subscriber?.subscriptions?.first()?.msisdn )
+    }
+
+    @Test
+    fun `jersey test - GET graphql`() {
+
+        val email = "graphql-${randomInt()}@test.com"
+        createProfile("Test GraphQL Endpoint", email)
+
+        val msisdn = createSubscription(email)
+
+        val subscriber = get<GraphQlResponse> {
+            path = "/graphql"
+            subscriberId = email
+            queryParams = mapOf("query" to URLEncoder.encode("""{subscriber{profile{email}subscriptions{msisdn}}}""", StandardCharsets.UTF_8.name()))
+        }.data?.subscriber
+
+        assertEquals(expected = email, actual = subscriber?.profile?.email)
+        assertEquals(expected = msisdn, actual = subscriber?.subscriptions?.first()?.msisdn )
     }
 }

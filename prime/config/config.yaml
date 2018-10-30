@@ -1,5 +1,9 @@
 modules:
 - type: jersey
+  config:
+    authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
+    jerseyClient:
+      timeout: 2s
 - type: slack
   config:
     notifications:
@@ -32,15 +36,12 @@ modules:
   config:
     namespace: ${DATASTORE_NAMESPACE:-""}
 - type: api
-  config:
-    authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
-    jerseyClient:
-      timeout: 2s
 - type: stripe-payment-processor
 - type: firebase-app-notifier
   config:
     configFile: /secret/pantel-prod.json
 - type: admin
+- type: graphql
 
 server:
   applicationConnectors:

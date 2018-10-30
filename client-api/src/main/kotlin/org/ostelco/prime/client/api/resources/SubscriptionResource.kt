@@ -1,12 +1,13 @@
 package org.ostelco.prime.client.api.resources
 
 import io.dropwizard.auth.Auth
-import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
+import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.jsonmapper.asJson
 import javax.ws.rs.GET
 import javax.ws.rs.Path
 import javax.ws.rs.Produces
+import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
 /**
@@ -14,28 +15,13 @@ import javax.ws.rs.core.Response
  *
  */
 
+// TODO move this to appropriate resource
 @Path("/subscription")
-@Deprecated("use SubscriptionsResource and/or BundlesResource", ReplaceWith("SubscriptionsResource", "org.ostelco.prime.client.api.resources.SubscriptionsResource"))
 class SubscriptionResource(private val dao: SubscriberDAO) {
 
     @GET
-    @Path("status")
-    @Produces("application/json")
-    fun getSubscriptionStatus(@Auth token: AccessTokenPrincipal?): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-
-        return dao.getSubscriptionStatus(token.name).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.OK).entity(asJson(it)) })
-                .build()
-    }
-
-    @GET
     @Path("activePseudonyms")
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     fun getActivePseudonyms(@Auth token: AccessTokenPrincipal?): Response {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
@@ -53,7 +39,7 @@ class SubscriptionResource(private val dao: SubscriberDAO) {
 class SubscriptionsResource(private val dao: SubscriberDAO) {
 
     @GET
-    @Produces("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
     fun getSubscription(@Auth token: AccessTokenPrincipal?): Response {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)

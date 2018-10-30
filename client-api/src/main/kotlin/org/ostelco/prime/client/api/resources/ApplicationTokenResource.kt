@@ -1,7 +1,7 @@
 package org.ostelco.prime.client.api.resources
 
 import io.dropwizard.auth.Auth
-import org.ostelco.prime.client.api.auth.AccessTokenPrincipal
+import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.model.ApplicationToken
@@ -10,6 +10,7 @@ import javax.ws.rs.Consumes
 import javax.ws.rs.POST
 import javax.ws.rs.Path
 import javax.ws.rs.Produces
+import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
 /**
@@ -20,8 +21,8 @@ import javax.ws.rs.core.Response
 class ApplicationTokenResource(private val dao: SubscriberDAO) {
 
     @POST
-    @Produces("application/json")
-    @Consumes("application/json")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     fun storeApplicationToken(@Auth authToken: AccessTokenPrincipal?,
                               @NotNull applicationToken: ApplicationToken): Response {
         if (authToken == null) {

@@ -18,7 +18,7 @@ sourceSets {
   }
 }
 
-version = "1.19.1"
+version = "1.20.0"
 
 repositories {
   maven {
@@ -36,6 +36,7 @@ dependencies {
   runtimeOnly project(':neo4j-store')
   runtimeOnly project(':pseudonym-server')
   runtimeOnly project(':client-api')
+  runtimeOnly project(':graphql')
   runtimeOnly project(':admin-api')
   runtimeOnly project(':app-notifier')
   runtimeOnly project(':payment-processor')

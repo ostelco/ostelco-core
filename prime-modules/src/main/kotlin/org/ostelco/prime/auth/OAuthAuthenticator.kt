@@ -1,10 +1,9 @@
-package org.ostelco.prime.client.api.auth
+package org.ostelco.prime.auth
 
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.JsonNode
 import io.dropwizard.auth.AuthenticationException
 import io.dropwizard.auth.Authenticator
-import org.ostelco.prime.client.api.core.UserInfo
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.objectMapper
 import java.io.IOException
@@ -104,7 +103,7 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
        Throws 'illegalargumentexception' exception on error. */
     private fun getClaims(token: String): String {
         if (token.codePoints().filter { ch -> ch == '.'.toInt() }.count() != 2L) {
-            throw IllegalArgumentException("The provided token is an Invalid JWT token")
+            throw java.lang.IllegalArgumentException("The provided token is an Invalid JWT token")
         }
         val parts = token.split("\\.".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
 

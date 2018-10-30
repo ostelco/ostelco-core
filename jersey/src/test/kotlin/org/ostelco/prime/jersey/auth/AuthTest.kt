@@ -1,4 +1,4 @@
-package org.ostelco.prime.client.api.auth
+package org.ostelco.prime.jersey.auth
 
 import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.testing.ConfigOverride
@@ -10,8 +10,8 @@ import org.glassfish.jersey.client.ClientProperties
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
-import org.ostelco.prime.client.api.auth.helpers.TestApp
-import org.ostelco.prime.client.api.util.AccessToken
+import org.ostelco.prime.jersey.auth.helpers.AccessToken
+import org.ostelco.prime.jersey.auth.helpers.TestApp
 import javax.ws.rs.client.Client
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
@@ -20,7 +20,7 @@ import javax.ws.rs.core.Response
  * Tests OAuth2 callback to '.../userinfo" endpoint.
  *
  */
-class GetUserInfoTest {
+class AuthTest {
 
     private val email = "boaty@internet.org"
 
@@ -28,7 +28,7 @@ class GetUserInfoTest {
             "http://localhost:${RULE.localPort}/userinfo")
 
     @Test
-    fun getProfileNotFound() {
+    fun getNotFound() {
 
 
         // XXX Race condition makes test fail sometimes.
@@ -39,7 +39,7 @@ class GetUserInfoTest {
 
 
         val response = client.target(
-                "http://localhost:${RULE.localPort}/profile")
+                "http://localhost:${RULE.localPort}/foo")
                 .request()
                 .property(ClientProperties.CONNECT_TIMEOUT, 30000)
                 .property(ClientProperties.READ_TIMEOUT, 30000)
@@ -70,7 +70,7 @@ class GetUserInfoTest {
         }
 
         if (counter == 0) {
-            fail<Nothing>("Couldn't connect to RULE server")
+            fail("Couldn't connect to RULE server")
         }
     }
 
