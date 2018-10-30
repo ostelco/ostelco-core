@@ -188,28 +188,6 @@ paths:
           description: "No products found for the user."
       security:
         - auth0_jwt: []
-  "/products/{sku}":
-    post:
-      description: "Buy the product specified in sku parameter."
-      produces:
-        - application/json
-        - text/plain
-      operationId: "buyProductDeprecated"
-      responses:
-        201:
-          description: "Successfully purchased the product."
-          schema:
-            $ref: '#/definitions/Product'
-        404:
-          description: "Product not found."
-      security:
-        - auth0_jwt: []
-      parameters:
-      - name: sku
-        in: path
-        description: SKU to be purchased
-        required: true
-        type: string
   "/products/{sku}/purchase":
     post:
       description: "Buy the product specified in sku parameter."
@@ -286,21 +264,6 @@ paths:
             $ref: '#/definitions/BundleList'
         404:
           description: "No bundle found for this user."
-      security:
-        - auth0_jwt: []
-  "/subscription/status":
-    get:
-      description: "Get subscription status for the user (identified by bearer token)."
-      produces:
-        - application/json
-      operationId: "getSubscriptionStatus"
-      responses:
-        200:
-          description: "Get the subscription status for this user."
-          schema:
-            $ref: '#/definitions/SubscriptionStatus'
-        404:
-          description: "No subscription status found for this user."
       security:
         - auth0_jwt: []
   "/subscription/activePseudonyms":
@@ -457,18 +420,6 @@ definitions:
         description: "Balance units in this bundle"
         type: integer
         format: int64
-  SubscriptionStatus:
-    type: object
-    properties:
-      remaining:
-        description: "Remaining data"
-        type: integer
-        format: int64
-      purchaseRecords:
-        description: "List of Purchases"
-        type: array
-        items:
-          $ref: '#/definitions/PurchaseRecord'
   PurchaseRecordList:
     type: array
     items:

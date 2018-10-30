@@ -36,26 +36,6 @@ class ProductsResource(private val dao: SubscriberDAO) {
                 .build()
     }
 
-    @Deprecated("use purchaseProduct")
-    @POST
-    @Path("{sku}")
-    @Produces(MediaType.APPLICATION_JSON)
-    fun purchaseProductWithoutPayment(@Auth token: AccessTokenPrincipal?,
-                                      @NotNull
-                                      @PathParam("sku")
-                                      sku: String): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-
-        return dao.purchaseProductWithoutPayment(token.name, sku)
-                .fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                        { productInfo -> Response.status(CREATED).entity(productInfo) }
-                ).build()
-    }
-
     @POST
     @Path("{sku}/purchase")
     @Produces(MediaType.APPLICATION_JSON)

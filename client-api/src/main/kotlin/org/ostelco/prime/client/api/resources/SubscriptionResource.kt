@@ -15,24 +15,9 @@ import javax.ws.rs.core.Response
  *
  */
 
+// TODO move this to appropriate resource
 @Path("/subscription")
-@Deprecated("use SubscriptionsResource and/or BundlesResource", ReplaceWith("SubscriptionsResource", "org.ostelco.prime.client.api.resources.SubscriptionsResource"))
 class SubscriptionResource(private val dao: SubscriberDAO) {
-
-    @GET
-    @Path("status")
-    @Produces(MediaType.APPLICATION_JSON)
-    fun getSubscriptionStatus(@Auth token: AccessTokenPrincipal?): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-
-        return dao.getSubscriptionStatus(token.name).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.OK).entity(asJson(it)) })
-                .build()
-    }
 
     @GET
     @Path("activePseudonyms")
