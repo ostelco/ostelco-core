@@ -23,6 +23,7 @@ import javax.ws.rs.core.Response
  */
 
 private const val DEFAULT_USER_INFO_ENDPOINT = "https://ostelco.eu.auth0.com/userinfo"
+private const val NAMESPACE = "https://ostelco"
 
 class OAuthAuthenticator(private val client: Client) : Authenticator<String, AccessTokenPrincipal> {
 
@@ -30,14 +31,21 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
 
     override fun authenticate(accessToken: String): Optional<AccessTokenPrincipal> {
 
-        var userInfoEndpoint: String
+        var userInfoEndpoint = DEFAULT_USER_INFO_ENDPOINT
 
         try {
-            val claims = decodeClaims(getClaims(accessToken))
-            userInfoEndpoint = getUserInfoEndpointFromAudience(claims)
+            val claims = getClaims(accessToken)
+            if (claims != null) {
+
+                val email =  getEmail(claims)
+                if(email != null) {
+                    return Optional.of(AccessTokenPrincipal(email))
+                }
+
+                userInfoEndpoint = getUserInfoEndpointFromAudience(claims)
+            }
         } catch (e: Exception) {
             logger.error("No audience field in the 'access-token' claims part", e)
-            userInfoEndpoint = DEFAULT_USER_INFO_ENDPOINT
         }
 
         val userInfo = getUserInfo(userInfoEndpoint, accessToken)
@@ -76,9 +84,9 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
         return userInfo
     }
 
-    private fun getUserInfoEndpointFromAudience(claims: JsonNode?): String {
+    private fun getUserInfoEndpointFromAudience(claims: JsonNode): String {
 
-        if (claims?.has("aud") == true) {
+        if (claims.has("aud")) {
             val audienceNode = claims.get("aud")
 
             if (audienceNode.isTextual) {
@@ -101,7 +109,7 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
 
     /* Extracts 'claims' part from JWT token.
        Throws 'illegalargumentexception' exception on error. */
-    private fun getClaims(token: String): String {
+    private fun getClaims(token: String): JsonNode? {
         if (token.codePoints().filter { ch -> ch == '.'.toInt() }.count() != 2L) {
             throw java.lang.IllegalArgumentException("The provided token is an Invalid JWT token")
         }
@@ -110,19 +118,30 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
         return String(Base64.getDecoder().decode(parts[1]
                 .replace("-", "+")
                 .replace("_", "/")))
+                .let(::decodeClaims)
     }
 
     /* Decodes the claims part of a JWT token.
        Returns null on error. */
     private fun decodeClaims(claims: String): JsonNode? {
-        var obj: JsonNode? = null
         try {
-            obj = objectMapper.readTree(claims)
+            return objectMapper.readTree(claims)
         } catch (e: JsonParseException) {
             logger.error("Parsing of the provided json doc {} failed: {}", claims, e)
         } catch (e: IOException) {
             logger.error("Unexpected error when parsing the json doc {}: {}", claims, e)
         }
-        return obj
+        return null
+    }
+
+    private fun getEmail(claims: JsonNode): String? {
+
+        if (claims.has("$NAMESPACE/email")) {
+            return claims.get("$NAMESPACE/email").textValue()
+        } else {
+            logger.error("Missing '{}/email' field in claims part of JWT token {}",
+                    NAMESPACE, claims)
+            return null
+        }
     }
 }
