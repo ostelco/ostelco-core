@@ -4,7 +4,7 @@ import org.neo4j.driver.v1.AccessMode
 import java.nio.file.Files
 import java.nio.file.Paths
 
-fun main(args: Array<String>) {
+fun main() {
     // neo4jExporterToCypherFile()
     cypherFileToNeo4jImporter()
 }
