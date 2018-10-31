@@ -16,9 +16,7 @@ import org.slf4j.LoggerFactory
 /**
  * Entry point for running the authentiation server application
  */
-fun main(args: Array<String>) {
-    AuthServerApplication().run(*args)
-}
+fun main(args: Array<String>) = AuthServerApplication().run(*args)
 
 /**
  * A Dropwizard application for running an authentication service that

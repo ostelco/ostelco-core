@@ -580,7 +580,7 @@ definitions:
         type: object
 securityDefinitions:
   auth0_jwt:
-    authorizationUrl: "https://ostelco.eu.auth0.com/authorize"
+    authorizationUrl: ""
     flow: "implicit"
     type: "oauth2"
     x-google-issuer: "https://ostelco.eu.auth0.com/"

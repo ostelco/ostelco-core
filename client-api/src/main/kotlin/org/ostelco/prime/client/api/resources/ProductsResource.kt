@@ -46,13 +46,14 @@ class ProductsResource(private val dao: SubscriberDAO) {
                         @QueryParam("sourceId")
                         sourceId: String?,
                         @QueryParam("saveCard")
-                        saveCard: Boolean = false): Response {    /* 'false' is default. */
+                        saveCard: Boolean?): Response {    /* 'false' is default. */
+
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
 
-        return dao.purchaseProduct(token.name, sku, sourceId, saveCard)
+        return dao.purchaseProduct(token.name, sku, sourceId, saveCard ?: false)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { productInfo -> Response.status(CREATED).entity(productInfo) }
