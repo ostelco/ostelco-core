@@ -1,4 +1,4 @@
-package org.ostelco.prime.client.api.auth
+package org.ostelco.prime.auth
 
 import java.security.Principal
 

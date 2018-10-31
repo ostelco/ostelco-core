@@ -16,7 +16,10 @@ import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Gauge
 import io.prometheus.client.Summary
 import io.prometheus.client.exporter.PushGateway
-import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import net.sourceforge.argparse4j.inf.Namespace
 import net.sourceforge.argparse4j.inf.Subparser
 import org.slf4j.Logger
@@ -64,9 +67,7 @@ import com.google.cloud.bigquery.Job as BQJob
 /**
  * Main entry point, invoke dropwizard application.
  */
-fun main(args: Array<String>) {
-    BqMetricsExtractorApplication().run(*args)
-}
+fun main(args: Array<String>) = BqMetricsExtractorApplication().run(*args)
 
 /**
  * Config of a single metric that will be extracted using a BigQuery

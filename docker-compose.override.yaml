@@ -100,7 +100,7 @@ services:
 
   neo4j:
     container_name: "neo4j"
-    image: neo4j:3.4.8
+    image: neo4j:3.4.9
     environment:
     - NEO4J_AUTH=none
     ports:

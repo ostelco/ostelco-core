@@ -1,5 +1,9 @@
 modules:
 - type: jersey
+  config:
+    authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
+    jerseyClient:
+      timeout: 3s
 - type: firebase
   config:
     configFile: config/pantel-prod.json
@@ -19,10 +23,6 @@ modules:
     lowBalanceThreshold: 0
 - type: pseudonymizer
 - type: api
-  config:
-    authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
-    jerseyClient:
-      timeout: 3s
 - type: stripe-payment-processor
 - type: firebase-app-notifier
   config:

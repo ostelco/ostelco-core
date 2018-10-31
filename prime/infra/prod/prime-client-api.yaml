@@ -188,28 +188,6 @@ paths:
           description: "No products found for the user."
       security:
         - auth0_jwt: []
-  "/products/{sku}":
-    post:
-      description: "Buy the product specified in sku parameter."
-      produces:
-        - application/json
-        - text/plain
-      operationId: "buyProductDeprecated"
-      responses:
-        201:
-          description: "Successfully purchased the product."
-          schema:
-            $ref: '#/definitions/Product'
-        404:
-          description: "Product not found."
-      security:
-        - auth0_jwt: []
-      parameters:
-      - name: sku
-        in: path
-        description: SKU to be purchased
-        required: true
-        type: string
   "/products/{sku}/purchase":
     post:
       description: "Buy the product specified in sku parameter."
@@ -286,21 +264,6 @@ paths:
             $ref: '#/definitions/BundleList'
         404:
           description: "No bundle found for this user."
-      security:
-        - auth0_jwt: []
-  "/subscription/status":
-    get:
-      description: "Get subscription status for the user (identified by bearer token)."
-      produces:
-        - application/json
-      operationId: "getSubscriptionStatus"
-      responses:
-        200:
-          description: "Get the subscription status for this user."
-          schema:
-            $ref: '#/definitions/SubscriptionStatus'
-        404:
-          description: "No subscription status found for this user."
       security:
         - auth0_jwt: []
   "/subscription/activePseudonyms":
@@ -385,6 +348,30 @@ paths:
         description: "Whether user accepted the consent (default = true)"
         required: false
         type: boolean
+  "/graphql":
+    post:
+      description: "GraphQL endpoint"
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      operationId: "graphql"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            type: object
+        404:
+          description: "Not found"
+      security:
+      - auth0_jwt: []
+      parameters:
+      - name: "request"
+        in: body
+        description: "GraphQL Request."
+        schema:
+          $ref: '#/definitions/GraphQLRequest'
+
 definitions:
   Profile:
     type: object
@@ -416,6 +403,9 @@ definitions:
       msisdn:
         description: "Mobile number for this subscription"
         type: string
+      alias:
+        description: "Human readable optional alias for this subscription"
+        type: string
   BundleList:
     type: array
     items:
@@ -430,18 +420,6 @@ definitions:
         description: "Balance units in this bundle"
         type: integer
         format: int64
-  SubscriptionStatus:
-    type: object
-    properties:
-      remaining:
-        description: "Remaining data"
-        type: integer
-        format: int64
-      purchaseRecords:
-        description: "List of Purchases"
-        type: array
-        items:
-          $ref: '#/definitions/PurchaseRecord'
   PurchaseRecordList:
     type: array
     items:
@@ -588,9 +566,21 @@ definitions:
     required:
       - current
       - next
+  GraphQLRequest:
+    type: object
+    properties:
+      query:
+        description: "GraphQL query."
+        type: string
+      operationName:
+        description: "GraphQL Operation Name."
+        type: string
+      variables:
+        description: "GraphQL query variables."
+        type: object
 securityDefinitions:
   auth0_jwt:
-    authorizationUrl: "https://ostelco.eu.auth0.com/authorize"
+    authorizationUrl: ""
     flow: "implicit"
     type: "oauth2"
     x-google-issuer: "https://ostelco.eu.auth0.com/"
