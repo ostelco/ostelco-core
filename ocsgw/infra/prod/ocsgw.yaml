@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ocsgw-tls-proxy
+  labels:
+    app: ocsgw-tls-proxy
+    tier: backend
+spec:
+  type: LoadBalancer
+  ports:
+  - name: ocsgw-loadbalancer
+    port: 3868
+    targetPort: 8084
+    protocol: TCP
+  selector:
+    app: ocsgw
+    tier: backend
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: ocsgw
+  labels:
+    app: ocsgw
+    tier: backend
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ocsgw
+        tier: backend
+    spec:
+      containers:
+      - name: tcp-test
+        image: eu.gcr.io/pantel-2decb/tcp-test:TLS_PROXY_VERSION
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3868
+      - name: ocsgw-tls-proxy
+        image: eu.gcr.io/pantel-2decb/tls-proxy:TLS_PROXY_VERSION
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8084
+#      - name: ocsgw
+#        image: eu.gcr.io/pantel-2decb/ocsgw:OCSGW_VERSION
+#        imagePullPolicy: Always
+#        ports:
+#        - containerPort: 3868

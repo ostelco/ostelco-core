@@ -6,7 +6,7 @@ echo "Starting TCP test"
 
 ifconfig
 
-tcpdump -i eth1 -w /pcap/trace_tcp.pcap &
+# tcpdump -i eth1 -w /pcap/trace_tcp.pcap &
 
 # nc -l -p 3868 > /pcap/receiveData.txt
 
