@@ -13,7 +13,7 @@ import javax.ws.rs.core.Response
 
 internal const val JWT_SIGNING_KEY = "jwt_secret"
 
-fun main(args: Array<String>) {
+fun main() {
     AuthProviderApp().run("server")
 }
 
