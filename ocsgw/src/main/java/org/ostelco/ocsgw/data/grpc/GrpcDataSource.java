@@ -185,8 +185,8 @@ public class GrpcDataSource implements DataSource {
                 .keepAliveTime(KEEP_ALIVE_TIME_IN_SECONDS, TimeUnit.SECONDS);
 
         final ManagedChannelBuilder channelBuilder =
-                Files.exists(Paths.get("/config/ocs.crt"))
-                        ? nettyChannelBuilder.sslContext(GrpcSslContexts.forClient().trustManager(new File("/config/ocs.crt")).build())
+                Files.exists(Paths.get("/cert/ocs.crt"))
+                        ? nettyChannelBuilder.sslContext(GrpcSslContexts.forClient().trustManager(new File("/cert/ocs.crt")).build())
                         : nettyChannelBuilder;
 
         final String serviceAccountFile = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");

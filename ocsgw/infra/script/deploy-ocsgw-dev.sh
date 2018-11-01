@@ -24,15 +24,15 @@ echo TAG_TLS_PROXY=${TAG_TLS_PROXY}
 echo TLS_PROXY_VERSION=${TLS_PROXY_VERSION}
 
 
-#gradle ocsgw:clean ocsgw:build
-#docker build -t eu.gcr.io/${PROJECT_ID}/ocsgw:${TAG_OCS} ocsgw
-#docker push eu.gcr.io/${PROJECT_ID}/ocsgw:${TAG_OCS}
+gradle ocsgw:clean ocsgw:build
+docker build -t eu.gcr.io/${PROJECT_ID}/ocsgw:${TAG_OCS} ocsgw
+docker push eu.gcr.io/${PROJECT_ID}/ocsgw:${TAG_OCS}
 
 docker build -t eu.gcr.io/${PROJECT_ID}/tls-proxy:${TAG_TLS_PROXY} tls-proxy
 docker push eu.gcr.io/${PROJECT_ID}/tls-proxy:${TAG_TLS_PROXY}
 
-docker build -t eu.gcr.io/${PROJECT_ID}/tcp-test:${TAG_TLS_PROXY} tls-proxy/test/tcp-container
-docker push eu.gcr.io/${PROJECT_ID}/tcp-test:${TAG_TLS_PROXY}
+#docker build -t eu.gcr.io/${PROJECT_ID}/tcp-test:${TAG_TLS_PROXY} tls-proxy/test/tcp-container
+#docker push eu.gcr.io/${PROJECT_ID}/tcp-test:${TAG_TLS_PROXY}
 
 echo "Deploying ocsgw and TLS proxy to GKE"
 
