@@ -4,7 +4,6 @@ import arrow.core.Either
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.Person
-import org.ostelco.prime.client.api.model.SubscriptionStatus
 import org.ostelco.prime.model.ActivePseudonyms
 import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Bundle
@@ -27,9 +26,6 @@ interface SubscriberDAO {
     fun createProfile(subscriberId: String, profile: Subscriber, referredBy: String?): Either<ApiError, Subscriber>
 
     fun updateProfile(subscriberId: String, profile: Subscriber): Either<ApiError, Subscriber>
-
-    @Deprecated("use getSubscriptions", ReplaceWith("getSubscriptions", "org.ostelco.prime.client.api.model.Subscription"))
-    fun getSubscriptionStatus(subscriberId: String): Either<ApiError, SubscriptionStatus>
 
     fun getSubscriptions(subscriberId: String): Either<ApiError, Collection<Subscription>>
 
@@ -67,6 +63,8 @@ interface SubscriberDAO {
 
     fun removeSource(subscriberId: String, sourceId: String): Either<ApiError, SourceInfo>
 
+    fun getActivePseudonymForSubscriber(subscriberId: String): Either<ApiError, ActivePseudonyms>
+
     companion object {
 
         /**
@@ -90,9 +88,4 @@ interface SubscriberDAO {
                     && !appToken.tokenType.isEmpty())
         }
     }
-
-    @Deprecated(message = "use purchaseProduct")
-    fun purchaseProductWithoutPayment(subscriberId: String, sku: String): Either<ApiError, Unit>
-
-    fun getActivePseudonymForSubscriber(subscriberId: String): Either<ApiError, ActivePseudonyms>
 }

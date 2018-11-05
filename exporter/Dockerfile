@@ -1,6 +1,6 @@
 FROM ubuntu:18.04
 
-MAINTAINER CSI "csi@telenordigital.com"
+LABEL maintainer="dev@redotter.sg"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         apt-utils \

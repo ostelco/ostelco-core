@@ -1,9 +1,10 @@
-FROM openjdk:11
+FROM openjdk:11.0.1-jdk
 
-MAINTAINER CSI "csi@telenordigital.com"
+LABEL maintainer="dev@redotter.sg"
 
 COPY script/start.sh /start.sh
 
+COPY config/subscriber.graphqls /config/
 COPY config/config.yaml /config/
 
 COPY build/libs/prime-uber.jar /prime.jar

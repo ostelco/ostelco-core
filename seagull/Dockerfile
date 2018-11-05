@@ -1,6 +1,6 @@
 FROM ubuntu:15.04
 
-MAINTAINER CSI "csi@telenordigital.com"
+LABEL maintainer="dev@redotter.sg"
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends build-essential curl git libglib2.0-dev ksh bison flex vim tmux net-tools \

@@ -8,9 +8,7 @@ import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 import org.dhatim.dropwizard.prometheus.PrometheusBundle
 
-fun main(args: Array<String>) {
-    PrimeApplication().run(*args)
-}
+fun main(args: Array<String>) = PrimeApplication().run(*args)
 
 class PrimeApplication : Application<PrimeConfiguration>() {
 
@@ -24,8 +22,5 @@ class PrimeApplication : Application<PrimeConfiguration>() {
 
     override fun run(
             primeConfiguration: PrimeConfiguration,
-            environment: Environment) {
-
-        primeConfiguration.modules.forEach { it.init(environment) }
-    }
+            environment: Environment) = primeConfiguration.modules.forEach { it.init(environment) }
 }

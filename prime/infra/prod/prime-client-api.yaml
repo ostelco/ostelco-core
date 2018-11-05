@@ -47,6 +47,12 @@ paths:
           description: "Successfully created the profile."
           schema:
               $ref: '#/definitions/Profile'
+        400:
+          description: "Incomplete profile"
+        403:
+          description: "Profile invalid or already created"
+        502:
+          description: "Failed to store profile"
       security:
         - auth0_jwt: []
     put:
@@ -67,8 +73,12 @@ paths:
           description: "Successfully updated the profile."
           schema:
               $ref: '#/definitions/Profile'
+        400:
+           description: "Incomplete profile"
         404:
           description: "Profile not found."
+        502:
+          description: "Failed to store profile"
       security:
         - auth0_jwt: []
   "/applicationtoken":
@@ -90,6 +100,8 @@ paths:
           description: "Successfully stored token."
           schema:
             $ref: '#/definitions/ApplicationToken'
+        400:
+          descripton: "Token malformed. Not able to store"
         404:
           description: "User not found."
         507:
@@ -109,6 +121,8 @@ paths:
             $ref: '#/definitions/PaymentSourceList'
         404:
           description: "No user found."
+        503:
+          description: "Service Unavailable"
       security:
         - auth0_jwt: []
     post:
@@ -127,8 +141,12 @@ paths:
           description: "Successfully added source to user"
           schema:
             $ref: '#/definitions/PaymentSource'
+        403:
+          description: "Invalid source"
         404:
           description: "User not found."
+        503:
+          description: "Service Unavailable"
       security:
       - auth0_jwt: []
     put:
@@ -147,8 +165,12 @@ paths:
           description: "Successfully set as default source to user"
           schema:
             $ref: '#/definitions/PaymentSource'
+        403:
+          description: "Invalid source"
         404:
           description: "User not found."
+        503:
+          description: "Service Unavailable"
       security:
       - auth0_jwt: []
     delete:
@@ -169,8 +191,12 @@ paths:
             $ref: '#/definitions/PaymentSource'
         400:
           description: "The source could not be removed"
+        403:
+          description: "Invalid source"
         404:
           description: "No such source for user"
+        503:
+          description: "Service Unavailable"
       security:
       - auth0_jwt: []
   "/products":
@@ -188,28 +214,6 @@ paths:
           description: "No products found for the user."
       security:
         - auth0_jwt: []
-  "/products/{sku}":
-    post:
-      description: "Buy the product specified in sku parameter."
-      produces:
-        - application/json
-        - text/plain
-      operationId: "buyProductDeprecated"
-      responses:
-        201:
-          description: "Successfully purchased the product."
-          schema:
-            $ref: '#/definitions/Product'
-        404:
-          description: "Product not found."
-      security:
-        - auth0_jwt: []
-      parameters:
-      - name: sku
-        in: path
-        description: SKU to be purchased
-        required: true
-        type: string
   "/products/{sku}/purchase":
     post:
       description: "Buy the product specified in sku parameter."
@@ -254,8 +258,12 @@ paths:
           description: "List of Purchase Records."
           schema:
             $ref: '#/definitions/PurchaseRecordList'
+        403:
+          description: "Not allowed to charge this source"
         404:
           description: "No Purchase Records found for the user."
+        503:
+          description: "Service Unavailable"
       security:
       - auth0_jwt: []
   "/subscriptions":
@@ -286,21 +294,6 @@ paths:
             $ref: '#/definitions/BundleList'
         404:
           description: "No bundle found for this user."
-      security:
-        - auth0_jwt: []
-  "/subscription/status":
-    get:
-      description: "Get subscription status for the user (identified by bearer token)."
-      produces:
-        - application/json
-      operationId: "getSubscriptionStatus"
-      responses:
-        200:
-          description: "Get the subscription status for this user."
-          schema:
-            $ref: '#/definitions/SubscriptionStatus'
-        404:
-          description: "No subscription status found for this user."
       security:
         - auth0_jwt: []
   "/subscription/activePseudonyms":
@@ -385,6 +378,30 @@ paths:
         description: "Whether user accepted the consent (default = true)"
         required: false
         type: boolean
+  "/graphql":
+    post:
+      description: "GraphQL endpoint"
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      operationId: "graphql"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            type: object
+        404:
+          description: "Not found"
+      security:
+      - auth0_jwt: []
+      parameters:
+      - name: "request"
+        in: body
+        description: "GraphQL Request."
+        schema:
+          $ref: '#/definitions/GraphQLRequest'
+
 definitions:
   Profile:
     type: object
@@ -416,6 +433,9 @@ definitions:
       msisdn:
         description: "Mobile number for this subscription"
         type: string
+      alias:
+        description: "Human readable optional alias for this subscription"
+        type: string
   BundleList:
     type: array
     items:
@@ -430,18 +450,6 @@ definitions:
         description: "Balance units in this bundle"
         type: integer
         format: int64
-  SubscriptionStatus:
-    type: object
-    properties:
-      remaining:
-        description: "Remaining data"
-        type: integer
-        format: int64
-      purchaseRecords:
-        description: "List of Purchases"
-        type: array
-        items:
-          $ref: '#/definitions/PurchaseRecord'
   PurchaseRecordList:
     type: array
     items:
@@ -588,9 +596,21 @@ definitions:
     required:
       - current
       - next
+  GraphQLRequest:
+    type: object
+    properties:
+      query:
+        description: "GraphQL query."
+        type: string
+      operationName:
+        description: "GraphQL Operation Name."
+        type: string
+      variables:
+        description: "GraphQL query variables."
+        type: object
 securityDefinitions:
   auth0_jwt:
-    authorizationUrl: "https://ostelco.eu.auth0.com/authorize"
+    authorizationUrl: ""
     flow: "implicit"
     type: "oauth2"
     x-google-issuer: "https://ostelco.eu.auth0.com/"
