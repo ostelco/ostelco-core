@@ -2,14 +2,23 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { authActions, pseudoActions } from '../../actions';
-import { Panel } from 'react-bootstrap';
+import { Grid, Row, Col, Button, Panel } from 'react-bootstrap';
 
 const DataUsage = props => {
   return (
     <Panel>
       <Panel.Heading>Data balance</Panel.Heading>
       <Panel.Body>
-        <samp>{`Remaining ${props.balance}`}</samp>
+        <Grid>
+          <Row className="show-grid">
+            <Col xs={6} md={4}>
+            <samp>{`Remaining ${props.balance}.`}</samp>
+            </Col>
+            <Col xs={6} md={4}>
+              <samp><Button bsStyle="link">{'Give additional 1 GB'}</Button></samp>
+            </Col>
+            </Row>
+          </Grid>
       </Panel.Body>
     </Panel>
   );

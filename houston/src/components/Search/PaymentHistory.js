@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { authActions, pseudoActions } from '../../actions';
-import { Panel, Table } from 'react-bootstrap';
+import { Button, Panel, Table } from 'react-bootstrap';
 
 const PaymentHistory = props => {
   return (
@@ -17,6 +17,7 @@ const PaymentHistory = props => {
               <th>Date</th>
               <th>Plan</th>
               <th>Price</th>
+              <th>Options</th>
             </tr>
           </thead>
           <tbody>
@@ -25,18 +26,21 @@ const PaymentHistory = props => {
               <td>15 Oct 2018</td>
               <td>1 GB</td>
               <td>1$</td>
+              <td></td>
             </tr>
             <tr>
               <td>2</td>
               <td>16 Oct 2018</td>
               <td>1 GB</td>
               <td>1$</td>
+              <td></td>
             </tr>
             <tr>
-              <td>2</td>
+              <td>3</td>
               <td>18 Oct 2018</td>
               <td>5 GB</td>
               <td>5$</td>
+              <td><Button bsStyle="link">Revert</Button></td>
             </tr>
           </tbody>
         </Table>
