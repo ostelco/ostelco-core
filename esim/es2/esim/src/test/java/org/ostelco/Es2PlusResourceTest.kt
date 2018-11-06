@@ -24,8 +24,6 @@ import javax.ws.rs.core.MediaType
 
 class ES2PlusResourceTest {
 
-
-
     companion object {
 
         @JvmField
@@ -40,12 +38,6 @@ class ES2PlusResourceTest {
         fun afterClass() {}
     }
 
-    @Test
-    fun testDownloadOrder() {
-        val es2ProtocolPayload = Es2PlusDownloadOrder("secret eid", iccid = "highly conformant iccid", profileType = "really!")
-        postEs2ProtocolCommand(es2ProtocolPayload)
-    }
-
     private  fun <T> postEs2ProtocolCommand(es2ProtocolPayload: T) {
         val entity: Entity<T> = Entity.entity(es2ProtocolPayload, MediaType.APPLICATION_JSON)
         RULE.target("/gsma/rsp2/es2plus/downloadOrder")
@@ -53,5 +45,11 @@ class ES2PlusResourceTest {
                 .header("User-Agent:", "gsma-rsp-lpad")
                 .header("X-Admin-Protocol", "gsma/rsp/v<x.y.z>")
                 .post(entity)
+    }
+
+    @Test
+    fun testDownloadOrder() {
+        val es2ProtocolPayload = Es2PlusDownloadOrder("secret eid", iccid = "highly conformant iccid", profileType = "really!")
+        postEs2ProtocolCommand(es2ProtocolPayload)
     }
 }
