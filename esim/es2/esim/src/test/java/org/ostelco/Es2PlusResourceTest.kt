@@ -3,7 +3,9 @@ import org.junit.After
 import org.junit.AfterClass
 import org.junit.ClassRule
 import org.junit.Test
+import org.ostelco.Blah
 import org.ostelco.Es2PlusResource
+import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 
 
@@ -41,9 +43,11 @@ class ES2PlusResourceTest {
 
     @Test
     fun getsReturnNotifications() {
+        val blah = Blah(fooz="da fooz")
+        val entity:Entity<Blah> = Entity.entity(blah, MediaType.APPLICATION_JSON!!)
         RULE.target("/foo")
                 .request(MediaType.APPLICATION_JSON)
-                .get(String::class.java)
+                .header(" X-Admin-Protocol",  "gsma/rsp/v<x.y.z>")
+                .post(entity)
     }
-
 }
