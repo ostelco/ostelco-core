@@ -44,8 +44,8 @@ data class Blah(
 
 
 @Path("/foo")
-// @Produces(MediaType.APPLICATION_JSON)
-// @Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
 class Es2PlusResource() {
 
 

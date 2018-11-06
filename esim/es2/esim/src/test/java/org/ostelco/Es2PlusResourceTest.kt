@@ -7,17 +7,23 @@ import org.ostelco.Es2PlusResource
 import javax.ws.rs.core.MediaType
 
 
+/**
+ * Testing that we're able to stay within the envelope as defined by the
+ * standardf rom GSMA:
+ *
+ * HTTP POST <HTTP Path> HTTP/1.1
+ * Host: <Server Address>
+ * User-Agent: gsma-rsp-lpad
+ * X-Admin-Protocol: gsma/rsp/v<x.y.z>
+ * Content-Type: application/json
+ * Content-Length: <Length of the JSON requestMessage>
+ * <JSON requestMessage>
+ */
+
+
 class ES2PlusResourceTest {
 
-    @Test
-    fun getsReturnNotifications() {
-        RULE.target("/foo")
-                .request(MediaType.APPLICATION_JSON)
-                .get(String::class.java)
-    }
 
-    @After
-    fun after() {}
 
     companion object {
 
@@ -32,4 +38,12 @@ class ES2PlusResourceTest {
         @AfterClass
         fun afterClass() {}
     }
+
+    @Test
+    fun getsReturnNotifications() {
+        RULE.target("/foo")
+                .request(MediaType.APPLICATION_JSON)
+                .get(String::class.java)
+    }
+
 }
