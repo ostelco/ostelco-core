@@ -1,9 +1,8 @@
 import io.dropwizard.testing.junit.ResourceTestRule
-import org.junit.After
 import org.junit.AfterClass
 import org.junit.ClassRule
 import org.junit.Test
-import org.ostelco.Blah
+import org.ostelco.Es2PlusDownloadOrder
 import org.ostelco.Es2PlusResource
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
@@ -42,12 +41,13 @@ class ES2PlusResourceTest {
     }
 
     @Test
-    fun getsReturnNotifications() {
-        val blah = Blah(fooz="da fooz")
-        val entity:Entity<Blah> = Entity.entity(blah, MediaType.APPLICATION_JSON!!)
-        RULE.target("/foo")
+    fun testDownloadOrder() {
+        val es2ProtocolPayload = Es2PlusDownloadOrder("secret eid", iccid = "highly conformant iccid", profileType = "really!")
+        val entity:Entity<Es2PlusDownloadOrder> = Entity.entity(es2ProtocolPayload, MediaType.APPLICATION_JSON!!)
+        RULE.target("/gsma/rsp2/es2plus/downloadOrder")
                 .request(MediaType.APPLICATION_JSON)
-                .header(" X-Admin-Protocol",  "gsma/rsp/v<x.y.z>")
+                .header("User-Agent:", "gsma-rsp-lpad")
+                .header("X-Admin-Protocol",  "gsma/rsp/v<x.y.z>")
                 .post(entity)
     }
 }

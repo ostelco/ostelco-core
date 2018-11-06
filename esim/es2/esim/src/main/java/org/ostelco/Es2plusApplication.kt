@@ -38,24 +38,56 @@ class Es2plusApplication : Application<Es2plusConfiguration>() {
 
 }
 
-data class Blah(
-        @JsonProperty("fooz") val fooz: String
+data class Es2PlusDownloadOrder(
+        @JsonProperty("eid") val eid: String?,
+        @JsonProperty("iccid") val iccid: String?,
+        @JsonProperty("profileType") val profileType: String?
+)
+
+data class Es2ConfirmOrder(
+        @JsonProperty("eid") val eid: String,
+        @JsonProperty("iccid") val iccid: String?,
+        @JsonProperty("matchingId") val matchingId: String?,
+        @JsonProperty("confirmationCode") val confirmationCode: String?,
+        @JsonProperty("smdsAddress") val smdsAddress: String?,
+        @JsonProperty("releaseFlag") val releaseFlag: String?
 )
 
 
-@Path("/foo")
+
+@Path("/gsma/rsp2/es2plus/")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 class Es2PlusResource() {
 
 
-    @GET
-    fun get(): Response {
-        return Response.noContent().build() // XXXX Just to gt there
+    @Path("downloadOrder")
+    @POST
+    fun downloadOrder(order: Es2PlusDownloadOrder): Response {
+        return Response.created(UriBuilder.fromPath("http://bananas.org/").build()).build()
+    }
+    
+    @Path("confirmOrder")
+    @POST
+    fun confirmOrder(order: Es2ConfirmOrder): Response {
+        return Response.created(UriBuilder.fromPath("http://bananas.org/").build()).build()
     }
 
+    @Path("cancelOrder")
     @POST
-    fun add(): Response {
+    fun cancelOrder(): Response {
+        return Response.created(UriBuilder.fromPath("http://bananas.org/").build()).build()
+    }
+
+    @Path("releaseProfile")
+    @POST
+    fun releaseProfile(): Response {
+        return Response.created(UriBuilder.fromPath("http://bananas.org/").build()).build()
+    }
+
+    @Path("handleDownloadProgressInfo")
+    @POST
+    fun handleDownloadProgressInfo(): Response {
         return Response.created(UriBuilder.fromPath("http://bananas.org/").build()).build()
     }
 }
