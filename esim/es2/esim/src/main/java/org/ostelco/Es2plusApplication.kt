@@ -94,7 +94,9 @@ class Es2PlusResource() {
 
     @Path("downloadOrder")
     @POST
-    fun downloadOrder(order: Es2PlusDownloadOrder): Response {
+    fun downloadOrder(@HeaderParam("user-agent")  userAgent: String,
+                      @HeaderParam("X-Admin-Protocol")  xAdminProtocol: String,
+                      order: Es2PlusDownloadOrder): Response {
         return Response.created(UriBuilder.fromPath("http://bananas.org/").build()).build()
     }
 
