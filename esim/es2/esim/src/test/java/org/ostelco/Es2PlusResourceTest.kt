@@ -6,6 +6,7 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.ostelco.Es2PlusDownloadOrder
 import org.ostelco.Es2PlusResource
+import org.ostelco.RestrictedOperationsRequestFilter
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 import java.io.IOException
@@ -27,28 +28,6 @@ import javax.ws.rs.ext.Provider
  * Content-Length: <Length of the JSON requestMessage>
  * <JSON requestMessage>
  */
-
-
-
-@Provider
-class RestrictedOperationsRequestFilter : ContainerRequestFilter {
-
-    @Throws(IOException::class)
-    override fun filter(ctx: ContainerRequestContext) {
-        val adminProtocol = ctx.headers.getFirst("X-Admin-Protocol")
-        val userAgent = ctx.headers.getFirst("User-Agent")
-
-        if (!"gsma-rsp-lpad".equals(userAgent)) {
-            ctx.abortWith(Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Illegal user agent, expected gsma-rsp-lpad")
-                    .build())
-        } else if (adminProtocol == null || !adminProtocol!!.startsWith("gsma/rsp/")) {
-                    ctx.abortWith(Response.status(Response.Status.BAD_REQUEST)
-                            .entity("Illegal X-Admin-Protocol header, expected something starting with \"gsma/rsp/\"")
-                            .build())
-                }
-    }
-}
 
 
 class ES2PlusResourceTest {

@@ -4,10 +4,14 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.dropwizard.Application
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
+import java.io.IOException
 import javax.ws.rs.*
+import javax.ws.rs.container.ContainerRequestContext
+import javax.ws.rs.container.ContainerRequestFilter
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.UriBuilder
+import javax.ws.rs.ext.Provider
 
 class Es2plusApplication : Application<Es2plusConfiguration>() {
 
@@ -23,6 +27,7 @@ class Es2plusApplication : Application<Es2plusConfiguration>() {
             environment: Environment) {
         // TODO: implement application
         environment.jersey().register(Es2PlusResource())
+        environment.jersey().register(RestrictedOperationsRequestFilter())
     }
 
     companion object {
@@ -37,6 +42,29 @@ class Es2plusApplication : Application<Es2plusConfiguration>() {
     // https://www.gsma.com/newsroom/wp-content/uploads/SGP.22-v2.0.pdf
 
 }
+
+
+
+@Provider
+class RestrictedOperationsRequestFilter : ContainerRequestFilter {
+
+    @Throws(IOException::class)
+    override fun filter(ctx: ContainerRequestContext) {
+        val adminProtocol = ctx.headers.getFirst("X-Admin-Protocol")
+        val userAgent = ctx.headers.getFirst("User-Agent")
+
+        if (!"gsma-rsp-lpad".equals(userAgent)) {
+            ctx.abortWith(Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Illegal user agent, expected gsma-rsp-lpad")
+                    .build())
+        } else if (adminProtocol == null || !adminProtocol!!.startsWith("gsma/rsp/")) {
+            ctx.abortWith(Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Illegal X-Admin-Protocol header, expected something starting with \"gsma/rsp/\"")
+                    .build())
+        }
+    }
+}
+
 
 data class Es2PlusDownloadOrder(
         @JsonProperty("eid") val eid: String?,
@@ -94,9 +122,7 @@ class Es2PlusResource() {
 
     @Path("downloadOrder")
     @POST
-    fun downloadOrder(@HeaderParam("user-agent")  userAgent: String,
-                      @HeaderParam("X-Admin-Protocol")  xAdminProtocol: String,
-                      order: Es2PlusDownloadOrder): Response {
+    fun downloadOrder(order: Es2PlusDownloadOrder): Response {
         return Response.created(UriBuilder.fromPath("http://bananas.org/").build()).build()
     }
 
