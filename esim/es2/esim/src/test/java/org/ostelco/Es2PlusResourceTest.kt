@@ -43,11 +43,15 @@ class ES2PlusResourceTest {
     @Test
     fun testDownloadOrder() {
         val es2ProtocolPayload = Es2PlusDownloadOrder("secret eid", iccid = "highly conformant iccid", profileType = "really!")
-        val entity:Entity<Es2PlusDownloadOrder> = Entity.entity(es2ProtocolPayload, MediaType.APPLICATION_JSON!!)
+        postEs2ProtocolCommand(es2ProtocolPayload)
+    }
+
+    private  fun <T> postEs2ProtocolCommand(es2ProtocolPayload: T) {
+        val entity: Entity<T> = Entity.entity(es2ProtocolPayload, MediaType.APPLICATION_JSON)
         RULE.target("/gsma/rsp2/es2plus/downloadOrder")
                 .request(MediaType.APPLICATION_JSON)
                 .header("User-Agent:", "gsma-rsp-lpad")
-                .header("X-Admin-Protocol",  "gsma/rsp/v<x.y.z>")
+                .header("X-Admin-Protocol", "gsma/rsp/v<x.y.z>")
                 .post(entity)
     }
 }

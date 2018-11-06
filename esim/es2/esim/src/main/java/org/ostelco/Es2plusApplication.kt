@@ -53,7 +53,38 @@ data class Es2ConfirmOrder(
         @JsonProperty("releaseFlag") val releaseFlag: String?
 )
 
+data class Es2CancelOrder(
+        @JsonProperty("eid") val eid: String,
+        @JsonProperty("iccid") val iccid: String?,
+        @JsonProperty("matchingId") val matchingId: String?,
+        @JsonProperty("finalProfileStatusIndicator") val confirmationCode: String?
+)
 
+data class Es2ReleaseProfile(
+        @JsonProperty("iccid") val iccid: String
+)
+
+data class ES2NotificationPointStatus(
+        @JsonProperty("status") val status: String, // "Executed-Success, Executed-WithWarning, Failed or
+        @JsonProperty("statusCodeData") val statusCodeData: ES2StatusCodeData?
+        )
+
+data class ES2StatusCodeData(
+        @JsonProperty("subjectCode") val subjectCode: String, // "Executed-Success, Executed-WithWarning, Failed or
+        @JsonProperty("reasonCode") val statusCodeData: String,
+        @JsonProperty("subjectIdentifier") val subjectIdentifier: String?,
+        @JsonProperty("message") val message: String?
+)
+
+data class Es2HandleDownloadProgressInfo(
+        @JsonProperty("eid") val eid: String?,
+        @JsonProperty("iccid") val iccid: String?,
+        @JsonProperty("profileType") val profileType: String?,
+        @JsonProperty("timestamp") val timestamp: String?,
+        @JsonProperty("notificationPointId") val notificationPointId: String?,
+        @JsonProperty("notificationPointStatus") val notificationPointStatus: ES2NotificationPointStatus?,
+        @JsonProperty("resultData") val resultData: ES2StatusCodeData?
+        )
 
 @Path("/gsma/rsp2/es2plus/")
 @Produces(MediaType.APPLICATION_JSON)
@@ -66,7 +97,7 @@ class Es2PlusResource() {
     fun downloadOrder(order: Es2PlusDownloadOrder): Response {
         return Response.created(UriBuilder.fromPath("http://bananas.org/").build()).build()
     }
-    
+
     @Path("confirmOrder")
     @POST
     fun confirmOrder(order: Es2ConfirmOrder): Response {
@@ -75,19 +106,19 @@ class Es2PlusResource() {
 
     @Path("cancelOrder")
     @POST
-    fun cancelOrder(): Response {
+    fun cancelOrder(order: Es2CancelOrder): Response {
         return Response.created(UriBuilder.fromPath("http://bananas.org/").build()).build()
     }
 
     @Path("releaseProfile")
     @POST
-    fun releaseProfile(): Response {
+    fun releaseProfile(order: Es2ReleaseProfile): Response {
         return Response.created(UriBuilder.fromPath("http://bananas.org/").build()).build()
     }
 
     @Path("handleDownloadProgressInfo")
     @POST
-    fun handleDownloadProgressInfo(): Response {
+    fun handleDownloadProgressInfo(order: Es2HandleDownloadProgressInfo): Response {
         return Response.created(UriBuilder.fromPath("http://bananas.org/").build()).build()
     }
 }
