@@ -1,7 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { authActions, pseudoActions } from '../../actions';
 import { Form,  Button, FormGroup, ControlLabel, FormControl } from 'react-bootstrap';
 
 export class SearchForm extends React.Component {
