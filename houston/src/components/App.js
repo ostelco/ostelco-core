@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { Navbar, Button, NavItem, Nav, MenuItem, NavDropdown } from 'react-bootstrap';
 
@@ -49,8 +50,10 @@ class App extends Component {
             isAuthenticated && (
               <Navbar.Collapse>
                 <Nav>
-                  <NavItem eventKey={1} href="#">
-                    Customer
+                <NavItem componentClass={Link} href="/search" to="/search" active={window.location.pathname === '/search'}>Search</NavItem>
+                <NavItem componentClass={Link} href="/home" to="/home" active={window.location.pathname === '/home'}>Home</NavItem>
+                  <NavItem >
+                    Customer 
                   </NavItem>
                   <NavItem eventKey={2} href="#">
                     Link

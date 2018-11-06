@@ -23,6 +23,7 @@ class Auth {
     this.handleAuthentication = this.handleAuthentication.bind(this);
     this.loadCurrentSession = this.loadCurrentSession.bind(this);
     this.isAuthenticated = this.isAuthenticated.bind(this);
+    console.log("constructing Auth");
     setTimeout(this.loadCurrentSession, 1);
   }
 
