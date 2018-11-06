@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { Navbar, Button } from 'react-bootstrap';
+import { Navbar, Button, NavItem, Nav, MenuItem, NavDropdown } from 'react-bootstrap';
 
 import { authActions } from '../actions';
 import './App.css';
@@ -48,6 +48,21 @@ class App extends Component {
           {
             isAuthenticated && (
               <Navbar.Collapse>
+                <Nav>
+                  <NavItem eventKey={1} href="#">
+                    Customer
+                  </NavItem>
+                  <NavItem eventKey={2} href="#">
+                    Link
+                  </NavItem>
+                  <NavDropdown eventKey={3} title="Dropdown" id="basic-nav-dropdown">
+                    <MenuItem eventKey={3.1}>Action</MenuItem>
+                    <MenuItem eventKey={3.2}>Another action</MenuItem>
+                    <MenuItem eventKey={3.3}>Something else here</MenuItem>
+                    <MenuItem divider />
+                    <MenuItem eventKey={3.3}>Separated link</MenuItem>
+                  </NavDropdown>
+                </Nav>
                 <Navbar.Text pullRight>
                   <Navbar.Link href="" onClick={(e) => { e.preventDefault(); props.logout(); }}>
                     {' '+ userName + ' '}
