@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { authActions, pseudoActions } from '../../actions';
-import { Panel, Grid, Row, Col } from 'react-bootstrap';
+import { Button, Panel, Grid, Row, Col } from 'react-bootstrap';
 
 const Profile = props => {
   return (
@@ -33,6 +33,17 @@ const Profile = props => {
             </Col>
             <Col xs={12} md={8}>
               <samp>{`${props.profile.address}`}</samp>
+            </Col>
+          </Row>
+          <br />
+          <Row className="show-grid">
+            <Col xs={12} md={6}>
+            <samp>{'Block '}<Button bsStyle="link">{'current SIM card'}</Button></samp>
+            </Col>
+          </Row>
+          <Row className="show-grid">
+            <Col xs={12} md={6}>
+            <samp>{'Order '}<Button bsStyle="link">{'new SIM card'}</Button></samp>
             </Col>
           </Row>
         </Grid>
