@@ -1,5 +1,42 @@
 
-ES2+CancelOrder-def.json
+
+{
+  "title": "Sample Pet Store App",
+  "description": "This is a sample server for a pet store.",
+  "termsOfService": "http://example.com/terms/",
+  "contact": {
+    "name": "API Support",
+    "url": "http://www.example.com/support",
+    "email": "support@example.com"
+  },
+  "license": {
+    "name": "Apache 2.0",
+    "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
+  },
+  "version": "1.0.1"
+}
+
+
+{
+  "servers": [
+    {
+      "url": "https://development.gigantic-server.com/v1",
+      "description": "Development server"
+    },
+    {
+      "url": "https://staging.gigantic-server.com/v1",
+      "description": "Staging server"
+    },
+    {
+      "url": "https://api.gigantic-server.com/v1",
+      "description": "Production server"
+    }
+  ]
+}
+
+
+
+"CancelOrder":
 {
   "type": "object",
   "properties": {
@@ -27,7 +64,7 @@ ES2+CancelOrder-def.json
   ]
 }
 
-ES2+ConfirmOrder-1-def.json
+"ConfirmOrder-1":
 {
   "type": "object",
   "properties": {
@@ -64,7 +101,7 @@ ES2+ConfirmOrder-1-def.json
   ]
 }
 
-ES2+ConfirmOrder-2-def.json
+"ConfirmOrder-2":
 {
   "type": "object",
   "properties": {
@@ -85,7 +122,7 @@ ES2+ConfirmOrder-2-def.json
   "required": []
 }
 
-ES2+DownloadOrder-2-def.json
+"DownloadOrder-2":
 {
 "type" : "object", "properties" : {
 "iccid" : {
@@ -95,7 +132,7 @@ ES2+DownloadOrder-2-def.json
 },
 "required" : ["iccid"] }
 
-ES2+DownloadOrder-def.json
+"DownloadOrder":
 {
   "type": "object",
   "properties": {
@@ -116,7 +153,7 @@ ES2+DownloadOrder-def.json
   }
 }
 
-ES2+HandleDownloadProgressInfo-def.json
+"HandleDownloadProgressInfo":
 {
 "type" : "object", "properties" : {
 "eid" : {
@@ -176,8 +213,7 @@ contained in the ProfileInstallationResult" }
 "required" : ["iccid", "profileType", "timestamp", "notificationPointId", "notificationPointStatus"]
 }
 
-ES2+ReleaseProfile-def.json
-{
+"ReleaseProfile":{
   "type": "object",
   "properties": {
     "iccid": {
