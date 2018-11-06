@@ -9,6 +9,7 @@ const PaymentHistory = props => {
     <Panel>
       <Panel.Heading>Payment History</Panel.Heading>
       <Panel.Body>
+      <samp>
         <Table striped bordered condensed hover>
           <thead>
             <tr>
@@ -39,6 +40,7 @@ const PaymentHistory = props => {
             </tr>
           </tbody>
         </Table>
+        </samp>
       </Panel.Body>
     </Panel>
   );

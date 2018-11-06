@@ -23,7 +23,6 @@ class Auth {
     this.handleAuthentication = this.handleAuthentication.bind(this);
     this.loadCurrentSession = this.loadCurrentSession.bind(this);
     this.isAuthenticated = this.isAuthenticated.bind(this);
-    console.log("constructing Auth");
     setTimeout(this.loadCurrentSession, 1);
   }
 
@@ -74,7 +73,7 @@ class Auth {
     const isAuthenticated = this.isAuthenticated(expiresAt);
     this.user = { accessToken, expiresAt, name, email, picture };
     if (isAuthenticated) {
-      history.replace('/home');
+      history.replace('/search');
       store.dispatch(authActions.loginSuccess(this.user));
     } else {
       store.dispatch(authActions.logout())
