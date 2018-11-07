@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Form, Button, FormGroup, ControlLabel, FormControl } from 'react-bootstrap';
+import { getTextType } from '../../helpers';
 
 export class SearchForm extends React.Component {
   constructor(props, context) {
@@ -11,11 +12,10 @@ export class SearchForm extends React.Component {
     };
   }
   getValidationState() {
-    const isPhoneNumber = /^[+]?\d+$/g.test(this.state.value)
-    const isEmail = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test(this.state.value)
+    const type = getTextType(this.state.value);
+    if (type === 'phonenumber' || type === 'email') return 'success'
     const length = this.state.value.length;
-    if (isPhoneNumber || isEmail) return 'success';
-    else if (length > 5) return 'warning';
+    if (length > 5) return 'warning';
     return null;
   }
 
