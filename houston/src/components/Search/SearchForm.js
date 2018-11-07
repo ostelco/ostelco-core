@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Form, Button, FormGroup, ControlLabel, FormControl } from 'react-bootstrap';
-import { getTextType } from '../../helpers';
+import { getTextType } from '../../helpers/utils';
 
 export class SearchForm extends React.Component {
   constructor(props, context) {

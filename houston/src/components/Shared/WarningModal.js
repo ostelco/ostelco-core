@@ -29,4 +29,4 @@ WarningModal.propTypes = {
   handleClose: PropTypes.func.isRequired
 };
 
-export { WarningModal };
+export default WarningModal;

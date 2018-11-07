@@ -3,8 +3,8 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { authActions, pseudoActions } from '../../actions';
 import { Grid, Row, Col, Button, Panel } from 'react-bootstrap';
-import { WarningModal } from '../Shared/WarningModal';
-import { humanReadableBytes } from '../../helpers';
+import WarningModal from '../Shared/WarningModal';
+import { humanReadableBytes } from '../../helpers/utils';
 
 class DataUsage extends React.Component {
   constructor(props, context) {
