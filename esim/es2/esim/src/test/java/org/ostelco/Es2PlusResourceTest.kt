@@ -1,7 +1,7 @@
 import io.dropwizard.testing.junit.ResourceTestRule
-import junit.framework.Assert.assertEquals
+import junit.framework.TestCase.assertEquals
 import org.everit.json.schema.Schema
-import org.everit.json.schema.loader.SchemaLoader
+import org.everit.json.schema.ValidationException
 import org.json.JSONObject
 import org.json.JSONTokener
 import org.junit.AfterClass
@@ -68,7 +68,8 @@ public class JsonSchemaValidator implements ContainerRequestFilter {
 @Provider
 class RequestServerReaderInterceptor : ReaderInterceptor, DynamicFeature {
 
-    lateinit var schema: Schema
+    // XXX Extend by reading at startup, putting into maps
+    var schema: Schema
 
     init {
         val inputStream = this.javaClass.getResourceAsStream("/es2schemas/ES2+DownloadOrder-def.json")
@@ -76,6 +77,7 @@ class RequestServerReaderInterceptor : ReaderInterceptor, DynamicFeature {
         schema = org.everit.json.schema.loader.SchemaLoader.load(rawSchema)
     }
 
+    // XXX Modify by making into a thread local variable, perhaps?
     var currentFunc: KFunction<*>? = null
     override fun configure(resourceInfo: ResourceInfo, context: FeatureContext) {
         val method = resourceInfo.resourceMethod
@@ -86,15 +88,19 @@ class RequestServerReaderInterceptor : ReaderInterceptor, DynamicFeature {
     }
 
     @Throws(IOException::class, WebApplicationException::class)
-    override fun aroundReadFrom(context: ReaderInterceptorContext): Any {
-        val originalStream = context.inputStream
+    override fun aroundReadFrom(ctx: ReaderInterceptorContext): Any {
+        val originalStream = ctx.inputStream
         val stream = BufferedReader(InputStreamReader(originalStream)).lines()
         val body: String = stream.collect(Collectors.joining("\n"))
-        context.inputStream = ByteArrayInputStream("$body".toByteArray())
+        ctx.inputStream = ByteArrayInputStream("$body".toByteArray())
 
-        schema.validate(JSONObject(body))
+        try {
+            schema.validate(JSONObject(body))
+        } catch (t: ValidationException) {
+            throw WebApplicationException( t.errorMessage, Response.Status.BAD_REQUEST)
+        }
 
-        return context.proceed()
+        return ctx.proceed()
     }
 }
 
@@ -117,14 +123,16 @@ class ES2PlusResourceTest {
         }
     }
 
-    private fun <T> postEs2ProtocolCommand(es2ProtocolPayload: T): Response? {
+    private fun <T> postEs2ProtocolCommand(
+            es2ProtocolPayload: T,
+            expectedReturnCode: Int = 201): Response? {
         val entity: Entity<T> = Entity.entity(es2ProtocolPayload, MediaType.APPLICATION_JSON)
         val result = RULE.target("/gsma/rsp2/es2plus/downloadOrder")
                 .request(MediaType.APPLICATION_JSON)
                 .header("User-Agent", "gsma-rsp-lpad")
                 .header("X-Admin-Protocol", "gsma/rsp/v<x.y.z>")
                 .post(entity)
-        assertEquals(201, result.status)
+        assertEquals(expectedReturnCode, result.status)
         return result
     }
 
@@ -136,5 +144,15 @@ class ES2PlusResourceTest {
                 profileType = "really!")
 
         postEs2ProtocolCommand(es2ProtocolPayload)
+    }
+
+    @Test
+    fun testDownloadOrderWithIncorrectEid() {
+        val es2ProtocolPayload = Es2PlusDownloadOrder(
+                "01234567890123456789012345678901a",
+                iccid = "01234567890123456789",
+                profileType = "really!")
+
+        postEs2ProtocolCommand(es2ProtocolPayload, expectedReturnCode=400)
     }
 }
