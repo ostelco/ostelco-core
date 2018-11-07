@@ -39,7 +39,7 @@ import javax.ws.rs.ext.ReaderInterceptorContext
  * <JSON requestMessage>
  */
 
-g
+
 @Provider
 class RequestServerReaderInterceptor : ReaderInterceptor {
 
@@ -68,6 +68,16 @@ class RequestServerReaderInterceptor : ReaderInterceptor {
         return schemaMap[name]!!
     }
 
+    private fun validateUsingJsonSchema(payloadClass: Class<*>, body:String) {
+        val schemaAnnotation = payloadClass.getAnnotation<JsonSchema>(JsonSchema::class.java)
+        if (schemaAnnotation != null) {
+            try {
+                getSchema(schemaAnnotation.schemaKey).validate(JSONObject(body))
+            } catch (t: ValidationException) {
+                throw WebApplicationException(t.errorMessage, Response.Status.BAD_REQUEST)
+            }
+        }
+    }
 
     @Throws(IOException::class, WebApplicationException::class)
     override fun aroundReadFrom(ctx: ReaderInterceptorContext): Any {
@@ -76,15 +86,7 @@ class RequestServerReaderInterceptor : ReaderInterceptor {
         val body: String = stream.collect(Collectors.joining("\n"))
         ctx.inputStream = ByteArrayInputStream("$body".toByteArray())
 
-        // If we have a validation schema, then use it!
-        val schemaAnnotation = ctx.type.getAnnotation<JsonSchema>(JsonSchema::class.java)
-        if (schemaAnnotation != null) {
-            try {
-                getSchema(schemaAnnotation.schemaKey).validate(JSONObject(body))
-            } catch (t: ValidationException) {
-                throw WebApplicationException(t.errorMessage, Response.Status.BAD_REQUEST)
-            }
-        }
+        validateUsingJsonSchema(ctx.type, body)
 
         return ctx.proceed()
     }
