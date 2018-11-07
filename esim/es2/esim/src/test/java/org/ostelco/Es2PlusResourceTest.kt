@@ -55,6 +55,10 @@ class ES2PlusResourceTest {
         return result
     }
 
+
+    // XXX TODO:   Extend the method to return a proper result object,
+    //             pick that result object up, and fail the test if it's
+    //             the expected result.
     @Test
     fun testDownloadOrder() {
         val es2ProtocolPayload = Es2PlusDownloadOrder(
