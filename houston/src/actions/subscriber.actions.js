@@ -32,11 +32,6 @@ const getSubscriberByMsisdn = (msisdn) => (dispatch, getState) => {
   console.log("getSubscriberByMsisdn =", msisdn);
   return dispatch(fetchSubscriberByMsisdn(msisdn));
 }
-const mockUser = {
-    name: "Shane Warne",
-    email: "shane@icc.org",
-    address: "4, Leng Kee Road,  #06-07 SiS Building, Singapore 159088"
-}
 
 // TODO: API based implementaion. Reference: https://github.com/reduxjs/redux/issues/1676
 

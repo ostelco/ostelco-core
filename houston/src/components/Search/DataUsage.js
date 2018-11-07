@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { authActions, pseudoActions } from '../../actions';
 import { Grid, Row, Col, Button, Panel } from 'react-bootstrap';
 import WarningModal from '../Shared/WarningModal';
-import { humanReadableBytes } from '../../helpers/utils';
+import { utils } from '../../helpers';
 
 class DataUsage extends React.Component {
   constructor(props, context) {
@@ -72,7 +72,7 @@ function mapStateToProps(state) {
   const { bundles } = state;
   let balance = null;
   if (bundles.data) {
-    balance = humanReadableBytes(bundles.data[0].balance);
+    balance = utils.humanReadableBytes(bundles.data[0].balance);
   }
   return {
     balance

@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Form, Button, FormGroup, ControlLabel, FormControl } from 'react-bootstrap';
-import { getTextType } from '../../helpers/utils';
+import { utils } from '../../helpers';
 
 export class SearchForm extends React.Component {
   constructor(props, context) {
@@ -12,7 +12,7 @@ export class SearchForm extends React.Component {
     };
   }
   getValidationState() {
-    const type = getTextType(this.state.value);
+    const type = utils.getTextType(this.state.value);
     if (type === 'phonenumber' || type === 'email') return 'success'
     const length = this.state.value.length;
     if (length > 5) return 'warning';

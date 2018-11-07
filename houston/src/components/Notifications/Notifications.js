@@ -14,8 +14,6 @@ class Notifications extends React.Component {
   }
 
   render() {
-    const hasResults = this.props.profile.name || false;
-
     return (
       <div className="container">
       <Panel>
