@@ -39,31 +39,7 @@ import javax.ws.rs.ext.ReaderInterceptorContext
  * <JSON requestMessage>
  */
 
-/*
-
-@Secured
-@Priority(Priorities.ENTITY_CODER)
-public class JsonSchemaValidator implements ContainerRequestFilter {
-
-    @Context
-    var  resourceInfo: ResourceInfo
-
-    @Override
-    fun filter( requestContext: ContainerRequestContext){
-
-        val method = resourceInfo.getResourceMethod()
-
-        if (method != null) {
-            Secured secured = method.getAnnotation(Secured.class);
-          // XXX TBD  Check the input stream for the annotation, the
-            // replay it for proper serialization.
-        }
-    }
-}
-*/
-
-
-
+g
 @Provider
 class RequestServerReaderInterceptor : ReaderInterceptor {
 
