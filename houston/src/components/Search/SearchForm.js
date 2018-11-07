@@ -1,7 +1,6 @@
 import React from 'react';
-import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Form,  Button, FormGroup, ControlLabel, FormControl } from 'react-bootstrap';
+import { Form, Button, FormGroup, ControlLabel, FormControl } from 'react-bootstrap';
 
 export class SearchForm extends React.Component {
   constructor(props, context) {
@@ -12,7 +11,7 @@ export class SearchForm extends React.Component {
     };
   }
   getValidationState() {
-    const isPhoneNumber =  /^[+]?\d+$/g.test(this.state.value)
+    const isPhoneNumber = /^[+]?\d+$/g.test(this.state.value)
     const isEmail = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test(this.state.value)
     const length = this.state.value.length;
     if (isPhoneNumber || isEmail) return 'success';
@@ -46,8 +45,8 @@ export class SearchForm extends React.Component {
               placeholder="Enter text"
               onChange={this.handleChange}
             />
-            </FormGroup>
-             <Button bsStyle="primary" type="submit">Search</Button>
+          </FormGroup>
+          <Button bsStyle="primary" type="submit">Search</Button>
         </Form>
       </div>
     );
