@@ -3,7 +3,8 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { authActions, pseudoActions } from '../../actions';
 import { Grid, Row, Col, Button, Panel } from 'react-bootstrap';
-import { WarningModal } from '../Shared/WarningModal'
+import { WarningModal } from '../Shared/WarningModal';
+import { humanReadableBytes } from '../../helpers';
 
 class DataUsage extends React.Component {
   constructor(props, context) {
@@ -66,16 +67,6 @@ DataUsage.propTypes = {
   pseudonym: PropTypes.object,
   balance: PropTypes.string
 };
-
-function humanReadableBytes(sizeInBytes) {
-  var i = -1;
-  var byteUnits = ['KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-  do {
-    sizeInBytes = sizeInBytes / 1024;
-    i++;
-  } while (sizeInBytes > 1024);
-  return `${Math.max(sizeInBytes, 0.1).toFixed(1)} ${byteUnits[i]}`;
-}
 
 function mapStateToProps(state) {
   const { bundles } = state;
