@@ -18,8 +18,8 @@ class Search extends React.Component {
 
     return (
       <div className="container">
-        <SearchForm onSubmit = {this.onSubmit} />
-        <br/>
+        <SearchForm onSubmit={this.onSubmit} />
+        <br />
         {
           hasResults && (
             <SearchResults />
