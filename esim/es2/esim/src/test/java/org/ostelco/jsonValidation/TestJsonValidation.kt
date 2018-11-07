@@ -1,6 +1,5 @@
-package org.ostelco
+package org.ostelco.jsonValidation
 
-import com.github.fge.jsonschema.core.load.SchemaLoader
 import junit.framework.Assert.assertNotNull
 import org.json.JSONObject
 import org.json.JSONTokener
@@ -27,4 +26,7 @@ class TestJsonValidation() {
         val schema =  org.everit.json.schema.loader.SchemaLoader.load(rawSchema)
         schema.validate(JSONObject( "{\"eid\" : \"01234567890123456789012345678901\", \"iccid\" : \"01234567890123456789\", \"profileType\" : \"Eplestang\"}"))
     }
+
+    // XXX This class does not contain any actual tests of the json schema validator.  That is
+    //     clearly something that should be fixed before we start believing in this code.
 }
