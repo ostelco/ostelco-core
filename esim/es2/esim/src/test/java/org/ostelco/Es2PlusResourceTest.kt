@@ -2,6 +2,7 @@ import io.dropwizard.testing.junit.ResourceTestRule
 import junit.framework.TestCase.assertEquals
 import org.everit.json.schema.Schema
 import org.everit.json.schema.ValidationException
+import org.json.JSONException
 import org.json.JSONObject
 import org.json.JSONTokener
 import org.junit.AfterClass
@@ -66,37 +67,30 @@ public class JsonSchemaValidator implements ContainerRequestFilter {
 @Provider
 class RequestServerReaderInterceptor : ReaderInterceptor {
 
+    private val schemaRoot = "/es2schemas"
+    private var schemaMap: MutableMap<String, Schema> = mutableMapOf()
 
-    var schemaMap: MutableMap<String, Schema> = mutableMapOf()
 
-    init {
-        val inputStream = this.javaClass.getResourceAsStream("/es2schemas/ES2+DownloadOrder-def.json")
-        val schema = JSONObject(JSONTokener(inputStream))
-        schemaMap["ES2+DownloadOrder-def"] = org.everit.json.schema.loader.SchemaLoader.load(schema)
-    }
-
-    /*
-    override fun configure(resourceInfo: ResourceInfo, context: FeatureContext) {
-        val method = resourceInfo.resourceMethod
-        val func = method.kotlinFunction
-
-        if (func != null) {
-            val jsonSchemaAnnotation = func!!.findAnnotation<JsonSchema>()
-            if (jsonSchemaAnnotation != null) {
-                println("We just read an annotation key =  ${jsonSchemaAnnotation.schemaKey}")
-                if (!schemaMap.containsKey(jsonSchemaAnnotation.schemaKey)) {
-                    // XXX Log that  an unknown schema map was encountered.
-                    throw WebApplicationException("Unknown schema map", Response.Status.INTERNAL_SERVER_ERROR)
-                }
-                currentSchema.set(schemaMap[jsonSchemaAnnotation.schemaKey]!!)
-            } else {
-                currentSchema.set(null)
-            }
-        } else {
-            currentSchema.set(null)
+    private fun loadJsonSchemaResource(name: String) : Schema {
+        val inputStream = this.javaClass.getResourceAsStream("${schemaRoot}/${name}.json")
+        if (inputStream == null) {
+            throw WebApplicationException("Unknown schema map", Response.Status.INTERNAL_SERVER_ERROR)
+        }
+        try {
+            val schema = JSONObject(JSONTokener(inputStream))
+            return org.everit.json.schema.loader.SchemaLoader.load(schema)
+        } catch (e: JSONException) {
+            throw WebApplicationException("Syntax error in schema description", Response.Status.INTERNAL_SERVER_ERROR)
         }
     }
-*/
+
+
+    private fun getSchema(name: String): Schema {
+        if (!schemaMap.containsKey(name)) {
+             schemaMap[name] = loadJsonSchemaResource(name)
+        }
+        return schemaMap[name]!!
+    }
 
 
     @Throws(IOException::class, WebApplicationException::class)
@@ -106,23 +100,16 @@ class RequestServerReaderInterceptor : ReaderInterceptor {
         val body: String = stream.collect(Collectors.joining("\n"))
         ctx.inputStream = ByteArrayInputStream("$body".toByteArray())
 
+        // If we have a validation schema, then use it!
         val schemaAnnotation = ctx.type.getAnnotation<JsonSchema>(JsonSchema::class.java)
-
         if (schemaAnnotation != null) {
-            println("schema annotation = $schemaAnnotation")
-            val schemaKey = schemaAnnotation.schemaKey
-            if (!schemaMap.containsKey(schemaAnnotation.schemaKey)) {
-                throw WebApplicationException("Unknown schema map", Response.Status.INTERNAL_SERVER_ERROR)
-            }
-
-            val schema = schemaMap[schemaAnnotation.schemaKey]!!
             try {
-                schema.validate(JSONObject(body))
+                getSchema(schemaAnnotation.schemaKey).validate(JSONObject(body))
             } catch (t: ValidationException) {
                 throw WebApplicationException(t.errorMessage, Response.Status.BAD_REQUEST)
             }
         }
-        
+
         return ctx.proceed()
     }
 
