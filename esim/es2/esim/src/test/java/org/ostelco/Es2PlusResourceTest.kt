@@ -12,18 +12,13 @@ import org.ostelco.Es2PlusDownloadOrder
 import org.ostelco.Es2PlusResource
 import org.ostelco.JsonSchema
 import org.ostelco.RestrictedOperationsRequestFilter
-import java.io.BufferedReader
-import java.io.ByteArrayInputStream
-import java.io.IOException
-import java.io.InputStreamReader
+import java.io.*
 import java.util.stream.Collectors
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
-import javax.ws.rs.ext.Provider
-import javax.ws.rs.ext.ReaderInterceptor
-import javax.ws.rs.ext.ReaderInterceptorContext
+import javax.ws.rs.ext.*
 
 
 class JsonSchemaValidator() {
@@ -52,7 +47,7 @@ class JsonSchemaValidator() {
         return schemaMap[name]!!
     }
 
-    public fun validate(payloadClass: Class<*>, body:String) {
+    public fun validateString(payloadClass: Class<*>, body:String) {
         val schemaAnnotation = payloadClass.getAnnotation<JsonSchema>(JsonSchema::class.java)
         if (schemaAnnotation != null) {
             try {
@@ -64,8 +59,9 @@ class JsonSchemaValidator() {
     }
 }
 
+
 @Provider
-class RequestServerReaderInterceptor : ReaderInterceptor {
+class RequestServerReaderWriterInterceptor : ReaderInterceptor, WriterInterceptor {
 
     val validator = JsonSchemaValidator()
 
@@ -76,11 +72,23 @@ class RequestServerReaderInterceptor : ReaderInterceptor {
         val body: String = stream.collect(Collectors.joining("\n"))
         ctx.inputStream = ByteArrayInputStream("$body".toByteArray())
 
-        validator.validate(ctx.type, body)
+        validator.validateString(ctx.type, body)
+
+        return ctx.proceed()
+    }
+
+    @Throws(IOException::class, WebApplicationException::class)
+    override fun aroundWriteTo(ctx: WriterInterceptorContext) {
+
+        // XXX Read docs, figure out how to do this, essentially
+        //     check the  json schema of anything being written, if the
+        //     entity being written has a schema declared in an
+        //     annotation.
 
         return ctx.proceed()
     }
 }
+
 
 class ES2PlusResourceTest {
 
@@ -92,7 +100,7 @@ class ES2PlusResourceTest {
                 .builder()
                 .addResource(Es2PlusResource())
                 .addProvider(RestrictedOperationsRequestFilter())
-                .addProvider(RequestServerReaderInterceptor())
+                .addProvider(RequestServerReaderWriterInterceptor())
                 .build()
 
         @JvmStatic
