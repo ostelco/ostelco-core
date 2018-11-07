@@ -53,8 +53,8 @@ class DataUsage extends React.Component {
             heading={modalHeading}
             warningText={modalText}
             show={this.state.showWarning}
-            handleConfirm = {this.handleConfirmModal}
-            handleClose = {this.handleCloseModal}/>
+            handleConfirm={this.handleConfirmModal}
+            handleClose={this.handleCloseModal} />
         </Panel.Body>
       </Panel>
     );
