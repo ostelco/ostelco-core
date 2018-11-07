@@ -71,6 +71,11 @@ class RestrictedOperationsRequestFilter : ContainerRequestFilter {
 }
 
 
+@Target(AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.RUNTIME)
+public annotation class JsonSchema(val schemaKey: String)
+
+@JsonSchema("ES2+DownloadOrder-def")
 data class Es2PlusDownloadOrder(
         @JsonProperty("eid") val eid: String?,
         @JsonProperty("iccid") val iccid: String?,
@@ -120,17 +125,13 @@ data class Es2HandleDownloadProgressInfo(
         )
 
 
-@Target(AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.RUNTIME)
-public annotation class JsonSchema(val schemaKey: String)
-
 
 @Path("/gsma/rsp2/es2plus/")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 class Es2PlusResource() {
 
-    @JsonSchema("ES2+DownloadOrder-def")  // XXX Really just input schema, but we'll get to that
+
     @Path("downloadOrder")
     @POST
     fun downloadOrder(order: Es2PlusDownloadOrder): Response {

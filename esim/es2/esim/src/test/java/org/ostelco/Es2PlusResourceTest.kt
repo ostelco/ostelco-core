@@ -18,16 +18,11 @@ import java.io.InputStreamReader
 import java.util.stream.Collectors
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.client.Entity
-import javax.ws.rs.container.DynamicFeature
-import javax.ws.rs.container.ResourceInfo
-import javax.ws.rs.core.FeatureContext
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.ext.Provider
 import javax.ws.rs.ext.ReaderInterceptor
 import javax.ws.rs.ext.ReaderInterceptorContext
-import kotlin.reflect.full.findAnnotation
-import kotlin.reflect.jvm.kotlinFunction
 
 
 /**
@@ -69,11 +64,9 @@ public class JsonSchemaValidator implements ContainerRequestFilter {
 
 
 @Provider
-class RequestServerReaderInterceptor : ReaderInterceptor, DynamicFeature {
+class RequestServerReaderInterceptor : ReaderInterceptor {
 
 
-
-    var currentSchema: ThreadLocal<Schema?> = ThreadLocal()
     var schemaMap: MutableMap<String, Schema> = mutableMapOf()
 
     init {
@@ -82,6 +75,7 @@ class RequestServerReaderInterceptor : ReaderInterceptor, DynamicFeature {
         schemaMap["ES2+DownloadOrder-def"] = org.everit.json.schema.loader.SchemaLoader.load(schema)
     }
 
+    /*
     override fun configure(resourceInfo: ResourceInfo, context: FeatureContext) {
         val method = resourceInfo.resourceMethod
         val func = method.kotlinFunction
@@ -102,6 +96,8 @@ class RequestServerReaderInterceptor : ReaderInterceptor, DynamicFeature {
             currentSchema.set(null)
         }
     }
+*/
+
 
     @Throws(IOException::class, WebApplicationException::class)
     override fun aroundReadFrom(ctx: ReaderInterceptorContext): Any {
@@ -110,23 +106,26 @@ class RequestServerReaderInterceptor : ReaderInterceptor, DynamicFeature {
         val body: String = stream.collect(Collectors.joining("\n"))
         ctx.inputStream = ByteArrayInputStream("$body".toByteArray())
 
-        // XXX This ThreadLocal stuff isn't cutting it.   Losing the
-        ///    validator. Need to find some other way of transporting it between the two
-        //     methods.   Perhaps the generic type or type fields of the ctx?  There is an annotation field?
-        //     Putting the annotation on the type being deserialized is in fact quite nice, since it
-        //     puts the entire responsibility into this method, thus avoiding the need to transport
-        //     information from the "configure" method.  We'll do that. It's much cleaner!!
-        val schema = currentSchema.get()
-        if (schema != null) {
+        val schemaAnnotation = ctx.type.getAnnotation<JsonSchema>(JsonSchema::class.java)
+
+        if (schemaAnnotation != null) {
+            println("schema annotation = $schemaAnnotation")
+            val schemaKey = schemaAnnotation.schemaKey
+            if (!schemaMap.containsKey(schemaAnnotation.schemaKey)) {
+                throw WebApplicationException("Unknown schema map", Response.Status.INTERNAL_SERVER_ERROR)
+            }
+
+            val schema = schemaMap[schemaAnnotation.schemaKey]!!
             try {
                 schema.validate(JSONObject(body))
             } catch (t: ValidationException) {
                 throw WebApplicationException(t.errorMessage, Response.Status.BAD_REQUEST)
             }
         }
-
+        
         return ctx.proceed()
     }
+
 }
 
 class ES2PlusResourceTest {
