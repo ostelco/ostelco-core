@@ -9,6 +9,7 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.ostelco.Es2PlusDownloadOrder
 import org.ostelco.Es2PlusResource
+import org.ostelco.JsonSchema
 import org.ostelco.RestrictedOperationsRequestFilter
 import java.io.BufferedReader
 import java.io.ByteArrayInputStream
@@ -25,7 +26,9 @@ import javax.ws.rs.core.Response
 import javax.ws.rs.ext.Provider
 import javax.ws.rs.ext.ReaderInterceptor
 import javax.ws.rs.ext.ReaderInterceptorContext
+import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
+import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.jvm.kotlinFunction
 
 
@@ -65,6 +68,8 @@ public class JsonSchemaValidator implements ContainerRequestFilter {
 }
 */
 
+
+
 @Provider
 class RequestServerReaderInterceptor : ReaderInterceptor, DynamicFeature {
 
@@ -77,14 +82,18 @@ class RequestServerReaderInterceptor : ReaderInterceptor, DynamicFeature {
         schema = org.everit.json.schema.loader.SchemaLoader.load(rawSchema)
     }
 
-    // XXX Modify by making into a thread local variable, perhaps?
-    var currentFunc: KFunction<*>? = null
     override fun configure(resourceInfo: ResourceInfo, context: FeatureContext) {
         val method = resourceInfo.resourceMethod
         val func = method.kotlinFunction
 
-        currentFunc = func!!
         println("invoked by method = ${method.kotlinFunction}")
+
+        if (func != null) {
+            val jsonSchemaAnnotation = func!!.findAnnotation<JsonSchema>()
+            if (jsonSchemaAnnotation != null) {
+                println("We just read an annotation key =  ${jsonSchemaAnnotation.schemaKey}")
+            }
+        }
     }
 
     @Throws(IOException::class, WebApplicationException::class)

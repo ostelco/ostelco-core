@@ -15,6 +15,9 @@ import javax.ws.rs.core.Response
 import javax.ws.rs.core.UriBuilder
 import javax.ws.rs.ext.Provider
 
+
+
+
 class Es2plusApplication : Application<Es2plusConfiguration>() {
 
     override fun getName(): String {
@@ -116,11 +119,18 @@ data class Es2HandleDownloadProgressInfo(
         @JsonProperty("resultData") val resultData: ES2StatusCodeData?
         )
 
+
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.RUNTIME)
+public annotation class JsonSchema(val schemaKey: String)
+
+
 @Path("/gsma/rsp2/es2plus/")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 class Es2PlusResource() {
 
+    @JsonSchema("ES2+DownloadOrder-def")  // XXX Really just input schema, but we'll get to that
     @Path("downloadOrder")
     @POST
     fun downloadOrder(order: Es2PlusDownloadOrder): Response {
