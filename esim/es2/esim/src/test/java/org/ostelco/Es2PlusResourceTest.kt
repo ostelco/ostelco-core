@@ -26,23 +26,7 @@ import javax.ws.rs.ext.ReaderInterceptor
 import javax.ws.rs.ext.ReaderInterceptorContext
 
 
-/**
- * Testing that we're able to stay within the envelope as defined by the
- * standardf rom GSMA:
- *
- * HTTP POST <HTTP Path> HTTP/1.1
- * Host: <Server Address>
- * User-Agent: gsma-rsp-lpad
- * X-Admin-Protocol: gsma/rsp/v<x.y.z>
- * Content-Type: application/json
- * Content-Length: <Length of the JSON requestMessage>
- * <JSON requestMessage>
- */
-
-
-@Provider
-class RequestServerReaderInterceptor : ReaderInterceptor {
-
+class JsonSchemaValidator() {
     private val schemaRoot = "/es2schemas"
     private var schemaMap: MutableMap<String, Schema> = mutableMapOf()
 
@@ -63,12 +47,12 @@ class RequestServerReaderInterceptor : ReaderInterceptor {
 
     private fun getSchema(name: String): Schema {
         if (!schemaMap.containsKey(name)) {
-             schemaMap[name] = loadJsonSchemaResource(name)
+            schemaMap[name] = loadJsonSchemaResource(name)
         }
         return schemaMap[name]!!
     }
 
-    private fun validateUsingJsonSchema(payloadClass: Class<*>, body:String) {
+    public fun validate(payloadClass: Class<*>, body:String) {
         val schemaAnnotation = payloadClass.getAnnotation<JsonSchema>(JsonSchema::class.java)
         if (schemaAnnotation != null) {
             try {
@@ -78,6 +62,12 @@ class RequestServerReaderInterceptor : ReaderInterceptor {
             }
         }
     }
+}
+
+@Provider
+class RequestServerReaderInterceptor : ReaderInterceptor {
+
+    val validator = JsonSchemaValidator()
 
     @Throws(IOException::class, WebApplicationException::class)
     override fun aroundReadFrom(ctx: ReaderInterceptorContext): Any {
@@ -86,11 +76,10 @@ class RequestServerReaderInterceptor : ReaderInterceptor {
         val body: String = stream.collect(Collectors.joining("\n"))
         ctx.inputStream = ByteArrayInputStream("$body".toByteArray())
 
-        validateUsingJsonSchema(ctx.type, body)
+        validator.validate(ctx.type, body)
 
         return ctx.proceed()
     }
-
 }
 
 class ES2PlusResourceTest {
