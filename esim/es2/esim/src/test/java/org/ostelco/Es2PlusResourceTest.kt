@@ -1,5 +1,4 @@
 import io.dropwizard.testing.junit.ResourceTestRule
-import junit.framework.Assert
 import junit.framework.Assert.assertEquals
 import org.everit.json.schema.Schema
 import org.everit.json.schema.loader.SchemaLoader
@@ -20,12 +19,12 @@ import javax.ws.rs.WebApplicationException
 import javax.ws.rs.client.Entity
 import javax.ws.rs.container.DynamicFeature
 import javax.ws.rs.container.ResourceInfo
+import javax.ws.rs.core.FeatureContext
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.ext.Provider
 import javax.ws.rs.ext.ReaderInterceptor
 import javax.ws.rs.ext.ReaderInterceptorContext
-import javax.ws.rs.core.FeatureContext
 import kotlin.reflect.KFunction
 import kotlin.reflect.jvm.kotlinFunction
 
@@ -72,10 +71,9 @@ class RequestServerReaderInterceptor : ReaderInterceptor, DynamicFeature {
     lateinit var schema: Schema
 
     init {
-        // XXX Check the schema
         val inputStream = this.javaClass.getResourceAsStream("/es2schemas/ES2+DownloadOrder-def.json")
         val rawSchema = JSONObject(JSONTokener(inputStream))
-         schema =  org.everit.json.schema.loader.SchemaLoader.load(rawSchema)
+        schema = org.everit.json.schema.loader.SchemaLoader.load(rawSchema)
     }
 
     var currentFunc: KFunction<*>? = null
@@ -91,11 +89,10 @@ class RequestServerReaderInterceptor : ReaderInterceptor, DynamicFeature {
     override fun aroundReadFrom(context: ReaderInterceptorContext): Any {
         val originalStream = context.inputStream
         val stream = BufferedReader(InputStreamReader(originalStream)).lines()
-        val body : String = stream.collect(Collectors.joining("\n"))
+        val body: String = stream.collect(Collectors.joining("\n"))
         context.inputStream = ByteArrayInputStream("$body".toByteArray())
 
-
-        schema.validate(JSONObject( body))
+        schema.validate(JSONObject(body))
 
         return context.proceed()
     }
@@ -116,10 +113,11 @@ class ES2PlusResourceTest {
 
         @JvmStatic
         @AfterClass
-        fun afterClass() {}
+        fun afterClass() {
+        }
     }
 
-    private  fun <T> postEs2ProtocolCommand(es2ProtocolPayload: T): Response? {
+    private fun <T> postEs2ProtocolCommand(es2ProtocolPayload: T): Response? {
         val entity: Entity<T> = Entity.entity(es2ProtocolPayload, MediaType.APPLICATION_JSON)
         val result = RULE.target("/gsma/rsp2/es2plus/downloadOrder")
                 .request(MediaType.APPLICATION_JSON)
