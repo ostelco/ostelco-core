@@ -149,7 +149,7 @@ class ES2PlusResourceTest {
     @Test
     fun testDownloadOrderWithIncorrectEid() {
         val es2ProtocolPayload = Es2PlusDownloadOrder(
-                "01234567890123456789012345678901a",
+                "01234567890123456789012345678901a", // Appended an "a" to force a JSON schema validation error
                 iccid = "01234567890123456789",
                 profileType = "really!")
 
