@@ -62,7 +62,6 @@ Profile.propTypes = {
 };
 
 function mapStateToProps(state) {
-  console.log("Profile mapStateToProps", JSON.stringify(state))
   const { subscriber } = state;
   return {
     profile: subscriber
