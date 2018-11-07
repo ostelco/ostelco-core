@@ -18,8 +18,8 @@ const Profile = props => {
             <Col xs={12} md={8}>
               <samp>{`${props.profile.name}`}</samp>
             </Col>
-            </Row>
-            <Row className="show-grid">
+          </Row>
+          <Row className="show-grid">
             <Col xs={1} md={1}>
               <samp>{'Email:'}</samp>
             </Col>
@@ -39,12 +39,12 @@ const Profile = props => {
           <br />
           <Row className="show-grid">
             <Col xs={12} md={6}>
-            <samp>{'Block '}<Button bsStyle="link">{'current SIM card'}</Button></samp>
+              <samp>{'Block '}<Button bsStyle="link">{'current SIM card'}</Button></samp>
             </Col>
           </Row>
           <Row className="show-grid">
             <Col xs={12} md={6}>
-            <samp>{'Order '}<Button bsStyle="link">{'new SIM card'}</Button></samp>
+              <samp>{'Order '}<Button bsStyle="link">{'new SIM card'}</Button></samp>
             </Col>
           </Row>
         </Grid>
@@ -56,7 +56,7 @@ const Profile = props => {
 Profile.propTypes = {
   profile: PropTypes.shape({
     name: PropTypes.string,
-    email:PropTypes.string,
+    email: PropTypes.string,
     address: PropTypes.string
   }),
 };
