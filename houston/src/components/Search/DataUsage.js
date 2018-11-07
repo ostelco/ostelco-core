@@ -3,31 +3,68 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { authActions, pseudoActions } from '../../actions';
 import { Grid, Row, Col, Button, Panel } from 'react-bootstrap';
+import { WarningModal } from './WarningModal'
 
-const DataUsage = props => {
-  return (
-    <Panel>
-      <Panel.Heading>Data balance</Panel.Heading>
-      <Panel.Body>
-        <Grid>
-          <Row className="show-grid">
-            <Col xs={6} md={4}>
-            <samp>{`Remaining ${props.balance}.`}</samp>
-            </Col>
-            <Col xs={6} md={4}>
-              <samp><Button bsStyle="link">{'Give additional 1 GB'}</Button></samp>
-            </Col>
+class DataUsage extends React.Component {
+  constructor(props, context) {
+    super(props, context);
+    this.state = {
+      showWarning: false
+    };
+  }
+
+  handleCloseModal = () => {
+    this.setState({
+      showWarning: false
+    });
+  }
+
+  handleShowModal = () => {
+    this.setState({
+      showWarning: true
+    });
+  }
+
+  handleConfirmModal = () => {
+    this.handleCloseModal();
+    // TODO call the method to give additional data
+  }
+
+  render() {
+    const modalHeading = `Confirm additional Data`
+    const modalText = `Do you really want to give this user an additional 1 GB of Data ?`
+    const props = this.props;
+    if (!props.balance) return null;
+    return (
+      <Panel>
+        <Panel.Heading>Data balance</Panel.Heading>
+        <Panel.Body>
+          <Grid>
+            <Row className="show-grid">
+              <Col xs={6} md={4}>
+                <samp>{`Remaining ${props.balance}.`}</samp>
+              </Col>
+              <Col xs={6} md={4}>
+                <samp><Button bsStyle="link" onClick={this.handleShowModal}>{'Give additional 1 GB'}</Button></samp>
+              </Col>
             </Row>
           </Grid>
-      </Panel.Body>
-    </Panel>
-  );
+          <WarningModal
+            heading={modalHeading}
+            warningText={modalText}
+            show={this.state.showWarning}
+            handleConfirm = {this.handleConfirmModal}
+            handleClose = {this.handleCloseModal}/>
+        </Panel.Body>
+      </Panel>
+    );
+  }
 }
 
 DataUsage.propTypes = {
   loggedIn: PropTypes.bool,
   pseudonym: PropTypes.object,
-  balance: PropTypes.string.isRequired
+  balance: PropTypes.string
 };
 
 function humanReadableBytes(sizeInBytes) {
@@ -41,12 +78,12 @@ function humanReadableBytes(sizeInBytes) {
 }
 
 function mapStateToProps(state) {
-  const { loggedIn } = state.authentication;
-  const { pseudonym } = state;
-  const balance = humanReadableBytes(1024 * 1024 * 1024 * 2);
+  const { bundles } = state;
+  let balance = null;
+  if (bundles.data) {
+    balance = humanReadableBytes(bundles.data[0].balance);
+  }
   return {
-    loggedIn,
-    pseudonym,
     balance
   };
 }

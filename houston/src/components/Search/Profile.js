@@ -1,10 +1,11 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { authActions, pseudoActions } from '../../actions';
 import { Button, Panel, Grid, Row, Col } from 'react-bootstrap';
 
 const Profile = props => {
+  console.log(JSON.stringify(props.profile));
+  if (!props.profile.name) return null;
   return (
     <Panel>
       <Panel.Heading>User Profile</Panel.Heading>
@@ -53,31 +54,18 @@ const Profile = props => {
 }
 
 Profile.propTypes = {
-  loggedIn: PropTypes.bool,
-  pseudonym: PropTypes.object,
   profile: PropTypes.shape({
     name: PropTypes.string,
     email:PropTypes.string,
     address: PropTypes.string
-  }).isRequired,
+  }),
 };
 
 function mapStateToProps(state) {
-  const { loggedIn } = state.authentication;
-  const { pseudonym } = state;
-  const profile = {
-    name: "Shane Warne",
-    email: "shane@icc.org",
-    address: "4, Leng Kee Road,  #06-07 SiS Building, Singapore 159088"
-  }
+  console.log("Profile mapStateToProps", JSON.stringify(state))
+  const { subscriber } = state;
   return {
-    loggedIn,
-    pseudonym,
-    profile
+    profile: subscriber
   };
 }
-const mapDispatchToProps = {
-  login: authActions.login,
-  getPseudonym: pseudoActions.getPseudonym
-}
-export default connect(mapStateToProps, mapDispatchToProps)(Profile);
+export default connect(mapStateToProps)(Profile);

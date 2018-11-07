@@ -28,7 +28,7 @@ export class SearchForm extends React.Component {
     e.preventDefault();
     //handle form processing here....
     console.log("SearchForm On Submit")
-    this.props.onSubmit()
+    this.props.onSubmit(this.state.value)
   }
 
   render() {

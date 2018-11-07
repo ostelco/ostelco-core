@@ -1,15 +1,16 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { authActions, pseudoActions } from '../../actions';
+import { authActions, subscriberActions } from '../../actions';
 import { SearchForm } from './SearchForm';
 import SearchResults from './SearchResults';
 
 class Search extends React.Component {
 
-  onSubmit = () => {
+  onSubmit = (text) => {
     //handle form processing here....
     console.log("Search On Submit")
+    this.props.getSubscriberAndBundles(text)
   }
 
   render() {
@@ -46,6 +47,6 @@ function mapStateToProps(state) {
 }
 const mapDispatchToProps = {
   login: authActions.login,
-  getPseudonym: pseudoActions.getPseudonym
+  getSubscriberAndBundles: subscriberActions.mockGetSubscriberAndBundles
 }
 export default connect(mapStateToProps, mapDispatchToProps)(Search);
