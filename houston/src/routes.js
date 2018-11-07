@@ -3,6 +3,7 @@ import { Route, Router } from 'react-router-dom';
 import App from './components/App';
 import Home from './components/Home/Home';
 import Search from './components/Search/Search';
+import Notifications from './components/Notifications/Notifications';
 import Callback from './components/Callback/Callback';
 import { history } from './helpers';
 import { Provider } from 'react-redux';
@@ -16,7 +17,6 @@ const handleAuthentication = ({location}) => {
 }
 
 export const makeMainRoutes = () => {
-  console.log("makeMainRoutes")
   return (
     <Provider store={store}>
         <Router history={history}>
@@ -24,6 +24,7 @@ export const makeMainRoutes = () => {
             <Route path="/" render={(props) => <App {...props} />} />
             <Route path="/home" render={(props) => <Home {...props} />} />
             <Route path="/search" render={(props) => <Search {...props} />} />
+            <Route path="/notifications" render={(props) => <Notifications {...props} />} />
             <Route path="/callback" render={(props) => {
                 handleAuthentication(props);
                 return <Callback {...props} /> 

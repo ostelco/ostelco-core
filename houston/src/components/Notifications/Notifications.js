@@ -2,10 +2,10 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { authActions, subscriberActions } from '../../actions';
-import { SearchForm } from './SearchForm';
-import SearchResults from './SearchResults';
+import { TextForm } from './TextForm';
+import { Panel } from 'react-bootstrap';
 
-class Search extends React.Component {
+class Notifications extends React.Component {
 
   onSubmit = (text) => {
     //handle form processing here....
@@ -18,19 +18,24 @@ class Search extends React.Component {
 
     return (
       <div className="container">
-        <SearchForm onSubmit = {this.onSubmit} />
-        <br/>
-        {
-          hasResults && (
-            <SearchResults />
-          )
-        }
+      <Panel>
+      <Panel.Heading>Global Push Notifications.</Panel.Heading>
+      <Panel.Body>
+        <TextForm onSubmit = {this.onSubmit} />
+        </Panel.Body>
+        </Panel>
+        <Panel>
+      <Panel.Heading>Global Emails</Panel.Heading>
+      <Panel.Body>
+        <TextForm onSubmit = {this.onSubmit} />
+        </Panel.Body>
+        </Panel>
       </div>
     );
   }
 }
 
-Search.propTypes = {
+Notifications.propTypes = {
   loggedIn: PropTypes.bool,
   pseudonym: PropTypes.object,
   profile: PropTypes.object,
@@ -46,4 +51,4 @@ const mapDispatchToProps = {
   login: authActions.login,
   getSubscriberAndBundles: subscriberActions.mockGetSubscriberAndBundles
 }
-export default connect(mapStateToProps, mapDispatchToProps)(Search);
+export default connect(mapStateToProps, mapDispatchToProps)(Notifications);
