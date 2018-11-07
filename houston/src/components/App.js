@@ -28,10 +28,7 @@ class App extends Component {
         <Navbar fluid>
           <Navbar.Header>
             <Navbar.Brand>
-              <a href="#">
-                <img src="redotter.png" style={{ width: 100, marginTop: 5 }} />
-                Houston
-              </a>
+                <img src="redotter.png" style={{ width: 80, height: 80, marginTop: -10 }} />
             </Navbar.Brand>
             {
               !isAuthenticated && (
@@ -51,13 +48,7 @@ class App extends Component {
               <Navbar.Collapse>
                 <Nav>
                 <NavItem componentClass={Link} href="/search" to="/search" active={window.location.pathname === '/search'}>Search</NavItem>
-                <NavItem componentClass={Link} href="/home" to="/home" active={window.location.pathname === '/home'}>Home</NavItem>
-                  <NavItem >
-                    Customer 
-                  </NavItem>
-                  <NavItem eventKey={2} href="#">
-                    Link
-                  </NavItem>
+                <NavItem componentClass={Link} href="/notify" to="/notify" active={window.location.pathname === '/notify'}>Notifications</NavItem>
                   <NavDropdown eventKey={3} title="Dropdown" id="basic-nav-dropdown">
                     <MenuItem eventKey={3.1}>Action</MenuItem>
                     <MenuItem eventKey={3.2}>Another action</MenuItem>
