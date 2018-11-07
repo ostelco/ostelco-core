@@ -10,27 +10,27 @@ import { Provider } from 'react-redux';
 import { store } from './helpers';
 import { authService } from './services';
 
-const handleAuthentication = ({location}) => {
+const handleAuthentication = ({ location }) => {
   if (/access_token|id_token|error/.test(location.hash)) {
-      authService.handleAuthentication(store.dispatch);
+    authService.handleAuthentication(store.dispatch);
   }
 }
 
 export const makeMainRoutes = () => {
   return (
     <Provider store={store}>
-        <Router history={history}>
-            <div>
-            <Route path="/" render={(props) => <App {...props} />} />
-            <Route path="/home" render={(props) => <Home {...props} />} />
-            <Route path="/search" render={(props) => <Search {...props} />} />
-            <Route path="/notifications" render={(props) => <Notifications {...props} />} />
-            <Route path="/callback" render={(props) => {
-                handleAuthentication(props);
-                return <Callback {...props} /> 
-            }}/>
-            </div>
-        </Router>
-      </Provider>
+      <Router history={history}>
+        <div>
+          <Route path="/" render={(props) => <App {...props} />} />
+          <Route path="/home" render={(props) => <Home {...props} />} />
+          <Route path="/search" render={(props) => <Search {...props} />} />
+          <Route path="/notifications" render={(props) => <Notifications {...props} />} />
+          <Route path="/callback" render={(props) => {
+            handleAuthentication(props);
+            return <Callback {...props} />
+          }} />
+        </div>
+      </Router>
+    </Provider>
   );
 }
