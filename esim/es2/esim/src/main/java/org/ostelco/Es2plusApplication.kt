@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.dropwizard.Application
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
+import org.json.JSONObject
+import org.json.JSONTokener
 import java.io.IOException
 import javax.ws.rs.*
 import javax.ws.rs.container.ContainerRequestContext
@@ -118,7 +120,6 @@ data class Es2HandleDownloadProgressInfo(
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 class Es2PlusResource() {
-
 
     @Path("downloadOrder")
     @POST
