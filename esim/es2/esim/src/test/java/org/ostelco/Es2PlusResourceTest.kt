@@ -26,8 +26,6 @@ import javax.ws.rs.core.Response
 import javax.ws.rs.ext.Provider
 import javax.ws.rs.ext.ReaderInterceptor
 import javax.ws.rs.ext.ReaderInterceptorContext
-import kotlin.reflect.KClass
-import kotlin.reflect.KFunction
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.jvm.kotlinFunction
 
@@ -73,26 +71,35 @@ public class JsonSchemaValidator implements ContainerRequestFilter {
 @Provider
 class RequestServerReaderInterceptor : ReaderInterceptor, DynamicFeature {
 
-    // XXX Extend by reading at startup, putting into maps
-    var schema: Schema
+
+
+    var currentSchema: ThreadLocal<Schema?> = ThreadLocal()
+    var schemaMap: MutableMap<String, Schema> = mutableMapOf()
 
     init {
         val inputStream = this.javaClass.getResourceAsStream("/es2schemas/ES2+DownloadOrder-def.json")
-        val rawSchema = JSONObject(JSONTokener(inputStream))
-        schema = org.everit.json.schema.loader.SchemaLoader.load(rawSchema)
+        val schema = JSONObject(JSONTokener(inputStream))
+        schemaMap["ES2+DownloadOrder-def"] = org.everit.json.schema.loader.SchemaLoader.load(schema)
     }
 
     override fun configure(resourceInfo: ResourceInfo, context: FeatureContext) {
         val method = resourceInfo.resourceMethod
         val func = method.kotlinFunction
 
-        println("invoked by method = ${method.kotlinFunction}")
-
         if (func != null) {
             val jsonSchemaAnnotation = func!!.findAnnotation<JsonSchema>()
             if (jsonSchemaAnnotation != null) {
                 println("We just read an annotation key =  ${jsonSchemaAnnotation.schemaKey}")
+                if (!schemaMap.containsKey(jsonSchemaAnnotation.schemaKey)) {
+                    // XXX Log that  an unknown schema map was encountered.
+                    throw WebApplicationException("Unknown schema map", Response.Status.INTERNAL_SERVER_ERROR)
+                }
+                currentSchema.set(schemaMap[jsonSchemaAnnotation.schemaKey]!!)
+            } else {
+                currentSchema.set(null)
             }
+        } else {
+            currentSchema.set(null)
         }
     }
 
@@ -103,10 +110,19 @@ class RequestServerReaderInterceptor : ReaderInterceptor, DynamicFeature {
         val body: String = stream.collect(Collectors.joining("\n"))
         ctx.inputStream = ByteArrayInputStream("$body".toByteArray())
 
-        try {
-            schema.validate(JSONObject(body))
-        } catch (t: ValidationException) {
-            throw WebApplicationException( t.errorMessage, Response.Status.BAD_REQUEST)
+        // XXX This ThreadLocal stuff isn't cutting it.   Losing the
+        ///    validator. Need to find some other way of transporting it between the two
+        //     methods.   Perhaps the generic type or type fields of the ctx?  There is an annotation field?
+        //     Putting the annotation on the type being deserialized is in fact quite nice, since it
+        //     puts the entire responsibility into this method, thus avoiding the need to transport
+        //     information from the "configure" method.  We'll do that. It's much cleaner!!
+        val schema = currentSchema.get()
+        if (schema != null) {
+            try {
+                schema.validate(JSONObject(body))
+            } catch (t: ValidationException) {
+                throw WebApplicationException(t.errorMessage, Response.Status.BAD_REQUEST)
+            }
         }
 
         return ctx.proceed()
