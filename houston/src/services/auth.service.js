@@ -1,6 +1,6 @@
 import { history } from '../helpers';
 import auth0 from 'auth0-js';
-import * as _ from 'lodash';
+import _ from 'lodash';
 import { getAuthConfig } from './config-variables';
 import { authActions } from '../actions';
 import { store } from '../helpers';
