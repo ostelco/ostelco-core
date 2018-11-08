@@ -16,8 +16,6 @@ import javax.ws.rs.core.UriBuilder
 import javax.ws.rs.ext.Provider
 
 
-
-
 class Es2plusApplication : Application<Es2plusConfiguration>() {
 
     override fun getName(): String {

@@ -6,14 +6,18 @@ import org.json.JSONException
 import org.json.JSONObject
 import org.json.JSONTokener
 import org.ostelco.JsonSchema
-import java.io.BufferedReader
-import java.io.ByteArrayInputStream
-import java.io.IOException
-import java.io.InputStreamReader
 import java.util.stream.Collectors
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.Response
 import javax.ws.rs.ext.*
+import java.io.*
+import javax.ws.rs.container.ContainerResponseContext
+import javax.ws.rs.container.ContainerRequestContext
+import javax.ws.rs.container.ContainerResponseFilter
+
+
+
+
 
 
 class JsonSchemaValidator() {
@@ -71,15 +75,24 @@ class RequestServerReaderWriterInterceptor : ReaderInterceptor, WriterIntercepto
 
         return ctx.proceed()
     }
+    
 
     @Throws(IOException::class, WebApplicationException::class)
     override fun aroundWriteTo(ctx: WriterInterceptorContext) {
 
-        // XXX Read docs, figure out how to do this, essentially
-        //     check the  json schema of anything being written, if the
-        //     entity being written has a schema declared in an
-        //     annotation.
+        // Read the whole output entity as a byte array,
+        // then convert it to a string that is validated
+        val out =  ByteArrayOutputStream()
+        ctx.outputStream = out
+        val contentBytes = out.toByteArray()
+        val body = contentBytes.contentToString()
+        val type = ctx.entity::class.java
+        validator.validateString(ctx.type, body)
 
-        return ctx.proceed()
+        // Now we convert write the original entity back
+        // to the filter output stream.
+        ctx.outputStream = ByteArrayOutputStream()
+        ctx.outputStream.write(out.toByteArray())
+        ctx.proceed()
     }
 }
