@@ -1,3 +1,4 @@
+import { deflateSync } from "zlib";
 
 export const getTextType = (text)  => {
   const isPhoneNumber = /^[+]?\d+$/g.test(text)
@@ -15,4 +16,9 @@ export const humanReadableBytes = (sizeInBytes) => {
     i++;
   } while (sizeInBytes > 1024);
   return `${Math.max(sizeInBytes, 0.1).toFixed(1)} ${byteUnits[i]}`;
+}
+
+export const convertTimestampToDate = (timestamp) => {
+  const date = new Date(timestamp);
+  return date.toLocaleString('en-GB', { timeZone: 'UTC' });
 }

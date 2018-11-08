@@ -10,7 +10,7 @@ class Search extends React.Component {
   onSubmit = (text) => {
     //handle form processing here....
     console.log("Search On Submit")
-    this.props.getSubscriberAndBundles(text)
+    this.props.getSubscriberAndBundlesByEmail(text)
   }
 
   render() {
@@ -44,6 +44,6 @@ function mapStateToProps(state) {
 }
 const mapDispatchToProps = {
   login: authActions.login,
-  getSubscriberAndBundles: subscriberActions.mockGetSubscriberAndBundles
+  getSubscriberAndBundlesByEmail: subscriberActions.getSubscriberAndBundlesByEmail
 }
 export default connect(mapStateToProps, mapDispatchToProps)(Search);

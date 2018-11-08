@@ -8,7 +8,7 @@ export class SearchForm extends React.Component {
     super(props, context);
     this.handleChange = this.handleChange.bind(this);
     this.state = {
-      value: ''
+      value: 'havard.noren@telenordigital.com', //'vihang.patil@telenordigital.com'
     };
   }
   getValidationState() {

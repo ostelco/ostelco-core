@@ -33,7 +33,47 @@ const getSubscriberByMsisdn = (msisdn) => (dispatch, getState) => {
   return dispatch(fetchSubscriberByMsisdn(msisdn));
 }
 
+const fetchBundlesByEmail = (email) => ({
+  [CALL_API]: {
+    types: [
+      subscriberConstants.BUNDLES_REQUEST,
+      subscriberConstants.BUNDLES_SUCCESS,
+      subscriberConstants.BUNDLES_FAILURE],
+    endpoint: `bundles/email/${encodeURIComponent(email)}`,
+    method: 'GET'
+  }
+});
+
+const getBundlesByEmail = (email) => (dispatch, getState) => {
+  console.log("getBundlesByEmail =", email);
+  return dispatch(fetchBundlesByEmail(email));
+}
+
+const fetchPaymentHistoryByEmail = (email) => ({
+  [CALL_API]: {
+    types: [
+      subscriberConstants.PAYMENT_HISTORY_REQUEST,
+      subscriberConstants.PAYMENT_HISTORY_SUCCESS,
+      subscriberConstants.PAYMENT_HISTORY_FAILURE],
+    endpoint: `purchases/email/${encodeURIComponent(email)}`,
+    method: 'GET'
+  }
+});
+
+const getPaymentHistoryByEmail = (email) => (dispatch, getState) => {
+  console.log("getPaymentHistoryByEmail =", email);
+  return dispatch(fetchPaymentHistoryByEmail(email));
+}
+
 // TODO: API based implementaion. Reference: https://github.com/reduxjs/redux/issues/1676
+const getSubscriberAndBundlesByEmail = (email) => (dispatch, getState) =>  {
+  return dispatch(fetchSubscriberByEmail(email)).then(() => {
+    return dispatch(fetchBundlesByEmail(email)).then(() => {
+      return dispatch(fetchPaymentHistoryByEmail(email))
+    })
+  })
+}
+
 
 const mockGetSubscriberAndBundles = (email) => (dispatch, getState) =>  {
     // Remember I told you dispatch() can now handle thunks?
@@ -70,5 +110,7 @@ const mockGetBundles = (email) => {
 export const subscriberActions = {
   getSubscriberByEmail,
   getSubscriberByMsisdn,
+  getBundlesByEmail,
+  getSubscriberAndBundlesByEmail,
   mockGetSubscriberAndBundles
 };

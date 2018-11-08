@@ -28,11 +28,35 @@ export function bundles(state = {}, action) {
         loading: true
       };
     case subscriberConstants.BUNDLES_SUCCESS:
-      console.log(JSON.stringify(action))
       return {
         data: action.response
       };
     case subscriberConstants.BUNDLES_FAILURE:
+      return {
+        error: action.error
+      };
+    default:
+      return state
+  }
+}
+
+export function paymentHistory(state = {}, action) {
+  switch (action.type) {
+    case subscriberConstants.PAYMENT_HISTORY_REQUEST:
+      return {
+        loading: true
+      };
+    case subscriberConstants.PAYMENT_HISTORY_SUCCESS:
+      let history = action.response;
+      if (Array.isArray(history)){
+        history.sort((a,b) => {
+          return (a.timestamp - b.timestamp) * -1;
+        })
+      }
+      return {
+        data: history
+      };
+    case subscriberConstants.PAYMENT_HISTORY_FAILURE:
       return {
         error: action.error
       };
