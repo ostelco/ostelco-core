@@ -151,8 +151,11 @@ class Es2PlusResource() {
 
     @Path("confirmOrder")
     @POST
-    fun confirmOrder(order: Es2ConfirmOrder): Response {
-        return Response.created(UriBuilder.fromPath("http://bananas.org/").build()).build()
+    fun confirmOrder(order: Es2ConfirmOrder): Es2ConfirmOrderResponse {
+        return Es2ConfirmOrderResponse(
+                eid =order.eid,
+                smdsAddress = order.smdsAddress,
+                matchingId = order.matchingId )
     }
 
     @Path("cancelOrder")
