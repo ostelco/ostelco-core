@@ -1,6 +1,7 @@
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.dropwizard.testing.junit.ResourceTestRule
 import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.fail
 import org.everit.json.schema.Schema
 import org.everit.json.schema.ValidationException
 import org.json.JSONException
@@ -48,7 +49,9 @@ class ES2PlusResourceTest {
                 .header("User-Agent", "gsma-rsp-lpad")
                 .header("X-Admin-Protocol", "gsma/rsp/v<x.y.z>")
                 .post(entity)
-        assertEquals(expectedReturnCode, result.status)
+        if (expectedReturnCode  != result.status) {
+            assertEquals("Expected return value $expectedReturnCode, but got ${result.status}.  Body was \"${result.readEntity(String::class.java)}\"", expectedReturnCode, result.status)
+        }
         return result
     }
 
