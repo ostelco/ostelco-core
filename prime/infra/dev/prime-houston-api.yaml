@@ -10,47 +10,106 @@ x-google-endpoints:
 schemes:
   - "https"
 paths:
-  "/pseudonym/current/{msisdn}":
+  "/profile/email/{email}":
     get:
-      description: "Get the pseudonym which is valid at the time of the call."
+      description: "Get profile for the given email-id (url encoded)."
       produces:
       - application/json
-      operationId: "getPseudonym"
+      operationId: "getProfileByEmail"
       responses:
         200:
-          description: "pseudonym for this msisdn."
+          description: "Get the profile for this user."
           schema:
-            $ref: '#/definitions/PseudonymEntity'
+            $ref: '#/definitions/Profile'
         404:
-          description: "Not found."
+          description: "Profile not found."
       security:
       - auth0_jwt: []
-      parameters:
-      - name: msisdn
-        in: path
-        description: msisdn to be pseudonymised
-        required: true
-        type: string
+  "/profile/msisdn/{msisdn}":
+    get:
+      description: "Get profile for the given msisdn."
+      produces:
+      - application/json
+      operationId: "getProfileByMsisdn"
+      responses:
+        200:
+          description: "Get the profile for this user."
+          schema:
+            $ref: '#/definitions/Profile'
+        404:
+          description: "Profile not found."
+      security:
+      - auth0_jwt: []
 definitions:
-  PseudonymEntity:
+  Profile:
     type: object
     properties:
-      sourceId:
+      name:
         type: string
-      pseudonym:
+      address:
         type: string
-      start:
-        description: "The start time stamp for this pseudonym"
-        type: integer
-        format: int64
-      end:
-        description: "The start time stamp for this pseudonym"
-        type: integer
-        format: int64
+      postCode:
+        type: string
+      city:
+        type: string
+      country:
+        type: string
+      email:
+        type: string
+        format: email
+      referralId:
+        type: string
     required:
-    - sourceId
-    - pseudonym
-    - start
+    - email
+  SubscriptionList:
+    type: array
+    items:
+      $ref: '#/definitions/Subscription'
+  Subscription:
+    type: object
+    properties:
+      msisdn:
+        description: "Mobile number for this subscription"
+        type: string
+      alias:
+        description: "Human readable optional alias for this subscription"
+        type: string
+  BundleList:
+    type: array
+    items:
+      $ref: '#/definitions/Bundle'
+  Bundle:
+    type: object
+    properties:
+      id:
+        description: "Bundle ID"
+        type: string
+      balance:
+        description: "Balance units in this bundle"
+        type: integer
+        format: int64
+  PurchaseRecordList:
+    type: array
+    items:
+      $ref: '#/definitions/PurchaseRecord'
+  PurchaseRecord:
+    type: object
+    properties:
+      id:
+        description: "Purchase Record ID"
+        type: string
+      msisdn:
+        description: "Deprecated: The MSISDN for which the purchase was made."
+        type: string
+      timestamp:
+        description: "The time stamp of the purchase"
+        type: integer
+        format: int64
+      product:
+        $ref: '#/definitions/Product'
+    required:
+    - timestamp
+    - product
     - end
 securityDefinitions:
   auth0_jwt:
