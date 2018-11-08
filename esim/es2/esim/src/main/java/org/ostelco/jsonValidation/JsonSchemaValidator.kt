@@ -120,8 +120,8 @@ class RequestServerReaderWriterInterceptor : ReaderInterceptor, WriterIntercepto
         val type = ctx.entity::class.java
         validator.validateString(ctx.type, contentString, Response.Status.INTERNAL_SERVER_ERROR)
 
-        // Now we convert write the original entity back
-        // to the filter output stream to be transmitted
+        // Now we  write the original entity back
+        // to the "filtered" output stream to be transmitted
         // over the wire.
         origin.write(contentBytes)
         ctx.outputStream = origin

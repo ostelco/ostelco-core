@@ -4,10 +4,11 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.dropwizard.Application
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
-import org.json.JSONObject
-import org.json.JSONTokener
 import java.io.IOException
-import javax.ws.rs.*
+import javax.ws.rs.Consumes
+import javax.ws.rs.POST
+import javax.ws.rs.Path
+import javax.ws.rs.Produces
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.container.ContainerRequestFilter
 import javax.ws.rs.core.MediaType
@@ -27,7 +28,7 @@ class Es2plusApplication : Application<Es2plusConfiguration>() {
     }
 
     override fun run(configuration: Es2plusConfiguration,
-            environment: Environment) {
+                     environment: Environment) {
         // TODO: implement application
         environment.jersey().register(Es2PlusResource())
         environment.jersey().register(RestrictedOperationsRequestFilter())
@@ -45,7 +46,6 @@ class Es2plusApplication : Application<Es2plusConfiguration>() {
     // https://www.gsma.com/newsroom/wp-content/uploads/SGP.22-v2.0.pdf
 
 }
-
 
 
 @Provider
@@ -81,8 +81,9 @@ data class Es2PlusDownloadOrder(
 )
 
 @JsonSchema("ES2+DownloadOrder-response")
-data class Es2DownloadOrderResponse( @JsonProperty("iccid") val iccid: String)
+data class Es2DownloadOrderResponse(@JsonProperty("iccid") val iccid: String)
 
+@JsonSchema("ES2+ConfirmOrder-def")
 data class Es2ConfirmOrder(
         @JsonProperty("eid") val eid: String,
         @JsonProperty("iccid") val iccid: String,
@@ -99,13 +100,44 @@ data class Es2ConfirmOrderResponse(
         @JsonProperty("smdsAddress") val smdsAddress: String?
 )
 
-
+@JsonSchema("ES2+CancelOrder-def")
 data class Es2CancelOrder(
         @JsonProperty("eid") val eid: String,
         @JsonProperty("iccid") val iccid: String?,
         @JsonProperty("matchingId") val matchingId: String?,
-        @JsonProperty("finalProfileStatusIndicator") val confirmationCode: String?
+        @JsonProperty("finalProfileStatusIndicator") val finalProfileStatusIndicator: String?
 )
+
+enum class FunctionExecutionStatusType {
+    @JsonProperty("Executed-Success")
+    ExecutedSuccess,
+    @JsonProperty("Executed-WithWarning")
+    ExecutedWithWarning,
+    @JsonProperty("Failed")
+    Failed,
+    @JsonProperty("Expired")
+    Expired
+}
+
+
+// XXX Disabled for now. @JsonSchema("ES2+jsonResponseHeader")
+data class ES2JsonBaseResponse(
+        val header: ES2JsonResponseHeader
+)
+
+data class ES2JsonResponseHeader(
+        val functionExecutionStatus: FunctionExecutionStatus)
+
+// XXX Add annotation to ignore null values.
+data class FunctionExecutionStatus(
+        @JsonProperty("status") val status: FunctionExecutionStatusType,
+        @JsonProperty("statusCodeData") val statusCodeData: StatusCodeData?=null)
+
+data class StatusCodeData(
+        @JsonProperty("subjectCode") var subjectCode: String,
+        @JsonProperty("reasonCode") var reasonCode: String,
+        @JsonProperty("subjectIdentifier") var subjectIdentifier: String?,
+        @JsonProperty("message") var message: String?)
 
 data class Es2ReleaseProfile(
         @JsonProperty("iccid") val iccid: String
@@ -114,7 +146,7 @@ data class Es2ReleaseProfile(
 data class ES2NotificationPointStatus(
         @JsonProperty("status") val status: String, // "Executed-Success, Executed-WithWarning, Failed or
         @JsonProperty("statusCodeData") val statusCodeData: ES2StatusCodeData?
-        )
+)
 
 data class ES2StatusCodeData(
         @JsonProperty("subjectCode") val subjectCode: String, // "Executed-Success, Executed-WithWarning, Failed or
@@ -131,15 +163,12 @@ data class Es2HandleDownloadProgressInfo(
         @JsonProperty("notificationPointId") val notificationPointId: String?,
         @JsonProperty("notificationPointStatus") val notificationPointStatus: ES2NotificationPointStatus?,
         @JsonProperty("resultData") val resultData: ES2StatusCodeData?
-        )
-
-
+)
 
 @Path("/gsma/rsp2/es2plus/")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 class Es2PlusResource() {
-
 
     @Path("downloadOrder")
     @POST
@@ -153,15 +182,18 @@ class Es2PlusResource() {
     @POST
     fun confirmOrder(order: Es2ConfirmOrder): Es2ConfirmOrderResponse {
         return Es2ConfirmOrderResponse(
-                eid =order.eid,
+                eid = order.eid,
                 smdsAddress = order.smdsAddress,
-                matchingId = order.matchingId )
+                matchingId = order.matchingId)
     }
 
     @Path("cancelOrder")
     @POST
-    fun cancelOrder(order: Es2CancelOrder): Response {
-        return Response.created(UriBuilder.fromPath("http://bananas.org/").build()).build()
+    fun cancelOrder(order: Es2CancelOrder): ES2JsonBaseResponse {
+        return ES2JsonBaseResponse(
+                header = ES2JsonResponseHeader(
+                        functionExecutionStatus = FunctionExecutionStatus(
+                                status = FunctionExecutionStatusType.ExecutedSuccess)))
     }
 
     @Path("releaseProfile")
