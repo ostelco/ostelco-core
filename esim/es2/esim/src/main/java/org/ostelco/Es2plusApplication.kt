@@ -85,12 +85,20 @@ data class Es2DownloadOrderResponse( @JsonProperty("iccid") val iccid: String)
 
 data class Es2ConfirmOrder(
         @JsonProperty("eid") val eid: String,
-        @JsonProperty("iccid") val iccid: String?,
+        @JsonProperty("iccid") val iccid: String,
         @JsonProperty("matchingId") val matchingId: String?,
         @JsonProperty("confirmationCode") val confirmationCode: String?,
         @JsonProperty("smdsAddress") val smdsAddress: String?,
-        @JsonProperty("releaseFlag") val releaseFlag: String?
+        @JsonProperty("releaseFlag") val releaseFlag: Boolean
 )
+
+@JsonSchema("ES2+ConfirmOrder-response")
+data class Es2ConfirmOrderResponse(
+        @JsonProperty("eid") val eid: String,
+        @JsonProperty("matchingId") val matchingId: String?,
+        @JsonProperty("smdsAddress") val smdsAddress: String?
+)
+
 
 data class Es2CancelOrder(
         @JsonProperty("eid") val eid: String,

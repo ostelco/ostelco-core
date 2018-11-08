@@ -71,7 +71,7 @@ class RequestServerReaderWriterInterceptor : ReaderInterceptor, WriterIntercepto
 
     @Throws(IOException::class, WebApplicationException::class)
     override fun aroundWriteTo(ctx: WriterInterceptorContext) {
-        
+
         // Switch out the original output stream with a
         // ByteArrayOutputStream that we can get a byte
         // array out of

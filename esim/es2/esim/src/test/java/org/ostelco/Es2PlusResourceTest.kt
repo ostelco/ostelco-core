@@ -1,3 +1,4 @@
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.dropwizard.testing.junit.ResourceTestRule
 import junit.framework.TestCase.assertEquals
 import org.everit.json.schema.Schema
@@ -61,10 +62,11 @@ class ES2PlusResourceTest {
 
         val response  =
                 postEs2ProtocolCommand(es2ProtocolPayload, expectedReturnCode=200)
-                        .readEntity(String::class.java)
+                        .readEntity(Es2DownloadOrderResponse::class.java)
         println("Response = $response")
     }
 
+    // XXX Remove this thing, it should be in the test harness for the JsonSchemaValidator, not for the actual ES2+ protocol
     @Test
     fun testDownloadOrderWithIncorrectEid() {
         val es2ProtocolPayload = Es2PlusDownloadOrder(
@@ -73,5 +75,17 @@ class ES2PlusResourceTest {
                 profileType = "really!")
 
         postEs2ProtocolCommand(es2ProtocolPayload, expectedReturnCode=400)
+    }
+
+    @Test
+    fun testConfirmOrder() {
+        val es2ConfirmOrder = postEs2ProtocolCommand(Es2ConfirmOrder(
+                eid = "01234567890123456789012345678901",
+                iccid = "01234567890123456789",
+                matchingId = "foo",
+                confirmationCode = "bar",
+                smdsAddress = "baz",
+                releaseFlag = true), 200)
+                .readEntity(Es2ConfirmOrderResponse::class.java)
     }
 }
