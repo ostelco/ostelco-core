@@ -73,6 +73,32 @@ paths:
         description: "The email of the user"
         required: true
         type: string
+  "/purchases/email/{email}":
+    get:
+      description: "Get list of all purchases."
+      produces:
+      - application/json
+      - text/plain
+      operationId: "getPurchaseHistoryByEmail"
+      responses:
+        200:
+          description: "List of Purchase Records."
+          schema:
+            $ref: '#/definitions/PurchaseRecordList'
+        403:
+          description: "Not allowed to charge this source"
+        404:
+          description: "No Purchase Records found for the user."
+        503:
+          description: "Service Unavailable"
+      security:
+      - auth0_jwt: []
+      parameters:
+      - name: email
+        in: path
+        description: "The email of the user"
+        required: true
+        type: string
 definitions:
   Profile:
     type: object
