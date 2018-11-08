@@ -58,7 +58,7 @@ class Auth {
     localStorage.setItem('picture', picture);
 
     // navigate to the home route
-    history.replace('/home');
+    history.replace('/search');
     const { accessToken } = authResult;
     this.user = { accessToken, expiresAt, name, email, picture };
   }
