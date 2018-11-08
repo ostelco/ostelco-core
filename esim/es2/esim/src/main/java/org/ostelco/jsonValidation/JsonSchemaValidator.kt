@@ -6,6 +6,7 @@ import org.json.JSONObject
 import org.json.JSONTokener
 import org.ostelco.JsonSchema
 import java.io.*
+import java.nio.charset.Charset
 import java.util.stream.Collectors
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.Response
@@ -70,23 +71,32 @@ class RequestServerReaderWriterInterceptor : ReaderInterceptor, WriterIntercepto
 
     @Throws(IOException::class, WebApplicationException::class)
     override fun aroundWriteTo(ctx: WriterInterceptorContext) {
-/*
-        // Read the whole output entity as a byte array,
-        // then convert it to a string that is validated
-        val out = ByteArrayOutputStream()
-        ctx.outputStream = out
-        val contentBytes = out.toByteArray()
-        val body = contentBytes.contentToString()
+
+
+        // Switch out the original output stream with a
+        // ByteArrayOutputStream that we can get a byte
+        // array out of
+        val origin = ctx.outputStream!!
+        val interceptingStream =  ByteArrayOutputStream()
+        ctx.outputStream = interceptingStream
+
+        // Proceed, meaning that we'll get all the input
+        // sent into the byte output stream.
+        ctx.proceed()
+
+        // Then get the byte array & convert it to a nice
+        // UTF-8 string
+        val contentBytes = interceptingStream.toByteArray()
+        val contentString: String = String(contentBytes, Charset.forName("UTF-8"))
+
+        // Validate our now serialized input.
         val type = ctx.entity::class.java
-        // XXX THis thign will fail due to weird quoting. Fix!
-        // validator.validateString(ctx.type, body, Response.Status.INTERNAL_SERVER_ERROR)
+        validator.validateString(ctx.type, contentString, Response.Status.INTERNAL_SERVER_ERROR)
 
         // Now we convert write the original entity back
         // to the filter output stream to be transmitted
         // over the wire.
-        ctx.outputStream = ByteArrayOutputStream()
-        ctx.outputStream.write(out.toByteArray())
-        */
-        ctx.proceed()
+        origin.write(contentBytes)
+        ctx.outputStream = origin
     }
 }
