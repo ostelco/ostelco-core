@@ -75,8 +75,8 @@ class BundlesResource() {
                     .build()
         }
         val decodedEmail = URLDecoder.decode(email, "UTF-8")
-        logger.info("${token.name} Accessing profile for $decodedEmail")
-        return getBundles(token.name).fold(
+        logger.info("${token.name} Accessing bundles for $decodedEmail")
+        return getBundles(decodedEmail).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
