@@ -8,10 +8,7 @@ import org.json.JSONTokener
 import org.junit.AfterClass
 import org.junit.ClassRule
 import org.junit.Test
-import org.ostelco.Es2PlusDownloadOrder
-import org.ostelco.Es2PlusResource
-import org.ostelco.JsonSchema
-import org.ostelco.RestrictedOperationsRequestFilter
+import org.ostelco.*
 import org.ostelco.jsonValidation.RequestServerReaderWriterInterceptor
 import java.io.*
 import java.util.stream.Collectors
@@ -43,9 +40,9 @@ class ES2PlusResourceTest {
 
     private fun <T> postEs2ProtocolCommand(
             es2ProtocolPayload: T,
-            expectedReturnCode: Int = 201): Response? {
+            expectedReturnCode: Int = 201): Response {
         val entity: Entity<T> = Entity.entity(es2ProtocolPayload, MediaType.APPLICATION_JSON)
-        val result = RULE.target("/gsma/rsp2/es2plus/downloadOrder")
+        val result : Response = RULE.target("/gsma/rsp2/es2plus/downloadOrder")
                 .request(MediaType.APPLICATION_JSON)
                 .header("User-Agent", "gsma-rsp-lpad")
                 .header("X-Admin-Protocol", "gsma/rsp/v<x.y.z>")
@@ -54,9 +51,7 @@ class ES2PlusResourceTest {
         return result
     }
 
-    // XXX TODO:   Extend the method to return a proper result object,
-    //             pick that result object up, and fail the test if it's
-    //             the expected result.
+  
     @Test
     fun testDownloadOrder() {
         val es2ProtocolPayload = Es2PlusDownloadOrder(
@@ -64,7 +59,10 @@ class ES2PlusResourceTest {
                 iccid = "01234567890123456789",
                 profileType = "really!")
 
-        postEs2ProtocolCommand(es2ProtocolPayload)
+        val response  =
+                postEs2ProtocolCommand(es2ProtocolPayload, expectedReturnCode=200)
+                        .readEntity(Es2DownloadOrderResponse::class.java)
+        println("Response = $response")
     }
 
     @Test

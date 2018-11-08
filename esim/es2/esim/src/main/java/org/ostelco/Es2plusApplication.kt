@@ -80,6 +80,9 @@ data class Es2PlusDownloadOrder(
         @JsonProperty("profileType") val profileType: String?
 )
 
+@JsonSchema("ES2+DownloadOrder-response")
+data class Es2DownloadOrderResponse( @JsonProperty("iccid") val iccid: String)
+
 data class Es2ConfirmOrder(
         @JsonProperty("eid") val eid: String,
         @JsonProperty("iccid") val iccid: String?,
@@ -132,8 +135,10 @@ class Es2PlusResource() {
 
     @Path("downloadOrder")
     @POST
-    fun downloadOrder(order: Es2PlusDownloadOrder): Response {
-        return Response.created(UriBuilder.fromPath("http://bananas.org/").build()).build()
+    fun downloadOrder(order: Es2PlusDownloadOrder): Es2DownloadOrderResponse {
+        val iccid = if (order.iccid != null) order.iccid else "01234567890123456798"
+        val response = Es2DownloadOrderResponse(iccid)
+        return response
     }
 
     @Path("confirmOrder")
