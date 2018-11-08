@@ -25,6 +25,12 @@ paths:
           description: "Profile not found."
       security:
       - auth0_jwt: []
+      parameters:
+      - name: email
+        in: path
+        description: "The email of the user"
+        required: true
+        type: string
   "/profile/msisdn/{msisdn}":
     get:
       description: "Get profile for the given msisdn."
@@ -40,6 +46,12 @@ paths:
           description: "Profile not found."
       security:
       - auth0_jwt: []
+      parameters:
+      - name: msisdn
+        in: path
+        description: "The phone number of the user"
+        required: true
+        type: string
 definitions:
   Profile:
     type: object
