@@ -7,7 +7,6 @@ import org.json.JSONTokener
 import org.ostelco.JsonSchema
 import java.io.*
 import java.nio.charset.Charset
-import java.util.stream.Collectors
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.Response
 import javax.ws.rs.ext.*
@@ -57,15 +56,44 @@ class RequestServerReaderWriterInterceptor : ReaderInterceptor, WriterIntercepto
 
     val validator = JsonSchemaValidator()
 
+    @Throws(IOException::class)
+    private fun toByteArray(input: InputStream): ByteArray {
+        ByteArrayOutputStream().use { output ->
+            copy(input, output)
+            return output.toByteArray()
+        }
+    }
+
+    @Throws(IOException::class)
+    private fun copy(input: InputStream, output: OutputStream): Int {
+        val count = copyLarge(input, output,ByteArray(512))
+        return if (count > Integer.MAX_VALUE) {
+            -1
+        } else count.toInt()
+    }
+
+    @Throws(IOException::class)
+    fun copyLarge(input: InputStream, output: OutputStream, buffer: ByteArray): Long {
+        var count: Long = 0
+        var n: Int = input.read(buffer)
+        while (-1 != n) {
+            output.write(buffer, 0, n)
+            count += n.toLong()
+            n = input.read(buffer)
+        }
+        return count
+    }
+
+
     @Throws(IOException::class, WebApplicationException::class)
     override fun aroundReadFrom(ctx: ReaderInterceptorContext): Any {
         val originalStream = ctx.inputStream
-        val stream = BufferedReader(InputStreamReader(originalStream)).lines()
-        val body: String = stream.collect(Collectors.joining("\n"))
+        val originalByteArray = toByteArray(originalStream)
+        val body: String = String(originalByteArray, Charset.forName("UTF-8"))
 
         validator.validateString(ctx.type, body, Response.Status.BAD_REQUEST)
 
-        ctx.inputStream = ByteArrayInputStream("$body".toByteArray())
+        ctx.inputStream = ByteArrayInputStream(originalByteArray)
         return ctx.proceed()
     }
 
