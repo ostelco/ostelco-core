@@ -52,6 +52,27 @@ paths:
         description: "The phone number of the user"
         required: true
         type: string
+  "/bundles/email/{email}":
+    get:
+      description: "Get bundles (balance) for the user (identified by email)."
+      produces:
+      - application/json
+      operationId: "getBundlesByEmail"
+      responses:
+        200:
+          description: "Get bundles for this user."
+          schema:
+            $ref: '#/definitions/BundleList'
+        404:
+          description: "No bundle found for this user."
+      security:
+      - auth0_jwt: []
+      parameters:
+      - name: email
+        in: path
+        description: "The email of the user"
+        required: true
+        type: string
 definitions:
   Profile:
     type: object

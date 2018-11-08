@@ -8,6 +8,7 @@ import org.ostelco.prime.apierror.NotFoundError
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
+import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.ClientDataSource
@@ -55,4 +56,40 @@ class ProfileResource() {
         }
     }
 
+}
+
+@Path("/bundles")
+class BundlesResource() {
+    private val logger by getLogger()
+    private val storage by lazy { getResource<ClientDataSource>() }
+
+    @GET
+    @Path("email/{email}")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun getBundlesByEmail(@Auth token: AccessTokenPrincipal?,
+                          @NotNull
+                          @PathParam("email")
+                          email: String): Response {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .build()
+        }
+        val decodedEmail = URLDecoder.decode(email, "UTF-8")
+        logger.info("${token.name} Accessing profile for $decodedEmail")
+        return getBundles(token.name).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                { Response.status(Response.Status.OK).entity(asJson(it)) })
+                .build()
+    }
+    // TODO: Reuse the one from SubscriberDAO
+    private fun getBundles(subscriberId: String): Either<ApiError, Collection<Bundle>> {
+        return try {
+            storage.getBundles(subscriberId).mapLeft {
+                NotFoundError("Failed to get bundles. ${it.message}", ApiErrorCode.FAILED_TO_FETCH_BUNDLES)
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to get bundles for subscriberId $subscriberId", e)
+            Either.left(NotFoundError("Failed to get bundles", ApiErrorCode.FAILED_TO_FETCH_BUNDLES))
+        }
+    }
 }
