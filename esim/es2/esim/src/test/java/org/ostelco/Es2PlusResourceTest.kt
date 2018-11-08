@@ -22,7 +22,6 @@ import javax.ws.rs.core.Response
 import javax.ws.rs.ext.*
 
 
-
 class ES2PlusResourceTest {
 
     companion object {
@@ -54,7 +53,6 @@ class ES2PlusResourceTest {
         assertEquals(expectedReturnCode, result.status)
         return result
     }
-
 
     // XXX TODO:   Extend the method to return a proper result object,
     //             pick that result object up, and fail the test if it's
