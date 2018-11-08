@@ -70,7 +70,7 @@ class RequestServerReaderWriterInterceptor : ReaderInterceptor, WriterIntercepto
 
     @Throws(IOException::class, WebApplicationException::class)
     override fun aroundWriteTo(ctx: WriterInterceptorContext) {
-
+/*
         // Read the whole output entity as a byte array,
         // then convert it to a string that is validated
         val out = ByteArrayOutputStream()
@@ -86,6 +86,7 @@ class RequestServerReaderWriterInterceptor : ReaderInterceptor, WriterIntercepto
         // over the wire.
         ctx.outputStream = ByteArrayOutputStream()
         ctx.outputStream.write(out.toByteArray())
+        */
         ctx.proceed()
     }
 }

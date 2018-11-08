@@ -51,7 +51,7 @@ class ES2PlusResourceTest {
         return result
     }
 
-  
+
     @Test
     fun testDownloadOrder() {
         val es2ProtocolPayload = Es2PlusDownloadOrder(
@@ -61,7 +61,7 @@ class ES2PlusResourceTest {
 
         val response  =
                 postEs2ProtocolCommand(es2ProtocolPayload, expectedReturnCode=200)
-                        .readEntity(Es2DownloadOrderResponse::class.java)
+                        .readEntity(String::class.java)
         println("Response = $response")
     }
 
