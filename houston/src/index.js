@@ -1,6 +1,8 @@
 import ReactDOM from 'react-dom';
 import * as serviceWorker from './serviceWorker';
 import 'bootstrap/dist/css/bootstrap.css';
+import './index.css';
+
 import { makeMainRoutes } from './routes';
 
 const routes = makeMainRoutes();

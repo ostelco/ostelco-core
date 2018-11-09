@@ -17,7 +17,7 @@ import {
 } from 'reactstrap';
 
 import { authActions } from '../actions';
-
+import './App.css'
 class App extends Component {
   constructor(props, context) {
     super(props, context);
@@ -80,7 +80,7 @@ class App extends Component {
       <div>
         <Navbar light expand="md">
           <NavbarBrand>
-            <img src="redotter.png" style={{ width: 32, height: 32, marginTop: 0 }} />
+            <img src="redotter.png" style={{ width: 60, height: 60, marginTop: -10 }} />
           </NavbarBrand>
           <Nav>
             <NavItem>
