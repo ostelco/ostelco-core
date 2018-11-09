@@ -55,7 +55,7 @@ class ES2PlusResourceTest {
 
                 ),
                 body = Es2PlusDownloadOrderBody(
-                        eid = "01234567890123456789012345678901", // Appended an "a" to force a JSON schema validation error
+                        eid = "01234567890123456789012345678901",
                         iccid = "01234567890123456789",
                         profileType = "really!"))
 

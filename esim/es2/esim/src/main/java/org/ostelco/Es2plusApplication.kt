@@ -79,7 +79,7 @@ data class ES2RequestHeader (
         @JsonProperty("functionCallIdentifier") val functionCallIdentifier: String
 )
 
-// @JsonSchema("ES2+DownloadOrder-def")
+
 
 data class Es2PlusDownloadOrderBody(
         @JsonProperty("eid") val eid: String?,
@@ -88,6 +88,7 @@ data class Es2PlusDownloadOrderBody(
 )
 
 
+@JsonSchema("ES2+DownloadOrder-def")
 data class Es2PlusDownloadOrder (
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("body") val body: Es2PlusDownloadOrderBody
