@@ -40,8 +40,7 @@ const PaymentHistory = props => {
     <Card>
       <CardBody>
         <CardTitle>Payment History</CardTitle>
-        <samp>
-          <Table striped bordered condensed hover>
+          <Table striped bordered>
             <thead>
               <tr>
                 <th>#</th>
@@ -55,7 +54,6 @@ const PaymentHistory = props => {
               {listItems}
             </tbody>
           </Table>
-        </samp>
       </CardBody>
     </Card>
   );

@@ -60,48 +60,28 @@ class Profile extends React.Component {
         <CardBody>
           <CardTitle>User Profile</CardTitle>
           <Row>
-            <Col xs={2} md={2}>
-              <samp>{'Name:'}</samp>
-            </Col>
-            <Col xs={12} md={8}>
-              <samp>{`${props.profile.name}`}</samp>
-            </Col>
+            <Col xs={2} md={2}>{'Name:'}</Col>
+            <Col xs={12} md={8}>{`${props.profile.name}`}</Col>
           </Row>
           <Row>
-            <Col xs={2} md={2}>
-              <samp>{'Email:'}</samp>
-            </Col>
-            <Col xs={12} md={8}>
-              <samp>{`${props.profile.email}`}</samp>
-            </Col>
+            <Col xs={2} md={2}>{'Email:'}</Col>
+            <Col xs={12} md={8}>{`${props.profile.email}`}</Col>
           </Row>
-
           <Row>
-            <Col xs={2} md={2}>
-              <samp>{'Address:'}</samp>
-            </Col>
-            <Col xs={12} md={8}>
-              <samp>{`${props.profile.address}`}</samp>
-            </Col>
+            <Col xs={2} md={2}>{'Address:'}</Col>
+            <Col xs={12} md={8}>{`${props.profile.address}`}</Col>
           </Row>
           <br />
           <Row>
-            <Col xs={12} md={6}>
-              <samp>
-                <Button color="danger" onClick={this.handleShowBlock}>
-                  {'Block current SIM card'}
-                </Button>
-              </samp>
+            <Col xs={6} md={4}>
+              <Button color="danger" onClick={this.handleShowBlock}>
+                {'Block current SIM card'}
+              </Button>
             </Col>
-          </Row>
-          <br />
-          <Row>
-            <Col xs={12} md={6}>
-              <samp>
-                <Button onClick={this.handleShowNewSIM}>
-                  {'Order new SIM card'}
-                </Button>
-              </samp>
+            <Col xs={6} md={4}>
+              <Button onClick={this.handleShowNewSIM}>
+                {'Order new SIM card'}
+              </Button>
             </Col>
           </Row>
           <WarningModal

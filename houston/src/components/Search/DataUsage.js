@@ -42,10 +42,10 @@ class DataUsage extends React.Component {
         <CardTitle>Data balance</CardTitle>
             <Row >
               <Col xs={6} md={4}>
-                <samp>{`Remaining ${props.balance}.`}</samp>
+                {`Remaining ${props.balance}.`}
               </Col>
               <Col xs={6} md={4}>
-                <samp><Button onClick={this.handleShowModal}>{'Give additional 1 GB'}</Button></samp>
+                <Button onClick={this.handleShowModal}>{'Give additional 1 GB'}</Button>
               </Col>
             </Row>
           <WarningModal
