@@ -45,28 +45,23 @@ class ES2PlusResourceTest {
         return result
     }
 
-    // XXX Remove this test, it should be in the test harness for the JsonSchemaValidator, not for the actual ES2+ protocol
-    @Test
-    fun testDownloadOrderWithIncorrectEid() {
-        val es2ProtocolPayload = Es2PlusDownloadOrder(
-                "01234567890123456789012345678901a", // Appended an "a" to force a JSON schema validation error
-                iccid = "01234567890123456789",
-                profileType = "really!")
-
-        postEs2ProtocolCommand("/gsma/rsp2/es2plus/downloadOrder", es2ProtocolPayload, expectedReturnCode = 400)
-    }
 
     @Test
     fun testDownloadOrder() {
         val es2ProtocolPayload = Es2PlusDownloadOrder(
-                "01234567890123456789012345678901",
-                iccid = "01234567890123456789",
-                profileType = "really!")
+                header = ES2RequestHeader(
+                        functionRequesterIdentifier = "foo",
+                        functionCallIdentifier = "bar"
 
-        val response =
-                postEs2ProtocolCommand("/gsma/rsp2/es2plus/downloadOrder", es2ProtocolPayload, expectedReturnCode = 200)
-                        .readEntity(Es2DownloadOrderResponse::class.java)
+                ),
+                body = Es2PlusDownloadOrderBody(
+                        eid = "01234567890123456789012345678901", // Appended an "a" to force a JSON schema validation error
+                        iccid = "01234567890123456789",
+                        profileType = "really!"))
+
+        postEs2ProtocolCommand("/gsma/rsp2/es2plus/downloadOrder", es2ProtocolPayload, expectedReturnCode = 200)
     }
+
 
     @Test
     fun testConfirmOrder() {

@@ -73,11 +73,24 @@ class RestrictedOperationsRequestFilter : ContainerRequestFilter {
 @Retention(AnnotationRetention.RUNTIME)
 public annotation class JsonSchema(val schemaKey: String)
 
-@JsonSchema("ES2+DownloadOrder-def")
-data class Es2PlusDownloadOrder(
+
+data class ES2RequestHeader (
+        @JsonProperty("functionRequesterIdentifier") val functionRequesterIdentifier: String,
+        @JsonProperty("functionCallIdentifier") val functionCallIdentifier: String
+)
+
+// @JsonSchema("ES2+DownloadOrder-def")
+
+data class Es2PlusDownloadOrderBody(
         @JsonProperty("eid") val eid: String?,
         @JsonProperty("iccid") val iccid: String?,
         @JsonProperty("profileType") val profileType: String?
+)
+
+
+data class Es2PlusDownloadOrder (
+        @JsonProperty("header") val header: ES2RequestHeader,
+        @JsonProperty("body") val body: Es2PlusDownloadOrderBody
 )
 
 @JsonSchema("ES2+DownloadOrder-response")
@@ -173,7 +186,7 @@ class Es2PlusResource() {
     @Path("downloadOrder")
     @POST
     fun downloadOrder(order: Es2PlusDownloadOrder): Es2DownloadOrderResponse {
-        val iccid = if (order.iccid != null) order.iccid else "01234567890123456798"
+        val iccid = if (order.body.iccid != null) order.body.iccid else "01234567890123456798"
         val response = Es2DownloadOrderResponse(iccid)
         return response
     }
