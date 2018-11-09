@@ -12,6 +12,7 @@ const callApi = async (endpoint, method, body, allowEmptyResponse, params = []) 
   }
   const authHeader = authService.authHeader();
   if (!authHeader) {
+    console.log("callApi: Authentication failed");
     return Promise.reject("Authentication failed");
   }
   let options = {
