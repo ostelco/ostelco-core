@@ -19,14 +19,22 @@ class Notifications extends React.Component {
         <Card>
           <CardBody>
             <CardTitle>Global Push Notifications.</CardTitle>
-            <TextForm onSubmit={this.onSubmit} />
+            <TextForm
+              onSubmit={this.onSubmit}
+              submitLabel="Send Notification"
+              inputLabel="Enter notification"
+            />
           </CardBody>
         </Card>
         <br />
         <Card>
           <CardBody>
             <CardTitle>Global Emails</CardTitle>
-            <TextForm onSubmit={this.onSubmit} />
+            <TextForm
+              onSubmit={this.onSubmit}
+              submitLabel="Send Email"
+              inputLabel="Enter email text"
+            />
           </CardBody>
         </Card>
       </div>

@@ -26,7 +26,7 @@ export class TextForm extends React.Component {
     return (
       <Form onSubmit={this.onSubmit}>
         <FormGroup>
-          <Label for="exampleText">Text Area</Label>
+          <Label for="exampleText">{this.props.inputLabel}</Label>
           <Input
             type="textarea"
             name="text"
@@ -36,13 +36,15 @@ export class TextForm extends React.Component {
             onChange={this.handleChange}
           />
         </FormGroup>
-        <Button bsStyle="primary" type="submit">Send notification</Button>
+        <Button bsStyle="primary" type="submit">{this.props.submitLabel}</Button>
       </Form>
     );
   }
 }
 
 TextForm.propTypes = {
+  inputLabel: PropTypes.func.isRequired,
+  submitLabel: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired
 };
 
