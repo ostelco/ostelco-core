@@ -9,7 +9,6 @@ export function subscriber(state = {}, action) {
       };
     case subscriberConstants.SUBSCRIBER_BY_EMAIL_SUCCESS:
     case subscriberConstants.SUBSCRIBER_BY_MSISDN_SUCCESS:
-      console.log(JSON.stringify(action))
       return action.response
     case subscriberConstants.SUBSCRIBER_BY_EMAIL_FAILURE:
     case subscriberConstants.SUBSCRIBER_BY_MSISDN_FAILURE:

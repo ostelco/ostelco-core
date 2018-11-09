@@ -1,9 +1,10 @@
 import { authService } from '../services';
 import { getAPIRoot } from '../services/config-variables';
+import { authConstants } from '../constants';
 
 const API_ROOT = getAPIRoot();
 
-const callApi = async (endpoint, method, body, allowEmptyResponse, params = []) => {
+const apiCaller = async (endpoint, method, body, allowEmptyResponse, params = []) => {
   let fullUrl = (endpoint.indexOf(API_ROOT) === -1) ? API_ROOT + endpoint : endpoint
 
   // TODO: Params can contain invalid characters and should be url encoded
@@ -12,8 +13,12 @@ const callApi = async (endpoint, method, body, allowEmptyResponse, params = []) 
   }
   const authHeader = authService.authHeader();
   if (!authHeader) {
-    console.log("callApi: Authentication failed");
-    return Promise.reject("Authentication failed");
+    console.log("apiCaller: Authentication failed");
+    const error = { 
+      code: authConstants.AUTHENTICATION_FAILURE,
+      message:"Authentication failed"
+    };
+    return Promise.reject(error);
   }
   let options = {
     method,
@@ -30,7 +35,7 @@ const callApi = async (endpoint, method, body, allowEmptyResponse, params = []) 
   return fetch(fullUrl, options)
     .then(response => {
       return response.text().then(text => {
-        console.log(`Response text for -> ${fullUrl} ==> [${text}]`);
+        //console.log(`Response text for -> ${fullUrl} ==> [${text}]`);
         let json = null;
         let exception = null;
         // Capture any JSON parse exception.
@@ -92,13 +97,14 @@ export default store => next => action => {
   const [requestType, successType, failureType] = types;
   next(actionWith({ type: requestType }));
 
-  return callApi(endpoint, method, body, allowEmptyResponse, params).then(
+  return apiCaller(endpoint, method, body, allowEmptyResponse, params).then(
     response => next(actionWith({
       response,
       type: successType
     })),
     error => next(actionWith({
       type: failureType,
+      errorObj: error,
       error: error.message || 'Something bad happened'
     }))
   );

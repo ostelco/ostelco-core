@@ -31,7 +31,6 @@ HistoryRow.propTypes = {
 };
 
 const PaymentHistory = props => {
-  console.log(JSON.stringify(props.paymentHistory));
   if (!Array.isArray(props.paymentHistory)) return null;
   const listItems = props.paymentHistory.map((history, index) =>
     <HistoryRow item={history} index={index+1}  key={history.id}/>

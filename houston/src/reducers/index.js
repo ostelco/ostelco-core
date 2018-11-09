@@ -3,8 +3,11 @@ import { authentication } from './authentication.reducer';
 import { pseudonym } from './pseudo.reducer';
 import { alert } from './alert.reducer';
 import { subscriber, bundles, paymentHistory } from './subscriber.reducer';
+import { authConstants, subscriberConstants } from '../constants';
+import { authActions } from '../actions';
+import { store } from '../helpers';
 
-const rootReducer = combineReducers({
+const appReducer = combineReducers({
   authentication,
   pseudonym,
   alert,
@@ -13,4 +16,25 @@ const rootReducer = combineReducers({
   paymentHistory
 });
 
+function checkForAuthenticationFailures(errorObj) {
+  if (errorObj && errorObj.code === authConstants.AUTHENTICATION_FAILURE) {
+    setTimeout(() => {
+      store.dispatch(authActions.logout());
+    }, 1);
+  }
+}
+
+const rootReducer = (state, action) => {
+  if (action.type === authConstants.LOGOUT) {
+    state = {}
+  }
+  switch (action.type) {
+    case authConstants.LOGIN_FAILURE:
+    case subscriberConstants.SUBSCRIBER_BY_MSISDN_FAILURE:
+    case subscriberConstants.SUBSCRIBER_BY_EMAIL_FAILURE:
+      checkForAuthenticationFailures(action.errorObj);
+      break;
+  }
+  return appReducer(state, action);
+};
 export default rootReducer;

@@ -1,5 +1,6 @@
 import { CALL_API } from '../helpers';
 import { subscriberConstants } from '../constants';
+import _ from 'lodash';
 
 const fetchSubscriberByEmail = (email) => ({
   [CALL_API]: {
@@ -68,9 +69,13 @@ const getPaymentHistoryByEmail = (email) => (dispatch, getState) => {
 // TODO: API based implementaion. Reference: https://github.com/reduxjs/redux/issues/1676
 const getSubscriberAndBundlesByEmail = (email) => (dispatch, getState) =>  {
   return dispatch(fetchSubscriberByEmail(email)).then(() => {
-    return dispatch(fetchBundlesByEmail(email)).then(() => {
-      return dispatch(fetchPaymentHistoryByEmail(email))
-    })
+    // Assuming this is where the fetched user got stored
+    const subscriberEmail = _.get(getState(), 'subscriber.email');
+    if (subscriberEmail) {
+      return dispatch(fetchBundlesByEmail(subscriberEmail)).then(() => {
+        return dispatch(fetchPaymentHistoryByEmail(subscriberEmail))
+      })
+    }
   })
 }
 

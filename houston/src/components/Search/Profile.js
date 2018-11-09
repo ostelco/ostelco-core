@@ -49,7 +49,6 @@ class Profile extends React.Component {
     const newSIMText = `Do you really want to provision new SIM card ?`
 
     const props = this.props;
-    console.log(JSON.stringify(props.profile));
     if (!props.profile.name) return null;
     return (
       <Panel>
