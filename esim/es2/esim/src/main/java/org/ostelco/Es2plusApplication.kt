@@ -16,7 +16,6 @@ import javax.ws.rs.core.Response
 import javax.ws.rs.core.UriBuilder
 import javax.ws.rs.ext.Provider
 
-
 class Es2plusApplication : Application<Es2plusConfiguration>() {
 
     override fun getName(): String {
@@ -47,7 +46,6 @@ class Es2plusApplication : Application<Es2plusConfiguration>() {
 
 }
 
-
 @Provider
 class RestrictedOperationsRequestFilter : ContainerRequestFilter {
 
@@ -68,59 +66,31 @@ class RestrictedOperationsRequestFilter : ContainerRequestFilter {
     }
 }
 
-
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
 public annotation class JsonSchema(val schemaKey: String)
 
 
-data class ES2RequestHeader (
+///
+///   The fields that all requests needs to have in their headers
+///   (for reasons that are unclear to me)
+///
+
+data class ES2RequestHeader(
         @JsonProperty("functionRequesterIdentifier") val functionRequesterIdentifier: String,
         @JsonProperty("functionCallIdentifier") val functionCallIdentifier: String
 )
 
+///
+///   The fields all responses needs to have in their headers
+///   (also unknown to me :)
+///
 
 
-data class Es2PlusDownloadOrderBody(
-        @JsonProperty("eid") val eid: String?,
-        @JsonProperty("iccid") val iccid: String?,
-        @JsonProperty("profileType") val profileType: String?
-)
+data class ES2ResponseHeader(
+        @JsonProperty("functionExecutionStatus") val functionExecutionStatus: FunctionExecutionStatus)
 
 
-@JsonSchema("ES2+DownloadOrder-def")
-data class Es2PlusDownloadOrder (
-        @JsonProperty("header") val header: ES2RequestHeader,
-        @JsonProperty("body") val body: Es2PlusDownloadOrderBody
-)
-
-@JsonSchema("ES2+DownloadOrder-response")
-data class Es2DownloadOrderResponse(@JsonProperty("iccid") val iccid: String)
-
-@JsonSchema("ES2+ConfirmOrder-def")
-data class Es2ConfirmOrder(
-        @JsonProperty("eid") val eid: String,
-        @JsonProperty("iccid") val iccid: String,
-        @JsonProperty("matchingId") val matchingId: String?,
-        @JsonProperty("confirmationCode") val confirmationCode: String?,
-        @JsonProperty("smdsAddress") val smdsAddress: String?,
-        @JsonProperty("releaseFlag") val releaseFlag: Boolean
-)
-
-@JsonSchema("ES2+ConfirmOrder-response")
-data class Es2ConfirmOrderResponse(
-        @JsonProperty("eid") val eid: String,
-        @JsonProperty("matchingId") val matchingId: String?,
-        @JsonProperty("smdsAddress") val smdsAddress: String?
-)
-
-@JsonSchema("ES2+CancelOrder-def")
-data class Es2CancelOrder(
-        @JsonProperty("eid") val eid: String,
-        @JsonProperty("iccid") val iccid: String?,
-        @JsonProperty("matchingId") val matchingId: String?,
-        @JsonProperty("finalProfileStatusIndicator") val finalProfileStatusIndicator: String?
-)
 
 enum class FunctionExecutionStatusType {
     @JsonProperty("Executed-Success")
@@ -133,19 +103,9 @@ enum class FunctionExecutionStatusType {
     Expired
 }
 
-
-// XXX Disabled for now. @JsonSchema("ES2+jsonResponseHeader")
-data class ES2JsonBaseResponse(
-        val header: ES2JsonResponseHeader
-)
-
-data class ES2JsonResponseHeader(
-        val functionExecutionStatus: FunctionExecutionStatus)
-
-// XXX Add annotation to ignore null values.
 data class FunctionExecutionStatus(
         @JsonProperty("status") val status: FunctionExecutionStatusType,
-        @JsonProperty("statusCodeData") val statusCodeData: StatusCodeData?=null)
+        @JsonProperty("statusCodeData") val statusCodeData: StatusCodeData? = null)
 
 data class StatusCodeData(
         @JsonProperty("subjectCode") var subjectCode: String,
@@ -153,8 +113,135 @@ data class StatusCodeData(
         @JsonProperty("subjectIdentifier") var subjectIdentifier: String?,
         @JsonProperty("message") var message: String?)
 
-data class Es2ReleaseProfile(
+
+///
+///  The DownloadOrder function
+///
+
+@JsonSchema("ES2+DownloadOrder-def")
+data class Es2PlusDownloadOrder(
+        @JsonProperty("header") val header: ES2RequestHeader,
+        @JsonProperty("body") val body: Es2PlusDownloadOrderBody
+)
+
+
+data class Es2PlusDownloadOrderBody(
+        @JsonProperty("eid") val eid: String?,
+        @JsonProperty("iccid") val iccid: String?,
+        @JsonProperty("profileType") val profileType: String?
+)
+
+@JsonSchema("ES2+DownloadOrder-response")
+data class Es2DownloadOrderResponse(
+        @JsonProperty("header") val header: ES2ResponseHeader,
+        @JsonProperty("body") val body: Es2PlusDownloadOrderResponseBody
+)
+
+data class Es2PlusDownloadOrderResponseBody(
         @JsonProperty("iccid") val iccid: String
+)
+
+///
+/// The ConfirmOrder function
+///
+
+@JsonSchema("ES2+ConfirmOrder-def")
+data class Es2ConfirmOrder(
+        @JsonProperty("header") val header: ES2RequestHeader,
+        @JsonProperty("body") val body: Es2ConfirmOrderBody
+)
+
+data class Es2ConfirmOrderBody(
+        @JsonProperty("eid") val eid: String,
+        @JsonProperty("iccid") val iccid: String,
+        @JsonProperty("matchingId") val matchingId: String?,
+        @JsonProperty("confirmationCode") val confirmationCode: String?,
+        @JsonProperty("smdsAddress") val smdsAddress: String?,
+        @JsonProperty("releaseFlag") val releaseFlag: Boolean
+)
+
+@JsonSchema("ES2+ConfirmOrder-response")
+data class Es2ConfirmOrderResponse(
+        @JsonProperty("header") val header: ES2ResponseHeader,
+        @JsonProperty("body") val body: Es2ConfirmOrderResponseBody)
+
+data class Es2ConfirmOrderResponseBody(
+        @JsonProperty("eid") val eid: String,
+        @JsonProperty("matchingId") val matchingId: String?,
+        @JsonProperty("smdsAddress") val smdsAddress: String?
+)
+
+///
+///  The CancelOrder function
+///
+
+@JsonSchema("ES2+CancelOrder-def")
+data class Es2CancelOrder(
+        @JsonProperty("header") val header: ES2RequestHeader,
+        @JsonProperty("body") val body: Es2CancelOrderBody
+)
+
+
+data class Es2CancelOrderBody(
+        @JsonProperty("eid") val eid: String,
+        @JsonProperty("iccid") val iccid: String?,
+        @JsonProperty("matchingId") val matchingId: String?,
+        @JsonProperty("finalProfileStatusIndicator") val finalProfileStatusIndicator: String?
+)
+
+
+@JsonSchema("ES2+CancelOrder-result")
+data class Es2CancelOrderResponse(
+        @JsonProperty("header") val header: ES2ResponseHeader,
+        @JsonProperty("body") val body: Es2CancelOrderResponseBody
+)
+
+class Es2CancelOrderResponseBody
+
+///
+///  The ReleaseProfile function
+///
+
+
+@JsonSchema("ES2+ReleaseProfile-def")
+data class Es2ReleaseProfile(
+        @JsonProperty("header") val header: ES2RequestHeader,
+        @JsonProperty("body") val body: Es2ReleaseProfileBody
+)
+
+
+data class Es2ReleaseProfileBody(
+        @JsonProperty("iccid") val iccid: String
+)
+
+@JsonSchema("ES2+ReleaseProfile-response")
+data class Es2ReleaseProfileResponse(
+        @JsonProperty("header") val header: ES2ResponseHeader,
+        @JsonProperty("body") val body: Es2ReleaseProfileResultBody)
+
+
+class Es2ReleaseProfileResultBody
+
+
+///
+///  The The HandleDownloadProgressInfo function
+///
+
+@JsonSchema("ES2+HandleDownloadProgressInfo-def")
+
+data class Es2HandleDownloadProgressInfo(
+        @JsonProperty("header") val header: ES2RequestHeader,
+        @JsonProperty("body") val body: Es2HandleDownloadProgressInfoBody
+)
+
+data class Es2HandleDownloadProgressInfoBody(
+        @JsonProperty("eid") val eid: String?,
+        @JsonProperty("iccid") val iccid: String?,
+        @JsonProperty("profileType") val profileType: String?,
+        @JsonProperty("timestamp") val timestamp: String?,
+        @JsonProperty("notificationPointId") val notificationPointId: String?,
+        @JsonProperty("notificationPointStatus") val notificationPointStatus: ES2NotificationPointStatus?,
+        @JsonProperty("resultData") val resultData: ES2StatusCodeData?
 )
 
 data class ES2NotificationPointStatus(
@@ -169,15 +256,17 @@ data class ES2StatusCodeData(
         @JsonProperty("message") val message: String?
 )
 
-data class Es2HandleDownloadProgressInfo(
-        @JsonProperty("eid") val eid: String?,
-        @JsonProperty("iccid") val iccid: String?,
-        @JsonProperty("profileType") val profileType: String?,
-        @JsonProperty("timestamp") val timestamp: String?,
-        @JsonProperty("notificationPointId") val notificationPointId: String?,
-        @JsonProperty("notificationPointStatus") val notificationPointStatus: ES2NotificationPointStatus?,
-        @JsonProperty("resultData") val resultData: ES2StatusCodeData?
-)
+@JsonSchema("ES2+HandleDownloadProgressInfo-def")
+data class Es2HandleDownloadProgressInfoResponse(
+        @JsonProperty("header") val header: ES2ResponseHeader,
+        @JsonProperty("body") val body: Es2HandleDownloadProgressInfoResponseBody)
+
+class Es2HandleDownloadProgressInfoResponseBody
+
+
+///
+///  The web resource using the protocol domain model.
+///
 
 @Path("/gsma/rsp2/es2plus/")
 @Produces(MediaType.APPLICATION_JSON)
@@ -188,7 +277,11 @@ class Es2PlusResource() {
     @POST
     fun downloadOrder(order: Es2PlusDownloadOrder): Es2DownloadOrderResponse {
         val iccid = if (order.body.iccid != null) order.body.iccid else "01234567890123456798"
-        val response = Es2DownloadOrderResponse(iccid)
+        val response =
+                Es2DownloadOrderResponse(
+                        header = ES2ResponseHeader(functionExecutionStatus= FunctionExecutionStatus(
+                                status = FunctionExecutionStatusType.ExecutedSuccess)),
+                        body = Es2PlusDownloadOrderResponseBody(iccid))
         return response
     }
 
@@ -196,29 +289,41 @@ class Es2PlusResource() {
     @POST
     fun confirmOrder(order: Es2ConfirmOrder): Es2ConfirmOrderResponse {
         return Es2ConfirmOrderResponse(
-                eid = order.eid,
-                smdsAddress = order.smdsAddress,
-                matchingId = order.matchingId)
+                header = ES2ResponseHeader(functionExecutionStatus= FunctionExecutionStatus(
+                        status = FunctionExecutionStatusType.ExecutedSuccess)),
+                body =  Es2ConfirmOrderResponseBody(
+                eid = order.body.eid,
+                smdsAddress = order.body.smdsAddress,
+                matchingId = order.body.matchingId))
     }
 
     @Path("cancelOrder")
     @POST
-    fun cancelOrder(order: Es2CancelOrder): ES2JsonBaseResponse {
-        return ES2JsonBaseResponse(
-                header = ES2JsonResponseHeader(
+    fun cancelOrder(order: Es2CancelOrder): Es2CancelOrderResponse {
+        return Es2CancelOrderResponse(
+                header = ES2ResponseHeader(
                         functionExecutionStatus = FunctionExecutionStatus(
-                                status = FunctionExecutionStatusType.ExecutedSuccess)))
+                                status = FunctionExecutionStatusType.ExecutedSuccess)),
+                body = Es2CancelOrderResponseBody())
     }
 
     @Path("releaseProfile")
     @POST
-    fun releaseProfile(order: Es2ReleaseProfile): Response {
-        return Response.created(UriBuilder.fromPath("http://bananas.org/").build()).build()
+    fun releaseProfile(order: Es2ReleaseProfile): Es2ReleaseProfileResponse {
+        return Es2ReleaseProfileResponse(
+                header = ES2ResponseHeader(
+                        functionExecutionStatus = FunctionExecutionStatus(
+                                status = FunctionExecutionStatusType.ExecutedSuccess)),
+                body = Es2ReleaseProfileResultBody())
     }
 
     @Path("handleDownloadProgressInfo")
     @POST
-    fun handleDownloadProgressInfo(order: Es2HandleDownloadProgressInfo): Response {
-        return Response.created(UriBuilder.fromPath("http://bananas.org/").build()).build()
+    fun handleDownloadProgressInfo(order: Es2HandleDownloadProgressInfo): Es2HandleDownloadProgressInfoResponse {
+        return Es2HandleDownloadProgressInfoResponse(
+                header = ES2ResponseHeader(
+                        functionExecutionStatus = FunctionExecutionStatus(
+                                status = FunctionExecutionStatusType.ExecutedSuccess)),
+                body = Es2HandleDownloadProgressInfoResponseBody())
     }
 }

@@ -65,13 +65,18 @@ class ES2PlusResourceTest {
 
     @Test
     fun testConfirmOrder() {
-        val es2ConfirmOrder = postEs2ProtocolCommand("/gsma/rsp2/es2plus/confirmOrder", Es2ConfirmOrder(
-                eid = "01234567890123456789012345678901",
-                iccid = "01234567890123456789",
-                matchingId = "foo",
-                confirmationCode = "bar",
-                smdsAddress = "baz",
-                releaseFlag = true), 200)
+        val es2ConfirmOrder = postEs2ProtocolCommand("/gsma/rsp2/es2plus/confirmOrder",
+                Es2ConfirmOrder(
+                        header = ES2RequestHeader(
+                                functionRequesterIdentifier = "foo",
+                                functionCallIdentifier = "bar"),
+                        body = Es2ConfirmOrderBody(
+                                eid = "01234567890123456789012345678901",
+                                iccid = "01234567890123456789",
+                                matchingId = "foo",
+                                confirmationCode = "bar",
+                                smdsAddress = "baz",
+                                releaseFlag = true)), 200)
                 .readEntity(Es2ConfirmOrderResponse::class.java)
     }
 
@@ -79,11 +84,18 @@ class ES2PlusResourceTest {
     fun testCancelOrder() {
         val es2ConfirmOrder = postEs2ProtocolCommand("/gsma/rsp2/es2plus/cancelOrder",
                 Es2CancelOrder(
-                        eid = "01234567890123456789012345678901",
-                        iccid = "01234567890123456789",
-                        matchingId = "foo",
-                        finalProfileStatusIndicator = "bar"), 200)
+                        header = ES2RequestHeader(
+                                functionRequesterIdentifier = "foo",
+                                functionCallIdentifier = "bar"
+
+                        ),
+                        body = Es2CancelOrderBody(
+                                eid = "01234567890123456789012345678901",
+                                iccid = "01234567890123456789",
+                                matchingId = "foo",
+                                finalProfileStatusIndicator = "bar"))
+                , 200)
                 .readEntity(String::class.java)
-                // XXX Fails .readEntity(ES2JsonBaseResponse::class.java)
+        // XXX Fails .readEntity(ES2JsonBaseResponse::class.java)
     }
 }

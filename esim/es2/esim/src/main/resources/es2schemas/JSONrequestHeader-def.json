@@ -1,0 +1,19 @@
+{
+  "header": {
+    "type": "object",
+    "properties": {
+      "functionRequesterIdentifier": {
+        "type": "string",
+        "description": "identification of the function requester"
+      },
+      "functionCallIdentifier": {
+        "type": "string",
+        "description": "identification of the function call"
+      }
+    },
+    "required": [
+      "functionRequesterIdentifier",
+      "functionCallIdentifier"
+    ]
+  }
+}
