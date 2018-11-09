@@ -57,6 +57,25 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  name: prime-alvin-api
+  labels:
+    app: prime
+    tier: backend
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 35.240.69.194
+  ports:
+  - name: https
+    port: 443
+    targetPort: 6443
+    protocol: TCP
+  selector:
+    app: prime
+    tier: backend
+---
+apiVersion: v1
+kind: Service
+metadata:
   name: prime-metrics
   labels:
     app: prime
@@ -150,6 +169,23 @@ spec:
         - mountPath: /etc/nginx/ssl
           name: api-ostelco-ssl
           readOnly: true
+      - name: alvin-api-esp
+        image: gcr.io/endpoints-release/endpoints-runtime:1
+        args: [
+          "--http_port=9008",
+          "--ssl_port=6443",
+          "--status_port=8097",
+          "--service=alvin-api.dev.ostelco.org",
+          "--rollout_strategy=managed",
+          "--backend=127.0.0.1:8080"
+        ]
+        ports:
+        - containerPort: 9008
+        - containerPort: 6443
+        volumeMounts:
+        - mountPath: /etc/nginx/ssl
+          name: api-ostelco-ssl
+          readOnly: true
       - name: metrics-esp
         image: gcr.io/endpoints-release/endpoints-runtime:1
         args: [
@@ -212,6 +248,11 @@ spec:
             secretKeyRef:
               name: stripe-secrets
               key: stripeApiKey
+        - name: STRIPE_ENDPOINT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: stripe-secrets
+              key: stripeEndpointSecret
         volumeMounts:
         - name: secret-config
           mountPath: "/secret"
