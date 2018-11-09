@@ -15,6 +15,8 @@ To see your applications health enter url `http://localhost:8081/healthcheck`
 TODO
 ---
 
-1.  Make all the rudimentary tests work, and also develop the json schemas for both requests and responses
-1.  Make some recactoring in the data structure. As it is today it is simply a mess.   
-2.  See if it's possible to find an example of a valid SM-DP2 interaction somewhere
+1. Make all the rudimentary tests work, _without_ JSON schemas to match
+1. Optimize data structures to make it nicer. E.g. by aoviding multiple empty classes
+1. and also develop the json schemas for both requests and responses
+1. Make some recactoring in the data structure. As it is today it is simply a mess.   
+1. See if it's possible to find an example of a valid SM-DP2 interaction somewhere

@@ -118,7 +118,7 @@ data class StatusCodeData(
 ///  The DownloadOrder function
 ///
 
-@JsonSchema("ES2+DownloadOrder-def")
+// @JsonSchema("ES2+DownloadOrder-def")
 data class Es2PlusDownloadOrder(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("body") val body: Es2PlusDownloadOrderBody
@@ -131,7 +131,7 @@ data class Es2PlusDownloadOrderBody(
         @JsonProperty("profileType") val profileType: String?
 )
 
-@JsonSchema("ES2+DownloadOrder-response")
+// @JsonSchema("ES2+DownloadOrder-response")
 data class Es2DownloadOrderResponse(
         @JsonProperty("header") val header: ES2ResponseHeader,
         @JsonProperty("body") val body: Es2PlusDownloadOrderResponseBody
@@ -145,7 +145,7 @@ data class Es2PlusDownloadOrderResponseBody(
 /// The ConfirmOrder function
 ///
 
-@JsonSchema("ES2+ConfirmOrder-def")
+// @JsonSchema("ES2+ConfirmOrder-def")
 data class Es2ConfirmOrder(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("body") val body: Es2ConfirmOrderBody
@@ -160,7 +160,7 @@ data class Es2ConfirmOrderBody(
         @JsonProperty("releaseFlag") val releaseFlag: Boolean
 )
 
-@JsonSchema("ES2+ConfirmOrder-response")
+// @JsonSchema("ES2+ConfirmOrder-response")
 data class Es2ConfirmOrderResponse(
         @JsonProperty("header") val header: ES2ResponseHeader,
         @JsonProperty("body") val body: Es2ConfirmOrderResponseBody)
@@ -175,7 +175,7 @@ data class Es2ConfirmOrderResponseBody(
 ///  The CancelOrder function
 ///
 
-@JsonSchema("ES2+CancelOrder-def")
+// @JsonSchema("ES2+CancelOrder-def")
 data class Es2CancelOrder(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("body") val body: Es2CancelOrderBody
@@ -190,7 +190,7 @@ data class Es2CancelOrderBody(
 )
 
 
-@JsonSchema("ES2+CancelOrder-result")
+// @JsonSchema("ES2+CancelOrder-result")
 data class Es2CancelOrderResponse(
         @JsonProperty("header") val header: ES2ResponseHeader,
         @JsonProperty("body") val body: Es2CancelOrderResponseBody
@@ -203,7 +203,7 @@ class Es2CancelOrderResponseBody
 ///
 
 
-@JsonSchema("ES2+ReleaseProfile-def")
+// @JsonSchema("ES2+ReleaseProfile-def")
 data class Es2ReleaseProfile(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("body") val body: Es2ReleaseProfileBody
@@ -214,7 +214,7 @@ data class Es2ReleaseProfileBody(
         @JsonProperty("iccid") val iccid: String
 )
 
-@JsonSchema("ES2+ReleaseProfile-response")
+// @JsonSchema("ES2+ReleaseProfile-response")
 data class Es2ReleaseProfileResponse(
         @JsonProperty("header") val header: ES2ResponseHeader,
         @JsonProperty("body") val body: Es2ReleaseProfileResultBody)
@@ -227,7 +227,7 @@ class Es2ReleaseProfileResultBody
 ///  The The HandleDownloadProgressInfo function
 ///
 
-@JsonSchema("ES2+HandleDownloadProgressInfo-def")
+// @JsonSchema("ES2+HandleDownloadProgressInfo-def")
 
 data class Es2HandleDownloadProgressInfo(
         @JsonProperty("header") val header: ES2RequestHeader,
@@ -256,7 +256,7 @@ data class ES2StatusCodeData(
         @JsonProperty("message") val message: String?
 )
 
-@JsonSchema("ES2+HandleDownloadProgressInfo-def")
+// @JsonSchema("ES2+HandleDownloadProgressInfo-def")
 data class Es2HandleDownloadProgressInfoResponse(
         @JsonProperty("header") val header: ES2ResponseHeader,
         @JsonProperty("body") val body: Es2HandleDownloadProgressInfoResponseBody)
