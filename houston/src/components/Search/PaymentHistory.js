@@ -1,8 +1,9 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
+import { Table, Card, CardBody, CardTitle, Button } from 'reactstrap';
+
 import { authActions, pseudoActions } from '../../actions';
-import { Button, Panel, Table } from 'react-bootstrap';
 import { convertTimestampToDate } from '../../helpers';
 
 const HistoryRow = props => {
@@ -12,7 +13,7 @@ const HistoryRow = props => {
       <td>{convertTimestampToDate(props.item.timestamp)}</td>
       <td>{props.item.product.presentation.productLabel}</td>
       <td>{props.item.product.presentation.priceLabel}</td>
-      <td><Button bsStyle="link">Revert</Button></td>
+      <td><Button color="link">Revert</Button></td>
     </tr>);
 }
 
@@ -33,12 +34,12 @@ HistoryRow.propTypes = {
 const PaymentHistory = props => {
   if (!Array.isArray(props.paymentHistory)) return null;
   const listItems = props.paymentHistory.map((history, index) =>
-    <HistoryRow item={history} index={index+1}  key={history.id}/>
+    <HistoryRow item={history} index={index + 1} key={history.id} />
   );
   return (
-    <Panel>
-      <Panel.Heading>Payment History</Panel.Heading>
-      <Panel.Body>
+    <Card>
+      <CardBody>
+        <CardTitle>Payment History</CardTitle>
         <samp>
           <Table striped bordered condensed hover>
             <thead>
@@ -55,8 +56,8 @@ const PaymentHistory = props => {
             </tbody>
           </Table>
         </samp>
-      </Panel.Body>
-    </Panel>
+      </CardBody>
+    </Card>
   );
 }
 

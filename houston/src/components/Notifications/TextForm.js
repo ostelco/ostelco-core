@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Form,  Button, FormGroup, ControlLabel, FormControl } from 'react-bootstrap';
+import { Button, Form, FormGroup, Label, Input } from 'reactstrap';
 
 export class TextForm extends React.Component {
   constructor(props, context) {
@@ -24,20 +24,20 @@ export class TextForm extends React.Component {
 
   render() {
     return (
-        <Form onSubmit={this.onSubmit}>
-          <FormGroup
-            controlId="formBasicText"
-          >
-            <ControlLabel></ControlLabel>
-            <FormControl
-              componentClass="textarea"
-              value={this.state.value}
-              placeholder="Enter text"
-              onChange={this.handleChange}
-            />
-            </FormGroup>
-             <Button bsStyle="primary" type="submit">Send notification</Button>
-        </Form>
+      <Form onSubmit={this.onSubmit}>
+        <FormGroup>
+          <Label for="exampleText">Text Area</Label>
+          <Input
+            type="textarea"
+            name="text"
+            id="exampleText"
+            value={this.state.value}
+            placeholder="Enter text"
+            onChange={this.handleChange}
+          />
+        </FormGroup>
+        <Button bsStyle="primary" type="submit">Send notification</Button>
+      </Form>
     );
   }
 }

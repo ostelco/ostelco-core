@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Form, Button, FormGroup, ControlLabel, FormControl } from 'react-bootstrap';
+import { Button, Form, FormGroup, Label, Input } from 'reactstrap';
+
 import { getTextType } from '../../helpers';
 
 export class SearchForm extends React.Component {
@@ -29,7 +30,6 @@ export class SearchForm extends React.Component {
     console.log("SearchForm On Submit")
     this.props.onSubmit(this.state.value)
   }
-
   render() {
     return (
       <div className="container">
@@ -38,15 +38,16 @@ export class SearchForm extends React.Component {
             controlId="formBasicText"
             validationState={this.getValidationState()}
           >
-            <ControlLabel>Search user by phone number or email</ControlLabel>
-            <FormControl
+            <br />
+            <Label>Search user by phone number or email</Label>
+            <Input
               type="text"
               value={this.state.value}
               placeholder="Enter text"
               onChange={this.handleChange}
             />
           </FormGroup>
-          <Button bsStyle="primary" type="submit">Search</Button>
+          <Button color="outline-primary" type="submit">Search</Button>
         </Form>
       </div>
     );

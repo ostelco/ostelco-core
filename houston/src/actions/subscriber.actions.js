@@ -69,7 +69,7 @@ const getPaymentHistoryByEmail = (email) => (dispatch, getState) => {
 // TODO: API based implementaion. Reference: https://github.com/reduxjs/redux/issues/1676
 const getSubscriberAndBundlesByEmail = (email) => (dispatch, getState) =>  {
   return dispatch(fetchSubscriberByEmail(email)).then(() => {
-    // Assuming this is where the fetched user got stored
+    // Get the email from the fetched user
     const subscriberEmail = _.get(getState(), 'subscriber.email');
     if (subscriberEmail) {
       return dispatch(fetchBundlesByEmail(subscriberEmail)).then(() => {

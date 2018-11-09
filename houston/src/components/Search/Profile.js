@@ -1,7 +1,8 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Button, Panel, Grid, Row, Col } from 'react-bootstrap';
+import { Col, Row, Card, CardBody, CardTitle, Button } from 'reactstrap';
+
 import WarningModal from '../Shared/WarningModal';
 
 class Profile extends React.Component {
@@ -13,13 +14,15 @@ class Profile extends React.Component {
     };
   }
   handleCloseBlock = () => {
-    this.state.showBlock = false;
-    this.setState(this.state);
+    const state = this.state;
+    state.showBlock = false;
+    this.setState(state);
   }
 
   handleShowBlock = () => {
-    this.state.showBlock = true;
-    this.setState(this.state);
+    const state = this.state;
+    state.showBlock = true;
+    this.setState(state);
   }
 
   handleConfirmBlock = () => {
@@ -28,13 +31,15 @@ class Profile extends React.Component {
   }
 
   handleCloseNewSIM = () => {
-    this.state.showNewSIM = false;
-    this.setState(this.state);
+    const state = this.state;
+    state.showNewSIM = false;
+    this.setState(state);
   }
 
   handleShowNewSIM = () => {
-    this.state.showNewSIM = true;
-    this.setState(this.state);
+    const state = this.state;
+    state.showNewSIM = true;
+    this.setState(state);
   }
 
   handleConfirmNewSIM = () => {
@@ -51,56 +56,54 @@ class Profile extends React.Component {
     const props = this.props;
     if (!props.profile.name) return null;
     return (
-      <Panel>
-        <Panel.Heading>User Profile</Panel.Heading>
-        <Panel.Body>
-          <Grid>
-            <Row className="show-grid">
-              <Col xs={1} md={1}>
-                <samp>{'Name:'}</samp>
-              </Col>
-              <Col xs={12} md={8}>
-                <samp>{`${props.profile.name}`}</samp>
-              </Col>
-            </Row>
-            <Row className="show-grid">
-              <Col xs={1} md={1}>
-                <samp>{'Email:'}</samp>
-              </Col>
-              <Col xs={12} md={8}>
-                <samp>{`${props.profile.email}`}</samp>
-              </Col>
-            </Row>
+      <Card>
+        <CardBody>
+          <CardTitle>User Profile</CardTitle>
+          <Row>
+            <Col xs={2} md={2}>
+              <samp>{'Name:'}</samp>
+            </Col>
+            <Col xs={12} md={8}>
+              <samp>{`${props.profile.name}`}</samp>
+            </Col>
+          </Row>
+          <Row>
+            <Col xs={2} md={2}>
+              <samp>{'Email:'}</samp>
+            </Col>
+            <Col xs={12} md={8}>
+              <samp>{`${props.profile.email}`}</samp>
+            </Col>
+          </Row>
 
-            <Row className="show-grid">
-              <Col xs={1} md={1}>
-                <samp>{'Address:'}</samp>
-              </Col>
-              <Col xs={12} md={8}>
-                <samp>{`${props.profile.address}`}</samp>
-              </Col>
-            </Row>
-            <br />
-            <Row className="show-grid">
-              <Col xs={12} md={6}>
-                <samp>
-                  {'Block '}
-                  <Button bsStyle="link" onClick={this.handleShowBlock}>
-                    {'current SIM card'}
-                  </Button>
-                </samp>
-              </Col>
-            </Row>
-            <Row className="show-grid">
-              <Col xs={12} md={6}>
-                <samp>{'Order '}
-                  <Button bsStyle="link" onClick={this.handleShowNewSIM}>
-                    {'new SIM card'}
-                  </Button>
-                </samp>
-              </Col>
-            </Row>
-          </Grid>
+          <Row>
+            <Col xs={2} md={2}>
+              <samp>{'Address:'}</samp>
+            </Col>
+            <Col xs={12} md={8}>
+              <samp>{`${props.profile.address}`}</samp>
+            </Col>
+          </Row>
+          <br />
+          <Row>
+            <Col xs={12} md={6}>
+              <samp>
+                <Button color="danger" onClick={this.handleShowBlock}>
+                  {'Block current SIM card'}
+                </Button>
+              </samp>
+            </Col>
+          </Row>
+          <br />
+          <Row>
+            <Col xs={12} md={6}>
+              <samp>
+                <Button onClick={this.handleShowNewSIM}>
+                  {'Order new SIM card'}
+                </Button>
+              </samp>
+            </Col>
+          </Row>
           <WarningModal
             heading={blockHeading}
             warningText={blockText}
@@ -113,11 +116,12 @@ class Profile extends React.Component {
             show={this.state.showNewSIM}
             handleConfirm={this.handleConfirmNewSIM}
             handleClose={this.handleCloseNewSIM} />
-        </Panel.Body>
-      </Panel>
+        </CardBody>
+      </Card>
     );
   }
 }
+
 Profile.propTypes = {
   profile: PropTypes.shape({
     name: PropTypes.string,

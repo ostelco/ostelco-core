@@ -1,12 +1,31 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
-import { Navbar, Button, NavItem, Nav, MenuItem, NavDropdown } from 'react-bootstrap';
+import {
+  Button,
+  Collapse,
+  Navbar,
+  NavbarToggler,
+  NavbarBrand,
+  Nav,
+  NavItem,
+  NavLink,
+  UncontrolledDropdown,
+  DropdownToggle,
+  DropdownMenu,
+  DropdownItem
+} from 'reactstrap';
 
 import { authActions } from '../actions';
-import './App.css';
 
 class App extends Component {
+  constructor(props, context) {
+    super(props, context);
+    this.state = {
+      isOpen: false
+    };
+  }
+
   goTo(route) {
     this.props.history.replace(`/${route}`)
   }
@@ -19,52 +38,64 @@ class App extends Component {
     this.props.logout();
   }
 
+  toggle = () => {
+    this.setState({
+      isOpen: !this.state.isOpen
+    });
+  }
+
+  renderMenu() {
+    const { props } = this;
+    const userName = props.user ? props.user.name + ' : ' + props.user.email : '';
+    return (
+      <Collapse isOpen={this.state.isOpen} navbar>
+        <Nav className="ml-auto" navbar>
+          <NavItem>
+            <NavLink tag={Link} href="/search" to="/search">Search</NavLink>
+          </NavItem>
+          <NavItem>
+            <NavLink tag={Link} href="/notifications" to="/notifications">Notifications</NavLink>
+          </NavItem>
+          <UncontrolledDropdown nav inNavbar>
+            <DropdownToggle nav caret>
+              Options
+          </DropdownToggle>
+            <DropdownMenu right>
+              <DropdownItem>
+                <NavLink href="" onClick={(e) => { e.preventDefault(); props.logout(); }}>Logout</NavLink>
+              </DropdownItem>
+            </DropdownMenu>
+          </UncontrolledDropdown>
+        </Nav>
+      </Collapse>
+    );
+  }
+
   render() {
     const { props } = this
     const isAuthenticated = props.loggedIn || false;
     const userName = props.user ? props.user.name + ' : ' + props.user.email : '';
+
     return (
       <div>
-        <Navbar fluid>
-          <Navbar.Header>
-            <Navbar.Brand>
-              <img src="redotter.png" style={{ width: 80, height: 80, marginTop: -10 }} />
-            </Navbar.Brand>
-            {
-              !isAuthenticated && (
-                <Button
-                  id="qsLoginBtn"
-                  bsStyle="primary"
-                  className="btn-margin"
-                  onClick={this.login.bind(this)}
-                >
-                  Log In
-                </Button>
-              )
-            }
-          </Navbar.Header>
+        <Navbar light expand="md">
+          <NavbarBrand>
+            <img src="redotter.png" style={{ width: 32, height: 32, marginTop: 0 }} />
+          </NavbarBrand>
+          <Nav>
+            <NavItem>
+              {userName}
+            </NavItem>
+          </Nav>
           {
-            isAuthenticated && (
-              <Navbar.Collapse>
-                <Nav>
-                  <NavItem componentClass={Link} href="/search" to="/search" active={window.location.pathname === '/search'}>Search</NavItem>
-                  <NavItem componentClass={Link} href="/notifications" to="/notifications" active={window.location.pathname === '/notifications'}>Notifications</NavItem>
-                  <NavDropdown eventKey={3} title="Dropdown" id="basic-nav-dropdown">
-                    <MenuItem eventKey={3.1}>Action</MenuItem>
-                    <MenuItem eventKey={3.2}>Another action</MenuItem>
-                    <MenuItem eventKey={3.3}>Something else here</MenuItem>
-                    <MenuItem divider />
-                    <MenuItem eventKey={3.3}>Separated link</MenuItem>
-                  </NavDropdown>
-                </Nav>
-                <Navbar.Text pullRight>
-                  <Navbar.Link href="" onClick={(e) => { e.preventDefault(); props.logout(); }}>
-                    {' ' + userName + ' '}
-                  </Navbar.Link>
-                </Navbar.Text>
-              </Navbar.Collapse>
+            !isAuthenticated && (
+              <Button color="outline-primary" onClick={this.login.bind(this)}>Log In</Button>
             )
           }
+          {
+            isAuthenticated && (this.renderMenu())
+          }
+          <NavbarToggler onClick={this.toggle} />
         </Navbar>
       </div>
     );

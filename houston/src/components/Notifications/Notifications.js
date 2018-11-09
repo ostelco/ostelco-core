@@ -1,9 +1,10 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
+import { Card, CardBody, CardTitle } from 'reactstrap';
+
 import { authActions, subscriberActions } from '../../actions';
 import { TextForm } from './TextForm';
-import { Panel } from 'react-bootstrap';
 
 class Notifications extends React.Component {
 
@@ -12,22 +13,22 @@ class Notifications extends React.Component {
     console.log("Search On Submit")
     this.props.getSubscriberAndBundles(text)
   }
-
   render() {
     return (
       <div className="container">
-      <Panel>
-      <Panel.Heading>Global Push Notifications.</Panel.Heading>
-      <Panel.Body>
-        <TextForm onSubmit = {this.onSubmit} />
-        </Panel.Body>
-        </Panel>
-        <Panel>
-      <Panel.Heading>Global Emails</Panel.Heading>
-      <Panel.Body>
-        <TextForm onSubmit = {this.onSubmit} />
-        </Panel.Body>
-        </Panel>
+        <Card>
+          <CardBody>
+            <CardTitle>Global Push Notifications.</CardTitle>
+            <TextForm onSubmit={this.onSubmit} />
+          </CardBody>
+        </Card>
+        <br />
+        <Card>
+          <CardBody>
+            <CardTitle>Global Emails</CardTitle>
+            <TextForm onSubmit={this.onSubmit} />
+          </CardBody>
+        </Card>
       </div>
     );
   }
