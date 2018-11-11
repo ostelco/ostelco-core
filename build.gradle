@@ -15,7 +15,7 @@ allprojects {
   repositories {
     mavenCentral()
     jcenter()
-    maven { url = "https://repository.jboss.org/nexus/content/repositories/releases/" }
+    maven { url = "http://repository.jboss.org/nexus/content/repositories/releases/" }
     maven { url = "https://maven.repository.redhat.com/ga/" }
     maven { url = "http://clojars.org/repo/" }
   }
@@ -34,10 +34,10 @@ subprojects {
   ext {
     kotlinVersion = "1.3.0"
     dropwizardVersion = "1.3.7"
-    kotlinXCoroutinesVersion = "1.0.0"
-    googleCloudVersion = "1.50.0"
+    kotlinXCoroutinesVersion = "1.0.1"
+    googleCloudVersion = "1.52.0"
     jacksonVersion = "2.9.7"
-    stripeVersion = "7.1.0"
+    stripeVersion = "7.6.0"
     guavaVersion = "27.0-jre"
     junit5Version = "5.3.1"
     assertJVersion = "3.11.1"
@@ -51,7 +51,7 @@ subprojects {
     grpcVersion = "1.16.1"
     jaxbVersion = "2.3.0"
     javaxActivationVersion = "1.1.1"
-    arrowVersion = "0.7.3"
+    arrowVersion = "0.8.0"
   }
 }
 

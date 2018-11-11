@@ -10,8 +10,7 @@ cache:
 
 install: echo "skip 'gradle assemble' step"
 
-# Bug in jdk11 prevents downloading certain dependencies
-# jdk: openjdk11
+jdk: openjdk11
 
 # TODO vihang: fix neo4j-store:test
 script: ./gradlew clean build -info --stacktrace -x neo4j-store:test -x integration
