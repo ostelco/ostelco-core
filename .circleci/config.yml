@@ -78,7 +78,7 @@ jobs:
       CODACY_MODULE: com.codacy.CodacyCoverageReporter
   
     docker:
-      - image: circleci/openjdk:11-jdk-sid
+      - image: circleci/openjdk:11.0.1-jdk-node-browsers
 
     steps:
       - run:  
