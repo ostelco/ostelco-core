@@ -173,7 +173,7 @@ data class Es2ConfirmOrderResponseBody(
 ///  The CancelOrder function
 ///
 
-// @JsonSchema("ES2+CancelOrder-def")
+@JsonSchema("ES2+CancelOrder-def")
 data class Es2CancelOrder(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("body") val body: Es2CancelOrderBody
@@ -187,19 +187,13 @@ data class Es2CancelOrderBody(
         @JsonProperty("finalProfileStatusIndicator") val finalProfileStatusIndicator: String?
 )
 
+@JsonSchema("ES2+CancelOrder-response")
+data class Es2CancelOrderResponse(@JsonProperty("header") val header: ES2ResponseHeader)
 
-// @JsonSchema("ES2+CancelOrder-result")
-data class Es2CancelOrderResponse(
-        @JsonProperty("header") val header: ES2ResponseHeader,
-        @JsonProperty("body") val body: Es2CancelOrderResponseBody
-)
-
-class Es2CancelOrderResponseBody
 
 ///
 ///  The ReleaseProfile function
 ///
-
 
 // @JsonSchema("ES2+ReleaseProfile-def")
 data class Es2ReleaseProfile(
@@ -309,10 +303,13 @@ class Es2PlusResource() {
     @POST
     fun cancelOrder(order: Es2CancelOrder): Es2CancelOrderResponse {
         return Es2CancelOrderResponse(
-                header = ES2ResponseHeader(
-                        functionExecutionStatus = FunctionExecutionStatus(
-                                status = FunctionExecutionStatusType.ExecutedSuccess)),
-                body = Es2CancelOrderResponseBody())
+                header = ES2ResponseHeader(functionExecutionStatus = FunctionExecutionStatus(
+                        status = FunctionExecutionStatusType.ExecutedSuccess,
+                        statusCodeData = StatusCodeData(
+                                subjectCode = "foo",
+                                reasonCode = "bar",
+                                subjectIdentifier = "baz",
+                                message = "gazonk"))))
     }
 
     @Path("releaseProfile")

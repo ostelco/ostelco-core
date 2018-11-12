@@ -21,7 +21,7 @@ class JsonSchemaValidator() {
     private fun loadJsonSchemaResource(name: String): Schema {
         val inputStream = this.javaClass.getResourceAsStream("${schemaRoot}/${name}.json")
         if (inputStream == null) {
-            throw WebApplicationException("Unknown schema map", Response.Status.INTERNAL_SERVER_ERROR)
+            throw WebApplicationException("Unknown schema map: '$name'", Response.Status.INTERNAL_SERVER_ERROR)
         }
         try {
             val jsonEncodedSchemaDescription = JSONObject(JSONTokener(inputStream))
