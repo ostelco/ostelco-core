@@ -61,7 +61,9 @@ class ES2PlusResourceTest {
                         iccid = "01234567890123456789",
                         profileType = "really!"))
 
-        postEs2ProtocolCommand("/gsma/rsp2/es2plus/downloadOrder", es2ProtocolPayload, expectedReturnCode = 200)
+        postEs2ProtocolCommand("/gsma/rsp2/es2plus/downloadOrder",
+                es2ProtocolPayload,
+                expectedReturnCode = 200)
     }
 
 
@@ -98,7 +100,6 @@ class ES2PlusResourceTest {
                                 finalProfileStatusIndicator = "bar"))
                 , 200)
                 .readEntity(String::class.java)
-        // XXX Fails .readEntity(ES2JsonBaseResponse::class.java)
     }
 
 
@@ -115,7 +116,6 @@ class ES2PlusResourceTest {
                                 iccid = "01234567890123456789"))
                 , 200)
                 .readEntity(String::class.java)
-        // XXX Fails .readEntity(ES2JsonBaseResponse::class.java)
     }
 
 
