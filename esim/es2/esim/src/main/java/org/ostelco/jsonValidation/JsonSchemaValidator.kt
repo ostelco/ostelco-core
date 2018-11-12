@@ -26,7 +26,8 @@ class JsonSchemaValidator() {
             val jsonEncodedSchemaDescription = JSONObject(JSONTokener(inputStream))
             return org.everit.json.schema.loader.SchemaLoader.load(jsonEncodedSchemaDescription)
         } catch (e: JSONException) {
-            throw WebApplicationException("Syntax error in schema description", Response.Status.INTERNAL_SERVER_ERROR)
+            val msg = e.message
+            throw WebApplicationException("Syntax error in schema description  named '$name'. Error:  ${msg}", Response.Status.INTERNAL_SERVER_ERROR)
         }
     }
 

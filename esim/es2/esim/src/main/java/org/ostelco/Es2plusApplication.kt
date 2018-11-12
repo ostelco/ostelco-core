@@ -118,7 +118,7 @@ data class StatusCodeData(
 ///  The DownloadOrder function
 ///
 
-// @JsonSchema("ES2+DownloadOrder-def")
+@JsonSchema("ES2+DownloadOrder-def")
 data class Es2PlusDownloadOrder(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("body") val body: Es2PlusDownloadOrderBody
@@ -131,7 +131,7 @@ data class Es2PlusDownloadOrderBody(
         @JsonProperty("profileType") val profileType: String?
 )
 
-// @JsonSchema("ES2+DownloadOrder-response")
+@JsonSchema("ES2+DownloadOrder-response")
 data class Es2DownloadOrderResponse(
         @JsonProperty("header") val header: ES2ResponseHeader,
         @JsonProperty("body") val body: Es2PlusDownloadOrderResponseBody
@@ -145,7 +145,7 @@ data class Es2PlusDownloadOrderResponseBody(
 /// The ConfirmOrder function
 ///
 
-// @JsonSchema("ES2+ConfirmOrder-def")
+@JsonSchema("ES2+ConfirmOrder-def")
 data class Es2ConfirmOrder(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("body") val body: Es2ConfirmOrderBody

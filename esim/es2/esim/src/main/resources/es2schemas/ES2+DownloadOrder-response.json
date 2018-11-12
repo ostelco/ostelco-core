@@ -6,7 +6,7 @@
       "properties": {
         "functionExecutionStatus": {
           "type": "object",
-          "description": "Whether the function has been processed correctly or not"
+          "description": "Whether the function has been processed correctly or not",
           "properties": {
             "status": {
               "type": "string",
