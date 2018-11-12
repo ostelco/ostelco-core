@@ -47,7 +47,7 @@ class JsonSchemaValidator() {
             try {
                 getSchema(schemaAnnotation.schemaKey).validate(JSONObject(body))
             } catch (t: ValidationException) {
-                val msg = "Schema validation failed while validating schema named: '$schemaAnnotation.schemaKey'.  Error:  t.message"
+                val msg = "Schema validation failed while validating schema named: '${schemaAnnotation.schemaKey}'.  Error:  $t.message"
                 throw WebApplicationException(msg, error)
             }
         }

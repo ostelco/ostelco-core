@@ -158,7 +158,7 @@ data class Es2ConfirmOrderBody(
         @JsonProperty("releaseFlag") val releaseFlag: Boolean
 )
 
-// @JsonSchema("ES2+ConfirmOrder-response")
+@JsonSchema("ES2+ConfirmOrder-response")
 data class Es2ConfirmOrderResponse(
         @JsonProperty("header") val header: ES2ResponseHeader,
         @JsonProperty("body") val body: Es2ConfirmOrderResponseBody)
