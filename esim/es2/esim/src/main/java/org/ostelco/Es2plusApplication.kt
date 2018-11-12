@@ -4,7 +4,14 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.dropwizard.Application
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
+import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource
+import io.swagger.v3.oas.integration.SwaggerConfiguration
+import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.oas.models.info.Contact
+import io.swagger.v3.oas.models.info.Info
 import java.io.IOException
+import java.util.stream.Collectors
+import java.util.stream.Stream
 import javax.ws.rs.Consumes
 import javax.ws.rs.POST
 import javax.ws.rs.Path
@@ -27,7 +34,24 @@ class Es2plusApplication : Application<Es2plusConfiguration>() {
 
     override fun run(configuration: Es2plusConfiguration,
                      environment: Environment) {
-        // TODO: implement application
+
+        // XXX Add these parameters to configuration file.
+        val oas = OpenAPI()
+        val info = Info()
+                .title(getName())
+                .description("Restful membership management.")
+                .termsOfService("http://example.com/terms")
+                .contact(Contact().email("la3lma@gmail.com"))
+
+        oas.info(info)
+        val oasConfig = SwaggerConfiguration()
+                .openAPI(oas)
+                .prettyPrint(true)
+                .resourcePackages(Stream.of("no .rmz.membershipmgt")
+                        .collect(Collectors.toSet<String>()))
+        environment.jersey().register(OpenApiResource()
+                .openApiConfiguration(oasConfig))
+
         environment.jersey().register(Es2PlusResource())
         environment.jersey().register(RestrictedOperationsRequestFilter())
     }
@@ -257,6 +281,9 @@ data class Es2HandleDownloadProgressInfoResponse(
 @Consumes(MediaType.APPLICATION_JSON)
 class Es2PlusResource() {
 
+    /**
+     * Provided by SM-DP+, called by operator's BSS system.
+     */
     @Path("downloadOrder")
     @POST
     fun downloadOrder(order: Es2PlusDownloadOrder): Es2DownloadOrderResponse {
@@ -275,6 +302,9 @@ class Es2PlusResource() {
     }
 
 
+    /**
+     * Provided by SM-DP+, called by operator's BSS system.
+     */
     @Path("confirmOrder")
     @POST
     fun confirmOrder(order: Es2ConfirmOrder): Es2ConfirmOrderResponse {
@@ -292,6 +322,9 @@ class Es2PlusResource() {
                         matchingId = order.body.matchingId))
     }
 
+    /**
+     * Provided by SM-DP+, called by operator's BSS system.
+     */
     @Path("cancelOrder")
     @POST
     fun cancelOrder(order: Es2CancelOrder): Es2CancelOrderResponse {
@@ -305,6 +338,9 @@ class Es2PlusResource() {
                                 message = "gazonk"))))
     }
 
+    /**
+     * Provided by SM-DP+, called by operator's BSS system.
+     */
     @Path("releaseProfile")
     @POST
     fun releaseProfile(order: Es2ReleaseProfile): Es2ReleaseProfileResponse {
@@ -319,6 +355,11 @@ class Es2PlusResource() {
                                         message = "gazonk"))))
     }
 
+    /**
+     * This method is intened to be called _by_ the SM-DP+, sending information
+     * back to the  operator's BSS system about the progress of various
+     * operations.
+     */
     @Path("handleDownloadProgressInfo")
     @POST
     fun handleDownloadProgressInfo(order: Es2HandleDownloadProgressInfo): Es2HandleDownloadProgressInfoResponse {
