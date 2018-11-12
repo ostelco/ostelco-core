@@ -57,10 +57,10 @@ class Es2plusApplication : Application<Es2plusConfiguration>() {
     }
 
     companion object {
-
         @Throws(Exception::class)
+        @JvmStatic
         fun main(args: Array<String>) {
-            Es2plusApplication().run("foo")
+            Es2plusApplication().run(*args)
         }
     }
 
