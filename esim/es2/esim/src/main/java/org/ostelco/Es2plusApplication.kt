@@ -195,7 +195,7 @@ data class Es2CancelOrderResponse(@JsonProperty("header") val header: ES2Respons
 ///  The ReleaseProfile function
 ///
 
-// @JsonSchema("ES2+ReleaseProfile-def")
+@JsonSchema("ES2+ReleaseProfile-def")
 data class Es2ReleaseProfile(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("body") val body: Es2ReleaseProfileBody
@@ -206,13 +206,9 @@ data class Es2ReleaseProfileBody(
         @JsonProperty("iccid") val iccid: String
 )
 
-// @JsonSchema("ES2+ReleaseProfile-response")
+@JsonSchema("ES2+ReleaseProfile-response")
 data class Es2ReleaseProfileResponse(
-        @JsonProperty("header") val header: ES2ResponseHeader,
-        @JsonProperty("body") val body: Es2ReleaseProfileResultBody)
-
-
-class Es2ReleaseProfileResultBody
+        @JsonProperty("header") val header: ES2ResponseHeader)
 
 
 ///
@@ -323,8 +319,7 @@ class Es2PlusResource() {
                                         subjectCode = "foo",
                                         reasonCode = "bar",
                                         subjectIdentifier = "baz",
-                                        message = "gazonk"))),
-                body = Es2ReleaseProfileResultBody())
+                                        message = "gazonk"))))
     }
 
     @Path("handleDownloadProgressInfo")
