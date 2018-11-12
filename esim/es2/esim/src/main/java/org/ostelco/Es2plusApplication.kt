@@ -235,13 +235,13 @@ data class Es2HandleDownloadProgressInfo(
 )
 
 data class Es2HandleDownloadProgressInfoBody(
-        @JsonProperty("eid") val eid: String?,
-        @JsonProperty("iccid") val iccid: String?,
-        @JsonProperty("profileType") val profileType: String?,
-        @JsonProperty("timestamp") val timestamp: String?,
-        @JsonProperty("notificationPointId") val notificationPointId: String?,
-        @JsonProperty("notificationPointStatus") val notificationPointStatus: ES2NotificationPointStatus?,
-        @JsonProperty("resultData") val resultData: ES2StatusCodeData?
+        @JsonProperty("eid") val eid: String? = null,
+        @JsonProperty("iccid") val iccid: String?= null,
+        @JsonProperty("profileType") val profileType: String?= null,
+        @JsonProperty("timestamp") val timestamp: String?= null,
+        @JsonProperty("notificationPointId") val notificationPointId: String?= null,
+        @JsonProperty("notificationPointStatus") val notificationPointStatus: ES2NotificationPointStatus?= null,
+        @JsonProperty("resultData") val resultData: ES2StatusCodeData?= null
 )
 
 data class ES2NotificationPointStatus(

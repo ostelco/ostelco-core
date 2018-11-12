@@ -5,6 +5,8 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.ostelco.*
 import org.ostelco.jsonValidation.RequestServerReaderWriterInterceptor
+import javax.ws.rs.POST
+import javax.ws.rs.Path
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
@@ -94,6 +96,40 @@ class ES2PlusResourceTest {
                                 iccid = "01234567890123456789",
                                 matchingId = "foo",
                                 finalProfileStatusIndicator = "bar"))
+                , 200)
+                .readEntity(String::class.java)
+        // XXX Fails .readEntity(ES2JsonBaseResponse::class.java)
+    }
+
+
+    @Test
+    fun testReleaseProfile() {
+        val es2ConfirmOrder = postEs2ProtocolCommand("/gsma/rsp2/es2plus/releaseProfile",
+                Es2ReleaseProfile(
+                        header = ES2RequestHeader(
+                                functionRequesterIdentifier = "foo",
+                                functionCallIdentifier = "bar"
+
+                        ),
+                        body = Es2ReleaseProfileBody(
+                                iccid = "01234567890123456789"))
+                , 200)
+                .readEntity(String::class.java)
+        // XXX Fails .readEntity(ES2JsonBaseResponse::class.java)
+    }
+
+
+
+    @Test
+    fun testHandleDownloadProgressInfo() {
+        val es2ConfirmOrder = postEs2ProtocolCommand("/gsma/rsp2/es2plus/handleDownloadProgressInfo",
+                Es2HandleDownloadProgressInfo(
+                        header = ES2RequestHeader(
+                                functionRequesterIdentifier = "foo",
+                                functionCallIdentifier = "bar"
+
+                        ),
+                        body = Es2HandleDownloadProgressInfoBody())
                 , 200)
                 .readEntity(String::class.java)
         // XXX Fails .readEntity(ES2JsonBaseResponse::class.java)
