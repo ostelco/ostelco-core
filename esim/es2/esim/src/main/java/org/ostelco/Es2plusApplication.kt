@@ -215,8 +215,7 @@ data class Es2ReleaseProfileResponse(
 ///  The The HandleDownloadProgressInfo function
 ///
 
-// @JsonSchema("ES2+HandleDownloadProgressInfo-def")
-
+@JsonSchema("ES2+HandleDownloadProgressInfo-def")
 data class Es2HandleDownloadProgressInfo(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("body") val body: Es2HandleDownloadProgressInfoBody
@@ -244,12 +243,10 @@ data class ES2StatusCodeData(
         @JsonProperty("message") val message: String?
 )
 
-// @JsonSchema("ES2+HandleDownloadProgressInfo-def")
+@JsonSchema("ES2+HandleDownloadProgressInfo-response")
 data class Es2HandleDownloadProgressInfoResponse(
-        @JsonProperty("header") val header: ES2ResponseHeader,
-        @JsonProperty("body") val body: Es2HandleDownloadProgressInfoResponseBody)
+        @JsonProperty("header") val header: ES2ResponseHeader)
 
-class Es2HandleDownloadProgressInfoResponseBody
 
 ///
 ///  The web resource using the protocol domain model.
@@ -333,7 +330,6 @@ class Es2PlusResource() {
                                         subjectCode = "foo",
                                         reasonCode = "bar",
                                         subjectIdentifier = "baz",
-                                        message = "gazonk"))),
-                body = Es2HandleDownloadProgressInfoResponseBody())
+                                        message = "gazonk"))))
     }
 }

@@ -1,6 +1,7 @@
 package org.ostelco.jsonValidation
 
 import org.everit.json.schema.Schema
+import org.everit.json.schema.SchemaException
 import org.everit.json.schema.ValidationException
 import org.json.JSONException
 import org.json.JSONObject
@@ -29,6 +30,8 @@ class JsonSchemaValidator() {
         } catch (e: JSONException) {
             val msg = e.message
             throw WebApplicationException("Syntax error in schema description  named '$name'. Error:  ${msg}", Response.Status.INTERNAL_SERVER_ERROR)
+        } catch (e: SchemaException) {
+            throw WebApplicationException("Illegal Schema definition for schema: '$name'.  Error: ${e.message}")
         }
     }
 
