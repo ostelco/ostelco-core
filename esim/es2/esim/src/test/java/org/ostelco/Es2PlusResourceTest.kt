@@ -110,7 +110,6 @@ class ES2PlusResourceTest {
                         header = ES2RequestHeader(
                                 functionRequesterIdentifier = "foo",
                                 functionCallIdentifier = "bar"
-
                         ),
                         body = Es2ReleaseProfileBody(
                                 iccid = "01234567890123456789"))
