@@ -13,7 +13,6 @@ import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.container.ContainerRequestFilter
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
-import javax.ws.rs.core.UriBuilder
 import javax.ws.rs.ext.Provider
 
 class Es2plusApplication : Application<Es2plusConfiguration>() {
@@ -89,7 +88,6 @@ data class ES2RequestHeader(
 
 data class ES2ResponseHeader(
         @JsonProperty("functionExecutionStatus") val functionExecutionStatus: FunctionExecutionStatus)
-
 
 
 enum class FunctionExecutionStatusType {
@@ -236,12 +234,12 @@ data class Es2HandleDownloadProgressInfo(
 
 data class Es2HandleDownloadProgressInfoBody(
         @JsonProperty("eid") val eid: String? = null,
-        @JsonProperty("iccid") val iccid: String?= null,
-        @JsonProperty("profileType") val profileType: String?= null,
-        @JsonProperty("timestamp") val timestamp: String?= null,
-        @JsonProperty("notificationPointId") val notificationPointId: String?= null,
-        @JsonProperty("notificationPointStatus") val notificationPointStatus: ES2NotificationPointStatus?= null,
-        @JsonProperty("resultData") val resultData: ES2StatusCodeData?= null
+        @JsonProperty("iccid") val iccid: String? = null,
+        @JsonProperty("profileType") val profileType: String? = null,
+        @JsonProperty("timestamp") val timestamp: String? = null,
+        @JsonProperty("notificationPointId") val notificationPointId: String? = null,
+        @JsonProperty("notificationPointStatus") val notificationPointStatus: ES2NotificationPointStatus? = null,
+        @JsonProperty("resultData") val resultData: ES2StatusCodeData? = null
 )
 
 data class ES2NotificationPointStatus(
@@ -263,7 +261,6 @@ data class Es2HandleDownloadProgressInfoResponse(
 
 class Es2HandleDownloadProgressInfoResponseBody
 
-
 ///
 ///  The web resource using the protocol domain model.
 ///
@@ -279,22 +276,33 @@ class Es2PlusResource() {
         val iccid = if (order.body.iccid != null) order.body.iccid else "01234567890123456798"
         val response =
                 Es2DownloadOrderResponse(
-                        header = ES2ResponseHeader(functionExecutionStatus= FunctionExecutionStatus(
-                                status = FunctionExecutionStatusType.ExecutedSuccess)),
+                        header = ES2ResponseHeader(functionExecutionStatus = FunctionExecutionStatus(
+                                status = FunctionExecutionStatusType.ExecutedSuccess,
+                                statusCodeData = StatusCodeData(
+                                        subjectCode = "foo",
+                                        reasonCode = "bar",
+                                        subjectIdentifier = "baz",
+                                        message = "gazonk"))),
                         body = Es2PlusDownloadOrderResponseBody(iccid))
         return response
     }
+
 
     @Path("confirmOrder")
     @POST
     fun confirmOrder(order: Es2ConfirmOrder): Es2ConfirmOrderResponse {
         return Es2ConfirmOrderResponse(
-                header = ES2ResponseHeader(functionExecutionStatus= FunctionExecutionStatus(
-                        status = FunctionExecutionStatusType.ExecutedSuccess)),
-                body =  Es2ConfirmOrderResponseBody(
-                eid = order.body.eid,
-                smdsAddress = order.body.smdsAddress,
-                matchingId = order.body.matchingId))
+                header = ES2ResponseHeader(functionExecutionStatus = FunctionExecutionStatus(
+                        status = FunctionExecutionStatusType.ExecutedSuccess,
+                        statusCodeData = StatusCodeData(
+                                subjectCode = "foo",
+                                reasonCode = "bar",
+                                subjectIdentifier = "baz",
+                                message = "gazonk"))),
+                body = Es2ConfirmOrderResponseBody(
+                        eid = order.body.eid,
+                        smdsAddress = order.body.smdsAddress,
+                        matchingId = order.body.matchingId))
     }
 
     @Path("cancelOrder")
@@ -313,7 +321,12 @@ class Es2PlusResource() {
         return Es2ReleaseProfileResponse(
                 header = ES2ResponseHeader(
                         functionExecutionStatus = FunctionExecutionStatus(
-                                status = FunctionExecutionStatusType.ExecutedSuccess)),
+                                status = FunctionExecutionStatusType.ExecutedSuccess,
+                                statusCodeData = StatusCodeData(
+                                        subjectCode = "foo",
+                                        reasonCode = "bar",
+                                        subjectIdentifier = "baz",
+                                        message = "gazonk"))),
                 body = Es2ReleaseProfileResultBody())
     }
 
@@ -323,7 +336,12 @@ class Es2PlusResource() {
         return Es2HandleDownloadProgressInfoResponse(
                 header = ES2ResponseHeader(
                         functionExecutionStatus = FunctionExecutionStatus(
-                                status = FunctionExecutionStatusType.ExecutedSuccess)),
+                                status = FunctionExecutionStatusType.ExecutedSuccess,
+                                statusCodeData = StatusCodeData(
+                                        subjectCode = "foo",
+                                        reasonCode = "bar",
+                                        subjectIdentifier = "baz",
+                                        message = "gazonk"))),
                 body = Es2HandleDownloadProgressInfoResponseBody())
     }
 }

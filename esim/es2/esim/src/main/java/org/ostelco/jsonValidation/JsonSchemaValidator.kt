@@ -1,6 +1,7 @@
 package org.ostelco.jsonValidation
 
 import org.everit.json.schema.Schema
+import org.everit.json.schema.ValidationException
 import org.json.JSONException
 import org.json.JSONObject
 import org.json.JSONTokener
@@ -39,18 +40,19 @@ class JsonSchemaValidator() {
         return schemaMap[name]!!
     }
 
+    @Throws(WebApplicationException::class)
     public fun validateString(payloadClass: Class<*>, body: String, error: Response.Status) {
         val schemaAnnotation = payloadClass.getAnnotation<JsonSchema>(JsonSchema::class.java)
         if (schemaAnnotation != null) {
             try {
                 getSchema(schemaAnnotation.schemaKey).validate(JSONObject(body))
-            } catch (t: Exception) {
-                throw WebApplicationException(t.message, error)
+            } catch (t: ValidationException) {
+                val msg = "Schema validation failed while validating schema named: '$schemaAnnotation.schemaKey'.  Error:  t.message"
+                throw WebApplicationException(msg, error)
             }
         }
     }
 }
-
 
 @Provider
 class RequestServerReaderWriterInterceptor : ReaderInterceptor, WriterInterceptor {
@@ -85,7 +87,6 @@ class RequestServerReaderWriterInterceptor : ReaderInterceptor, WriterIntercepto
         return count
     }
 
-
     @Throws(IOException::class, WebApplicationException::class)
     override fun aroundReadFrom(ctx: ReaderInterceptorContext): Any {
         val originalStream = ctx.inputStream
@@ -109,7 +110,7 @@ class RequestServerReaderWriterInterceptor : ReaderInterceptor, WriterIntercepto
         ctx.outputStream = interceptingStream
 
         // Proceed, meaning that we'll get all the input
-        // sent into the byte output stream.
+        // sent into the byte output (intercepting) stream.
         ctx.proceed()
 
         // Then get the byte array & convert it to a nice
