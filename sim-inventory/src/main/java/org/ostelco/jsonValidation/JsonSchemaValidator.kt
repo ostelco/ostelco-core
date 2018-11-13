@@ -6,12 +6,15 @@ import org.everit.json.schema.ValidationException
 import org.json.JSONException
 import org.json.JSONObject
 import org.json.JSONTokener
-import org.ostelco.JsonSchema
 import java.io.*
 import java.nio.charset.Charset
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.Response
 import javax.ws.rs.ext.*
+
+@Target(AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.RUNTIME)
+public annotation class JsonSchema(val schemaKey: String)
 
 
 class JsonSchemaValidator() {
@@ -58,7 +61,7 @@ class JsonSchemaValidator() {
 }
 
 @Provider
-class RequestServerReaderWriterInterceptor : ReaderInterceptor, WriterInterceptor {
+class JsonSchemaInputOutputValidationInterceptor : ReaderInterceptor, WriterInterceptor {
 
     val validator = JsonSchemaValidator()
 

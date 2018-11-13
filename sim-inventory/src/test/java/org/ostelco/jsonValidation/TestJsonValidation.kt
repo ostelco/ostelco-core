@@ -17,7 +17,6 @@ class TestJsonValidation() {
     }
 
 
-
     @Test
     fun ES2DownloadOrderTest() {
         val inputStream = this.javaClass.getResourceAsStream("/es2schemas/ES2+DownloadOrder-def.json")
