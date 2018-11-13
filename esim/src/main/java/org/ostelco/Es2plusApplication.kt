@@ -243,7 +243,6 @@ data class Es2ReleaseProfile(
         @JsonProperty("body") val body: Es2ReleaseProfileBody
 )
 
-
 data class Es2ReleaseProfileBody(
         @JsonProperty("iccid") val iccid: String
 )
