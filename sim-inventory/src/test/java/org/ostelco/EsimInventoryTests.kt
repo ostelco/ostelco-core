@@ -37,6 +37,6 @@ class ES2PlusResourceTest {
         assertEquals(200, response.status)
 
         val simEntry = response.readEntity(SimEntry::class.java)
-        println("entry = ${simEntry}")
+
     }
 }
