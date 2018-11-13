@@ -1,0 +1,276 @@
+openapi: 3.0.1
+info:
+  title: es2+ application
+  description: Restful membership management.
+  termsOfService: http://example.com/terms
+  contact:
+    email: la3lma@gmail.com
+paths:
+  /gsma/rsp2/es2plus/downloadOrder:
+    post:
+      operationId: downloadOrder
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Es2PlusDownloadOrder'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Es2DownloadOrderResponse'
+  /gsma/rsp2/es2plus/handleDownloadProgressInfo:
+    post:
+      operationId: handleDownloadProgressInfo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Es2HandleDownloadProgressInfo'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Es2HandleDownloadProgressInfoResponse'
+  /gsma/rsp2/es2plus/cancelOrder:
+    post:
+      operationId: cancelOrder
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Es2CancelOrder'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Es2CancelOrderResponse'
+  /gsma/rsp2/es2plus/releaseProfile:
+    post:
+      operationId: releaseProfile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Es2ReleaseProfile'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Es2ReleaseProfileResponse'
+  /gsma/rsp2/es2plus/confirmOrder:
+    post:
+      operationId: confirmOrder
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Es2ConfirmOrder'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Es2ConfirmOrderResponse'
+components:
+  schemas:
+    Es2HandleDownloadProgressInfoResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ES2ResponseHeader'
+    ES2NotificationPointStatus:
+      type: object
+      properties:
+        status:
+          type: string
+        statusCodeData:
+          $ref: '#/components/schemas/ES2StatusCodeData'
+    Es2ReleaseProfile:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ES2RequestHeader'
+        body:
+          $ref: '#/components/schemas/Es2ReleaseProfileBody'
+    ES2StatusCodeData:
+      type: object
+      properties:
+        subjectCode:
+          type: string
+        reasonCode:
+          type: string
+          writeOnly: true
+        subjectIdentifier:
+          type: string
+        message:
+          type: string
+        statusCodeData:
+          type: string
+    Es2ConfirmOrderResponseBody:
+      type: object
+      properties:
+        eid:
+          type: string
+        matchingId:
+          type: string
+        smdsAddress:
+          type: string
+    Es2PlusDownloadOrderBody:
+      type: object
+      properties:
+        eid:
+          type: string
+        iccid:
+          type: string
+        profileType:
+          type: string
+    Es2HandleDownloadProgressInfoBody:
+      type: object
+      properties:
+        eid:
+          type: string
+        iccid:
+          type: string
+        profileType:
+          type: string
+        timestamp:
+          type: string
+        notificationPointId:
+          type: string
+        notificationPointStatus:
+          $ref: '#/components/schemas/ES2NotificationPointStatus'
+        resultData:
+          $ref: '#/components/schemas/ES2StatusCodeData'
+    Es2ReleaseProfileBody:
+      type: object
+      properties:
+        iccid:
+          type: string
+    Es2PlusDownloadOrderResponseBody:
+      type: object
+      properties:
+        iccid:
+          type: string
+    ES2ResponseHeader:
+      type: object
+      properties:
+        functionExecutionStatus:
+          $ref: '#/components/schemas/FunctionExecutionStatus'
+    FunctionExecutionStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - ExecutedSuccess
+          - ExecutedWithWarning
+          - Failed
+          - Expired
+        statusCodeData:
+          $ref: '#/components/schemas/StatusCodeData'
+    Es2CancelOrderBody:
+      type: object
+      properties:
+        eid:
+          type: string
+        iccid:
+          type: string
+        matchingId:
+          type: string
+        finalProfileStatusIndicator:
+          type: string
+    ES2RequestHeader:
+      type: object
+      properties:
+        functionRequesterIdentifier:
+          type: string
+        functionCallIdentifier:
+          type: string
+    StatusCodeData:
+      type: object
+      properties:
+        subjectCode:
+          type: string
+        reasonCode:
+          type: string
+        subjectIdentifier:
+          type: string
+        message:
+          type: string
+    Es2HandleDownloadProgressInfo:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ES2RequestHeader'
+        body:
+          $ref: '#/components/schemas/Es2HandleDownloadProgressInfoBody'
+    Es2ConfirmOrderResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ES2ResponseHeader'
+        body:
+          $ref: '#/components/schemas/Es2ConfirmOrderResponseBody'
+    Es2ConfirmOrderBody:
+      type: object
+      properties:
+        eid:
+          type: string
+        iccid:
+          type: string
+        matchingId:
+          type: string
+        confirmationCode:
+          type: string
+        smdsAddress:
+          type: string
+        releaseFlag:
+          type: boolean
+    Es2ConfirmOrder:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ES2RequestHeader'
+        body:
+          $ref: '#/components/schemas/Es2ConfirmOrderBody'
+    Es2DownloadOrderResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ES2ResponseHeader'
+        body:
+          $ref: '#/components/schemas/Es2PlusDownloadOrderResponseBody'
+    Es2CancelOrderResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ES2ResponseHeader'
+    Es2ReleaseProfileResponse:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ES2ResponseHeader'
+    Es2PlusDownloadOrder:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ES2RequestHeader'
+        body:
+          $ref: '#/components/schemas/Es2PlusDownloadOrderBody'
+    Es2CancelOrder:
+      type: object
+      properties:
+        header:
+          $ref: '#/components/schemas/ES2RequestHeader'
+        body:
+          $ref: '#/components/schemas/Es2CancelOrderBody'
