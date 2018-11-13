@@ -17,10 +17,8 @@ import javax.ws.rs.ext.*
 public annotation class JsonSchema(val schemaKey: String)
 
 
-class JsonSchemaValidator() {
-    private val schemaRoot = "/es2schemas"
+class JsonSchemaValidator(val schemaRoot: String) {
     private var schemaMap: MutableMap<String, Schema> = mutableMapOf()
-
 
     private fun loadJsonSchemaResource(name: String): Schema {
         val inputStream = this.javaClass.getResourceAsStream("${schemaRoot}/${name}.json")
