@@ -18,7 +18,7 @@ class ES2PlusResourceTest {
         val RULE: ResourceTestRule = ResourceTestRule
                 .builder()
                 .addResource(EsimInventoryResource())
-                .addProvider(JsonSchemaInputOutputValidationInterceptor())
+                .addProvider(JsonSchemaInputOutputValidationInterceptor("resources"))
                 .build()
 
         @JvmStatic
@@ -34,5 +34,8 @@ class ES2PlusResourceTest {
                 .get()
 
         assertEquals(200, response.status)
+
+        val simEntry = response.readEntity(SimEntry::class.java)
+        println("entry = ${simEntry}")
     }
 }

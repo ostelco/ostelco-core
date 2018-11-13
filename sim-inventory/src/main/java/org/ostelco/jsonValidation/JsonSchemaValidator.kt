@@ -59,9 +59,9 @@ class JsonSchemaValidator(val schemaRoot: String) {
 }
 
 @Provider
-class JsonSchemaInputOutputValidationInterceptor : ReaderInterceptor, WriterInterceptor {
+class JsonSchemaInputOutputValidationInterceptor (val path:String): ReaderInterceptor, WriterInterceptor {
 
-    val validator = JsonSchemaValidator()
+    val validator = JsonSchemaValidator(path)
 
     @Throws(IOException::class)
     private fun toByteArray(input: InputStream): ByteArray {
