@@ -13,7 +13,8 @@ GSMA spec.  Use jackson's ordinary methods for handling incoming
 requests and replies.
 
 
-TODO:
+TODO
+---
 
 * Verify that the protocol is actually sane (don't have _any_ examples
   of ES2+ interactions that can be used to check assumptions made
