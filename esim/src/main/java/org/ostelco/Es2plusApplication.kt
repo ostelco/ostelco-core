@@ -66,7 +66,6 @@ class Es2plusApplication : Application<Es2plusConfiguration>() {
 
     // We're basing this implementation on
     // https://www.gsma.com/newsroom/wp-content/uploads/SGP.22-v2.0.pdf
-
 }
 
 @Provider
