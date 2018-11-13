@@ -83,10 +83,12 @@ class AppExceptionMapper : ExceptionMapper<Es2Exception> {
 
 // @JsonSchema("SimEntry")
 data class SimEntry(
+        @JsonProperty("id") val id: Long,
         @JsonProperty("hlrId") val hlrId: String,
+        @JsonProperty("msisdn") val msisdn: String? = null,
         @JsonProperty("iccid") val iccid: String,
         @JsonProperty("imsi") val imsi: String,
-        @JsonProperty("eid") val eid: String?,
+        @JsonProperty("eid") val eid: String? = null,
         @JsonProperty("active") val active: Boolean,
         @JsonProperty("pin1") val pin1: String,
         @JsonProperty("pin2") val pin2: String,
@@ -98,17 +100,20 @@ data class SimEntry(
 ///  The web resource using the protocol domain model.
 ///
 
-@Path("/ostelco/sim-inventory/")
+@Path("/ostelco/sim-inventory/{hlr}/")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 class EsimInventoryResource() {
 
-    @Path("find-by-iccid")
-    @GET // XXX Perhaps an ICCID type with constraints?
-    fun findByIccid(@NotEmpty @QueryParam("iccid") iccid: String):SimEntry {
+    @Path("iccid/{iccid}")
+    @GET
+    fun findByIccid(
+            @NotEmpty @PathParam("hlr") hlr: String,
+            @NotEmpty @PathParam("iccid") iccid: String):SimEntry {
             return SimEntry(
+                    id = 1L,
                     hlrId = "foo",
-                    iccid =" a",
+                    iccid = iccid,
                     imsi = "foo",
                     eid  = "bb",
                     active = false,
@@ -117,5 +122,84 @@ class EsimInventoryResource() {
                     puk1 = "ss",
                     puk2 = "ss"
             )
+    }
+
+    @Path("imsi/{imsi}")
+    @GET
+    fun findByImsi(
+            @NotEmpty @PathParam("hlr") hlr: String,
+            @NotEmpty @PathParam("imsi") imsi: String):SimEntry {
+        return SimEntry(
+                id = 1L,
+                hlrId = "foo",
+                iccid =" a",
+                imsi = imsi,
+                eid  = "bb",
+                active = false,
+                pin1 = "ss",
+                pin2 = "ss",
+                puk1 = "ss",
+                puk2 = "ss"
+        )
+    }
+
+    @Path("allocate-next-free")
+    @GET
+    fun allocateNextFree(
+            @NotEmpty @PathParam("hlr") hlr: String,
+            @NotEmpty @QueryParam("msisdn") msisdn: String):SimEntry {
+        return SimEntry(
+                id = 1L,
+                msisdn=msisdn,
+                hlrId = "foo",
+                iccid =" a",
+                imsi = "9u8y32879329783247",
+                eid  = "bb",
+                active = false,
+                pin1 = "ss",
+                pin2 = "ss",
+                puk1 = "ss",
+                puk2 = "ss"
+        )
+    }
+
+    @Path("/iccid/{iccid}/activate")
+    @GET
+    fun activate(
+            @NotEmpty @PathParam("hlr") hlr: String,
+            @NotEmpty @PathParam("iccid") iccid: String):SimEntry {
+        return SimEntry(
+                id = 1L,
+                msisdn="82828282828282828",
+                hlrId = "foo",
+                iccid = iccid,
+                imsi = "9u8y32879329783247",
+                eid  = "bb",
+                active = false,
+                pin1 = "ss",
+                pin2 = "ss",
+                puk1 = "ss",
+                puk2 = "ss"
+        )
+    }
+
+    @Path("/iccid/{iccid}/deactivate")
+    @GET
+    fun deactrivate(
+            @NotEmpty @PathParam("hlr") hlr: String,
+            @NotEmpty @QueryParam("iccid") iccid: String):SimEntry {
+        return SimEntry(
+                id = 1L,
+                msisdn="2134234",
+                hlrId = "foo",
+                iccid = iccid,
+                imsi = "9u8y32879329783247",
+                eid  = "bb",
+                active = false,
+                pin1 = "ss",
+                pin2 = "ss",
+                puk1 = "ss",
+                puk2 = "ss"
+        )
     }
 }

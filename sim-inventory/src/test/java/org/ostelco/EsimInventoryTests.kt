@@ -29,14 +29,62 @@ class ES2PlusResourceTest {
 
     @Test
     fun testFindByIccid() {
-        val response = RULE.target("/ostelco/sim-inventory/find-by-iccid")
-                .queryParam("iccid", "0123435678789123434")
+        val response = RULE.target("/ostelco/sim-inventory/Loltel/iccid/0123123123123")
                 .request(MediaType.APPLICATION_JSON)
                 .get()
 
         assertEquals(200, response.status)
 
         val simEntry = response.readEntity(SimEntry::class.java)
-
     }
+
+    @Test
+    fun testFindByImsi() {
+        val response = RULE.target("/ostelco/sim-inventory/Loltel/imsi/44881122123123123")
+                .request(MediaType.APPLICATION_JSON)
+                .get()
+
+        assertEquals(200, response.status)
+
+        val simEntry = response.readEntity(SimEntry::class.java)
+    }
+
+
+    @Test
+    fun testAllocateNextFree() {
+        val response = RULE.target("/ostelco/sim-inventory/Loltel/msisdn/123123123/allocate-next-free")
+                .request(MediaType.APPLICATION_JSON)
+                .get()
+
+        assertEquals(200, response.status)
+
+        val simEntry = response.readEntity(SimEntry::class.java)
+    }
+
+
+    @Test
+    fun testActivate() {
+        val response = RULE.target("/ostelco/sim-inventory/iccid/982389123498/activate")
+                .request(MediaType.APPLICATION_JSON)
+                .get()
+
+        assertEquals(200, response.status)
+
+        val simEntry = response.readEntity(SimEntry::class.java)
+    }
+
+    @Test
+    fun testDeactivate() {
+        val response = RULE.target("/ostelco/sim-inventory/deactivate")
+                .queryParam("id", "1")
+                .request(MediaType.APPLICATION_JSON)
+                .get()
+
+        assertEquals(200, response.status)
+
+        val simEntry = response.readEntity(SimEntry::class.java)
+    }
+
+
+
 }
