@@ -30,8 +30,8 @@ class ES2PlusResourceTest {
     @Test
     fun testFindByIccid() {
         val response = RULE.target("/ostelco/sim-inventory/find-by-iccid")
+                .queryParam("iccid", "0123435678789123434")
                 .request(MediaType.APPLICATION_JSON)
-                // XXX Add parameter for iccid
                 .get()
 
         assertEquals(200, response.status)

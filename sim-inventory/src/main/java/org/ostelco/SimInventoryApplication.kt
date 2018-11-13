@@ -9,6 +9,7 @@ import io.swagger.v3.oas.integration.SwaggerConfiguration
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Contact
 import io.swagger.v3.oas.models.info.Info
+import org.hibernate.validator.constraints.NotEmpty
 import java.util.stream.Collectors
 import java.util.stream.Stream
 import javax.ws.rs.*
@@ -86,11 +87,11 @@ data class SimEntry(
         @JsonProperty("iccid") val iccid: String,
         @JsonProperty("imsi") val imsi: String,
         @JsonProperty("eid") val eid: String?,
-        @JsonProperty("isActive") val isActive: Boolean,
+        @JsonProperty("active") val active: Boolean,
         @JsonProperty("pin1") val pin1: String,
         @JsonProperty("pin2") val pin2: String,
         @JsonProperty("puk1") val puk1: String,
-        @JsonProperty("puk1") val puk2: String
+        @JsonProperty("puk2") val puk2: String
 )
 
 ///
@@ -103,13 +104,14 @@ data class SimEntry(
 class EsimInventoryResource() {
 
     @Path("find-by-iccid")
-    @GET
-    fun findByIccid():SimEntry {
-            return SimEntry(hlrId = "foo",
+    @GET // XXX Perhaps an ICCID type with constraints?
+    fun findByIccid(@NotEmpty @QueryParam("iccid") iccid: String):SimEntry {
+            return SimEntry(
+                    hlrId = "foo",
                     iccid =" a",
                     imsi = "foo",
                     eid  = "bb",
-                    isActive = false,
+                    active = false,
                     pin1 = "ss",
                     pin2 = "ss",
                     puk1 = "ss",
