@@ -52,7 +52,7 @@ class Es2plusApplication : Application<Es2plusConfiguration>() {
         environment.jersey().register(OpenApiResource()
                 .openApiConfiguration(oasConfig))
 
-        environment.jersey().register(Es2PlusResource())
+        environment.jersey().register(Es2PlusResource(SmDpPlus()))
         environment.jersey().register(RestrictedOperationsRequestFilter())
     }
 
@@ -293,8 +293,17 @@ data class Es2HandleDownloadProgressInfoResponse(
 
 
 class SmDpPlus {
+
+    // XXX The ICCID generated should be  unique, not yet allocated, etc.
     fun downloadOrder(eid: String?, iccid: String?, profileType: String?): String {
         val iccid = if (iccid != null) iccid else "01234567890123456798"
+        return iccid
+    }
+
+    // XXX Throw exception if order can't be confirmed, also: Are all these parameters
+    //     needed?
+    fun confirmOrder(eid: String, smdsAddress: String?, machingId: String?, confirmationCode: String?) {
+
     }
 
 }
@@ -325,9 +334,9 @@ class Es2PlusResource(val smDpPlus: SmDpPlus) {
                         functionExecutionStatus = FunctionExecutionStatus(
                                 status = FunctionExecutionStatusType.ExecutedSuccess,
                                 statusCodeData = StatusCodeData(
-                                        subjectCode = "foo",
-                                        reasonCode = "bar",
-                                        subjectIdentifier = "baz",
+                                        subjectCode = "foo",  // XXX WTF is this
+                                        reasonCode = "bar",   // .... and this
+                                        subjectIdentifier = "baz", //  and this?  GSMA isn't particulary clear
                                         message = "gazonk"))),
                 body = Es2PlusDownloadOrderResponseBody(iccid))
     }
@@ -339,6 +348,12 @@ class Es2PlusResource(val smDpPlus: SmDpPlus) {
     @Path("confirmOrder")
     @POST
     fun confirmOrder(order: Es2ConfirmOrder): Es2ConfirmOrderResponse {
+
+        smDpPlus.confirmOrder(eid=order.body.eid,
+                smdsAddress=order.body.smdsAddress,
+                machingId=order.body.matchingId,
+                confirmationCode = order.body.confirmationCode)
+
         return Es2ConfirmOrderResponse(
                 header = ES2ResponseHeader(functionExecutionStatus = FunctionExecutionStatus(
                         status = FunctionExecutionStatusType.ExecutedSuccess,
