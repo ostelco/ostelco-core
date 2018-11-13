@@ -89,6 +89,25 @@ class RestrictedOperationsRequestFilter : ContainerRequestFilter {
     }
 }
 
+/*
+
+
+// Starting point for intercepting exceptions, so that they can
+// be wrapped in a return value of sorts.
+
+class Es2Exception extends Exception {
+}
+
+
+class AppExceptionMapper : ExceptionMapper<Es2Exception> {
+    fun toResponse(ex: Es2Exception): Response {
+        return Response.status(ex.getStatus())
+                .entity(ErrorMessage(ex))
+                .type(MediaType.APPLICATION_JSON).build()
+    }
+}
+
+*/
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
 public annotation class JsonSchema(val schemaKey: String)
@@ -272,6 +291,14 @@ data class Es2HandleDownloadProgressInfoResponse(
         @JsonProperty("header") val header: ES2ResponseHeader)
 
 
+
+class SmDpPlus {
+    fun downloadOrder(eid: String?, iccid: String?, profileType: String?): String {
+        val iccid = if (iccid != null) iccid else "01234567890123456798"
+    }
+
+}
+
 ///
 ///  The web resource using the protocol domain model.
 ///
@@ -279,7 +306,7 @@ data class Es2HandleDownloadProgressInfoResponse(
 @Path("/gsma/rsp2/es2plus/")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-class Es2PlusResource() {
+class Es2PlusResource(val smDpPlus: SmDpPlus) {
 
     /**
      * Provided by SM-DP+, called by operator's BSS system.
@@ -287,18 +314,22 @@ class Es2PlusResource() {
     @Path("downloadOrder")
     @POST
     fun downloadOrder(order: Es2PlusDownloadOrder): Es2DownloadOrderResponse {
-        val iccid = if (order.body.iccid != null) order.body.iccid else "01234567890123456798"
-        val response =
-                Es2DownloadOrderResponse(
-                        header = ES2ResponseHeader(functionExecutionStatus = FunctionExecutionStatus(
+
+        val iccid = smDpPlus.downloadOrder(
+                eid = order.body.eid,
+                iccid = order.body.iccid,
+                profileType = order.body.profileType)
+
+        return Es2DownloadOrderResponse(
+                header = ES2ResponseHeader(
+                        functionExecutionStatus = FunctionExecutionStatus(
                                 status = FunctionExecutionStatusType.ExecutedSuccess,
                                 statusCodeData = StatusCodeData(
                                         subjectCode = "foo",
                                         reasonCode = "bar",
                                         subjectIdentifier = "baz",
                                         message = "gazonk"))),
-                        body = Es2PlusDownloadOrderResponseBody(iccid))
-        return response
+                body = Es2PlusDownloadOrderResponseBody(iccid))
     }
 
 
@@ -356,7 +387,7 @@ class Es2PlusResource() {
     }
 
     /**
-     * This method is intened to be called _by_ the SM-DP+, sending information
+     * This method is intended to be called _by_ the SM-DP+, sending information
      * back to the  operator's BSS system about the progress of various
      * operations.
      */
