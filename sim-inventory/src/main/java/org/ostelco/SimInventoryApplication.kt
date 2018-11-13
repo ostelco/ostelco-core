@@ -102,7 +102,7 @@ data class SimEntry(
 @Consumes(MediaType.APPLICATION_JSON)
 class EsimInventoryResource() {
 
-    @Path("findByIccid")
+    @Path("find-by-iccid")
     @GET
     fun findByIccid():SimEntry {
             return SimEntry(hlrId = "foo",
