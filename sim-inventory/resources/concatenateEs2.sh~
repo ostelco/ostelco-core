@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for f in ES*.json ; do
+
+
+done

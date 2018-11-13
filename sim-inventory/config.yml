@@ -1,0 +1,4 @@
+logging:
+  level: INFO
+  loggers:
+    org.ostelco: DEBUG
