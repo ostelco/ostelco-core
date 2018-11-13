@@ -18,7 +18,7 @@ import javax.ws.rs.core.MediaType
 class Es2plusApplication : Application<Es2plusConfiguration>() {
 
     override fun getName(): String {
-        return "es2+ application"
+        return "SIM inventory application"
     }
 
     override fun initialize(bootstrap: Bootstrap<Es2plusConfiguration>) {
