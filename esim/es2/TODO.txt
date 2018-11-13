@@ -1,8 +1,0 @@
-1. Make the basic envelope fit (headers etc.) modulo two-way TSL security.
-  - Get jackson library
-  - set headers, check headers etc.
-2. Make the first of the requests bounce back and forth, use json schema for
-   vallidation, but straight jackson for serialization/deserialization.
-3. At that point, either extend to next type of messages, or add TSL
-   two way, with self signed certs.
-4. Rinse&repeat until complete.
