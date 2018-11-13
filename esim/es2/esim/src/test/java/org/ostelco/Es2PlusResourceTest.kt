@@ -20,7 +20,7 @@ class ES2PlusResourceTest {
         @ClassRule
         val RULE: ResourceTestRule = ResourceTestRule
                 .builder()
-                .addResource(Es2PlusResource())
+                .addResource(Es2PlusResource(SmDpPlus()))
                 .addProvider(RestrictedOperationsRequestFilter())
                 .addProvider(RequestServerReaderWriterInterceptor())
                 .build()
