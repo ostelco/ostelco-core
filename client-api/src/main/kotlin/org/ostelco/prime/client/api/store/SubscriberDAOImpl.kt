@@ -65,6 +65,7 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
             return Either.left(BadRequestError("Incomplete profile description. Profile must contain name and email", ApiErrorCode.FAILED_TO_CREATE_PROFILE))
         }
         return try {
+            // FIXME set subscriberId into profile
             storage.addSubscriber(profile, referredBy)
                     .mapLeft {
                         mapStorageErrorToApiError("Failed to create profile.", ApiErrorCode.FAILED_TO_CREATE_PROFILE, it)
@@ -110,6 +111,8 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
             return Either.left(BadRequestError("Incomplete profile description", ApiErrorCode.FAILED_TO_UPDATE_PROFILE))
         }
         try {
+            // FIXME set subscriberId into profile
+            // FIXME only update editable fields
             storage.updateSubscriber(profile)
         } catch (e: Exception) {
             logger.error("Failed to update profile for subscriberId $subscriberId", e)
