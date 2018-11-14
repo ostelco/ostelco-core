@@ -43,8 +43,8 @@ export class TextForm extends React.Component {
 }
 
 TextForm.propTypes = {
-  inputLabel: PropTypes.func.isRequired,
-  submitLabel: PropTypes.func.isRequired,
+  inputLabel: PropTypes.string.isRequired,
+  submitLabel: PropTypes.string.isRequired,
   onSubmit: PropTypes.func.isRequired
 };
 

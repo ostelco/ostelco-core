@@ -35,8 +35,8 @@ export class SearchForm extends React.Component {
       <div className="container">
         <Form onSubmit={this.onSubmit}>
           <FormGroup
-            controlId="formBasicText"
-            validationState={this.getValidationState()}
+            controlid="formBasicText"
+            validationstate={this.getValidationState()}
           >
             <br />
             <Label>Search user by phone number or email</Label>
