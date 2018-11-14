@@ -54,7 +54,7 @@ class ES2PlusResourceTest {
     fun testAllocateNextFree() {
         val response = RULE.target("/ostelco/sim-inventory/Loltel/msisdn/123123123/allocate-next-free")
                 .request(MediaType.APPLICATION_JSON)
-                .get()
+                .get() // XXX Post (or put?)x'
 
         assertEquals(200, response.status)
 
@@ -66,7 +66,7 @@ class ES2PlusResourceTest {
     fun testActivate() {
         val response = RULE.target("/ostelco/sim-inventory/iccid/982389123498/activate")
                 .request(MediaType.APPLICATION_JSON)
-                .get()
+                .get()// XXX Post
 
         assertEquals(200, response.status)
 
@@ -75,10 +75,9 @@ class ES2PlusResourceTest {
 
     @Test
     fun testDeactivate() {
-        val response = RULE.target("/ostelco/sim-inventory/deactivate")
-                .queryParam("id", "1")
+        val response = RULE.target("/ostelco/sim-inventory/iccid/8328238238328/deactivate")
                 .request(MediaType.APPLICATION_JSON)
-                .get()
+                .get() // XXX Post
 
         assertEquals(200, response.status)
 
@@ -86,5 +85,17 @@ class ES2PlusResourceTest {
     }
 
 
+    //  @Path("/import-batch/sim-profile-vendor/{profilevendor}")
+    // Test importing a CSV file from the resources.
 
+    @Test
+    fun testImport() {
+        val response = RULE.target("import-batch/sim-profile-vendor/Idemia")
+                .request(MediaType.TEXT_PLAIN)
+                .put()
+
+        assertEquals(200, response.status)
+
+        val simEntry = response.readEntity(SimEntry::class.java)
+    }
 }

@@ -9,7 +9,7 @@ import javax.validation.Valid
 
 
 
-class Es2plusConfiguration : Configuration()// TODO: implement service configuration
+class SimInventoryConfiguration : Configuration()// TODO: implement service configuration
 {
 
 }

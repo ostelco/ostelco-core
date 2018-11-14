@@ -138,6 +138,22 @@
             <version>2.2.10</version>
         </dependency>
 
+        <!-- https://www.callicoder.com/java-read-write-csv-file-apache-commons-csv/ -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.5</version>
+        </dependency>
+
+
+        <!-- https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc -->
+        <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <version>3.23.1</version>
+        </dependency>
+
+
         <!-- For JSON schema validation -->
         <dependency>
             <groupId>com.github.everit-org.json-schema</groupId>
