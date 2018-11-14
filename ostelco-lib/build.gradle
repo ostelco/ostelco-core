@@ -44,4 +44,4 @@ jar {
     }
 }
 
-apply from: '../jacoco.gradle'
+apply from: '../gradle/jacoco.gradle'
