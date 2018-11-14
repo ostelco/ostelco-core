@@ -321,7 +321,8 @@ class SimImportBatchReader(val csvInputStream: InputStream) {
         // XXX Adjust to fit whatever format we should cater to, there may
         //     be some variation between  sim vendors, and that should be
         //     something we can adjust to given the parameters sent to the
-        //     reader class on creation.
+        //     reader class on creation.   Should anyway be configurable in
+        //     a config file or perhaps some config database.
         val csvFileFormat = CSVFormat.DEFAULT
                 .withQuote(null)
                 .withIgnoreEmptyLines(true)
