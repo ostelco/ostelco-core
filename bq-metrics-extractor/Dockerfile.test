@@ -1,4 +1,4 @@
-FROM openjdk:11.0.1-jdk
+FROM azul/zulu-openjdk:11.0.1-11.2
 
 LABEL maintainer="dev@redotter.sg"
 
