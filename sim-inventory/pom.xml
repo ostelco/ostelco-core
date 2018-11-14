@@ -139,10 +139,11 @@
         </dependency>
 
         <!-- https://www.callicoder.com/java-read-write-csv-file-apache-commons-csv/ -->
+        <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-csv -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-csv</artifactId>
-            <version>1.5</version>
+            <version>1.4</version>
         </dependency>
 
 

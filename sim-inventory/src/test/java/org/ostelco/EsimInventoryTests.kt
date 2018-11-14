@@ -64,7 +64,7 @@ class ES2PlusResourceTest {
 
     @Test
     fun testActivate() {
-        val response = RULE.target("/ostelco/sim-inventory/iccid/982389123498/activate")
+        val response = RULE.target("/ostelco/sim-inventory/iccid/982389123498/activate/all")
                 .request(MediaType.APPLICATION_JSON)
                 .get()// XXX Post
 
@@ -72,6 +72,31 @@ class ES2PlusResourceTest {
 
         val simEntry = response.readEntity(SimEntry::class.java)
     }
+
+    @Test
+    fun testActivate() {
+        val response = RULE.target("/ostelco/sim-inventory/iccid/982389123498/activate/hlr")
+                .request(MediaType.APPLICATION_JSON)
+                .get()// XXX Post
+
+        assertEquals(200, response.status)
+
+        val simEntry = response.readEntity(SimEntry::class.java)
+    }
+
+    @Test
+    fun testActivate() {
+        val response = RULE.target("/ostelco/sim-inventory/iccid/982389123498/activate/esim")
+                .request(MediaType.APPLICATION_JSON)
+                .get()// XXX Post
+
+        assertEquals(200, response.status)
+
+        val simEntry = response.readEntity(SimEntry::class.java)
+    }
+
+
+
 
     @Test
     fun testDeactivate() {

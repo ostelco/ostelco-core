@@ -9,6 +9,9 @@ import io.swagger.v3.oas.integration.SwaggerConfiguration
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Contact
 import io.swagger.v3.oas.models.info.Info
+import org.apache.commons.csv.CSVFormat
+import org.apache.commons.csv.CSVParser
+import org.apache.commons.csv.CSVRecord
 import org.hibernate.validator.constraints.NotEmpty
 import java.util.stream.Collectors
 import java.util.stream.Stream
@@ -16,6 +19,7 @@ import javax.ws.rs.*
 import javax.ws.rs.core.MediaType
 import java.io.IOException
 import java.io.InputStream
+import java.io.InputStreamReader
 import java.nio.charset.Charset
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -35,24 +39,24 @@ import javax.ws.rs.Consumes
  * The inventory can then serve as an intermidiary between the
  * rest of the BSS and the OSS in the form of HSS and SM-DP+.
  */
-class SimInventoryApplication : Application<SimInventoryConfiguration>() {
+class SimAdministrationApplication : Application<SimAdministrationAppConfiguration>() {
 
     override fun getName(): String {
         return "SIM inventory application"
     }
 
-    override fun initialize(bootstrap: Bootstrap<SimInventoryConfiguration>) {
+    override fun initialize(bootstrap: Bootstrap<SimAdministrationAppConfiguration>) {
         // TODO: application initialization
     }
 
-    override fun run(configuration: SimInventoryConfiguration,
+    override fun run(configuration: SimAdministrationAppConfiguration,
                      environment: Environment) {
 
         // XXX Add these parameters to configuration file.
         val oas = OpenAPI()
         val info = Info()
                 .title(getName())
-                .description("SIM inventory management.")
+                .description("SIM management.")
                 .termsOfService("http://example.com/terms")
                 .contact(Contact().email("rmz@redotter.com"))
 
@@ -60,7 +64,7 @@ class SimInventoryApplication : Application<SimInventoryConfiguration>() {
         val oasConfig = SwaggerConfiguration()
                 .openAPI(oas)
                 .prettyPrint(true)
-                .resourcePackages(Stream.of("no.ostelco.org")
+                .resourcePackages(Stream.of("org.ostelco")
                         .collect(Collectors.toSet<String>()))
         environment.jersey().register(OpenApiResource()
                 .openApiConfiguration(oasConfig))
@@ -72,12 +76,9 @@ class SimInventoryApplication : Application<SimInventoryConfiguration>() {
         @Throws(Exception::class)
         @JvmStatic
         fun main(args: Array<String>) {
-            SimInventoryApplication().run(*args)
+            SimAdministrationApplication().run(*args)
         }
     }
-
-    // We're basing this implementation on
-    // https://www.gsma.com/newsroom/wp-content/uploads/SGP.22-v2.0.pdf
 }
 
 /*
@@ -135,12 +136,12 @@ data class SimImportBatch(
         @JsonProperty("profileVendor") val profileVendor: String
         )
 
+
 // XXX Need to register profileVendor into some registry, also need to
 //     remember import batches, and a registry of entities that
-//     are permitted to entre profiles.
-
-
-
+//     are permitted to entre profiles.  So we need entity classes
+//     for those and DAOs that permits us to talk about them in a
+//     "stateless" manner.
 
 ///
 ///  The web resource using the protocol domain model.
@@ -211,7 +212,7 @@ class EsimInventoryResource() {
 
     // XXX Arguably this shouldn't be done synchronously since it
     //     may take a long time.
-    @Path("/iccid/{iccid}/activate")
+    @Path("/iccid/{iccid}/activate/all")
     @GET
     fun activateByIccid(
             @NotEmpty @PathParam("hlr") hlr: String,
@@ -231,7 +232,50 @@ class EsimInventoryResource() {
         )
     }
 
-    @Path("/iccid/{iccid}/deactivate")
+
+
+    @Path("/iccid/{iccid}/activate/hlr")
+    @GET
+    fun activateProfileByIccid(
+            @NotEmpty @PathParam("hlr") hlr: String,
+            @NotEmpty @PathParam("iccid") iccid: String):SimEntry {
+        return SimEntry(
+                id = 1L,
+                msisdn="82828282828282828",
+                hlrId = "foo",
+                iccid = iccid,
+                imsi = "9u8y32879329783247",
+                eid  = "bb",
+                active = false,
+                pin1 = "ss",
+                pin2 = "ss",
+                puk1 = "ss",
+                puk2 = "ss"
+        )
+    }
+
+
+    @Path("/iccid/{iccid}/activate/esim")
+    @GET
+    fun activateEsimProfileByIccid(
+            @NotEmpty @PathParam("hlr") hlr: String,
+            @NotEmpty @PathParam("iccid") iccid: String):SimEntry {
+        return SimEntry(
+                id = 1L,
+                msisdn="82828282828282828",
+                hlrId = "foo",
+                iccid = iccid,
+                imsi = "9u8y32879329783247",
+                eid  = "bb",
+                active = false,
+                pin1 = "ss",
+                pin2 = "ss",
+                puk1 = "ss",
+                puk2 = "ss"
+        )
+    }
+
+    @Path("/iccid/{iccid}/deactivate/hlr")
     @GET
     fun deactrivateByIccid(
             @NotEmpty @PathParam("hlr") hlr: String,
@@ -274,6 +318,10 @@ class SimImportBatchReader(val csvInputStream: InputStream) {
 
     fun read(): SimImportBatch {
 
+        // XXX Adjust to fit whatever format we should cater to, there may
+        //     be some variation between  sim vendors, and that should be
+        //     something we can adjust to given the parameters sent to the
+        //     reader class on creation.
         val csvFileFormat = CSVFormat.DEFAULT
                 .withQuote(null)
                 .withIgnoreEmptyLines(true)
@@ -282,8 +330,8 @@ class SimImportBatchReader(val csvInputStream: InputStream) {
 
         val records = mutableListOf<CSVRecord>()
         Files.newBufferedReader(
-                Paths.get(csvFilePath),
-                Charset.forName("ISO-8859-1")).use { reader ->
+                InputStreamReader(csvInputStream, Charset.forName(
+                        "ISO-8859-1"))).use { reader ->
             CSVParser(reader, csvFileFormat).use { csvParser ->
                 for (csvRecord in csvParser) {
                     records.add(csvRecord)
@@ -291,47 +339,33 @@ class SimImportBatchReader(val csvInputStream: InputStream) {
             }
         }
 
-        var i = 0;
-        fun next(): CSVRecord {
-            return records[i++]
-        }
-
         fun getUnquotedField(field: CSVRecord, index: Int): String {
             return field[index].trim('"')
         }
 
-
-
-        val transactions = mutableListOf<DnbTransactionRecord>()
+        val simRecords = mutableListOf<SimEntry>()
         // Now we read all the records, while there are more
         while (i < records.size) {
             field = next()
             // XXX Read the PIN, PUK etc.
-            val date = getUnquotedField(field, 0)
-            val explanatoryText = getUnquotedField(field, 1)
-            val status = getUnquotedField(field, 2)
-            val transactionType = getUnquotedField(field, 3)
-            val interestDate = getUnquotedField(field, 4)
-            val incoming = getUnquotedField(field, 5)
-            val outgoing = getUnquotedField(field, 6)
-            val archiveRef = getUnquotedField(field, 7)
-            val reference = getUnquotedField(field, 8)
-
+            val iccid = getUnquotedField(field, 0)
+            val imsi = getUnquotedField(field, 1)
+            val pin1 = getUnquotedField(field, 2)
+            val pin2 = getUnquotedField(field, 3)
+            val puk1 = getUnquotedField(field, 4)
+            val puk2 = getUnquotedField(field, 5)
 
             // XXX Shouldn't add to the list here, but
             //     should pass it on to the DAO, in a transaction.
-            transactions.add(SimEntry(
-                    date = date,
-                    explanatoryText = explanatoryText,
-                    status = status,
-                    transactionType = transactionType,
-                    interestDate = interestDate,
-                    incoming = incoming,
-                    emailAddress = emailAddress,
-                    outgoing = outgoing,
-                    archiveRef = archiveRef,
-                    reference = reference))
+            simRecords.add(SimEntry(
+                    iccid = iccid,
+                    imsi = imsi,
+                    pin1 = pin1,
+                    pin2 = pin2,
+                    puk1 = puk1,
+                    puk2 = puk2))
         }
+
         return SimImportBatch(
                 id = 1L,
                 startedAt =  "13123",

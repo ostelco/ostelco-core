@@ -9,7 +9,7 @@ import javax.validation.Valid
 
 
 
-class SimInventoryConfiguration : Configuration()// TODO: implement service configuration
+class SimAdministrationAppConfiguration : Configuration()// TODO: implement service configuration
 {
 
 }
