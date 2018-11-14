@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { Card, CardBody, CardTitle } from 'reactstrap';
 
 import { authActions, subscriberActions } from '../../actions';
-import { TextForm } from './TextForm';
+import TextForm from './TextForm';
 
 class Notifications extends React.Component {
 
