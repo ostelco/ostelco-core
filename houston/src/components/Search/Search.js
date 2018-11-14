@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 
 import { authActions, subscriberActions } from '../../actions';
-import { SearchForm } from './SearchForm';
+import SearchForm from './SearchForm';
 import SearchResults from './SearchResults';
 
 class Search extends React.Component {

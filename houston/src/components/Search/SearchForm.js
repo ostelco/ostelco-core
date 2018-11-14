@@ -1,50 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Button, Form, FormGroup, Label, Input } from 'reactstrap';
 
 import { getTextType } from '../../helpers';
 
-export class SearchForm extends React.Component {
-  constructor(props, context) {
-    super(props, context);
-    this.handleChange = this.handleChange.bind(this);
-    this.state = {
-      value: 'havard.noren@telenordigital.com', //'vihang.patil@telenordigital.com'
-    };
-  }
-  getValidationState() {
-    const type = getTextType(this.state.value);
-    if (type === 'phonenumber' || type === 'email') return 'success'
-    const length = this.state.value.length;
-    if (length > 5) return 'warning';
-    return null;
-  }
-
-  handleChange(e) {
-    this.setState({ value: e.target.value });
-  }
-
-  onSubmit = (e) => {
-    e.preventDefault();
-    //handle form processing here....
-    console.log("SearchForm On Submit")
-    this.props.onSubmit(this.state.value)
-  }
-  render() {
+export default function SearchForm(props) {
+  const input = useFormInput('havard.noren@telenordigital.com', props.onSubmit)
     return (
       <div className="container">
-        <Form onSubmit={this.onSubmit}>
-          <FormGroup
-            controlid="formBasicText"
-            validationstate={this.getValidationState()}
-          >
+        <Form onSubmit={input.onSubmit}>
+          <FormGroup>
             <br />
             <Label>Search user by phone number or email</Label>
             <Input
-              type="text"
-              value={this.state.value}
+              type="email"
+              value={input.value}
+              onChange={input.onChange}
               placeholder="Enter text"
-              onChange={this.handleChange}
             />
           </FormGroup>
           <Button color="outline-primary" type="submit">Search</Button>
@@ -52,10 +24,30 @@ export class SearchForm extends React.Component {
       </div>
     );
   }
-}
 
 SearchForm.propTypes = {
   onSubmit: PropTypes.func.isRequired
 };
 
-export default SearchForm;
+function useFormInput(initialValue, submit) {
+  const [value, setValue] = useState(initialValue);
+
+  function onChange(e) {
+    setValue(e.target.value);
+  }
+
+  function onSubmit(e) {
+    e.preventDefault();
+    submit(value);
+  }
+
+  function onValidateInput() {
+    const type = getTextType(value);
+    if (type === 'phonenumber' || type === 'email') return 'success';
+    const length = value.length;
+    if (length > 5) return 'warning';
+    return null;
+  }
+
+  return { value, onChange, onSubmit, onValidateInput };
+}

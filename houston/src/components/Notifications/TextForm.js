@@ -1,19 +1,19 @@
-import React from 'react';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Button, Form, FormGroup, Label, Input } from 'reactstrap';
 
 export default function TextForm(props) {
-  const input = useFormInput('', props.onSubmit);
+  const input = useFormInput('sdasdsadas', props.onSubmit);
   return (
     <Form onSubmit={input.onSubmit}>
       <FormGroup>
-        <Label for="exampleText">{props.inputLabel}</Label>
+        <Label for="inputText">{props.inputLabel}</Label>
         <Input
           type="textarea"
           name="text"
-          id="exampleText"
-          {...input} // use onChange and value properties.
+          id="inputText"
+          value={input.value}
+          onChange={input.onChange}
           placeholder="Enter text"
         />
       </FormGroup>
@@ -32,7 +32,7 @@ function useFormInput(initialValue, submit) {
   const [value, setValue] = useState(initialValue);
 
   function onChange(e) {
-    setValue(e.targetvalue);
+    setValue(e.target.value);
   }
 
   function onSubmit(e) {
