@@ -1,5 +1,5 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.3.0"
+  id "org.jetbrains.kotlin.jvm" version "1.3.10"
   id "application"
   id "com.github.johnrengelman.shadow" version "4.0.2"
   id "idea"
@@ -20,5 +20,3 @@ shadowJar {
   classifier = "uber"
   version = null
 }
-
-apply from: '../../jacoco.gradle'
