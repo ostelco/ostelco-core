@@ -13,6 +13,7 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.apache.commons.csv.CSVRecord
 import org.hibernate.validator.constraints.NotEmpty
+import java.io.BufferedReader
 import java.util.stream.Collectors
 import java.util.stream.Stream
 import javax.ws.rs.*
@@ -148,9 +149,10 @@ data class SimImportBatch(
 ///
 
 @Path("/ostelco/sim-inventory/{hlr}/")
-@Produces(MediaType.APPLICATION_JSON)
-@Consumes(MediaType.APPLICATION_JSON)
 class EsimInventoryResource() {
+
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
 
     @Path("iccid/{iccid}")
     @GET
@@ -171,6 +173,9 @@ class EsimInventoryResource() {
             )
     }
 
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+
     @Path("imsi/{imsi}")
     @GET
     fun findByImsi(
@@ -189,6 +194,9 @@ class EsimInventoryResource() {
                 puk2 = "ss"
         )
     }
+
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
 
     @Path("msisdn/{msisdn}/allocate")
     @GET
@@ -212,6 +220,9 @@ class EsimInventoryResource() {
 
     // XXX Arguably this shouldn't be done synchronously since it
     //     may take a long time.
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+
     @Path("/iccid/{iccid}/activate/all")
     @GET
     fun activateByIccid(
@@ -232,6 +243,9 @@ class EsimInventoryResource() {
         )
     }
 
+
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
 
 
     @Path("/iccid/{iccid}/activate/hlr")
@@ -255,6 +269,9 @@ class EsimInventoryResource() {
     }
 
 
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+
     @Path("/iccid/{iccid}/activate/esim")
     @GET
     fun activateEsimProfileByIccid(
@@ -274,6 +291,9 @@ class EsimInventoryResource() {
                 puk2 = "ss"
         )
     }
+
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
 
     @Path("/iccid/{iccid}/deactivate/hlr")
     @GET
@@ -296,6 +316,7 @@ class EsimInventoryResource() {
     }
 
 
+    @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.TEXT_PLAIN)
     @Throws(IOException::class)
     @Path("/import-batch/sim-profile-vendor/{profilevendor}")
@@ -330,45 +351,19 @@ class SimImportBatchReader(val csvInputStream: InputStream) {
                 .withDelimiter(';')
 
         val records = mutableListOf<CSVRecord>()
-        Files.newBufferedReader(
-                InputStreamReader(csvInputStream, Charset.forName(
+        BufferedReader(InputStreamReader(csvInputStream, Charset.forName(
                         "ISO-8859-1"))).use { reader ->
             CSVParser(reader, csvFileFormat).use { csvParser ->
                 for (csvRecord in csvParser) {
-                    records.add(csvRecord)
+                    println(csvRecord)
                 }
             }
         }
 
-        fun getUnquotedField(field: CSVRecord, index: Int): String {
-            return field[index].trim('"')
-        }
-
-        val simRecords = mutableListOf<SimEntry>()
-        // Now we read all the records, while there are more
-        while (i < records.size) {
-            field = next()
-            // XXX Read the PIN, PUK etc.
-            val iccid = getUnquotedField(field, 0)
-            val imsi = getUnquotedField(field, 1)
-            val pin1 = getUnquotedField(field, 2)
-            val pin2 = getUnquotedField(field, 3)
-            val puk1 = getUnquotedField(field, 4)
-            val puk2 = getUnquotedField(field, 5)
-
-            // XXX Shouldn't add to the list here, but
-            //     should pass it on to the DAO, in a transaction.
-            simRecords.add(SimEntry(
-                    iccid = iccid,
-                    imsi = imsi,
-                    pin1 = pin1,
-                    pin2 = pin2,
-                    puk1 = puk1,
-                    puk2 = puk2))
-        }
 
         return SimImportBatch(
                 id = 1L,
+                status="wtf",
                 startedAt =  "13123",
                 endedAt =  "999",
                 successful = true,

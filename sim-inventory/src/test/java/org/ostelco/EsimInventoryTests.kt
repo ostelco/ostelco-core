@@ -5,6 +5,7 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.ostelco.*
 import org.ostelco.jsonValidation.JsonSchemaInputOutputValidationInterceptor
+import javax.print.attribute.standard.Media
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
@@ -63,7 +64,7 @@ class ES2PlusResourceTest {
 
 
     @Test
-    fun testActivate() {
+    fun testActivateAll() {
         val response = RULE.target("/ostelco/sim-inventory/iccid/982389123498/activate/all")
                 .request(MediaType.APPLICATION_JSON)
                 .get()// XXX Post
@@ -74,7 +75,7 @@ class ES2PlusResourceTest {
     }
 
     @Test
-    fun testActivate() {
+    fun testActivateHlr() {
         val response = RULE.target("/ostelco/sim-inventory/iccid/982389123498/activate/hlr")
                 .request(MediaType.APPLICATION_JSON)
                 .get()// XXX Post
@@ -85,7 +86,7 @@ class ES2PlusResourceTest {
     }
 
     @Test
-    fun testActivate() {
+    fun testActivateEsim() {
         val response = RULE.target("/ostelco/sim-inventory/iccid/982389123498/activate/esim")
                 .request(MediaType.APPLICATION_JSON)
                 .get()// XXX Post
@@ -100,7 +101,7 @@ class ES2PlusResourceTest {
 
     @Test
     fun testDeactivate() {
-        val response = RULE.target("/ostelco/sim-inventory/iccid/8328238238328/deactivate")
+        val response = RULE.target("/ostelco/sim-inventory/iccid/8328238238328/deactivate/hlr")
                 .request(MediaType.APPLICATION_JSON)
                 .get() // XXX Post
 
@@ -115,12 +116,21 @@ class ES2PlusResourceTest {
 
     @Test
     fun testImport() {
-        val response = RULE.target("import-batch/sim-profile-vendor/Idemia")
+        val sampleCsvIinput =
+                """
+        iccid, imsi, pin1, pin2, puk1, puk2
+        123123, 123123, 1233,1233,1233,1233
+        123123, 123123, 1233,1233,1233,1233
+        123123, 123123, 1233,1233,1233,1233
+       123123, 123123, 1233,1233,1233,1233
+    """.trimIndent()
+
+        val response = RULE.target("/ostelco/sim-inventory/Loltel/import-batch/sim-profile-vendor/Idemia")
                 .request(MediaType.TEXT_PLAIN)
-                .put()
+                .put(Entity.entity(sampleCsvIinput, MediaType.TEXT_PLAIN))
 
-        assertEquals(200, response.status)
+        assertEquals(201, response.status)
 
-        val simEntry = response.readEntity(SimEntry::class.java)
+        val simEntry = response.readEntity(SimImportBatch::class.java)
     }
 }
