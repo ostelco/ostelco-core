@@ -348,14 +348,15 @@ object ObjectHandler {
     //
 
     fun getProperties(any: Any): Map<String, Any> = toSimpleMap(
-            objectMapper.convertValue(any, object : TypeReference<Map<String, Any>>() {}))
+            objectMapper.convertValue(any, object : TypeReference<Map<String, Any?>>() {}))
 
-    private fun toSimpleMap(map: Map<String, Any>, prefix: String = ""): Map<String, Any> {
+    private fun toSimpleMap(map: Map<String, Any?>, prefix: String = ""): Map<String, Any> {
         val outputMap: MutableMap<String, Any> = LinkedHashMap()
         map.forEach { key, value ->
             when (value) {
                 is Map<*, *> -> outputMap.putAll(toSimpleMap(value as Map<String, Any>, "$prefix$key$SEPARATOR"))
                 is List<*> -> println("Skipping list value: $value for key: $key")
+                null -> Unit
                 else -> outputMap["$prefix$key"] = value
             }
         }
