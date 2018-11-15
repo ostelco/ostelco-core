@@ -109,7 +109,8 @@ paths:
       responses:
         200:
           description: "Purchase is refunded."
-          type: object
+          schema:
+            type: object
         403:
           description: "Forbidden to refund this Purchase"
         404:
@@ -205,6 +206,34 @@ definitions:
     - timestamp
     - product
     - end
+  Product:
+    type: object
+    properties:
+      sku:
+        description: "A unique Id representing a SKU"
+        type: string
+      price:
+        $ref: '#/definitions/Price'
+      properties:
+        type: object
+      presentation:
+        type: object
+    required:
+    - sku
+    - price
+  Price:
+    type: object
+    properties:
+      amount:
+        description: "A positive integer in the smallest currency unit"
+        type: integer
+        minimum: 0
+      currency:
+        description: "ISO 4217 currency code (three letter alphabetic code)"
+        type: string
+    required:
+    - amount
+    - currency
 securityDefinitions:
   auth0_jwt:
     authorizationUrl: "https://redotter-admin-dev.eu.auth0.com/authorize"
