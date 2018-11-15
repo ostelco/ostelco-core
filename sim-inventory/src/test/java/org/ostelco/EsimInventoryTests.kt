@@ -118,7 +118,7 @@ class ES2PlusResourceTest {
     fun testImport() {
         val sampleCsvIinput =
                 """
-        iccid, imsi, pin1, pin2, puk1, puk2
+        ICCID, IMSI, PIN1, PIN2, PUK1, PUK2
         123123, 123123, 1233,1233,1233,1233
         123123, 123123, 1233,1233,1233,1233
         123123, 123123, 1233,1233,1233,1233

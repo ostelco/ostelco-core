@@ -346,19 +346,31 @@ class SimImportBatchReader(val csvInputStream: InputStream) {
         //     a config file or perhaps some config database.
         val csvFileFormat = CSVFormat.DEFAULT
                 .withQuote(null)
+                .withFirstRecordAsHeader()
                 .withIgnoreEmptyLines(true)
                 .withTrim()
-                .withDelimiter(';')
+                .withDelimiter(',')
 
         val records = mutableListOf<CSVRecord>()
         BufferedReader(InputStreamReader(csvInputStream, Charset.forName(
                         "ISO-8859-1"))).use { reader ->
             CSVParser(reader, csvFileFormat).use { csvParser ->
-                for (csvRecord in csvParser) {
-                    println(csvRecord)
+                for (record in csvParser) {
+                    println(record)
+                    val iccid = record.get("ICCID")
+                    val imsi = record.get("IMSI")
+                    val pin1 = record.get("PIN1")
+                    val pin2 = record.get("PIN2")
+                    val puk1 = record.get("PUK1")
+                    val puk2 = record.get("PUK2")
+
+                    println("Iccid was = $iccid")
                 }
             }
         }
+
+
+
 
 
         return SimImportBatch(
