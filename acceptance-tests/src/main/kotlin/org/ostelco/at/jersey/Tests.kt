@@ -453,6 +453,8 @@ class SourceTest {
 
 class PurchaseTest {
 
+    private val logger by getLogger()
+
     @Test
     fun `jersey test - POST products purchase`() {
 
@@ -544,6 +546,70 @@ class PurchaseTest {
 
             assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
             assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
+        } finally {
+            StripePayment.deleteCustomer(email = email)
+        }
+    }
+
+    @Test
+    fun `jersey test - Refund purchase using default source`() {
+
+        val email = "purchase-${randomInt()}@test.com"
+        try {
+            createProfile(name = "Test Purchase User with Default Payment Source", email = email)
+
+            val sourceId = StripePayment.createPaymentTokenId()
+
+            val paymentSource: PaymentSource = post {
+                path = "/paymentSources"
+                subscriberId = email
+                queryParams = mapOf("sourceId" to sourceId)
+            }
+
+            assertNotNull(paymentSource.id, message = "Failed to create payment source")
+
+            val balanceBefore = get<List<Bundle>> {
+                path = "/bundles"
+                subscriberId = email
+            }.first().balance
+
+            val productSku = "1GB_249NOK"
+
+            post<String> {
+                path = "/products/$productSku/purchase"
+                subscriberId = email
+            }
+
+            Thread.sleep(100) // wait for 100 ms for balance to be updated in db
+
+            val balanceAfter = get<List<Bundle>> {
+                path = "/bundles"
+                subscriberId = email
+            }.first().balance
+
+            assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
+
+            val purchaseRecords: PurchaseRecordList = get {
+                path = "/purchases"
+                subscriberId = email
+            }
+
+            purchaseRecords.sortBy { it.timestamp }
+
+            assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
+            assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
+
+            val encodedEmail = URLEncoder.encode(email, "UTF-8")
+            val encodedPurchaseRecordId = URLEncoder.encode(purchaseRecords.last().id, "UTF-8")
+            val encodedReason = URLEncoder.encode("requested_by_customer", "UTF-8")
+            val refundId  = put<String> {
+                path = "/refunds/email/$encodedEmail/purchase"
+                subscriberId = email
+                queryParams = mapOf(
+                        "purchaseRecordId" to encodedPurchaseRecordId,
+                        "reason" to encodedReason)
+            }
+            logger.info("Refunded purchase id:${purchaseRecords.last().id} with refund id:${refundId}")
         } finally {
             StripePayment.deleteCustomer(email = email)
         }
