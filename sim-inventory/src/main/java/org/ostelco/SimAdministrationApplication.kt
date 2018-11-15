@@ -2,6 +2,7 @@ package org.ostelco
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.dropwizard.Application
+import io.dropwizard.jdbi.DBIFactory
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource
@@ -9,28 +10,24 @@ import io.swagger.v3.oas.integration.SwaggerConfiguration
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Contact
 import io.swagger.v3.oas.models.info.Info
-import jdk.internal.util.xml.impl.Input
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
-import org.apache.commons.csv.CSVRecord
 import org.hibernate.validator.constraints.NotEmpty
 import org.skife.jdbi.v2.sqlobject.BindBean
 import org.skife.jdbi.v2.sqlobject.SqlBatch
+import org.skife.jdbi.v2.sqlobject.SqlUpdate
 import org.skife.jdbi.v2.sqlobject.customizers.BatchChunkSize
 import java.io.BufferedReader
-import java.util.stream.Collectors
-import java.util.stream.Stream
-import javax.ws.rs.*
-import javax.ws.rs.core.MediaType
 import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.nio.charset.Charset
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.util.*
 import java.util.concurrent.ConcurrentLinkedDeque
-import javax.ws.rs.Consumes
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.stream.Collectors
+import java.util.stream.Stream
+import javax.ws.rs.*
+import javax.ws.rs.core.MediaType
 
 
 /**
@@ -59,6 +56,14 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
     override fun run(configuration: SimAdministrationAppConfiguration,
                      environment: Environment) {
 
+
+        val factory = DBIFactory()
+        val jdbi = factory.build(
+                environment,
+                configuration.database, "sqlite")
+        val simInventoryDAO = jdbi.onDemand(SimInventoryDAO::class.java)
+
+
         // XXX Add these parameters to configuration file.
         val oas = OpenAPI()
         val info = Info()
@@ -76,7 +81,7 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
         environment.jersey().register(OpenApiResource()
                 .openApiConfiguration(oasConfig))
 
-        environment.jersey().register(EsimInventoryResource())
+        environment.jersey().register(EsimInventoryResource(simInventoryDAO))
     }
 
     companion object {
@@ -112,15 +117,15 @@ class AppExceptionMapper : ExceptionMapper<Es2Exception> {
  */
 // @JsonSchema("SimEntry")
 data class SimEntry(
-        @JsonProperty("id") val id: Long,
+        @JsonProperty("id") val id: Long? = null,
         @JsonProperty("batchId") val batchId: Long = 99L,
         @JsonProperty("hlrId") val hlrId: String,
-        @JsonProperty("smdpplus") val smdpplus: String?=null,
+        @JsonProperty("smdpplus") val smdpplus: String? = null,
         @JsonProperty("msisdn") val msisdn: String? = null,
         @JsonProperty("iccid") val iccid: String,
         @JsonProperty("imsi") val imsi: String,
         @JsonProperty("eid") val eid: String? = null,
-        @JsonProperty("active") val active: Boolean,
+        @JsonProperty("active") val active: Boolean = false,
         @JsonProperty("pin1") val pin1: String,
         @JsonProperty("pin2") val pin2: String,
         @JsonProperty("puk1") val puk1: String,
@@ -141,7 +146,7 @@ data class SimImportBatch(
         @JsonProperty("size") val size: Long,
         @JsonProperty("hlr") val hlr: String,
         @JsonProperty("profileVendor") val profileVendor: String
-        )
+)
 
 
 // XXX Need to register profileVendor into some registry, also need to
@@ -155,7 +160,7 @@ data class SimImportBatch(
 ///
 
 @Path("/ostelco/sim-inventory/{hlr}/")
-class EsimInventoryResource() {
+class EsimInventoryResource(val dao: SimInventoryDAO) {
 
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
@@ -164,19 +169,19 @@ class EsimInventoryResource() {
     @GET
     fun findByIccid(
             @NotEmpty @PathParam("hlr") hlr: String,
-            @NotEmpty @PathParam("iccid") iccid: String):SimEntry {
-            return SimEntry(
-                    id = 1L,
-                    hlrId = "foo",
-                    iccid = iccid,
-                    imsi = "foo",
-                    eid  = "bb",
-                    active = false,
-                    pin1 = "ss",
-                    pin2 = "ss",
-                    puk1 = "ss",
-                    puk2 = "ss"
-            )
+            @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
+        return SimEntry(
+                id = 1L,
+                hlrId = "foo",
+                iccid = iccid,
+                imsi = "foo",
+                eid = "bb",
+                active = false,
+                pin1 = "ss",
+                pin2 = "ss",
+                puk1 = "ss",
+                puk2 = "ss"
+        )
     }
 
     @Produces(MediaType.APPLICATION_JSON)
@@ -186,13 +191,13 @@ class EsimInventoryResource() {
     @GET
     fun findByImsi(
             @NotEmpty @PathParam("hlr") hlr: String,
-            @NotEmpty @PathParam("imsi") imsi: String):SimEntry {
+            @NotEmpty @PathParam("imsi") imsi: String): SimEntry {
         return SimEntry(
                 id = 1L,
                 hlrId = "foo",
-                iccid =" a",
+                iccid = " a",
                 imsi = imsi,
-                eid  = "bb",
+                eid = "bb",
                 active = false,
                 pin1 = "ss",
                 pin2 = "ss",
@@ -208,14 +213,14 @@ class EsimInventoryResource() {
     @GET
     fun allocateNextFree(
             @NotEmpty @PathParam("hlr") hlr: String,
-            @NotEmpty @PathParam("msisdn") msisdn: String):SimEntry {
+            @NotEmpty @PathParam("msisdn") msisdn: String): SimEntry {
         return SimEntry(
                 id = 1L,
-                msisdn=msisdn,
+                msisdn = msisdn,
                 hlrId = "foo",
-                iccid =" a",
+                iccid = " a",
                 imsi = "9u8y32879329783247",
-                eid  = "bb",
+                eid = "bb",
                 active = false,
                 pin1 = "ss",
                 pin2 = "ss",
@@ -233,14 +238,14 @@ class EsimInventoryResource() {
     @GET
     fun activateByIccid(
             @NotEmpty @PathParam("hlr") hlr: String,
-            @NotEmpty @PathParam("iccid") iccid: String):SimEntry {
+            @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
         return SimEntry(
                 id = 1L,
-                msisdn="82828282828282828",
+                msisdn = "82828282828282828",
                 hlrId = "foo",
                 iccid = iccid,
                 imsi = "9u8y32879329783247",
-                eid  = "bb",
+                eid = "bb",
                 active = false,
                 pin1 = "ss",
                 pin2 = "ss",
@@ -258,14 +263,14 @@ class EsimInventoryResource() {
     @GET
     fun activateProfileByIccid(
             @NotEmpty @PathParam("hlr") hlr: String,
-            @NotEmpty @PathParam("iccid") iccid: String):SimEntry {
+            @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
         return SimEntry(
                 id = 1L,
-                msisdn="82828282828282828",
+                msisdn = "82828282828282828",
                 hlrId = "foo",
                 iccid = iccid,
                 imsi = "9u8y32879329783247",
-                eid  = "bb",
+                eid = "bb",
                 active = false,
                 pin1 = "ss",
                 pin2 = "ss",
@@ -282,14 +287,14 @@ class EsimInventoryResource() {
     @GET
     fun activateEsimProfileByIccid(
             @NotEmpty @PathParam("hlr") hlr: String,
-            @NotEmpty @PathParam("iccid") iccid: String):SimEntry {
+            @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
         return SimEntry(
                 id = 1L,
-                msisdn="82828282828282828",
+                msisdn = "82828282828282828",
                 hlrId = "foo",
                 iccid = iccid,
                 imsi = "9u8y32879329783247",
-                eid  = "bb",
+                eid = "bb",
                 active = false,
                 pin1 = "ss",
                 pin2 = "ss",
@@ -305,14 +310,14 @@ class EsimInventoryResource() {
     @GET
     fun deactrivateByIccid(
             @NotEmpty @PathParam("hlr") hlr: String,
-            @NotEmpty @PathParam("iccid") iccid: String):SimEntry {
+            @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
         return SimEntry(
                 id = 1L,
-                msisdn="2134234",
+                msisdn = "2134234",
                 hlrId = "foo",
                 iccid = iccid,
                 imsi = "9u8y32879329783247",
-                eid  = "bb",
+                eid = "bb",
                 active = false,
                 pin1 = "ss",
                 pin2 = "ss",
@@ -332,7 +337,7 @@ class EsimInventoryResource() {
             @NotEmpty @PathParam("profilevendor") profilevendor: String,
             csv: InputStream): SimImportBatch {
         // XXX A bunch of parameters are ignored here.
-        return SimImportBatchReader(csv).read()
+        return SimImportBatchReader(hlr, csv, dao).read()
     }
 }
 
@@ -341,18 +346,19 @@ class EsimInventoryResource() {
 // yet been fully transformed into a reader of a CSV with ICCID profiles
 // as they arrive from the SIM Profile factory.
 
-class SimImportBatchReader(val csvInputStream: InputStream) {
+class SimImportBatchReader(val hlrid: String, val csvInputStream: InputStream, val dao: SimInventoryDAO) {
 
-    inner class SimEntryIterator (csvInputStream: InputStream): Iterator<SimEntry> {
+    inner class SimEntryIterator(csvInputStream: InputStream) : Iterator<SimEntry> {
 
 
+        var count = AtomicInteger(0)
         // XXX The current implementation puts everything in a deque at startup.
         //     This is correct, but inefficient, in partricular for large
         //     batches.   Once proven to work, this thing should be rewritten
         //     to use coroutines, to let the "next" get the next available
         //     sim entry.  It may make sense to have a reader and writer thread
         //     coordinating via the deque.
-        val values : Deque<SimEntry> = ConcurrentLinkedDeque<>()
+        private val values  = ConcurrentLinkedDeque<SimEntry>()
 
         init {
             // XXX Adjust to fit whatever format we should cater to, there may
@@ -392,15 +398,17 @@ class SimImportBatchReader(val csvInputStream: InputStream) {
                         val puk2 = record.get("PUK2")
 
                         val value = SimEntry(
+                                hlrId = hlrid,
                                 iccid = iccid,
                                 imsi = imsi,
                                 pin1 = pin1,
                                 puk1 = puk1,
-                                puk2  = puk2,
+                                puk2 = puk2,
                                 pin2 = pin2
                         )
 
                         values.add(value)
+                        count.incrementAndGet()
                     }
                 }
             }
@@ -417,31 +425,46 @@ class SimImportBatchReader(val csvInputStream: InputStream) {
          * Returns `true` if the iteration has more elements.
          */
         override operator fun hasNext(): Boolean {
-                return !values.isEmpty()
+            return !values.isEmpty()
         }
     }
 
     fun read(): SimImportBatch {
 
+        // XXX First start a transaction
+        // XXX Then create the batch object.
 
+        val values = SimEntryIterator(csvInputStream)
+        dao.insertAll(values)
 
-        return SimImportBatch(
+        // XXX Now pick up the total number of values
+
+        val returnValue =  SimImportBatch(
                 id = 1L,
-                status="wtf",
-                startedAt =  "13123",
-                endedAt =  "999",
+                status = "wtf",
+                startedAt = "13123",
+                endedAt = "999",
                 successful = true,
                 importer = "mmm",
-                size = 3,
-                hlr="loltel",
+                size = values.count.toLong(),
+                hlr = "loltel",
                 profileVendor = "idemia"
         )
+
+
+        // XXX Update the batch entry,
+        // XXX Commit the transaction
+
+
+        return returnValue
     }
 }
 
-public interface ChunkedBatchExample
-{
-  @SqlBatch("insert into SIM_ENTRIES (iccid, imsi, pin1, pin2, puk1, puk2) values (:iccid, :imsi, :pin1, :pin2, :puk1, :puk2)")
-  @BatchChunkSize(1000)
-  fun  insertAll(@BindBean Iterator<SimEntry> entries)
+public interface SimInventoryDAO {
+    @SqlBatch("insert into SIM_ENTRIES (iccid, imsi, pin1, pin2, puk1, puk2) values (:iccid, :imsi, :pin1, :pin2, :puk1, :puk2)")
+    @BatchChunkSize(1000)
+    fun insertAll(@BindBean entries:  Iterator<SimEntry>)
+
+    @SqlUpdate("create table SIM_ENTRIES (id  integer autoincrement primary key, imsi varchar(15), iccid varchar(22), pin1 varchar(4), pin2 varchar(4), puk1 varchar(80), puk2 varchar(80))")
+    fun createSimEntryTable()
 }

@@ -1,24 +1,25 @@
-import io.dropwizard.testing.junit.ResourceTestRule
 import junit.framework.TestCase.assertEquals
 import org.junit.AfterClass
 import org.junit.ClassRule
 import org.junit.Test
 import org.ostelco.*
 import org.ostelco.jsonValidation.JsonSchemaInputOutputValidationInterceptor
-import javax.print.attribute.standard.Media
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.Response
-
+import io.dropwizard.testing.junit.ResourceTestRule
+import org.mockito.Mockito.*
 
 class ES2PlusResourceTest {
 
     companion object {
+
+        private val dao = mock(SimInventoryDAO::class.java)
+
         @JvmField
         @ClassRule
         val RULE: ResourceTestRule = ResourceTestRule
                 .builder()
-                .addResource(EsimInventoryResource())
+                .addResource(EsimInventoryResource(dao))
                 .addProvider(JsonSchemaInputOutputValidationInterceptor("resources"))
                 .build()
 

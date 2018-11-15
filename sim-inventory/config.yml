@@ -2,3 +2,12 @@ logging:
   level: INFO
   loggers:
     org.ostelco: DEBUG
+
+# Database settings
+database:
+  # the name of your JDBC driver
+  driverClass: org.sqlite.JDBC
+
+  # the JDBC URL
+  url: jdbc:sqlite:sim_inventory.db
+
