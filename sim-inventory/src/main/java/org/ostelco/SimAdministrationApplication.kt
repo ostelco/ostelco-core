@@ -462,14 +462,14 @@ class SimImportBatchReader(val hlrid: String, val csvInputStream: InputStream, v
     }
 }
 
-public interface SimInventoryDAO {
+abstract class SimInventoryDAO {
     @SqlBatch("insert into SIM_ENTRIES (iccid, imsi, pin1, pin2, puk1, puk2) values (:iccid, :imsi, :pin1, :pin2, :puk1, :puk2)")
     @BatchChunkSize(1000)
-    fun insertAll(@BindBean entries:  Iterator<SimEntry>)
+    abstract fun insertAll(@BindBean entries:  Iterator<SimEntry>);
 
     @SqlUpdate("create table SIM_ENTRIES (id integer primary key autoincrement, imsi varchar(15), iccid varchar(22), pin1 varchar(4), pin2 varchar(4), puk1 varchar(80), puk2 varchar(80))")
-    fun createSimEntryTable()
+    abstract fun createSimEntryTable();
 
     @SqlUpdate("drop  table SIM_ENTRIES")
-    fun dropSimEntryTable()
+    abstract fun dropSimEntryTable();
 }

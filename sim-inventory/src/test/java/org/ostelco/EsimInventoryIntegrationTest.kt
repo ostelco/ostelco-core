@@ -1,4 +1,4 @@
-package org.ostelco.jsonValidation
+package org.ostelco
 
 import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.testing.ResourceHelpers
@@ -6,12 +6,8 @@ import io.dropwizard.testing.junit.DropwizardAppRule
 import junit.framework.TestCase
 import org.junit.ClassRule
 import org.junit.Test
-import org.ostelco.SimAdministrationApplication
-import org.ostelco.SimImportBatch
-import javax.ws.rs.client.Client
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
-import com.google.common.collect.TreeTraverser.using
 import org.junit.Before
 
 
