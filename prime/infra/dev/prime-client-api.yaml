@@ -101,7 +101,7 @@ paths:
           schema:
             $ref: '#/definitions/ApplicationToken'
         400:
-          descripton: "Token malformed. Not able to store"
+          description: "Token malformed. Not able to store"
         404:
           description: "User not found."
         507:
