@@ -53,6 +53,8 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
         // TODO: application initialization
     }
 
+    lateinit  var simInventoryDAO: SimInventoryDAO
+
     override fun run(configuration: SimAdministrationAppConfiguration,
                      environment: Environment) {
 
@@ -61,7 +63,7 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
         val jdbi = factory.build(
                 environment,
                 configuration.database, "sqlite")
-        val simInventoryDAO = jdbi.onDemand(SimInventoryDAO::class.java)
+        this.simInventoryDAO = jdbi.onDemand(SimInventoryDAO::class.java)
 
 
         // XXX Add these parameters to configuration file.
@@ -465,6 +467,9 @@ public interface SimInventoryDAO {
     @BatchChunkSize(1000)
     fun insertAll(@BindBean entries:  Iterator<SimEntry>)
 
-    @SqlUpdate("create table SIM_ENTRIES (id  integer autoincrement primary key, imsi varchar(15), iccid varchar(22), pin1 varchar(4), pin2 varchar(4), puk1 varchar(80), puk2 varchar(80))")
+    @SqlUpdate("create table SIM_ENTRIES (id integer primary key autoincrement, imsi varchar(15), iccid varchar(22), pin1 varchar(4), pin2 varchar(4), puk1 varchar(80), puk2 varchar(80))")
     fun createSimEntryTable()
+
+    @SqlUpdate("drop  table SIM_ENTRIES")
+    fun dropSimEntryTable()
 }

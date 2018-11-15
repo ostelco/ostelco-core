@@ -7,6 +7,8 @@ import org.ostelco.jsonValidation.JsonSchemaInputOutputValidationInterceptor
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 import io.dropwizard.testing.junit.ResourceTestRule
+import org.mockito.ArgumentMatchers
+import org.mockito.Matchers
 import org.mockito.Mockito.*
 
 class ES2PlusResourceTest {
@@ -51,7 +53,6 @@ class ES2PlusResourceTest {
         val simEntry = response.readEntity(SimEntry::class.java)
     }
 
-
     @Test
     fun testAllocateNextFree() {
         val response = RULE.target("/ostelco/sim-inventory/Loltel/msisdn/123123123/allocate-next-free")
@@ -62,7 +63,6 @@ class ES2PlusResourceTest {
 
         val simEntry = response.readEntity(SimEntry::class.java)
     }
-
 
     @Test
     fun testActivateAll() {
@@ -97,9 +97,6 @@ class ES2PlusResourceTest {
         val simEntry = response.readEntity(SimEntry::class.java)
     }
 
-
-
-
     @Test
     fun testDeactivate() {
         val response = RULE.target("/ostelco/sim-inventory/iccid/8328238238328/deactivate/hlr")
@@ -110,7 +107,6 @@ class ES2PlusResourceTest {
 
         val simEntry = response.readEntity(SimEntry::class.java)
     }
-
 
     //  @Path("/import-batch/sim-profile-vendor/{profilevendor}")
     // Test importing a CSV file from the resources.
@@ -130,9 +126,12 @@ class ES2PlusResourceTest {
                 .request(MediaType.APPLICATION_JSON)
                 .put(Entity.entity(sampleCsvIinput, MediaType.TEXT_PLAIN))
 
-        // XXX Shold be 201, but we'll accept a 200 for now.
+        // XXX Should be 201, but we'll accept a 200 for now.
         assertEquals(200, response.status)
 
         val simEntry = response.readEntity(SimImportBatch::class.java)
+
+        // XXX Couldn't figure out how to verify
+        // verify(dao).insertAll(ArgumentMatchers.anyIterable<SimEntry>())
     }
 }
