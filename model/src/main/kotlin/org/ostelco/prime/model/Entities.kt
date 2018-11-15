@@ -84,11 +84,17 @@ data class ProductClass(
         override val id: String,
         val properties: List<String> = listOf()) : HasId
 
+data class RefundRecord(
+        override val id: String,
+        val reason: String, // possible values are duplicate, fraudulent, and requested_by_customer
+        val timestamp: Long) : HasId
+
 data class PurchaseRecord(
         override val id: String,
         @Deprecated("Will be removed in future") val msisdn: String,
         val product: Product,
-        val timestamp: Long) : HasId
+        val timestamp: Long,
+        val refund: RefundRecord? = null) : HasId
 
 data class PurchaseRecordInfo(override val id: String,
                               val subscriberId: String,

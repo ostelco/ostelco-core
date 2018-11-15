@@ -2,6 +2,7 @@ package org.ostelco.prime.admin.api
 
 import arrow.core.Either
 import io.dropwizard.auth.Auth
+import org.ostelco.prime.admin.importer.UpdateSegments
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
 import org.ostelco.prime.apierror.BadGatewayError
@@ -13,20 +14,21 @@ import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.module.getResource
+import org.ostelco.prime.paymentprocessor.core.ForbiddenError
+import org.ostelco.prime.paymentprocessor.core.ProductInfo
+import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.storage.AdminDataSource
 import org.ostelco.prime.storage.ClientDataSource
 import java.net.URLDecoder
 import javax.validation.constraints.NotNull
-import javax.ws.rs.GET
-import javax.ws.rs.Path
-import javax.ws.rs.PathParam
-import javax.ws.rs.Produces
+import javax.ws.rs.*
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
 @Path("/profile")
 class ProfileResource() {
     private val logger by getLogger()
-    private val storage by lazy { getResource<ClientDataSource>() }
+    private val storage by lazy { getResource<AdminDataSource>() }
 
     @GET
     @Path("email/{email}")
@@ -46,6 +48,7 @@ class ProfileResource() {
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
     }
+
     // TODO: Reuse the one from SubscriberDAO
     private fun getProfile(subscriberId: String): Either<ApiError, Subscriber> {
         return try {
@@ -63,7 +66,7 @@ class ProfileResource() {
 @Path("/bundles")
 class BundlesResource() {
     private val logger by getLogger()
-    private val storage by lazy { getResource<ClientDataSource>() }
+    private val storage by lazy { getResource<AdminDataSource>() }
 
     @GET
     @Path("email/{email}")
@@ -83,6 +86,7 @@ class BundlesResource() {
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
     }
+
     // TODO: Reuse the one from SubscriberDAO
     private fun getBundles(subscriberId: String): Either<ApiError, Collection<Bundle>> {
         return try {
@@ -99,15 +103,15 @@ class BundlesResource() {
 @Path("/purchases")
 class PurchaseResource() {
     private val logger by getLogger()
-    private val storage by lazy { getResource<ClientDataSource>() }
+    private val storage by lazy { getResource<AdminDataSource>() }
 
     @GET
     @Path("email/{email}")
     @Produces(MediaType.APPLICATION_JSON)
     fun getPurchaseHistoryByEmail(@Auth token: AccessTokenPrincipal?,
-                          @NotNull
-                          @PathParam("email")
-                          email: String): Response {
+                                  @NotNull
+                                  @PathParam("email")
+                                  email: String): Response {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
@@ -119,6 +123,7 @@ class PurchaseResource() {
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
     }
+
     // TODO: Reuse the one from SubscriberDAO
     private fun getPurchaseHistory(subscriberId: String): Either<ApiError, Collection<PurchaseRecord>> {
         return try {
@@ -128,6 +133,53 @@ class PurchaseResource() {
         } catch (e: Exception) {
             logger.error("Failed to get purchase history for subscriberId $subscriberId", e)
             Either.left(BadGatewayError("Failed to get purchase history", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_HISTORY))
+        }
+    }
+}
+
+@Path("/refunds")
+class RefundsResource() {
+    private val logger by getLogger()
+    private val storage by lazy { getResource<AdminDataSource>() }
+
+    @PUT
+    @Path("email/{email}")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun refundPurchaseByEmail(@Auth token: AccessTokenPrincipal?,
+                              @NotNull
+                              @PathParam("email")
+                              email: String,
+                              @NotNull
+                              @QueryParam("purchaseRecordId")
+                              purchaseRecordId: String,
+                              @NotNull
+                              @QueryParam("reason")
+                              reason: String): Response {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .build()
+        }
+        val decodedEmail = URLDecoder.decode(email, "UTF-8")
+        val decodedPurchaseRecordId = URLDecoder.decode(purchaseRecordId, "UTF-8")
+        val decodedReason = URLDecoder.decode(reason, "UTF-8")
+        logger.info("${token.name} Refunding purchase for $decodedEmail at id: $purchaseRecordId")
+        return refundPurchase(decodedEmail, decodedPurchaseRecordId, decodedReason).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                { Response.status(Response.Status.OK).entity(asJson(it)) })
+                .build()
+    }
+
+    private fun refundPurchase(subscriberId: String, purchaseRecordId: String, reason: String): Either<ApiError, ProductInfo> {
+        return try {
+            return storage.refundPurchase(subscriberId, purchaseRecordId, reason).mapLeft {
+                when(it) {
+                    is ForbiddenError -> org.ostelco.prime.apierror.ForbiddenError("Failed to refund purchase. ${it.description}", ApiErrorCode.FAILED_TO_REFUND_PURCHASE)
+                    else -> NotFoundError("Failed to refund purchase. ${it.description}", ApiErrorCode.FAILED_TO_REFUND_PURCHASE)
+                }
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to refund purchase for subscriberId $subscriberId, id: $purchaseRecordId", e)
+            Either.left(BadGatewayError("Failed to refund purchase", ApiErrorCode.FAILED_TO_REFUND_PURCHASE))
         }
     }
 }

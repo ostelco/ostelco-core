@@ -162,6 +162,9 @@ interface AdminGraphStore {
     fun atomicRemoveFromSegments(removeFromSegments: Collection<Segment>): Either<StoreError, Unit>
     fun atomicChangeSegments(changeSegments: Collection<ChangeSegment>): Either<StoreError, Unit>
 
+    // Method to perform a full refund of a purchase
+    fun refundPurchase(subscriberId: String, purchaseRecordId: String, reason: String): Either<PaymentError, ProductInfo>
+
     // simple getAll
     // fun getOffers(): Collection<Offer>
     // fun getSegments(): Collection<Segment>

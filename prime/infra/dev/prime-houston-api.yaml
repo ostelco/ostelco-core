@@ -99,6 +99,41 @@ paths:
         description: "The email of the user"
         required: true
         type: string
+  "/refunds/email/{email}":
+    put:
+      description: "Full refund of a purchase."
+      produces:
+      - application/json
+      - text/plain
+      operationId: "refundPurchaseByEmail"
+      responses:
+        200:
+          description: "Purchase is refunded."
+          type: object
+        403:
+          description: "Forbidden to refund this Purchase"
+        404:
+          description: "Purchase record not found"
+        502:
+          description: "Failed to refund purchase"
+      security:
+      - auth0_jwt: []
+      parameters:
+      - name: email
+        in: path
+        description: "The email of the user"
+        required: true
+        type: string
+      - name: purchaseRecordId
+        in: query
+        description: "The record id of the purchase to be refunded"
+        required: true
+        type: string
+      - name: reason
+        in: query
+        description: "The reason for refund"
+        required: true
+        type: string
 definitions:
   Profile:
     type: object

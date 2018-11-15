@@ -92,6 +92,8 @@ object Neo4jStoreSingleton : GraphStore {
             to = productEntity,
             dataClass = PurchaseRecord::class.java)
     private val purchaseRecordRelationStore = RelationStore(purchaseRecordRelation)
+    private val purchaseRecordEntity = EntityType(PurchaseRecord::class.java)
+    private val purchaseRecordStore = EntityStore(purchaseRecordEntity)
 
     private val referredRelation = RelationType(
             relation = REFERRED,
@@ -431,7 +433,6 @@ object Neo4jStoreSingleton : GraphStore {
             }
         }
     }
-
     //
     // Referrals
     //
@@ -542,6 +543,65 @@ object Neo4jStoreSingleton : GraphStore {
             result.single().get("count").asLong()
         }
     }
+
+    //
+    // For refunds
+    //
+
+    private fun checkPurchaseRecordForRefund(purchaseRecord: PurchaseRecord): Either<PaymentError, Unit> {
+        if (purchaseRecord.refund != null) {
+            logger.error("Trying to refund again, ${purchaseRecord.id}, refund ${purchaseRecord.refund?.id}")
+            return Either.left(org.ostelco.prime.paymentprocessor.core.ForbiddenError("Trying to refund again"))
+        } else  if (purchaseRecord.product.price.amount == 0) {
+            logger.error("Trying to refund a free product, ${purchaseRecord.id}")
+            return Either.left(org.ostelco.prime.paymentprocessor.core.ForbiddenError("Trying to refund a free purchase"))
+        }
+        return Either.right(Unit)
+    }
+    private fun updatePurchaseRecord(
+            purchase: PurchaseRecord,
+            primeTransaction: PrimeTransaction): Either<StoreError, Unit> {
+        return purchaseRecordStore.update(purchase, primeTransaction)
+                .ifFailedThenRollback(primeTransaction)
+    }
+
+    override fun refundPurchase(
+            subscriberId: String,
+            purchaseRecordId: String,
+            reason: String): Either<PaymentError, ProductInfo> = writeTransaction {
+        IO {
+            ForEither<PaymentError>() extensions {
+                binding {
+                    val purchaseRecord = purchaseRecordStore.get(purchaseRecordId, transaction)
+                            // If we can't find the record, return not-found
+                            .mapLeft { org.ostelco.prime.paymentprocessor.core.NotFoundError("Purchase Record unavailable") }
+                            .bind()
+                    checkPurchaseRecordForRefund(purchaseRecord).bind()
+                    val refundId = paymentProcessor.refundCharge(
+                            purchaseRecord.id,
+                            purchaseRecord.product.price.amount,
+                            purchaseRecord.product.price.currency).bind()
+                    val refund = RefundRecord(refundId, reason, Instant.now().toEpochMilli())
+                    val changedPurchaseRecord = PurchaseRecord(
+                            id = purchaseRecord.id,
+                            product = purchaseRecord.product,
+                            timestamp = purchaseRecord.timestamp,
+                            msisdn = "",
+                            refund = refund)
+                    updatePurchaseRecord(changedPurchaseRecord, transaction)
+                            .mapLeft { storeError ->
+                                logger.error("failed to update purchase record, for refund $refund.id, chargeId $purchaseRecordId, payment has been refunded in Stripe")
+                                BadGatewayError(storeError.message)
+                            }.bind()
+                    analyticsReporter.reportPurchaseInfo(purchaseRecord, subscriberId, "refunded")
+                    ProductInfo(purchaseRecord.product.sku)
+                }.fix()
+            }
+        }.unsafeRunSync()
+                .ifFailedThenRollback(transaction)
+    }
+
+
 
     //
     // Stores
