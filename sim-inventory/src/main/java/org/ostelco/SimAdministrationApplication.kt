@@ -9,10 +9,14 @@ import io.swagger.v3.oas.integration.SwaggerConfiguration
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Contact
 import io.swagger.v3.oas.models.info.Info
+import jdk.internal.util.xml.impl.Input
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.apache.commons.csv.CSVRecord
 import org.hibernate.validator.constraints.NotEmpty
+import org.skife.jdbi.v2.sqlobject.BindBean
+import org.skife.jdbi.v2.sqlobject.SqlBatch
+import org.skife.jdbi.v2.sqlobject.customizers.BatchChunkSize
 import java.io.BufferedReader
 import java.util.stream.Collectors
 import java.util.stream.Stream
@@ -24,6 +28,8 @@ import java.io.InputStreamReader
 import java.nio.charset.Charset
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.util.*
+import java.util.concurrent.ConcurrentLinkedDeque
 import javax.ws.rs.Consumes
 
 
@@ -337,53 +343,85 @@ class EsimInventoryResource() {
 
 class SimImportBatchReader(val csvInputStream: InputStream) {
 
-    fun read(): SimImportBatch {
+    inner class SimEntryIterator (csvInputStream: InputStream): Iterator<SimEntry> {
 
-        // XXX Adjust to fit whatever format we should cater to, there may
-        //     be some variation between  sim vendors, and that should be
-        //     something we can adjust to given the parameters sent to the
-        //     reader class on creation.   Should anyway be configurable in
-        //     a config file or perhaps some config database.
-        val csvFileFormat = CSVFormat.DEFAULT
-                .withQuote(null)
-                .withFirstRecordAsHeader()
-                .withIgnoreEmptyLines(true)
-                .withTrim()
-                .withDelimiter(',')
 
-        // XXX The plan now is to create an iterator that will
-        //     iterate over the CSV file, and then return it as an
-        //     iterator<SimEntry>.  That iterator can then be fed to
-        //     a jdbi DAO, using the BindBean anotation, and
-        //     the SqlBatch annotation to enter stuff into the
-        //     appropriate table.  NOTE:  The ordering of events should
-        //     be: Create the batch, get the ID, and then insert all the
-        //     records referring to the batch that inserted them, then finally
-        //     update the batch record with information about how many records
-        //     when the processing finished etc.
-        //     See http://jdbi.org/jdbi2/sql_object_api_batching/ for details.
-        val records : Iterator<SimEntry>
-        BufferedReader(InputStreamReader(csvInputStream, Charset.forName(
-                        "ISO-8859-1"))).use { reader ->
-            CSVParser(reader, csvFileFormat).use { csvParser ->
-                for (record in csvParser) {
-                    println(record)
+        // XXX The current implementation puts everything in a deque at startup.
+        //     This is correct, but inefficient, in partricular for large
+        //     batches.   Once proven to work, this thing should be rewritten
+        //     to use coroutines, to let the "next" get the next available
+        //     sim entry.  It may make sense to have a reader and writer thread
+        //     coordinating via the deque.
+        val values : Deque<SimEntry> = ConcurrentLinkedDeque<>()
 
-                    // XXX Really want this to be case independent, is there a way
-                    //     to fix that?
-                    val iccid = record.get("ICCID")
-                    val imsi = record.get("IMSI")
-                    val pin1 = record.get("PIN1")
-                    val pin2 = record.get("PIN2")
-                    val puk1 = record.get("PUK1")
-                    val puk2 = record.get("PUK2")
+        init {
+            // XXX Adjust to fit whatever format we should cater to, there may
+            //     be some variation between  sim vendors, and that should be
+            //     something we can adjust to given the parameters sent to the
+            //     reader class on creation.   Should anyway be configurable in
+            //     a config file or perhaps some config database.
 
-                    // XXX Create a record with all fields filled in, then
-                    //     write it via the DAO (or perhaps the other way round).
-                    println("Iccid was = $iccid")
+            val csvFileFormat = CSVFormat.DEFAULT
+                    .withQuote(null)
+                    .withFirstRecordAsHeader()
+                    .withIgnoreEmptyLines(true)
+                    .withTrim()
+                    .withDelimiter(',')
+
+            // XXX The plan now is to create an iterator that will
+            //     iterate over the CSV file, and then return it as an
+            //     iterator<SimEntry>.  That iterator can then be fed to
+            //     a jdbi DAO, using the BindBean anotation, and
+            //     the SqlBatch annotation to enter stuff into the
+            //     appropriate table.  NOTE:  The ordering of events should
+            //     be: Create the batch, get the ID, and then insert all the
+            //     records referring to the batch that inserted them, then finally
+            //     update the batch record with information about how many records
+            //     when the processing finished etc.
+            //     See http://jdbi.org/jdbi2/sql_object_api_batching/ for details.
+            BufferedReader(InputStreamReader(csvInputStream, Charset.forName(
+                    "ISO-8859-1"))).use { reader ->
+                CSVParser(reader, csvFileFormat).use { csvParser ->
+                    for (record in csvParser) {
+
+                        val iccid = record.get("ICCID")
+                        val imsi = record.get("IMSI")
+                        val pin1 = record.get("PIN1")
+                        val pin2 = record.get("PIN2")
+                        val puk1 = record.get("PUK1")
+                        val puk2 = record.get("PUK2")
+
+                        val value = SimEntry(
+                                iccid = iccid,
+                                imsi = imsi,
+                                pin1 = pin1,
+                                puk1 = puk1,
+                                puk2  = puk2,
+                                pin2 = pin2
+                        )
+
+                        values.add(value)
+                    }
                 }
             }
         }
+
+        /**
+         * Returns the next element in the iteration.
+         */
+        override operator fun next(): SimEntry {
+            return values.removeLast()
+        }
+
+        /**
+         * Returns `true` if the iteration has more elements.
+         */
+        override operator fun hasNext(): Boolean {
+                return !values.isEmpty()
+        }
+    }
+
+    fun read(): SimImportBatch {
 
 
 
@@ -399,4 +437,11 @@ class SimImportBatchReader(val csvInputStream: InputStream) {
                 profileVendor = "idemia"
         )
     }
+}
+
+public interface ChunkedBatchExample
+{
+  @SqlBatch("insert into SIM_ENTRIES (iccid, imsi, pin1, pin2, puk1, puk2) values (:iccid, :imsi, :pin1, :pin2, :puk1, :puk2)")
+  @BatchChunkSize(1000)
+  fun  insertAll(@BindBean Iterator<SimEntry> entries)
 }
