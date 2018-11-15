@@ -351,12 +351,26 @@ class SimImportBatchReader(val csvInputStream: InputStream) {
                 .withTrim()
                 .withDelimiter(',')
 
-        val records = mutableListOf<CSVRecord>()
+        // XXX The plan now is to create an iterator that will
+        //     iterate over the CSV file, and then return it as an
+        //     iterator<SimEntry>.  That iterator can then be fed to
+        //     a jdbi DAO, using the BindBean anotation, and
+        //     the SqlBatch annotation to enter stuff into the
+        //     appropriate table.  NOTE:  The ordering of events should
+        //     be: Create the batch, get the ID, and then insert all the
+        //     records referring to the batch that inserted them, then finally
+        //     update the batch record with information about how many records
+        //     when the processing finished etc.
+        //     See http://jdbi.org/jdbi2/sql_object_api_batching/ for details.
+        val records : Iterator<SimEntry>
         BufferedReader(InputStreamReader(csvInputStream, Charset.forName(
                         "ISO-8859-1"))).use { reader ->
             CSVParser(reader, csvFileFormat).use { csvParser ->
                 for (record in csvParser) {
                     println(record)
+
+                    // XXX Really want this to be case independent, is there a way
+                    //     to fix that?
                     val iccid = record.get("ICCID")
                     val imsi = record.get("IMSI")
                     val pin1 = record.get("PIN1")
@@ -364,12 +378,12 @@ class SimImportBatchReader(val csvInputStream: InputStream) {
                     val puk1 = record.get("PUK1")
                     val puk2 = record.get("PUK2")
 
+                    // XXX Create a record with all fields filled in, then
+                    //     write it via the DAO (or perhaps the other way round).
                     println("Iccid was = $iccid")
                 }
             }
         }
-
-
 
 
 
