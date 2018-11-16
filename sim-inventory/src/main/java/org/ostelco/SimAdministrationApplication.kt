@@ -167,7 +167,7 @@ data class SimImportBatch(
 @Path("/ostelco/sim-inventory/{hlr}/")
 class EsimInventoryResource(val dao: SimInventoryDAO) {
 
-    private fun <T> assertNonNull(v: T) : T {
+    private fun <T> assertNonNull(v: T?) : T {
         if (v == null) {
             throw WebApplicationException(Response.Status.NOT_FOUND)
         } else {
@@ -209,25 +209,13 @@ class EsimInventoryResource(val dao: SimInventoryDAO) {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
 
-    @Path("msisdn/{msisdn}/allocate")
+    @Path("msisdn/{msisdn}/allocate-next-free")
     @GET
     fun allocateNextFree(
             @NotEmpty @PathParam("hlr") hlr: String,
             @NotEmpty @PathParam("msisdn") msisdn: String): SimEntry {
-        return SimEntry(
-                id = 1L,
-                msisdn = msisdn,
-                hlrId = "foo",
-                batch = 99L,
-                iccid = " a",
-                imsi = "9u8y32879329783247",
-                eid = "bb",
-                active = false,
-                pin1 = "ss",
-                pin2 = "ss",
-                puk1 = "ss",
-                puk2 = "ss"
-        )
+        // XXX This shouldn't be 404 I think but something else.
+        return assertNonNull(dao.allocateNextFreeSimForMsisdn(hlr, msisdn))
     }
 
     // XXX Arguably this shouldn't be done synchronously since it
@@ -567,8 +555,42 @@ abstract class SimInventoryDAO {
         }
     }
 
+
     //
-    // Creating and deleting tables
+    //  Binding a SIM card to an MSISDN
+    //
+
+    @SqlUpdate("UPDATE sim_entries SET msisdn = :msisdn  WHERE id = :id")
+    abstract fun setMsisdnOfSim(@Bind("id") id:Long, @Bind("msisdn") msisdn:String)
+
+    //
+    // Finding next free SIM card for a particular HLR.
+    //
+    @SqlQuery("SELECT * FROM sim_entries WHERE hlr = :hlr AND msisdn = null limit 1")
+    @RegisterMapper(SimImportBatchMapper::class)
+    abstract fun findNextFreeSimForMsisdn(@Bind("hlr") hlr:String): SimEntry
+
+    //
+    // Allocating next free simcards in an HLR.
+    //
+    @Transaction
+    fun allocateNextFreeSimForMsisdn(hlr:String, msisdn: String): SimEntry? {
+        val sim : SimEntry= findNextFreeSimForMsisdn(hlr)
+        if (sim == null) {
+            return null
+        }
+
+        setMsisdnOfSim(sim.id!!, msisdn)
+
+        // This is an inefficient way of getting an updated profile,
+        // but it will work, and we can optimize it away if the need ever arises
+        // arises.
+        return getSimProfileByMsisdn(msisdn)
+    }
+
+    //
+    // Creating and deleting tables (XXX only used for testing, and should be moved to
+    // a test only DAO eventually)
     //
     @SqlUpdate("create table sim_import_batches (id integer primary key autoincrement, status text, endedAt integer, importer text, size integer, hlr text, profileVendor text)")
     abstract fun createImportBatchesTable();
@@ -582,4 +604,5 @@ abstract class SimInventoryDAO {
 
     @SqlUpdate("drop  table sim_entries")
     abstract fun dropSimEntryTable();
+
 }

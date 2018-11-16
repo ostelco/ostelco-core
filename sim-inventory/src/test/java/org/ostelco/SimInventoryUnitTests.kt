@@ -37,8 +37,9 @@ class ES2PlusResourceTest {
     val fakeImsi2 = "12345678912346"
     val fakeMsisdn1 = "474747474747"
     val fakeMsisdn2 = "464646464646"
+    val fakeHlr = "Loltel"
 
-    var fakeSimEntry = SimEntry(
+    var fakeSimEntryWithoutMsisdn = SimEntry(
             id = 1L,
             hlrId = "foo",
             batch = 99L,
@@ -51,16 +52,44 @@ class ES2PlusResourceTest {
             puk1 = "ss",
             puk2 = "ss")
 
+    var fakeSimEntry = SimEntry(
+            id = 1L,
+            hlrId = "foo",
+            batch = 99L,
+            iccid = " a",
+            imsi = fakeIccid1,
+            msisdn = fakeMsisdn1,
+            eid = "bb",
+            active = false,
+            pin1 = "ss",
+            pin2 = "ss",
+            puk1 = "ss",
+            puk2 = "ss")
+
 
     @Before
     fun setUp() {
 
+        fakeSimEntryWithoutMsisdn = SimEntry(
+                id = 1L,
+                hlrId = "foo",
+                batch = 99L,
+                iccid = " a",
+                msisdn = null,
+                imsi = fakeIccid1,
+                eid = "bb",
+                active = false,
+                pin1 = "ss",
+                pin2 = "ss",
+                puk1 = "ss",
+                puk2 = "ss")
 
         fakeSimEntry = SimEntry(
                 id = 1L,
                 hlrId = "foo",
                 batch = 99L,
                 iccid = " a",
+                msisdn = fakeMsisdn1,
                 imsi = fakeIccid1,
                 eid = "bb",
                 active = false,
@@ -72,14 +101,14 @@ class ES2PlusResourceTest {
         reset(dao)
 
         org.mockito.Mockito.`when`(dao.getSimProfileByIccid(fakeIccid1))
-                .thenReturn(fakeSimEntry)
+                .thenReturn(fakeSimEntryWithoutMsisdn)
 
         org.mockito.Mockito.`when`(dao.getSimProfileByIccid(fakeIccid2))
                 .thenReturn(null)
 
 
         org.mockito.Mockito.`when`(dao.getSimProfileByImsi(fakeImsi1))
-                .thenReturn(fakeSimEntry)
+                .thenReturn(fakeSimEntryWithoutMsisdn)
 
         org.mockito.Mockito.`when`(dao.getSimProfileByImsi(fakeImsi2))
                 .thenReturn(null)
@@ -89,6 +118,9 @@ class ES2PlusResourceTest {
 
         org.mockito.Mockito.`when`(dao.getSimProfileByMsisdn(fakeMsisdn2))
                 .thenReturn(null)
+
+        org.mockito.Mockito.`when`(dao.findNextFreeSimForMsisdn(fakeHlr))
+                .thenReturn(fakeSimEntryWithoutMsisdn)
     }
 
     @Test
@@ -102,7 +134,7 @@ class ES2PlusResourceTest {
         val simEntry = response.readEntity(SimEntry::class.java)
         verify(dao).getSimProfileByIccid(fakeIccid1)
         assertNotNull(simEntry)
-        assertEquals(fakeSimEntry, simEntry)
+        assertEquals(fakeSimEntryWithoutMsisdn, simEntry)
     }
 
     @Test
@@ -125,7 +157,7 @@ class ES2PlusResourceTest {
 
         val simEntry = response.readEntity(SimEntry::class.java)
         assertNotNull(simEntry)
-        assertEquals(fakeSimEntry, simEntry)
+        assertEquals(fakeSimEntryWithoutMsisdn, simEntry)
         verify(dao).getSimProfileByImsi(fakeImsi1)
     }
 
@@ -149,7 +181,7 @@ class ES2PlusResourceTest {
 
         val simEntry = response.readEntity(SimEntry::class.java)
         assertNotNull(simEntry)
-        assertEquals(fakeSimEntry, simEntry)
+        assertEquals(fakeSimEntryWithoutMsisdn, simEntry)
         verify(dao).getSimProfileByMsisdn(fakeIccid1)
     }
 
@@ -165,13 +197,14 @@ class ES2PlusResourceTest {
 
     @Test
     fun testAllocateNextFree() {
-        val response = RULE.target("/ostelco/sim-inventory/Loltel/msisdn/123123123/allocate-next-free")
+        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/msisdn/$fakeMsisdn1/allocate-next-free")
                 .request(MediaType.APPLICATION_JSON)
                 .get() // XXX Post (or put?)x'
 
         assertEquals(200, response.status)
-
         val simEntry = response.readEntity(SimEntry::class.java)
+        assertNotNull(simEntry)
+        assertEquals(fakeSimEntry, simEntry)
     }
 
     @Test

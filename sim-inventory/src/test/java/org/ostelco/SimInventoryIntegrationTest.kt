@@ -45,7 +45,6 @@ class EsimInventoryIntegrationTest() {
         RULE.getApplication<SimAdministrationApplication>().simInventoryDAO.createImportBatchesTable()
     }
 
-
     @Test
     fun testImport() {
 
