@@ -13,15 +13,18 @@ import io.swagger.v3.oas.models.info.Info
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.hibernate.validator.constraints.NotEmpty
-import org.skife.jdbi.v2.sqlobject.BindBean
-import org.skife.jdbi.v2.sqlobject.SqlBatch
-import org.skife.jdbi.v2.sqlobject.SqlUpdate
+import org.skife.jdbi.v2.StatementContext
+import org.skife.jdbi.v2.sqlobject.*
 import org.skife.jdbi.v2.sqlobject.customizers.BatchChunkSize
+import org.skife.jdbi.v2.sqlobject.customizers.RegisterMapper
+import org.skife.jdbi.v2.tweak.ResultSetMapper
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.nio.charset.Charset
+import java.sql.ResultSet
+import java.sql.SQLException
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.stream.Collectors
@@ -53,7 +56,7 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
         // TODO: application initialization
     }
 
-    lateinit  var simInventoryDAO: SimInventoryDAO
+    lateinit var simInventoryDAO: SimInventoryDAO
 
     override fun run(configuration: SimAdministrationAppConfiguration,
                      environment: Environment) {
@@ -140,9 +143,7 @@ data class SimEntry(
  */
 data class SimImportBatch(
         @JsonProperty("id") val id: Long,
-        @JsonProperty("startedAt") val startedAt: String,
-        @JsonProperty("endedAt") val endedAt: String,
-        @JsonProperty("successfull") val successful: Boolean,
+        @JsonProperty("endedAt") val endedAt: Long,
         @JsonProperty("message") val status: String?,
         @JsonProperty("importer") val importer: String,
         @JsonProperty("size") val size: Long,
@@ -337,139 +338,183 @@ class EsimInventoryResource(val dao: SimInventoryDAO) {
     fun importBatch(
             @NotEmpty @PathParam("hlr") hlr: String,
             @NotEmpty @PathParam("profilevendor") profilevendor: String,
-            csv: InputStream): SimImportBatch {
-        // XXX A bunch of parameters are ignored here.
-        return SimImportBatchReader(hlr, csv, dao).read()
+            csvInputStream: InputStream): SimImportBatch {
+
+        return dao.importSims(
+                importer = "importer",
+                hlr = hlr,
+                profileVendor = "Idemia",
+                csvInputStream = csvInputStream)
     }
 }
 
 
-// XXX This class started out as a CSV reader of bank records, and has not
-// yet been fully transformed into a reader of a CSV with ICCID profiles
-// as they arrive from the SIM Profile factory.
-
-class SimImportBatchReader(val hlrid: String, val csvInputStream: InputStream, val dao: SimInventoryDAO) {
-
-    inner class SimEntryIterator(csvInputStream: InputStream) : Iterator<SimEntry> {
+class SimEntryIterator(hlrId: String, batchId: Long, csvInputStream: InputStream) : Iterator<SimEntry> {
 
 
-        var count = AtomicInteger(0)
-        // XXX The current implementation puts everything in a deque at startup.
-        //     This is correct, but inefficient, in partricular for large
-        //     batches.   Once proven to work, this thing should be rewritten
-        //     to use coroutines, to let the "next" get the next available
-        //     sim entry.  It may make sense to have a reader and writer thread
-        //     coordinating via the deque.
-        private val values  = ConcurrentLinkedDeque<SimEntry>()
+    var count = AtomicInteger(0)
+    // XXX The current implementation puts everything in a deque at startup.
+    //     This is correct, but inefficient, in partricular for large
+    //     batches.   Once proven to work, this thing should be rewritten
+    //     to use coroutines, to let the "next" get the next available
+    //     sim entry.  It may make sense to have a reader and writer thread
+    //     coordinating via the deque.
+    private val values = ConcurrentLinkedDeque<SimEntry>()
 
-        init {
-            // XXX Adjust to fit whatever format we should cater to, there may
-            //     be some variation between  sim vendors, and that should be
-            //     something we can adjust to given the parameters sent to the
-            //     reader class on creation.   Should anyway be configurable in
-            //     a config file or perhaps some config database.
+    init {
+        // XXX Adjust to fit whatever format we should cater to, there may
+        //     be some variation between  sim vendors, and that should be
+        //     something we can adjust to given the parameters sent to the
+        //     reader class on creation.   Should anyway be configurable in
+        //     a config file or perhaps some config database.
 
-            val csvFileFormat = CSVFormat.DEFAULT
-                    .withQuote(null)
-                    .withFirstRecordAsHeader()
-                    .withIgnoreEmptyLines(true)
-                    .withTrim()
-                    .withDelimiter(',')
+        val csvFileFormat = CSVFormat.DEFAULT
+                .withQuote(null)
+                .withFirstRecordAsHeader()
+                .withIgnoreEmptyLines(true)
+                .withTrim()
+                .withDelimiter(',')
 
-            // XXX The plan now is to create an iterator that will
-            //     iterate over the CSV file, and then return it as an
-            //     iterator<SimEntry>.  That iterator can then be fed to
-            //     a jdbi DAO, using the BindBean anotation, and
-            //     the SqlBatch annotation to enter stuff into the
-            //     appropriate table.  NOTE:  The ordering of events should
-            //     be: Create the batch, get the ID, and then insert all the
-            //     records referring to the batch that inserted them, then finally
-            //     update the batch record with information about how many records
-            //     when the processing finished etc.
-            //     See http://jdbi.org/jdbi2/sql_object_api_batching/ for details.
-            BufferedReader(InputStreamReader(csvInputStream, Charset.forName(
-                    "ISO-8859-1"))).use { reader ->
-                CSVParser(reader, csvFileFormat).use { csvParser ->
-                    for (record in csvParser) {
+        BufferedReader(InputStreamReader(csvInputStream, Charset.forName(
+                "ISO-8859-1"))).use { reader ->
+            CSVParser(reader, csvFileFormat).use { csvParser ->
+                for (record in csvParser) {
 
-                        val iccid = record.get("ICCID")
-                        val imsi = record.get("IMSI")
-                        val pin1 = record.get("PIN1")
-                        val pin2 = record.get("PIN2")
-                        val puk1 = record.get("PUK1")
-                        val puk2 = record.get("PUK2")
+                    val iccid = record.get("ICCID")
+                    val imsi = record.get("IMSI")
+                    val pin1 = record.get("PIN1")
+                    val pin2 = record.get("PIN2")
+                    val puk1 = record.get("PUK1")
+                    val puk2 = record.get("PUK2")
 
-                        val value = SimEntry(
-                                hlrId = hlrid,
-                                iccid = iccid,
-                                imsi = imsi,
-                                pin1 = pin1,
-                                puk1 = puk1,
-                                puk2 = puk2,
-                                pin2 = pin2
-                        )
+                    val value = SimEntry(
+                            batchId = batchId,
+                            hlrId = hlrId,
+                            iccid = iccid,
+                            imsi = imsi,
+                            pin1 = pin1,
+                            puk1 = puk1,
+                            puk2 = puk2,
+                            pin2 = pin2
+                    )
 
-                        values.add(value)
-                        count.incrementAndGet()
-                    }
+                    values.add(value)
+                    count.incrementAndGet()
                 }
             }
         }
-
-        /**
-         * Returns the next element in the iteration.
-         */
-        override operator fun next(): SimEntry {
-            return values.removeLast()
-        }
-
-        /**
-         * Returns `true` if the iteration has more elements.
-         */
-        override operator fun hasNext(): Boolean {
-            return !values.isEmpty()
-        }
     }
 
-    fun read(): SimImportBatch {
+    /**
+     * Returns the next element in the iteration.
+     */
+    override operator fun next(): SimEntry {
+        return values.removeLast()
+    }
 
-        // XXX First start a transaction
-        // XXX Then create the batch object.
-
-        val values = SimEntryIterator(csvInputStream)
-        dao.insertAll(values)
-
-        // XXX Now pick up the total number of values
-
-        val returnValue =  SimImportBatch(
-                id = 1L,
-                status = "wtf",
-                startedAt = "13123",
-                endedAt = "999",
-                successful = true,
-                importer = "mmm",
-                size = values.count.toLong(),
-                hlr = "loltel",
-                profileVendor = "idemia"
-        )
-
-
-        // XXX Update the batch entry,
-        // XXX Commit the transaction
-
-
-        return returnValue
+    /**
+     * Returns `true` if the iteration has more elements.
+     */
+    override operator fun hasNext(): Boolean {
+        return !values.isEmpty()
     }
 }
 
-abstract class SimInventoryDAO {
-    @SqlBatch("insert into SIM_ENTRIES (iccid, imsi, pin1, pin2, puk1, puk2) values (:iccid, :imsi, :pin1, :pin2, :puk1, :puk2)")
-    @BatchChunkSize(1000)
-    abstract fun insertAll(@BindBean entries:  Iterator<SimEntry>);
+// This class makes very little sense!
+class SimImportBatchReader(val hlrid: String, val csvInputStream: InputStream, val dao: SimInventoryDAO) {
 
-    @SqlUpdate("create table SIM_ENTRIES (id integer primary key autoincrement, imsi varchar(15), iccid varchar(22), pin1 varchar(4), pin2 varchar(4), puk1 varchar(80), puk2 varchar(80))")
+}
+
+abstract class SimInventoryDAO {
+
+    //
+    // Getting the ID of the last insert, regardless of table
+    //
+    @SqlQuery("select last_insert_rowid()")
+    abstract fun lastInsertRowid(): Long
+
+    //
+    // Importing
+    //
+    @Transaction
+    @SqlBatch("INSRERT INTO sim_entries (iccid, imsi, pin1, pin2, puk1, puk2) VALUES (:iccid, :imsi, :pin1, :pin2, :puk1, :puk2)")
+    @BatchChunkSize(1000)
+    abstract fun insertAll(@BindBean entries: Iterator<SimEntry>);
+
+
+    @SqlUpdate("INSERT INTO sim_import_batches (status,  importer, hlr, profileVendor) VALUES ('STARTED', :importer, :hlr, :profileVendor)")
+    abstract fun createNewSimImportBatch(
+             importer: String,
+             hlr: String,
+             profileVendor: String)
+
+    abstract fun getIdOfBatchCreatedLast(): Long
+
+    @SqlUpdate("UPDATE sim_import_batches SET size = :size, state=:state endedAt=:endedAt  WHERE id = :id")
+    abstract fun updateBatchState(id: Long, size: AtomicInteger, state: String, endedAt: Long)
+
+
+    @Transaction
+    fun importSims(
+            importer: String,
+            hlr:String,
+            profileVendor: String,
+            csvInputStream: InputStream) : SimImportBatch {
+
+        createNewSimImportBatch(importer = importer, hlr = hlr, profileVendor = profileVendor)
+        val batchId = lastInsertRowid()
+        val values = SimEntryIterator(
+                hlrId = hlr,
+                batchId = batchId,
+                csvInputStream = csvInputStream)
+        insertAll(values)
+        updateBatchState(id = batchId, size = values.count, state="SUCCESS", endedAt = System.currentTimeMillis())
+        return getBatchInfo(batchId)
+    }
+
+    @SqlQuery("select * from sim_import_batches")
+    @RegisterMapper(SimImportBatchMapper::class)
+    abstract fun getBatchInfo(@Bind("id") id: Long): SimImportBatch
+
+
+    class SimImportBatchMapper : ResultSetMapper<SimImportBatch> {
+
+        @Throws(SQLException::class)
+        override fun map(index: Int, r: ResultSet, ctx: StatementContext): SimImportBatch? {
+            if (r.isAfterLast) {
+                return null
+            }
+            val id = r.getLong("id")
+            val endedAt = r.getLong("endedAt")
+            val status = r.getString("status")
+            val hlr = r.getString("hlr")
+            val profileVendor = r.getString("profileVendor")
+            val size = r.getLong("size")
+
+
+            return SimImportBatch(
+                    id = id,
+                    endedAt = endedAt,
+                    status = status,
+                    hlr = hlr,
+                    profileVendor = profileVendor,
+                    size=size,
+                    importer = "XXX Replace with name of agent that facilitated the import")
+        }
+    }
+
+    //
+    // Creating and deleting tables
+    //
+    @SqlUpdate("create table sim_import_batches (id integer primary key autoincrement, status text, endedAt integer, importer text, size integer, hlr text, profileVendor text)")
+    abstract fun createImportBatchesTable();
+
+    @SqlUpdate("drop  table sim_import_batches")
+    abstract fun dropImportBatchesTable();
+
+    @SqlUpdate("create table sim_entries (id integer primary key autoincrement, imsi varchar(15), iccid varchar(22), pin1 varchar(4), pin2 varchar(4), puk1 varchar(80), puk2 varchar(80))")
     abstract fun createSimEntryTable();
 
-    @SqlUpdate("drop  table SIM_ENTRIES")
+    @SqlUpdate("drop  table sim_entries")
     abstract fun dropSimEntryTable();
 }

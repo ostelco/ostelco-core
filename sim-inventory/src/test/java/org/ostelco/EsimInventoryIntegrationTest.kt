@@ -30,25 +30,24 @@ class EsimInventoryIntegrationTest() {
 
     @Test
     fun testImport() {
-        val sampleCsvIinput =
-                """
-        ICCID, IMSI, PIN1, PIN2, PUK1, PUK2
-        123123, 123123, 1233,1233,1233,1233
-        123123, 123123, 1233,1233,1233,1233
-        123123, 123123, 1233,1233,1233,1233
-       123123, 123123, 1233,1233,1233,1233
-    """.trimIndent()
 
-        // XXX Is this necessary?
+
+        // NOTE: Doesn't scale up very far, should scale to several million before we're happy
+        val sample = StringBuilder("ICCID, IMSI, PIN1, PIN2, PUK1, PUK2\n")
+        for (i in 1..10000) {
+            sample.append("123123, 123123, 1233,1233,1233,1233\n");
+        }
+        val sampleValue = sample.toString()
+
+
         val client = JerseyClientBuilder(RULE.environment)
                 .using(RULE.configuration.getJerseyClientConfiguration())
                 .build("Test client")
 
-
         var response = client
                 .target("http://localhost:8080/ostelco/sim-inventory/Loltel/import-batch/sim-profile-vendor/Idemia")
                 .request(MediaType.APPLICATION_JSON)
-                .put(Entity.entity(sampleCsvIinput, MediaType.TEXT_PLAIN))
+                .put(Entity.entity(sampleValue, MediaType.TEXT_PLAIN))
 
         // XXX Should be 201, but we'll accept a 200 for now.
         TestCase.assertEquals(200, response.status)
