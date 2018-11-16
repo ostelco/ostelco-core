@@ -189,7 +189,7 @@ class ES2PlusResourceTest {
                 .get()
 
         assertEquals(404, response.status)
-        verify(dao).getSimProfileByMsisdn(fakeIccid2)
+        verify(dao).getSimProfileByMsisdn(fakeMsisdn2)
     }
 
     @Test
