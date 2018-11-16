@@ -26,7 +26,7 @@ import java.nio.charset.Charset
 import java.sql.ResultSet
 import java.sql.SQLException
 import java.util.concurrent.ConcurrentLinkedDeque
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import java.util.stream.Collectors
 import java.util.stream.Stream
 import javax.ws.rs.*
@@ -257,7 +257,6 @@ class EsimInventoryResource(val dao: SimInventoryDAO) {
         )
     }
 
-
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
 
@@ -329,7 +328,6 @@ class EsimInventoryResource(val dao: SimInventoryDAO) {
         )
     }
 
-
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.TEXT_PLAIN)
     @Throws(IOException::class)
@@ -348,11 +346,9 @@ class EsimInventoryResource(val dao: SimInventoryDAO) {
     }
 }
 
-
 class SimEntryIterator(hlrId: String, batchId: Long, csvInputStream: InputStream) : Iterator<SimEntry> {
 
-
-    var count = AtomicInteger(0)
+    var count = AtomicLong(0)
     // XXX The current implementation puts everything in a deque at startup.
     //     This is correct, but inefficient, in partricular for large
     //     batches.   Once proven to work, this thing should be rewritten
@@ -420,11 +416,6 @@ class SimEntryIterator(hlrId: String, batchId: Long, csvInputStream: InputStream
     }
 }
 
-// This class makes very little sense!
-class SimImportBatchReader(val hlrid: String, val csvInputStream: InputStream, val dao: SimInventoryDAO) {
-
-}
-
 /**
  * The DAO we're using to access the SIM inventory, and also the
  * pieces of SM-DP+/HLR infrastucture the SIM management needs to
@@ -442,22 +433,25 @@ abstract class SimInventoryDAO {
     // Importing
     //
     @Transaction
-    @SqlBatch("INSRERT INTO sim_entries (iccid, imsi, pin1, pin2, puk1, puk2) VALUES (:iccid, :imsi, :pin1, :pin2, :puk1, :puk2)")
+    @SqlBatch("INSERT INTO sim_entries (iccid, imsi, pin1, pin2, puk1, puk2) VALUES (:iccid, :imsi, :pin1, :pin2, :puk1, :puk2)")
     @BatchChunkSize(1000)
     abstract fun insertAll(@BindBean entries: Iterator<SimEntry>);
 
 
     @SqlUpdate("INSERT INTO sim_import_batches (status,  importer, hlr, profileVendor) VALUES ('STARTED', :importer, :hlr, :profileVendor)")
     abstract fun createNewSimImportBatch(
-             importer: String,
-             hlr: String,
-             profileVendor: String)
+            @Bind("importer")importer: String,
+            @Bind("hlr")hlr: String,
+            @Bind("profileVendor")profileVendor: String)
 
     abstract fun getIdOfBatchCreatedLast(): Long
 
-    @SqlUpdate("UPDATE sim_import_batches SET size = :size, state=:state endedAt=:endedAt  WHERE id = :id")
-    abstract fun updateBatchState(id: Long, size: AtomicInteger, state: String, endedAt: Long)
-
+    @SqlUpdate("UPDATE sim_import_batches SET size = :size, status = :status, endedAt = :endedAt  WHERE id = :id")
+    abstract fun updateBatchState(
+            @Bind("id") id: Long,
+            @Bind("size") size: Long,
+            @Bind("status") status: String,
+            @Bind("endedAt") endedAt: Long)
 
     @Transaction
     fun importSims(
@@ -466,21 +460,27 @@ abstract class SimInventoryDAO {
             profileVendor: String,
             csvInputStream: InputStream) : SimImportBatch {
 
-        createNewSimImportBatch(importer = importer, hlr = hlr, profileVendor = profileVendor)
+        createNewSimImportBatch(
+                importer = importer,
+                hlr = hlr,
+                profileVendor = profileVendor)
         val batchId = lastInsertRowid()
         val values = SimEntryIterator(
                 hlrId = hlr,
                 batchId = batchId,
                 csvInputStream = csvInputStream)
         insertAll(values)
-        updateBatchState(id = batchId, size = values.count, state="SUCCESS", endedAt = System.currentTimeMillis())
+        updateBatchState(
+                id = batchId,
+                size = values.count.get(),
+                status="SUCCESS",
+                endedAt = System.currentTimeMillis())
         return getBatchInfo(batchId)
     }
 
-    @SqlQuery("select * from sim_import_batches")
+    @SqlQuery("select * from sim_import_batches where id = :id")
     @RegisterMapper(SimImportBatchMapper::class)
     abstract fun getBatchInfo(@Bind("id") id: Long): SimImportBatch
-
 
     class SimImportBatchMapper : ResultSetMapper<SimImportBatch> {
 
