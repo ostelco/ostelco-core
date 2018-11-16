@@ -425,6 +425,11 @@ class SimImportBatchReader(val hlrid: String, val csvInputStream: InputStream, v
 
 }
 
+/**
+ * The DAO we're using to access the SIM inventory, and also the
+ * pieces of SM-DP+/HLR infrastucture the SIM management needs to
+ * be aware of.
+ */
 abstract class SimInventoryDAO {
 
     //
@@ -484,13 +489,13 @@ abstract class SimInventoryDAO {
             if (r.isAfterLast) {
                 return null
             }
+
             val id = r.getLong("id")
             val endedAt = r.getLong("endedAt")
             val status = r.getString("status")
             val hlr = r.getString("hlr")
             val profileVendor = r.getString("profileVendor")
             val size = r.getLong("size")
-
 
             return SimImportBatch(
                     id = id,
