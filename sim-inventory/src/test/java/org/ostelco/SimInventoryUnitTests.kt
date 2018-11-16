@@ -47,6 +47,7 @@ class ES2PlusResourceTest {
                 batch = 99L,
                 iccid = fakeIccid1,
                 imsi = fakeImsi1,
+                smdpplus = "Loltel",
                 eid = "bb",
                 hlrActivation = false,
                 smdpPlusActivation = false,
@@ -65,7 +66,6 @@ class ES2PlusResourceTest {
                 imsi = fakeImsi2,
                 msisdn = fakeMsisdn1,
                 eid = "bb",
-                smdpplus = "Loltel",
                 hlrActivation = false,
                 smdpPlusActivation = false,
                 pin1 = "ss",
@@ -77,17 +77,18 @@ class ES2PlusResourceTest {
 
     var fakeSimEntryWithoutMsisdn = fakeEntryWithoutMsisdn()
 
-    var fakeSimEntry = fakeEntryWithMsisdn()
+    var fakeSimEntryWithMsisdn = fakeEntryWithMsisdn()
 
 
     @Before
     fun setUp() {
 
         this.fakeSimEntryWithoutMsisdn = fakeEntryWithoutMsisdn()
-        this.fakeSimEntry = fakeEntryWithMsisdn()
+        this.fakeSimEntryWithMsisdn = fakeEntryWithMsisdn()
 
 
         val mockHlrAdapter = HlrAdapter(1L, "Loltel")
+        val mockSmdpplusAdapter = SmdpPlusAdapter(1L, "Loltel")
 
         reset(dao)
 
@@ -108,7 +109,7 @@ class ES2PlusResourceTest {
                 .thenReturn(null)
 
         org.mockito.Mockito.`when`(dao.getSimProfileByMsisdn(fakeMsisdn1))
-                .thenReturn(fakeSimEntry)
+                .thenReturn(fakeSimEntryWithMsisdn)
 
         org.mockito.Mockito.`when`(dao.getSimProfileByMsisdn(fakeMsisdn2))
                 .thenReturn(null)
@@ -118,6 +119,11 @@ class ES2PlusResourceTest {
 
         org.mockito.Mockito.`when`(dao.getHlrAdapterByName("Loltel"))
                 .thenReturn(mockHlrAdapter)
+
+        org.mockito.Mockito.`when`(dao.getSmdpPlusAdapterByName("Loltel"))
+                .thenReturn(mockSmdpplusAdapter)
+
+
     }
 
     @Test
@@ -178,7 +184,7 @@ class ES2PlusResourceTest {
 
         val simEntry = response.readEntity(SimEntry::class.java)
         assertNotNull(simEntry)
-        assertEquals(fakeSimEntry, simEntry)
+        assertEquals(fakeSimEntryWithMsisdn, simEntry)
         verify(dao).getSimProfileByMsisdn(fakeMsisdn1)
     }
 
@@ -201,7 +207,7 @@ class ES2PlusResourceTest {
         assertEquals(200, response.status)
         val simEntry = response.readEntity(SimEntry::class.java)
         assertNotNull(simEntry)
-        assertEquals(fakeSimEntry, simEntry)
+        assertEquals(fakeSimEntryWithMsisdn, simEntry)
     }
 
     @Test
@@ -238,11 +244,12 @@ class ES2PlusResourceTest {
         assertEquals(200, response.status)
 
         val simEntry = response.readEntity(SimEntry::class.java)
+        // XXX Missing a bunch of verifications
     }
 
     @Test
     fun testActivateEsimFailinglyOnSimWithoutSmdpPlus() {
-        val response = RULE.target("/ostelco/sim-inventory/Loltel/iccid/$fakeIccid2/activate/esim")
+        val response = RULE.target("/ostelco/sim-inventory/Loltel/iccid/$fakeIccid1/activate/esim")
                 .request(MediaType.APPLICATION_JSON)
                 .get()// XXX Post
 
