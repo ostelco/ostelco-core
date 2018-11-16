@@ -189,25 +189,21 @@ class EsimInventoryResource(val dao: SimInventoryDAO) {
 
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-
     @Path("imsi/{imsi}")
     @GET
     fun findByImsi(
             @NotEmpty @PathParam("hlr") hlr: String,
             @NotEmpty @PathParam("imsi") imsi: String): SimEntry {
-        return SimEntry(
-                id = 1L,
-                hlrId = "foo",
-                batch = 99L,
-                iccid = " a",
-                imsi = imsi,
-                eid = "bb",
-                active = false,
-                pin1 = "ss",
-                pin2 = "ss",
-                puk1 = "ss",
-                puk2 = "ss"
-        )
+        return assertNonNull(dao.getSimProfileByImsi(imsi))
+    }
+
+
+    @Path("msisdn/{msisdn}")
+    @GET
+    fun findByMsisdn(
+            @NotEmpty @PathParam("hlr") hlr: String,
+            @NotEmpty @PathParam("msisdn") msisdn: String): SimEntry {
+        return assertNonNull(dao.getSimProfileByMsisdn(msisdn))
     }
 
     @Produces(MediaType.APPLICATION_JSON)
@@ -435,6 +431,16 @@ abstract class SimInventoryDAO {
     abstract fun getSimProfileByIccid(iccid: String): SimEntry
 
 
+
+    @SqlQuery("select * from sim_entries where imsi = :imsi")
+    @RegisterMapper(SimEntryMapper::class)
+    abstract fun getSimProfileByImsi(imsi: String): SimEntry
+
+    @SqlQuery("select * from sim_entries where msisdn = :msisdn")
+    @RegisterMapper(SimEntryMapper::class)
+    abstract fun getSimProfileByMsisdn(msisdn: String): SimEntry
+
+
     class SimEntryMapper : ResultSetMapper<SimEntry> {
 
         @Throws(SQLException::class)
@@ -576,6 +582,4 @@ abstract class SimInventoryDAO {
 
     @SqlUpdate("drop  table sim_entries")
     abstract fun dropSimEntryTable();
-
-
 }

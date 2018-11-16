@@ -7,6 +7,7 @@ import org.ostelco.jsonValidation.JsonSchemaInputOutputValidationInterceptor
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 import io.dropwizard.testing.junit.ResourceTestRule
+import junit.framework.TestCase.assertNotNull
 import org.junit.Before
 import org.mockito.Mockito.*
 
@@ -32,25 +33,61 @@ class ES2PlusResourceTest {
 
     val fakeIccid1 = "01234567891234567890"
     val fakeIccid2 = "01234567891234567891"
+    val fakeImsi1 = "12345678912345"
+    val fakeImsi2 = "12345678912346"
+    val fakeMsisdn1 = "474747474747"
+    val fakeMsisdn2 = "464646464646"
+
+    var fakeSimEntry = SimEntry(
+            id = 1L,
+            hlrId = "foo",
+            batch = 99L,
+            iccid = " a",
+            imsi = fakeIccid1,
+            eid = "bb",
+            active = false,
+            pin1 = "ss",
+            pin2 = "ss",
+            puk1 = "ss",
+            puk2 = "ss")
+
+
     @Before
     fun setUp() {
+
+
+        fakeSimEntry = SimEntry(
+                id = 1L,
+                hlrId = "foo",
+                batch = 99L,
+                iccid = " a",
+                imsi = fakeIccid1,
+                eid = "bb",
+                active = false,
+                pin1 = "ss",
+                pin2 = "ss",
+                puk1 = "ss",
+                puk2 = "ss")
+
         reset(dao)
 
         org.mockito.Mockito.`when`(dao.getSimProfileByIccid(fakeIccid1))
-                .thenReturn(SimEntry(
-                        id = 1L,
-                        hlrId = "foo",
-                        batch = 99L,
-                        iccid = " a",
-                        imsi = fakeIccid1,
-                        eid = "bb",
-                        active = false,
-                        pin1 = "ss",
-                        pin2 = "ss",
-                        puk1 = "ss",
-                        puk2 = "ss"))
+                .thenReturn(fakeSimEntry)
 
         org.mockito.Mockito.`when`(dao.getSimProfileByIccid(fakeIccid2))
+                .thenReturn(null)
+
+
+        org.mockito.Mockito.`when`(dao.getSimProfileByImsi(fakeImsi1))
+                .thenReturn(fakeSimEntry)
+
+        org.mockito.Mockito.`when`(dao.getSimProfileByImsi(fakeImsi2))
+                .thenReturn(null)
+
+        org.mockito.Mockito.`when`(dao.getSimProfileByMsisdn(fakeMsisdn1))
+                .thenReturn(fakeSimEntry)
+
+        org.mockito.Mockito.`when`(dao.getSimProfileByMsisdn(fakeMsisdn2))
                 .thenReturn(null)
     }
 
@@ -64,6 +101,8 @@ class ES2PlusResourceTest {
 
         val simEntry = response.readEntity(SimEntry::class.java)
         verify(dao).getSimProfileByIccid(fakeIccid1)
+        assertNotNull(simEntry)
+        assertEquals(fakeSimEntry, simEntry)
     }
 
     @Test
@@ -77,14 +116,51 @@ class ES2PlusResourceTest {
     }
 
     @Test
-    fun testFindByImsi() {
-        val response = RULE.target("/ostelco/sim-inventory/Loltel/imsi/44881122123123123")
+    fun testFindByImsiPositiveResult() {
+        val response = RULE.target("/ostelco/sim-inventory/Loltel/imsi/$fakeImsi1")
                 .request(MediaType.APPLICATION_JSON)
                 .get()
 
         assertEquals(200, response.status)
 
         val simEntry = response.readEntity(SimEntry::class.java)
+        assertNotNull(simEntry)
+        assertEquals(fakeSimEntry, simEntry)
+        verify(dao).getSimProfileByImsi(fakeImsi1)
+    }
+
+    @Test
+    fun testFindByImsiNegativeResult() {
+        val response = RULE.target("/ostelco/sim-inventory/Loltel/imsi/$fakeImsi2")
+                .request(MediaType.APPLICATION_JSON)
+                .get()
+
+        assertEquals(404, response.status)
+        verify(dao).getSimProfileByImsi(fakeImsi2)
+    }
+
+    @Test
+    fun testFindByMsisdnPositiveResult() {
+        val response = RULE.target("/ostelco/sim-inventory/Loltel/msisdn/$fakeMsisdn1")
+                .request(MediaType.APPLICATION_JSON)
+                .get()
+
+        assertEquals(200, response.status)
+
+        val simEntry = response.readEntity(SimEntry::class.java)
+        assertNotNull(simEntry)
+        assertEquals(fakeSimEntry, simEntry)
+        verify(dao).getSimProfileByMsisdn(fakeIccid1)
+    }
+
+    @Test
+    fun testFindByMsisdnNegativeResult() {
+        val response = RULE.target("/ostelco/sim-inventory/Loltel/msisdn/$fakeMsisdn2")
+                .request(MediaType.APPLICATION_JSON)
+                .get()
+
+        assertEquals(404, response.status)
+        verify(dao).getSimProfileByMsisdn(fakeIccid2)
     }
 
     @Test
