@@ -301,10 +301,7 @@ class RelationStore<FROM : HasId, TO : HasId>(private val relationType: Relation
 
 class ChangeableRelationStore<FROM : HasId, TO : HasId, RELATION : HasId>(private val relationType: RelationType<FROM, RELATION, TO>) {
 
-    private val LOG by getLogger()
-
     fun get(id: String, transaction: Transaction): Either<StoreError, RELATION> {
-        LOG.info("""MATCH (from)-[r:${relationType.relation.name}{id:'$id'}]->(to) RETURN r;""");
         return read("""MATCH (from)-[r:${relationType.relation.name}{id:'$id'}]->(to) RETURN r;""", transaction) {
             if (it.hasNext()) {
                 Either.right(relationType.createRelation(it.single().get("r").asMap())!!)
@@ -317,7 +314,6 @@ class ChangeableRelationStore<FROM : HasId, TO : HasId, RELATION : HasId>(privat
     fun update(relation: RELATION, transaction: Transaction): Either<StoreError, Unit> {
         val properties = getProperties(relation)
         val setClause: String = properties.entries.fold("") { acc, entry -> """$acc SET r.`${entry.key}` = "${entry.value}" """ }
-        LOG.info("""MATCH (from)-[r:${relationType.relation.name}{id:'${relation.id}'}]->(to) $setClause ;""");
         return write("""MATCH (from)-[r:${relationType.relation.name}{id:'${relation.id}'}]->(to) $setClause ;""", transaction) {
             Either.cond(
                     test = it.summary().counters().containsUpdates(), // TODO vihang: this is not perfect way to check if updates are applied
