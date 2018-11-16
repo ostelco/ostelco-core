@@ -7,8 +7,7 @@ import org.ostelco.jsonValidation.JsonSchemaInputOutputValidationInterceptor
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 import io.dropwizard.testing.junit.ResourceTestRule
-import org.mockito.ArgumentMatchers
-import org.mockito.Matchers
+import org.junit.Before
 import org.mockito.Mockito.*
 
 class ES2PlusResourceTest {
@@ -31,15 +30,50 @@ class ES2PlusResourceTest {
         }
     }
 
+    val fakeIccid1 = "01234567891234567890"
+    val fakeIccid2 = "01234567891234567891"
+    @Before
+    fun setUp() {
+        reset(dao)
+
+        org.mockito.Mockito.`when`(dao.getSimProfileByIccid(fakeIccid1))
+                .thenReturn(SimEntry(
+                        id = 1L,
+                        hlrId = "foo",
+                        batch = 99L,
+                        iccid = " a",
+                        imsi = fakeIccid1,
+                        eid = "bb",
+                        active = false,
+                        pin1 = "ss",
+                        pin2 = "ss",
+                        puk1 = "ss",
+                        puk2 = "ss"))
+
+        org.mockito.Mockito.`when`(dao.getSimProfileByIccid(fakeIccid2))
+                .thenReturn(null)
+    }
+
     @Test
-    fun testFindByIccid() {
-        val response = RULE.target("/ostelco/sim-inventory/Loltel/iccid/0123123123123")
+    fun testFindByIccidPositiveResult() {
+        val response = RULE.target("/ostelco/sim-inventory/Loltel/iccid/$fakeIccid1")
                 .request(MediaType.APPLICATION_JSON)
                 .get()
 
         assertEquals(200, response.status)
 
         val simEntry = response.readEntity(SimEntry::class.java)
+        verify(dao).getSimProfileByIccid(fakeIccid1)
+    }
+
+    @Test
+    fun testFindByIccidNegativeResult() {
+        val response = RULE.target("/ostelco/sim-inventory/Loltel/iccid/$fakeIccid2")
+                .request(MediaType.APPLICATION_JSON)
+                .get()
+
+        assertEquals(404, response.status)
+        verify(dao).getSimProfileByIccid(fakeIccid2)
     }
 
     @Test

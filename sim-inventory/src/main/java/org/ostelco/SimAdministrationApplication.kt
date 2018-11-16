@@ -1,5 +1,6 @@
 package org.ostelco
 
+import ch.qos.logback.access.pattern.StatusCodeConverter
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.dropwizard.Application
 import io.dropwizard.jdbi.DBIFactory
@@ -31,6 +32,7 @@ import java.util.stream.Collectors
 import java.util.stream.Stream
 import javax.ws.rs.*
 import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.Response
 
 
 /**
@@ -173,19 +175,12 @@ class EsimInventoryResource(val dao: SimInventoryDAO) {
     fun findByIccid(
             @NotEmpty @PathParam("hlr") hlr: String,
             @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
-        return SimEntry(
-                id = 1L,
-                batch = 99L,
-                hlrId = "foo",
-                iccid = iccid,
-                imsi = "foo",
-                eid = "bb",
-                active = false,
-                pin1 = "ss",
-                pin2 = "ss",
-                puk1 = "ss",
-                puk2 = "ss"
-        )
+        val result =  dao.getSimProfileByIccid(iccid)
+        if (result == null) {
+            throw WebApplicationException(Response.Status.NOT_FOUND)
+        } else {
+            return result
+        }
     }
 
     @Produces(MediaType.APPLICATION_JSON)
@@ -430,6 +425,52 @@ class SimEntryIterator(hlrId: String, batchId: Long, csvInputStream: InputStream
  */
 abstract class SimInventoryDAO {
 
+
+    @SqlQuery("select * from sim_entries where id = :id")
+    @RegisterMapper(SimEntryMapper::class)
+    abstract fun getSimProfileByIccid(iccid: String): SimEntry
+
+
+    class SimEntryMapper : ResultSetMapper<SimEntry> {
+
+        @Throws(SQLException::class)
+        override fun map(index: Int, r: ResultSet, ctx: StatementContext): SimEntry? {
+            if (r.isAfterLast) {
+                return null
+            }
+
+            val id = r.getLong("id")
+            val batch = r.getLong("batch")
+            val hlrId = r.getString("hlrId")
+            val smdpplus = r.getString("smdpplus")
+            val msisdn = r.getString("msisdn")
+            val iccid = r.getString("iccid")
+            val imsi = r.getString("imsi")
+            val eid = r.getString("eid")
+            val active = r.getBoolean("active")
+            val pin1 = r.getString("pin1")
+            val pin2 = r.getString("pin2")
+            val puk1 = r.getString("puk1")
+            val puk2 = r.getString("puk2")
+
+            return SimEntry(
+                    id = id,
+                    batch = batch,
+                    hlrId = hlrId,
+                    smdpplus = smdpplus,
+                    msisdn = msisdn,
+                    iccid = iccid,
+                    imsi = imsi,
+                    eid = eid,
+                    active = active,
+                    pin1 = pin1,
+                    pin2 = pin2,
+                    puk1 = puk1,
+                    puk2 = puk2
+            )
+        }
+    }
+
     //
     // Getting the ID of the last insert, regardless of table
     //
@@ -448,9 +489,9 @@ abstract class SimInventoryDAO {
 
     @SqlUpdate("INSERT INTO sim_import_batches (status,  importer, hlr, profileVendor) VALUES ('STARTED', :importer, :hlr, :profileVendor)")
     abstract fun createNewSimImportBatch(
-            @Bind("importer")importer: String,
-            @Bind("hlr")hlr: String,
-            @Bind("profileVendor")profileVendor: String)
+            @Bind("importer") importer: String,
+            @Bind("hlr") hlr: String,
+            @Bind("profileVendor") profileVendor: String)
 
     abstract fun getIdOfBatchCreatedLast(): Long
 
@@ -464,9 +505,9 @@ abstract class SimInventoryDAO {
     @Transaction
     fun importSims(
             importer: String,
-            hlr:String,
+            hlr: String,
             profileVendor: String,
-            csvInputStream: InputStream) : SimImportBatch {
+            csvInputStream: InputStream): SimImportBatch {
 
         createNewSimImportBatch(
                 importer = importer,
@@ -481,7 +522,7 @@ abstract class SimInventoryDAO {
         updateBatchState(
                 id = batchId,
                 size = values.count.get(),
-                status="SUCCESS",
+                status = "SUCCESS",
                 endedAt = System.currentTimeMillis())
         return getBatchInfo(batchId)
     }
@@ -511,7 +552,7 @@ abstract class SimInventoryDAO {
                     status = status,
                     hlr = hlr,
                     profileVendor = profileVendor,
-                    size=size,
+                    size = size,
                     importer = "XXX Replace with name of agent that facilitated the import")
         }
     }
@@ -525,27 +566,12 @@ abstract class SimInventoryDAO {
     @SqlUpdate("drop  table sim_import_batches")
     abstract fun dropImportBatchesTable();
 
-    /*
-
-    @JsonProperty("id") val id: Long? = null,
-    @JsonProperty("batch") val batch: Long,
-    @JsonProperty("hlrId") val hlrId: String,
-    @JsonProperty("smdpplus") val smdpplus: String? = null,
-    @JsonProperty("msisdn") val msisdn: String? = null,
-    @JsonProperty("iccid") val iccid: String,
-    @JsonProperty("imsi") val imsi: String,
-    @JsonProperty("eid") val eid: String? = null,
-    @JsonProperty("active") val active: Boolean = false,
-    @JsonProperty("pin1") val pin1: String,
-    @JsonProperty("pin2") val pin2: String,
-    @JsonProperty("puk1") val puk1: String,
-    @JsonProperty("puk2") val puk2: String
-    */
-
 
     @SqlUpdate("create table sim_entries (id integer primary key autoincrement, hlrid text, smdpplus text, msisdn text, eid text, active boolean, batch integer, imsi varchar(15), iccid varchar(22), pin1 varchar(4), pin2 varchar(4), puk1 varchar(80), puk2 varchar(80), CONSTRAINT Unique_Imsi UNIQUE (imsi), CONSTRAINT Unique_Iccid UNIQUE (iccid))")
     abstract fun createSimEntryTable();
 
     @SqlUpdate("drop  table sim_entries")
     abstract fun dropSimEntryTable();
+
+
 }
