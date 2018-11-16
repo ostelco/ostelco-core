@@ -159,9 +159,13 @@ class RefundsResource() {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
+        logger.info("Refunding purchase [enc] $email $purchaseRecordId $reason")
+
         val decodedEmail = URLDecoder.decode(email, "UTF-8")
         val decodedPurchaseRecordId = URLDecoder.decode(purchaseRecordId, "UTF-8")
         val decodedReason = URLDecoder.decode(reason, "UTF-8")
+        logger.info("Refunding purchase [dec] $decodedEmail $decodedPurchaseRecordId $decodedReason")
+
         logger.info("${token.name} Refunding purchase for $decodedEmail at id: $purchaseRecordId")
         return refundPurchase(decodedEmail, decodedPurchaseRecordId, decodedReason).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },

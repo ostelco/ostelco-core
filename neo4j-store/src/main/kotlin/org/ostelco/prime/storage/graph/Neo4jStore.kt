@@ -92,8 +92,7 @@ object Neo4jStoreSingleton : GraphStore {
             to = productEntity,
             dataClass = PurchaseRecord::class.java)
     private val purchaseRecordRelationStore = RelationStore(purchaseRecordRelation)
-    private val purchaseRecordEntity = EntityType(PurchaseRecord::class.java)
-    private val purchaseRecordStore = EntityStore(purchaseRecordEntity)
+    private val changablePurchaseRelationStore = ChangeableRelationStore(purchaseRecordRelation)
 
     private val referredRelation = RelationType(
             relation = REFERRED,
@@ -552,16 +551,17 @@ object Neo4jStoreSingleton : GraphStore {
         if (purchaseRecord.refund != null) {
             logger.error("Trying to refund again, ${purchaseRecord.id}, refund ${purchaseRecord.refund?.id}")
             return Either.left(org.ostelco.prime.paymentprocessor.core.ForbiddenError("Trying to refund again"))
-        } else  if (purchaseRecord.product.price.amount == 0) {
+        } else if (purchaseRecord.product.price.amount == 0) {
             logger.error("Trying to refund a free product, ${purchaseRecord.id}")
             return Either.left(org.ostelco.prime.paymentprocessor.core.ForbiddenError("Trying to refund a free purchase"))
         }
         return Either.right(Unit)
     }
+
     private fun updatePurchaseRecord(
             purchase: PurchaseRecord,
             primeTransaction: PrimeTransaction): Either<StoreError, Unit> {
-        return purchaseRecordStore.update(purchase, primeTransaction)
+        return changablePurchaseRelationStore.update(purchase, primeTransaction)
                 .ifFailedThenRollback(primeTransaction)
     }
 
@@ -572,7 +572,7 @@ object Neo4jStoreSingleton : GraphStore {
         IO {
             ForEither<PaymentError>() extensions {
                 binding {
-                    val purchaseRecord = purchaseRecordStore.get(purchaseRecordId, transaction)
+                    val purchaseRecord = changablePurchaseRelationStore.get(purchaseRecordId, transaction)
                             // If we can't find the record, return not-found
                             .mapLeft { org.ostelco.prime.paymentprocessor.core.NotFoundError("Purchase Record unavailable") }
                             .bind()
@@ -600,7 +600,6 @@ object Neo4jStoreSingleton : GraphStore {
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
     }
-
 
 
     //
