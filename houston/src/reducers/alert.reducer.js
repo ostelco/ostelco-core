@@ -1,4 +1,5 @@
 import { alertConstants } from '../constants';
+import { subscriberConstants } from '../constants';
 
 export function alert(state = {}, action) {
   switch (action.type) {
@@ -11,6 +12,13 @@ export function alert(state = {}, action) {
       return {
         type: 'alert-danger',
         message: action.message
+      };
+    case subscriberConstants.REFUND_PAYMENT_FAILURE:
+      console.log(JSON.stringify(action));
+      return {
+        type: 'alert-danger',
+        message: `Payment refund failed, See console for details`,
+        error: action.error
       };
     case alertConstants.CLEAR:
       return {};

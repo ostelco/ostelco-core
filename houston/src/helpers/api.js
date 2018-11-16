@@ -1,6 +1,7 @@
 import { authService } from '../services';
 import { getAPIRoot } from '../services/config-variables';
 import { authConstants } from '../constants';
+import  _ from 'lodash';
 
 const API_ROOT = getAPIRoot();
 
@@ -58,6 +59,13 @@ const apiCaller = async (endpoint, method, body, allowEmptyResponse, params = []
         return json;
       });
     });
+}
+
+export function createParams(params) {
+  const array = _.toPairs(params);
+  return _.map(array, (kv) => {
+    return `${kv[0]}=${kv[1]}`;
+  });
 }
 
 // Action key that carries API call info interpreted by this Redux middleware.

@@ -1,4 +1,4 @@
-import { CALL_API } from '../helpers';
+import { CALL_API, createParams } from '../helpers';
 import { subscriberConstants } from '../constants';
 import _ from 'lodash';
 
@@ -79,6 +79,27 @@ const getSubscriberAndBundlesByEmail = (email) => (dispatch, getState) =>  {
   })
 }
 
+const putRefundPurchaseByEmail = (email, purchaseRecordId, reason) => ({
+  [CALL_API]: {
+    types: [
+      subscriberConstants.REFUND_PAYMENT_REQUEST,
+      subscriberConstants.REFUND_PAYMENT_SUCCESS,
+      subscriberConstants.REFUND_PAYMENT_FAILURE],
+    endpoint: `refunds/email/${encodeURIComponent(email)}`,
+    method: 'PUT',
+    params: createParams({purchaseRecordId, reason})
+  }
+});
+
+const refundPurchase = (purchaseRecordId, reason) => (dispatch, getState) =>  {
+    // Get the email from the fetched user
+    const subscriberEmail = _.get(getState(), 'subscriber.email');
+    if (subscriberEmail) {
+      return dispatch(putRefundPurchaseByEmail(subscriberEmail, purchaseRecordId, reason)).then(() => {
+        return dispatch(fetchPaymentHistoryByEmail(subscriberEmail))
+      })
+    }
+}
 
 const mockGetSubscriberAndBundles = (email) => (dispatch, getState) =>  {
     // Remember I told you dispatch() can now handle thunks?
@@ -117,5 +138,6 @@ export const subscriberActions = {
   getSubscriberByMsisdn,
   getBundlesByEmail,
   getSubscriberAndBundlesByEmail,
+  refundPurchase,
   mockGetSubscriberAndBundles
 };
