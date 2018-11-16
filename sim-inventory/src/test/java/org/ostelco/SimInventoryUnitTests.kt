@@ -39,68 +39,53 @@ class ES2PlusResourceTest {
     val fakeMsisdn2 = "464646464646"
     val fakeHlr = "Loltel"
 
-    var fakeSimEntryWithoutMsisdn = SimEntry(
-            id = 1L,
-            hlrId = "foo",
-            batch = 99L,
-            iccid = " a",
-            imsi = fakeIccid1,
-            eid = "bb",
-            hlrActivation = false,
-            smdpPlusActivation = false,
-            pin1 = "ss",
-            pin2 = "ss",
-            puk1 = "ss",
-            puk2 = "ss")
 
-    var fakeSimEntry = SimEntry(
-            id = 1L,
-            hlrId = "foo",
-            batch = 99L,
-            iccid = " a",
-            imsi = fakeIccid1,
-            msisdn = fakeMsisdn1,
-            eid = "bb",
-            hlrActivation = false,
-            smdpPlusActivation = false,
-            pin1 = "ss",
-            pin2 = "ss",
-            puk1 = "ss",
-            puk2 = "ss")
+    fun fakeEntryWithoutMsisdn() : SimEntry {
+        return SimEntry(
+                id = 1L,
+                hlrId = "foo",
+                batch = 99L,
+                iccid = fakeIccid1,
+                imsi = fakeImsi1,
+                eid = "bb",
+                hlrActivation = false,
+                smdpPlusActivation = false,
+                pin1 = "ss",
+                pin2 = "ss",
+                puk1 = "ss",
+                puk2 = "ss")
+    }
+
+    fun fakeEntryWithMsisdn() : SimEntry{
+        return SimEntry(
+                id = 1L,
+                hlrId = "foo",
+                batch = 99L,
+                iccid = fakeIccid2,
+                imsi = fakeImsi2,
+                msisdn = fakeMsisdn1,
+                eid = "bb",
+                smdpplus = "Loltel",
+                hlrActivation = false,
+                smdpPlusActivation = false,
+                pin1 = "ss",
+                pin2 = "ss",
+                puk1 = "ss",
+                puk2 = "ss")
+    }
+
+
+    var fakeSimEntryWithoutMsisdn = fakeEntryWithoutMsisdn()
+
+    var fakeSimEntry = fakeEntryWithMsisdn()
 
 
     @Before
     fun setUp() {
 
-        fakeSimEntryWithoutMsisdn = SimEntry(
-                id = 1L,
-                hlrId = "foo",
-                batch = 99L,
-                iccid = " a",
-                msisdn = null,
-                imsi = fakeIccid1,
-                eid = "bb",
-                hlrActivation = false,
-                smdpPlusActivation = false,
-                pin1 = "ss",
-                pin2 = "ss",
-                puk1 = "ss",
-                puk2 = "ss")
+        this.fakeSimEntryWithoutMsisdn = fakeEntryWithoutMsisdn()
+        this.fakeSimEntry = fakeEntryWithMsisdn()
 
-        fakeSimEntry = SimEntry(
-                id = 1L,
-                hlrId = "foo",
-                batch = 99L,
-                iccid = " a",
-                msisdn = fakeMsisdn1,
-                imsi = fakeIccid1,
-                eid = "bb",
-                hlrActivation = false,
-                smdpPlusActivation = false,
-                pin1 = "ss",
-                pin2 = "ss",
-                puk1 = "ss",
-                puk2 = "ss")
 
         val mockHlrAdapter = HlrAdapter(1L, "Loltel")
 
@@ -193,8 +178,8 @@ class ES2PlusResourceTest {
 
         val simEntry = response.readEntity(SimEntry::class.java)
         assertNotNull(simEntry)
-        assertEquals(fakeSimEntryWithoutMsisdn, simEntry)
-        verify(dao).getSimProfileByMsisdn(fakeIccid1)
+        assertEquals(fakeSimEntry, simEntry)
+        verify(dao).getSimProfileByMsisdn(fakeMsisdn1)
     }
 
     @Test
@@ -245,12 +230,23 @@ class ES2PlusResourceTest {
     }
 
     @Test
-    fun testActivateEsim() {
+    fun testActivateEsimSuccessfully() {
         val response = RULE.target("/ostelco/sim-inventory/Loltel/iccid/$fakeIccid1/activate/esim")
                 .request(MediaType.APPLICATION_JSON)
                 .get()// XXX Post
 
         assertEquals(200, response.status)
+
+        val simEntry = response.readEntity(SimEntry::class.java)
+    }
+
+    @Test
+    fun testActivateEsimFailinglyOnSimWithoutSmdpPlus() {
+        val response = RULE.target("/ostelco/sim-inventory/Loltel/iccid/$fakeIccid2/activate/esim")
+                .request(MediaType.APPLICATION_JSON)
+                .get()// XXX Post
+
+        assertEquals(404, response.status)
 
         val simEntry = response.readEntity(SimEntry::class.java)
     }
