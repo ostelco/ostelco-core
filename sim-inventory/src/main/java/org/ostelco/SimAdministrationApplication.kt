@@ -1,6 +1,5 @@
 package org.ostelco
 
-import ch.qos.logback.access.pattern.StatusCodeConverter
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.dropwizard.Application
 import io.dropwizard.jdbi.DBIFactory
@@ -132,7 +131,8 @@ data class SimEntry(
         @JsonProperty("iccid") val iccid: String,
         @JsonProperty("imsi") val imsi: String,
         @JsonProperty("eid") val eid: String? = null,
-        @JsonProperty("active") val active: Boolean = false,
+        @JsonProperty("hlrActivation") val hlrActivation: Boolean = false,
+        @JsonProperty("smdpPlusActivation") val smdpPlusActivation: Boolean = false,
         @JsonProperty("pin1") val pin1: String,
         @JsonProperty("pin2") val pin2: String,
         @JsonProperty("puk1") val puk1: String,
@@ -154,11 +154,47 @@ data class SimImportBatch(
 )
 
 
-// XXX Need to register profileVendor into some registry, also need to
-//     remember import batches, and a registry of entities that
-//     are permitted to entre profiles.  So we need entity classes
-//     for those and DAOs that permits us to talk about them in a
-//     "stateless" manner.
+
+
+/**
+ * An adapter that can connect to HLR entries and activate/deactivate
+ * individual SIM profiles.
+ */
+data class HlrAdapter(
+        @JsonProperty("id") val id: Long,
+        @JsonProperty("name") val name:String) {
+
+    /**
+     * Will connect to the HLR and then activate the profile, so that when
+     * a VLR asks the HLR for the an authentication triplet, then the HLR
+     * will know that it should give an answer.
+     */
+    fun activateEntry(simEntry: SimEntry) {
+        // XXX TBD
+    }
+}
+
+
+
+
+/**
+ * An adapter that can connect to HLR entries and activate/deactivate
+ * individual SIM profiles.
+ */
+data class SmdpPlusAdapter(
+        @JsonProperty("id") val id: Long,
+        @JsonProperty("name") val name:String) {
+
+    /**
+     * Will connect to the SM-DP+  and then activate the profile, so that when
+     * user equpiment tries to download a profile, it will get a profile to
+     * download.
+     */
+    fun activateEntry(simEntry: SimEntry) {
+        // XXX TBD
+    }
+}
+
 
 ///
 ///  The web resource using the protocol domain model.
@@ -174,7 +210,6 @@ class EsimInventoryResource(val dao: SimInventoryDAO) {
             return v
         }
     }
-
 
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
@@ -214,15 +249,12 @@ class EsimInventoryResource(val dao: SimInventoryDAO) {
     fun allocateNextFree(
             @NotEmpty @PathParam("hlr") hlr: String,
             @NotEmpty @PathParam("msisdn") msisdn: String): SimEntry {
-        // XXX This shouldn't be 404 I think but something else.
         return assertNonNull(dao.allocateNextFreeSimForMsisdn(hlr, msisdn))
     }
 
-    // XXX Arguably this shouldn't be done synchronously since it
-    //     may take a long time.
+
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-
     @Path("/iccid/{iccid}/activate/all")
     @GET
     fun activateByIccid(
@@ -236,7 +268,8 @@ class EsimInventoryResource(val dao: SimInventoryDAO) {
                 iccid = iccid,
                 imsi = "9u8y32879329783247",
                 eid = "bb",
-                active = false,
+                hlrActivation = false,
+                smdpPlusActivation = false,
                 pin1 = "ss",
                 pin2 = "ss",
                 puk1 = "ss",
@@ -246,57 +279,48 @@ class EsimInventoryResource(val dao: SimInventoryDAO) {
 
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-
-
     @Path("/iccid/{iccid}/activate/hlr")
     @GET
-    fun activateProfileByIccid(
+    fun activateHlrProfileByIccid(
             @NotEmpty @PathParam("hlr") hlr: String,
             @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
-        return SimEntry(
-                id = 1L,
-                msisdn = "82828282828282828",
-                batch = 99L,
-                hlrId = "foo",
-                iccid = iccid,
-                imsi = "9u8y32879329783247",
-                eid = "bb",
-                active = false,
-                pin1 = "ss",
-                pin2 = "ss",
-                puk1 = "ss",
-                puk2 = "ss"
-        )
+
+        val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
+        val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
+
+        try {
+            hlrAdapter.activateEntry(simEntry)
+        } catch (e:Exception) {
+            throw WebApplicationException(Response.Status.BAD_REQUEST)
+        }
+        return assertNonNull(dao.setActivatedInHlr(simEntry.id!!))
     }
 
 
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-
     @Path("/iccid/{iccid}/activate/esim")
     @GET
     fun activateEsimProfileByIccid(
             @NotEmpty @PathParam("hlr") hlr: String,
             @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
-        return SimEntry(
-                id = 1L,
-                msisdn = "82828282828282828",
-                batch = 99L,
-                hlrId = "foo",
-                iccid = iccid,
-                imsi = "9u8y32879329783247",
-                eid = "bb",
-                active = false,
-                pin1 = "ss",
-                pin2 = "ss",
-                puk1 = "ss",
-                puk2 = "ss"
-        )
+        val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
+
+        if (simEntry.smdpplus == null) {
+            throw WebApplicationException(Response.Status.BAD_REQUEST)
+        }
+        val smdpPlusAdpter = assertNonNull(dao.getSmdpPlusAdapterByName(simEntry.smdpplus))
+
+        try {
+            smdpPlusAdpter.activateEntry(simEntry)
+        } catch (e: Exception) {
+            throw WebApplicationException(Response.Status.BAD_REQUEST)
+        }
+        return assertNonNull(dao.setActivatedInSmdpPlus(simEntry.id!!))
     }
 
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-
     @Path("/iccid/{iccid}/deactivate/hlr")
     @GET
     fun deactrivateByIccid(
@@ -310,7 +334,8 @@ class EsimInventoryResource(val dao: SimInventoryDAO) {
                 iccid = iccid,
                 imsi = "9u8y32879329783247",
                 eid = "bb",
-                active = false,
+                hlrActivation = false,
+                smdpPlusActivation = false,
                 pin1 = "ss",
                 pin2 = "ss",
                 puk1 = "ss",
@@ -416,17 +441,19 @@ abstract class SimInventoryDAO {
 
     @SqlQuery("select * from sim_entries where id = :id")
     @RegisterMapper(SimEntryMapper::class)
-    abstract fun getSimProfileByIccid(iccid: String): SimEntry
+    abstract fun getSimProfileById(@Bind("id")id: Long): SimEntry
 
-
+    @SqlQuery("select * from sim_entries where iccid = :iccid")
+    @RegisterMapper(SimEntryMapper::class)
+    abstract fun getSimProfileByIccid(@Bind("iccid")iccid: String): SimEntry
 
     @SqlQuery("select * from sim_entries where imsi = :imsi")
     @RegisterMapper(SimEntryMapper::class)
-    abstract fun getSimProfileByImsi(imsi: String): SimEntry
+    abstract fun getSimProfileByImsi(@Bind("imsi")imsi: String): SimEntry
 
     @SqlQuery("select * from sim_entries where msisdn = :msisdn")
     @RegisterMapper(SimEntryMapper::class)
-    abstract fun getSimProfileByMsisdn(msisdn: String): SimEntry
+    abstract fun getSimProfileByMsisdn(@Bind("msisdn")msisdn: String): SimEntry
 
 
     class SimEntryMapper : ResultSetMapper<SimEntry> {
@@ -445,7 +472,8 @@ abstract class SimInventoryDAO {
             val iccid = r.getString("iccid")
             val imsi = r.getString("imsi")
             val eid = r.getString("eid")
-            val active = r.getBoolean("active")
+            val smdpPlusActivation = r.getBoolean("smdpPlusActivation")
+            val hlrActivation = r.getBoolean("hlrActivation")
             val pin1 = r.getString("pin1")
             val pin2 = r.getString("pin2")
             val puk1 = r.getString("puk1")
@@ -460,7 +488,8 @@ abstract class SimInventoryDAO {
                     iccid = iccid,
                     imsi = imsi,
                     eid = eid,
-                    active = active,
+                    smdpPlusActivation = smdpPlusActivation,
+                    hlrActivation = hlrActivation,
                     pin1 = pin1,
                     pin2 = pin2,
                     puk1 = puk1,
@@ -469,12 +498,40 @@ abstract class SimInventoryDAO {
         }
     }
 
+    @SqlQuery("select * from hlr_adapters where name = :name")
+    @RegisterMapper(HlrAdapterMapper::class)
+    abstract fun getHlrAdapterByName(@Bind("name")name: String): HlrAdapter
+
+
+    @SqlQuery("select * from hlr_adapters where id = :id")
+    @RegisterMapper(HlrAdapterMapper::class)
+    abstract fun getHlrAdapterByName(@Bind("id")id: Long): HlrAdapter
+
+
+    class HlrAdapterMapper : ResultSetMapper<HlrAdapter> {
+
+        @Throws(SQLException::class)
+        override fun map(index: Int, r: ResultSet, ctx: StatementContext): HlrAdapter? {
+            if (r.isAfterLast) {
+                return null
+            }
+
+            val id = r.getLong("id")
+            val name = r.getString("name")
+
+            return HlrAdapter(
+                    id = id,
+                    name = name)
+        }
+    }
+
+    abstract fun getSmdpPlusAdapterByName(name: String): SmdpPlusAdapter?
+
     //
     // Getting the ID of the last insert, regardless of table
     //
     @SqlQuery("select last_insert_rowid()")
     abstract fun lastInsertRowid(): Long
-
 
     //
     // Importing
@@ -555,6 +612,36 @@ abstract class SimInventoryDAO {
         }
     }
 
+    //
+    // Setting activation statuses
+    //
+
+    @SqlUpdate("UPDATE sim_entries SET hlrActivation = :hlrActivation  WHERE id = :id")
+    abstract fun setHlrActivation(
+            @Bind("id") id:Long,
+            @Bind("hlrActivation") hlrActivation:Boolean)
+
+
+    @SqlUpdate("UPDATE sim_entries SET smdpPlusActivation = :smdpPlusActivation  WHERE id = :id")
+    abstract fun setSmdpPlusActivation(
+            @Bind("id") id:Long,
+            @Bind("smdpPlusActivation") smdpPlusActivation:Boolean)
+
+
+    /**
+     * Set the entity to be marked as "active" in the HLR, then return the
+     * SIM entry.
+     */
+    fun setActivatedInHlr(id: Long): SimEntry? {
+        setHlrActivation(id, true)
+        return getSimProfileById(id)
+    }
+
+
+    fun setActivatedInSmdpPlus(id: Long): SimEntry? {
+        setSmdpPlusActivation(id, true)
+        return getSimProfileById(id)
+    }
 
     //
     //  Binding a SIM card to an MSISDN
@@ -588,6 +675,11 @@ abstract class SimInventoryDAO {
         return getSimProfileByMsisdn(msisdn)
     }
 
+
+
+
+
+
     //
     // Creating and deleting tables (XXX only used for testing, and should be moved to
     // a test only DAO eventually)
@@ -599,10 +691,27 @@ abstract class SimInventoryDAO {
     abstract fun dropImportBatchesTable();
 
 
-    @SqlUpdate("create table sim_entries (id integer primary key autoincrement, hlrid text, smdpplus text, msisdn text, eid text, active boolean, batch integer, imsi varchar(15), iccid varchar(22), pin1 varchar(4), pin2 varchar(4), puk1 varchar(80), puk2 varchar(80), CONSTRAINT Unique_Imsi UNIQUE (imsi), CONSTRAINT Unique_Iccid UNIQUE (iccid))")
+    @SqlUpdate("create table sim_entries (id integer primary key autoincrement, hlrid text, smdpplus text, msisdn text, eid text, hlrActivation boolean, smdpPlusActivation boolean, batch integer, imsi varchar(15), iccid varchar(22), pin1 varchar(4), pin2 varchar(4), puk1 varchar(80), puk2 varchar(80), CONSTRAINT Unique_Imsi UNIQUE (imsi), CONSTRAINT Unique_Iccid UNIQUE (iccid))")
     abstract fun createSimEntryTable();
 
     @SqlUpdate("drop  table sim_entries")
     abstract fun dropSimEntryTable();
+
+
+    @SqlUpdate("create table hlr_adapters (id integer primary key autoincrement, name text,  CONSTRAINT Unique_Name UNIQUE (name))")
+    abstract fun createHlrAdapterTable();
+
+    @SqlUpdate("drop  table hlr_adapters")
+    abstract fun dropHlrAdapterTable();
+
+
+    @SqlUpdate("create table smdp_plus_adapters (id integer primary key autoincrement, name text,  CONSTRAINT Unique_Name UNIQUE (name))")
+    abstract fun createSmdpPlusTable();
+
+    @SqlUpdate("drop  table smdp_plus_adapters")
+    abstract fun dropSmdpPlusTable();
+
+
+
 
 }

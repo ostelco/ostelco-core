@@ -46,7 +46,8 @@ class ES2PlusResourceTest {
             iccid = " a",
             imsi = fakeIccid1,
             eid = "bb",
-            active = false,
+            hlrActivation = false,
+            smdpPlusActivation = false,
             pin1 = "ss",
             pin2 = "ss",
             puk1 = "ss",
@@ -60,7 +61,8 @@ class ES2PlusResourceTest {
             imsi = fakeIccid1,
             msisdn = fakeMsisdn1,
             eid = "bb",
-            active = false,
+            hlrActivation = false,
+            smdpPlusActivation = false,
             pin1 = "ss",
             pin2 = "ss",
             puk1 = "ss",
@@ -78,7 +80,8 @@ class ES2PlusResourceTest {
                 msisdn = null,
                 imsi = fakeIccid1,
                 eid = "bb",
-                active = false,
+                hlrActivation = false,
+                smdpPlusActivation = false,
                 pin1 = "ss",
                 pin2 = "ss",
                 puk1 = "ss",
@@ -92,15 +95,21 @@ class ES2PlusResourceTest {
                 msisdn = fakeMsisdn1,
                 imsi = fakeIccid1,
                 eid = "bb",
-                active = false,
+                hlrActivation = false,
+                smdpPlusActivation = false,
                 pin1 = "ss",
                 pin2 = "ss",
                 puk1 = "ss",
                 puk2 = "ss")
 
+        val mockHlrAdapter = HlrAdapter(1L, "Loltel")
+
         reset(dao)
 
         org.mockito.Mockito.`when`(dao.getSimProfileByIccid(fakeIccid1))
+                .thenReturn(fakeSimEntryWithoutMsisdn)
+
+        org.mockito.Mockito.`when`(dao.getSimProfileById(fakeSimEntryWithoutMsisdn.id!!))
                 .thenReturn(fakeSimEntryWithoutMsisdn)
 
         org.mockito.Mockito.`when`(dao.getSimProfileByIccid(fakeIccid2))
@@ -121,6 +130,9 @@ class ES2PlusResourceTest {
 
         org.mockito.Mockito.`when`(dao.findNextFreeSimForMsisdn(fakeHlr))
                 .thenReturn(fakeSimEntryWithoutMsisdn)
+
+        org.mockito.Mockito.`when`(dao.getHlrAdapterByName("Loltel"))
+                .thenReturn(mockHlrAdapter)
     }
 
     @Test
@@ -209,9 +221,9 @@ class ES2PlusResourceTest {
 
     @Test
     fun testActivateAll() {
-        val response = RULE.target("/ostelco/sim-inventory/iccid/982389123498/activate/all")
+        val response = RULE.target("/ostelco/sim-inventory/iccid/$fakeIccid1/activate/all")
                 .request(MediaType.APPLICATION_JSON)
-                .get()// XXX Post
+                .get() // XXX Post
 
         assertEquals(200, response.status)
 
@@ -220,18 +232,21 @@ class ES2PlusResourceTest {
 
     @Test
     fun testActivateHlr() {
-        val response = RULE.target("/ostelco/sim-inventory/iccid/982389123498/activate/hlr")
+
+        val response = RULE.target("/ostelco/sim-inventory/Loltel/iccid/$fakeIccid1/activate/hlr")
                 .request(MediaType.APPLICATION_JSON)
                 .get()// XXX Post
 
         assertEquals(200, response.status)
-
         val simEntry = response.readEntity(SimEntry::class.java)
+
+        // XXX Bunch of verifications missing
+        verify(dao).getSimProfileById(fakeSimEntryWithoutMsisdn.id!!)
     }
 
     @Test
     fun testActivateEsim() {
-        val response = RULE.target("/ostelco/sim-inventory/iccid/982389123498/activate/esim")
+        val response = RULE.target("/ostelco/sim-inventory/Loltel/iccid/$fakeIccid1/activate/esim")
                 .request(MediaType.APPLICATION_JSON)
                 .get()// XXX Post
 
@@ -242,10 +257,11 @@ class ES2PlusResourceTest {
 
     @Test
     fun testDeactivate() {
-        val response = RULE.target("/ostelco/sim-inventory/iccid/8328238238328/deactivate/hlr")
+        val response = RULE.target("/ostelco/sim-inventory/Loltel/iccid/$fakeIccid1/deactivate/hlr")
                 .request(MediaType.APPLICATION_JSON)
                 .get() // XXX Post
 
+        // XXX Check what return value to expect when updating, don't think it's 200
         assertEquals(200, response.status)
 
         val simEntry = response.readEntity(SimEntry::class.java)
@@ -273,8 +289,5 @@ class ES2PlusResourceTest {
         assertEquals(200, response.status)
 
         val simEntry = response.readEntity(SimImportBatch::class.java)
-
-        // XXX Couldn't figure out how to verify
-        // verify(dao).insertAll(ArgumentMatchers.anyIterable<SimEntry>())
     }
 }
