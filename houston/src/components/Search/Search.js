@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
 import { authActions, subscriberActions } from '../../actions';
 import SearchForm from './SearchForm';
 import SearchResults from './SearchResults';
-import AlertMessage from '../Shared/Alert';
+import AlertMessage from './Alert';
 
 class Search extends React.Component {
 
