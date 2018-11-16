@@ -123,7 +123,7 @@ class AppExceptionMapper : ExceptionMapper<Es2Exception> {
 // @JsonSchema("SimEntry")
 data class SimEntry(
         @JsonProperty("id") val id: Long? = null,
-        @JsonProperty("batchId") val batchId: Long = 99L,
+        @JsonProperty("batch") val batch: Long,
         @JsonProperty("hlrId") val hlrId: String,
         @JsonProperty("smdpplus") val smdpplus: String? = null,
         @JsonProperty("msisdn") val msisdn: String? = null,
@@ -175,6 +175,7 @@ class EsimInventoryResource(val dao: SimInventoryDAO) {
             @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
         return SimEntry(
                 id = 1L,
+                batch = 99L,
                 hlrId = "foo",
                 iccid = iccid,
                 imsi = "foo",
@@ -198,6 +199,7 @@ class EsimInventoryResource(val dao: SimInventoryDAO) {
         return SimEntry(
                 id = 1L,
                 hlrId = "foo",
+                batch = 99L,
                 iccid = " a",
                 imsi = imsi,
                 eid = "bb",
@@ -221,6 +223,7 @@ class EsimInventoryResource(val dao: SimInventoryDAO) {
                 id = 1L,
                 msisdn = msisdn,
                 hlrId = "foo",
+                batch = 99L,
                 iccid = " a",
                 imsi = "9u8y32879329783247",
                 eid = "bb",
@@ -246,6 +249,7 @@ class EsimInventoryResource(val dao: SimInventoryDAO) {
                 id = 1L,
                 msisdn = "82828282828282828",
                 hlrId = "foo",
+                batch = 99L,
                 iccid = iccid,
                 imsi = "9u8y32879329783247",
                 eid = "bb",
@@ -269,6 +273,7 @@ class EsimInventoryResource(val dao: SimInventoryDAO) {
         return SimEntry(
                 id = 1L,
                 msisdn = "82828282828282828",
+                batch = 99L,
                 hlrId = "foo",
                 iccid = iccid,
                 imsi = "9u8y32879329783247",
@@ -293,6 +298,7 @@ class EsimInventoryResource(val dao: SimInventoryDAO) {
         return SimEntry(
                 id = 1L,
                 msisdn = "82828282828282828",
+                batch = 99L,
                 hlrId = "foo",
                 iccid = iccid,
                 imsi = "9u8y32879329783247",
@@ -316,6 +322,7 @@ class EsimInventoryResource(val dao: SimInventoryDAO) {
         return SimEntry(
                 id = 1L,
                 msisdn = "2134234",
+                batch = 99L,
                 hlrId = "foo",
                 iccid = iccid,
                 imsi = "9u8y32879329783247",
@@ -384,7 +391,7 @@ class SimEntryIterator(hlrId: String, batchId: Long, csvInputStream: InputStream
                     val puk2 = record.get("PUK2")
 
                     val value = SimEntry(
-                            batchId = batchId,
+                            batch = batchId,
                             hlrId = hlrId,
                             iccid = iccid,
                             imsi = imsi,
@@ -428,6 +435,7 @@ abstract class SimInventoryDAO {
     //
     @SqlQuery("select last_insert_rowid()")
     abstract fun lastInsertRowid(): Long
+
 
     //
     // Importing
@@ -517,7 +525,25 @@ abstract class SimInventoryDAO {
     @SqlUpdate("drop  table sim_import_batches")
     abstract fun dropImportBatchesTable();
 
-    @SqlUpdate("create table sim_entries (id integer primary key autoincrement, imsi varchar(15), iccid varchar(22), pin1 varchar(4), pin2 varchar(4), puk1 varchar(80), puk2 varchar(80), CONSTRAINT Unique_Imsi UNIQUE (imsi), CONSTRAINT Unique_Iccid UNIQUE (iccid))")
+    /*
+
+    @JsonProperty("id") val id: Long? = null,
+    @JsonProperty("batch") val batch: Long,
+    @JsonProperty("hlrId") val hlrId: String,
+    @JsonProperty("smdpplus") val smdpplus: String? = null,
+    @JsonProperty("msisdn") val msisdn: String? = null,
+    @JsonProperty("iccid") val iccid: String,
+    @JsonProperty("imsi") val imsi: String,
+    @JsonProperty("eid") val eid: String? = null,
+    @JsonProperty("active") val active: Boolean = false,
+    @JsonProperty("pin1") val pin1: String,
+    @JsonProperty("pin2") val pin2: String,
+    @JsonProperty("puk1") val puk1: String,
+    @JsonProperty("puk2") val puk2: String
+    */
+
+
+    @SqlUpdate("create table sim_entries (id integer primary key autoincrement, hlrid text, smdpplus text, msisdn text, eid text, active boolean, batch integer, imsi varchar(15), iccid varchar(22), pin1 varchar(4), pin2 varchar(4), puk1 varchar(80), puk2 varchar(80), CONSTRAINT Unique_Imsi UNIQUE (imsi), CONSTRAINT Unique_Iccid UNIQUE (iccid))")
     abstract fun createSimEntryTable();
 
     @SqlUpdate("drop  table sim_entries")
