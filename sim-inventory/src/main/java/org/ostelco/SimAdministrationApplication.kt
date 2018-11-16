@@ -583,7 +583,7 @@ abstract class SimInventoryDAO {
         setMsisdnOfSim(sim.id!!, msisdn)
 
         // This is an inefficient way of getting an updated profile,
-        // but it will work, and we can optimize it away if the need ever arises
+        // but it will work, and we can optimize it away if the need ever
         // arises.
         return getSimProfileByMsisdn(msisdn)
     }
