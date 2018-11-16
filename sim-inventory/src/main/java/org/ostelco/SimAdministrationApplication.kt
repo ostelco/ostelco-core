@@ -517,7 +517,7 @@ abstract class SimInventoryDAO {
     @SqlUpdate("drop  table sim_import_batches")
     abstract fun dropImportBatchesTable();
 
-    @SqlUpdate("create table sim_entries (id integer primary key autoincrement, imsi varchar(15), iccid varchar(22), pin1 varchar(4), pin2 varchar(4), puk1 varchar(80), puk2 varchar(80))")
+    @SqlUpdate("create table sim_entries (id integer primary key autoincrement, imsi varchar(15), iccid varchar(22), pin1 varchar(4), pin2 varchar(4), puk1 varchar(80), puk2 varchar(80), CONSTRAINT Unique_Imsi UNIQUE (imsi), CONSTRAINT Unique_Iccid UNIQUE (iccid))")
     abstract fun createSimEntryTable();
 
     @SqlUpdate("drop  table sim_entries")

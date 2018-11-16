@@ -10,6 +10,7 @@ import org.junit.Test
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 import org.junit.Before
+import java.math.BigInteger
 
 
 class EsimInventoryIntegrationTest() {
@@ -44,16 +45,13 @@ class EsimInventoryIntegrationTest() {
         RULE.getApplication<SimAdministrationApplication>().simInventoryDAO.createImportBatchesTable()
     }
 
+
+
+
     @Test
     fun testImport() {
 
-        // NOTE: Doesn't scale up very far, should scale to several million before we're happy
-        val sample = StringBuilder("ICCID, IMSI, PIN1, PIN2, PUK1, PUK2\n")
-        for (i in 1..100) { // Works well up to 10000, after that it breaks.
-            sample.append("123123, 123123, 1233,1233,1233,1233\n");
-        }
-        val sampleValue = sample.toString()
-
+        val sampleValue = SimFactoryEmulator(100).simBatchOutFileAsString()
 
         val client = JerseyClientBuilder(RULE.environment)
                 .using(RULE.configuration.getJerseyClientConfiguration())
@@ -71,4 +69,43 @@ class EsimInventoryIntegrationTest() {
     }
 }
 
+
+class SimFactoryEmulator(val batchSize: Int) {
+
+    val imsiStart = BigInteger.valueOf(410072821393853L)
+    val iccidStart = BigInteger.valueOf(1234567890123456789L)
+    var rollingNumber    = 0L
+
+    fun imsi(i: Int): String {
+        return imsiStart.add(BigInteger.valueOf(i.toLong())).toString()
+    }
+
+    fun iccid(i: Int): String {
+        return iccidStart.add(BigInteger.valueOf(i.toLong())).toString()
+    }
+
+    fun nextFourDigitNumber() : String {
+        rollingNumber += 1
+        return "%04d".format(rollingNumber % 10000).toString()
+    }
+
+    fun simBatchOutFileAsString():String {
+        // NOTE: Doesn't scale up very far, should scale to several million before we're happy
+        val header = "ICCID, IMSI, PIN1, PIN2, PUK1, PUK2\n"
+
+
+        val sample = StringBuilder(header)
+        for (i in 1..100) { // Works well up to 10000, after that it breaks
+           val s =  "%s, %s, %s, %s, %s, %s\n".format(
+                    iccid(i),
+                    imsi(i),
+                    nextFourDigitNumber(),
+                    nextFourDigitNumber(),
+                    nextFourDigitNumber(),
+                    nextFourDigitNumber())
+            sample.append(s);
+        }
+        return sample.toString()
+    }
+}
 
