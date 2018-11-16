@@ -167,20 +167,24 @@ data class SimImportBatch(
 @Path("/ostelco/sim-inventory/{hlr}/")
 class EsimInventoryResource(val dao: SimInventoryDAO) {
 
+    private fun <T> assertNonNull(v: T) : T {
+        if (v == null) {
+            throw WebApplicationException(Response.Status.NOT_FOUND)
+        } else {
+            return v
+        }
+    }
+
+
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-
     @Path("iccid/{iccid}")
     @GET
     fun findByIccid(
             @NotEmpty @PathParam("hlr") hlr: String,
             @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
-        val result =  dao.getSimProfileByIccid(iccid)
-        if (result == null) {
-            throw WebApplicationException(Response.Status.NOT_FOUND)
-        } else {
-            return result
-        }
+
+        return assertNonNull(dao.getSimProfileByIccid(iccid))
     }
 
     @Produces(MediaType.APPLICATION_JSON)
