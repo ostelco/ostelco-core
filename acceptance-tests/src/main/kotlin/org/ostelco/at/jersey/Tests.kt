@@ -7,20 +7,7 @@ import org.ostelco.at.common.createSubscription
 import org.ostelco.at.common.expectedProducts
 import org.ostelco.at.common.getLogger
 import org.ostelco.at.common.randomInt
-import org.ostelco.prime.client.model.ActivePseudonyms
-import org.ostelco.prime.client.model.ApplicationToken
-import org.ostelco.prime.client.model.Bundle
-import org.ostelco.prime.client.model.BundleList
-import org.ostelco.prime.client.model.Consent
-import org.ostelco.prime.client.model.PaymentSource
-import org.ostelco.prime.client.model.PaymentSourceList
-import org.ostelco.prime.client.model.Person
-import org.ostelco.prime.client.model.Price
-import org.ostelco.prime.client.model.Product
-import org.ostelco.prime.client.model.Profile
-import org.ostelco.prime.client.model.PurchaseRecord
-import org.ostelco.prime.client.model.PurchaseRecordList
-import org.ostelco.prime.client.model.Subscription
+import org.ostelco.prime.client.model.*
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.Instant
@@ -600,16 +587,16 @@ class PurchaseTest {
             assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
 
             val encodedEmail = URLEncoder.encode(email, "UTF-8")
-            val encodedPurchaseRecordId = URLEncoder.encode(purchaseRecords.last().id, "UTF-8")
-            val encodedReason = URLEncoder.encode("requested_by_customer@something", "UTF-8")
-            val refundId  = put<String> {
+            val refundedProduct:ProductInfo  = put<ProductInfo> {
                 path = "/refunds/email/$encodedEmail"
                 subscriberId = email
                 queryParams = mapOf(
-                        "purchaseRecordId" to encodedPurchaseRecordId,
-                        "reason" to encodedReason)
+                        "purchaseRecordId" to purchaseRecords.last().id,
+                        "reason" to "requested_by_customer")
             }
-            logger.info("Refunded purchase id:${purchaseRecords.last().id} with refund id:${refundId}")
+            logger.info("Refunded product: ${refundedProduct} with purchase id:${purchaseRecords.last().id}")
+            assertEquals(productSku, refundedProduct.id, "Refund returned a different product")
+
         } finally {
             StripePayment.deleteCustomer(email = email)
         }

@@ -493,6 +493,14 @@ definitions:
     required:
       - sku
       - price
+  ProductInfo:
+    type: object
+    properties:
+      id:
+        description: "A unique Id representing a SKU"
+        type: string
+    required:
+    - id
   Refund:
     type: object
     properties:
