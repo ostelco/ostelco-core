@@ -110,10 +110,13 @@ export default store => next => action => {
       response,
       type: successType
     })),
-    error => next(actionWith({
-      type: failureType,
-      errorObj: error,
-      error: error.message || 'Something bad happened'
-    }))
+    error =>  {
+        next(actionWith({
+        type: failureType,
+        errorObj: error,
+        error: error.message || 'Something bad happened'
+      }));
+      throw error;
+    }
   );
 }

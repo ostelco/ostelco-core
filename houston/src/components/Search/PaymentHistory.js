@@ -12,13 +12,16 @@ const HistoryRow = props => {
     console.log(`Reverting ${props.item.id}`);
     props.refundPurchase(props.item.id, 'requested_by_customer');
   }
+  function nope(e) {
+    e.preventDefault();
+  }
   function renderOption() {
     if (props.item.refund && props.item.refund.id) {
       return (
         <td>
-        <span id={props.item.refund.id}>Refunded...</span>
+        <Button color="outline-secondary" onClick={nope} id={props.item.refund.id}>Refunded..</Button>
         <UncontrolledTooltip placement="right" target={props.item.refund.id}>
-          {`Refunded on ${convertTimestampToDate(props.item.refund.timestamp)}"`}
+          {`Refunded on ${convertTimestampToDate(props.item.refund.timestamp)}, ${props.item.refund.reason}`}
         </UncontrolledTooltip>
       </td>
       );

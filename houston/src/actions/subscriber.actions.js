@@ -66,17 +66,24 @@ const getPaymentHistoryByEmail = (email) => (dispatch, getState) => {
   return dispatch(fetchPaymentHistoryByEmail(email));
 }
 
+function errorCatcher(error) {
+  console.log('Error reported.', error);
+}
 // TODO: API based implementaion. Reference: https://github.com/reduxjs/redux/issues/1676
 const getSubscriberAndBundlesByEmail = (email) => (dispatch, getState) =>  {
-  return dispatch(fetchSubscriberByEmail(email)).then(() => {
+  return dispatch(fetchSubscriberByEmail(email))
+  .then(() => {
     // Get the email from the fetched user
     const subscriberEmail = _.get(getState(), 'subscriber.email');
     if (subscriberEmail) {
-      return dispatch(fetchBundlesByEmail(subscriberEmail)).then(() => {
+      return dispatch(fetchBundlesByEmail(subscriberEmail))
+      .then(() => {
         return dispatch(fetchPaymentHistoryByEmail(subscriberEmail))
       })
+      .catch(errorCatcher);
     }
   })
+  .catch(errorCatcher);
 }
 
 const putRefundPurchaseByEmail = (email, purchaseRecordId, reason) => ({
@@ -95,9 +102,11 @@ const refundPurchase = (purchaseRecordId, reason) => (dispatch, getState) =>  {
     // Get the email from the fetched user
     const subscriberEmail = _.get(getState(), 'subscriber.email');
     if (subscriberEmail) {
-      return dispatch(putRefundPurchaseByEmail(subscriberEmail, purchaseRecordId, reason)).then(() => {
-        return dispatch(fetchPaymentHistoryByEmail(subscriberEmail))
+      return dispatch(putRefundPurchaseByEmail(subscriberEmail, purchaseRecordId, reason))
+      .then(() => {
+        return dispatch(fetchPaymentHistoryByEmail(subscriberEmail));
       })
+      .catch(errorCatcher);
     }
 }
 
