@@ -114,9 +114,25 @@ export default store => next => action => {
         next(actionWith({
         type: failureType,
         errorObj: error,
-        error: error.message || 'Something bad happened'
+        error: transformError(error)
       }));
-      throw error;
+      throw {
+        message: transformError(error),
+        errorObj: error
+      };
     }
   );
+}
+
+function transformError(errorObj) {
+  if (errorObj.errors) {
+    return errorObj.errors.join(', ')
+  }
+  if (errorObj.message) {
+    return errorObj.message
+  }
+  if (errorObj.error) {
+    return errorObj.error.toString()
+  }
+  return 'Something bad happened';
 }

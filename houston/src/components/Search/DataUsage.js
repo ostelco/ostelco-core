@@ -3,7 +3,6 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Col, Row, Card,  CardBody, CardTitle, Button } from 'reactstrap';
 
-import { authActions, pseudoActions } from '../../actions';
 import WarningModal from '../Shared/WarningModal';
 import { humanReadableBytes } from '../../helpers';
 
@@ -76,8 +75,5 @@ function mapStateToProps(state) {
     balance
   };
 }
-const mapDispatchToProps = {
-  login: authActions.login,
-  getPseudonym: pseudoActions.getPseudonym
-}
-export default connect(mapStateToProps, mapDispatchToProps)(DataUsage);
+
+export default connect(mapStateToProps)(DataUsage);

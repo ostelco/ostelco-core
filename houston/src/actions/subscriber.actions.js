@@ -1,5 +1,7 @@
 import { CALL_API, createParams } from '../helpers';
 import { subscriberConstants } from '../constants';
+import { alertActions } from './alert.actions';
+
 import _ from 'lodash';
 
 const fetchSubscriberByEmail = (email) => ({
@@ -106,7 +108,10 @@ const refundPurchase = (purchaseRecordId, reason) => (dispatch, getState) =>  {
       .then(() => {
         return dispatch(fetchPaymentHistoryByEmail(subscriberEmail));
       })
-      .catch(errorCatcher);
+      .catch(error => {
+        console.log('Error Caught', JSON.stringify(error));
+        dispatch(alertActions.alertError(error));
+      });
     }
 }
 

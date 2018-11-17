@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 
-import { authActions, subscriberActions } from '../../actions';
+import { subscriberActions } from '../../actions';
 import SearchForm from './SearchForm';
 import SearchResults from './SearchResults';
 import AlertMessage from './Alert';
@@ -46,7 +46,6 @@ function mapStateToProps(state) {
   };
 }
 const mapDispatchToProps = {
-  login: authActions.login,
   getSubscriberAndBundlesByEmail: subscriberActions.getSubscriberAndBundlesByEmail
 }
 export default connect(mapStateToProps, mapDispatchToProps)(Search);

@@ -1,19 +1,29 @@
-import { alertConstants } from '../constants';
+import { createActions, handleActions, combineActions } from 'redux-actions';
 
+const defaultState = {};
+
+const ALERT_SUCCESS = 'ALERT_SUCCESS';
+const ALERT_ERROR = 'ALERT_ERROR';
+const CLEAR_ALERT = 'CLEAR_ALERT';
+
+const { alertSuccess, alertError, clearAlert } = createActions(ALERT_SUCCESS, ALERT_ERROR, CLEAR_ALERT);
 export const alertActions = {
-  success,
-  error,
-  clear
+  alertSuccess, alertError, clearAlert
 };
 
-function success(message) {
-  return { type: alertConstants.SUCCESS, message };
-}
+const reducer = handleActions(
+  {
+    [alertSuccess]: (state, { payload }) => {
+      return { ...state, type: 'alert-success', message: payload };
+    },
+    [alertError]: (state, { payload: { message } }) => {
+      return { ...state, type: 'alert-danger', message };
+    },
+    [clearAlert]: () => {
+      return defaultState;
+    }
+  },
+  defaultState
+);
 
-function error(message) {
-  return { type: alertConstants.ERROR, message };
-}
-
-function clear() {
-  return { type: alertConstants.CLEAR };
-}
+export default reducer;

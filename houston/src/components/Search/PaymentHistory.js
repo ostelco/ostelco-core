@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Table, Card, CardBody, CardTitle, Button, UncontrolledTooltip } from 'reactstrap';
 
-import { authActions, pseudoActions, subscriberActions } from '../../actions';
+import { subscriberActions } from '../../actions';
 import { convertTimestampToDate } from '../../helpers';
 
 const HistoryRow = props => {
@@ -83,25 +83,20 @@ const PaymentHistory = props => {
 
 PaymentHistory.propTypes = {
   loggedIn: PropTypes.bool,
-  pseudonym: PropTypes.object,
   paymentHistory: PropTypes.array,
   refundPurchase: PropTypes.func.isRequired
 };
 
 function mapStateToProps(state) {
   const { loggedIn } = state.authentication;
-  const { pseudonym } = state;
   const { paymentHistory } = state;
 
   return {
     loggedIn,
-    pseudonym,
     paymentHistory: paymentHistory.data
   };
 }
 const mapDispatchToProps = {
-  login: authActions.login,
-  getPseudonym: pseudoActions.getPseudonym,
   refundPurchase: subscriberActions.refundPurchase
 }
 export default connect(mapStateToProps, mapDispatchToProps)(PaymentHistory);

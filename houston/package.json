@@ -19,6 +19,7 @@
     "react-scripts": "2.1.1",
     "reactstrap": "^6.5.0",
     "redux": "^4.0.1",
+    "redux-actions": "^2.6.4",
     "redux-devtools-extension": "^2.13.5",
     "redux-logger": "^3.0.6",
     "redux-thunk": "^2.3.0"

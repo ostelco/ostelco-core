@@ -1,15 +1,13 @@
 import { combineReducers } from 'redux';
 import { authentication } from './authentication.reducer';
-import { pseudonym } from './pseudo.reducer';
-import { alert } from './alert.reducer';
 import { subscriber, bundles, paymentHistory } from './subscriber.reducer';
 import { authConstants, subscriberConstants } from '../constants';
 import { authActions } from '../actions';
+import alert from '../actions/alert.actions';
 import { store } from '../helpers';
 
 const appReducer = combineReducers({
   authentication,
-  pseudonym,
   alert,
   subscriber,
   bundles,

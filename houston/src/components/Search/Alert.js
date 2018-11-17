@@ -4,11 +4,10 @@ import { connect } from 'react-redux';
 import { Alert } from 'reactstrap';
 
 import { alertActions } from '../../actions';
-import { subscriberActions } from '../../actions';
 
 function AlertMessage(props) {
   function onDismiss(e) {
-    props.clear();
+    props.clearAlert();
   }
 
   const visible = (props.alert && props.alert.type === 'alert-danger');
@@ -17,13 +16,12 @@ function AlertMessage(props) {
     <Alert color="danger" isOpen={visible} toggle={onDismiss}>
       {props.alert.message}
       <hr />
-      {props.alert.error}
     </Alert>
   );
 }
 
 AlertMessage.propTypes = {
-  clear: PropTypes.func.isRequired,
+  clearAlert: PropTypes.func.isRequired,
   alert: PropTypes.shape({
     type: PropTypes.string,
     message: PropTypes.string
@@ -37,7 +35,6 @@ function mapStateToProps(state) {
   };
 }
 const mapDispatchToProps = {
-  clear: alertActions.clear,
-  getBundlesByEmail: subscriberActions.getBundlesByEmail
+  clearAlert: alertActions.clearAlert,
 }
 export default connect(mapStateToProps, mapDispatchToProps)(AlertMessage);
