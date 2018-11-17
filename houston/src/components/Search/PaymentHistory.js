@@ -27,7 +27,7 @@ const HistoryRow = props => {
       );
     } else {
       return (
-      <td><Button color="link" onClick={onRefund}>Refund</Button></td>
+      <td><Button color="outline-primary" onClick={onRefund}>Refund</Button></td>
       );
     }
   }
