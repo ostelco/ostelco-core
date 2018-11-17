@@ -1,7 +1,8 @@
+import  _ from 'lodash';
+
 import { authService } from '../services';
 import { getAPIRoot } from '../services/config-variables';
-import { authConstants } from '../constants';
-import  _ from 'lodash';
+import { authConstants } from '../actions/auth.actions';
 
 const API_ROOT = getAPIRoot();
 

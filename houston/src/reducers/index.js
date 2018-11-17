@@ -1,14 +1,15 @@
 import { combineReducers } from 'redux';
-//import { authentication } from './authentication.reducer';
-import { subscriber, bundles, paymentHistory } from './subscriber.reducer';
-import { authConstants, subscriberConstants } from '../constants';
+import { authConstants } from '../actions/auth.actions';
+import { subscriberConstants } from '../constants';
 import { authActions } from '../actions';
 import { store } from '../helpers';
 
+// Reducers.
 import alert from '../actions/alert.actions';
 import authentication from './authentication.reducer';
+import { subscriber, bundles, paymentHistory } from './subscriber.reducer';
 
-console.log(JSON.stringify(authentication))
+
 const appReducer = combineReducers({
   authentication,
   alert,
