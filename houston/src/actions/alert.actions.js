@@ -1,16 +1,15 @@
 import { createActions, handleActions, combineActions } from 'redux-actions';
 
-const defaultState = {};
-
 const ALERT_SUCCESS = 'ALERT_SUCCESS';
 const ALERT_ERROR = 'ALERT_ERROR';
 const CLEAR_ALERT = 'CLEAR_ALERT';
 
-const { alertSuccess, alertError, clearAlert } = createActions(ALERT_SUCCESS, ALERT_ERROR, CLEAR_ALERT);
-export const alertActions = {
-  alertSuccess, alertError, clearAlert
-};
+const defaultState = {};
 
+// exports alertSuccess, alertError, clearAlert
+export const alertActions = createActions(ALERT_SUCCESS, ALERT_ERROR, CLEAR_ALERT);
+
+const { alertSuccess, alertError, clearAlert } = alertActions;
 const reducer = handleActions(
   {
     [alertSuccess]: (state, { payload }) => {
