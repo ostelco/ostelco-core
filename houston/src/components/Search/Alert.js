@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { Alert } from 'reactstrap';
 
-import { alertActions } from '../../actions';
+import { alertActions } from '../../actions/alert.actions';
 
 function AlertMessage(props) {
   function onDismiss(e) {

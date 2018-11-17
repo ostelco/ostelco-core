@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 
-import { subscriberActions } from '../../actions';
+import { subscriberActions } from '../../actions/subscriber.actions';
 import SearchForm from './SearchForm';
 import SearchResults from './SearchResults';
 import AlertMessage from './Alert';

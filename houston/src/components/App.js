@@ -16,7 +16,7 @@ import {
   DropdownItem
 } from 'reactstrap';
 
-import { authActions } from '../actions';
+import { authActions } from '../actions/auth.actions';
 import './App.css'
 class App extends Component {
   constructor(props, context) {
@@ -46,7 +46,6 @@ class App extends Component {
 
   renderMenu() {
     const { props } = this;
-    const userName = props.user ? props.user.name + ' : ' + props.user.email : '';
     return (
       <Collapse isOpen={this.state.isOpen} navbar>
         <Nav className="ml-auto" navbar>
@@ -80,7 +79,7 @@ class App extends Component {
       <div>
         <Navbar light expand="md">
           <NavbarBrand>
-            <img src="redotter.png" style={{ width: 60, height: 60, marginTop: -10 }} />
+            <img src="redotter.png" alt="Red Otter" style={{ width: 60, height: 60, marginTop: -10 }} />
           </NavbarBrand>
           <Nav>
             <NavItem>

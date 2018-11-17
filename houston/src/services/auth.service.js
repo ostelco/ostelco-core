@@ -1,9 +1,11 @@
 import { history } from '../helpers';
 import auth0 from 'auth0-js';
 import _ from 'lodash';
+
 import { getAuthConfig } from './config-variables';
-import { authActions } from '../actions';
+import { authConstants, authActions } from '../actions/auth.actions';
 import { store } from '../helpers';
+import { setAuthResolver } from '../helpers/api';
 
 const authConfig  = getAuthConfig();
 class Auth {
@@ -18,6 +20,7 @@ class Auth {
 
   constructor() {
     this.user = null;
+    setAuthResolver(this.getHeader);
     setTimeout(this.loadCurrentSession);
   }
 
@@ -102,6 +105,20 @@ class Auth {
     }
     return null;
   }
+
+  getHeader = () => {
+    const header = this.authHeader();
+    if (!header) {
+      console.log("apiCaller: Authentication failed");
+      const error = {
+        code: authConstants.AUTHENTICATION_FAILURE,
+        message:"Authentication failed"
+      };
+      return {error};
+    }
+    return {header};
+  }
+
 }
 const auth = new Auth();
 export const authService = auth;

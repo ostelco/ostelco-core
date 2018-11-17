@@ -1,10 +1,13 @@
 import  _ from 'lodash';
 
-import { authService } from '../services';
 import { getAPIRoot } from '../services/config-variables';
-import { authConstants } from '../actions/auth.actions';
 
 const API_ROOT = getAPIRoot();
+
+let authHeaderResolver = null;
+export function setAuthResolver(getterFunc) {
+  authHeaderResolver = getterFunc;
+}
 
 const apiCaller = async (endpoint, method, body, allowEmptyResponse, params = []) => {
   let fullUrl = (endpoint.indexOf(API_ROOT) === -1) ? API_ROOT + endpoint : endpoint
@@ -13,20 +16,19 @@ const apiCaller = async (endpoint, method, body, allowEmptyResponse, params = []
   if (params.length > 0) {
     fullUrl += `?${params.join('&')}`;
   }
-  const authHeader = authService.authHeader();
-  if (!authHeader) {
-    console.log("apiCaller: Authentication failed");
-    const error = { 
-      code: authConstants.AUTHENTICATION_FAILURE,
-      message:"Authentication failed"
-    };
-    return Promise.reject(error);
+  if (authHeaderResolver ===  null) {
+    console.log("apiCaller: authHeaderResolver not set");
+    return Promise.reject();
+  }
+  const auth = authHeaderResolver();
+  if (auth.error) {
+    return Promise.reject(auth.error);
   }
   let options = {
     method,
     headers: {
       Accept: 'application/json',
-      Authorization: authHeader
+      Authorization: auth.header
     }
   };
   if (body) {
@@ -81,7 +83,7 @@ export default store => next => action => {
   }
 
   let { endpoint } = callAPI;
-  const { types, method, body, allowEmptyResponse, params = [] } = callAPI;
+  const { actions, method, body, allowEmptyResponse, params = [] } = callAPI;
 
   if (typeof endpoint === 'function') {
     endpoint = endpoint(store.getState());
@@ -90,37 +92,24 @@ export default store => next => action => {
   if (typeof endpoint !== 'string') {
     throw new Error('Specify a string endpoint URL.');
   }
-  if (!Array.isArray(types) || types.length !== 3) {
-    throw new Error('Expected an array of three action types.');
+  if (!Array.isArray(actions) || actions.length !== 3) {
+    throw new Error('Expected an array of three actions.');
   }
-  if (!types.every(type => typeof type === 'string')) {
-    throw new Error('Expected action types to be strings.');
-  }
-
-  const actionWith = data => {
-    const finalAction = Object.assign({}, action, data);
-    delete finalAction[CALL_API];
-    return finalAction;
+  if (!actions.every(action => typeof action === 'function')) {
+    throw new Error('Expected actions to be functions.');
   }
 
-  const [requestType, successType, failureType] = types;
-  next(actionWith({ type: requestType }));
+  const [request, success, failure] = actions;
+  next(request());
 
   return apiCaller(endpoint, method, body, allowEmptyResponse, params).then(
-    response => next(actionWith({
-      response,
-      type: successType
-    })),
+    response => next(success(response)),
     error =>  {
-        next(actionWith({
-        type: failureType,
+      next(failure({
         errorObj: error,
         error: transformError(error)
       }));
-      throw {
-        message: transformError(error),
-        errorObj: error
-      };
+      throw new Error(transformError(error));
     }
   );
 }

@@ -1,4 +1,4 @@
-import { createActions, handleActions, combineActions } from 'redux-actions';
+import { createActions, handleActions } from 'redux-actions';
 
 const ALERT_SUCCESS = 'ALERT_SUCCESS';
 const ALERT_ERROR = 'ALERT_ERROR';

@@ -3,7 +3,6 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Card, CardBody, CardTitle } from 'reactstrap';
 
-import { authActions, subscriberActions } from '../../actions';
 import TextForm from './TextForm';
 
 class Notifications extends React.Component {
@@ -11,7 +10,6 @@ class Notifications extends React.Component {
   onSubmit = (text) => {
     //handle form processing here....
     console.log("Search On Submit")
-    this.props.getSubscriberAndBundles(text)
   }
   render() {
     return (
@@ -54,8 +52,5 @@ function mapStateToProps(state) {
     profile: subscriber
   };
 }
-const mapDispatchToProps = {
-  login: authActions.login,
-  getSubscriberAndBundles: subscriberActions.mockGetSubscriberAndBundles
-}
-export default connect(mapStateToProps, mapDispatchToProps)(Notifications);
+
+export default connect(mapStateToProps)(Notifications);

@@ -68,8 +68,8 @@ DataUsage.propTypes = {
 function mapStateToProps(state) {
   const { bundles } = state;
   let balance = null;
-  if (bundles.data) {
-    balance = humanReadableBytes(bundles.data[0].balance);
+  if (Array.isArray(bundles)) {
+    balance = humanReadableBytes(bundles[0].balance);
   }
   return {
     balance

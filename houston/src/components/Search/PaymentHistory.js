@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Table, Card, CardBody, CardTitle, Button, UncontrolledTooltip } from 'reactstrap';
 
-import { subscriberActions } from '../../actions';
+import { subscriberActions } from '../../actions/subscriber.actions';
 import { convertTimestampToDate } from '../../helpers';
 
 const HistoryRow = props => {
@@ -55,7 +55,7 @@ HistoryRow.propTypes = {
 };
 
 const PaymentHistory = props => {
-  if (!Array.isArray(props.paymentHistory)) return null;
+  if (!props.paymentHistory) return null;
   const listItems = props.paymentHistory.map((history, index) =>
     <HistoryRow item={history} key={history.id} refundPurchase={props.refundPurchase}/>
   );
@@ -88,12 +88,13 @@ PaymentHistory.propTypes = {
 };
 
 function mapStateToProps(state) {
-  const { loggedIn } = state.authentication;
-  const { paymentHistory } = state;
-
+  let paymentHistory = state.paymentHistory;
+  // Pass only arrays
+  if (!Array.isArray(paymentHistory)) {
+    paymentHistory = null;
+  }
   return {
-    loggedIn,
-    paymentHistory: paymentHistory.data
+    paymentHistory
   };
 }
 const mapDispatchToProps = {

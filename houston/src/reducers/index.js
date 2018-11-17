@@ -1,8 +1,7 @@
 import { combineReducers } from 'redux';
-import { authConstants } from '../actions/auth.actions';
-import { subscriberConstants } from '../constants';
-import { authActions } from '../actions';
+import { authConstants, authActions } from '../actions/auth.actions';
 import { store } from '../helpers';
+import { subscriberConstants } from '../actions/subscriber.actions';
 
 // Reducers.
 import alert from '../actions/alert.actions';
@@ -36,7 +35,10 @@ const rootReducer = (state, action) => {
     case subscriberConstants.SUBSCRIBER_BY_EMAIL_FAILURE:
       checkForAuthenticationFailures(action.errorObj);
       break;
+    default:
+      break;
   }
   return appReducer(state, action);
 };
+
 export default rootReducer;
