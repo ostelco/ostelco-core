@@ -6,24 +6,24 @@ import { getTextType } from '../../helpers';
 
 export default function SearchForm(props) {
   const input = useFormInput('havard.noren@telenordigital.com', props.onSubmit)
-    return (
-      <div className="container">
-        <Form onSubmit={input.onSubmit}>
-          <FormGroup>
-            <br />
-            <Label>Search user by phone number or email</Label>
-            <Input
-              type="email"
-              value={input.value}
-              onChange={input.onChange}
-              placeholder="Enter text"
-            />
-          </FormGroup>
-          <Button color="outline-primary" type="submit">Search</Button>
-        </Form>
-      </div>
-    );
-  }
+  return (
+    <div className="container">
+      <Form onSubmit={input.onSubmit}>
+        <FormGroup>
+          <br />
+          <Label>Search user by phone number or email</Label>
+          <Input
+            type="email"
+            value={input.value}
+            onChange={input.onChange}
+            placeholder="Enter text"
+          />
+        </FormGroup>
+        <Button color="outline-primary" type="submit">Search</Button>
+      </Form>
+    </div>
+  );
+}
 
 SearchForm.propTypes = {
   onSubmit: PropTypes.func.isRequired

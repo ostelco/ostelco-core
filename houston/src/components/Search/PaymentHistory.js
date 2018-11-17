@@ -19,15 +19,15 @@ const HistoryRow = props => {
     if (props.item.refund && props.item.refund.id) {
       return (
         <td>
-        <Button color="outline-secondary" onClick={nope} id={props.item.refund.id}>Refunded..</Button>
-        <UncontrolledTooltip placement="right" target={props.item.refund.id}>
-          {`Refunded on ${convertTimestampToDate(props.item.refund.timestamp)}, ${props.item.refund.reason}`}
-        </UncontrolledTooltip>
-      </td>
+          <Button color="outline-secondary" onClick={nope} id={props.item.refund.id}>Refunded..</Button>
+          <UncontrolledTooltip placement="right" target={props.item.refund.id}>
+            {`Refunded on ${convertTimestampToDate(props.item.refund.timestamp)}, ${props.item.refund.reason}`}
+          </UncontrolledTooltip>
+        </td>
       );
     } else {
       return (
-      <td><Button color="outline-primary" onClick={onRefund}>Refund</Button></td>
+        <td><Button color="outline-primary" onClick={onRefund}>Refund</Button></td>
       );
     }
   }
@@ -57,25 +57,25 @@ HistoryRow.propTypes = {
 const PaymentHistory = props => {
   if (!props.paymentHistory) return null;
   const listItems = props.paymentHistory.map((history, index) =>
-    <HistoryRow item={history} key={history.id} refundPurchase={props.refundPurchase}/>
+    <HistoryRow item={history} key={history.id} refundPurchase={props.refundPurchase} />
   );
   return (
     <Card>
       <CardBody>
         <CardTitle>Payment History</CardTitle>
-          <Table striped bordered>
-            <thead>
-              <tr>
-                <th>Plan</th>
-                <th>Price</th>
-                <th>Date</th>
-                <th>Options</th>
-              </tr>
-            </thead>
-            <tbody>
-              {listItems}
-            </tbody>
-          </Table>
+        <Table striped bordered>
+          <thead>
+            <tr>
+              <th>Plan</th>
+              <th>Price</th>
+              <th>Date</th>
+              <th>Options</th>
+            </tr>
+          </thead>
+          <tbody>
+            {listItems}
+          </tbody>
+        </Table>
       </CardBody>
     </Card>
   );

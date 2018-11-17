@@ -1,5 +1,4 @@
-import  _ from 'lodash';
-
+import _ from 'lodash';
 import { getAPIRoot } from '../services/config-variables';
 
 const API_ROOT = getAPIRoot();
@@ -16,7 +15,7 @@ const apiCaller = async (endpoint, method, body, allowEmptyResponse, params = []
   if (params.length > 0) {
     fullUrl += `?${params.join('&')}`;
   }
-  if (authHeaderResolver ===  null) {
+  if (authHeaderResolver === null) {
     console.log("apiCaller: authHeaderResolver not set");
     return Promise.reject();
   }
@@ -104,7 +103,7 @@ export default store => next => action => {
 
   return apiCaller(endpoint, method, body, allowEmptyResponse, params).then(
     response => next(success(response)),
-    error =>  {
+    error => {
       next(failure({
         errorObj: error,
         error: transformError(error)

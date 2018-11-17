@@ -7,7 +7,7 @@ import { authConstants, authActions } from '../actions/auth.actions';
 import { store } from '../helpers';
 import { setAuthResolver } from '../helpers/api';
 
-const authConfig  = getAuthConfig();
+const authConfig = getAuthConfig();
 class Auth {
   auth0 = new auth0.WebAuth({
     domain: authConfig.domain,
@@ -72,9 +72,9 @@ class Auth {
     this.user = { accessToken, expiresAt, name, email, picture };
     if (isAuthenticated) {
       history.replace('/search');
-      setTimeout(() => {store.dispatch(authActions.loginSuccess(this.user))});
+      setTimeout(() => { store.dispatch(authActions.loginSuccess(this.user)) });
     } else {
-      setTimeout(() => {store.dispatch(authActions.logout())});
+      setTimeout(() => { store.dispatch(authActions.logout()) });
     }
   }
 
@@ -87,7 +87,7 @@ class Auth {
     localStorage.removeItem('email');
     localStorage.removeItem('picture');
     // navigate to the home route
-    setTimeout(() => {history.replace('/home')});
+    setTimeout(() => { history.replace('/home') });
   }
 
   isAuthenticated(expiresAt) {
@@ -112,11 +112,11 @@ class Auth {
       console.log("apiCaller: Authentication failed");
       const error = {
         code: authConstants.AUTHENTICATION_FAILURE,
-        message:"Authentication failed"
+        message: "Authentication failed"
       };
-      return {error};
+      return { error };
     }
-    return {header};
+    return { header };
   }
 
 }

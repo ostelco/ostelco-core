@@ -1,4 +1,4 @@
-export const getTextType = (text)  => {
+export const getTextType = (text) => {
   const isPhoneNumber = /^[+]?\d+$/g.test(text)
   const isEmail = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test(text)
   if (isPhoneNumber) return 'phonenumber';
@@ -39,7 +39,7 @@ export const isChrome = () => {
   if (isIOSChrome) {
     // is Google Chrome on IOS
     return false;
-  } else if(
+  } else if (
     isChromium !== null &&
     typeof isChromium !== "undefined" &&
     vendorName === "Google Inc." &&
