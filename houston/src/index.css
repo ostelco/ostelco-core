@@ -18,7 +18,7 @@ code {
   line-height: 1.428;
 }
 
-.alerts {
+.alert {
   position:fixed;
   z-index: 999;
 }
