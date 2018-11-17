@@ -6,7 +6,7 @@ import { store } from '../helpers';
 
 // Reducers.
 import alert from '../actions/alert.actions';
-import authentication from './authentication.reducer';
+import authentication from './auth.reducer';
 import { subscriber, bundles, paymentHistory } from './subscriber.reducer';
 
 
