@@ -1,25 +1,32 @@
-import { authConstants } from '../constants';
+import { handleActions } from 'redux-actions';
+
+import { authService } from '../services';
+import { authActions } from '../actions';
 
 let user = JSON.parse(localStorage.getItem('user'));
-const initialState = user ? { loggedIn: true, user } : {};
+const defaultState = user ? { loggedIn: true, user } : {};
 
-export function authentication(state = initialState, action) {
-  switch (action.type) {
-    case authConstants.LOGIN_REQUEST:
-      return {
-        loggingIn: true,
-        user: null
-      };
-    case authConstants.LOGIN_SUCCESS:
-      return {
-        loggedIn: true,
-        user: action.user
-      };
-    case authConstants.LOGIN_FAILURE:
+const { loginRequest, loginSuccess, loginFailure, logout } = authActions;
+
+const reducer = handleActions(
+  {
+    [loginRequest]: () => {
+      authService.login()
+      return { loggingIn: true };
+    },
+    [loginSuccess]: (state, { payload }) => {
+      return { loggedIn: true, user: payload };
+    },
+    [logout]: () => {
+      authService.logout();
       return {};
-    case authConstants.LOGOUT:
+    },
+    [loginFailure]: () => {
+      authService.logout();
       return {};
-    default:
-      return state
-  }
-}
+    }
+  },
+  defaultState
+);
+
+export default reducer;

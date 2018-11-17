@@ -110,7 +110,7 @@ function mapStateToProps(state) {
   };
 }
 const mapDispatchToProps = {
-  login: authActions.login,
+  login: authActions.loginRequest,
   logout: authActions.logout
 }
 

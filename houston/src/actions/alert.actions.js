@@ -18,9 +18,7 @@ const reducer = handleActions(
     [alertError]: (state, { payload: { message } }) => {
       return { ...state, type: 'alert-danger', message };
     },
-    [clearAlert]: () => {
-      return defaultState;
-    }
+    [clearAlert]: () => defaultState
   },
   defaultState
 );

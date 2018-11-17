@@ -1,30 +1,15 @@
-import { authConstants } from '../constants';
-import { authService } from '../services';
+import { createActions } from 'redux-actions';
 
-export const authActions = {
-  login,
-  loginSuccess,
-  loginFailure,
-  logout
-};
+const LOGIN_REQUEST = 'LOGIN_REQUEST';
+const LOGIN_SUCCESS = 'LOGIN_SUCCESS';
+const LOGIN_FAILURE = 'LOGIN_FAILURE';
 
-function login() {
-  return dispatch => {
-    dispatch(request());
-    authService.login()
-  };
-  function request() { return { type: authConstants.LOGIN_REQUEST } }
-}
+const LOGOUT = 'LOGOUT';
+const AUTHENTICATION_FAILURE = 'AUTHENTICATION_FAILURE';
 
-function loginSuccess(user) {
-  return { type: authConstants.LOGIN_SUCCESS, user };
-}
-
-function loginFailure(error) {
-  return { type: authConstants.LOGIN_FAILURE, error };
-}
-
-function logout() {
-  authService.logout();
-  return { type: authConstants.LOGOUT };
-}
+export const authActions = createActions(
+  LOGIN_REQUEST,
+  LOGIN_SUCCESS,
+  LOGIN_FAILURE,
+  LOGOUT
+);

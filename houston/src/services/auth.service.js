@@ -17,13 +17,8 @@ class Auth {
   });
 
   constructor() {
-    this.user = {};
-    this.login = this.login.bind(this);
-    this.logout = this.logout.bind(this);
-    this.handleAuthentication = this.handleAuthentication.bind(this);
-    this.loadCurrentSession = this.loadCurrentSession.bind(this);
-    this.isAuthenticated = this.isAuthenticated.bind(this);
-    setTimeout(this.loadCurrentSession, 1);
+    this.user = null;
+    setTimeout(this.loadCurrentSession);
   }
 
   login() {
@@ -31,6 +26,7 @@ class Auth {
   }
 
   handleAuthentication(dispatch) {
+    this.user = {}; // initialize
     this.auth0.parseHash((err, authResult) => {
       if (authResult && authResult.accessToken) {
         this.setSession(authResult);
@@ -45,7 +41,6 @@ class Auth {
   }
 
   setSession(authResult) {
-    console.log(authResult);
     // Set the time that the access token will expire at
     let expiresAt = JSON.stringify((authResult.expiresIn * 1000) + new Date().getTime());
     localStorage.setItem('access_token', authResult.accessToken);
@@ -63,8 +58,8 @@ class Auth {
     this.user = { accessToken, expiresAt, name, email, picture };
   }
 
-  loadCurrentSession() {
-    console.log("loadCurrentSession");
+  loadCurrentSession = () => {
+    if (this.user !== null) return;
     const accessToken = localStorage.getItem('access_token');
     const expiresAt = localStorage.getItem('expires_at');
     const name = localStorage.getItem('name');
@@ -74,9 +69,9 @@ class Auth {
     this.user = { accessToken, expiresAt, name, email, picture };
     if (isAuthenticated) {
       history.replace('/search');
-      store.dispatch(authActions.loginSuccess(this.user));
+      setTimeout(() => {store.dispatch(authActions.loginSuccess(this.user))});
     } else {
-      store.dispatch(authActions.logout())
+      setTimeout(() => {store.dispatch(authActions.logout())});
     }
   }
 
@@ -89,7 +84,7 @@ class Auth {
     localStorage.removeItem('email');
     localStorage.removeItem('picture');
     // navigate to the home route
-    history.replace('/home');
+    setTimeout(() => {history.replace('/home')});
   }
 
   isAuthenticated(expiresAt) {
