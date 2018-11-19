@@ -192,6 +192,46 @@ abstract class SimInventoryDAO {
         }
     }
 
+
+
+    data class SimProfileVendor(val id:Long, val name:String) {
+        fun isAuthorizedForHlr(hlr: String): Boolean {
+            return true // Placeholder for an actoal database lookup.
+        }
+    }
+
+
+    class SimProfileVendorMapper : ResultSetMapper<SimProfileVendor> {
+
+        @Throws(SQLException::class)
+        override fun map(index: Int, r: ResultSet, ctx: StatementContext): SimProfileVendor? {
+            if (r.isAfterLast) {
+                return null
+            }
+
+            val id = r.getLong("id")
+            val name = r.getString("name")
+
+            return SimProfileVendor(
+                    id = id,
+                    name = name)
+        }
+    }
+
+
+    @SqlQuery("select * from sim_profile_vendor where name = :name")
+    @RegisterMapper(SimProfileVendorMapper::class)
+    abstract fun getProfilevendorByName(@Bind("name")name: String): SimProfileVendor
+
+
+
+    @SqlQuery("select * from sim_profile_vendor where id = :id")
+    @RegisterMapper(SimProfileVendorMapper::class)
+    abstract fun getProfilevendorById(@Bind("id")id: Long): SimProfileVendor
+
+
+
+
     @SqlQuery("select * from hlr_adapters where name = :name")
     @RegisterMapper(HlrAdapterMapper::class)
     abstract fun getHlrAdapterByName(@Bind("name")name: String): HlrAdapter
@@ -400,4 +440,12 @@ abstract class SimInventoryDAO {
 
     @SqlUpdate("drop  table smdp_plus_adapters")
     abstract fun dropSmdpPlusTable();
+
+
+
+    @SqlUpdate("create table sim_profile_vendor (id integer primary key autoincrement, name text,  CONSTRAINT Unique_Name UNIQUE (name))")
+    abstract fun createSimProfileVendorTable();
+
+    @SqlUpdate("drop  table sim_profile_vendor")
+    abstract fun dropSimProfileVendorTable();
 }

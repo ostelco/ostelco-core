@@ -312,5 +312,7 @@ class ES2PlusResourceTest {
         assertEquals(200, response.status)
 
         val simEntry = response.readEntity(SimImportBatch::class.java)
+
+        // XXX Verify a lot of things here!
     }
 }

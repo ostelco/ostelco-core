@@ -258,9 +258,16 @@ class EsimInventoryResource(val dao: SimInventoryDAO) {
             @NotEmpty @PathParam("profilevendor") profilevendor: String,
             csvInputStream: InputStream): SimImportBatch {
 
-        // XXX Check referential integrity of hlr and profilevendor
-        //      Also add a parameter for importer, and c heck if that importer
-        //      has the necessary permissions to perform imports.
+
+        val  pvp  =
+                assertNonNull(dao.getProfilevendorByName(profilevendor))
+
+        val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
+
+        if (!pvp.isAuthorizedForHlr(hlr)) {
+            throw WebApplicationException(Response.Status.BAD_REQUEST)
+        }
+
 
         return dao.importSims(
                 importer = "importer",
