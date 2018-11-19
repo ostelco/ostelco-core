@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { createActions } from 'redux-actions'
 
-import { CALL_API, createParams } from '../helpers/api';
+import { CALL_API } from '../helpers/api';
 import { alertActions } from './alert.actions';
 
 const SUBSCRIBER_BY_EMAIL_REQUEST = 'SUBSCRIBER_BY_EMAIL_REQUEST';
@@ -51,7 +51,7 @@ const fetchSubscriberByEmail = (email) => ({
       actions.subscriberByEmailRequest,
       actions.subscriberByEmailSuccess,
       actions.subscriberByEmailFailure],
-    endpoint: `profile/email/${encodeURIComponent(email)}`,
+    endpoint: `profile/email/${email}`,
     method: 'GET'
   }
 });
@@ -62,7 +62,7 @@ const fetchBundlesByEmail = (email) => ({
       actions.bundlesRequest,
       actions.bundlesSuccess,
       actions.bundlesFailure],
-    endpoint: `bundles/email/${encodeURIComponent(email)}`,
+    endpoint: `bundles/email/${email}`,
     method: 'GET'
   }
 });
@@ -73,7 +73,7 @@ const fetchPaymentHistoryByEmail = (email) => ({
       actions.paymentHistoryRequest,
       actions.paymentHistorySuccess,
       actions.paymentHistoryFailure],
-    endpoint: `purchases/email/${encodeURIComponent(email)}`,
+    endpoint: `purchases/email/${email}`,
     method: 'GET'
   }
 });
@@ -84,9 +84,9 @@ const putRefundPurchaseByEmail = (email, purchaseRecordId, reason) => ({
       actions.refundPaymentRequest,
       actions.refundPaymentSuccess,
       actions.refundPaymentFailure],
-    endpoint: `refunds/email/${encodeURIComponent(email)}`,
+    endpoint: `refunds/email/${email}`,
     method: 'PUT',
-    params: createParams({ purchaseRecordId, reason })
+    params: { purchaseRecordId, reason }
   }
 });
 

@@ -11,10 +11,13 @@ export function setAuthResolver(getterFunc) {
 const apiCaller = async (endpoint, method, body, allowEmptyResponse, params = []) => {
   let fullUrl = (endpoint.indexOf(API_ROOT) === -1) ? API_ROOT + endpoint : endpoint
 
-  // TODO: Params can contain invalid characters and should be url encoded
-  if (params.length > 0) {
-    fullUrl += `?${params.join('&')}`;
+  if (typeof params === 'object') {
+    fullUrl += createParams(params);
+  } else if (typeof params === 'string') {
+    fullUrl += params;
   }
+  fullUrl =  encodeURI(fullUrl);
+
   if (authHeaderResolver === null) {
     console.log("apiCaller: authHeaderResolver not set");
     return Promise.reject();
@@ -65,9 +68,10 @@ const apiCaller = async (endpoint, method, body, allowEmptyResponse, params = []
 
 export function createParams(params) {
   const array = _.toPairs(params);
-  return _.map(array, (kv) => {
+  const kvParams = _.map(array, (kv) => {
     return `${kv[0]}=${kv[1]}`;
   });
+  return `?${kvParams.join('&')}`
 }
 
 // Action key that carries API call info interpreted by this Redux middleware.
