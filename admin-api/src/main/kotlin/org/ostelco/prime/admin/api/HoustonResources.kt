@@ -14,6 +14,7 @@ import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.module.getResource
+import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
@@ -25,11 +26,17 @@ import javax.ws.rs.*
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
+/**
+ * Resource used to handle the profile related REST calls.
+ */
 @Path("/profile")
 class ProfileResource() {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
 
+    /**
+     * Get the subscriber profile.
+     */
     @GET
     @Path("email/{email}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -63,11 +70,17 @@ class ProfileResource() {
 
 }
 
+/**
+ * Resource used to handle bundles related REST calls.
+ */
 @Path("/bundles")
 class BundlesResource() {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
 
+    /**
+     * Get all bundles for the subscriber.
+     */
     @GET
     @Path("email/{email}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -100,11 +113,17 @@ class BundlesResource() {
     }
 }
 
+/**
+ * Resource used to handle purchase related REST calls.
+ */
 @Path("/purchases")
 class PurchaseResource() {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
 
+    /**
+     * Get all purchase history for the subscriber.
+     */
     @GET
     @Path("email/{email}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -137,11 +156,17 @@ class PurchaseResource() {
     }
 }
 
+/**
+ * Resource used to handle refunds related REST calls.
+ */
 @Path("/refunds")
 class RefundsResource() {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
 
+    /**
+     * Refund a specified purchase for the subscriber.
+     */
     @PUT
     @Path("email/{email}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -163,7 +188,10 @@ class RefundsResource() {
         logger.info("${token.name} Refunding purchase for $decodedEmail at id: $purchaseRecordId")
         return refundPurchase(decodedEmail, purchaseRecordId, reason).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.OK).entity(asJson(it)) })
+                {
+                    logger.info(NOTIFY_OPS_MARKER, "${token.name} refunded the purchase (id:$purchaseRecordId) for $decodedEmail ")
+                    Response.status(Response.Status.OK).entity(asJson(it))
+                })
                 .build()
     }
 
