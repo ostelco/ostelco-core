@@ -117,15 +117,22 @@ export default store => next => action => {
   );
 }
 
-function transformError(errorObj) {
+export function transformError(errorObj) {
   if (errorObj.errors) {
-    return errorObj.errors.join(', ')
+    if (Array.isArray(errorObj.errors)) {
+      return errorObj.errors.join(', ')
+    } else {
+      return errorObj.errors.toString()
+    }
   }
   if (errorObj.message) {
-    return errorObj.message
+    return errorObj.message.toString();
   }
   if (errorObj.error) {
     return errorObj.error.toString()
+  }
+  if (typeof errorObj === 'string') {
+    return errorObj;
   }
   return 'Something bad happened';
 }
