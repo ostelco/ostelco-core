@@ -201,7 +201,6 @@ class StripePaymentProcessorTest {
 
         val resultRefundCharge = paymentProcessor.refundCharge(resultAuthorizeCharge.fold({ "" }, { it } ), amount, currency)
         assertEquals(true, resultRefundCharge.isRight())
-        assertEquals(resultAuthorizeCharge.fold({ "" }, { it } ), resultRefundCharge.fold({ "" }, { it } ))
 
         val resultRemoveSource = paymentProcessor.removeSource(stripeCustomerId, resultAddSource.fold({ "" }, { it.id }))
         assertEquals(true, resultRemoveSource.isRight())

@@ -101,7 +101,7 @@ paths:
           schema:
             $ref: '#/definitions/ApplicationToken'
         400:
-          descripton: "Token malformed. Not able to store"
+          description: "Token malformed. Not able to store"
         404:
           description: "User not found."
         507:
@@ -469,6 +469,8 @@ definitions:
         format: int64
       product:
         $ref: '#/definitions/Product'
+      refund:
+        $ref: '#/definitions/Refund'
     required:
       - timestamp
       - product
@@ -491,6 +493,31 @@ definitions:
     required:
       - sku
       - price
+  ProductInfo:
+    type: object
+    properties:
+      id:
+        description: "A unique Id representing a SKU"
+        type: string
+    required:
+    - id
+  Refund:
+    type: object
+    properties:
+      id:
+        description: "A unique Id representing a refund object"
+        type: string
+      reason:
+        description: "Reason provided while refunding"
+        type: string
+      timestamp:
+        description: "The time stamp of the refund"
+        type: integer
+        format: int64
+    required:
+    - id
+    - reason
+    - timestamp
   PaymentSourceList:
     type: array
     items:

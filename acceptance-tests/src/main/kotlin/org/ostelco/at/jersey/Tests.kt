@@ -7,20 +7,7 @@ import org.ostelco.at.common.createSubscription
 import org.ostelco.at.common.expectedProducts
 import org.ostelco.at.common.getLogger
 import org.ostelco.at.common.randomInt
-import org.ostelco.prime.client.model.ActivePseudonyms
-import org.ostelco.prime.client.model.ApplicationToken
-import org.ostelco.prime.client.model.Bundle
-import org.ostelco.prime.client.model.BundleList
-import org.ostelco.prime.client.model.Consent
-import org.ostelco.prime.client.model.PaymentSource
-import org.ostelco.prime.client.model.PaymentSourceList
-import org.ostelco.prime.client.model.Person
-import org.ostelco.prime.client.model.Price
-import org.ostelco.prime.client.model.Product
-import org.ostelco.prime.client.model.Profile
-import org.ostelco.prime.client.model.PurchaseRecord
-import org.ostelco.prime.client.model.PurchaseRecordList
-import org.ostelco.prime.client.model.Subscription
+import org.ostelco.prime.client.model.*
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.Instant
@@ -453,6 +440,8 @@ class SourceTest {
 
 class PurchaseTest {
 
+    private val logger by getLogger()
+
     @Test
     fun `jersey test - POST products purchase`() {
 
@@ -544,6 +533,70 @@ class PurchaseTest {
 
             assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
             assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
+        } finally {
+            StripePayment.deleteCustomer(email = email)
+        }
+    }
+
+    @Test
+    fun `jersey test - Refund purchase using default source`() {
+
+        val email = "purchase-${randomInt()}@test.com"
+        try {
+            createProfile(name = "Test Purchase User with Default Payment Source", email = email)
+
+            val sourceId = StripePayment.createPaymentTokenId()
+
+            val paymentSource: PaymentSource = post {
+                path = "/paymentSources"
+                subscriberId = email
+                queryParams = mapOf("sourceId" to sourceId)
+            }
+
+            assertNotNull(paymentSource.id, message = "Failed to create payment source")
+
+            val balanceBefore = get<List<Bundle>> {
+                path = "/bundles"
+                subscriberId = email
+            }.first().balance
+
+            val productSku = "1GB_249NOK"
+
+            post<String> {
+                path = "/products/$productSku/purchase"
+                subscriberId = email
+            }
+
+            Thread.sleep(100) // wait for 100 ms for balance to be updated in db
+
+            val balanceAfter = get<List<Bundle>> {
+                path = "/bundles"
+                subscriberId = email
+            }.first().balance
+
+            assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
+
+            val purchaseRecords: PurchaseRecordList = get {
+                path = "/purchases"
+                subscriberId = email
+            }
+
+            purchaseRecords.sortBy { it.timestamp }
+
+            assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
+            assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
+
+            val encodedEmail = URLEncoder.encode(email, "UTF-8")
+            val refundedProduct:ProductInfo  = put<ProductInfo> {
+                path = "/refunds/email/$encodedEmail"
+                subscriberId = email
+                queryParams = mapOf(
+                        "purchaseRecordId" to purchaseRecords.last().id,
+                        "reason" to "requested_by_customer")
+            }
+            logger.info("Refunded product: ${refundedProduct} with purchase id:${purchaseRecords.last().id}")
+            assertEquals(productSku, refundedProduct.id, "Refund returned a different product")
+
         } finally {
             StripePayment.deleteCustomer(email = email)
         }

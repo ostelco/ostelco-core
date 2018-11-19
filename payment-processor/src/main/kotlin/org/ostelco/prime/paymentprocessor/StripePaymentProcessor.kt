@@ -258,7 +258,7 @@ class StripePaymentProcessor : PaymentProcessor {
                 amount == 0 -> Either.right(chargeId)
                 else -> either("Failed to refund charge $chargeId") {
                     val refundParams = mapOf("charge" to chargeId)
-                    Refund.create(refundParams).charge
+                    Refund.create(refundParams).id
                 }
             }
 
