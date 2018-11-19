@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { Button, Form, FormGroup, Label, Input } from 'reactstrap';
 
 export default function TextForm(props) {
-  const input = useFormInput('sdasdsadas', props.onSubmit);
+  const input = useFormInput('', props.onSubmit);
   return (
     <Form onSubmit={input.onSubmit}>
       <FormGroup>
