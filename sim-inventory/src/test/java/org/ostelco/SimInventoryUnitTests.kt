@@ -44,7 +44,7 @@ class ES2PlusResourceTest {
     fun fakeEntryWithoutMsisdn() : SimEntry {
         return SimEntry(
                 id = 1L,
-                hlrId = "foo",
+                hlrId = "Loltel",
                 batch = 99L,
                 iccid = fakeIccid1,
                 imsi = fakeImsi1,
@@ -61,7 +61,8 @@ class ES2PlusResourceTest {
     fun fakeEntryWithoutMsisdnAndSmdpplus() : SimEntry {
         return SimEntry(
                 id = 1L,
-                hlrId = "foo",
+                hlrId = fakeHlr,
+                smdpplus = "Loltel",
                 batch = 99L,
                 iccid = fakeIccid1,
                 imsi = fakeImsi1,
@@ -77,7 +78,7 @@ class ES2PlusResourceTest {
     fun fakeEntryWithMsisdn() : SimEntry{
         return SimEntry(
                 id = 1L,
-                hlrId = "foo",
+                hlrId = "Loltel",
                 batch = 99L,
                 iccid = fakeIccid2,
                 imsi = fakeImsi2,
@@ -107,7 +108,7 @@ class ES2PlusResourceTest {
         this.fakeEnrtryWithoutMsisdnAndSmdpplus = fakeEntryWithoutMsisdnAndSmdpplus()
 
 
-        val mockHlrAdapter = HlrAdapter(1L, "Loltel")
+        val mockHlrAdapter = HlrAdapter(1L, fakeHlr)
         val mockSmdpplusAdapter = SmdpPlusAdapter(1L, "Loltel")
 
         reset(dao)
@@ -140,16 +141,18 @@ class ES2PlusResourceTest {
         org.mockito.Mockito.`when`(dao.findNextFreeSimForMsisdn(fakeHlr))
                 .thenReturn(fakeSimEntryWithoutMsisdn)
 
-        org.mockito.Mockito.`when`(dao.getHlrAdapterByName("Loltel"))
+        org.mockito.Mockito.`when`(dao.getHlrAdapterByName(fakeHlr))
                 .thenReturn(mockHlrAdapter)
 
         org.mockito.Mockito.`when`(dao.getSmdpPlusAdapterByName("Loltel"))
                 .thenReturn(mockSmdpplusAdapter)
+
+
     }
 
     @Test
     fun testFindByIccidPositiveResult() {
-        val response = RULE.target("/ostelco/sim-inventory/Loltel/iccid/$fakeIccid1")
+        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/iccid/$fakeIccid1")
                 .request(MediaType.APPLICATION_JSON)
                 .get()
 
@@ -163,7 +166,7 @@ class ES2PlusResourceTest {
 
     @Test
     fun testFindByIccidNegativeResult() {
-        val response = RULE.target("/ostelco/sim-inventory/Loltel/iccid/$fakeIccid2")
+        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/iccid/$fakeIccid2")
                 .request(MediaType.APPLICATION_JSON)
                 .get()
 
@@ -187,7 +190,7 @@ class ES2PlusResourceTest {
 
     @Test
     fun testFindByImsiNegativeResult() {
-        val response = RULE.target("/ostelco/sim-inventory/Loltel/imsi/$fakeImsi2")
+        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/imsi/$fakeImsi2")
                 .request(MediaType.APPLICATION_JSON)
                 .get()
 
@@ -197,7 +200,7 @@ class ES2PlusResourceTest {
 
     @Test
     fun testFindByMsisdnPositiveResult() {
-        val response = RULE.target("/ostelco/sim-inventory/Loltel/msisdn/$fakeMsisdn1")
+        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/msisdn/$fakeMsisdn1")
                 .request(MediaType.APPLICATION_JSON)
                 .get()
 
@@ -211,7 +214,7 @@ class ES2PlusResourceTest {
 
     @Test
     fun testFindByMsisdnNegativeResult() {
-        val response = RULE.target("/ostelco/sim-inventory/Loltel/msisdn/$fakeMsisdn2")
+        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/msisdn/$fakeMsisdn2")
                 .request(MediaType.APPLICATION_JSON)
                 .get()
 
@@ -233,7 +236,7 @@ class ES2PlusResourceTest {
 
     @Test
     fun testActivateAll() {
-        val response = RULE.target("/ostelco/sim-inventory/iccid/$fakeIccid1/activate/all")
+        val response = RULE.target("/ostelco/sim-inventory/Loltel/iccid/$fakeIccid1/activate/all")
                 .request(MediaType.APPLICATION_JSON)
                 .get() // XXX Post
 
@@ -288,9 +291,6 @@ class ES2PlusResourceTest {
 
         val simEntry = response.readEntity(SimEntry::class.java)
     }
-
-    //  @Path("/import-batch/sim-profile-vendor/{profilevendor}")
-    // Test importing a CSV file from the resources.
 
     @Test
     fun testImport() {

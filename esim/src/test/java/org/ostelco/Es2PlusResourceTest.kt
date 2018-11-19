@@ -79,7 +79,7 @@ class ES2PlusResourceTest {
                                 iccid = "01234567890123456789",
                                 matchingId = "foo",
                                 confirmationCode = "bar",
-                                smdsAddress = "baz",
+                                smdsAddress =matc h "baz",
                                 releaseFlag = true)), 200)
                 .readEntity(Es2ConfirmOrderResponse::class.java)
     }
