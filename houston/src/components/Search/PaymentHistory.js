@@ -7,6 +7,8 @@ import { subscriberActions } from '../../actions/subscriber.actions';
 import { convertTimestampToDate } from '../../helpers';
 
 const HistoryRow = props => {
+  const isRefunded = () => (props.item.refund && props.item.refund.id);
+  const isFreeProduct = () => (props.item.product.price.amount <= 0);
   function onRefund(e) {
     e.preventDefault();
     console.log(`Reverting ${props.item.id}`);
@@ -16,7 +18,7 @@ const HistoryRow = props => {
     e.preventDefault();
   }
   function renderOption() {
-    if (props.item.refund && props.item.refund.id) {
+    if (isRefunded()) {
       return (
         <td>
           <Button color="outline-secondary" onClick={nope} id={props.item.refund.id}>Refunded..</Button>
@@ -25,6 +27,8 @@ const HistoryRow = props => {
           </UncontrolledTooltip>
         </td>
       );
+    } else if(isFreeProduct()) {
+      return (<td />);
     } else {
       return (
         <td><Button color="outline-primary" onClick={onRefund}>Refund</Button></td>
