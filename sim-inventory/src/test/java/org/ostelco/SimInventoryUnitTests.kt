@@ -62,7 +62,7 @@ class ES2PlusResourceTest {
         return SimEntry(
                 id = 1L,
                 hlrId = fakeHlr,
-                smdpplus = "Loltel",
+                smdpplus =  null,
                 batch = 99L,
                 iccid = fakeIccid1,
                 imsi = fakeImsi1,
@@ -131,6 +131,7 @@ class ES2PlusResourceTest {
 
         org.mockito.Mockito.`when`(dao.getSimProfileByImsi(fakeImsi2))
                 .thenReturn(null)
+
 
         org.mockito.Mockito.`when`(dao.getSimProfileByMsisdn(fakeMsisdn1))
                 .thenReturn(fakeSimEntryWithMsisdn)
