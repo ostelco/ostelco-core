@@ -16,7 +16,7 @@ const apiCaller = async (endpoint, method, body, allowEmptyResponse, params = []
   } else if (typeof params === 'string') {
     fullUrl += params;
   }
-  fullUrl =  encodeURI(fullUrl);
+  fullUrl = encodeURI(fullUrl);
 
   if (authHeaderResolver === null) {
     console.log("apiCaller: authHeaderResolver not set");
@@ -124,15 +124,13 @@ export function transformError(errorObj) {
     } else {
       return errorObj.errors.toString()
     }
-  }
-  if (errorObj.message) {
+  } else if (errorObj.message) {
     return errorObj.message.toString();
-  }
-  if (errorObj.error) {
+  } else if (errorObj.error) {
     return errorObj.error.toString()
-  }
-  if (typeof errorObj === 'string') {
+  } else if (typeof errorObj === 'string') {
     return errorObj;
+  } else {
+    return 'Something bad happened';
   }
-  return 'Something bad happened';
 }
