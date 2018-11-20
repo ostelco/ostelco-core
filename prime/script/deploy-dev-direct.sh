@@ -10,7 +10,7 @@ fi
 kubectl config use-context $(kubectl config get-contexts --output name | grep dev-cluster)
 
 PROJECT_ID="$(gcloud config get-value project -q)"
-PRIME_VERSION="$(gradle prime:properties -q | grep "version:" | awk '{print $2}' | tr -d '[:space:]')"
+PRIME_VERSION="$(./gradlew prime:properties -q | grep "version:" | awk '{print $2}' | tr -d '[:space:]')"
 SHORT_SHA="$(git log -1 --pretty=format:%h)"
 TAG="${PRIME_VERSION}-${SHORT_SHA}-dev"
 
@@ -20,7 +20,7 @@ echo SHORT_SHA=${SHORT_SHA}
 echo TAG=${TAG}
 
 
-gradle prime:clean prime:build
+./gradlew prime:clean prime:build
 docker build -t eu.gcr.io/${PROJECT_ID}/prime:${TAG} prime
 docker push eu.gcr.io/${PROJECT_ID}/prime:${TAG}
 

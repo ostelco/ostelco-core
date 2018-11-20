@@ -1,0 +1,244 @@
+swagger: "2.0"
+info:
+  title: "Houston Admin API"
+  description: "The APIs for the Houston Admin Client."
+  version: "1.0.0"
+host: "houston-api.dev.ostelco.org"
+x-google-endpoints:
+  - name: "houston-api.dev.ostelco.org"
+    allowCors: true
+schemes:
+  - "https"
+paths:
+  "/profile/email/{email}":
+    get:
+      description: "Get profile for the given email-id (url encoded)."
+      produces:
+      - application/json
+      operationId: "getProfileByEmail"
+      responses:
+        200:
+          description: "Get the profile for this user."
+          schema:
+            $ref: '#/definitions/Profile'
+        404:
+          description: "Profile not found."
+      security:
+      - auth0_jwt: []
+      parameters:
+      - name: email
+        in: path
+        description: "The email of the user"
+        required: true
+        type: string
+  "/profile/msisdn/{msisdn}":
+    get:
+      description: "Get profile for the given msisdn."
+      produces:
+      - application/json
+      operationId: "getProfileByMsisdn"
+      responses:
+        200:
+          description: "Get the profile for this user."
+          schema:
+            $ref: '#/definitions/Profile'
+        404:
+          description: "Profile not found."
+      security:
+      - auth0_jwt: []
+      parameters:
+      - name: msisdn
+        in: path
+        description: "The phone number of the user"
+        required: true
+        type: string
+  "/bundles/email/{email}":
+    get:
+      description: "Get bundles (balance) for the user (identified by email)."
+      produces:
+      - application/json
+      operationId: "getBundlesByEmail"
+      responses:
+        200:
+          description: "Get bundles for this user."
+          schema:
+            $ref: '#/definitions/BundleList'
+        404:
+          description: "No bundle found for this user."
+      security:
+      - auth0_jwt: []
+      parameters:
+      - name: email
+        in: path
+        description: "The email of the user"
+        required: true
+        type: string
+  "/purchases/email/{email}":
+    get:
+      description: "Get list of all purchases."
+      produces:
+      - application/json
+      - text/plain
+      operationId: "getPurchaseHistoryByEmail"
+      responses:
+        200:
+          description: "List of Purchase Records."
+          schema:
+            $ref: '#/definitions/PurchaseRecordList'
+        403:
+          description: "Not allowed to charge this source"
+        404:
+          description: "No Purchase Records found for the user."
+        503:
+          description: "Service Unavailable"
+      security:
+      - auth0_jwt: []
+      parameters:
+      - name: email
+        in: path
+        description: "The email of the user"
+        required: true
+        type: string
+  "/refunds/email/{email}":
+    put:
+      description: "Full refund of a purchase."
+      produces:
+      - application/json
+      - text/plain
+      operationId: "refundPurchaseByEmail"
+      responses:
+        200:
+          description: "Purchase is refunded."
+          schema:
+            type: object
+        403:
+          description: "Forbidden to refund this Purchase"
+        404:
+          description: "Purchase record not found"
+        502:
+          description: "Failed to refund purchase"
+      security:
+      - auth0_jwt: []
+      parameters:
+      - name: email
+        in: path
+        description: "The email of the user"
+        required: true
+        type: string
+      - name: purchaseRecordId
+        in: query
+        description: "The record id of the purchase to be refunded"
+        required: true
+        type: string
+      - name: reason
+        in: query
+        description: "The reason for refund"
+        required: true
+        type: string
+definitions:
+  Profile:
+    type: object
+    properties:
+      name:
+        type: string
+      address:
+        type: string
+      postCode:
+        type: string
+      city:
+        type: string
+      country:
+        type: string
+      email:
+        type: string
+        format: email
+      referralId:
+        type: string
+    required:
+    - email
+  SubscriptionList:
+    type: array
+    items:
+      $ref: '#/definitions/Subscription'
+  Subscription:
+    type: object
+    properties:
+      msisdn:
+        description: "Mobile number for this subscription"
+        type: string
+      alias:
+        description: "Human readable optional alias for this subscription"
+        type: string
+  BundleList:
+    type: array
+    items:
+      $ref: '#/definitions/Bundle'
+  Bundle:
+    type: object
+    properties:
+      id:
+        description: "Bundle ID"
+        type: string
+      balance:
+        description: "Balance units in this bundle"
+        type: integer
+        format: int64
+  PurchaseRecordList:
+    type: array
+    items:
+      $ref: '#/definitions/PurchaseRecord'
+  PurchaseRecord:
+    type: object
+    properties:
+      id:
+        description: "Purchase Record ID"
+        type: string
+      msisdn:
+        description: "Deprecated: The MSISDN for which the purchase was made."
+        type: string
+      timestamp:
+        description: "The time stamp of the purchase"
+        type: integer
+        format: int64
+      product:
+        $ref: '#/definitions/Product'
+    required:
+    - timestamp
+    - product
+    - end
+  Product:
+    type: object
+    properties:
+      sku:
+        description: "A unique Id representing a SKU"
+        type: string
+      price:
+        $ref: '#/definitions/Price'
+      properties:
+        type: object
+      presentation:
+        type: object
+    required:
+    - sku
+    - price
+  Price:
+    type: object
+    properties:
+      amount:
+        description: "A positive integer in the smallest currency unit"
+        type: integer
+        minimum: 0
+      currency:
+        description: "ISO 4217 currency code (three letter alphabetic code)"
+        type: string
+    required:
+    - amount
+    - currency
+securityDefinitions:
+  auth0_jwt:
+    authorizationUrl: "https://redotter-admin-dev.eu.auth0.com/authorize"
+    flow: "implicit"
+    type: "oauth2"
+    x-google-issuer: "https://redotter-admin-dev.eu.auth0.com/"
+    x-google-jwks_uri: "https://redotter-admin-dev.eu.auth0.com/.well-known/jwks.json"
+    x-google-audiences: "http://google_api"
