@@ -45,7 +45,7 @@ class JsonSchemaValidator(private val schemaRoot: String) {
     }
 
     @Throws(WebApplicationException::class)
-    public fun validateString(payloadClass: Class<*>, body: String, error: Response.Status) {
+    fun validateString(payloadClass: Class<*>, body: String, error: Response.Status) {
         val schemaAnnotation = payloadClass.getAnnotation<JsonSchema>(JsonSchema::class.java)
         if (schemaAnnotation != null) {
             try {
