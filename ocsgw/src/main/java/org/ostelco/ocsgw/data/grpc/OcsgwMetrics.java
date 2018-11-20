@@ -1,6 +1,6 @@
 package org.ostelco.ocsgw.data.grpc;
 
-import com.google.auth.oauth2.ServiceAccountJwtAccessCredentials;
+import com.google.auth.oauth2.GoogleCredentials;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
@@ -46,7 +46,7 @@ class OcsgwMetrics {
 
     private OcsgwAnalyticsReport lastActiveSessions = null;
 
-    OcsgwMetrics(String metricsServerHostname, ServiceAccountJwtAccessCredentials credentials) {
+    OcsgwMetrics(String metricsServerHostname, GoogleCredentials credentials) {
 
         try {
             final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder
@@ -55,8 +55,8 @@ class OcsgwMetrics {
                     .keepAliveTimeout(KEEP_ALIVE_TIMEOUT_IN_MINUTES, TimeUnit.MINUTES)
                     .keepAliveTime(KEEP_ALIVE_TIME_IN_SECONDS, TimeUnit.SECONDS);
 
-            final ManagedChannelBuilder channelBuilder = Files.exists(Paths.get("/config/metrics.crt"))
-                        ? nettyChannelBuilder.sslContext(GrpcSslContexts.forClient().trustManager(new File("/config/metrics.crt")).build())
+            final ManagedChannelBuilder channelBuilder = Files.exists(Paths.get("/cert/metrics.crt"))
+                        ? nettyChannelBuilder.sslContext(GrpcSslContexts.forClient().trustManager(new File("/cert/metrics.crt")).build())
                         : nettyChannelBuilder;
 
             final ManagedChannel channel = channelBuilder

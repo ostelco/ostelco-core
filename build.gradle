@@ -55,17 +55,7 @@ subprojects {
   }
 }
 
-task pack(dependsOn: ['packDev', 'packProd'])
-
-task packDev(type: Zip, dependsOn: [':ocsgw:packDev', ':auth-server:pack']) {
-  from zipTree('ocsgw/build/deploy/dev/ocsgw.zip')
-  from zipTree('auth-server/build/deploy/auth-server.zip')
-  from 'docker-compose.yaml'
-  from 'docker-compose.dev.yaml'
-  rename 'docker-compose.dev.yaml','docker-compose.override.yaml'
-  archiveName = 'ostelco-core-dev.zip'
-  destinationDir = file('build/deploy/')
-}
+task pack(dependsOn: ['packProd'])
 
 task packProd(type: Zip, dependsOn: [':ocsgw:packProd', ':auth-server:pack']) {
   from zipTree('ocsgw/build/deploy/prod/ocsgw.zip')

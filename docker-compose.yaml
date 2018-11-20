@@ -7,6 +7,9 @@ services:
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/config/pantel-prod.json
       - GOOGLE_CLOUD_PROJECT=pantel-2decb
+    volumes:
+      - ./ocsgw/cert:/cert/
+      - ./ocsgw/config:/config/
   auth-server:
     container_name: auth-server
     build: auth-server
