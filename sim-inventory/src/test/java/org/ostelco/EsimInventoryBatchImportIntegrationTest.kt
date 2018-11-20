@@ -1,6 +1,7 @@
 package org.ostelco
 
 import io.dropwizard.client.JerseyClientBuilder
+import io.dropwizard.db.PooledDataSourceFactory
 import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
 import junit.framework.TestCase
@@ -11,6 +12,10 @@ import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 import org.junit.Before
 import java.math.BigInteger
+import org.skife.jdbi.v2.sqlobject.SqlObjectBuilder.onDemand
+import org.skife.jdbi.v2.DBI
+import io.dropwizard.jdbi.DBIFactory
+import io.dropwizard.setup.Environment
 
 
 class EsimInventoryBatchImportTest() {
@@ -19,7 +24,7 @@ class EsimInventoryBatchImportTest() {
     public companion object {
         @JvmField
         @ClassRule
-        public val RULE =
+        val RULE =
                 DropwizardAppRule(
                         SimAdministrationApplication::class.java,
                         ResourceHelpers.resourceFilePath("config.yml"))
@@ -27,15 +32,20 @@ class EsimInventoryBatchImportTest() {
 
     @Before
     fun initializeApp() {
+        val factory = DBIFactory()
+        val jdbi2 = factory.build(
+                RULE.environment,
+                RULE.configuration.database, "sqlite2")
+        val daoForCreationAndDeletion =
+                jdbi2.onDemand(SimInventoryCreationDestructionDAO::class.java)
 
+        daoForCreationAndDeletion.dropAll()
+
+        // Then make new tables.
+        daoForCreationAndDeletion.createAll()
 
         // First delete whatever we can delete of old tables
         val dao = RULE.getApplication<SimAdministrationApplication>().simInventoryDAO
-        dao.dropAll()
-
-        // Then make new tables.
-        dao.createAll()
-
         // The set up the necessary entities to permit import.
         dao.addSimProfileVendor("Idemia")
         dao.addHlrAdapter("Loltel")
@@ -68,7 +78,7 @@ class SimFactoryEmulator(val batchSize: Int) {
 
     val imsiStart = BigInteger.valueOf(410072821393853L)
     val iccidStart = BigInteger.valueOf(1234567890123456789L)
-    var rollingNumber    = 0L
+    var rollingNumber = 0L
 
     fun imsi(i: Int): String {
         return imsiStart.add(BigInteger.valueOf(i.toLong())).toString()
@@ -78,18 +88,18 @@ class SimFactoryEmulator(val batchSize: Int) {
         return iccidStart.add(BigInteger.valueOf(i.toLong())).toString()
     }
 
-    fun nextFourDigitNumber() : String {
+    fun nextFourDigitNumber(): String {
         rollingNumber += 1
         return "%04d".format(rollingNumber % 10000).toString()
     }
 
-    fun simBatchOutFileAsString():String {
+    fun simBatchOutFileAsString(): String {
         // NOTE: Doesn't scale up very far, should scale to several million before we're happy
         val header = "ICCID, IMSI, PIN1, PIN2, PUK1, PUK2\n"
 
         val sample = StringBuilder(header)
         for (i in 1..100) { // Works well up to 10000, after that it breaks
-           val s =  "%s, %s, %s, %s, %s, %s\n".format(
+            val s = "%s, %s, %s, %s, %s, %s\n".format(
                     iccid(i),
                     imsi(i),
                     nextFourDigitNumber(),
