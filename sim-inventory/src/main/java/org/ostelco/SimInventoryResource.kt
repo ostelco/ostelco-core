@@ -15,13 +15,16 @@ import javax.ws.rs.core.Response
 @Path("/ostelco/sim-inventory/{hlr}/")
 class SimInventoryResource(val dao: SimInventoryDAO) {
 
-    private fun <T> assertNonNull(v: T?): T {
-        if (v == null) {
-            throw WebApplicationException(Response.Status.NOT_FOUND)
-        } else {
-            return v
+    companion object {
+        private fun <T> assertNonNull(v: T?): T {
+            if (v == null) {
+                throw WebApplicationException(Response.Status.NOT_FOUND)
+            } else {
+                return v
+            }
         }
     }
+
 
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
@@ -169,7 +172,7 @@ class SimInventoryResource(val dao: SimInventoryDAO) {
 
         val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
 
-        if (!pvp.isAuthorizedForHlr(hlr)) {
+        if (!dao.simVendorIsPermittedForHlr(pvp.id, hlrAdapter.id)) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }
 

@@ -16,6 +16,8 @@ import java.sql.ResultSet
 import java.sql.SQLException
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.AtomicLong
+import javax.ws.rs.WebApplicationException
+import javax.ws.rs.core.Response
 
 
 /**
@@ -165,6 +167,25 @@ class SimEntryIterator(hlrId: String, batchId: Long, csvInputStream: InputStream
     }
 }
 
+data class SimProfileVendor(val id: Long, val name: String)
+
+class SimProfileVendorMapper : ResultSetMapper<SimProfileVendor> {
+
+    @Throws(SQLException::class)
+    override fun map(index: Int, r: ResultSet, ctx: StatementContext): SimProfileVendor? {
+        if (r.isAfterLast) {
+            return null
+        }
+
+        val id = r.getLong("id")
+        val name = r.getString("name")
+
+        return SimProfileVendor(
+                id = id,
+                name = name)
+    }
+}
+
 
 /**
  * The DAO we're using to access the SIM inventory, and also the
@@ -234,37 +255,39 @@ abstract class SimInventoryDAO {
     }
 
 
-    data class SimProfileVendor(val id: Long, val name: String) {
-
-        val authrizedHlrs = mutableListOf<String>()
-
-        fun isAuthorizedForHlr(hlr: String): Boolean {
-            return true // Placeholder for an actoal database lookup.
-        }
-
-        fun addAuthorizationFor(mockHlrAdapter: HlrAdapter) {
-            authrizedHlrs.add(mockHlrAdapter.name)
-        }
-    }
-
-
-    class SimProfileVendorMapper : ResultSetMapper<SimProfileVendor> {
-
-        @Throws(SQLException::class)
-        override fun map(index: Int, r: ResultSet, ctx: StatementContext): SimProfileVendor? {
-            if (r.isAfterLast) {
-                return null
+    companion object {
+        private fun <T> assertNonNull(v: T?): T {
+            if (v == null) {
+                throw WebApplicationException(Response.Status.NOT_FOUND)
+            } else {
+                return v
             }
-
-            val id = r.getLong("id")
-            val name = r.getString("name")
-
-            return SimProfileVendor(
-                    id = id,
-                    name = name)
         }
     }
 
+    @Transaction
+    fun permitVendorForHlrByNames(vendor: String, hlr: String) {
+        val hlrAdapter = assertNonNull(getHlrAdapterByName(hlr))
+        val simVendorEntry = assertNonNull(getProfilevendorByName(vendor))
+        storeSimVendorForHlrPermission(simVendorEntry.id, hlrAdapter.id)
+    }
+
+
+    @SqlQuery("select id from sim_vendors_permitted_hlrs where vendorId = vendorId AND hlrId = :hlrId")
+    abstract fun findSimVendorForHlrPermissions(@Bind("vendorId")vendorId: Long, @Bind("hlrId")hlrId: Long): List<Long>
+
+    fun simVendorIsPermittedForHlr(@Bind("vendorId")vendorId: Long,  @Bind("hlrId")hlrId: Long): Boolean {
+        return (findSimVendorForHlrPermissions(vendorId,hlrId).size != 0)
+    }
+
+    @SqlUpdate("INSERT INTO sim_vendors_permitted_hlrs (vendorId, hlrId) VALUES (:vendorId, :hlrId)")
+    abstract fun storeSimVendorForHlrPermission(@Bind("vendorId") vendorId: Long, @Bind("hlrId") hlrId: Long)
+
+    @SqlUpdate("INSERT INTO hlr_adapters (name) VALUES (:name)")
+    abstract fun addHlrAdapter(@Bind("name")name: String)
+
+    @SqlUpdate("INSERT INTO sim_profile_vendor (name) VALUES (:name)")
+    abstract fun addSimProfileVendor(@Bind("name")name: String)
 
     @SqlQuery("select * from sim_profile_vendor where name = :name")
     @RegisterMapper(SimProfileVendorMapper::class)
@@ -454,46 +477,47 @@ abstract class SimInventoryDAO {
     }
 
 
-
     fun createAll() {
-        try {
-            createImportBatchesTable()
-        } catch (e: Exception) {
-            println("Couldn't drop table, ignoring: $e")
-        }
+        createImportBatchesTable()
+        createSimEntryTable()
+        createHlrAdapterTable()
+        createSmdpPlusTable()
+        createSimProfileVendorTable()
+        createSimVendorsPermittedTable()
 
-        try {
-            createSimEntryTable()
-        } catch (e: Exception) {
-            println("Couldn't drop table, ignoring: $e")
-        }
-
-        try {
-            createHlrAdapterTable()
-        } catch (e: Exception) {
-            println("Couldn't drop table, ignoring: $e")
-        }
-
-        try {
-            createSmdpPlusTable()
-        } catch (e: Exception) {
-            println("Couldn't drop table, ignoring: $e")
-        }
-
-        try {
-            createSimProfileVendorTable()
-        } catch (e: Exception) {
-            println("Couldn't drop table, ignoring: $e")
-        }
     }
 
     fun dropAll() {
-        dropImportBatchesTable()
-        dropSimEntryTable()
-        dropHlrAdapterTable()
-        dropSmdpPlusTable()
-        dropSimProfileVendorTable()
+        try {
+            dropImportBatchesTable()
+        } catch (e: Exception) {
+        }
+        try {
+            dropSimEntryTable()
+        } catch (e: Exception) {
+        }
+        try {
+            dropHlrAdapterTable()
+        } catch (e: Exception) {
+        }
+        try {
+            dropSmdpPlusTable()
+        } catch (e: Exception) {
+        }
+        try {
+            dropSimProfileVendorTable()
+        } catch (e: Exception) {
+        }
+        try {
+            dropSimProfileVendorTable()
+        } catch (e: Exception) {
+        }
+        try {
+            dropSimVendorsPermittedTable()
+        } catch (e: Exception) {
+        }
     }
+
     //
     // Creating and deleting tables (XXX only used for testing, and should be moved to
     // a test only DAO eventually)
@@ -530,4 +554,11 @@ abstract class SimInventoryDAO {
 
     @SqlUpdate("drop  table sim_profile_vendor")
     abstract fun dropSimProfileVendorTable();
+
+    @SqlUpdate("create table sim_vendors_permitted_hlrs (id integer primary key autoincrement, vendorId integer, hlrId integer,  CONSTRAINT Unique_pair UNIQUE (vendorId, hlrId))")
+    abstract fun createSimVendorsPermittedTable()
+
+    @SqlUpdate("drop  table sim_vendors_permitted_hlrs")
+    abstract fun dropSimVendorsPermittedTable();
+
 }

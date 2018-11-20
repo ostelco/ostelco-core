@@ -13,7 +13,7 @@ import org.junit.Before
 import java.math.BigInteger
 
 
-class EsimInventoryIntegrationTest() {
+class EsimInventoryBatchImportTest() {
 
 
     public companion object {
@@ -28,24 +28,22 @@ class EsimInventoryIntegrationTest() {
     @Before
     fun initializeApp() {
 
+
         // First delete whatever we can delete of old tables
-        try {
-            RULE.getApplication<SimAdministrationApplication>().simInventoryDAO.dropSimEntryTable()
-        } catch (e: Exception ) {
-            println("Caught exception while dropping SimEntry table, ignoring.")
-        }
-        try {
-            RULE.getApplication<SimAdministrationApplication>().simInventoryDAO.dropImportBatchesTable()
-        } catch (e: Exception) {
-            println("Caught exception while dropping ImportBatches table, ignoring.")
-        }
+        val dao = RULE.getApplication<SimAdministrationApplication>().simInventoryDAO
+        dao.dropAll()
 
         // Then make new tables.
-        RULE.getApplication<SimAdministrationApplication>().simInventoryDAO.createAll()
+        dao.createAll()
+
+        // The set up the necessary entities to permit import.
+        dao.addSimProfileVendor("Idemia")
+        dao.addHlrAdapter("Loltel")
+        dao.permitVendorForHlrByNames(vendor = "Idemia", hlr = "Loltel")
     }
 
     @Test
-    fun testImport() {
+    fun testImportIntegration() {
 
         val sampleValue = SimFactoryEmulator(100).simBatchOutFileAsString()
 

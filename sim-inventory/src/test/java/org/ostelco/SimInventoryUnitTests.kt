@@ -113,10 +113,7 @@ class ES2PlusResourceTest {
         val mockHlrAdapter = HlrAdapter(1L, fakeHlr)
         val mockSmdpplusAdapter = SmdpPlusAdapter(1L, "Loltel")
 
-        val idemiaProfileVendor = SimInventoryDAO.SimProfileVendor(id = 0L, name = "Idemia")
-        idemiaProfileVendor.addAuthorizationFor(mockHlrAdapter)
-
-
+        val idemiaProfileVendor = SimProfileVendor(id = 0L, name = "Idemia")
 
         org.mockito.Mockito.`when`(dao.getSimProfileByIccid(fakeIccid1))
                 .thenReturn(fakeSimEntryWithoutMsisdn)
@@ -305,6 +302,12 @@ class ES2PlusResourceTest {
 
         org.mockito.Mockito.`when`(dao.getBatchInfo(0))
                 .thenReturn(SimImportBatch(id = 0L, status="SUCCESS", size = 4L, hlr="Loltel", profileVendor  ="Idemia", importer="Testroutine", endedAt = 999L))
+
+
+        org.mockito.Mockito.`when`(dao.findSimVendorForHlrPermissions(0L, 1L))
+                .thenReturn(listOf<Long>(0L))
+
+
         val sampleCsvIinput =
                 """
         ICCID, IMSI, PIN1, PIN2, PUK1, PUK2
