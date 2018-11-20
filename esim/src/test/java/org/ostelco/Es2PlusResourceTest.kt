@@ -1,3 +1,4 @@
+
 import io.dropwizard.testing.junit.ResourceTestRule
 import junit.framework.TestCase.assertEquals
 import org.junit.AfterClass
@@ -5,9 +6,51 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.ostelco.*
 import org.ostelco.jsonValidation.RequestServerReaderWriterInterceptor
+import javax.ws.rs.client.Client
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+
+
+class ES2PlusClient(val client: Client){
+
+
+    private fun <T, S> postEs2ProtocolCmd(
+            path: String,
+            es2ProtocolPayload: T,
+            sclass: Class<S>,
+            expectedReturnCode: Int = 201): S {
+        val entity: Entity<T> = Entity.entity(es2ProtocolPayload, MediaType.APPLICATION_JSON)
+        val result: Response = client.target(path)
+                .request(MediaType.APPLICATION_JSON)
+                .header("User-Agent", "gsma-rsp-lpad")
+                .header("X-Admin-Protocol", "gsma/rsp/v<x.y.z>")
+                .post(entity)
+        if (expectedReturnCode != result.status) {
+            assertEquals("Expected return value $expectedReturnCode, but got ${result.status}.  Body was \"${result.readEntity(String::class.java)}\"", expectedReturnCode, result.status)
+        }
+        return result.readEntity(sclass)
+    }
+
+    public fun downloadOrder(
+            eid: String,
+            iccid: String,
+            profileType: String ) : Es2DownloadOrderResponse{
+        val requesterId = "foo"
+        val es2ProtocolPayload = Es2PlusDownloadOrder(
+                header = ES2RequestHeader(
+                        functionRequesterIdentifier = requesterId,
+                        functionCallIdentifier = "downloadOrder"),
+                eid = eid,
+                iccid = iccid,
+                profileType = profileType)
+
+        return  postEs2ProtocolCmd("/gsma/rsp2/es2plus/downloadOrder",
+                es2ProtocolPayload,
+                Es2DownloadOrderResponse::class.java,
+                expectedReturnCode = 200)
+    }
+}
 
 
 class ES2PlusResourceTest {
@@ -29,12 +72,21 @@ class ES2PlusResourceTest {
         }
     }
 
-    private fun <T> postEs2ProtocolCommand(
+    val client = ES2PlusClient(RULE.client())
+
+
+    //
+    // XXX  I'll make this into a client where the requester ID is set, and
+    //      also somehow inject a jersey client so that the RULE.target stuff
+    //      can be deleted.
+
+    
+    fun <T> postEs2ProtocolCommand(
             path: String,
             es2ProtocolPayload: T,
             expectedReturnCode: Int = 201): Response {
         val entity: Entity<T> = Entity.entity(es2ProtocolPayload, MediaType.APPLICATION_JSON)
-        val result: Response = RULE.target(path)
+        val result: Response = RULE.client().target(path)
                 .request(MediaType.APPLICATION_JSON)
                 .header("User-Agent", "gsma-rsp-lpad")
                 .header("X-Admin-Protocol", "gsma/rsp/v<x.y.z>")
@@ -45,24 +97,15 @@ class ES2PlusResourceTest {
         return result
     }
 
+
+
     @Test
     fun testDownloadOrder() {
-        val es2ProtocolPayload = Es2PlusDownloadOrder(
-                header = ES2RequestHeader(
-                        functionRequesterIdentifier = "foo",
-                        functionCallIdentifier = "bar"
-
-                ),
-                body = Es2PlusDownloadOrderBody(
-                        eid = "01234567890123456789012345678901",
-                        iccid = "01234567890123456789",
-                        profileType = "really!"))
-
-        postEs2ProtocolCommand("/gsma/rsp2/es2plus/downloadOrder",
-                es2ProtocolPayload,
-                expectedReturnCode = 200)
+        client.downloadOrder(
+                eid = "01234567890123456789012345678901",
+                iccid = "01234567890123456789",
+                profileType = "Really!")
     }
-
 
     @Test
     fun testConfirmOrder() {

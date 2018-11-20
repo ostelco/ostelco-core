@@ -160,22 +160,14 @@ data class StatusCodeData(
 // @JsonSchema("ES2+DownloadOrder-def")
 data class Es2PlusDownloadOrder(
         @JsonProperty("header") val header: ES2RequestHeader,
-        @JsonProperty("body") val body: Es2PlusDownloadOrderBody
-)
-
-data class Es2PlusDownloadOrderBody(
         @JsonProperty("eid") val eid: String?,
         @JsonProperty("iccid") val iccid: String?,
         @JsonProperty("profileType") val profileType: String?
 )
 
-@JsonSchema("ES2+DownloadOrder-response")
+// @JsonSchema("ES2+DownloadOrder-response")
 data class Es2DownloadOrderResponse(
         @JsonProperty("header") val header: ES2ResponseHeader,
-        @JsonProperty("body") val body: Es2PlusDownloadOrderResponseBody
-)
-
-data class Es2PlusDownloadOrderResponseBody(
         @JsonProperty("iccid") val iccid: String
 )
 
@@ -298,9 +290,9 @@ class Es2PlusResource(val smDpPlus: SmDpPlus) {
     fun downloadOrder(order: Es2PlusDownloadOrder): Es2DownloadOrderResponse {
 
         val iccid = smDpPlus.downloadOrder(
-                eid = order.body.eid,
-                iccid = order.body.iccid,
-                profileType = order.body.profileType)
+                eid = order.eid,
+                iccid = order.iccid,
+                profileType = order.profileType)
 
         return Es2DownloadOrderResponse(
                 header = ES2ResponseHeader(
@@ -311,7 +303,7 @@ class Es2PlusResource(val smDpPlus: SmDpPlus) {
                                         reasonCode = "bar",   // .... and this
                                         subjectIdentifier = "baz", //  and this?  GSMA isn't particulary clear
                                         message = "gazonk"))),
-                body = Es2PlusDownloadOrderResponseBody(iccid))
+                iccid = iccid)
     }
 
 
