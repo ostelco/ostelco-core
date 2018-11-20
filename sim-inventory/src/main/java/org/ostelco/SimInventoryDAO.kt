@@ -53,6 +53,47 @@ data class SimImportBatch(
 )
 
 
+/**
+ * An adapter that can connect to HLR entries and activate/deactivate
+ * individual SIM profiles.
+ */
+data class HlrAdapter(
+        @JsonProperty("id") val id: Long,
+        @JsonProperty("name") val name: String) {
+
+    /**
+     * Will connect to the HLR and then activate the profile, so that when
+     * a VLR asks the HLR for the an authentication triplet, then the HLR
+     * will know that it should give an answer.
+     */
+    fun activate(simEntry: SimEntry) {
+        // XXX TBD
+    }
+
+    fun deactivate(simEntry: SimEntry) {
+        // XXX TBD
+    }
+}
+
+
+/**
+ * An adapter that can connect to HLR entries and activate/deactivate
+ * individual SIM profiles.
+ */
+data class SmdpPlusAdapter(
+        @JsonProperty("id") val id: Long,
+        @JsonProperty("name") val name: String) {
+
+    /**
+     * Will connect to the SM-DP+  and then activate the profile, so that when
+     * user equpiment tries to download a profile, it will get a profile to
+     * download.
+     */
+    fun activateEntry(simEntry: SimEntry) {
+        // XXX TBD
+    }
+}
+
 
 class SimEntryIterator(hlrId: String, batchId: Long, csvInputStream: InputStream) : Iterator<SimEntry> {
 
@@ -135,19 +176,19 @@ abstract class SimInventoryDAO {
 
     @SqlQuery("select * from sim_entries where id = :id")
     @RegisterMapper(SimEntryMapper::class)
-    abstract fun getSimProfileById(@Bind("id")id: Long): SimEntry
+    abstract fun getSimProfileById(@Bind("id") id: Long): SimEntry
 
     @SqlQuery("select * from sim_entries where iccid = :iccid")
     @RegisterMapper(SimEntryMapper::class)
-    abstract fun getSimProfileByIccid(@Bind("iccid")iccid: String): SimEntry
+    abstract fun getSimProfileByIccid(@Bind("iccid") iccid: String): SimEntry
 
     @SqlQuery("select * from sim_entries where imsi = :imsi")
     @RegisterMapper(SimEntryMapper::class)
-    abstract fun getSimProfileByImsi(@Bind("imsi")imsi: String): SimEntry
+    abstract fun getSimProfileByImsi(@Bind("imsi") imsi: String): SimEntry
 
     @SqlQuery("select * from sim_entries where msisdn = :msisdn")
     @RegisterMapper(SimEntryMapper::class)
-    abstract fun getSimProfileByMsisdn(@Bind("msisdn")msisdn: String): SimEntry
+    abstract fun getSimProfileByMsisdn(@Bind("msisdn") msisdn: String): SimEntry
 
 
     class SimEntryMapper : ResultSetMapper<SimEntry> {
@@ -193,10 +234,16 @@ abstract class SimInventoryDAO {
     }
 
 
+    data class SimProfileVendor(val id: Long, val name: String) {
 
-    data class SimProfileVendor(val id:Long, val name:String) {
+        val authrizedHlrs = mutableListOf<String>()
+
         fun isAuthorizedForHlr(hlr: String): Boolean {
             return true // Placeholder for an actoal database lookup.
+        }
+
+        fun addAuthorizationFor(mockHlrAdapter: HlrAdapter) {
+            authrizedHlrs.add(mockHlrAdapter.name)
         }
     }
 
@@ -221,25 +268,22 @@ abstract class SimInventoryDAO {
 
     @SqlQuery("select * from sim_profile_vendor where name = :name")
     @RegisterMapper(SimProfileVendorMapper::class)
-    abstract fun getProfilevendorByName(@Bind("name")name: String): SimProfileVendor
-
+    abstract fun getProfilevendorByName(@Bind("name") name: String): SimProfileVendor
 
 
     @SqlQuery("select * from sim_profile_vendor where id = :id")
     @RegisterMapper(SimProfileVendorMapper::class)
-    abstract fun getProfilevendorById(@Bind("id")id: Long): SimProfileVendor
-
-
+    abstract fun getProfilevendorById(@Bind("id") id: Long): SimProfileVendor
 
 
     @SqlQuery("select * from hlr_adapters where name = :name")
     @RegisterMapper(HlrAdapterMapper::class)
-    abstract fun getHlrAdapterByName(@Bind("name")name: String): HlrAdapter
+    abstract fun getHlrAdapterByName(@Bind("name") name: String): HlrAdapter
 
 
     @SqlQuery("select * from hlr_adapters where id = :id")
     @RegisterMapper(HlrAdapterMapper::class)
-    abstract fun getHlrAdapterByName(@Bind("id")id: Long): HlrAdapter
+    abstract fun getHlrAdapterByName(@Bind("id") id: Long): HlrAdapter
 
 
     class HlrAdapterMapper : ResultSetMapper<HlrAdapter> {
@@ -352,14 +396,14 @@ abstract class SimInventoryDAO {
 
     @SqlUpdate("UPDATE sim_entries SET hlrActivation = :hlrActivation  WHERE id = :id")
     abstract fun setHlrActivation(
-            @Bind("id") id:Long,
-            @Bind("hlrActivation") hlrActivation:Boolean)
+            @Bind("id") id: Long,
+            @Bind("hlrActivation") hlrActivation: Boolean)
 
 
     @SqlUpdate("UPDATE sim_entries SET smdpPlusActivation = :smdpPlusActivation  WHERE id = :id")
     abstract fun setSmdpPlusActivation(
-            @Bind("id") id:Long,
-            @Bind("smdpPlusActivation") smdpPlusActivation:Boolean)
+            @Bind("id") id: Long,
+            @Bind("smdpPlusActivation") smdpPlusActivation: Boolean)
 
 
     /**
@@ -382,21 +426,21 @@ abstract class SimInventoryDAO {
     //
 
     @SqlUpdate("UPDATE sim_entries SET msisdn = :msisdn  WHERE id = :id")
-    abstract fun setMsisdnOfSim(@Bind("id") id:Long, @Bind("msisdn") msisdn:String)
+    abstract fun setMsisdnOfSim(@Bind("id") id: Long, @Bind("msisdn") msisdn: String)
 
     //
     // Finding next free SIM card for a particular HLR.
     //
     @SqlQuery("SELECT * FROM sim_entries WHERE hlr = :hlr AND msisdn = null limit 1")
     @RegisterMapper(SimImportBatchMapper::class)
-    abstract fun findNextFreeSimForMsisdn(@Bind("hlr") hlr:String): SimEntry
+    abstract fun findNextFreeSimForMsisdn(@Bind("hlr") hlr: String): SimEntry
 
     //
     // Allocating next free simcards in an HLR.
     //
     @Transaction
-    fun allocateNextFreeSimForMsisdn(hlr:String, msisdn: String): SimEntry? {
-        val sim : SimEntry= findNextFreeSimForMsisdn(hlr)
+    fun allocateNextFreeSimForMsisdn(hlr: String, msisdn: String): SimEntry? {
+        val sim: SimEntry = findNextFreeSimForMsisdn(hlr)
         if (sim == null) {
             return null // No sim cards available
         }
@@ -410,41 +454,79 @@ abstract class SimInventoryDAO {
     }
 
 
+
+    fun createAll() {
+        try {
+            createImportBatchesTable()
+        } catch (e: Exception) {
+            println("Couldn't drop table, ignoring: $e")
+        }
+
+        try {
+            createSimEntryTable()
+        } catch (e: Exception) {
+            println("Couldn't drop table, ignoring: $e")
+        }
+
+        try {
+            createHlrAdapterTable()
+        } catch (e: Exception) {
+            println("Couldn't drop table, ignoring: $e")
+        }
+
+        try {
+            createSmdpPlusTable()
+        } catch (e: Exception) {
+            println("Couldn't drop table, ignoring: $e")
+        }
+
+        try {
+            createSimProfileVendorTable()
+        } catch (e: Exception) {
+            println("Couldn't drop table, ignoring: $e")
+        }
+    }
+
+    fun dropAll() {
+        dropImportBatchesTable()
+        dropSimEntryTable()
+        dropHlrAdapterTable()
+        dropSmdpPlusTable()
+        dropSimProfileVendorTable()
+    }
     //
     // Creating and deleting tables (XXX only used for testing, and should be moved to
     // a test only DAO eventually)
     //
     @SqlUpdate("create table sim_import_batches (id integer primary key autoincrement, status text, endedAt integer, importer text, size integer, hlr text, profileVendor text)")
-    abstract fun createImportBatchesTable();
+    abstract fun createImportBatchesTable()
 
     @SqlUpdate("drop  table sim_import_batches")
-    abstract fun dropImportBatchesTable();
+    abstract fun dropImportBatchesTable()
 
 
     @SqlUpdate("create table sim_entries (id integer primary key autoincrement, hlrid text, smdpplus text, msisdn text, eid text, hlrActivation boolean, smdpPlusActivation boolean, batch integer, imsi varchar(15), iccid varchar(22), pin1 varchar(4), pin2 varchar(4), puk1 varchar(80), puk2 varchar(80), CONSTRAINT Unique_Imsi UNIQUE (imsi), CONSTRAINT Unique_Iccid UNIQUE (iccid))")
-    abstract fun createSimEntryTable();
+    abstract fun createSimEntryTable()
 
     @SqlUpdate("drop  table sim_entries")
-    abstract fun dropSimEntryTable();
-
+    abstract fun dropSimEntryTable()
 
     @SqlUpdate("create table hlr_adapters (id integer primary key autoincrement, name text,  CONSTRAINT Unique_Name UNIQUE (name))")
-    abstract fun createHlrAdapterTable();
+    abstract fun createHlrAdapterTable()
 
     @SqlUpdate("drop  table hlr_adapters")
-    abstract fun dropHlrAdapterTable();
+    abstract fun dropHlrAdapterTable()
 
 
     @SqlUpdate("create table smdp_plus_adapters (id integer primary key autoincrement, name text,  CONSTRAINT Unique_Name UNIQUE (name))")
-    abstract fun createSmdpPlusTable();
+    abstract fun createSmdpPlusTable()
 
     @SqlUpdate("drop  table smdp_plus_adapters")
-    abstract fun dropSmdpPlusTable();
-
+    abstract fun dropSmdpPlusTable()
 
 
     @SqlUpdate("create table sim_profile_vendor (id integer primary key autoincrement, name text,  CONSTRAINT Unique_Name UNIQUE (name))")
-    abstract fun createSimProfileVendorTable();
+    abstract fun createSimProfileVendorTable()
 
     @SqlUpdate("drop  table sim_profile_vendor")
     abstract fun dropSimProfileVendorTable();

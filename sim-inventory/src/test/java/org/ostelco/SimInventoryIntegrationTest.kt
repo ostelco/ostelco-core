@@ -41,8 +41,7 @@ class EsimInventoryIntegrationTest() {
         }
 
         // Then make new tables.
-        RULE.getApplication<SimAdministrationApplication>().simInventoryDAO.createSimEntryTable()
-        RULE.getApplication<SimAdministrationApplication>().simInventoryDAO.createImportBatchesTable()
+        RULE.getApplication<SimAdministrationApplication>().simInventoryDAO.createAll()
     }
 
     @Test
@@ -55,7 +54,7 @@ class EsimInventoryIntegrationTest() {
                 .build("Test client")
 
         var response = client
-                .target("http://localhost:8080/ostelco/sim-inventory/Loltel/import-batch/sim-profile-vendor/Idemia")
+                .target("http://localhost:8080/ostelco/sim-inventory/Loltel/import-batch")
                 .request(MediaType.APPLICATION_JSON)
                 .put(Entity.entity(sampleValue, MediaType.TEXT_PLAIN))
 
@@ -89,7 +88,6 @@ class SimFactoryEmulator(val batchSize: Int) {
     fun simBatchOutFileAsString():String {
         // NOTE: Doesn't scale up very far, should scale to several million before we're happy
         val header = "ICCID, IMSI, PIN1, PIN2, PUK1, PUK2\n"
-
 
         val sample = StringBuilder(header)
         for (i in 1..100) { // Works well up to 10000, after that it breaks

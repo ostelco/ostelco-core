@@ -21,7 +21,7 @@ class ES2PlusResourceTest {
         @ClassRule
         val RULE: ResourceTestRule = ResourceTestRule
                 .builder()
-                .addResource(EsimInventoryResource(dao))
+                .addResource(SimInventoryResource(dao))
                 .addProvider(JsonSchemaInputOutputValidationInterceptor("resources"))
                 .build()
 
@@ -103,6 +103,8 @@ class ES2PlusResourceTest {
     @Before
     fun setUp() {
 
+        reset(dao)
+
         this.fakeSimEntryWithoutMsisdn = fakeEntryWithoutMsisdn()
         this.fakeSimEntryWithMsisdn = fakeEntryWithMsisdn()
         this.fakeEnrtryWithoutMsisdnAndSmdpplus = fakeEntryWithoutMsisdnAndSmdpplus()
@@ -111,7 +113,10 @@ class ES2PlusResourceTest {
         val mockHlrAdapter = HlrAdapter(1L, fakeHlr)
         val mockSmdpplusAdapter = SmdpPlusAdapter(1L, "Loltel")
 
-        reset(dao)
+        val idemiaProfileVendor = SimInventoryDAO.SimProfileVendor(id = 0L, name = "Idemia")
+        idemiaProfileVendor.addAuthorizationFor(mockHlrAdapter)
+
+
 
         org.mockito.Mockito.`when`(dao.getSimProfileByIccid(fakeIccid1))
                 .thenReturn(fakeSimEntryWithoutMsisdn)
@@ -148,6 +153,8 @@ class ES2PlusResourceTest {
         org.mockito.Mockito.`when`(dao.getSmdpPlusAdapterByName("Loltel"))
                 .thenReturn(mockSmdpplusAdapter)
 
+        org.mockito.Mockito.`when`(dao.getProfilevendorByName("Idemia"))
+                .thenReturn(idemiaProfileVendor)
 
     }
 
@@ -295,6 +302,9 @@ class ES2PlusResourceTest {
 
     @Test
     fun testImport() {
+
+        org.mockito.Mockito.`when`(dao.getBatchInfo(0))
+                .thenReturn(SimImportBatch(id = 0L, status="SUCCESS", size = 4L, hlr="Loltel", profileVendor  ="Idemia", importer="Testroutine", endedAt = 999L))
         val sampleCsvIinput =
                 """
         ICCID, IMSI, PIN1, PIN2, PUK1, PUK2
@@ -304,15 +314,12 @@ class ES2PlusResourceTest {
        123123, 123123, 1233,1233,1233,1233
     """.trimIndent()
 
-        val response = RULE.target("/ostelco/sim-inventory/Loltel/import-batch/sim-profile-vendor/Idemia")
+        val response = RULE.target("/ostelco/sim-inventory/Loltel/import-batch")
                 .request(MediaType.APPLICATION_JSON)
                 .put(Entity.entity(sampleCsvIinput, MediaType.TEXT_PLAIN))
 
-        // XXX Should be 201, but we'll accept a 200 for now.
         assertEquals(200, response.status)
 
         val simEntry = response.readEntity(SimImportBatch::class.java)
-
-        // XXX Verify a lot of things here!
     }
 }
