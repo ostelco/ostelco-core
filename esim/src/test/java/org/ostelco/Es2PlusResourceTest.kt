@@ -45,7 +45,6 @@ class ES2PlusResourceTest {
         return result
     }
 
-
     @Test
     fun testDownloadOrder() {
         val es2ProtocolPayload = Es2PlusDownloadOrder(
@@ -72,13 +71,13 @@ class ES2PlusResourceTest {
                         header = ES2RequestHeader(
                                 functionRequesterIdentifier = "foo",
                                 functionCallIdentifier = "bar"),
-                        body = Es2ConfirmOrderBody(
-                                eid = "01234567890123456789012345678901",
-                                iccid = "01234567890123456789",
-                                matchingId = "foo",
-                                confirmationCode = "bar",
-                                smdsAddress = "baz",
-                                releaseFlag = true)), 200)
+
+                        eid = "01234567890123456789012345678901",
+                        iccid = "01234567890123456789",
+                        matchingId = "foo",
+                        confirmationCode = "bar",
+                        smdsAddress = "baz",
+                        releaseFlag = true), 200)
                 .readEntity(Es2ConfirmOrderResponse::class.java)
     }
 
@@ -100,7 +99,6 @@ class ES2PlusResourceTest {
                 .readEntity(String::class.java)
     }
 
-
     @Test
     fun testReleaseProfile() {
         val es2ConfirmOrder = postEs2ProtocolCommand("/gsma/rsp2/es2plus/releaseProfile",
@@ -114,7 +112,6 @@ class ES2PlusResourceTest {
                 , 200)
                 .readEntity(String::class.java)
     }
-
 
     @Test
     fun testHandleDownloadProgressInfo() {

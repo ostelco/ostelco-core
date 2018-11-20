@@ -157,7 +157,7 @@ data class StatusCodeData(
 ///  The DownloadOrder function
 ///
 
-@JsonSchema("ES2+DownloadOrder-def")
+// @JsonSchema("ES2+DownloadOrder-def")
 data class Es2PlusDownloadOrder(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("body") val body: Es2PlusDownloadOrderBody
@@ -183,13 +183,9 @@ data class Es2PlusDownloadOrderResponseBody(
 /// The ConfirmOrder function
 ///
 
-@JsonSchema("ES2+ConfirmOrder-def")
+// @JsonSchema("ES2+ConfirmOrder-def")
 data class Es2ConfirmOrder(
         @JsonProperty("header") val header: ES2RequestHeader,
-        @JsonProperty("body") val body: Es2ConfirmOrderBody
-)
-
-data class Es2ConfirmOrderBody(
         @JsonProperty("eid") val eid: String,
         @JsonProperty("iccid") val iccid: String,
         @JsonProperty("matchingId") val matchingId: String?,
@@ -198,12 +194,9 @@ data class Es2ConfirmOrderBody(
         @JsonProperty("releaseFlag") val releaseFlag: Boolean
 )
 
-@JsonSchema("ES2+ConfirmOrder-response")
+// @JsonSchema("ES2+ConfirmOrder-response")
 data class Es2ConfirmOrderResponse(
         @JsonProperty("header") val header: ES2ResponseHeader,
-        @JsonProperty("body") val body: Es2ConfirmOrderResponseBody)
-
-data class Es2ConfirmOrderResponseBody(
         @JsonProperty("eid") val eid: String,
         @JsonProperty("matchingId") val matchingId: String?,
         @JsonProperty("smdsAddress") val smdsAddress: String?
@@ -213,7 +206,7 @@ data class Es2ConfirmOrderResponseBody(
 ///  The CancelOrder function
 ///
 
-@JsonSchema("ES2+CancelOrder-def")
+// @JsonSchema("ES2+CancelOrder-def")
 data class Es2CancelOrder(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("eid") val eid: String,
@@ -222,7 +215,7 @@ data class Es2CancelOrder(
         @JsonProperty("finalProfileStatusIndicator") val finalProfileStatusIndicator: String?
 )
 
-@JsonSchema("ES2+CancelOrder-response")
+// @JsonSchema("ES2+CancelOrder-response")
 data class Es2CancelOrderResponse(@JsonProperty("header") val header: ES2ResponseHeader)
 
 ///
@@ -329,10 +322,10 @@ class Es2PlusResource(val smDpPlus: SmDpPlus) {
     @POST
     fun confirmOrder(order: Es2ConfirmOrder): Es2ConfirmOrderResponse {
 
-        smDpPlus.confirmOrder(eid=order.body.eid,
-                smdsAddress=order.body.smdsAddress,
-                machingId=order.body.matchingId,
-                confirmationCode = order.body.confirmationCode)
+        smDpPlus.confirmOrder(eid = order.eid,
+                smdsAddress = order.smdsAddress,
+                machingId = order.matchingId,
+                confirmationCode = order.confirmationCode)
 
         return Es2ConfirmOrderResponse(
                 header = ES2ResponseHeader(functionExecutionStatus = FunctionExecutionStatus(
@@ -342,10 +335,9 @@ class Es2PlusResource(val smDpPlus: SmDpPlus) {
                                 reasonCode = "bar",
                                 subjectIdentifier = "baz",
                                 message = "gazonk"))),
-                body = Es2ConfirmOrderResponseBody(
-                        eid = order.body.eid,
-                        smdsAddress = order.body.smdsAddress,
-                        matchingId = order.body.matchingId))
+                eid = order.eid,
+                smdsAddress = order.smdsAddress,
+                matchingId = order.matchingId)
     }
 
     /**
