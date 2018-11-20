@@ -5,7 +5,7 @@ import org.json.JSONObject
 import org.json.JSONTokener
 import org.junit.Test
 
-class TestJsonValidation() {
+class TestJsonValidation {
 
     @Test
     fun helloWorldTest() {
@@ -16,10 +16,8 @@ class TestJsonValidation() {
         schema.validate(JSONObject("{\"hello\" : \"world\"}"))
     }
 
-
-
     @Test
-    fun ES2DownloadOrderTest() {
+    fun eS2DownloadOrderTest() {
         val inputStream = this.javaClass.getResourceAsStream("/es2schemas/ES2+DownloadOrder-def.json")
         assertNotNull(inputStream)
         val rawSchema = JSONObject(JSONTokener(inputStream))

@@ -38,7 +38,7 @@ class Es2plusApplication : Application<Es2plusConfiguration>() {
         // XXX Add these parameters to configuration file.
         val oas = OpenAPI()
         val info = Info()
-                .title(getName())
+                .title(name)
                 .description("Restful membership management.")
                 .termsOfService("http://example.com/terms")
                 .contact(Contact().email("la3lma@gmail.com"))
@@ -76,11 +76,11 @@ class RestrictedOperationsRequestFilter : ContainerRequestFilter {
         val adminProtocol = ctx.headers.getFirst("X-Admin-Protocol")
         val userAgent = ctx.headers.getFirst("User-Agent")
 
-        if (!"gsma-rsp-lpad".equals(userAgent)) {
+        if ("gsma-rsp-lpad" != userAgent) {
             ctx.abortWith(Response.status(Response.Status.BAD_REQUEST)
                     .entity("Illegal user agent, expected gsma-rsp-lpad")
                     .build())
-        } else if (adminProtocol == null || !adminProtocol!!.startsWith("gsma/rsp/")) {
+        } else if (adminProtocol == null || !adminProtocol.startsWith("gsma/rsp/")) {
             ctx.abortWith(Response.status(Response.Status.BAD_REQUEST)
                     .entity("Illegal X-Admin-Protocol header, expected something starting with \"gsma/rsp/\"")
                     .build())
@@ -109,7 +109,7 @@ class AppExceptionMapper : ExceptionMapper<Es2Exception> {
 */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
-public annotation class JsonSchema(val schemaKey: String)
+annotation class JsonSchema(val schemaKey: String)
 
 
 ///
@@ -277,8 +277,7 @@ class SmDpPlus {
 
     // XXX The ICCID generated should be  unique, not yet allocated, etc.
     fun downloadOrder(eid: String?, iccid: String?, profileType: String?): String {
-        val iccid = if (iccid != null) iccid else "01234567890123456798"
-        return iccid
+        return iccid ?: "01234567890123456798"
     }
 
     // XXX Throw exception if order can't be confirmed, also: Are all these parameters

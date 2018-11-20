@@ -14,16 +14,13 @@ import javax.ws.rs.core.Response
 import javax.ws.rs.ext.*
 
 
-class JsonSchemaValidator() {
+class JsonSchemaValidator {
     private val schemaRoot = "/es2schemas"
     private var schemaMap: MutableMap<String, Schema> = mutableMapOf()
 
 
     private fun loadJsonSchemaResource(name: String): Schema {
-        val inputStream = this.javaClass.getResourceAsStream("${schemaRoot}/${name}.json")
-        if (inputStream == null) {
-            throw WebApplicationException("Unknown schema map: '$name'", Response.Status.INTERNAL_SERVER_ERROR)
-        }
+        val inputStream = this.javaClass.getResourceAsStream("$schemaRoot/$name.json") ?: throw WebApplicationException("Unknown schema map: '$name'", Response.Status.INTERNAL_SERVER_ERROR)
         try {
             val jsonEncodedSchemaDescription = JSONObject(JSONTokener(inputStream))
             return org.everit.json.schema.loader.SchemaLoader.load(jsonEncodedSchemaDescription)
@@ -44,7 +41,7 @@ class JsonSchemaValidator() {
     }
 
     @Throws(WebApplicationException::class)
-    public fun validateString(payloadClass: Class<*>, body: String, error: Response.Status) {
+    fun validateString(payloadClass: Class<*>, body: String, error: Response.Status) {
         val schemaAnnotation = payloadClass.getAnnotation<JsonSchema>(JsonSchema::class.java)
         if (schemaAnnotation != null) {
             try {
@@ -60,7 +57,7 @@ class JsonSchemaValidator() {
 @Provider
 class RequestServerReaderWriterInterceptor : ReaderInterceptor, WriterInterceptor {
 
-    val validator = JsonSchemaValidator()
+    private val validator = JsonSchemaValidator()
 
     @Throws(IOException::class)
     private fun toByteArray(input: InputStream): ByteArray {
