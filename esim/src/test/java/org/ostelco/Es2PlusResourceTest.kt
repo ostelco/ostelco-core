@@ -79,7 +79,7 @@ class ES2PlusResourceTest {
                                 iccid = "01234567890123456789",
                                 matchingId = "foo",
                                 confirmationCode = "bar",
-                                smdsAddress =matc h "baz",
+                                smdsAddress = "baz",
                                 releaseFlag = true)), 200)
                 .readEntity(Es2ConfirmOrderResponse::class.java)
     }
@@ -93,11 +93,11 @@ class ES2PlusResourceTest {
                                 functionCallIdentifier = "bar"
 
                         ),
-                        body = Es2CancelOrderBody(
-                                eid = "01234567890123456789012345678901",
-                                iccid = "01234567890123456789",
-                                matchingId = "foo",
-                                finalProfileStatusIndicator = "bar"))
+
+                        eid = "01234567890123456789012345678901",
+                        iccid = "01234567890123456789",
+                        matchingId = "foo",
+                        finalProfileStatusIndicator = "bar")
                 , 200)
                 .readEntity(String::class.java)
     }
@@ -111,12 +111,11 @@ class ES2PlusResourceTest {
                                 functionRequesterIdentifier = "foo",
                                 functionCallIdentifier = "bar"
                         ),
-                        body = Es2ReleaseProfileBody(
-                                iccid = "01234567890123456789"))
+
+                        iccid = "01234567890123456789")
                 , 200)
                 .readEntity(String::class.java)
     }
-
 
 
     @Test
@@ -127,8 +126,7 @@ class ES2PlusResourceTest {
                                 functionRequesterIdentifier = "foo",
                                 functionCallIdentifier = "bar"
 
-                        ),
-                        body = Es2HandleDownloadProgressInfoBody())
+                        ))
                 , 200)
                 .readEntity(String::class.java)
         // XXX Fails .readEntity(ES2JsonBaseResponse::class.java)

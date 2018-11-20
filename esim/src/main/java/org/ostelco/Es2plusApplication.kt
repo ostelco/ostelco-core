@@ -153,7 +153,6 @@ data class StatusCodeData(
         @JsonProperty("subjectIdentifier") var subjectIdentifier: String?,
         @JsonProperty("message") var message: String?)
 
-
 ///
 ///  The DownloadOrder function
 ///
@@ -163,7 +162,6 @@ data class Es2PlusDownloadOrder(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("body") val body: Es2PlusDownloadOrderBody
 )
-
 
 data class Es2PlusDownloadOrderBody(
         @JsonProperty("eid") val eid: String?,
@@ -218,11 +216,6 @@ data class Es2ConfirmOrderResponseBody(
 @JsonSchema("ES2+CancelOrder-def")
 data class Es2CancelOrder(
         @JsonProperty("header") val header: ES2RequestHeader,
-        @JsonProperty("body") val body: Es2CancelOrderBody
-)
-
-
-data class Es2CancelOrderBody(
         @JsonProperty("eid") val eid: String,
         @JsonProperty("iccid") val iccid: String?,
         @JsonProperty("matchingId") val matchingId: String?,
@@ -232,7 +225,6 @@ data class Es2CancelOrderBody(
 @JsonSchema("ES2+CancelOrder-response")
 data class Es2CancelOrderResponse(@JsonProperty("header") val header: ES2ResponseHeader)
 
-
 ///
 ///  The ReleaseProfile function
 ///
@@ -240,10 +232,6 @@ data class Es2CancelOrderResponse(@JsonProperty("header") val header: ES2Respons
 @JsonSchema("ES2+ReleaseProfile-def")
 data class Es2ReleaseProfile(
         @JsonProperty("header") val header: ES2RequestHeader,
-        @JsonProperty("body") val body: Es2ReleaseProfileBody
-)
-
-data class Es2ReleaseProfileBody(
         @JsonProperty("iccid") val iccid: String
 )
 
@@ -256,13 +244,9 @@ data class Es2ReleaseProfileResponse(
 ///  The The HandleDownloadProgressInfo function
 ///
 
-@JsonSchema("ES2+HandleDownloadProgressInfo-def")
+// XXXX JSON file contains syntax error, ignoring for now:  @JsonSchema("ES2+HandleDownloadProgressInfo-def")
 data class Es2HandleDownloadProgressInfo(
         @JsonProperty("header") val header: ES2RequestHeader,
-        @JsonProperty("body") val body: Es2HandleDownloadProgressInfoBody
-)
-
-data class Es2HandleDownloadProgressInfoBody(
         @JsonProperty("eid") val eid: String? = null,
         @JsonProperty("iccid") val iccid: String? = null,
         @JsonProperty("profileType") val profileType: String? = null,
@@ -287,7 +271,6 @@ data class ES2StatusCodeData(
 @JsonSchema("ES2+HandleDownloadProgressInfo-response")
 data class Es2HandleDownloadProgressInfoResponse(
         @JsonProperty("header") val header: ES2ResponseHeader)
-
 
 
 class SmDpPlus {

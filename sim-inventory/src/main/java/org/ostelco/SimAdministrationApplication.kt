@@ -14,7 +14,7 @@ import java.util.stream.Stream
 
 
 /**
- * The SIM Inventory  (a slight misnomer,  look for a better name)
+ * The SIM manager
  * is an application that inputs inhales SIM batches
  * from SIM profile factories (physical or esim). It then facilitates
  * activation of SIM profiles to MSISDNs.   A typical interaction is

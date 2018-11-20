@@ -11,17 +11,18 @@ database:
   # the JDBC URL
   url: jdbc:sqlite:sim_inventory.db
 
+httpClient:
 
-# The minimum number of threads to use for asynchronous calls.
-minThreads: 1
+  # The minimum number of threads to use for asynchronous calls.
+  minThreads: 1
 
-# The maximum number of threads to use for asynchronous calls.
-maxThreads: 128
+  # The maximum number of threads to use for asynchronous calls.
+  maxThreads: 128
 
-# If true, the client will automatically decode response entities
-# with gzip content encoding.
-gzipEnabled: true
+  # If true, the client will automatically decode response entities
+  # with gzip content encoding.
+  gzipEnabled: true
 
-# If true, the client will encode request entities with gzip
-# content encoding. (Requires gzipEnabled to be true).
-gzipEnabledForRequests: true
+  # If true, the client will encode request entities with gzip
+  # content encoding. (Requires gzipEnabled to be true).
+  gzipEnabledForRequests: true
