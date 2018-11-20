@@ -14,14 +14,14 @@ import javax.ws.rs.ext.*
 
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
-public annotation class JsonSchema(val schemaKey: String)
+annotation class JsonSchema(val schemaKey: String)
 
 
-class JsonSchemaValidator(val schemaRoot: String) {
+class JsonSchemaValidator(private val schemaRoot: String) {
     private var schemaMap: MutableMap<String, Schema> = mutableMapOf()
 
     private fun loadJsonSchemaResource(name: String): Schema {
-        val inputStream = this.javaClass.getResourceAsStream("${schemaRoot}/${name}.json")
+        val inputStream = this.javaClass.getResourceAsStream("$schemaRoot/${name}.json")
         if (inputStream == null) {
             throw WebApplicationException("Unknown schema map: '$name'", Response.Status.INTERNAL_SERVER_ERROR)
         }
@@ -59,7 +59,7 @@ class JsonSchemaValidator(val schemaRoot: String) {
 }
 
 @Provider
-class JsonSchemaInputOutputValidationInterceptor (val path:String): ReaderInterceptor, WriterInterceptor {
+class JsonSchemaInputOutputValidationInterceptor (path:String): ReaderInterceptor, WriterInterceptor {
 
     val validator = JsonSchemaValidator(path)
 
@@ -95,7 +95,7 @@ class JsonSchemaInputOutputValidationInterceptor (val path:String): ReaderInterc
     override fun aroundReadFrom(ctx: ReaderInterceptorContext): Any {
         val originalStream = ctx.inputStream
         val originalByteArray = toByteArray(originalStream)
-        val body: String = String(originalByteArray, Charset.forName("UTF-8"))
+        val body = String(originalByteArray, Charset.forName("UTF-8"))
 
         validator.validateString(ctx.type, body, Response.Status.BAD_REQUEST)
 

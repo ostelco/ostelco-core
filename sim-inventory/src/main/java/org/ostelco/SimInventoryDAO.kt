@@ -340,7 +340,7 @@ abstract class SimInventoryDAO {
     @Transaction
     @SqlBatch("INSERT INTO sim_entries (iccid, imsi, pin1, pin2, puk1, puk2) VALUES (:iccid, :imsi, :pin1, :pin2, :puk1, :puk2)")
     @BatchChunkSize(1000)
-    abstract fun insertAll(@BindBean entries: Iterator<SimEntry>);
+    abstract fun insertAll(@BindBean entries: Iterator<SimEntry>)
 
 
     @SqlUpdate("INSERT INTO sim_import_batches (status,  importer, hlr, profileVendor) VALUES ('STARTED', :importer, :hlr, :profileVendor)")

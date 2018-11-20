@@ -58,7 +58,7 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
         // XXX Add these parameters to configuration file.
         val oas = OpenAPI()
         val info = Info()
-                .title(getName())
+                .title(name)
                 .description("SIM management.")
                 .termsOfService("http://example.com/terms")
                 .contact(Contact().email("rmz@redotter.com"))

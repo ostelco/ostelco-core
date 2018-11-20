@@ -18,10 +18,9 @@ import io.dropwizard.jdbi.DBIFactory
 import io.dropwizard.setup.Environment
 
 
-class EsimInventoryBatchImportTest() {
+class EsimInventoryBatchImportTest {
 
-
-    public companion object {
+    companion object {
         @JvmField
         @ClassRule
         val RULE =
@@ -76,21 +75,21 @@ class EsimInventoryBatchImportTest() {
 
 class SimFactoryEmulator(val batchSize: Int) {
 
-    val imsiStart = BigInteger.valueOf(410072821393853L)
-    val iccidStart = BigInteger.valueOf(1234567890123456789L)
-    var rollingNumber = 0L
+    private val imsiStart :BigInteger  = BigInteger.valueOf(410072821393853L)
+    private val iccidStart: BigInteger = BigInteger.valueOf(1234567890123456789L)
+    private var rollingNumber = 0L
 
-    fun imsi(i: Int): String {
+    private fun imsi(i: Int): String {
         return imsiStart.add(BigInteger.valueOf(i.toLong())).toString()
     }
 
-    fun iccid(i: Int): String {
+    private fun iccid(i: Int): String {
         return iccidStart.add(BigInteger.valueOf(i.toLong())).toString()
     }
 
-    fun nextFourDigitNumber(): String {
+    private fun nextFourDigitNumber(): String {
         rollingNumber += 1
-        return "%04d".format(rollingNumber % 10000).toString()
+        return "%04d".format(rollingNumber % 10000)
     }
 
     fun simBatchOutFileAsString(): String {
@@ -106,7 +105,7 @@ class SimFactoryEmulator(val batchSize: Int) {
                     nextFourDigitNumber(),
                     nextFourDigitNumber(),
                     nextFourDigitNumber())
-            sample.append(s);
+            sample.append(s)
         }
         return sample.toString()
     }

@@ -13,7 +13,7 @@ import javax.ws.rs.core.Response
 ///
 
 @Path("/ostelco/sim-inventory/{hlr}/")
-class SimInventoryResource(val dao: SimInventoryDAO) {
+class SimInventoryResource(private val dao: SimInventoryDAO) {
 
     companion object {
         private fun <T> assertNonNull(v: T?): T {
@@ -88,8 +88,8 @@ class SimInventoryResource(val dao: SimInventoryDAO) {
         }
     }
 
-    fun assertHlrsEqual(hlr1: String, hlr2: String) {
-        if (!hlr1.equals(hlr2)) {
+    private fun assertHlrsEqual(hlr1: String, hlr2: String) {
+        if (hlr1 != hlr2) {
             // XXX log.error("Attempt to impersonate HLR.  '$hlr1', '$hlr2'")
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }
@@ -152,7 +152,7 @@ class SimInventoryResource(val dao: SimInventoryDAO) {
 
         hlrAdapter.deactivate(simEntry)
         dao.setActivatedInHlr(simEntry.id!!)
-        return dao.getSimProfileById(simEntry.id!!)
+        return dao.getSimProfileById(simEntry.id)
     }
 
 
@@ -176,11 +176,10 @@ class SimInventoryResource(val dao: SimInventoryDAO) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }
 
-        val returnValue =  dao.importSims(
+        return dao.importSims(
                 importer = "importer", // ???
                 hlr = hlr,
                 profileVendor = profilevendor,
                 csvInputStream = csvInputStream)
-        return returnValue
     }
 }

@@ -31,17 +31,17 @@ class ES2PlusResourceTest {
         }
     }
 
-    val fakeIccid1 = "01234567891234567890"
-    val fakeIccid2 = "01234567891234567891"
-    val fakeIccid3 = "01234567891234567892"
-    val fakeImsi1 = "12345678912345"
-    val fakeImsi2 = "12345678912346"
-    val fakeMsisdn1 = "474747474747"
-    val fakeMsisdn2 = "464646464646"
-    val fakeHlr = "Loltel"
+    private val fakeIccid1 = "01234567891234567890"
+    private val fakeIccid2 = "01234567891234567891"
+    private val fakeIccid3 = "01234567891234567892"
+    private val fakeImsi1 = "12345678912345"
+    private val fakeImsi2 = "12345678912346"
+    private val fakeMsisdn1 = "474747474747"
+    private val fakeMsisdn2 = "464646464646"
+    private val fakeHlr = "Loltel"
 
 
-    fun fakeEntryWithoutMsisdn() : SimEntry {
+    private fun fakeEntryWithoutMsisdn() : SimEntry {
         return SimEntry(
                 id = 1L,
                 hlrId = "Loltel",
@@ -58,7 +58,7 @@ class ES2PlusResourceTest {
                 puk2 = "ss")
     }
 
-    fun fakeEntryWithoutMsisdnAndSmdpplus() : SimEntry {
+    private fun fakeEntryWithoutMsisdnAndSmdpplus() : SimEntry {
         return SimEntry(
                 id = 1L,
                 hlrId = fakeHlr,
@@ -75,7 +75,7 @@ class ES2PlusResourceTest {
                 puk2 = "ss")
     }
 
-    fun fakeEntryWithMsisdn() : SimEntry{
+    private fun fakeEntryWithMsisdn() : SimEntry{
         return SimEntry(
                 id = 1L,
                 hlrId = "Loltel",
@@ -93,11 +93,11 @@ class ES2PlusResourceTest {
     }
 
 
-    var fakeSimEntryWithoutMsisdn = fakeEntryWithoutMsisdn()
+    private var fakeSimEntryWithoutMsisdn = fakeEntryWithoutMsisdn()
 
-    var fakeSimEntryWithMsisdn = fakeEntryWithMsisdn()
+    private var fakeSimEntryWithMsisdn = fakeEntryWithMsisdn()
 
-    var fakeEnrtryWithoutMsisdnAndSmdpplus = fakeEntryWithoutMsisdnAndSmdpplus()
+    private var fakeEnrtryWithoutMsisdnAndSmdpplus = fakeEntryWithoutMsisdnAndSmdpplus()
 
 
     @Before

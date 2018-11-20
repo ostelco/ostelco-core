@@ -85,12 +85,12 @@ abstract class SimInventoryCreationDestructionDAO {
     abstract fun createSimProfileVendorTable()
 
     @SqlUpdate("drop  table sim_profile_vendor")
-    abstract fun dropSimProfileVendorTable();
+    abstract fun dropSimProfileVendorTable()
 
     @SqlUpdate("create table sim_vendors_permitted_hlrs (id integer primary key autoincrement, vendorId integer, hlrId integer,  CONSTRAINT Unique_pair UNIQUE (vendorId, hlrId))")
     abstract fun createSimVendorsPermittedTable()
 
     @SqlUpdate("drop  table sim_vendors_permitted_hlrs")
-    abstract fun dropSimVendorsPermittedTable();
+    abstract fun dropSimVendorsPermittedTable()
 
 }
