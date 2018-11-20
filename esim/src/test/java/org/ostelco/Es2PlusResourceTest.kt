@@ -12,7 +12,7 @@ import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
 
-class ES2PlusClient(val client: Client){
+class ES2PlusClient(val requesterId : String, val client: Client){
 
 
     private fun <T, S> postEs2ProtocolCmd(
@@ -36,7 +36,6 @@ class ES2PlusClient(val client: Client){
             eid: String,
             iccid: String,
             profileType: String ) : Es2DownloadOrderResponse{
-        val requesterId = "foo"
         val es2ProtocolPayload = Es2PlusDownloadOrder(
                 header = ES2RequestHeader(
                         functionRequesterIdentifier = requesterId,
@@ -72,7 +71,7 @@ class ES2PlusResourceTest {
         }
     }
 
-    val client = ES2PlusClient(RULE.client())
+    val client = ES2PlusClient("integrationTestClient", RULE.client())
 
 
     //
@@ -80,7 +79,7 @@ class ES2PlusResourceTest {
     //      also somehow inject a jersey client so that the RULE.target stuff
     //      can be deleted.
 
-    
+
     fun <T> postEs2ProtocolCommand(
             path: String,
             es2ProtocolPayload: T,
@@ -101,10 +100,11 @@ class ES2PlusResourceTest {
 
     @Test
     fun testDownloadOrder() {
-        client.downloadOrder(
+        val result = client.downloadOrder(
                 eid = "01234567890123456789012345678901",
                 iccid = "01234567890123456789",
                 profileType = "Really!")
+        println("result = $result")
     }
 
     @Test
