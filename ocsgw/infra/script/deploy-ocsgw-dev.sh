@@ -23,7 +23,44 @@ echo TAG_OCS=${TAG_OCS}
 docker build -t eu.gcr.io/${PROJECT_ID}/ocsgw:${TAG_OCS} ocsgw
 docker push eu.gcr.io/${PROJECT_ID}/ocsgw:${TAG_OCS}
 
-echo "Deploying ocsgw to GKE Dev"
+getInstance () {
+    echo ""
+    printf "Which instance to update\n"
+    printf " 1)\n"
+    printf " 2)\n"
+    printf " 3) 1 and 2\n"
+    read INSTANCE
+}
 
-gcloud compute instances update-container ocsgw-dev \
+deploy_1 () {
+    echo "Deploying ocsgw instance 1 to GKE Dev"
+    gcloud compute instances update-container ocsgw-dev \
     --container-image eu.gcr.io/${PROJECT_ID}/ocsgw:${TAG_OCS}
+}
+
+deploy_2 () {
+    echo "Deploying ocsgw instance 2 to GKE Dev"
+    gcloud compute instances update-container ocsgw-dev-2 \
+    --container-image eu.gcr.io/${PROJECT_ID}/ocsgw:${TAG_OCS}
+}
+
+
+while true; do
+  getInstance
+
+  if [[ "$INSTANCE" == 1 ]] || [[ "$INSTANCE" == 2 ]]  || [[ "$INSTANCE" == 3 ]]
+  then
+    break
+  fi
+done
+
+
+if [ "$INSTANCE" == "1" ]; then
+    deploy_1
+elif [ "$INSTANCE" == "2" ]; then
+    deploy_2
+else
+    deploy_1
+    deploy_2
+fi
+
