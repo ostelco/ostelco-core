@@ -11,7 +11,7 @@ import org.ostelco.*
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 
-class ES2PlusResourceTest {
+class SimInventoryUnitTests {
 
     companion object {
 
@@ -38,7 +38,6 @@ class ES2PlusResourceTest {
     private val fakeMsisdn1 = "474747474747"
     private val fakeMsisdn2 = "464646464646"
     private val fakeHlr = "Loltel"
-
 
     private fun fakeEntryWithoutMsisdn() : SimEntry {
         return SimEntry(

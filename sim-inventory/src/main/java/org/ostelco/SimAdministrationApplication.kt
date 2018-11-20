@@ -77,24 +77,3 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
         }
     }
 }
-
-/*
-
-
-// Starting point for intercepting exceptions, so that they can
-// be wrapped in a return value of sorts.
-
-class Es2Exception extends Exception {
-}
-
-
-class AppExceptionMapper : ExceptionMapper<Es2Exception> {
-    fun toResponse(ex: Es2Exception): Response {
-        return Response.status(ex.getStatus())
-                .entity(ErrorMessage(ex))
-                .type(MediaType.APPLICATION_JSON).build()
-    }
-}
-*/
-
-
