@@ -8,7 +8,6 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.mockito.Mockito.*
 import org.ostelco.*
-import org.ostelco.jsonValidation.JsonSchemaInputOutputValidationInterceptor
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 
@@ -23,7 +22,6 @@ class ES2PlusResourceTest {
         val RULE: ResourceTestRule = ResourceTestRule
                 .builder()
                 .addResource(SimInventoryResource(dao))
-                .addProvider(JsonSchemaInputOutputValidationInterceptor("resources"))
                 .build()
 
         @JvmStatic
