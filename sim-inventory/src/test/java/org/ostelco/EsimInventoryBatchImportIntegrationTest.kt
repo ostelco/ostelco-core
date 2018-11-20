@@ -1,21 +1,16 @@
 package org.ostelco
 
 import io.dropwizard.client.JerseyClientBuilder
-import io.dropwizard.db.PooledDataSourceFactory
+import io.dropwizard.jdbi.DBIFactory
 import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
 import junit.framework.TestCase
-import org.apache.log4j.spi.LoggerFactory
+import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Test
+import java.math.BigInteger
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
-import org.junit.Before
-import java.math.BigInteger
-import org.skife.jdbi.v2.sqlobject.SqlObjectBuilder.onDemand
-import org.skife.jdbi.v2.DBI
-import io.dropwizard.jdbi.DBIFactory
-import io.dropwizard.setup.Environment
 
 
 class EsimInventoryBatchImportTest {
@@ -54,13 +49,13 @@ class EsimInventoryBatchImportTest {
     @Test
     fun testImportIntegration() {
 
-        val sampleValue = SimFactoryEmulator(100).simBatchOutFileAsString()
+        val sampleValue = SimFactoryEmulator().simBatchOutFileAsString()
 
         val client = JerseyClientBuilder(RULE.environment)
                 .using(RULE.configuration.getJerseyClientConfiguration())
                 .build("Test client")
 
-        var response = client
+        val response = client
                 .target("http://localhost:8080/ostelco/sim-inventory/Loltel/import-batch")
                 .request(MediaType.APPLICATION_JSON)
                 .put(Entity.entity(sampleValue, MediaType.TEXT_PLAIN))
@@ -73,7 +68,7 @@ class EsimInventoryBatchImportTest {
 }
 
 
-class SimFactoryEmulator(val batchSize: Int) {
+class SimFactoryEmulator {
 
     private val imsiStart :BigInteger  = BigInteger.valueOf(410072821393853L)
     private val iccidStart: BigInteger = BigInteger.valueOf(1234567890123456789L)

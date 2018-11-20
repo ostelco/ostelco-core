@@ -9,14 +9,8 @@ import io.swagger.v3.oas.integration.SwaggerConfiguration
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Contact
 import io.swagger.v3.oas.models.info.Info
-import org.hibernate.validator.constraints.NotEmpty
-import java.io.IOException
-import java.io.InputStream
 import java.util.stream.Collectors
 import java.util.stream.Stream
-import javax.ws.rs.*
-import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.Response
 
 
 /**

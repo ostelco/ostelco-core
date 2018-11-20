@@ -12,7 +12,7 @@ class SimAdministrationAppConfiguration : Configuration() {
     @Valid
     @NotNull
     @JsonProperty("database")
-    var database: DataSourceFactory
+    var database: DataSourceFactory = DataSourceFactory()
 
 
     @Valid
@@ -24,7 +24,4 @@ class SimAdministrationAppConfiguration : Configuration() {
         return httpClient
     }
 
-    init {
-        database = DataSourceFactory()
-    }
 }

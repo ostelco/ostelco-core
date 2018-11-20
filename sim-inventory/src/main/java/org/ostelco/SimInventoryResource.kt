@@ -81,10 +81,10 @@ class SimInventoryResource(private val dao: SimInventoryDAO) {
             @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
         val sim = activateHlrProfileByIccid(hlr, iccid)
         assertHlrsEqual(hlr, sim.hlrId)
-        if (sim.smdpplus != null) {
-            return activateEsimProfileByIccid(hlr, iccid)
+        return if (sim.smdpplus != null) {
+            activateEsimProfileByIccid(hlr, iccid)
         } else {
-            return sim
+            sim
         }
     }
 

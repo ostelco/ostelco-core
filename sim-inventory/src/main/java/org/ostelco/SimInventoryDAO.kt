@@ -277,7 +277,7 @@ abstract class SimInventoryDAO {
     abstract fun findSimVendorForHlrPermissions(@Bind("vendorId") vendorId: Long, @Bind("hlrId") hlrId: Long): List<Long>
 
     fun simVendorIsPermittedForHlr(@Bind("vendorId") vendorId: Long, @Bind("hlrId") hlrId: Long): Boolean {
-        return (findSimVendorForHlrPermissions(vendorId, hlrId).size != 0)
+        return (findSimVendorForHlrPermissions(vendorId, hlrId).isNotEmpty())
     }
 
     @SqlUpdate("INSERT INTO sim_vendors_permitted_hlrs (vendorId, hlrId) VALUES (:vendorId, :hlrId)")
@@ -466,11 +466,9 @@ abstract class SimInventoryDAO {
 
         // First find the the next free SIM that can be activated in the HLR
         val sim: SimEntry = findNextFreeSimForMsisdn(hlr)
+                ?: return null // No sim cards available
 
         // ... and if we can1t find any, return null.
-        if (sim == null) {
-            return null // No sim cards available
-        }
 
         // Now set the MSISDN for this particular SIM
         setMsisdnOfSim(sim.id!!, msisdn)

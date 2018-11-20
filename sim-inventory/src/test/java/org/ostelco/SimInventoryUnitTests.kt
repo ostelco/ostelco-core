@@ -1,15 +1,16 @@
+
+import io.dropwizard.testing.junit.ResourceTestRule
 import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertNotNull
 import org.junit.AfterClass
+import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Test
+import org.mockito.Mockito.*
 import org.ostelco.*
 import org.ostelco.jsonValidation.JsonSchemaInputOutputValidationInterceptor
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
-import io.dropwizard.testing.junit.ResourceTestRule
-import junit.framework.TestCase.assertNotNull
-import org.junit.Before
-import org.mockito.Mockito.*
 
 class ES2PlusResourceTest {
 
@@ -305,7 +306,7 @@ class ES2PlusResourceTest {
 
 
         org.mockito.Mockito.`when`(dao.findSimVendorForHlrPermissions(0L, 1L))
-                .thenReturn(listOf<Long>(0L))
+                .thenReturn(listOf(0L))
 
 
         val sampleCsvIinput =

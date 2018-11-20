@@ -21,10 +21,7 @@ class JsonSchemaValidator(private val schemaRoot: String) {
     private var schemaMap: MutableMap<String, Schema> = mutableMapOf()
 
     private fun loadJsonSchemaResource(name: String): Schema {
-        val inputStream = this.javaClass.getResourceAsStream("$schemaRoot/${name}.json")
-        if (inputStream == null) {
-            throw WebApplicationException("Unknown schema map: '$name'", Response.Status.INTERNAL_SERVER_ERROR)
-        }
+        val inputStream = this.javaClass.getResourceAsStream("$schemaRoot/$name.json") ?: throw WebApplicationException("Unknown schema map: '$name'", Response.Status.INTERNAL_SERVER_ERROR)
         try {
             val jsonEncodedSchemaDescription = JSONObject(JSONTokener(inputStream))
             return org.everit.json.schema.loader.SchemaLoader.load(jsonEncodedSchemaDescription)
@@ -61,7 +58,7 @@ class JsonSchemaValidator(private val schemaRoot: String) {
 @Provider
 class JsonSchemaInputOutputValidationInterceptor (path:String): ReaderInterceptor, WriterInterceptor {
 
-    val validator = JsonSchemaValidator(path)
+    private val validator = JsonSchemaValidator(path)
 
     @Throws(IOException::class)
     private fun toByteArray(input: InputStream): ByteArray {
@@ -120,7 +117,7 @@ class JsonSchemaInputOutputValidationInterceptor (path:String): ReaderIntercepto
         // Then get the byte array & convert it to a nice
         // UTF-8 string
         val contentBytes = interceptingStream.toByteArray()
-        val contentString: String = String(contentBytes, Charset.forName("UTF-8"))
+        val contentString = String(contentBytes, Charset.forName("UTF-8"))
 
         // Validate our now serialized input.
         val type = ctx.entity::class.java
