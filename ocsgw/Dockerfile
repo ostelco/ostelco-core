@@ -14,4 +14,4 @@ COPY config/logback.dev.xml /config/logback.dev.xml
 
 COPY build/libs/ocsgw-uber.jar /ocsgw.jar
 
-ENTRYPOINT ["/start.sh"]
+CMD ["/start.sh"]

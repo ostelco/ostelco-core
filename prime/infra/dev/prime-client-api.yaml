@@ -10,6 +10,41 @@ x-google-endpoints:
 schemes:
   - "https"
 paths:
+  "/customer/activePseudonyms":
+    get:
+      description: "Get currently active pseudonyms for the user (identified by bearer token)."
+      produces:
+        - application/json
+      operationId: "getActivePseudonyms"
+      responses:
+        200:
+          description: "Get active pseudonyms for the user."
+          schema:
+            $ref: '#/definitions/ActivePseudonyms'
+        404:
+          description: "User not found"
+      security:
+        - auth0_jwt: []
+  "/customer/stripe-ephemeral-key":
+    get:
+      description: "Get Stripe Ephemeral key."
+      produces:
+        - application/json
+      operationId: "getStripeEphemeralKey"
+      parameters:
+        - name: api_version
+          in: query
+          description: "Stripe API version"
+          type: string
+      responses:
+        200:
+          description: "Get Stripe Ephemeral key."
+          schema:
+            type: string
+        404:
+          description: "User not found."
+      security:
+        - auth0_jwt: []
   "/profile":
     get:
       description: "Get profile for the user (email-id present in the bearer token)."
@@ -298,17 +333,17 @@ paths:
         - auth0_jwt: []
   "/subscription/activePseudonyms":
     get:
-      description: "Get currently active pseudonyms for the user's msisdn (identified by bearer token)."
+      description: "Get currently active pseudonyms for the user (identified by bearer token)."
       produces:
         - application/json
-      operationId: "getActivePseudonyms"
+      operationId: "getActivePseudonymsDeprecated"
       responses:
         200:
-          description: "Get active pseudonyms for the user's msisdn."
+          description: "Get active pseudonyms for the user."
           schema:
             $ref: '#/definitions/ActivePseudonyms'
         404:
-          description: "No subscription found for this user."
+          description: "User not found."
       security:
         - auth0_jwt: []
   "/referred":

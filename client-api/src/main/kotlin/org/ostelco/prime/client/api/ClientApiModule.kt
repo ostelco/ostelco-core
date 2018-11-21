@@ -8,7 +8,8 @@ import org.ostelco.prime.client.api.resources.AnalyticsResource
 import org.ostelco.prime.client.api.resources.ApplicationTokenResource
 import org.ostelco.prime.client.api.resources.BundlesResource
 import org.ostelco.prime.client.api.resources.ConsentsResource
-import org.ostelco.prime.client.api.resources.PaymentResource
+import org.ostelco.prime.client.api.resources.CustomerResource
+import org.ostelco.prime.client.api.resources.PaymentSourcesResource
 import org.ostelco.prime.client.api.resources.ProductsResource
 import org.ostelco.prime.client.api.resources.ProfileResource
 import org.ostelco.prime.client.api.resources.PurchaseResource
@@ -17,9 +18,6 @@ import org.ostelco.prime.client.api.resources.SubscriptionResource
 import org.ostelco.prime.client.api.resources.SubscriptionsResource
 import org.ostelco.prime.client.api.store.SubscriberDAOImpl
 import org.ostelco.prime.module.PrimeModule
-import org.ostelco.prime.module.getResource
-import org.ostelco.prime.ocs.OcsSubscriberService
-import org.ostelco.prime.storage.ClientDataSource
 import java.util.*
 import javax.servlet.DispatcherType
 
@@ -30,9 +28,6 @@ import javax.servlet.DispatcherType
  */
 @JsonTypeName("api")
 class ClientApiModule : PrimeModule {
-
-    private val storage by lazy { getResource<ClientDataSource>() }
-    private val ocsSubscriberService by lazy { getResource<OcsSubscriberService>() }
 
     override fun init(env: Environment) {
 
@@ -46,7 +41,7 @@ class ClientApiModule : PrimeModule {
         corsFilterRegistration.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType::class.java), true, "/*")
 
 
-        val dao = SubscriberDAOImpl(storage, ocsSubscriberService)
+        val dao = SubscriberDAOImpl()
         val jerseyEnv = env.jersey()
 
         /* APIs. */
@@ -56,10 +51,11 @@ class ClientApiModule : PrimeModule {
         jerseyEnv.register(PurchaseResource(dao))
         jerseyEnv.register(ProfileResource(dao))
         jerseyEnv.register(ReferralResource(dao))
-        jerseyEnv.register(PaymentResource(dao))
+        jerseyEnv.register(PaymentSourcesResource(dao))
         jerseyEnv.register(SubscriptionResource(dao))
         jerseyEnv.register(BundlesResource(dao))
         jerseyEnv.register(SubscriptionsResource(dao))
+        jerseyEnv.register(CustomerResource(dao))
         jerseyEnv.register(ApplicationTokenResource(dao))
 
         reportMetricsAtStartUp()
