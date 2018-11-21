@@ -6,6 +6,27 @@ import { Table, Card, CardBody, CardTitle, Button, UncontrolledTooltip } from 'r
 import { subscriberActions } from '../../actions/subscriber.actions';
 import { convertTimestampToDate } from '../../helpers';
 
+
+export const RefundedItemOption = props => {
+  function nope(e) {
+    e.preventDefault();
+  }
+  return (
+    <td>
+      <Button color="outline-secondary" onClick={nope} id={props.id}>Refunded..</Button>
+      <UncontrolledTooltip placement="right" target={props.id}>
+        {`Refunded on ${convertTimestampToDate(props.timestamp)}, ${props.reason}`}
+      </UncontrolledTooltip>
+    </td>
+  );
+}
+
+export const FreeItemOption = props => {
+  return (
+    <td />
+  );
+}
+
 export const HistoryRow = props => {
   const isRefunded = () => (props.item.refund && props.item.refund.id);
   const isFreeProduct = () => (props.item.product.price.amount <= 0);
@@ -14,21 +35,12 @@ export const HistoryRow = props => {
     console.log(`Reverting ${props.item.id}`);
     props.refundPurchase(props.item.id, 'requested_by_customer');
   }
-  function nope(e) {
-    e.preventDefault();
-  }
+
   function renderOption() {
     if (isRefunded()) {
-      return (
-        <td>
-          <Button color="outline-secondary" onClick={nope} id={props.item.refund.id}>Refunded..</Button>
-          <UncontrolledTooltip placement="right" target={props.item.refund.id}>
-            {`Refunded on ${convertTimestampToDate(props.item.refund.timestamp)}, ${props.item.refund.reason}`}
-          </UncontrolledTooltip>
-        </td>
-      );
-    } else if(isFreeProduct()) {
-      return (<td />);
+      return (<RefundedItemOption {...props.item.refund} />);
+    } else if (isFreeProduct()) {
+      return (<FreeItemOption />);
     } else {
       return (
         <td><Button color="outline-primary" onClick={onRefund}>Refund</Button></td>
@@ -58,6 +70,7 @@ HistoryRow.propTypes = {
     }),
     refund: PropTypes.shape({
       id: PropTypes.string.isRequired,
+      reason: PropTypes.string,
       timestamp: PropTypes.number.isRequired
     }),
     timestamp: PropTypes.number.isRequired
