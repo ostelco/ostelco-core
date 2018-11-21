@@ -4,9 +4,7 @@ import junit.framework.TestCase.assertEquals
 import org.junit.AfterClass
 import org.junit.ClassRule
 import org.junit.Test
-import org.ostelco.Es2PlusResource
-import org.ostelco.RestrictedOperationsRequestFilter
-import org.ostelco.SmDpPlus
+import org.ostelco.*
 import org.ostelco.es2plus.ES2PlusClient
 import org.ostelco.jsonValidation.RequestServerReaderWriterInterceptor
 import javax.ws.rs.client.Entity
@@ -23,7 +21,8 @@ class ES2PlusResourceTest {
         @ClassRule
         val RULE: ResourceTestRule = ResourceTestRule
                 .builder()
-                .addResource(Es2PlusResource(SmDpPlus()))
+                .addResource(SmDpPlusServerResource(SmDpPlusService()))
+                .addResource(SmDpPlusCallbackResource(SmDpPlusCallbackService()))
                 .addProvider(RestrictedOperationsRequestFilter())
                 .addProvider(RequestServerReaderWriterInterceptor())
                 .build()

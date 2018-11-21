@@ -49,11 +49,13 @@ class Es2plusApplication : Application<Es2plusConfiguration>() {
                 .prettyPrint(true)
                 .resourcePackages(Stream.of("no .rmz.membershipmgt")
                         .collect(Collectors.toSet<String>()))
-        environment.jersey().register(OpenApiResource()
+        val env = environment.jersey()
+        env.register(OpenApiResource()
                 .openApiConfiguration(oasConfig))
 
-        environment.jersey().register(Es2PlusResource(SmDpPlus()))
-        environment.jersey().register(RestrictedOperationsRequestFilter())
+        env.register(SmDpPlusCallbackResource(SmDpPlusCallbackService()))
+        env.register(SmDpPlusServerResource(SmDpPlusService()))
+        env.register(RestrictedOperationsRequestFilter())
     }
 
     companion object {
@@ -110,10 +112,10 @@ class AppExceptionMapper : ExceptionMapper<Es2Exception> {
 
 
 
-class SmDpPlusException (val statusCodeData: StatusCodeData): Exception()
+class SmDpPlusException(val statusCodeData: StatusCodeData) : Exception()
 
 
-class SmDpPlus {
+class SmDpPlusService {
 
     @Throws(SmDpPlusException::class)
     fun downloadOrder(eid: String?, iccid: String?, profileType: String?): String {
@@ -137,6 +139,11 @@ class SmDpPlus {
 
     }
 
+
+}
+
+class  SmDpPlusCallbackService {
+
     @Throws(SmDpPlusException::class)
     fun handleDownloadProgressInfo(eid: String?, iccid: String?, notificationPointId: String?, profileType: String?, resultData: ES2StatusCodeData?, timestamp: String?) {
 
@@ -151,8 +158,7 @@ class SmDpPlus {
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/gsma/rsp2/es2plus/")
-class Es2PlusResource(val smDpPlus: SmDpPlus) {
-
+class SmDpPlusServerResource(val smDpPlus: SmDpPlusService) {
 
 
     /**
@@ -167,7 +173,7 @@ class Es2PlusResource(val smDpPlus: SmDpPlus) {
                 iccid = order.iccid,
                 profileType = order.profileType)
 
-        return Es2DownloadOrderResponse(iccid=iccid)
+        return Es2DownloadOrderResponse(iccid = iccid)
     }
 
     /**
@@ -181,14 +187,14 @@ class Es2PlusResource(val smDpPlus: SmDpPlus) {
         //     methods in the resource only handle the happy day cases.
         //     Makes for simpler code and clearer separation of concerns.
         //     also less repeated code.
-        var header : ES2ResponseHeader
+        var header: ES2ResponseHeader
         try {
             smDpPlus.confirmOrder(eid = order.eid,
                     smdsAddress = order.smdsAddress,
                     machingId = order.matchingId,
                     confirmationCode = order.confirmationCode)
             header = eS2SuccessResponseHeader()
-        } catch (e:SmDpPlusException) {
+        } catch (e: SmDpPlusException) {
             header = newErrorHeader(e)
         }
 
@@ -206,7 +212,7 @@ class Es2PlusResource(val smDpPlus: SmDpPlus) {
     @POST
     fun cancelOrder(order: Es2CancelOrder): Es2CancelOrderResponse {
 
-       smDpPlus.cancelOrder(
+        smDpPlus.cancelOrder(
                 eid = order.eid,
                 iccid = order.iccid,
                 matchingId = order.matchingId,
@@ -224,6 +230,12 @@ class Es2PlusResource(val smDpPlus: SmDpPlus) {
         smDpPlus.releaseProfile(iccid = order.iccid)
         return Es2ReleaseProfileResponse()
     }
+}
+
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+@Path("/gsma/rsp2/es2plus/")
+class SmDpPlusCallbackResource(val smDpPlus: SmDpPlusCallbackService) {
 
     /**
      * This method is intended to be called _by_ the SM-DP+, sending information
