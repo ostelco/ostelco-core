@@ -6,7 +6,7 @@ import { Table, Card, CardBody, CardTitle, Button, UncontrolledTooltip } from 'r
 import { subscriberActions } from '../../actions/subscriber.actions';
 import { convertTimestampToDate } from '../../helpers';
 
-const HistoryRow = props => {
+export const HistoryRow = props => {
   const isRefunded = () => (props.item.refund && props.item.refund.id);
   const isFreeProduct = () => (props.item.product.price.amount <= 0);
   function onRefund(e) {
@@ -46,14 +46,21 @@ const HistoryRow = props => {
 
 HistoryRow.propTypes = {
   item: PropTypes.shape({
-    id: PropTypes.string,
+    id: PropTypes.string.isRequired,
     product: PropTypes.shape({
+      price: PropTypes.shape({
+        amount: PropTypes.number.isRequired
+      }).isRequired,
       presentation: PropTypes.shape({
         priceLabel: PropTypes.string,
         productLabel: PropTypes.string
-      }),
+      }).isRequired,
     }),
-    timestamp: PropTypes.number
+    refund: PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      timestamp: PropTypes.number.isRequired
+    }),
+    timestamp: PropTypes.number.isRequired
   }),
   refundPurchase: PropTypes.func.isRequired
 };
