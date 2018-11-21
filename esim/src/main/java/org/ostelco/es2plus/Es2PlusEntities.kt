@@ -1,7 +1,7 @@
 package org.ostelco.es2plus
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import org.ostelco.SmDpPlusException
+
 
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)

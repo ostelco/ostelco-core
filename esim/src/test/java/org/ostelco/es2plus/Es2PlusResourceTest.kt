@@ -1,28 +1,28 @@
+package org.ostelco.es2plus
 
 import io.dropwizard.testing.junit.ResourceTestRule
-import junit.framework.TestCase.assertEquals
 import org.junit.AfterClass
+import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Test
-import org.ostelco.*
-import org.ostelco.es2plus.ES2PlusClient
+import org.mockito.Mockito
+import org.mockito.Mockito.reset
 import org.ostelco.jsonValidation.RequestServerReaderWriterInterceptor
-import javax.ws.rs.client.Entity
-import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.Response
-
 
 
 class ES2PlusResourceTest {
 
     companion object {
 
+        val smdpPlusService = Mockito.mock(SmDpPlusService::class.java)
+        val callbackService = Mockito.mock(SmDpPlusCallbackService::class.java)
+
         @JvmField
         @ClassRule
         val RULE: ResourceTestRule = ResourceTestRule
                 .builder()
-                .addResource(SmDpPlusServerResource(SmDpPlusService()))
-                .addResource(SmDpPlusCallbackResource(SmDpPlusCallbackService()))
+                .addResource(SmDpPlusServerResource(smdpPlusService))
+                .addResource(SmDpPlusCallbackResource(callbackService))
                 .addProvider(RestrictedOperationsRequestFilter())
                 .addProvider(RequestServerReaderWriterInterceptor())
                 .build()
@@ -33,32 +33,29 @@ class ES2PlusResourceTest {
         }
     }
 
+    @Before
+    fun setUp() {
+        reset(smdpPlusService)
+        reset(callbackService)
+    }
+
     val client = ES2PlusClient("Integration test client", RULE.client())
 
 
-    fun <T> postEs2ProtocolCommand(
-            path: String,
-            es2ProtocolPayload: T,
-            expectedReturnCode: Int = 201): Response {
-        val entity: Entity<T> = Entity.entity(es2ProtocolPayload, MediaType.APPLICATION_JSON)
-        val result: Response = RULE.client().target(path)
-                .request(MediaType.APPLICATION_JSON)
-                .header("User-Agent", "gsma-rsp-lpad")
-                .header("X-Admin-Protocol", "gsma/rsp/v<x.y.z>")
-                .post(entity)
-        if (expectedReturnCode != result.status) {
-            assertEquals("Expected return value $expectedReturnCode, but got ${result.status}.  Body was \"${result.readEntity(String::class.java)}\"", expectedReturnCode, result.status)
-        }
-        return result
-    }
-
     @Test
     fun testDownloadOrder() {
+
+        Mockito.`when`(smdpPlusService.downloadOrder(
+                eid = Mockito.anyString(),
+                iccid = Mockito.anyString(),
+                profileType = Mockito.anyString()))
+                .thenReturn("01234567890123456789")
+
         val result = client.downloadOrder(
                 eid = "01234567890123456789012345678901",
                 iccid = "01234567890123456789",
                 profileType = "AProfileTypeOfSomeSort")
-        println("result = $result")
+        // XXX Do some verification
     }
 
     @Test
@@ -71,6 +68,7 @@ class ES2PlusResourceTest {
                 confirmationCode = "bar",
                 smdsAddress = "baz",
                 releaseFlag = true)
+        // XXX Do some verification
     }
 
     @Test
@@ -80,15 +78,23 @@ class ES2PlusResourceTest {
                 iccid = "01234567890123456789",
                 matchingId = "foo",
                 finalProfileStatusIndicator = "bar")
+        // XXX Do some verification
     }
 
     @Test
     fun testReleaseProfile() {
         client.releaseProfile(iccid = "01234567890123456789")
+        // XXX Do some verification
     }
 
     @Test
     fun testHandleDownloadProgressInfo() {
+        // XXX Not testing anything sensible
         client.handleDownloadProgressInfo()
+        // XXX Do some verification
     }
+
+
+    // XXX Not testing error cases, to ensure that the exception, error reportibng
+    //     mechanism is working properly.
 }

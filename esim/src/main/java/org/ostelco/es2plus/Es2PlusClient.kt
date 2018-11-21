@@ -102,6 +102,8 @@ class ES2PlusClient(val requesterId: String, val client: Client) {
                 expectedReturnCode = 200)
     }
 
+    // XXX This client is missing essentially _all_ of its input parameters, must
+    //     be heavily amended so that it can be used for proper testing.
     fun handleDownloadProgressInfo(): Es2HandleDownloadProgressInfoResponse {
         return postEs2ProtocolCmd("/gsma/rsp2/es2plus/handleDownloadProgressInfo",
                 Es2HandleDownloadProgressInfo(

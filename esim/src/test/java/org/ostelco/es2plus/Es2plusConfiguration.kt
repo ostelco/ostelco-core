@@ -1,4 +1,4 @@
-package org.ostelco
+package org.ostelco.es2plus
 
 import io.dropwizard.Configuration
 
