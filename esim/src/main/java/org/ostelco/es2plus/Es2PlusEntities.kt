@@ -1,6 +1,7 @@
 package org.ostelco.es2plus
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import org.ostelco.SmDpPlusException
 
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
@@ -62,7 +63,7 @@ data class Es2PlusDownloadOrder(
 
 // @JsonSchema("ES2+DownloadOrder-response")
 data class Es2DownloadOrderResponse(
-        @JsonProperty("header") val header: ES2ResponseHeader,
+        @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader(),
         @JsonProperty("iccid") val iccid: String
 )
 
@@ -83,7 +84,7 @@ data class Es2ConfirmOrder(
 
 // @JsonSchema("ES2+ConfirmOrder-response")
 data class Es2ConfirmOrderResponse(
-        @JsonProperty("header") val header: ES2ResponseHeader,
+        @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader(),
         @JsonProperty("eid") val eid: String,
         @JsonProperty("matchingId") val matchingId: String?,
         @JsonProperty("smdsAddress") val smdsAddress: String?
@@ -103,21 +104,21 @@ data class Es2CancelOrder(
 )
 
 // @JsonSchema("ES2+CancelOrder-response")
-data class Es2CancelOrderResponse(@JsonProperty("header") val header: ES2ResponseHeader)
+data class Es2CancelOrderResponse(@JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader())
 
 ///
 ///  The ReleaseProfile function
 ///
 
-@JsonSchema("ES2+ReleaseProfile-def")
+// @JsonSchema("ES2+ReleaseProfile-def")
 data class Es2ReleaseProfile(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("iccid") val iccid: String
 )
 
-@JsonSchema("ES2+ReleaseProfile-response")
+// @JsonSchema("ES2+ReleaseProfile-response")
 data class Es2ReleaseProfileResponse(
-        @JsonProperty("header") val header: ES2ResponseHeader)
+        @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader())
 
 
 ///
@@ -148,6 +149,24 @@ data class ES2StatusCodeData(
         @JsonProperty("message") val message: String?
 )
 
-@JsonSchema("ES2+HandleDownloadProgressInfo-response")
+// @JsonSchema("ES2+HandleDownloadProgressInfo-response")
 data class Es2HandleDownloadProgressInfoResponse(
-        @JsonProperty("header") val header: ES2ResponseHeader)
+        @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader())
+
+
+///
+///    Convenience functions to generate headers
+///
+
+
+fun newErrorHeader(e: SmDpPlusException): ES2ResponseHeader {
+    return ES2ResponseHeader(
+            functionExecutionStatus =
+            FunctionExecutionStatus(
+                    status = FunctionExecutionStatusType.Failed,
+                    statusCodeData = e.statusCodeData))
+}
+
+fun eS2SuccessResponseHeader() =
+        ES2ResponseHeader(functionExecutionStatus =
+        FunctionExecutionStatus(status = FunctionExecutionStatusType.ExecutedSuccess))

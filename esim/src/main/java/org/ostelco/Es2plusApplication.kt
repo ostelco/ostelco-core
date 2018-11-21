@@ -109,19 +109,38 @@ class AppExceptionMapper : ExceptionMapper<Es2Exception> {
 */
 
 
+
+class SmDpPlusException (val statusCodeData: StatusCodeData): Exception()
+
+
 class SmDpPlus {
 
-    // XXX The ICCID generated should be  unique, not yet allocated, etc.
+    @Throws(SmDpPlusException::class)
     fun downloadOrder(eid: String?, iccid: String?, profileType: String?): String {
         return iccid ?: "01234567890123456798"
     }
 
     // XXX Throw exception if order can't be confirmed, also: Are all these parameters
     //     needed?
+    @Throws(SmDpPlusException::class)
     fun confirmOrder(eid: String, smdsAddress: String?, machingId: String?, confirmationCode: String?) {
 
     }
 
+    @Throws(SmDpPlusException::class)
+    fun cancelOrder(eid: String, iccid: String?, matchingId: String?, finalProfileStatusIndicator: String?) {
+
+    }
+
+    @Throws(SmDpPlusException::class)
+    fun releaseProfile(iccid: String) {
+
+    }
+
+    @Throws(SmDpPlusException::class)
+    fun handleDownloadProgressInfo(eid: String?, iccid: String?, notificationPointId: String?, profileType: String?, resultData: ES2StatusCodeData?, timestamp: String?) {
+
+    }
 }
 
 ///
@@ -133,6 +152,8 @@ class SmDpPlus {
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/gsma/rsp2/es2plus/")
 class Es2PlusResource(val smDpPlus: SmDpPlus) {
+
+
 
     /**
      * Provided by SM-DP+, called by operator's BSS system.
@@ -146,18 +167,8 @@ class Es2PlusResource(val smDpPlus: SmDpPlus) {
                 iccid = order.iccid,
                 profileType = order.profileType)
 
-        return Es2DownloadOrderResponse(
-                header = ES2ResponseHeader(
-                        functionExecutionStatus = FunctionExecutionStatus(
-                                status = FunctionExecutionStatusType.ExecutedSuccess,
-                                statusCodeData = StatusCodeData(
-                                        subjectCode = "foo",  // XXX WTF is this
-                                        reasonCode = "bar",   // .... and this
-                                        subjectIdentifier = "baz", //  and this?  GSMA isn't particulary clear
-                                        message = "gazonk"))),
-                iccid = iccid)
+        return Es2DownloadOrderResponse(iccid=iccid)
     }
-
 
     /**
      * Provided by SM-DP+, called by operator's BSS system.
@@ -166,19 +177,23 @@ class Es2PlusResource(val smDpPlus: SmDpPlus) {
     @POST
     fun confirmOrder(order: Es2ConfirmOrder): Es2ConfirmOrderResponse {
 
-        smDpPlus.confirmOrder(eid = order.eid,
-                smdsAddress = order.smdsAddress,
-                machingId = order.matchingId,
-                confirmationCode = order.confirmationCode)
+        // XXX Modify to catch error by an interceptor, so that the
+        //     methods in the resource only handle the happy day cases.
+        //     Makes for simpler code and clearer separation of concerns.
+        //     also less repeated code.
+        var header : ES2ResponseHeader
+        try {
+            smDpPlus.confirmOrder(eid = order.eid,
+                    smdsAddress = order.smdsAddress,
+                    machingId = order.matchingId,
+                    confirmationCode = order.confirmationCode)
+            header = eS2SuccessResponseHeader()
+        } catch (e:SmDpPlusException) {
+            header = newErrorHeader(e)
+        }
 
         return Es2ConfirmOrderResponse(
-                header = ES2ResponseHeader(functionExecutionStatus = FunctionExecutionStatus(
-                        status = FunctionExecutionStatusType.ExecutedSuccess,
-                        statusCodeData = StatusCodeData(
-                                subjectCode = "foo",
-                                reasonCode = "bar",
-                                subjectIdentifier = "baz",
-                                message = "gazonk"))),
+                header = header,
                 eid = order.eid,
                 smdsAddress = order.smdsAddress,
                 matchingId = order.matchingId)
@@ -190,14 +205,13 @@ class Es2PlusResource(val smDpPlus: SmDpPlus) {
     @Path("cancelOrder")
     @POST
     fun cancelOrder(order: Es2CancelOrder): Es2CancelOrderResponse {
-        return Es2CancelOrderResponse(
-                header = ES2ResponseHeader(functionExecutionStatus = FunctionExecutionStatus(
-                        status = FunctionExecutionStatusType.ExecutedSuccess,
-                        statusCodeData = StatusCodeData(
-                                subjectCode = "foo",
-                                reasonCode = "bar",
-                                subjectIdentifier = "baz",
-                                message = "gazonk"))))
+
+       smDpPlus.cancelOrder(
+                eid = order.eid,
+                iccid = order.iccid,
+                matchingId = order.matchingId,
+                finalProfileStatusIndicator = order.finalProfileStatusIndicator)
+        return Es2CancelOrderResponse()
     }
 
     /**
@@ -206,15 +220,9 @@ class Es2PlusResource(val smDpPlus: SmDpPlus) {
     @Path("releaseProfile")
     @POST
     fun releaseProfile(order: Es2ReleaseProfile): Es2ReleaseProfileResponse {
-        return Es2ReleaseProfileResponse(
-                header = ES2ResponseHeader(
-                        functionExecutionStatus = FunctionExecutionStatus(
-                                status = FunctionExecutionStatusType.ExecutedSuccess,
-                                statusCodeData = StatusCodeData(
-                                        subjectCode = "foo",
-                                        reasonCode = "bar",
-                                        subjectIdentifier = "baz",
-                                        message = "gazonk"))))
+
+        smDpPlus.releaseProfile(iccid = order.iccid)
+        return Es2ReleaseProfileResponse()
     }
 
     /**
@@ -225,14 +233,14 @@ class Es2PlusResource(val smDpPlus: SmDpPlus) {
     @Path("handleDownloadProgressInfo")
     @POST
     fun handleDownloadProgressInfo(order: Es2HandleDownloadProgressInfo): Es2HandleDownloadProgressInfoResponse {
-        return Es2HandleDownloadProgressInfoResponse(
-                header = ES2ResponseHeader(
-                        functionExecutionStatus = FunctionExecutionStatus(
-                                status = FunctionExecutionStatusType.ExecutedSuccess,
-                                statusCodeData = StatusCodeData(
-                                        subjectCode = "foo",
-                                        reasonCode = "bar",
-                                        subjectIdentifier = "baz",
-                                        message = "gazonk"))))
+        smDpPlus.handleDownloadProgressInfo(
+                eid = order.eid,
+                iccid = order.iccid,
+                notificationPointId = order.notificationPointId,
+                profileType = order.profileType,
+                resultData = order.resultData,
+                timestamp = order.timestamp
+        )
+        return Es2HandleDownloadProgressInfoResponse()
     }
 }
