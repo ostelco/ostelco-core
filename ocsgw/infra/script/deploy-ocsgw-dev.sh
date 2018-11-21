@@ -32,18 +32,11 @@ getInstance () {
     read INSTANCE
 }
 
-deploy_1 () {
-    echo "Deploying ocsgw instance 1 to GKE Dev"
-    gcloud compute instances update-container ocsgw-dev \
+deploy () {
+    echo "Deploying ocsgw instance ${INSTANCE} to GKE Dev"
+    gcloud compute instances update-container ocsgw-dev-${INSTANCE} \
     --container-image eu.gcr.io/${PROJECT_ID}/ocsgw:${TAG_OCS}
 }
-
-deploy_2 () {
-    echo "Deploying ocsgw instance 2 to GKE Dev"
-    gcloud compute instances update-container ocsgw-dev-2 \
-    --container-image eu.gcr.io/${PROJECT_ID}/ocsgw:${TAG_OCS}
-}
-
 
 while true; do
   getInstance
@@ -55,12 +48,12 @@ while true; do
 done
 
 
-if [ "$INSTANCE" == "1" ]; then
-    deploy_1
-elif [ "$INSTANCE" == "2" ]; then
-    deploy_2
+if [[ "$INSTANCE" == 1 ]] || [[ "$INSTANCE" == 2 ]]; then
+    deploy
 else
-    deploy_1
-    deploy_2
+    INSTANCE=1
+    deploy
+    INSTANCE=2
+    deploy
 fi
 
