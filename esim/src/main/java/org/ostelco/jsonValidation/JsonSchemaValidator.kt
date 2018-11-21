@@ -6,7 +6,7 @@ import org.everit.json.schema.ValidationException
 import org.json.JSONException
 import org.json.JSONObject
 import org.json.JSONTokener
-import org.ostelco.JsonSchema
+import org.ostelco.es2plus.JsonSchema
 import java.io.*
 import java.nio.charset.Charset
 import javax.ws.rs.WebApplicationException
@@ -31,7 +31,6 @@ class JsonSchemaValidator {
             throw WebApplicationException("Illegal Schema definition for schema: '$name'.  Error: ${e.message}")
         }
     }
-
 
     private fun getSchema(name: String): Schema {
         if (!schemaMap.containsKey(name)) {

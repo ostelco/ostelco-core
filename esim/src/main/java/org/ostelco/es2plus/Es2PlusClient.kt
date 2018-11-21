@@ -1,6 +1,5 @@
-package org.ostelco
+package org.ostelco.es2plus
 
-import junit.framework.TestCase
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
@@ -25,7 +24,6 @@ class ES2PlusClient(val requesterId: String, val client: Client) {
                 .post(entity)
         if (expectedReturnCode != result.status) {
             val msg = "Expected return value $expectedReturnCode, but got ${result.status}.  Body was \"${result.readEntity(String::class.java)}\""
-            TestCase.assertEquals("Expected return value $expectedReturnCode, but got ${result.status}.  Body was \"${result.readEntity(String::class.java)}\"", expectedReturnCode, result.status)
             throw ES2PlusClientException(msg)
         }
         return result.readEntity(sclass)

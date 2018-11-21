@@ -4,10 +4,10 @@ import junit.framework.TestCase.assertEquals
 import org.junit.AfterClass
 import org.junit.ClassRule
 import org.junit.Test
-import org.ostelco.ES2PlusClient
 import org.ostelco.Es2PlusResource
 import org.ostelco.RestrictedOperationsRequestFilter
 import org.ostelco.SmDpPlus
+import org.ostelco.es2plus.ES2PlusClient
 import org.ostelco.jsonValidation.RequestServerReaderWriterInterceptor
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
