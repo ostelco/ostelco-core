@@ -21,12 +21,7 @@ export const RefundedItemOption = props => {
   );
 }
 
-export const FreeItemOption = props => {
-  return (
-    <td />
-  );
-}
-
+export const FreeItemOption = props => (<td/>);
 export const HistoryRow = props => {
   const isRefunded = () => (props.item.refund && props.item.refund.id);
   const isFreeProduct = () => (props.item.product.price.amount <= 0);
