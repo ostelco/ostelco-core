@@ -91,6 +91,19 @@ class ES2PlusClient(val requesterId: String, val client: Client) {
                 sclass = Es2CancelOrderResponse::class.java,
                 expectedReturnCode = 200)
     }
+
+
+    fun releaseProfile(iccid: String): Es2ReleaseProfileResponse {
+        return postEs2ProtocolCmd("/gsma/rsp2/es2plus/releaseProfile",
+                Es2ReleaseProfile(
+                        header = ES2RequestHeader(
+                                functionRequesterIdentifier = requesterId,
+                                functionCallIdentifier = "releaseProfile"
+                        ),
+                        iccid = iccid),
+                sclass = Es2ReleaseProfileResponse::class.java,
+                expectedReturnCode = 200)
+    }
 }
 
 

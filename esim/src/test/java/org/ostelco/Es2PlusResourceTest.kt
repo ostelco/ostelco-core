@@ -82,16 +82,7 @@ class ES2PlusResourceTest {
 
     @Test
     fun testReleaseProfile() {
-        val es2ConfirmOrder = postEs2ProtocolCommand("/gsma/rsp2/es2plus/releaseProfile",
-                Es2ReleaseProfile(
-                        header = ES2RequestHeader(
-                                functionRequesterIdentifier = "foo",
-                                functionCallIdentifier = "bar"
-                        ),
-
-                        iccid = "01234567890123456789")
-                , 200)
-                .readEntity(String::class.java)
+        client.releaseProfile(iccid = "01234567890123456789")
     }
 
     @Test
