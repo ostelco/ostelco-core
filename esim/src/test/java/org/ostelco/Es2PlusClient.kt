@@ -92,7 +92,6 @@ class ES2PlusClient(val requesterId: String, val client: Client) {
                 expectedReturnCode = 200)
     }
 
-
     fun releaseProfile(iccid: String): Es2ReleaseProfileResponse {
         return postEs2ProtocolCmd("/gsma/rsp2/es2plus/releaseProfile",
                 Es2ReleaseProfile(
@@ -102,6 +101,18 @@ class ES2PlusClient(val requesterId: String, val client: Client) {
                         ),
                         iccid = iccid),
                 sclass = Es2ReleaseProfileResponse::class.java,
+                expectedReturnCode = 200)
+    }
+
+    fun handleDownloadProgressInfo(): Es2HandleDownloadProgressInfoResponse {
+        return postEs2ProtocolCmd("/gsma/rsp2/es2plus/handleDownloadProgressInfo",
+                Es2HandleDownloadProgressInfo(
+                        header = ES2RequestHeader(
+                                functionRequesterIdentifier = requesterId,
+                                functionCallIdentifier = "handleDownloadProgressInfo"
+
+                        )),
+                sclass = Es2HandleDownloadProgressInfoResponse::class.java,
                 expectedReturnCode = 200)
     }
 }

@@ -4,7 +4,10 @@ import junit.framework.TestCase.assertEquals
 import org.junit.AfterClass
 import org.junit.ClassRule
 import org.junit.Test
-import org.ostelco.*
+import org.ostelco.ES2PlusClient
+import org.ostelco.Es2PlusResource
+import org.ostelco.RestrictedOperationsRequestFilter
+import org.ostelco.SmDpPlus
 import org.ostelco.jsonValidation.RequestServerReaderWriterInterceptor
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
@@ -87,15 +90,6 @@ class ES2PlusResourceTest {
 
     @Test
     fun testHandleDownloadProgressInfo() {
-        val es2ConfirmOrder = postEs2ProtocolCommand("/gsma/rsp2/es2plus/handleDownloadProgressInfo",
-                Es2HandleDownloadProgressInfo(
-                        header = ES2RequestHeader(
-                                functionRequesterIdentifier = "foo",
-                                functionCallIdentifier = "bar"
-
-                        ))
-                , 200)
-                .readEntity(String::class.java)
-        // XXX Fails .readEntity(ES2JsonBaseResponse::class.java)
+        client.handleDownloadProgressInfo()
     }
 }
