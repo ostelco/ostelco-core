@@ -50,7 +50,6 @@ class ES2PlusResourceTest {
         return result
     }
 
-
     @Test
     fun testDownloadOrder() {
         val result = client.downloadOrder(
@@ -74,20 +73,11 @@ class ES2PlusResourceTest {
 
     @Test
     fun testCancelOrder() {
-        val es2ConfirmOrder = postEs2ProtocolCommand("/gsma/rsp2/es2plus/cancelOrder",
-                Es2CancelOrder(
-                        header = ES2RequestHeader(
-                                functionRequesterIdentifier = "foo",
-                                functionCallIdentifier = "bar"
-
-                        ),
-
-                        eid = "01234567890123456789012345678901",
-                        iccid = "01234567890123456789",
-                        matchingId = "foo",
-                        finalProfileStatusIndicator = "bar")
-                , 200)
-                .readEntity(String::class.java)
+        client.cancelOrder(
+                eid = "01234567890123456789012345678901",
+                iccid = "01234567890123456789",
+                matchingId = "foo",
+                finalProfileStatusIndicator = "bar")
     }
 
     @Test

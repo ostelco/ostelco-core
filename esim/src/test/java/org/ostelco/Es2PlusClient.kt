@@ -73,6 +73,24 @@ class ES2PlusClient(val requesterId: String, val client: Client) {
                 expectedReturnCode = 200,
                 sclass = Es2ConfirmOrderResponse::class.java)
     }
+
+    fun cancelOrder(eid: String,
+                    iccid: String,
+                    matchingId: String,
+                    finalProfileStatusIndicator: String): Es2CancelOrderResponse {
+        return postEs2ProtocolCmd("/gsma/rsp2/es2plus/cancelOrder",
+                es2ProtocolPayload = Es2CancelOrder(
+                        header = ES2RequestHeader(
+                                functionRequesterIdentifier = requesterId,
+                                functionCallIdentifier = "cancelOrder"
+                        ),
+                        eid = eid,
+                        iccid = iccid,
+                        matchingId = matchingId,
+                        finalProfileStatusIndicator = finalProfileStatusIndicator),
+                sclass = Es2CancelOrderResponse::class.java,
+                expectedReturnCode = 200)
+    }
 }
 
 
