@@ -1,6 +1,6 @@
 package org.ostelco.ocsgw.data.grpc;
 
-import com.google.auth.oauth2.GoogleCredentials;
+import com.google.auth.oauth2.ServiceAccountJwtAccessCredentials;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
@@ -46,7 +46,7 @@ class OcsgwMetrics {
 
     private OcsgwAnalyticsReport lastActiveSessions = null;
 
-    OcsgwMetrics(String metricsServerHostname, GoogleCredentials credentials) {
+    OcsgwMetrics(String metricsServerHostname, ServiceAccountJwtAccessCredentials credentials) {
 
         try {
             final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder

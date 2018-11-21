@@ -1,5 +1,6 @@
 package org.ostelco.ocsgw;
 
+import com.google.cloud.storage.*;
 import org.jdiameter.api.Answer;
 import org.jdiameter.api.ApplicationId;
 import org.jdiameter.api.Configuration;
@@ -22,6 +23,8 @@ import org.ostelco.ocsgw.utils.AppConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -54,8 +57,33 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
         }
     }
 
+    private void fetchConfig(final String configDir) {
+        final String vpcEnv = System.getenv("VPC_ENV");
+        final String instance = System.getenv("INSTANCE");
+        final String serviceFile = System.getenv("SERVICE_FILE");
+
+        if ((vpcEnv != null) && (instance != null) && (serviceFile != null)) {
+
+            final String bucket = "ocsgw-" + vpcEnv + "-" + instance + "-bucket";
+
+            Storage storage = StorageOptions.getDefaultInstance().getService();
+
+            Blob blobConfigFile = storage.get(BlobId.of(bucket, DIAMETER_CONFIG_FILE));
+            final Path destConfigurationFilePath = Paths.get(configDir + "/" + DIAMETER_CONFIG_FILE);
+            blobConfigFile.downloadTo(destConfigurationFilePath);
+
+            Blob blobServiceAccountFile = storage.get(BlobId.of(bucket, serviceFile));
+            final Path destServiceAccountFilePath = Paths.get(configDir + "/" + serviceFile);
+            blobServiceAccountFile.downloadTo(destServiceAccountFilePath);
+        }
+    }
+
+
     public void start(final String configDir) {
         try {
+
+            fetchConfig(configDir);
+
             Configuration diameterConfig = new XMLConfiguration(configDir +  DIAMETER_CONFIG_FILE);
             stack = new StackImpl();
             stack.init(diameterConfig);

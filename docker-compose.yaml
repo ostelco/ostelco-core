@@ -5,7 +5,7 @@ services:
     container_name: ocsgw
     build: ocsgw
     environment:
-      - GOOGLE_APPLICATION_CREDENTIALS=/config/pantel-prod.json
+      - SERVICE_FILE=/config/pantel-prod.json
       - GOOGLE_CLOUD_PROJECT=pantel-2decb
     volumes:
       - ./ocsgw/cert:/cert/
