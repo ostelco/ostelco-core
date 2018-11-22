@@ -38,22 +38,34 @@ deploy () {
     --container-image eu.gcr.io/${PROJECT_ID}/ocsgw:${TAG_OCS}
 }
 
-while true; do
-  getInstance
+# Instance can be passed as first parameter
+if [ ! -z "$1" ]; then
+    INSTANCE=$1
+fi
 
-  if [[ "$INSTANCE" == 1 ]] || [[ "$INSTANCE" == 2 ]]  || [[ "$INSTANCE" == 3 ]]
-  then
-    break
-  fi
-done
+if [[ -z "$INSTANCE" ]]
+then
+    while true; do
+      getInstance
+
+      if [[ "$INSTANCE" == 1 ]] || [[ "$INSTANCE" == 2 ]]  || [[ "$INSTANCE" == 3 ]]
+      then
+        break
+      fi
+    done
+fi
 
 
-if [[ "$INSTANCE" == 1 ]] || [[ "$INSTANCE" == 2 ]]; then
+if [[ "$INSTANCE" == 1 ]] || [[ "$INSTANCE" == 2 ]]
+then
     deploy
-else
+elif [[ "$INSTANCE" == 3 ]]
+then
     INSTANCE=1
     deploy
     INSTANCE=2
     deploy
+else
+    printf "Unknown instance %s\n" $INSTANCE
 fi
 
