@@ -465,8 +465,7 @@ abstract class SimInventoryDAO {
     fun allocateNextFreeSimForMsisdn(hlr: String, msisdn: String): SimEntry? {
 
         // First find the the next free SIM that can be activated in the HLR
-        val sim: SimEntry = findNextFreeSimForMsisdn(hlr)
-                ?: return null // No sim cards available
+        val sim: SimEntry = findNextFreeSimForMsisdn(hlr) // No sim cards available
 
         // ... and if we can1t find any, return null.
 
