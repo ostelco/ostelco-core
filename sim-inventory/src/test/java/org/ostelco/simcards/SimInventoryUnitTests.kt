@@ -1,4 +1,4 @@
-
+package org.ostelco.simcards
 import io.dropwizard.testing.junit.ResourceTestRule
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNotNull
@@ -7,7 +7,6 @@ import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Test
 import org.mockito.Mockito.*
-import org.ostelco.*
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 
@@ -60,7 +59,7 @@ class SimInventoryUnitTests {
         return SimEntry(
                 id = 1L,
                 hlrId = fakeHlr,
-                smdpplus =  null,
+                smdpplus = null,
                 batch = 99L,
                 iccid = fakeIccid1,
                 imsi = fakeImsi1,
@@ -73,7 +72,7 @@ class SimInventoryUnitTests {
                 puk2 = "ss")
     }
 
-    private fun fakeEntryWithMsisdn() : SimEntry{
+    private fun fakeEntryWithMsisdn() : SimEntry {
         return SimEntry(
                 id = 1L,
                 hlrId = "Loltel",
@@ -299,7 +298,7 @@ class SimInventoryUnitTests {
     fun testImport() {
 
         org.mockito.Mockito.`when`(dao.getBatchInfo(0))
-                .thenReturn(SimImportBatch(id = 0L, status="SUCCESS", size = 4L, hlr="Loltel", profileVendor  ="Idemia", importer="Testroutine", endedAt = 999L))
+                .thenReturn(SimImportBatch(id = 0L, status = "SUCCESS", size = 4L, hlr = "Loltel", profileVendor = "Idemia", importer = "Testroutine", endedAt = 999L))
 
 
         org.mockito.Mockito.`when`(dao.findSimVendorForHlrPermissions(0L, 1L))

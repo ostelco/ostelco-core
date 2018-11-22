@@ -1,4 +1,4 @@
-package org.ostelco
+package org.ostelco.simcards
 
 import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.jdbi.DBIFactory

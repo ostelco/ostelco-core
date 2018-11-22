@@ -1,11 +1,11 @@
-package org.ostelco
+package org.ostelco.simcards
 
-import io.dropwizard.Configuration
 import com.fasterxml.jackson.annotation.JsonProperty
-import javax.validation.constraints.*
+import io.dropwizard.Configuration
+import io.dropwizard.client.JerseyClientConfiguration
 import io.dropwizard.db.DataSourceFactory
 import javax.validation.Valid
-import io.dropwizard.client.JerseyClientConfiguration
+import javax.validation.constraints.NotNull
 
 
 class SimAdministrationAppConfiguration : Configuration() {

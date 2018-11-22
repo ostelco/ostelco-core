@@ -1,4 +1,4 @@
-package org.ostelco
+package org.ostelco.simcards
 
 import org.skife.jdbi.v2.sqlobject.SqlUpdate
 
