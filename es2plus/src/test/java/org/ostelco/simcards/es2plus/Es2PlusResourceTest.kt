@@ -7,7 +7,7 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.mockito.Mockito
 import org.mockito.Mockito.reset
-import org.ostelco.simcards.jsonValidation.RequestServerReaderWriterInterceptor
+import org.ostelco.jsonschema.RequestServerReaderWriterInterceptor
 
 
 class ES2PlusResourceTest {

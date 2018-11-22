@@ -1,4 +1,4 @@
-package org.ostelco.simcards.jsonValidation
+package org.ostelco.jsonschema
 
 import junit.framework.Assert.assertNotNull
 import org.json.JSONObject

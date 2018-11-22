@@ -1,4 +1,4 @@
-package org.ostelco.simcards.jsonValidation
+package org.ostelco.jsonschema
 
 import org.everit.json.schema.Schema
 import org.everit.json.schema.SchemaException
