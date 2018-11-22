@@ -1,4 +1,4 @@
-package org.ostelco.es2plus
+package org.ostelco.simcards.es2plus
 
 import io.dropwizard.Application
 import io.dropwizard.setup.Bootstrap
@@ -8,19 +8,8 @@ import io.swagger.v3.oas.integration.SwaggerConfiguration
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Contact
 import io.swagger.v3.oas.models.info.Info
-import java.io.IOException
 import java.util.stream.Collectors
 import java.util.stream.Stream
-import javax.ws.rs.Consumes
-import javax.ws.rs.POST
-import javax.ws.rs.Path
-import javax.ws.rs.Produces
-import javax.ws.rs.container.ContainerRequestContext
-import javax.ws.rs.container.ContainerRequestFilter
-import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.Response
-import javax.ws.rs.ext.ExceptionMapper
-import javax.ws.rs.ext.Provider
 
 class Es2plusApplication : Application<Es2plusConfiguration>() {
 

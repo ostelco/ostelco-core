@@ -1,4 +1,4 @@
-package org.ostelco.es2plus
+package org.ostelco.simcards.es2plus
 
 import io.dropwizard.testing.junit.ResourceTestRule
 import org.junit.AfterClass
@@ -7,7 +7,7 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.mockito.Mockito
 import org.mockito.Mockito.reset
-import org.ostelco.jsonValidation.RequestServerReaderWriterInterceptor
+import org.ostelco.simcards.jsonValidation.RequestServerReaderWriterInterceptor
 
 
 class ES2PlusResourceTest {

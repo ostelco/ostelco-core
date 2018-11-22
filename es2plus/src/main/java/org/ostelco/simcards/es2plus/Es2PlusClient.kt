@@ -1,4 +1,4 @@
-package org.ostelco.es2plus
+package org.ostelco.simcards.es2plus
 
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.Entity

@@ -1,4 +1,4 @@
-package org.ostelco.jsonValidation
+package org.ostelco.simcards.jsonValidation
 
 import org.everit.json.schema.Schema
 import org.everit.json.schema.SchemaException
@@ -6,7 +6,7 @@ import org.everit.json.schema.ValidationException
 import org.json.JSONException
 import org.json.JSONObject
 import org.json.JSONTokener
-import org.ostelco.es2plus.JsonSchema
+import org.ostelco.simcards.es2plus.JsonSchema
 import java.io.*
 import java.nio.charset.Charset
 import javax.ws.rs.WebApplicationException

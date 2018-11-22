@@ -1,4 +1,4 @@
-package org.ostelco.es2plus
+package org.ostelco.simcards.es2plus
 
 import java.io.IOException
 import javax.ws.rs.Consumes
