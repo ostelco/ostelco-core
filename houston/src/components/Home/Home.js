@@ -3,11 +3,10 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 
 const Home = props => {
-  const isAuthenticated = props.loggedIn || false;
   return (
     <div className="container">
       {
-        !isAuthenticated && (
+        !props.isAuthenticated && (
           <h4>
             You are not logged in! Please Log In to continue.
           </h4>
@@ -18,15 +17,12 @@ const Home = props => {
 }
 
 Home.propTypes = {
-  loggedIn: PropTypes.bool
+  isAuthenticated: PropTypes.bool.isRequired
 };
 
 function mapStateToProps(state) {
   const { loggedIn } = state.authentication;
-
-  return {
-    loggedIn
-  };
+  return { isAuthenticated: loggedIn ? true: false };
 }
 
 export default connect(mapStateToProps)(Home);
