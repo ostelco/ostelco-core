@@ -89,10 +89,10 @@ const putRefundPurchaseByEmail = (email, purchaseRecordId, reason) => ({
     params: { purchaseRecordId, reason }
   }
 });
-
+const encodeEmail = (email) => (email ? encodeURIComponent(email) : email);
 // TODO: API based implementaion. Reference: https://github.com/reduxjs/redux/issues/1676
 const getSubscriberAndBundlesByEmail = (email) => (dispatch, getState) => {
-
+  email = encodeEmail(email);
   const handleError = (error) => {
     console.log('Error reported.', error);
     dispatch(alertActions.alertError(error));
@@ -101,7 +101,7 @@ const getSubscriberAndBundlesByEmail = (email) => (dispatch, getState) => {
   return dispatch(fetchSubscriberByEmail(email))
     .then(() => {
       // Get the email from the fetched user
-      const subscriberEmail = _.get(getState(), 'subscriber.email');
+      const subscriberEmail = encodeEmail(_.get(getState(), 'subscriber.email'));
       if (subscriberEmail) {
         return dispatch(fetchBundlesByEmail(subscriberEmail))
           .then(() => {
@@ -121,7 +121,7 @@ const refundPurchase = (purchaseRecordId, reason) => (dispatch, getState) => {
   };
 
   // Get the email from the fetched user
-  const subscriberEmail = _.get(getState(), 'subscriber.email');
+  const subscriberEmail = encodeEmail(_.get(getState(), 'subscriber.email'));
   if (subscriberEmail) {
     return dispatch(putRefundPurchaseByEmail(subscriberEmail, purchaseRecordId, reason))
       .then(() => {

@@ -16,8 +16,7 @@ const apiCaller = async (endpoint, method, body, allowEmptyResponse, params = []
   } else if (typeof params === 'string') {
     fullUrl += params;
   }
-  fullUrl = encodeURI(fullUrl);
-
+  console.log('API URL:', fullUrl);
   if (authHeaderResolver === null) {
     console.log("apiCaller: authHeaderResolver not set");
     return Promise.reject();
@@ -69,9 +68,9 @@ const apiCaller = async (endpoint, method, body, allowEmptyResponse, params = []
 export function createParams(params) {
   const array = _.toPairs(params);
   const kvParams = _.map(array, (kv) => {
-    return `${kv[0]}=${kv[1]}`;
+    return `${kv[0]}=${encodeURIComponent(kv[1])}`;
   });
-  return `?${kvParams.join('&')}`
+  return (array.length ? `?${kvParams.join('&')}` : '');
 }
 
 // Action key that carries API call info interpreted by this Redux middleware.

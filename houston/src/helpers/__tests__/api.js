@@ -8,6 +8,24 @@ it('creates REST parameters from object', () => {
   expect(actual).toEqual(expected);
 });
 
+it('creates REST parameters from undefined', () => {
+  const expected =  '';
+  const actual = createParams();
+  expect(actual).toEqual(expected);
+});
+
+it('creates REST parameters from null', () => {
+  const expected =  '';
+  const actual = createParams();
+  expect(actual).toEqual(expected);
+});
+
+it('creates REST parameters from empty object', () => {
+  const expected =  '';
+  const actual = createParams({});
+  expect(actual).toEqual(expected);
+});
+
 it('transform Error object with array of errors', () => {
   const errorObj = { errors: ['fail 1', 'fail 2'] };
   const expected =  'fail 1, fail 2';
