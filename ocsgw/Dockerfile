@@ -8,6 +8,8 @@ COPY script/start.sh /start.sh
 COPY script/wait.sh /wait.sh
 
 COPY config/dictionary.xml /config/dictionary.xml
+COPY config/logback.xml /config/logback.xml
+COPY config/logback.dev.xml /config/logback.dev.xml
 
 COPY build/libs/ocsgw-uber.jar /ocsgw.jar
 

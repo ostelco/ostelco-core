@@ -7,17 +7,28 @@ if [ ! -f ocsgw/infra/script/deploy-ocsgw-dev.sh ]; then
     exit 1
 fi
 
-kubectl config use-context $(kubectl config get-contexts --output name | grep dev-cluster)
+# Instance can be passed as first parameter
+if [ ! -z "$1" ]; then
+    INSTANCE=$1
+fi
+
+# Environment can be passed as second parameter
+if [ ! -z "$2" ]; then
+    ENV=$2
+else
+    ENV="dev"
+fi
 
 PROJECT_ID="$(gcloud config get-value project -q)"
 OCSGW_VERSION="$(./gradlew ocsgw:properties -q | grep "version:" | awk '{print $2}' | tr -d '[:space:]')"
 SHORT_SHA="$(git log -1 --pretty=format:%h)"
-TAG_OCS="${OCSGW_VERSION}-${SHORT_SHA}-dev"
+TAG_OCS="${OCSGW_VERSION}-${SHORT_SHA}"
 
 echo PROJECT_ID=${PROJECT_ID}
 echo OCSGW_VERSION=${OCSGW_VERSION}
 echo SHORT_SHA=${SHORT_SHA}
 echo TAG_OCS=${TAG_OCS}
+echo ENV=${ENV}
 
 ./gradlew ocsgw:clean ocsgw:build
 docker build -t eu.gcr.io/${PROJECT_ID}/ocsgw:${TAG_OCS} ocsgw
@@ -33,21 +44,26 @@ getInstance () {
 }
 
 deploy () {
-    echo "Deploying ocsgw instance ${INSTANCE} to GKE Dev"
-    gcloud compute instances update-container ocsgw-dev-${INSTANCE} \
+    if [[ "$INSTANCE" == 1 ]]
+    then
+        ZONE="europe-west1-b"
+    elif [[ "$INSTANCE" == 2 ]]
+    then
+        ZONE="europe-west1-c"
+    else
+        printf "Unknown instance %s\n" $INSTANCE
+    fi
+
+    echo "Deploying ocsgw instance ${INSTANCE} to GKE ${ENV}"
+    gcloud compute instances update-container --zone ${ZONE} ocsgw-${ENV}-${INSTANCE} \
     --container-image eu.gcr.io/${PROJECT_ID}/ocsgw:${TAG_OCS}
 }
 
-# Instance can be passed as first parameter
-if [ ! -z "$1" ]; then
-    INSTANCE=$1
-fi
 
 if [[ -z "$INSTANCE" ]]
 then
     while true; do
       getInstance
-
       if [[ "$INSTANCE" == 1 ]] || [[ "$INSTANCE" == 2 ]]  || [[ "$INSTANCE" == 3 ]]
       then
         break
