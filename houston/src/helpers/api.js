@@ -11,10 +11,12 @@ export function setAuthResolver(getterFunc) {
 const apiCaller = async (endpoint, method, body, allowEmptyResponse, params = []) => {
   let fullUrl = (endpoint.indexOf(API_ROOT) === -1) ? API_ROOT + endpoint : endpoint
 
-  // TODO: Params can contain invalid characters and should be url encoded
-  if (params.length > 0) {
-    fullUrl += `?${params.join('&')}`;
+  if (typeof params === 'object') {
+    fullUrl += createParams(params);
+  } else if (typeof params === 'string') {
+    fullUrl += params;
   }
+  console.log('API URL:', fullUrl);
   if (authHeaderResolver === null) {
     console.log("apiCaller: authHeaderResolver not set");
     return Promise.reject();
@@ -65,9 +67,10 @@ const apiCaller = async (endpoint, method, body, allowEmptyResponse, params = []
 
 export function createParams(params) {
   const array = _.toPairs(params);
-  return _.map(array, (kv) => {
-    return `${kv[0]}=${kv[1]}`;
+  const kvParams = _.map(array, (kv) => {
+    return `${kv[0]}=${encodeURIComponent(kv[1])}`;
   });
+  return (array.length ? `?${kvParams.join('&')}` : '');
 }
 
 // Action key that carries API call info interpreted by this Redux middleware.
@@ -113,15 +116,20 @@ export default store => next => action => {
   );
 }
 
-function transformError(errorObj) {
+export function transformError(errorObj) {
   if (errorObj.errors) {
-    return errorObj.errors.join(', ')
-  }
-  if (errorObj.message) {
-    return errorObj.message
-  }
-  if (errorObj.error) {
+    if (Array.isArray(errorObj.errors)) {
+      return errorObj.errors.join(', ')
+    } else {
+      return errorObj.errors.toString()
+    }
+  } else if (errorObj.message) {
+    return errorObj.message.toString();
+  } else if (errorObj.error) {
     return errorObj.error.toString()
+  } else if (typeof errorObj === 'string') {
+    return errorObj;
+  } else {
+    return 'Something bad happened';
   }
-  return 'Something bad happened';
 }

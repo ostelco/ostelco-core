@@ -16,7 +16,7 @@ export function getAuthConfig() {
   } else if (process.env.NODE_ENV === "development") {
     return DEV_AUTH_CONFIG;
   } else {
-    return {}
+    return DEV_AUTH_CONFIG;
   }
 }
 

@@ -1,41 +1,17 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
-import {
-  Button,
-  Collapse,
-  Navbar,
-  NavbarToggler,
-  NavbarBrand,
-  Nav,
-  NavItem,
-  NavLink,
-  UncontrolledDropdown,
-  DropdownToggle,
-  DropdownMenu,
-  DropdownItem
-} from 'reactstrap';
+import { Button, Collapse, Navbar, NavbarToggler, NavbarBrand, Nav, NavItem, NavLink } from 'reactstrap';
 
 import { authActions } from '../actions/auth.actions';
 import './App.css'
+
 class App extends Component {
   constructor(props, context) {
     super(props, context);
     this.state = {
       isOpen: false
     };
-  }
-
-  goTo(route) {
-    this.props.history.replace(`/${route}`)
-  }
-
-  login() {
-    this.props.login();
-  }
-
-  logout() {
-    this.props.logout();
   }
 
   toggle = () => {
@@ -55,16 +31,9 @@ class App extends Component {
           <NavItem>
             <NavLink tag={Link} href="/notifications" to="/notifications">Notifications</NavLink>
           </NavItem>
-          <UncontrolledDropdown nav inNavbar>
-            <DropdownToggle nav caret>
-              Options
-          </DropdownToggle>
-            <DropdownMenu right>
-              <DropdownItem>
-                <NavLink href="" onClick={(e) => { e.preventDefault(); props.logout(); }}>Logout</NavLink>
-              </DropdownItem>
-            </DropdownMenu>
-          </UncontrolledDropdown>
+          <NavItem>
+            <NavLink tag={Link} href="" to="/" onClick={(e) => { e.preventDefault(); props.logout(); }}>Logout</NavLink>
+          </NavItem>
         </Nav>
       </Collapse>
     );
@@ -88,7 +57,7 @@ class App extends Component {
           </Nav>
           {
             !isAuthenticated && (
-              <Button color="outline-primary" onClick={this.login.bind(this)}>Log In</Button>
+              <Button color="outline-primary" onClick={props.login}>Log In</Button>
             )
           }
           {
@@ -96,6 +65,13 @@ class App extends Component {
           }
           <NavbarToggler onClick={this.toggle} />
         </Navbar>
+        {
+            !isAuthenticated && (
+              <div className="container">
+                <h4>You are not logged in! Please Log In to continue.</h4>
+              </div>
+            )
+          }
       </div>
     );
   }
