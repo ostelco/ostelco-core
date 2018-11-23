@@ -14,7 +14,7 @@ import {
 
 import { authActions } from '../actions/auth.actions';
 import './App.css'
-import Home from './Home/Home';
+import Home from './Home';
 
 class App extends Component {
   constructor(props, context) {
