@@ -77,7 +77,9 @@ class App extends Component {
         </Navbar>
         {
             !isAuthenticated && (
-              <Home />
+              <div className="container">
+                <h4>You are not logged in! Please Log In to continue.</h4>
+              </div>
             )
           }
       </div>
