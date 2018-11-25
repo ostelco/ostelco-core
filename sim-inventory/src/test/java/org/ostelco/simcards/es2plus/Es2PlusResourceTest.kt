@@ -95,6 +95,6 @@ class ES2PlusResourceTest {
     }
 
 
-    // XXX Not testing error cases, to ensure that the exception, error reportibng
+    // XXX Not testing error cases, to ensure that the exception, error reporting
     //     mechanism is working properly.
 }
