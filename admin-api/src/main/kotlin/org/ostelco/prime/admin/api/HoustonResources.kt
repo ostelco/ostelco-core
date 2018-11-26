@@ -7,6 +7,7 @@ import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
 import org.ostelco.prime.apierror.BadGatewayError
 import org.ostelco.prime.apierror.NotFoundError
+import org.ostelco.prime.appnotifier.AppNotifier
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
@@ -206,6 +207,59 @@ class RefundsResource() {
         } catch (e: Exception) {
             logger.error("Failed to refund purchase for subscriberId $subscriberId, id: $purchaseRecordId", e)
             Either.left(BadGatewayError("Failed to refund purchase", ApiErrorCode.FAILED_TO_REFUND_PURCHASE))
+        }
+    }
+}
+
+/**
+ * Resource used to handle notification related REST calls.
+ */
+@Path("/notify")
+class NotifyResource() {
+    private val logger by getLogger()
+    private val storage by lazy { getResource<AdminDataSource>() }
+    private val notifier by lazy { getResource<AppNotifier>() }
+    /**
+     * Sends a notification to all devices for a subscriber.
+     */
+    @PUT
+    @Path("email/{email}")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun sendNotificationByEmail(@Auth token: AccessTokenPrincipal?,
+                              @NotNull
+                              @PathParam("email")
+                              email: String,
+                              @NotNull
+                              @QueryParam("title")
+                              title: String,
+                              @NotNull
+                              @QueryParam("message")
+                              message: String): Response {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .build()
+        }
+        val decodedEmail = URLDecoder.decode(email, "UTF-8")
+        return getMsisdn(decodedEmail).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                { msisdn ->
+                    logger.info("${token.name} Sending notification to $decodedEmail msisdn: $msisdn")
+                    notifier.notify(msisdn, title, message)
+                    Response.status(Response.Status.OK).entity("Message Sent")
+                })
+                .build()
+
+    }
+
+    // TODO: Reuse the one from SubscriberDAO
+    private fun getMsisdn(subscriberId: String): Either<ApiError, String> {
+        return try {
+            storage.getMsisdn(subscriberId).mapLeft {
+                NotFoundError("Did not find msisdn for this subscription.", ApiErrorCode.FAILED_TO_STORE_APPLICATION_TOKEN, it)
+            }
+        } catch (e: Exception) {
+            logger.error("Did not find msisdn for subscriberId $subscriberId", e)
+            Either.left(BadGatewayError("Did not find subscription", ApiErrorCode.FAILED_TO_STORE_APPLICATION_TOKEN))
         }
     }
 }

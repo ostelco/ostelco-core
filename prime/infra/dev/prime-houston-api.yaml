@@ -135,6 +135,38 @@ paths:
         description: "The reason for refund"
         required: true
         type: string
+  "/notify/email/{email}":
+    put:
+      description: "Send notification to a subscriber."
+      produces:
+        - application/json
+        - text/plain
+      operationId: "sendNotificationByEmail"
+      responses:
+        200:
+          description: "Sent notification."
+        404:
+          description: "Subscriber record not found"
+        502:
+          description: "Failed to send notification"
+      security:
+        - auth0_jwt: []
+      parameters:
+        - name: email
+          in: path
+          description: "The email of the user"
+          required: true
+          type: string
+        - name: title
+          in: query
+          description: "The title for the notification"
+          required: true
+          type: string
+        - name: message
+          in: query
+          description: "The notification message"
+          required: true
+          type: string
 definitions:
   Profile:
     type: object
