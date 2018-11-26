@@ -17,7 +17,7 @@ class Search extends React.Component {
 
   render() {
     const hasResults = this.props.profile.name || false;
-
+    if (!this.props.loggedIn) return null;
     return (
       <div className="container">
         <AlertMessage />
@@ -40,8 +40,10 @@ Search.propTypes = {
 };
 
 function mapStateToProps(state) {
+  const { loggedIn } = state.authentication;
   const { subscriber } = state;
   return {
+    loggedIn,
     profile: subscriber
   };
 }

@@ -9,7 +9,7 @@ import { notifyActions } from '../../actions/notifiy.actions';
 function NotificationEditor(props) {
   function onSubmit(e) {
     e.preventDefault();
-    props.onSubmit(props.title, props.message);
+    props.sendNotificationToSubscriber(props.title, props.message);
   }
   const { email } = props;
   return (
@@ -75,6 +75,7 @@ function mapStateToProps(state) {
 const mapDispatchToProps = {
   setNotificationMessage: notifyActions.setNotificationMessage,
   setNotificationTitle: notifyActions.setNotificationTitle,
-  setNotificationType: notifyActions.setNotificationType
+  setNotificationType: notifyActions.setNotificationType,
+  sendNotificationToSubscriber: notifyActions.sendNotificationToSubscriber
 }
 export default connect(mapStateToProps, mapDispatchToProps)(NotificationEditor);

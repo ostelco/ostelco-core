@@ -5,6 +5,7 @@ import { Card, CardBody, CardTitle } from 'reactstrap';
 
 import TextForm from './TextForm';
 import NotificationEditor from './NotificationEditor';
+import AlertMessage from '../Search/Alert';
 
 class Notifications extends React.Component {
 
@@ -19,6 +20,7 @@ class Notifications extends React.Component {
   render() {
     return (
       <div className="container">
+        <AlertMessage />
         <Card>
           <CardBody>
             <CardTitle>Notifications</CardTitle>

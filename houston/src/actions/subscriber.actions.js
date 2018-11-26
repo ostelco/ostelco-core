@@ -3,6 +3,7 @@ import { createActions } from 'redux-actions'
 
 import { CALL_API } from '../helpers/api';
 import { alertActions } from './alert.actions';
+import { encodeEmail } from '../helpers/utils';
 
 const SUBSCRIBER_BY_EMAIL_REQUEST = 'SUBSCRIBER_BY_EMAIL_REQUEST';
 const SUBSCRIBER_BY_EMAIL_SUCCESS = 'SUBSCRIBER_BY_EMAIL_SUCCESS';
@@ -89,7 +90,7 @@ const putRefundPurchaseByEmail = (email, purchaseRecordId, reason) => ({
     params: { purchaseRecordId, reason }
   }
 });
-const encodeEmail = (email) => (email ? encodeURIComponent(email) : email);
+
 // TODO: API based implementaion. Reference: https://github.com/reduxjs/redux/issues/1676
 const getSubscriberAndBundlesByEmail = (email) => (dispatch, getState) => {
   email = encodeEmail(email);

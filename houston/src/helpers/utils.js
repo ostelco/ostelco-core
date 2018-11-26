@@ -53,3 +53,5 @@ export const isChrome = () => {
     return false;
   }
 }
+
+export const encodeEmail = (email) => (email ? encodeURIComponent(email) : email);
