@@ -55,8 +55,8 @@ class OcsgwMetrics {
                     .keepAliveTimeout(KEEP_ALIVE_TIMEOUT_IN_MINUTES, TimeUnit.MINUTES)
                     .keepAliveTime(KEEP_ALIVE_TIME_IN_SECONDS, TimeUnit.SECONDS);
 
-            final ManagedChannelBuilder channelBuilder = Files.exists(Paths.get("/config/metrics.crt"))
-                        ? nettyChannelBuilder.sslContext(GrpcSslContexts.forClient().trustManager(new File("/config/metrics.crt")).build())
+            final ManagedChannelBuilder channelBuilder = Files.exists(Paths.get("/cert/metrics.crt"))
+                        ? nettyChannelBuilder.sslContext(GrpcSslContexts.forClient().trustManager(new File("/cert/metrics.crt")).build())
                         : nettyChannelBuilder;
 
             final ManagedChannel channel = channelBuilder

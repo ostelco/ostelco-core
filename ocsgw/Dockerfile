@@ -5,9 +5,13 @@ LABEL maintainer="dev@redotter.sg"
 RUN apt-get update && apt-get install -y --no-install-recommends netcat-openbsd && rm -rf /var/lib/apt/lists/*
 
 COPY script/start.sh /start.sh
+COPY script/start_dev.sh /start_dev.sh
 COPY script/wait.sh /wait.sh
-COPY config /config
+
+COPY config/dictionary.xml /config/dictionary.xml
+COPY config/logback.xml /config/logback.xml
+COPY config/logback.dev.xml /config/logback.dev.xml
 
 COPY build/libs/ocsgw-uber.jar /ocsgw.jar
 
-CMD ["/start.sh"]
+ENTRYPOINT ["/start.sh"]

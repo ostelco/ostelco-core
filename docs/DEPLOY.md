@@ -1,52 +1,11 @@
 # Deploy to production
 
-## Deploy to on-premise adjoining Packet gateway
+## Deploy OCSgw to GCP
 
+./ocsgw/infra/script/deploy-ocsgw.sh
 
-### TL;DR
-
-```bash
-gradle clean pack
-scripts/deploy-ocsgw.sh
-```
-
-
-### Package
-
-    gradle clean pack
-
-With unit testing:
-
-    gradle clean test pack
-
-* This creates zip file `build/deploy/ostelco-core.zip`
-
-### Deploy on host
-
-* Upload and unzip `ostelco-core.zip` file.
-
-```bash
-scp -oProxyJump=loltel@10.6.101.1 build/deploy/ostelco-core.zip  ubuntu@192.168.0.123:.
-ssh -A -Jloltel@10.6.101.1 ubuntu@192.168.0.123
-cd ostelco-core
-sudo docker-compose down
-cd ..
-rm -rf ostelco-core
-unzip ostelco-core.zip -d ostelco-core
-```
-
-* Run in docker
-
-```bash
-cd ostelco-core
-sudo docker-compose up -d --build
-
-sudo docker-compose logs -f
-
-sudo docker logs -f ocsgw
-sudo docker logs -f auth-server
-```
-
+The script takes to parameters. First parameter is instance number [1/2/3]. Second parameter is environment [dev/prod].
+If no parameters passed it will deploy all instances in dev environment.
 
 ## Deploy to kubernetes cluster on GCP
 

@@ -1,5 +1,6 @@
 package org.ostelco.ocsgw.data.grpc;
 
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountJwtAccessCredentials;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -185,11 +186,14 @@ public class GrpcDataSource implements DataSource {
                 .keepAliveTime(KEEP_ALIVE_TIME_IN_SECONDS, TimeUnit.SECONDS);
 
         final ManagedChannelBuilder channelBuilder =
-                Files.exists(Paths.get("/config/ocs.crt"))
-                        ? nettyChannelBuilder.sslContext(GrpcSslContexts.forClient().trustManager(new File("/config/ocs.crt")).build())
+                Files.exists(Paths.get("/cert/ocs.crt"))
+                        ? nettyChannelBuilder.sslContext(GrpcSslContexts.forClient().trustManager(new File("/cert/ocs.crt")).build())
                         : nettyChannelBuilder;
 
-        final String serviceAccountFile = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
+        // Not using the standard GOOGLE_APPLICATION_CREDENTIALS for this
+        // as we need to download the file using container credentials in
+        // OcsApplication.
+        final String serviceAccountFile = "/config/" + System.getenv("SERVICE_FILE");
         final ServiceAccountJwtAccessCredentials credentials =
                 ServiceAccountJwtAccessCredentials.fromStream(new FileInputStream(serviceAccountFile));
         final ManagedChannel channel = channelBuilder
