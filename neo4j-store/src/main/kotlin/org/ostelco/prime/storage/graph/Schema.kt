@@ -8,6 +8,7 @@ import org.neo4j.driver.v1.AccessMode.WRITE
 import org.neo4j.driver.v1.StatementResult
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.HasId
 import org.ostelco.prime.storage.AlreadyExistsError
@@ -319,6 +320,58 @@ class ChangeableRelationStore<FROM : HasId, TO : HasId, RELATION : HasId>(privat
                     test = it.summary().counters().containsUpdates(), // TODO vihang: this is not perfect way to check if updates are applied
                     ifTrue = {},
                     ifFalse = { NotUpdatedError(type = relationType.relation.name, id = relation.id) })
+        }
+    }
+}
+
+// Removes double apostrophes from key values in a JSON string.
+// Usage: output = re.replace(input, "$1$2$3")
+val re = Regex("""([,{])\s*"([^"]+)"\s*(:)""")
+
+class UniqueRelationStore<FROM: HasId, TO: HasId>(private val relationType: RelationType<FROM, *, TO>) {
+
+    fun get(from: String, transaction: Transaction) : Either<StoreError, List<TO>> {
+        return read("""MATCH (from:${relationType.from.name} {id: '${from}'})-[r:${relationType.relation.name}]->(to:${relationType.to.name})
+                RETURN to""".trimMargin(), transaction) {
+            Either.cond(it.hasNext(),
+                    ifTrue = { it.list { it["to"].asMap() } as List<TO> },
+                    ifFalse = { NotFoundError(relationType.relation.name, from) })
+        }
+    }
+
+    fun create(from: String, to: String, transaction: Transaction) : Either<StoreError, Unit> {
+        return write("""MATCH (from:${relationType.from.name} {id: '${from}'}),(to:${relationType.to.name} {id: '${to}'})
+                MERGE (from)-[:${relationType.relation.name}]->(to)""".trimMargin(), transaction) {
+            Either.cond(it.summary().counters().relationshipsCreated() == 1,
+                    ifTrue = { Unit },
+                    ifFalse = { NotCreatedError(relationType.relation.name) })
+        }
+    }
+
+    fun delete(from: String, to: String, transaction: Transaction) : Either<StoreError, Unit> {
+        return write("""MATCH (from:${relationType.from.name} { id: '$from'})-[r:${relationType.relation.name}]->(to:${relationType.to.name} {id: '${to}'})
+                DELETE r""".trimMargin(), transaction) {
+            Either.cond(it.summary().counters().relationshipsDeleted() == 1,
+                    ifTrue = { Unit },
+                    ifFalse = { NotDeletedError(relationType.relation.name, "${from} -> ${to}") })
+        }
+    }
+
+    fun getProperties(from: String, to: String, transaction: Transaction) : Either<StoreError, Map<String, Any>> {
+        return read("""MATCH (from:${relationType.from.name} {id: '${from}'})-[r:${relationType.relation.name}]->(to:${relationType.to.name} {id: '${to}'})
+                RETURN r""".trimMargin(), transaction) {
+            Either.cond(it.hasNext(),
+                    ifTrue = { it.single()["r"].asMap() },
+                    ifFalse = { NotFoundError(relationType.relation.name, "${from} -> ${to}") })
+        }
+    }
+
+    fun setProperties(from: String, to: String, properties: Map<String, Any>, transaction: Transaction) : Either<StoreError, Unit> {
+        return write("""MATCH (from:${relationType.from.name} {id: '${from}'})-[r:${relationType.relation.name}]->(to:${relationType.to.name} {id: '${to}'})
+                SET r = ${re.replace(asJson(properties), "$1$2$3")}""".trimMargin(), transaction) {
+            Either.cond(it.summary().counters().propertiesSet() > 0,
+                    ifTrue = { Unit },
+                    ifFalse = { NotUpdatedError(relationType.relation.name, "${from} -> ${to}") })
         }
     }
 }

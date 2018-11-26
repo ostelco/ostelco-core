@@ -29,6 +29,7 @@ import java.util.stream.Collectors
 enum class Relation {
     HAS_SUBSCRIPTION,      // (Subscriber) -[HAS_SUBSCRIPTION]-> (Subscription)
     HAS_BUNDLE,            // (Subscriber) -[HAS_BUNDLE]-> (Bundle)
+    HAS_PLAN,              // (Subscriber> -[HAS_PLAN]-> (Plan)
     LINKED_TO_BUNDLE,      // (Subscription) -[LINKED_TO_BUNDLE]-> (Bundle)
     PURCHASED,             // (Subscriber) -[PURCHASED]-> (Product)
     REFERRED,              // (Subscriber) -[REFERRED]-> (Subscriber)
@@ -60,6 +61,9 @@ object Neo4jStoreSingleton : GraphStore {
 
     private val bundleEntity = EntityType(Bundle::class.java)
     private val bundleStore = EntityStore(bundleEntity)
+
+    private val planEntity = EntityType(Plan::class.java)
+    private val plansStore = EntityStore(planEntity)
 
     //
     // Relation
@@ -100,6 +104,13 @@ object Neo4jStoreSingleton : GraphStore {
             to = subscriberEntity,
             dataClass = Void::class.java)
     private val referredRelationStore = RelationStore(referredRelation)
+
+    private val hasPlanRelation = RelationType(
+            relation = Relation.HAS_PLAN,
+            from = subscriberEntity,
+            to = planEntity,
+            dataClass = Void::class.java)
+    private val hasPlanRelationStore = UniqueRelationStore(hasPlanRelation)
 
     // -------------
     // Client Store
