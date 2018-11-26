@@ -84,6 +84,19 @@ data class ProductClass(
         override val id: String,
         val properties: List<String> = listOf()) : HasId
 
+// Note: The 'name' value becomes the name (sku) of the corresponding product in Stripe.
+data class Plan(
+        val name: String,
+        val price: Price,
+        val interval: String,
+        val intervalCount: Long = 1L,
+        val planId: String = "") : HasId {
+
+    override val id: String
+        @JsonIgnore
+        get() = name
+}
+
 data class RefundRecord(
         override val id: String,
         val reason: String, // possible values are duplicate, fraudulent, and requested_by_customer

@@ -44,20 +44,22 @@ interface PaymentProcessor {
     fun getPaymentProfile(userEmail: String): Either<PaymentError, ProfileInfo>
 
     /**
-     * @param productId Stripe product id
+     * @param name The name of the plan
      * @param amount The amount to be charged in the interval specified
      * @param currency Three-letter ISO currency code in lowercase
-     * @param interval The frequency with which a subscription should be billed.
+     * @param interval The frequency with which a subscription should be billed
+     * @param invervalCount The number of intervals between subscription billings
      * @return Stripe planId if created
      */
-    fun createPlan(productId: String, amount: Int, currency: String, interval: Interval): Either<PaymentError, PlanInfo>
+    fun createPlan(name: String, amount: Int, currency: String, interval: Interval, intervalCount: Long = 1): Either<PaymentError, PlanInfo>
 
     /**
      * @param Stripe Plan Id
      * @param Stripe Customer Id
+     * @param Epoch timestamp for when the trial period ends
      * @return Stripe SubscriptionId if subscribed
      */
-    fun subscribeToPlan(planId: String, customerId: String): Either<PaymentError, SubscriptionInfo>
+    fun subscribeToPlan(planId: String, customerId: String, trialEnd: Long = 0L): Either<PaymentError, SubscriptionInfo>
 
     /**
      * @param Stripe Plan Id
@@ -123,7 +125,8 @@ interface PaymentProcessor {
      * @param chargeId ID of the of the authorized charge to refund from authorizeCharge()
      * @return id of the charge
      */
-    fun refundCharge(chargeId: String, amount: Int, currency: String): Either<PaymentError, String>
+    fun refundCharge(chargeId: String, amount: Int, currency: String
+    ): Either<PaymentError, String>
 
     /**
      * @param customerId Customer id in the payment system
