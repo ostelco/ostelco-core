@@ -50,6 +50,6 @@ cp nginx.crt ../../ocsgw/cert/metrics.crt
 ### Test acceptance-tests
 
 ```bash
-gradle clean build  
+gradlew clean build  
 docker-compose up --build --abort-on-container-exit
 ```    

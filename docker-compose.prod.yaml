@@ -1,8 +1,0 @@
-version: "3.3"
-
-services:
-  ocsgw:
-    environment:
-    - OCS_GRPC_SERVER=ocs.ostelco.org
-    - METRICS_GRPC_SERVER=metrics.ostelco.org
-    network_mode: "host"
