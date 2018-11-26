@@ -5,6 +5,7 @@ LABEL maintainer="dev@redotter.sg"
 RUN apt-get update && apt-get install -y --no-install-recommends netcat-openbsd && rm -rf /var/lib/apt/lists/*
 
 COPY script/start.sh /start.sh
+COPY script/start_dev.sh /start_dev.sh
 COPY script/wait.sh /wait.sh
 
 COPY config/dictionary.xml /config/dictionary.xml
