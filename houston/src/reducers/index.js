@@ -1,4 +1,5 @@
 import { combineReducers } from 'redux';
+import  _ from 'lodash';
 import { authConstants, authActions } from '../actions/auth.actions';
 import { store } from '../helpers';
 import { subscriberConstants } from '../actions/subscriber.actions';
@@ -33,7 +34,7 @@ const rootReducer = (state, action) => {
     case authConstants.LOGIN_FAILURE:
     case subscriberConstants.SUBSCRIBER_BY_MSISDN_FAILURE:
     case subscriberConstants.SUBSCRIBER_BY_EMAIL_FAILURE:
-      checkForAuthenticationFailures(action.errorObj);
+      checkForAuthenticationFailures(_.get(action, 'payload.errorObj'));
       break;
     default:
       break;
