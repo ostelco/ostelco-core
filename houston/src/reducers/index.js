@@ -6,6 +6,7 @@ import { subscriberConstants } from '../actions/subscriber.actions';
 
 // Reducers.
 import alert from '../actions/alert.actions';
+import notification from '../actions/notifiy.actions';
 import authentication from './auth.reducer';
 import { subscriber, bundles, paymentHistory } from './subscriber.reducer';
 
@@ -13,6 +14,7 @@ import { subscriber, bundles, paymentHistory } from './subscriber.reducer';
 const appReducer = combineReducers({
   authentication,
   alert,
+  notification,
   subscriber,
   bundles,
   paymentHistory
