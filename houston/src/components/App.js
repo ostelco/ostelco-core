@@ -26,7 +26,7 @@ class App extends Component {
       <Collapse isOpen={this.state.isOpen} navbar>
         <Nav className="ml-auto" navbar>
           <NavItem>
-            <NavLink tag={Link} href="/search" to="/search">Search</NavLink>
+            <NavLink tag={Link} href="/" to="/">Search</NavLink>
           </NavItem>
           <NavItem>
             <NavLink tag={Link} href="/notifications" to="/notifications">Notifications</NavLink>
@@ -65,13 +65,6 @@ class App extends Component {
           }
           <NavbarToggler onClick={this.toggle} />
         </Navbar>
-        {
-            !isAuthenticated && (
-              <div className="container">
-                <h4>You are not logged in! Please Log In to continue.</h4>
-              </div>
-            )
-          }
       </div>
     );
   }

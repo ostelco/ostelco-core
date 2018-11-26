@@ -1,4 +1,3 @@
-import { history } from '../helpers';
 import auth0 from 'auth0-js';
 import _ from 'lodash';
 
@@ -38,7 +37,6 @@ class Auth {
       if (authResult && authResult.accessToken) {
         this.setSession(authResult);
         // navigate to the home route
-        history.replace('/search');
         dispatch(authActions.loginSuccess(this.user));
       } else if (err) {
         console.log('Error recieved from auth0 parse', err);
@@ -46,8 +44,6 @@ class Auth {
         if (err.error === 'invalid_token') {
           // Token expired, re-login
           console.log('Invalid token recieved, possibly expired token');
-          // // Display login screen
-          // setTimeout(() => { history.replace('/') });
         }
         dispatch(authActions.loginFailure(err));
       }
@@ -92,7 +88,6 @@ class Auth {
     const email = localStorage.getItem('email');
     const picture = localStorage.getItem('picture');
     this.user = { accessToken, expiresAt, name, email, picture };
-    history.replace('/search');
     setTimeout(() => { store.dispatch(authActions.loginSuccess(this.user)) });
   }
 
