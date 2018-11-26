@@ -58,13 +58,11 @@ NotificationEditor.propTypes = {
   titleLabel: PropTypes.string.isRequired,
   messageLabel: PropTypes.string.isRequired,
   submitLabel: PropTypes.string.isRequired,
-  onSubmit: PropTypes.func.isRequired
 };
 
 function mapStateToProps(state) {
   let notification = state.notification;
   const email = _.get(state, 'subscriber.email');
-  console.log(state);
   return {
     message: notification.message,
     title: notification.title,

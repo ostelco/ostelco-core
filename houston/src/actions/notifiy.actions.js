@@ -14,7 +14,7 @@ const SET_NOTIFICATION_TITLE = 'SET_NOTIFICATION_TITLE';
 const SET_NOTIFICATION_TYPE = 'SET_NOTIFICATION_TYPE';
 const CLEAR_NOTIFICATION = 'CLEAR_NOTIFICATION';
 
-const defaultState = { type: true };
+const defaultState = { type: true , message: '', title: '' };
 
 const actions = createActions(
   NOTIFY_REQUEST,

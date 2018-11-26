@@ -8,11 +8,6 @@ import NotificationEditor from './NotificationEditor';
 import AlertMessage from '../Search/Alert';
 
 class Notifications extends React.Component {
-
-  onSubmitNotification = (title, message) => {
-    //handle form processing here....
-    console.log("Search On Submit", title, message);
-  }
   onSubmitEmail = (title, message) => {
     //handle form processing here....
     console.log("Search On Submit");
@@ -25,7 +20,6 @@ class Notifications extends React.Component {
           <CardBody>
             <CardTitle>Notifications</CardTitle>
             <NotificationEditor
-              onSubmit={this.onSubmitNotification}
               submitLabel="Send Notification"
               titleLabel="Enter title"
               messageLabel="Enter Message"
