@@ -6,6 +6,7 @@ import arrow.core.flatMap
 import arrow.effects.IO
 import arrow.instances.either.monad.monad
 import arrow.typeclasses.binding
+import io.grpc.Internal
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.getLogger
@@ -15,11 +16,9 @@ import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.ocs.OcsAdminService
 import org.ostelco.prime.ocs.OcsSubscriberService
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
-import org.ostelco.prime.paymentprocessor.core.BadGatewayError
-import org.ostelco.prime.paymentprocessor.core.PaymentError
-import org.ostelco.prime.paymentprocessor.core.ProductInfo
-import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.paymentprocessor.core.*
 import org.ostelco.prime.storage.*
+import org.ostelco.prime.storage.NotFoundError
 import org.ostelco.prime.storage.graph.Graph.read
 import org.ostelco.prime.storage.graph.Relation.*
 import java.time.Instant
@@ -560,6 +559,108 @@ object Neo4jStoreSingleton : GraphStore {
             result.single().get("count").asLong()
         }
     }
+
+
+    //
+    // For plans and subscriptions
+    //
+
+    override fun getPlan(planId: String): Either<StoreError, Plan> {
+        return readTransaction {
+            plansStore.get(planId, transaction).bimap(
+                    { NotFoundError("", "") },
+                    { it }
+            )
+        }
+    }
+
+    override fun getPlans(subscriberId: String): Either<StoreError, List<Plan>> {
+        return readTransaction {
+            hasPlanRelationStore.get(subscriberId, transaction).bimap(
+                    { err -> NotFoundError("", "") },
+                    { it }
+            )
+        }
+    }
+
+    override fun createPlan(plan: Plan): Either<StoreError, Unit> {
+        return writeTransaction {
+            plansStore.get(plan.id, transaction)
+                    .mapLeft { AlreadyExistsError("", "") }
+                    .flatMap { plan ->
+                        paymentProcessor.createPlan(plan.name, plan.price.amount, plan.price.currency,
+                                PaymentProcessor.Interval.valueOf(plan.interval.toUpperCase()), plan.intervalCount)
+                                .mapLeft { err -> AlreadyExistsError("", err.description) }
+                                .flatMap { planInfo ->
+                                    plansStore.create(plan.copy(planId = planInfo.id), transaction).bimap(
+                                            { err -> NotCreatedError("", err.message) },
+                                            { Unit }
+                                    )
+                                }
+                    }
+        }
+    }
+
+    override fun deletePlan(planId: String): Either<StoreError, Unit> {
+        return writeTransaction {
+            plansStore.get(planId, transaction)
+                    .mapLeft { err -> NotFoundError("", err.message) }
+                    .flatMap { plan ->
+                        paymentProcessor.removePlan(plan.planId)
+                                .mapLeft { err -> NotFoundError("", err.description) }
+                                .flatMap {
+                                    plansStore.delete(planId, transaction).bimap(
+                                            { err -> NotFoundError("", err.message) },
+                                            { Unit })
+                                }
+                    }
+        }
+    }
+
+    override fun attachPlan(subscriberId: String, planId: String, trialEnd: Long): Either<StoreError, Unit> {
+        return writeTransaction {
+            subscriberStore.get(subscriberId, transaction)
+                    .mapLeft { err -> NotFoundError("", err.message) }
+                    .flatMap { subscriber ->
+                        plansStore.get(planId, transaction)
+                                .mapLeft { err -> NotFoundError("", err.message) }
+                                .flatMap { plan ->
+                                    hasPlanRelationStore.create(subscriberId, planId, transaction)
+                                            .mapLeft { err -> NotCreatedError("", err.message) }
+                                            .flatMap {
+                                                paymentProcessor.subscribeToPlan(plan.planId, subscriber.id, trialEnd)
+                                                        .mapLeft { err -> NotCreatedError("", err.description) }
+                                                        .flatMap {
+                                                            hasPlanRelationStore.setProperties(subscriberId, planId, mapOf("paymentSubscriptionId" to it.id), transaction)
+                                                                    .bimap(
+                                                                            { err -> NotCreatedError("", err.message) },
+                                                                            { Unit }
+                                                                    )
+                                                        }
+                                            }
+                                }
+                    }
+        }
+    }
+
+    override fun detachPlan(subscriberId: String, planId: String): Either<StoreError, Unit> {
+        return writeTransaction {
+            hasPlanRelationStore.getProperties(subscriberId, planId, transaction)
+                    .mapLeft { err -> NotFoundError("", err.message) }
+                    .flatMap { properties ->
+                        paymentProcessor.cancelSubscription(properties["paymentSubscriptionId"].toString(), false)
+                                .mapLeft { err -> NotDeletedError("", err.description) }
+                                .flatMap {
+                                    hasPlanRelationStore.delete(subscriberId, planId, transaction)
+                                            .bimap(
+                                                    { err -> NotDeletedError("", err.message) },
+                                                    { Unit }
+                                            )
+                                }
+                    }
+        }
+    }
+
 
     //
     // For refunds
