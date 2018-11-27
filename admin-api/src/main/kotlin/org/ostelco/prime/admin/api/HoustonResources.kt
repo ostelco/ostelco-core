@@ -53,27 +53,29 @@ class ProfilesResource() {
         }
         val decodedId = URLDecoder.decode(id, "UTF-8")
         if (!isEmail(decodedId)) {
-            // TODO: Add a new method to get subscriber from msisdn
-            logger.info("${token.name} Accessing profile for msisdn:$decodedId, Not implemented")
-            return Response.status(Response.Status.NOT_IMPLEMENTED)
+            logger.info("${token.name} Accessing profile for msisdn:$decodedId")
+            return getProfileForMsisdn(decodedId).fold(
+                    { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                    { Response.status(Response.Status.OK).entity(asJson(it)) })
+                    .build()
+        } else {
+            logger.info("${token.name} Accessing profile for email:$decodedId")
+            return getProfile(decodedId).fold(
+                    { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                    { Response.status(Response.Status.OK).entity(asJson(it)) })
                     .build()
         }
-        logger.info("${token.name} Accessing profile for email:$decodedId")
-        return getProfile(decodedId).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.OK).entity(asJson(it)) })
-                .build()
     }
 
     // TODO: Reuse the one from SubscriberDAO
     private fun getProfile(subscriberId: String): Either<ApiError, Subscriber> {
         return try {
             storage.getSubscriber(subscriberId).mapLeft {
-                NotFoundError("Failed to fetch profile.", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_PROFILE, it)
+                NotFoundError("Failed to fetch profile.", ApiErrorCode.FAILED_TO_FETCH_PROFILE, it)
             }
         } catch (e: Exception) {
             logger.error("Failed to fetch profile for subscriberId $subscriberId", e)
-            Either.left(NotFoundError("Failed to fetch profile", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_PROFILE))
+            Either.left(NotFoundError("Failed to fetch profile", ApiErrorCode.FAILED_TO_FETCH_PROFILE))
         }
     }
 
@@ -83,6 +85,16 @@ class ProfilesResource() {
         return pattern.matcher(email).matches();
     }
 
+    private fun getProfileForMsisdn(msisdn: String): Either<ApiError, Subscriber> {
+        return try {
+            storage.getSubscriberForMsisdn(msisdn).mapLeft {
+                NotFoundError("Failed to fetch profile.", ApiErrorCode.FAILED_TO_FETCH_PROFILE, it)
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to fetch profile for msisdn $msisdn", e)
+            Either.left(NotFoundError("Failed to fetch profile", ApiErrorCode.FAILED_TO_FETCH_PROFILE))
+        }
+    }
 }
 
 /**

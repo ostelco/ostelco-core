@@ -505,6 +505,19 @@ object Neo4jStoreSingleton : GraphStore {
         }
     }
 
+    override fun getSubscriberForMsisdn(msisdn: String): Either<StoreError, Subscriber> = readTransaction {
+        read("""
+                MATCH (subscriber:${subscriberEntity.name})-[:${subscriptionRelation.relation.name}]->(subscription:${subscriptionEntity.name} {msisdn: '${msisdn}'})
+                RETURN subscriber
+                """.trimIndent(),
+                transaction) {
+            if (it.hasNext())
+                Either.right(subscriberEntity.createEntity(it.single().get("subscriber").asMap()))
+            else
+                Either.left(NotFoundError(type = subscriberEntity.name, id = msisdn))
+        }
+    }
+
     //
     // For metrics
     //
