@@ -52,7 +52,7 @@ const fetchSubscriberByEmail = (email) => ({
       actions.subscriberByEmailRequest,
       actions.subscriberByEmailSuccess,
       actions.subscriberByEmailFailure],
-    endpoint: `profile/${email}`,
+    endpoint: `profiles/${email}`,
     method: 'GET'
   }
 });
