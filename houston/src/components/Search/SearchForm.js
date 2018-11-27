@@ -5,7 +5,7 @@ import { Button, Form, FormGroup, Label, Input } from 'reactstrap';
 import { getTextType } from '../../helpers';
 
 export default function SearchForm(props) {
-  const input = useFormInput('havard.noren@telenordigital.com', props.onSubmit)
+  const input = useFormInput('martin.cederlof@telenordigital.com', props.onSubmit)
   return (
     <div className="container">
       <Form onSubmit={input.onSubmit}>

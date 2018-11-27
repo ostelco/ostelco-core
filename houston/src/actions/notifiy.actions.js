@@ -14,6 +14,11 @@ const SET_NOTIFICATION_TITLE = 'SET_NOTIFICATION_TITLE';
 const SET_NOTIFICATION_TYPE = 'SET_NOTIFICATION_TYPE';
 const CLEAR_NOTIFICATION = 'CLEAR_NOTIFICATION';
 
+// Used by global reducer.
+export const notifyConstants = {
+  NOTIFY_FAILURE
+};
+
 const defaultState = { type: true , message: '', title: '' };
 
 const actions = createActions(

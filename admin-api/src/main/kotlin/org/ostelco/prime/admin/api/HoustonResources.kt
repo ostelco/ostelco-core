@@ -269,11 +269,11 @@ class NotifyResource() {
     private fun getMsisdn(subscriberId: String): Either<ApiError, String> {
         return try {
             storage.getMsisdn(subscriberId).mapLeft {
-                NotFoundError("Did not find msisdn for this subscription.", ApiErrorCode.FAILED_TO_STORE_APPLICATION_TOKEN, it)
+                NotFoundError("Did not find msisdn for this subscription.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS, it)
             }
         } catch (e: Exception) {
             logger.error("Did not find msisdn for subscriberId $subscriberId", e)
-            Either.left(BadGatewayError("Did not find subscription", ApiErrorCode.FAILED_TO_STORE_APPLICATION_TOKEN))
+            Either.left(BadGatewayError("Did not find subscription", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS))
         }
     }
 }
