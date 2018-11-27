@@ -33,7 +33,7 @@ import javax.ws.rs.core.Response
  * Resource used to handle the profile related REST calls.
  */
 @Path("/profiles")
-class ProfileResource() {
+class ProfilesResource() {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
 
@@ -175,7 +175,7 @@ class PurchaseResource() {
  * Resource used to handle refund related REST calls.
  */
 @Path("/refund")
-class RefundsResource() {
+class RefundResource() {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
 
