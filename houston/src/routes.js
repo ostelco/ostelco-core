@@ -16,16 +16,12 @@ const handleAuthentication = ({ location }) => {
   }
 }
 
-function isAuthenticated() {
-  return authService.isAuthenticated();
-}
 function ProtectedRoute({ component: Component, ...rest }) {
   return (
     <Route
       {...rest}
       render={props => {
-        console.log('isAuthenticated ?', isAuthenticated(), ' Location ', JSON.stringify(props.location));
-        return isAuthenticated() ? (
+        return authService.isAuthenticated() ? (
           <Component {...props} />
         ) : (
             <Redirect

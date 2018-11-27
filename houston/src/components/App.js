@@ -41,7 +41,7 @@ class App extends Component {
 
   render() {
     const { props } = this
-    const isAuthenticated = props.loggedIn || false;
+    const loggedIn = props.loggedIn || false;
     const userName = props.user ? props.user.name + ' : ' + props.user.email : '';
 
     return (
@@ -56,12 +56,12 @@ class App extends Component {
             </NavItem>
           </Nav>
           {
-            !isAuthenticated && (
+            !loggedIn && (
               <Button color="outline-primary" onClick={props.login}>Log In</Button>
             )
           }
           {
-            isAuthenticated && (this.renderMenu())
+            loggedIn && (this.renderMenu())
           }
           <NavbarToggler onClick={this.toggle} />
         </Navbar>

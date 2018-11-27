@@ -47,6 +47,7 @@ const putNotificationByEmail = (email, title, message) => ({
       actions.notifyFailure],
     endpoint: `notify/${email}`,
     method: 'PUT',
+    allowEmptyResponse: true,
     params: { message, title }
   }
 });
