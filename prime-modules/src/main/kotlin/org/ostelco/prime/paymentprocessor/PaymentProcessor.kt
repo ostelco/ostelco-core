@@ -44,14 +44,14 @@ interface PaymentProcessor {
     fun getPaymentProfile(userEmail: String): Either<PaymentError, ProfileInfo>
 
     /**
-     * @param name The name of the plan
+     * @param productId The product associated with the new plan
      * @param amount The amount to be charged in the interval specified
      * @param currency Three-letter ISO currency code in lowercase
      * @param interval The frequency with which a subscription should be billed
      * @param invervalCount The number of intervals between subscription billings
      * @return Stripe planId if created
      */
-    fun createPlan(name: String, amount: Int, currency: String, interval: Interval, intervalCount: Long = 1): Either<PaymentError, PlanInfo>
+    fun createPlan(productId: String, amount: Int, currency: String, interval: Interval, intervalCount: Long = 1): Either<PaymentError, PlanInfo>
 
     /**
      * @param Stripe Plan Id

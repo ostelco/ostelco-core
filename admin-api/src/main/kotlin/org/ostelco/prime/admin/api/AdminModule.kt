@@ -21,5 +21,6 @@ class AdminModule : PrimeModule {
         jerseySever.register(PurchaseResource())
         jerseySever.register(RefundResource())
         jerseySever.register(NotifyResource())
+        jerseySever.register(PlanResource())
     }
 }

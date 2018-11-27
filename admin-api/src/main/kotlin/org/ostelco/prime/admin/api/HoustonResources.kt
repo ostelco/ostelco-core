@@ -2,7 +2,6 @@ package org.ostelco.prime.admin.api
 
 import arrow.core.Either
 import io.dropwizard.auth.Auth
-import org.ostelco.prime.admin.importer.UpdateSegments
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
 import org.ostelco.prime.apierror.BadGatewayError
@@ -20,10 +19,7 @@ import org.ostelco.prime.module.getResource
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
-import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.storage.AdminDataSource
-import org.ostelco.prime.storage.ClientDataSource
-import org.ostelco.prime.storage.StoreError
 import java.net.URLDecoder
 import java.util.regex.Pattern
 import javax.validation.constraints.NotNull
@@ -374,7 +370,7 @@ class NotifyResource {
  */
 @Path("/plans")
 class PlanResource() {
-    private val logger by getLogger()
+
     private val storage by lazy { getResource<AdminDataSource>() }
 
     /**
@@ -383,7 +379,8 @@ class PlanResource() {
     @GET
     @Path("{planId}")
     @Produces("application/json")
-    fun get(@PathParam("planId") planId: String): Response {
+    fun get(@NotNull
+            @PathParam("planId") planId: String): Response {
         return storage.getPlan(planId).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
@@ -410,10 +407,11 @@ class PlanResource() {
     @DELETE
     @Path("{planId}")
     @Produces("application/json")
-    fun delete(@PathParam("planId") planId: String) : Response {
+    fun delete(@NotNull
+               @PathParam("planId") planId: String) : Response {
         return storage.deletePlan(planId).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.OK)})
+                { Response.status(Response.Status.OK).entity(asJson(it))})
                 .build()
     }
 }

@@ -6,9 +6,11 @@ import arrow.core.flatMap
 import arrow.effects.IO
 import arrow.instances.either.monad.monad
 import arrow.typeclasses.binding
-import io.grpc.Internal
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
+import org.ostelco.prime.apierror.ApiError
+import org.ostelco.prime.apierror.ApiErrorCode
+import org.ostelco.prime.apierror.BadRequestError
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.*
 import org.ostelco.prime.module.getResource
@@ -560,107 +562,187 @@ object Neo4jStoreSingleton : GraphStore {
         }
     }
 
-
     //
     // For plans and subscriptions
     //
 
-    override fun getPlan(planId: String): Either<StoreError, Plan> {
-        return readTransaction {
-            plansStore.get(planId, transaction).bimap(
-                    { NotFoundError("", "") },
-                    { it }
-            )
-        }
+    override fun getPlan(planId: String): Either<ApiError, Plan> = readTransaction {
+        plansStore.get(planId, transaction).bimap(
+                {
+                    org.ostelco.prime.apierror.NotFoundError("Plan ${planId} not found",
+                            ApiErrorCode.FAILED_TO_FETCH_PLAN)
+                },
+                { it }
+        )
     }
 
-    override fun getPlans(subscriberId: String): Either<StoreError, List<Plan>> {
-        return readTransaction {
-            hasPlanRelationStore.get(subscriberId, transaction).bimap(
-                    { err -> NotFoundError("", "") },
-                    { it }
-            )
-        }
+    override fun getPlans(subscriberId: String): Either<ApiError, List<Plan>> = readTransaction {
+        hasPlanRelationStore.get(subscriberId, transaction).bimap(
+                {
+                    org.ostelco.prime.apierror.NotFoundError("No plans found for ${subscriberId}",
+                            ApiErrorCode.FAILED_TO_FETCH_PLANS_FOR_SUBSCRIBER)
+                },
+                { it }
+        )
     }
 
-    override fun createPlan(plan: Plan): Either<StoreError, Unit> {
-        return writeTransaction {
-            plansStore.get(plan.id, transaction)
-                    .mapLeft { AlreadyExistsError("", "") }
-                    .flatMap { plan ->
-                        paymentProcessor.createPlan(plan.name, plan.price.amount, plan.price.currency,
-                                PaymentProcessor.Interval.valueOf(plan.interval.toUpperCase()), plan.intervalCount)
-                                .mapLeft { err -> AlreadyExistsError("", err.description) }
-                                .flatMap { planInfo ->
-                                    plansStore.create(plan.copy(planId = planInfo.id), transaction).bimap(
-                                            { err -> NotCreatedError("", err.message) },
-                                            { Unit }
-                                    )
+    override fun createPlan(plan: Plan): Either<ApiError, Plan> = writeTransaction {
+        IO {
+            Either.monad<ApiError>().binding {
+                plansStore.get(plan.id, transaction)
+                        .fold(
+                                { Either.right(Unit) },
+                                {
+                                    Either.left(BadRequestError("Plan ${plan.id} alredy exists",
+                                            ApiErrorCode.FAILED_TO_STORE_PLAN))
                                 }
-                    }
-        }
+                        ).bind()
+                val productInfo = paymentProcessor.createProduct(plan.id)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to create product ${plan.id}",
+                                    ApiErrorCode.FAILED_TO_STORE_PLAN, err)
+                        }.linkReversalActionToTransaction(transaction) {
+                            paymentProcessor.removeProduct(it.id)
+                        }.bind()
+                val planInfo = paymentProcessor.createPlan(productInfo.id, plan.price.amount, plan.price.currency,
+                        PaymentProcessor.Interval.valueOf(plan.interval.toUpperCase()), plan.intervalCount)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to create ${plan.id}",
+                                    ApiErrorCode.FAILED_TO_STORE_PLAN, err)
+                        }.linkReversalActionToTransaction(transaction) {
+                            paymentProcessor.removePlan(it.id)
+                        }.bind()
+                plansStore.create(plan.copy(planId = planInfo.id, productId = productInfo.id), transaction)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to create ${plan.id}",
+                                    ApiErrorCode.FAILED_TO_STORE_PLAN,
+                                    err)
+                        }.bind()
+                plansStore.get(plan.id, transaction)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to create ${plan.id}",
+                                    ApiErrorCode.FAILED_TO_STORE_PLAN,
+                                    err)
+                        }.bind()
+            }.fix()
+        }.unsafeRunSync()
+                .ifFailedThenRollback(transaction)
     }
 
-    override fun deletePlan(planId: String): Either<StoreError, Unit> {
-        return writeTransaction {
-            plansStore.get(planId, transaction)
-                    .mapLeft { err -> NotFoundError("", err.message) }
-                    .flatMap { plan ->
-                        paymentProcessor.removePlan(plan.planId)
-                                .mapLeft { err -> NotFoundError("", err.description) }
-                                .flatMap {
-                                    plansStore.delete(planId, transaction).bimap(
-                                            { err -> NotFoundError("", err.message) },
-                                            { Unit })
-                                }
-                    }
-        }
+    override fun deletePlan(planId: String): Either<ApiError, Plan> = writeTransaction {
+        IO {
+            Either.monad<ApiError>().binding {
+                val plan = plansStore.get(planId, transaction)
+                        .mapLeft {
+                            org.ostelco.prime.apierror.NotFoundError("Plan ${planId} does not exists",
+                                    ApiErrorCode.FAILED_TO_REMOVE_PLAN)
+                        }.bind()
+                plansStore.delete(planId, transaction)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to remove plan",
+                                    ApiErrorCode.FAILED_TO_REMOVE_PLAN,
+                                    err)
+                        }.flatMap {
+                            Either.right(Unit)
+                        }.bind()
+                paymentProcessor.removePlan(plan.planId)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to remove plan ${planId}",
+                                    ApiErrorCode.FAILED_TO_REMOVE_PLAN,
+                                    err)
+                        }.linkReversalActionToTransaction(transaction) {
+                            // (Nothing to do.)
+                        }.flatMap {
+                            Either.right(Unit)
+                        }.bind()
+                paymentProcessor.removeProduct(plan.productId)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to remove plan ${planId}",
+                                    ApiErrorCode.FAILED_TO_REMOVE_PLAN,
+                                    err)
+                        }.linkReversalActionToTransaction(transaction) {
+                            // (Nothing to do.)
+                        }.bind()
+                plan
+            }.fix()
+        }.unsafeRunSync()
+                .ifFailedThenRollback(transaction)
     }
 
-    override fun attachPlan(subscriberId: String, planId: String, trialEnd: Long): Either<StoreError, Unit> {
-        return writeTransaction {
-            subscriberStore.get(subscriberId, transaction)
-                    .mapLeft { err -> NotFoundError("", err.message) }
-                    .flatMap { subscriber ->
-                        plansStore.get(planId, transaction)
-                                .mapLeft { err -> NotFoundError("", err.message) }
-                                .flatMap { plan ->
-                                    hasPlanRelationStore.create(subscriberId, planId, transaction)
-                                            .mapLeft { err -> NotCreatedError("", err.message) }
-                                            .flatMap {
-                                                paymentProcessor.subscribeToPlan(plan.planId, subscriber.id, trialEnd)
-                                                        .mapLeft { err -> NotCreatedError("", err.description) }
-                                                        .flatMap {
-                                                            hasPlanRelationStore.setProperties(subscriberId, planId, mapOf("paymentSubscriptionId" to it.id), transaction)
-                                                                    .bimap(
-                                                                            { err -> NotCreatedError("", err.message) },
-                                                                            { Unit }
-                                                                    )
-                                                        }
-                                            }
-                                }
-                    }
-        }
+    override fun attachPlan(subscriberId: String, planId: String, trialEnd: Long): Either<ApiError, Unit> = writeTransaction {
+        IO {
+            Either.monad<ApiError>().binding {
+                subscriberStore.get(subscriberId, transaction)
+                        .mapLeft {
+                            BadRequestError("Subscriber ${subscriberId} does not exists",
+                                    ApiErrorCode.FAILED_TO_FETCH_PROFILE)
+                        }.bind()
+                val plan = plansStore.get(planId, transaction)
+                        .mapLeft {
+                            org.ostelco.prime.apierror.NotFoundError("Plan ${planId} does not exists",
+                                    ApiErrorCode.FAILED_TO_FETCH_PLAN)
+                        }.bind()
+                val profileInfo = paymentProcessor.getPaymentProfile(subscriberId)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to subscribe ${subscriberId} to plan ${planId}",
+                                    ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN,
+                                    err)
+                        }.bind()
+                hasPlanRelationStore.create(subscriberId, planId, transaction)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to subscribe ${subscriberId} to plan ${planId}",
+                                    ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN,
+                                    err)
+                        }.bind()
+                val subscriptionInfo = paymentProcessor.subscribeToPlan(plan.planId, profileInfo.id, trialEnd)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to subscribe ${subscriberId} to plan ${planId}",
+                                    ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN,
+                                    err)
+                        }.linkReversalActionToTransaction(transaction) {
+                            paymentProcessor.cancelSubscription(it.id)
+                        }.bind()
+                hasPlanRelationStore.setProperties(subscriberId, planId, mapOf("paymentSubscriptionId" to subscriptionInfo.id), transaction)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to subscribe ${subscriberId} to plan ${planId}",
+                                    ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN,
+                                    err)
+                        }.flatMap {
+                            Either.right(Unit)
+                        }.bind()
+            }.fix()
+        }.unsafeRunSync()
+                .ifFailedThenRollback(transaction)
     }
 
-    override fun detachPlan(subscriberId: String, planId: String): Either<StoreError, Unit> {
-        return writeTransaction {
-            hasPlanRelationStore.getProperties(subscriberId, planId, transaction)
-                    .mapLeft { err -> NotFoundError("", err.message) }
-                    .flatMap { properties ->
-                        paymentProcessor.cancelSubscription(properties["paymentSubscriptionId"].toString(), false)
-                                .mapLeft { err -> NotDeletedError("", err.description) }
-                                .flatMap {
-                                    hasPlanRelationStore.delete(subscriberId, planId, transaction)
-                                            .bimap(
-                                                    { err -> NotDeletedError("", err.message) },
-                                                    { Unit }
-                                            )
-                                }
-                    }
-        }
+    override fun detachPlan(subscriberId: String, planId: String, atIntervalEnd: Boolean): Either<ApiError, Unit> = writeTransaction {
+        IO {
+            Either.monad<ApiError>().binding {
+                val properties = hasPlanRelationStore.getProperties(subscriberId, planId, transaction)
+                        .mapLeft {
+                            BadRequestError("Could not find subscription where ${subscriberId} subscribes to plan ${planId}",
+                                    ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTION)
+                        }.bind()
+                paymentProcessor.cancelSubscription(properties["paymentSubscriptionId"].toString(), atIntervalEnd)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to remove subscription for ${subscriberId} to plan ${planId}",
+                                    ApiErrorCode.FAILED_TO_REMOVE_SUBSCRIPTION,
+                                    err)
+                        }.flatMap {
+                            Either.right(Unit)
+                        }.bind()
+                hasPlanRelationStore.delete(subscriberId, planId, transaction)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to remove subscription for ${subscriberId} to plan ${planId}",
+                                    ApiErrorCode.FAILED_TO_REMOVE_SUBSCRIPTION,
+                                    err)
+                        }.flatMap {
+                            Either.right(Unit)
+                        }.bind()
+            }.fix()
+        }.unsafeRunSync()
+                .ifFailedThenRollback(transaction)
     }
-
 
     //
     // For refunds

@@ -1,6 +1,8 @@
 package org.ostelco.prime.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.firebase.database.Exclude
 
 interface HasId {
@@ -90,7 +92,8 @@ data class Plan(
         val price: Price,
         val interval: String,
         val intervalCount: Long = 1L,
-        val planId: String = "") : HasId {
+        val planId: String = "",
+        val productId: String = "") : HasId {
 
     override val id: String
         @JsonIgnore

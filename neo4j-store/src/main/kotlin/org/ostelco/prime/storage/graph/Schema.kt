@@ -334,7 +334,7 @@ class UniqueRelationStore<FROM: HasId, TO: HasId>(private val relationType: Rela
         return read("""MATCH (from:${relationType.from.name} {id: '${from}'})-[r:${relationType.relation.name}]->(to:${relationType.to.name})
                 RETURN to""".trimMargin(), transaction) {
             Either.cond(it.hasNext(),
-                    ifTrue = { it.list { it["to"].asMap() } as List<TO> },
+                    ifTrue = { it.list { relationType.to.createEntity(it["to"].asMap()) }.filterNotNull() },
                     ifFalse = { NotFoundError(relationType.relation.name, from) })
         }
     }

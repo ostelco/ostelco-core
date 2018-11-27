@@ -132,28 +132,21 @@ class StripePaymentProcessor : PaymentProcessor {
         }
     }
 
-    override fun createPlan(name: String, amount: Int, currency: String, interval: PaymentProcessor.Interval, intervalCount: Long): Either<PaymentError, PlanInfo> =
-            either("Failed to create plan with name $name amount $amount currency $currency interval ${interval.value}") {
-                val productParams = mapOf(
-                        "name" to name,
-                        "type" to "service")
-                Product.create(productParams).let { product ->
-                    val planParams = mapOf(
-                            "amount" to amount,
-                            "interval" to interval.value,
-                            "interval_count" to intervalCount,
-                            "product" to product.id,
-                            "currency" to currency)
-                    PlanInfo(Plan.create(planParams).id)
-                }
+    override fun createPlan(productId: String, amount: Int, currency: String, interval: PaymentProcessor.Interval, intervalCount: Long): Either<PaymentError, PlanInfo> =
+            either("Failed to create plan for product $productId amount $amount currency $currency interval ${interval.value}") {
+                val planParams = mapOf(
+                        "product" to productId,
+                        "amount" to amount,
+                        "interval" to interval.value,
+                        "interval_count" to intervalCount,
+                        "currency" to currency)
+                PlanInfo(Plan.create(planParams).id)
             }
 
     override fun removePlan(planId: String): Either<PaymentError, PlanInfo> =
             either("Failed to delete plan $planId") {
-                 Plan.retrieve(planId).let { plan ->
+                Plan.retrieve(planId).let { plan ->
                     plan.delete()
-                    Product.retrieve(plan.product)
-                            .delete()
                     PlanInfo(plan.id)
                 }
             }
@@ -201,13 +194,8 @@ class StripePaymentProcessor : PaymentProcessor {
 
     override fun subscribeToPlan(planId: String, customerId: String, trialEnd: Long): Either<PaymentError, SubscriptionInfo> =
             either("Failed to subscribe customer $customerId to plan $planId") {
-<<<<<<< HEAD
-                val item = mapOf("plan" to planId)
-                val params = mapOf(
-=======
                 val item =  mapOf("plan" to planId)
                 val subscriptionParams = mapOf(
->>>>>>> Updates 'payment' API to better support subscription plans
                         "customer" to customerId,
                         "items" to mapOf("0" to item),
                         *( if (trialEnd > Instant.now().epochSecond)

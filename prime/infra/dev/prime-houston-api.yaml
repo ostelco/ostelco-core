@@ -405,6 +405,14 @@ definitions:
         type: integer
         default: 1
         minimum: 1
+      planId:
+        description: "Stripe plan id"
+        type: string
+        default: ""
+      productId:
+        description: "Stripe product id"
+        type: string
+        default: ""
     required:
       - name
       - price
