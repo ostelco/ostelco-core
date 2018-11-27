@@ -30,7 +30,6 @@
 
   <root level="DEBUG">
     <appender-ref ref="STDOUT"/>
-    <appender-ref ref="CLOUD_ASYNC"/>
   </root>
 
 </configuration>
