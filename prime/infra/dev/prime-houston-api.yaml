@@ -10,12 +10,12 @@ x-google-endpoints:
 schemes:
   - "https"
 paths:
-  "/profile/email/{email}":
+  "/profiles/{id}":
     get:
-      description: "Get profile for the given email-id (url encoded)."
+      description: "Get profile for the given email-id or msisdn (url encoded)."
       produces:
       - application/json
-      operationId: "getProfileByEmail"
+      operationId: "getProfile"
       responses:
         200:
           description: "Get the profile for this user."
@@ -26,33 +26,12 @@ paths:
       security:
       - auth0_jwt: []
       parameters:
-      - name: email
+      - name: id
         in: path
-        description: "The email of the user"
+        description: "The id of the user (msisdn or email)"
         required: true
         type: string
-  "/profile/msisdn/{msisdn}":
-    get:
-      description: "Get profile for the given msisdn."
-      produces:
-      - application/json
-      operationId: "getProfileByMsisdn"
-      responses:
-        200:
-          description: "Get the profile for this user."
-          schema:
-            $ref: '#/definitions/Profile'
-        404:
-          description: "Profile not found."
-      security:
-      - auth0_jwt: []
-      parameters:
-      - name: msisdn
-        in: path
-        description: "The phone number of the user"
-        required: true
-        type: string
-  "/bundles/email/{email}":
+  "/bundles/{email}":
     get:
       description: "Get bundles (balance) for the user (identified by email)."
       produces:
@@ -73,7 +52,7 @@ paths:
         description: "The email of the user"
         required: true
         type: string
-  "/purchases/email/{email}":
+  "/purchases/{email}":
     get:
       description: "Get list of all purchases."
       produces:
@@ -99,7 +78,7 @@ paths:
         description: "The email of the user"
         required: true
         type: string
-  "/refunds/email/{email}":
+  "/refund/{email}":
     put:
       description: "Full refund of a purchase."
       produces:
@@ -135,7 +114,7 @@ paths:
         description: "The reason for refund"
         required: true
         type: string
-  "/notify/email/{email}":
+  "/notify/{email}":
     put:
       description: "Send notification to a subscriber."
       produces:

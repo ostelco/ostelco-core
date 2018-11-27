@@ -21,7 +21,9 @@ import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.storage.AdminDataSource
 import org.ostelco.prime.storage.ClientDataSource
+import org.ostelco.prime.storage.StoreError
 import java.net.URLDecoder
+import java.util.regex.Pattern
 import javax.validation.constraints.NotNull
 import javax.ws.rs.*
 import javax.ws.rs.core.MediaType
@@ -30,7 +32,7 @@ import javax.ws.rs.core.Response
 /**
  * Resource used to handle the profile related REST calls.
  */
-@Path("/profile")
+@Path("/profiles")
 class ProfileResource() {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
@@ -39,19 +41,25 @@ class ProfileResource() {
      * Get the subscriber profile.
      */
     @GET
-    @Path("email/{email}")
+    @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getProfileByEmail(@Auth token: AccessTokenPrincipal?,
+    fun getProfile(@Auth token: AccessTokenPrincipal?,
                           @NotNull
-                          @PathParam("email")
-                          email: String): Response {
+                          @PathParam("id")
+                          id: String): Response {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
-        val decodedEmail = URLDecoder.decode(email, "UTF-8")
-        logger.info("${token.name} Accessing profile for $decodedEmail")
-        return getProfile(decodedEmail).fold(
+        val decodedId = URLDecoder.decode(id, "UTF-8")
+        if (!isEmail(decodedId)) {
+            // TODO: Add a new method to get subscriber from msisdn
+            logger.info("${token.name} Accessing profile for msisdn:$decodedId, Not implemented")
+            return Response.status(Response.Status.NOT_IMPLEMENTED)
+                    .build()
+        }
+        logger.info("${token.name} Accessing profile for email:$decodedId")
+        return getProfile(decodedId).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
@@ -69,6 +77,12 @@ class ProfileResource() {
         }
     }
 
+    private fun isEmail(email: String): Boolean {
+        val regex = "^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$"
+        val pattern = Pattern.compile(regex)
+        return pattern.matcher(email).matches();
+    }
+
 }
 
 /**
@@ -83,7 +97,7 @@ class BundlesResource() {
      * Get all bundles for the subscriber.
      */
     @GET
-    @Path("email/{email}")
+    @Path("{email}")
     @Produces(MediaType.APPLICATION_JSON)
     fun getBundlesByEmail(@Auth token: AccessTokenPrincipal?,
                           @NotNull
@@ -126,7 +140,7 @@ class PurchaseResource() {
      * Get all purchase history for the subscriber.
      */
     @GET
-    @Path("email/{email}")
+    @Path("{email}")
     @Produces(MediaType.APPLICATION_JSON)
     fun getPurchaseHistoryByEmail(@Auth token: AccessTokenPrincipal?,
                                   @NotNull
@@ -158,9 +172,9 @@ class PurchaseResource() {
 }
 
 /**
- * Resource used to handle refunds related REST calls.
+ * Resource used to handle refund related REST calls.
  */
-@Path("/refunds")
+@Path("/refund")
 class RefundsResource() {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
@@ -169,7 +183,7 @@ class RefundsResource() {
      * Refund a specified purchase for the subscriber.
      */
     @PUT
-    @Path("email/{email}")
+    @Path("{email}")
     @Produces(MediaType.APPLICATION_JSON)
     fun refundPurchaseByEmail(@Auth token: AccessTokenPrincipal?,
                               @NotNull
@@ -223,7 +237,7 @@ class NotifyResource() {
      * Sends a notification to all devices for a subscriber.
      */
     @PUT
-    @Path("email/{email}")
+    @Path("{email}")
     @Produces(MediaType.APPLICATION_JSON)
     fun sendNotificationByEmail(@Auth token: AccessTokenPrincipal?,
                               @NotNull
