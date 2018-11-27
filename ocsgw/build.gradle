@@ -23,6 +23,8 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter-api:$junit5Version"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junit5Version"
 
+    testImplementation project(':diameter-ha')
+
     testImplementation 'junit:junit:4.12'
     testRuntimeOnly "org.junit.vintage:junit-vintage-engine:$junit5Version"
 }
