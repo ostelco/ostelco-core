@@ -52,7 +52,7 @@ const fetchSubscriberByEmail = (email) => ({
       actions.subscriberByEmailRequest,
       actions.subscriberByEmailSuccess,
       actions.subscriberByEmailFailure],
-    endpoint: `profile/email/${email}`,
+    endpoint: `profile/${email}`,
     method: 'GET'
   }
 });
@@ -63,7 +63,7 @@ const fetchBundlesByEmail = (email) => ({
       actions.bundlesRequest,
       actions.bundlesSuccess,
       actions.bundlesFailure],
-    endpoint: `bundles/email/${email}`,
+    endpoint: `bundles/${email}`,
     method: 'GET'
   }
 });
@@ -74,7 +74,7 @@ const fetchPaymentHistoryByEmail = (email) => ({
       actions.paymentHistoryRequest,
       actions.paymentHistorySuccess,
       actions.paymentHistoryFailure],
-    endpoint: `purchases/email/${email}`,
+    endpoint: `purchases/${email}`,
     method: 'GET'
   }
 });
@@ -85,7 +85,7 @@ const putRefundPurchaseByEmail = (email, purchaseRecordId, reason) => ({
       actions.refundPaymentRequest,
       actions.refundPaymentSuccess,
       actions.refundPaymentFailure],
-    endpoint: `refunds/email/${email}`,
+    endpoint: `refund/${email}`,
     method: 'PUT',
     params: { purchaseRecordId, reason }
   }

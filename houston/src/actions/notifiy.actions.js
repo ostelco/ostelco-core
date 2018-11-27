@@ -40,7 +40,7 @@ const putNotificationByEmail = (email, title, message) => ({
       actions.notifyRequest,
       actions.notifySuccess,
       actions.notifyFailure],
-    endpoint: `notify/email/${email}`,
+    endpoint: `notify/${email}`,
     method: 'PUT',
     params: { message, title }
   }
