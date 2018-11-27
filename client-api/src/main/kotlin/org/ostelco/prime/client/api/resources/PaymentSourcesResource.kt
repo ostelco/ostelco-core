@@ -21,7 +21,7 @@ import javax.ws.rs.core.Response
  *
  */
 @Path("/paymentSources")
-class PaymentResource(private val dao: SubscriberDAO) {
+class PaymentSourcesResource(private val dao: SubscriberDAO) {
 
     private val logger by getLogger()
 

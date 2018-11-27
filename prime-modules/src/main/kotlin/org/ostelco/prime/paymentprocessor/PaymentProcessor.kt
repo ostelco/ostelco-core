@@ -1,7 +1,13 @@
 package org.ostelco.prime.paymentprocessor
 
 import arrow.core.Either
-import org.ostelco.prime.paymentprocessor.core.*
+import org.ostelco.prime.paymentprocessor.core.PaymentError
+import org.ostelco.prime.paymentprocessor.core.PlanInfo
+import org.ostelco.prime.paymentprocessor.core.ProductInfo
+import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
+import org.ostelco.prime.paymentprocessor.core.SourceInfo
+import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
 
 interface PaymentProcessor {
 
@@ -125,4 +131,6 @@ interface PaymentProcessor {
      * @return id if removed
      */
     fun removeSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo>
+
+    fun getStripeEphemeralKey(userEmail: String, apiVersion: String): Either<PaymentError, String>
 }
