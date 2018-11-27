@@ -7,21 +7,12 @@ import org.ostelco.prime.jsonmapper.asJson
 import javax.ws.rs.GET
 import javax.ws.rs.Path
 import javax.ws.rs.Produces
+import javax.ws.rs.QueryParam
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
-import kotlin.DeprecationLevel.WARNING
 
-/**
- * Subscriptions API.
- *
- */
-
-@Deprecated(
-        message = "Will be removed in later releases.",
-        replaceWith = ReplaceWith("CustomerResource", imports = arrayOf("org.ostelco.prime.client.api.resources.CustomerResource")),
-        level = WARNING)
-@Path("/subscription")
-class SubscriptionResource(private val dao: SubscriberDAO) {
+@Path("/customer")
+class CustomerResource(private val dao: SubscriberDAO) {
 
     @GET
     @Path("activePseudonyms")
@@ -37,22 +28,21 @@ class SubscriptionResource(private val dao: SubscriberDAO) {
                 { pseudonym -> Response.status(Response.Status.OK).entity(pseudonym) })
                 .build()
     }
-}
-
-@Path("/subscriptions")
-class SubscriptionsResource(private val dao: SubscriberDAO) {
 
     @GET
+    @Path("stripe-ephemeral-key")
     @Produces(MediaType.APPLICATION_JSON)
-    fun getSubscription(@Auth token: AccessTokenPrincipal?): Response {
+    fun getStripeEphemeralKey(
+            @Auth token: AccessTokenPrincipal?,
+            @QueryParam("api_version") apiVersion: String): Response {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
 
-        return dao.getSubscriptions(token.name).fold(
+        return dao.getStripeEphemeralKey(subscriberId = token.name, apiVersion = apiVersion).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.OK).entity(asJson(it)) })
+                { stripeEphemeralKey -> Response.status(Response.Status.OK).entity(stripeEphemeralKey) })
                 .build()
     }
 }
