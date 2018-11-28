@@ -18,6 +18,21 @@ export const subscriber = handleActions(
   defaultState
 );
 
+export const subscriptions = handleActions(
+  {
+    [actions.subscriptionsRequest]: (state, action) => ({
+      loading: true
+    }),
+    [actions.subscriptionsSuccess]: (state, action) => ({
+      items: action.payload
+    }),
+    [actions.subscriptionsFailure]: (state, action) => ({
+      ...action.payload
+    })
+  },
+  defaultState
+);
+
 export const bundles = handleActions(
   {
     [actions.bundlesRequest]: (state, action) => ({

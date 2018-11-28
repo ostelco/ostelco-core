@@ -9,7 +9,7 @@ import { notifyConstants } from '../actions/notifiy.actions';
 import alert from '../actions/alert.actions';
 import notification from '../actions/notifiy.actions';
 import authentication from './auth.reducer';
-import { subscriber, bundles, paymentHistory } from './subscriber.reducer';
+import { subscriber, subscriptions, bundles, paymentHistory } from './subscriber.reducer';
 
 
 const appReducer = combineReducers({
@@ -17,6 +17,7 @@ const appReducer = combineReducers({
   alert,
   notification,
   subscriber,
+  subscriptions,
   bundles,
   paymentHistory
 });
@@ -35,7 +36,7 @@ const rootReducer = (state, action) => {
   }
   switch (action.type) {
     case authConstants.LOGIN_FAILURE:
-    case subscriberConstants.SUBSCRIBER_BY_MSISDN_FAILURE:
+    case subscriberConstants.SUBSCRIPTIONS_FAILURE:
     case subscriberConstants.SUBSCRIBER_BY_EMAIL_FAILURE:
     case notifyConstants.NOTIFY_FAILURE:
       checkForAuthenticationFailures(_.get(action, 'payload.errorObj'));
