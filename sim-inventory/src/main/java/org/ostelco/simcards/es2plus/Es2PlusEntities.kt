@@ -136,17 +136,18 @@ data class Es2ReleaseProfileResponse(
 ///  The The HandleDownloadProgressInfo function
 ///
 
+
 @JsonSchema("ES2+HandleDownloadProgressInfo-def")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Es2HandleDownloadProgressInfo(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("eid") val eid: String? = null,
-        @JsonProperty("iccid") val iccid: String? = null,
-        @JsonProperty("profileType") val profileType: String? = null,
+        @JsonProperty("iccid") val iccid: String,
+        @JsonProperty("profileType") val profileType: String,
         @JsonProperty("timestamp") val timestamp: String? = null,
-        @JsonProperty("notificationPointId") val notificationPointId: String? = null,
-        @JsonProperty("notificationPointStatus") val notificationPointStatus: ES2NotificationPointStatus? = null,
-        @JsonInclude(JsonInclude.Include.NON_NULL) @JsonProperty("resultData") val resultData: ES2StatusCodeData? = null,
+        @JsonProperty("notificationPointId") val notificationPointId: String,
+        @JsonProperty("notificationPointStatus") val notificationPointStatus: ES2NotificationPointStatus,
+        @JsonInclude(JsonInclude.Include.NON_NULL) @JsonProperty("resultData") val resultData: String? = null,
         @JsonProperty("imei") val imei : String? = null
 )
 

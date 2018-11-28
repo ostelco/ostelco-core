@@ -1,5 +1,7 @@
 package org.ostelco.simcards.es2plus
 
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.annotation.JsonProperty
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
@@ -104,14 +106,31 @@ class ES2PlusClient(private val requesterId: String, private val client: Client)
 
     // XXX This client is missing essentially _all_ of its input parameters, must
     //     be heavily amended so that it can be used for proper testing.
-    fun handleDownloadProgressInfo(): Es2HandleDownloadProgressInfoResponse {
+    fun handleDownloadProgressInfo(
+            eid: String? = null,
+            iccid: String,
+            profileType: String,
+            timestamp: String,
+            notificationPointId: String,
+            notificationPointStatus: ES2NotificationPointStatus,
+            resultData: String? = null,
+            imei: String? = null
+    ): Es2HandleDownloadProgressInfoResponse {
         return postEs2ProtocolCmd("/gsma/rsp2/es2plus/handleDownloadProgressInfo",
                 Es2HandleDownloadProgressInfo(
                         header = ES2RequestHeader(
                                 functionRequesterIdentifier = requesterId,
                                 functionCallIdentifier = "handleDownloadProgressInfo"
 
-                        )),
+                        ),
+                        eid = eid,
+                        iccid = iccid,
+                        profileType = profileType,
+                        timestamp = timestamp,
+                        notificationPointId = notificationPointId,
+                        notificationPointStatus = notificationPointStatus,
+                        resultData = resultData,
+                        imei = imei),
                 sclass = Es2HandleDownloadProgressInfoResponse::class.java,
                 expectedReturnCode = 200)
     }
