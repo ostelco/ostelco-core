@@ -31,6 +31,28 @@ paths:
         description: "The id of the user (msisdn or email)"
         required: true
         type: string
+  "/profiles/{email}/subscriptions":
+    get:
+      description: "Get subscription (msisdn) for the user."
+      produces:
+        - application/json
+      operationId: "getSubscriptions"
+      responses:
+        200:
+          description: "Get subscriptions for this user."
+          schema:
+            $ref: '#/definitions/SubscriptionList'
+        404:
+          description: "No subscription found for this user."
+      security:
+        - auth0_jwt: []
+      parameters:
+        - name: email
+          in: path
+          description: "The email of the user"
+          required: true
+          type: string
+
   "/bundles/{email}":
     get:
       description: "Get bundles (balance) for the user (identified by email)."
