@@ -52,7 +52,68 @@ paths:
           description: "The email of the user"
           required: true
           type: string
-
+  "/profiles/{email}/plans":
+    get:
+      description: "Get all plans subscribed to by a subscriber"
+      produces:
+        - application/json
+      operationId: "getPlans"
+      parameters:
+        - name: email
+          in: path
+          description: "The email of the subscriber"
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Plans subscribed to"
+          items:
+            $ref: '#/definitions/PlanList'
+        404:
+          description: "No plans found"
+  "/profiles/{email}/plans/{planId}":
+    post:
+      description: "Subscribe a subscriber to a plan"
+      produces:
+        - application/json
+        - text/plain
+      parameters:
+        - name: email
+          in: path
+          description: "The email of the subscriber"
+          required: true
+          type: string
+        - name: planId
+          in: path
+          description: "The name of the plan to subscribe to"
+          required: true
+          type: string
+      responses:
+        201:
+          description: "The subscription was created successfully"
+        400:
+          description: "Failed to create subscription"
+    delete:
+      description: "Remove a subscriber from a plan"
+      produces:
+        - application/json
+        - text/plain
+      parameters:
+        - name: email
+          in: path
+          description: "The email of the subscriber"
+          required: true
+          type: string
+        - name: planId
+          in: path
+          description: "The name of the plan to remove the subscription for"
+          required: true
+          type: string
+      responses:
+        200:
+          description: "The subscription was removed successfully"
+        400:
+          description: "Failed to remove subscription"
   "/bundles/{email}":
     get:
       description: "Get bundles (balance) for the user (identified by email)."
@@ -168,6 +229,66 @@ paths:
           description: "The notification message"
           required: true
           type: string
+  "/plans":
+    get:
+      description: "Get plan details"
+      produces:
+        - application/json
+        - text/plain
+      operationId: "getPlan"
+      parameters:
+        - name: planId
+          in: path
+          description: "Name of plan to get"
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Plan details is returned"
+          schema:
+            $ref: '#/definitions/Plan'
+        404:
+          description: "No such plan"
+    post:
+      description: "Create a plan"
+      produces:
+        - application/json
+        - text/plain
+      operationId: "createPlan"
+      parameters:
+        - name: plan
+          in: body
+          description: Plan details
+          schema:
+            $ref: '#/definitions/Plan'
+      responses:
+        201:
+          description: "Successfully purchased the plan."
+          schema:
+            $ref: '#/definitions/Plan'
+        400:
+          description: "Failed to create the plan"
+    delete:
+      description: "Removes a plan"
+      produces:
+        - application/json
+        - text/plain
+      operationId: "deletePlan"
+      parameters:
+        - name: planId
+          in: path
+          description: "The name of the plan to remove"
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Plan is removed"
+          schema:
+            $ref: '#/definitions/Plan'
+        400:
+          description: "Failed to remove plan"
+        404:
+          description: "No such plan"
 definitions:
   Profile:
     type: object
@@ -267,6 +388,31 @@ definitions:
     required:
     - amount
     - currency
+  Plan:
+    type: object
+    properties:
+      name:
+        description: "An unique name representing the plan"
+        type: string
+      price:
+        $ref: '#/definitions/Price'
+      interval:
+        description: "The recurring period for the plan"
+        type: string
+        enum: [ day, week, month, year ]
+      intervalCount:
+        description: "Number of intervals in a period"
+        type: integer
+        default: 1
+        minimum: 1
+    required:
+      - name
+      - price
+      - interval
+  PlanList:
+    type: array
+    items:
+      $ref: '#/definitions/Plan'
 securityDefinitions:
   auth0_jwt:
     authorizationUrl: "https://redotter-admin-dev.eu.auth0.com/authorize"
