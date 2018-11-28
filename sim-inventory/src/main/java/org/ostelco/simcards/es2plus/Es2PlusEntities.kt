@@ -145,7 +145,7 @@ data class Es2HandleDownloadProgressInfo(
         @JsonProperty("iccid") val iccid: String,
         @JsonProperty("profileType") val profileType: String,
         @JsonProperty("timestamp") val timestamp: String,
-        @JsonProperty("notificationPointId") val notificationPointId: String,
+        @JsonProperty("notificationPointId") val notificationPointId: Int,
         @JsonProperty("notificationPointStatus") val notificationPointStatus: ES2NotificationPointStatus,
         @JsonInclude(JsonInclude.Include.NON_NULL) @JsonProperty("resultData") val resultData: String? = null,
         @JsonProperty("imei") val imei : String? = null

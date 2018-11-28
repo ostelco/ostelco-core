@@ -82,7 +82,7 @@ class PlaceholderSmDpPlusService : SmDpPlusService {
 
 
 class PlaceholderSmDpPlusCallbackService : SmDpPlusCallbackService {
-    override fun handleDownloadProgressInfo(eid: String?, iccid: String, notificationPointId: String, profileType: String?, resultData: String?, timestamp: String) {
+    override fun handleDownloadProgressInfo(eid: String?, iccid: String, notificationPointId: Int, profileType: String?, resultData: String?, timestamp: String) {
 
     }
 }

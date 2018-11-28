@@ -94,7 +94,7 @@ class ES2PlusResourceTest {
                 iccid = "01234567890123456789",
                 profileType =  "foo",
                 timestamp = "1994-11-05T13:15:30Z",
-                notificationPointId = "blabla",
+                notificationPointId = 4711,
                 notificationPointStatus = ES2NotificationPointStatus()
         )
         // XXX Do some verification

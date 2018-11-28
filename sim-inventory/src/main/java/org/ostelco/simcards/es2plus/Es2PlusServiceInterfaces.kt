@@ -25,7 +25,7 @@ interface  SmDpPlusCallbackService {
     fun handleDownloadProgressInfo(
             eid: String?,
             iccid: String,
-            notificationPointId: String,
+            notificationPointId: Int,
             profileType: String?,
             resultData: String?,
             timestamp: String)

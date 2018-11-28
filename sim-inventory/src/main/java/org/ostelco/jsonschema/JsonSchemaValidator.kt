@@ -46,7 +46,10 @@ class JsonSchemaValidator {
             try {
                 getSchema(schemaAnnotation.schemaKey).validate(JSONObject(body))
             } catch (t: ValidationException) {
-                val causes = t.causingExceptions.map { e: ValidationException -> "${e.keyword}: ${e.errorMessage}" }.joinToString(separator = ". ")
+                var causes = t.causingExceptions.map { e: ValidationException -> "${e.keyword}: ${e.errorMessage}" }.joinToString(separator = ". ")
+                if (causes.isBlank()) {
+                    causes = t.errorMessage
+                }
                 val msg = "Schema validation failed while validating schema named: '${schemaAnnotation.schemaKey}'.  Error:  $t.message. Causes= $causes"
                 throw WebApplicationException(msg, error)
             }

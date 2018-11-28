@@ -73,7 +73,7 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
         // TODO: Extend this interface to also receive authentication information.
         jerseyEnvironment.register(SimInventoryResource(simInventoryDAO))
         val smdpPlusCallbackHandler = object : SmDpPlusCallbackService {
-            override fun handleDownloadProgressInfo(eid: String?, iccid: String, notificationPointId: String, profileType: String?, resultData: String?, timestamp: String) {
+            override fun handleDownloadProgressInfo(eid: String?, iccid: String, notificationPointId: Int, profileType: String?, resultData: String?, timestamp: String) {
 
             }
         }

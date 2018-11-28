@@ -1,7 +1,5 @@
 package org.ostelco.simcards.es2plus
 
-import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.annotation.JsonProperty
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
@@ -111,7 +109,7 @@ class ES2PlusClient(private val requesterId: String, private val client: Client)
             iccid: String,
             profileType: String,
             timestamp: String,
-            notificationPointId: String,
+            notificationPointId: Int,
             notificationPointStatus: ES2NotificationPointStatus,
             resultData: String? = null,
             imei: String? = null
