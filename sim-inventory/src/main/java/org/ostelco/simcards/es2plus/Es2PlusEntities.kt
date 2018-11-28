@@ -1,5 +1,6 @@
 package org.ostelco.simcards.es2plus
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 
 
@@ -13,6 +14,7 @@ annotation class JsonSchema(val schemaKey: String)
 ///   (for reasons that are unclear to me)
 ///
 
+@JsonInclude(Include.NON_NULL)
 data class ES2RequestHeader(
         @JsonProperty("functionRequesterIdentifier") val functionRequesterIdentifier: String,
         @JsonProperty("functionCallIdentifier") val functionCallIdentifier: String
@@ -23,11 +25,11 @@ data class ES2RequestHeader(
 ///   (also unknown to me :)
 ///
 
-
+@JsonInclude(Include.NON_NULL)
 data class ES2ResponseHeader(
-        @JsonProperty("functionExecutionStatus") val functionExecutionStatus: FunctionExecutionStatus)
+        @JsonProperty("functionExecutionStatus") val functionExecutionStatus: FunctionExecutionStatus = FunctionExecutionStatus())
 
-
+@JsonInclude(Include.NON_NULL)
 enum class FunctionExecutionStatusType {
     @JsonProperty("Executed-Success")
     ExecutedSuccess,
@@ -39,10 +41,12 @@ enum class FunctionExecutionStatusType {
     Expired
 }
 
+@JsonInclude(Include.NON_NULL)
 data class FunctionExecutionStatus(
-        @JsonProperty("status") val status: FunctionExecutionStatusType,
-        @JsonProperty("statusCodeData") val statusCodeData: StatusCodeData? = null)
+        @JsonProperty("status") val status: FunctionExecutionStatusType = FunctionExecutionStatusType.ExecutedSuccess,
+        @JsonProperty("statusCodeData") val statusCodeData: StatusCodeData? = StatusCodeData(subjectCode =  "huh?", reasonCode =  "What?"))
 
+@JsonInclude(Include.NON_NULL)
 data class StatusCodeData(
         @JsonProperty("subjectCode") var subjectCode: String,
         @JsonProperty("reasonCode") var reasonCode: String,
@@ -53,7 +57,8 @@ data class StatusCodeData(
 ///  The DownloadOrder function
 ///
 
-// @JsonSchema("ES2+DownloadOrder-def")
+@JsonSchema("ES2+DownloadOrder-def")
+@JsonInclude(Include.NON_NULL)
 data class Es2PlusDownloadOrder(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("eid") val eid: String?,
@@ -61,7 +66,8 @@ data class Es2PlusDownloadOrder(
         @JsonProperty("profileType") val profileType: String?
 )
 
-// @JsonSchema("ES2+DownloadOrder-response")
+@JsonSchema("ES2+DownloadOrder-response")
+@JsonInclude(Include.NON_NULL)
 data class Es2DownloadOrderResponse(
         @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader(),
         @JsonProperty("iccid") val iccid: String
@@ -72,6 +78,7 @@ data class Es2DownloadOrderResponse(
 ///
 
 @JsonSchema("ES2+ConfirmOrder-def")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class Es2ConfirmOrder(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("eid") val eid: String,
@@ -82,6 +89,7 @@ data class Es2ConfirmOrder(
         @JsonProperty("releaseFlag") val releaseFlag: Boolean
 )
 
+@JsonInclude(Include.NON_NULL)
 @JsonSchema("ES2+ConfirmOrder-response")
 data class Es2ConfirmOrderResponse(
         @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader(),
@@ -94,6 +102,7 @@ data class Es2ConfirmOrderResponse(
 ///  The CancelOrder function
 ///
 
+@JsonInclude(Include.NON_NULL)
 @JsonSchema("ES2+CancelOrder-def")
 data class Es2CancelOrder(
         @JsonProperty("header") val header: ES2RequestHeader,
@@ -110,12 +119,14 @@ data class Es2CancelOrderResponse(@JsonProperty("header") val header: ES2Respons
 ///  The ReleaseProfile function
 ///
 
+@JsonInclude(Include.NON_NULL)
 @JsonSchema("ES2+ReleaseProfile-def")
 data class Es2ReleaseProfile(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("iccid") val iccid: String
 )
 
+@JsonInclude(Include.NON_NULL)
 @JsonSchema("ES2+ReleaseProfile-response")
 data class Es2ReleaseProfileResponse(
         @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader())
@@ -125,7 +136,8 @@ data class Es2ReleaseProfileResponse(
 ///  The The HandleDownloadProgressInfo function
 ///
 
-// XXXX JSON file contains syntax error, ignoring for now:  @JsonSchema("ES2+HandleDownloadProgressInfo-def")
+@JsonSchema("ES2+HandleDownloadProgressInfo-def")
+@JsonInclude(Include.NON_NULL)
 data class Es2HandleDownloadProgressInfo(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("eid") val eid: String? = null,
@@ -135,14 +147,16 @@ data class Es2HandleDownloadProgressInfo(
         @JsonProperty("notificationPointId") val notificationPointId: String? = null,
         @JsonProperty("notificationPointStatus") val notificationPointStatus: ES2NotificationPointStatus? = null,
         @JsonProperty("resultData") val resultData: ES2StatusCodeData? = null,
-        @JsonProperty("imei") val resultData : String?
+        @JsonProperty("imei") val imei : String? = null
 )
 
+@JsonInclude(Include.NON_NULL)
 data class ES2NotificationPointStatus(
         @JsonProperty("status") val status: String, // "Executed-Success, Executed-WithWarning, Failed or
         @JsonProperty("statusCodeData") val statusCodeData: ES2StatusCodeData?
 )
 
+@JsonInclude(Include.NON_NULL)
 data class ES2StatusCodeData(
         @JsonProperty("subjectCode") val subjectCode: String, // "Executed-Success, Executed-WithWarning, Failed or
         @JsonProperty("reasonCode") val statusCodeData: String,
@@ -150,7 +164,7 @@ data class ES2StatusCodeData(
         @JsonProperty("message") val message: String?
 )
 
-// @JsonSchema("ES2+HandleDownloadProgressInfo-response")
+@JsonSchema("ES2+HandleDownloadProgressInfo-response")
 data class Es2HandleDownloadProgressInfoResponse(
         @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader())
 
