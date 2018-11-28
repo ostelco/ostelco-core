@@ -3,6 +3,7 @@ package org.ostelco.simcards.admin
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
+import org.ostelco.simcards.es2plus.JsonSchema
 import org.skife.jdbi.v2.StatementContext
 import org.skife.jdbi.v2.sqlobject.*
 import org.skife.jdbi.v2.sqlobject.customizers.BatchChunkSize
@@ -23,7 +24,7 @@ import javax.ws.rs.core.Response
 /**
  *  Representing a single SIM card.
  */
-// @JsonSchema("SimEntry")
+@JsonSchema("SimEntry")
 data class SimEntry(
         @JsonProperty("id") val id: Long? = null,
         @JsonProperty("batch") val batch: Long,
