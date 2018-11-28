@@ -92,8 +92,9 @@ class ES2PlusResourceTest {
         // XXX Not testing anything sensible
         client.handleDownloadProgressInfo(
                 iccid = "01234567890123456789",
+                eid = "01234567890123456789012345678901",
                 profileType =  "foo",
-                timestamp = "1994-11-05T13:15:30Z",
+                timestamp = "2001-12-17T09:30:47Z",
                 notificationPointId = 4711,
                 notificationPointStatus = ES2NotificationPointStatus()
         )
