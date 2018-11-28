@@ -144,7 +144,7 @@ data class Es2HandleDownloadProgressInfo(
         @JsonProperty("eid") val eid: String? = null,
         @JsonProperty("iccid") val iccid: String,
         @JsonProperty("profileType") val profileType: String,
-        @JsonProperty("timestamp") val timestamp: String? = null,
+        @JsonProperty("timestamp") val timestamp: String,
         @JsonProperty("notificationPointId") val notificationPointId: String,
         @JsonProperty("notificationPointStatus") val notificationPointStatus: ES2NotificationPointStatus,
         @JsonInclude(JsonInclude.Include.NON_NULL) @JsonProperty("resultData") val resultData: String? = null,
@@ -153,7 +153,7 @@ data class Es2HandleDownloadProgressInfo(
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ES2NotificationPointStatus(
-        @JsonProperty("status") val status: String, // "Executed-Success, Executed-WithWarning, Failed or
+        @JsonProperty("status") val status: String = "Executed-Success" , // "Executed-Success, Executed-WithWarning, Failed or
         @JsonInclude(JsonInclude.Include.NON_NULL)  @JsonProperty("statusCodeData") val statusCodeData: ES2StatusCodeData? = null
 )
 

@@ -24,8 +24,9 @@ interface  SmDpPlusCallbackService {
     @Throws(SmDpPlusException::class)
     fun handleDownloadProgressInfo(
             eid: String?,
-            iccid: String?,
-            notificationPointId: String?,
+            iccid: String,
+            notificationPointId: String,
             profileType: String?,
-            resultData: ES2StatusCodeData?, timestamp: String?)
+            resultData: String?,
+            timestamp: String)
 }

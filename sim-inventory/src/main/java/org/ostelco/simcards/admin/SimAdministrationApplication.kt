@@ -9,7 +9,6 @@ import io.swagger.v3.oas.integration.SwaggerConfiguration
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Contact
 import io.swagger.v3.oas.models.info.Info
-import org.ostelco.simcards.es2plus.ES2StatusCodeData
 import org.ostelco.simcards.es2plus.SmDpPlusCallbackResource
 import org.ostelco.simcards.es2plus.SmDpPlusCallbackService
 import java.util.stream.Collectors
@@ -74,10 +73,9 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
         // TODO: Extend this interface to also receive authentication information.
         jerseyEnvironment.register(SimInventoryResource(simInventoryDAO))
         val smdpPlusCallbackHandler = object : SmDpPlusCallbackService {
-            override fun handleDownloadProgressInfo(eid: String?, iccid: String?, notificationPointId: String?, profileType: String?, resultData: ES2StatusCodeData?, timestamp: String?) {
+            override fun handleDownloadProgressInfo(eid: String?, iccid: String, notificationPointId: String, profileType: String?, resultData: String?, timestamp: String) {
 
             }
-
         }
 
         jerseyEnvironment.register(SmDpPlusCallbackResource(smdpPlusCallbackHandler))
