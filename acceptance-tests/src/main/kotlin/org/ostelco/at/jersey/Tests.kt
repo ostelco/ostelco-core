@@ -588,7 +588,7 @@ class PurchaseTest {
 
             val encodedEmail = URLEncoder.encode(email, "UTF-8")
             val refundedProduct:ProductInfo  = put<ProductInfo> {
-                path = "/refunds/email/$encodedEmail"
+                path = "/refund/$encodedEmail"
                 subscriberId = email
                 queryParams = mapOf(
                         "purchaseRecordId" to purchaseRecords.last().id,

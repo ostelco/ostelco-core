@@ -1,8 +1,14 @@
 import React, { Component } from 'react';
 import loading from './loading.svg';
+import { Redirect } from 'react-router-dom';
+import { connect } from 'react-redux';
 
 class Callback extends Component {
   render() {
+    if (this.props.loggedIn) {
+      return <Redirect to="/" />;
+    }
+
     const style = {
       position: 'absolute',
       display: 'flex',
@@ -24,4 +30,11 @@ class Callback extends Component {
   }
 }
 
-export default Callback;
+function mapStateToProps(state) {
+  const { loggedIn } = state.authentication;
+  return {
+    loggedIn
+  };
+}
+
+export default connect(mapStateToProps)(Callback);

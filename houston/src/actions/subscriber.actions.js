@@ -3,6 +3,7 @@ import { createActions } from 'redux-actions'
 
 import { CALL_API } from '../helpers/api';
 import { alertActions } from './alert.actions';
+import { encodeEmail } from '../helpers/utils';
 
 const SUBSCRIBER_BY_EMAIL_REQUEST = 'SUBSCRIBER_BY_EMAIL_REQUEST';
 const SUBSCRIBER_BY_EMAIL_SUCCESS = 'SUBSCRIBER_BY_EMAIL_SUCCESS';
@@ -51,7 +52,7 @@ const fetchSubscriberByEmail = (email) => ({
       actions.subscriberByEmailRequest,
       actions.subscriberByEmailSuccess,
       actions.subscriberByEmailFailure],
-    endpoint: `profile/email/${email}`,
+    endpoint: `profiles/${email}`,
     method: 'GET'
   }
 });
@@ -62,7 +63,7 @@ const fetchBundlesByEmail = (email) => ({
       actions.bundlesRequest,
       actions.bundlesSuccess,
       actions.bundlesFailure],
-    endpoint: `bundles/email/${email}`,
+    endpoint: `bundles/${email}`,
     method: 'GET'
   }
 });
@@ -73,7 +74,7 @@ const fetchPaymentHistoryByEmail = (email) => ({
       actions.paymentHistoryRequest,
       actions.paymentHistorySuccess,
       actions.paymentHistoryFailure],
-    endpoint: `purchases/email/${email}`,
+    endpoint: `purchases/${email}`,
     method: 'GET'
   }
 });
@@ -84,12 +85,12 @@ const putRefundPurchaseByEmail = (email, purchaseRecordId, reason) => ({
       actions.refundPaymentRequest,
       actions.refundPaymentSuccess,
       actions.refundPaymentFailure],
-    endpoint: `refunds/email/${email}`,
+    endpoint: `refund/${email}`,
     method: 'PUT',
     params: { purchaseRecordId, reason }
   }
 });
-const encodeEmail = (email) => (email ? encodeURIComponent(email) : email);
+
 // TODO: API based implementaion. Reference: https://github.com/reduxjs/redux/issues/1676
 const getSubscriberAndBundlesByEmail = (email) => (dispatch, getState) => {
   email = encodeEmail(email);

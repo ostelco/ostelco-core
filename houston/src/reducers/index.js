@@ -3,9 +3,11 @@ import  _ from 'lodash';
 import { authConstants, authActions } from '../actions/auth.actions';
 import { store } from '../helpers';
 import { subscriberConstants } from '../actions/subscriber.actions';
+import { notifyConstants } from '../actions/notifiy.actions';
 
 // Reducers.
 import alert from '../actions/alert.actions';
+import notification from '../actions/notifiy.actions';
 import authentication from './auth.reducer';
 import { subscriber, bundles, paymentHistory } from './subscriber.reducer';
 
@@ -13,6 +15,7 @@ import { subscriber, bundles, paymentHistory } from './subscriber.reducer';
 const appReducer = combineReducers({
   authentication,
   alert,
+  notification,
   subscriber,
   bundles,
   paymentHistory
@@ -22,7 +25,7 @@ function checkForAuthenticationFailures(errorObj) {
   if (errorObj && errorObj.code === authConstants.AUTHENTICATION_FAILURE) {
     setTimeout(() => {
       store.dispatch(authActions.logout());
-    }, 1);
+    });
   }
 }
 
@@ -34,6 +37,7 @@ const rootReducer = (state, action) => {
     case authConstants.LOGIN_FAILURE:
     case subscriberConstants.SUBSCRIBER_BY_MSISDN_FAILURE:
     case subscriberConstants.SUBSCRIBER_BY_EMAIL_FAILURE:
+    case notifyConstants.NOTIFY_FAILURE:
       checkForAuthenticationFailures(_.get(action, 'payload.errorObj'));
       break;
     default:

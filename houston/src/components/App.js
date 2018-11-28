@@ -26,7 +26,7 @@ class App extends Component {
       <Collapse isOpen={this.state.isOpen} navbar>
         <Nav className="ml-auto" navbar>
           <NavItem>
-            <NavLink tag={Link} href="/search" to="/search">Search</NavLink>
+            <NavLink tag={Link} href="/" to="/">Search</NavLink>
           </NavItem>
           <NavItem>
             <NavLink tag={Link} href="/notifications" to="/notifications">Notifications</NavLink>
@@ -41,7 +41,7 @@ class App extends Component {
 
   render() {
     const { props } = this
-    const isAuthenticated = props.loggedIn || false;
+    const loggedIn = props.loggedIn || false;
     const userName = props.user ? props.user.name + ' : ' + props.user.email : '';
 
     return (
@@ -56,22 +56,15 @@ class App extends Component {
             </NavItem>
           </Nav>
           {
-            !isAuthenticated && (
+            !loggedIn && (
               <Button color="outline-primary" onClick={props.login}>Log In</Button>
             )
           }
           {
-            isAuthenticated && (this.renderMenu())
+            loggedIn && (this.renderMenu())
           }
           <NavbarToggler onClick={this.toggle} />
         </Navbar>
-        {
-            !isAuthenticated && (
-              <div className="container">
-                <h4>You are not logged in! Please Log In to continue.</h4>
-              </div>
-            )
-          }
       </div>
     );
   }

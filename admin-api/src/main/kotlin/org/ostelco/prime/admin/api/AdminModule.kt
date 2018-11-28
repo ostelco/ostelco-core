@@ -16,9 +16,10 @@ class AdminModule : PrimeModule {
         jerseySever.register(ProductResource())
         jerseySever.register(ProductClassResource())
         jerseySever.register(ImporterResource(ImportAdapter()))
-        jerseySever.register(ProfileResource())
+        jerseySever.register(ProfilesResource())
         jerseySever.register(BundlesResource())
         jerseySever.register(PurchaseResource())
-        jerseySever.register(RefundsResource())
+        jerseySever.register(RefundResource())
+        jerseySever.register(NotifyResource())
     }
 }

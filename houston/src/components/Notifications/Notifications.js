@@ -4,23 +4,25 @@ import PropTypes from 'prop-types';
 import { Card, CardBody, CardTitle } from 'reactstrap';
 
 import TextForm from './TextForm';
+import NotificationEditor from './NotificationEditor';
+import AlertMessage from '../Search/Alert';
 
 class Notifications extends React.Component {
-
-  onSubmit = (text) => {
+  onSubmitEmail = (title, message) => {
     //handle form processing here....
-    console.log("Search On Submit")
+    console.log("Search On Submit");
   }
   render() {
     return (
       <div className="container">
+        <AlertMessage />
         <Card>
           <CardBody>
-            <CardTitle>Global Push Notifications.</CardTitle>
-            <TextForm
-              onSubmit={this.onSubmit}
+            <CardTitle>Notifications</CardTitle>
+            <NotificationEditor
               submitLabel="Send Notification"
-              inputLabel="Enter notification"
+              titleLabel="Enter title"
+              messageLabel="Enter Message"
             />
           </CardBody>
         </Card>
@@ -29,7 +31,7 @@ class Notifications extends React.Component {
           <CardBody>
             <CardTitle>Global Emails</CardTitle>
             <TextForm
-              onSubmit={this.onSubmit}
+              onSubmit={this.onSubmitEmail}
               submitLabel="Send Email"
               inputLabel="Enter email text"
             />

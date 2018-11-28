@@ -16,7 +16,8 @@ const apiCaller = async (endpoint, method, body, allowEmptyResponse, params = []
   } else if (typeof params === 'string') {
     fullUrl += params;
   }
-  console.log('API URL:', fullUrl);
+ 
+  //console.log('API URL:', fullUrl);
   if (authHeaderResolver === null) {
     console.log("apiCaller: authHeaderResolver not set");
     return Promise.reject();
