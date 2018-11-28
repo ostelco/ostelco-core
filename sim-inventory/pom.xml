@@ -20,7 +20,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <dropwizard.version>1.3.7</dropwizard.version>
-        <mainClass>org.ostelco.es2plusApplication</mainClass>
+        <mainClass>org.ostelco.simcards.admin.SimAdministrationApplication</mainClass>
         <kotlin.version>1.3.10</kotlin.version>
 
         <maven.compiler.source>1.8</maven.compiler.source>
