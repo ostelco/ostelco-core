@@ -75,8 +75,8 @@
   </Network>
 
   <Extensions>
-    <SessionDatasource value="org.ostelco.diameter.ha.sessiondatasource.TestSessionDatasource" />
-    <TimerFacility value="org.ostelco.diameter.ha.timer.TestTimerFacility" />
+    <SessionDatasource value="org.ostelco.diameter.ha.sessiondatasource.LocalSessionDatasource" />
+    <TimerFacility value="org.ostelco.diameter.ha.timer.LocalTimerFacility" />
   </Extensions>
 
 </Configuration>
