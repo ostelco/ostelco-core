@@ -98,7 +98,7 @@ class PaymentHistory extends React.Component {
     const { id, reason } = this.state;
     // TODO call the method to give additional data
     console.log(`User confirmed, refunding id:${id}, reason:${reason}`);
-    //this.props.refundPurchase(this.state.id, this.state.reason);
+    this.props.refundPurchase(this.state.id, this.state.reason);
   }
 
   render() {
