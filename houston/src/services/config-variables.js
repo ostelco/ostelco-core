@@ -3,12 +3,13 @@ const DEV_AUTH_CONFIG = {
   domain: 'redotter-admin-dev.eu.auth0.com',
   clientId: '9DgdUDakjmn3O00NkDKna0YAsZanYqof',
   callbackUrl: 'http://localhost:3000/callback'
-}
+};
+
 const DEPLOYED_DEV_AUTH_CONFIG = {
   domain: 'redotter-admin-dev.eu.auth0.com',
   clientId: '9DgdUDakjmn3O00NkDKna0YAsZanYqof',
   callbackUrl: 'https://redotter-admin-dev.firebaseapp.com/callback'
-}
+};
 
 export function getAuthConfig() {
   if (process.env.REACT_APP_DEPLOYMENT_ENV === "development") {

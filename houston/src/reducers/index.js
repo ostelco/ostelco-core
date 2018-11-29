@@ -32,7 +32,7 @@ function checkForAuthenticationFailures(errorObj) {
 
 const rootReducer = (state, action) => {
   if (action.type === authConstants.LOGOUT) {
-    state = {}
+    state = {};
   }
   switch (action.type) {
     case authConstants.LOGIN_FAILURE:

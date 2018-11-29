@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Button, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap';
 
-const WarningModal = props => {
+const WarningModal = (props) => {
   return (
     <Modal isOpen={props.show} toggle={props.handleClose}>
       <ModalHeader toggle={props.handleClose}>{props.heading}</ModalHeader>
@@ -17,7 +17,7 @@ const WarningModal = props => {
       </ModalFooter>
     </Modal>
   );
-}
+};
 
 WarningModal.propTypes = {
   show: PropTypes.bool.isRequired,

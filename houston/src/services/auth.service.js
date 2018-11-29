@@ -58,8 +58,8 @@ class Auth {
     localStorage.setItem('expires_at', expiresAt);
 
     const name = _.get(authResult, 'idTokenPayload.name');
-    const email = _.get(authResult, 'idTokenPayload.email')
-    const picture = _.get(authResult, 'idTokenPayload.picture')
+    const email = _.get(authResult, 'idTokenPayload.email');
+    const picture = _.get(authResult, 'idTokenPayload.picture');
     localStorage.setItem('name', name);
     localStorage.setItem('email', email);
     localStorage.setItem('picture', picture);
@@ -87,7 +87,7 @@ class Auth {
     const email = localStorage.getItem('email');
     const picture = localStorage.getItem('picture');
     this.user = { accessToken, expiresAt, name, email, picture };
-    setTimeout(() => { store.dispatch(authActions.loginSuccess(this.user)) });
+    setTimeout(() =>  store.dispatch(authActions.loginSuccess(this.user)));
   }
 
   logout() {
@@ -140,8 +140,8 @@ class Auth {
       if (this.isTokenValid(user.expiresAt)) {
         return true;
       } else {
-        console.log('Token expired, dispatch-->logout')
-        setTimeout(() => { store.dispatch(authActions.logout()) });
+        console.log('Token expired, dispatch-->logout');
+        setTimeout(() => store.dispatch(authActions.logout()));
       }
     }
     return false;

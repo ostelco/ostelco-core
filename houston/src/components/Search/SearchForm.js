@@ -4,6 +4,33 @@ import { Button, Form, FormGroup, Label, Input } from 'reactstrap';
 
 import { getTextType } from '../../helpers';
 
+function useFormInput(initialValue, submit) {
+  const [value, setValue] = useState(initialValue);
+
+  function onChange(e) {
+    setValue(e.target.value);
+  }
+
+  function onSubmit(e) {
+    e.preventDefault();
+    submit(value);
+  }
+
+  function onValidateInput() {
+    const type = getTextType(value);
+    if (type === 'phonenumber' || type === 'email') {
+      return 'success'
+    };
+    const length = value.length;
+    if (length > 5) {
+      return 'warning'
+    };
+    return null;
+  }
+
+  return { value, onChange, onSubmit, onValidateInput };
+}
+
 export default function SearchForm(props) {
   const input = useFormInput('martin.cederlof@telenordigital.com', props.onSubmit)
   return (
@@ -28,26 +55,3 @@ export default function SearchForm(props) {
 SearchForm.propTypes = {
   onSubmit: PropTypes.func.isRequired
 };
-
-function useFormInput(initialValue, submit) {
-  const [value, setValue] = useState(initialValue);
-
-  function onChange(e) {
-    setValue(e.target.value);
-  }
-
-  function onSubmit(e) {
-    e.preventDefault();
-    submit(value);
-  }
-
-  function onValidateInput() {
-    const type = getTextType(value);
-    if (type === 'phonenumber' || type === 'email') return 'success';
-    const length = value.length;
-    if (length > 5) return 'warning';
-    return null;
-  }
-
-  return { value, onChange, onSubmit, onValidateInput };
-}

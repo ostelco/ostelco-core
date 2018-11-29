@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { createActions } from 'redux-actions'
+import { createActions } from 'redux-actions';
 
 import { CALL_API } from '../helpers/api';
 import { alertActions } from './alert.actions';
@@ -121,13 +121,13 @@ const getSubscriberAndBundlesByEmail = (email) => (dispatch, getState) => {
         dispatch(fetchSubscriptionsByEmail(subscriberEmail)).catch(handleError);
         return dispatch(fetchBundlesByEmail(subscriberEmail))
           .then(() => {
-            return dispatch(fetchPaymentHistoryByEmail(subscriberEmail))
+            return dispatch(fetchPaymentHistoryByEmail(subscriberEmail));
           })
           .catch(handleError);
       }
     })
     .catch(handleError);
-}
+};
 
 const refundPurchase = (purchaseRecordId, reason) => (dispatch, getState) => {
 
@@ -145,7 +145,7 @@ const refundPurchase = (purchaseRecordId, reason) => (dispatch, getState) => {
       })
       .catch(handleError);
   }
-}
+};
 
 export const subscriberActions = {
   getSubscriberAndBundlesByEmail,
