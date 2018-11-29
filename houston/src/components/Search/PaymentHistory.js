@@ -5,6 +5,7 @@ import { Table, Card, CardBody, CardTitle, Button, UncontrolledTooltip } from 'r
 
 import { subscriberActions } from '../../actions/subscriber.actions';
 import { convertTimestampToDate } from '../../helpers';
+import WarningModal from '../Shared/WarningModal';
 
 
 export const RefundedItemOption = (props) => {
@@ -21,7 +22,7 @@ export const RefundedItemOption = (props) => {
   );
 }
 
-export const FreeItemOption = props => (<td/>);
+export const FreeItemOption = props => (<td />);
 export const HistoryRow = props => {
   const isRefunded = () => (props.item.refund && props.item.refund.id);
   const isFreeProduct = () => (props.item.product.price.amount <= 0);
@@ -73,31 +74,71 @@ HistoryRow.propTypes = {
   refundPurchase: PropTypes.func.isRequired
 };
 
-const PaymentHistory = props => {
-  if (!props.paymentHistory) return null;
-  const listItems = props.paymentHistory.map((history) =>
-    <HistoryRow item={history} key={history.id} refundPurchase={props.refundPurchase} />
-  );
-  return (
-    <Card>
-      <CardBody>
-        <CardTitle>Payment History</CardTitle>
-        <Table striped bordered>
-          <thead>
-            <tr>
-              <th>Plan</th>
-              <th>Price</th>
-              <th>Date</th>
-              <th>Options</th>
-            </tr>
-          </thead>
-          <tbody>
-            {listItems}
-          </tbody>
-        </Table>
-      </CardBody>
-    </Card>
-  );
+class PaymentHistory extends React.Component {
+  constructor(props, context) {
+    super(props, context);
+    this.state = {
+      showConfirm: false
+    };
+  }
+  handleCloseConfirm = () => {
+    const state = this.state;
+    state.showConfirm = false;
+    this.setState(state);
+  }
+
+  handleShowConfirm = (id, reason) => {
+    const state = { ...this.state, id, reason };
+    state.showConfirm = true;
+    this.setState(state);
+  }
+
+  handleConfirm = () => {
+    this.handleCloseConfirm();
+    const { id, reason } = this.state;
+    // TODO call the method to give additional data
+    console.log(`User confirmed, refunding id:${id}, reason:${reason}`);
+    //this.props.refundPurchase(this.state.id, this.state.reason);
+  }
+
+  render() {
+    const { props } = this;
+    if (!props.paymentHistory) {
+      return null;
+    }
+    const refundHeading = 'Confirm refund operartion';
+    const refundText = 'Do you really want to refund this transaction ?';
+    const listItems = props.paymentHistory.map((history) =>
+      <HistoryRow item={history} key={history.id} refundPurchase={this.handleShowConfirm} />
+    );
+
+    return (
+      <Card>
+        <CardBody>
+          <CardTitle>Payment History</CardTitle>
+          <Table striped bordered>
+            <thead>
+              <tr>
+                <th>Plan</th>
+                <th>Price</th>
+                <th>Date</th>
+                <th>Options</th>
+              </tr>
+            </thead>
+            <tbody>
+              {listItems}
+            </tbody>
+          </Table>
+        </CardBody>
+        <WarningModal
+          heading={refundHeading}
+          warningText={refundText}
+          show={this.state.showConfirm}
+          handleConfirm={this.handleConfirm}
+          handleClose={this.handleCloseConfirm} />
+      </Card>
+    );
+  }
 }
 
 PaymentHistory.propTypes = {
