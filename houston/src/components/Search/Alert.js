@@ -11,7 +11,9 @@ function AlertMessage(props) {
   }
 
   const visible = (props.alert && props.alert.type === 'alert-danger');
-  if (!visible) return null;
+  if (!visible) {
+    return null
+  };
   return (
     <Alert color="danger" isOpen={visible} toggle={onDismiss}>
       {props.alert.message}

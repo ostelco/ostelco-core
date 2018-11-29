@@ -10,12 +10,12 @@ x-google-endpoints:
 schemes:
   - "https"
 paths:
-  "/profile/email/{email}":
+  "/profiles/{id}":
     get:
-      description: "Get profile for the given email-id (url encoded)."
+      description: "Get profile for the given email-id or msisdn (url encoded)."
       produces:
       - application/json
-      operationId: "getProfileByEmail"
+      operationId: "getProfile"
       responses:
         200:
           description: "Get the profile for this user."
@@ -26,33 +26,34 @@ paths:
       security:
       - auth0_jwt: []
       parameters:
-      - name: email
+      - name: id
         in: path
-        description: "The email of the user"
+        description: "The id of the user (msisdn or email)"
         required: true
         type: string
-  "/profile/msisdn/{msisdn}":
+  "/profiles/{email}/subscriptions":
     get:
-      description: "Get profile for the given msisdn."
+      description: "Get subscription (msisdn) for the user."
       produces:
-      - application/json
-      operationId: "getProfileByMsisdn"
+        - application/json
+      operationId: "getSubscriptions"
       responses:
         200:
-          description: "Get the profile for this user."
+          description: "Get subscriptions for this user."
           schema:
-            $ref: '#/definitions/Profile'
+            $ref: '#/definitions/SubscriptionList'
         404:
-          description: "Profile not found."
+          description: "No subscription found for this user."
       security:
-      - auth0_jwt: []
+        - auth0_jwt: []
       parameters:
-      - name: msisdn
-        in: path
-        description: "The phone number of the user"
-        required: true
-        type: string
-  "/bundles/email/{email}":
+        - name: email
+          in: path
+          description: "The email of the user"
+          required: true
+          type: string
+
+  "/bundles/{email}":
     get:
       description: "Get bundles (balance) for the user (identified by email)."
       produces:
@@ -73,7 +74,7 @@ paths:
         description: "The email of the user"
         required: true
         type: string
-  "/purchases/email/{email}":
+  "/purchases/{email}":
     get:
       description: "Get list of all purchases."
       produces:
@@ -99,7 +100,7 @@ paths:
         description: "The email of the user"
         required: true
         type: string
-  "/refunds/email/{email}":
+  "/refund/{email}":
     put:
       description: "Full refund of a purchase."
       produces:
@@ -135,6 +136,38 @@ paths:
         description: "The reason for refund"
         required: true
         type: string
+  "/notify/{email}":
+    put:
+      description: "Send notification to a subscriber."
+      produces:
+        - application/json
+        - text/plain
+      operationId: "sendNotificationByEmail"
+      responses:
+        200:
+          description: "Sent notification."
+        404:
+          description: "Subscriber record not found"
+        502:
+          description: "Failed to send notification"
+      security:
+        - auth0_jwt: []
+      parameters:
+        - name: email
+          in: path
+          description: "The email of the user"
+          required: true
+          type: string
+        - name: title
+          in: query
+          description: "The title for the notification"
+          required: true
+          type: string
+        - name: message
+          in: query
+          description: "The notification message"
+          required: true
+          type: string
 definitions:
   Profile:
     type: object

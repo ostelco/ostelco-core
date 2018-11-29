@@ -134,6 +134,7 @@ interface AdminGraphStore {
     fun getAllBundles(): Collection<Bundle>
     fun getSubscriberToBundleIdMap(): Map<Subscriber, Bundle>
     fun getSubscriberToMsisdnMap(): Map<Subscriber, Subscription>
+    fun getSubscriberForMsisdn(msisdn: String): Either<StoreError, Subscriber>
 
     // simple create
     fun createProductClass(productClass: ProductClass): Either<StoreError, Unit>

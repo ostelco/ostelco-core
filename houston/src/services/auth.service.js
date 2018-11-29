@@ -1,4 +1,3 @@
-import { history } from '../helpers';
 import auth0 from 'auth0-js';
 import _ from 'lodash';
 
@@ -9,7 +8,7 @@ import { setAuthResolver } from '../helpers/api';
 
 const authConfig = getAuthConfig();
 class Auth {
-  auth0 = new auth0.WebAuth({
+  webAuth = new auth0.WebAuth({
     domain: authConfig.domain,
     clientID: authConfig.clientId,
     redirectUri: authConfig.callbackUrl,
@@ -21,23 +20,31 @@ class Auth {
   constructor() {
     this.user = null;
     setAuthResolver(this.getHeader);
-    setTimeout(this.loadCurrentSession);
+    this.loadCurrentSession();
   }
 
   login() {
-    this.auth0.authorize();
+    this.webAuth.authorize();
   }
 
-  handleAuthentication(dispatch) {
+  handleAuthentication(dispatch, hash) {
+    if (this.user != null) {
+      console.log('Valid session in memory, callback is called before the session is cleared.');
+      return;
+    }
     this.user = {}; // initialize
-    this.auth0.parseHash((err, authResult) => {
+    this.webAuth.parseHash({ hash }, (err, authResult) => {
       if (authResult && authResult.accessToken) {
         this.setSession(authResult);
+        // navigate to the home route
         dispatch(authActions.loginSuccess(this.user));
       } else if (err) {
-        console.log(err);
-        alert(`Error: ${err.error}. Check the console for further details.`);
-        this.logout()
+        console.log('Error recieved from auth0 parse', err);
+        this.clearLocalStorage();
+        if (err.error === 'invalid_token') {
+          // Token expired, re-login
+          console.log('Invalid token recieved, possibly expired token');
+        }
         dispatch(authActions.loginFailure(err));
       }
     });
@@ -46,51 +53,60 @@ class Auth {
   setSession(authResult) {
     // Set the time that the access token will expire at
     let expiresAt = JSON.stringify((authResult.expiresIn * 1000) + new Date().getTime());
-    localStorage.setItem('access_token', authResult.accessToken);
+    const { accessToken } = authResult;
+    localStorage.setItem('access_token', accessToken);
     localStorage.setItem('expires_at', expiresAt);
+
     const name = _.get(authResult, 'idTokenPayload.name');
+    const email = _.get(authResult, 'idTokenPayload.email');
+    const picture = _.get(authResult, 'idTokenPayload.picture');
     localStorage.setItem('name', name);
-    const email = _.get(authResult, 'idTokenPayload.email')
     localStorage.setItem('email', email);
-    const picture = _.get(authResult, 'idTokenPayload.picture')
     localStorage.setItem('picture', picture);
 
-    // navigate to the home route
-    history.replace('/search');
-    const { accessToken } = authResult;
     this.user = { accessToken, expiresAt, name, email, picture };
   }
 
   loadCurrentSession = () => {
-    if (this.user !== null) return;
+    if (this.user !== null) {
+      console.log('Valid session in memory, clear this before calling loadCurrentSession');
+      return;
+    }
     const accessToken = localStorage.getItem('access_token');
+    if (accessToken === null) {
+      console.log('No saved user');
+      return;
+    }
     const expiresAt = localStorage.getItem('expires_at');
+    if (!this.isTokenValid(expiresAt)) {
+      console.log('Expired Token, clear local storage');
+      this.clearLocalStorage();
+      return;
+    }
     const name = localStorage.getItem('name');
     const email = localStorage.getItem('email');
     const picture = localStorage.getItem('picture');
-    const isAuthenticated = this.isAuthenticated(expiresAt);
     this.user = { accessToken, expiresAt, name, email, picture };
-    if (isAuthenticated) {
-      history.replace('/search');
-      setTimeout(() => { store.dispatch(authActions.loginSuccess(this.user)) });
-    } else {
-      setTimeout(() => { store.dispatch(authActions.logout()) });
-    }
+    setTimeout(() =>  store.dispatch(authActions.loginSuccess(this.user)));
   }
 
   logout() {
-    this.user = {};
+    this.clearLocalStorage();
+    // navigate to the home route
+    this.webAuth.logout();
+  }
+
+  clearLocalStorage() {
+    this.user = null;
     // Clear access token and ID token from local storage
     localStorage.removeItem('access_token');
     localStorage.removeItem('expires_at');
     localStorage.removeItem('name');
     localStorage.removeItem('email');
     localStorage.removeItem('picture');
-    // navigate to the home route
-    setTimeout(() => { history.replace('/home') });
   }
 
-  isAuthenticated(expiresAt) {
+  isTokenValid(expiresAt) {
     // Check whether the current time is past the
     // access token's expiry time
     let expiry = JSON.parse(expiresAt);
@@ -98,9 +114,8 @@ class Auth {
   }
 
   authHeader() {
-    const state = store.getState();
-    const user = _.get(state, "authentication.user");
-    if (user && this.isAuthenticated(user.expiresAt)) {
+    const user = _.get(store.getState(), "authentication.user");
+    if (user && this.isTokenValid(user.expiresAt)) {
       return `Bearer ${user.accessToken}`;
     }
     return null;
@@ -117,6 +132,19 @@ class Auth {
       return { error };
     }
     return { header };
+  }
+
+  isAuthenticated() {
+    const user = _.get(store.getState(), "authentication.user");
+    if (user) {
+      if (this.isTokenValid(user.expiresAt)) {
+        return true;
+      } else {
+        console.log('Token expired, dispatch-->logout');
+        setTimeout(() => store.dispatch(authActions.logout()));
+      }
+    }
+    return false;
   }
 
 }
