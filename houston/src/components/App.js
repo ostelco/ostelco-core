@@ -1,41 +1,17 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
-import {
-  Button,
-  Collapse,
-  Navbar,
-  NavbarToggler,
-  NavbarBrand,
-  Nav,
-  NavItem,
-  NavLink,
-  UncontrolledDropdown,
-  DropdownToggle,
-  DropdownMenu,
-  DropdownItem
-} from 'reactstrap';
+import { Button, Collapse, Navbar, NavbarToggler, NavbarBrand, Nav, NavItem, NavLink } from 'reactstrap';
 
 import { authActions } from '../actions/auth.actions';
-import './App.css'
+import './App.css';
+
 class App extends Component {
   constructor(props, context) {
     super(props, context);
     this.state = {
       isOpen: false
     };
-  }
-
-  goTo(route) {
-    this.props.history.replace(`/${route}`)
-  }
-
-  login() {
-    this.props.login();
-  }
-
-  logout() {
-    this.props.logout();
   }
 
   toggle = () => {
@@ -50,29 +26,22 @@ class App extends Component {
       <Collapse isOpen={this.state.isOpen} navbar>
         <Nav className="ml-auto" navbar>
           <NavItem>
-            <NavLink tag={Link} href="/search" to="/search">Search</NavLink>
+            <NavLink tag={Link} href="/" to="/">Search</NavLink>
           </NavItem>
           <NavItem>
             <NavLink tag={Link} href="/notifications" to="/notifications">Notifications</NavLink>
           </NavItem>
-          <UncontrolledDropdown nav inNavbar>
-            <DropdownToggle nav caret>
-              Options
-          </DropdownToggle>
-            <DropdownMenu right>
-              <DropdownItem>
-                <NavLink href="" onClick={(e) => { e.preventDefault(); props.logout(); }}>Logout</NavLink>
-              </DropdownItem>
-            </DropdownMenu>
-          </UncontrolledDropdown>
+          <NavItem>
+            <NavLink tag={Link} href="" to="/" onClick={(e) => { e.preventDefault(); props.logout(); }}>Logout</NavLink>
+          </NavItem>
         </Nav>
       </Collapse>
     );
   }
 
   render() {
-    const { props } = this
-    const isAuthenticated = props.loggedIn || false;
+    const { props } = this;
+    const loggedIn = props.loggedIn || false;
     const userName = props.user ? props.user.name + ' : ' + props.user.email : '';
 
     return (
@@ -87,12 +56,12 @@ class App extends Component {
             </NavItem>
           </Nav>
           {
-            !isAuthenticated && (
-              <Button color="outline-primary" onClick={this.login.bind(this)}>Log In</Button>
+            !loggedIn && (
+              <Button color="outline-primary" onClick={props.login}>Log In</Button>
             )
           }
           {
-            isAuthenticated && (this.renderMenu())
+            loggedIn && (this.renderMenu())
           }
           <NavbarToggler onClick={this.toggle} />
         </Navbar>
@@ -111,7 +80,7 @@ function mapStateToProps(state) {
 const mapDispatchToProps = {
   login: authActions.loginRequest,
   logout: authActions.logout
-}
+};
 
 const connectedApp = connect(mapStateToProps, mapDispatchToProps)(App);
 export default connectedApp;

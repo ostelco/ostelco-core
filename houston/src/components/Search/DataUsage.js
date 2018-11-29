@@ -34,7 +34,9 @@ class DataUsage extends React.Component {
     const modalHeading = `Confirm additional Data`
     const modalText = `Do you really want to give this user an additional 1 GB of Data ?`
     const props = this.props;
-    if (!props.balance) return null;
+    if (!props.balance) {
+      return null;
+    }
     return (
       <Card>
         <CardBody>

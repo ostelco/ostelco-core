@@ -9,7 +9,7 @@ const defaultState = user ? { loggedIn: true, user } : {};
 const reducer = handleActions(
   {
     [authActions.loginRequest]: () => {
-      authService.login()
+      authService.login();
       return { loggingIn: true };
     },
     [authActions.loginSuccess]: (state, { payload }) => {

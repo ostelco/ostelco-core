@@ -65,6 +65,8 @@ interface SubscriberDAO {
 
     fun getActivePseudonymForSubscriber(subscriberId: String): Either<ApiError, ActivePseudonyms>
 
+    fun getStripeEphemeralKey(subscriberId: String, apiVersion: String): Either<ApiError, String>
+
     companion object {
 
         /**

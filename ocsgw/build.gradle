@@ -1,6 +1,6 @@
 plugins {
     id "application"
-    id "com.github.johnrengelman.shadow" version "4.0.2"
+    id "com.github.johnrengelman.shadow" version "4.0.3"
 }
 
 dependencies {
@@ -9,14 +9,12 @@ dependencies {
 
     implementation project(':diameter-stack')
     implementation "com.google.cloud:google-cloud-core-grpc:$googleCloudVersion"
+    implementation "com.google.cloud:google-cloud-storage:$googleCloudVersion"
 
     implementation "javax.xml.bind:jaxb-api:$jaxbVersion"
     runtimeOnly "javax.activation:activation:$javaxActivationVersion"
 
     implementation 'ch.qos.logback:logback-classic:1.2.3'
-
-    // log to gcp stack-driver
-    implementation 'com.google.cloud:google-cloud-logging-logback:0.70.0-alpha'
 
     testImplementation project(':diameter-test')
     testImplementation "org.junit.jupiter:junit-jupiter-api:$junit5Version"
@@ -33,6 +31,8 @@ shadowJar {
     version = null
 }
 
+version = "1.1.27"
+
 test {
     // native support to Junit5 in Gradle 4.6+
     useJUnitPlatform {
@@ -42,69 +42,6 @@ test {
         exceptionFormat = 'full'
         events "PASSED", "FAILED", "SKIPPED"
     }
-}
-
-task pack(dependsOn: ['packDev', 'packProd'])
-
-task packProd(type: Zip, dependsOn: 'shadowJar') {
-    from ('script/') {
-        into(project.name + '/script')
-    }
-    from ('config/dictionary.xml') {
-        into (project.name + '/config/')
-    }
-    from ('config/server-jdiameter-config.prod.xml') {
-        into (project.name + '/config/')
-        rename { String fileName ->
-            fileName.replace('prod.', '')
-        }
-    }
-    from ('config/pantel-prod.json') {
-        into (project.name + '/config/')
-    }
-    from ('config/logback.xml') {
-        into (project.name + '/config/')
-    }
-    from ('build/libs/ocsgw-uber.jar') {
-        into(project.name + '/build/libs/')
-    }
-    from ('Dockerfile') {
-        into(project.name)
-    }
-    archiveName = 'ocsgw.zip'
-    destinationDir = file('build/deploy/prod/')
-}
-
-task packDev(type: Zip, dependsOn: 'shadowJar') {
-    from ('script/') {
-        into(project.name + '/script')
-    }
-    from ('config/logback.dev.xml') {
-        into (project.name + '/config/')
-        rename { String fileName ->
-            fileName.replace('dev.', '')
-        }
-    }
-    from ('config/dictionary.xml') {
-        into (project.name + '/config/')
-    }
-    from ('config/server-jdiameter-config.dev.xml') {
-        into (project.name + '/config/')
-        rename { String fileName ->
-            fileName.replace('dev.', '')
-        }
-    }
-    from ('config/pantel-prod.json') {
-        into (project.name + '/config/')
-    }
-    from ('build/libs/ocsgw-uber.jar') {
-        into(project.name + '/build/libs/')
-    }
-    from ('Dockerfile') {
-        into(project.name)
-    }
-    archiveName = 'ocsgw.zip'
-    destinationDir = file('build/deploy/dev/')
 }
 
 apply from: '../gradle/jacoco.gradle'

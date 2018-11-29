@@ -2,7 +2,6 @@ package org.ostelco.prime.client.api.store
 
 import arrow.core.Either
 import arrow.core.flatMap
-import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
 import org.ostelco.prime.apierror.ApiErrorMapper.mapPaymentErrorToApiError
@@ -23,7 +22,6 @@ import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
-import org.ostelco.prime.ocs.OcsSubscriberService
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
@@ -37,13 +35,13 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  *
  */
-class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSubscriberService: OcsSubscriberService) : SubscriberDAO {
+class SubscriberDAOImpl : SubscriberDAO {
 
     private val logger by getLogger()
 
+    private val storage by lazy { getResource<ClientDataSource>() }
     private val paymentProcessor by lazy { getResource<PaymentProcessor>() }
     private val pseudonymizer by lazy { getResource<PseudonymizerService>() }
-    private val analyticsReporter by lazy { getResource<AnalyticsService>() }
 
     /* Table for 'profiles'. */
     private val consentMap = ConcurrentHashMap<String, ConcurrentHashMap<String, Boolean>>()
@@ -311,5 +309,10 @@ class SubscriberDAOImpl(private val storage: ClientDataSource, private val ocsSu
                     paymentProcessor.removeSource(profileInfo.id, sourceId)
                             .mapLeft { mapPaymentErrorToApiError("Failed to remove payment source", ApiErrorCode.FAILED_TO_REMOVE_PAYMENT_SOURCE, it) }
                 }
+    }
+
+    override fun getStripeEphemeralKey(subscriberId: String, apiVersion: String): Either<ApiError, String> {
+        return paymentProcessor.getStripeEphemeralKey(userEmail = subscriberId, apiVersion = apiVersion)
+                .mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_GENERATE_STRIPE_EPHEMERAL_KEY, error) }
     }
 }
