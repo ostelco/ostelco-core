@@ -14,7 +14,7 @@ data:
     logging:
       level: INFO
       loggers:
-	org.ostelco: DEBUG
+        org.ostelco: DEBUG
 
     # Database settings
     database:
@@ -39,4 +39,3 @@ data:
       # If true, the client will encode request entities with gzip
       # content encoding. (Requires gzipEnabled to be true).
       gzipEnabledForRequests: true
-
