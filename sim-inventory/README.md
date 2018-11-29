@@ -17,8 +17,11 @@ TODO
 ---
 
 
-TODO
----
+* Follow through on https://rohannagar.github.io/2018-04-11/dropwizard-on-kubernetes
+
+* docker build -t ostelco/simadmin . 
+  ... to build a new version of the simadmin thingy that is
+  also reachable by kubernetes locally.
 
 * Re-enable json schema validation on  everything, fixing the broken 
   schemas in the process.
