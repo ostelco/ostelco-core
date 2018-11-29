@@ -40,7 +40,7 @@ class App extends Component {
   }
 
   render() {
-    const { props } = this
+    const { props } = this;
     const loggedIn = props.loggedIn || false;
     const userName = props.user ? props.user.name + ' : ' + props.user.email : '';
 

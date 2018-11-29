@@ -14,7 +14,7 @@ const handleAuthentication = ({ location }) => {
   if (/access_token|id_token|error/.test(location.hash)) {
     authService.handleAuthentication(store.dispatch, location.hash);
   }
-}
+};
 
 function ProtectedRoute({ component: Component, ...rest }) {
   return (

@@ -79,14 +79,14 @@ const apiCaller = async (endpoint, method, body, allowEmptyResponse, params = []
 function transformError(errorObj) {
   if (errorObj.errors) {
     if (Array.isArray(errorObj.errors)) {
-      return errorObj.errors.join(', ')
+      return errorObj.errors.join(', ');
     } else {
-      return errorObj.errors.toString()
+      return errorObj.errors.toString();
     }
   } else if (errorObj.message) {
     return errorObj.message.toString();
   } else if (errorObj.error) {
-    return errorObj.error.toString()
+    return errorObj.error.toString();
   } else if (typeof errorObj === 'string') {
     return errorObj;
   } else {
