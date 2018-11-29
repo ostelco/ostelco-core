@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import { Button, Collapse, Navbar, NavbarToggler, NavbarBrand, Nav, NavItem, NavLink } from 'reactstrap';
 
 import { authActions } from '../actions/auth.actions';
-import './App.css'
+import './App.css';
 
 class App extends Component {
   constructor(props, context) {
@@ -80,7 +80,7 @@ function mapStateToProps(state) {
 const mapDispatchToProps = {
   login: authActions.loginRequest,
   logout: authActions.logout
-}
+};
 
 const connectedApp = connect(mapStateToProps, mapDispatchToProps)(App);
 export default connectedApp;

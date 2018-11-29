@@ -8,8 +8,17 @@ export function setAuthResolver(getterFunc) {
   authHeaderResolver = getterFunc;
 }
 
+export function createParams(params) {
+  const array = _.toPairs(params);
+  const kvParams = _.map(array, (kv) => {
+    return `${kv[0]}=${encodeURIComponent(kv[1])}`;
+  });
+  return (array.length ? `?${kvParams.join('&')}` : '');
+}
+
+
 const apiCaller = async (endpoint, method, body, allowEmptyResponse, params = []) => {
-  let fullUrl = (endpoint.indexOf(API_ROOT) === -1) ? API_ROOT + endpoint : endpoint
+  let fullUrl = (endpoint.indexOf(API_ROOT) === -1) ? API_ROOT + endpoint : endpoint;
 
   if (typeof params === 'object') {
     fullUrl += createParams(params);
@@ -64,22 +73,33 @@ const apiCaller = async (endpoint, method, body, allowEmptyResponse, params = []
         return json;
       });
     });
-}
+};
 
-export function createParams(params) {
-  const array = _.toPairs(params);
-  const kvParams = _.map(array, (kv) => {
-    return `${kv[0]}=${encodeURIComponent(kv[1])}`;
-  });
-  return (array.length ? `?${kvParams.join('&')}` : '');
+
+function transformError(errorObj) {
+  if (errorObj.errors) {
+    if (Array.isArray(errorObj.errors)) {
+      return errorObj.errors.join(', ')
+    } else {
+      return errorObj.errors.toString()
+    }
+  } else if (errorObj.message) {
+    return errorObj.message.toString();
+  } else if (errorObj.error) {
+    return errorObj.error.toString()
+  } else if (typeof errorObj === 'string') {
+    return errorObj;
+  } else {
+    return 'Something bad happened';
+  }
 }
 
 // Action key that carries API call info interpreted by this Redux middleware.
-export const CALL_API = 'Call API'
+export const CALL_API = 'Call API';
 
 // A Redux middleware that interprets actions with CALL_API info specified.
 // Performs the call and promises when such actions are dispatched.
-export default store => next => action => {
+export default (store) => (next) => (action) => {
   const callAPI = action[CALL_API];
   if (typeof callAPI === 'undefined') {
     return next(action);
@@ -98,7 +118,7 @@ export default store => next => action => {
   if (!Array.isArray(actions) || actions.length !== 3) {
     throw new Error('Expected an array of three actions.');
   }
-  if (!actions.every(action => typeof action === 'function')) {
+  if (!actions.every((action) => typeof action === 'function')) {
     throw new Error('Expected actions to be functions.');
   }
 
@@ -106,8 +126,8 @@ export default store => next => action => {
   next(request());
 
   return apiCaller(endpoint, method, body, allowEmptyResponse, params).then(
-    response => next(success(response)),
-    error => {
+    (response) => next(success(response)),
+    (error) => {
       next(failure({
         errorObj: error,
         error: transformError(error)
@@ -117,20 +137,3 @@ export default store => next => action => {
   );
 }
 
-export function transformError(errorObj) {
-  if (errorObj.errors) {
-    if (Array.isArray(errorObj.errors)) {
-      return errorObj.errors.join(', ')
-    } else {
-      return errorObj.errors.toString()
-    }
-  } else if (errorObj.message) {
-    return errorObj.message.toString();
-  } else if (errorObj.error) {
-    return errorObj.error.toString()
-  } else if (typeof errorObj === 'string') {
-    return errorObj;
-  } else {
-    return 'Something bad happened';
-  }
-}

@@ -10,9 +10,7 @@ import AlertMessage from './Alert';
 class Search extends React.Component {
 
   onSubmit = (text) => {
-    //handle form processing here....
-    console.log("Search On Submit")
-    this.props.getSubscriberAndBundlesByEmail(text)
+    this.props.getSubscriberAndBundlesByEmail(text);
   }
 
   render() {
@@ -45,8 +43,9 @@ function mapStateToProps(state) {
     loggedIn,
     profile: subscriber
   };
-}
+};
+
 const mapDispatchToProps = {
   getSubscriberAndBundlesByEmail: subscriberActions.getSubscriberAndBundlesByEmail
-}
+};
 export default connect(mapStateToProps, mapDispatchToProps)(Search);

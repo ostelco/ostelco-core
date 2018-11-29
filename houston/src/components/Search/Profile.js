@@ -12,10 +12,10 @@ class Profile extends React.Component {
     let listItems = null;
     if (Array.isArray(props.subscriptions.items)) {
       listItems = props.subscriptions.items.map((subscription, index) =>
-        <>
-          <Subscription subscription={subscription} />
+        <div key={index}>
+          <Subscription subscription={subscription}  key={index}/>
           <hr />
-        </>
+        </div>
       );
     }
     return (

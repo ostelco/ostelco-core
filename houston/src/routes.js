@@ -20,7 +20,7 @@ function ProtectedRoute({ component: Component, ...rest }) {
   return (
     <Route
       {...rest}
-      render={props => {
+      render={(props) => {
         return authService.isAuthenticated() ? (
           <Component {...props} />
         ) : (
@@ -30,12 +30,49 @@ function ProtectedRoute({ component: Component, ...rest }) {
                 state: { from: props.location }
               }}
             />
-          )
+          );
       }
       }
     />
   );
 }
+
+function login(props) {
+  // Redirect to search 
+  if (props.loggedIn) {
+    return <Redirect to="/" />;
+  }
+  return (
+    <div className="container">
+      <h4>You are not logged in! Please Log In to continue.</h4>
+    </div>
+  );
+}
+
+function mapStateToProps(state) {
+  const { loggedIn } = state.authentication;
+  return {
+    loggedIn
+  };
+};
+const Login = connect(mapStateToProps)(login);
+
+function NoMatch() {
+  return (
+    <div className="container">
+      <p>No such path found here...</p>
+      <ul>
+        <li>
+          <Link to="/">Search</Link>
+        </li>
+        <li>
+          <Link to="/notifications">Notifications</Link>
+        </li>
+      </ul>
+    </div>
+  );
+}
+
 export const makeMainRoutes = () => {
   return (
     <Provider store={store}>
@@ -58,38 +95,3 @@ export const makeMainRoutes = () => {
   );
 }
 
-function login(props) {
-  // Redirect to search 
-  if (props.loggedIn) {
-    return <Redirect to="/" />;
-  }
-  return (
-    <div className="container">
-      <h4>You are not logged in! Please Log In to continue.</h4>
-    </div>
-  );
-}
-
-function mapStateToProps(state) {
-  const { loggedIn } = state.authentication;
-  return {
-    loggedIn
-  };
-}
-const Login = connect(mapStateToProps)(login);
-
-function NoMatch() {
-  return (
-    <div className="container">
-      <p>No such path found here...</p>
-      <ul>
-        <li>
-          <Link to="/">Search</Link>
-        </li>
-        <li>
-          <Link to="/notifications">Notifications</Link>
-        </li>
-      </ul>
-    </div>
-  );
-}

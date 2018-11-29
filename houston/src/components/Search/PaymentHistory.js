@@ -7,7 +7,7 @@ import { subscriberActions } from '../../actions/subscriber.actions';
 import { convertTimestampToDate } from '../../helpers';
 
 
-export const RefundedItemOption = props => {
+export const RefundedItemOption = (props) => {
   function nope(e) {
     e.preventDefault();
   }
@@ -75,7 +75,7 @@ HistoryRow.propTypes = {
 
 const PaymentHistory = props => {
   if (!props.paymentHistory) return null;
-  const listItems = props.paymentHistory.map((history, index) =>
+  const listItems = props.paymentHistory.map((history) =>
     <HistoryRow item={history} key={history.id} refundPurchase={props.refundPurchase} />
   );
   return (

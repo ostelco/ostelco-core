@@ -63,7 +63,8 @@ const sendNotificationToSubscriber = (title, message) => (dispatch, getState) =>
     return dispatch(putNotificationByEmail(subscriberEmail, title, message))
       .catch(handleError);
   }
-}
+};
+
 export const notifyActions =  { ...actions, sendNotificationToSubscriber };
 
  const reducer = handleActions(

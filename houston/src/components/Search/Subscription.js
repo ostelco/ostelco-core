@@ -47,10 +47,10 @@ export default class Subscription extends React.Component {
   }
 
   render() {
-    const blockHeading = `Confirm Blocking of SIM`
-    const blockText = `Do you really want to block the current SIM card ? (Not implemented)`
-    const newSIMHeading = `Confirm new SIM`
-    const newSIMText = `Do you really want to provision new SIM card ? (Not implemented)`
+    const blockHeading = 'Confirm Blocking of SIM';
+    const blockText = 'Do you really want to block the current SIM card ? (Not implemented)';
+    const newSIMHeading = 'Confirm new SIM';
+    const newSIMText = 'Do you really want to provision new SIM card ? (Not implemented)';
 
     const { subscription } = this.props;
     return (
