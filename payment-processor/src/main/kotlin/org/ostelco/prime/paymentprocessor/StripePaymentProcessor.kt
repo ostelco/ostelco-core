@@ -31,6 +31,7 @@ import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
+import java.time.Instant
 import java.util.UUID
 
 
@@ -131,20 +132,23 @@ class StripePaymentProcessor : PaymentProcessor {
         }
     }
 
-    override fun createPlan(productId: String, amount: Int, currency: String, interval: PaymentProcessor.Interval): Either<PaymentError, PlanInfo> =
-            either("Failed to create plan with product id $productId amount $amount currency $currency interval ${interval.value}") {
+    override fun createPlan(productId: String, amount: Int, currency: String, interval: PaymentProcessor.Interval, intervalCount: Long): Either<PaymentError, PlanInfo> =
+            either("Failed to create plan for product $productId amount $amount currency $currency interval ${interval.value}") {
                 val planParams = mapOf(
+                        "product" to productId,
                         "amount" to amount,
                         "interval" to interval.value,
-                        "product" to productId,
+                        "interval_count" to intervalCount,
                         "currency" to currency)
                 PlanInfo(Plan.create(planParams).id)
             }
 
     override fun removePlan(planId: String): Either<PaymentError, PlanInfo> =
             either("Failed to delete plan $planId") {
-                val plan = Plan.retrieve(planId)
-                PlanInfo(plan.delete().id)
+                Plan.retrieve(planId).let { plan ->
+                    plan.delete()
+                    PlanInfo(plan.id)
+                }
             }
 
     override fun createProduct(sku: String): Either<PaymentError, ProductInfo> =
@@ -164,9 +168,9 @@ class StripePaymentProcessor : PaymentProcessor {
     override fun addSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo> =
             either("Failed to add source $sourceId to customer $customerId") {
                 val customer = Customer.retrieve(customerId)
-                val params = mapOf("source" to sourceId,
+                val sourceParams = mapOf("source" to sourceId,
                         "metadata" to mapOf("created" to getSecondsSinceEpoch()))
-                SourceInfo(customer.sources.create(params).id)
+                SourceInfo(customer.sources.create(sourceParams).id)
             }
 
     override fun setDefaultSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo> =
@@ -188,14 +192,17 @@ class StripePaymentProcessor : PaymentProcessor {
                 ProfileInfo(customer.delete().id)
             }
 
-    override fun subscribeToPlan(planId: String, customerId: String): Either<PaymentError, SubscriptionInfo> =
+    override fun subscribeToPlan(planId: String, customerId: String, trialEnd: Long): Either<PaymentError, SubscriptionInfo> =
             either("Failed to subscribe customer $customerId to plan $planId") {
-                val item = mapOf("plan" to planId)
-                val params = mapOf(
+                val item =  mapOf("plan" to planId)
+                val subscriptionParams = mapOf(
                         "customer" to customerId,
-                        "items" to mapOf("0" to item))
-
-                SubscriptionInfo(Subscription.create(params).id)
+                        "items" to mapOf("0" to item),
+                        *( if (trialEnd > Instant.now().epochSecond)
+                               arrayOf("trial_end" to trialEnd.toString())
+                           else
+                               arrayOf()) )
+                SubscriptionInfo(Subscription.create(subscriptionParams).id)
             }
 
     override fun cancelSubscription(subscriptionId: String, atIntervalEnd: Boolean): Either<PaymentError, SubscriptionInfo> =

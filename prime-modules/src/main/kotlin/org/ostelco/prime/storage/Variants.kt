@@ -1,16 +1,8 @@
 package org.ostelco.prime.storage
 
 import arrow.core.Either
-import org.ostelco.prime.model.ApplicationToken
-import org.ostelco.prime.model.Bundle
-import org.ostelco.prime.model.ChangeSegment
-import org.ostelco.prime.model.Offer
-import org.ostelco.prime.model.Product
-import org.ostelco.prime.model.ProductClass
-import org.ostelco.prime.model.PurchaseRecord
-import org.ostelco.prime.model.Segment
-import org.ostelco.prime.model.Subscriber
-import org.ostelco.prime.model.Subscription
+import org.ostelco.prime.apierror.ApiError
+import org.ostelco.prime.model.*
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 
@@ -149,6 +141,54 @@ interface AdminGraphStore {
     fun getSubscriberCount(): Long
     fun getReferredSubscriberCount(): Long
     fun getPaidSubscriberCount(): Long
+
+    /* For managing plans and subscription to plans. */
+
+    /**
+     * Get details for a specific plan.
+     * @param planId - The name/id of the plan
+     * @return Plan details if found
+     */
+    fun getPlan(planId: String): Either<ApiError, Plan>
+
+    /**
+     * Get all plans that a subscriber subscribes to.
+     * @param subscriberId - The subscriber
+     * @return List with plan details if found
+     */
+    fun getPlans(subscriberId: String): Either<ApiError, List<Plan>>
+
+    /**
+     * Create a new plan.
+     * @param plan - Plan details
+     * @return Unit value if created successfully
+     */
+    fun createPlan(plan: Plan): Either<ApiError, Plan>
+
+    /**
+     * Remove a plan.
+     * @param planId - The name/id of the plan
+     * @return Unit value if removed successfully
+     */
+    fun deletePlan(planId: String): Either<ApiError, Plan>
+
+    /**
+     * Set up a subscriber with a subscription to a specific plan.
+     * @param subscriberId - The id of the subscriber
+     * @param planId - The name/id of the plan
+     * @param trialEnd - Epoch timestamp for when the trial period ends
+     * @return Unit value if the subscription was created successfully
+     */
+    fun attachPlan(subscriberId: String, planId: String, trialEnd: Long = 0): Either<ApiError, Unit>
+
+    /**
+     * Remove the subscription to a plan for a specific subscrber.
+     * @param subscriberId - The id of the subscriber
+     * @param planId - The name/id of the plan
+     * @param atIntervalEnd - Remove at end of curren subscription period
+     * @return Unit value if the subscription was removed successfully
+     */
+    fun detachPlan(subscriberId: String, planId: String, atIntervalEnd: Boolean = false): Either<ApiError, Unit>
 
     // atomic import of Offer + Product + Segment
     fun atomicCreateOffer(
