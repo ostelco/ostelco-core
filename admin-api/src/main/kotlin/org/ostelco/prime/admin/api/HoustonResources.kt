@@ -34,7 +34,7 @@ import javax.ws.rs.core.Response
  * Resource used to handle the profile related REST calls.
  */
 @Path("/profiles")
-class ProfilesResource() {
+class ProfilesResource {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
 
@@ -137,7 +137,7 @@ class ProfilesResource() {
  * Resource used to handle bundles related REST calls.
  */
 @Path("/bundles")
-class BundlesResource() {
+class BundlesResource {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
 
@@ -180,7 +180,7 @@ class BundlesResource() {
  * Resource used to handle purchase related REST calls.
  */
 @Path("/purchases")
-class PurchaseResource() {
+class PurchaseResource {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
 
@@ -223,7 +223,7 @@ class PurchaseResource() {
  * Resource used to handle refund related REST calls.
  */
 @Path("/refund")
-class RefundResource() {
+class RefundResource {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
 
@@ -277,7 +277,7 @@ class RefundResource() {
  * Resource used to handle notification related REST calls.
  */
 @Path("/notify")
-class NotifyResource() {
+class NotifyResource {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
     private val notifier by lazy { getResource<AppNotifier>() }
