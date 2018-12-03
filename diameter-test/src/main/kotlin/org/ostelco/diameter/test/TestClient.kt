@@ -8,7 +8,6 @@ import org.jdiameter.api.Configuration
 import org.jdiameter.api.EventListener
 import org.jdiameter.api.IllegalDiameterStateException
 import org.jdiameter.api.InternalException
-import org.jdiameter.api.Message
 import org.jdiameter.api.Mode
 import org.jdiameter.api.Network
 import org.jdiameter.api.NetworkReqListener
@@ -22,6 +21,7 @@ import org.jdiameter.common.impl.app.cca.JCreditControlRequestImpl
 import org.jdiameter.server.impl.StackImpl
 import org.jdiameter.server.impl.helpers.XMLConfiguration
 import org.ostelco.diameter.logger
+import org.ostelco.diameter.model.RequestType
 import org.ostelco.diameter.util.DiameterUtilities
 import java.util.concurrent.TimeUnit
 
@@ -179,7 +179,7 @@ class TestClient : EventListener<Request, Answer> {
             val ccr = JCreditControlRequestImpl(request)
             try {
                 session.send(ccr.message, this)
-                dumpMessage(ccr.message, true) //dump info on console
+                logger.info("Sending request of type [" + RequestType.getTypeAsString(ccr.getRequestTypeAVPValue()) + "]");
                 return true
             } catch (e: InternalException) {
                 logger.error("Failed to send request", e)
@@ -197,7 +197,7 @@ class TestClient : EventListener<Request, Answer> {
     }
 
     override fun receivedSuccessMessage(request: Request, answer: Answer) {
-        dumpMessage(answer, false)
+        logger.info("Received answer")
         resultAvps = answer.avps
         resultCodeAvp = answer.resultCode
         this.isAnswerReceived = true
@@ -205,17 +205,6 @@ class TestClient : EventListener<Request, Answer> {
 
     override fun timeoutExpired(request: Request) {
         logger.info("Timeout expired $request")
-    }
-
-
-    private fun dumpMessage(message: Message, sending: Boolean) {
-        logger.info((if (sending) "Sending " else "Received ")
-                + (if (message.isRequest) "Request: " else "Answer: ") + message.commandCode
-                + "\nE2E:" + message.endToEndIdentifier
-                + "\nHBH:" + message.hopByHopIdentifier
-                + "\nAppID:" + message.applicationId)
-
-        logger.info("AVPS[" + message.avps.size() + "]: \n")
     }
 
     /**

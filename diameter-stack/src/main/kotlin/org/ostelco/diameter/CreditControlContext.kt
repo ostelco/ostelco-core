@@ -86,7 +86,7 @@ class CreditControlContext(
                 answerMSCC.addAvp(Avp.RESULT_CODE, resultCode, true, false)
                 answerMSCC.addAvp(Avp.VALIDITY_TIME, mscc.validityTime, true, false)
             }
-            logger.info("Credit-Control-Answer")
+            logger.info("Created Credit-Control-Answer")
             DiameterUtilities().printAvps(ccaAvps)
 
         } catch (e: InternalException) {

@@ -3,7 +3,7 @@
 
   <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%d{dd MMM yyyy HH:mm:ss,SSS} %-4r [%t] %-5p %c %x - %m%n</pattern>
+      <pattern>%d{dd MMM yyyy HH:mm:ss,SSS} %highlight(%-4r) %-5p %c %x - %m%n</pattern>
     </encoder>
   </appender>
 
