@@ -20,7 +20,7 @@ class ES2PlusClient(private val requesterId: String, private val client: Client)
         val result: Response = client.target(path)
                 .request(MediaType.APPLICATION_JSON)
                 .header("User-Agent", "gsma-rsp-lpad")
-                .header("X-Admin-Protocol", "gsma/rsp/v<x.y.z>")
+                .header("X-Admin-Protocol", "gsma/rsp/v<x.y.z>")   // TODO:  The x.y.x should be something else I think (proper version of the GSMA protocol probably)
                 .post(entity)
         if (expectedReturnCode != result.status) {
             val msg = "Expected return value $expectedReturnCode, but got ${result.status}.  Body was \"${result.readEntity(String::class.java)}\""

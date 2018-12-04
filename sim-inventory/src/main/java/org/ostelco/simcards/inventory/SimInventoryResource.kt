@@ -1,4 +1,4 @@
-package org.ostelco.simcards.admin
+package org.ostelco.simcards.inventory
 
 import org.hibernate.validator.constraints.NotEmpty
 import java.io.IOException

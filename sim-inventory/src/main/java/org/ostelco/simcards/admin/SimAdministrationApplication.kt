@@ -11,6 +11,8 @@ import io.swagger.v3.oas.models.info.Contact
 import io.swagger.v3.oas.models.info.Info
 import org.ostelco.simcards.es2plus.SmDpPlusCallbackResource
 import org.ostelco.simcards.es2plus.SmDpPlusCallbackService
+import org.ostelco.simcards.inventory.SimInventoryDAO
+import org.ostelco.simcards.inventory.SimInventoryResource
 import java.util.stream.Collectors
 import java.util.stream.Stream
 
