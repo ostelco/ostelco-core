@@ -28,7 +28,7 @@ paths:
       description: "Endpoint for event reports from eKYC."
       produces:
         - application/json
-      operationId: "handleEvent"
+      operationId: "handleCallback"
       responses:
         200:
           description: "Event report processed successfully."

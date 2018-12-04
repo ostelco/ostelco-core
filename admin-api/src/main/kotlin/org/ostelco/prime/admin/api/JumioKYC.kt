@@ -7,6 +7,7 @@ import javax.ws.rs.Produces
 import javax.ws.rs.core.Context
 import javax.ws.rs.core.HttpHeaders
 import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.Response
 
 /**
  * Resource used to handle the eKYC related REST calls.
@@ -15,18 +16,16 @@ import javax.ws.rs.core.MediaType
 class KYCResource {
     private val logger by getLogger()
 
-    @Context
-    private val httpHeaders: HttpHeaders? = null
-
     @GET
     @Path("callback")
     @Produces(MediaType.APPLICATION_JSON)
-    fun handleCallback() {
-        printHeaderInfo();
+    fun handleCallback(@Context
+                       httpHeaders: HttpHeaders): Response {
+        printHeaderInfo(httpHeaders);
+        return Response.status(Response.Status.OK).build();
     }
-    private fun printHeaderInfo() {
-        println("---------------")
-        val requestHeaders = httpHeaders!!.getRequestHeaders()
+    private fun printHeaderInfo(httpHeaders: HttpHeaders) {
+        val requestHeaders = httpHeaders.getRequestHeaders()
         for (entry in requestHeaders.entries) {
             logger.info("${entry.key} = ${entry.value}")
         }
