@@ -34,8 +34,9 @@ class KYCResource {
         val requestHeaders = httpHeaders.getRequestHeaders()
         for (entry in requestHeaders.entries) {
             result += "${entry.key} = ${entry.value}\n"
-            logger.info("${entry.key} = ${entry.value}")
         }
+        logger.info("$result")
+
         return result
     }
 }
