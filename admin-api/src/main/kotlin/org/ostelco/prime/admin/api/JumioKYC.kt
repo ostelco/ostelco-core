@@ -21,13 +21,15 @@ class KYCResource {
     @Produces(MediaType.APPLICATION_JSON)
     fun handleCallback(@Context
                        httpHeaders: HttpHeaders): Response {
-        printHeaderInfo(httpHeaders);
-        return Response.status(Response.Status.OK).build();
+        return Response.status(Response.Status.OK).entity(printHeaderInfo(httpHeaders)).build();
     }
-    private fun printHeaderInfo(httpHeaders: HttpHeaders) {
+    private fun printHeaderInfo(httpHeaders: HttpHeaders):String {
+        var result = ""
         val requestHeaders = httpHeaders.getRequestHeaders()
         for (entry in requestHeaders.entries) {
+            result += "${entry.key} = ${entry.value}\n"
             logger.info("${entry.key} = ${entry.value}")
         }
+        return result
     }
 }
