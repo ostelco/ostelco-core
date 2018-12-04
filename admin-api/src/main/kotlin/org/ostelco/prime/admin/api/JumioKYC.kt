@@ -1,7 +1,7 @@
 package org.ostelco.prime.admin.api
 
 import org.ostelco.prime.getLogger
-import javax.ws.rs.GET
+import javax.servlet.http.HttpServletRequest
 import javax.ws.rs.POST
 import javax.ws.rs.Path
 import javax.ws.rs.Produces
@@ -19,12 +19,15 @@ class KYCResource {
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    fun handleCallback(@Context
-                       httpHeaders: HttpHeaders): Response {
-        return Response.status(Response.Status.OK).entity(printHeaderInfo(httpHeaders)).build();
+    fun handleCallback(
+            @Context request: HttpServletRequest,
+            @Context httpHeaders: HttpHeaders): Response {
+        return Response.status(Response.Status.OK).entity(printHeaderInfo(request, httpHeaders)).build();
     }
-    private fun printHeaderInfo(httpHeaders: HttpHeaders):String {
+    private fun printHeaderInfo(request: HttpServletRequest, httpHeaders: HttpHeaders):String {
         var result = ""
+        result += request.remoteHost + " (" + request.remoteAddr + ":" + request.remotePort + ")"
+
         val requestHeaders = httpHeaders.getRequestHeaders()
         for (entry in requestHeaders.entries) {
             result += "${entry.key} = ${entry.value}\n"
