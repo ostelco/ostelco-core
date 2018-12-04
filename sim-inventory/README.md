@@ -17,6 +17,11 @@ TODO
 ---
 
 
+* Think this through: Would it make sense to have emulators for
+  the HSS and SM-DP+es we will integrate to, just to see that the 
+  system is capable of connecting to them using the appropriate
+  set of certificates etc.?
+
 * Follow through on https://rohannagar.github.io/2018-04-11/dropwizard-on-kubernetes
 
 * docker build -t ostelco/simadmin . 
