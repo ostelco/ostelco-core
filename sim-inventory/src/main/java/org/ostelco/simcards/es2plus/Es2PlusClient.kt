@@ -75,7 +75,7 @@ class ES2PlusClient(private val requesterId: String, private val client: Client)
     fun cancelOrder(eid: String,
                     iccid: String,
                     matchingId: String,
-                    finalProfileStatusIndicator: String): Es2CancelOrderResponse {
+                    finalProfileStatusIndicator: String): HeaderOnlyResponse {
         return postEs2ProtocolCmd("/gsma/rsp2/es2plus/cancelOrder",
                 es2ProtocolPayload = Es2CancelOrder(
                         header = ES2RequestHeader(
@@ -86,11 +86,11 @@ class ES2PlusClient(private val requesterId: String, private val client: Client)
                         iccid = iccid,
                         matchingId = matchingId,
                         finalProfileStatusIndicator = finalProfileStatusIndicator),
-                sclass = Es2CancelOrderResponse::class.java,
+                sclass = HeaderOnlyResponse::class.java,
                 expectedReturnCode = 200)
     }
 
-    fun releaseProfile(iccid: String): Es2ReleaseProfileResponse {
+    fun releaseProfile(iccid: String): HeaderOnlyResponse {
         return postEs2ProtocolCmd("/gsma/rsp2/es2plus/releaseProfile",
                 Es2ReleaseProfile(
                         header = ES2RequestHeader(
@@ -98,7 +98,7 @@ class ES2PlusClient(private val requesterId: String, private val client: Client)
                                 functionCallIdentifier = "releaseProfile"
                         ),
                         iccid = iccid),
-                sclass = Es2ReleaseProfileResponse::class.java,
+                sclass = HeaderOnlyResponse::class.java,
                 expectedReturnCode = 200)
     }
 
@@ -112,7 +112,7 @@ class ES2PlusClient(private val requesterId: String, private val client: Client)
             notificationPointStatus: ES2NotificationPointStatus,
             resultData: String? = null,
             imei: String? = null
-    ): Es2HandleDownloadProgressInfoResponse {
+    ): HeaderOnlyResponse {
         return postEs2ProtocolCmd("/gsma/rsp2/es2plus/handleDownloadProgressInfo",
                 Es2HandleDownloadProgressInfo(
                         header = ES2RequestHeader(
@@ -128,7 +128,7 @@ class ES2PlusClient(private val requesterId: String, private val client: Client)
                         notificationPointStatus = notificationPointStatus,
                         resultData = resultData,
                         imei = imei),
-                sclass = Es2HandleDownloadProgressInfoResponse::class.java,
+                sclass = HeaderOnlyResponse::class.java,
                 expectedReturnCode = 200)
     }
 }

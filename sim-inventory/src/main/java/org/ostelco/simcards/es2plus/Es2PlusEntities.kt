@@ -112,8 +112,9 @@ data class Es2CancelOrder(
         @JsonProperty("finalProfileStatusIndicator") val finalProfileStatusIndicator: String? = null
 )
 
-@JsonSchema("ES2+CancelOrder-response")
-data class Es2CancelOrderResponse(@JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader())
+@JsonSchema("ES2+HeaderOnly-response")
+data class HeaderOnlyResponse(@JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader())
+
 
 ///
 ///  The ReleaseProfile function
@@ -125,11 +126,6 @@ data class Es2ReleaseProfile(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("iccid") val iccid: String
 )
-
-@JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonSchema("ES2+ReleaseProfile-response")
-data class Es2ReleaseProfileResponse(
-        @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader())
 
 
 ///
@@ -164,11 +160,6 @@ data class ES2StatusCodeData(
         @JsonProperty("subjectIdentifier") val subjectIdentifier: String? = null,
         @JsonProperty("message") val message: String? = null
 )
-
-@JsonSchema("ES2+HandleDownloadProgressInfo-response")
-@JsonInclude(JsonInclude.Include.NON_NULL)
-data class Es2HandleDownloadProgressInfoResponse(
-        @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader())
 
 ///
 ///    Convenience functions to generate headers
