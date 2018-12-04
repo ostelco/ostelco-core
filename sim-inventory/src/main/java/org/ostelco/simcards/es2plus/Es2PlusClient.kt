@@ -102,8 +102,7 @@ class ES2PlusClient(private val requesterId: String, private val client: Client)
                 expectedReturnCode = 200)
     }
 
-    // XXX This client is missing essentially _all_ of its input parameters, must
-    //     be heavily amended so that it can be used for proper testing.
+
     fun handleDownloadProgressInfo(
             eid: String? = null,
             iccid: String,
