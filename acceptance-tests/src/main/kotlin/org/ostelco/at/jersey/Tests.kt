@@ -1191,7 +1191,7 @@ class PlanTest {
                 .amount(100)
                 .currency("nok")
         val plan = Plan()
-                .name("test")
+                .name("PLAN_1_NOK_PER_DAY")
                 .price(price)
                 .interval(Plan.IntervalEnum.DAY)
                 .intervalCount(1)

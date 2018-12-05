@@ -212,7 +212,6 @@ class StripePaymentProcessor : PaymentProcessor {
                 SubscriptionInfo(subscription.cancel(subscriptionParams).id)
             }
 
-
     override fun authorizeCharge(customerId: String, sourceId: String?, amount: Int, currency: String): Either<PaymentError, String> {
         val errorMessage = "Failed to authorize the charge for customerId $customerId sourceId $sourceId amount $amount currency $currency"
         return when (amount) {

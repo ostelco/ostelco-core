@@ -210,7 +210,7 @@ class ProfilesResource {
     fun attachPlan(@PathParam("email") email: String,
                    @PathParam("planId") planId: String,
                    @QueryParam("trial_end") trialEnd: Long): Response {
-        return storage.attachPlan(email, planId, trialEnd).fold(
+        return storage.subscribeToPlan(email, planId, trialEnd).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.CREATED) })
                 .build()
@@ -224,7 +224,7 @@ class ProfilesResource {
     @Produces("application/json")
     fun detachPlan(@PathParam("email") email: String,
                    @PathParam("planId") planId: String): Response {
-        return storage.detachPlan(email, planId).fold(
+        return storage.unsubscribeFromPlan(email, planId).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.OK) })
                 .build()

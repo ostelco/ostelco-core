@@ -10,6 +10,7 @@ import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
+import org.ostelco.prime.apierror.BadGatewayError
 import org.ostelco.prime.apierror.BadRequestError
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.*
@@ -30,7 +31,8 @@ import java.util.stream.Collectors
 enum class Relation {
     HAS_SUBSCRIPTION,      // (Subscriber) -[HAS_SUBSCRIPTION]-> (Subscription)
     HAS_BUNDLE,            // (Subscriber) -[HAS_BUNDLE]-> (Bundle)
-    HAS_PLAN,              // (Subscriber> -[HAS_PLAN]-> (Plan)
+    HAS_PLAN,              // (Subscriber) -[HAS_PLAN]-> (Plan)
+    BELONG_TO_PRODUCT,     // (Plan) -[BELONG_TO_PRODUCT]-> (Product)
     LINKED_TO_BUNDLE,      // (Subscription) -[LINKED_TO_BUNDLE]-> (Bundle)
     PURCHASED,             // (Subscriber) -[PURCHASED]-> (Product)
     REFERRED,              // (Subscriber) -[REFERRED]-> (Subscriber)
@@ -134,6 +136,14 @@ object Neo4jStoreSingleton : GraphStore {
             to = scanInformationEntity,
             dataClass = Void::class.java)
     private val scanInformationRelationStore = UniqueRelationStore(scanInformationRelation)
+
+    private val planProductRelation = RelationType(
+            relation = Relation.BELONG_TO_PRODUCT,
+            from = planEntity,
+            to = productEntity,
+            dataClass = Void::class.java)
+    private val planProductRelationStore = UniqueRelationStore(planProductRelation)
+
 
     // -------------
     // Client Store
@@ -715,14 +725,24 @@ object Neo4jStoreSingleton : GraphStore {
     override fun createPlan(plan: Plan): Either<ApiError, Plan> = writeTransaction {
         IO {
             Either.monad<ApiError>().binding {
+
+                productStore.get(plan.id, transaction)
+                        .fold(
+                                { Either.right(Unit) },
+                                {
+                                    Either.left(BadRequestError("Found existing product with matching name ${plan.id}",
+                                            ApiErrorCode.FAILED_TO_STORE_PLAN))
+                                }
+                        ).bind()
                 plansStore.get(plan.id, transaction)
                         .fold(
                                 { Either.right(Unit) },
                                 {
-                                    Either.left(BadRequestError("Plan ${plan.id} alredy exists",
+                                    Either.left(BadGatewayError("Found plan with name ${plan.id} but no corresponding product with sku ${plan.id}",
                                             ApiErrorCode.FAILED_TO_STORE_PLAN))
                                 }
                         ).bind()
+
                 val productInfo = paymentProcessor.createProduct(plan.id)
                         .mapLeft { err ->
                             BadRequestError("Failed to create product ${plan.id}",
@@ -738,12 +758,32 @@ object Neo4jStoreSingleton : GraphStore {
                         }.linkReversalActionToTransaction(transaction) {
                             paymentProcessor.removePlan(it.id)
                         }.bind()
-                plansStore.create(plan.copy(planId = planInfo.id, productId = productInfo.id), transaction)
+
+                /* The associated product to a plan, has:
+                       sku - same as the name of the plan
+                       price - set to 0 */
+                val product = Product(sku = plan.id, price = Price(amount = 0, currency = plan.price.currency))
+
+                productStore.create(product, transaction)
                         .mapLeft { err ->
-                            BadRequestError("Failed to create ${plan.id}",
+                            BadRequestError("Failed to create associated product with sku ${plan.id} for plan with name ${plan.id}",
                                     ApiErrorCode.FAILED_TO_STORE_PLAN,
                                     err)
                         }.bind()
+                plansStore.create(plan.copy(planId = planInfo.id, productId = productInfo.id), transaction)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to create plan with name ${plan.id}",
+                                    ApiErrorCode.FAILED_TO_STORE_PLAN,
+                                    err)
+                        }.bind()
+
+                planProductRelationStore.create(plan.id, product.id, transaction)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to create plan with name ${plan.id} and associated product with sku ${product.id}",
+                                    ApiErrorCode.FAILED_TO_STORE_PLAN,
+                                    err)
+                        }.bind()
+
                 plansStore.get(plan.id, transaction)
                         .mapLeft { err ->
                             BadRequestError("Failed to create ${plan.id}",
@@ -760,24 +800,38 @@ object Neo4jStoreSingleton : GraphStore {
             Either.monad<ApiError>().binding {
                 val plan = plansStore.get(planId, transaction)
                         .mapLeft {
-                            org.ostelco.prime.apierror.NotFoundError("Plan ${planId} does not exists",
+                            org.ostelco.prime.apierror.NotFoundError("Plan with name ${planId} does not exists",
                                     ApiErrorCode.FAILED_TO_REMOVE_PLAN)
                         }.bind()
-                plansStore.delete(planId, transaction)
+                /* The name of the product is the same as the name of the corresponding plan. */
+                val product = productStore.get(planId, transaction)
+                        .mapLeft {
+                            BadGatewayError("Could not find associated product with sku ${planId} for plan with name ${plan.id}",
+                                    ApiErrorCode.FAILED_TO_REMOVE_PLAN)
+                        }.bind()
+                planProductRelationStore.get(plan.id, transaction)
+                        .mapLeft {
+                            BadGatewayError("No association between product with sku ${plan.id} and plan with name ${product.id} found",
+                                    ApiErrorCode.FAILED_TO_REMOVE_PLAN)
+                        }.bind()
+
+                /* Not removing the product due to purchase references. */
+
+                /* Removing the plan will remove the plan itself and all relations going to it. */
+                plansStore.delete(plan.id, transaction)
                         .mapLeft { err ->
-                            BadRequestError("Failed to remove plan",
+                            BadRequestError("Failed to remove plan with name ${plan.id}",
                                     ApiErrorCode.FAILED_TO_REMOVE_PLAN,
                                     err)
-                        }.flatMap {
-                            Either.right(Unit)
                         }.bind()
+
                 paymentProcessor.removePlan(plan.planId)
                         .mapLeft { err ->
                             BadRequestError("Failed to remove plan ${planId}",
                                     ApiErrorCode.FAILED_TO_REMOVE_PLAN,
                                     err)
                         }.linkReversalActionToTransaction(transaction) {
-                            // (Nothing to do.)
+                            /* (Nothing to do.) */
                         }.flatMap {
                             Either.right(Unit)
                         }.bind()
@@ -787,7 +841,7 @@ object Neo4jStoreSingleton : GraphStore {
                                     ApiErrorCode.FAILED_TO_REMOVE_PLAN,
                                     err)
                         }.linkReversalActionToTransaction(transaction) {
-                            // (Nothing to do.)
+                            /* (Nothing to do.) */
                         }.bind()
                 plan
             }.fix()
@@ -795,7 +849,7 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun attachPlan(subscriberId: String, planId: String, trialEnd: Long): Either<ApiError, Unit> = writeTransaction {
+    override fun subscribeToPlan(subscriberId: String, planId: String, trialEnd: Long): Either<ApiError, Unit> = writeTransaction {
         IO {
             Either.monad<ApiError>().binding {
                 subscriberStore.get(subscriberId, transaction)
@@ -841,7 +895,7 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun detachPlan(subscriberId: String, planId: String, atIntervalEnd: Boolean): Either<ApiError, Unit> = writeTransaction {
+    override fun unsubscribeFromPlan(subscriberId: String, planId: String, atIntervalEnd: Boolean): Either<ApiError, Unit> = writeTransaction {
         IO {
             Either.monad<ApiError>().binding {
                 val properties = hasPlanRelationStore.getProperties(subscriberId, planId, transaction)

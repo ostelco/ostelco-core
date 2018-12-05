@@ -194,7 +194,7 @@ interface AdminGraphStore {
      * @param trialEnd - Epoch timestamp for when the trial period ends
      * @return Unit value if the subscription was created successfully
      */
-    fun attachPlan(subscriberId: String, planId: String, trialEnd: Long = 0): Either<ApiError, Unit>
+    fun subscribeToPlan(subscriberId: String, planId: String, trialEnd: Long = 0): Either<ApiError, Unit>
 
     /**
      * Remove the subscription to a plan for a specific subscrber.
@@ -203,7 +203,7 @@ interface AdminGraphStore {
      * @param atIntervalEnd - Remove at end of curren subscription period
      * @return Unit value if the subscription was removed successfully
      */
-    fun detachPlan(subscriberId: String, planId: String, atIntervalEnd: Boolean = false): Either<ApiError, Unit>
+    fun unsubscribeFromPlan(subscriberId: String, planId: String, atIntervalEnd: Boolean = false): Either<ApiError, Unit>
 
     // atomic import of Offer + Product + Segment
     fun atomicCreateOffer(
