@@ -77,10 +77,7 @@
     </Realms>
   </Network>
 
-  <Extensions>
-    <SessionDatasource value="org.ostelco.diameter.ha.sessiondatasource.LocalSessionDatasource" />
-    <TimerFacility value="org.ostelco.diameter.ha.timer.LocalTimerFacility" />
-  </Extensions>
+  <Extensions/>
 
 
 </Configuration>

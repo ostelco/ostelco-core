@@ -95,7 +95,6 @@ class TestClient : EventListener<Request, Answer> {
                         null
                     },
                     this.authAppId) //passing our example app id.
-
         } catch (e: Exception) {
             logger.error("Failed to init Diameter Stack", e)
             this.stack.destroy()
