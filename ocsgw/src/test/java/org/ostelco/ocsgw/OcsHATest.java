@@ -12,6 +12,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.channels.SocketChannel;
 
 import static org.junit.Assert.assertEquals;
 
@@ -38,41 +41,83 @@ public class OcsHATest {
     Process ocsgw_1;
     Process ocsgw_2;
 
+
+    public void waitForPort(String hostname, int port, long timeoutMs) {
+        LOG.info("Waiting for port " + port);
+        long startTs = System.currentTimeMillis();
+        boolean scanning=true;
+        while(scanning)
+        {
+            if (System.currentTimeMillis() - startTs > timeoutMs) {
+                throw new RuntimeException("Timeout waiting for port " + port);
+            }
+            try
+            {
+                SocketAddress addr = new InetSocketAddress(hostname, port);
+                SocketChannel socketChannel = SocketChannel.open();
+                socketChannel.configureBlocking(true);
+                try {
+                    socketChannel.connect(addr);
+                }
+                finally {
+                    socketChannel.close();
+                }
+
+                scanning=false;
+            }
+            catch(IOException e)
+            {
+                LOG.debug("Still waiting for port " + port);
+                try
+                {
+                    Thread.sleep(2000);//2 seconds
+                }
+                catch(InterruptedException ie){
+                    LOG.error("Interrupted", ie);
+                }
+            }
+        }
+        LOG.info("Port " + port + " ready.");
+    }
+
+    private void waitForProcessExit(Process process) {
+        while (process.isAlive()) {
+            try
+            {
+                Thread.sleep(2000);//2 seconds
+            }
+            catch(InterruptedException ie){
+                LOG.error("Interrupted", ie);
+            }
+        }
+    }
+
+    private Process startServer(final int server) {
+
+        Process process = null;
+        ProcessBuilder processBuilder = new ProcessBuilder("java", "-jar", "./build/libs/ocsgw-uber.jar");
+        processBuilder.environment().put("DIAMETER_CONFIG_FILE", "server-jdiameter-ha-" + server +"-config.xml");
+        processBuilder.environment().put("OCS_DATASOURCE_TYPE", "Local");
+        processBuilder.environment().put("CONFIG_FOLDER", "src/test/resources/");
+        processBuilder.inheritIO();
+        try {
+            process = processBuilder.start();
+        } catch (IOException e) {
+            LOG.error("Failed to start external OCSgw number" + server, e);
+        }
+        return process;
+    }
+
+
     @BeforeEach
     protected void setUp() {
 
-        {
-            ProcessBuilder processBuilderOcsgw1 = new ProcessBuilder("java", "-jar", "./build/libs/ocsgw-uber.jar");
-            processBuilderOcsgw1.environment().put("DIAMETER_CONFIG_FILE", "server-jdiameter-ha-1-config.xml");
-            processBuilderOcsgw1.environment().put("OCS_DATASOURCE_TYPE", "Local");
-            processBuilderOcsgw1.environment().put("CONFIG_FOLDER", "src/test/resources/");
-            processBuilderOcsgw1.inheritIO();
-            try {
-                ocsgw_1 = processBuilderOcsgw1.start();
-            } catch (IOException e) {
-                LOG.error("Failed to start external OCSgw-1", e);
-            }
-        }
-
-        {
-            ProcessBuilder processBuilerOcsgw2 = new ProcessBuilder("java", "-jar", "./build/libs/ocsgw-uber.jar");
-            processBuilerOcsgw2.environment().put("DIAMETER_CONFIG_FILE", "server-jdiameter-ha-2-config.xml");
-            processBuilerOcsgw2.environment().put("OCS_DATASOURCE_TYPE", "Local");
-            processBuilerOcsgw2.environment().put("CONFIG_FOLDER", "src/test/resources/");
-            processBuilerOcsgw2.inheritIO();
-            try {
-                ocsgw_2 = processBuilerOcsgw2.start();
-            } catch (IOException e) {
-                LOG.error("Failed to start external OCSgw-2", e);
-            }
-        }
+        ocsgw_1 = startServer(1);
+        ocsgw_2 = startServer(2);
 
         // Wait for ocsgws to start
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            LOG.error("I can not get no sleep");
-        }
+        waitForPort("127.0.0.1", 3868,10000);
+        waitForPort("127.0.0.1", 3869,10000);
 
         testPGW = new TestClient();
         testPGW.initStack("src/test/resources/", "client-jdiameter-ha-config.xml");
@@ -87,7 +132,7 @@ public class OcsHATest {
         ocsgw_2.destroy();
     }
 
-    private void simpleCreditControlRequestInit(Session session) {
+    private void haCreditControlRequestInit(Session session) {
 
         Request request = testPGW.createRequest(
                 OCS_REALM,
@@ -118,7 +163,36 @@ public class OcsHATest {
         }
     }
 
-    private void simpleCreditControlRequestUpdate(Session session) {
+    private void restartServer(final int server) {
+        switch (server) {
+            case 1:
+                ocsgw_1.destroy();
+                waitForProcessExit(ocsgw_1);
+                ocsgw_1 = startServer(1);
+                waitForPort("127.0.0.1", 3868,10000);
+                break;
+            case 2:
+                ocsgw_2.destroy();
+                waitForProcessExit(ocsgw_2);
+                ocsgw_2 = startServer(2);
+                waitForPort("127.0.0.1", 3869,10000);
+                break;
+            default:
+                LOG.info("Incorrect server number : " + server);
+        }
+        // Give time for ocsgw to reconnect to p-gw
+        try
+        {
+            LOG.info("Pausing testing 10 seconds for ocsgw to reconnect...");
+            Thread.sleep(10000);//10 seconds
+            LOG.info("Continue testing");
+        }
+        catch(InterruptedException ie){
+            LOG.error("Interrupted", ie);
+        }
+    }
+
+    private void haCreditControlRequestUpdate(Session session) {
 
         Request request = testPGW.createRequest(
                 OCS_REALM,
@@ -145,12 +219,22 @@ public class OcsHATest {
         }
     }
 
-    // Currently not used in testing 
+    /**
+     *  This is only meant to be used for local testing. As it is starting external processes for the
+     *  OCSgw you will have to take care to clean up.
+     *
+     *  The test will create a session. It will restart server 1 before it sends the CCR-Update message.
+     *  Then restart server 2 and send another CCR-Update message. This will only work if state was shared
+     *  as the session would otherwise have been lost by ocsgw.
+     */
     @DisplayName("HA Credit-Control-Request Init Update and Terminate")
-    public void simpleCreditControlRequestInitUpdateAndTerminate() {
+    public void haCreditControlRequestInitUpdateAndTerminate() {
         Session session = testPGW.createSession();
-        simpleCreditControlRequestInit(session);
-        simpleCreditControlRequestUpdate(session);
+        haCreditControlRequestInit(session);
+        restartServer(1);
+        haCreditControlRequestUpdate(session);
+        restartServer(2);
+        haCreditControlRequestUpdate(session);
 
         Request request = testPGW.createRequest(
                 OCS_REALM,
