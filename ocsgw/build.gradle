@@ -8,6 +8,7 @@ dependencies {
     implementation project(':analytics-grpc-api')
 
     implementation project(':diameter-stack')
+    implementation project(':diameter-ha')
     implementation "com.google.cloud:google-cloud-core-grpc:$googleCloudVersion"
     implementation "com.google.cloud:google-cloud-storage:$googleCloudVersion"
 
@@ -22,8 +23,6 @@ dependencies {
     testImplementation project(':diameter-test')
     testImplementation "org.junit.jupiter:junit-jupiter-api:$junit5Version"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junit5Version"
-
-    testImplementation project(':diameter-ha')
 
     testImplementation 'junit:junit:4.12'
     testRuntimeOnly "org.junit.vintage:junit-vintage-engine:$junit5Version"
