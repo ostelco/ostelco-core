@@ -32,9 +32,6 @@ class TestClient : EventListener<Request, Answer> {
 
     companion object {
 
-        //configuration files
-        private const val configFile = "client-jdiameter-config.xml"
-
         // definition of codes, IDs
         private const val applicationID = 4L  // Diameter Credit Control Application (4)
 
@@ -73,7 +70,7 @@ class TestClient : EventListener<Request, Answer> {
      *
      * @param configPath path to the jDiameter configuration file
      */
-    fun initStack(configPath: String) {
+    fun initStack(configPath: String, configFile: String) {
         try {
             config = XMLConfiguration(configPath + configFile)
         } catch (e: Exception) {

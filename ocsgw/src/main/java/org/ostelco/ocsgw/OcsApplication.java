@@ -41,7 +41,7 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
         Runtime.getRuntime().addShutdownHook(new Thread(OcsApplication::shutdown));
 
         OcsApplication app = new OcsApplication();
-        app.start("/config/");
+        app.start("/config/", DIAMETER_CONFIG_FILE);
     }
 
 
@@ -79,12 +79,12 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
     }
 
 
-    public void start(final String configDir) {
+    public void start(final String configDir, final String configFile) {
         try {
 
             fetchConfig(configDir);
 
-            Configuration diameterConfig = new XMLConfiguration(configDir +  DIAMETER_CONFIG_FILE);
+            Configuration diameterConfig = new XMLConfiguration(configDir +  configFile);
             stack = new StackImpl();
             stack.init(diameterConfig);
 
