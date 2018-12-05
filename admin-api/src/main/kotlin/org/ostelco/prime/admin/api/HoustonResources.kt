@@ -2,7 +2,6 @@ package org.ostelco.prime.admin.api
 
 import arrow.core.Either
 import io.dropwizard.auth.Auth
-import org.ostelco.prime.admin.importer.UpdateSegments
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
 import org.ostelco.prime.apierror.BadGatewayError
@@ -12,6 +11,7 @@ import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.model.Bundle
+import org.ostelco.prime.model.Plan
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
 import org.ostelco.prime.model.Subscription
@@ -19,10 +19,7 @@ import org.ostelco.prime.module.getResource
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
-import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.storage.AdminDataSource
-import org.ostelco.prime.storage.ClientDataSource
-import org.ostelco.prime.storage.StoreError
 import java.net.URLDecoder
 import java.util.regex.Pattern
 import javax.validation.constraints.NotNull
@@ -34,7 +31,7 @@ import javax.ws.rs.core.Response
  * Resource used to handle the profile related REST calls.
  */
 @Path("/profiles")
-class ProfilesResource() {
+class ProfilesResource {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
 
@@ -131,13 +128,55 @@ class ProfilesResource() {
         }
     }
 
+    /**
+     * Fetches and returna all plans that a subscriber subscribes
+     * to if any.
+     */
+    @GET
+    @Path("{email}/plans")
+    @Produces("application/json")
+    fun getPlans(@PathParam("email") email: String): Response {
+        return storage.getPlans(email).fold(
+                { apiError ->  Response.status(apiError.status).entity(asJson(apiError)) },
+                { Response.status(Response.Status.OK).entity(asJson(it)) })
+                .build()
+    }
+
+    /**
+     * Attaches (subscribes) a subscriber to a plan.
+     */
+    @POST
+    @Path("{email}/plans/{planId}")
+    @Produces("application/json")
+    fun attachPlan(@PathParam("email") email: String,
+                   @PathParam("planId") planId: String,
+                   @QueryParam("trial_end") trialEnd: Long): Response {
+        return storage.attachPlan(email, planId, trialEnd).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                { Response.status(Response.Status.CREATED) })
+                .build()
+    }
+
+    /**
+     * Removes a plan from the list subscriptions for a subscriber.
+     */
+    @DELETE
+    @Path("{email}/plans/{planId}")
+    @Produces("application/json")
+    fun detachPlan(@PathParam("email") email: String,
+                   @PathParam("planId") planId: String): Response {
+        return storage.detachPlan(email, planId).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                { Response.status(Response.Status.OK) })
+                .build()
+    }
 }
 
 /**
  * Resource used to handle bundles related REST calls.
  */
 @Path("/bundles")
-class BundlesResource() {
+class BundlesResource {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
 
@@ -180,7 +219,7 @@ class BundlesResource() {
  * Resource used to handle purchase related REST calls.
  */
 @Path("/purchases")
-class PurchaseResource() {
+class PurchaseResource {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
 
@@ -223,7 +262,7 @@ class PurchaseResource() {
  * Resource used to handle refund related REST calls.
  */
 @Path("/refund")
-class RefundResource() {
+class RefundResource {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
 
@@ -277,7 +316,7 @@ class RefundResource() {
  * Resource used to handle notification related REST calls.
  */
 @Path("/notify")
-class NotifyResource() {
+class NotifyResource {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
     private val notifier by lazy { getResource<AppNotifier>() }
@@ -323,5 +362,56 @@ class NotifyResource() {
             logger.error("Did not find msisdn for subscriberId $subscriberId", e)
             Either.left(BadGatewayError("Did not find subscription", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS))
         }
+    }
+}
+
+/**
+ * Resource used to handle plans related REST calls.
+ */
+@Path("/plans")
+class PlanResource() {
+
+    private val storage by lazy { getResource<AdminDataSource>() }
+
+    /**
+     * Return plan details.
+     */
+    @GET
+    @Path("{planId}")
+    @Produces("application/json")
+    fun get(@NotNull
+            @PathParam("planId") planId: String): Response {
+        return storage.getPlan(planId).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                { Response.status(Response.Status.OK).entity(asJson(it)) })
+                .build()
+    }
+
+    /**
+     * Creates a plan.
+     */
+    @POST
+    @Produces("application/json")
+    @Consumes("application/json")
+    fun create(plan: Plan) : Response {
+        return storage.createPlan(plan).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError))},
+                { Response.status(Response.Status.CREATED).entity(asJson(it))})
+                .build()
+    }
+
+    /**
+     * Deletes a plan.
+     * Note, will fail if there are subscriptions on the plan.
+     */
+    @DELETE
+    @Path("{planId}")
+    @Produces("application/json")
+    fun delete(@NotNull
+               @PathParam("planId") planId: String) : Response {
+        return storage.deletePlan(planId).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                { Response.status(Response.Status.OK).entity(asJson(it))})
+                .build()
     }
 }
