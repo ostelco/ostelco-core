@@ -20,7 +20,7 @@ class ES2PlusClient(private val requesterId: String, private val client: Client)
         val result: Response = client.target(path)
                 .request(MediaType.APPLICATION_JSON)
                 .header("User-Agent", "gsma-rsp-lpad")
-                .header("X-Admin-Protocol", "gsma/rsp/v<x.y.z>")
+                .header("X-Admin-Protocol", "gsma/rsp/v<x.y.z>")   // TODO:  The x.y.x should be something else I think (proper version of the GSMA protocol probably)
                 .post(entity)
         if (expectedReturnCode != result.status) {
             val msg = "Expected return value $expectedReturnCode, but got ${result.status}.  Body was \"${result.readEntity(String::class.java)}\""
@@ -75,7 +75,7 @@ class ES2PlusClient(private val requesterId: String, private val client: Client)
     fun cancelOrder(eid: String,
                     iccid: String,
                     matchingId: String,
-                    finalProfileStatusIndicator: String): Es2CancelOrderResponse {
+                    finalProfileStatusIndicator: String): HeaderOnlyResponse {
         return postEs2ProtocolCmd("/gsma/rsp2/es2plus/cancelOrder",
                 es2ProtocolPayload = Es2CancelOrder(
                         header = ES2RequestHeader(
@@ -86,11 +86,11 @@ class ES2PlusClient(private val requesterId: String, private val client: Client)
                         iccid = iccid,
                         matchingId = matchingId,
                         finalProfileStatusIndicator = finalProfileStatusIndicator),
-                sclass = Es2CancelOrderResponse::class.java,
+                sclass = HeaderOnlyResponse::class.java,
                 expectedReturnCode = 200)
     }
 
-    fun releaseProfile(iccid: String): Es2ReleaseProfileResponse {
+    fun releaseProfile(iccid: String): HeaderOnlyResponse {
         return postEs2ProtocolCmd("/gsma/rsp2/es2plus/releaseProfile",
                 Es2ReleaseProfile(
                         header = ES2RequestHeader(
@@ -98,12 +98,11 @@ class ES2PlusClient(private val requesterId: String, private val client: Client)
                                 functionCallIdentifier = "releaseProfile"
                         ),
                         iccid = iccid),
-                sclass = Es2ReleaseProfileResponse::class.java,
+                sclass = HeaderOnlyResponse::class.java,
                 expectedReturnCode = 200)
     }
 
-    // XXX This client is missing essentially _all_ of its input parameters, must
-    //     be heavily amended so that it can be used for proper testing.
+
     fun handleDownloadProgressInfo(
             eid: String? = null,
             iccid: String,
@@ -113,7 +112,7 @@ class ES2PlusClient(private val requesterId: String, private val client: Client)
             notificationPointStatus: ES2NotificationPointStatus,
             resultData: String? = null,
             imei: String? = null
-    ): Es2HandleDownloadProgressInfoResponse {
+    ): HeaderOnlyResponse {
         return postEs2ProtocolCmd("/gsma/rsp2/es2plus/handleDownloadProgressInfo",
                 Es2HandleDownloadProgressInfo(
                         header = ES2RequestHeader(
@@ -129,7 +128,7 @@ class ES2PlusClient(private val requesterId: String, private val client: Client)
                         notificationPointStatus = notificationPointStatus,
                         resultData = resultData,
                         imei = imei),
-                sclass = Es2HandleDownloadProgressInfoResponse::class.java,
+                sclass = HeaderOnlyResponse::class.java,
                 expectedReturnCode = 200)
     }
 }
