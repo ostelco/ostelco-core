@@ -314,7 +314,7 @@ class SimInventoryUnitTests {
        123123, 123123, 1233,1233,1233,1233
     """.trimIndent()
 
-        val response = RULE.target("/ostelco/sim-inventory/Loltel/import-batch")
+        val response = RULE.target("/ostelco/sim-inventory/Loltel/import-batch/profilevendor/Idemia")
                 .request(MediaType.APPLICATION_JSON)
                 .put(Entity.entity(sampleCsvIinput, MediaType.TEXT_PLAIN))
 

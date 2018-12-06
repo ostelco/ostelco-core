@@ -53,7 +53,7 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
                 environment,
                 configuration.database, "sqlite")
         this.simInventoryDAO = jdbi.onDemand(SimInventoryDAO::class.java)
-        
+
         // XXX Add these parameters to configuration file.
         val oas = OpenAPI()
         val info = Info()

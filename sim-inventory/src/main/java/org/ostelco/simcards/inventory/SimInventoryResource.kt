@@ -156,14 +156,13 @@ class SimInventoryResource(private val dao: SimInventoryDAO) {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.TEXT_PLAIN)
     @Throws(IOException::class)
-    @Path("/import-batch")
+    @Path("/import-batch/profilevendor/{profilevendor}")
     @PUT
     fun importBatch(
             @NotEmpty @PathParam("hlr") hlr: String,
-            // @NotEmpty @PathParam("profilevendor") profilevendor: String, // TODO: This fails.  Why?
+            @NotEmpty @PathParam("profilevendor") profilevendor: String,
             csvInputStream: InputStream): SimImportBatch {
 
-        val profilevendor = "Idemia" // TODO: Hardcoded, since parameters above failed
         val  pvp  =
                 assertNonNull(dao.getProfilevendorByName(profilevendor))
 

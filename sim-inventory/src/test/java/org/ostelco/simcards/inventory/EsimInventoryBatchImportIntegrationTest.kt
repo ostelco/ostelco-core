@@ -57,7 +57,7 @@ class EsimInventoryBatchImportTest {
                 .build("Test client")
 
         val response = client
-                .target("http://localhost:8080/ostelco/sim-inventory/Loltel/import-batch")
+                .target("http://localhost:8080/ostelco/sim-inventory/Loltel/import-batch/profilevendor/Idemia")
                 .request(MediaType.APPLICATION_JSON)
                 .put(Entity.entity(sampleValue, MediaType.TEXT_PLAIN))
 
