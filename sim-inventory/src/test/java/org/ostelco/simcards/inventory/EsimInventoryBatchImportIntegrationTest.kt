@@ -68,7 +68,6 @@ class EsimInventoryBatchImportTest {
     }
 }
 
-
 class SimFactoryEmulator {
 
     private val imsiStart :BigInteger  = BigInteger.valueOf(410072821393853L)
