@@ -56,6 +56,8 @@ class EsimInventoryBatchImportTest {
                 .using(RULE.configuration.getJerseyClientConfiguration())
                 .build("Test client")
 
+
+       // XXX This thing should be refactored into a client.
         val response = client
                 .target("http://localhost:8080/ostelco/sim-inventory/Loltel/import-batch/profilevendor/Idemia")
                 .request(MediaType.APPLICATION_JSON)
