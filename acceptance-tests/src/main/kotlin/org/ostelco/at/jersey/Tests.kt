@@ -1195,6 +1195,8 @@ class PlanTest {
                 .price(price)
                 .interval(Plan.IntervalEnum.DAY)
                 .intervalCount(1)
+                .properties(emptyMap<String, Any>())
+                .presentation(emptyMap<String, Any>())
 
         post<Plan> {
             path = "/plans"
@@ -1239,6 +1241,8 @@ class PlanTest {
                 .price(price)
                 .interval(Plan.IntervalEnum.DAY)
                 .intervalCount(1)
+                .properties(emptyMap<String, Any>())
+                .presentation(emptyMap<String, Any>())
 
         try {
             // Create subscriber with payment source.

@@ -770,7 +770,9 @@ object Neo4jStoreSingleton : GraphStore {
                                     ApiErrorCode.FAILED_TO_STORE_PLAN,
                                     err)
                         }.bind()
-                plansStore.create(plan.copy(planId = planInfo.id, productId = productInfo.id), transaction)
+                plansStore.create(plan.copy(properties = plan.properties.plus(mapOf(
+                                "planId" to planInfo.id,
+                                "productId" to productInfo.id))), transaction)
                         .mapLeft { err ->
                             BadRequestError("Failed to create plan with name ${plan.id}",
                                     ApiErrorCode.FAILED_TO_STORE_PLAN,
@@ -825,7 +827,8 @@ object Neo4jStoreSingleton : GraphStore {
                                     err)
                         }.bind()
 
-                paymentProcessor.removePlan(plan.planId)
+                /* Lookup in payment backend will fail if no value found for 'planId'. */
+                paymentProcessor.removePlan(plan.properties.getOrDefault("planId", "missing"))
                         .mapLeft { err ->
                             BadRequestError("Failed to remove plan ${planId}",
                                     ApiErrorCode.FAILED_TO_REMOVE_PLAN,
@@ -835,7 +838,8 @@ object Neo4jStoreSingleton : GraphStore {
                         }.flatMap {
                             Either.right(Unit)
                         }.bind()
-                paymentProcessor.removeProduct(plan.productId)
+                /* Lookup in payment backend will fail if no value found for 'productId'. */
+                paymentProcessor.removeProduct(plan.properties.getOrDefault("productId", "missing"))
                         .mapLeft { err ->
                             BadRequestError("Failed to remove plan ${planId}",
                                     ApiErrorCode.FAILED_TO_REMOVE_PLAN,
@@ -888,7 +892,9 @@ object Neo4jStoreSingleton : GraphStore {
                                     err)
                         }.bind()
 
-                val subscriptionInfo = paymentProcessor.createSubscription(plan.planId, profileInfo.id, trialEnd)
+                /* Lookup in payment backend will fail if no value found for 'planId'. */
+                val subscriptionInfo = paymentProcessor.createSubscription(plan.properties.getOrDefault("planId", "missing"),
+                                    profileInfo.id, trialEnd)
                         .mapLeft { err ->
                             BadRequestError("Failed to subscribe ${subscriberId} to plan ${planId}",
                                     ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN,
