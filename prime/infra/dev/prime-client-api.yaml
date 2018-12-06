@@ -658,6 +658,39 @@ definitions:
     required:
       - current
       - next
+  Plan:
+    type: object
+    properties:
+      name:
+        description: "An unique name representing the plan"
+        type: string
+      price:
+        $ref: '#/definitions/Price'
+      interval:
+        description: "The recurring period for the plan"
+        type: string
+        enum: [ day, week, month, year ]
+      intervalCount:
+        description: "Number of intervals in a period"
+        type: integer
+        default: 1
+        minimum: 1
+      planId:
+        description: "Stripe plan id"
+        type: string
+        default: ""
+      productId:
+        description: "Stripe product id"
+        type: string
+        default: ""
+    required:
+      - name
+      - price
+      - interval
+  PlanList:
+    type: array
+    items:
+      $ref: '#/definitions/Plan'
   GraphQLRequest:
     type: object
     properties:

@@ -1,6 +1,8 @@
 package org.ostelco.prime.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.firebase.database.Exclude
 
 interface HasId {
@@ -83,6 +85,20 @@ data class Product(
 data class ProductClass(
         override val id: String,
         val properties: List<String> = listOf()) : HasId
+
+// Note: The 'name' value becomes the name (sku) of the corresponding product in Stripe.
+data class Plan(
+        val name: String,
+        val price: Price,
+        val interval: String,
+        val intervalCount: Long = 1L,
+        val planId: String = "",
+        val productId: String = "") : HasId {
+
+    override val id: String
+        @JsonIgnore
+        get() = name
+}
 
 data class RefundRecord(
         override val id: String,
