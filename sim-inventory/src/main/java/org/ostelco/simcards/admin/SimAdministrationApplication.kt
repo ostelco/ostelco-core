@@ -102,8 +102,7 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
         jerseyEnvironment.register(SimInventoryResource(simInventoryDAO))
         jerseyEnvironment.register(SmDpPlusCallbackResource(smdpPlusCallbackHandler))
         jerseyEnvironment.register(SmDpPlusCallbackResource(callbackService))
-
-        // XXX: The  ES2PlusHeadersFilter filter below is not compatible with the batch upload function.
+        
         jerseyEnvironment.register(ES2PlusHeadersFilter())
         jerseyEnvironment.register(RequestServerReaderWriterInterceptor())
     }
