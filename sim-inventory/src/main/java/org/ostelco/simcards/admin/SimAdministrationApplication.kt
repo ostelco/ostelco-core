@@ -102,7 +102,6 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
         jerseyEnvironment.register(SimInventoryResource(simInventoryDAO))
         jerseyEnvironment.register(SmDpPlusCallbackResource(smdpPlusCallbackHandler))
         jerseyEnvironment.register(SmDpPlusCallbackResource(callbackService))
-        
         jerseyEnvironment.register(ES2PlusHeadersFilter())
         jerseyEnvironment.register(RequestServerReaderWriterInterceptor())
     }
