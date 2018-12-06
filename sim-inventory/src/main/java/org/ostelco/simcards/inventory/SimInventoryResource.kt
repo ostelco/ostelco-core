@@ -70,7 +70,6 @@ class SimInventoryResource(private val dao: SimInventoryDAO) {
         return assertNonNull(dao.allocateNextFreeSimForMsisdn(hlr, msisdn))
     }
 
-
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/iccid/{iccid}/activate/all")
@@ -153,7 +152,6 @@ class SimInventoryResource(private val dao: SimInventoryDAO) {
         dao.setActivatedInHlr(simEntry.id!!)
         return dao.getSimProfileById(simEntry.id)
     }
-
 
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.TEXT_PLAIN)
