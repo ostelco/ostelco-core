@@ -23,7 +23,7 @@ class ES2PlusResourceTest {
                 .builder()
                 .addResource(SmDpPlusServerResource(smdpPlusService))
                 .addResource(SmDpPlusCallbackResource(callbackService))
-                .addProvider(RestrictedOperationsRequestFilter())
+                .addProvider(ES2PlusHeadersFilter())
                 .addProvider(RequestServerReaderWriterInterceptor())
                 .build()
 

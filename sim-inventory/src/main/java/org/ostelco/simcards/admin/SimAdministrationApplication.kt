@@ -9,6 +9,8 @@ import io.swagger.v3.oas.integration.SwaggerConfiguration
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Contact
 import io.swagger.v3.oas.models.info.Info
+import org.ostelco.jsonschema.RequestServerReaderWriterInterceptor
+import org.ostelco.simcards.es2plus.ES2PlusHeadersFilter
 import org.ostelco.simcards.es2plus.SmDpPlusCallbackResource
 import org.ostelco.simcards.es2plus.SmDpPlusCallbackService
 import org.ostelco.simcards.inventory.SimInventoryDAO
@@ -71,16 +73,39 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
         jerseyEnvironment.register(OpenApiResource()
                 .openApiConfiguration(oasConfig))
 
-        // TODO: Placeholder for thing handling callbacks from a remote SM-DP+
-        // TODO: Extend this interface to also receive authentication information.
-        jerseyEnvironment.register(SimInventoryResource(simInventoryDAO))
         val smdpPlusCallbackHandler = object : SmDpPlusCallbackService {
-            override fun handleDownloadProgressInfo(eid: String?, iccid: String, notificationPointId: Int, profileType: String?, resultData: String?, timestamp: String) {
+            override fun handleDownloadProgressInfo(
+                    eid: String?,
+                    iccid: String,
+                    notificationPointId: Int,
+                    profileType: String?,
+                    resultData: String?,
+                    timestamp: String) {
+                // TODO: Not implemented.
 
             }
         }
 
+        val callbackService: SmDpPlusCallbackService = object : SmDpPlusCallbackService {
+
+            override fun handleDownloadProgressInfo(
+                    eid: String?,
+                    iccid: String,
+                    notificationPointId: Int,
+                    profileType: String?,
+                    resultData: String?,
+                    timestamp: String) {
+                // TODO: Not implemented
+            }
+        }
+
+        jerseyEnvironment.register(SimInventoryResource(simInventoryDAO))
         jerseyEnvironment.register(SmDpPlusCallbackResource(smdpPlusCallbackHandler))
+        jerseyEnvironment.register(SmDpPlusCallbackResource(callbackService))
+
+        // XXX: The  ES2PlusHeadersFilter filter below is not compatible with the batch upload function.
+        jerseyEnvironment.register(ES2PlusHeadersFilter())
+        jerseyEnvironment.register(RequestServerReaderWriterInterceptor())
     }
 
     companion object {

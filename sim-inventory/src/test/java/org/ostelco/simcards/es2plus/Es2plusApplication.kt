@@ -44,7 +44,7 @@ class Es2plusApplication : Application<Es2plusConfiguration>() {
 
         env.register(SmDpPlusCallbackResource(PlaceholderSmDpPlusCallbackService()))
         env.register(SmDpPlusServerResource(PlaceholderSmDpPlusService()))
-        env.register(RestrictedOperationsRequestFilter())
+        env.register(ES2PlusHeadersFilter())
         env.register(SmdpExceptionMapper())
     }
 

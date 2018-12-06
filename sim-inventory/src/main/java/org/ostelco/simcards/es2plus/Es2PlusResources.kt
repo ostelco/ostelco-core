@@ -1,5 +1,6 @@
 package org.ostelco.simcards.es2plus
 
+import org.ostelco.simcards.es2plus.SmDpPlusServerResource.Companion.ES2PLUS_PATH_PREFIX
 import java.io.IOException
 import javax.ws.rs.Consumes
 import javax.ws.rs.POST
@@ -13,11 +14,18 @@ import javax.ws.rs.ext.ExceptionMapper
 import javax.ws.rs.ext.Provider
 
 
+
 @Provider
-class RestrictedOperationsRequestFilter : ContainerRequestFilter {
+class ES2PlusHeadersFilter : ContainerRequestFilter {
 
     @Throws(IOException::class)
     override fun filter(ctx: ContainerRequestContext) {
+
+
+        if (!ctx.uriInfo.path.startsWith(ES2PLUS_PATH_PREFIX)) {
+            return
+        }
+
         val adminProtocol = ctx.headers.getFirst("X-Admin-Protocol")
         val userAgent = ctx.headers.getFirst("User-Agent")
 
@@ -50,11 +58,14 @@ class SmdpExceptionMapper : ExceptionMapper<SmDpPlusException> {
 ///  The web resource using the protocol domain model.
 ///
 
-
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Path("/gsma/rsp2/es2plus/")
+@Path(ES2PLUS_PATH_PREFIX)
 class SmDpPlusServerResource(private val smDpPlus: SmDpPlusService) {
+
+    companion object {
+        const val ES2PLUS_PATH_PREFIX : String = "/gsma/rsp2/es2plus/"
+    }
 
     /**
      * Provided by SM-DP+, called by operator's BSS system.
