@@ -204,7 +204,7 @@ class StripePaymentProcessor : PaymentProcessor {
                            else
                                arrayOf()) )
                 val subscription = Subscription.create(subscriptionParams)
-                SubscriptionInfo(subscription.id, subscription.created, subscription.trialEnd)
+                SubscriptionInfo(subscription.id, subscription.created, subscription.trialEnd ?: 0L)
             }
 
     override fun cancelSubscription(subscriptionId: String, atIntervalEnd: Boolean): Either<PaymentError, SubscriptionInfo> =
@@ -212,7 +212,7 @@ class StripePaymentProcessor : PaymentProcessor {
                 val subscription = Subscription.retrieve(subscriptionId)
                 val subscriptionParams = mapOf("at_period_end" to atIntervalEnd)
                 subscription.cancel(subscriptionParams)
-                SubscriptionInfo(subscription.id, subscription.created, subscription.trialEnd)
+                SubscriptionInfo(subscription.id, subscription.created, subscription.trialEnd ?: 0L)
             }
 
     override fun authorizeCharge(customerId: String, sourceId: String?, amount: Int, currency: String): Either<PaymentError, String> {

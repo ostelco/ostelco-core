@@ -31,8 +31,8 @@ import java.util.stream.Collectors
 enum class Relation {
     HAS_SUBSCRIPTION,      // (Subscriber) -[HAS_SUBSCRIPTION]-> (Subscription)
     HAS_BUNDLE,            // (Subscriber) -[HAS_BUNDLE]-> (Bundle)
-    HAS_PLAN,              // (Subscriber) -[HAS_PLAN]-> (Plan)
-    BELONG_TO_PRODUCT,     // (Plan) -[BELONG_TO_PRODUCT]-> (Product)
+    SUBSCRIBES_TO_PLAN,    // (Subscriber) -[SUBSCRIBES_TO_PLAN]-> (Plan)
+    HAS_PRODUCT,           // (Plan) -[HAS_PRODUCT]-> (Product)
     LINKED_TO_BUNDLE,      // (Subscription) -[LINKED_TO_BUNDLE]-> (Bundle)
     PURCHASED,             // (Subscriber) -[PURCHASED]-> (Product)
     REFERRED,              // (Subscriber) -[REFERRED]-> (Subscriber)
@@ -117,7 +117,7 @@ object Neo4jStoreSingleton : GraphStore {
     private val referredRelationStore = RelationStore(referredRelation)
 
     private val subscribesToPlanRelation = RelationType(
-            relation = Relation.HAS_PLAN,
+            relation = Relation.SUBSCRIBES_TO_PLAN,
             from = subscriberEntity,
             to = planEntity,
             dataClass = Void::class.java)
@@ -138,7 +138,7 @@ object Neo4jStoreSingleton : GraphStore {
     private val scanInformationRelationStore = UniqueRelationStore(scanInformationRelation)
 
     private val planProductRelation = RelationType(
-            relation = Relation.BELONG_TO_PRODUCT,
+            relation = Relation.HAS_PRODUCT,
             from = planEntity,
             to = productEntity,
             dataClass = Void::class.java)
@@ -852,30 +852,42 @@ object Neo4jStoreSingleton : GraphStore {
     override fun subscribeToPlan(subscriberId: String, planId: String, trialEnd: Long): Either<ApiError, Unit> = writeTransaction {
         IO {
             Either.monad<ApiError>().binding {
-                subscriberStore.get(subscriberId, transaction)
+                val subscriber = subscriberStore.get(subscriberId, transaction)
                         .mapLeft {
                             BadRequestError("Subscriber ${subscriberId} does not exists",
-                                    ApiErrorCode.FAILED_TO_FETCH_PROFILE)
+                                    ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN)
                         }.bind()
                 val plan = plansStore.get(planId, transaction)
                         .mapLeft {
                             org.ostelco.prime.apierror.NotFoundError("Plan ${planId} does not exists",
-                                    ApiErrorCode.FAILED_TO_FETCH_PLAN)
+                                    ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN)
                         }.bind()
-                val profileInfo = paymentProcessor.getPaymentProfile(subscriberId)
+                val product = planProductRelationStore.get(plan.id, transaction)
                         .mapLeft { err ->
-                            BadRequestError("Failed to subscribe ${subscriberId} to plan ${planId}",
+                            BadGatewayError("No product for plan ${plan.id} found",
+                                    ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN,
+                                    err)
+                        }.bind()
+                val profileInfo = paymentProcessor.getPaymentProfile(subscriber.id)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to obtain payment profile for ${subscriber.id}",
                                     ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN,
                                     err)
                         }.bind()
 
-
-                subscribesToPlanRelationStore.create(subscriberId, planId, transaction)
+                subscribesToPlanRelationStore.create(subscriber.id, plan.id, transaction)
                         .mapLeft { err ->
-                            BadRequestError("Failed to subscribe ${subscriberId} to plan ${planId}",
+                            BadRequestError("Failed to create subscription for ${subscriber.id} to plan ${plan.id}",
                                     ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN,
                                     err)
                         }.bind()
+                purchaseRecordRelationStore.create(subscriber.id, product[0].id, transaction)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to add purchase record for the purchase of plan ${plan.id} by subscriber ${subscriber.id}",
+                                    ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN,
+                                    err)
+                        }.bind()
+
                 val subscriptionInfo = paymentProcessor.createSubscription(plan.planId, profileInfo.id, trialEnd)
                         .mapLeft { err ->
                             BadRequestError("Failed to subscribe ${subscriberId} to plan ${planId}",
@@ -884,7 +896,11 @@ object Neo4jStoreSingleton : GraphStore {
                         }.linkReversalActionToTransaction(transaction) {
                             paymentProcessor.cancelSubscription(it.id)
                         }.bind()
-                subscribesToPlanRelationStore.setProperties(subscriberId, planId, mapOf("paymentSubscriptionId" to subscriptionInfo.id), transaction)
+
+                /* Store information from payment backend for later use. */
+                subscribesToPlanRelationStore.setProperties(subscriberId, planId, mapOf("subscriptionId" to subscriptionInfo.id,
+                                "created" to subscriptionInfo.created,
+                                "trialEnd" to subscriptionInfo.trialEnd), transaction)
                         .mapLeft { err ->
                             BadRequestError("Failed to subscribe ${subscriberId} to plan ${planId}",
                                     ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN,
@@ -903,9 +919,9 @@ object Neo4jStoreSingleton : GraphStore {
                 val properties = subscribesToPlanRelationStore.getProperties(subscriberId, planId, transaction)
                         .mapLeft {
                             BadRequestError("Could not find subscription where ${subscriberId} subscribes to plan ${planId}",
-                                    ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTION)
+                                    ApiErrorCode.FAILED_TO_REMOVE_SUBSCRIPTION)
                         }.bind()
-                paymentProcessor.cancelSubscription(properties["paymentSubscriptionId"].toString(), atIntervalEnd)
+                paymentProcessor.cancelSubscription(properties["subscriptionId"].toString(), atIntervalEnd)
                         .mapLeft { err ->
                             BadRequestError("Failed to remove subscription for ${subscriberId} to plan ${planId}",
                                     ApiErrorCode.FAILED_TO_REMOVE_SUBSCRIPTION,
