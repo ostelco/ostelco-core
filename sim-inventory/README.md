@@ -52,7 +52,6 @@ TODO (not prioritized)
 
     * Prometheus integration
 
-
 * Return channel for ES2+
 
    * Figure out where we want to place the return channel for ES2+
