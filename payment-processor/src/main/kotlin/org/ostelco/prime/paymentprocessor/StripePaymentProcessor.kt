@@ -140,7 +140,8 @@ class StripePaymentProcessor : PaymentProcessor {
                         "interval" to interval.value,
                         "interval_count" to intervalCount,
                         "currency" to currency)
-                PlanInfo(Plan.create(planParams).id)
+                val plan = Plan.create(planParams)
+                PlanInfo(plan.id)
             }
 
     override fun removePlan(planId: String): Either<PaymentError, PlanInfo> =
@@ -192,7 +193,7 @@ class StripePaymentProcessor : PaymentProcessor {
                 ProfileInfo(customer.delete().id)
             }
 
-    override fun subscribeToPlan(planId: String, customerId: String, trialEnd: Long): Either<PaymentError, SubscriptionInfo> =
+    override fun createSubscription(planId: String, customerId: String, trialEnd: Long): Either<PaymentError, SubscriptionInfo> =
             either("Failed to subscribe customer $customerId to plan $planId") {
                 val item =  mapOf("plan" to planId)
                 val subscriptionParams = mapOf(
@@ -202,14 +203,16 @@ class StripePaymentProcessor : PaymentProcessor {
                                arrayOf("trial_end" to trialEnd.toString())
                            else
                                arrayOf()) )
-                SubscriptionInfo(Subscription.create(subscriptionParams).id)
+                val subscription = Subscription.create(subscriptionParams)
+                SubscriptionInfo(subscription.id, subscription.created, subscription.trialEnd)
             }
 
     override fun cancelSubscription(subscriptionId: String, atIntervalEnd: Boolean): Either<PaymentError, SubscriptionInfo> =
             either("Failed to unsubscribe subscription Id : $subscriptionId atIntervalEnd $atIntervalEnd") {
                 val subscription = Subscription.retrieve(subscriptionId)
                 val subscriptionParams = mapOf("at_period_end" to atIntervalEnd)
-                SubscriptionInfo(subscription.cancel(subscriptionParams).id)
+                subscription.cancel(subscriptionParams)
+                SubscriptionInfo(subscription.id, subscription.created, subscription.trialEnd)
             }
 
     override fun authorizeCharge(customerId: String, sourceId: String?, amount: Int, currency: String): Either<PaymentError, String> {

@@ -116,12 +116,12 @@ object Neo4jStoreSingleton : GraphStore {
             dataClass = Void::class.java)
     private val referredRelationStore = RelationStore(referredRelation)
 
-    private val hasPlanRelation = RelationType(
+    private val subscribesToPlanRelation = RelationType(
             relation = Relation.HAS_PLAN,
             from = subscriberEntity,
             to = planEntity,
             dataClass = Void::class.java)
-    private val hasPlanRelationStore = UniqueRelationStore(hasPlanRelation)
+    private val subscribesToPlanRelationStore = UniqueRelationStore(subscribesToPlanRelation)
 
     private val subscriberStateRelation = RelationType(
             relation = Relation.SUBSCRIBER_STATE,
@@ -713,7 +713,7 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     override fun getPlans(subscriberId: String): Either<ApiError, List<Plan>> = readTransaction {
-        hasPlanRelationStore.get(subscriberId, transaction).bimap(
+        subscribesToPlanRelationStore.get(subscriberId, transaction).bimap(
                 {
                     org.ostelco.prime.apierror.NotFoundError("No plans found for ${subscriberId}",
                             ApiErrorCode.FAILED_TO_FETCH_PLANS_FOR_SUBSCRIBER)
@@ -868,13 +868,15 @@ object Neo4jStoreSingleton : GraphStore {
                                     ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN,
                                     err)
                         }.bind()
-                hasPlanRelationStore.create(subscriberId, planId, transaction)
+
+
+                subscribesToPlanRelationStore.create(subscriberId, planId, transaction)
                         .mapLeft { err ->
                             BadRequestError("Failed to subscribe ${subscriberId} to plan ${planId}",
                                     ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN,
                                     err)
                         }.bind()
-                val subscriptionInfo = paymentProcessor.subscribeToPlan(plan.planId, profileInfo.id, trialEnd)
+                val subscriptionInfo = paymentProcessor.createSubscription(plan.planId, profileInfo.id, trialEnd)
                         .mapLeft { err ->
                             BadRequestError("Failed to subscribe ${subscriberId} to plan ${planId}",
                                     ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN,
@@ -882,7 +884,7 @@ object Neo4jStoreSingleton : GraphStore {
                         }.linkReversalActionToTransaction(transaction) {
                             paymentProcessor.cancelSubscription(it.id)
                         }.bind()
-                hasPlanRelationStore.setProperties(subscriberId, planId, mapOf("paymentSubscriptionId" to subscriptionInfo.id), transaction)
+                subscribesToPlanRelationStore.setProperties(subscriberId, planId, mapOf("paymentSubscriptionId" to subscriptionInfo.id), transaction)
                         .mapLeft { err ->
                             BadRequestError("Failed to subscribe ${subscriberId} to plan ${planId}",
                                     ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN,
@@ -898,7 +900,7 @@ object Neo4jStoreSingleton : GraphStore {
     override fun unsubscribeFromPlan(subscriberId: String, planId: String, atIntervalEnd: Boolean): Either<ApiError, Unit> = writeTransaction {
         IO {
             Either.monad<ApiError>().binding {
-                val properties = hasPlanRelationStore.getProperties(subscriberId, planId, transaction)
+                val properties = subscribesToPlanRelationStore.getProperties(subscriberId, planId, transaction)
                         .mapLeft {
                             BadRequestError("Could not find subscription where ${subscriberId} subscribes to plan ${planId}",
                                     ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTION)
@@ -911,7 +913,7 @@ object Neo4jStoreSingleton : GraphStore {
                         }.flatMap {
                             Either.right(Unit)
                         }.bind()
-                hasPlanRelationStore.delete(subscriberId, planId, transaction)
+                subscribesToPlanRelationStore.delete(subscriberId, planId, transaction)
                         .mapLeft { err ->
                             BadRequestError("Failed to remove subscription for ${subscriberId} to plan ${planId}",
                                     ApiErrorCode.FAILED_TO_REMOVE_SUBSCRIPTION,
