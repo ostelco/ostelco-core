@@ -14,6 +14,7 @@ requests and replies.
 
 TODO (Prioritized)
 ---
+* Make class comments for every high level class.
 
 * Make junit-tests that runs the dropwizard application in a mode to permit it
   to accept TSL connections that are signed by a self-signed certificate,
