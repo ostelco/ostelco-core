@@ -473,6 +473,7 @@ object Neo4jStoreSingleton : GraphStore {
             }
         }
     }
+
     //
     // Referrals
     //
@@ -853,7 +854,7 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun subscribeToPlan(subscriberId: String, planId: String, trialEnd: Long): Either<ApiError, Unit> = writeTransaction {
+    override fun subscribeToPlan(subscriberId: String, planId: String, trialEnd: Long): Either<ApiError, Plan> = writeTransaction {
         IO {
             Either.monad<ApiError>().binding {
                 val subscriber = subscriberStore.get(subscriberId, transaction)
@@ -866,7 +867,7 @@ object Neo4jStoreSingleton : GraphStore {
                             org.ostelco.prime.apierror.NotFoundError("Plan ${planId} does not exists",
                                     ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN)
                         }.bind()
-                val product = planProductRelationStore.get(plan.id, transaction)
+                planProductRelationStore.get(plan.id, transaction)
                         .mapLeft { err ->
                             BadGatewayError("No product for plan ${plan.id} found",
                                     ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN,
@@ -882,12 +883,6 @@ object Neo4jStoreSingleton : GraphStore {
                 subscribesToPlanRelationStore.create(subscriber.id, plan.id, transaction)
                         .mapLeft { err ->
                             BadRequestError("Failed to create subscription for ${subscriber.id} to plan ${plan.id}",
-                                    ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN,
-                                    err)
-                        }.bind()
-                purchaseRecordRelationStore.create(subscriber.id, product[0].id, transaction)
-                        .mapLeft { err ->
-                            BadRequestError("Failed to add purchase record for the purchase of plan ${plan.id} by subscriber ${subscriber.id}",
                                     ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN,
                                     err)
                         }.bind()
@@ -912,16 +907,21 @@ object Neo4jStoreSingleton : GraphStore {
                                     ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN,
                                     err)
                         }.flatMap {
-                            Either.right(Unit)
+                            Either.right(plan)
                         }.bind()
             }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun unsubscribeFromPlan(subscriberId: String, planId: String, atIntervalEnd: Boolean): Either<ApiError, Unit> = writeTransaction {
+    override fun unsubscribeFromPlan(subscriberId: String, planId: String, atIntervalEnd: Boolean): Either<ApiError, Plan> = writeTransaction {
         IO {
             Either.monad<ApiError>().binding {
+                val plan = plansStore.get(planId, transaction)
+                        .mapLeft {
+                            org.ostelco.prime.apierror.NotFoundError("Could not remove subscriptiona as plan ${planId} was not found",
+                                    ApiErrorCode.FAILED_TO_REMOVE_SUBSCRIPTION)
+                        }.bind()
                 val properties = subscribesToPlanRelationStore.getProperties(subscriberId, planId, transaction)
                         .mapLeft {
                             BadRequestError("Could not find subscription where ${subscriberId} subscribes to plan ${planId}",
@@ -935,17 +935,52 @@ object Neo4jStoreSingleton : GraphStore {
                         }.flatMap {
                             Either.right(Unit)
                         }.bind()
+
                 subscribesToPlanRelationStore.delete(subscriberId, planId, transaction)
                         .mapLeft { err ->
                             BadRequestError("Failed to remove subscription for ${subscriberId} to plan ${planId}",
                                     ApiErrorCode.FAILED_TO_REMOVE_SUBSCRIPTION,
                                     err)
                         }.flatMap {
-                            Either.right(Unit)
+                            Either.right(plan)
                         }.bind()
             }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
+    }
+
+    override fun subscriptionPurchaseReport(invoiceId: String, subscriberId: String, sku: String, amount: Long, currency: String): Either<ApiError, Plan> = writeTransaction {
+        IO {
+            Either.monad<ApiError>().binding {
+                val product = productStore.get(sku, transaction)
+                        .mapLeft { err ->
+                            BadGatewayError("Could not find requested product for the purchase of plan ${sku} for customer ${subscriberId} for invoice ${invoiceId}",
+                                    ApiErrorCode.FAILED_TO_RECORD_PLAN_INVOICE,
+                                    err)
+                        }.bind()
+                val plan = planProductRelationStore.getFrom(sku, transaction)
+                        .mapLeft {
+                            BadGatewayError("Could not find corresponing plan for product ${sku} in invoice ${invoiceId} for customer ${subscriberId}",
+                                    ApiErrorCode.FAILED_TO_RECORD_PLAN_INVOICE)
+                        }.flatMap {
+                            Either.right(it.get(0))
+                        }.bind()
+                val purchaseRecord = PurchaseRecord(
+                        id = invoiceId,
+                        product = product,
+                        timestamp = Instant.now().toEpochMilli(),
+                        msisdn = "")
+                createPurchaseRecordRelation(subscriberId, purchaseRecord, transaction)
+                        .mapLeft { err ->
+                            BadGatewayError("Failed to save subscription purchase record for customer ${subscriberId} for invoice ${invoiceId}",
+                                    ApiErrorCode.FAILED_TO_RECORD_PLAN_INVOICE,
+                                    err)
+                        }.flatMap {
+                            Either.right(plan)
+                        }.bind()
+            }.fix()
+        }.unsafeRunSync()
+            .ifFailedThenRollback(transaction)
     }
 
     //

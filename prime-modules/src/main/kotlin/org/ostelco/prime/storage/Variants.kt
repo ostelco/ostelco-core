@@ -5,6 +5,7 @@ import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.model.*
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
+import java.util.*
 
 interface ClientDocumentStore {
 
@@ -194,7 +195,7 @@ interface AdminGraphStore {
      * @param trialEnd - Epoch timestamp for when the trial period ends
      * @return Unit value if the subscription was created successfully
      */
-    fun subscribeToPlan(subscriberId: String, planId: String, trialEnd: Long = 0): Either<ApiError, Unit>
+    fun subscribeToPlan(subscriberId: String, planId: String, trialEnd: Long = 0): Either<ApiError, Plan>
 
     /**
      * Remove the subscription to a plan for a specific subscrber.
@@ -203,7 +204,9 @@ interface AdminGraphStore {
      * @param atIntervalEnd - Remove at end of curren subscription period
      * @return Unit value if the subscription was removed successfully
      */
-    fun unsubscribeFromPlan(subscriberId: String, planId: String, atIntervalEnd: Boolean = false): Either<ApiError, Unit>
+    fun unsubscribeFromPlan(subscriberId: String, planId: String, atIntervalEnd: Boolean = false): Either<ApiError, Plan>
+
+    fun subscriptionPurchaseReport(invoiceId: String, subscriberId: String, sku: String, amount: Long, currency: String): Either<ApiError, Plan>
 
     // atomic import of Offer + Product + Segment
     fun atomicCreateOffer(

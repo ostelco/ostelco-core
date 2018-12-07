@@ -2,7 +2,9 @@ package org.ostelco.prime.paymentprocessor
 
 import com.stripe.model.*
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.module.getResource
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
+import org.ostelco.prime.storage.AdminDataSource
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -11,6 +13,7 @@ import java.time.format.DateTimeFormatter
 class StripeEventReporter {
 
     private val logger by getLogger()
+    private val storage by lazy { getResource<AdminDataSource>() }
 
     fun handleEvent(event: Event) {
 
@@ -22,6 +25,7 @@ class StripeEventReporter {
             is Charge -> report(event, data)
             is Customer -> report(event, data)
             is Dispute -> report(event, data)
+            is Invoice -> report(event, data)
             is Payout -> report(event, data)
             is Plan -> report(event, data)
             is Product -> report(event, data)
@@ -124,6 +128,28 @@ class StripeEventReporter {
             )
             else -> logger.error(NOTIFY_OPS_MARKER,
                     format("Unhandled Stripe event ${event.type} (cat: Payout)",
+                            event))
+        }
+    }
+
+    private fun report(event: Event, invoice: Invoice) {
+        when {
+            event.type == "invoice.payment_succeeded" -> {
+                logger.info("invoice customer: ${invoice.customer}")
+                logger.info("        subscription: ${invoice.subscription ?: "not a subscription"}")
+
+                if (invoice.subscription != null) {
+                    val plan = invoice.lines.data[0].plan
+                    val productId = plan.product
+                    val amount = plan.amount
+                    val currency = plan.currency
+                    val productDetails = Product.retrieve(productId)
+                    val customer = Customer.retrieve(invoice.customer)
+                    storage.subscriptionPurchaseReport(invoice.id, customer.email, productDetails.name, amount, currency)
+                }
+            }
+            else -> logger.error(NOTIFY_OPS_MARKER,
+                    format("Unhandled Stripe event ${event.type} (cat: Invoice)",
                             event))
         }
     }
