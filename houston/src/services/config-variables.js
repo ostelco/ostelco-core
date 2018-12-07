@@ -2,13 +2,15 @@
 const DEV_AUTH_CONFIG = {
   domain: 'redotter-admin-dev.eu.auth0.com',
   clientId: '9DgdUDakjmn3O00NkDKna0YAsZanYqof',
-  callbackUrl: 'http://localhost:3000/callback'
+  callbackUrl: 'http://localhost:3000/callback',
+  homeUrl: 'http://localhost:3000'
 };
 
 const DEPLOYED_DEV_AUTH_CONFIG = {
   domain: 'redotter-admin-dev.eu.auth0.com',
   clientId: '9DgdUDakjmn3O00NkDKna0YAsZanYqof',
-  callbackUrl: 'https://redotter-admin-dev.firebaseapp.com/callback'
+  callbackUrl: 'https://redotter-admin-dev.firebaseapp.com/callback',
+  homeUrl: 'https://redotter-admin-dev.firebaseapp.com'
 };
 
 export function getAuthConfig() {
