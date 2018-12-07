@@ -1,6 +1,7 @@
 package org.ostelco.pseudonym.service
 
 import com.google.cloud.bigquery.BigQuery
+import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
 import org.mockito.Mockito
@@ -91,6 +92,12 @@ class PseudonymizerServiceTest {
             ConfigRegistry.config = PseudonymServerConfig()
                     .apply { this.datastoreType = "inmemory-emulator" }
             PseudonymizerServiceSingleton.init(env = null, bq = Mockito.mock(BigQuery::class.java))
+        }
+
+        @JvmStatic
+        @AfterClass
+        fun cleanup() {
+            PseudonymizerServiceSingleton.cleanup()
         }
     }
 }
