@@ -47,7 +47,6 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
     override fun run(configuration: SimAdministrationAppConfiguration,
                      environment: Environment) {
 
-
         val factory = DBIFactory()
         val jdbi = factory.build(
                 environment,

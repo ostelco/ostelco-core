@@ -12,8 +12,25 @@ source code) to verify that the input / output is conformant to the
 GSMA spec.  Use jackson's ordinary methods for handling incoming
 requests and replies.
 
+TODO (Prioritized)
+---
+
+* Make junit-tests that runs the dropwizard application in a mode to permit it
+  to accept TSL connections that are signed by a self-signed certificate,
+  using a certificate chain where the signing authority is included.  The tests
+  should as far as possible use standard configurations of both 
+  dropwizard and the jersey client to make this happen.  A script describing
+  how to generate new signed certificates should also be included.
+
+
 TODO (not prioritized)
 ---
+
+* Think _very_hard_  about how to make an acceptance test for this thing.   It should
+   * Have a minimum of different executables.
+   * Preferably run in Docker Compose, but kubernetes is also an option.
+   * Generate a clear-cut test result, preferably in junit, preferable with coverage.
+   * Should be simple to run from the command line, no magic necessary.
 
 * General refactoring, weed out TODOs, make constants, set protocol versions
   correctly etc.
