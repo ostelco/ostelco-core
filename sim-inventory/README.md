@@ -23,6 +23,9 @@ TODO (Prioritized)
   dropwizard and the jersey client to make this happen.  A script describing
   how to generate new signed certificates should also be included.
 
+  Look here for description on how to make this happen
+  https://stackoverflow.com/questions/34908947/dropwizard-client-certificate-authentication-via-httpclient-key-trust-store
+
 
 TODO (not prioritized)
 ---
