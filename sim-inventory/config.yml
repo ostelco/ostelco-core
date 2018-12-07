@@ -26,3 +26,15 @@ httpClient:
   # If true, the client will encode request entities with gzip
   # content encoding. (Requires gzipEnabled to be true).
   gzipEnabledForRequests: true
+
+server:
+  applicationConnectors:
+    - type: h2
+      port: 8445
+      maxConcurrentStreams: 1024
+      initialStreamRecvWindow: 65535
+      keyStorePath: KeyStore.jks
+      keyStorePassword: secret
+      trustStorePath: TrustStore.jks
+      trustStorePassword: secret
+      supportedCipherSuites: TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
