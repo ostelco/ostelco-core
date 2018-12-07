@@ -88,8 +88,9 @@ class SimInventoryResource(private val dao: SimInventoryDAO) {
 
     private fun assertHlrsEqual(hlr1: String, hlr2: String) {
         if (hlr1 != hlr2) {
-            // XXX log.error("Attempt to impersonate HLR.  '$hlr1', '$hlr2'")
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
+            throw WebApplicationException(
+                    "Attempt to impersonate HLR.  '$hlr1', '$hlr2'",
+                    Response.Status.BAD_REQUEST)
         }
     }
 

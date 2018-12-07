@@ -85,22 +85,8 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
             }
         }
 
-        val callbackService: SmDpPlusCallbackService = object : SmDpPlusCallbackService {
-
-            override fun handleDownloadProgressInfo(
-                    eid: String?,
-                    iccid: String,
-                    notificationPointId: Int,
-                    profileType: String?,
-                    resultData: String?,
-                    timestamp: String) {
-                // TODO: Not implemented
-            }
-        }
-
         jerseyEnvironment.register(SimInventoryResource(simInventoryDAO))
         jerseyEnvironment.register(SmDpPlusCallbackResource(smdpPlusCallbackHandler))
-        jerseyEnvironment.register(SmDpPlusCallbackResource(callbackService))
         jerseyEnvironment.register(ES2PlusHeadersFilter())
         jerseyEnvironment.register(RequestServerReaderWriterInterceptor())
     }
