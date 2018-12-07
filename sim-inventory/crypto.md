@@ -1,3 +1,11 @@
+
+
+# What this is
+
+Notes a out how to generate csrs and keystores to use for a dropwisard app.
+Based on information in https://support.globalsign.com/customer/en/portal/articles/2121490-java-keytool---create-keystore
+
+
 # Generating keystpore and truststpre
 
    keytool -genkey -alias mydomain -keyalg RSA -keystore KeyStore.jks -keysize 2048
