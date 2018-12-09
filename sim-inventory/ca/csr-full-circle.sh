@@ -8,14 +8,25 @@
 
 
 ##
+##  Reset by deleting all old certificates etc.
+##
+
+REQ_DIR=requester
+CA_DIR=cert-auth
+
+rm -rf $REQ_DIR $CA_DIR
+
+
+
+##
 ## Creating a requesting domain, and a CSR
 ##
 
 
 REQUESTING_DOMAIN="example.org"
-REQUESTER_KEY="${REQUESTING_DOMAIN}.key"
-REQUEST_CSR="${REQUESTING_DOMAIN}.csr"
-REQUEST_CRT="${REQUESTING_DOMAIN}.crt"
+REQUESTER_KEY="${REQ_DIR}/${REQUESTING_DOMAIN}.key"
+REQUEST_CSR="${REQ_DIR}/${REQUESTING_DOMAIN}.csr"
+REQUEST_CRT="${REQ_DIR}/${REQUESTING_DOMAIN}.crt"
 REQUESTER_CONF=oats.conf
 
 # Generate a secret ckey for the requesting domain
@@ -34,9 +45,9 @@ openssl req -new -out $REQUEST_CSR -config $REQUESTER_CONF
 
 # The domain of the CA
 CA_DOMAIN=ca
-CA_KEY="${CA_DOMAIN}.key"
-CA_PUBKEY="${CA_DOMAIN}.pubkey"
-CA_CRT="${CA_DOMAIN}.crt"
+CA_KEY="${CA_DIR}/${CA_DOMAIN}.key"
+CA_PUBKEY="${CA_DIR}${CA_DOMAIN}.pubkey"
+CA_CRT="${CA_DIR}/${CA_DOMAIN}.crt"
 CA_SERIAL_NUMBER_FILE=${CA_DOMAIN}.srl
 CA_CONF=ca.conf
 
