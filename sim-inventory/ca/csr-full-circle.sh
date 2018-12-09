@@ -20,6 +20,8 @@ for tool in $DEPENDENCIES ; do
   fi
 done
 
+
+
 ##
 ##  Reset by deleting all old certificates etc.
 ##
@@ -106,15 +108,17 @@ openssl x509 -req -in $REQUEST_CSR -CA $CA_CRT -CAkey $CA_KEY -CAcreateserial -o
 ##
 ## In this section we generate both, for use in a client/server setup.
 
+##
+## The locations/passwords for the keystores that the
+## output will eventually be placed in.
+## 
+
 REQUESTER_KEYSTORE="${REQ_DIR}/requester-keystore.jks"
 REQUESTER_TRUSTSTORE="${REQ_DIR}/requester-truststore.jks"
 REQUESTER_KEYSTORE_PASSWORD="verySecret1238%%/"
 REQUESTER_TRUSTSTORE_PASSWORD="verySecret1238%%/"
 
-keytool  -noprompt -storepass "${REQUESTER_KEYSTORE_PASSWORD}" -import -trustcacerts -alias root -file $REQUEST_CRT -keystore $REQUESTER_KEYSTORE
 
-
-keytool  -noprompt -storepass "${REQUESTER_TRUSTSTORE_PASSWORD}" -import -trustcacerts -alias root -file $CA_PUBKEY_PEM -keystore $REQUESTER_TRUSTSTORE
-
-
+keytool  -noprompt -storepass "${REQUESTER_KEYSTORE_PASSWORD}"   -import -trustcacerts -alias requesterKey -file $REQUEST_CRT -keystore $REQUESTER_KEYSTORE
+keytool  -noprompt -storepass "${REQUESTER_TRUSTSTORE_PASSWORD}" -import -trustcacerts -alias MyRootCa     -file $CA_CRT      -keystore $REQUESTER_TRUSTSTORE
 
