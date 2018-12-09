@@ -1,11 +1,24 @@
 #!/bin/bash
 
 
-# Run a full CSR cycle against a CA. Do it all from scratch, generating
-# root certificate for the ca, generating the csr, signing the csr
-# an injecting the certs in to java keyrings.
+###
+### Run a full CSR cycle against a CA. Do it all from scratch, generating
+### root certificate for the ca, generating the csr, signing the csr
+### an injecting the certs in to java keyrings.
+###
 
 
+##
+## Check for dependencies
+##
+DEPENDENCIES="keytool openssl"
+
+for tool in $DEPENDENCIES ; do 
+  if [[ -z "$(which $tool)" ]] ; then
+    (>&2 echo "$0: Error. Could not find dependency $tool")
+    exit 0
+  fi
+done
 
 ##
 ##  Reset by deleting all old certificates etc.
