@@ -47,7 +47,7 @@ openssl req -new -out $REQUEST_CSR -config $REQUESTER_CONF
 # The domain of the CA
 CA_DOMAIN=ca
 CA_KEY="${CA_DIR}/${CA_DOMAIN}.key"
-CA_PUBKEY="${CA_DIR}${CA_DOMAIN}.pubkey"
+CA_PUBKEY="${CA_DIR}/${CA_DOMAIN}.pubkey"
 CA_CRT="${CA_DIR}/${CA_DOMAIN}.crt"
 CA_CONF=ca.conf
 
