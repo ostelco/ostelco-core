@@ -13,9 +13,10 @@
 
 REQ_DIR=requester
 CA_DIR=cert-auth
+CA_SERIAL_NUMBER_FILE=${CA_DOMAIN}.srl
 
-rm -rf $REQ_DIR $CA_DIR
-
+rm -rf $REQ_DIR $CA_DIR $CA_SERIAL_NUMBER_FILE
+mkdir  $REQ_DIR $CA_DIR
 
 
 ##
@@ -48,7 +49,6 @@ CA_DOMAIN=ca
 CA_KEY="${CA_DIR}/${CA_DOMAIN}.key"
 CA_PUBKEY="${CA_DIR}${CA_DOMAIN}.pubkey"
 CA_CRT="${CA_DIR}/${CA_DOMAIN}.crt"
-CA_SERIAL_NUMBER_FILE=${CA_DOMAIN}.srl
 CA_CONF=ca.conf
 
 # Generate a secret ckey for the CA
