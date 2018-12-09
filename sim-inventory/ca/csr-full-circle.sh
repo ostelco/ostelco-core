@@ -15,6 +15,7 @@
 REQUESTING_DOMAIN="example.org"
 REQUESTER_KEY="${REQUESTING_DOMAIN}.key"
 REQUEST_CSR="${REQUESTING_DOMAIN}.csr"
+REQUEST_CRT="${REQUESTING_DOMAIN}.crgt"
 
 # Generate a secret ckey for the requesting domain
 openssl genrsa -out $REQUESTER_KEY 2048
@@ -31,9 +32,18 @@ openssl req -new -out oats.csr -config oats.conf
 
 
 # The domain of the CA
-CA_DOMAIN=ca.org
+CA_DOMAIN=ca
 CA_KEY="${CA_DOMAIN}.key"
+CA_CRT="${CA_DOMAIN}.crt"
+CA_SERIAL_NUMBER_FILE=${CA_DOMAIN}.srl
 
 # Generate a secret ckey for the CA
 openssl genrsa -out $CA_KEY  2048
+
+# Generate a self-signed certificate for the CA
+openssl req -new -x509 -key $CA_KEYe -out $CA_CRT
+
+# Then sign the requesting certificate
+
+openssl x509 -req -in ${REQUEST_CSR} -CA ${CA_CRT} -CAkey ${CA_KEY} -CAcreateserial -out $REQUEST_CRT
 
