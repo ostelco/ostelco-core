@@ -13,6 +13,7 @@
 
 REQ_DIR=requester
 CA_DIR=cert-auth
+CA_DOMAIN=ca
 CA_SERIAL_NUMBER_FILE=${CA_DOMAIN}.srl
 
 rm -rf $REQ_DIR $CA_DIR $CA_SERIAL_NUMBER_FILE
@@ -48,9 +49,7 @@ openssl req -new -out $REQUEST_CSR -config $REQUESTER_CONF
 ## publish the public part of the signing key.
 ##
 
-
 # The domain of the CA
-CA_DOMAIN=ca
 CA_KEY="${CA_DIR}/${CA_DOMAIN}.key"
 CA_PUBKEY="${CA_DIR}/${CA_DOMAIN}.pubkey"
 CA_CRT="${CA_DIR}/${CA_DOMAIN}.crt"
