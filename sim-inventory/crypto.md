@@ -2,9 +2,38 @@
 
 # What this is
 
-Notes a out how to generate csrs and keystores to use for a dropwisard app.
-Based on information in https://support.globalsign.com/customer/en/portal/articles/2121490-java-keytool---create-keystore
+This is, or rather will be, a description on how to set up a local
+certificate authority and use that to create self-signed certificates
+to be used by dropwizard and jersey-client when using two-way TLS as
+required by the ES2+ standard.
 
+THe assumption is that we will create certificates frequently, possibly
+every time we run an acceptance test.   It is also assumed that 
+both openssl and the java keytool are installed.
+
+It is not assumed that any trusted certificated are located anywhere,
+everything is based on self-signing.
+
+The certificate authority setup is rudimentary, but with some modifications
+sufficient to to provide generate certificates for production use (run in 
+a secure environment, verify that the toolchains are uncontaminated
+etc.)
+
+
+# Overall flow
+
+  TBD:   Insert  plantuml sequence diagram describing key signing process.
+
+
+# Inspiration
+
+Notes a out how to generate csrs and keystores to use for a dropwisard app.
+Based on information in 
+
+   * https://support.globalsign.com/customer/en/portal/articles/2121490-java-keytool---create-keystore
+   * https://docs.oracle.com/cd/E19798-01/821-1751/ghlgj/index.html
+   * https://developer.okta.com/blog/2015/12/02/tls-client-authentication-for-services
+   * https://gist.github.com/Soarez/9688998
 
 # Generating keystpore and truststpre
 
@@ -40,4 +69,11 @@ yields the result:
     ib4auHzUhozi6Tc9v2X23Ybqdw+AHN0tG5Bz162kUzp5m30DDa10dRvjuIWzv2+j
     w3NivI42ZcAbfviR
     -----END NEW CERTIFICATE REQUEST-----
+
+
+# To sign the CSR with your own key do this:
+
+   openssl ca -in server.csr -days 365 -config my-ca-conf.cnf -out server.crt
+
+
 
