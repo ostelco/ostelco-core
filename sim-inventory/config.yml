@@ -27,14 +27,34 @@ httpClient:
   # content encoding. (Requires gzipEnabled to be true).
   gzipEnabledForRequests: true
 
+
 server:
   applicationConnectors:
-    - type: h2
-      port: 8445
-      maxConcurrentStreams: 1024
-      initialStreamRecvWindow: 65535
+    - type: https
+      port: 8443
       keyStorePath: KeyStore.jks
-      keyStorePassword: secret
+      keyStorePassword: secxret
+      keyStoreType: JKS
+      keyStoreProvider:
       trustStorePath: TrustStore.jks
       trustStorePassword: secret
-      supportedCipherSuites: TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
+      trustStoreType: JKS
+      trustStoreProvider:
+      keyManagerPassword: changeit
+      needClientAuth: false
+      wantClientAuth:
+      certAlias: <alias>
+      crlPath: /path/to/file
+      enableCRLDP: false
+      enableOCSP: false
+      maxCertPathLength: (unlimited)
+      ocspResponderUrl: (none)
+      jceProvider: (none)
+      validateCerts: false
+      validatePeers: false
+      supportedProtocols: (JVM default)
+      excludedProtocols: [SSL, SSLv2, SSLv2Hello, SSLv3] # (Jetty's default)
+      supportedCipherSuites: (JVM default)
+      excludedCipherSuites: [.*_(MD5|SHA|SHA1)$] # (Jetty's default)
+      allowRenegotiation: true
+      endpointIdentificationAlgorithm: (none)
