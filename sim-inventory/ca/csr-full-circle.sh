@@ -20,10 +20,9 @@ REQUEST_CSR="${REQUESTING_DOMAIN}.csr"
 openssl genrsa -out $REQUESTER_KEY 2048
 
 
-# Generate a CSR for the requesting domain
-openssl req -new -key $REQUESTER_KEY  -out $REQUEST_CSR
-
-
+# Generate a CSR using configuration from the oats.conf
+# file (should later be parameterized)
+openssl req -new -out oats.csr -config oats.conf
 
 ##
 ## Creating certificate authority (CA), sign the CSR, and
