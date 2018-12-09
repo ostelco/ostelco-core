@@ -28,7 +28,7 @@ REQUESTING_DOMAIN="example.org"
 REQUESTER_KEY="${REQ_DIR}/${REQUESTING_DOMAIN}.key"
 REQUEST_CSR="${REQ_DIR}/${REQUESTING_DOMAIN}.csr"
 REQUEST_CRT="${REQ_DIR}/${REQUESTING_DOMAIN}.crt"
-REQUESTER_CONF=oats.conf
+REQUESTER_CONF=requester.conf
 
 # Generate a secret ckey for the requesting domain
 openssl genrsa -out $REQUESTER_KEY 2048
