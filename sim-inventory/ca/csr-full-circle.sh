@@ -24,14 +24,19 @@ mkdir  $REQ_DIR $CA_DIR
 ##
 
 
-REQUESTING_DOMAIN="example.org"
+REQUESTING_DOMAIN="not-really-ostelco.org"
 REQUESTER_KEY="${REQ_DIR}/${REQUESTING_DOMAIN}.key"
+REQUESTER_PUBKEY="${REQ_DIR}/${REQUESTING_DOMAIN}.pubkey"
 REQUEST_CSR="${REQ_DIR}/${REQUESTING_DOMAIN}.csr"
 REQUEST_CRT="${REQ_DIR}/${REQUESTING_DOMAIN}.crt"
 REQUESTER_CONF=requester.conf
 
 # Generate a secret ckey for the requesting domain
 openssl genrsa -out $REQUESTER_KEY 2048
+
+# Then extract the pubkey
+openssl rsa -in $REQUESTER_KEY -pubout -out $REQUESTER_PUBKEY
+
 
 
 # Generate a CSR using configuration from the oats.conf
