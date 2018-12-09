@@ -24,7 +24,6 @@ etc.)
 
   TBD:   Insert  plantuml sequence diagram describing key signing process.
 
-
 # Inspiration
 
 Notes a out how to generate csrs and keystores to use for a dropwisard app.
@@ -34,12 +33,12 @@ Based on information in
    * https://docs.oracle.com/cd/E19798-01/821-1751/ghlgj/index.html
    * https://developer.okta.com/blog/2015/12/02/tls-client-authentication-for-services
    * https://gist.github.com/Soarez/9688998
+   * https://www.sslshopper.com/article-most-common-java-keytool-keystore-commands.html
 
 # Generating keystpore and truststpre
 
    keytool -genkey -alias mydomain -keyalg RSA -keystore KeyStore.jks -keysize 2048
    keytool -genkey -alias mydomain -keyalg RSA -keystore TrustStore.jks -keysize 2048
-
 
 ... for test use only.   Both have "secret" as their password.
 
@@ -70,10 +69,6 @@ yields the result:
     w3NivI42ZcAbfviR
     -----END NEW CERTIFICATE REQUEST-----
 
-
-# To sign the CSR with your own key do this:
-
-   openssl ca -in server.csr -days 365 -config my-ca-conf.cnf -out server.crt
 
 
 
