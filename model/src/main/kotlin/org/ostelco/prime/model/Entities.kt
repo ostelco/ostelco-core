@@ -41,6 +41,44 @@ data class Subscriber(
         get() = email
 }
 
+
+enum class SubscriberStatus {
+    REGISTERED,         // User has registered an account
+    EKYC_PENDING,       // eKYC results are pending
+    EKYC_REJECTED,      // eKYC documents were rejected
+    EKYC_APPROVED,      // eKYC documents were approved
+    ACTIVE,             // Subscriber is active
+    INACTIVE            // Inactive subscriber
+}
+
+data class SubscriberState(
+        val status: SubscriberStatus,   // Current status of the subscriber
+        val modifiedTimestamp: Long     // last modification time of the subscriber status
+)
+
+data class ScanResult(
+        val status: String,
+        val verificationStatus: String,
+        val time: Long,
+        val type: String?,
+        val country: String?,
+        val firstName: String,
+        val lastName: String,
+        val dob: String?,
+        val rejectReason: String?
+)
+
+data class ScanInformation(
+        val scanReferenceId:String,
+        var scanResult: ScanResult?
+) : HasId {
+
+    override val id: String
+        @Exclude
+        @JsonIgnore
+        get() = scanReferenceId
+}
+
 // TODO vihang: make ApplicationToken data class immutable
 // this data class is treated differently since it is stored in Firebase.
 data class ApplicationToken(
