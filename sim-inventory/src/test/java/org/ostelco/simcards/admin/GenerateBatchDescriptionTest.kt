@@ -1,7 +1,6 @@
 package org.ostelco.simcards.admin
 
-import junit.framework.TestCase.assertFalse
-import junit.framework.TestCase.assertTrue
+import junit.framework.TestCase.*
 import org.junit.Test
 import org.ostelco.simcards.admin.GenerateBatchDescription.Companion.luhnCheck
 import org.ostelco.simcards.admin.GenerateBatchDescription.Companion.luhnComplete
@@ -32,10 +31,30 @@ class GenerateBatchDescriptionTest {
         }
     }
 
-
     @Test
     fun testLuhnComplete() {
         assertTrue(luhnCheck(luhnComplete("79927398710")))
+    }
+
+    @Test
+    fun testGenerateIccid() {
+        val iccid = IccidBasis(cc = 47, serialNumber = 1)
+        val iccidString = iccid.asIccid()
+        assertEquals(19, iccidString.length)
+    }
+}
+
+
+/**
+ *  MM = Constant (ISO 7812 Major Industry Identifier)
+ *  CC = Country Code
+ *  II = Issuer Identifier
+ *  serialNumber = unique  positive number.
+ */
+class IccidBasis(val mm: Int = 89, val cc: Int, val ii: Int = 0, val serialNumber: Int) {
+    fun asIccid() : String{
+        val protoIccid = "%02d%02d%02d%012d".format(mm, cc, ii, serialNumber)
+        return luhnComplete(protoIccid)
     }
 }
 
@@ -45,7 +64,7 @@ class GenerateBatchDescriptionTest {
 //       just too get going.
 
 class SimBatchDescription(
-        val customer:String,
+        val customer: String,
         val profileType: String,
         val orderDate: String,
         val batchNo: Int,
@@ -91,7 +110,7 @@ class GenerateBatchDescription {
         }
     }
 
-    fun prettyPrint(bd: SimBatchDescription):String {
+    fun prettyPrint(bd: SimBatchDescription): String {
         return """*HEADER DESCRIPTION
             ***************************************
             Customer        : ${bd.customer}
