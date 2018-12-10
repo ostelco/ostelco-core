@@ -37,7 +37,7 @@ class SmdpExceptionMapper : ExceptionMapper<SmDpPlusException> {
     override fun toResponse(ex: SmDpPlusException): Response {
 
         // XXX Use some other responser than this, just a placeholderr
-        val entity = Es2ReleaseProfileResponse(
+        val entity = HeaderOnlyResponse(
                 header = newErrorHeader(ex))
 
         return Response.status(Response.Status.OK)
@@ -88,14 +88,14 @@ class SmDpPlusServerResource(private val smDpPlus: SmDpPlusService) {
      */
     @Path("cancelOrder")
     @POST
-    fun cancelOrder(order: Es2CancelOrder): Es2CancelOrderResponse {
+    fun cancelOrder(order: Es2CancelOrder): HeaderOnlyResponse {
 
         smDpPlus.cancelOrder(
                 eid = order.eid,
                 iccid = order.iccid,
                 matchingId = order.matchingId,
                 finalProfileStatusIndicator = order.finalProfileStatusIndicator)
-        return Es2CancelOrderResponse()
+        return HeaderOnlyResponse()
     }
 
     /**
@@ -103,10 +103,10 @@ class SmDpPlusServerResource(private val smDpPlus: SmDpPlusService) {
      */
     @Path("releaseProfile")
     @POST
-    fun releaseProfile(order: Es2ReleaseProfile): Es2ReleaseProfileResponse {
+    fun releaseProfile(order: Es2ReleaseProfile): HeaderOnlyResponse {
 
         smDpPlus.releaseProfile(iccid = order.iccid)
-        return Es2ReleaseProfileResponse()
+        return HeaderOnlyResponse()
     }
 }
 
@@ -122,7 +122,7 @@ class SmDpPlusCallbackResource(private val smDpPlus: SmDpPlusCallbackService) {
      */
     @Path("handleDownloadProgressInfo")
     @POST
-    fun handleDownloadProgressInfo(order: Es2HandleDownloadProgressInfo): Es2HandleDownloadProgressInfoResponse {
+    fun handleDownloadProgressInfo(order: Es2HandleDownloadProgressInfo): HeaderOnlyResponse {
         smDpPlus.handleDownloadProgressInfo(
                 eid = order.eid,
                 iccid = order.iccid,
@@ -131,6 +131,6 @@ class SmDpPlusCallbackResource(private val smDpPlus: SmDpPlusCallbackService) {
                 resultData = order.resultData,
                 timestamp = order.timestamp
         )
-        return Es2HandleDownloadProgressInfoResponse()
+        return HeaderOnlyResponse()
     }
 }

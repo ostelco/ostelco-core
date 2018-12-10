@@ -1,4 +1,4 @@
-package org.ostelco.simcards.admin
+package org.ostelco.simcards.inventory
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.apache.commons.csv.CSVFormat

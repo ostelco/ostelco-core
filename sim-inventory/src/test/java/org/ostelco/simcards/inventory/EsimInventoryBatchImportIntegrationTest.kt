@@ -1,4 +1,4 @@
-package org.ostelco.simcards.admin
+package org.ostelco.simcards.inventory
 
 import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.jdbi.DBIFactory
@@ -8,6 +8,7 @@ import junit.framework.TestCase
 import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Test
+import org.ostelco.simcards.admin.SimAdministrationApplication
 import java.math.BigInteger
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType

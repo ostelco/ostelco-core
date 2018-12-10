@@ -1,4 +1,4 @@
-package org.ostelco.simcards.admin
+package org.ostelco.simcards.inventory
 import io.dropwizard.testing.junit.ResourceTestRule
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNotNull
