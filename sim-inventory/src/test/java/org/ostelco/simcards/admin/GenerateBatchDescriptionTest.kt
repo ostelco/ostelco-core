@@ -4,6 +4,7 @@ import junit.framework.TestCase.*
 import org.junit.Test
 import org.ostelco.simcards.admin.GenerateBatchDescription.Companion.luhnCheck
 import org.ostelco.simcards.admin.GenerateBatchDescription.Companion.luhnComplete
+import org.ostelco.simcards.admin.GenerateBatchDescription.Companion.prettyPrintSimBatchDescription
 
 class GenerateBatchDescriptionTest {
 
@@ -42,6 +43,27 @@ class GenerateBatchDescriptionTest {
         val iccidString = iccid.asIccid()
         assertEquals(19, iccidString.length)
     }
+
+    @Test
+    fun funPrettyPrintBatchDescription() {
+        val iccid = IccidBasis(cc = 47, serialNumber = 1).asIccid()
+
+        val batch = SimBatchDescription(
+                customer = "FooTel",
+                profileType = "FooTelStd",
+                orderDate = "20181212",
+                batchNo = 1,
+                quantity = 1,
+                iccidStart = iccid,
+                imsiStart = "4201710010000",
+                opKeyLabel = "FooTel-OP",
+                transportKeyLabel = "FooTel-TK-1"
+        )
+
+        val pp = prettyPrintSimBatchDescription(batch)
+        println(pp)
+        assertTrue(pp.length > 100)
+    }
 }
 
 
@@ -52,7 +74,7 @@ class GenerateBatchDescriptionTest {
  *  serialNumber = unique  positive number.
  */
 class IccidBasis(val mm: Int = 89, val cc: Int, val ii: Int = 0, val serialNumber: Int) {
-    fun asIccid() : String{
+    fun asIccid(): String {
         val protoIccid = "%02d%02d%02d%012d".format(mm, cc, ii, serialNumber)
         return luhnComplete(protoIccid)
     }
@@ -108,10 +130,11 @@ class GenerateBatchDescription {
             }
             throw RuntimeException("Luhn completion failed for string '$s'")
         }
-    }
 
-    fun prettyPrint(bd: SimBatchDescription): String {
-        return """*HEADER DESCRIPTION
+
+        fun prettyPrintSimBatchDescription(bd: SimBatchDescription): String {
+            return """
+            *HEADER DESCRIPTION
             ***************************************
             Customer        : ${bd.customer}
             ProfileType     : ${bd.profileType}
@@ -131,5 +154,6 @@ class GenerateBatchDescription {
             ***************************************
             var_Out: ICCID/IMSI/KI
             """.trimIndent()
+        }
     }
 }
