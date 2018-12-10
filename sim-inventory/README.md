@@ -26,6 +26,10 @@ TODO (Prioritized)
   Look here for description on how to make this happen
   https://stackoverflow.com/questions/34908947/dropwizard-client-certificate-authentication-via-httpclient-key-trust-store
 
+  Question: Can we run kotlin scripts as docker containers, and if we can, would
+  that make it simpler to make the little things we need to serve as an execution
+  environment during testing?
+
 
 TODO (not prioritized)
 ---
