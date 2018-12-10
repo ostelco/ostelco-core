@@ -1,5 +1,3 @@
-
-
 # What this is
 
 This is, or rather will be, a description on how to set up a local
