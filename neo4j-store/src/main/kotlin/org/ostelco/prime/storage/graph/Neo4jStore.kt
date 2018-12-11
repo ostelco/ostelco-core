@@ -369,13 +369,63 @@ object Neo4jStoreSingleton : GraphStore {
             subscriberId: String,
             sku: String,
             sourceId: String?,
-            saveCard: Boolean): Either<PaymentError, ProductInfo> = writeTransaction {
+            saveCard: Boolean): Either<PaymentError, ProductInfo> {
+
+        return getProduct(subscriberId, sku).fold(
+                {
+                    Either.left(org.ostelco.prime.paymentprocessor.core.NotFoundError("Product unavailable"))
+                },
+                {
+                    return if (it.properties.containsKey("productType") && it.properties["productType"].equals("plan", true))
+                        purchasePlan(subscriberId, it, sourceId, saveCard)
+                    else
+                        purchaseProduct(subscriberId, it, sourceId, saveCard)
+                }
+        )
+    }
+
+    private fun purchasePlan(subscriberId: String,
+                             product: Product,
+                             sourceId: String?,
+                             saveCard: Boolean): Either<PaymentError, ProductInfo> = writeTransaction {
         IO {
             Either.monad<PaymentError>().binding {
-                val product = getProduct(subscriberId, sku, transaction)
-                        // If we can't find the product, return not-found
-                        .mapLeft { org.ostelco.prime.paymentprocessor.core.NotFoundError("Product unavailable") }
+                val profileInfo = fetchOrCreatePaymentProfile(subscriberId)
                         .bind()
+                val paymentCustomerId = profileInfo.id
+
+                if (sourceId != null) {
+                    val sourceDetails = paymentProcessor.getSavedSources(paymentCustomerId)
+                            .mapLeft {
+                                org.ostelco.prime.paymentprocessor.core.BadGatewayError("Failed to fetch sources for user",
+                                        it.description)
+                            }.bind()
+                    if (!sourceDetails.any { sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
+                        paymentProcessor.addSource(paymentCustomerId, sourceId)
+                                .finallyDo(transaction) {
+                                    removePaymentSource(saveCard, paymentCustomerId, it.id)
+                                }.bind().id
+                    }
+                }
+                subscribeToPlan(subscriberId, product.id)
+                        .mapLeft {
+                            org.ostelco.prime.paymentprocessor.core.BadGatewayError("Failed to subscribe to plan",
+                                    it.message)
+                        }
+                        .flatMap {
+                            Either.right(ProductInfo(product.id))
+                        }.bind()
+            }.fix()
+        }.unsafeRunSync()
+                .ifFailedThenRollback(transaction)
+    }
+
+    private fun purchaseProduct(subscriberId: String,
+                                product: Product,
+                                sourceId: String?,
+                                saveCard: Boolean): Either<PaymentError, ProductInfo> = writeTransaction {
+        IO {
+            Either.monad<PaymentError>().binding {
                 val profileInfo = fetchOrCreatePaymentProfile(subscriberId).bind()
                 val paymentCustomerId = profileInfo.id
                 var addedSourceId: String? = null
@@ -399,7 +449,7 @@ object Neo4jStoreSingleton : GraphStore {
                 //TODO: If later steps fail, then refund the authorized charge
                 val chargeId = paymentProcessor.authorizeCharge(paymentCustomerId, addedSourceId, product.price.amount, product.price.currency)
                         .mapLeft { apiError ->
-                            logger.error("failed to authorize purchase for paymentCustomerId $paymentCustomerId, sourceId $addedSourceId, sku $sku")
+                            logger.error("failed to authorize purchase for paymentCustomerId $paymentCustomerId, sourceId $addedSourceId, sku ${product.sku}")
                             apiError
                         }.linkReversalActionToTransaction(transaction) { chargeId ->
                             paymentProcessor.refundCharge(chargeId, product.price.amount, product.price.currency)
@@ -417,7 +467,7 @@ object Neo4jStoreSingleton : GraphStore {
                         }.bind()
                 //TODO: While aborting transactions, send a record with "reverted" status
                 analyticsReporter.reportPurchaseInfo(purchaseRecord, subscriberId, "success")
-                ocs.topup(subscriberId, sku)
+                ocs.topup(subscriberId, product.sku)
                         .mapLeft { BadGatewayError("Failed to perform topup", it) }
                         .bind()
                 // Even if the "capture charge operation" failed, we do not want to rollback.
@@ -430,10 +480,12 @@ object Neo4jStoreSingleton : GraphStore {
                         }
                 // Ignore failure to capture charge, by not calling bind()
                 ProductInfo(product.sku)
+
             }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
     }
+
     // << END
 
     private fun removePaymentSource(saveCard: Boolean, paymentCustomerId: String, sourceId: String) {
@@ -760,10 +812,17 @@ object Neo4jStoreSingleton : GraphStore {
                             paymentProcessor.removePlan(it.id)
                         }.bind()
 
-                /* The associated product to a plan, has:
-                       sku - same as the name of the plan
-                       price - set to 0 */
-                val product = Product(sku = plan.id, price = Price(amount = 0, currency = plan.price.currency))
+                /* The associated product to the plan. Note that:
+                         sku - name of the plan
+                         property value 'productType' is set to "plan"
+                    TODO: Complete support for 'product-class' and merge 'plan' and 'product' objects
+                          into one object differentiated by 'product-class'. */
+                val product = Product(sku = plan.id, price = plan.price,
+                        properties = plan.properties + mapOf(
+                                "productType" to "plan",
+                                "interval" to plan.interval,
+                                "intervalCount" to plan.intervalCount.toString()),
+                        presentation = plan.presentation)
 
                 productStore.create(product, transaction)
                         .mapLeft { err ->
