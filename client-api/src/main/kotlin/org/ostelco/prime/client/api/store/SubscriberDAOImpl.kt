@@ -314,4 +314,9 @@ class SubscriberDAOImpl : SubscriberDAO {
         return storage.newEKYCScanId(subscriberId)
                 .mapLeft { mapStorageErrorToApiError("Failed to create new scanId", ApiErrorCode.FAILED_TO_CREATE_SCANID, it) }
     }
+
+    override fun getSubscriberState(subscriberId: String): Either<ApiError, SubscriberState> {
+        return storage.getSubscriberState(subscriberId)
+                .mapLeft { mapStorageErrorToApiError("Failed to fetch new subscriber state", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIBER_STATE, it) }
+    }
 }

@@ -61,4 +61,20 @@ class CustomerResource(private val dao: SubscriberDAO) {
                 { scanInformation -> Response.status(Response.Status.OK).entity(scanInformation) })
                 .build()
     }
+
+    @GET
+    @Path("subscriberState")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun getSubscriberState(
+            @Auth token: AccessTokenPrincipal?): Response {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .build()
+        }
+
+        return dao.newEKYCScanId(subscriberId = token.name).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                { scanInformation -> Response.status(Response.Status.OK).entity(scanInformation) })
+                .build()
+    }
 }

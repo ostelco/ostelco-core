@@ -63,6 +63,8 @@ interface SubscriberDAO {
 
     fun newEKYCScanId(subscriberId: String): Either<ApiError, ScanInformation>
 
+    fun getSubscriberState(subscriberId: String): Either<ApiError, SubscriberState>
+
     companion object {
 
         /**

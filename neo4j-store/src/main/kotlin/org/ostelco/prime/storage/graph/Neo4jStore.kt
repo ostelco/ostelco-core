@@ -178,6 +178,7 @@ object Neo4jStoreSingleton : GraphStore {
                 validateCreateSubscriberParams(subscriber, referredBy).bind()
                 val bundleId = subscriber.id
                 subscriberStore.create(subscriber, transaction).bind()
+                createSubscriberState(subscriber.id, SubscriberStatus.REGISTERED, transaction).bind()
                 subscriberToSegmentStore.create(subscriber.id, getSegmentNameFromCountryCode(subscriber.country), transaction)
                         .mapLeft { storeError ->
                             if (storeError is NotCreatedError && storeError.type == subscriberToSegmentRelation.relation.name) {
@@ -475,25 +476,36 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     //
-    // eKYC
+    // Subscriber State
     //
-    private fun createSubscriberState(subscriberId: String, status: SubscriberStatus, transaction: PrimeTransaction): Either<StoreError, Unit> {
+
+    private fun createSubscriberState(subscriberId: String, status: SubscriberStatus, transaction: PrimeTransaction): Either<StoreError, SubscriberState> {
         val state = SubscriberState(status, Date().time, subscriberId)
         return subscriberStateStore.create(state, transaction).flatMap {
             subscriberStateRelationStore.create(subscriberId, subscriberId, transaction)
+                    .map { state }
         }
     }
 
-    private fun updateSubscriberState(subscriberId: String, status: SubscriberStatus, transaction: PrimeTransaction): Either<StoreError, Unit> {
+    private fun updateSubscriberState(subscriberId: String, status: SubscriberStatus, transaction: PrimeTransaction): Either<StoreError, SubscriberState> {
         return subscriberStateStore.get(subscriberId, transaction)
                 .fold(
                         { createSubscriberState(subscriberId, status, transaction) },
                         {
                             val state = SubscriberState(status, Date().time, subscriberId)
                             subscriberStateStore.update(state, transaction)
+                                    .map { state }
                         }
                 )
     }
+
+    override fun getSubscriberState(subscriberId: String): Either<StoreError, SubscriberState> = readTransaction {
+        subscriberStateStore.get(subscriberId, transaction)
+    }
+
+    //
+    // eKYC
+    //
 
     override fun newEKYCScanId(subscriberId: String): Either<StoreError, ScanInformation> = writeTransaction {
         subscriberStore.get(subscriberId, transaction).flatMap { subscriber ->
@@ -529,7 +541,7 @@ object Neo4jStoreSingleton : GraphStore {
         }
         getSubscriberId(scanInformation.scanId, transaction).flatMap { subscriber ->
             scanInformationStore.update(scanInformation, transaction).flatMap {
-                updateSubscriberState(subscriber.id, state, transaction)
+                updateSubscriberState(subscriber.id, state, transaction).map { Unit }
             }
         }
     }

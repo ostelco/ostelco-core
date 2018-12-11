@@ -123,6 +123,11 @@ interface ClientGraphStore {
      * Generate new eKYC scanId for the subscriber.
      */
     fun newEKYCScanId(subscriberId: String): Either<StoreError, ScanInformation>
+
+    /**
+     * Get state of the subscriber.
+     */
+    fun getSubscriberState(subscriberId: String): Either<StoreError, SubscriberState>
 }
 
 interface AdminGraphStore {
