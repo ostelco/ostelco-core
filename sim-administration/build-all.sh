@@ -29,4 +29,4 @@ fi
 #
 # Build the dockerfile for the simadmin
 #
-docker build --file dockerfiles/Dockerfile.simadmin .
+docker build --file dockerfiles/Dockerfile.simadmin --tag ostelco/simadmin .
