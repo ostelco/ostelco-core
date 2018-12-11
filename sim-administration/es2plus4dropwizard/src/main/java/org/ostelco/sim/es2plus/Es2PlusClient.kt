@@ -12,6 +12,8 @@ import javax.ws.rs.core.Response
  */
 class ES2PlusClient(private val requesterId: String, private val client: Client) {
 
+    private val xAdminProtocolValue = "gsma/rsp/v<x.y.z>"
+
     @Throws(ES2PlusClientException::class)
     private fun <T, S> postEs2ProtocolCmd(
             path: String,
@@ -22,12 +24,25 @@ class ES2PlusClient(private val requesterId: String, private val client: Client)
         val result: Response = client.target(path)
                 .request(MediaType.APPLICATION_JSON)
                 .header("User-Agent", "gsma-rsp-lpad")
-                .header("X-Admin-Protocol", "gsma/rsp/v<x.y.z>")   // TODO:  The x.y.x should be something else I think (proper version of the GSMA protocol probably)
+                .header("X-Admin-Protocol", xAdminProtocolValue)   // TODO:  The x.y.x should be something else I think (proper version of the GSMA protocol probably)
                 .post(entity)
+
+        // Validata returned response
         if (expectedReturnCode != result.status) {
             val msg = "Expected return value $expectedReturnCode, but got ${result.status}.  Body was \"${result.readEntity(String::class.java)}\""
             throw ES2PlusClientException(msg)
         }
+
+        val xAdminProtocolHeader = result.getHeaderString("X-Admin-Protocol")
+        if (xAdminProtocolHeader == null || !xAdminProtocolHeader.equals(xAdminProtocolValue)) {
+             throw ES2PlusClientException("Expected header X-Admin-Protocol to be '$xAdminProtocolValue' but it was '$xAdminProtocolHeader'")
+        }
+
+        val returnedContentType = result.getHeaderString("Content-Type")
+        if (returnedContentType != null || !returnedContentType.equals("application/json")) {
+             throw ES2PlusClientException("Expected header Content-Type to be 'application/json' but was '$returnedContentType'")
+        }
+
         return result.readEntity(sclass)
     }
 
