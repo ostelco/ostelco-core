@@ -17,6 +17,7 @@
     <name>Sim Administration</name>
     <modules>
       <module>simadmin</module>
+        <module>jersey-json-schema-validator</module>
     </modules>
 
     <properties>

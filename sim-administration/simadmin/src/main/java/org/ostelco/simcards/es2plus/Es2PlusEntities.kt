@@ -2,11 +2,7 @@ package org.ostelco.simcards.es2plus
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
-
-
-@Target(AnnotationTarget.CLASS)
-@Retention(AnnotationRetention.RUNTIME)
-annotation class JsonSchema(val schemaKey: String)
+import org.ostelco.jsonschema.JsonSchema
 
 
 ///

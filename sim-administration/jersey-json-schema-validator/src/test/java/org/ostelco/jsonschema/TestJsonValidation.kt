@@ -25,6 +25,6 @@ class TestJsonValidation {
         schema.validate(JSONObject( "{\"eid\" : \"01234567890123456789012345678901\", \"iccid\" : \"01234567890123456789\", \"profileType\" : \"Eplestang\"}"))
     }
 
-    // XXX This class does not contain any actual tests of the json schema validator.  That is
-    //     clearly something that should be fixed before we start believing in this code.
+    // TODO: This class does not contain any actual tests of the json schema validator.  That is
+    //       clearly something that should be fixed before we start believing in this code.
 }

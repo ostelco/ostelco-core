@@ -80,9 +80,8 @@ class IccidBasis(val mm: Int = 89, val cc: Int, val ii: Int = 0, val serialNumbe
     }
 }
 
-
-// TODO: This is just a first iteration,things like dates etc. should be
-//       not be using strings but proper time-objects, but we'll do this for now
+// TODO: This is just a first iteration, things like dates etc. should be
+//       not be represented using strings but proper time-objects, but we'll do this for now
 //       just too get going.
 
 class SimBatchDescription(
@@ -130,7 +129,6 @@ class GenerateBatchDescription {
             }
             throw RuntimeException("Luhn completion failed for string '$s'")
         }
-
 
         fun prettyPrintSimBatchDescription(bd: SimBatchDescription): String {
             return """

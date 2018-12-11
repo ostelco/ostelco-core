@@ -3,7 +3,7 @@ package org.ostelco.simcards.inventory
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
-import org.ostelco.simcards.es2plus.JsonSchema
+import org.ostelco.jsonschema.JsonSchema
 import org.skife.jdbi.v2.StatementContext
 import org.skife.jdbi.v2.sqlobject.*
 import org.skife.jdbi.v2.sqlobject.customizers.BatchChunkSize
@@ -101,7 +101,7 @@ data class SmdpPlusAdapter(
 class SimEntryIterator(hlrId: String, batchId: Long, csvInputStream: InputStream) : Iterator<SimEntry> {
 
     var count = AtomicLong(0)
-    // XXX The current implementation puts everything in a deque at startup.
+    // TODO: The current implementation puts everything in a deque at startup.
     //     This is correct, but inefficient, in partricular for large
     //     batches.   Once proven to work, this thing should be rewritten
     //     to use coroutines, to let the "next" get the next available

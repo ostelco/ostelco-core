@@ -6,12 +6,18 @@ import org.everit.json.schema.ValidationException
 import org.json.JSONException
 import org.json.JSONObject
 import org.json.JSONTokener
-import org.ostelco.simcards.es2plus.JsonSchema
+
 import java.io.*
 import java.nio.charset.Charset
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.Response
 import javax.ws.rs.ext.*
+
+
+
+@Target(AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class JsonSchema(val schemaKey: String)
 
 
 class JsonSchemaValidator {
