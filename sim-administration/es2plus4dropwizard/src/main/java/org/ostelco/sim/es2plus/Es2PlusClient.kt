@@ -11,8 +11,10 @@ import javax.ws.rs.core.Response
  * the ES2+ protocol.
  */
 class ES2PlusClient(private val requesterId: String, private val client: Client) {
+    companion object {
+        val X_ADMIN_PROTOCOL_HEADER_VALUE = "gsma/rsp/v<x.y.z>"
+    }
 
-    private val xAdminProtocolValue = "gsma/rsp/v<x.y.z>"
 
     @Throws(ES2PlusClientException::class)
     private fun <T, S> postEs2ProtocolCmd(
@@ -24,7 +26,7 @@ class ES2PlusClient(private val requesterId: String, private val client: Client)
         val result: Response = client.target(path)
                 .request(MediaType.APPLICATION_JSON)
                 .header("User-Agent", "gsma-rsp-lpad")
-                .header("X-Admin-Protocol", xAdminProtocolValue)
+                .header("X-Admin-Protocol", X_ADMIN_PROTOCOL_HEADER_VALUE)
                 .post(entity)
 
         // Validata returned response
@@ -34,13 +36,15 @@ class ES2PlusClient(private val requesterId: String, private val client: Client)
         }
 
         val xAdminProtocolHeader = result.getHeaderString("X-Admin-Protocol")
-        if (xAdminProtocolHeader == null || !xAdminProtocolHeader.equals(xAdminProtocolValue)) {
-             throw ES2PlusClientException("Expected header X-Admin-Protocol to be '$xAdminProtocolValue' but it was '$xAdminProtocolHeader'")
+        if (xAdminProtocolHeader == null || !xAdminProtocolHeader.equals(X_ADMIN_PROTOCOL_HEADER_VALUE)) {
+            throw ES2PlusClientException("Expected header X-Admin-Protocol to be '$X_ADMIN_PROTOCOL_HEADER_VALUE' but it was '$xAdminProtocolHeader'")
         }
 
         val returnedContentType = result.getHeaderString("Content-Type")
-        if (returnedContentType != null || !returnedContentType.equals("application/json")) {
-             throw ES2PlusClientException("Expected header Content-Type to be 'application/json' but was '$returnedContentType'")
+
+        val expectedContentType = "application/json"
+        if (returnedContentType == null || !returnedContentType.equals(expectedContentType)) {
+            throw ES2PlusClientException("Expected header Content-Type to be '$expectedContentType' but was '$returnedContentType'")
         }
 
         return result.readEntity(sclass)

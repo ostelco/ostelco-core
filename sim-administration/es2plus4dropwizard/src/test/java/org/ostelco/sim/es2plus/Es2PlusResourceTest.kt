@@ -23,8 +23,9 @@ class ES2PlusResourceTest {
                 .builder()
                 .addResource(SmDpPlusServerResource(smdpPlusService))
                 .addResource(SmDpPlusCallbackResource(callbackService))
-                .addProvider(ES2PlusHeadersFilter())
+                .addProvider(ES2PlusIncomingHeadersFilter())
                 .addProvider(RequestServerReaderWriterInterceptor())
+                .addProvider(ES2PlusOutgoingHeadersFilter())
                 .build()
 
         @JvmStatic

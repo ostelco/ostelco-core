@@ -1,5 +1,6 @@
 package org.ostelco.sim.es2plus
 
+import org.ostelco.sim.es2plus.ES2PlusClient.Companion.X_ADMIN_PROTOCOL_HEADER_VALUE
 import org.ostelco.sim.es2plus.SmDpPlusServerResource.Companion.ES2PLUS_PATH_PREFIX
 import java.io.IOException
 import javax.ws.rs.Consumes
@@ -8,6 +9,8 @@ import javax.ws.rs.Path
 import javax.ws.rs.Produces
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.container.ContainerRequestFilter
+import javax.ws.rs.container.ContainerResponseContext
+import javax.ws.rs.container.ContainerResponseFilter
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import javax.ws.rs.ext.ExceptionMapper
@@ -15,8 +18,10 @@ import javax.ws.rs.ext.Provider
 
 
 
+
+
 @Provider
-class ES2PlusHeadersFilter : ContainerRequestFilter {
+class ES2PlusIncomingHeadersFilter : ContainerRequestFilter {
 
     @Throws(IOException::class)
     override fun filter(ctx: ContainerRequestContext) {
@@ -38,6 +43,16 @@ class ES2PlusHeadersFilter : ContainerRequestFilter {
                     .entity("Illegal X-Admin-Protocol header, expected something starting with \"gsma/rsp/\"")
                     .build())
         }
+    }
+}
+
+@Provider
+class ES2PlusOutgoingHeadersFilter : ContainerResponseFilter {
+
+    @Throws(IOException::class)
+    override fun filter(requestContext: ContainerRequestContext,
+                        responseContext: ContainerResponseContext) {
+        responseContext.headers.add("X-Admin-Protocol", X_ADMIN_PROTOCOL_HEADER_VALUE)
     }
 }
 
