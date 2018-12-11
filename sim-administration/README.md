@@ -14,6 +14,11 @@ requests and replies.
 
 TODO (Prioritized)
 ---
+* Restructure project to be a multi-module Maven project with
+  modules for the various libraries, as well as java/docker components
+  for simulating sm-dp+, the return-channel from sm-dp+, a database and a 
+  test runner.
+
 * Make class comments for every high level class.
 
 * Make junit-tests that runs the dropwizard application in a mode to permit it
