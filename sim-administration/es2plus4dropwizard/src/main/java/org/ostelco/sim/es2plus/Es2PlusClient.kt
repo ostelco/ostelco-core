@@ -24,7 +24,7 @@ class ES2PlusClient(private val requesterId: String, private val client: Client)
         val result: Response = client.target(path)
                 .request(MediaType.APPLICATION_JSON)
                 .header("User-Agent", "gsma-rsp-lpad")
-                .header("X-Admin-Protocol", xAdminProtocolValue)   // TODO:  The x.y.x should be something else I think (proper version of the GSMA protocol probably)
+                .header("X-Admin-Protocol", xAdminProtocolValue)
                 .post(entity)
 
         // Validata returned response
