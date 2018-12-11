@@ -1,27 +1,57 @@
 package org.ostelco.prime.admin.api
 
 import arrow.core.Either
-import org.ostelco.prime.apierror.ApiError
-import org.ostelco.prime.apierror.ApiErrorCode
-import org.ostelco.prime.apierror.BadGatewayError
-import org.ostelco.prime.apierror.NotFoundError
+import io.dropwizard.auth.Auth
+import org.ostelco.prime.apierror.*
+import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.ScanResult
 import org.ostelco.prime.module.getResource
-import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
-import org.ostelco.prime.paymentprocessor.core.ForbiddenError
-import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.storage.AdminDataSource
-import javax.servlet.http.HttpServletRequest
-import javax.ws.rs.POST
-import javax.ws.rs.Path
-import javax.ws.rs.Produces
-import javax.ws.rs.core.*
-import java.util.HashMap
+import java.net.URLDecoder
 import java.text.SimpleDateFormat
+import java.util.*
+import javax.servlet.http.HttpServletRequest
+import javax.ws.rs.*
+import javax.ws.rs.core.*
 
+
+//TODO: Prasanth, Remove after testing
+/**
+ * Resource used to handle bundles related REST calls.
+ */
+@Path("/new-ekyc-scanId")
+class KYCTestHelperResource {
+    private val logger by getLogger()
+    private val storage by lazy { getResource<AdminDataSource>() }
+
+    @GET
+    @Path("new-ekyc-scanId")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun newEKYCScanId(@Auth token: AccessTokenPrincipal?,
+                      @PathParam("email")
+                      email: String
+                      ): Response {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .build()
+        }
+        val decodedEmail = URLDecoder.decode(email, "UTF-8")
+        logger.info("${token.name} Generate new ScanId for $decodedEmail")
+
+        return newEKYCScanId(subscriberId = decodedEmail).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                { scanInformation -> Response.status(Response.Status.OK).entity(scanInformation) })
+                .build()
+    }
+
+    private fun newEKYCScanId(subscriberId: String): Either<ApiError, ScanInformation> {
+        return storage.newEKYCScanId(subscriberId)
+                .mapLeft { ApiErrorMapper.mapStorageErrorToApiError("Failed to create new scanId", ApiErrorCode.FAILED_TO_CREATE_SCANID, it) }
+    }
+}
 
 /**
  * Resource used to handle the eKYC related REST calls.
@@ -55,31 +85,37 @@ class KYCResource {
         return date.time
     }
 
-    private fun toScanInformation(dataMap: Map<String, String>): ScanInformation {
-        val vendorScanReference: String = dataMap["jumioIdScanReference"]!!
-        val status: String = dataMap["idScanStatus"]!!
-        val verificationStatus: String = dataMap["verificationStatus"]!!
-        val time: Long = toTimestamp(dataMap["callbackDate"]!!)
-        val type: String? = dataMap["idType"]
-        val country: String? = dataMap["idCountry"]
-        val firstName: String? = dataMap["idFirstName"]
-        val lastName: String? = dataMap["idLastName"]
-        val dob: String? = dataMap["idDob"]
-        val rejectReason: String? = dataMap["rejectReason"]
-        val scanId: String = dataMap["merchantIdScanReference"]!!
+    private fun toScanInformation(dataMap: Map<String, String>): ScanInformation? {
+        try {
+            val vendorScanReference: String = dataMap["jumioIdScanReference"]!!
+            val status: String = dataMap["idScanStatus"]!!
+            val verificationStatus: String = dataMap["verificationStatus"]!!
+            val time: Long = toTimestamp(dataMap["callbackDate"]!!)
+            val type: String? = dataMap["idType"]
+            val country: String? = dataMap["idCountry"]
+            val firstName: String? = dataMap["idFirstName"]
+            val lastName: String? = dataMap["idLastName"]
+            val dob: String? = dataMap["idDob"]
+            val rejectReason: String? = dataMap["rejectReason"]
+            val scanId: String = dataMap["merchantIdScanReference"]!!
 
-        return ScanInformation(scanId, ScanResult(
-                vendorScanReference = vendorScanReference,
-                status = status,
-                verificationStatus = verificationStatus,
-                time = time,
-                type = type,
-                country = country,
-                firstName = firstName,
-                lastName = lastName,
-                dob = dob,
-                rejectReason = rejectReason
-        ))
+            return ScanInformation(scanId, ScanResult(
+                    vendorScanReference = vendorScanReference,
+                    status = status,
+                    verificationStatus = verificationStatus,
+                    time = time,
+                    type = type,
+                    country = country,
+                    firstName = firstName,
+                    lastName = lastName,
+                    dob = dob,
+                    rejectReason = rejectReason
+            ))
+        }
+        catch (e: NullPointerException) {
+            logger.error("Missing mandatory fields in scan result ${dataMap}")
+            return null;
+        }
     }
 
     @POST
@@ -89,13 +125,14 @@ class KYCResource {
             @Context httpHeaders: HttpHeaders,
             formData: MultivaluedMap<String, String>): Response {
 
-        val scanInformation = toScanInformation(toRegularMap(formData))
+        val scanInformation = toScanInformation(toRegularMap(formData)) ?:
+            return Response.status(Response.Status.BAD_REQUEST).build()
         dumpRequestInfo(request, httpHeaders, formData)
         logger.error("Updating scan information ${scanInformation.scanId} jumioIdScanReference ${scanInformation.scanResult?.vendorScanReference}")
         return updateScanInformation(scanInformation).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 {
-                    Response.status(Response.Status.OK).entity(asJson(it))
+                    Response.status(Response.Status.OK).entity(asJson(scanInformation))
                 })
                 .build()
     }

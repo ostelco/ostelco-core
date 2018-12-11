@@ -10,11 +10,7 @@ import org.ostelco.prime.appnotifier.AppNotifier
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
-import org.ostelco.prime.model.Bundle
-import org.ostelco.prime.model.Plan
-import org.ostelco.prime.model.PurchaseRecord
-import org.ostelco.prime.model.Subscriber
-import org.ostelco.prime.model.Subscription
+import org.ostelco.prime.model.*
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
@@ -129,7 +125,7 @@ class ProfilesResource {
     }
 
     /**
-     * Fetches and returna all plans that a subscriber subscribes
+     * Fetches and return all plans that a subscriber subscribes
      * to if any.
      */
     @GET

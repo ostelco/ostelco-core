@@ -491,6 +491,11 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     override fun updateScanInformation(scanInformation: ScanInformation): Either<StoreError, Unit> = writeTransaction {
+        //TODO: Prasanth, Update subscriberstate with new state
+        var state = SubscriberStatus.EKYC_REJECTED
+        if (scanInformation.scanResult?.status == "SUCCESS") {
+            state = SubscriberStatus.EKYC_APPROVED
+        }
         scanInformationStore.update(scanInformation, transaction)
     }
 
