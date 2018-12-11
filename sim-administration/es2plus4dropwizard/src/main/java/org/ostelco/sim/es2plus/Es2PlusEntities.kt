@@ -1,4 +1,4 @@
-package org.ostelco.simcards.es2plus
+package org.ostelco.sim.es2plus
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty

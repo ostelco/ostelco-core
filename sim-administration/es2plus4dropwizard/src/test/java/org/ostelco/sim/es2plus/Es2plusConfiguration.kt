@@ -1,4 +1,4 @@
-package org.ostelco.simcards.es2plus
+package org.ostelco.sim.es2plus
 
 import io.dropwizard.Configuration
 

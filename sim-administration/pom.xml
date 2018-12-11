@@ -16,8 +16,9 @@
 
     <name>Sim Administration</name>
     <modules>
-      <module>simadmin</module>
         <module>jersey-json-schema-validator</module>
+        <module>es2plus4dropwizard</module>
+        <module>simmanager</module>
     </modules>
 
     <properties>

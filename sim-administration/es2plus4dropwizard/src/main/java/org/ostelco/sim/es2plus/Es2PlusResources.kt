@@ -1,6 +1,6 @@
-package org.ostelco.simcards.es2plus
+package org.ostelco.sim.es2plus
 
-import org.ostelco.simcards.es2plus.SmDpPlusServerResource.Companion.ES2PLUS_PATH_PREFIX
+import org.ostelco.sim.es2plus.SmDpPlusServerResource.Companion.ES2PLUS_PATH_PREFIX
 import java.io.IOException
 import javax.ws.rs.Consumes
 import javax.ws.rs.POST
