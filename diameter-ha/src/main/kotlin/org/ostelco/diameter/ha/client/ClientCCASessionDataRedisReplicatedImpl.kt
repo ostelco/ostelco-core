@@ -38,7 +38,7 @@ class ClientCCASessionDataRedisReplicatedImpl( id: String, redisStorage: RedisSt
 
 
     override fun isEventBased(): Boolean {
-        return  toPrimitive(this.redisStorage.getValue(id, EVENT_BASED), true)
+        return toPrimitive(this.redisStorage.getValue(id, EVENT_BASED), true)
     }
 
     override fun setEventBased(b: Boolean) {
@@ -46,7 +46,7 @@ class ClientCCASessionDataRedisReplicatedImpl( id: String, redisStorage: RedisSt
     }
 
     override fun isRequestTypeSet(): Boolean {
-        return toPrimitive(this.redisStorage.getValue(id, REQUEST_TYPE), false)
+        return toPrimitive(getValue(REQUEST_TYPE), false)
     }
 
     override fun setRequestTypeSet(b: Boolean) {
@@ -54,7 +54,7 @@ class ClientCCASessionDataRedisReplicatedImpl( id: String, redisStorage: RedisSt
     }
 
     override fun getClientCCASessionState(): ClientCCASessionState {
-        val value = this.redisStorage.getValue(id, STATE)
+        val value = getValue(STATE)
         if (value != null) {
             return ClientCCASessionState.valueOf(value)
         } else {
@@ -68,7 +68,7 @@ class ClientCCASessionDataRedisReplicatedImpl( id: String, redisStorage: RedisSt
     }
 
     override fun getTxTimerId(): Serializable {
-        val value =  redisStorage.getValue(id, TXTIMER_ID)
+        val value = getValue(TXTIMER_ID)
         if (value != null) {
             return value
         } else {
@@ -81,7 +81,7 @@ class ClientCCASessionDataRedisReplicatedImpl( id: String, redisStorage: RedisSt
     }
 
     override fun getTxTimerRequest(): Request? {
-        val b64String = this.redisStorage.getValue(id, TXTIMER_REQUEST)
+        val b64String = getValue(TXTIMER_REQUEST)
         if (b64String != null) {
             try {
                 return this.messageParser.createMessage(ByteArrayfromBase64String(b64String))
@@ -112,7 +112,7 @@ class ClientCCASessionDataRedisReplicatedImpl( id: String, redisStorage: RedisSt
     }
 
     override fun getBuffer(): Request? {
-        val b64String = this.redisStorage.getValue(id, BUFFER)
+        val b64String = getValue(BUFFER)
         if (b64String != null) {
             try {
                 return this.messageParser.createMessage(ByteArrayfromBase64String(b64String))
@@ -144,7 +144,7 @@ class ClientCCASessionDataRedisReplicatedImpl( id: String, redisStorage: RedisSt
     }
 
     override fun getGatheredRequestedAction(): Int {
-        val value = redisStorage.getValue(id, GRA)
+        val value = getValue(GRA)
         if (value != null) {
             return value.toInt()
         } else {
@@ -157,7 +157,7 @@ class ClientCCASessionDataRedisReplicatedImpl( id: String, redisStorage: RedisSt
     }
 
     override fun getGatheredCCFH(): Int {
-        val value =  redisStorage.getValue(id, GCCFH)
+        val value = getValue(GCCFH)
         if (value != null) {
             return value.toInt()
         } else {
@@ -170,7 +170,7 @@ class ClientCCASessionDataRedisReplicatedImpl( id: String, redisStorage: RedisSt
     }
 
     override fun getGatheredDDFH(): Int {
-        val value = redisStorage.getValue(id, GDDFH)
+        val value = getValue(GDDFH)
         if (value != null) {
             return value.toInt()
         } else {

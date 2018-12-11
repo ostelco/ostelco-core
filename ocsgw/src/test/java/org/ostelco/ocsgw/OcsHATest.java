@@ -111,6 +111,7 @@ public class OcsHATest {
 
     @BeforeEach
     protected void setUp() {
+        LOG.info("setUp()");
 
         ocsgw_1 = startServer(1);
         ocsgw_2 = startServer(2);
@@ -125,6 +126,7 @@ public class OcsHATest {
 
     @AfterEach
     protected void tearDown() {
+        LOG.info("tearDown()");
         testPGW.shutdown();
         testPGW = null;
 

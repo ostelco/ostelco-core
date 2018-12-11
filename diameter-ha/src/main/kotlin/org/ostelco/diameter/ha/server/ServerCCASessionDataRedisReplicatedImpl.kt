@@ -8,11 +8,8 @@ import org.ostelco.diameter.ha.common.RedisStorage
 import org.ostelco.diameter.ha.logger
 import java.io.*
 import java.lang.IllegalStateException
-import java.util.*
 
 class ServerCCASessionDataRedisReplicatedImpl(id: String, redisStorage: RedisStorage, container: IContainer) : AppSessionDataRedisReplicatedImpl(id, redisStorage), IServerCCASessionData {
-
-    private val logger by logger()
 
     private val TCCID = "TCCID"
     private val STATELESS = "STATELESS"
@@ -31,7 +28,7 @@ class ServerCCASessionDataRedisReplicatedImpl(id: String, redisStorage: RedisSto
     }
 
     override fun getServerCCASessionState(): ServerCCASessionState {
-        val value = redisStorage.getValue(id, STATE)
+        val value = getValue(STATE)
         if (value != null) {
             return ServerCCASessionState.valueOf(value)
         } else {
@@ -47,12 +44,12 @@ class ServerCCASessionDataRedisReplicatedImpl(id: String, redisStorage: RedisSto
         storeValue(TCCID, toBase64String(tccTimerId))
     }
 
-    override fun getTccTimerId(): Serializable {
-        val value = redisStorage.getValue(id, TCCID)
+    override fun getTccTimerId(): Serializable? {
+        val value = getValue(TCCID)
         if (value != null) {
             return fromBase64String(value)
         } else {
-            throw IllegalStateException()
+            return value
         }
     }
 }

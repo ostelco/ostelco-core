@@ -111,8 +111,9 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
         logger.info("getSession $sessionId")
         if (this.localDataSource.exists(sessionId)) {
             return this.localDataSource.getSession(sessionId)
-        } else {
-            logger.error("Session $sessionId not found")
+        } else if (existReplicated(sessionId)) {
+            makeLocal(sessionId)
+            return this.localDataSource.getSession(sessionId)
         }
         return null
     }
@@ -138,8 +139,16 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
     }
 
     override fun addSession(session: BaseSession?) {
-        logger.info("addSession session:$session")
+        logger.info("addSession session: $session")
         this.localDataSource.addSession(session)
+    }
+
+    private fun makeLocal(sessionId: String?) {
+        TODO("Implement me!")
+    }
+
+    private fun existReplicated(sessionId: String?): Boolean {
+        TODO("Implement me!")
     }
 
     fun getRedisStorage(): RedisStorage {

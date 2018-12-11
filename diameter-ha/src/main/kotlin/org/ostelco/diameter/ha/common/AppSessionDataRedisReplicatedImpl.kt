@@ -11,7 +11,6 @@ import java.util.*
 open class AppSessionDataRedisReplicatedImpl(val id: String, val redisStorage: RedisStorage) : IAppSessionData {
 
     protected val APID = "APID"
-    protected val SIFACE = "SIFACE"
 
     private val logger by logger()
 
@@ -37,7 +36,7 @@ open class AppSessionDataRedisReplicatedImpl(val id: String, val redisStorage: R
      * @return the Application-Id
      */
     override fun getApplicationId(): ApplicationId {
-        val value = redisStorage.getValue(id, APID)
+        val value = getValue(APID)
         if (value != null) {
             return fromBase64String(value) as ApplicationId
         } else {
@@ -68,7 +67,14 @@ open class AppSessionDataRedisReplicatedImpl(val id: String, val redisStorage: R
 
     protected fun storeValue(key: String, value: String) : Boolean {
         logger.info("Storing key : $key value : $value")
-        return  this.redisStorage.storeValue(id, key, value)
+        return this.redisStorage.storeValue(id, key, value)
+    }
+
+    protected fun getValue(key: String) : String? {
+        logger.info("Get key : $key")
+        val value = this.redisStorage.getValue(id, key)
+        logger.info("Got key : $key value : $value")
+        return value
     }
 
     /**
