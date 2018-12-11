@@ -36,7 +36,9 @@ enum class Relation {
     REFERRED,              // (Subscriber) -[REFERRED]-> (Subscriber)
     OFFERED_TO_SEGMENT,    // (Offer) -[OFFERED_TO_SEGMENT]-> (Segment)
     OFFER_HAS_PRODUCT,     // (Offer) -[OFFER_HAS_PRODUCT]-> (Product)
-    BELONG_TO_SEGMENT      // (Subscriber) -[BELONG_TO_SEGMENT]-> (Segment)
+    BELONG_TO_SEGMENT,     // (Subscriber) -[BELONG_TO_SEGMENT]-> (Segment)
+    SUBSCRIBER_STATE,      // (Subscriber) -[SUBSCRIBER_STATE]-> (SubscriberState)
+    EKYC_SCAN,             // (Subscriber) -[EKYC_SCAN]-> (ScanInformation)
 }
 
 
@@ -65,6 +67,12 @@ object Neo4jStoreSingleton : GraphStore {
 
     private val planEntity = EntityType(Plan::class.java)
     private val plansStore = EntityStore(planEntity)
+
+    private val subscriberStateEntity = EntityType(SubscriberState::class.java)
+    private val subscriberStateStore = EntityStore(subscriberStateEntity)
+
+    private val scanInformationEntity = EntityType(ScanInformation::class.java)
+    private val scanInformationStore = EntityStore(scanInformationEntity)
 
     //
     // Relation
@@ -112,6 +120,20 @@ object Neo4jStoreSingleton : GraphStore {
             to = planEntity,
             dataClass = Void::class.java)
     private val hasPlanRelationStore = UniqueRelationStore(hasPlanRelation)
+
+    private val subscriberStateRelation = RelationType(
+            relation = Relation.SUBSCRIBER_STATE,
+            from = subscriberEntity,
+            to = subscriberStateEntity,
+            dataClass = Void::class.java)
+    private val subscriberStateRelationStore = UniqueRelationStore(subscriberStateRelation)
+
+    private val scanInformationRelation = RelationType(
+            relation = Relation.EKYC_SCAN,
+            from = subscriberEntity,
+            to = scanInformationEntity,
+            dataClass = Void::class.java)
+    private val scanInformationRelationStore = UniqueRelationStore(scanInformationRelation)
 
     // -------------
     // Client Store
@@ -450,6 +472,26 @@ object Neo4jStoreSingleton : GraphStore {
     override fun getReferredBy(subscriberId: String): Either<StoreError, String?> = readTransaction {
         subscriberStore.getRelatedFrom(subscriberId, referredRelation, transaction)
                 .map { it.singleOrNull()?.name }
+    }
+
+    //
+    // eKYC
+    //
+
+    override fun newEKYCScanId(subscriberId: String): Either<StoreError, ScanInformation> = writeTransaction {
+        subscriberStore.get(subscriberId, transaction).flatMap { subscriber ->
+            // Generate new id for the for the
+            val scanId = UUID.randomUUID().toString()
+            val newScan = ScanInformation(scanId = scanId, scanResult = null)
+            scanInformationStore.create(newScan, transaction).flatMap {
+                scanInformationRelationStore.create(subscriber.id, newScan.id, transaction)
+                        .map { newScan }
+            }
+        }
+    }
+
+    override fun updateScanInformation(scanInformation: ScanInformation): Either<StoreError, Unit> = writeTransaction {
+        scanInformationStore.update(scanInformation, transaction)
     }
 
     // ------------

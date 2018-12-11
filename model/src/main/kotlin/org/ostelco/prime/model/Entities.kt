@@ -53,30 +53,32 @@ enum class SubscriberStatus {
 
 data class SubscriberState(
         val status: SubscriberStatus,   // Current status of the subscriber
-        val modifiedTimestamp: Long     // last modification time of the subscriber status
-)
+        val modifiedTimestamp: Long,    // last modification time of the subscriber status
+        override val id: String
+): HasId
 
 data class ScanResult(
+        val vendorScanReference: String,
         val status: String,
         val verificationStatus: String,
         val time: Long,
         val type: String?,
         val country: String?,
-        val firstName: String,
-        val lastName: String,
+        val firstName: String?,
+        val lastName: String?,
         val dob: String?,
         val rejectReason: String?
 )
 
 data class ScanInformation(
-        val scanReferenceId:String,
-        var scanResult: ScanResult?
+        val scanId:String,
+        @JsonIgnore val scanResult: ScanResult?
 ) : HasId {
 
     override val id: String
         @Exclude
         @JsonIgnore
-        get() = scanReferenceId
+        get() = scanId
 }
 
 // TODO vihang: make ApplicationToken data class immutable

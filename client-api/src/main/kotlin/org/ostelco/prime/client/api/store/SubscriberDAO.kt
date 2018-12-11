@@ -4,13 +4,7 @@ import arrow.core.Either
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.Person
-import org.ostelco.prime.model.ActivePseudonyms
-import org.ostelco.prime.model.ApplicationToken
-import org.ostelco.prime.model.Bundle
-import org.ostelco.prime.model.Product
-import org.ostelco.prime.model.PurchaseRecord
-import org.ostelco.prime.model.Subscriber
-import org.ostelco.prime.model.Subscription
+import org.ostelco.prime.model.*
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
@@ -66,6 +60,8 @@ interface SubscriberDAO {
     fun getActivePseudonymForSubscriber(subscriberId: String): Either<ApiError, ActivePseudonyms>
 
     fun getStripeEphemeralKey(subscriberId: String, apiVersion: String): Either<ApiError, String>
+
+    fun newEKYCScanId(subscriberId: String): Either<ApiError, ScanInformation>
 
     companion object {
 

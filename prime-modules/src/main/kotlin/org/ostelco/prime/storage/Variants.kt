@@ -118,6 +118,11 @@ interface ClientGraphStore {
      * Temporary method to perform purchase as atomic transaction
      */
     fun purchaseProduct(subscriberId: String, sku: String, sourceId: String?, saveCard: Boolean): Either<PaymentError, ProductInfo>
+
+    /**
+     * Generate new eKYC scanId for the subscriber.
+     */
+    fun newEKYCScanId(subscriberId: String): Either<StoreError, ScanInformation>
 }
 
 interface AdminGraphStore {
@@ -205,6 +210,9 @@ interface AdminGraphStore {
 
     // Method to perform a full refund of a purchase
     fun refundPurchase(subscriberId: String, purchaseRecordId: String, reason: String): Either<PaymentError, ProductInfo>
+
+    // update the scan information with scan result
+    fun updateScanInformation(scanInformation: ScanInformation): Either<StoreError, Unit>
 
     // simple getAll
     // fun getOffers(): Collection<Offer>

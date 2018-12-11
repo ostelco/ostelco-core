@@ -14,13 +14,7 @@ import org.ostelco.prime.client.api.metrics.updateMetricsOnNewSubscriber
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.Person
 import org.ostelco.prime.getLogger
-import org.ostelco.prime.model.ActivePseudonyms
-import org.ostelco.prime.model.ApplicationToken
-import org.ostelco.prime.model.Bundle
-import org.ostelco.prime.model.Product
-import org.ostelco.prime.model.PurchaseRecord
-import org.ostelco.prime.model.Subscriber
-import org.ostelco.prime.model.Subscription
+import org.ostelco.prime.model.*
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
@@ -314,5 +308,10 @@ class SubscriberDAOImpl : SubscriberDAO {
     override fun getStripeEphemeralKey(subscriberId: String, apiVersion: String): Either<ApiError, String> {
         return paymentProcessor.getStripeEphemeralKey(userEmail = subscriberId, apiVersion = apiVersion)
                 .mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_GENERATE_STRIPE_EPHEMERAL_KEY, error) }
+    }
+
+    override fun newEKYCScanId(subscriberId: String): Either<ApiError, ScanInformation> {
+        return storage.newEKYCScanId(subscriberId)
+                .mapLeft { mapStorageErrorToApiError("Failed to create new scanId", ApiErrorCode.FAILED_TO_CREATE_SCANID, it) }
     }
 }

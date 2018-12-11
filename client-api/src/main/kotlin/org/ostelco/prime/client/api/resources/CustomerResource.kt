@@ -45,4 +45,20 @@ class CustomerResource(private val dao: SubscriberDAO) {
                 { stripeEphemeralKey -> Response.status(Response.Status.OK).entity(stripeEphemeralKey) })
                 .build()
     }
+
+    @GET
+    @Path("new-ekyc-scanId")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun newEKYCScanId(
+            @Auth token: AccessTokenPrincipal?): Response {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .build()
+        }
+
+        return dao.newEKYCScanId(subscriberId = token.name).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                { scanInformation -> Response.status(Response.Status.OK).entity(scanInformation) })
+                .build()
+    }
 }
