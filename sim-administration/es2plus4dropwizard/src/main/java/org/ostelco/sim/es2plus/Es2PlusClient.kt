@@ -6,8 +6,10 @@ import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
 
-class ES2PlusClientException(msg: String) : Exception(msg)
-
+/**
+ * A client implementation that is able to talk all of the GSMA specified parts of
+ * the ES2+ protocol.
+ */
 class ES2PlusClient(private val requesterId: String, private val client: Client) {
 
     @Throws(ES2PlusClientException::class)
@@ -133,4 +135,9 @@ class ES2PlusClient(private val requesterId: String, private val client: Client)
     }
 }
 
+
+/**
+ * Thrown when something goes wrong with the ES2+ protocol.
+ */
+class ES2PlusClientException(msg: String) : Exception(msg)
 
