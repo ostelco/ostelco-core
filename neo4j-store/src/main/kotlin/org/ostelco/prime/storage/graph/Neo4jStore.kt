@@ -227,6 +227,8 @@ object Neo4jStoreSingleton : GraphStore {
                             .map { it.forEach { bundle -> bundleStore.delete(bundle.id, transaction) } }
                     subscriberStore.getRelated(subscriberId, subscriptionRelation, transaction)
                             .map { it.forEach { subscription -> subscriptionStore.delete(subscription.id, transaction) } }
+                    subscriberStore.getRelated(subscriberId, subscriberStateRelation, transaction)
+                            .map { it.forEach { bundle -> subscriberStateStore.delete(bundle.id, transaction) } }
                 }
                 .flatMap { subscriberStore.delete(subscriberId, transaction) }
                 .ifFailedThenRollback(transaction)
