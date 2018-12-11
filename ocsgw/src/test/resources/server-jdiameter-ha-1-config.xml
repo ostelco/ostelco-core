@@ -73,7 +73,7 @@
   </Network>
 
   <Extensions>
-    <SessionDatasource value="org.ostelco.diameter.ha.sessiondatasource.LocalSessionDatasource" />
+    <SessionDatasource value="org.ostelco.diameter.ha.sessiondatasource.RedisReplicatedSessionDatasource" />
     <TimerFacility value="org.ostelco.diameter.ha.timer.LocalTimerFacility" />
   </Extensions>
 

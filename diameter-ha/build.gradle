@@ -19,6 +19,8 @@ dependencies {
   }
   implementation 'org.slf4j:log4j-over-slf4j:1.7.25'
 
+  compile 'io.lettuce:lettuce-core:5.1.3.RELEASE'
+
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
   testRuntimeOnly 'org.hamcrest:hamcrest-all:1.3'
   testImplementation 'org.mockito:mockito-all:1.10.19'

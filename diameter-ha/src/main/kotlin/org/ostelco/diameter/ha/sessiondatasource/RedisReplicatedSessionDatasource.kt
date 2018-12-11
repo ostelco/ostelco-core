@@ -30,6 +30,7 @@ import org.jdiameter.common.impl.app.sh.ShLocalSessionDataFactory
 import org.jdiameter.common.impl.app.slg.SLgLocalSessionDataFactory
 import org.jdiameter.common.impl.app.slh.SLhLocalSessionDataFactory
 import org.jdiameter.common.impl.data.LocalDataSource
+import org.ostelco.diameter.ha.common.RedisStorage
 import org.ostelco.diameter.ha.logger
 import org.ostelco.diameter.ha.sessiondatafactory.CCARedisReplicatedSessionDataFactory
 import java.util.HashMap
@@ -37,12 +38,14 @@ import java.util.HashMap
 /**
  * A Replicated DataSource that will use redis as a remote store to save session information.
  */
-class RedisReplicatedSessionDatasource(container: IContainer) : ISessionDatasource {
+class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionDatasource {
 
     private val logger by logger()
     private val localDataSource: ISessionDatasource = LocalDataSource()
 
     protected var appSessionDataFactories = HashMap<Class<out IAppSessionData>, IAppSessionDataFactory<out IAppSessionData>>()
+
+    private val redisStorage = RedisStorage()
 
 
     // We only care about ICCASessionData so that is the only one we have re-implemented right now
@@ -68,10 +71,12 @@ class RedisReplicatedSessionDatasource(container: IContainer) : ISessionDatasour
 
     override fun start() {
         logger.info("start")
+        redisStorage.connect()
     }
 
     override fun stop() {
         logger.info("stop")
+        redisStorage.disconnect()
     }
 
     override fun setSessionListener(sessionId: String?, data: NetworkReqListener?) {
@@ -135,5 +140,9 @@ class RedisReplicatedSessionDatasource(container: IContainer) : ISessionDatasour
     override fun addSession(session: BaseSession?) {
         logger.info("addSession session:$session")
         this.localDataSource.addSession(session)
+    }
+
+    fun getRedisStorage(): RedisStorage {
+        return redisStorage
     }
 }
