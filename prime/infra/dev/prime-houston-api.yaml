@@ -242,12 +242,6 @@ paths:
         - application/json
         - text/plain
       operationId: "getPlan"
-      parameters:
-        - name: planId
-          in: path
-          description: "Name of plan to get"
-          required: true
-          type: string
       responses:
         200:
           description: "Plan details is returned"
@@ -255,18 +249,20 @@ paths:
             $ref: '#/definitions/Plan'
         404:
           description: "No such plan"
+      parameters:
+          - name: planId
+          in: path
+          description: "Name of plan to get"
+          required: true
+          type: string
+      security:
+        - auth0_jwt: []
     post:
       description: "Create a plan"
       produces:
         - application/json
         - text/plain
       operationId: "createPlan"
-      parameters:
-        - name: plan
-          in: body
-          description: Plan details
-          schema:
-            $ref: '#/definitions/Plan'
       responses:
         201:
           description: "Successfully purchased the plan."
@@ -274,18 +270,20 @@ paths:
             $ref: '#/definitions/Plan'
         400:
           description: "Failed to create the plan"
+      parameters:
+          - name: plan
+          in: body
+          description: Plan details
+          schema:
+            $ref: '#/definitions/Plan'
+      security:
+        - auth0_jwt: []
     delete:
       description: "Removes a plan"
       produces:
         - application/json
         - text/plain
       operationId: "deletePlan"
-      parameters:
-        - name: planId
-          in: path
-          description: "The name of the plan to remove"
-          required: true
-          type: string
       responses:
         200:
           description: "Plan is removed"
@@ -295,6 +293,14 @@ paths:
           description: "Failed to remove plan"
         404:
           description: "No such plan"
+      parameters:
+        - name: planId
+          in: path
+          description: "The name of the plan to remove"
+          required: true
+          type: string
+      security:
+        - auth0_jwt: []
   "/profiles/{email}/state":
     get:
       description: "Get state of the user."
