@@ -133,7 +133,8 @@ class LocalTimerFacility(container: IContainer) : ITimerFacility {
      */
         @Throws(IOException::class)
         override fun writeExternal(out: ObjectOutput) {
-            throw IOException("Failed to serialize local timer!")
+            logger.info("IMPLEMENT ME (writeExternal)")
+            //throw IOException("Failed to serialize local timer!")
         }
 
         /*
@@ -143,7 +144,8 @@ class LocalTimerFacility(container: IContainer) : ITimerFacility {
      */
         @Throws(IOException::class, ClassNotFoundException::class)
         override fun readExternal(`in`: ObjectInput) {
-            throw IOException("Failed to deserialize local timer!")
+            logger.info("IMPLEMENT ME (readExternal)")
+            //throw IOException("Failed to deserialize local timer!")
         }
     }
 }

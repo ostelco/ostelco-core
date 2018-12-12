@@ -1,8 +1,10 @@
 package org.ostelco.diameter.ha.sessiondatasource
 
 import org.jdiameter.api.BaseSession
+import org.jdiameter.api.IllegalDiameterStateException
 import org.jdiameter.api.NetworkReqListener
 import org.jdiameter.client.api.IContainer
+import org.jdiameter.client.api.ISessionFactory
 import org.jdiameter.common.api.app.IAppSessionData
 import org.jdiameter.common.api.app.IAppSessionDataFactory
 import org.jdiameter.common.api.app.acc.IAccSessionData
@@ -30,6 +32,7 @@ import org.jdiameter.common.impl.app.sh.ShLocalSessionDataFactory
 import org.jdiameter.common.impl.app.slg.SLgLocalSessionDataFactory
 import org.jdiameter.common.impl.app.slh.SLhLocalSessionDataFactory
 import org.jdiameter.common.impl.data.LocalDataSource
+import org.ostelco.diameter.ha.common.AppSessionDataRedisReplicatedImpl
 import org.ostelco.diameter.ha.common.RedisStorage
 import org.ostelco.diameter.ha.logger
 import org.ostelco.diameter.ha.sessiondatafactory.CCARedisReplicatedSessionDataFactory
@@ -84,7 +87,7 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
         if (localDataSource.exists(sessionId)) {
             localDataSource.setSessionListener(sessionId, data)
         } else {
-            logger.error("could not find session $sessionId")
+            logger.error("could not set session listener for non local session $sessionId")
         }
     }
 
@@ -93,39 +96,54 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
         if (localDataSource.exists(sessionId)) {
             return localDataSource.removeSessionListener(sessionId)
         } else {
-            logger.error("could not remove session $sessionId")
+            logger.error("could not remove SessionListener for session $sessionId")
         }
         return null
     }
 
     override fun removeSession(sessionId: String?) {
-        logger.info("removeSession sessionId:$sessionId")
-        if (localDataSource.exists(sessionId)) {
-            localDataSource.removeSession(sessionId)
-        } else {
-            logger.error("Session not found $sessionId")
+        if (sessionId != null) {
+            logger.info("removeSession sessionId:$sessionId")
+            if (localDataSource.exists(sessionId)) {
+                localDataSource.removeSession(sessionId)
+            } else if (existReplicated(sessionId)) {
+                logger.info("Removed external session information")
+                redisStorage.removeId(sessionId)
+            } else {
+                logger.error("Could not remove session : $sessionId. Not found")
+            }
         }
     }
 
     override fun getSession(sessionId: String?): BaseSession? {
         logger.info("getSession $sessionId")
-        if (this.localDataSource.exists(sessionId)) {
-            return this.localDataSource.getSession(sessionId)
-        } else if (existReplicated(sessionId)) {
-            makeLocal(sessionId)
-            return this.localDataSource.getSession(sessionId)
+        if (sessionId != null) {
+            if (this.localDataSource.exists(sessionId)) {
+                logger.info("Using LocalDataSouce for session $sessionId")
+                return this.localDataSource.getSession(sessionId)
+            } else if (existReplicated(sessionId)) {
+                logger.info("Using replicated session : $sessionId")
+                makeLocal(sessionId)
+                return this.localDataSource.getSession(sessionId)
+            } else {
+                logger.error("Session not local or external $sessionId")
+            }
         }
         return null
     }
 
     override fun exists(sessionId: String?): Boolean {
         logger.info("exists sessionId: $sessionId")
-        return this.localDataSource.exists(sessionId)
+        return if (this.localDataSource.exists(sessionId)) true else this.existReplicated(sessionId)
     }
 
     override fun getSessionListener(sessionId: String?): NetworkReqListener? {
         logger.info("getSessionListener sessionId:$sessionId")
         if (localDataSource.exists(sessionId)) {
+            return localDataSource.getSessionListener(sessionId)
+        } else if (existReplicated(sessionId)) {
+            logger.info("getting session listener from replicatad external source")
+            makeLocal(sessionId)
             return localDataSource.getSessionListener(sessionId)
         } else {
             logger.error("Could not get session listener for sessionId $sessionId")
@@ -144,11 +162,39 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
     }
 
     private fun makeLocal(sessionId: String?) {
-        TODO("Implement me!")
+        logger.info("makeLocal")
+        if (sessionId != null) {
+            try {
+                // this is APP session, always
+                val appSessionInterfaceClass = AppSessionDataRedisReplicatedImpl.getAppSessionIface(this.redisStorage, sessionId)
+                logger.info("Got appSessionInterfaceClass : $appSessionInterfaceClass")
+                // get factory;
+                val factory = (this.container.sessionFactory as ISessionFactory).getAppSessionFactory(appSessionInterfaceClass)
+                if (factory == null) {
+                    logger.warn("Session with id:{}, is in replicated data source, but no Application Session Factory for:{}.", sessionId, appSessionInterfaceClass)
+                    return
+                } else {
+                    logger.info("Got a factory : $factory")
+                    val session = factory.getSession(sessionId, appSessionInterfaceClass)
+                    this.localDataSource.addSession(session)
+                    this.localDataSource.setSessionListener(sessionId, session as NetworkReqListener)
+                    return
+                }
+            } catch (e: IllegalDiameterStateException) {
+                logger.error("Failed to obtain factory from stack.", e)
+            }
+        } else {
+            logger.error("No sessionId set")
+        }
     }
 
     private fun existReplicated(sessionId: String?): Boolean {
-        TODO("Implement me!")
+        logger.info("existReplicated : $sessionId")
+        if (sessionId == null) {
+            return false
+        } else {
+            return redisStorage.exist(sessionId)
+        }
     }
 
     fun getRedisStorage(): RedisStorage {

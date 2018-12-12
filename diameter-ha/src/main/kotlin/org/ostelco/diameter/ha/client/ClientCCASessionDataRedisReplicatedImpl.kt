@@ -2,6 +2,7 @@ package org.ostelco.diameter.ha.client
 
 import org.jdiameter.api.AvpDataException
 import org.jdiameter.api.Request
+import org.jdiameter.api.acc.ClientAccSession
 import org.jdiameter.client.api.IContainer
 import org.jdiameter.client.api.IMessage
 import org.jdiameter.client.api.parser.IMessageParser
@@ -33,6 +34,9 @@ class ClientCCASessionDataRedisReplicatedImpl( id: String, redisStorage: RedisSt
     private val messageParser: IMessageParser
 
     init {
+        if (!redisStorage.exist(id)) {
+            setAppSessionIface(ClientAccSession::class.java)
+        }
         messageParser = container.assemblerFacility.getComponentInstance(IMessageParser::class.java);
     }
 

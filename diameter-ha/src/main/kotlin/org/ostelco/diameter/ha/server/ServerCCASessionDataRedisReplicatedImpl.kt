@@ -1,5 +1,6 @@
 package org.ostelco.diameter.ha.server
 
+import org.jdiameter.api.cca.ServerCCASession
 import org.jdiameter.client.api.IContainer
 import org.jdiameter.common.api.app.cca.ServerCCASessionState
 import org.jdiameter.server.impl.app.cca.IServerCCASessionData
@@ -16,7 +17,10 @@ class ServerCCASessionDataRedisReplicatedImpl(id: String, redisStorage: RedisSto
     private val STATE = "STATE"
 
     init {
-        setServerCCASessionState(ServerCCASessionState.IDLE)
+        if (!redisStorage.exist(id)) {
+            setAppSessionIface(ServerCCASession::class.java)
+            setServerCCASessionState(ServerCCASessionState.IDLE)
+        }
     }
 
     override fun isStateless(): Boolean {

@@ -1,18 +1,24 @@
 package org.ostelco.diameter.ha.common
 
 import org.jdiameter.api.ApplicationId
+import org.jdiameter.api.acc.ClientAccSession
 import org.jdiameter.common.api.app.IAppSessionData
 import org.ostelco.diameter.ha.logger
 import java.io.*
 import java.lang.IllegalStateException
 import java.nio.ByteBuffer
 import java.util.*
+import org.jdiameter.api.app.AppSession
+
+
 
 open class AppSessionDataRedisReplicatedImpl(val id: String, val redisStorage: RedisStorage) : IAppSessionData {
 
     protected val APID = "APID"
 
-    private val logger by logger()
+    fun setAppSessionIface(iface: Class<out AppSession>) {
+        storeValue(SIFACE, toBase64String(iface))
+    }
 
     /**
      * Returns the session-id of the session to which this data belongs to.
@@ -95,28 +101,44 @@ open class AppSessionDataRedisReplicatedImpl(val id: String, val redisStorage: R
         return Base64.getDecoder().decode(b64String)
     }
 
-    /**
-     * Convert Serializable to a b64 encoded string
-     */
-    @Throws(IOException::class)
-    protected fun toBase64String(o: Serializable?): String {
-        val baos = ByteArrayOutputStream()
-        val oos = ObjectOutputStream(baos)
-        oos.writeObject(o)
-        oos.close()
-        return Base64.getEncoder().encodeToString(baos.toByteArray())
-    }
+    companion object AppSessionHelper {
 
-    /**
-     * Read the object from Base64 string.
-     **/
-    @Throws(IOException::class, ClassNotFoundException::class)
-    protected fun fromBase64String(b64String: String): Serializable {
-        val data = Base64.getDecoder().decode(b64String)
-        val objectInputStream = ObjectInputStream(
-                ByteArrayInputStream(data))
-        val any = objectInputStream.readObject() as Serializable
-        objectInputStream.close()
-        return any
+        private val logger by logger()
+        protected val SIFACE = "SIFACE"
+
+        fun getAppSessionIface(storage: RedisStorage, sessionId: String): Class<out AppSession> {
+            val value = storage.getValue(sessionId, SIFACE)
+            logger.info("getAppSessionIface value : $value")
+            if (value != null) {
+                return fromBase64String(value) as Class<out AppSession>
+            }
+            return ClientAccSession::class.java
+        }
+
+        /**
+         * Convert Serializable to a b64 encoded string
+         */
+        @Throws(IOException::class)
+        fun toBase64String(o: Serializable?): String {
+            val baos = ByteArrayOutputStream()
+            val oos = ObjectOutputStream(baos)
+            oos.writeObject(o)
+            oos.close()
+            return Base64.getEncoder().encodeToString(baos.toByteArray())
+        }
+
+        /**
+         * Read the object from Base64 string.
+         **/
+        @Throws(IOException::class, ClassNotFoundException::class)
+        fun fromBase64String(b64String: String): Serializable {
+            val data = Base64.getDecoder().decode(b64String)
+            val objectInputStream = ObjectInputStream(
+                    ByteArrayInputStream(data))
+            val any = objectInputStream.readObject() as Serializable
+            objectInputStream.close()
+            return any
+        }
+
     }
 }
