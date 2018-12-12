@@ -7,6 +7,9 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.util.*
+import javax.ws.rs.core.MultivaluedHashMap
+import javax.ws.rs.core.MultivaluedMap
+import kotlin.collections.HashMap
 import kotlin.test.*
 
 
@@ -642,6 +645,62 @@ class PurchaseTest {
 
             assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
             assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
+        } finally {
+            StripePayment.deleteCustomer(email = email)
+        }
+    }
+
+}
+
+class eKYCTest {
+    @Test
+    fun `jersey test - GET new-ekyc-scanId - generate new scanId for eKYC`() {
+
+        val email = "ekyc-${randomInt()}@test.com"
+        try {
+            createProfile(name = "Test User for eKYC", email = email)
+
+            val scanInfo: ScanInformation = get {
+                path = "/customer/new-ekyc-scanId"
+                subscriberId = email
+            }
+
+            assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
+        } finally {
+            StripePayment.deleteCustomer(email = email)
+        }
+    }
+    @Test
+    fun `jersey test - ekyc callback - test the call back processing`() {
+
+        val email = "ekyc-${randomInt()}@test.com"
+        try {
+            createProfile(name = "Test User for eKYC", email = email)
+
+            val scanInfo: ScanInformation = get {
+                path = "/customer/new-ekyc-scanId"
+                subscriberId = email
+            }
+
+            assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
+
+            var dataMap = MultivaluedHashMap<String,String>()
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            dataMap.put("idScanStatus", listOf("ERROR"))
+            dataMap.put("verificationStatus", listOf("FRAUD"))
+            dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
+            dataMap.put("idType", listOf("LICENSE"))
+            dataMap.put("idCountry", listOf("NOR"))
+            dataMap.put("idFirstName", listOf("Test User"))
+            dataMap.put("idLastName", listOf("Test Family"))
+            dataMap.put("idDob", listOf("1990-12-09"))
+            dataMap.put("merchantIdScanReference", listOf(scanInfo.scanId))
+
+            postForm<ScanInformation>(expectedResultCode = 200) {
+                path = "/ekyc/callback"
+                body = dataMap
+            }
+
         } finally {
             StripePayment.deleteCustomer(email = email)
         }

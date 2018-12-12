@@ -42,6 +42,16 @@ inline fun <reified T> post(expectedResultCode: Int = 201, execute: HttpRequest.
     return response.readEntity(object : GenericType<T>() {})
 }
 
+/**
+ * DSL function for POST operation
+ */
+inline fun <reified T> postForm(expectedResultCode: Int = 201, execute: HttpRequest.() -> Unit): T {
+    val request = HttpRequest().apply(execute)
+    val response = HttpClient.send(request.path, request.queryParams, request.headerParams, request.subscriberId)
+            .post(Entity.entity(request.body ?: "", MediaType.APPLICATION_FORM_URLENCODED))
+    assertEquals(expectedResultCode, response.status) { response.readEntity(String::class.java) }
+    return response.readEntity(object : GenericType<T>() {})
+}
 
 /**
  * DSL function for PUT operation

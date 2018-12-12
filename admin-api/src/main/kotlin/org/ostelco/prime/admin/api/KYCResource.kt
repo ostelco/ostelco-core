@@ -12,6 +12,7 @@ import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.AdminDataSource
 import java.net.URLDecoder
 import java.text.SimpleDateFormat
+import java.time.Instant
 import java.util.*
 import javax.servlet.http.HttpServletRequest
 import javax.ws.rs.*
@@ -79,18 +80,12 @@ class KYCResource {
         return map
     }
 
-    private fun toTimestamp(dateString: String, format: String = "YYYY-MM-DDThh:mm:ss.SSSZ"): Long {
-        val df = SimpleDateFormat(format)
-        val date = df.parse(dateString)
-        return date.time
-    }
-
     private fun toScanInformation(dataMap: Map<String, String>): ScanInformation? {
         try {
             val vendorScanReference: String = dataMap["jumioIdScanReference"]!!
             val status: String = dataMap["idScanStatus"]!!
             val verificationStatus: String = dataMap["verificationStatus"]!!
-            val time: Long = toTimestamp(dataMap["callbackDate"]!!)
+            val time: Long = Instant.parse(dataMap["callbackDate"]!!).toEpochMilli()
             val type: String? = dataMap["idType"]
             val country: String? = dataMap["idCountry"]
             val firstName: String? = dataMap["idFirstName"]
@@ -124,11 +119,10 @@ class KYCResource {
             @Context request: HttpServletRequest,
             @Context httpHeaders: HttpHeaders,
             formData: MultivaluedMap<String, String>): Response {
-
+        dumpRequestInfo(request, httpHeaders, formData)
         val scanInformation = toScanInformation(toRegularMap(formData)) ?:
             return Response.status(Response.Status.BAD_REQUEST).build()
-        dumpRequestInfo(request, httpHeaders, formData)
-        logger.error("Updating scan information ${scanInformation.scanId} jumioIdScanReference ${scanInformation.scanResult?.vendorScanReference}")
+        logger.info("Updating scan information ${scanInformation.scanId} jumioIdScanReference ${scanInformation.scanResult?.vendorScanReference}")
         return updateScanInformation(scanInformation).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 {
@@ -148,7 +142,7 @@ class KYCResource {
             Either.left(BadGatewayError("Failed to update scan information", ApiErrorCode.FAILED_TO_UPDATE_SCAN_RESULTS))
         }
     }
-
+    //TODO: Prasanth, remove this method after testing
     private fun dumpRequestInfo(request: HttpServletRequest, httpHeaders: HttpHeaders, formData: MultivaluedMap<String, String>): String {
         var result = ""
         result += "Address: ${request.remoteHost} (${request.remoteAddr} : ${request.remotePort}) \n"
