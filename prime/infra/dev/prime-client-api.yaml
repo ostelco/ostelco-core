@@ -45,6 +45,36 @@ paths:
           description: "User not found."
       security:
         - auth0_jwt: []
+  "/customer/subscriberState":
+    get:
+      description: "Get state of the user."
+      produces:
+        - application/json
+      operationId: "getSubscriberState"
+      responses:
+        200:
+          description: "Successfully retrieved the state."
+          schema:
+            $ref: '#/definitions/SubscriberState'
+        404:
+          description: "No state information available for this user."
+      security:
+        - auth0_jwt: []
+  "/customer/new-ekyc-scanId":
+    get:
+      description: "Get a new Id for eKYC scanning."
+      produces:
+        - application/json
+      operationId: "newEKYCScanId"
+      responses:
+        200:
+          description: "Successfully retrieved new ScanId."
+          schema:
+            $ref: '#/definitions/ScanInformation'
+        404:
+          description: "User not found."
+      security:
+        - auth0_jwt: []
   "/profile":
     get:
       description: "Get profile for the user (email-id present in the bearer token)."
@@ -703,6 +733,31 @@ definitions:
       variables:
         description: "GraphQL query variables."
         type: object
+  SubscriberState:
+    type: object
+    properties:
+      id:
+        description: "User Id"
+        type: string
+      status:
+        description: "Current status of the subscriber"
+        type: string
+      modifiedTimestamp:
+        description: "Last modified time for the status (Unix timestamp)"
+        type: integer
+        format: int64
+    required:
+      - id
+      - status
+      - modifiedTimestamp
+  ScanInformation:
+    type: object
+    properties:
+      scanId:
+        description: "New scan Id for eKYC"
+        type: string
+    required:
+      - scanId
 securityDefinitions:
   auth0_jwt:
     authorizationUrl: ""

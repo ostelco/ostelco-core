@@ -289,6 +289,48 @@ paths:
           description: "Failed to remove plan"
         404:
           description: "No such plan"
+  "/profiles/{email}/state":
+    get:
+      description: "Get state of the user."
+      produces:
+        - application/json
+      operationId: "getSubscriberState"
+      responses:
+        200:
+          description: "Successfully retrieved the state."
+          schema:
+            $ref: '#/definitions/SubscriberState'
+        404:
+          description: "No state information available for this user."
+      security:
+        - auth0_jwt: []
+      parameters:
+        - name: email
+          in: path
+          description: "The email of the user"
+          required: true
+          type: string
+  "/new-ekyc-scanId/{email}":
+    get:
+      description: "Get a new Id for eKYC scanning."
+      produces:
+        - application/json
+      operationId: "newEKYCScanId"
+      responses:
+        200:
+          description: "Successfully retrieved new ScanId."
+          schema:
+            $ref: '#/definitions/ScanInformation'
+        404:
+          description: "User not found."
+      security:
+        - auth0_jwt: []
+      parameters:
+        - name: email
+          in: path
+          description: "The email of the user"
+          required: true
+          type: string
 definitions:
   Profile:
     type: object
@@ -421,6 +463,31 @@ definitions:
     type: array
     items:
       $ref: '#/definitions/Plan'
+  SubscriberState:
+    type: object
+    properties:
+      id:
+        description: "User Id"
+        type: string
+      status:
+        description: "Current status of the subscriber"
+        type: string
+      modifiedTimestamp:
+        description: "Last modified time for the status (Unix timestamp)"
+        type: integer
+        format: int64
+    required:
+      - id
+      - status
+      - modifiedTimestamp
+  ScanInformation:
+    type: object
+    properties:
+      scanId:
+        description: "New scan Id for eKYC"
+        type: string
+    required:
+      - scanId
 securityDefinitions:
   auth0_jwt:
     authorizationUrl: "https://redotter-admin-dev.eu.auth0.com/authorize"

@@ -28,7 +28,7 @@ class KYCTestHelperResource {
     private val storage by lazy { getResource<AdminDataSource>() }
 
     @GET
-    @Path("new-ekyc-scanId")
+    @Path("{email}")
     @Produces(MediaType.APPLICATION_JSON)
     fun newEKYCScanId(@Auth token: AccessTokenPrincipal?,
                       @PathParam("email")
