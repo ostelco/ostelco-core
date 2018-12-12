@@ -58,25 +58,34 @@ paths:
       produces:
         - application/json
       operationId: "getPlans"
+      security:
+        - auth0_jwt: []
+      responses:
+        200:
+          description: "Plans subscribed to"
+          schema:
+            $ref: '#/definitions/PlanList'
+        404:
+          description: "No plans found"
       parameters:
         - name: email
           in: path
           description: "The email of the subscriber"
           required: true
           type: string
-      responses:
-        200:
-          description: "Plans subscribed to"
-          items:
-            $ref: '#/definitions/PlanList'
-        404:
-          description: "No plans found"
   "/profiles/{email}/plans/{planId}":
     post:
       description: "Subscribe a subscriber to a plan"
       produces:
         - application/json
         - text/plain
+      responses:
+        201:
+          description: "The subscription was created successfully"
+        400:
+          description: "Failed to create subscription"
+      security:
+        - auth0_jwt: []
       parameters:
         - name: email
           in: path
@@ -88,16 +97,18 @@ paths:
           description: "The name of the plan to subscribe to"
           required: true
           type: string
-      responses:
-        201:
-          description: "The subscription was created successfully"
-        400:
-          description: "Failed to create subscription"
     delete:
       description: "Remove a subscriber from a plan"
       produces:
         - application/json
         - text/plain
+      responses:
+        200:
+          description: "The subscription was removed successfully"
+        400:
+          description: "Failed to remove subscription"
+      security:
+        - auth0_jwt: []
       parameters:
         - name: email
           in: path
@@ -109,11 +120,6 @@ paths:
           description: "The name of the plan to remove the subscription for"
           required: true
           type: string
-      responses:
-        200:
-          description: "The subscription was removed successfully"
-        400:
-          description: "Failed to remove subscription"
   "/bundles/{email}":
     get:
       description: "Get bundles (balance) for the user (identified by email)."
