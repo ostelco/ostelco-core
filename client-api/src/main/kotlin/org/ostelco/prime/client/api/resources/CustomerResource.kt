@@ -72,9 +72,9 @@ class CustomerResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        return dao.newEKYCScanId(subscriberId = token.name).fold(
+        return dao.getSubscriberState(subscriberId = token.name).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { scanInformation -> Response.status(Response.Status.OK).entity(scanInformation) })
+                { state -> Response.status(Response.Status.OK).entity(state) })
                 .build()
     }
 }
