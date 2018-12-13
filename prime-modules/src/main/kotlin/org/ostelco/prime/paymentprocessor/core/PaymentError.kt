@@ -2,10 +2,10 @@ package org.ostelco.prime.paymentprocessor.core
 
 import org.ostelco.prime.apierror.InternalError
 
-sealed class PaymentError(val description: String, var externalErrorMessage : String? = null) : InternalError()
+sealed class PaymentError(val description: String, var message : String? = null, val error: InternalError?) : InternalError()
 
-class ForbiddenError(description: String, externalErrorMessage: String? = null) : PaymentError(description, externalErrorMessage)
+class ForbiddenError(description: String, message: String? = null, error: InternalError? = null) : PaymentError(description, message, error)
 
-class NotFoundError(description: String, externalErrorMessage: String? = null) : PaymentError(description, externalErrorMessage )
+class NotFoundError(description: String, message: String? = null, error: InternalError? = null) : PaymentError(description, message, error)
 
-class BadGatewayError(description: String, externalErrorMessage: String? = null) : PaymentError(description, externalErrorMessage)
+class BadGatewayError(description: String, message: String? = null, error: InternalError? = null) : PaymentError(description, message, error)
