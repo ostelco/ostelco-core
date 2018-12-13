@@ -8,6 +8,7 @@ import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.ScanResult
+import org.ostelco.prime.model.ScanStatus
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.AdminDataSource
 import java.net.URLDecoder
@@ -80,10 +81,17 @@ class KYCResource {
         return map
     }
 
+    private fun toScanStatus(status: String): ScanStatus  {
+        return when (status) {
+            "SUCCESS" -> { ScanStatus.APPROVED }
+            else -> { ScanStatus.REJECTED }
+        }
+    }
+
     private fun toScanInformation(dataMap: Map<String, String>): ScanInformation? {
         try {
             val vendorScanReference: String = dataMap["jumioIdScanReference"]!!
-            val status: String = dataMap["idScanStatus"]!!
+            val status: ScanStatus = toScanStatus(dataMap["idScanStatus"]!!)
             val verificationStatus: String = dataMap["verificationStatus"]!!
             val time: Long = Instant.parse(dataMap["callbackDate"]!!).toEpochMilli()
             val type: String? = dataMap["idType"]
@@ -94,9 +102,8 @@ class KYCResource {
             val rejectReason: String? = dataMap["rejectReason"]
             val scanId: String = dataMap["merchantIdScanReference"]!!
 
-            return ScanInformation(scanId, ScanResult(
+            return ScanInformation(scanId, status, ScanResult(
                     vendorScanReference = vendorScanReference,
-                    status = status,
                     verificationStatus = verificationStatus,
                     time = time,
                     type = type,
@@ -120,8 +127,11 @@ class KYCResource {
             @Context httpHeaders: HttpHeaders,
             formData: MultivaluedMap<String, String>): Response {
         dumpRequestInfo(request, httpHeaders, formData)
-        val scanInformation = toScanInformation(toRegularMap(formData)) ?:
-            return Response.status(Response.Status.BAD_REQUEST).build()
+        val scanInformation = toScanInformation(toRegularMap(formData))
+        if (scanInformation == null) {
+            val reqError = BadRequestError("Missing mandatory fields in scan result", ApiErrorCode.FAILED_TO_UPDATE_SCAN_RESULTS)
+            return Response.status(reqError.status).entity(asJson(reqError)).build()
+        }
         logger.info("Updating scan information ${scanInformation.scanId} jumioIdScanReference ${scanInformation.scanResult?.vendorScanReference}")
         return updateScanInformation(scanInformation).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },

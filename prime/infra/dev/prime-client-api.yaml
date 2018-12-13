@@ -756,8 +756,12 @@ definitions:
       scanId:
         description: "New scan Id for eKYC"
         type: string
+      status:
+        description: "The status of the scan"
+        type: string
     required:
       - scanId
+      - status
 securityDefinitions:
   auth0_jwt:
     authorizationUrl: ""

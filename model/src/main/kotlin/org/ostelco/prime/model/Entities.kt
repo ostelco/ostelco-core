@@ -43,8 +43,7 @@ data class Subscriber(
 
 
 enum class SubscriberStatus {
-    REGISTERED,         // User has registered an account
-    EKYC_PENDING,       // eKYC results are pending
+    REGISTERED,         // User has registered an account, eKYC results are pending
     EKYC_REJECTED,      // eKYC documents were rejected
     EKYC_APPROVED,      // eKYC documents were approved
     ACTIVE,             // Subscriber is active
@@ -57,9 +56,14 @@ data class SubscriberState(
         override val id: String
 ): HasId
 
+enum class ScanStatus {
+    PENDING,        // scan results are pending
+    REJECTED,       // scanned Id was rejected
+    APPROVED        // scanned Id was approved
+}
+
 data class ScanResult(
         val vendorScanReference: String,
-        val status: String,
         val verificationStatus: String,
         val time: Long,
         val type: String?,
@@ -72,7 +76,8 @@ data class ScanResult(
 
 data class ScanInformation(
         val scanId:String,
-        @JsonIgnore val scanResult: ScanResult?
+        val status: ScanStatus,
+        val scanResult: ScanResult?
 ) : HasId {
 
     override val id: String
