@@ -501,6 +501,9 @@ definitions:
       status:
         description: "The status of the scan"
         type: string
+      scanResult:
+        description: "The result from the vendor"
+        type: object
     required:
       - scanId
       - status
