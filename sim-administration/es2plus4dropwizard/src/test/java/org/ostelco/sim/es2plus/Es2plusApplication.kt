@@ -8,6 +8,7 @@ import io.swagger.v3.oas.integration.SwaggerConfiguration
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Contact
 import io.swagger.v3.oas.models.info.Info
+import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
 import java.util.stream.Collectors
 import java.util.stream.Stream
 
@@ -42,10 +43,8 @@ class Es2plusApplication : Application<Es2plusConfiguration>() {
         env.register(OpenApiResource()
                 .openApiConfiguration(oasConfig))
 
-        env.register(SmDpPlusCallbackResource(PlaceholderSmDpPlusCallbackService()))
-        env.register(SmDpPlusServerResource(PlaceholderSmDpPlusService()))
-        env.register(ES2PlusIncomingHeadersFilter())
-        env.register(SmdpExceptionMapper())
+
+        addEs2PlusDefaultFiltersAndInterceptors(env)
     }
 
     companion object {

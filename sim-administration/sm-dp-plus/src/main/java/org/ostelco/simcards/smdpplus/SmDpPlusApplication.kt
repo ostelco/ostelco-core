@@ -5,20 +5,12 @@ import io.dropwizard.Application
 import io.dropwizard.Configuration
 import io.dropwizard.client.JerseyClientConfiguration
 import io.dropwizard.db.DataSourceFactory
-import io.dropwizard.jersey.setup.JerseyEnvironment
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
-import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource
-import io.swagger.v3.oas.integration.SwaggerConfiguration
-import io.swagger.v3.oas.models.OpenAPI
-import io.swagger.v3.oas.models.info.Contact
-import io.swagger.v3.oas.models.info.Info
-import org.ostelco.jsonschema.RequestServerReaderWriterInterceptor
-import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter
-import org.ostelco.sim.es2plus.ES2PlusOutgoingHeadersFilter
+import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
+import org.ostelco.dropwizardutils.OpenapiResourceAdderConfig
+import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
 import org.slf4j.LoggerFactory
-import java.util.stream.Collectors
-import java.util.stream.Stream
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
 
@@ -56,33 +48,8 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 
         val jerseyEnvironment = environment.jersey()
 
-        addOpenapiResourceToJerseyEnv(jerseyEnvironment)
-        
-        jerseyEnvironment.register(ES2PlusIncomingHeadersFilter())
-        jerseyEnvironment.register(ES2PlusOutgoingHeadersFilter())
-        jerseyEnvironment.register(RequestServerReaderWriterInterceptor())
-    }
-
-    private fun addOpenapiResourceToJerseyEnv(jerseyEnvironment: JerseyEnvironment) {
-        // XXX Add these parameters to configuration file.
-        val oas = OpenAPI()
-        val info = Info()
-                .title(name)
-                .description("SM-DP+ (test fixture only)")
-                .termsOfService("http://example.com/terms")
-                .contact(Contact().email("rmz@redotter.com"))
-
-        oas.info(info)
-        val oasConfig = SwaggerConfiguration()
-                .openAPI(oas)
-                .prettyPrint(true)
-                .resourcePackages(Stream.of("org.ostelco")
-                        .collect(Collectors.toSet<String>()))
-
-
-
-        jerseyEnvironment.register(OpenApiResource()
-                .openApiConfiguration(oasConfig))
+        addOpenapiResourceToJerseyEnv(jerseyEnvironment, configuration.openApi)
+        addEs2PlusDefaultFiltersAndInterceptors(jerseyEnvironment)
     }
 
 
@@ -96,12 +63,17 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 }
 
 
+
 class SmDpPlusAppConfiguration : Configuration() {
     @Valid
     @NotNull
     @JsonProperty("database")
-    var database: DataSourceFactory = DataSourceFactory()
+    var database = DataSourceFactory()
 
+    @Valid
+    @NotNull
+    @JsonProperty("openApi")
+    var openApi = OpenapiResourceAdderConfig()
 
     @Valid
     @NotNull
@@ -111,5 +83,4 @@ class SmDpPlusAppConfiguration : Configuration() {
     fun getJerseyClientConfiguration(): JerseyClientConfiguration {
         return httpClient
     }
-
 }

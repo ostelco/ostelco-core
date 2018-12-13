@@ -20,6 +20,7 @@
         <module>es2plus4dropwizard</module>
         <module>simmanager</module>
         <module>sm-dp-plus</module>
+        <module>ostelco-dropwizard-utils</module>
     </modules>
 
     <properties>

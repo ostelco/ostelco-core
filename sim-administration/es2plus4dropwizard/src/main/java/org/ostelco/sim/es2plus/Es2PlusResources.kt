@@ -1,5 +1,7 @@
 package org.ostelco.sim.es2plus
 
+import io.dropwizard.jersey.setup.JerseyEnvironment
+import org.ostelco.jsonschema.RequestServerReaderWriterInterceptor
 import org.ostelco.sim.es2plus.ES2PlusClient.Companion.X_ADMIN_PROTOCOL_HEADER_VALUE
 import org.ostelco.sim.es2plus.SmDpPlusServerResource.Companion.ES2PLUS_PATH_PREFIX
 import java.io.IOException
@@ -22,6 +24,15 @@ import javax.ws.rs.ext.Provider
 
 @Provider
 class ES2PlusIncomingHeadersFilter : ContainerRequestFilter {
+
+    companion object {
+        fun addEs2PlusDefaultFiltersAndInterceptors(env: JerseyEnvironment) {
+            env.register(ES2PlusIncomingHeadersFilter())
+            env.register(ES2PlusOutgoingHeadersFilter())
+            env.register(RequestServerReaderWriterInterceptor())
+            env.register(SmdpExceptionMapper())
+        }
+    }
 
     @Throws(IOException::class)
     override fun filter(ctx: ContainerRequestContext) {
