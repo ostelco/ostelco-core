@@ -16,8 +16,7 @@ import io.swagger.v3.oas.models.info.Info
 import org.ostelco.jsonschema.RequestServerReaderWriterInterceptor
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter
 import org.ostelco.sim.es2plus.ES2PlusOutgoingHeadersFilter
-import org.ostelco.sim.es2plus.SmDpPlusCallbackResource
-import org.ostelco.sim.es2plus.SmDpPlusCallbackService
+import org.slf4j.LoggerFactory
 import java.util.stream.Collectors
 import java.util.stream.Stream
 import javax.validation.Valid
@@ -42,6 +41,8 @@ import javax.validation.constraints.NotNull
  */
 class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 
+    private val log = LoggerFactory.getLogger(javaClass)
+
     override fun getName(): String {
         return "SM-DP+ implementation (partial, only for testing of sim admin service)"
     }
@@ -50,28 +51,13 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         // TODO: application initialization
     }
 
-
     override fun run(configuration: SmDpPlusAppConfiguration,
                      environment: Environment) {
 
         val jerseyEnvironment = environment.jersey()
 
         addOpenapiResourceToJerseyEnv(jerseyEnvironment)
-
-        val smdpPlusCallbackHandler = object : SmDpPlusCallbackService {
-            override fun handleDownloadProgressInfo(
-                    eid: String?,
-                    iccid: String,
-                    notificationPointId: Int,
-                    profileType: String?,
-                    resultData: String?,
-                    timestamp: String) {
-                // TODO: Not implemented.
-
-            }
-        }
-
-        jerseyEnvironment.register(SmDpPlusCallbackResource(smdpPlusCallbackHandler))
+        
         jerseyEnvironment.register(ES2PlusIncomingHeadersFilter())
         jerseyEnvironment.register(ES2PlusOutgoingHeadersFilter())
         jerseyEnvironment.register(RequestServerReaderWriterInterceptor())
@@ -98,7 +84,7 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         jerseyEnvironment.register(OpenApiResource()
                 .openApiConfiguration(oasConfig))
     }
-    
+
 
     companion object {
         @Throws(Exception::class)
