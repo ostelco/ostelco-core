@@ -21,6 +21,7 @@
         <module>simmanager</module>
         <module>sm-dp-plus</module>
         <module>ostelco-dropwizard-utils</module>
+        <module>simcard-utils</module>
     </modules>
 
     <properties>
