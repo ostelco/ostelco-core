@@ -369,9 +369,12 @@ object Neo4jStoreSingleton : GraphStore {
 
         return getProduct(subscriberId, sku).fold(
                 {
-                    Either.left(org.ostelco.prime.paymentprocessor.core.NotFoundError("Product unavailable"))
+                    Either.left(org.ostelco.prime.paymentprocessor.core.NotFoundError("Product ${sku} is unavailable",
+                            error = it))
                 },
                 {
+                    /* TODO: Complete support for 'product-class' and store plans as a
+                             'product' of product-class: 'plan'. */
                     return if (it.properties.containsKey("productType") && it.properties["productType"].equals("plan", true))
                         purchasePlan(subscriberId, it, sourceId, saveCard)
                     else
@@ -393,8 +396,8 @@ object Neo4jStoreSingleton : GraphStore {
                 if (sourceId != null) {
                     val sourceDetails = paymentProcessor.getSavedSources(paymentCustomerId)
                             .mapLeft {
-                                org.ostelco.prime.paymentprocessor.core.BadGatewayError("Failed to fetch sources for user",
-                                        it.description)
+                                BadGatewayError("Failed to fetch sources for subscriber ${subscriberId}",
+                                        error = it)
                             }.bind()
                     if (!sourceDetails.any { sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
                         paymentProcessor.addSource(paymentCustomerId, sourceId)
@@ -405,8 +408,8 @@ object Neo4jStoreSingleton : GraphStore {
                 }
                 subscribeToPlan(subscriberId, product.id)
                         .mapLeft {
-                            org.ostelco.prime.paymentprocessor.core.BadGatewayError("Failed to subscribe to plan",
-                                    it.message)
+                            org.ostelco.prime.paymentprocessor.core.BadGatewayError("Failed to subscribe ${subscriberId} to plan ${product.id}",
+                                    error = it)
                         }
                         .flatMap {
                             Either.right(ProductInfo(product.id))
@@ -428,9 +431,10 @@ object Neo4jStoreSingleton : GraphStore {
                 if (sourceId != null) {
                     // First fetch all existing saved sources
                     val sourceDetails = paymentProcessor.getSavedSources(paymentCustomerId)
-                            // If we can't find the product, return not-found
-                            .mapLeft { org.ostelco.prime.paymentprocessor.core.BadGatewayError("Failed to fetch sources for user", it.description) }
-                            .bind()
+                            .mapLeft {
+                                BadGatewayError("Failed to fetch sources for user",
+                                        error = it)
+                            }.bind()
                     addedSourceId = sourceId
                     // If the sourceId is not found in existing list of saved sources,
                     // then save the source
@@ -444,28 +448,33 @@ object Neo4jStoreSingleton : GraphStore {
                 }
                 //TODO: If later steps fail, then refund the authorized charge
                 val chargeId = paymentProcessor.authorizeCharge(paymentCustomerId, addedSourceId, product.price.amount, product.price.currency)
-                        .mapLeft { apiError ->
-                            logger.error("failed to authorize purchase for paymentCustomerId $paymentCustomerId, sourceId $addedSourceId, sku ${product.sku}")
-                            apiError
+                        .mapLeft {
+                            logger.error("Failed to authorize purchase for paymentCustomerId $paymentCustomerId, sourceId $addedSourceId, sku ${product.sku}")
+                            it
                         }.linkReversalActionToTransaction(transaction) { chargeId ->
                             paymentProcessor.refundCharge(chargeId, product.price.amount, product.price.currency)
-                            logger.error(NOTIFY_OPS_MARKER, "Failed to refund charge for paymentCustomerId $paymentCustomerId, chargeId $chargeId.\nFix this in Stripe dashboard.")
+                            logger.error(NOTIFY_OPS_MARKER,
+                                    "Failed to refund charge for paymentCustomerId $paymentCustomerId, chargeId $chargeId.\nFix this in Stripe dashboard.")
                         }.bind()
+
                 val purchaseRecord = PurchaseRecord(
                         id = chargeId,
                         product = product,
                         timestamp = Instant.now().toEpochMilli(),
                         msisdn = "")
                 createPurchaseRecordRelation(subscriberId, purchaseRecord, transaction)
-                        .mapLeft { storeError ->
-                            logger.error("failed to save purchase record, for paymentCustomerId $paymentCustomerId, chargeId $chargeId, payment will be unclaimed in Stripe")
-                            BadGatewayError(storeError.message)
+                        .mapLeft {
+                            logger.error("Failed to save purchase record, for paymentCustomerId $paymentCustomerId, chargeId $chargeId, payment will be unclaimed in Stripe")
+                            BadGatewayError("Failed to save purchase record",
+                                    error = it)
                         }.bind()
+
                 //TODO: While aborting transactions, send a record with "reverted" status
                 analyticsReporter.reportPurchaseInfo(purchaseRecord, subscriberId, "success")
                 ocs.topup(subscriberId, product.sku)
-                        .mapLeft { BadGatewayError("Failed to perform topup", it) }
-                        .bind()
+                        .mapLeft {
+                            BadGatewayError("Failed to perform topup", message = it)
+                        }.bind()
                 // Even if the "capture charge operation" failed, we do not want to rollback.
                 // In that case, we just want to log it at error level.
                 // These transactions can then me manually changed before they are auto rollback'ed in 'X' days.
@@ -476,7 +485,6 @@ object Neo4jStoreSingleton : GraphStore {
                         }
                 // Ignore failure to capture charge, by not calling bind()
                 ProductInfo(product.sku)
-
             }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
@@ -489,9 +497,9 @@ object Neo4jStoreSingleton : GraphStore {
         // These saved sources can then me manually removed.
         if (!saveCard) {
             paymentProcessor.removeSource(paymentCustomerId, sourceId)
-                    .mapLeft { paymentError ->
+                    .mapLeft {
                         logger.error("Failed to remove card, for customerId $paymentCustomerId, sourceId $sourceId")
-                        paymentError
+                        it
                     }
         }
     }
@@ -741,8 +749,7 @@ object Neo4jStoreSingleton : GraphStore {
                 MATCH (subscriber:${subscriberEntity.name})-[:${purchaseRecordRelation.relation.name}]->(product:${productEntity.name})
                 WHERE product.`price/amount` > 0
                 RETURN count(subscriber) AS count
-                """.trimIndent(),
-                transaction) { result ->
+                """.trimIndent(), transaction) { result ->
             result.single().get("count").asLong()
         }
     }
@@ -767,27 +774,29 @@ object Neo4jStoreSingleton : GraphStore {
                         .fold(
                                 { Either.right(Unit) },
                                 {
-                                    Either.left(AlreadyExistsError(type = "<product-store>", id = plan.id))
+                                    Either.left(AlreadyExistsError(type = productEntity.name, id = "Failed to find product associated with plan ${plan.id}"))
                                 }
                         ).bind()
                 plansStore.get(plan.id, transaction)
                         .fold(
                                 { Either.right(Unit) },
                                 {
-                                    Either.left(AlreadyExistsError(type = "<plan-store>", id = plan.id))
+                                    Either.left(AlreadyExistsError(type = planEntity.name, id = "Failed to find plan ${plan.id}"))
                                 }
                         ).bind()
 
                 val productInfo = paymentProcessor.createProduct(plan.id)
                         .mapLeft {
-                            NotCreatedError(type = "<product-store>", id = plan.id)
+                            NotCreatedError(type = planEntity.name, id = "Failed to create plan ${plan.id}",
+                                    error = it)
                         }.linkReversalActionToTransaction(transaction) {
                             paymentProcessor.removeProduct(it.id)
                         }.bind()
                 val planInfo = paymentProcessor.createPlan(productInfo.id, plan.price.amount, plan.price.currency,
                         PaymentProcessor.Interval.valueOf(plan.interval.toUpperCase()), plan.intervalCount)
                         .mapLeft {
-                            NotCreatedError(type = "<product-store>", id = plan.id)
+                            NotCreatedError(type = planEntity.name, id = "Failed to create plan ${plan.id}",
+                                    error = it)
                         }.linkReversalActionToTransaction(transaction) {
                             paymentProcessor.removePlan(it.id)
                         }.bind()
@@ -804,26 +813,17 @@ object Neo4jStoreSingleton : GraphStore {
                                 "intervalCount" to plan.intervalCount.toString()),
                         presentation = plan.presentation)
 
+                /* Propagates errors from lower layer if any. */
                 productStore.create(product, transaction)
-                        .mapLeft {
-                            NotCreatedError(type = "<product-store>", id = product.id)
-                        }.bind()
+                        .bind()
                 plansStore.create(plan.copy(properties = plan.properties.plus(mapOf(
                                 "planId" to planInfo.id,
                                 "productId" to productInfo.id))), transaction)
-                        .mapLeft {
-                            NotCreatedError(type = "<plan-store>", id = plan.id)
-                        }.bind()
-
+                        .bind()
                 planProductRelationStore.create(plan.id, product.id, transaction)
-                        .mapLeft {
-                            NotCreatedError(type = "<plan-store>", id = plan.id)
-                        }.bind()
-
+                        .bind()
                 plansStore.get(plan.id, transaction)
-                        .mapLeft {
-                            NotCreatedError(type = "<plan-store>", id = plan.id)
-                        }.bind()
+                        .bind()
             }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
@@ -833,31 +833,24 @@ object Neo4jStoreSingleton : GraphStore {
         IO {
             Either.monad<StoreError>().binding {
                 val plan = plansStore.get(planId, transaction)
-                        .mapLeft {
-                            NotFoundError(type = "<plan-store>", id = planId)
-                        }.bind()
+                        .bind()
                 /* The name of the product is the same as the name of the corresponding plan. */
                 productStore.get(planId, transaction)
-                        .mapLeft {
-                            NotFoundError(type = "<product-store>", id = planId)
-                        }.bind()
+                        .bind()
                 planProductRelationStore.get(plan.id, transaction)
-                        .mapLeft {
-                            NotCreatedError(type = "<plan-product-relation-store>", id = plan.id)
-                        }.bind()
+                        .bind()
 
                 /* Not removing the product due to purchase references. */
 
                 /* Removing the plan will remove the plan itself and all relations going to it. */
                 plansStore.delete(plan.id, transaction)
-                        .mapLeft {
-                            NotDeletedError(type = "<plan-store>", id = plan.id)
-                        }.bind()
+                        .bind()
 
                 /* Lookup in payment backend will fail if no value found for 'planId'. */
                 paymentProcessor.removePlan(plan.properties.getOrDefault("planId", "missing"))
                         .mapLeft {
-                            NotDeletedError(type = "<plan-store>", id = plan.id)
+                            NotDeletedError(type = planEntity.name, id = "Failed to delete ${plan.id}",
+                                    error = it)
                         }.linkReversalActionToTransaction(transaction) {
                             /* (Nothing to do.) */
                         }.flatMap {
@@ -866,7 +859,8 @@ object Neo4jStoreSingleton : GraphStore {
                 /* Lookup in payment backend will fail if no value found for 'productId'. */
                 paymentProcessor.removeProduct(plan.properties.getOrDefault("productId", "missing"))
                         .mapLeft {
-                            NotDeletedError(type = "<plan-store>", id = plan.id)
+                            NotDeletedError(type = planEntity.name, id = "Failed to delete ${plan.id}",
+                                    error = it)
                         }.linkReversalActionToTransaction(transaction) {
                             /* (Nothing to do.) */
                         }.bind()
@@ -880,32 +874,25 @@ object Neo4jStoreSingleton : GraphStore {
         IO {
             Either.monad<StoreError>().binding {
                 val subscriber = subscriberStore.get(subscriberId, transaction)
-                        .mapLeft {
-                            NotFoundError(type = "<subscriber-store>", id = subscriberId)
-                        }.bind()
+                        .bind()
                 val plan = plansStore.get(planId, transaction)
-                        .mapLeft {
-                            NotFoundError(type = "<plan-store>", id = planId)
-                        }.bind()
+                        .bind()
                 planProductRelationStore.get(plan.id, transaction)
-                        .mapLeft {
-                            NotFoundError(type = "<plan-product-relation-store>", id = plan.id)
-                        }.bind()
+                        .bind()
                 val profileInfo = paymentProcessor.getPaymentProfile(subscriber.id)
                         .mapLeft {
-                            NotFoundError(type = "<>", id = subscriber.id)
+                            NotFoundError(type = planEntity.name, id = "Failed to subscribe ${subscriber.id} to ${plan.id}",
+                                    error = it)
                         }.bind()
-
                 subscribesToPlanRelationStore.create(subscriber.id, plan.id, transaction)
-                        .mapLeft {
-                            NotCreatedError(type = "<subscibes-to-plan-relation-store>", id = "${subscriber.id} -> ${plan.id}")
-                        }.bind()
+                        .bind()
 
                 /* Lookup in payment backend will fail if no value found for 'planId'. */
                 val subscriptionInfo = paymentProcessor.createSubscription(plan.properties.getOrDefault("planId", "missing"),
                                     profileInfo.id, trialEnd)
                         .mapLeft {
-                            NotCreatedError(type = "<>", id = "Failed to subscribe ${subscriberId} to ${plan.id}")
+                            NotCreatedError(type = planEntity.name, id = "Failed to subscribe ${subscriberId} to ${plan.id}",
+                                    error = it)
                         }.linkReversalActionToTransaction(transaction) {
                             paymentProcessor.cancelSubscription(it.id)
                         }.bind()
@@ -914,9 +901,7 @@ object Neo4jStoreSingleton : GraphStore {
                 subscribesToPlanRelationStore.setProperties(subscriberId, planId, mapOf("subscriptionId" to subscriptionInfo.id,
                                 "created" to subscriptionInfo.created,
                                 "trialEnd" to subscriptionInfo.trialEnd), transaction)
-                        .mapLeft {
-                            NotCreatedError(type = "<subscribes-to-plan-relation-store>", id = "${subscriberId} -> ${plan.id}")
-                        }.flatMap {
+                        .flatMap {
                             Either.right(plan)
                         }.bind()
             }.fix()
@@ -928,24 +913,19 @@ object Neo4jStoreSingleton : GraphStore {
         IO {
             Either.monad<StoreError>().binding {
                 val plan = plansStore.get(planId, transaction)
-                        .mapLeft {
-                            NotFoundError(type = "<plan-store>", id = planId)
-                        }.bind()
+                        .bind()
                 val properties = subscribesToPlanRelationStore.getProperties(subscriberId, planId, transaction)
-                        .mapLeft {
-                            NotFoundError(type = "<subscribes-to-plan-relation-store>", id = "${subscriberId} -> ${planId}")
-                        }.bind()
+                        .bind()
                 paymentProcessor.cancelSubscription(properties["subscriptionId"].toString(), atIntervalEnd)
                         .mapLeft {
-                            NotDeletedError(type = "<>", id = "${subscriberId} -> ${plan.id}")
+                            NotDeletedError(type = planEntity.name, id = "${subscriberId} -> ${plan.id}",
+                                    error = it)
                         }.flatMap {
                             Either.right(Unit)
                         }.bind()
 
                 subscribesToPlanRelationStore.delete(subscriberId, planId, transaction)
-                        .mapLeft {
-                            NotDeletedError(type = "<subscribes-to-plan-relation-store>", id = "${subscriberId} -> ${plan.id}")
-                        }.flatMap {
+                        .flatMap {
                             Either.right(plan)
                         }.bind()
             }.fix()
@@ -957,15 +937,9 @@ object Neo4jStoreSingleton : GraphStore {
         IO {
             Either.monad<StoreError>().binding {
                 val product = productStore.get(sku, transaction)
-                        .mapLeft {
-                            //"Could not find requested product for the purchase of plan ${sku} for customer ${subscriberId} for invoice ${invoiceId}"
-                            NotFoundError(type = "<product-store>", id = subscriberId)
-                        }.bind()
+                        .bind()
                 val plan = planProductRelationStore.getFrom(sku, transaction)
-                        .mapLeft {
-                            // "Could not find corresponing plan for product ${sku} in invoice ${invoiceId} for customer ${subscriberId}"
-                            NotFoundError(type = "<product-store>", id = subscriberId)
-                        }.flatMap {
+                        .flatMap {
                             Either.right(it.get(0))
                         }.bind()
                 val purchaseRecord = PurchaseRecord(
@@ -975,10 +949,7 @@ object Neo4jStoreSingleton : GraphStore {
                         msisdn = "")
 
                 createPurchaseRecordRelation(subscriberId, purchaseRecord, transaction)
-                        .mapLeft {
-                            //"Failed to save subscription purchase record for customer ${subscriberId} for invoice ${invoiceId}"
-                            NotCreatedError(type = "<purchase-record-relation-store>", id = subscriberId)
-                        }.flatMap {
+                        .flatMap {
                             Either.right(plan)
                         }.bind()
             }.fix()
@@ -993,10 +964,10 @@ object Neo4jStoreSingleton : GraphStore {
     private fun checkPurchaseRecordForRefund(purchaseRecord: PurchaseRecord): Either<PaymentError, Unit> {
         if (purchaseRecord.refund != null) {
             logger.error("Trying to refund again, ${purchaseRecord.id}, refund ${purchaseRecord.refund?.id}")
-            return Either.left(org.ostelco.prime.paymentprocessor.core.ForbiddenError("Trying to refund again"))
+            return Either.left(ForbiddenError("Trying to refund again"))
         } else if (purchaseRecord.product.price.amount == 0) {
             logger.error("Trying to refund a free product, ${purchaseRecord.id}")
-            return Either.left(org.ostelco.prime.paymentprocessor.core.ForbiddenError("Trying to refund a free purchase"))
+            return Either.left(ForbiddenError("Trying to refund a free purchase"))
         }
         return Either.right(Unit)
     }
@@ -1016,8 +987,10 @@ object Neo4jStoreSingleton : GraphStore {
             Either.monad<PaymentError>().binding {
                 val purchaseRecord = changablePurchaseRelationStore.get(purchaseRecordId, transaction)
                         // If we can't find the record, return not-found
-                        .mapLeft { org.ostelco.prime.paymentprocessor.core.NotFoundError("Purchase Record unavailable") }
-                        .bind()
+                        .mapLeft {
+                            org.ostelco.prime.paymentprocessor.core.NotFoundError("Purchase Record unavailable",
+                                    error = it)
+                        }.bind()
                 checkPurchaseRecordForRefund(purchaseRecord).bind()
                 val refundId = paymentProcessor.refundCharge(
                         purchaseRecord.id,
@@ -1031,9 +1004,10 @@ object Neo4jStoreSingleton : GraphStore {
                         msisdn = "",
                         refund = refund)
                 updatePurchaseRecord(changedPurchaseRecord, transaction)
-                        .mapLeft { storeError ->
+                        .mapLeft {
                             logger.error("failed to update purchase record, for refund $refund.id, chargeId $purchaseRecordId, payment has been refunded in Stripe")
-                            BadGatewayError(storeError.message)
+                            BadGatewayError("Failed to update purchase record for refund ${refund.id}",
+                                    error = it)
                         }.bind()
                 analyticsReporter.reportPurchaseInfo(purchaseRecord, subscriberId, "refunded")
                 ProductInfo(purchaseRecord.product.sku)

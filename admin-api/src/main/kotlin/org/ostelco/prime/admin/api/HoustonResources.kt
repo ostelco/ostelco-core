@@ -13,9 +13,6 @@ import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.storage.AdminDataSource
-import org.ostelco.prime.storage.AlreadyExistsError
-import org.ostelco.prime.storage.NotCreatedError
-import org.ostelco.prime.storage.NotDeletedError
 import java.net.URLDecoder
 import java.util.regex.Pattern
 import javax.validation.constraints.NotNull
@@ -199,14 +196,11 @@ class ProfilesResource {
     @Produces("application/json")
     fun getPlans(@PathParam("email") email: String): Response {
         return storage.getPlans(email).fold(
-                { err ->
-                    when (err) {
-                        is org.ostelco.prime.storage.NotFoundError -> Response.status(Response.Status.NOT_FOUND).entity(asJson(err))
-                        else -> {
-                            logger.error("Unexpected error ${err} in 'get-plans' requests for ${email}")
-                            Response.status(Response.Status.BAD_GATEWAY).entity(asJson(err))
-                        }
-                    }
+                {
+                    val err = ApiErrorMapper.mapStorageErrorToApiError("Failed to fetch plans",
+                            ApiErrorCode.FAILED_TO_FETCH_PLANS_FOR_SUBSCRIBER,
+                            it)
+                    Response.status(err.status).entity(asJson(err))
                 },
                 { Response.status(Response.Status.OK).entity(asJson(it)) }
         ).build()
@@ -222,15 +216,11 @@ class ProfilesResource {
                    @PathParam("planId") planId: String,
                    @QueryParam("trial_end") trialEnd: Long): Response {
         return storage.subscribeToPlan(email, planId, trialEnd).fold(
-                { err ->
-                    when (err) {
-                        is org.ostelco.prime.storage.NotFoundError -> Response.status(Response.Status.NOT_FOUND).entity(asJson(err))
-                        is NotCreatedError -> Response.status(Response.Status.BAD_REQUEST).entity(asJson(err))
-                        else -> {
-                            logger.error("Unexpected error ${err} in 'attac-plan' requests for ${email} -> ${planId}")
-                            Response.status(Response.Status.BAD_GATEWAY).entity(asJson(err))
-                        }
-                    }
+                {
+                    val err = ApiErrorMapper.mapStorageErrorToApiError("Failed to store subscription",
+                            ApiErrorCode.FAILED_TO_STORE_SUBSCRIPTION,
+                            it)
+                    Response.status(err.status).entity(asJson(err))
                 },
                 { Response.status(Response.Status.CREATED) }
         ).build()
@@ -245,15 +235,11 @@ class ProfilesResource {
     fun detachPlan(@PathParam("email") email: String,
                    @PathParam("planId") planId: String): Response {
         return storage.unsubscribeFromPlan(email, planId).fold(
-                {err ->
-                    when (err) {
-                        is org.ostelco.prime.storage.NotFoundError -> Response.status(Response.Status.NOT_FOUND).entity(asJson(err))
-                        is NotDeletedError -> Response.status(Response.Status.BAD_REQUEST).entity(asJson(err))
-                        else -> {
-                            logger.error("Unexpected error ${err} in 'detach-plan' requests for ${email} -> ${planId}")
-                            Response.status(Response.Status.BAD_GATEWAY).entity(asJson(err))
-                        }
-                    }
+                {
+                    val err = ApiErrorMapper.mapStorageErrorToApiError("Failed to remove subscription",
+                            ApiErrorCode.FAILED_TO_REMOVE_SUBSCRIPTION,
+                            it)
+                    Response.status(err.status).entity(asJson(err))
                 },
                 { Response.status(Response.Status.OK) }
         ).build()
@@ -471,14 +457,11 @@ class PlanResource() {
     fun get(@NotNull
             @PathParam("planId") planId: String): Response {
         return storage.getPlan(planId).fold(
-                { err ->
-                    when (err) {
-                        is org.ostelco.prime.storage.NotFoundError -> Response.status(Response.Status.NOT_FOUND).entity(asJson(err))
-                        else -> {
-                            logger.error("Unexpected error ${err} in 'get-plan' requests for plan ${planId}")
-                            Response.status(Response.Status.BAD_GATEWAY).entity(asJson(err))
-                        }
-                    }
+                {
+                    val err = ApiErrorMapper.mapStorageErrorToApiError("Failed to fetch plan",
+                            ApiErrorCode.FAILED_TO_FETCH_PLAN,
+                            it)
+                    Response.status(err.status).entity(asJson(err))
                 },
                 { Response.status(Response.Status.OK).entity(asJson(it)) }
         ).build()
@@ -492,15 +475,11 @@ class PlanResource() {
     @Consumes("application/json")
     fun create(plan: Plan): Response {
         return storage.createPlan(plan).fold(
-                { err ->
-                    when (err) {
-                        is AlreadyExistsError -> Response.status(Response.Status.BAD_REQUEST).entity(asJson(err))
-                        is NotCreatedError -> Response.status(Response.Status.BAD_GATEWAY).entity(asJson(err))
-                        else -> {
-                            logger.error("Unexpected error ${err} in 'create-plan' requests for plan ${plan}")
-                            Response.status(Response.Status.BAD_GATEWAY).entity(asJson(err))
-                        }
-                    }
+                {
+                    val err = ApiErrorMapper.mapStorageErrorToApiError("Failed to store plan",
+                            ApiErrorCode.FAILED_TO_STORE_PLAN,
+                            it)
+                    Response.status(err.status).entity(asJson(err))
                 },
                 { Response.status(Response.Status.CREATED).entity(asJson(it)) }
         ).build()
@@ -516,15 +495,11 @@ class PlanResource() {
     fun delete(@NotNull
                @PathParam("planId") planId: String) : Response {
         return storage.deletePlan(planId).fold(
-                { err ->
-                    when (err) {
-                        is org.ostelco.prime.storage.NotFoundError -> Response.status(Response.Status.BAD_REQUEST).entity(asJson(err))
-                        is NotDeletedError -> Response.status(Response.Status.BAD_GATEWAY).entity(asJson(err))
-                        else -> {
-                            logger.error("Unexpected error ${err} in 'delete-plan' requests for plan ${planId}")
-                            Response.status(Response.Status.BAD_GATEWAY).entity(asJson(err))
-                        }
-                    }
+                {
+                    val err = ApiErrorMapper.mapStorageErrorToApiError("Failed to remove plan",
+                            ApiErrorCode.FAILED_TO_REMOVE_PLAN,
+                            it)
+                    Response.status(err.status).entity(asJson(err))
                 },
                 { Response.status(Response.Status.OK).entity(asJson(it))}
         ).build()
