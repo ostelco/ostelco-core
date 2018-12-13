@@ -3,6 +3,14 @@ logging:
   loggers:
     org.ostelco: DEBUG
 
+
+openApi:
+  name: Sim admin
+  description: SIM administration service
+  termsOfService: http://example.org
+  contactEmail: rmz@telenordigital.com
+  resourcePackage: org.ostelco
+
 # Database settings
 database:
   # the name of your JDBC driver
@@ -26,3 +34,4 @@ httpClient:
   # If true, the client will encode request entities with gzip
   # content encoding. (Requires gzipEnabled to be true).
   gzipEnabledForRequests: true
+

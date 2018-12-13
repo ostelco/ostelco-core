@@ -3,6 +3,14 @@ logging:
   loggers:
     org.ostelco: DEBUG
 
+
+openApi:
+  name: Sim admin
+  description: SIM administration service
+  termsOfService: http://example.org
+  contactEmail: rmz@telenordigital.com
+  resourcePackage: org.ostelco
+
 # Database settings
 database:
   # the name of your JDBC driver

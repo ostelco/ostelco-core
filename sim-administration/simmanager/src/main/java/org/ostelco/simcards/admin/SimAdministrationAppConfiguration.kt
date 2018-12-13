@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.dropwizard.Configuration
 import io.dropwizard.client.JerseyClientConfiguration
 import io.dropwizard.db.DataSourceFactory
+import org.ostelco.dropwizardutils.OpenapiResourceAdderConfig
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
 
@@ -24,4 +25,8 @@ class SimAdministrationAppConfiguration : Configuration() {
         return httpClient
     }
 
+    @Valid
+    @NotNull
+    @JsonProperty("openApi")
+    var openApi = OpenapiResourceAdderConfig()
 }

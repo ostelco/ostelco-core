@@ -9,6 +9,7 @@ import io.swagger.v3.oas.integration.SwaggerConfiguration
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Contact
 import io.swagger.v3.oas.models.info.Info
+import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
 import org.ostelco.sim.es2plus.SmDpPlusCallbackService
 import org.ostelco.simcards.inventory.SimInventoryDAO
@@ -83,9 +84,10 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
         }
 
 
-        jerseyEnvironment.register(SimInventoryResource(simInventoryDAO))
-
+        addOpenapiResourceToJerseyEnv(jerseyEnvironment, configuration.openApi)
         addEs2PlusDefaultFiltersAndInterceptors(jerseyEnvironment)
+
+        jerseyEnvironment.register(SimInventoryResource(simInventoryDAO))
     }
 
     companion object {
