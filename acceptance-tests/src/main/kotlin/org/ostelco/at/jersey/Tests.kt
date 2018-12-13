@@ -864,7 +864,7 @@ class eKYCTest {
                 path = "/customer/subscriberState"
                 subscriberId = email
             }
-            assertEquals("EKY_APPROVED", newSsubscriberState.status, message = "Wrong state")
+            assertEquals("EKYC_APPROVED", newSsubscriberState.status, message = "Wrong state")
 
 
         } finally {
