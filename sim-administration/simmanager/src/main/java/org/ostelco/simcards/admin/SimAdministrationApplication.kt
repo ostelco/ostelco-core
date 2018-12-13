@@ -4,18 +4,12 @@ import io.dropwizard.Application
 import io.dropwizard.jdbi.DBIFactory
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
-import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource
-import io.swagger.v3.oas.integration.SwaggerConfiguration
-import io.swagger.v3.oas.models.OpenAPI
-import io.swagger.v3.oas.models.info.Contact
-import io.swagger.v3.oas.models.info.Info
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
+import org.ostelco.sim.es2plus.SmDpPlusCallbackResource
 import org.ostelco.sim.es2plus.SmDpPlusCallbackService
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SimInventoryResource
-import java.util.stream.Collectors
-import java.util.stream.Stream
 
 
 /**
@@ -52,24 +46,6 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
                 configuration.database, "sqlite")
         this.simInventoryDAO = jdbi.onDemand(SimInventoryDAO::class.java)
 
-        // XXX Add these parameters to configuration file.
-        val oas = OpenAPI()
-        val info = Info()
-                .title(name)
-                .description("SIM management.")
-                .termsOfService("http://example.com/terms")
-                .contact(Contact().email("rmz@redotter.com"))
-
-        oas.info(info)
-        val oasConfig = SwaggerConfiguration()
-                .openAPI(oas)
-                .prettyPrint(true)
-                .resourcePackages(Stream.of("org.ostelco")
-                        .collect(Collectors.toSet<String>()))
-        val jerseyEnvironment = environment.jersey()
-        jerseyEnvironment.register(OpenApiResource()
-                .openApiConfiguration(oasConfig))
-
         val smdpPlusCallbackHandler = object : SmDpPlusCallbackService {
             override fun handleDownloadProgressInfo(
                     eid: String?,
@@ -83,11 +59,13 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
             }
         }
 
+        val jerseyEnvironment = environment.jersey()
 
         addOpenapiResourceToJerseyEnv(jerseyEnvironment, configuration.openApi)
         addEs2PlusDefaultFiltersAndInterceptors(jerseyEnvironment)
 
         jerseyEnvironment.register(SimInventoryResource(simInventoryDAO))
+        jerseyEnvironment.register(SmDpPlusCallbackResource(smdpPlusCallbackHandler))
     }
 
     companion object {
