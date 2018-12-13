@@ -5,6 +5,7 @@ import io.dropwizard.Application
 import io.dropwizard.Configuration
 import io.dropwizard.client.JerseyClientConfiguration
 import io.dropwizard.db.DataSourceFactory
+import io.dropwizard.jersey.setup.JerseyEnvironment
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource
@@ -53,24 +54,9 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
     override fun run(configuration: SmDpPlusAppConfiguration,
                      environment: Environment) {
 
-
-        // XXX Add these parameters to configuration file.
-        val oas = OpenAPI()
-        val info = Info()
-                .title(name)
-                .description("SM-DP+ (test fixture only)")
-                .termsOfService("http://example.com/terms")
-                .contact(Contact().email("rmz@redotter.com"))
-
-        oas.info(info)
-        val oasConfig = SwaggerConfiguration()
-                .openAPI(oas)
-                .prettyPrint(true)
-                .resourcePackages(Stream.of("org.ostelco")
-                        .collect(Collectors.toSet<String>()))
         val jerseyEnvironment = environment.jersey()
-        jerseyEnvironment.register(OpenApiResource()
-                .openApiConfiguration(oasConfig))
+
+        addOpenapiResourceToJerseyEnv(jerseyEnvironment)
 
         val smdpPlusCallbackHandler = object : SmDpPlusCallbackService {
             override fun handleDownloadProgressInfo(
@@ -91,6 +77,29 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         jerseyEnvironment.register(RequestServerReaderWriterInterceptor())
     }
 
+    private fun addOpenapiResourceToJerseyEnv(jerseyEnvironment: JerseyEnvironment) {
+        // XXX Add these parameters to configuration file.
+        val oas = OpenAPI()
+        val info = Info()
+                .title(name)
+                .description("SM-DP+ (test fixture only)")
+                .termsOfService("http://example.com/terms")
+                .contact(Contact().email("rmz@redotter.com"))
+
+        oas.info(info)
+        val oasConfig = SwaggerConfiguration()
+                .openAPI(oas)
+                .prettyPrint(true)
+                .resourcePackages(Stream.of("org.ostelco")
+                        .collect(Collectors.toSet<String>()))
+
+
+
+        jerseyEnvironment.register(OpenApiResource()
+                .openApiConfiguration(oasConfig))
+    }
+    
+
     companion object {
         @Throws(Exception::class)
         @JvmStatic
@@ -99,8 +108,6 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         }
     }
 }
-
-
 
 
 class SmDpPlusAppConfiguration : Configuration() {
