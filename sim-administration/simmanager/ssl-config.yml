@@ -1,0 +1,60 @@
+logging:
+  level: INFO
+  loggers:
+    org.ostelco: DEBUG
+
+# Database settings
+database:
+  # the name of your JDBC driver
+  driverClass: org.sqlite.JDBC
+
+  # the JDBC URL
+  url: jdbc:sqlite:sim_inventory.db
+
+httpClient:
+
+  # The minimum number of threads to use for asynchronous calls.
+  minThreads: 1
+
+  # The maximum number of threads to use for asynchronous calls.
+  maxThreads: 128
+
+  # If true, the client will automatically decode response entities
+  # with gzip content encoding.
+  gzipEnabled: true
+
+  # If true, the client will encode request entities with gzip
+  # content encoding. (Requires gzipEnabled to be true).
+  gzipEnabledForRequests: true
+
+
+server:
+  applicationConnectors:
+    - type: https
+      port: 8443
+      keyStorePath: KeyStore.jks
+      keyStorePassword: secxret
+      keyStoreType: JKS
+      keyStoreProvider:
+      trustStorePath: TrustStore.jks
+      trustStorePassword: secret
+      trustStoreType: JKS
+      trustStoreProvider:
+      keyManagerPassword: changeit
+      needClientAuth: false
+      wantClientAuth:
+      certAlias: <alias>
+      crlPath: /path/to/file
+      enableCRLDP: false
+      enableOCSP: false
+      maxCertPathLength: (unlimited)
+      ocspResponderUrl: (none)
+      jceProvider: (none)
+      validateCerts: false
+      validatePeers: false
+      supportedProtocols: (JVM default)
+      excludedProtocols: [SSL, SSLv2, SSLv2Hello, SSLv3] # (Jetty's default)
+      supportedCipherSuites: (JVM default)
+      excludedCipherSuites: [.*_(MD5|SHA|SHA1)$] # (Jetty's default)
+      allowRenegotiation: true
+      endpointIdentificationAlgorithm: (none)

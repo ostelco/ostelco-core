@@ -19,6 +19,7 @@
         <module>jersey-json-schema-validator</module>
         <module>es2plus4dropwizard</module>
         <module>simmanager</module>
+        <module>sm-dp-plus</module>
     </modules>
 
     <properties>

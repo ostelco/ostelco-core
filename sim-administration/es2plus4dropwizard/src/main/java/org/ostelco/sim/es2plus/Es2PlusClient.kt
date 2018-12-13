@@ -29,7 +29,7 @@ class ES2PlusClient(private val requesterId: String, private val client: Client)
                 .header("X-Admin-Protocol", X_ADMIN_PROTOCOL_HEADER_VALUE)
                 .post(entity)
 
-        // Validata returned response
+        // Validate returned response
         if (expectedReturnCode != result.status) {
             val msg = "Expected return value $expectedReturnCode, but got ${result.status}.  Body was \"${result.readEntity(String::class.java)}\""
             throw ES2PlusClientException(msg)
@@ -41,7 +41,6 @@ class ES2PlusClient(private val requesterId: String, private val client: Client)
         }
 
         val returnedContentType = result.getHeaderString("Content-Type")
-
         val expectedContentType = "application/json"
         if (returnedContentType == null || !returnedContentType.equals(expectedContentType)) {
             throw ES2PlusClientException("Expected header Content-Type to be '$expectedContentType' but was '$returnedContentType'")

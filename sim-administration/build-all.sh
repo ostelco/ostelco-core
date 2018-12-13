@@ -26,7 +26,12 @@ if [[ $? -ne 0 ]] ; then echo
    exit 1
 fi
 
-#
-# Build the dockerfile for the simadmin
-#
-docker build --file dockerfiles/Dockerfile.simadmin --tag ostelco/simadmin .
+
+
+
+for x in simadmin sm-dp-plus ; do 
+
+
+    docker build --file dockerfiles/Dockerfile.$x --tag ostelco/$x .
+
+done
