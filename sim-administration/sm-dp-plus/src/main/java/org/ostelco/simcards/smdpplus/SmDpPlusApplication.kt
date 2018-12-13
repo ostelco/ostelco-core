@@ -84,8 +84,6 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
     }
 }
 
-
-
 class SmDpPlusAppConfiguration : Configuration() {
     @Valid
     @NotNull
