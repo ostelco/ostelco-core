@@ -10,6 +10,8 @@ import io.dropwizard.setup.Environment
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
 import org.ostelco.dropwizardutils.OpenapiResourceAdderConfig
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
+import org.ostelco.sim.es2plus.SmDpPlusServerResource
+import org.ostelco.sim.es2plus.SmDpPlusService
 import org.slf4j.LoggerFactory
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
@@ -50,6 +52,26 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 
         addOpenapiResourceToJerseyEnv(jerseyEnvironment, configuration.openApi)
         addEs2PlusDefaultFiltersAndInterceptors(jerseyEnvironment)
+
+        val smdpPlusService : SmDpPlusService =   object : SmDpPlusService {
+            override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): String {
+                TODO("not implemented")
+            }
+
+            override fun confirmOrder(eid: String, smdsAddress: String?, machingId: String?, confirmationCode: String?) {
+                TODO("not implemented")
+            }
+
+            override fun cancelOrder(eid: String, iccid: String?, matchingId: String?, finalProfileStatusIndicator: String?) {
+                TODO("not implemented")
+            }
+
+            override fun releaseProfile(iccid: String) {
+                TODO("not implemented")
+            }
+        }
+
+        jerseyEnvironment.register(SmDpPlusServerResource(smDpPlus = smdpPlusService))
     }
 
 
