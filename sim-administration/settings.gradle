@@ -1,0 +1,15 @@
+rootProject.name = 'sim-administration'
+
+include ':es2plus4dropwizard'
+include ':jersey-json-schema-validator'
+include ':ostelco-dropwizard-utils'
+include ':simcard-utils'
+include ':simmanager'
+include ':sm-dp-plus'
+
+project(':es2plus4dropwizard').projectDir = "$rootDir/es2plus4dropwizard" as File
+project(':jersey-json-schema-validator').projectDir = "$rootDir/jersey-json-schema-validator" as File
+project(':ostelco-dropwizard-utils').projectDir = "$rootDir/ostelco-dropwizard-utils" as File
+project(':simcard-utils').projectDir = "$rootDir/simcard-utils" as File
+project(':simmanager').projectDir = "$rootDir/simmanager" as File
+project(':sm-dp-plus').projectDir = "$rootDir/sm-dp-plus" as File
