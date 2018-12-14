@@ -541,6 +541,19 @@ object Neo4jStoreSingleton : GraphStore {
         }
     }
 
+    override fun getScanInformation(subscriberId: String, scanId: String): Either<StoreError, ScanInformation> = readTransaction {
+        scanInformationStore.get(scanId, transaction).flatMap { scanInformation ->
+            getSubscriberId(scanInformation.scanId, transaction).flatMap { subscriber ->
+                // Check if the scan belongs to this subscriber
+                if (subscriber.id == subscriberId) {
+                    Either.right(scanInformation)
+                } else {
+                    Either.left(ValidationError(type = scanInformationEntity.name, id = scanId, message = "Not allowed"))
+                }
+            }
+        }
+    }
+
     override fun updateScanInformation(scanInformation: ScanInformation): Either<StoreError, Unit> = writeTransaction {
         getSubscriberId(scanInformation.scanId, transaction).flatMap { subscriber ->
             scanInformationStore.update(scanInformation, transaction).flatMap {

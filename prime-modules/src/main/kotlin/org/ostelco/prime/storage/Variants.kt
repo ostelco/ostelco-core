@@ -125,6 +125,11 @@ interface ClientGraphStore {
     fun newEKYCScanId(subscriberId: String): Either<StoreError, ScanInformation>
 
     /**
+     * Get information about an eKYC scan for the subscriber.
+     */
+    fun getScanInformation(subscriberId: String, scanId: String): Either<StoreError, ScanInformation>
+
+    /**
      * Get state of the subscriber.
      */
     fun getSubscriberState(subscriberId: String): Either<StoreError, SubscriberState>
