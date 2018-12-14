@@ -14,10 +14,8 @@ requests and replies.
 
 TODO (Prioritized)
 ---
-* Restructure project to be a multi-module Maven project with
-  modules for the various libraries, as well as java/docker components
-  for simulating sm-dp+, the return-channel from sm-dp+, a database and a 
-  test runner.
+* Make end to end non-encrypted acceptance test of download order,
+  all scenarios (with iccid, and with profile onyly).
 
 * Make class comments for every high level class.
 
