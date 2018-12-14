@@ -26,3 +26,19 @@ after_success:
   - wget -O ~/codacy-coverage-reporter-assembly-latest.jar https://github.com/codacy/codacy-coverage-reporter/releases/download/4.0.3/codacy-coverage-reporter-4.0.3-assembly.jar
   - for REPORT_TARGET in $(find . -name jacocoTestReport.xml | sort); do java -cp ~/codacy-coverage-reporter-assembly-latest.jar com.codacy.CodacyCoverageReporter report -l Java -r ${REPORT_TARGET} --partial; done
   - java -cp ~/codacy-coverage-reporter-assembly-latest.jar com.codacy.CodacyCoverageReporter final
+
+
+
+#
+# Integrating sonarcloud as described in
+#  https://docs.travis-ci.com/user/sonarcloud/
+#
+
+addons:
+  sonarcloud:
+    organization: "ostelco"
+    token:
+      secure: "rmSMOzNoUZPwSLowwsS9JyuhIwI0WaWY15d55gD0sYcGLnRDhXDkBPnhFoTS+1+2B7j6L0qzQMXdL3SIQ9uRJK0hr8qUGFvON3x9I6SOzifw9vXn3b3Zle8zd6YtaOF8E8H0BpwoLL49nToLVMVXoWjz5vwX3anvfH1eFqQM5rVXc+Cfq8KnDzUTtiL5Z5GtEusOlp+l5by+fa98T0Y8NWkqSGN2UBTZKn/CQmCjMl48Q4Jefw2hMEjCE9L+hZtexboUQZUM3AO/+QqSRR20XFylr0QkNgwjSxfOPEYldCvoYl9id/0sNRSJ0tf9xK9MAJO0D48nvnbPw2ZmOIQ5/XPbxllZ6PMaxDiJKq6OJEwuFofZyfLqlQeaxWBuFVHH6qrubCie5C+Iqc7YBluqutxU6UTTTiKLxOM2o7FQWZBLI14uo1+E6VwstGzHyYEdC0iRv83IxeJQKiqnPoWJwqDQOcvSNPIQJEaYEXxdqEghxwqKpkM3KxrQlqky1cvkbylMY7xO5TZLQx+0AupDotu0cOLtKMmWWXKy+wqK+Br6GY9w7NdN/wVVr69Berx5OB3yMIYCGkePW/FPukc17Oa55prH8d9CtdVbTY3KIBJdtMfZTV9z/i7sQgNIYVwXW9ofFUBeLtwmUI/mOwS1FWOWVnOka0h+ysIJtoPqVlQ="
+script:
+  # other script steps might be done before running the actual analysis
+  - sonar-scanner
