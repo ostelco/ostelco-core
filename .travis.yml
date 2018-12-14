@@ -26,7 +26,6 @@ after_success:
   - wget -O ~/codacy-coverage-reporter-assembly-latest.jar https://github.com/codacy/codacy-coverage-reporter/releases/download/4.0.3/codacy-coverage-reporter-4.0.3-assembly.jar
   - for REPORT_TARGET in $(find . -name jacocoTestReport.xml | sort); do java -cp ~/codacy-coverage-reporter-assembly-latest.jar com.codacy.CodacyCoverageReporter report -l Java -r ${REPORT_TARGET} --partial; done
   - java -cp ~/codacy-coverage-reporter-assembly-latest.jar com.codacy.CodacyCoverageReporter final
-  - ./gradlew sonarqube
 
 
 
@@ -42,4 +41,4 @@ addons:
       secure: ZcRSUk9dhEhz9sQC3a8svXvji+GQqDAq9VC0+lHVniDTOHHrkDQ9g80vMMYIHG7X1g7bMgL3j3nQ0UHMfE0Nuk4lcri7KPjKMzqKMYpSW0BwAkMl8gfs5sBoaIUYxw2CURIFj0wE9DfyYuqfIw5cloQDh4Tf3Tudsu2C0LNffSjT9N0DhSpOLF1uzeo5AlHiGKjX6Ac65HiqsMf09aoToY1eeZ2QK/VQN4V3g23QU47TVKzbOr9km7rqF8yAkGRgXrOaqTpxhzAnGKJX2c/60+he+axSXpFIq2Jn89vqpyhTmt1HIYQdDjGsPO/fcIP5hmhOpX4HTedZHhikoXjI/N/93ikkYHHUFTqP+vvBtQ0wTqt0917RwWVXE6+XuQLHC3hxKrBeQb/DP25SN1yW1gZKB8dN1ko8+2mhCLTiGEgvoJYbZZ2rlyv1fpjlYI94Pjja3x4d3SRXyoasRsAAAPavxEhKHK7P08tmVp3bRtY5uvii4mUo+vAf/1R9qJP4WkwJDc/Vk7KIO/s0HYonwg7anLwJ7rCWT71MoksvmI7muDAHMskiLvLG70pU0xfXnFIOviPq/+Pvw3sgEOhvPUkrDPpU4SH/+P8LSsgf8mYIig4MGswIeY6ap28tuE2qbMYvp2/I4M2eaBN+QIv93TVNHNh9Y5HgAWQ7/VWO2Ys=
 script:
   # other script steps might be done before running the actual analysis
-  - sonar-scanner
+  - sonar-scanner -X
