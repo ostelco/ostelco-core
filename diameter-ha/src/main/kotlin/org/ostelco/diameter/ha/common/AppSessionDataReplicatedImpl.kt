@@ -14,6 +14,8 @@ import org.jdiameter.api.app.AppSession
 
 open class AppSessionDataReplicatedImpl(val id: String, val replicatedStorage: ReplicatedStorage) : IAppSessionData {
 
+    private val logger by logger()
+
     protected val APID = "APID"
 
     fun setAppSessionIface(iface: Class<out AppSession>) {
@@ -74,13 +76,13 @@ open class AppSessionDataReplicatedImpl(val id: String, val replicatedStorage: R
     }
 
     protected fun storeValue(key: String, value: String) : Boolean {
-        logger.info("Storing key : $key value : $value")
+        logger.debug("Storing key : $key value : $value")
         return this.replicatedStorage.storeValue(id, key, value)
     }
 
     protected fun getValue(key: String) : String? {
         val value = this.replicatedStorage.getValue(id, key)
-        logger.info("Got key : $key value : $value")
+        logger.debug("Got key : $key value : $value")
         return value
     }
 
@@ -104,12 +106,10 @@ open class AppSessionDataReplicatedImpl(val id: String, val replicatedStorage: R
 
     companion object AppSessionHelper {
 
-        private val logger by logger()
         protected val SIFACE = "SIFACE"
 
         fun getAppSessionIface(storage: ReplicatedStorage, sessionId: String): Class<out AppSession> {
             val value = storage.getValue(sessionId, SIFACE)
-            logger.info("getAppSessionIface value : $value")
             if (value != null) {
                 return fromBase64String(value) as Class<out AppSession>
             }

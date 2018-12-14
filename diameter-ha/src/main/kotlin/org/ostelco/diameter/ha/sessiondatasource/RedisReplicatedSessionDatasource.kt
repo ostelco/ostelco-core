@@ -69,22 +69,20 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
     }
 
     override fun isClustered(): Boolean {
-        logger.info("isClustered")
         return false;
     }
 
     override fun start() {
-        logger.info("start")
+        logger.debug("start")
         redisStorage.start()
     }
 
     override fun stop() {
-        logger.info("stop")
+        logger.debug("stop")
         redisStorage.stop()
     }
 
     override fun setSessionListener(sessionId: String?, data: NetworkReqListener?) {
-        logger.info("setSessionListener sessionId: $sessionId data: $data")
         if (localDataSource.exists(sessionId)) {
             localDataSource.setSessionListener(sessionId, data)
         } else {
@@ -93,7 +91,6 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
     }
 
     override fun removeSessionListener(sessionId: String?): NetworkReqListener? {
-        logger.info("removeSessionListener sessionId: $sessionId")
         if (localDataSource.exists(sessionId)) {
             return localDataSource.removeSessionListener(sessionId)
         } else {
@@ -104,11 +101,9 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
 
     override fun removeSession(sessionId: String?) {
         if (sessionId != null) {
-            logger.info("removeSession sessionId:$sessionId")
             if (localDataSource.exists(sessionId)) {
                 localDataSource.removeSession(sessionId)
             } else if (existReplicated(sessionId)) {
-                logger.info("Removed external session information")
                 redisStorage.removeId(sessionId)
             } else {
                 logger.error("Could not remove session : $sessionId. Not found")
@@ -117,13 +112,12 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
     }
 
     override fun getSession(sessionId: String?): BaseSession? {
-        logger.info("getSession $sessionId")
         if (sessionId != null) {
             if (this.localDataSource.exists(sessionId)) {
-                logger.info("Using LocalDataSouce for session $sessionId")
+                logger.debug("Using LocalDataSouce for session $sessionId")
                 return this.localDataSource.getSession(sessionId)
             } else if (existReplicated(sessionId)) {
-                logger.info("Using replicated session : $sessionId")
+                logger.debug("Using replicated session : $sessionId")
                 makeLocal(sessionId)
                 return this.localDataSource.getSession(sessionId)
             } else {
@@ -134,16 +128,14 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
     }
 
     override fun exists(sessionId: String?): Boolean {
-        logger.info("exists sessionId: $sessionId")
         return if (this.localDataSource.exists(sessionId)) true else this.existReplicated(sessionId)
     }
 
     override fun getSessionListener(sessionId: String?): NetworkReqListener? {
-        logger.info("getSessionListener sessionId:$sessionId")
         if (localDataSource.exists(sessionId)) {
             return localDataSource.getSessionListener(sessionId)
         } else if (existReplicated(sessionId)) {
-            logger.info("getting session listener from replicatad external source")
+            logger.debug("getting session listener from replicatad external source")
             makeLocal(sessionId)
             return localDataSource.getSessionListener(sessionId)
         } else {
@@ -153,29 +145,25 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
     }
 
     override fun getDataFactory(x: Class<out IAppSessionData>?): IAppSessionDataFactory<out IAppSessionData>? {
-        logger.info("getDataFactory x:$x")
         return this.appSessionDataFactories[x]
     }
 
     override fun addSession(session: BaseSession?) {
-        logger.info("addSession session: $session")
         this.localDataSource.addSession(session)
     }
 
     private fun makeLocal(sessionId: String?) {
-        logger.info("makeLocal")
+        logger.info("makeLocal sessionId $sessionId")
         if (sessionId != null) {
             try {
                 // this is APP session, always
                 val appSessionInterfaceClass = AppSessionDataReplicatedImpl.getAppSessionIface(this.redisStorage, sessionId)
-                logger.info("Got appSessionInterfaceClass : $appSessionInterfaceClass")
                 // get factory;
                 val factory = (this.container.sessionFactory as ISessionFactory).getAppSessionFactory(appSessionInterfaceClass)
                 if (factory == null) {
                     logger.warn("Session with id:{}, is in replicated data source, but no Application Session Factory for:{}.", sessionId, appSessionInterfaceClass)
                     return
                 } else {
-                    logger.info("Got a factory : $factory")
                     val session = factory.getSession(sessionId, appSessionInterfaceClass)
                     this.localDataSource.addSession(session)
                     this.localDataSource.setSessionListener(sessionId, session as NetworkReqListener)

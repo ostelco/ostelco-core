@@ -60,20 +60,18 @@ class LocalSessionDatasource(container: IContainer) : ISessionDatasource {
     }
 
     override fun isClustered(): Boolean {
-        logger.info("isClustered")
         return false;
     }
 
     override fun start() {
-        logger.info("start")
+        logger.debug("start")
     }
 
     override fun stop() {
-        logger.info("stop")
+        logger.debug("stop")
     }
 
     override fun setSessionListener(sessionId: String?, data: NetworkReqListener?) {
-        logger.info("setSessionListener sessionId: $sessionId data: $data")
         if (localDataSource.exists(sessionId)) {
             localDataSource.setSessionListener(sessionId, data)
         } else {
@@ -82,7 +80,6 @@ class LocalSessionDatasource(container: IContainer) : ISessionDatasource {
     }
 
     override fun removeSessionListener(sessionId: String?): NetworkReqListener? {
-        logger.info("removeSessionListener sessionId: $sessionId")
         if (localDataSource.exists(sessionId)) {
             return localDataSource.removeSessionListener(sessionId)
         } else {
@@ -92,7 +89,6 @@ class LocalSessionDatasource(container: IContainer) : ISessionDatasource {
     }
 
     override fun removeSession(sessionId: String?) {
-        logger.info("removeSession sessionId:$sessionId")
         if (localDataSource.exists(sessionId)) {
             localDataSource.removeSession(sessionId)
         } else {
@@ -101,7 +97,6 @@ class LocalSessionDatasource(container: IContainer) : ISessionDatasource {
     }
 
     override fun getSession(sessionId: String?): BaseSession? {
-        logger.info("getSession $sessionId")
         if (this.localDataSource.exists(sessionId)) {
             return this.localDataSource.getSession(sessionId)
         } else {
@@ -111,12 +106,10 @@ class LocalSessionDatasource(container: IContainer) : ISessionDatasource {
     }
 
     override fun exists(sessionId: String?): Boolean {
-        logger.info("exists sessionId: $sessionId")
         return this.localDataSource.exists(sessionId)
     }
 
     override fun getSessionListener(sessionId: String?): NetworkReqListener? {
-        logger.info("getSessionListener sessionId:$sessionId")
         if (localDataSource.exists(sessionId)) {
             return localDataSource.getSessionListener(sessionId)
         } else {
@@ -126,12 +119,10 @@ class LocalSessionDatasource(container: IContainer) : ISessionDatasource {
     }
 
     override fun getDataFactory(x: Class<out IAppSessionData>?): IAppSessionDataFactory<out IAppSessionData>? {
-        logger.info("getDataFactory x:$x")
         return this.appSessionDataFactories[x]
     }
 
     override fun addSession(session: BaseSession?) {
-        logger.info("addSession session:$session")
         this.localDataSource.addSession(session)
     }
 

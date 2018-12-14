@@ -12,11 +12,7 @@ import org.ostelco.diameter.ha.logger
 import org.ostelco.diameter.ha.server.ServerCCASessionDataReplicatedImpl
 import org.ostelco.diameter.ha.sessiondatasource.RedisReplicatedSessionDatasource
 
-class CCAReplicatedSessionDataFactory
-
-(replicatedSessionDataSource: ISessionDatasource) : IAppSessionDataFactory<ICCASessionData> {
-
-    private val logger by logger()
+class CCAReplicatedSessionDataFactory(replicatedSessionDataSource: ISessionDatasource) : IAppSessionDataFactory<ICCASessionData> {
 
     private val replicatedSessionDataSource: RedisReplicatedSessionDatasource
     private val replicatedStorage: ReplicatedStorage
@@ -29,11 +25,9 @@ class CCAReplicatedSessionDataFactory
     override fun getAppSessionData(clazz: Class<out AppSession>, sessionId: String): ICCASessionData {
 
         if (clazz == ClientCCASession::class.java) {
-            logger.info("Getting session of type ClientCCASession")
             val data = ClientCCASessionDataReplicatedImpl(sessionId, this.replicatedStorage, this.replicatedSessionDataSource.container)
             return data
         } else if (clazz == ServerCCASession::class.java) {
-            logger.info("Getting session of type ServerCCASession")
             val data = ServerCCASessionDataReplicatedImpl(sessionId, this.replicatedStorage)
             return data
         }
