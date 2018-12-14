@@ -1,30 +1,28 @@
 package org.ostelco.diameter.ha.server
 
 import org.jdiameter.api.cca.ServerCCASession
-import org.jdiameter.client.api.IContainer
 import org.jdiameter.common.api.app.cca.ServerCCASessionState
 import org.jdiameter.server.impl.app.cca.IServerCCASessionData
-import org.ostelco.diameter.ha.common.AppSessionDataRedisReplicatedImpl
-import org.ostelco.diameter.ha.common.RedisStorage
-import org.ostelco.diameter.ha.logger
+import org.ostelco.diameter.ha.common.AppSessionDataReplicatedImpl
+import org.ostelco.diameter.ha.common.ReplicatedStorage
 import java.io.*
 import java.lang.IllegalStateException
 
-class ServerCCASessionDataRedisReplicatedImpl(id: String, redisStorage: RedisStorage, container: IContainer) : AppSessionDataRedisReplicatedImpl(id, redisStorage), IServerCCASessionData {
+class ServerCCASessionDataReplicatedImpl(id: String, replicatedStorage: ReplicatedStorage) : AppSessionDataReplicatedImpl(id, replicatedStorage), IServerCCASessionData {
 
     private val TCCID = "TCCID"
     private val STATELESS = "STATELESS"
     private val STATE = "STATE"
 
     init {
-        if (!redisStorage.exist(id)) {
+        if (!replicatedStorage.exist(id)) {
             setAppSessionIface(ServerCCASession::class.java)
             setServerCCASessionState(ServerCCASessionState.IDLE)
         }
     }
 
     override fun isStateless(): Boolean {
-        return toPrimitive(redisStorage.getValue(id, STATELESS), true)
+        return toPrimitive(replicatedStorage.getValue(id, STATELESS), true)
     }
 
     override fun setStateless(stateless: Boolean) {
@@ -45,7 +43,9 @@ class ServerCCASessionDataRedisReplicatedImpl(id: String, redisStorage: RedisSto
     }
 
     override fun setTccTimerId(tccTimerId: Serializable?) {
-        storeValue(TCCID, toBase64String(tccTimerId))
+        if (tccTimerId != null) {
+            storeValue(TCCID, toBase64String(tccTimerId))
+        }
     }
 
     override fun getTccTimerId(): Serializable? {

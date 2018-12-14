@@ -32,10 +32,11 @@ import org.jdiameter.common.impl.app.sh.ShLocalSessionDataFactory
 import org.jdiameter.common.impl.app.slg.SLgLocalSessionDataFactory
 import org.jdiameter.common.impl.app.slh.SLhLocalSessionDataFactory
 import org.jdiameter.common.impl.data.LocalDataSource
-import org.ostelco.diameter.ha.common.AppSessionDataRedisReplicatedImpl
+import org.ostelco.diameter.ha.common.AppSessionDataReplicatedImpl
 import org.ostelco.diameter.ha.common.RedisStorage
+import org.ostelco.diameter.ha.common.ReplicatedStorage
 import org.ostelco.diameter.ha.logger
-import org.ostelco.diameter.ha.sessiondatafactory.CCARedisReplicatedSessionDataFactory
+import org.ostelco.diameter.ha.sessiondatafactory.CCAReplicatedSessionDataFactory
 import java.util.HashMap
 
 /**
@@ -55,7 +56,7 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
     init {
         appSessionDataFactories[IAuthSessionData::class.java] = AuthLocalSessionDataFactory()
         appSessionDataFactories[IAccSessionData::class.java] = AccLocalSessionDataFactory()
-        appSessionDataFactories[ICCASessionData::class.java] = CCARedisReplicatedSessionDataFactory(this)
+        appSessionDataFactories[ICCASessionData::class.java] = CCAReplicatedSessionDataFactory(this)
         appSessionDataFactories[IRoSessionData::class.java] = RoLocalSessionDataFactory()
         appSessionDataFactories[IRfSessionData::class.java] = RfLocalSessionDataFactory()
         appSessionDataFactories[IShSessionData::class.java] = ShLocalSessionDataFactory()
@@ -74,12 +75,12 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
 
     override fun start() {
         logger.info("start")
-        redisStorage.connect()
+        redisStorage.start()
     }
 
     override fun stop() {
         logger.info("stop")
-        redisStorage.disconnect()
+        redisStorage.stop()
     }
 
     override fun setSessionListener(sessionId: String?, data: NetworkReqListener?) {
@@ -166,7 +167,7 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
         if (sessionId != null) {
             try {
                 // this is APP session, always
-                val appSessionInterfaceClass = AppSessionDataRedisReplicatedImpl.getAppSessionIface(this.redisStorage, sessionId)
+                val appSessionInterfaceClass = AppSessionDataReplicatedImpl.getAppSessionIface(this.redisStorage, sessionId)
                 logger.info("Got appSessionInterfaceClass : $appSessionInterfaceClass")
                 // get factory;
                 val factory = (this.container.sessionFactory as ISessionFactory).getAppSessionFactory(appSessionInterfaceClass)
@@ -189,7 +190,6 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
     }
 
     private fun existReplicated(sessionId: String?): Boolean {
-        logger.info("existReplicated : $sessionId")
         if (sessionId == null) {
             return false
         } else {
@@ -197,7 +197,7 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
         }
     }
 
-    fun getRedisStorage(): RedisStorage {
+    fun getReplicatedStorage(): ReplicatedStorage {
         return redisStorage
     }
 }

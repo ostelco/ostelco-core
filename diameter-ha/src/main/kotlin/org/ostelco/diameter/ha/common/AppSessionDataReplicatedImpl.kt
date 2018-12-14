@@ -12,7 +12,7 @@ import org.jdiameter.api.app.AppSession
 
 
 
-open class AppSessionDataRedisReplicatedImpl(val id: String, val redisStorage: RedisStorage) : IAppSessionData {
+open class AppSessionDataReplicatedImpl(val id: String, val replicatedStorage: ReplicatedStorage) : IAppSessionData {
 
     protected val APID = "APID"
 
@@ -33,7 +33,9 @@ open class AppSessionDataRedisReplicatedImpl(val id: String, val redisStorage: R
      * @param applicationId the Application-Id
      */
     override fun setApplicationId(applicationId: ApplicationId?) {
-        storeValue(APID, toBase64String(applicationId))
+        if (applicationId != null) {
+            storeValue(APID, toBase64String(applicationId))
+        }
     }
 
     /**
@@ -56,8 +58,8 @@ open class AppSessionDataRedisReplicatedImpl(val id: String, val redisStorage: R
      * @return true if removed, false otherwise
      */
     override fun remove(): Boolean {
-        if (redisStorage.exist(id)) {
-            redisStorage.removeId(id)
+        if (replicatedStorage.exist(id)) {
+            replicatedStorage.removeId(id)
             return true
         } else {
             return false
@@ -73,12 +75,11 @@ open class AppSessionDataRedisReplicatedImpl(val id: String, val redisStorage: R
 
     protected fun storeValue(key: String, value: String) : Boolean {
         logger.info("Storing key : $key value : $value")
-        return this.redisStorage.storeValue(id, key, value)
+        return this.replicatedStorage.storeValue(id, key, value)
     }
 
     protected fun getValue(key: String) : String? {
-        logger.info("Get key : $key")
-        val value = this.redisStorage.getValue(id, key)
+        val value = this.replicatedStorage.getValue(id, key)
         logger.info("Got key : $key value : $value")
         return value
     }
@@ -106,7 +107,7 @@ open class AppSessionDataRedisReplicatedImpl(val id: String, val redisStorage: R
         private val logger by logger()
         protected val SIFACE = "SIFACE"
 
-        fun getAppSessionIface(storage: RedisStorage, sessionId: String): Class<out AppSession> {
+        fun getAppSessionIface(storage: ReplicatedStorage, sessionId: String): Class<out AppSession> {
             val value = storage.getValue(sessionId, SIFACE)
             logger.info("getAppSessionIface value : $value")
             if (value != null) {
@@ -133,8 +134,7 @@ open class AppSessionDataRedisReplicatedImpl(val id: String, val redisStorage: R
         @Throws(IOException::class, ClassNotFoundException::class)
         fun fromBase64String(b64String: String): Serializable {
             val data = Base64.getDecoder().decode(b64String)
-            val objectInputStream = ObjectInputStream(
-                    ByteArrayInputStream(data))
+            val objectInputStream = ObjectInputStream(ByteArrayInputStream(data))
             val any = objectInputStream.readObject() as Serializable
             objectInputStream.close()
             return any

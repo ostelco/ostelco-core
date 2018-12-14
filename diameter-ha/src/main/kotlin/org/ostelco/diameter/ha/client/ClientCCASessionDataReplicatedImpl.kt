@@ -9,15 +9,15 @@ import org.jdiameter.client.api.parser.IMessageParser
 import org.jdiameter.client.api.parser.ParseException
 import org.jdiameter.client.impl.app.cca.IClientCCASessionData
 import org.jdiameter.common.api.app.cca.ClientCCASessionState
-import org.ostelco.diameter.ha.common.AppSessionDataRedisReplicatedImpl
-import org.ostelco.diameter.ha.common.RedisStorage
+import org.ostelco.diameter.ha.common.AppSessionDataReplicatedImpl
+import org.ostelco.diameter.ha.common.ReplicatedStorage
 import org.ostelco.diameter.ha.logger
 import java.io.Serializable
 import java.io.IOException
 import java.lang.IllegalStateException
 
 
-class ClientCCASessionDataRedisReplicatedImpl( id: String, redisStorage: RedisStorage, container: IContainer) : AppSessionDataRedisReplicatedImpl(id, redisStorage), IClientCCASessionData {
+class ClientCCASessionDataReplicatedImpl(id: String, replicatedStorage: ReplicatedStorage, container: IContainer) : AppSessionDataReplicatedImpl(id, replicatedStorage), IClientCCASessionData {
 
     private val logger by logger()
 
@@ -34,7 +34,7 @@ class ClientCCASessionDataRedisReplicatedImpl( id: String, redisStorage: RedisSt
     private val messageParser: IMessageParser
 
     init {
-        if (!redisStorage.exist(id)) {
+        if (!replicatedStorage.exist(id)) {
             setAppSessionIface(ClientAccSession::class.java)
         }
         messageParser = container.assemblerFacility.getComponentInstance(IMessageParser::class.java);
@@ -42,7 +42,7 @@ class ClientCCASessionDataRedisReplicatedImpl( id: String, redisStorage: RedisSt
 
 
     override fun isEventBased(): Boolean {
-        return toPrimitive(this.redisStorage.getValue(id, EVENT_BASED), true)
+        return toPrimitive(this.replicatedStorage.getValue(id, EVENT_BASED), true)
     }
 
     override fun setEventBased(b: Boolean) {
@@ -64,11 +64,13 @@ class ClientCCASessionDataRedisReplicatedImpl( id: String, redisStorage: RedisSt
         } else {
             throw IllegalStateException()
         }
-        //return this.redisStorage.getValue(id, STATE) as ClientCCASessionState
+        //return this.replicatedStorage.getValue(id, STATE) as ClientCCASessionState
     }
 
     override fun setClientCCASessionState(state: ClientCCASessionState?) {
-        storeValue(STATE, state.toString())
+        if (state != null) {
+            storeValue(STATE, state.toString())
+        }
     }
 
     override fun getTxTimerId(): Serializable {
@@ -81,7 +83,9 @@ class ClientCCASessionDataRedisReplicatedImpl( id: String, redisStorage: RedisSt
     }
 
     override fun setTxTimerId(txTimerId: Serializable?) {
-        storeValue(TXTIMER_ID, txTimerId.toString())
+        if (txTimerId != null) {
+            storeValue(TXTIMER_ID, txTimerId.toString())
+        }
     }
 
     override fun getTxTimerRequest(): Request? {
@@ -111,7 +115,7 @@ class ClientCCASessionDataRedisReplicatedImpl( id: String, redisStorage: RedisSt
                 logger.error("Unable to encode Tx Timer Request to buffer.", e)
             }
         } else {
-            this.redisStorage.removeValue(id, TXTIMER_REQUEST)
+            this.replicatedStorage.removeValue(id, TXTIMER_REQUEST)
         }
     }
 
@@ -143,7 +147,7 @@ class ClientCCASessionDataRedisReplicatedImpl( id: String, redisStorage: RedisSt
             }
 
         } else {
-            this.redisStorage.removeValue(id, BUFFER)
+            this.replicatedStorage.removeValue(id, BUFFER)
         }
     }
 
