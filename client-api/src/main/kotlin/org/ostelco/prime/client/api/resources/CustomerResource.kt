@@ -61,7 +61,7 @@ class CustomerResource(private val dao: SubscriberDAO) {
     }
 
     @GET
-    @Path("scanStatus")
+    @Path("scanStatus/{scanId}")
     @Produces(MediaType.APPLICATION_JSON)
     fun getScanStatus(
             @Auth token: AccessTokenPrincipal?,

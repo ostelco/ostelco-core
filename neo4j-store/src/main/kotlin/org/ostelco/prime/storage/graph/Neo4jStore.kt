@@ -553,6 +553,9 @@ object Neo4jStoreSingleton : GraphStore {
             }
         }
     }
+    override fun getAllScanInformation(subscriberId: String): Either<StoreError, Collection<ScanInformation>> = readTransaction {
+        subscriberStore.getRelated(subscriberId, scanInformationRelation, transaction)
+    }
 
     override fun updateScanInformation(scanInformation: ScanInformation): Either<StoreError, Unit> = writeTransaction {
         getSubscriberId(scanInformation.scanId, transaction).flatMap { subscriber ->

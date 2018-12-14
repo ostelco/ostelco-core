@@ -224,6 +224,9 @@ interface AdminGraphStore {
     // update the scan information with scan result
     fun updateScanInformation(scanInformation: ScanInformation): Either<StoreError, Unit>
 
+    // Retrieve all scan information for the subscriber
+    fun getAllScanInformation(subscriberId: String): Either<StoreError, Collection<ScanInformation>>
+
     // simple getAll
     // fun getOffers(): Collection<Offer>
     // fun getSegments(): Collection<Segment>

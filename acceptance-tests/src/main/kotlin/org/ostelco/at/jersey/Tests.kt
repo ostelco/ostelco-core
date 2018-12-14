@@ -813,7 +813,7 @@ class eKYCTest {
 
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
-            var dataMap = MultivaluedHashMap<String,String>()
+            var dataMap = MultivaluedHashMap<String, String>()
             dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
             dataMap.put("idScanStatus", listOf("ERROR"))
             dataMap.put("verificationStatus", listOf("FRAUD"))
@@ -866,6 +866,56 @@ class eKYCTest {
             }
             assertEquals("EKYC_APPROVED", newSsubscriberState.status, message = "Wrong state")
 
+
+        } finally {
+            StripePayment.deleteCustomer(email = email)
+        }
+    }
+
+    @Test
+    fun `jersey test - ekyc verify scan information`() {
+
+        val email = "ekyc-${randomInt()}@test.com"
+        try {
+            createProfile(name = "Test User for eKYC", email = email)
+
+            val scanInfo: ScanInformation = get {
+                path = "/customer/new-ekyc-scanId"
+                subscriberId = email
+            }
+
+            assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
+
+            var dataMap = MultivaluedHashMap<String, String>()
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            dataMap.put("idScanStatus", listOf("SUCCESS"))
+            dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
+            dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
+            dataMap.put("idType", listOf("LICENSE"))
+            dataMap.put("idCountry", listOf("NOR"))
+            dataMap.put("idFirstName", listOf("Test User"))
+            dataMap.put("idLastName", listOf("Test Family"))
+            dataMap.put("idDob", listOf("1990-12-09"))
+            dataMap.put("merchantIdScanReference", listOf(scanInfo.scanId))
+
+            post<ScanInformation>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
+                path = "/ekyc/callback"
+                body = dataMap
+            }
+
+            val scanInformation: ScanInformation = get {
+                path = "/customer/scanStatus/${scanInfo.scanId}"
+                subscriberId = email
+            }
+            assertEquals("APPROVED", scanInformation.status, message = "Wrong status")
+
+            val encodedEmail = URLEncoder.encode(email, "UTF-8")
+            val scanInformationList = get<Collection<ScanInformation>> {
+                path = "/profiles/$encodedEmail/scans"
+                subscriberId = email
+            }
+            assertEquals(1, scanInformationList.size, message = "More scans than expected")
+            assertEquals("APPROVED", scanInformationList.elementAt(0).status, message = "Wrong status")
 
         } finally {
             StripePayment.deleteCustomer(email = email)

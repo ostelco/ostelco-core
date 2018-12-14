@@ -102,6 +102,39 @@ class ProfilesResource {
                 .build()
     }
 
+    /**
+     * Get all the eKYC scan information for this subscriber.
+     */
+    @GET
+    @Path("{email}/scans")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun getAllScanInformation(@Auth token: AccessTokenPrincipal?,
+                         @NotNull
+                         @PathParam("email")
+                         email: String): Response {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .build()
+        }
+        val decodedId = URLDecoder.decode(email, "UTF-8")
+        logger.info("${token.name} Accessing scan information for email:$decodedId")
+        return getAllScanInformation(decodedId).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                { Response.status(Response.Status.OK).entity(asJson(it)) })
+                .build()
+    }
+
+    private fun getAllScanInformation(subscriberId: String): Either<ApiError, Collection<ScanInformation>> {
+        return try {
+            storage.getAllScanInformation(subscriberId).mapLeft {
+                NotFoundError("Failed to fetch scan information.", ApiErrorCode.FAILED_TO_FETCH_SCAN_INFORMATION, it)
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to fetch scan information $subscriberId", e)
+            Either.left(NotFoundError("Failed to fetch scan information", ApiErrorCode.FAILED_TO_FETCH_SCAN_INFORMATION))
+        }
+    }
+
     // TODO: Reuse the one from SubscriberDAO
     private fun getProfile(subscriberId: String): Either<ApiError, Subscriber> {
         return try {
