@@ -1,0 +1,6 @@
+FROM openjdk:11-jre
+
+ADD ./sm-dp-plus/target/sm-dp-plus-1.0-SNAPSHOT.jar app.jar
+ADD ./sm-dp-plus/config.yml config.yml
+EXPOSE 8080 8081
+ENTRYPOINT ["java", "-jar","/app.jar", "server", "config.yml"]

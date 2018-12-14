@@ -1,0 +1,56 @@
+version: "3"
+services:
+
+  simadmin:
+    build:
+      context: simmanager
+      dockerfile: dockerfiles/Dockerfile.simadmin
+    image: ostelco/simadmin
+    ports:
+      - "8080"
+    networks:
+      - frontend
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+
+  sm-dp-plus:
+    build:
+      context: sm-dp-plus
+      dockerfile: dockerfiles/Dockerfile.sm-dp-plus
+    image: ostelco/sm-dp-plus
+    ports:
+      - "8080"
+    networks:
+      - frontend
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+
+  db:
+    image: postgres:11.1
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - backend
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+
+
+networks:
+  frontend:
+  backend:
+
+volumes:
+  db-data:
