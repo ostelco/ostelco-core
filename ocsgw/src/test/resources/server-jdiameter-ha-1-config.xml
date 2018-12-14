@@ -74,7 +74,7 @@
 
   <Extensions>
     <SessionDatasource value="org.ostelco.diameter.ha.sessiondatasource.RedisReplicatedSessionDatasource" />
-    <TimerFacility value="org.ostelco.diameter.ha.timer.LocalTimerFacility" />
+    <TimerFacility value="org.ostelco.diameter.ha.timer.ReplicatedTimerFacilityImpl" />
   </Extensions>
 
 </Configuration>

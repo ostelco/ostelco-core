@@ -35,7 +35,7 @@ class LocalTimerFacility(container: IContainer) : ITimerFacility {
     override fun schedule(sessionId: String?, timerName: String?, milliseconds: Long): Serializable {
 
         val id = "$sessionId/$timerName"
-        logger.debug("Scheduling timer with id: $id timerName: $timerName, mililseconds: $milliseconds")
+        logger.info("Scheduling timer with id: $id timerName: $timerName, mililseconds: $milliseconds")
         val timerTaskHandle = borrowTimerTaskHandle()
         timerTaskHandle!!.id = id
         timerTaskHandle.sessionId = sessionId
@@ -47,7 +47,7 @@ class LocalTimerFacility(container: IContainer) : ITimerFacility {
     override fun cancel(timerTaskHandle: Serializable?) {
         if (timerTaskHandle != null && timerTaskHandle is TimerTaskHandle) {
             if (timerTaskHandle.future != null) {
-                logger.debug("Cancelling timer with id [{}] and delay [{}]", timerTaskHandle.id, timerTaskHandle.future!!.getDelay(TimeUnit.MILLISECONDS))
+                logger.info("Cancelling timer with id [{}] and delay [{}]", timerTaskHandle.id, timerTaskHandle.future!!.getDelay(TimeUnit.MILLISECONDS))
                 if (executor.remove(timerTaskHandle.future as Runnable)) {
                     timerTaskHandle.future!!.cancel(false)
                     returnTimerTaskHandle(timerTaskHandle)
