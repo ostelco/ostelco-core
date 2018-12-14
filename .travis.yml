@@ -13,7 +13,7 @@ install: echo "skip 'gradle assemble' step"
 jdk: openjdk11
 
 # TODO vihang: fix neo4j-store:test
-script: ./gradlew clean build -info --stacktrace -x neo4j-store:test -x integration sonarqube
+script: ./gradlew clean build -info --stacktrace -x neo4j-store:test -x integration
 
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
@@ -26,6 +26,7 @@ after_success:
   - wget -O ~/codacy-coverage-reporter-assembly-latest.jar https://github.com/codacy/codacy-coverage-reporter/releases/download/4.0.3/codacy-coverage-reporter-4.0.3-assembly.jar
   - for REPORT_TARGET in $(find . -name jacocoTestReport.xml | sort); do java -cp ~/codacy-coverage-reporter-assembly-latest.jar com.codacy.CodacyCoverageReporter report -l Java -r ${REPORT_TARGET} --partial; done
   - java -cp ~/codacy-coverage-reporter-assembly-latest.jar com.codacy.CodacyCoverageReporter final
+  - ./gradlew sonarqube
 
 
 
