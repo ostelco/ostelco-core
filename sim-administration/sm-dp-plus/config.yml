@@ -4,7 +4,7 @@ logging:
     org.ostelco: DEBUG
 
 
-simBatchData: src/test/resources/fixtures/sample-sim-batch-for-sm-dp+.csv
+simBatchData: sample-sim-batch-for-sm-dp+.csv
 
 openApi:
   name: SM-DP-emulator

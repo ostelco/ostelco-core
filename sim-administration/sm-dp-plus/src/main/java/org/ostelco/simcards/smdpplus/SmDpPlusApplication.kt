@@ -78,14 +78,19 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
  */
 class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusService {
 
-    val entries: MutableSet<SmDpSimEntry> = mutableSetOf()
+    private val log = LoggerFactory.getLogger(javaClass)
+
+    /**
+     * Global lock, just in case.
+     */
     val entriesLock = Object()
+
+    val entries: MutableSet<SmDpSimEntry> = mutableSetOf()
     val entriesByIccid = mutableMapOf<String, SmDpSimEntry>()
     val entriesByImsi = mutableMapOf<String, SmDpSimEntry>()
     val entriesByProfile = mutableMapOf<String, MutableSet<SmDpSimEntry>>()
 
     init {
-
         incomingEntries.forEach {
             entries.add(it)
             entriesByIccid[it.iccid] = it
@@ -96,6 +101,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
             entriesByProfile[it.profile]!!.add(it)
         }
 
+        log.info("Just read ${entries.size} SIM entries.")
     }
 
     // TODO; What about the reservation flag?
@@ -136,11 +142,13 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
                 throw RuntimeException("This should never happen, entry=null")
             }
 
-            // Then mark the entry as allocated and return the corresponding ICCID.
+            // If an EID is known, then mark this as the IED associated
+            // with the entry.
             if (eid != null) {
                 entry!!.eid = eid
             }
 
+            // Then mark the entry as allocated and return the corresponding ICCID.
             entry!!.allocated = true
             return entry!!.iccid
         }
