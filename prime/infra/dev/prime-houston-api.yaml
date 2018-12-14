@@ -52,6 +52,27 @@ paths:
           description: "The email of the user"
           required: true
           type: string
+  "/profiles/{email}/scans":
+    get:
+      description: "Get eKYC scan information for the user."
+      produces:
+        - application/json
+      operationId: "getAllScanInformation"
+      responses:
+        200:
+          description: "Retrieved scan information for this user."
+          schema:
+            $ref: '#/definitions/ScanInformationList'
+        404:
+          description: "No scan information found for this user."
+      security:
+        - auth0_jwt: []
+      parameters:
+        - name: email
+          in: path
+          description: "The email of the user"
+          required: true
+          type: string
   "/profiles/{email}/plans":
     get:
       description: "Get all plans subscribed to by a subscriber"
@@ -250,7 +271,7 @@ paths:
         404:
           description: "No such plan"
       parameters:
-          - name: planId
+        - name: planId
           in: path
           description: "Name of plan to get"
           required: true
@@ -271,7 +292,7 @@ paths:
         400:
           description: "Failed to create the plan"
       parameters:
-          - name: plan
+        - name: plan
           in: body
           description: Plan details
           schema:
@@ -492,6 +513,10 @@ definitions:
       - id
       - status
       - modifiedTimestamp
+  ScanInformationList:
+    type: array
+    items:
+      $ref: '#/definitions/ScanInformation'
   ScanInformation:
     type: object
     properties:

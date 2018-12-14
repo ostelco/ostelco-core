@@ -75,6 +75,27 @@ paths:
           description: "User not found."
       security:
         - auth0_jwt: []
+  "/customer/scanStatus":
+    get:
+      description: "Get status of eKYC scan."
+      produces:
+        - application/json
+      operationId: "getScanStatus"
+      parameters:
+        - name: scanId
+          in: path
+          description: "Id of the scan being queried"
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Successfully retrieved Scan information."
+          schema:
+            $ref: '#/definitions/ScanInformation'
+        404:
+          description: "Scan not found."
+      security:
+        - auth0_jwt: []
   "/profile":
     get:
       description: "Get profile for the user (email-id present in the bearer token)."
@@ -750,6 +771,10 @@ definitions:
       - id
       - status
       - modifiedTimestamp
+  ScanInformationList:
+    type: array
+    items:
+      $ref: '#/definitions/ScanInformation'
   ScanInformation:
     type: object
     properties:
