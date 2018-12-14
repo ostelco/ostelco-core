@@ -2,6 +2,7 @@ package org.ostelco.prime.paymentprocessor
 
 import arrow.core.Either
 import arrow.core.flatMap
+import arrow.core.right
 import com.stripe.exception.ApiConnectionException
 import com.stripe.exception.AuthenticationException
 import com.stripe.exception.CardException
@@ -11,12 +12,14 @@ import com.stripe.exception.StripeException
 import com.stripe.model.Card
 import com.stripe.model.Charge
 import com.stripe.model.Customer
+import com.stripe.model.EphemeralKey
 import com.stripe.model.ExternalAccount
 import com.stripe.model.Plan
 import com.stripe.model.Product
 import com.stripe.model.Refund
 import com.stripe.model.Source
 import com.stripe.model.Subscription
+import com.stripe.net.RequestOptions
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.paymentprocessor.core.BadGatewayError
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
@@ -28,7 +31,8 @@ import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
-import java.util.*
+import java.time.Instant
+import java.util.UUID
 
 
 class StripePaymentProcessor : PaymentProcessor {
@@ -45,49 +49,49 @@ class StripePaymentProcessor : PaymentProcessor {
                 sources.sortedByDescending { it.details["created"] as Long }
             }
 
-    private fun getAccountType(details: Map<String, Any>) : String {
+    private fun getAccountType(details: Map<String, Any>): String {
         return details["type"].toString()
     }
 
     /* Returns detailed 'account details' for the given Stripe source/account.
        Note that including the fields 'id', 'type' and 'created' are mandatory. */
-    private fun getAccountDetails(accountInfo: ExternalAccount) : Map<String, Any> {
+    private fun getAccountDetails(accountInfo: ExternalAccount): Map<String, Any> {
         when (accountInfo) {
             is Card -> {
                 return mapOf("id" to accountInfo.id,
-                             "type" to "card",
-                             "addressLine1" to accountInfo.addressLine1,
-                             "addressLine2" to accountInfo.addressLine2,
-                             "addressZip" to accountInfo.addressZip,
-                             "addressCity" to accountInfo.addressCity,
-                             "addressState" to accountInfo.addressState,
-                             "brand" to accountInfo.brand,              // "Visa", "Mastercard" etc.
-                             "country" to accountInfo.country,
-                             "currency" to accountInfo.currency,
-                             "cvcCheck" to accountInfo.cvcCheck,
-                             "created" to getCreatedTimestampFromMetadata(accountInfo.id,
-                                     accountInfo.metadata),
-                             "expMonth" to accountInfo.expMonth,
-                             "expYear" to accountInfo.expYear,
-                             "fingerprint" to accountInfo.fingerprint,
-                             "funding" to accountInfo.funding,
-                             "last4" to accountInfo.last4,              // Typ.: "credit" or "debit"
-                             "threeDSecure" to accountInfo.threeDSecure)
-                            .filterValues { it != null }
+                        "type" to "card",
+                        "addressLine1" to accountInfo.addressLine1,
+                        "addressLine2" to accountInfo.addressLine2,
+                        "addressZip" to accountInfo.addressZip,
+                        "addressCity" to accountInfo.addressCity,
+                        "addressState" to accountInfo.addressState,
+                        "brand" to accountInfo.brand,              // "Visa", "Mastercard" etc.
+                        "country" to accountInfo.country,
+                        "currency" to accountInfo.currency,
+                        "cvcCheck" to accountInfo.cvcCheck,
+                        "created" to getCreatedTimestampFromMetadata(accountInfo.id,
+                                accountInfo.metadata),
+                        "expMonth" to accountInfo.expMonth,
+                        "expYear" to accountInfo.expYear,
+                        "fingerprint" to accountInfo.fingerprint,
+                        "funding" to accountInfo.funding,
+                        "last4" to accountInfo.last4,              // Typ.: "credit" or "debit"
+                        "threeDSecure" to accountInfo.threeDSecure)
+                        .filterValues { it != null }
             }
             is Source -> {
                 return mapOf("id" to accountInfo.id,
-                             "type" to "source",
-                             "created" to accountInfo.created,
-                             "typeData" to accountInfo.typeData,
-                             "owner" to accountInfo.owner)
+                        "type" to "source",
+                        "created" to accountInfo.created,
+                        "typeData" to accountInfo.typeData,
+                        "owner" to accountInfo.owner)
             }
             else -> {
                 logger.error("Received unsupported Stripe source/account type: {}",
                         accountInfo)
                 return mapOf("id" to accountInfo.id,
-                             "type" to "unsupported",
-                             "created" to getSecondsSinceEpoch())
+                        "type" to "unsupported",
+                        "created" to getSecondsSinceEpoch())
             }
         }
     }
@@ -96,7 +100,7 @@ class StripePaymentProcessor : PaymentProcessor {
        metadata returned from Stripe. (It might seem like that Stripe
        returns stored metadata values as strings, even if they where stored
        using an another type. Needs to be verified.) */
-    private fun getCreatedTimestampFromMetadata(id: String, metadata: Map<String, Any>) : Long {
+    private fun getCreatedTimestampFromMetadata(id: String, metadata: Map<String, Any>): Long {
         val created: String? = metadata["created"] as? String
         return created?.toLongOrNull() ?: run {
             logger.warn("No 'created' timestamp found in metadata for Stripe account {}",
@@ -106,7 +110,7 @@ class StripePaymentProcessor : PaymentProcessor {
     }
 
     /* Seconds since Epoch in UTC zone. */
-    private fun getSecondsSinceEpoch() : Long {
+    private fun getSecondsSinceEpoch(): Long {
         return System.currentTimeMillis() / 1000L
     }
 
@@ -117,10 +121,10 @@ class StripePaymentProcessor : PaymentProcessor {
             }
 
     override fun getPaymentProfile(userEmail: String): Either<PaymentError, ProfileInfo> {
-            val customerParams = mapOf(
-                    "limit" to "1",
-                    "email" to userEmail)
-            val customerList = Customer.list(customerParams)
+        val customerParams = mapOf(
+                "limit" to "1",
+                "email" to userEmail)
+        val customerList = Customer.list(customerParams)
         return when {
             customerList.data.isEmpty() -> Either.left(NotFoundError("Could not find a payment profile for user $userEmail"))
             customerList.data.size > 1 -> Either.left(NotFoundError("Multiple profiles for user $userEmail found"))
@@ -128,20 +132,23 @@ class StripePaymentProcessor : PaymentProcessor {
         }
     }
 
-    override fun createPlan(productId: String, amount: Int, currency: String, interval: PaymentProcessor.Interval): Either<PaymentError, PlanInfo> =
-            either("Failed to create plan with product id $productId amount $amount currency $currency interval ${interval.value}") {
+    override fun createPlan(productId: String, amount: Int, currency: String, interval: PaymentProcessor.Interval, intervalCount: Long): Either<PaymentError, PlanInfo> =
+            either("Failed to create plan for product $productId amount $amount currency $currency interval ${interval.value}") {
                 val planParams = mapOf(
+                        "product" to productId,
                         "amount" to amount,
                         "interval" to interval.value,
-                        "product" to productId,
+                        "interval_count" to intervalCount,
                         "currency" to currency)
                 PlanInfo(Plan.create(planParams).id)
             }
 
     override fun removePlan(planId: String): Either<PaymentError, PlanInfo> =
             either("Failed to delete plan $planId") {
-                val plan = Plan.retrieve(planId)
-                PlanInfo(plan.delete().id)
+                Plan.retrieve(planId).let { plan ->
+                    plan.delete()
+                    PlanInfo(plan.id)
+                }
             }
 
     override fun createProduct(sku: String): Either<PaymentError, ProductInfo> =
@@ -161,9 +168,9 @@ class StripePaymentProcessor : PaymentProcessor {
     override fun addSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo> =
             either("Failed to add source $sourceId to customer $customerId") {
                 val customer = Customer.retrieve(customerId)
-                val params = mapOf("source" to sourceId,
+                val sourceParams = mapOf("source" to sourceId,
                         "metadata" to mapOf("created" to getSecondsSinceEpoch()))
-                SourceInfo(customer.sources.create(params).id)
+                SourceInfo(customer.sources.create(sourceParams).id)
             }
 
     override fun setDefaultSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo> =
@@ -185,14 +192,17 @@ class StripePaymentProcessor : PaymentProcessor {
                 ProfileInfo(customer.delete().id)
             }
 
-    override fun subscribeToPlan(planId: String, customerId: String): Either<PaymentError, SubscriptionInfo> =
+    override fun subscribeToPlan(planId: String, customerId: String, trialEnd: Long): Either<PaymentError, SubscriptionInfo> =
             either("Failed to subscribe customer $customerId to plan $planId") {
                 val item =  mapOf("plan" to planId)
-                val params = mapOf(
+                val subscriptionParams = mapOf(
                         "customer" to customerId,
-                        "items" to mapOf("0" to item))
-
-                SubscriptionInfo(Subscription.create(params).id)
+                        "items" to mapOf("0" to item),
+                        *( if (trialEnd > Instant.now().epochSecond)
+                               arrayOf("trial_end" to trialEnd.toString())
+                           else
+                               arrayOf()) )
+                SubscriptionInfo(Subscription.create(subscriptionParams).id)
             }
 
     override fun cancelSubscription(subscriptionId: String, atIntervalEnd: Boolean): Either<PaymentError, SubscriptionInfo> =
@@ -205,8 +215,8 @@ class StripePaymentProcessor : PaymentProcessor {
 
     override fun authorizeCharge(customerId: String, sourceId: String?, amount: Int, currency: String): Either<PaymentError, String> {
         val errorMessage = "Failed to authorize the charge for customerId $customerId sourceId $sourceId amount $amount currency $currency"
-        return when {
-            amount == 0 -> Either.right("ZERO_CHARGE_${UUID.randomUUID()}")
+        return when (amount) {
+            0 -> Either.right("ZERO_CHARGE_${UUID.randomUUID()}")
             else -> either(errorMessage) {
                 val chargeParams = mutableMapOf(
                         "amount" to amount,
@@ -230,8 +240,8 @@ class StripePaymentProcessor : PaymentProcessor {
 
     override fun captureCharge(chargeId: String, customerId: String, amount: Int, currency: String): Either<PaymentError, String> {
         val errorMessage = "Failed to capture charge for customerId $customerId chargeId $chargeId"
-        return when {
-            amount == 0 -> Either.right(chargeId)
+        return when (amount) {
+            0 -> Either.right(chargeId)
             else -> either(errorMessage) {
                 Charge.retrieve(chargeId)
             }.flatMap { charge: Charge ->
@@ -254,8 +264,8 @@ class StripePaymentProcessor : PaymentProcessor {
     }
 
     override fun refundCharge(chargeId: String, amount: Int, currency: String): Either<PaymentError, String> =
-            when {
-                amount == 0 -> Either.right(chargeId)
+            when (amount) {
+                0 -> Either.right(chargeId)
                 else -> either("Failed to refund charge $chargeId") {
                     val refundParams = mapOf("charge" to chargeId)
                     Refund.create(refundParams).id
@@ -273,6 +283,21 @@ class StripePaymentProcessor : PaymentProcessor {
                 }
                 SourceInfo(sourceId)
             }
+
+    override fun getStripeEphemeralKey(userEmail: String, apiVersion: String): Either<PaymentError, String> =
+            getPaymentProfile(userEmail)
+                    .fold(
+                            { createPaymentProfile(userEmail) },
+                            { profileInfo -> profileInfo.right() }
+                    ).flatMap { profileInfo ->
+                        either("Failed to create stripe ephemeral key") {
+                            EphemeralKey.create(
+                                    mapOf("customer" to profileInfo.id),
+                                    RequestOptions.builder().setStripeVersion(apiVersion).build())
+                                    .rawJson
+                        }
+                    }
+
 
     private fun <RETURN> either(errorDescription: String, action: () -> RETURN): Either<PaymentError, RETURN> {
         return try {

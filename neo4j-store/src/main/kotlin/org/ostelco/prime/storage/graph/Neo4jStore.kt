@@ -4,10 +4,13 @@ import arrow.core.Either
 import arrow.core.fix
 import arrow.core.flatMap
 import arrow.effects.IO
-import arrow.instances.ForEither
+import arrow.instances.either.monad.monad
 import arrow.typeclasses.binding
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
+import org.ostelco.prime.apierror.ApiError
+import org.ostelco.prime.apierror.ApiErrorCode
+import org.ostelco.prime.apierror.BadRequestError
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.*
 import org.ostelco.prime.module.getResource
@@ -15,11 +18,9 @@ import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.ocs.OcsAdminService
 import org.ostelco.prime.ocs.OcsSubscriberService
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
-import org.ostelco.prime.paymentprocessor.core.BadGatewayError
-import org.ostelco.prime.paymentprocessor.core.PaymentError
-import org.ostelco.prime.paymentprocessor.core.ProductInfo
-import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.paymentprocessor.core.*
 import org.ostelco.prime.storage.*
+import org.ostelco.prime.storage.NotFoundError
 import org.ostelco.prime.storage.graph.Graph.read
 import org.ostelco.prime.storage.graph.Relation.*
 import java.time.Instant
@@ -29,6 +30,7 @@ import java.util.stream.Collectors
 enum class Relation {
     HAS_SUBSCRIPTION,      // (Subscriber) -[HAS_SUBSCRIPTION]-> (Subscription)
     HAS_BUNDLE,            // (Subscriber) -[HAS_BUNDLE]-> (Bundle)
+    HAS_PLAN,              // (Subscriber> -[HAS_PLAN]-> (Plan)
     LINKED_TO_BUNDLE,      // (Subscription) -[LINKED_TO_BUNDLE]-> (Bundle)
     PURCHASED,             // (Subscriber) -[PURCHASED]-> (Product)
     REFERRED,              // (Subscriber) -[REFERRED]-> (Subscriber)
@@ -60,6 +62,9 @@ object Neo4jStoreSingleton : GraphStore {
 
     private val bundleEntity = EntityType(Bundle::class.java)
     private val bundleStore = EntityStore(bundleEntity)
+
+    private val planEntity = EntityType(Plan::class.java)
+    private val plansStore = EntityStore(planEntity)
 
     //
     // Relation
@@ -101,6 +106,13 @@ object Neo4jStoreSingleton : GraphStore {
             dataClass = Void::class.java)
     private val referredRelationStore = RelationStore(referredRelation)
 
+    private val hasPlanRelation = RelationType(
+            relation = Relation.HAS_PLAN,
+            from = subscriberEntity,
+            to = planEntity,
+            dataClass = Void::class.java)
+    private val hasPlanRelationStore = UniqueRelationStore(hasPlanRelation)
+
     // -------------
     // Client Store
     // -------------
@@ -140,43 +152,41 @@ object Neo4jStoreSingleton : GraphStore {
         // https://arrow-kt.io/docs/patterns/monad_comprehensions/#comprehensions-over-coroutines
         // https://arrow-kt.io/docs/effects/io/#unsaferunsync
         IO {
-            ForEither<StoreError>() extensions {
-                binding {
-                    validateCreateSubscriberParams(subscriber, referredBy).bind()
-                    val bundleId = subscriber.id
-                    subscriberStore.create(subscriber, transaction).bind()
-                    subscriberToSegmentStore.create(subscriber.id, getSegmentNameFromCountryCode(subscriber.country), transaction)
-                            .mapLeft { storeError ->
-                                if (storeError is NotCreatedError && storeError.type == subscriberToSegmentRelation.relation.name) {
-                                    ValidationError(type = subscriberEntity.name, id = subscriber.id, message = "Unsupported country: ${subscriber.country}")
-                                } else {
-                                    storeError
-                                }
-                            }.bind()
-                    // Give 100 MB as free initial balance
-                    var productId: String = "100MB_FREE_ON_JOINING"
-                    var balance: Long = 100_000_000
-                    if (referredBy != null) {
-                        // Give 1 GB if subscriber is referred
-                        productId = "1GB_FREE_ON_REFERRED"
-                        balance = 1_000_000_000
-                        referredRelationStore.create(referredBy, subscriber.id, transaction).bind()
-                    }
-                    bundleStore.create(Bundle(bundleId, balance), transaction).bind()
-                    val product = productStore.get(productId, transaction).bind()
-                    createPurchaseRecordRelation(
-                            subscriber.id,
-                            PurchaseRecord(id = UUID.randomUUID().toString(), product = product, timestamp = Instant.now().toEpochMilli(), msisdn = ""),
-                            transaction)
-                    ocsAdminService.addBundle(Bundle(bundleId, balance))
-                    subscriberToBundleStore.create(subscriber.id, bundleId, transaction).bind()
-                    // TODO Remove hardcoded country code.
-                    // https://docs.oracle.com/javase/9/docs/api/java/util/Locale.IsoCountryCode.html
-                    if (subscriber.country.equals("sg", ignoreCase = true)) {
-                        logger.info(NOTIFY_OPS_MARKER, "Created a new user with email: ${subscriber.email} for Singapore.\nProvision a SIM card for this user.")
-                    }
-                }.fix()
-            }
+            Either.monad<StoreError>().binding {
+                validateCreateSubscriberParams(subscriber, referredBy).bind()
+                val bundleId = subscriber.id
+                subscriberStore.create(subscriber, transaction).bind()
+                subscriberToSegmentStore.create(subscriber.id, getSegmentNameFromCountryCode(subscriber.country), transaction)
+                        .mapLeft { storeError ->
+                            if (storeError is NotCreatedError && storeError.type == subscriberToSegmentRelation.relation.name) {
+                                ValidationError(type = subscriberEntity.name, id = subscriber.id, message = "Unsupported country: ${subscriber.country}")
+                            } else {
+                                storeError
+                            }
+                        }.bind()
+                // Give 100 MB as free initial balance
+                var productId: String = "100MB_FREE_ON_JOINING"
+                var balance: Long = 100_000_000
+                if (referredBy != null) {
+                    // Give 1 GB if subscriber is referred
+                    productId = "1GB_FREE_ON_REFERRED"
+                    balance = 1_000_000_000
+                    referredRelationStore.create(referredBy, subscriber.id, transaction).bind()
+                }
+                bundleStore.create(Bundle(bundleId, balance), transaction).bind()
+                val product = productStore.get(productId, transaction).bind()
+                createPurchaseRecordRelation(
+                        subscriber.id,
+                        PurchaseRecord(id = UUID.randomUUID().toString(), product = product, timestamp = Instant.now().toEpochMilli(), msisdn = ""),
+                        transaction)
+                ocsAdminService.addBundle(Bundle(bundleId, balance))
+                subscriberToBundleStore.create(subscriber.id, bundleId, transaction).bind()
+                // TODO Remove hardcoded country code.
+                // https://docs.oracle.com/javase/9/docs/api/java/util/Locale.IsoCountryCode.html
+                if (subscriber.country.equals("sg", ignoreCase = true)) {
+                    logger.info(NOTIFY_OPS_MARKER, "Created a new user with email: ${subscriber.email} for Singapore.\nProvision a SIM card for this user.")
+                }
+            }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
     }
@@ -211,25 +221,23 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun addSubscription(subscriberId: String, msisdn: String): Either<StoreError, Unit> = writeTransaction {
         IO {
-            ForEither<StoreError>() extensions {
-                binding {
-                    val bundles = subscriberStore.getRelated(subscriberId, subscriberToBundleRelation, transaction).bind()
-                    validateBundleList(bundles, subscriberId).bind()
-                    subscriptionStore.create(Subscription(msisdn), transaction).bind()
-                    val subscription = subscriptionStore.get(msisdn, transaction).bind()
-                    val subscriber = subscriberStore.get(subscriberId, transaction).bind()
-                    bundles.forEach { bundle ->
-                        subscriptionToBundleStore.create(subscription, bundle, transaction).bind()
-                        ocsAdminService.addMsisdnToBundleMapping(msisdn, bundle.id)
-                    }
-                    subscriptionRelationStore.create(subscriber, subscription, transaction).bind()
-                    // TODO Remove hardcoded country code.
-                    // https://docs.oracle.com/javase/9/docs/api/java/util/Locale.IsoCountryCode.html
-                    if (subscriber.country.equals("sg", ignoreCase = true)) {
-                        logger.info(NOTIFY_OPS_MARKER, "Assigned +${subscription.msisdn} to the user: ${subscriber.email} in Singapore.")
-                    }
-                }.fix()
-            }
+            Either.monad<StoreError>().binding {
+                val bundles = subscriberStore.getRelated(subscriberId, subscriberToBundleRelation, transaction).bind()
+                validateBundleList(bundles, subscriberId).bind()
+                subscriptionStore.create(Subscription(msisdn), transaction).bind()
+                val subscription = subscriptionStore.get(msisdn, transaction).bind()
+                val subscriber = subscriberStore.get(subscriberId, transaction).bind()
+                bundles.forEach { bundle ->
+                    subscriptionToBundleStore.create(subscription, bundle, transaction).bind()
+                    ocsAdminService.addMsisdnToBundleMapping(msisdn, bundle.id)
+                }
+                subscriptionRelationStore.create(subscriber, subscription, transaction).bind()
+                // TODO Remove hardcoded country code.
+                // https://docs.oracle.com/javase/9/docs/api/java/util/Locale.IsoCountryCode.html
+                if (subscriber.country.equals("sg", ignoreCase = true)) {
+                    logger.info(NOTIFY_OPS_MARKER, "Assigned +${subscription.msisdn} to the user: ${subscriber.email} in Singapore.")
+                }
+            }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
     }
@@ -315,7 +323,7 @@ object Neo4jStoreSingleton : GraphStore {
     private val analyticsReporter by lazy { getResource<AnalyticsService>() }
 
     private fun fetchOrCreatePaymentProfile(subscriberId: String): Either<PaymentError, ProfileInfo> =
-            // Fetch/Create stripe payment profile for the subscriber.
+    // Fetch/Create stripe payment profile for the subscriber.
             paymentProcessor.getPaymentProfile(subscriberId)
                     .fold(
                             { paymentProcessor.createPaymentProfile(subscriberId) },
@@ -328,68 +336,66 @@ object Neo4jStoreSingleton : GraphStore {
             sourceId: String?,
             saveCard: Boolean): Either<PaymentError, ProductInfo> = writeTransaction {
         IO {
-            ForEither<PaymentError>() extensions {
-                binding {
-                    val product = getProduct(subscriberId, sku, transaction)
+            Either.monad<PaymentError>().binding {
+                val product = getProduct(subscriberId, sku, transaction)
+                        // If we can't find the product, return not-found
+                        .mapLeft { org.ostelco.prime.paymentprocessor.core.NotFoundError("Product unavailable") }
+                        .bind()
+                val profileInfo = fetchOrCreatePaymentProfile(subscriberId).bind()
+                val paymentCustomerId = profileInfo.id
+                var addedSourceId: String? = null
+                if (sourceId != null) {
+                    // First fetch all existing saved sources
+                    val sourceDetails = paymentProcessor.getSavedSources(paymentCustomerId)
                             // If we can't find the product, return not-found
-                            .mapLeft { org.ostelco.prime.paymentprocessor.core.NotFoundError("Product unavailable") }
+                            .mapLeft { org.ostelco.prime.paymentprocessor.core.BadGatewayError("Failed to fetch sources for user", it.description) }
                             .bind()
-                    val profileInfo = fetchOrCreatePaymentProfile(subscriberId).bind()
-                    val paymentCustomerId = profileInfo.id
-                    var addedSourceId: String? = null
-                    if (sourceId != null) {
-                        // First fetch all existing saved sources
-                        val sourceDetails = paymentProcessor.getSavedSources(paymentCustomerId)
-                                // If we can't find the product, return not-found
-                                .mapLeft { org.ostelco.prime.paymentprocessor.core.BadGatewayError("Failed to fetch sources for user", it.description) }
-                                .bind()
-                        addedSourceId = sourceId
-                        // If the sourceId is not found in existing list of saved sources,
-                        // then save the source
-                        if (!sourceDetails.any { sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
-                            addedSourceId = paymentProcessor.addSource(paymentCustomerId, sourceId)
-                                    // For success case, saved source is removed after "capture charge" is saveCard == false.
-                                    // Making sure same happens even for failure case by linking reversal action to transaction
-                                    .finallyDo(transaction) { removePaymentSource(saveCard, paymentCustomerId, it.id) }
-                                    .bind().id
-                        }
+                    addedSourceId = sourceId
+                    // If the sourceId is not found in existing list of saved sources,
+                    // then save the source
+                    if (!sourceDetails.any { sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
+                        addedSourceId = paymentProcessor.addSource(paymentCustomerId, sourceId)
+                                // For success case, saved source is removed after "capture charge" is saveCard == false.
+                                // Making sure same happens even for failure case by linking reversal action to transaction
+                                .finallyDo(transaction) { removePaymentSource(saveCard, paymentCustomerId, it.id) }
+                                .bind().id
                     }
-                    //TODO: If later steps fail, then refund the authorized charge
-                    val chargeId = paymentProcessor.authorizeCharge(paymentCustomerId, addedSourceId, product.price.amount, product.price.currency)
-                            .mapLeft { apiError ->
-                                logger.error("failed to authorize purchase for paymentCustomerId $paymentCustomerId, sourceId $addedSourceId, sku $sku")
-                                apiError
-                            }.linkReversalActionToTransaction(transaction) { chargeId ->
-                                paymentProcessor.refundCharge(chargeId, product.price.amount, product.price.currency)
-                                logger.error(NOTIFY_OPS_MARKER, "Failed to refund charge for paymentCustomerId $paymentCustomerId, chargeId $chargeId.\nFix this in Stripe dashboard.")
-                            }.bind()
-                    val purchaseRecord = PurchaseRecord(
-                            id = chargeId,
-                            product = product,
-                            timestamp = Instant.now().toEpochMilli(),
-                            msisdn = "")
-                    createPurchaseRecordRelation(subscriberId, purchaseRecord, transaction)
-                            .mapLeft { storeError ->
-                                logger.error("failed to save purchase record, for paymentCustomerId $paymentCustomerId, chargeId $chargeId, payment will be unclaimed in Stripe")
-                                BadGatewayError(storeError.message)
-                            }.bind()
-                    //TODO: While aborting transactions, send a record with "reverted" status
-                    analyticsReporter.reportPurchaseInfo(purchaseRecord, subscriberId, "success")
-                    ocs.topup(subscriberId, sku)
-                            .mapLeft { BadGatewayError("Failed to perform topup", it) }
-                            .bind()
-                    // Even if the "capture charge operation" failed, we do not want to rollback.
-                    // In that case, we just want to log it at error level.
-                    // These transactions can then me manually changed before they are auto rollback'ed in 'X' days.
-                    paymentProcessor.captureCharge(chargeId, paymentCustomerId, product.price.amount, product.price.currency)
-                            .mapLeft {
-                                // TODO payment: retry capture charge
-                                logger.error(NOTIFY_OPS_MARKER, "Capture failed for paymentCustomerId $paymentCustomerId, chargeId $chargeId.\nFix this in Stripe Dashboard")
-                            }
-                    // Ignore failure to capture charge, by not calling bind()
-                    ProductInfo(product.sku)
-                }.fix()
-            }
+                }
+                //TODO: If later steps fail, then refund the authorized charge
+                val chargeId = paymentProcessor.authorizeCharge(paymentCustomerId, addedSourceId, product.price.amount, product.price.currency)
+                        .mapLeft { apiError ->
+                            logger.error("failed to authorize purchase for paymentCustomerId $paymentCustomerId, sourceId $addedSourceId, sku $sku")
+                            apiError
+                        }.linkReversalActionToTransaction(transaction) { chargeId ->
+                            paymentProcessor.refundCharge(chargeId, product.price.amount, product.price.currency)
+                            logger.error(NOTIFY_OPS_MARKER, "Failed to refund charge for paymentCustomerId $paymentCustomerId, chargeId $chargeId.\nFix this in Stripe dashboard.")
+                        }.bind()
+                val purchaseRecord = PurchaseRecord(
+                        id = chargeId,
+                        product = product,
+                        timestamp = Instant.now().toEpochMilli(),
+                        msisdn = "")
+                createPurchaseRecordRelation(subscriberId, purchaseRecord, transaction)
+                        .mapLeft { storeError ->
+                            logger.error("failed to save purchase record, for paymentCustomerId $paymentCustomerId, chargeId $chargeId, payment will be unclaimed in Stripe")
+                            BadGatewayError(storeError.message)
+                        }.bind()
+                //TODO: While aborting transactions, send a record with "reverted" status
+                analyticsReporter.reportPurchaseInfo(purchaseRecord, subscriberId, "success")
+                ocs.topup(subscriberId, sku)
+                        .mapLeft { BadGatewayError("Failed to perform topup", it) }
+                        .bind()
+                // Even if the "capture charge operation" failed, we do not want to rollback.
+                // In that case, we just want to log it at error level.
+                // These transactions can then me manually changed before they are auto rollback'ed in 'X' days.
+                paymentProcessor.captureCharge(chargeId, paymentCustomerId, product.price.amount, product.price.currency)
+                        .mapLeft {
+                            // TODO payment: retry capture charge
+                            logger.error(NOTIFY_OPS_MARKER, "Capture failed for paymentCustomerId $paymentCustomerId, chargeId $chargeId.\nFix this in Stripe Dashboard")
+                        }
+                // Ignore failure to capture charge, by not calling bind()
+                ProductInfo(product.sku)
+            }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
     }
@@ -505,6 +511,19 @@ object Neo4jStoreSingleton : GraphStore {
         }
     }
 
+    override fun getSubscriberForMsisdn(msisdn: String): Either<StoreError, Subscriber> = readTransaction {
+        read("""
+                MATCH (subscriber:${subscriberEntity.name})-[:${subscriptionRelation.relation.name}]->(subscription:${subscriptionEntity.name} {msisdn: '${msisdn}'})
+                RETURN subscriber
+                """.trimIndent(),
+                transaction) {
+            if (it.hasNext())
+                Either.right(subscriberEntity.createEntity(it.single().get("subscriber").asMap()))
+            else
+                Either.left(NotFoundError(type = subscriberEntity.name, id = msisdn))
+        }
+    }
+
     //
     // For metrics
     //
@@ -544,6 +563,188 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     //
+    // For plans and subscriptions
+    //
+
+    override fun getPlan(planId: String): Either<ApiError, Plan> = readTransaction {
+        plansStore.get(planId, transaction).bimap(
+                {
+                    org.ostelco.prime.apierror.NotFoundError("Plan ${planId} not found",
+                            ApiErrorCode.FAILED_TO_FETCH_PLAN)
+                },
+                { it }
+        )
+    }
+
+    override fun getPlans(subscriberId: String): Either<ApiError, List<Plan>> = readTransaction {
+        hasPlanRelationStore.get(subscriberId, transaction).bimap(
+                {
+                    org.ostelco.prime.apierror.NotFoundError("No plans found for ${subscriberId}",
+                            ApiErrorCode.FAILED_TO_FETCH_PLANS_FOR_SUBSCRIBER)
+                },
+                { it }
+        )
+    }
+
+    override fun createPlan(plan: Plan): Either<ApiError, Plan> = writeTransaction {
+        IO {
+            Either.monad<ApiError>().binding {
+                plansStore.get(plan.id, transaction)
+                        .fold(
+                                { Either.right(Unit) },
+                                {
+                                    Either.left(BadRequestError("Plan ${plan.id} alredy exists",
+                                            ApiErrorCode.FAILED_TO_STORE_PLAN))
+                                }
+                        ).bind()
+                val productInfo = paymentProcessor.createProduct(plan.id)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to create product ${plan.id}",
+                                    ApiErrorCode.FAILED_TO_STORE_PLAN, err)
+                        }.linkReversalActionToTransaction(transaction) {
+                            paymentProcessor.removeProduct(it.id)
+                        }.bind()
+                val planInfo = paymentProcessor.createPlan(productInfo.id, plan.price.amount, plan.price.currency,
+                        PaymentProcessor.Interval.valueOf(plan.interval.toUpperCase()), plan.intervalCount)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to create ${plan.id}",
+                                    ApiErrorCode.FAILED_TO_STORE_PLAN, err)
+                        }.linkReversalActionToTransaction(transaction) {
+                            paymentProcessor.removePlan(it.id)
+                        }.bind()
+                plansStore.create(plan.copy(planId = planInfo.id, productId = productInfo.id), transaction)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to create ${plan.id}",
+                                    ApiErrorCode.FAILED_TO_STORE_PLAN,
+                                    err)
+                        }.bind()
+                plansStore.get(plan.id, transaction)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to create ${plan.id}",
+                                    ApiErrorCode.FAILED_TO_STORE_PLAN,
+                                    err)
+                        }.bind()
+            }.fix()
+        }.unsafeRunSync()
+                .ifFailedThenRollback(transaction)
+    }
+
+    override fun deletePlan(planId: String): Either<ApiError, Plan> = writeTransaction {
+        IO {
+            Either.monad<ApiError>().binding {
+                val plan = plansStore.get(planId, transaction)
+                        .mapLeft {
+                            org.ostelco.prime.apierror.NotFoundError("Plan ${planId} does not exists",
+                                    ApiErrorCode.FAILED_TO_REMOVE_PLAN)
+                        }.bind()
+                plansStore.delete(planId, transaction)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to remove plan",
+                                    ApiErrorCode.FAILED_TO_REMOVE_PLAN,
+                                    err)
+                        }.flatMap {
+                            Either.right(Unit)
+                        }.bind()
+                paymentProcessor.removePlan(plan.planId)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to remove plan ${planId}",
+                                    ApiErrorCode.FAILED_TO_REMOVE_PLAN,
+                                    err)
+                        }.linkReversalActionToTransaction(transaction) {
+                            // (Nothing to do.)
+                        }.flatMap {
+                            Either.right(Unit)
+                        }.bind()
+                paymentProcessor.removeProduct(plan.productId)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to remove plan ${planId}",
+                                    ApiErrorCode.FAILED_TO_REMOVE_PLAN,
+                                    err)
+                        }.linkReversalActionToTransaction(transaction) {
+                            // (Nothing to do.)
+                        }.bind()
+                plan
+            }.fix()
+        }.unsafeRunSync()
+                .ifFailedThenRollback(transaction)
+    }
+
+    override fun attachPlan(subscriberId: String, planId: String, trialEnd: Long): Either<ApiError, Unit> = writeTransaction {
+        IO {
+            Either.monad<ApiError>().binding {
+                subscriberStore.get(subscriberId, transaction)
+                        .mapLeft {
+                            BadRequestError("Subscriber ${subscriberId} does not exists",
+                                    ApiErrorCode.FAILED_TO_FETCH_PROFILE)
+                        }.bind()
+                val plan = plansStore.get(planId, transaction)
+                        .mapLeft {
+                            org.ostelco.prime.apierror.NotFoundError("Plan ${planId} does not exists",
+                                    ApiErrorCode.FAILED_TO_FETCH_PLAN)
+                        }.bind()
+                val profileInfo = paymentProcessor.getPaymentProfile(subscriberId)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to subscribe ${subscriberId} to plan ${planId}",
+                                    ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN,
+                                    err)
+                        }.bind()
+                hasPlanRelationStore.create(subscriberId, planId, transaction)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to subscribe ${subscriberId} to plan ${planId}",
+                                    ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN,
+                                    err)
+                        }.bind()
+                val subscriptionInfo = paymentProcessor.subscribeToPlan(plan.planId, profileInfo.id, trialEnd)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to subscribe ${subscriberId} to plan ${planId}",
+                                    ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN,
+                                    err)
+                        }.linkReversalActionToTransaction(transaction) {
+                            paymentProcessor.cancelSubscription(it.id)
+                        }.bind()
+                hasPlanRelationStore.setProperties(subscriberId, planId, mapOf("paymentSubscriptionId" to subscriptionInfo.id), transaction)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to subscribe ${subscriberId} to plan ${planId}",
+                                    ApiErrorCode.FAILED_TO_SUBSCRIBE_TO_PLAN,
+                                    err)
+                        }.flatMap {
+                            Either.right(Unit)
+                        }.bind()
+            }.fix()
+        }.unsafeRunSync()
+                .ifFailedThenRollback(transaction)
+    }
+
+    override fun detachPlan(subscriberId: String, planId: String, atIntervalEnd: Boolean): Either<ApiError, Unit> = writeTransaction {
+        IO {
+            Either.monad<ApiError>().binding {
+                val properties = hasPlanRelationStore.getProperties(subscriberId, planId, transaction)
+                        .mapLeft {
+                            BadRequestError("Could not find subscription where ${subscriberId} subscribes to plan ${planId}",
+                                    ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTION)
+                        }.bind()
+                paymentProcessor.cancelSubscription(properties["paymentSubscriptionId"].toString(), atIntervalEnd)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to remove subscription for ${subscriberId} to plan ${planId}",
+                                    ApiErrorCode.FAILED_TO_REMOVE_SUBSCRIPTION,
+                                    err)
+                        }.flatMap {
+                            Either.right(Unit)
+                        }.bind()
+                hasPlanRelationStore.delete(subscriberId, planId, transaction)
+                        .mapLeft { err ->
+                            BadRequestError("Failed to remove subscription for ${subscriberId} to plan ${planId}",
+                                    ApiErrorCode.FAILED_TO_REMOVE_SUBSCRIPTION,
+                                    err)
+                        }.flatMap {
+                            Either.right(Unit)
+                        }.bind()
+            }.fix()
+        }.unsafeRunSync()
+                .ifFailedThenRollback(transaction)
+    }
+
+    //
     // For refunds
     //
 
@@ -570,33 +771,31 @@ object Neo4jStoreSingleton : GraphStore {
             purchaseRecordId: String,
             reason: String): Either<PaymentError, ProductInfo> = writeTransaction {
         IO {
-            ForEither<PaymentError>() extensions {
-                binding {
-                    val purchaseRecord = changablePurchaseRelationStore.get(purchaseRecordId, transaction)
-                            // If we can't find the record, return not-found
-                            .mapLeft { org.ostelco.prime.paymentprocessor.core.NotFoundError("Purchase Record unavailable") }
-                            .bind()
-                    checkPurchaseRecordForRefund(purchaseRecord).bind()
-                    val refundId = paymentProcessor.refundCharge(
-                            purchaseRecord.id,
-                            purchaseRecord.product.price.amount,
-                            purchaseRecord.product.price.currency).bind()
-                    val refund = RefundRecord(refundId, reason, Instant.now().toEpochMilli())
-                    val changedPurchaseRecord = PurchaseRecord(
-                            id = purchaseRecord.id,
-                            product = purchaseRecord.product,
-                            timestamp = purchaseRecord.timestamp,
-                            msisdn = "",
-                            refund = refund)
-                    updatePurchaseRecord(changedPurchaseRecord, transaction)
-                            .mapLeft { storeError ->
-                                logger.error("failed to update purchase record, for refund $refund.id, chargeId $purchaseRecordId, payment has been refunded in Stripe")
-                                BadGatewayError(storeError.message)
-                            }.bind()
-                    analyticsReporter.reportPurchaseInfo(purchaseRecord, subscriberId, "refunded")
-                    ProductInfo(purchaseRecord.product.sku)
-                }.fix()
-            }
+            Either.monad<PaymentError>().binding {
+                val purchaseRecord = changablePurchaseRelationStore.get(purchaseRecordId, transaction)
+                        // If we can't find the record, return not-found
+                        .mapLeft { org.ostelco.prime.paymentprocessor.core.NotFoundError("Purchase Record unavailable") }
+                        .bind()
+                checkPurchaseRecordForRefund(purchaseRecord).bind()
+                val refundId = paymentProcessor.refundCharge(
+                        purchaseRecord.id,
+                        purchaseRecord.product.price.amount,
+                        purchaseRecord.product.price.currency).bind()
+                val refund = RefundRecord(refundId, reason, Instant.now().toEpochMilli())
+                val changedPurchaseRecord = PurchaseRecord(
+                        id = purchaseRecord.id,
+                        product = purchaseRecord.product,
+                        timestamp = purchaseRecord.timestamp,
+                        msisdn = "",
+                        refund = refund)
+                updatePurchaseRecord(changedPurchaseRecord, transaction)
+                        .mapLeft { storeError ->
+                            logger.error("failed to update purchase record, for refund $refund.id, chargeId $purchaseRecordId, payment has been refunded in Stripe")
+                            BadGatewayError(storeError.message)
+                        }.bind()
+                analyticsReporter.reportPurchaseInfo(purchaseRecord, subscriberId, "refunded")
+                ProductInfo(purchaseRecord.product.sku)
+            }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
     }

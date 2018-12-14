@@ -1,0 +1,50 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: application
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: simadmin
+    spec:
+      containers:
+        - name: simadmin
+          image: ostelco/simadmin:test
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+            - containerPort: 8080
+          volumeMounts:
+            - name: config-volume
+              mountPath: /home/config
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 81
+            initialDelaySeconds: 10
+            timeoutSeconds: 1
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 81
+            initialDelaySeconds: 10
+            timeoutSeconds: 1
+      volumes:
+        - name: config-volume
+          configMap:
+            name: application-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: application
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 80
+  selector:
+    app: application
+

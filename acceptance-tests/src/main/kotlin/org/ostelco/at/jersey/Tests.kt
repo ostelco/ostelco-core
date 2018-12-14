@@ -1,24 +1,14 @@
 package org.ostelco.at.jersey
 
 import org.junit.Test
-import org.ostelco.at.common.StripePayment
-import org.ostelco.at.common.createProfile
-import org.ostelco.at.common.createSubscription
-import org.ostelco.at.common.expectedProducts
-import org.ostelco.at.common.getLogger
-import org.ostelco.at.common.randomInt
+import org.ostelco.at.common.*
 import org.ostelco.prime.client.model.*
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.util.*
-import kotlin.test.assertEquals
-import kotlin.test.assertFails
-import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import kotlin.test.*
+
 
 class ProfileTest {
 
@@ -177,7 +167,7 @@ class BundlesAndPurchasesTest {
                 .properties(mapOf("noOfBytes" to "100_000_000"))
                 .presentation(emptyMap<String, String>())
 
-        val purchaseRecords:PurchaseRecordList = get {
+        val purchaseRecords: PurchaseRecordList = get {
             path = "/purchases"
             subscriberId = email
         }
@@ -587,14 +577,14 @@ class PurchaseTest {
             assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
 
             val encodedEmail = URLEncoder.encode(email, "UTF-8")
-            val refundedProduct:ProductInfo  = put<ProductInfo> {
-                path = "/refunds/email/$encodedEmail"
+            val refundedProduct: ProductInfo = put<ProductInfo> {
+                path = "/refund/$encodedEmail"
                 subscriberId = email
                 queryParams = mapOf(
                         "purchaseRecordId" to purchaseRecords.last().id,
                         "reason" to "requested_by_customer")
             }
-            logger.info("Refunded product: ${refundedProduct} with purchase id:${purchaseRecords.last().id}")
+            logger.info("Refunded product: $refundedProduct with purchase id:${purchaseRecords.last().id}")
             assertEquals(productSku, refundedProduct.id, "Refund returned a different product")
 
         } finally {
@@ -833,6 +823,125 @@ class ReferralTest {
     }
 }
 
+class PlanTest {
+
+    @Test
+    fun `jersey test - POST plan`() {
+
+        val price = Price()
+                .amount(100)
+                .currency("nok")
+        val plan = Plan()
+                .name("test")
+                .price(price)
+                .interval(Plan.IntervalEnum.DAY)
+                .intervalCount(1)
+
+        post<Plan> {
+            path = "/plans"
+            body = plan
+        }
+
+        val stored: Plan = get {
+            path = "/plans/${plan.name}"
+        }
+
+        assertEquals(plan.name, stored.name)
+        assertEquals(plan.price, stored.price)
+        assertEquals(plan.interval, stored.interval)
+        assertEquals(plan.intervalCount, stored.intervalCount)
+
+        val deletedPLan: Plan = delete {
+            path = "/plans/${plan.name}"
+        }
+
+        assertEquals(plan.name, deletedPLan.name)
+        assertEquals(plan.price, deletedPLan.price)
+        assertEquals(plan.interval, deletedPLan.interval)
+        assertEquals(plan.intervalCount, deletedPLan.intervalCount)
+
+        assertFailsWith(AssertionError::class, "Plan ${plan.name} not removed") {
+            get<Plan> {
+                path = "/plans/${plan.name}"
+            }
+        }
+    }
+
+    @Test
+    fun `jersey test - POST subscription`() {
+
+        val email = "purchase-${randomInt()}@test.com"
+
+        val price = Price()
+                .amount(100)
+                .currency("nok")
+        val plan = Plan()
+                .name("test")
+                .price(price)
+                .interval(Plan.IntervalEnum.DAY)
+                .intervalCount(1)
+
+        try {
+            // Create subscriber with payment source.
+
+            createProfile(name = "Test Purchase User with Default Payment Source", email = email)
+
+            val sourceId = StripePayment.createPaymentTokenId()
+
+            val paymentSource: PaymentSource = post {
+                path = "/paymentSources"
+                subscriberId = email
+                queryParams = mapOf("sourceId" to sourceId)
+            }
+
+            assertNotNull(paymentSource.id, message = "Failed to create payment source")
+
+            // Create a plan.
+
+            post<Plan> {
+                path = "/plans"
+                body = plan
+            }
+
+            val stored: Plan = get {
+                path = "/plans/${plan.name}"
+            }
+
+            assertEquals(plan.name, stored.name)
+
+            // Now create and verify the subscription.
+
+            post<Unit> {
+                path = "/profiles/${email}/plans/${plan.name}"
+            }
+
+            val plans: List<Plan> = get {
+                path = "/profiles/${email}/plans"
+            }
+
+            assert(plans.isNotEmpty())
+            assert(plans.lastIndex == 0)
+            assertEquals(plan.name, plans[0].name)
+            assertEquals(plan.price, plans[0].price)
+            assertEquals(plan.interval, plans[0].interval)
+            assertEquals(plan.intervalCount, plans[0].intervalCount)
+
+            delete<Unit> {
+                path = "/profiles/${email}/plans/${plan.name}"
+            }
+
+            // Cleanup - remove plan.
+            val deletedPLan: Plan = delete {
+                path = "/plans/${plan.name}"
+            }
+            assertEquals(plan.name, deletedPLan.name)
+
+        } finally {
+            StripePayment.deleteCustomer(email = email)
+        }
+    }
+}
+
 class GraphQlTests {
 
     data class Subscriber(
@@ -861,7 +970,7 @@ class GraphQlTests {
         }.data?.subscriber
 
         assertEquals(expected = email, actual = subscriber?.profile?.email)
-        assertEquals(expected = msisdn, actual = subscriber?.subscriptions?.first()?.msisdn )
+        assertEquals(expected = msisdn, actual = subscriber?.subscriptions?.first()?.msisdn)
     }
 
     @Test
@@ -879,6 +988,6 @@ class GraphQlTests {
         }.data?.subscriber
 
         assertEquals(expected = email, actual = subscriber?.profile?.email)
-        assertEquals(expected = msisdn, actual = subscriber?.subscriptions?.first()?.msisdn )
+        assertEquals(expected = msisdn, actual = subscriber?.subscriptions?.first()?.msisdn)
     }
 }

@@ -1,16 +1,17 @@
 import _ from 'lodash';
-import { createActions } from 'redux-actions'
+import { createActions } from 'redux-actions';
 
 import { CALL_API } from '../helpers/api';
 import { alertActions } from './alert.actions';
+import { encodeEmail } from '../helpers/utils';
 
 const SUBSCRIBER_BY_EMAIL_REQUEST = 'SUBSCRIBER_BY_EMAIL_REQUEST';
 const SUBSCRIBER_BY_EMAIL_SUCCESS = 'SUBSCRIBER_BY_EMAIL_SUCCESS';
 const SUBSCRIBER_BY_EMAIL_FAILURE = 'SUBSCRIBER_BY_EMAIL_FAILURE';
 
-const SUBSCRIBER_BY_MSISDN_REQUEST = 'SUBSCRIBER_BY_MSISDN_REQUEST';
-const SUBSCRIBER_BY_MSISDN_SUCCESS = 'SUBSCRIBER_BY_MSISDN_SUCCESS';
-const SUBSCRIBER_BY_MSISDN_FAILURE = 'SUBSCRIBER_BY_MSISDN_FAILURE';
+const SUBSCRIPTIONS_REQUEST = 'SUBSCRIPTIONS_REQUEST';
+const SUBSCRIPTIONS_SUCCESS = 'SUBSCRIPTIONS_SUCCESS';
+const SUBSCRIPTIONS_FAILURE = 'SUBSCRIPTIONS_FAILURE';
 
 const BUNDLES_REQUEST = 'BUNDLES_REQUEST';
 const BUNDLES_SUCCESS = 'BUNDLES_SUCCESS';
@@ -27,13 +28,16 @@ const REFUND_PAYMENT_FAILURE = 'REFUND_PAYMENT_FAILURE';
 // Used by global reducer.
 export const subscriberConstants = {
   SUBSCRIBER_BY_EMAIL_FAILURE,
-  SUBSCRIBER_BY_MSISDN_FAILURE,
+  SUBSCRIPTIONS_FAILURE,
 };
 
 export const actions = createActions(
   SUBSCRIBER_BY_EMAIL_REQUEST,
   SUBSCRIBER_BY_EMAIL_SUCCESS,
   SUBSCRIBER_BY_EMAIL_FAILURE,
+  SUBSCRIPTIONS_REQUEST,
+  SUBSCRIPTIONS_SUCCESS,
+  SUBSCRIPTIONS_FAILURE,
   BUNDLES_REQUEST,
   BUNDLES_SUCCESS,
   BUNDLES_FAILURE,
@@ -45,13 +49,24 @@ export const actions = createActions(
   REFUND_PAYMENT_FAILURE
 );
 
-const fetchSubscriberByEmail = (email) => ({
+const fetchSubscriberById = (id) => ({
   [CALL_API]: {
     actions: [
       actions.subscriberByEmailRequest,
       actions.subscriberByEmailSuccess,
       actions.subscriberByEmailFailure],
-    endpoint: `profile/email/${email}`,
+    endpoint: `profiles/${id}`,
+    method: 'GET'
+  }
+});
+
+const fetchSubscriptionsByEmail = (email) => ({
+  [CALL_API]: {
+    actions: [
+      actions.subscriptionsRequest,
+      actions.subscriptionsSuccess,
+      actions.subscriptionsFailure],
+    endpoint: `profiles/${email}/subscriptions`,
     method: 'GET'
   }
 });
@@ -62,7 +77,7 @@ const fetchBundlesByEmail = (email) => ({
       actions.bundlesRequest,
       actions.bundlesSuccess,
       actions.bundlesFailure],
-    endpoint: `bundles/email/${email}`,
+    endpoint: `bundles/${email}`,
     method: 'GET'
   }
 });
@@ -73,7 +88,7 @@ const fetchPaymentHistoryByEmail = (email) => ({
       actions.paymentHistoryRequest,
       actions.paymentHistorySuccess,
       actions.paymentHistoryFailure],
-    endpoint: `purchases/email/${email}`,
+    endpoint: `purchases/${email}`,
     method: 'GET'
   }
 });
@@ -84,12 +99,12 @@ const putRefundPurchaseByEmail = (email, purchaseRecordId, reason) => ({
       actions.refundPaymentRequest,
       actions.refundPaymentSuccess,
       actions.refundPaymentFailure],
-    endpoint: `refunds/email/${email}`,
+    endpoint: `refund/${email}`,
     method: 'PUT',
     params: { purchaseRecordId, reason }
   }
 });
-const encodeEmail = (email) => (email ? encodeURIComponent(email) : email);
+
 // TODO: API based implementaion. Reference: https://github.com/reduxjs/redux/issues/1676
 const getSubscriberAndBundlesByEmail = (email) => (dispatch, getState) => {
   email = encodeEmail(email);
@@ -98,20 +113,21 @@ const getSubscriberAndBundlesByEmail = (email) => (dispatch, getState) => {
     dispatch(alertActions.alertError(error));
   };
 
-  return dispatch(fetchSubscriberByEmail(email))
+  return dispatch(fetchSubscriberById(email))
     .then(() => {
       // Get the email from the fetched user
       const subscriberEmail = encodeEmail(_.get(getState(), 'subscriber.email'));
       if (subscriberEmail) {
+        dispatch(fetchSubscriptionsByEmail(subscriberEmail)).catch(handleError);
         return dispatch(fetchBundlesByEmail(subscriberEmail))
           .then(() => {
-            return dispatch(fetchPaymentHistoryByEmail(subscriberEmail))
+            return dispatch(fetchPaymentHistoryByEmail(subscriberEmail));
           })
           .catch(handleError);
       }
     })
     .catch(handleError);
-}
+};
 
 const refundPurchase = (purchaseRecordId, reason) => (dispatch, getState) => {
 
@@ -129,7 +145,7 @@ const refundPurchase = (purchaseRecordId, reason) => (dispatch, getState) => {
       })
       .catch(handleError);
   }
-}
+};
 
 export const subscriberActions = {
   getSubscriberAndBundlesByEmail,

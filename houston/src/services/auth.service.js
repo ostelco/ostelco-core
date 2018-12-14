@@ -1,4 +1,3 @@
-import { history } from '../helpers';
 import auth0 from 'auth0-js';
 import _ from 'lodash';
 
@@ -38,7 +37,6 @@ class Auth {
       if (authResult && authResult.accessToken) {
         this.setSession(authResult);
         // navigate to the home route
-        history.replace('/search');
         dispatch(authActions.loginSuccess(this.user));
       } else if (err) {
         console.log('Error recieved from auth0 parse', err);
@@ -46,8 +44,6 @@ class Auth {
         if (err.error === 'invalid_token') {
           // Token expired, re-login
           console.log('Invalid token recieved, possibly expired token');
-          // // Display login screen
-          // setTimeout(() => { history.replace('/') });
         }
         dispatch(authActions.loginFailure(err));
       }
@@ -62,8 +58,8 @@ class Auth {
     localStorage.setItem('expires_at', expiresAt);
 
     const name = _.get(authResult, 'idTokenPayload.name');
-    const email = _.get(authResult, 'idTokenPayload.email')
-    const picture = _.get(authResult, 'idTokenPayload.picture')
+    const email = _.get(authResult, 'idTokenPayload.email');
+    const picture = _.get(authResult, 'idTokenPayload.picture');
     localStorage.setItem('name', name);
     localStorage.setItem('email', email);
     localStorage.setItem('picture', picture);
@@ -82,8 +78,7 @@ class Auth {
       return;
     }
     const expiresAt = localStorage.getItem('expires_at');
-    const isAuthenticated = this.isAuthenticated(expiresAt);
-    if (!isAuthenticated) {
+    if (!this.isTokenValid(expiresAt)) {
       console.log('Expired Token, clear local storage');
       this.clearLocalStorage();
       return;
@@ -92,14 +87,13 @@ class Auth {
     const email = localStorage.getItem('email');
     const picture = localStorage.getItem('picture');
     this.user = { accessToken, expiresAt, name, email, picture };
-    history.replace('/search');
-    setTimeout(() => { store.dispatch(authActions.loginSuccess(this.user)) });
+    setTimeout(() =>  store.dispatch(authActions.loginSuccess(this.user)));
   }
 
   logout() {
     this.clearLocalStorage();
     // navigate to the home route
-    this.webAuth.logout();
+    this.webAuth.logout({returnTo: authConfig.homeUrl});
   }
 
   clearLocalStorage() {
@@ -112,7 +106,7 @@ class Auth {
     localStorage.removeItem('picture');
   }
 
-  isAuthenticated(expiresAt) {
+  isTokenValid(expiresAt) {
     // Check whether the current time is past the
     // access token's expiry time
     let expiry = JSON.parse(expiresAt);
@@ -120,9 +114,8 @@ class Auth {
   }
 
   authHeader() {
-    const state = store.getState();
-    const user = _.get(state, "authentication.user");
-    if (user && this.isAuthenticated(user.expiresAt)) {
+    const user = _.get(store.getState(), "authentication.user");
+    if (user && this.isTokenValid(user.expiresAt)) {
       return `Bearer ${user.accessToken}`;
     }
     return null;
@@ -139,6 +132,19 @@ class Auth {
       return { error };
     }
     return { header };
+  }
+
+  isAuthenticated() {
+    const user = _.get(store.getState(), "authentication.user");
+    if (user) {
+      if (this.isTokenValid(user.expiresAt)) {
+        return true;
+      } else {
+        console.log('Token expired, dispatch-->logout');
+        setTimeout(() => store.dispatch(authActions.logout()));
+      }
+    }
+    return false;
   }
 
 }

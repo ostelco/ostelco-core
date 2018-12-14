@@ -47,18 +47,14 @@
         "functionExecutionStatus"
       ]
     },
-    "body": {
-      "type": "object",
-      "properties": {
-        "iccid": {
-          "type": "string",
-          "pattern": "^[0-9]{19,20}$",
-          "description": "ICCID as desc in ITU-T E.118"
-        }
-      },
-      "required": [
-        "iccid"
-      ]
+    "iccid": {
+      "type": "string",
+      "pattern": "^[0-9]{19,20}$",
+      "description": "ICCID as desc in ITU-T E.118"
     }
-  }
+  },
+  "required": [
+    "iccid"
+  ]
 }
+

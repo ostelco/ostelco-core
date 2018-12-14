@@ -90,11 +90,18 @@ class ES2PlusResourceTest {
     @Test
     fun testHandleDownloadProgressInfo() {
         // XXX Not testing anything sensible
-        client.handleDownloadProgressInfo()
+        client.handleDownloadProgressInfo(
+                iccid = "01234567890123456789",
+                eid = "01234567890123456789012345678901",
+                profileType =  "foo",
+                timestamp = "2001-12-17T09:30:47Z",
+                notificationPointId = 4711,
+                notificationPointStatus = ES2NotificationPointStatus()
+        )
         // XXX Do some verification
     }
 
 
-    // XXX Not testing error cases, to ensure that the exception, error reportibng
+    // XXX Not testing error cases, to ensure that the exception, error reporting
     //     mechanism is working properly.
 }

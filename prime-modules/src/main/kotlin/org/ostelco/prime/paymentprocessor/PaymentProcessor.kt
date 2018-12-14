@@ -1,7 +1,13 @@
 package org.ostelco.prime.paymentprocessor
 
 import arrow.core.Either
-import org.ostelco.prime.paymentprocessor.core.*
+import org.ostelco.prime.paymentprocessor.core.PaymentError
+import org.ostelco.prime.paymentprocessor.core.PlanInfo
+import org.ostelco.prime.paymentprocessor.core.ProductInfo
+import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
+import org.ostelco.prime.paymentprocessor.core.SourceInfo
+import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
 
 interface PaymentProcessor {
 
@@ -38,20 +44,22 @@ interface PaymentProcessor {
     fun getPaymentProfile(userEmail: String): Either<PaymentError, ProfileInfo>
 
     /**
-     * @param productId Stripe product id
+     * @param productId The product associated with the new plan
      * @param amount The amount to be charged in the interval specified
      * @param currency Three-letter ISO currency code in lowercase
-     * @param interval The frequency with which a subscription should be billed.
+     * @param interval The frequency with which a subscription should be billed
+     * @param invervalCount The number of intervals between subscription billings
      * @return Stripe planId if created
      */
-    fun createPlan(productId: String, amount: Int, currency: String, interval: Interval): Either<PaymentError, PlanInfo>
+    fun createPlan(productId: String, amount: Int, currency: String, interval: Interval, intervalCount: Long = 1): Either<PaymentError, PlanInfo>
 
     /**
      * @param Stripe Plan Id
      * @param Stripe Customer Id
+     * @param Epoch timestamp for when the trial period ends
      * @return Stripe SubscriptionId if subscribed
      */
-    fun subscribeToPlan(planId: String, customerId: String): Either<PaymentError, SubscriptionInfo>
+    fun subscribeToPlan(planId: String, customerId: String, trialEnd: Long = 0L): Either<PaymentError, SubscriptionInfo>
 
     /**
      * @param Stripe Plan Id
@@ -117,7 +125,8 @@ interface PaymentProcessor {
      * @param chargeId ID of the of the authorized charge to refund from authorizeCharge()
      * @return id of the charge
      */
-    fun refundCharge(chargeId: String, amount: Int, currency: String): Either<PaymentError, String>
+    fun refundCharge(chargeId: String, amount: Int, currency: String
+    ): Either<PaymentError, String>
 
     /**
      * @param customerId Customer id in the payment system
@@ -125,4 +134,6 @@ interface PaymentProcessor {
      * @return id if removed
      */
     fun removeSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo>
+
+    fun getStripeEphemeralKey(userEmail: String, apiVersion: String): Either<PaymentError, String>
 }

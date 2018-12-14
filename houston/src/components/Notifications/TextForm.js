@@ -2,6 +2,21 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Button, Form, FormGroup, Label, Input } from 'reactstrap';
 
+function useFormInput(initialValue, submit) {
+  const [value, setValue] = useState(initialValue);
+
+  function onChange(e) {
+    setValue(e.target.value);
+  }
+
+  function onSubmit(e) {
+    e.preventDefault();
+    submit(value);
+  }
+
+  return { value, onChange, onSubmit };
+}
+
 export default function TextForm(props) {
   const input = useFormInput('', props.onSubmit);
   return (
@@ -27,18 +42,3 @@ TextForm.propTypes = {
   submitLabel: PropTypes.string.isRequired,
   onSubmit: PropTypes.func.isRequired
 };
-
-function useFormInput(initialValue, submit) {
-  const [value, setValue] = useState(initialValue);
-
-  function onChange(e) {
-    setValue(e.target.value);
-  }
-
-  function onSubmit(e) {
-    e.preventDefault();
-    submit(value);
-  }
-
-  return { value, onChange, onSubmit };
-}
