@@ -55,7 +55,7 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         addEs2PlusDefaultFiltersAndInterceptors(jerseyEnvironment)
 
         val simEntriesIterator = SmDpSimEntryIterator(FileInputStream(configuration.simBatchData))
-        val smdpPlusService : SmDpPlusService =  SmDpPlusEmulator(simEntriesIterator)
+        val smdpPlusService: SmDpPlusService = SmDpPlusEmulator(simEntriesIterator)
 
         jerseyEnvironment.register(SmDpPlusServerResource(smDpPlus = smdpPlusService))
     }
@@ -71,19 +71,81 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 }
 
 
-class SmDpPlusEmulator (incomingEntries: Iterator<SmDpSimEntry>):  SmDpPlusService {
+/**
+ * A very reduced  functionality SmDpPlus, essentially handling only
+ * happy day scenarios, and not particulary efficient, and in-memory
+ * only etc.
+ */
+class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusService {
 
-    val entries:Set<SmDpSimEntry>
+    val entries: MutableSet<SmDpSimEntry> = mutableSetOf()
+    val entriesLock = Object()
+    val entriesByIccid = mutableMapOf<String, SmDpSimEntry>()
+    val entriesByImsi = mutableMapOf<String, SmDpSimEntry>()
+    val entriesByProfile = mutableMapOf<String, MutableSet<SmDpSimEntry>>()
 
     init {
-        val entrySet = mutableSetOf<SmDpSimEntry>()
-        incomingEntries.forEach { entrySet.add(it)}
-        entries = entrySet
+
+        incomingEntries.forEach {
+            entries.add(it)
+            entriesByIccid[it.iccid] = it
+            entriesByImsi[it.imsi] = it
+            if (!entriesByProfile.containsKey(it.profile)) {
+                entriesByProfile[it.profile] = mutableSetOf<SmDpSimEntry>()
+            }
+            entriesByProfile[it.profile]!!.add(it)
+        }
+
     }
 
+    // TODO; What about the reservation flag?
     override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): String {
-        TODO("not implemented")
+        synchronized(entriesLock) {
+            var entry: SmDpSimEntry? = null
+
+            // Find a matching entry, or throw a runtime exception because
+            // one couldn't be found.
+            if (iccid != null) {
+                if (!entriesByIccid.containsKey(iccid)) {
+                    throw RuntimeException("Attempt to allocate nonexisting iccid $iccid")
+                }
+
+                val entry = entriesByIccid[iccid]!!
+
+                if (entry.allocated) {
+                    throw RuntimeException("Attempt to download an already allocated SIM entry")
+                }
+
+                if (profileType != null) {
+                    if (!entry.profile.equals(profileType)) {
+                        throw RuntimeException("Profile of iccid = $iccid is ${entry.profile}, not $profileType")
+                    }
+                }
+            } else if (profileType == null) {
+                throw RuntimeException("No iccid, no profile type, so don't know how to allocate sim entry")
+            } else if (!entriesByProfile.containsKey(profileType!!)) {
+                throw RuntimeException("Unknown profile type $profileType")
+            } else {
+                entry = entriesByProfile[profileType]!!.find { it.profile == profileType!! }
+                if (entry == null) {
+                    throw RuntimeException("Could not allocate entry iccid=$iccid, profile=$profileType. No free matching entries")
+                }
+            }
+
+            if (entry == null) {
+                throw RuntimeException("This should never happen, entry=null")
+            }
+
+            // Then mark the entry as allocated and return the corresponding ICCID.
+            if (eid != null) {
+                entry!!.eid = eid
+            }
+
+            entry!!.allocated = true
+            return entry!!.iccid
+        }
     }
+
 
     override fun confirmOrder(eid: String, smdsAddress: String?, machingId: String?, confirmationCode: String?) {
         TODO("not implemented")
@@ -97,7 +159,6 @@ class SmDpPlusEmulator (incomingEntries: Iterator<SmDpSimEntry>):  SmDpPlusServi
         TODO("not implemented")
     }
 }
-
 
 
 class SmDpPlusAppConfiguration : Configuration() {
@@ -115,7 +176,7 @@ class SmDpPlusAppConfiguration : Configuration() {
     @Valid
     @NotNull
     @JsonProperty("simBatchData")
-    var simBatchData : String = ""
+    var simBatchData: String = ""
 
     @Valid
     @NotNull
