@@ -4,6 +4,7 @@ plugins {
   id "project-report"
   id "com.github.ben-manes.versions" version "0.20.0"
   id "jacoco"
+  id "org.sonarqube"
 }
 
 allprojects {
