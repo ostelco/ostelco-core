@@ -13,6 +13,7 @@ import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2Plus
 import org.ostelco.sim.es2plus.SmDpPlusServerResource
 import org.ostelco.sim.es2plus.SmDpPlusService
 import org.slf4j.LoggerFactory
+import java.io.FileInputStream
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
 
@@ -53,23 +54,8 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         addOpenapiResourceToJerseyEnv(jerseyEnvironment, configuration.openApi)
         addEs2PlusDefaultFiltersAndInterceptors(jerseyEnvironment)
 
-        val smdpPlusService : SmDpPlusService =   object : SmDpPlusService {
-            override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): String {
-                TODO("not implemented")
-            }
-
-            override fun confirmOrder(eid: String, smdsAddress: String?, machingId: String?, confirmationCode: String?) {
-                TODO("not implemented")
-            }
-
-            override fun cancelOrder(eid: String, iccid: String?, matchingId: String?, finalProfileStatusIndicator: String?) {
-                TODO("not implemented")
-            }
-
-            override fun releaseProfile(iccid: String) {
-                TODO("not implemented")
-            }
-        }
+        val simEntriesIterator = SmDpSimEntryIterator(FileInputStream(configuration.simBatchData))
+        val smdpPlusService : SmDpPlusService =  SmDpPlusEmulator(simEntriesIterator)
 
         jerseyEnvironment.register(SmDpPlusServerResource(smDpPlus = smdpPlusService))
     }
@@ -84,6 +70,36 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
     }
 }
 
+
+class SmDpPlusEmulator (incomingEntries: Iterator<SmDpSimEntry>):  SmDpPlusService {
+
+    val entries:Set<SmDpSimEntry>
+
+    init {
+        val entrySet = mutableSetOf<SmDpSimEntry>()
+        incomingEntries.forEach { entrySet.add(it)}
+        entries = entrySet
+    }
+
+    override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): String {
+        TODO("not implemented")
+    }
+
+    override fun confirmOrder(eid: String, smdsAddress: String?, machingId: String?, confirmationCode: String?) {
+        TODO("not implemented")
+    }
+
+    override fun cancelOrder(eid: String, iccid: String?, matchingId: String?, finalProfileStatusIndicator: String?) {
+        TODO("not implemented")
+    }
+
+    override fun releaseProfile(iccid: String) {
+        TODO("not implemented")
+    }
+}
+
+
+
 class SmDpPlusAppConfiguration : Configuration() {
     @Valid
     @NotNull
@@ -94,6 +110,12 @@ class SmDpPlusAppConfiguration : Configuration() {
     @NotNull
     @JsonProperty("openApi")
     var openApi = OpenapiResourceAdderConfig()
+
+
+    @Valid
+    @NotNull
+    @JsonProperty("simBatchData")
+    var simBatchData : String = ""
 
     @Valid
     @NotNull
