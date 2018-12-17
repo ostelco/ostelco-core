@@ -226,8 +226,10 @@ function generate_csr {
 
     local keyfile=$(key_filename $actor $role)
     local cert_config=$(crt_config_filename $actor $role)
+    local csr_file=$(csr_filename $actor $role)
     
-    generate_cert_config $cert_config $keyfile $actor $role $distinguished_name $country $state $location $organization $common_name
+    generate_cert_config "$cert_config" "$keyfile" "$actor" "$role" "$distinguished_name" "$country" "$state" "$location" "$organization" "$common_name"
+    openssl req -new -out "$csr_file" -config "$cert_config"
 }
 
 
@@ -239,11 +241,9 @@ generate_csr "sim-mgr" "ca" "not-really-ostelco.org" "NO" "Oslo" "Oslo" "Not rea
 generate_csr "sim-mgr" "ck" "not-really-ostelco.org" "NO" "Oslo" "Oslo" "Not really ostelco" "*.not-really-ostelco.org" 
 generate_csr "sim-mgr" "sk" "not-really-ostelco.org" "NO" "Oslo" "Oslo" "Not really ostelco" "*.not-really-ostelco.org" 
 
-
 generate_csr "sm-dp-plus" "ca" "not-really-smdp.org" "NO" "Oslo" "Oslo" "Not really SMDP org" "*.not-really-ostelco.org" 
 generate_csr "sm-dp-plus" "ck" "not-really-smdp.org" "NO" "Oslo" "Oslo" "Not really SMDP org" "*.not-really-ostelco.org" 
 generate_csr "sm-dp-plus" "sk" "not-really-smdp.org" "NO" "Oslo" "Oslo" "Not really SMDP org" "*.not-really-ostelco.org" 
-
 
 
 
@@ -257,7 +257,6 @@ function sign_csr {
     local signer_actor=$3
     local signer_role=$4
 
-    echo "-->csr_filename $issuer_actor $issuer_role"
     local csr_file=$(csr_filename $issuer_actor $issuer_role)
     local crt_file=$(crt_filename $issuer_actor $issuer_role)
     local ca_crt=$(crt_filename $signer_actor $signer_role)
