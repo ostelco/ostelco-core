@@ -100,34 +100,6 @@ function crt_config_filename {
     echo $(generate_filename $actor $role "csr_config" )
 }
 
-
-
-##
-##  Generating keys
-##
-
-function generate_key {
-   local output_file=$1
-   local dirname=$(dirname $output_file)
-   mkdir -p $dirname
-   openssl genrsa -out $output_file $KEY_LENGTH
-}
-
-
-
-
-#
-# Both of the actors have  three keys.  One certificate authority
-# key (_ca), one server key (_sk), and one client key (_ck)
-#
-
-# for actor in  $ACTORS ; do
-#     for role in "ca" "sk" "ck" ; do
-#          generate_key $(key_filename $actor $role)
-#     done
-# done
-
-
 ##
 ## Generating Certificate Signing Requests (CSRs) and signing them.
 ##
