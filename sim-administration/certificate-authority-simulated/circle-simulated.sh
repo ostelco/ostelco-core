@@ -12,7 +12,7 @@
 ##
 ## Key length. Should be 2048, but may be smaller during testing.
 ##
-KEY_LENGTH=128
+KEY_LENGTH=2048
 
 
 ##
@@ -121,11 +121,11 @@ function generate_key {
 # key (_ca), one server key (_sk), and one client key (_ck)
 #
 
-for actor in  $ACTORS ; do
-    for role in "ca" "sk" "ck" ; do
-        generate_key $(key_filename $actor $role)
-    done
-done
+# for actor in  $ACTORS ; do
+#     for role in "ca" "sk" "ck" ; do
+#          generate_key $(key_filename $actor $role)
+#     done
+# done
 
 
 ##
@@ -143,6 +143,17 @@ function generate_cert_config {
     local organization=$7
     local common_name=$8
 
+    
+    echo "local cert_config=$1"
+    echo "local keyfile=$2"
+    echo "local distinguished_name=$3"
+    echo "local country=$4"
+    echo "local state=$5"
+    echo "local location=$6"
+    echo "local organization=$7"
+    echo "local common_name=$8"
+
+
     cat > $cert_config <<EOF
 # The main section is named req because the command we are using is req
 # (openssl req ...)
@@ -150,7 +161,7 @@ function generate_cert_config {
 # This specifies the default key size in bits. If not specified then 512 is
 # used. It is used if the -new option is used. It can be overridden by using
 # the -newkey option. 
-default_bits = 2048
+default_bits = $KEY_LENGTH
 
 # This is the default filename to write a private key to. If not specified the
 # key is written to standard output. This can be overridden by the -keyout
@@ -182,14 +193,13 @@ utf8 = yes
 # prompt for when generating a certificate or certificate request.
 distinguished_name = $distinguished_name
 
-
 # this specifies the configuration file section containing a list of extensions
 # to add to the certificate request. It can be overridden by the -reqexts
 # command line switch. See the x509v3_config(5) manual page for details of the
 # extension section format.
 req_extensions = my_extensions
 
-[ my_req_distinguished_name ]
+[ $distinguished_name ]
 C = $country
 ST = $state
 L = $location
@@ -228,20 +238,53 @@ function generate_csr {
     local cert_config=$(crt_config_filename $actor $role)
     local csr_file=$(csr_filename $actor $role)
     
-    generate_cert_config "$cert_config" "$keyfile" "$actor" "$role" "$distinguished_name" "$country" "$state" "$location" "$organization" "$common_name"
+    generate_cert_config "$cert_config" "$keyfile" "$distinguished_name" "$country" "$state" "$location" "$organization" "$common_name"
     openssl req -new -out "$csr_file" -config "$cert_config"
 }
+
+
+function self_signed_cert {
+    local actor=$1
+    local role=$2
+    local distinguished_name=$3
+    local country=$4
+    local state=$5
+    local location=$6
+    local organization=$7
+    local common_name=$8
+
+    local keyfile=$(key_filename $actor $role)
+    local cert_config=$(crt_config_filename $actor $role)
+    local crt_file=$(crt_filename $actor $role)
+    
+    generate_cert_config "$cert_config" "$keyfile" "$distinguished_name" "$country" "$state" "$location" "$organization" "$common_name"
+#    openssl req -new -out "$crt_file" -config "$cert_config"
+
+
+# openssl req -config example-com.conf -new -x509 -sha256 -newkey rsa:2048 -nodes \
+#    -keyout example-com.key.pem -days 365 -out example-com.cert.pem
+
+    openssl req \
+        -config $cert_config \
+	-new -x509 -sha256  \
+        -keyout $keyfile \
+        -out $crt_file -days 365
+}
+
+
+self_signed_cert "sim-mgr"    "ca" "not-really-ostelco.org" "NO" "Oslo" "Oslo" "Not really ostelco" "*.not-really-ostelco.org" 
+self_signed_cert "sm-dp-plus" "ca" "not-really-smdp.org"    "NO" "Oslo" "Oslo" "Not really SMDP org" "*.not-really-ostelco.org" 
+
+
 
 
 ##
 ## Now generate all the CSRs for both actors.
 ##
 
-generate_csr "sim-mgr" "ca" "not-really-ostelco.org" "NO" "Oslo" "Oslo" "Not really ostelco" "*.not-really-ostelco.org" 
 generate_csr "sim-mgr" "ck" "not-really-ostelco.org" "NO" "Oslo" "Oslo" "Not really ostelco" "*.not-really-ostelco.org" 
 generate_csr "sim-mgr" "sk" "not-really-ostelco.org" "NO" "Oslo" "Oslo" "Not really ostelco" "*.not-really-ostelco.org" 
 
-generate_csr "sm-dp-plus" "ca" "not-really-smdp.org" "NO" "Oslo" "Oslo" "Not really SMDP org" "*.not-really-ostelco.org" 
 generate_csr "sm-dp-plus" "ck" "not-really-smdp.org" "NO" "Oslo" "Oslo" "Not really SMDP org" "*.not-really-ostelco.org" 
 generate_csr "sm-dp-plus" "sk" "not-really-smdp.org" "NO" "Oslo" "Oslo" "Not really SMDP org" "*.not-really-ostelco.org" 
 
@@ -269,9 +312,7 @@ function sign_csr {
 }
 
 
-echo "Self sign root certs"
-sign_csr "sim-mgr"      "ca" "sim-mgr"      "ca"
-sign_csr "sm-dp-plus"   "ca" "sm-dp-plus"   "ca"
+
 
 echo "Sign server certificates using own CA"
 sign_csr "sim-mgr"      "sk" "sim-mgr"      "ca"
