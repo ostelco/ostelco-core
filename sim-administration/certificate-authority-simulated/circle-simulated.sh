@@ -1,5 +1,7 @@
 #!/bin/bash
 
+
+
 ###
 ### Run a full CSR cycle against a CA. Do it all from scatch, generating
 ### root certificate for the ca, generating the csr, signing the csr
@@ -53,6 +55,20 @@ function generate_filename {
     local actor=$1
     local role=$2
     local suffix=$3
+    
+    if [[ -z "$actor" ]] ; then
+	(>&2 echo "No actor given to generate_filename")
+	exit 1
+    fi
+    if [[ -z "$role" ]] ; then
+	(>&2 echo "No role given to generate_filename")
+	exit 1
+    fi
+
+    if [[ -z "$suffix" ]] ; then
+	(>&2 echo "No suffix given to generate_filename")
+	exit 1
+    fi
 
     echo "${ARTEFACT_ROOT}/${actor}/${role}.${suffix}"
 }
@@ -60,30 +76,29 @@ function generate_filename {
 function csr_filename {
     local actor=$1
     local role=$2
-    echo "$(generate_filename $actor $role "csr")"
+    echo $(generate_filename $actor $role "csr" )
 }
 
 
 function crt_filename {
     local actor=$1
     local role=$2
-    echo "$(generate_filename $actor $role "crt")"
+    echo $(generate_filename $actor $role "crt" )
 }
 
 
 function key_filename {
     local actor=$1
     local role=$2
-    echo "$(generate_filename $actor $role "key")"
+    echo $(generate_filename $actor $role "key" )
 }
 
 
 function crt_config_filename {
     local actor=$1
     local role=$2
-    echo "$(generate_filename $actor $role "config")"
+    echo $(generate_filename $actor $role "csr_config" )
 }
-
 
 
 
@@ -238,15 +253,18 @@ generate_csr "sm-dp-plus" "sk" "not-really-smdp.org" "NO" "Oslo" "Oslo" "Not rea
 
 function sign_csr {
     local issuer_actor=$1
-    local issure_role=$2
+    local issuer_role=$2
     local signer_actor=$3
     local signer_role=$4
+
+    echo "-->csr_filename $issuer_actor $issuer_role"
     local csr_file=$(csr_filename $issuer_actor $issuer_role)
     local crt_file=$(crt_filename $issuer_actor $issuer_role)
     local ca_crt=$(crt_filename $signer_actor $signer_role)
     local ca_key=$(key_filename $signer_actor $signer_role)
 
     # TODO: CHeck that all the input files exist
+    echo openssl x509 -req -in $csr_file -CA $ca_crt -CAkey $ca_key -CAcreateserial -out $crt_file
     openssl x509 -req -in $csr_file -CA $ca_crt -CAkey $ca_key -CAcreateserial -out $crt_file
     # TODO: Check that all the output files exist and that the exit code is zero
 }
