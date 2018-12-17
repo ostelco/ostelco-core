@@ -100,6 +100,7 @@ paths:
       produces:
         - application/json
         - text/plain
+      operationId: "attachPlan"
       responses:
         201:
           description: "The subscription was created successfully"
@@ -123,6 +124,7 @@ paths:
       produces:
         - application/json
         - text/plain
+      operationId: "detachPlan"
       responses:
         200:
           description: "The subscription was removed successfully"
