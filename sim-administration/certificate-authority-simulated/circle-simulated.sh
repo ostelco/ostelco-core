@@ -262,14 +262,12 @@ function self_signed_cert {
         -config $cert_config \
 	-new -x509 -sha256  \
         -keyout $keyfile \
-        -out $crt_file -days 365
+        -out $crt_file
 }
 
 
 self_signed_cert "sim-mgr"    "ca" "not-really-ostelco.org" "NO" "Oslo" "Oslo" "Not really ostelco" "*.not-really-ostelco.org" 
 self_signed_cert "sm-dp-plus" "ca" "not-really-smdp.org"    "NO" "Oslo" "Oslo" "Not really SMDP org" "*.not-really-ostelco.org" 
-
-
 
 
 ##
