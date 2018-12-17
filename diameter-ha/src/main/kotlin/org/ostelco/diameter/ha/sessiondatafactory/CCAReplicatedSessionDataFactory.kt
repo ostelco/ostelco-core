@@ -8,7 +8,6 @@ import org.jdiameter.common.api.app.cca.ICCASessionData
 import org.jdiameter.common.api.data.ISessionDatasource
 import org.ostelco.diameter.ha.client.ClientCCASessionDataReplicatedImpl
 import org.ostelco.diameter.ha.common.ReplicatedStorage
-import org.ostelco.diameter.ha.logger
 import org.ostelco.diameter.ha.server.ServerCCASessionDataReplicatedImpl
 import org.ostelco.diameter.ha.sessiondatasource.RedisReplicatedSessionDatasource
 

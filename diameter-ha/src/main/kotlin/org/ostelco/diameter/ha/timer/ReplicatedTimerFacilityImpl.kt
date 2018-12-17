@@ -1,10 +1,8 @@
 package org.ostelco.diameter.ha.timer
 
 import org.jdiameter.client.api.IContainer
-import org.jdiameter.client.impl.BaseSessionImpl
 import org.jdiameter.common.api.data.ISessionDatasource
 import org.jdiameter.common.api.timer.ITimerFacility
-import org.jdiameter.common.impl.app.AppSessionImpl
 import org.ostelco.diameter.ha.logger
 import java.io.Serializable
 
