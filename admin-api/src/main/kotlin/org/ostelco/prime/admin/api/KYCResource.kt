@@ -1,6 +1,7 @@
 package org.ostelco.prime.admin.api
 
 import arrow.core.Either
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.dropwizard.auth.Auth
 import org.ostelco.prime.apierror.*
 import org.ostelco.prime.auth.AccessTokenPrincipal
@@ -18,6 +19,9 @@ import java.util.*
 import javax.servlet.http.HttpServletRequest
 import javax.ws.rs.*
 import javax.ws.rs.core.*
+import java.io.IOException
+
+
 
 
 //TODO: Prasanth, Remove after testing
@@ -63,6 +67,26 @@ class KYCResource {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
 
+    fun isJSON(jsonInString: String): Boolean {
+        try {
+            val mapper = ObjectMapper()
+            mapper.readTree(jsonInString)
+            return true
+        } catch (e: IOException) {
+            return false
+        }
+    }
+    fun convertToPlainText(jsonString: String): String {
+        var plainText = jsonString.replace("\"", "")
+        plainText = plainText.replace(",", " , ")
+        plainText = plainText.replace(":", "-")
+        plainText = plainText.replace("[", "")
+        plainText = plainText.replace("]", "")
+        plainText = plainText.replace("{", "")
+        plainText = plainText.replace("}", "")
+        return plainText
+    }
+
     private fun toRegularMap(m: MultivaluedMap<String, String>?): Map<String, String> {
         val map = HashMap<String, String>()
         if (m == null) {
@@ -74,7 +98,11 @@ class KYCResource {
                 if (sb.length > 0) {
                     sb.append(',')
                 }
-                sb.append(s)
+                if (isJSON(s)) {
+                    sb.append(convertToPlainText(s))
+                } else {
+                    sb.append(s)
+                }
             }
             map[entry.key] = sb.toString()
         }
