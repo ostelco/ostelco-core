@@ -53,10 +53,8 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
                     notificationPointId: Int,
                     profileType: String?,
                     resultData: String?,
-                    timestamp: String) {
-                // TODO: Not implemented.
-
-            }
+                    timestamp: String) =// TODO: Not implemented.
+                    Unit
         }
 
         val jerseyEnvironment = environment.jersey()

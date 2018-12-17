@@ -10,7 +10,6 @@ import java.io.PrintWriter
 
 
 
-
 class SimCarfBatchDescriptorReaderTest {
 
     val smdpInputCsvPath =
@@ -55,6 +54,7 @@ class ImsiGenerator(val mcc : Int, val mnc: Int, val msinStart : Int) : Iterator
 
     var msin = msinStart
 
+    @Throws(NoSuchElementException::class)
     override fun next(): String {
         return "%03d%02d%010d".format(mcc, mnc, msin++)
     }
@@ -64,14 +64,13 @@ class ImsiGenerator(val mcc : Int, val mnc: Int, val msinStart : Int) : Iterator
     }
 }
 
-
-
 class IccidGenerator(val startSerialNum: Int = 0) : Iterator<String> {
 
     var serialNumber:Int = startSerialNum
     /**
      * Returns the next element in the iteration.
      */
+    @Throws(NoSuchElementException::class)
     override fun next(): String {
          return IccidBasis(serialNumber = serialNumber++).asIccid()
     }

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.dropwizard.Application
 import io.dropwizard.Configuration
 import io.dropwizard.client.JerseyClientConfiguration
-import io.dropwizard.db.DataSourceFactory
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
@@ -95,10 +94,14 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
             entries.add(it)
             entriesByIccid[it.iccid] = it
             entriesByImsi[it.imsi] = it
+            val entriesForProfile: MutableSet<SmDpSimEntry>
             if (!entriesByProfile.containsKey(it.profile)) {
-                entriesByProfile[it.profile] = mutableSetOf<SmDpSimEntry>()
+                entriesForProfile = mutableSetOf<SmDpSimEntry>()
+                entriesByProfile[it.profile] = entriesForProfile
+            } else {
+                entriesForProfile = entriesByProfile[it.profile]!!
             }
-            entriesByProfile[it.profile]!!.add(it)
+            entriesForProfile.add(it)
         }
 
         log.info("Just read ${entries.size} SIM entries.")
@@ -107,51 +110,77 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
     // TODO; What about the reservation flag?
     override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): String {
         synchronized(entriesLock) {
-            var entry: SmDpSimEntry? = null
-
-            // Find a matching entry, or throw a runtime exception because
-            // one couldn't be found.
-            if (iccid != null) {
-                if (!entriesByIccid.containsKey(iccid)) {
-                    throw RuntimeException("Attempt to allocate nonexisting iccid $iccid")
-                }
-
-                val entry = entriesByIccid[iccid]!!
-
-                if (entry.allocated) {
-                    throw RuntimeException("Attempt to download an already allocated SIM entry")
-                }
-
-                if (profileType != null) {
-                    if (!entry.profile.equals(profileType)) {
-                        throw RuntimeException("Profile of iccid = $iccid is ${entry.profile}, not $profileType")
-                    }
-                }
-            } else if (profileType == null) {
-                throw RuntimeException("No iccid, no profile type, so don't know how to allocate sim entry")
-            } else if (!entriesByProfile.containsKey(profileType!!)) {
-                throw RuntimeException("Unknown profile type $profileType")
-            } else {
-                entry = entriesByProfile[profileType]!!.find { it.profile == profileType!! }
-                if (entry == null) {
-                    throw RuntimeException("Could not allocate entry iccid=$iccid, profile=$profileType. No free matching entries")
-                }
-            }
+            var entry: SmDpSimEntry? =  findMatchingFreeProfile(iccid, profileType)
 
             if (entry == null) {
-                throw RuntimeException("This should never happen, entry=null")
+                throw SmDpPlusException("Could not find download order matching criteria")
             }
 
             // If an EID is known, then mark this as the IED associated
             // with the entry.
             if (eid != null) {
-                entry!!.eid = eid
+                entry.eid = eid
             }
 
             // Then mark the entry as allocated and return the corresponding ICCID.
-            entry!!.allocated = true
-            return entry!!.iccid
+            entry.allocated = true
+
+            // Finally return the ICCID uniquely identifying the profile instance.
+            return entry.iccid
         }
+    }
+
+    /**
+     * Find a free profile that either matches both iccid and profile type (if iccid != null),
+     * or just profile type (if iccid == null).  Throw runtime exception if parameter
+     * errors are discovered, but return null if no matching profile is found.
+     */
+    private fun findMatchingFreeProfile(iccid: String?, profileType: String?): SmDpSimEntry? {
+        if (iccid != null) {
+            return allocateByIccid(iccid, profileType)
+        } else if (profileType == null) {
+            throw RuntimeException("No iccid, no profile type, so don't know how to allocate sim entry")
+        } else if (!entriesByProfile.containsKey(profileType!!)) {
+            throw SmDpPlusException("Unknown profile type $profileType")
+        } else {
+            return allocateByProfile(profileType)
+        }
+    }
+
+    /**
+     * Find an allocatable profile  by profile type.  If a free and matching profile can be found.  If not, then
+     * return null.
+     */
+    private fun allocateByProfile(profileType: String): SmDpSimEntry? {
+        val entriesForProfile =  entriesByProfile[profileType]
+        if (entriesForProfile == null) {
+            return null
+        }
+        return  entriesForProfile.find { !it.allocated}
+    }
+
+    /**
+     * Allocate by ICCID, but only do so if the iccid exists, and the
+     * profile  associated with that ICCID matches the expected profile type
+     * (if not null, null will match anything).
+     */
+    private fun allocateByIccid(iccid: String, profileType: String?) : SmDpSimEntry {
+        if (!entriesByIccid.containsKey(iccid)) {
+            throw RuntimeException("Attempt to allocate nonexisting iccid $iccid")
+        }
+
+        val entry = entriesByIccid[iccid]!!
+
+        if (entry.allocated) {
+            throw SmDpPlusException("Attempt to download an already allocated SIM entry")
+        }
+
+        if (profileType != null) {
+            if (!entry.profile.equals(profileType)) {
+                throw SmDpPlusException("Profile of iccid = $iccid is ${entry.profile}, not $profileType")
+            }
+        }
+        return entry
     }
 
 
@@ -168,24 +197,40 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
     }
 }
 
+/**
+ * Thrown when an non-recoverable error is encountered byt he sm-dp+ implementation.
+ */
+class SmDpPlusException(message: String) : Exception(message)
 
+/**
+ * Configuration class for  Sm-dp+ emulator.
+ */
 class SmDpPlusAppConfiguration : Configuration() {
-    @Valid
-    @NotNull
-    @JsonProperty("database")
-    var database = DataSourceFactory()
 
+
+    /**
+     * Configuring how the Open API representation of the
+     * served resources will be presenting itself (owner,
+     * license etc.)
+     */
     @Valid
     @NotNull
     @JsonProperty("openApi")
     var openApi = OpenapiResourceAdderConfig()
 
 
+    /**
+     * Path to file containing simulated SIM data.
+     */
     @Valid
     @NotNull
     @JsonProperty("simBatchData")
     var simBatchData: String = ""
 
+    /**
+     * Configuration of the jersey client that is used
+     * for the ES2+ callbacks.
+     */
     @Valid
     @NotNull
     @JsonProperty

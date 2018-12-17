@@ -41,7 +41,17 @@ class LuhnChecksum {
                     return candidate
                 }
             }
-            throw RuntimeException("Luhn completion failed for string '$s'")
+            throw LuhnException("Luhn completion failed for string '$s'")
         }
     }
 }
+
+/**
+ * Exception that is thrown when the Luhn algorithm/algorithms encounter
+ * unrecoverable errors.
+ */
+class LuhnException(message: String) : Exception(message)
+
+
+
+
