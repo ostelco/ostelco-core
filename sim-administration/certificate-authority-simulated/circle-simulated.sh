@@ -8,6 +8,12 @@
 
 
 ##
+## Key length. Should be 2048, but may be smaller during testing.
+##
+KEY_LENGTH=128
+
+
+##
 ## Check for dependencies
 ##
 DEPENDENCIES="keytool openssl"
@@ -89,7 +95,7 @@ function generate_key {
    local output_file=$1
    local dirname=$(dirname $output_file)
    mkdir -p $dirname
-   openssl genrsa -out $output_file 2048
+   openssl genrsa -out $output_file $KEY_LENGTH
 }
 
 
@@ -206,7 +212,7 @@ function generate_csr {
     local keyfile=$(key_filename $actor $role)
     local cert_config=$(crt_config_filename $actor $role)
     
-   echo  generate_cert_config $cert_config $keyfile $actor $role $distinguished_name $country $state $location $organization $common_name
+    generate_cert_config $cert_config $keyfile $actor $role $distinguished_name $country $state $location $organization $common_name
 }
 
 
@@ -246,17 +252,17 @@ function sign_csr {
 }
 
 
-# Self sign root certs
-sign_csr "sim-mgr" "ca" "sim-mgr" "ca"
+echo "Self sign root certs"
+sign_csr "sim-mgr"      "ca" "sim-mgr"      "ca"
 sign_csr "sm-dp-plus"   "ca" "sm-dp-plus"   "ca"
 
-# Sign server certificates using own CA
-sign_csr "sim-mgr" "sk" "sim-mgr" "ca"
+echo "Sign server certificates using own CA"
+sign_csr "sim-mgr"      "sk" "sim-mgr"      "ca"
 sign_csr "sm-dp-plus"   "sk" "sm-dp-plus"   "ca"
 
 
-# Countersign client certificates
-sign_csr "sim-mgr" "ck" "sim-mgr" "ca" 
+echo "Countersign client certificates"
+sign_csr "sim-mgr"      "ck" "sim-mgr"      "ca" 
 sign_csr "sm-dp-plus"   "ck" "sm-dp-plus"   "ca"
 
 
