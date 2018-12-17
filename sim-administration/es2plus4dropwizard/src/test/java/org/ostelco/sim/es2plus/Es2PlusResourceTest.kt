@@ -12,6 +12,13 @@ import org.ostelco.jsonschema.RequestServerReaderWriterInterceptor
 
 class ES2PlusResourceTest {
 
+
+    private val iccid = "01234567890123456789"
+    private val eid = "01234567890123456789012345678901"
+    private val matchingId = "foo"
+    private val confirmationCode = "bar"
+
+
     companion object {
 
         val smdpPlusService: SmDpPlusService = Mockito.mock(SmDpPlusService::class.java)
@@ -42,7 +49,6 @@ class ES2PlusResourceTest {
 
     private val client = ES2PlusClient("Integration test client", RULE.client())
 
-
     @Test
     fun testDownloadOrder() {
 
@@ -50,23 +56,25 @@ class ES2PlusResourceTest {
                 eid = Mockito.anyString(),
                 iccid = Mockito.anyString(),
                 profileType = Mockito.anyString()))
-                .thenReturn("01234567890123456789")
+                .thenReturn(iccid)
 
         val result = client.downloadOrder(
-                eid = "01234567890123456789012345678901",
-                iccid = "01234567890123456789",
+                eid = eid,
+                iccid = iccid,
                 profileType = "AProfileTypeOfSomeSort")
         // XXX Do some verification
     }
 
+
     @Test
     fun testConfirmOrder() {
 
+
         client.confirmOrder(
-                eid = "01234567890123456789012345678901",
-                iccid = "01234567890123456789",
-                matchingId = "foo",
-                confirmationCode = "bar",
+                eid = eid,
+                iccid = iccid,
+                matchingId = matchingId,
+                confirmationCode = confirmationCode,
                 smdsAddress = "baz",
                 releaseFlag = true)
         // XXX Do some verification
@@ -75,16 +83,16 @@ class ES2PlusResourceTest {
     @Test
     fun testCancelOrder() {
         client.cancelOrder(
-                eid = "01234567890123456789012345678901",
-                iccid = "01234567890123456789",
-                matchingId = "foo",
-                finalProfileStatusIndicator = "bar")
+                eid = eid,
+                iccid = iccid,
+                matchingId = matchingId,
+                finalProfileStatusIndicator = confirmationCode)
         // XXX Do some verification
     }
 
     @Test
     fun testReleaseProfile() {
-        client.releaseProfile(iccid = "01234567890123456789")
+        client.releaseProfile(iccid = iccid)
         // XXX Do some verification
     }
 
@@ -92,9 +100,9 @@ class ES2PlusResourceTest {
     fun testHandleDownloadProgressInfo() {
         // XXX Not testing anything sensible
         client.handleDownloadProgressInfo(
-                iccid = "01234567890123456789",
-                eid = "01234567890123456789012345678901",
-                profileType =  "foo",
+                iccid = iccid,
+                eid = eid,
+                profileType =  "profileType",
                 timestamp = "2001-12-17T09:30:47Z",
                 notificationPointId = 4711,
                 notificationPointStatus = ES2NotificationPointStatus()

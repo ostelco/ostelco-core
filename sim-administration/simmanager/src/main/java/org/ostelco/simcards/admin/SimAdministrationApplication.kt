@@ -47,14 +47,14 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
         this.simInventoryDAO = jdbi.onDemand(SimInventoryDAO::class.java)
 
         val smdpPlusCallbackHandler = object : SmDpPlusCallbackService {
+            // TODO: Not implemented.
             override fun handleDownloadProgressInfo(
                     eid: String?,
                     iccid: String,
                     notificationPointId: Int,
                     profileType: String?,
                     resultData: String?,
-                    timestamp: String) =// TODO: Not implemented.
-                    Unit
+                    timestamp: String) = Unit
         }
 
         val jerseyEnvironment = environment.jersey()
