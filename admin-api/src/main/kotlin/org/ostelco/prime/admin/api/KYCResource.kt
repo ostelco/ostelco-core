@@ -78,11 +78,12 @@ class KYCResource {
     }
     fun convertToPlainText(jsonString: String): String {
         var plainText = jsonString.replace("\"", "")
-        plainText = plainText.replace(":", " - ")
-        plainText = plainText.replace("[", " ")
-        plainText = plainText.replace("]", " ")
-        plainText = plainText.replace("{", " ")
-        plainText = plainText.replace("}", " ")
+        plainText = plainText.replace(",", " , ")
+        plainText = plainText.replace(":", "-")
+        plainText = plainText.replace("[", "")
+        plainText = plainText.replace("]", "")
+        plainText = plainText.replace("{", "")
+        plainText = plainText.replace("}", "")
         return plainText
     }
 

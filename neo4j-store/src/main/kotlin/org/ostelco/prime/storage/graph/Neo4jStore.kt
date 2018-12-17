@@ -560,7 +560,6 @@ object Neo4jStoreSingleton : GraphStore {
     override fun updateScanInformation(scanInformation: ScanInformation): Either<StoreError, Unit> = writeTransaction {
         logger.info("updateScanInformation : ${scanInformation.scanId} status: ${scanInformation.status}")
         getSubscriberId(scanInformation.scanId, transaction).flatMap { subscriber ->
-            logger.info("Got subscriber : ${subscriber.email}")
             scanInformationStore.update(scanInformation, transaction).flatMap {
                 logger.info("updating scan Information for : ${subscriber.email} id: ${scanInformation.scanId} status: ${scanInformation.status}")
                 getOrCreateSubscriberState(subscriber.id, SubscriberStatus.REGISTERED, transaction).flatMap {subcriberState ->
