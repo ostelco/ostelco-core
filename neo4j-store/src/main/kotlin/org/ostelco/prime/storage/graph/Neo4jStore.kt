@@ -558,8 +558,11 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     override fun updateScanInformation(scanInformation: ScanInformation): Either<StoreError, Unit> = writeTransaction {
+        logger.info("updateScanInformation : ${scanInformation.scanId} status: ${scanInformation.status}")
         getSubscriberId(scanInformation.scanId, transaction).flatMap { subscriber ->
+            logger.info("Got subscriber : ${subscriber.email}")
             scanInformationStore.update(scanInformation, transaction).flatMap {
+                logger.info("updating scan Information for : ${subscriber.email} id: ${scanInformation.scanId} status: ${scanInformation.status}")
                 getOrCreateSubscriberState(subscriber.id, SubscriberStatus.REGISTERED, transaction).flatMap {subcriberState ->
                     if (scanInformation.status == ScanStatus.APPROVED  && (subcriberState.status == SubscriberStatus.REGISTERED || subcriberState.status == SubscriberStatus.EKYC_REJECTED)) {
                         // Update the state if the scan was successul and we are waiting for eKYC results
