@@ -258,12 +258,6 @@ function self_signed_cert {
     local crt_file=$(crt_filename $actor $role)
     
     generate_cert_config "$cert_config" "$keyfile" "$distinguished_name" "$country" "$state" "$location" "$organization" "$common_name"
-#    openssl req -new -out "$crt_file" -config "$cert_config"
-
-
-# openssl req -config example-com.conf -new -x509 -sha256 -newkey rsa:2048 -nodes \
-#    -keyout example-com.key.pem -days 365 -out example-com.cert.pem
-
     openssl req \
         -config $cert_config \
 	-new -x509 -sha256  \
