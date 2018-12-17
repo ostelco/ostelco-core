@@ -15,7 +15,6 @@ jdk: openjdk11
 # TODO vihang: fix neo4j-store:test
 script: 
   - ./gradlew clean build -info --stacktrace -x neo4j-store:test -x integration
-  - (cd sim-administration && ../mvnww clean install)
 
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
