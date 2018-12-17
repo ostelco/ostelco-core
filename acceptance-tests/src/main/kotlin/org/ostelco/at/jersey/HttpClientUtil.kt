@@ -34,14 +34,13 @@ inline fun <reified T> get(execute: HttpRequest.() -> Unit): T {
 /**
  * DSL function for POST operation
  */
-inline fun <reified T> post(expectedResultCode: Int = 201, execute: HttpRequest.() -> Unit): T {
+inline fun <reified T> post(expectedResultCode: Int = 201, dataType: MediaType = MediaType.APPLICATION_JSON_TYPE, execute: HttpRequest.() -> Unit): T {
     val request = HttpRequest().apply(execute)
     val response = HttpClient.send(request.path, request.queryParams, request.headerParams, request.subscriberId)
-            .post(Entity.entity(request.body ?: "", MediaType.APPLICATION_JSON_TYPE))
+            .post(Entity.entity(request.body ?: "", dataType))
     assertEquals(expectedResultCode, response.status) { response.readEntity(String::class.java) }
     return response.readEntity(object : GenericType<T>() {})
 }
-
 
 /**
  * DSL function for PUT operation

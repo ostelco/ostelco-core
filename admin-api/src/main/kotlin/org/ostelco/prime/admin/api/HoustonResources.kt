@@ -2,19 +2,12 @@ package org.ostelco.prime.admin.api
 
 import arrow.core.Either
 import io.dropwizard.auth.Auth
-import org.ostelco.prime.apierror.ApiError
-import org.ostelco.prime.apierror.ApiErrorCode
-import org.ostelco.prime.apierror.BadGatewayError
-import org.ostelco.prime.apierror.NotFoundError
+import org.ostelco.prime.apierror.*
 import org.ostelco.prime.appnotifier.AppNotifier
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
-import org.ostelco.prime.model.Bundle
-import org.ostelco.prime.model.Plan
-import org.ostelco.prime.model.PurchaseRecord
-import org.ostelco.prime.model.Subscriber
-import org.ostelco.prime.model.Subscription
+import org.ostelco.prime.model.*
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
@@ -66,6 +59,28 @@ class ProfilesResource {
     }
 
     /**
+     * Get the subscriber state/
+     */
+    @GET
+    @Path("{email}/state")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun getSubscriberState(@Auth token: AccessTokenPrincipal?,
+                           @NotNull
+                           @PathParam("email")
+                           email: String): Response {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .build()
+        }
+        val decodedId = URLDecoder.decode(email, "UTF-8")
+        logger.info("${token.name} Accessing state for email:$decodedId")
+        return getSubscriberState(decodedId).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                { Response.status(Response.Status.OK).entity(asJson(it)) })
+                .build()
+    }
+
+   /**
      * Get the subscriptions for this subscriber.
      */
     @GET
@@ -85,6 +100,39 @@ class ProfilesResource {
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
+    }
+
+    /**
+     * Get all the eKYC scan information for this subscriber.
+     */
+    @GET
+    @Path("{email}/scans")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun getAllScanInformation(@Auth token: AccessTokenPrincipal?,
+                         @NotNull
+                         @PathParam("email")
+                         email: String): Response {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .build()
+        }
+        val decodedId = URLDecoder.decode(email, "UTF-8")
+        logger.info("${token.name} Accessing scan information for email:$decodedId")
+        return getAllScanInformation(decodedId).fold(
+                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                { Response.status(Response.Status.OK).entity(asJson(it)) })
+                .build()
+    }
+
+    private fun getAllScanInformation(subscriberId: String): Either<ApiError, Collection<ScanInformation>> {
+        return try {
+            storage.getAllScanInformation(subscriberId).mapLeft {
+                NotFoundError("Failed to fetch scan information.", ApiErrorCode.FAILED_TO_FETCH_SCAN_INFORMATION, it)
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to fetch scan information $subscriberId", e)
+            Either.left(NotFoundError("Failed to fetch scan information", ApiErrorCode.FAILED_TO_FETCH_SCAN_INFORMATION))
+        }
     }
 
     // TODO: Reuse the one from SubscriberDAO
@@ -127,9 +175,20 @@ class ProfilesResource {
             return Either.left(BadGatewayError("Failed to get subscriptions", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS))
         }
     }
+    // TODO: Reuse the one from SubscriberDAO
+    private fun getSubscriberState(subscriberId: String): Either<ApiError, SubscriberState> {
+        try {
+            return storage.getSubscriberState(subscriberId).mapLeft {
+                NotFoundError("Failed to fetch state of subscriber.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIBER_STATE, it)
+            }
+        } catch (e: Exception) {
+            logger.error("Error fetching state for subscriberId $subscriberId", e)
+            return Either.left(BadGatewayError("Error fetching state", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIBER_STATE))
+        }
+    }
 
     /**
-     * Fetches and returna all plans that a subscriber subscribes
+     * Fetches and return all plans that a subscriber subscribes
      * to if any.
      */
     @GET

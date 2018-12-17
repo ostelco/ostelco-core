@@ -36,7 +36,9 @@ enum class Relation {
     REFERRED,              // (Subscriber) -[REFERRED]-> (Subscriber)
     OFFERED_TO_SEGMENT,    // (Offer) -[OFFERED_TO_SEGMENT]-> (Segment)
     OFFER_HAS_PRODUCT,     // (Offer) -[OFFER_HAS_PRODUCT]-> (Product)
-    BELONG_TO_SEGMENT      // (Subscriber) -[BELONG_TO_SEGMENT]-> (Segment)
+    BELONG_TO_SEGMENT,     // (Subscriber) -[BELONG_TO_SEGMENT]-> (Segment)
+    SUBSCRIBER_STATE,      // (Subscriber) -[SUBSCRIBER_STATE]-> (SubscriberState)
+    EKYC_SCAN,             // (Subscriber) -[EKYC_SCAN]-> (ScanInformation)
 }
 
 
@@ -65,6 +67,12 @@ object Neo4jStoreSingleton : GraphStore {
 
     private val planEntity = EntityType(Plan::class.java)
     private val plansStore = EntityStore(planEntity)
+
+    private val subscriberStateEntity = EntityType(SubscriberState::class.java)
+    private val subscriberStateStore = EntityStore(subscriberStateEntity)
+
+    private val scanInformationEntity = EntityType(ScanInformation::class.java)
+    private val scanInformationStore = EntityStore(scanInformationEntity)
 
     //
     // Relation
@@ -113,6 +121,20 @@ object Neo4jStoreSingleton : GraphStore {
             dataClass = Void::class.java)
     private val hasPlanRelationStore = UniqueRelationStore(hasPlanRelation)
 
+    private val subscriberStateRelation = RelationType(
+            relation = Relation.SUBSCRIBER_STATE,
+            from = subscriberEntity,
+            to = subscriberStateEntity,
+            dataClass = Void::class.java)
+    private val subscriberStateRelationStore = UniqueRelationStore(subscriberStateRelation)
+
+    private val scanInformationRelation = RelationType(
+            relation = Relation.EKYC_SCAN,
+            from = subscriberEntity,
+            to = scanInformationEntity,
+            dataClass = Void::class.java)
+    private val scanInformationRelationStore = UniqueRelationStore(scanInformationRelation)
+
     // -------------
     // Client Store
     // -------------
@@ -156,6 +178,7 @@ object Neo4jStoreSingleton : GraphStore {
                 validateCreateSubscriberParams(subscriber, referredBy).bind()
                 val bundleId = subscriber.id
                 subscriberStore.create(subscriber, transaction).bind()
+                createSubscriberState(subscriber.id, SubscriberStatus.REGISTERED, transaction).bind()
                 subscriberToSegmentStore.create(subscriber.id, getSegmentNameFromCountryCode(subscriber.country), transaction)
                         .mapLeft { storeError ->
                             if (storeError is NotCreatedError && storeError.type == subscriberToSegmentRelation.relation.name) {
@@ -204,6 +227,8 @@ object Neo4jStoreSingleton : GraphStore {
                             .map { it.forEach { bundle -> bundleStore.delete(bundle.id, transaction) } }
                     subscriberStore.getRelated(subscriberId, subscriptionRelation, transaction)
                             .map { it.forEach { subscription -> subscriptionStore.delete(subscription.id, transaction) } }
+                    subscriberStore.getRelated(subscriberId, subscriberStateRelation, transaction)
+                            .map { it.forEach { bundle -> subscriberStateStore.delete(bundle.id, transaction) } }
                 }
                 .flatMap { subscriberStore.delete(subscriberId, transaction) }
                 .ifFailedThenRollback(transaction)
@@ -450,6 +475,107 @@ object Neo4jStoreSingleton : GraphStore {
     override fun getReferredBy(subscriberId: String): Either<StoreError, String?> = readTransaction {
         subscriberStore.getRelatedFrom(subscriberId, referredRelation, transaction)
                 .map { it.singleOrNull()?.name }
+    }
+
+    //
+    // Subscriber State
+    //
+
+    private fun createSubscriberState(subscriberId: String, status: SubscriberStatus, transaction: PrimeTransaction): Either<StoreError, SubscriberState> {
+        val state = SubscriberState(status, Date().time, subscriberId)
+        return subscriberStateStore.create(state, transaction).flatMap {
+            subscriberStateRelationStore.create(subscriberId, subscriberId, transaction)
+                    .map { state }
+        }
+    }
+
+    private fun getOrCreateSubscriberState(subscriberId: String, status: SubscriberStatus, transaction: PrimeTransaction): Either<StoreError, SubscriberState> {
+        return subscriberStateStore.get(subscriberId, transaction)
+                .fold(
+                        { createSubscriberState(subscriberId, status, transaction) },
+                        { subscriberState -> Either.right(subscriberState) }
+                )
+    }
+
+    private fun updateSubscriberState(subscriberId: String, status: SubscriberStatus, transaction: PrimeTransaction): Either<StoreError, SubscriberState> {
+        return subscriberStateStore.get(subscriberId, transaction)
+                .fold(
+                        { createSubscriberState(subscriberId, status, transaction) },
+                        {
+                            val state = SubscriberState(status, Date().time, subscriberId)
+                            subscriberStateStore.update(state, transaction)
+                                    .map { state }
+                        }
+                )
+    }
+
+    override fun getSubscriberState(subscriberId: String): Either<StoreError, SubscriberState> = readTransaction {
+        subscriberStateStore.get(subscriberId, transaction)
+    }
+
+    //
+    // eKYC
+    //
+
+    override fun newEKYCScanId(subscriberId: String): Either<StoreError, ScanInformation> = writeTransaction {
+        subscriberStore.get(subscriberId, transaction).flatMap { subscriber ->
+            // Generate new id for the scan
+            val scanId = UUID.randomUUID().toString()
+            val newScan = ScanInformation(scanId = scanId, status = ScanStatus.PENDING, scanResult = null)
+            scanInformationStore.create(newScan, transaction).flatMap {
+                scanInformationRelationStore.create(subscriber.id, newScan.id, transaction). flatMap { Either.right(newScan) }
+            }
+        }
+    }
+
+    private fun getSubscriberId(scanId: String, transaction: Transaction): Either<StoreError, Subscriber> {
+        return read("""
+                MATCH (subscriber:${subscriberEntity.name})-[:${scanInformationRelation.relation.name}]->(scanInformation:${scanInformationEntity.name} {scanId: '${scanId}'})
+                RETURN subscriber
+                """.trimIndent(),
+                transaction)  {
+            if (it.hasNext())
+                Either.right(subscriberEntity.createEntity(it.single().get("subscriber").asMap()))
+            else
+                Either.left(NotFoundError(type = scanInformationEntity.name, id = scanId))
+        }
+    }
+
+    override fun getScanInformation(subscriberId: String, scanId: String): Either<StoreError, ScanInformation> = readTransaction {
+        scanInformationStore.get(scanId, transaction).flatMap { scanInformation ->
+            getSubscriberId(scanInformation.scanId, transaction).flatMap { subscriber ->
+                // Check if the scan belongs to this subscriber
+                if (subscriber.id == subscriberId) {
+                    Either.right(scanInformation)
+                } else {
+                    Either.left(ValidationError(type = scanInformationEntity.name, id = scanId, message = "Not allowed"))
+                }
+            }
+        }
+    }
+    override fun getAllScanInformation(subscriberId: String): Either<StoreError, Collection<ScanInformation>> = readTransaction {
+        subscriberStore.getRelated(subscriberId, scanInformationRelation, transaction)
+    }
+
+    override fun updateScanInformation(scanInformation: ScanInformation): Either<StoreError, Unit> = writeTransaction {
+        logger.info("updateScanInformation : ${scanInformation.scanId} status: ${scanInformation.status}")
+        getSubscriberId(scanInformation.scanId, transaction).flatMap { subscriber ->
+            scanInformationStore.update(scanInformation, transaction).flatMap {
+                logger.info("updating scan Information for : ${subscriber.email} id: ${scanInformation.scanId} status: ${scanInformation.status}")
+                getOrCreateSubscriberState(subscriber.id, SubscriberStatus.REGISTERED, transaction).flatMap {subcriberState ->
+                    if (scanInformation.status == ScanStatus.APPROVED  && (subcriberState.status == SubscriberStatus.REGISTERED || subcriberState.status == SubscriberStatus.EKYC_REJECTED)) {
+                        // Update the state if the scan was successul and we are waiting for eKYC results
+                        updateSubscriberState(subscriber.id, SubscriberStatus.EKYC_APPROVED, transaction).map { Unit }
+                    } else if (scanInformation.status == ScanStatus.REJECTED  && subcriberState.status == SubscriberStatus.REGISTERED) {
+                        // Update the state if the scan was a failure and we are waiting for eKYC results
+                        updateSubscriberState(subscriber.id, SubscriberStatus.EKYC_REJECTED, transaction).map { Unit }
+                    } else {
+                        // Remain in the previous state
+                        Either.right(Unit)
+                    }
+                }
+            }
+        }
     }
 
     // ------------
