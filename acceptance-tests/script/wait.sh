@@ -36,4 +36,5 @@ java -cp '/acceptance-tests.jar' org.junit.runner.JUnitCore \
      org.ostelco.at.jersey.ConsentTest \
      org.ostelco.at.jersey.ProfileTest \
      org.ostelco.at.jersey.GraphQlTests \
+     org.ostelco.at.jersey.eKYCTest\
      org.ostelco.at.pgw.OcsTest

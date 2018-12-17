@@ -8,13 +8,7 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.mockito.Mockito
 import org.neo4j.driver.v1.AccessMode.WRITE
-import org.ostelco.prime.model.Offer
-import org.ostelco.prime.model.Price
-import org.ostelco.prime.model.Product
-import org.ostelco.prime.model.PurchaseRecord
-import org.ostelco.prime.model.Segment
-import org.ostelco.prime.model.Subscriber
-import org.ostelco.prime.model.Subscription
+import org.ostelco.prime.model.*
 import org.ostelco.prime.ocs.OcsAdminService
 import java.time.Instant
 import java.util.*
@@ -210,6 +204,113 @@ class GraphStoreTest {
         Neo4jStoreSingleton.atomicCreateOffer(offer = duplicateOffer).bimap(
                 { assertEquals("Offer - some_offer already exists.", it.message) },
                 { fail("Expected import to fail since offer already exists.") })
+    }
+
+    @Test
+    fun `eKYCScan - generate new scanId`() {
+
+        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null).isRight())
+
+        Neo4jStoreSingleton.newEKYCScanId(EMAIL).map {
+            Neo4jStoreSingleton.getScanInformation(EMAIL, scanId = it.scanId).mapLeft {
+                fail(it.message)
+            }
+        }.mapLeft {
+            fail(it.message)
+        }
+    }
+
+    @Test
+    fun `eKYCScan - get all scans`() {
+
+        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null).isRight())
+
+        Neo4jStoreSingleton.newEKYCScanId(EMAIL).map { newScan ->
+            Neo4jStoreSingleton.getAllScanInformation(EMAIL).map { infoList ->
+                assertEquals(1, infoList.size, "More scans than expected.")
+                assertEquals(newScan.scanId, infoList.elementAt(0).scanId, "Wrong scan returned.")
+            }.mapLeft {
+                fail(it.message)
+            }
+        }.mapLeft {
+            fail(it.message)
+        }
+    }
+
+    @Test
+    fun `eKYCScan - update scan information`() {
+
+        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null).isRight())
+
+        Neo4jStoreSingleton.newEKYCScanId(EMAIL).map {
+            val newScanInformation = ScanInformation(
+                    scanId = it.scanId,
+                    status = ScanStatus.APPROVED,
+                    scanResult = ScanResult(
+                            vendorScanReference = UUID.randomUUID().toString(),
+                            time = 100,
+                            verificationStatus = "APPROVED",
+                            type = "ID",
+                            country = "NOR",
+                            firstName = "Test User",
+                            lastName = "Family",
+                            dob = "1980/10/10",
+                            rejectReason = null
+                    )
+            )
+            Neo4jStoreSingleton.updateScanInformation(newScanInformation).mapLeft {
+                fail(it.message)
+            }
+        }.mapLeft {
+            fail(it.message)
+        }
+    }
+
+    @Test
+    fun `eKYCScan - update with unknown scanId`() {
+
+        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null).isRight())
+
+        Neo4jStoreSingleton.newEKYCScanId(EMAIL).map {
+            val newScanInformation = ScanInformation(
+                    scanId = "fakeId",
+                    status = ScanStatus.APPROVED,
+                    scanResult = ScanResult(
+                            vendorScanReference = UUID.randomUUID().toString(),
+                            time = 100,
+                            verificationStatus = "APPROVED",
+                            type = "ID",
+                            country = "NOR",
+                            firstName = "Test User",
+                            lastName = "Family",
+                            dob = "1980/10/10",
+                            rejectReason = null
+                    )
+            )
+            Neo4jStoreSingleton.updateScanInformation(newScanInformation).bimap(
+                    { assertEquals("ScanInformation - fakeId not found.", it.message) },
+                    { fail("Expected to fail since scanId is fake.") })
+        }.mapLeft {
+            fail(it.message)
+        }
+    }
+
+    @Test
+    fun `eKYCScan - illegal access`() {
+        val `FAKE-EMAIL` = "fake-$EMAIL"
+        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null).isRight())
+        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = `FAKE-EMAIL`, name = NAME, country = COUNTRY), referredBy = null).isRight())
+
+        Neo4jStoreSingleton.newEKYCScanId(`FAKE-EMAIL`).mapLeft {
+            fail(it.message)
+        }
+        Neo4jStoreSingleton.newEKYCScanId(EMAIL).map {
+            Neo4jStoreSingleton.getScanInformation(`FAKE-EMAIL`, scanId = it.scanId).bimap(
+                    { assertEquals("Not allowed", it.message) },
+                    { fail("Expected to fail since the requested subscriber is wrong.") })
+        }.mapLeft {
+            fail(it.message)
+        }
     }
 
     companion object {

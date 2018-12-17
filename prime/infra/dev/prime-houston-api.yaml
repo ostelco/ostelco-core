@@ -52,31 +52,61 @@ paths:
           description: "The email of the user"
           required: true
           type: string
+  "/profiles/{email}/scans":
+    get:
+      description: "Get eKYC scan information for the user."
+      produces:
+        - application/json
+      operationId: "getAllScanInformation"
+      responses:
+        200:
+          description: "Retrieved scan information for this user."
+          schema:
+            $ref: '#/definitions/ScanInformationList'
+        404:
+          description: "No scan information found for this user."
+      security:
+        - auth0_jwt: []
+      parameters:
+        - name: email
+          in: path
+          description: "The email of the user"
+          required: true
+          type: string
   "/profiles/{email}/plans":
     get:
       description: "Get all plans subscribed to by a subscriber"
       produces:
         - application/json
       operationId: "getPlans"
+      security:
+        - auth0_jwt: []
+      responses:
+        200:
+          description: "Plans subscribed to"
+          schema:
+            $ref: '#/definitions/PlanList'
+        404:
+          description: "No plans found"
       parameters:
         - name: email
           in: path
           description: "The email of the subscriber"
           required: true
           type: string
-      responses:
-        200:
-          description: "Plans subscribed to"
-          items:
-            $ref: '#/definitions/PlanList'
-        404:
-          description: "No plans found"
   "/profiles/{email}/plans/{planId}":
     post:
       description: "Subscribe a subscriber to a plan"
       produces:
         - application/json
         - text/plain
+      responses:
+        201:
+          description: "The subscription was created successfully"
+        400:
+          description: "Failed to create subscription"
+      security:
+        - auth0_jwt: []
       parameters:
         - name: email
           in: path
@@ -88,16 +118,18 @@ paths:
           description: "The name of the plan to subscribe to"
           required: true
           type: string
-      responses:
-        201:
-          description: "The subscription was created successfully"
-        400:
-          description: "Failed to create subscription"
     delete:
       description: "Remove a subscriber from a plan"
       produces:
         - application/json
         - text/plain
+      responses:
+        200:
+          description: "The subscription was removed successfully"
+        400:
+          description: "Failed to remove subscription"
+      security:
+        - auth0_jwt: []
       parameters:
         - name: email
           in: path
@@ -109,11 +141,6 @@ paths:
           description: "The name of the plan to remove the subscription for"
           required: true
           type: string
-      responses:
-        200:
-          description: "The subscription was removed successfully"
-        400:
-          description: "Failed to remove subscription"
   "/bundles/{email}":
     get:
       description: "Get bundles (balance) for the user (identified by email)."
@@ -236,12 +263,6 @@ paths:
         - application/json
         - text/plain
       operationId: "getPlan"
-      parameters:
-        - name: planId
-          in: path
-          description: "Name of plan to get"
-          required: true
-          type: string
       responses:
         200:
           description: "Plan details is returned"
@@ -249,18 +270,20 @@ paths:
             $ref: '#/definitions/Plan'
         404:
           description: "No such plan"
+      parameters:
+        - name: planId
+          in: path
+          description: "Name of plan to get"
+          required: true
+          type: string
+      security:
+        - auth0_jwt: []
     post:
       description: "Create a plan"
       produces:
         - application/json
         - text/plain
       operationId: "createPlan"
-      parameters:
-        - name: plan
-          in: body
-          description: Plan details
-          schema:
-            $ref: '#/definitions/Plan'
       responses:
         201:
           description: "Successfully purchased the plan."
@@ -268,18 +291,20 @@ paths:
             $ref: '#/definitions/Plan'
         400:
           description: "Failed to create the plan"
+      parameters:
+        - name: plan
+          in: body
+          description: Plan details
+          schema:
+            $ref: '#/definitions/Plan'
+      security:
+        - auth0_jwt: []
     delete:
       description: "Removes a plan"
       produces:
         - application/json
         - text/plain
       operationId: "deletePlan"
-      parameters:
-        - name: planId
-          in: path
-          description: "The name of the plan to remove"
-          required: true
-          type: string
       responses:
         200:
           description: "Plan is removed"
@@ -289,6 +314,56 @@ paths:
           description: "Failed to remove plan"
         404:
           description: "No such plan"
+      parameters:
+        - name: planId
+          in: path
+          description: "The name of the plan to remove"
+          required: true
+          type: string
+      security:
+        - auth0_jwt: []
+  "/profiles/{email}/state":
+    get:
+      description: "Get state of the user."
+      produces:
+        - application/json
+      operationId: "getSubscriberState"
+      responses:
+        200:
+          description: "Successfully retrieved the state."
+          schema:
+            $ref: '#/definitions/SubscriberState'
+        404:
+          description: "No state information available for this user."
+      security:
+        - auth0_jwt: []
+      parameters:
+        - name: email
+          in: path
+          description: "The email of the user"
+          required: true
+          type: string
+  "/new-ekyc-scanId/{email}":
+    get:
+      description: "Get a new Id for eKYC scanning."
+      produces:
+        - application/json
+      operationId: "newEKYCScanId"
+      responses:
+        200:
+          description: "Successfully retrieved new ScanId."
+          schema:
+            $ref: '#/definitions/ScanInformation'
+        404:
+          description: "User not found."
+      security:
+        - auth0_jwt: []
+      parameters:
+        - name: email
+          in: path
+          description: "The email of the user"
+          required: true
+          type: string
 definitions:
   Profile:
     type: object
@@ -421,6 +496,42 @@ definitions:
     type: array
     items:
       $ref: '#/definitions/Plan'
+  SubscriberState:
+    type: object
+    properties:
+      id:
+        description: "User Id"
+        type: string
+      status:
+        description: "Current status of the subscriber"
+        type: string
+      modifiedTimestamp:
+        description: "Last modified time for the status (Unix timestamp)"
+        type: integer
+        format: int64
+    required:
+      - id
+      - status
+      - modifiedTimestamp
+  ScanInformationList:
+    type: array
+    items:
+      $ref: '#/definitions/ScanInformation'
+  ScanInformation:
+    type: object
+    properties:
+      scanId:
+        description: "New scan Id for eKYC"
+        type: string
+      status:
+        description: "The status of the scan"
+        type: string
+      scanResult:
+        description: "The result from the vendor"
+        type: object
+    required:
+      - scanId
+      - status
 securityDefinitions:
   auth0_jwt:
     authorizationUrl: "https://redotter-admin-dev.eu.auth0.com/authorize"
