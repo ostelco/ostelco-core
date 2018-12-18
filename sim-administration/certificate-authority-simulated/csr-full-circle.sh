@@ -1,12 +1,10 @@
 #!/bin/bash
 
-
 ###
 ### Run a full CSR cycle against a CA. Do it all from scratch, generating
 ### root certificate for the ca, generating the csr, signing the csr
 ### an injecting the certs in to java keyrings.
 ###
-
 
 ##
 ## Check for dependencies
@@ -19,8 +17,6 @@ for tool in $DEPENDENCIES ; do
     exit 0
   fi
 done
-
-
 
 ##
 ##  Reset by deleting all old certificates etc.
@@ -58,7 +54,6 @@ openssl rsa -in $REQUESTER_KEY -pubout -out $REQUESTER_PUBKEY
 
 openssl x509 -pubkey -noout -in $REQUEST_CRT > $REQUESTER_PUBKEY_PEM
 
-
 ##
 ## Creating certificate authority (CA) keys & cert.
 ##
@@ -79,8 +74,6 @@ openssl rsa -in $CA_KEY -pubout -out $CA_PUBKEY
 
 # Generate a self-signed certificate for the CA
 openssl req -new -x509 -key $CA_KEY -out $CA_CRT -config $CA_CONF
-
-
 openssl x509 -pubkey -noout -in $CA_CRT > $CA_PUBKEY_PEM
 
 ##

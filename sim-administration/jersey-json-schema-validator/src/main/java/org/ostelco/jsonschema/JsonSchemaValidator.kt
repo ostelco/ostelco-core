@@ -39,10 +39,14 @@ class JsonSchemaValidator {
     }
 
     private fun getSchema(name: String): Schema {
+        val  result: Schema
         if (!schemaMap.containsKey(name)) {
-            schemaMap[name] = loadJsonSchemaResource(name)
+            result = loadJsonSchemaResource(name)
+            schemaMap[name] = result
+        } else {
+            result = schemaMap[name]!!
         }
-        return schemaMap[name]!!
+        return result
     }
 
     @Throws(WebApplicationException::class)
