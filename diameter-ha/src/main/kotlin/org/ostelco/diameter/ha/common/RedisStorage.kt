@@ -3,13 +3,12 @@ package org.ostelco.diameter.ha.common
 import io.lettuce.core.RedisClient
 import io.lettuce.core.RedisURI
 import io.lettuce.core.api.StatefulRedisConnection
-import io.lettuce.core.api.sync.RedisCommands
 import io.lettuce.core.api.async.RedisAsyncCommands
 import java.util.concurrent.TimeUnit
 
 
 class RedisStorage : ReplicatedStorage {
-    
+
     private val redisURI = RedisURI.Builder.redis(getRedisHostName(), getRedisPort()).build();
     private val redisClient : RedisClient = RedisClient.create(redisURI)
     private lateinit var connection : StatefulRedisConnection<String, String>
