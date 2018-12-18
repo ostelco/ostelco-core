@@ -4,44 +4,47 @@ import io.lettuce.core.RedisClient
 import io.lettuce.core.RedisURI
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.api.sync.RedisCommands
-import java.lang.Error
+import io.lettuce.core.api.async.RedisAsyncCommands
+import java.util.concurrent.TimeUnit
+
 
 class RedisStorage : ReplicatedStorage {
-
-    // ToDo : Redis configuration from env
-    // ToDo : Default timeout for Redis to delete session
+    
     private val redisURI = RedisURI.Builder.redis(getRedisHostName(), getRedisPort()).build();
     private val redisClient : RedisClient = RedisClient.create(redisURI)
     private lateinit var connection : StatefulRedisConnection<String, String>
-    private lateinit var commands : RedisCommands<String, String>
+    private lateinit var asyncCommands: RedisAsyncCommands<String, String>
 
 
     override fun start() {
         connection = redisClient.connect()
-        commands = connection.sync()
+        asyncCommands = connection.async()
     }
 
     override fun storeValue(id: String, key: String, value: String) : Boolean {
-        return commands.hset(id, key, value)
+        asyncCommands.hset(id, key, value)
+        // Keys will be auto deleted from Redis if not updated within 2 days
+        asyncCommands.expire(id, 172800)
+        return true
     }
 
     override fun getValue(id:String, key: String): String? {
-        return commands.hget(id, key)
+        return asyncCommands.hget(id,key).get(5, TimeUnit.SECONDS)
     }
 
     override fun removeValue(id:String, key: String) {
-        commands.hdel(id, key)
+        asyncCommands.hdel(id, key)
     }
 
     override fun removeId(id: String) {
-        val keys = commands.hkeys(id);
+        val keys = asyncCommands.hkeys(id).get(5, TimeUnit.SECONDS)
         keys.forEach { key ->
             removeValue(id, key)
         }
     }
 
     override fun exist(id: String) : Boolean {
-        return (commands.hlen(id) > 0)
+        return (asyncCommands.hlen(id).get(5, TimeUnit.SECONDS) > 0)
     }
 
     override fun stop() {
