@@ -37,7 +37,7 @@ done
 ##
 
 ARTEFACT_ROOT=crypto-artefacts
-if [[ -x "$ARTEFACT_ROOT" ]] ; then 
+if [[ -r "$ARTEFACT_ROOT" ]] ; then 
    rm -f $ARTEFACT_ROOT
 fi
 
@@ -269,19 +269,23 @@ function sign_csr {
     local ca_crt=$(crt_filename $signer_actor $signer_role)
     local ca_key=$(key_filename $signer_actor $signer_role)
 
-    if [[ ! -x "$csr_file" ]] ; then 
+    if [[ ! -r "$csr_file" ]] ; then 
 	(>&2 echo "$0: Error. Could not find csr  $csr_file")
 	exit 1
     fi
 
-    if [[ ! -x "$ca_crt" ]] ; then 
+    if [[ ! -r "$ca_crt" ]] ; then 
 	(>&2 echo "$0: Error. Could not find CA crt  $csr_file")
 	exit 1
     fi
 
     echo openssl x509 -req -in $csr_file -CA $ca_crt -CAkey $ca_key -CAcreateserial -out $crt_file
     openssl x509 -req -in $csr_file -CA $ca_crt -CAkey $ca_key -CAcreateserial -out $crt_file
-    # TODO: Check that all the output files exist and that the exit code is zero
+    
+    if [[ ! -r "$crt_file" ]] ; then
+	echo "Could not create signed certificate file $crt_file"
+    fi
+
 }
 
 
