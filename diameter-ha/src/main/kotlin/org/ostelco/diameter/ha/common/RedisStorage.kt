@@ -1,14 +1,17 @@
 package org.ostelco.diameter.ha.common
 
 import io.lettuce.core.RedisClient
+import io.lettuce.core.RedisURI
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.api.sync.RedisCommands
+import java.lang.Error
 
 class RedisStorage : ReplicatedStorage {
 
     // ToDo : Redis configuration from env
     // ToDo : Default timeout for Redis to delete session
-    private val redisClient : RedisClient = RedisClient.create("redis://127.0.0.1:6379")
+    private val redisURI = RedisURI.Builder.redis(getRedisHostName(), getRedisPort()).build();
+    private val redisClient : RedisClient = RedisClient.create(redisURI)
     private lateinit var connection : StatefulRedisConnection<String, String>
     private lateinit var commands : RedisCommands<String, String>
 
@@ -44,5 +47,22 @@ class RedisStorage : ReplicatedStorage {
     override fun stop() {
         connection.close()
         redisClient.shutdown()
+    }
+
+    private fun getRedisHostName() : String {
+        var hostname = System.getenv("REDIS_HOSTNAME")
+        if (hostname == null || hostname.isEmpty()) {
+            hostname = "localhost"
+        }
+        return hostname
+    }
+
+    private fun getRedisPort() : Int {
+        val portEnv = System.getenv("REDIS_PORT")
+        var port = 6379
+        if (portEnv != null) {
+            port = portEnv.toInt()
+        }
+        return port
     }
 }
