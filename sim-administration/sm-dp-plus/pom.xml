@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>simadmin</artifactId>
+        <groupId>org.ostelco</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>sm-dp-plus</artifactId>
+
+    <properties>
+        <mainClass>org.ostelco.simcards.smdpplus.SmDpPlusApplication</mainClass>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <artifactId>jersey-json-schema-validator</artifactId>
+            <groupId>org.ostelco</groupId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.ostelco</groupId>
+            <artifactId>es2plus4dropwizard</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <artifactId>simcard-utils</artifactId>
+            <groupId>org.ostelco</groupId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.ostelco</groupId>
+            <artifactId>ostelco-dropwizard-utils</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
+</project>
