@@ -27,7 +27,7 @@ import static org.junit.Assert.assertEquals;
 @DisplayName("OcsHATest")
 public class OcsHATest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(OcsHATest.class);
+    private static final Logger logger = LoggerFactory.getLogger(OcsHATest.class);
 
 
     private static final String OCS_REALM = "loltel";
@@ -42,8 +42,20 @@ public class OcsHATest {
     Process ocsgw_2;
 
 
-    public void waitForPort(String hostname, int port, long timeoutMs) {
-        LOG.info("Waiting for port " + port);
+    private void waitForServerToStart(final int server) {
+        switch (server) {
+            case 1:
+                waitForPort("127.0.0.1", 3868,10000);
+                break;
+            case 2:
+                waitForPort("127.0.0.1", 3869,10000);
+                break;
+            default:
+        }
+    }
+
+    private void waitForPort(String hostname, int port, long timeoutMs) {
+        logger.debug("Waiting for port " + port);
         long startTs = System.currentTimeMillis();
         boolean scanning=true;
         while(scanning)
@@ -67,17 +79,17 @@ public class OcsHATest {
             }
             catch(IOException e)
             {
-                LOG.debug("Still waiting for port " + port);
+                logger.debug("Still waiting for port " + port);
                 try
                 {
                     Thread.sleep(2000);//2 seconds
                 }
                 catch(InterruptedException ie){
-                    LOG.error("Interrupted", ie);
+                    logger.error("Interrupted", ie);
                 }
             }
         }
-        LOG.info("Port " + port + " ready.");
+        logger.debug("Port " + port + " ready.");
     }
 
     private void waitForProcessExit(Process process) {
@@ -87,7 +99,7 @@ public class OcsHATest {
                 Thread.sleep(2000);//2 seconds
             }
             catch(InterruptedException ie){
-                LOG.error("Interrupted", ie);
+                logger.error("Interrupted", ie);
             }
         }
     }
@@ -103,7 +115,7 @@ public class OcsHATest {
         try {
             process = processBuilder.start();
         } catch (IOException e) {
-            LOG.error("Failed to start external OCSgw number" + server, e);
+            logger.error("Failed to start external OCSgw number" + server, e);
         }
         return process;
     }
@@ -111,14 +123,13 @@ public class OcsHATest {
 
     @BeforeEach
     protected void setUp() {
-        LOG.info("setUp()");
+        logger.debug("setUp()");
 
         ocsgw_1 = startServer(1);
         ocsgw_2 = startServer(2);
 
-        // Wait for ocsgws to start
-        waitForPort("127.0.0.1", 3868,10000);
-        waitForPort("127.0.0.1", 3869,10000);
+        waitForServerToStart(1);
+        waitForServerToStart(2);
 
         testPGW = new TestClient();
         testPGW.initStack("src/test/resources/", "client-jdiameter-ha-config.xml");
@@ -126,7 +137,7 @@ public class OcsHATest {
 
     @AfterEach
     protected void tearDown() {
-        LOG.info("tearDown()");
+        logger.debug("tearDown()");
         testPGW.shutdown();
         testPGW = null;
 
@@ -161,36 +172,48 @@ public class OcsHATest {
             Avp granted = resultMSCC.getGrouped().getAvp(Avp.GRANTED_SERVICE_UNIT);
             assertEquals(500000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
         } catch (AvpDataException e) {
-            LOG.error("Failed to get Result-Code", e);
+            logger.error("Failed to get Result-Code", e);
         }
     }
 
     private void restartServer(final int server) {
         switch (server) {
             case 1:
-                ocsgw_1.destroy();
+                stopServer(1);
                 waitForProcessExit(ocsgw_1);
                 ocsgw_1 = startServer(1);
-                waitForPort("127.0.0.1", 3868,10000);
+                waitForServerToStart(1);
+                break;
+            case 2:
+                stopServer(2);
+                waitForProcessExit(ocsgw_2);
+                ocsgw_2 = startServer(2);
+                waitForServerToStart(2);
+                break;
+            default:
+                logger.info("Incorrect server number : " + server);
+        }
+        // Give time for ocsgw to reconnect to P-GW
+        try
+        {
+            logger.debug("Pausing testing 10 seconds so that ocsgw can reconnect...");
+            Thread.sleep(10000);//10 seconds
+            logger.debug("Continue testing");
+        }
+        catch(InterruptedException ie){
+            logger.error("Interrupted", ie);
+        }
+    }
+
+    private void stopServer(final int server) {
+        switch (server) {
+            case 1:
+                ocsgw_1.destroy();
                 break;
             case 2:
                 ocsgw_2.destroy();
-                waitForProcessExit(ocsgw_2);
-                ocsgw_2 = startServer(2);
-                waitForPort("127.0.0.1", 3869,10000);
                 break;
             default:
-                LOG.info("Incorrect server number : " + server);
-        }
-        // Give time for ocsgw to reconnect to p-gw
-        try
-        {
-            LOG.info("Pausing testing 10 seconds for ocsgw to reconnect...");
-            Thread.sleep(10000);//10 seconds
-            LOG.info("Continue testing");
-        }
-        catch(InterruptedException ie){
-            LOG.error("Interrupted", ie);
         }
     }
 
@@ -217,7 +240,7 @@ public class OcsHATest {
             Avp granted = resultMSCC.getGrouped().getAvp(Avp.GRANTED_SERVICE_UNIT);
             assertEquals(400000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
         } catch (AvpDataException e) {
-            LOG.error("Failed to get Result-Code", e);
+            logger.error("Failed to get Result-Code", e);
         }
     }
 
@@ -257,7 +280,7 @@ public class OcsHATest {
             Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
             assertEquals(2001L, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
         } catch (AvpDataException e) {
-            LOG.error("Failed to get Result-Code", e);
+            logger.error("Failed to get Result-Code", e);
         }
         session.release();
     }
