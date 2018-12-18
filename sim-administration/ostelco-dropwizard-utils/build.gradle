@@ -1,0 +1,15 @@
+plugins {
+    id "org.jetbrains.kotlin.jvm" version "1.3.10"
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+    implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
+    implementation "io.swagger.core.v3:swagger-jaxrs2:$swaggerVersion"
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions {
+       jvmTarget = "1.8"
+    }
+}
