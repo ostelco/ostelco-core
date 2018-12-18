@@ -17,6 +17,7 @@ dependencies {
   api project(':model')
 
   api "io.dropwizard:dropwizard-core:$dropwizardVersion"
+  
   api "io.arrow-kt:arrow-core:$arrowVersion"
   api "io.arrow-kt:arrow-typeclasses:$arrowVersion"
   api "io.arrow-kt:arrow-instances-core:$arrowVersion"

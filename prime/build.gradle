@@ -31,7 +31,7 @@ dependencies {
   implementation project(':prime-modules')
 
   // prime-modules
-  runtimeOnly project(':ocs')
+  runtimeOnly project(':ocs-ktc')
   runtimeOnly project(':firebase-store')
   runtimeOnly project(':neo4j-store')
   runtimeOnly project(':pseudonym-server')

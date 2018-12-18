@@ -3,23 +3,55 @@ package org.ostelco.prime.storage.graph
 import arrow.core.Either
 import arrow.core.fix
 import arrow.core.flatMap
+import arrow.core.left
+import arrow.core.right
 import arrow.effects.IO
 import arrow.instances.either.monad.monad
 import arrow.typeclasses.binding
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.getLogger
-import org.ostelco.prime.model.*
+import org.ostelco.prime.model.Bundle
+import org.ostelco.prime.model.ChangeSegment
+import org.ostelco.prime.model.Offer
+import org.ostelco.prime.model.Plan
+import org.ostelco.prime.model.Product
+import org.ostelco.prime.model.ProductClass
+import org.ostelco.prime.model.PurchaseRecord
+import org.ostelco.prime.model.RefundRecord
+import org.ostelco.prime.model.ScanInformation
+import org.ostelco.prime.model.ScanStatus
+import org.ostelco.prime.model.Segment
+import org.ostelco.prime.model.Subscriber
+import org.ostelco.prime.model.SubscriberState
+import org.ostelco.prime.model.SubscriberStatus
+import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
-import org.ostelco.prime.ocs.OcsAdminService
-import org.ostelco.prime.ocs.OcsSubscriberService
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
-import org.ostelco.prime.paymentprocessor.core.*
-import org.ostelco.prime.storage.*
+import org.ostelco.prime.paymentprocessor.core.BadGatewayError
+import org.ostelco.prime.paymentprocessor.core.ForbiddenError
+import org.ostelco.prime.paymentprocessor.core.PaymentError
+import org.ostelco.prime.paymentprocessor.core.ProductInfo
+import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.storage.AlreadyExistsError
+import org.ostelco.prime.storage.GraphStore
+import org.ostelco.prime.storage.NotCreatedError
+import org.ostelco.prime.storage.NotDeletedError
 import org.ostelco.prime.storage.NotFoundError
+import org.ostelco.prime.storage.NotUpdatedError
+import org.ostelco.prime.storage.StoreError
+import org.ostelco.prime.storage.ValidationError
 import org.ostelco.prime.storage.graph.Graph.read
-import org.ostelco.prime.storage.graph.Relation.*
+import org.ostelco.prime.storage.graph.Graph.write
+import org.ostelco.prime.storage.graph.Relation.BELONG_TO_SEGMENT
+import org.ostelco.prime.storage.graph.Relation.HAS_BUNDLE
+import org.ostelco.prime.storage.graph.Relation.HAS_SUBSCRIPTION
+import org.ostelco.prime.storage.graph.Relation.LINKED_TO_BUNDLE
+import org.ostelco.prime.storage.graph.Relation.OFFERED_TO_SEGMENT
+import org.ostelco.prime.storage.graph.Relation.OFFER_HAS_PRODUCT
+import org.ostelco.prime.storage.graph.Relation.PURCHASED
+import org.ostelco.prime.storage.graph.Relation.REFERRED
 import java.time.Instant
 import java.util.*
 import java.util.stream.Collectors
@@ -44,7 +76,6 @@ class Neo4jStore : GraphStore by Neo4jStoreSingleton
 
 object Neo4jStoreSingleton : GraphStore {
 
-    private val ocsAdminService: OcsAdminService by lazy { getResource<OcsAdminService>() }
     private val logger by getLogger()
 
     //
@@ -208,7 +239,6 @@ object Neo4jStoreSingleton : GraphStore {
                         subscriber.id,
                         PurchaseRecord(id = UUID.randomUUID().toString(), product = product, timestamp = Instant.now().toEpochMilli(), msisdn = ""),
                         transaction)
-                ocsAdminService.addBundle(Bundle(bundleId, balance))
                 subscriberToBundleStore.create(subscriber.id, bundleId, transaction).bind()
                 // TODO Remove hardcoded country code.
                 // https://docs.oracle.com/javase/9/docs/api/java/util/Locale.IsoCountryCode.html
@@ -260,7 +290,6 @@ object Neo4jStoreSingleton : GraphStore {
                 val subscriber = subscriberStore.get(subscriberId, transaction).bind()
                 bundles.forEach { bundle ->
                     subscriptionToBundleStore.create(subscription, bundle, transaction).bind()
-                    ocsAdminService.addMsisdnToBundleMapping(msisdn, bundle.id)
                 }
                 subscriptionRelationStore.create(subscriber, subscription, transaction).bind()
                 // TODO Remove hardcoded country code.
@@ -344,13 +373,87 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     //
-    // Purchase Records
+    // Consumption
+    //
+
+    /**
+     * This method takes [msisdn], [usedBytes] and [requestedBytes] as parameters.
+     * The [usedBytes] will then be deducted from existing `balance` and `reservedBytes` from a [Bundle] associated with
+     * this [msisdn].
+     * Thus, `reservedBytes` is set back to `zero` and `surplus/deficit` bytes are adjusted with main `balance`.
+     * Then, bytes equal to or less than [requestedBytes] are deducted from `balance` such that `balance` is `non-negative`.
+     * Those bytes are then set as `reservedBytes` and returned as response.
+     *
+     * The above logic is vanilla case and may be enriched based on multiple factors such as mcc_mnc, rating-group etc.
+     *
+     * @param msisdn which is consuming
+     * @param usedBytes Bytes already consumed.
+     * @param requestedBytes Bytes requested for consumption.
+     *
+     */
+    override fun consume(msisdn: String, usedBytes: Long, requestedBytes: Long): Either<StoreError, Pair<Long, Long>> {
+
+        // Note: _LOCK_ dummy property is set in the relation 'r' and node 'bundle' so that they get locked.
+        // Ref: https://neo4j.com/docs/java-reference/current/transactions/#transactions-isolation
+
+        return writeTransaction {
+            IO {
+                Either.monad<StoreError>().binding {
+                    val (reservedBytes, balance) = read("""
+                            MATCH (:${subscriptionEntity.name} {id: '$msisdn'})-[r:${subscriptionToBundleRelation.relation.name}]->(bundle:${bundleEntity.name})
+                            SET r._LOCK_ = true, bundle._LOCK_ = true
+                            RETURN r.reservedBytes AS reservedBytes, bundle.balance AS balance
+                            """.trimIndent(),
+                            transaction) { statementResult ->
+                        if (statementResult.hasNext()) {
+                            val record = statementResult.single()
+                            val reservedBytes = record.get("reservedBytes").asString("0").toLong()
+                            val balance = record.get("balance").asString("0").toLong()
+                            Pair(reservedBytes, balance).right()
+                        } else {
+                            NotFoundError("Bundle for ${subscriptionEntity.name}", msisdn).left()
+                        }
+                    }.bind()
+
+                    // First adjust reserved and used bytes
+                    // Balance cannot be negative
+                    var newBalance = Math.max(balance + reservedBytes - usedBytes, 0)
+
+                    // Then check how much of requested bytes can be granted
+                    val granted = Math.min(newBalance, requestedBytes)
+                    newBalance -= granted
+
+                    write("""
+                            MATCH (:${subscriptionEntity.name} {id: '$msisdn'})-[r:${subscriptionToBundleRelation.relation.name}]->(bundle:${bundleEntity.name})
+                            SET r.reservedBytes = '$granted', bundle.balance = '$newBalance'
+                            REMOVE r._LOCK_, bundle._LOCK_
+                            RETURN r.reservedBytes AS granted, bundle.balance AS balance
+                            """.trimIndent(),
+                            transaction) { statementResult ->
+                        if (statementResult.hasNext()) {
+                            val record = statementResult.single()
+                            val savedBalance = record.get("balance").asString("0").toLong()
+                            if (savedBalance != newBalance) {
+                                logger.error(NOTIFY_OPS_MARKER, "Wrong balance set for msisdn: $msisdn to instead of $newBalance")
+                            }
+                            val savedGranted = record.get("granted").asString("0").toLong()
+                            Pair(savedGranted, savedBalance).right()
+                        } else {
+                            NotUpdatedError("Balance for ${subscriptionEntity.name}", msisdn).left()
+                        }
+                    }.bind()
+                }.fix()
+            }.unsafeRunSync()//.ifFailedThenRollback(transaction)
+        }
+    }
+
+    //
+    // Purchase
     //
 
     // TODO vihang: Move this logic to DSL + Rule Engine + Triggers, when they are ready
     // >> BEGIN
     private val paymentProcessor by lazy { getResource<PaymentProcessor>() }
-    private val ocs by lazy { getResource<OcsSubscriberService>() }
     private val analyticsReporter by lazy { getResource<AnalyticsService>() }
 
     private fun fetchOrCreatePaymentProfile(subscriberId: String): Either<PaymentError, ProfileInfo> =
@@ -375,10 +478,22 @@ object Neo4jStoreSingleton : GraphStore {
                 {
                     /* TODO: Complete support for 'product-class' and store plans as a
                              'product' of product-class: 'plan'. */
-                    return if (it.properties.containsKey("productType") && it.properties["productType"].equals("plan", true))
-                        purchasePlan(subscriberId, it, sourceId, saveCard)
-                    else
-                        purchaseProduct(subscriberId, it, sourceId, saveCard)
+                    return if (it.properties.containsKey("productType")
+                            && it.properties["productType"].equals("plan", true)) {
+
+                        purchasePlan(
+                                subscriberId = subscriberId,
+                                product = it,
+                                sourceId = sourceId,
+                                saveCard = saveCard)
+                    } else {
+
+                        purchaseProduct(
+                                subscriberId = subscriberId,
+                                product = it,
+                                sourceId = sourceId,
+                                saveCard = saveCard)
+                    }
                 }
         )
     }
@@ -471,10 +586,29 @@ object Neo4jStoreSingleton : GraphStore {
 
                 //TODO: While aborting transactions, send a record with "reverted" status
                 analyticsReporter.reportPurchaseInfo(purchaseRecord, subscriberId, "success")
-                ocs.topup(subscriberId, product.sku)
-                        .mapLeft {
-                            BadGatewayError("Failed to perform topup", message = it)
-                        }.bind()
+
+                // Topup
+                val bytes = product.properties["noOfBytes"]?.replace("_","")?.toLongOrNull() ?: 0L
+
+                if (bytes == 0L) {
+                    logger.error("Product with 0 bytes: sku = ${product.sku}")
+                }
+
+                write("""
+                    MATCH (sr:${subscriberEntity.name} { id:'$subscriberId' })-[:${subscriberToBundleRelation.relation.name}]->(bundle:${bundleEntity.name})
+                    SET bundle.balance = toString(toInteger(bundle.balance) + $bytes)
+                    """.trimIndent(), transaction) {
+                    Either.cond(
+                            test = it.summary().counters().containsUpdates(),
+                            ifTrue = {},
+                            ifFalse = {
+                                logger.error("Failed to update balance during purchase for subscriber: $subscriberId")
+                                BadGatewayError(
+                                        description = "Failed to update balance during purchase for subscriber: $subscriberId",
+                                        message = "Failed to perform topup")
+                            })
+                }.bind()
+
                 // Even if the "capture charge operation" failed, we do not want to rollback.
                 // In that case, we just want to log it at error level.
                 // These transactions can then me manually changed before they are auto rollback'ed in 'X' days.
@@ -486,10 +620,8 @@ object Neo4jStoreSingleton : GraphStore {
                 // Ignore failure to capture charge, by not calling bind()
                 ProductInfo(product.sku)
             }.fix()
-        }.unsafeRunSync()
-                .ifFailedThenRollback(transaction)
+        }.unsafeRunSync().ifFailedThenRollback(transaction)
     }
-
     // << END
 
     private fun removePaymentSource(saveCard: Boolean, paymentCustomerId: String, sourceId: String) {
@@ -503,6 +635,10 @@ object Neo4jStoreSingleton : GraphStore {
                     }
         }
     }
+
+    //
+    // Purchase Records
+    //
 
     override fun getPurchaseRecords(subscriberId: String): Either<StoreError, Collection<PurchaseRecord>> {
         return readTransaction {
@@ -590,7 +726,7 @@ object Neo4jStoreSingleton : GraphStore {
             val scanId = UUID.randomUUID().toString()
             val newScan = ScanInformation(scanId = scanId, status = ScanStatus.PENDING, scanResult = null)
             scanInformationStore.create(newScan, transaction).flatMap {
-                scanInformationRelationStore.create(subscriber.id, newScan.id, transaction). flatMap { Either.right(newScan) }
+                scanInformationRelationStore.create(subscriber.id, newScan.id, transaction).flatMap { Either.right(newScan) }
             }
         }
     }
@@ -600,7 +736,7 @@ object Neo4jStoreSingleton : GraphStore {
                 MATCH (subscriber:${subscriberEntity.name})-[:${scanInformationRelation.relation.name}]->(scanInformation:${scanInformationEntity.name} {scanId: '${scanId}'})
                 RETURN subscriber
                 """.trimIndent(),
-                transaction)  {
+                transaction) {
             if (it.hasNext())
                 Either.right(subscriberEntity.createEntity(it.single().get("subscriber").asMap()))
             else
@@ -620,6 +756,7 @@ object Neo4jStoreSingleton : GraphStore {
             }
         }
     }
+
     override fun getAllScanInformation(subscriberId: String): Either<StoreError, Collection<ScanInformation>> = readTransaction {
         subscriberStore.getRelated(subscriberId, scanInformationRelation, transaction)
     }
@@ -629,11 +766,11 @@ object Neo4jStoreSingleton : GraphStore {
         getSubscriberId(scanInformation.scanId, transaction).flatMap { subscriber ->
             scanInformationStore.update(scanInformation, transaction).flatMap {
                 logger.info("updating scan Information for : ${subscriber.email} id: ${scanInformation.scanId} status: ${scanInformation.status}")
-                getOrCreateSubscriberState(subscriber.id, SubscriberStatus.REGISTERED, transaction).flatMap {subcriberState ->
-                    if (scanInformation.status == ScanStatus.APPROVED  && (subcriberState.status == SubscriberStatus.REGISTERED || subcriberState.status == SubscriberStatus.EKYC_REJECTED)) {
+                getOrCreateSubscriberState(subscriber.id, SubscriberStatus.REGISTERED, transaction).flatMap { subcriberState ->
+                    if (scanInformation.status == ScanStatus.APPROVED && (subcriberState.status == SubscriberStatus.REGISTERED || subcriberState.status == SubscriberStatus.EKYC_REJECTED)) {
                         // Update the state if the scan was successul and we are waiting for eKYC results
                         updateSubscriberState(subscriber.id, SubscriberStatus.EKYC_APPROVED, transaction).map { Unit }
-                    } else if (scanInformation.status == ScanStatus.REJECTED  && subcriberState.status == SubscriberStatus.REGISTERED) {
+                    } else if (scanInformation.status == ScanStatus.REJECTED && subcriberState.status == SubscriberStatus.REGISTERED) {
                         // Update the state if the scan was a failure and we are waiting for eKYC results
                         updateSubscriberState(subscriber.id, SubscriberStatus.EKYC_REJECTED, transaction).map { Unit }
                     } else {
@@ -720,6 +857,7 @@ object Neo4jStoreSingleton : GraphStore {
     //
     // For metrics
     //
+
     override fun getSubscriberCount(): Long = readTransaction {
         read("""
                 MATCH (subscriber:${subscriberEntity.name})
@@ -817,8 +955,8 @@ object Neo4jStoreSingleton : GraphStore {
                 productStore.create(product, transaction)
                         .bind()
                 plansStore.create(plan.copy(properties = plan.properties.plus(mapOf(
-                                "planId" to planInfo.id,
-                                "productId" to productInfo.id))), transaction)
+                        "planId" to planInfo.id,
+                        "productId" to productInfo.id))), transaction)
                         .bind()
                 planProductRelationStore.create(plan.id, product.id, transaction)
                         .bind()
@@ -889,7 +1027,7 @@ object Neo4jStoreSingleton : GraphStore {
 
                 /* Lookup in payment backend will fail if no value found for 'planId'. */
                 val subscriptionInfo = paymentProcessor.createSubscription(plan.properties.getOrDefault("planId", "missing"),
-                                    profileInfo.id, trialEnd)
+                        profileInfo.id, trialEnd)
                         .mapLeft {
                             NotCreatedError(type = planEntity.name, id = "Failed to subscribe ${subscriberId} to ${plan.id}",
                                     error = it)
@@ -899,8 +1037,8 @@ object Neo4jStoreSingleton : GraphStore {
 
                 /* Store information from payment backend for later use. */
                 subscribesToPlanRelationStore.setProperties(subscriberId, planId, mapOf("subscriptionId" to subscriptionInfo.id,
-                                "created" to subscriptionInfo.created,
-                                "trialEnd" to subscriptionInfo.trialEnd), transaction)
+                        "created" to subscriptionInfo.created,
+                        "trialEnd" to subscriptionInfo.trialEnd), transaction)
                         .flatMap {
                             Either.right(plan)
                         }.bind()
@@ -954,7 +1092,7 @@ object Neo4jStoreSingleton : GraphStore {
                         }.bind()
             }.fix()
         }.unsafeRunSync()
-            .ifFailedThenRollback(transaction)
+                .ifFailedThenRollback(transaction)
     }
 
     //
