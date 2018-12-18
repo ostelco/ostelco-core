@@ -8,16 +8,16 @@ import org.ostelco.diameter.ha.common.ReplicatedStorage
 import java.io.*
 import java.lang.IllegalStateException
 
-class ServerCCASessionDataReplicatedImpl(id: String, replicatedStorage: ReplicatedStorage) : AppSessionDataReplicatedImpl(id, replicatedStorage), IServerCCASessionData {
+class ServerCCASessionDataReplicatedImpl(sessionId: String, replicatedStorage: ReplicatedStorage) : AppSessionDataReplicatedImpl(sessionId, replicatedStorage), IServerCCASessionData {
 
     private val TCCID = "TCCID"
     private val STATELESS = "STATELESS"
     private val STATE = "STATE"
 
     init {
-        if (!replicatedStorage.exist(id)) {
+        if (!replicatedStorage.exist(sessionId)) {
             setAppSessionIface(ServerCCASession::class.java)
-            setServerCCASessionState(ServerCCASessionState.IDLE)
+            serverCCASessionState = ServerCCASessionState.IDLE
         }
     }
 

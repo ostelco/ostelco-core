@@ -37,7 +37,7 @@ class ReplicatedTimerTaskScheduler {
         logger.info("Canceling task with timer id $taskID")
 
 
-        var task: ReplicatedTimerTask? = localRunningTasks[taskID]
+        val task: ReplicatedTimerTask? = localRunningTasks[taskID]
         if (task != null) {
 
             val setAction = task.action

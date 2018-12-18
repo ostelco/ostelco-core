@@ -6,13 +6,11 @@ import io.lettuce.core.api.sync.RedisCommands
 
 class RedisStorage : ReplicatedStorage {
 
-    private val redisClient : RedisClient
+    // ToDo : Redis configuration from env
+    // ToDo : Default timeout for Redis to delete session
+    private val redisClient : RedisClient = RedisClient.create("redis://127.0.0.1:6379")
     private lateinit var connection : StatefulRedisConnection<String, String>
     private lateinit var commands : RedisCommands<String, String>
-
-    init {
-        redisClient = RedisClient.create("redis://127.0.0.1:6379")
-    }
 
 
     override fun start() {

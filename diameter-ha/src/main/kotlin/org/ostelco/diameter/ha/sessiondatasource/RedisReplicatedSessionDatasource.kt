@@ -34,20 +34,19 @@ import org.jdiameter.common.impl.app.slh.SLhLocalSessionDataFactory
 import org.jdiameter.common.impl.data.LocalDataSource
 import org.ostelco.diameter.ha.common.AppSessionDataReplicatedImpl
 import org.ostelco.diameter.ha.common.RedisStorage
-import org.ostelco.diameter.ha.common.ReplicatedStorage
 import org.ostelco.diameter.ha.logger
 import org.ostelco.diameter.ha.sessiondatafactory.CCAReplicatedSessionDataFactory
 import java.util.HashMap
 
 /**
- * A Replicated DataSource that will use redis as a remote store to save session information.
+ * A Replicated DataSource that will use Redis as a remote store to save session information.
  */
 class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionDatasource {
 
     private val logger by logger()
     private val localDataSource: ISessionDatasource = LocalDataSource()
 
-    protected var appSessionDataFactories = HashMap<Class<out IAppSessionData>, IAppSessionDataFactory<out IAppSessionData>>()
+    private var appSessionDataFactories = HashMap<Class<out IAppSessionData>, IAppSessionDataFactory<out IAppSessionData>>()
 
     private val redisStorage = RedisStorage()
 
@@ -56,7 +55,7 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
     init {
         appSessionDataFactories[IAuthSessionData::class.java] = AuthLocalSessionDataFactory()
         appSessionDataFactories[IAccSessionData::class.java] = AccLocalSessionDataFactory()
-        appSessionDataFactories[ICCASessionData::class.java] = CCAReplicatedSessionDataFactory(this)
+        appSessionDataFactories[ICCASessionData::class.java] = CCAReplicatedSessionDataFactory(this, redisStorage)
         appSessionDataFactories[IRoSessionData::class.java] = RoLocalSessionDataFactory()
         appSessionDataFactories[IRfSessionData::class.java] = RfLocalSessionDataFactory()
         appSessionDataFactories[IShSessionData::class.java] = ShLocalSessionDataFactory()
@@ -86,7 +85,7 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
         if (localDataSource.exists(sessionId)) {
             localDataSource.setSessionListener(sessionId, data)
         } else {
-            logger.error("could not set session listener for non local session $sessionId")
+            logger.error("Could not set session listener for non local session $sessionId")
         }
     }
 
@@ -94,7 +93,7 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
         if (localDataSource.exists(sessionId)) {
             return localDataSource.removeSessionListener(sessionId)
         } else {
-            logger.error("could not remove SessionListener for session $sessionId")
+            logger.error("Could not remove SessionListener for session $sessionId")
         }
         return null
     }
@@ -113,60 +112,60 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
 
     override fun getSession(sessionId: String?): BaseSession? {
         if (sessionId != null) {
-            if (this.localDataSource.exists(sessionId)) {
-                logger.debug("Using LocalDataSouce for session $sessionId")
-                return this.localDataSource.getSession(sessionId)
-            } else if (existReplicated(sessionId)) {
-                logger.debug("Using replicated session : $sessionId")
-                makeLocal(sessionId)
-                return this.localDataSource.getSession(sessionId)
-            } else {
-                logger.error("Session not local or external $sessionId")
+            when {
+                localDataSource.exists(sessionId) -> {
+                    logger.debug("Using LocalDataSource for session $sessionId")
+                    return localDataSource.getSession(sessionId)
+                }
+                existReplicated(sessionId) -> {
+                    logger.debug("Using replicated session : $sessionId")
+                    makeLocal(sessionId)
+                    return localDataSource.getSession(sessionId)
+                }
+                else -> logger.error("Session not local or external $sessionId")
             }
         }
         return null
     }
 
     override fun exists(sessionId: String?): Boolean {
-        return if (this.localDataSource.exists(sessionId)) true else this.existReplicated(sessionId)
+        return if (localDataSource.exists(sessionId)) true else existReplicated(sessionId)
     }
 
     override fun getSessionListener(sessionId: String?): NetworkReqListener? {
-        if (localDataSource.exists(sessionId)) {
-            return localDataSource.getSessionListener(sessionId)
-        } else if (existReplicated(sessionId)) {
-            logger.debug("getting session listener from replicatad external source")
-            makeLocal(sessionId)
-            return localDataSource.getSessionListener(sessionId)
-        } else {
-            logger.error("Could not get session listener for sessionId $sessionId")
+        when {
+            localDataSource.exists(sessionId) -> return localDataSource.getSessionListener(sessionId)
+            existReplicated(sessionId) -> {
+                logger.debug("Getting session listener from replicated external source for sessionId $sessionId")
+                makeLocal(sessionId)
+                return localDataSource.getSessionListener(sessionId)
+            }
+            else -> logger.error("Could not get session listener for sessionId $sessionId")
         }
         return null
     }
 
     override fun getDataFactory(x: Class<out IAppSessionData>?): IAppSessionDataFactory<out IAppSessionData>? {
-        return this.appSessionDataFactories[x]
+        return appSessionDataFactories[x]
     }
 
     override fun addSession(session: BaseSession?) {
-        this.localDataSource.addSession(session)
+        localDataSource.addSession(session)
     }
 
     private fun makeLocal(sessionId: String?) {
-        logger.info("makeLocal sessionId $sessionId")
+        logger.info("MakeLocal sessionId $sessionId")
         if (sessionId != null) {
             try {
-                // this is APP session, always
-                val appSessionInterfaceClass = AppSessionDataReplicatedImpl.getAppSessionIface(this.redisStorage, sessionId)
-                // get factory;
-                val factory = (this.container.sessionFactory as ISessionFactory).getAppSessionFactory(appSessionInterfaceClass)
+                val appSessionInterfaceClass = AppSessionDataReplicatedImpl.getAppSessionIface(redisStorage, sessionId)
+                val factory = (container.sessionFactory as ISessionFactory).getAppSessionFactory(appSessionInterfaceClass)
                 if (factory == null) {
-                    logger.warn("Session with id:{}, is in replicated data source, but no Application Session Factory for:{}.", sessionId, appSessionInterfaceClass)
+                    logger.warn("Session with id: $sessionId, is in replicated data source, but no Application Session Factory for: $appSessionInterfaceClass.")
                     return
                 } else {
                     val session = factory.getSession(sessionId, appSessionInterfaceClass)
-                    this.localDataSource.addSession(session)
-                    this.localDataSource.setSessionListener(sessionId, session as NetworkReqListener)
+                    localDataSource.addSession(session)
+                    localDataSource.setSessionListener(sessionId, session as NetworkReqListener)
                     return
                 }
             } catch (e: IllegalDiameterStateException) {
@@ -178,14 +177,10 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
     }
 
     private fun existReplicated(sessionId: String?): Boolean {
-        if (sessionId == null) {
-            return false
-        } else {
-            return redisStorage.exist(sessionId)
+        var sessionIdExist = false
+        if (sessionId != null) {
+            sessionIdExist = redisStorage.exist(sessionId)
         }
-    }
-
-    fun getReplicatedStorage(): ReplicatedStorage {
-        return redisStorage
+        return sessionIdExist
     }
 }

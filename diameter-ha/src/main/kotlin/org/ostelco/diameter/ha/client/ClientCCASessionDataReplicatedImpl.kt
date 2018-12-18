@@ -64,7 +64,6 @@ class ClientCCASessionDataReplicatedImpl(id: String, replicatedStorage: Replicat
         } else {
             throw IllegalStateException()
         }
-        //return this.replicatedStorage.getValue(id, STATE) as ClientCCASessionState
     }
 
     override fun setClientCCASessionState(state: ClientCCASessionState?) {
@@ -92,25 +91,23 @@ class ClientCCASessionDataReplicatedImpl(id: String, replicatedStorage: Replicat
         val b64String = getValue(TXTIMER_REQUEST)
         if (b64String != null) {
             try {
-                return this.messageParser.createMessage(ByteArrayfromBase64String(b64String))
-            } catch (e : IOException) {
+                return this.messageParser.createMessage(byteArrayFromBase64String(b64String))
+            } catch (e: IOException) {
                 logger.error("Failed to decode Tx Timer Request", e)
-            } catch (e : ClassNotFoundException) {
+            } catch (e: ClassNotFoundException) {
                 logger.error("Failed to decode Tx Timer Request", e)
             } catch (e: AvpDataException) {
                 logger.error("Failed to decode Tx Timer Request", e)
             }
-            return null
-        } else {
-            return null
         }
+        return null
     }
 
     override fun setTxTimerRequest(txTimerRequest: Request?) {
         if (txTimerRequest != null) {
             try {
                 val data = this.messageParser.encodeMessage(txTimerRequest as IMessage)
-                storeValue(ByteBuffertoBase64String(data), TXTIMER_REQUEST)
+                storeValue(byteBufferToBase64String(data), TXTIMER_REQUEST)
             } catch (e: IOException) {
                 logger.error("Unable to encode Tx Timer Request to buffer.", e)
             }
@@ -123,7 +120,7 @@ class ClientCCASessionDataReplicatedImpl(id: String, replicatedStorage: Replicat
         val b64String = getValue(BUFFER)
         if (b64String != null) {
             try {
-                return this.messageParser.createMessage(ByteArrayfromBase64String(b64String))
+                return this.messageParser.createMessage(byteArrayFromBase64String(b64String))
             } catch (e : IOException) {
                 logger.error("Unable to recreate message from buffer.", e)
             } catch (e : ClassNotFoundException) {
@@ -131,17 +128,15 @@ class ClientCCASessionDataReplicatedImpl(id: String, replicatedStorage: Replicat
             } catch (e: AvpDataException) {
                 logger.error("Unable to recreate message from buffer.", e)
             }
-            return null
-        } else {
-            return null
         }
+        return null
     }
 
     override fun setBuffer(buffer: Request?) {
         if (buffer != null) {
             try {
                 val data = this.messageParser.encodeMessage(buffer as IMessage)
-                storeValue(ByteBuffertoBase64String(data), BUFFER)
+                storeValue(byteBufferToBase64String(data), BUFFER)
             } catch (e: ParseException) {
                 logger.error("Unable to encode message to buffer.", e)
             }

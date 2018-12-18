@@ -16,7 +16,7 @@ open class AppSessionDataReplicatedImpl(val id: String, val replicatedStorage: R
 
     private val logger by logger()
 
-    protected val APID = "APID"
+    private val APID = "APID"
 
     fun setAppSessionIface(iface: Class<out AppSession>) {
         storeValue(SIFACE, toBase64String(iface))
@@ -60,12 +60,12 @@ open class AppSessionDataReplicatedImpl(val id: String, val replicatedStorage: R
      * @return true if removed, false otherwise
      */
     override fun remove(): Boolean {
+        var removed = false
         if (replicatedStorage.exist(id)) {
             replicatedStorage.removeId(id)
-            return true
-        } else {
-            return false
+            removed = true
         }
+        return removed
     }
 
     protected fun toPrimitive(boolString: String?, default: Boolean): Boolean {
@@ -87,10 +87,10 @@ open class AppSessionDataReplicatedImpl(val id: String, val replicatedStorage: R
     }
 
     /**
-     * Convert ByteBuffer to a b64 encoded string
+     * Convert ByteBuffer to a Base64 encoded string
      */
     @Throws(IOException::class)
-    protected fun ByteBuffertoBase64String(data: ByteBuffer): String {
+    protected fun byteBufferToBase64String(data: ByteBuffer): String {
         val array = ByteArray(data.remaining())
         data.get(array)
         return Base64.getEncoder().encodeToString(array)
@@ -100,13 +100,13 @@ open class AppSessionDataReplicatedImpl(val id: String, val replicatedStorage: R
      * Read the object from Base64 string.
      **/
     @Throws(IOException::class, ClassNotFoundException::class)
-    protected fun ByteArrayfromBase64String(b64String: String): ByteArray? {
+    protected fun byteArrayFromBase64String(b64String: String): ByteArray? {
         return Base64.getDecoder().decode(b64String)
     }
 
     companion object AppSessionHelper {
 
-        protected val SIFACE = "SIFACE"
+        private val SIFACE = "SIFACE"
 
         fun getAppSessionIface(storage: ReplicatedStorage, sessionId: String): Class<out AppSession> {
             val value = storage.getValue(sessionId, SIFACE)
@@ -117,19 +117,19 @@ open class AppSessionDataReplicatedImpl(val id: String, val replicatedStorage: R
         }
 
         /**
-         * Convert Serializable to a b64 encoded string
+         * Convert Serializable to a Base64 encoded string
          */
         @Throws(IOException::class)
-        fun toBase64String(o: Serializable?): String {
-            val baos = ByteArrayOutputStream()
-            val oos = ObjectOutputStream(baos)
-            oos.writeObject(o)
-            oos.close()
-            return Base64.getEncoder().encodeToString(baos.toByteArray())
+        fun toBase64String(serializable: Serializable?): String {
+            val byteArrayOutputStream = ByteArrayOutputStream()
+            val objectOutputStream = ObjectOutputStream(byteArrayOutputStream)
+            objectOutputStream.writeObject(serializable)
+            objectOutputStream.close()
+            return Base64.getEncoder().encodeToString(byteArrayOutputStream.toByteArray())
         }
 
         /**
-         * Read the object from Base64 string.
+         * Read the object from Base64 encoded string.
          **/
         @Throws(IOException::class, ClassNotFoundException::class)
         fun fromBase64String(b64String: String): Serializable {

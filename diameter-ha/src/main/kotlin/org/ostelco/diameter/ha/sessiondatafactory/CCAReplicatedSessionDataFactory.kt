@@ -11,23 +11,17 @@ import org.ostelco.diameter.ha.common.ReplicatedStorage
 import org.ostelco.diameter.ha.server.ServerCCASessionDataReplicatedImpl
 import org.ostelco.diameter.ha.sessiondatasource.RedisReplicatedSessionDatasource
 
-class CCAReplicatedSessionDataFactory(replicatedSessionDataSource: ISessionDatasource) : IAppSessionDataFactory<ICCASessionData> {
+class CCAReplicatedSessionDataFactory(replicatedSessionDataSource: ISessionDatasource, private val replicatedStorage: ReplicatedStorage) : IAppSessionDataFactory<ICCASessionData> {
 
-    private val replicatedSessionDataSource: RedisReplicatedSessionDatasource
-    private val replicatedStorage: ReplicatedStorage
-
-    init {
-        this.replicatedSessionDataSource = replicatedSessionDataSource as RedisReplicatedSessionDatasource
-        this.replicatedStorage = replicatedSessionDataSource.getReplicatedStorage()
-    }
+    private val replicatedSessionDataSource: RedisReplicatedSessionDatasource = replicatedSessionDataSource as RedisReplicatedSessionDatasource
 
     override fun getAppSessionData(clazz: Class<out AppSession>, sessionId: String): ICCASessionData {
 
         if (clazz == ClientCCASession::class.java) {
-            val data = ClientCCASessionDataReplicatedImpl(sessionId, this.replicatedStorage, this.replicatedSessionDataSource.container)
+            val data = ClientCCASessionDataReplicatedImpl(sessionId, replicatedStorage, replicatedSessionDataSource.container)
             return data
         } else if (clazz == ServerCCASession::class.java) {
-            val data = ServerCCASessionDataReplicatedImpl(sessionId, this.replicatedStorage)
+            val data = ServerCCASessionDataReplicatedImpl(sessionId, replicatedStorage)
             return data
         }
         throw IllegalArgumentException(clazz.toString())
