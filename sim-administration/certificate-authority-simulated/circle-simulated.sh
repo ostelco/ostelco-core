@@ -23,7 +23,7 @@ DEPENDENCIES="keytool openssl"
 for tool in $DEPENDENCIES ; do 
   if [[ -z "$(which $tool)" ]] ; then
     (>&2 echo "$0: Error. Could not find dependency $tool")
-    exit 0
+    exit 1
   fi
 done
 
@@ -190,29 +190,11 @@ DNS.1 = $common_name
 EOF
 }
 
-# 
-# The actors then use their own CA  keys to sign their own CA
-# and SK certs.
-#
+## 
+## The actors then use their own CA  keys to sign their own CA
+## and SK certs.
+##
 
-
-function generate_csr {
-    local actor=$1
-    local role=$2
-    local distinguished_name=$3
-    local country=$4
-    local state=$5
-    local location=$6
-    local organization=$7
-    local common_name=$8
-
-    local keyfile=$(key_filename $actor $role)
-    local cert_config=$(crt_config_filename $actor $role)
-    local csr_file=$(csr_filename $actor $role)
-    
-    generate_cert_config "$cert_config" "$keyfile" "$distinguished_name" "$country" "$state" "$location" "$organization" "$common_name"
-    openssl req -new -out "$csr_file" -config "$cert_config"
-}
 
 
 function self_signed_cert {
@@ -241,17 +223,35 @@ function self_signed_cert {
 self_signed_cert "sim-mgr"    "ca" "not-really-ostelco.org" "NO" "Oslo" "Oslo" "Not really ostelco" "*.not-really-ostelco.org" 
 self_signed_cert "sm-dp-plus" "ca" "not-really-smdp.org"    "NO" "Oslo" "Oslo" "Not really SMDP org" "*.not-really-ostelco.org" 
 
-
 ##
 ## Now generate all the CSRs for both actors.
 ##
+
+
+function generate_csr {
+    local actor=$1
+    local role=$2
+    local distinguished_name=$3
+    local country=$4
+    local state=$5
+    local location=$6
+    local organization=$7
+    local common_name=$8
+
+    local keyfile=$(key_filename $actor $role)
+    local cert_config=$(crt_config_filename $actor $role)
+    local csr_file=$(csr_filename $actor $role)
+    
+    generate_cert_config "$cert_config" "$keyfile" "$distinguished_name" "$country" "$state" "$location" "$organization" "$common_name"
+    openssl req -new -out "$csr_file" -config "$cert_config"
+}
+
 
 generate_csr "sim-mgr" "ck" "not-really-ostelco.org" "NO" "Oslo" "Oslo" "Not really ostelco" "*.not-really-ostelco.org" 
 generate_csr "sim-mgr" "sk" "not-really-ostelco.org" "NO" "Oslo" "Oslo" "Not really ostelco" "*.not-really-ostelco.org" 
 
 generate_csr "sm-dp-plus" "ck" "not-really-smdp.org" "NO" "Oslo" "Oslo" "Not really SMDP org" "*.not-really-ostelco.org" 
 generate_csr "sm-dp-plus" "sk" "not-really-smdp.org" "NO" "Oslo" "Oslo" "Not really SMDP org" "*.not-really-ostelco.org" 
-
 
 
 ##
@@ -269,7 +269,16 @@ function sign_csr {
     local ca_crt=$(crt_filename $signer_actor $signer_role)
     local ca_key=$(key_filename $signer_actor $signer_role)
 
-    # TODO: CHeck that all the input files exist
+    if [[ ! -x "$csr_file" ]] ; then 
+	(>&2 echo "$0: Error. Could not find csr  $csr_file")
+	exit 1
+    fi
+
+    if [[ ! -x "$ca_crt" ]] ; then 
+	(>&2 echo "$0: Error. Could not find CA crt  $csr_file")
+	exit 1
+    fi
+
     echo openssl x509 -req -in $csr_file -CA $ca_crt -CAkey $ca_key -CAcreateserial -out $crt_file
     openssl x509 -req -in $csr_file -CA $ca_crt -CAkey $ca_key -CAcreateserial -out $crt_file
     # TODO: Check that all the output files exist and that the exit code is zero
