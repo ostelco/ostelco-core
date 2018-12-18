@@ -9,6 +9,10 @@
 ###
 
 
+## To reset the crypto artefacts repository, start script by setting RESET_CRYPTO_ARTEFACTS variable
+## to a non-null value, e.g. "RESET_CRYPTO_ARTEFACTS=yes ./circle-simulated.sh"
+
+
 ##
 ## Key length. Should be 2048, but may be smaller during testing.
 ##
@@ -37,12 +41,16 @@ done
 ##
 
 
-# TODO: Make deleting of the root optional.
 ARTEFACT_ROOT=crypto-artefacts
-# if [[ -f "$ARTEFACT_ROOT" ]] ; then 
-#    rm -f $ARTEFACT_ROOT
-# fi
 
+
+# Reset if requested
+if [[ -n "$RESET_CRYPTO_ARTEFACTS" ]] ; then 
+    if [[ -f "$ARTEFACT_ROOT" ]] ; then 
+	rm -f $ARTEFACT_ROOT
+    fi
+fi
+    
 SIM_MANAGER="sim-mgr"
 SMDPPLUS="sm-dp-plus"
 
@@ -81,13 +89,6 @@ function generate_filename {
     echo "${ARTEFACT_ROOT}/${actor}/${role}.${suffix}"
 }
 
-
-function keystore_alias {
-    local actor=$1
-    local role=$2
-    local keystore_type=$3
-    echo "${actor}_${role}_${keystore_type}"
-}
 
 
 function keystore_filename {
@@ -310,10 +311,6 @@ function sign_csr {
     fi
 
     if [[ ! -f "$crt_file" ]] ; then  
-	
-	echo openssl x509 -req -in $csr_file -CA $ca_crt -CAkey $ca_key -CAcreateserial -out $crt_file
-	exit 1
-
 	openssl x509 -req -in $csr_file -CA $ca_crt -CAkey $ca_key -CAcreateserial -out $crt_file
     else
 	echo "Signed certificate already exists in file $crt_file, not creating again"
@@ -321,7 +318,6 @@ function sign_csr {
     if [[ ! -f "$crt_file" ]] ; then
 	echo "Could not create signed certificate file $crt_file"
     fi
-
 }
 
 
@@ -359,15 +355,14 @@ function populate_keystore {
     local role=$1  ; shift
     local keystore_type=$1; shift
     local certs="$*"
-
-    local keystore_alias=$(keystore_alias $actor $role $keystore_type)
+    
     local keystore_filename=$(keystore_filename $actor $role $keystore_type)
     local common_password="superSecreet"
 
     for cert in $certs ; do 
 	keytool  \
              -noprompt -storepass "${common_password}"  \
-             -importcert -trustcacerts -alias requesterKey \
+             -importcert -trustcacerts -alias "$(basename $(dirname $cert))_$(basename $cert)" \
              -file $cert -keystore $keystore_filename
     done
 }
