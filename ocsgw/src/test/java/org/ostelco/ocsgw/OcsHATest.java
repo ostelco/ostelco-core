@@ -38,8 +38,8 @@ public class OcsHATest {
 
     private TestClient testPGW;
 
-    Process ocsgw_1;
-    Process ocsgw_2;
+    private Process ocsgw_1;
+    private Process ocsgw_2;
 
 
     private void waitForServerToStart(final int server) {
@@ -57,8 +57,8 @@ public class OcsHATest {
     private void waitForPort(String hostname, int port, long timeoutMs) {
         logger.debug("Waiting for port " + port);
         long startTs = System.currentTimeMillis();
-        boolean scanning=true;
-        while(scanning)
+        boolean scanning = true;
+        while (scanning)
         {
             if (System.currentTimeMillis() - startTs > timeoutMs) {
                 throw new RuntimeException("Timeout waiting for port " + port);
@@ -75,7 +75,7 @@ public class OcsHATest {
                     socketChannel.close();
                 }
 
-                scanning=false;
+                scanning = false;
             }
             catch(IOException e)
             {
@@ -145,11 +145,11 @@ public class OcsHATest {
         ocsgw_2.destroy();
     }
 
-    private void haCreditControlRequestInit(Session session) {
+    private void haCreditControlRequestInit(Session session, String host) {
 
         Request request = testPGW.createRequest(
                 OCS_REALM,
-                OCS_HOST_1,
+                host,
                 session
         );
 
@@ -162,7 +162,7 @@ public class OcsHATest {
         try {
             assertEquals(2001L, testPGW.getResultCodeAvp().getInteger32());
             AvpSet resultAvps = testPGW.getResultAvps();
-            assertEquals(OCS_HOST_1, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String());
+            assertEquals(host, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String());
             assertEquals(OCS_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String());
             assertEquals(RequestType.INITIAL_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
             Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
@@ -217,11 +217,11 @@ public class OcsHATest {
         }
     }
 
-    private void haCreditControlRequestUpdate(Session session) {
+    private void haCreditControlRequestUpdate(Session session, String host) {
 
         Request request = testPGW.createRequest(
                 OCS_REALM,
-                OCS_HOST_1,
+                host,
                 session
         );
 
@@ -234,6 +234,8 @@ public class OcsHATest {
         try {
             assertEquals(2001L, testPGW.getResultCodeAvp().getInteger32());
             AvpSet resultAvps = testPGW.getResultAvps();
+            assertEquals(host, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String());
+            assertEquals(OCS_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String());
             assertEquals(RequestType.UPDATE_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
             Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
             assertEquals(2001L, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
@@ -255,15 +257,23 @@ public class OcsHATest {
     @DisplayName("HA Credit-Control-Request Init Update and Terminate")
     public void haCreditControlRequestInitUpdateAndTerminate() {
         Session session = testPGW.createSession();
-        haCreditControlRequestInit(session);
+        haCreditControlRequestInit(session, OCS_HOST_1);
+
+        // Restart server 1 and continue when it is back online
         restartServer(1);
-        haCreditControlRequestUpdate(session);
+
+        haCreditControlRequestUpdate(session, OCS_HOST_1);
+
+        // Stop server 1 and hand over request to server 2
+        stopServer(1);
+        haCreditControlRequestUpdate(session, OCS_HOST_2);
+
+        // Restart server 2 and continue once it is back up
         restartServer(2);
-        haCreditControlRequestUpdate(session);
 
         Request request = testPGW.createRequest(
                 OCS_REALM,
-                OCS_HOST_1,
+                OCS_HOST_2,
                 session
         );
 
@@ -276,6 +286,8 @@ public class OcsHATest {
         try {
             assertEquals(2001L, testPGW.getResultCodeAvp().getInteger32());
             AvpSet resultAvps = testPGW.getResultAvps();
+            assertEquals(OCS_HOST_2, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String());
+            assertEquals(OCS_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String());
             assertEquals(RequestType.TERMINATION_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
             Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
             assertEquals(2001L, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
