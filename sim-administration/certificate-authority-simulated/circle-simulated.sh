@@ -95,7 +95,7 @@ function keystore_filename {
     local actor=$1
     local role=$2
     local keystore_type=$3
-    echo $(generate_filename $actor "${role}_${keystore_type}" "csr" )
+    echo $(generate_filename $actor "${role}_${keystore_type}" "jks" )
 }
 
 function csr_filename {
