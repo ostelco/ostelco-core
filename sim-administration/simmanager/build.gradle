@@ -1,0 +1,42 @@
+plugins {
+    id "org.jetbrains.kotlin.jvm" version "1.3.10"
+    id "application"
+    id "com.github.johnrengelman.shadow" version "4.0.3"
+}
+
+dependencies {
+    implementation project(":jersey-json-schema-validator")
+    implementation project(":simcard-utils")
+    implementation project(":es2plus4dropwizard")
+    implementation project(":ostelco-dropwizard-utils")
+
+    compile group: 'javax.activation', name: 'javax.activation-api', version: '1.2.0'
+
+    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-common:$kotlinVersion"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+
+    implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
+    implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
+    implementation "io.dropwizard:dropwizard-jdbi:$dropwizardVersion"
+
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
+    implementation "org.apache.commons:commons-csv:1.4"
+    implementation "org.xerial:sqlite-jdbc:3.23.1"
+
+    testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+    testImplementation "com.nhaarman:mockito-kotlin:1.6.0"
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+
+shadowJar {
+    mainClassName = "org.ostelco.simcards.admin.SimAdministrationApplication"
+    mergeServiceFiles()
+    classifier = "uber"
+    version = null
+}
