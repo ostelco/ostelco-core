@@ -7,14 +7,19 @@ import org.ostelco.diameter.ha.logger
 import java.io.Serializable
 import java.util.concurrent.ScheduledFuture
 
-class ReplicatedTimerTaskData(val taskID: Serializable, val sessionId: String, val timerName: String, var delay: Long, var startTime: Long, var period: Long) : Serializable {
+class ReplicatedTimerTaskData(val taskID: Serializable,
+                              val sessionId: String,
+                              val timerName: String,
+                              var delay: Long,
+                              var startTime: Long,
+                              var period: Long) : Serializable {
 
     override fun hashCode(): Int {
         return taskID.hashCode()
     }
 
     override fun equals(other: Any?): Boolean {
-        return if (other != null && other.javaClass == this.javaClass) (other as ReplicatedTimerTaskData).taskID == this.taskID else false
+        return if (other != null && other.javaClass == this.javaClass) (other as ReplicatedTimerTaskData).taskID == taskID else false
     }
 
     companion object {
@@ -23,6 +28,8 @@ class ReplicatedTimerTaskData(val taskID: Serializable, val sessionId: String, v
 }
 
 class ReplicatedTimerTask(val data: ReplicatedTimerTaskData, val sessionDataSource: ISessionDatasource) : Runnable {
+
+    private val logger by logger()
 
     var action: SetTimerAfterTxCommitRunnable? = null
 
@@ -36,7 +43,7 @@ class ReplicatedTimerTask(val data: ReplicatedTimerTaskData, val sessionDataSour
         }
 
     var scheduler: ReplicatedTimerTaskScheduler? = null
-    protected var autoRemoval = true
+    private var autoRemoval = true
     @Transient
     private var cancel: Boolean = false
 
@@ -51,22 +58,22 @@ class ReplicatedTimerTask(val data: ReplicatedTimerTaskData, val sessionDataSour
 
     override fun run() {
         if (data.period < 0L && autoRemoval) {
-            logger.info("Task with id ${data.taskID}  is not recurring, so removing it locally and in the cluster")
+            logger.debug("Task with id ${data.taskID} is not recurring, so removing it locally and in the cluster")
             removeFromScheduler()
         } else {
-            logger.info("Task with id ${data.taskID} is recurring, not removing it locally nor in the cluster")
+            logger.debug("Task with id ${data.taskID} is recurring, not removing it locally nor in the cluster")
         }
 
-        logger.info("Firing Timer with id ${data.taskID}")
+        logger.debug("Firing Timer with id ${data.taskID}")
 
         runTask()
     }
 
-    protected fun removeFromScheduler() {
+    private fun removeFromScheduler() {
         scheduler!!.remove(data.taskID)
     }
 
-    fun runTask() {
+    private fun runTask() {
         try {
             val bSession = sessionDataSource.getSession(data.sessionId)
             if (bSession == null) {
@@ -74,7 +81,7 @@ class ReplicatedTimerTask(val data: ReplicatedTimerTaskData, val sessionDataSour
                 return
             } else {
                 try {
-                    if (bSession.isAppSession()) {
+                    if (bSession.isAppSession) {
                         val impl = bSession as BaseSessionImpl
                         impl.onTimer(data.timerName)
                     } else {
@@ -84,14 +91,13 @@ class ReplicatedTimerTask(val data: ReplicatedTimerTaskData, val sessionDataSour
                 } catch (e: Exception) {
                     logger.error("Caught exception from session object!", e)
                 }
-
             }
         } catch (e: Exception) {
             logger.error("Failure executing timer task", e)
         }
-
     }
 
+    // ToDo : add this back
     fun beforeRecover() {
         if (data.period > 0L) {
             val now = System.currentTimeMillis()
@@ -102,12 +108,7 @@ class ReplicatedTimerTask(val data: ReplicatedTimerTaskData, val sessionDataSour
                 data.startTime = startTime
             }
 
-            logger.info("Task with id ${data.taskID} start time reset to ${data.startTime}")
+            logger.debug("Task with id ${data.taskID} start time $startTime reset to ${data.startTime}")
         }
-
-    }
-
-    companion object {
-        private val logger by logger()
     }
 }

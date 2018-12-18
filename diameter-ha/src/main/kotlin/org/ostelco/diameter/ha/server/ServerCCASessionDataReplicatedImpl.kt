@@ -22,7 +22,7 @@ class ServerCCASessionDataReplicatedImpl(sessionId: String, replicatedStorage: R
     }
 
     override fun isStateless(): Boolean {
-        return toPrimitive(replicatedStorage.getValue(id, STATELESS), true)
+        return toPrimitive(getValue(STATELESS), true)
     }
 
     override fun setStateless(stateless: Boolean) {

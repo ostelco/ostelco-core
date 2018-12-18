@@ -13,20 +13,20 @@ class ReplicatedTimerTaskScheduler {
     private val executor = ScheduledThreadPoolExecutor( 5, Executors.defaultThreadFactory())
 
     internal fun getExecutor(): ScheduledThreadPoolExecutor {
-        return this.executor
+        return executor
     }
 
     internal fun getLocalRunningTasksMap(): ConcurrentHashMap<Serializable, ReplicatedTimerTask> {
-        return this.localRunningTasks
+        return localRunningTasks
     }
 
     internal fun remove(taskID: Serializable) {
-        logger.info("Remove taskID : $taskID")
-        this.localRunningTasks.remove(taskID)
+        logger.debug("Remove taskID : $taskID")
+        localRunningTasks.remove(taskID)
     }
 
     fun schedule(task: ReplicatedTimerTask, checkIfAlreadyPresent: Boolean) {
-        logger.info("Scheduling task with id ${task.data.taskID}")
+        logger.debug("Scheduling task with id ${task.data.taskID}")
         task.scheduler = this
 
         SetTimerAfterTxCommitRunnable(task, this).run()
@@ -34,7 +34,7 @@ class ReplicatedTimerTaskScheduler {
 
     fun cancel(taskID: Serializable): ReplicatedTimerTask? {
 
-        logger.info("Canceling task with timer id $taskID")
+        logger.debug("Canceling task with timer id $taskID")
 
 
         val task: ReplicatedTimerTask? = localRunningTasks[taskID]

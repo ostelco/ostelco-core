@@ -9,31 +9,24 @@ import java.io.Serializable
 class ReplicatedTimerFacilityImpl(container: IContainer) : ITimerFacility {
 
     private val logger by logger()
-    private val sessionDataSource: ISessionDatasource
-    private val taskFactory: TimerTaskFactory;
-    private val replicatedTimerTaskScheduler: ReplicatedTimerTaskScheduler
-
-    init {
-        this.sessionDataSource = container.assemblerFacility.getComponentInstance(ISessionDatasource::class.java)
-        this.taskFactory = TimerTaskFactory()
-        this.replicatedTimerTaskScheduler = ReplicatedTimerTaskScheduler()
-    }
+    private val sessionDataSource: ISessionDatasource = container.assemblerFacility.getComponentInstance(ISessionDatasource::class.java)
+    private val taskFactory: TimerTaskFactory = TimerTaskFactory()
+    private val replicatedTimerTaskScheduler: ReplicatedTimerTaskScheduler = ReplicatedTimerTaskScheduler()
 
     override fun schedule(sessionId: String?, timerName: String?, delay: Long): Serializable {
-        logger.info("sessionId : $sessionId")
-        logger.info("timerName : $timerName")
+        logger.debug(" schedule sessionId : $sessionId timerName : $timerName delay : $delay")
         if ((sessionId != null) && (timerName != null)) {
-            val id = "$sessionId/$timerName"
-            logger.info("Scheduling timer with id $id")
+            val taskId = "$sessionId/$timerName"
+            logger.debug("Scheduling timer task with id $taskId")
 
-            //        if (this.replicatedTimerTaskScheduler.getTimerTaskData(id) != null) {
+            //        if (replicatedTimerTaskScheduler.getTimerTaskData(id) != null) {
             //            throw IllegalArgumentException("Timer already running: $id")
             //        }
 
-            val data = ReplicatedTimerTaskData(id, sessionId, timerName, delay, System.currentTimeMillis() + delay, -1)
-            val timerTask = this.taskFactory.newTimerTask(data)
+            val data = ReplicatedTimerTaskData(taskId, sessionId, timerName, delay, System.currentTimeMillis() + delay, -1)
+            val timerTask = taskFactory.newTimerTask(data)
             replicatedTimerTaskScheduler.schedule(timerTask, true)
-            return id
+            return taskId
         } else {
             logger.error("sessionId $sessionId timerName $timerName")
             return ""
@@ -41,9 +34,9 @@ class ReplicatedTimerFacilityImpl(container: IContainer) : ITimerFacility {
     }
 
     override fun cancel(id: Serializable?) {
-        logger.info("Cancelling timer with id $id")
+        logger.debug("Cancelling timer with id $id")
         if (id != null) {
-            this.replicatedTimerTaskScheduler.cancel(id)
+            replicatedTimerTaskScheduler.cancel(id)
         }
     }
 

@@ -2,7 +2,10 @@ package org.ostelco.diameter.ha.timer
 
 import org.ostelco.diameter.ha.logger
 
-class CancelTimerAfterTxCommitRunnable internal constructor(task: ReplicatedTimerTask, scheduler: ReplicatedTimerTaskScheduler) : AfterTxCommitRunnable(task, scheduler) {
+class CancelTimerAfterTxCommitRunnable internal constructor(task: ReplicatedTimerTask,
+                                                            scheduler: ReplicatedTimerTaskScheduler) : AfterTxCommitRunnable(task, scheduler) {
+
+    private val logger by logger()
 
     override val type: Type
         get() = AfterTxCommitRunnable.Type.CANCEL
@@ -10,26 +13,14 @@ class CancelTimerAfterTxCommitRunnable internal constructor(task: ReplicatedTime
 
     override fun run() {
 
-        val taskData = task.data
-        val taskID = taskData.taskID
+        logger.debug("Cancelling timer task for timer ID ${task.data.taskID}")
 
-        if (logger.isDebugEnabled) {
-            logger.info("Cancelling timer task for timer ID $taskID")
-        }
-
-        scheduler.getLocalRunningTasksMap().remove(taskID)
+        scheduler.getLocalRunningTasksMap().remove(task.data.taskID)
 
         try {
             task.cancel()
         } catch (e: Throwable) {
-            logger.error(e.message, e)
+            logger.error("Failed to cancel task ${task.data.taskID}", e)
         }
-
     }
-
-    companion object {
-
-        private val logger by logger()
-    }
-
 }

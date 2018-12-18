@@ -3,7 +3,10 @@ package org.ostelco.diameter.ha.timer
 import org.ostelco.diameter.ha.logger
 import java.util.concurrent.TimeUnit
 
-class SetTimerAfterTxCommitRunnable(task: ReplicatedTimerTask, scheduler: ReplicatedTimerTaskScheduler) : AfterTxCommitRunnable(task, scheduler) {
+class SetTimerAfterTxCommitRunnable(task: ReplicatedTimerTask,
+                                    scheduler: ReplicatedTimerTaskScheduler) : AfterTxCommitRunnable(task, scheduler) {
+    private val logger by logger()
+
     private var canceled = false
 
     override val type: Type
@@ -12,10 +15,10 @@ class SetTimerAfterTxCommitRunnable(task: ReplicatedTimerTask, scheduler: Replic
     override fun run() {
         task.action = null
         if (!canceled) {
-            logger.info("run")
+            logger.debug("SetTimerAfterTxCommitRunnable run")
             val previousTask = scheduler.getLocalRunningTasksMap().putIfAbsent(task.data.taskID, task)
             if (previousTask != null) {
-                logger.info("A task with id ${task.data.taskID} has already been added to the local tasks, not rescheduling")
+                logger.debug("A task with id ${task.data.taskID} has already been added to the local tasks, not rescheduling")
             }
 
             val taskData = task.data
@@ -26,33 +29,28 @@ class SetTimerAfterTxCommitRunnable(task: ReplicatedTimerTask, scheduler: Replic
 
             try {
                 if (taskData.period < 0L) {
-                    logger.info("Scheduling one-shot timer with id ${task.data.taskID} , delay $delay")
+                    logger.debug("Scheduling one-shot timer with id ${task.data.taskID} , delay $delay")
 
-                    task.scheduledFuture = this.scheduler.getExecutor().schedule(this.task, delay, TimeUnit.MILLISECONDS)
+                    task.scheduledFuture = scheduler.getExecutor().schedule(task, delay, TimeUnit.MILLISECONDS)
                 } else {
-                    logger.info("Scheduling periodic timer with id ${task.data.taskID}, delay $delay period ${taskData.period}")
+                    logger.debug("Scheduling periodic timer with id ${task.data.taskID}, delay $delay period ${taskData.period}")
 
-                    task.scheduledFuture = this.scheduler.getExecutor().scheduleWithFixedDelay(task, delay, taskData.period, TimeUnit.MILLISECONDS)
+                    task.scheduledFuture = scheduler.getExecutor().scheduleWithFixedDelay(task, delay, taskData.period, TimeUnit.MILLISECONDS)
                 }
             } catch (t: Throwable) {
-                logger.error(t.message, t)
+                logger.error("Failed to schedule task with id ${taskData.taskID}", t)
                 scheduler.remove(taskData.taskID)
             }
 
         } else {
-            logger.info("Canceled scheduling periodic timer with id : ${task.data.taskID}")
+            logger.debug("Canceled scheduling periodic timer with id : ${task.data.taskID}")
         }
-
     }
 
     fun cancel() {
-        logger.info("Canceling set timer action for task with timer id ${task.data.taskID}")
+        logger.debug("Canceling set timer action for task with timer id ${task.data.taskID}")
 
         canceled = true
         scheduler.remove(task.data.taskID)
-    }
-
-    companion object {
-        private val logger by logger()
     }
 }
