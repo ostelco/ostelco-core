@@ -137,8 +137,8 @@ data class Plan(
         val price: Price,
         val interval: String,
         val intervalCount: Long = 1L,
-        val planId: String = "",
-        val productId: String = "") : HasId {
+        val properties: Map<String, String> = emptyMap(),
+        val presentation: Map<String, String> = emptyMap()) : HasId {
 
     override val id: String
         @JsonIgnore

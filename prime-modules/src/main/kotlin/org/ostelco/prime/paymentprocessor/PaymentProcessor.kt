@@ -49,9 +49,15 @@ interface PaymentProcessor {
      * @param currency Three-letter ISO currency code in lowercase
      * @param interval The frequency with which a subscription should be billed
      * @param invervalCount The number of intervals between subscription billings
-     * @return Stripe planId if created
+     * @return Stripe plan details
      */
     fun createPlan(productId: String, amount: Int, currency: String, interval: Interval, intervalCount: Long = 1): Either<PaymentError, PlanInfo>
+
+    /**
+     * @param Stripe Plan Id
+     * @return Stripe PlanId if deleted
+     */
+    fun removePlan(planId: String): Either<PaymentError, PlanInfo>
 
     /**
      * @param Stripe Plan Id
@@ -59,13 +65,7 @@ interface PaymentProcessor {
      * @param Epoch timestamp for when the trial period ends
      * @return Stripe SubscriptionId if subscribed
      */
-    fun subscribeToPlan(planId: String, customerId: String, trialEnd: Long = 0L): Either<PaymentError, SubscriptionInfo>
-
-    /**
-     * @param Stripe Plan Id
-     * @return Stripe PlanId if deleted
-     */
-    fun removePlan(planId: String): Either<PaymentError, PlanInfo>
+    fun createSubscription(planId: String, customerId: String, trialEnd: Long = 0L): Either<PaymentError, SubscriptionInfo>
 
     /**
      * @param Stripe Subscription Id

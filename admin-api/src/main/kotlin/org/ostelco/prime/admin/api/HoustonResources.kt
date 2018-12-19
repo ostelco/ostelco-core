@@ -196,9 +196,14 @@ class ProfilesResource {
     @Produces("application/json")
     fun getPlans(@PathParam("email") email: String): Response {
         return storage.getPlans(email).fold(
-                { apiError ->  Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.OK).entity(asJson(it)) })
-                .build()
+                {
+                    val err = ApiErrorMapper.mapStorageErrorToApiError("Failed to fetch plans",
+                            ApiErrorCode.FAILED_TO_FETCH_PLANS_FOR_SUBSCRIBER,
+                            it)
+                    Response.status(err.status).entity(asJson(err))
+                },
+                { Response.status(Response.Status.OK).entity(asJson(it)) }
+        ).build()
     }
 
     /**
@@ -210,10 +215,15 @@ class ProfilesResource {
     fun attachPlan(@PathParam("email") email: String,
                    @PathParam("planId") planId: String,
                    @QueryParam("trial_end") trialEnd: Long): Response {
-        return storage.attachPlan(email, planId, trialEnd).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.CREATED) })
-                .build()
+        return storage.subscribeToPlan(email, planId, trialEnd).fold(
+                {
+                    val err = ApiErrorMapper.mapStorageErrorToApiError("Failed to store subscription",
+                            ApiErrorCode.FAILED_TO_STORE_SUBSCRIPTION,
+                            it)
+                    Response.status(err.status).entity(asJson(err))
+                },
+                { Response.status(Response.Status.CREATED) }
+        ).build()
     }
 
     /**
@@ -224,10 +234,15 @@ class ProfilesResource {
     @Produces("application/json")
     fun detachPlan(@PathParam("email") email: String,
                    @PathParam("planId") planId: String): Response {
-        return storage.detachPlan(email, planId).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.OK) })
-                .build()
+        return storage.unsubscribeFromPlan(email, planId).fold(
+                {
+                    val err = ApiErrorMapper.mapStorageErrorToApiError("Failed to remove subscription",
+                            ApiErrorCode.FAILED_TO_REMOVE_SUBSCRIPTION,
+                            it)
+                    Response.status(err.status).entity(asJson(err))
+                },
+                { Response.status(Response.Status.OK) }
+        ).build()
     }
 }
 
@@ -430,6 +445,7 @@ class NotifyResource {
 @Path("/plans")
 class PlanResource() {
 
+    private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
 
     /**
@@ -441,9 +457,14 @@ class PlanResource() {
     fun get(@NotNull
             @PathParam("planId") planId: String): Response {
         return storage.getPlan(planId).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.OK).entity(asJson(it)) })
-                .build()
+                {
+                    val err = ApiErrorMapper.mapStorageErrorToApiError("Failed to fetch plan",
+                            ApiErrorCode.FAILED_TO_FETCH_PLAN,
+                            it)
+                    Response.status(err.status).entity(asJson(err))
+                },
+                { Response.status(Response.Status.OK).entity(asJson(it)) }
+        ).build()
     }
 
     /**
@@ -452,11 +473,16 @@ class PlanResource() {
     @POST
     @Produces("application/json")
     @Consumes("application/json")
-    fun create(plan: Plan) : Response {
+    fun create(plan: Plan): Response {
         return storage.createPlan(plan).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError))},
-                { Response.status(Response.Status.CREATED).entity(asJson(it))})
-                .build()
+                {
+                    val err = ApiErrorMapper.mapStorageErrorToApiError("Failed to store plan",
+                            ApiErrorCode.FAILED_TO_STORE_PLAN,
+                            it)
+                    Response.status(err.status).entity(asJson(err))
+                },
+                { Response.status(Response.Status.CREATED).entity(asJson(it)) }
+        ).build()
     }
 
     /**
@@ -469,8 +495,13 @@ class PlanResource() {
     fun delete(@NotNull
                @PathParam("planId") planId: String) : Response {
         return storage.deletePlan(planId).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.OK).entity(asJson(it))})
-                .build()
+                {
+                    val err = ApiErrorMapper.mapStorageErrorToApiError("Failed to remove plan",
+                            ApiErrorCode.FAILED_TO_REMOVE_PLAN,
+                            it)
+                    Response.status(err.status).entity(asJson(err))
+                },
+                { Response.status(Response.Status.OK).entity(asJson(it))}
+        ).build()
     }
 }
