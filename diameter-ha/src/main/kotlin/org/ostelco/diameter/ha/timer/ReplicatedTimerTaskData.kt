@@ -10,7 +10,6 @@ import java.util.concurrent.ScheduledFuture
 class ReplicatedTimerTaskData(val taskID: Serializable,
                               val sessionId: String,
                               val timerName: String,
-                              var delay: Long,
                               var startTime: Long,
                               var period: Long) : Serializable {
 
@@ -27,11 +26,9 @@ class ReplicatedTimerTaskData(val taskID: Serializable,
     }
 }
 
-class ReplicatedTimerTask(val data: ReplicatedTimerTaskData, val sessionDataSource: ISessionDatasource) : Runnable {
+class ReplicatedTimerTask(val data: ReplicatedTimerTaskData, private val sessionDataSource: ISessionDatasource) : Runnable {
 
     private val logger by logger()
-
-    var action: SetTimerAfterTxCommitRunnable? = null
 
     var scheduledFuture: ScheduledFuture<*>? = null
         set(scheduledFuture) {
@@ -39,7 +36,6 @@ class ReplicatedTimerTask(val data: ReplicatedTimerTaskData, val sessionDataSour
             if (cancel) {
                 scheduledFuture!!.cancel(false)
             }
-
         }
 
     var scheduler: ReplicatedTimerTaskScheduler? = null
@@ -53,15 +49,14 @@ class ReplicatedTimerTask(val data: ReplicatedTimerTaskData, val sessionDataSour
         if (scheduledFuture != null) {
             scheduledFuture!!.cancel(false)
         }
-
     }
 
     override fun run() {
         if (data.period < 0L && autoRemoval) {
-            logger.debug("Task with id ${data.taskID} is not recurring, so removing it locally and in the cluster")
+            logger.debug("Task with id ${data.taskID} is not recurring, so removing it")
             removeFromScheduler()
         } else {
-            logger.debug("Task with id ${data.taskID} is recurring, not removing it locally nor in the cluster")
+            logger.debug("Task with id ${data.taskID} is recurring, not removing it")
         }
 
         logger.debug("Firing Timer with id ${data.taskID}")
@@ -94,21 +89,6 @@ class ReplicatedTimerTask(val data: ReplicatedTimerTaskData, val sessionDataSour
             }
         } catch (e: Exception) {
             logger.error("Failure executing timer task", e)
-        }
-    }
-
-    // ToDo : add this back
-    fun beforeRecover() {
-        if (data.period > 0L) {
-            val now = System.currentTimeMillis()
-            var startTime = data.startTime
-
-            while (startTime <= now) {
-                startTime += data.startTime
-                data.startTime = startTime
-            }
-
-            logger.debug("Task with id ${data.taskID} start time $startTime reset to ${data.startTime}")
         }
     }
 }

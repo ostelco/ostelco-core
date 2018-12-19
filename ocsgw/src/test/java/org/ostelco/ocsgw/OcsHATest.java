@@ -61,7 +61,8 @@ public class OcsHATest {
         while (scanning)
         {
             if (System.currentTimeMillis() - startTs > timeoutMs) {
-                throw new RuntimeException("Timeout waiting for port " + port);
+                logger.error("Timeout waiting for port " + port);
+                scanning = false;
             }
             try
             {

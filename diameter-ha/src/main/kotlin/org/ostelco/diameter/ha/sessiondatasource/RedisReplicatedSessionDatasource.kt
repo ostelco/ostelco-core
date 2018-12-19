@@ -140,7 +140,7 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
                 makeLocal(sessionId)
                 return localDataSource.getSessionListener(sessionId)
             }
-            else -> logger.error("Could not get session listener for sessionId $sessionId")
+            else -> logger.info("Could not find existing session listener for sessionId $sessionId")
         }
         return null
     }

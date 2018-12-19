@@ -25,30 +25,18 @@ class ReplicatedTimerTaskScheduler {
         localRunningTasks.remove(taskID)
     }
 
-    fun schedule(task: ReplicatedTimerTask, checkIfAlreadyPresent: Boolean) {
-        logger.debug("Scheduling task with id ${task.data.taskID}")
+    fun schedule(task: ReplicatedTimerTask) {
         task.scheduler = this
-
-        SetTimerAfterTxCommitRunnable(task, this).run()
+        SetTimerTaskRunnable(task, this).run()
     }
 
     fun cancel(taskID: Serializable): ReplicatedTimerTask? {
 
-        logger.debug("Canceling task with timer id $taskID")
-
+        logger.debug("Cancelling task with timer id $taskID")
 
         val task: ReplicatedTimerTask? = localRunningTasks[taskID]
         if (task != null) {
-
-            val setAction = task.action
-            if (setAction != null) {
-                // we have a tx action scheduled to run when tx commits, to set the timer, lets simply cancel it
-                setAction.cancel()
-            } else {
-                // do cancellation
-                val runnable = CancelTimerAfterTxCommitRunnable(task, this)
-                runnable.run()
-            }
+            CancelTimerTaskRunnable(task, this).run()
         }
         return task
     }

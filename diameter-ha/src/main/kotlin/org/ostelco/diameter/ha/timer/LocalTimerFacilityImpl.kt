@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit
 // Basically re-implementation of jdiameter/core/jdiameter/impl/src/main/java/org/jdiameter/common/impl/timer/LocalTimerFacilityImpl.java in Kotlin
 // to get a grip on the functionallity.
 
-class LocalTimerFacility(container: IContainer) : ITimerFacility {
+class LocalTimerFacilityImpl(container: IContainer) : ITimerFacility {
 
     private val logger by logger()
 

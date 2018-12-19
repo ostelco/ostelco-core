@@ -22,8 +22,8 @@ class RedisStorage : ReplicatedStorage {
 
     override fun storeValue(id: String, key: String, value: String) : Boolean {
         asyncCommands.hset(id, key, value)
-        // Keys will be auto deleted from Redis if not updated within 2 days
-        asyncCommands.expire(id, 172800)
+        // Keys will be auto deleted from Redis if not updated within 3 days
+        asyncCommands.expire(id, 259200)
         return true
     }
 
