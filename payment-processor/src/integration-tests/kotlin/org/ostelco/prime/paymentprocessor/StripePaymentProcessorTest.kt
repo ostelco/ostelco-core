@@ -247,7 +247,7 @@ class StripePaymentProcessorTest {
         val resultCreatePlan = paymentProcessor.createPlan(resultCreateProduct.fold({ "" }, { it.id }), 1000, "NOK", PaymentProcessor.Interval.MONTH)
         assertEquals(true, resultCreatePlan.isRight())
 
-        val resultSubscribePlan = paymentProcessor.subscribeToPlan(resultCreatePlan.fold({ "" }, { it.id }), stripeCustomerId)
+        val resultSubscribePlan = paymentProcessor.createSubscription(resultCreatePlan.fold({ "" }, { it.id }), stripeCustomerId)
         assertEquals(true, resultSubscribePlan.isRight())
 
         val resultUnsubscribePlan = paymentProcessor.cancelSubscription(resultSubscribePlan.fold({ "" }, { it.id }), false)
