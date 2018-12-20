@@ -472,7 +472,7 @@ object Neo4jStoreSingleton : GraphStore {
 
         return getProduct(subscriberId, sku).fold(
                 {
-                    Either.left(org.ostelco.prime.paymentprocessor.core.NotFoundError("Product ${sku} is unavailable",
+                    Either.left(org.ostelco.prime.paymentprocessor.core.NotFoundError("Product $sku is unavailable",
                             error = it))
                 },
                 {
