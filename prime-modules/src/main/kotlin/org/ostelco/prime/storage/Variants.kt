@@ -1,11 +1,21 @@
 package org.ostelco.prime.storage
 
 import arrow.core.Either
-import org.ostelco.prime.apierror.ApiError
-import org.ostelco.prime.model.*
+import org.ostelco.prime.model.ApplicationToken
+import org.ostelco.prime.model.Bundle
+import org.ostelco.prime.model.ChangeSegment
+import org.ostelco.prime.model.Offer
+import org.ostelco.prime.model.Plan
+import org.ostelco.prime.model.Product
+import org.ostelco.prime.model.ProductClass
+import org.ostelco.prime.model.PurchaseRecord
+import org.ostelco.prime.model.ScanInformation
+import org.ostelco.prime.model.Segment
+import org.ostelco.prime.model.Subscriber
+import org.ostelco.prime.model.SubscriberState
+import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
-import java.util.*
 
 interface ClientDocumentStore {
 
@@ -89,6 +99,11 @@ interface ClientGraphStore {
      * Set balance after OCS Topup or Consumption
      */
     fun updateBundle(bundle: Bundle): Either<StoreError, Unit>
+
+    /**
+     * Set balance after OCS Topup or Consumption
+     */
+    fun consume(msisdn: String, usedBytes: Long, requestedBytes: Long): Either<StoreError, Pair<Long, Long>>
 
     /**
      * Get msisdn for the given subscription-id
