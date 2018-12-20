@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    implementation project(":jersey-json-schema-validator")
+    implementation project(":sim-administration:jersey-json-schema-validator")
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
     implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
