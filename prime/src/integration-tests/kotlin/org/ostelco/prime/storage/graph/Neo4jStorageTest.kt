@@ -13,12 +13,9 @@ import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
-import org.mockito.Mockito.mock
-import org.ostelco.prime.disruptor.EventProducer
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscriber
-import org.ostelco.prime.ocs.OcsPrimeServiceSingleton
 import org.ostelco.prime.storage.GraphStore
 import org.ostelco.prime.storage.firebase.initFirebaseConfigRegistry
 import org.ostelco.prime.storage.graph.Products.DATA_TOPUP_3GB
@@ -122,8 +119,6 @@ class Neo4jStorageTest {
             Neo4jClient.start()
 
             initDatabase()
-
-            OcsPrimeServiceSingleton.init(mock(EventProducer::class.java))
         }
 
         @JvmStatic

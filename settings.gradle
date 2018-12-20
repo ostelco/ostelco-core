@@ -22,6 +22,7 @@ include ':neo4j-admin-tools'
 include ':neo4j-store'
 include ':ocs'
 include ':ocs-grpc-api'
+include ':ocs-ktc'
 include ':ocsgw'
 include ':ostelco-lib'
 include ':payment-processor'
@@ -55,6 +56,7 @@ project(':neo4j-admin-tools').projectDir = "$rootDir/tools/neo4j-admin-tools" as
 project(':neo4j-store').projectDir = "$rootDir/neo4j-store" as File
 project(':ocs').projectDir = "$rootDir/ocs" as File
 project(':ocs-grpc-api').projectDir = "$rootDir/ocs-grpc-api" as File
+project(':ocs-ktc').projectDir = "$rootDir/ocs-ktc" as File
 project(':ocsgw').projectDir = "$rootDir/ocsgw" as File
 project(':ostelco-lib').projectDir = "$rootDir/ostelco-lib" as File
 project(':payment-processor').projectDir = "$rootDir/payment-processor" as File
