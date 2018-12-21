@@ -404,17 +404,26 @@ function populate_keystore {
 #   https://stackoverflow.com/questions/19552380/no-certificate-matches-private-key-while-generating-p12-file
 #   https://coderwall.com/p/3t4xka/import-private-key-and-certificate-into-java-keystore
 #   https://www.ibm.com/support/knowledgecenter/en/SSWHYP_4.0.0/com.ibm.apimgmt.cmc.doc/task_apionprem_generate_pkcs_certificate.html
+#   https://www.pixelstech.net/article/1450354633-Using-keytool-to-create-certificate-chain
 
-
+#   https://stackoverflow.com/questions/41293778/jetty-javax-net-ssl-sslhandshakeexception-no-cipher-suites-in-common
+#     - claims that both key and cert must have same alias in keystore
 
 # openssl pkcs12 -export -in $(crt_filename $SMDPPLUS "sk")  -inkey $(key_filename $SMDPPLUS "sk")  -chain -CAfile $(crt_filename $SMDPPLUS "ca")  -name "not-really-ostelco.org" -out  mykeystore.pkcs12
 
-cat $(crt_filename $SMDPPLUS "sk") $(crt_filename $SMDPPLUS "ca") > caChain.pem
-openssl pkcs12 -inkey $(key_filename $SMDPPLUS "sk") -in $(crt_filename $SMDPPLUS "sk")  -export -out mykeystore.pkcs12 -CAfile caChain.pem -chain
+# cat $(crt_filename $SMDPPLUS "sk") $(crt_filename $SMDPPLUS "ca") > caChain.pem
+# openssl pkcs12 -inkey $(key_filename $SMDPPLUS "sk") -in $(crt_filename $SMDPPLUS "sk")  -export -out mykeystore.pkcs12 -CAfile caChain.pem -chain
 
-keytool  -noprompt -storepass superSecreet  -v -importkeystore -srckeystore mykeystore.pkcs12  -srcstoretype PKCS12 -destkeystore $(keystore_filename $SMDPPLUS "sk" "keys" )  -deststoretype JKS
+# keytool  -noprompt -storepass superSecreet  -v -importkeystore -srckeystore mykeystore.pkcs12  -srcstoretype PKCS12 -destkeystore $(keystore_filename $SMDPPLUS "sk" "keys" )  -deststoretype JKS
 
 # populate_keystore $SMDPPLUS "sk" "trust"     $(crt_filename $SIM_MANAGER  "ca")
 #  populate_keystore $SMDPPLUS "sk" "keys"      $(crt_filename $SMDPPLUS     "ca")  $(crt_filename $SMDPPLUS  "sk")
 # populate_keystore $SMDPPLUS "sk" "keys"   mykeystore.pkcs12 
                                           
+
+
+# keytool -genkey -keyalg RSA -alias selfsigned -keystore keystore.jks -storepass superSecreet -validity 360 -keysize 2048
+
+# openssl req -new -x509 -newkey rsa:2048 -sha256 -key jetty.key -out jetty.crt
+# openssl pkcs12 -inkey jetty.key -in jetty.crt -export -out idp-browser.p12
+openssl pkcs12 -inkey $(key_filename $SMDPPLUS "sk") -in $(crt_filename $SMDPPLUS "sk")  -export -out mykeystore2.pkcs12
