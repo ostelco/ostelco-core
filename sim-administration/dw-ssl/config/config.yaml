@@ -6,12 +6,12 @@ server:
   applicationConnectors:
     - type: http
       port: 8080
-#    - type: https
-#      port: 8443
+    - type: https
+      port: 8443
 #      keyStorePath: config/example.keystore
 #      keyStorePassword: example
-#      keyStorePath: sk_keys.jks
-#      keyStorePassword: superSecreet
+      keyStorePath: sk_keys.jks
+      keyStorePassword: superSecreet
 #      validateCerts: false
 
 logging:
