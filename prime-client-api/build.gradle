@@ -20,7 +20,6 @@ sourceSets.main.java.srcDir "${swaggerSources.'java-client'.code.outputDir}/src/
 sourceSets.main.resources.srcDir "${swaggerSources.'java-client'.code.outputDir}/src/main/resources"
 
 dependencies {
-  // implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
   swaggerCodegen 'io.swagger:swagger-codegen-cli:2.4.0'
 
   implementation 'javax.annotation:javax.annotation-api:1.3.2'

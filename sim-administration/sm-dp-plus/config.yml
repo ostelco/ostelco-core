@@ -1,8 +1,5 @@
 logging:
   level: INFO
-  loggers:
-    org.ostelco: DEBUG
-
 
 simBatchData: sample-sim-batch-for-sm-dp+.csv
 
@@ -28,4 +25,25 @@ httpClient:
   # If true, the client will encode request entities with gzip
   # content encoding. (Requires gzipEnabled to be true).
   gzipEnabledForRequests: true
+
+
+# Maybe this can help https://stackoverflow.com/questions/35002780/setting-up-ssl-in-dropwizard
+server:
+  type: simple
+  connector:
+    type: https
+    port: 8443
+    jceProvider: Conscrypt
+    # keyStoreType: JKS
+#    keyStorePath: ../certificate-authority-simulated/crypto-artefacts/sm-dp-plus/sk_keys.jks
+#    keyStorePassword: superSecreet
+    keyStoreType: PKCS12
+    keyStorePath: ../certificate-authority-simulated/mykeystore.pkcs12
+    keyStorePassword: superSecreet
+
+    #trustStorePath: ../certificate-authority-simulated/crypto-artefacts/sm-dp-plus/sk_trust.jks
+    #trustStorePassword: superSecreet
+    certAlias: sm-dp-plus_sk.crt
+    validateCerts: false
+    validatePeers: false
 

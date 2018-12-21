@@ -9,7 +9,7 @@ default_bits = 2048
 # This is the default filename to write a private key to. If not specified the
 # key is written to standard output. This can be overridden by the -keyout
 # option.
-default_keyfile = requester/requester.key
+default_keyfile = crypto-artefacts/sm-dp-plus/ck.key
 
 # If this is set to no then if a private key is generated it is not encrypted.
 # This is equivalent to the -nodes command line option. For compatibility
@@ -34,8 +34,7 @@ utf8 = yes
 
 # This specifies the section containing the distinguished name fields to
 # prompt for when generating a certificate or certificate request.
-distinguished_name = my_req_distinguished_name
-
+distinguished_name = not-really-smdp.org
 
 # this specifies the configuration file section containing a list of extensions
 # to add to the certificate request. It can be overridden by the -reqexts
@@ -43,11 +42,11 @@ distinguished_name = my_req_distinguished_name
 # extension section format.
 req_extensions = my_extensions
 
-[ my_req_distinguished_name ]
+[ not-really-smdp.org ]
 C = NO
-ST = OSLO
-L = OSLO
-O  = Open Source Telco
+ST = Oslo
+L = Oslo
+O  = Not really SMDP org
 CN = *.not-really-ostelco.org
 
 [ my_extensions ]
@@ -59,4 +58,3 @@ subjectKeyIdentifier = hash
 DNS.1 = *.not-really-ostelco.org
 # Multiple domains could be listed here, but we're not doing
 # doing that now.
-
