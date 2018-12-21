@@ -36,6 +36,7 @@ class AcceptanceTestSslRoundtrip {
     }
 
 
+    @Ignore
     @Test
     fun handleEncryptedHttp() {
         val client = JerseyClientBuilder().build()
