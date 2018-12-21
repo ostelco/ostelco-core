@@ -19,6 +19,7 @@ dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
 
   implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
+  implementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
 
   runtimeOnly "javax.xml.bind:jaxb-api:$jaxbVersion"
   runtimeOnly "javax.activation:activation:$javaxActivationVersion"
