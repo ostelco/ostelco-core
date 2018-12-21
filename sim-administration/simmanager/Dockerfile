@@ -4,7 +4,6 @@ LABEL maintainer="dev@redotter.sg"
 
 ADD config.yml config.yml
 ADD build/libs/simmanager-uber.jar app.jar
-
 EXPOSE 8080
 EXPOSE 8081
 
