@@ -5,10 +5,10 @@ plugins {
 }
 
 dependencies {
-    implementation project(":jersey-json-schema-validator")
-    implementation project(":simcard-utils")
-    implementation project(":es2plus4dropwizard")
-    implementation project(":ostelco-dropwizard-utils")
+    implementation project(":sim-administration:jersey-json-schema-validator")
+    implementation project(":sim-administration:simcard-utils")
+    implementation project(":sim-administration:es2plus4dropwizard")
+    implementation project(":sim-administration:ostelco-dropwizard-utils")
 
     compile group: 'javax.activation', name: 'javax.activation-api', version: '1.2.0'
 

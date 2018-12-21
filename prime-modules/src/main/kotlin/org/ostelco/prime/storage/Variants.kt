@@ -1,8 +1,19 @@
 package org.ostelco.prime.storage
 
 import arrow.core.Either
-import org.ostelco.prime.apierror.ApiError
-import org.ostelco.prime.model.*
+import org.ostelco.prime.model.ApplicationToken
+import org.ostelco.prime.model.Bundle
+import org.ostelco.prime.model.ChangeSegment
+import org.ostelco.prime.model.Offer
+import org.ostelco.prime.model.Plan
+import org.ostelco.prime.model.Product
+import org.ostelco.prime.model.ProductClass
+import org.ostelco.prime.model.PurchaseRecord
+import org.ostelco.prime.model.ScanInformation
+import org.ostelco.prime.model.Segment
+import org.ostelco.prime.model.Subscriber
+import org.ostelco.prime.model.SubscriberState
+import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 
@@ -90,6 +101,11 @@ interface ClientGraphStore {
     fun updateBundle(bundle: Bundle): Either<StoreError, Unit>
 
     /**
+     * Set balance after OCS Topup or Consumption
+     */
+    fun consume(msisdn: String, usedBytes: Long, requestedBytes: Long): Either<StoreError, Pair<Long, Long>>
+
+    /**
      * Get msisdn for the given subscription-id
      */
     fun getMsisdn(subscriptionId: String): Either<StoreError, String>
@@ -164,28 +180,28 @@ interface AdminGraphStore {
      * @param planId - The name/id of the plan
      * @return Plan details if found
      */
-    fun getPlan(planId: String): Either<ApiError, Plan>
+    fun getPlan(planId: String): Either<StoreError, Plan>
 
     /**
      * Get all plans that a subscriber subscribes to.
      * @param subscriberId - The subscriber
      * @return List with plan details if found
      */
-    fun getPlans(subscriberId: String): Either<ApiError, List<Plan>>
+    fun getPlans(subscriberId: String): Either<StoreError, List<Plan>>
 
     /**
      * Create a new plan.
      * @param plan - Plan details
      * @return Unit value if created successfully
      */
-    fun createPlan(plan: Plan): Either<ApiError, Plan>
+    fun createPlan(plan: Plan): Either<StoreError, Plan>
 
     /**
      * Remove a plan.
      * @param planId - The name/id of the plan
      * @return Unit value if removed successfully
      */
-    fun deletePlan(planId: String): Either<ApiError, Plan>
+    fun deletePlan(planId: String): Either<StoreError, Plan>
 
     /**
      * Set up a subscriber with a subscription to a specific plan.
@@ -194,7 +210,7 @@ interface AdminGraphStore {
      * @param trialEnd - Epoch timestamp for when the trial period ends
      * @return Unit value if the subscription was created successfully
      */
-    fun attachPlan(subscriberId: String, planId: String, trialEnd: Long = 0): Either<ApiError, Unit>
+    fun subscribeToPlan(subscriberId: String, planId: String, trialEnd: Long = 0): Either<StoreError, Plan>
 
     /**
      * Remove the subscription to a plan for a specific subscrber.
@@ -203,7 +219,18 @@ interface AdminGraphStore {
      * @param atIntervalEnd - Remove at end of curren subscription period
      * @return Unit value if the subscription was removed successfully
      */
-    fun detachPlan(subscriberId: String, planId: String, atIntervalEnd: Boolean = false): Either<ApiError, Unit>
+    fun unsubscribeFromPlan(subscriberId: String, planId: String, atIntervalEnd: Boolean = false): Either<StoreError, Plan>
+
+    /**
+     * Adds a purchase record to subscriber on start of or renewal
+     * of a subscription.
+     * @param invoiceId - The reference to the invoice that has been paid
+     * @param subscriberId - The subscriber that got charged
+     * @param sku - The product/plan bought
+     * @param amount - Cost of the product/plan
+     * @param currency - Currency used
+     */
+    fun subscriptionPurchaseReport(invoiceId: String, subscriberId: String, sku: String, amount: Long, currency: String): Either<StoreError, Plan>
 
     // atomic import of Offer + Product + Segment
     fun atomicCreateOffer(
