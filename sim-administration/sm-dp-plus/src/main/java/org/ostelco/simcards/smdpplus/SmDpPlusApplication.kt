@@ -6,6 +6,7 @@ import io.dropwizard.Configuration
 import io.dropwizard.client.JerseyClientConfiguration
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
+import org.conscrypt.OpenSSLProvider
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
 import org.ostelco.dropwizardutils.OpenapiResourceAdderConfig
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
@@ -13,8 +14,11 @@ import org.ostelco.sim.es2plus.SmDpPlusServerResource
 import org.ostelco.sim.es2plus.SmDpPlusService
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
+import java.security.Security
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
+
+
 
 
 /**
@@ -76,6 +80,12 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
  * only etc.
  */
 class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusService {
+
+    companion object {
+        init {
+            Security.addProvider(OpenSSLProvider ())
+        }
+    }
 
     private val log = LoggerFactory.getLogger(javaClass)
 

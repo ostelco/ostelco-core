@@ -13,6 +13,7 @@
 
     <properties>
         <mainClass>org.ostelco.simcards.smdpplus.SmDpPlusApplication</mainClass>
+        <conscrypt.version>1.4.2</conscrypt.version>
     </properties>
 
     <dependencies>
@@ -32,6 +33,12 @@
             <artifactId>simcard-utils</artifactId>
             <groupId>org.ostelco</groupId>
             <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.conscrypt</groupId>
+            <artifactId>conscrypt-openjdk-uber</artifactId>
+            <version>${conscrypt.version}</version>
         </dependency>
 
         <dependency>
