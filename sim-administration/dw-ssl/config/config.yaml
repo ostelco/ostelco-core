@@ -12,7 +12,7 @@ server:
 #      keyStorePassword: example
       keyStorePath: sk_keys.jks
       keyStorePassword: superSecreet
-#      validateCerts: false
+      validateCerts: false
 
 logging:
   level: INFO
