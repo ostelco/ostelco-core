@@ -24,11 +24,24 @@ class AcceptanceTestSslRoundtrip {
     }
 
     @Test
-    fun loginHandlerRedirectsAfterPost() {
+    fun handleNonEncryptedHttp() {
         val client = JerseyClientBuilder().build()
 
         val response = client.target(
                 String.format("http://localhost:%d/ping", 8080))
+                .request()
+                .get(Response::class.java)
+
+        assertThat(response.status).isEqualTo(200)
+    }
+
+
+    @Test
+    fun handleEncryptedHttp() {
+        val client = JerseyClientBuilder().build()
+
+        val response = client.target(
+                String.format("https://localhost:%d/ping", 8443))
                 .request()
                 .get(Response::class.java)
 
