@@ -20,6 +20,8 @@ dependencies {
 
   implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
   implementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+  implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
+
 
   runtimeOnly "javax.xml.bind:jaxb-api:$jaxbVersion"
   runtimeOnly "javax.activation:activation:$javaxActivationVersion"
