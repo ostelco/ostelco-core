@@ -7,8 +7,11 @@ import javax.ws.rs.Path
 import javax.ws.rs.Produces
 import javax.ws.rs.core.MediaType
 import com.fasterxml.jackson.annotation.JsonProperty
+import io.dropwizard.client.HttpClientBuilder
+import io.dropwizard.client.HttpClientConfiguration
 import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.client.JerseyClientConfiguration
+import org.apache.http.client.HttpClient
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
 import javax.ws.rs.client.Client
@@ -18,7 +21,7 @@ fun main() = DwSslApp().run("server", "config/config.yaml")
 
 class DwSslApp : Application<DweSslAppConfig>() {
 
-    lateinit var client: Client
+    lateinit var client: HttpClient
 
     override fun run(
             config: DweSslAppConfig,
@@ -27,7 +30,7 @@ class DwSslApp : Application<DweSslAppConfig>() {
         env.jersey().register(PingResource())
 
 
-       this.client = JerseyClientBuilder(env).using(config.getJerseyClientConfiguration()).build(getName())
+       this.client = HttpClientBuilder(env).using(config.getJerseyClientConfiguration()).build(getName())
     }
 }
 
@@ -35,15 +38,15 @@ class DwSslApp : Application<DweSslAppConfig>() {
 class DweSslAppConfig: Configuration() {
     @Valid
     @NotNull
-     var jerseyClient = JerseyClientConfiguration()
+     var jerseyClient = HttpClientConfiguration()
 
-    @JsonProperty("jerseyClient")
-    fun getJerseyClientConfiguration(): JerseyClientConfiguration {
+    @JsonProperty("httpClient")
+    fun getJerseyClientConfiguration(): HttpClientConfiguration {
         return jerseyClient
     }
 
-    @JsonProperty("jerseyClient")
-    fun setJerseyClientConfiguration(jerseyClient: JerseyClientConfiguration) {
+    @JsonProperty("httpClient")
+    fun setJerseyClientConfiguration(jerseyClient: HttpClientConfiguration) {
         this.jerseyClient = jerseyClient
     }
 }
