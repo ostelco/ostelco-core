@@ -1,20 +1,12 @@
 package org.ostelco.sim.dwssl
 
-import javax.ws.rs.client.Entity.json
-import com.fasterxml.jackson.databind.cfg.ConfigOverride
-import io.dropwizard.Configuration
 import io.dropwizard.client.HttpClientBuilder
-import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.testing.DropwizardTestSupport
-import io.dropwizard.testing.ResourceHelpers
-import org.assertj.core.api.Assertions.assertThat
-import org.junit.*
-import java.net.http.HttpRequest
-import javax.ws.rs.core.Response
-import org.apache.http.client.methods.CloseableHttpResponse
 import org.apache.http.client.methods.HttpGet
-
-
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
 
 
 class AcceptanceTestSslRoundtrip {
@@ -41,7 +33,10 @@ class AcceptanceTestSslRoundtrip {
 
     @Test
     fun handleEncryptedHttp() {
-        val client = HttpClientBuilder(SUPPORT.getEnvironment()).build("test client/http")
+
+
+        val client = HttpClientBuilder(SUPPORT.getEnvironment())
+                .build("test client/http")!!
 
         val httpGet = HttpGet(String.format("https://localhost:%d/ping", 8443))
         val response = client.execute(httpGet)
