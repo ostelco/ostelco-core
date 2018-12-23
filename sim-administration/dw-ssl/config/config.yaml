@@ -8,14 +8,23 @@ server:
       port: 8080
     - type: https
       port: 8443
-#      keyStorePath: config/example.keystore
-#      keyStorePassword: example
       keyStorePath: sk_keys.jks
       keyStorePassword: superSecreet
       validateCerts: false
-#     trustStorePath: sk_trust.jks
-#     trustStorePassword: superSecreet
 
+httpClient:
+  tls:
+    protocol: TLSv1.2
+    verifyHostname: true
+    keyStorePath: sk_keys.jks
+    keyStorePassword: superSecreet
+    keyStoreType: JKS
+    trustStorePath: sk_trust.jks
+    trustStorePassword: superSecreet
+    trustStoreType: JKS
+    trustSelfSignedCertificates: false
+#    supportedProtocols: TLSv1.2, TLSv1.1
+#     supportedCipherSuites: TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
 
 
 logging:
