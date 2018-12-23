@@ -13,6 +13,10 @@ server:
       keyStorePath: sk_keys.jks
       keyStorePassword: superSecreet
       validateCerts: false
+#     trustStorePath: sk_trust.jks
+#     trustStorePassword: superSecreet
+
+
 
 logging:
   level: INFO
