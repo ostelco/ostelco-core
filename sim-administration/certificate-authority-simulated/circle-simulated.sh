@@ -416,7 +416,7 @@ function populate_keystore {
 
 # keytool  -noprompt -storepass superSecreet  -v -importkeystore -srckeystore mykeystore.pkcs12  -srcstoretype PKCS12 -destkeystore $(keystore_filename $SMDPPLUS "sk" "keys" )  -deststoretype JKS
 
-populate_keystore $SMDPPLUS "sk" "trust"     $(crt_filename $SIM_MANAGER  "ca")
+populate_keystore $SMDPPLUS "sk" "trust"     $(crt_filename $SIM_MANAGER  "ca")  $(crt_filename $SMDPPLUS  "ca")
 #  populate_keystore $SMDPPLUS "sk" "keys"      $(crt_filename $SMDPPLUS     "ca")  $(crt_filename $SMDPPLUS  "sk")
 # populate_keystore $SMDPPLUS "sk" "keys"   mykeystore.pkcs12 
                                           
