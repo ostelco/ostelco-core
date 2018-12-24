@@ -22,7 +22,7 @@ httpClient:
     trustStorePath: sk_trust.jks
     trustStorePassword: superSecreet
     trustStoreType: JKS
-    trustSelfSignedCertificates: false
+    trustSelfSignedCertificates: true
 #    supportedProtocols: TLSv1.2, TLSv1.1
 #     supportedCipherSuites: TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
 

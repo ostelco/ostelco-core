@@ -53,14 +53,20 @@ class AcceptanceTestSslRoundtrip {
      * We want something along these lines to work eventually, but for now it fails, the
      * certs are not in order, the cert/trust stores are perhaps not correctly configured
      * or the files they point to don't contain the correct information.
+     *
+     * https://www.baeldung.com/spring-boot-https-self-signed-certificate
      */
     @Ignore
     @Test
     fun handleEncryptedHttp() {
 
 
-        val client = HttpClientBuilder(SUPPORT.getEnvironment())
-                .build("test client/http")!!
+        val client = SUPPORT.getApplication<DwSslApp>().client
+        /* val client = HttpClientBuilder(SUPPORT.getEnvironment())
+                .build("test client/http")!! */
+
+        // Current error: javax.net.ssl.SSLPeerUnverifiedException: Certificate for <localhost> doesn't match any of the subject alternative names: []
+        //  .... perhaps adding some domains in the certificate generation will do the trick?
 
         val httpGet = HttpGet(String.format("https://localhost:%d/ping", 8443))
         val response = client.execute(httpGet)
