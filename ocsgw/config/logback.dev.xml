@@ -13,6 +13,8 @@
   <logger name="jdiameter.statistic" level="INFO"/>
   <logger name="org.jdiameter" level="INFO"/>
   <logger name="io.grpc.netty" level="INFO"/>
+  <logger name="io.lettuce.core" level="INFO" />
+  <logger name="io.netty" level="INFO" />
 
   <root level="DEBUG">
     <appender-ref ref="STDOUT"/>
