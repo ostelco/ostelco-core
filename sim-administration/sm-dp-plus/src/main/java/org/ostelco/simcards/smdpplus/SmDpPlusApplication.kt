@@ -120,7 +120,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
     // TODO; What about the reservation flag?
     override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): String {
         synchronized(entriesLock) {
-            var entry: SmDpSimEntry? =  findMatchingFreeProfile(iccid, profileType)
+            val entry: SmDpSimEntry? =  findMatchingFreeProfile(iccid, profileType)
 
             if (entry == null) {
                 throw SmDpPlusException("Could not find download order matching criteria")
@@ -150,7 +150,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
             return allocateByIccid(iccid, profileType)
         } else if (profileType == null) {
             throw RuntimeException("No iccid, no profile type, so don't know how to allocate sim entry")
-        } else if (!entriesByProfile.containsKey(profileType!!)) {
+        } else if (!entriesByProfile.containsKey(profileType)) {
             throw SmDpPlusException("Unknown profile type $profileType")
         } else {
             return allocateByProfile(profileType)
@@ -162,10 +162,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
      * return null.
      */
     private fun allocateByProfile(profileType: String): SmDpSimEntry? {
-        val entriesForProfile =  entriesByProfile[profileType]
-        if (entriesForProfile == null) {
-            return null
-        }
+        val entriesForProfile = entriesByProfile[profileType] ?: return null
         return  entriesForProfile.find { !it.allocated}
     }
 

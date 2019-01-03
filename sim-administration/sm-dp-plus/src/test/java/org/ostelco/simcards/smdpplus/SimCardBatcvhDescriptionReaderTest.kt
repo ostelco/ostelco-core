@@ -1,7 +1,7 @@
 package org.ostelco.simcards.smdpplus
 
 import io.dropwizard.testing.ResourceHelpers
-import junit.framework.Assert.assertEquals
+import org.junit.Assert.assertEquals
 import org.junit.Ignore
 import org.junit.Test
 import org.ostelco.simcards.IccidBasis

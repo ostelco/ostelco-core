@@ -53,7 +53,7 @@ subprojects {
     neo4jDriverVersion="1.7.2"
     neo4jVersion="3.5.0"
     stripeVersion = "7.10.0"
-    swaggerVersion = "2.0.1"
+    swaggerVersion = "2.0.6"
   }
 }
 

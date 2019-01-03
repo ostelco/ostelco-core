@@ -1,8 +1,8 @@
 package org.ostelco.jsonschema
 
-import junit.framework.Assert.assertNotNull
 import org.json.JSONObject
 import org.json.JSONTokener
+import org.junit.Assert.assertNotNull
 import org.junit.Test
 
 class TestJsonValidation {
