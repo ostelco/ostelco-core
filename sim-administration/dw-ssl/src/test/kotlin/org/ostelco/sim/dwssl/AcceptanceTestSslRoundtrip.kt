@@ -50,24 +50,16 @@ class AcceptanceTestSslRoundtrip {
 
 
     /**
-     * We want something along these lines to work eventually, but for now it fails, the
-     * certs are not in order, the cert/trust stores are perhaps not correctly configured
-     * or the files they point to don't contain the correct information.
-     *
+     * This now works, since we disabled hostname  checking and enabled self-signed
+     * certificates in the config file.  It would be nice if we could enable the
+     * hostname checks in the test, but I don't know exactly how to make that
+     * happen.
+     * 
      * https://www.baeldung.com/spring-boot-https-self-signed-certificate
      */
-    @Ignore
     @Test
     fun handleEncryptedHttp() {
-
-
         val client = SUPPORT.getApplication<DwSslApp>().client
-        /* val client = HttpClientBuilder(SUPPORT.getEnvironment())
-                .build("test client/http")!! */
-
-        // Current error: javax.net.ssl.SSLPeerUnverifiedException: Certificate for <localhost> doesn't match any of the subject alternative names: []
-        //  .... perhaps adding some domains in the certificate generation will do the trick?
-
         val httpGet = HttpGet(String.format("https://localhost:%d/ping", 8443))
         val response = client.execute(httpGet)
         assertThat(response.statusLine.statusCode).isEqualTo(200)
@@ -104,8 +96,10 @@ class AcceptanceTestSslRoundtrip {
 
         val httpClient = DefaultHttpClient(ccm)
 
+
         val urlOverHttps = "https://localhost:8443/ping"
         val getMethod = HttpGet(urlOverHttps)
+
 
         val response = httpClient.execute(getMethod)
         assertThat(response.statusLine.statusCode).isEqualTo(200)
