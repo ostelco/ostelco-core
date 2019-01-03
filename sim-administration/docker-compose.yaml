@@ -1,0 +1,53 @@
+version: "3.7"
+services:
+
+  simadmin:
+    container_name: simmanager
+    build: simmanager
+    ports:
+      - "8080"
+    networks:
+      - frontend
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+
+  sm-dp-plus:
+    container_name: sm-dp-plus
+    build: sm-dp-plus
+    ports:
+      - "8080"
+    networks:
+      - frontend
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+
+  db:
+    container_name: db
+    image: postgres:11.1
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - backend
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+
+
+networks:
+  frontend:
+  backend:
+
+volumes:
+  db-data:

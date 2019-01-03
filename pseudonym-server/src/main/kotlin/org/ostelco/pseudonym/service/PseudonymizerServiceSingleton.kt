@@ -75,6 +75,8 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
     private val subscriberIdPseudonymCache: Cache<String, PseudonymEntity> = CacheBuilder.newBuilder()
             .maximumSize(5000)
             .build()
+    // Used by unit tests
+    private lateinit var localDatastoreHelper: LocalDatastoreHelper
 
     fun init(env: Environment?, bq: BigQuery? = null) {
 
@@ -88,6 +90,13 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
         }
         msisdnPseudonymiser.init(datastore, bigQuery, dateBounds)
         subscriberIdPseudonymiser.init(datastore, bigQuery, dateBounds)
+    }
+
+    fun cleanup() {
+        if (ConfigRegistry.config.datastoreType == "inmemory-emulator") {
+            // Stop the emulator after unit tests.
+            localDatastoreHelper.stop()
+        }
     }
 
     override fun getActivePseudonymsForSubscriberId(subscriberId: String): ActivePseudonyms {
@@ -138,9 +147,9 @@ object PseudonymizerServiceSingleton : PseudonymizerService {
         datastore = when (ConfigRegistry.config.datastoreType) {
             "inmemory-emulator" -> {
                 logger.info("Starting with in-memory datastore emulator")
-                val helper: LocalDatastoreHelper = LocalDatastoreHelper.create(1.0)
-                helper.start()
-                helper.options
+                localDatastoreHelper = LocalDatastoreHelper.create(1.0)
+                localDatastoreHelper.start()
+                localDatastoreHelper.options
             }
             "emulator" -> {
                 // When prime running in GCP by hosted CI/CD, Datastore client library assumes it is running in

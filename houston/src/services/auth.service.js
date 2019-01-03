@@ -93,7 +93,7 @@ class Auth {
   logout() {
     this.clearLocalStorage();
     // navigate to the home route
-    this.webAuth.logout();
+    this.webAuth.logout({returnTo: authConfig.homeUrl});
   }
 
   clearLocalStorage() {

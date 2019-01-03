@@ -108,7 +108,7 @@ spec:
     app: prime
     tier: backend
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: prime
@@ -116,7 +116,11 @@ metadata:
     app: prime
     tier: backend
 spec:
-  replicas: 1
+  replicas: 3
+  selector:
+    matchLabels:
+      app: prime
+      tier: backend
   template:
     metadata:
       labels:

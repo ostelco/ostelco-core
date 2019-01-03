@@ -18,6 +18,7 @@ allprojects {
     maven { url = "http://repository.jboss.org/nexus/content/repositories/releases/" }
     maven { url = "https://maven.repository.redhat.com/ga/" }
     maven { url = "http://clojars.org/repo/" }
+    maven { url "https://jitpack.io" }
   }
 
   jacoco {
@@ -34,36 +35,37 @@ subprojects {
   ext {
     assertJVersion = "3.11.1"
     arrowVersion = "0.8.1"
-    beamVersion = "2.8.0"
+    beamVersion = "2.9.0"
     dropwizardVersion = "1.3.7"
-    firebaseVersion = "6.5.0"
-    googleCloudVersion = "1.53.0"
-    grpcVersion = "1.16.1"
+    firebaseVersion = "6.6.0"
+    googleCloudVersion = "1.56.0"
+    grpcVersion = "1.17.1"
     guavaVersion = "27.0.1-jre"
-    jacksonVersion = "2.9.7"
+    jacksonVersion = "2.9.8"
     javaxActivationVersion = "1.1.1"
     // Keeping it version 1.16.1 to be consistent with grpc via PubSub client lib
     // Keeping it version 1.16.1 to be consistent with netty via Firebase lib
     jaxbVersion = "2.3.1"
     junit5Version = "5.3.2"
-    kotlinVersion = "1.3.10"
+    kotlinVersion = "1.3.11"
     kotlinXCoroutinesVersion = "1.0.1"
     mockitoVersion = "2.23.4"
-    neo4jDriverVersion="1.7.1"
+    neo4jDriverVersion="1.7.2"
     neo4jVersion="3.5.0"
-    stripeVersion = "7.8.0"
+    stripeVersion = "7.10.0"
+    swaggerVersion = "2.0.6"
   }
 }
 
-//dependencyUpdates.resolutionStrategy {
-//  componentSelection { rules ->
-//    rules.all { ComponentSelection selection ->
-//      boolean rejected = ['alpha', 'beta', 'rc', 'cr', 'm', 'redhat'].any { qualifier ->
-//        selection.candidate.version ==~ /(?i).*[.-]${qualifier}[.\d-]*/
-//      }
-//      if (rejected) {
-//        selection.reject('Release candidate')
-//      }
-//    }
-//  }
-//}
+dependencyUpdates.resolutionStrategy {
+  componentSelection { rules ->
+    rules.all { ComponentSelection selection ->
+      boolean rejected = ['alpha', 'beta', 'rc', 'cr', 'm', 'redhat'].any { qualifier ->
+        selection.candidate.version ==~ /(?i).*[.-]${qualifier}[.\d-]*/
+      }
+      if (rejected) {
+        selection.reject('Release candidate')
+      }
+    }
+  }
+}

@@ -38,4 +38,4 @@ fun createSubscription(email: String): String {
 }
 
 private val random = Random()
-fun randomInt(): Int = random.nextInt(999)
+fun randomInt(): Int = random.nextInt(99999)

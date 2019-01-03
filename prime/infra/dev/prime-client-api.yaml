@@ -45,6 +45,57 @@ paths:
           description: "User not found."
       security:
         - auth0_jwt: []
+  "/customer/subscriberState":
+    get:
+      description: "Get state of the user."
+      produces:
+        - application/json
+      operationId: "getSubscriberState"
+      responses:
+        200:
+          description: "Successfully retrieved the state."
+          schema:
+            $ref: '#/definitions/SubscriberState'
+        404:
+          description: "No state information available for this user."
+      security:
+        - auth0_jwt: []
+  "/customer/new-ekyc-scanId":
+    get:
+      description: "Get a new Id for eKYC scanning."
+      produces:
+        - application/json
+      operationId: "newEKYCScanId"
+      responses:
+        200:
+          description: "Successfully retrieved new ScanId."
+          schema:
+            $ref: '#/definitions/ScanInformation'
+        404:
+          description: "User not found."
+      security:
+        - auth0_jwt: []
+  "/customer/scanStatus":
+    get:
+      description: "Get status of eKYC scan."
+      produces:
+        - application/json
+      operationId: "getScanStatus"
+      parameters:
+        - name: scanId
+          in: path
+          description: "Id of the scan being queried"
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Successfully retrieved Scan information."
+          schema:
+            $ref: '#/definitions/ScanInformation'
+        404:
+          description: "Scan not found."
+      security:
+        - auth0_jwt: []
   "/profile":
     get:
       description: "Get profile for the user (email-id present in the bearer token)."
@@ -675,14 +726,14 @@ definitions:
         type: integer
         default: 1
         minimum: 1
-      planId:
-        description: "Stripe plan id"
-        type: string
-        default: ""
-      productId:
-        description: "Stripe product id"
-        type: string
-        default: ""
+      properties:
+        description: "Free form key/value pairs"
+        type: object
+        additionalProperties: true
+      presentation:
+        description: "Pretty print version of plan"
+        type: object
+        additionalProperties: true
     required:
       - name
       - price
@@ -703,6 +754,42 @@ definitions:
       variables:
         description: "GraphQL query variables."
         type: object
+  SubscriberState:
+    type: object
+    properties:
+      id:
+        description: "User Id"
+        type: string
+      status:
+        description: "Current status of the subscriber"
+        type: string
+      modifiedTimestamp:
+        description: "Last modified time for the status (Unix timestamp)"
+        type: integer
+        format: int64
+    required:
+      - id
+      - status
+      - modifiedTimestamp
+  ScanInformationList:
+    type: array
+    items:
+      $ref: '#/definitions/ScanInformation'
+  ScanInformation:
+    type: object
+    properties:
+      scanId:
+        description: "New scan Id for eKYC"
+        type: string
+      status:
+        description: "The status of the scan"
+        type: string
+      scanResult:
+        description: "The result from the vendor"
+        type: object
+    required:
+      - scanId
+      - status
 securityDefinitions:
   auth0_jwt:
     authorizationUrl: ""
