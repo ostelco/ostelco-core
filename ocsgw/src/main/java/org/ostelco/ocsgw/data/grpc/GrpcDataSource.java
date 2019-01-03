@@ -434,6 +434,11 @@ public class GrpcDataSource implements DataSource {
             return new CreditControlAnswer(new ArrayList<>());
         }
 
+        // ToDo : Set correct return code
+        if (response.getResultCode() == ResultCode.DIAMETER_USER_UNKNOWN) {
+            LOG.info("User unknown");
+        }
+
         final LinkedList<MultipleServiceCreditControl> multipleServiceCreditControls = new LinkedList<>();
         for (org.ostelco.ocs.api.MultipleServiceCreditControl mscc : response.getMsccList()) {
             multipleServiceCreditControls.add(convertMSCC(mscc));

@@ -89,6 +89,7 @@ message MultipleServiceCreditControl {
     FinalUnitIndication finalUnitIndication = 6;
     uint32 validityTime = 7;
     ReportingReason reportingReason = 8;
+    ResultCode resultCode = 9;
 }
 
 message PsInformation {
@@ -113,6 +114,7 @@ message CreditControlAnswerInfo {
   string requestId = 1;
   string msisdn = 2;
   repeated MultipleServiceCreditControl mscc = 3;
+  ResultCode resultCode = 4;
 }
 
 
