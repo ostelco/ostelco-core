@@ -3,10 +3,11 @@ package org.ostelco.simcards.smdpplus
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.dropwizard.Application
 import io.dropwizard.Configuration
-import io.dropwizard.client.JerseyClientConfiguration
+import io.dropwizard.client.HttpClientBuilder
+import io.dropwizard.client.HttpClientConfiguration
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
-import org.conscrypt.OpenSSLProvider
+import org.apache.http.client.HttpClient
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
 import org.ostelco.dropwizardutils.OpenapiResourceAdderConfig
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
@@ -14,11 +15,12 @@ import org.ostelco.sim.es2plus.SmDpPlusServerResource
 import org.ostelco.sim.es2plus.SmDpPlusService
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
-import java.security.Security
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
-
-
+import javax.ws.rs.GET
+import javax.ws.rs.Path
+import javax.ws.rs.Produces
+import javax.ws.rs.core.MediaType
 
 
 /**
@@ -49,18 +51,25 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         // TODO: application initialization
     }
 
-    override fun run(configuration: SmDpPlusAppConfiguration,
-                     environment: Environment) {
+    lateinit var client: HttpClient
 
-        val jerseyEnvironment = environment.jersey()
+    override fun run(config: SmDpPlusAppConfiguration,
+                     env: Environment) {
 
-        addOpenapiResourceToJerseyEnv(jerseyEnvironment, configuration.openApi)
+        val jerseyEnvironment = env.jersey()
+
+        addOpenapiResourceToJerseyEnv(jerseyEnvironment, config.openApi)
         addEs2PlusDefaultFiltersAndInterceptors(jerseyEnvironment)
 
-        val simEntriesIterator = SmDpSimEntryIterator(FileInputStream(configuration.simBatchData))
+        val simEntriesIterator = SmDpSimEntryIterator(FileInputStream(config.simBatchData))
         val smdpPlusService: SmDpPlusService = SmDpPlusEmulator(simEntriesIterator)
 
         jerseyEnvironment.register(SmDpPlusServerResource(smDpPlus = smdpPlusService))
+
+        // XXX Only until we're sure the client stuff works.
+        jerseyEnvironment.register(PingResource())
+
+        this.client = HttpClientBuilder(env).using(config.httpClientConfiguration).build(getName())
     }
 
 
@@ -74,6 +83,18 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 }
 
 
+// XXX Can be removed once we're sure the client works well with
+//     encryption, and a test for that has been extended to work
+//     also for something other than ping.
+@Path("/ping")
+class PingResource {
+
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    fun ping(): String = "pong"
+}
+
+
 /**
  * A very reduced  functionality SmDpPlus, essentially handling only
  * happy day scenarios, and not particulary efficient, and in-memory
@@ -81,11 +102,13 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
  */
 class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusService {
 
+    /*
     companion object {
         init {
-            Security.addProvider(OpenSSLProvider ())
+            Security.addProvider(OpenSSLProvider())
         }
     }
+    */
 
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -120,7 +143,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
     // TODO; What about the reservation flag?
     override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): String {
         synchronized(entriesLock) {
-            val entry: SmDpSimEntry? =  findMatchingFreeProfile(iccid, profileType)
+            val entry: SmDpSimEntry? = findMatchingFreeProfile(iccid, profileType)
 
             if (entry == null) {
                 throw SmDpPlusException("Could not find download order matching criteria")
@@ -163,7 +186,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
      */
     private fun allocateByProfile(profileType: String): SmDpSimEntry? {
         val entriesForProfile = entriesByProfile[profileType] ?: return null
-        return  entriesForProfile.find { !it.allocated}
+        return entriesForProfile.find { !it.allocated }
     }
 
     /**
@@ -171,7 +194,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
      * profile  associated with that ICCID matches the expected profile type
      * (if not null, null will match anything).
      */
-    private fun allocateByIccid(iccid: String, profileType: String?) : SmDpSimEntry {
+    private fun allocateByIccid(iccid: String, profileType: String?): SmDpSimEntry {
         if (!entriesByIccid.containsKey(iccid)) {
             throw RuntimeException("Attempt to allocate nonexisting iccid $iccid")
         }
@@ -234,16 +257,19 @@ class SmDpPlusAppConfiguration : Configuration() {
     @JsonProperty("simBatchData")
     var simBatchData: String = ""
 
-    /**
-     * Configuration of the jersey client that is used
-     * for the ES2+ callbacks.
-     */
     @Valid
     @NotNull
-    @JsonProperty
-    private val httpClient = JerseyClientConfiguration()
+    @JsonProperty("httpClient")
+    var httpClientConfiguration = HttpClientConfiguration()
 
-    fun getJerseyClientConfiguration(): JerseyClientConfiguration {
-        return httpClient
+    /*
+    @JsonProperty("httpClient")
+    fun getJerseyClientConfiguration(): HttpClientConfiguration {
+        return httpClientConfiguration
     }
+
+    @JsonProperty("httpClient")
+    fun setJerseyClientConfiguration(config: HttpClientConfiguration) {
+        this.httpClientConfiguration = config
+    } */
 }

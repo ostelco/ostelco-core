@@ -28,6 +28,9 @@ class SimCardBatchDescriptorReaderTest {
      * but when new testdata needs to be generated, it should be un-ignored, and run,
      * then the generated data should be copied to wherever it should be stored, and
      * ordinary testing can continue.
+     *
+     * XXX Take this out of the test code, make it into an utility app that can
+     *     be easily run from the command line.
      */
     @Test
     @Ignore
