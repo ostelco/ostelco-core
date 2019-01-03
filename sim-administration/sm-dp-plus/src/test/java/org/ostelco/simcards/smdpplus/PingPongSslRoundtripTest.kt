@@ -73,7 +73,7 @@ class PingPongSslRoundtripTest {
      */
     @Test
     @Throws(IOException::class, GeneralSecurityException::class)
-    fun givenAcceptingAllCertificates_whenHttpsUrlIsConsumed_thenException() {
+    fun testUsingExtremelyPermissiveHandConiguredClient() {
         val acceptingTrustStrategy = object: TrustStrategy {
             @Throws(CertificateException::class)
             override fun isTrusted(chain: Array<X509Certificate>, authType: String): Boolean = true
