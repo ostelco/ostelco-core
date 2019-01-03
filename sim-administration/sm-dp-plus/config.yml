@@ -38,21 +38,25 @@ server:
       port: 8080
     - type: https
       port: 8443
+      keyStorePath: sk_keys.jks
+      keyStorePassword: superSecreet
+      validateCerts: false
+
 #    jceProvider: Conscrypt
 # keyStoreType: JKS
 # keyStorePath: ../certificate-authority-simulated/crypto-artefacts/sm-dp-plus/keystore.jks
 # keyStorePassword: superSecreet
 #    keyStorePath: ../certificate-authority-simulated/crypto-artefacts/sm-dp-plus/sk_keys.jks
 #    keyStorePassword: superSecreet
-      keyStoreType: JKS
-      keyStorePath: example.keystore
-      keyStorePassword: example
+#      keyStoreType: JKS
+#      keyStorePath: example.keystore
+#      keyStorePassword: example
     # keyStorePassword: superSecreet
     #trustStorePath: ../certificate-authority-simulated/crypto-artefacts/sm-dp-plus/sk_trust.jks
     #trustStorePassword: superSecreet
-      certAlias: sm-dp-plus_sk.crt
-      validateCerts: false
-      validatePeers: false
+      #certAlias: sm-dp-plus_sk.crt
+      #validateCerts: false
+      #validatePeers: false
 
 
 
