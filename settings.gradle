@@ -31,6 +31,12 @@ include ':prime-modules'
 include ':prime-client-api'
 include ':pseudonym-server'
 include ':slack'
+include ':sim-administration:es2plus4dropwizard'
+include ':sim-administration:jersey-json-schema-validator'
+include ':sim-administration:ostelco-dropwizard-utils'
+include ':sim-administration:simcard-utils'
+include ':sim-administration:simmanager'
+include ':sim-administration:sm-dp-plus'
 include ':imei-lookup'
 
 
@@ -65,4 +71,10 @@ project(':prime-modules').projectDir = "$rootDir/prime-modules" as File
 project(':prime-client-api').projectDir = "$rootDir/prime-client-api" as File
 project(':pseudonym-server').projectDir = "$rootDir/pseudonym-server" as File
 project(':slack').projectDir = "$rootDir/slack" as File
+project(':sim-administration:es2plus4dropwizard').projectDir = "$rootDir/sim-administration/es2plus4dropwizard" as File
+project(':sim-administration:jersey-json-schema-validator').projectDir = "$rootDir/sim-administration/jersey-json-schema-validator" as File
+project(':sim-administration:ostelco-dropwizard-utils').projectDir = "$rootDir/sim-administration/ostelco-dropwizard-utils" as File
+project(':sim-administration:simcard-utils').projectDir = "$rootDir/sim-administration/simcard-utils" as File
+project(':sim-administration:simmanager').projectDir = "$rootDir/sim-administration/simmanager" as File
+project(':sim-administration:sm-dp-plus').projectDir = "$rootDir/sim-administration/sm-dp-plus" as File
 project(':imei-lookup').projectDir = "$rootDir/imei-lookup" as File

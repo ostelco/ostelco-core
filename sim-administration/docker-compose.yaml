@@ -1,11 +1,9 @@
-version: "3"
+version: "3.7"
 services:
 
   simadmin:
-    build:
-      context: simmanager
-      dockerfile: dockerfiles/Dockerfile.simadmin
-    image: ostelco/simadmin
+    container_name: simmanager
+    build: simmanager
     ports:
       - "8080"
     networks:
@@ -20,10 +18,8 @@ services:
 
 
   sm-dp-plus:
-    build:
-      context: sm-dp-plus
-      dockerfile: dockerfiles/Dockerfile.sm-dp-plus
-    image: ostelco/sm-dp-plus
+    container_name: sm-dp-plus
+    build: sm-dp-plus
     ports:
       - "8080"
     networks:
@@ -38,6 +34,7 @@ services:
 
 
   db:
+    container_name: db
     image: postgres:11.1
     volumes:
       - db-data:/var/lib/postgresql/data

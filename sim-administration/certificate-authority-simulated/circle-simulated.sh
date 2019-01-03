@@ -9,6 +9,10 @@
 ###
 
 
+## To reset the crypto artefacts repository, start script by setting RESET_CRYPTO_ARTEFACTS variable
+## to a non-null value, e.g. "RESET_CRYPTO_ARTEFACTS=yes ./circle-simulated.sh"
+
+
 ##
 ## Key length. Should be 2048, but may be smaller during testing.
 ##
@@ -36,14 +40,26 @@ done
 ## misc keys, certificats and csrs.
 ##
 
-ARTEFACT_ROOT=crypto-artefacts
-if [[ -r "$ARTEFACT_ROOT" ]] ; then 
-   rm -f $ARTEFACT_ROOT
-fi
 
-ACTORS="sim-mgr sm-dp-plus"
+ARTEFACT_ROOT=crypto-artefacts
+
+
+# Reset if requested
+if [[ -n "$RESET_CRYPTO_ARTEFACTS" ]] ; then 
+    if [[ -f "$ARTEFACT_ROOT" ]] ; then 
+	rm -rf $ARTEFACT_ROOT
+    fi
+fi
+    
+SIM_MANAGER="sim-mgr"
+SMDPPLUS="sm-dp-plus"
+
+ACTORS="$SIM_MANAGER $SMDPPLUS"
+
 for  x in $ACTORS ; do 
-  mkdir -p "$ARTEFACT_ROOT/$x"
+    if [[ ! -d "$ARTEFACT_ROOT/$x" ]] ; then 
+        mkdir -p "$ARTEFACT_ROOT/$x"
+    fi
 done
 
 
@@ -73,6 +89,15 @@ function generate_filename {
     echo "${ARTEFACT_ROOT}/${actor}/${role}.${suffix}"
 }
 
+
+
+function keystore_filename {
+    local actor=$1
+    local role=$2
+    local keystore_type=$3
+    echo $(generate_filename $actor "${role}_${keystore_type}" "jks" )
+}
+
 function csr_filename {
     local actor=$1
     local role=$2
@@ -84,6 +109,13 @@ function crt_filename {
     local actor=$1
     local role=$2
     echo $(generate_filename $actor $role "crt" )
+}
+
+
+function combined_crt_filename {
+    local actor=$1
+    local role=$2
+    echo $(generate_filename $actor "combined_$role" "crt" )
 }
 
 
@@ -196,7 +228,6 @@ EOF
 ##
 
 
-
 function self_signed_cert {
     local actor=$1
     local role=$2
@@ -210,18 +241,22 @@ function self_signed_cert {
     local keyfile=$(key_filename $actor $role)
     local cert_config=$(crt_config_filename $actor $role)
     local crt_file=$(crt_filename $actor $role)
-    
-    generate_cert_config "$cert_config" "$keyfile" "$distinguished_name" "$country" "$state" "$location" "$organization" "$common_name"
-    openssl req \
-        -config $cert_config \
-	-new -x509 -sha256  \
-        -keyout $keyfile \
-        -out $crt_file
+
+    if [[ -f "$crt_file"  ]] ; then 
+	echo "Self signed certificate file '$crt_file' already exist, not creating again"
+    else 
+	generate_cert_config "$cert_config" "$keyfile" "$distinguished_name" "$country" "$state" "$location" "$organization" "$common_name"
+	openssl req \
+	    -config $cert_config \
+	    -new -x509 -sha256  \
+	    -keyout $keyfile \
+	    -out $crt_file
+    fi
 }
 
 
-self_signed_cert "sim-mgr"    "ca" "not-really-ostelco.org" "NO" "Oslo" "Oslo" "Not really ostelco" "*.not-really-ostelco.org" 
-self_signed_cert "sm-dp-plus" "ca" "not-really-smdp.org"    "NO" "Oslo" "Oslo" "Not really SMDP org" "*.not-really-ostelco.org" 
+self_signed_cert "$SIM_MANAGER"  "ca" "not-really-ostelco.org" "NO" "Oslo" "Oslo" "Not really ostelco" "*.not-really-ostelco.org" 
+self_signed_cert $SMDPPLUS       "ca" "not-really-smdp.org"    "NO" "Oslo" "Oslo" "Not really SMDP org" "*.not-really-ostelco.org" 
 
 ##
 ## Now generate all the CSRs for both actors.
@@ -242,16 +277,19 @@ function generate_csr {
     local cert_config=$(crt_config_filename $actor $role)
     local csr_file=$(csr_filename $actor $role)
     
-    generate_cert_config "$cert_config" "$keyfile" "$distinguished_name" "$country" "$state" "$location" "$organization" "$common_name"
-    openssl req -new -out "$csr_file" -config "$cert_config"
+    if [[ -f "$csr_file"  ]] ; then 
+	echo "Certificate signing request (CSR) file  file '$csr_file' already exist, not creating again"
+    else 
+	generate_cert_config "$cert_config" "$keyfile" "$distinguished_name" "$country" "$state" "$location" "$organization" "$common_name"
+	openssl req -new -out "$csr_file" -config "$cert_config"
+    fi
 }
 
 
-generate_csr "sim-mgr" "ck" "not-really-ostelco.org" "NO" "Oslo" "Oslo" "Not really ostelco" "*.not-really-ostelco.org" 
-generate_csr "sim-mgr" "sk" "not-really-ostelco.org" "NO" "Oslo" "Oslo" "Not really ostelco" "*.not-really-ostelco.org" 
-
-generate_csr "sm-dp-plus" "ck" "not-really-smdp.org" "NO" "Oslo" "Oslo" "Not really SMDP org" "*.not-really-ostelco.org" 
-generate_csr "sm-dp-plus" "sk" "not-really-smdp.org" "NO" "Oslo" "Oslo" "Not really SMDP org" "*.not-really-ostelco.org" 
+generate_csr "$SIM_MANAGER" "ck" "not-really-ostelco.org" "NO" "Oslo" "Oslo" "Not really ostelco" "*.not-really-ostelco.org" 
+generate_csr "$SIM_MANAGER" "sk" "not-really-ostelco.org" "NO" "Oslo" "Oslo" "Not really ostelco" "*.not-really-ostelco.org" 
+generate_csr $SMDPPLUS "ck" "not-really-smdp.org" "NO" "Oslo" "Oslo" "Not really SMDP org" "*.not-really-ostelco.org" 
+generate_csr $SMDPPLUS "sk" "not-really-smdp.org" "NO" "Oslo" "Oslo" "Not really SMDP org" "*.not-really-ostelco.org" 
 
 
 ##
@@ -269,35 +307,114 @@ function sign_csr {
     local ca_crt=$(crt_filename $signer_actor $signer_role)
     local ca_key=$(key_filename $signer_actor $signer_role)
 
-    if [[ ! -r "$csr_file" ]] ; then 
+    if [[ ! -f "$csr_file" ]] ; then 
 	(>&2 echo "$0: Error. Could not find csr  $csr_file")
 	exit 1
     fi
 
-    if [[ ! -r "$ca_crt" ]] ; then 
+    if [[ ! -f "$ca_crt" ]] ; then 
 	(>&2 echo "$0: Error. Could not find CA crt  $csr_file")
 	exit 1
     fi
 
-    echo openssl x509 -req -in $csr_file -CA $ca_crt -CAkey $ca_key -CAcreateserial -out $crt_file
-    openssl x509 -req -in $csr_file -CA $ca_crt -CAkey $ca_key -CAcreateserial -out $crt_file
-    
-    if [[ ! -r "$crt_file" ]] ; then
+    if [[ ! -f "$crt_file" ]] ; then  
+	openssl x509 -req -in $csr_file -CA $ca_crt -CAkey $ca_key -CAcreateserial -out $crt_file
+    else
+	echo "Signed certificate already exists in file $crt_file, not creating again"
+    fi
+    if [[ ! -f "$crt_file" ]] ; then
 	echo "Could not create signed certificate file $crt_file"
     fi
+}
 
+
+echo "Sign server certificates using own CA"
+sign_csr "$SIM_MANAGER"      "sk" "$SIM_MANAGER"      "ca"
+sign_csr $SMDPPLUS           "sk"  $SMDPPLUS          "ca"
+
+
+echo "Countersign client certificates"
+sign_csr "$SIM_MANAGER"  "ck" "$SIM_MANAGER"      "ca" 
+sign_csr $SMDPPLUS       "ck"  $SMDPPLUS          "ca"
+
+
+
+##
+##  Generate keytool files based on the keys stored
+##  in the crypto storage.
+##
+
+#
+#  Generate and/or populate a keystore file with 
+#  the certificates given as fourth argument and onwards.
+#  First argument is the actor managing the keystore, the
+#  second is the role for which it is used (e.g. "client keys")
+#  third argument is either "trust" or "keys" depending on if this
+#  keystore is used in a "trustkeys" or "secretkeys" role.
+#
+#  Usage:
+# 
+#     populate_keystore "sim-manager" "ck" "trust" foobar.crt  bartz.crt ..
+#
+#
+function populate_keystore {
+    local actor=$1 ; shift
+    local role=$1  ; shift
+    local keystore_type=$1; shift
+    local certs="$*"
+    
+    local keystore_filename=$(keystore_filename $actor $role $keystore_type)
+    local common_password="superSecreet"
+
+
+# keytool -import -trustcacerts -alias mydomain -file mydomain.crt -keystore keystore.jks
+
+    echo "Creating keystore $keystore_filename"
+    for cert in $certs ; do 
+	echo "     Importing cert $cert"
+	keytool  \
+             -noprompt -storepass "${common_password}"  \
+             -importcert -trustcacerts -alias "$(basename $(dirname $cert))_$(basename $cert)" \
+             -file $cert -keystore $keystore_filename
+    done
 }
 
 
 
-
-echo "Sign server certificates using own CA"
-sign_csr "sim-mgr"      "sk" "sim-mgr"      "ca"
-sign_csr "sm-dp-plus"   "sk" "sm-dp-plus"   "ca"
-
-
-echo "Countersign client certificates"
-sign_csr "sim-mgr"      "ck" "sim-mgr"      "ca" 
-sign_csr "sm-dp-plus"   "ck" "sm-dp-plus"   "ca"
+#
+# Generate all the eight kinds of combinations that can be made.
+# One trust/keys pair for each of the four {sim_manager, smdpplus} x {ck, sk}
+# combinations.
+#
 
 
+
+# populate_keystore $SIM_MANAGER "ck" "trust"  $(crt_filename $SMDPPLUS    "ca")
+# populate_keystore $SIM_MANAGER "ck" "keys"   $(crt_filename $SIM_MANAGER "sk")
+# populate_keystore $SIM_MANAGER "sk" "trust"  $(crt_filename $SMDPPLUS    "ca")
+# populate_keystore $SIM_MANAGER "sk" "keys"   $(crt_filename $SIM_MANAGER "sk")
+
+
+# populate_keystore $SMDPPLUS "ck" "trust"     $(crt_filename $SIM_MANAGER  "ca")
+# populate_keystore $SMDPPLUS "ck" "keys"      $(crt_filename $SMDPPLUS     "sk")
+
+
+# Maybe this is the clue I need?
+#   https://docs.oracle.com/cd/E19509-01/820-3503/ggfhb/index.html
+#   https://stackoverflow.com/questions/19552380/no-certificate-matches-private-key-while-generating-p12-file
+#   https://coderwall.com/p/3t4xka/import-private-key-and-certificate-into-java-keystore
+#   https://www.ibm.com/support/knowledgecenter/en/SSWHYP_4.0.0/com.ibm.apimgmt.cmc.doc/task_apionprem_generate_pkcs_certificate.html
+
+
+
+# openssl pkcs12 -export -in $(crt_filename $SMDPPLUS "sk")  -inkey $(key_filename $SMDPPLUS "sk")  -chain -CAfile $(crt_filename $SMDPPLUS "ca")  -name "not-really-ostelco.org" -out  mykeystore.pkcs12
+
+cat $(crt_filename $SMDPPLUS "sk") $(crt_filename $SMDPPLUS "ca") > caChain.pem
+openssl pkcs12 -inkey $(key_filename $SMDPPLUS "sk") -in $(crt_filename $SMDPPLUS "sk")  -export -out mykeystore.pkcs12 -CAfile caChain.pem -chain
+
+keytool  -noprompt -storepass superSecreet  -v -importkeystore -srckeystore mykeystore.pkcs12  -srcstoretype PKCS12 -destkeystore $(keystore_filename $SMDPPLUS "sk" "keys" )  -deststoretype JKS
+
+# populate_keystore $SMDPPLUS "sk" "trust"     $(crt_filename $SIM_MANAGER  "ca")
+#  populate_keystore $SMDPPLUS "sk" "keys"      $(crt_filename $SMDPPLUS     "ca")  $(crt_filename $SMDPPLUS  "sk")
+# populate_keystore $SMDPPLUS "sk" "keys"   mykeystore.pkcs12 
+                                          

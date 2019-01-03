@@ -6,6 +6,7 @@ import io.dropwizard.Configuration
 import io.dropwizard.client.JerseyClientConfiguration
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
+import org.conscrypt.OpenSSLProvider
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
 import org.ostelco.dropwizardutils.OpenapiResourceAdderConfig
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
@@ -13,8 +14,11 @@ import org.ostelco.sim.es2plus.SmDpPlusServerResource
 import org.ostelco.sim.es2plus.SmDpPlusService
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
+import java.security.Security
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
+
+
 
 
 /**
@@ -77,6 +81,12 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
  */
 class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusService {
 
+    companion object {
+        init {
+            Security.addProvider(OpenSSLProvider ())
+        }
+    }
+
     private val log = LoggerFactory.getLogger(javaClass)
 
     /**
@@ -110,7 +120,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
     // TODO; What about the reservation flag?
     override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): String {
         synchronized(entriesLock) {
-            var entry: SmDpSimEntry? =  findMatchingFreeProfile(iccid, profileType)
+            val entry: SmDpSimEntry? =  findMatchingFreeProfile(iccid, profileType)
 
             if (entry == null) {
                 throw SmDpPlusException("Could not find download order matching criteria")
@@ -140,7 +150,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
             return allocateByIccid(iccid, profileType)
         } else if (profileType == null) {
             throw RuntimeException("No iccid, no profile type, so don't know how to allocate sim entry")
-        } else if (!entriesByProfile.containsKey(profileType!!)) {
+        } else if (!entriesByProfile.containsKey(profileType)) {
             throw SmDpPlusException("Unknown profile type $profileType")
         } else {
             return allocateByProfile(profileType)
@@ -152,10 +162,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
      * return null.
      */
     private fun allocateByProfile(profileType: String): SmDpSimEntry? {
-        val entriesForProfile =  entriesByProfile[profileType]
-        if (entriesForProfile == null) {
-            return null
-        }
+        val entriesForProfile = entriesByProfile[profileType] ?: return null
         return  entriesForProfile.find { !it.allocated}
     }
 
