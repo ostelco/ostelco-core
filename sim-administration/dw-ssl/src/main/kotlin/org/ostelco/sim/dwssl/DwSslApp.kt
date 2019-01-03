@@ -9,12 +9,9 @@ import javax.ws.rs.core.MediaType
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.dropwizard.client.HttpClientBuilder
 import io.dropwizard.client.HttpClientConfiguration
-import io.dropwizard.client.JerseyClientBuilder
-import io.dropwizard.client.JerseyClientConfiguration
 import org.apache.http.client.HttpClient
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
-import javax.ws.rs.client.Client
 
 
 fun main() = DwSslApp().run("server", "config/config.yaml")
@@ -38,16 +35,16 @@ class DwSslApp : Application<DweSslAppConfig>() {
 class DweSslAppConfig: Configuration() {
     @Valid
     @NotNull
-     var jerseyClient = HttpClientConfiguration()
+     var httpClientConfiguration = HttpClientConfiguration()
 
     @JsonProperty("httpClient")
     fun getJerseyClientConfiguration(): HttpClientConfiguration {
-        return jerseyClient
+        return httpClientConfiguration
     }
 
     @JsonProperty("httpClient")
-    fun setJerseyClientConfiguration(jerseyClient: HttpClientConfiguration) {
-        this.jerseyClient = jerseyClient
+    fun setJerseyClientConfiguration(config: HttpClientConfiguration) {
+        this.httpClientConfiguration = config
     }
 }
 
