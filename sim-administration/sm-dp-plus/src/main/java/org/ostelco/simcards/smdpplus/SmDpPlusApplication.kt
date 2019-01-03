@@ -8,6 +8,7 @@ import io.dropwizard.client.HttpClientConfiguration
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 import org.apache.http.client.HttpClient
+import org.conscrypt.OpenSSLProvider
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
 import org.ostelco.dropwizardutils.OpenapiResourceAdderConfig
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
@@ -15,12 +16,15 @@ import org.ostelco.sim.es2plus.SmDpPlusServerResource
 import org.ostelco.sim.es2plus.SmDpPlusService
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
+import java.security.Security
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
 import javax.ws.rs.GET
 import javax.ws.rs.Path
 import javax.ws.rs.Produces
 import javax.ws.rs.core.MediaType
+
+
 
 
 /**
@@ -77,6 +81,9 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         @Throws(Exception::class)
         @JvmStatic
         fun main(args: Array<String>) {
+
+            Security.insertProviderAt(OpenSSLProvider(), 1)
+
             SmDpPlusApplication().run(*args)
         }
     }

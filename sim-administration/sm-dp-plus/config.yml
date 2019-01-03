@@ -20,12 +20,14 @@ server:
       port: 8080
     - type: https
       port: 8443
+      # Enabling conscrypt blows the whole thing up, so don't do that.
+      #jceProvider: Conscrypt
+      keyStoreType: JKS
       keyStorePath: sk_keys.jks
       keyStorePassword: superSecreet
       validateCerts: false
 
-#    jceProvider: Conscrypt
-# keyStoreType: JKS
+
 
 
 httpClient:
