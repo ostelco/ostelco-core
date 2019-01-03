@@ -10,7 +10,7 @@ import java.io.PrintWriter
 
 
 
-class SimCarfBatchDescriptorReaderTest {
+class SimCardBatchDescriptorReaderTest {
 
     val smdpInputCsvPath =
             ResourceHelpers.resourceFilePath("fixtures/sample-sim-batch-for-sm-dp+.csv")
