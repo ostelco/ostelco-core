@@ -33,8 +33,6 @@ server:
       excludedProtocols: [SSLv2Hello, SSLv3]
 
 
-
-
 httpClient:
   tls:
     protocol: TLSv1.2
