@@ -7,7 +7,7 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.mockito.Mockito
 import org.mockito.Mockito.reset
-import org.ostelco.jsonschema.RequestServerReaderWriterInterceptor
+import org.ostelco.jsonschema.DynamicES2ValidatorAdder
 
 
 class ES2PlusResourceTest {
@@ -31,7 +31,7 @@ class ES2PlusResourceTest {
                 .addResource(SmDpPlusServerResource(smdpPlusService))
                 .addResource(SmDpPlusCallbackResource(callbackService))
                 .addProvider(ES2PlusIncomingHeadersFilter())
-                .addProvider(RequestServerReaderWriterInterceptor())
+                .addProvider(DynamicES2ValidatorAdder())
                 .addProvider(ES2PlusOutgoingHeadersFilter())
                 .build()
 

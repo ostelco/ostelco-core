@@ -17,6 +17,7 @@ import org.ostelco.sim.es2plus.SmDpPlusService
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
 import java.security.Security
+import javax.servlet.ServletRequest
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
 import javax.ws.rs.GET
@@ -96,9 +97,13 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 @Path("/ping")
 class PingResource {
 
+    private val log = LoggerFactory.getLogger(javaClass)
     @GET
     @Produces(MediaType.TEXT_PLAIN)
-    fun ping(): String = "pong"
+    fun ping(request: ServletRequest): String  {
+        log.info("Incoming request = $request")
+        return  "pong"
+    }
 }
 
 
