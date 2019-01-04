@@ -1,5 +1,6 @@
 logging:
-  level: ALL
+#  level: ALL
+   level: INFO
 
 simBatchData: sample-sim-batch-for-sm-dp+.csv
 
@@ -33,6 +34,10 @@ server:
 httpClient:
   tls:
     protocol: TLSv1.2
+    keyStoreType: JKS
+    keyStorePath: sk_keys.jks
+    keyStorePassword: superSecreet
+#    validateCerts: false
 #    keyStorePath: sk_keys.jks
 #    keyStorePassword: superSecreet
 #    keyStoreType: JKS
