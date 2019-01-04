@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  * from scatch, that reacts to annotations, roles, this that
  * and misc. other things.  It is all good, but will have to wait
  * over the weekend.
- * 
+ *
  *
  * @author <a href="mailto:wdawson@okta.com">wdawson</a>
  */
@@ -66,8 +66,6 @@ public final class CertificateValidationFilter implements ContainerRequestFilter
         if (!dnRegex.matcher(clientCertDN).matches()) {
             requestContext.abortWith(buildForbiddenResponse("Certificate subject is not recognized!"));
         }
-
-        request.set
     }
 
     private Response buildForbiddenResponse(String message) {
