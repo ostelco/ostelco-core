@@ -22,9 +22,9 @@ import javax.validation.constraints.NotNull
 import javax.ws.rs.GET
 import javax.ws.rs.Path
 import javax.ws.rs.Produces
+import javax.ws.rs.core.Context
 import javax.ws.rs.core.MediaType
-
-
+import javax.ws.rs.core.SecurityContext
 
 
 /**
@@ -72,6 +72,7 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 
         // XXX Only until we're sure the client stuff works.
         jerseyEnvironment.register(PingResource())
+        jerseyEnvironment.register(CertificateValidationFilter(".*"))
 
         this.client = HttpClientBuilder(env).using(config.httpClientConfiguration).build(getName())
     }
@@ -99,8 +100,8 @@ class PingResource {
     private val log = LoggerFactory.getLogger(javaClass)
     @GET
     @Produces(MediaType.TEXT_PLAIN)
-    fun ping(): String  {
-        // log.info("Incoming request = $request")
+    fun ping(// @Auth(required = false)  user: Authentication.User,
+             @Context context:SecurityContext ): String  {
         return  "pong"
     }
 }
