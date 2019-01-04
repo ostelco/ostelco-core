@@ -27,6 +27,10 @@ server:
       keyStorePath: sk_keys.jks
       keyStorePassword: superSecreet
       validateCerts: false
+      needClientAuth: true
+      wantClientAuth: true
+      supportedProtocols: [TLSv1.1, TLSv1.2, TLSv1.3]
+      excludedProtocols: [SSLv2Hello, SSLv3]
 
 
 
