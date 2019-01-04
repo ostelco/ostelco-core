@@ -16,6 +16,15 @@ import java.util.regex.Pattern;
  * A ContainerRequestFilter to do certificate validation beyond the tls validation.
  * For example, the filter matches the subject against a regex and will 403 if it doesn't match
  *
+ *
+ * In
+ * https://howtodoinjava.com/jersey/jersey-rest-security/
+ * we can find an example of how to write an authentication filter
+ * from scatch, that reacts to annotations, roles, this that
+ * and misc. other things.  It is all good, but will have to wait
+ * over the weekend.
+ * 
+ *
  * @author <a href="mailto:wdawson@okta.com">wdawson</a>
  */
 @PreMatching
@@ -57,6 +66,8 @@ public final class CertificateValidationFilter implements ContainerRequestFilter
         if (!dnRegex.matcher(clientCertDN).matches()) {
             requestContext.abortWith(buildForbiddenResponse("Certificate subject is not recognized!"));
         }
+
+        request.set
     }
 
     private Response buildForbiddenResponse(String message) {
