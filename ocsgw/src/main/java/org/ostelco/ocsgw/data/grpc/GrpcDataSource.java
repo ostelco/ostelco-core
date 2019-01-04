@@ -407,36 +407,25 @@ public class GrpcDataSource implements DataSource {
     }
 
     private CreditControlRequestType getRequestType(CreditControlContext context) {
-        CreditControlRequestType type = CreditControlRequestType.NONE;
         switch (context.getOriginalCreditControlRequest().getRequestTypeAVPValue()) {
             case INITIAL_REQUEST:
-                type = CreditControlRequestType.INITIAL_REQUEST;
-                break;
+                return CreditControlRequestType.INITIAL_REQUEST;
             case UPDATE_REQUEST:
-                type = CreditControlRequestType.UPDATE_REQUEST;
-                break;
+                return CreditControlRequestType.UPDATE_REQUEST;
             case TERMINATION_REQUEST:
-                type = CreditControlRequestType.TERMINATION_REQUEST;
-                break;
+                return CreditControlRequestType.TERMINATION_REQUEST;
             case EVENT_REQUEST:
-                type = CreditControlRequestType.EVENT_REQUEST;
-                break;
+                return CreditControlRequestType.EVENT_REQUEST;
             default:
                 LOG.warn("Unknown request type");
-                break;
+                return CreditControlRequestType.NONE;
         }
-        return type;
     }
 
     private CreditControlAnswer createCreditControlAnswer(CreditControlAnswerInfo response) {
         if (response == null) {
             LOG.error("Empty CreditControlAnswerInfo received");
             return new CreditControlAnswer(org.ostelco.diameter.model.ResultCode.DIAMETER_UNABLE_TO_COMPLY, new ArrayList<>());
-        }
-
-        // ToDo : Set correct return code
-        if (response.getResultCode() == org.ostelco.ocs.api.ResultCode.DIAMETER_USER_UNKNOWN) {
-            LOG.info("User unknown");
         }
 
         final LinkedList<MultipleServiceCreditControl> multipleServiceCreditControls = new LinkedList<>();

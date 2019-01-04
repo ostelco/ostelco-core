@@ -4,7 +4,6 @@ import org.jdiameter.api.Avp
 import org.jdiameter.api.AvpSet
 import org.jdiameter.api.InternalException
 import org.jdiameter.api.Request
-import org.jdiameter.api.ResultCode
 import org.jdiameter.api.cca.events.JCreditControlRequest
 import org.jdiameter.common.impl.app.cca.JCreditControlAnswerImpl
 import org.ostelco.diameter.model.CreditControlAnswer
@@ -55,9 +54,7 @@ class CreditControlContext(
             ccaAvps.addAvp(Avp.ORIGIN_HOST, originHost, true, false, true)
             ccaAvps.addAvp(Avp.ORIGIN_REALM, originRealm, true, false, true)
 
-            val multipleServiceCreditControls = creditControlAnswer.multipleServiceCreditControls
-
-            for (mscc in multipleServiceCreditControls) {
+            for (mscc in creditControlAnswer.multipleServiceCreditControls) {
 
                 val answerMSCC = ccaAvps.addGroupedAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL, true, false)
                 if (mscc.ratingGroup > 0) {
