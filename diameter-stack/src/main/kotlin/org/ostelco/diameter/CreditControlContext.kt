@@ -43,10 +43,9 @@ class CreditControlContext(
 
     fun createCCA(creditControlAnswer: CreditControlAnswer): JCreditControlAnswerImpl? {
         var answer: JCreditControlAnswerImpl? = null
-        val resultCode = ResultCode.SUCCESS
 
         try {
-            answer = JCreditControlAnswerImpl(originalCreditControlRequest.message as Request, ResultCode.SUCCESS.toLong())
+            answer = JCreditControlAnswerImpl(originalCreditControlRequest.message as Request, creditControlAnswer.resultCode.value.toLong())
 
             val ccaAvps = answer.message.avps
 
@@ -83,7 +82,8 @@ class CreditControlContext(
                         gsuAvp.addAvp(Avp.CC_TOTAL_OCTETS, mscc.granted.total, true, false)
                     }
                 }
-                answerMSCC.addAvp(Avp.RESULT_CODE, resultCode, true, false)
+
+                answerMSCC.addAvp(Avp.RESULT_CODE, mscc.resultCode.value, true, false)
                 answerMSCC.addAvp(Avp.VALIDITY_TIME, mscc.validityTime, true, false)
             }
             logger.info("Created Credit-Control-Answer")

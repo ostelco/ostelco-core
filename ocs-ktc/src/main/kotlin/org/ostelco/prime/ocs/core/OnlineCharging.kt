@@ -51,6 +51,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                 val response = CreditControlAnswerInfo.newBuilder()
                         .setRequestId(request.requestId)
                         .setMsisdn(msisdn)
+                        .setResultCode(ResultCode.DIAMETER_SUCCESS)
 
                 if (request.msccCount > 0) {
                     val mscc = request.getMscc(0)
@@ -86,19 +87,19 @@ object OnlineCharging : OcsAsyncRequestConsumer {
 
                         responseMscc.granted = ServiceUnit.newBuilder().setTotalOctets(grantedTotalOctets).build()
 
-                        if (balance != null) {
-                            launch {
-                                AnalyticsReporter.report(
-                                        request = request,
-                                        bundleBytes = balance)
-                            }
+                        responseMscc.resultCode = ResultCode.DIAMETER_SUCCESS
 
-                            launch {
-                                Notifications.lowBalanceAlert(
-                                        msisdn = msisdn,
-                                        reserved = granted,
-                                        balance = balance)
-                            }
+                        launch {
+                            AnalyticsReporter.report(
+                                    request = request,
+                                    bundleBytes = balance)
+                        }
+
+                        launch {
+                            Notifications.lowBalanceAlert(
+                                    msisdn = msisdn,
+                                    reserved = granted,
+                                    balance = balance)
                         }
                         response.addMscc(responseMscc)
                     })
