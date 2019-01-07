@@ -12,6 +12,7 @@ import org.apache.http.impl.conn.PoolingClientConnectionManager
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import java.io.IOException
 import java.security.GeneralSecurityException
@@ -72,6 +73,8 @@ class PingPongSslRoundtripTest {
      * but sufficient to test the _server_
      */
     @Test
+    @Ignore // ... in preparation of deleting (just want to make absolutely sure the
+    //  code above is trustworthy
     @Throws(IOException::class, GeneralSecurityException::class)
     fun testUsingExtremelyPermissiveHandConiguredClient() {
         val acceptingTrustStrategy = object: TrustStrategy {
