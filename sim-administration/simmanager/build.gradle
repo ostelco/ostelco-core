@@ -2,6 +2,7 @@ plugins {
     id "org.jetbrains.kotlin.jvm" version "1.3.11"
     id "application"
     id "com.github.johnrengelman.shadow" version "4.0.3"
+    id "idea"
 }
 
 dependencies {
@@ -9,6 +10,7 @@ dependencies {
     implementation project(":sim-administration:simcard-utils")
     implementation project(":sim-administration:es2plus4dropwizard")
     implementation project(":sim-administration:ostelco-dropwizard-utils")
+    implementation project(":sim-administration:sm-dp-plus")
 
     implementation 'javax.activation:javax.activation-api:1.2.0'
 
@@ -38,4 +40,34 @@ shadowJar {
     mergeServiceFiles()
     classifier = "uber"
     version = null
+}
+
+sourceSets {
+    integrationTest {
+        kotlin {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += main.output + test.output
+            srcDirs += file('src/integration-test/kotlin')
+        }
+        resources.srcDir file('src/integration-test/resources')
+    }
+}
+
+configurations {
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestCompile.extendsFrom testCompile
+    integrationTestRuntime.extendsFrom testRuntime
+}
+
+task integrationTest(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+}
+
+integrationTest.mustRunAfter test
+
+idea {
+    module {
+        testSourceDirs += file('src/integration-test/kotlin')
+    }
 }

@@ -8,6 +8,7 @@ import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiReso
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
 import org.ostelco.sim.es2plus.SmDpPlusCallbackResource
 import org.ostelco.sim.es2plus.SmDpPlusCallbackService
+import org.ostelco.simcards.inventory.PingResource
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SimInventoryResource
 
@@ -64,6 +65,8 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
 
         jerseyEnvironment.register(SimInventoryResource(simInventoryDAO))
         jerseyEnvironment.register(SmDpPlusCallbackResource(smdpPlusCallbackHandler))
+
+        jerseyEnvironment.register(PingResource())
     }
 
     companion object {

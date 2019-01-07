@@ -127,10 +127,10 @@ class SimInventoryResource(private val dao: SimInventoryDAO) {
         if (simEntry.smdpplus == null) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }
-        val smdpPlusAdpter = assertNonNull(dao.getSmdpPlusAdapterByName(simEntry.smdpplus))
+        val smdpPlusAdapter = assertNonNull(dao.getSmdpPlusAdapterByName(simEntry.smdpplus))
 
         try {
-            smdpPlusAdpter.activateEntry(simEntry)
+            smdpPlusAdapter.activateEntry(simEntry)
         } catch (e: Exception) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }
@@ -164,8 +164,7 @@ class SimInventoryResource(private val dao: SimInventoryDAO) {
             @NotEmpty @PathParam("profilevendor") profilevendor: String,
             csvInputStream: InputStream): SimImportBatch {
 
-        val  pvp  =
-                assertNonNull(dao.getProfilevendorByName(profilevendor))
+        val pvp = assertNonNull(dao.getProfilevendorByName(profilevendor))
 
         val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
 
@@ -179,4 +178,12 @@ class SimInventoryResource(private val dao: SimInventoryDAO) {
                 profileVendor = profilevendor,
                 csvInputStream = csvInputStream)
     }
+}
+
+@Path("/ping")
+class PingResource {
+
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    fun ping(): String = "pong"
 }
