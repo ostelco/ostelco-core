@@ -38,8 +38,8 @@ public class LocalDataSource implements DataSource {
         try {
             final ServerCCASession session = OcsServer.getInstance().getStack().getSession(context.getSessionId(), ServerCCASession.class);
             session.sendCreditControlAnswer(context.createCCA(answer));
-        } catch (InternalException | IllegalDiameterStateException | RouteException | OverloadException e) {
-            LOG.error("Failed to send Credit-Control-Answer. SessionId : {}", context.getSessionId());
+        } catch (InternalException | IllegalDiameterStateException | RouteException | OverloadException | NullPointerException e) {
+            LOG.error("Failed to send Credit-Control-Answer. SessionId : {}", context.getSessionId(), e);
         }
     }
 

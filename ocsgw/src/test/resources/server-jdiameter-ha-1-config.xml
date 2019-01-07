@@ -2,7 +2,7 @@
 <Configuration xmlns="http://www.jdiameter.org/jdiameter-server">
 
   <LocalPeer>
-    <URI value="aaa://ocs:3868" />
+    <URI value="aaa://ocs_1:3868" />
 
     <IPAddresses>
       <IPAddress value="127.0.0.1"/>
@@ -57,8 +57,6 @@
 
   <Network>
     <Peers>
-      <!-- Seagull Peer -->
-      <Peer name="aaa://seagull" attempt_connect="false" rating="1" />
         <!-- testclient Peer -->
         <Peer name="aaa://testclient" attempt_connect="false" rating="1" />
     </Peers>
@@ -74,7 +72,9 @@
     </Realms>
   </Network>
 
-  <Extensions/>
-
+  <Extensions>
+    <SessionDatasource value="org.ostelco.diameter.ha.sessiondatasource.RedisReplicatedSessionDatasource" />
+    <TimerFacility value="org.ostelco.diameter.ha.timer.ReplicatedTimerFacilityImpl" />
+  </Extensions>
 
 </Configuration>

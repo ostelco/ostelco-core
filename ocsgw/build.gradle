@@ -8,6 +8,7 @@ dependencies {
     implementation project(':analytics-grpc-api')
 
     implementation project(':diameter-stack')
+    implementation project(':diameter-ha')
     implementation "com.google.cloud:google-cloud-core-grpc:$googleCloudVersion"
     implementation "com.google.cloud:google-cloud-storage:$googleCloudVersion"
 
