@@ -3,22 +3,24 @@ About the project
 =================
 
 This project makes it possible to connect the Gy interface from a GGSN/P-GW to this OCS gateway.
-The gateway will parse the Diameter traffic and pass it through to another component.
-Currently this support a gRPC or a local adapter.
+The gateway will parse the Diameter traffic and pass it through to the OCS component.
+Currently it supports a gRPC or a local adapter.
 
 The Local adapter will accept all Credit-Control-Requests and send a Credit-Control-Answer that grant
-any service unit requested.
+any service units requested.
 
-The gRPC adapter will translate the Credit-Control-Request to gRPC and forward this to your gRPC server.
+The gRPC adapter will translate the Credit-Control-Request to gRPC and forward this to the OCS server.
 
 Note that this project does not implement a full Online Charging System.
 
-The project is built on RestComm jDiameter Stack
+The project is built on RestComm jDiameter Stack.
+
+For diameter HA setup please see : [diameter-ha](../diameter-ha/README.md)
 
 Build
 ===============
 
-gradle build
+gradlew build
 
 
 Run

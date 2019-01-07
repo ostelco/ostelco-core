@@ -2,7 +2,7 @@
 
 set -e
 
-if [ ! -f ocsgw/infra/script/deploy-ocsgw-dev.sh ]; then
+if [ ! -f ocsgw/infra/script/deploy-ocsgw.sh ]; then
     (>&2 echo "Run this script from project root dir (ostelco-core)")
     exit 1
 fi
