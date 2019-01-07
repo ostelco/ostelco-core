@@ -39,6 +39,8 @@ class CertificateValidationFilter
  */
 (dnRegex: String) : ContainerRequestFilter {
 
+
+    // https://stackoverflow.com/questions/34654903/how-to-create-global-and-pre-post-matching-filter-in-restlet
     private val dnRegex: Pattern
 
     // Although this is a class level field, Jersey actually injects a proxy
@@ -73,42 +75,12 @@ class CertificateValidationFilter
     @Throws(IOException::class)
     override fun filter(requestContext: ContainerRequestContext) {
 
+        if (!certifcateMatches(requestContext)) {
+            requestContext.abortWith(buildForbiddenResponse("Certificate subject is not recognized!"))
+            return
+        }
 
-/* Commented out while being debugged
-        val method = requestContext.request.
-        //Access allowed for all
-        if (!method.isAnnotationPresent(PermitAll::class.java)) {
-            //Access denied for all
-            if (method.isAnnotationPresent(DenyAll::class.java)) {
-                requestContext.abortWith(buildForbiddenResponse("Method not permitted"))
-                return
-            }
-
-            // XXX Not the final word in matching, should do more once we figure out  a way toi
-            //     infer user from certificate.
-            if (!certifcateMatches(requestContext)) {
-                requestContext.abortWith(buildForbiddenResponse("Certificate subject is not recognized!"))
-                return
-            }
-
-            //Split username and password tokens
-            val tokenizer = StringTokenizer(usernameAndPassword, ":")
-            val username = "some username we will eventually get from the cert"
-
-            //Verify user access
-            if (method.isAnnotationPresent(RolesAllowed::class.java)) {
-                method.
-                val rolesAnnotation = method.getAnnotation(RolesAllowed::class.java)
-                rolesAnnotation.
-                val rolesSet = HashSet<String>(Arrays.asList(rolesAnnotation.value()))
-
-                //Is user valid?
-                if (!isUserAllowed(username, password, rolesSet)) {
-                    requestContext.abortWith(ACCESS_DENIED)
-                    return
-                }
-            }
-        } */
+        // XXX Stash authentication information somewhere for the authorizer stage to pick up.
     }
 
     private fun buildForbiddenResponse(message: String): Response {
@@ -121,3 +93,5 @@ class CertificateValidationFilter
         private val X509_CERTIFICATE_ATTRIBUTE = "javax.servlet.request.X509Certificate"
     }
 }
+
+
