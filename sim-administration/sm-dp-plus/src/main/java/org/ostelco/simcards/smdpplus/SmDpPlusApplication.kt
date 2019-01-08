@@ -17,6 +17,7 @@ import org.ostelco.sim.es2plus.SmDpPlusService
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
 import java.security.Security
+import javax.annotation.security.RolesAllowed
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
 import javax.ws.rs.GET
@@ -99,6 +100,8 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 class PingResource {
 
     private val log = LoggerFactory.getLogger(javaClass)
+
+    @RolesAllowed("flyfisher")
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     fun ping(// @Auth(required = false)  user: Authentication.User,

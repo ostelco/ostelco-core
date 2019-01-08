@@ -48,3 +48,23 @@ httpClient:
 #    trustStoreType: JKS
     verifyHostname: false
     trustSelfSignedCertificates: true
+
+
+certAuth:
+  certAuths:
+    - userId: foo
+      country: NO
+      location: Fornebu
+      organization: all of the above
+      commonName: foo.bar.baz
+      roles:
+        - flyfisher
+
+
+roles:
+  definitions:
+    - name: flyfisher
+      description: Obviously just a dummy role
+
+
+
