@@ -53,10 +53,10 @@ public class OcsApplicationTest {
 
     @BeforeEach
     protected void setUp() {
-        application.start("src/test/resources/");
+        application.start("src/test/resources/", "server-jdiameter-config.xml");
 
         client = new TestClient();
-        client.initStack("src/test/resources/");
+        client.initStack("src/test/resources/", "client-jdiameter-config.xml");
     }
 
     @AfterEach

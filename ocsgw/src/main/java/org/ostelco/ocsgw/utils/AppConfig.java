@@ -16,7 +16,13 @@ public class AppConfig {
     }
 
     public String getDataStoreType () {
-        return prop.getProperty("DataStoreType", "Local");
+        // OCS_DATASOURCE_TYPE env has higher preference over config.properties
+        final String dataSource = System.getenv("OCS_DATASOURCE_TYPE");
+        if (dataSource == null || dataSource.isEmpty()) {
+
+            return prop.getProperty("DataStoreType", "Local");
+        }
+        return dataSource;
     }
 
     public String getGrpcServer() {

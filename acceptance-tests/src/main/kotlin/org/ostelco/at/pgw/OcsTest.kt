@@ -29,12 +29,15 @@ class OcsTest {
 
     private val logger by getLogger()
 
+    //configuration file
+    private val configFile = "client-jdiameter-config.xml"
+
     private var testClient: TestClient? = null
 
     @Before
     fun setUp() {
         testClient = TestClient()
-        testClient?.initStack("/")
+        testClient?.initStack("/", configFile)
     }
 
     @After
