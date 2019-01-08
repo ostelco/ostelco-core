@@ -314,13 +314,16 @@ public class GrpcDataSource implements DataSource {
         ocsgwAnalytics.sendAnalytics(builder.build());
     }
 
+    /**
+     * A user will be blocked if one of the MSCC in the request could not be filled in the answer
+     */
     private void updateBlockedList(CreditControlAnswerInfo answer, CreditControlRequest request) {
-        // FixMe: This suffers from the fact that one Credit-Control-Request can have multiple MSCC
         for (org.ostelco.ocs.api.MultipleServiceCreditControl msccAnswer : answer.getMsccList()) {
             for (MultipleServiceCreditControl msccRequest : request.getMultipleServiceCreditControls()) {
                 if ((msccAnswer.getServiceIdentifier() == msccRequest.getServiceIdentifier()) && (msccAnswer.getRatingGroup() == msccRequest.getRatingGroup())) {
-                    updateBlockedList(msccAnswer, msccRequest, answer.getMsisdn());
-                    return;
+                    if (updateBlockedList(msccAnswer, msccRequest, answer.getMsisdn())) {
+                        return;
+                    }
                 }
             }
         }
@@ -415,14 +418,16 @@ public class GrpcDataSource implements DataSource {
         return new CreditControlAnswer(multipleServiceCreditControls);
     }
 
-    private void updateBlockedList(org.ostelco.ocs.api.MultipleServiceCreditControl msccAnswer, MultipleServiceCreditControl msccRequest, String msisdn) {
+    private boolean updateBlockedList(org.ostelco.ocs.api.MultipleServiceCreditControl msccAnswer, MultipleServiceCreditControl msccRequest, String msisdn) {
         if (!msccRequest.getRequested().isEmpty()) {
             if (msccAnswer.getGranted().getTotalOctets() < msccRequest.getRequested().get(0).getTotal()) {
                 blocked.add(msisdn);
+                return true;
             } else {
                 blocked.remove(msisdn);
             }
         }
+        return false;
     }
 
     @Override
