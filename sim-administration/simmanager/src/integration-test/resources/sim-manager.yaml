@@ -19,4 +19,4 @@ server:
 
 database:
   driverClass: org.sqlite.JDBC
-  url: jdbc:sqlite:sim_inventory.db
+  url: jdbc:sqlite:/tmp/sim_inventory.db

@@ -3,7 +3,6 @@ package org.ostelco.simcards.inventory
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
-import org.ostelco.jsonschema.JsonSchema
 import org.skife.jdbi.v2.StatementContext
 import org.skife.jdbi.v2.sqlobject.*
 import org.skife.jdbi.v2.sqlobject.customizers.BatchChunkSize
@@ -24,7 +23,6 @@ import javax.ws.rs.core.Response
 /**
  *  Representing a single SIM card.
  */
-@JsonSchema("SimEntry")
 data class SimEntry(
         @JsonProperty("id") val id: Long? = null,
         @JsonProperty("batch") val batch: Long,
@@ -339,7 +337,7 @@ abstract class SimInventoryDAO {
     // Importing
     //
     @Transaction
-    @SqlBatch("INSERT INTO sim_entries (iccid, imsi, pin1, pin2, puk1, puk2) VALUES (:iccid, :imsi, :pin1, :pin2, :puk1, :puk2)")
+    @SqlBatch("INSERT INTO sim_entries (batch, hlrid, iccid, imsi, pin1, pin2, puk1, puk2) VALUES (:batch, :hlrId, :iccid, :imsi, :pin1, :pin2, :puk1, :puk2)")
     @BatchChunkSize(1000)
     abstract fun insertAll(@BindBean entries: Iterator<SimEntry>)
 
@@ -371,8 +369,9 @@ abstract class SimInventoryDAO {
                 hlr = hlr,
                 profileVendor = profileVendor)
         val batchId = lastInsertRowid()
+        val hlrId = "1"
         val values = SimEntryIterator(
-                hlrId = hlr,
+                hlrId = hlrId,
                 batchId = batchId,
                 csvInputStream = csvInputStream)
         insertAll(values)

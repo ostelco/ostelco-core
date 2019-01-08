@@ -12,7 +12,7 @@ import javax.ws.rs.core.Response
 ///  The web resource using the protocol domain model.
 ///
 
-@Path("/ostelco/sim-inventory/{hlr}/")
+@Path("/ostelco/sim-inventory/{hlr}")
 class SimInventoryResource(private val dao: SimInventoryDAO) {
 
     companion object {
@@ -178,12 +178,4 @@ class SimInventoryResource(private val dao: SimInventoryDAO) {
                 profileVendor = profilevendor,
                 csvInputStream = csvInputStream)
     }
-}
-
-@Path("/ping")
-class PingResource {
-
-    @GET
-    @Produces(MediaType.TEXT_PLAIN)
-    fun ping(): String = "pong"
 }
