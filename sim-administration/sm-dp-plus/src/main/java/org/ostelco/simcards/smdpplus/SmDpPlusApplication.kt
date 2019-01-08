@@ -72,7 +72,8 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 
         // XXX Only until we're sure the client stuff works.
         jerseyEnvironment.register(PingResource())
-        jerseyEnvironment.register(CertificateValidationFilter(".*"))
+        // jerseyEnvironment.register(CertificateValidationFilter(".*"))
+        jerseyEnvironment.register(CertificateAuthorizationFilter(RBACService(rolesConfig = config.rolesConfig, certConfig = config.certConfig)))
 
         this.client = HttpClientBuilder(env).using(config.httpClientConfiguration).build(getName())
     }
@@ -245,7 +246,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
 class SmDpPlusException(message: String) : Exception(message)
 
 /**
- * Configuration class for  Sm-dp+ emulator.
+ * Configuration class for SM-DP+ emulator.
  */
 class SmDpPlusAppConfiguration : Configuration() {
 
@@ -260,7 +261,6 @@ class SmDpPlusAppConfiguration : Configuration() {
     @JsonProperty("openApi")
     var openApi = OpenapiResourceAdderConfig()
 
-
     /**
      * Path to file containing simulated SIM data.
      */
@@ -269,19 +269,31 @@ class SmDpPlusAppConfiguration : Configuration() {
     @JsonProperty("simBatchData")
     var simBatchData: String = ""
 
+    /**
+     * The client we use to connect to other services, including
+     * ES2+ services
+     */
     @Valid
     @NotNull
     @JsonProperty("httpClient")
     var httpClientConfiguration = HttpClientConfiguration()
 
-    /*
-    @JsonProperty("httpClient")
-    fun getJerseyClientConfiguration(): HttpClientConfiguration {
-        return httpClientConfiguration
-    }
 
-    @JsonProperty("httpClient")
-    fun setJerseyClientConfiguration(config: HttpClientConfiguration) {
-        this.httpClientConfiguration = config
-    } */
+    /**
+     * Declaring the mapping between users and certificates, also
+     * which roles the users are assigned to.
+     */
+    @Valid
+    @JsonProperty("certAuth")
+    @NotNull
+    var certConfig = CertAuthConfig()
+
+    /**
+     * Declaring which roles we will permit
+     */
+    @Valid
+    @JsonProperty("roles")
+    @NotNull
+    var rolesConfig = RolesConfig()
+
 }
