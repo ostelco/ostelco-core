@@ -18,11 +18,11 @@ import org.jdiameter.server.impl.app.cca.ServerCCASessionImpl;
 import org.ostelco.diameter.CreditControlContext;
 import org.ostelco.diameter.model.SessionContext;
 import org.ostelco.diameter.model.ReAuthRequestType;
-import org.ostelco.ocsgw.data.DataSource;
-import org.ostelco.ocsgw.data.DataSourceType;
-import org.ostelco.ocsgw.data.grpc.GrpcDataSource;
-import org.ostelco.ocsgw.data.local.LocalDataSource;
-import org.ostelco.ocsgw.data.proxy.ProxyDataSource;
+import org.ostelco.ocsgw.datasource.DataSource;
+import org.ostelco.ocsgw.datasource.DataSourceType;
+import org.ostelco.ocsgw.datasource.grpc.GrpcDataSource;
+import org.ostelco.ocsgw.datasource.local.LocalDataSource;
+import org.ostelco.ocsgw.datasource.proxy.ProxyDataSource;
 import org.ostelco.ocsgw.utils.AppConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,7 +89,7 @@ public class OcsServer {
         }
     }
 
-    public void init(Stack stack, AppConfig appConfig) throws IOException {
+    void init(Stack stack, AppConfig appConfig) throws IOException {
         this.stack = stack;
 
         switch (appConfig.getDataStoreType()) {

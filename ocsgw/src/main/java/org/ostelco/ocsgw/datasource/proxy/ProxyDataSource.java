@@ -1,9 +1,10 @@
-package org.ostelco.ocsgw.data.proxy;
+package org.ostelco.ocsgw.datasource.proxy;
 
-import org.ostelco.ocsgw.data.DataSource;
-import org.ostelco.ocsgw.data.local.LocalDataSource;
+import org.ostelco.ocsgw.datasource.DataSource;
+import org.ostelco.ocsgw.datasource.local.LocalDataSource;
 import org.ostelco.diameter.CreditControlContext;
 import org.ostelco.ocs.api.CreditControlRequestType;
+
 /**
  * Proxy DataSource is a combination of the Local DataSource and any other
  * DataSource.
