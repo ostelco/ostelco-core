@@ -4,6 +4,7 @@ import org.ostelco.ocsgw.data.DataSource;
 import org.ostelco.ocsgw.data.local.LocalDataSource;
 import org.ostelco.diameter.CreditControlContext;
 import org.ostelco.ocs.api.CreditControlRequestType;
+
 /**
  * Proxy DataSource is a combination of the Local DataSource and any other
  * DataSource.
@@ -40,7 +41,7 @@ public class ProxyDataSource implements DataSource {
             // For CCR-U we will send all requests to both Local and Secondary until the secondary has blocked the msisdn
             if (!secondary.isBlocked(context.getCreditControlRequest().getMsisdn())) {
                 local.handleRequest(context);
-                // When local datasource will be responding with Answer, gRPC datasource should skip to send Answer to PGw.
+                // When local datasource will be responding with Answer, gRPC datasource should skip to send Answer to P-GW.
                 context.setSkipAnswer(true);
                 secondary.handleRequest(context);
             } else {

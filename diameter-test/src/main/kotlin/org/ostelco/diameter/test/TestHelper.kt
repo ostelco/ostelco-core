@@ -68,7 +68,7 @@ object TestHelper {
         }
     }
 
-    private fun addFinalBucketRequest(ccrAvps: AvpSet, ratingGroup: Int, serviceIdentifier: Int) {
+    private fun addFinalBucketRequest(ccrAvps: AvpSet, ratingGroup: Int, serviceIdentifier: Int, usedBucketSize: Long = 0) {
 
         set(ccrAvps) {
 
@@ -76,6 +76,7 @@ object TestHelper {
 
             group(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL) {
                 group(Avp.USED_SERVICE_UNIT) {
+                    avp(Avp.CC_TOTAL_OCTETS, usedBucketSize, pFlag = true)
                     avp(Avp.CC_TIME, 0, pFlag = true)
                     avp(Avp.CC_SERVICE_SPECIFIC_UNITS, 0L, pFlag = true)
                 }
@@ -139,10 +140,10 @@ object TestHelper {
     }
 
     @JvmStatic
-    fun createUpdateRequestFinal(ccrAvps: AvpSet, msisdn: String) {
+    fun createUpdateRequestFinal(ccrAvps: AvpSet, msisdn: String, usedBucketSize: Long) {
         buildBasicRequest(ccrAvps, RequestType.UPDATE_REQUEST, requestNumber = 1)
         addUser(ccrAvps, msisdn = msisdn, imsi = IMSI)
-        addFinalBucketRequest(ccrAvps, ratingGroup = 10, serviceIdentifier = 1)
+        addFinalBucketRequest(ccrAvps, ratingGroup = 10, serviceIdentifier = 1, usedBucketSize = usedBucketSize)
         addServiceInformation(ccrAvps, apn = APN, sgsnMccMnc = SGSN_MCC_MNC)
     }
 
