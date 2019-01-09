@@ -1,17 +1,13 @@
 package org.ostelco.prime.ocs.core
 
+import arrow.core.flatMap
+import arrow.core.right
+import arrow.instances.either.monad.flatMap
 import io.grpc.stub.StreamObserver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
-import org.ostelco.ocs.api.ActivateResponse
-import org.ostelco.ocs.api.CreditControlAnswerInfo
-import org.ostelco.ocs.api.CreditControlRequestInfo
-import org.ostelco.ocs.api.FinalUnitAction
-import org.ostelco.ocs.api.FinalUnitIndication
-import org.ostelco.ocs.api.MultipleServiceCreditControl
-import org.ostelco.ocs.api.ReportingReason
-import org.ostelco.ocs.api.ServiceUnit
+import org.ostelco.ocs.api.*
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.ocs.analytics.AnalyticsReporter
 import org.ostelco.prime.ocs.consumption.OcsAsyncRequestConsumer
@@ -55,6 +51,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                 val response = CreditControlAnswerInfo.newBuilder()
                         .setRequestId(request.requestId)
                         .setMsisdn(msisdn)
+                        .setResultCode(ResultCode.DIAMETER_SUCCESS)
 
                 if (request.msccCount > 0) {
                     val mscc = request.getMscc(0)
@@ -65,28 +62,33 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                             .newBuilder(mscc)
                             .setValidityTime(86400)
 
-                    val (granted, balance) = storage.consume(msisdn, used, requested).fold({ Pair(0L, null) }, { it })
+                    storage.consume(msisdn, used, requested).fold({
+                        // ToDo : Should we handle all errors as NotFoundError
+                        response.setResultCode(ResultCode.DIAMETER_USER_UNKNOWN)
+                    }, {
+                        val (granted, balance) = it
 
-                    val grantedTotalOctets = if (mscc.reportingReason != ReportingReason.FINAL
-                            && mscc.requested.totalOctets > 0) {
+                        val grantedTotalOctets = if (mscc.reportingReason != ReportingReason.FINAL
+                                && mscc.requested.totalOctets > 0) {
 
-                        if (granted < mscc.requested.totalOctets) {
-                            responseMscc.finalUnitIndication = FinalUnitIndication.newBuilder()
-                                    .setFinalUnitAction(FinalUnitAction.TERMINATE)
-                                    .setIsSet(true)
-                                    .build()
+                            if (granted < mscc.requested.totalOctets) {
+                                responseMscc.finalUnitIndication = FinalUnitIndication.newBuilder()
+                                        .setFinalUnitAction(FinalUnitAction.TERMINATE)
+                                        .setIsSet(true)
+                                        .build()
+                            }
+
+                            granted
+
+                        } else {
+                            // Use -1 to indicate no granted service unit should be included in the answer
+                            -1
                         }
 
-                        granted
+                        responseMscc.granted = ServiceUnit.newBuilder().setTotalOctets(grantedTotalOctets).build()
 
-                    } else {
-                        // Use -1 to indicate no granted service unit should be included in the answer
-                        -1
-                    }
+                        responseMscc.resultCode = ResultCode.DIAMETER_SUCCESS
 
-                    responseMscc.granted = ServiceUnit.newBuilder().setTotalOctets(grantedTotalOctets).build()
-
-                    if (balance != null) {
                         launch {
                             AnalyticsReporter.report(
                                     request = request,
@@ -99,8 +101,8 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                                     reserved = granted,
                                     balance = balance)
                         }
-                    }
-                    response.addMscc(responseMscc)
+                        response.addMscc(responseMscc)
+                    })
                 }
 
                 ccaStreamMap[streamId]?.onNext(response.build())

@@ -25,32 +25,27 @@ class GrpcDiameterConverter {
                 new org.ostelco.diameter.model.ServiceUnit(),
                 new org.ostelco.diameter.model.ServiceUnit(msccGRPC.getGranted().getTotalOctets(), 0, 0),
                 msccGRPC.getValidityTime(),
-                convertFinalUnitIndication(msccGRPC.getFinalUnitIndication()));
+                convertFinalUnitIndication(msccGRPC.getFinalUnitIndication()),
+                convertResultCode(msccGRPC.getResultCode()));
     }
 
     /**
      * Convert Diameter request type to gRPC
      */
     static CreditControlRequestType getRequestType(CreditControlContext context) {
-        CreditControlRequestType type = CreditControlRequestType.NONE;
         switch (context.getOriginalCreditControlRequest().getRequestTypeAVPValue()) {
             case INITIAL_REQUEST:
-                type = CreditControlRequestType.INITIAL_REQUEST;
-                break;
+                return CreditControlRequestType.INITIAL_REQUEST;
             case UPDATE_REQUEST:
-                type = CreditControlRequestType.UPDATE_REQUEST;
-                break;
+                return CreditControlRequestType.UPDATE_REQUEST;
             case TERMINATION_REQUEST:
-                type = CreditControlRequestType.TERMINATION_REQUEST;
-                break;
+                return CreditControlRequestType.TERMINATION_REQUEST;
             case EVENT_REQUEST:
-                type = CreditControlRequestType.EVENT_REQUEST;
-                break;
+                return CreditControlRequestType.EVENT_REQUEST;
             default:
                 LOG.warn("Unknown request type");
-                break;
+                return CreditControlRequestType.NONE;
         }
-        return type;
     }
 
     private static FinalUnitIndication convertFinalUnitIndication(org.ostelco.ocs.api.FinalUnitIndication fuiGrpc) {
@@ -66,5 +61,10 @@ class GrpcDiameterConverter {
                         fuiGrpc.getRedirectServer().getRedirectServerAddress()
                 )
         );
+    }
+
+    // We match the error codes on names in gRPC and internal model
+    static org.ostelco.diameter.model.ResultCode convertResultCode(org.ostelco.ocs.api.ResultCode resultCode) {
+        return org.ostelco.diameter.model.ResultCode.valueOf(resultCode.name());
     }
 }

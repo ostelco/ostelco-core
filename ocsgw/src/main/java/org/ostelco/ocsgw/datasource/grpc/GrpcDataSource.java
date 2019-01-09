@@ -19,6 +19,9 @@ import org.ostelco.diameter.model.CreditControlRequest;
 import org.ostelco.diameter.model.MultipleServiceCreditControl;
 import org.ostelco.diameter.model.SessionContext;
 import org.ostelco.ocs.api.*;
+import org.ostelco.ocs.api.PsInformation;
+import org.ostelco.ocs.api.ReportingReason;
+import org.ostelco.ocs.api.ServiceUnit;
 import org.ostelco.ocsgw.OcsServer;
 import org.ostelco.ocsgw.datasource.DataSource;
 import org.ostelco.prime.metrics.api.OcsgwAnalyticsReport;
@@ -408,14 +411,14 @@ public class GrpcDataSource implements DataSource {
     private CreditControlAnswer createCreditControlAnswer(CreditControlAnswerInfo response) {
         if (response == null) {
             LOG.error("Empty CreditControlAnswerInfo received");
-            return new CreditControlAnswer(new ArrayList<>());
+            return new CreditControlAnswer(org.ostelco.diameter.model.ResultCode.DIAMETER_UNABLE_TO_COMPLY, new ArrayList<>());
         }
 
         final LinkedList<MultipleServiceCreditControl> multipleServiceCreditControls = new LinkedList<>();
         for (org.ostelco.ocs.api.MultipleServiceCreditControl mscc : response.getMsccList()) {
             multipleServiceCreditControls.add(GrpcDiameterConverter.convertMSCC(mscc));
         }
-        return new CreditControlAnswer(multipleServiceCreditControls);
+        return new CreditControlAnswer(GrpcDiameterConverter.convertResultCode(response.getResultCode()), multipleServiceCreditControls);
     }
 
     private boolean updateBlockedList(org.ostelco.ocs.api.MultipleServiceCreditControl msccAnswer, MultipleServiceCreditControl msccRequest, String msisdn) {

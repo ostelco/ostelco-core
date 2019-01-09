@@ -90,7 +90,7 @@ class EventProducerImpl(private val ringBuffer: RingBuffer<OcsEvent>) : EventPro
             request: CreditControlRequestInfo) {
 
         injectIntoRingBuffer(
-                eventMessageType =CREDIT_CONTROL_REQUEST,
+                eventMessageType = CREDIT_CONTROL_REQUEST,
                 msisdn = request.msisdn,
                 streamId = streamId,
                 request = request)
