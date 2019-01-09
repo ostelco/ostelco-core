@@ -7,7 +7,6 @@ import java.io.IOException
 import java.security.Principal
 import java.security.cert.X509Certificate
 import java.util.*
-import java.util.regex.Pattern
 import javax.annotation.Priority
 import javax.annotation.security.DenyAll
 import javax.annotation.security.PermitAll
@@ -39,7 +38,6 @@ import javax.ws.rs.ext.Provider
  */
 
 
-
 class CertConfig {
 
 
@@ -58,6 +56,11 @@ class CertConfig {
     @JsonProperty("country")
     @NotNull
     var country: String? = null
+
+    @Valid
+    @JsonProperty("state")
+    @NotNull
+    var state: String? = null
 
     @Valid
     @JsonProperty("location")
@@ -94,12 +97,12 @@ class RoleDef {
     @Valid
     @JsonProperty("name")
     @NotNull
-    var name:String? = null
+    var name: String? = null
 
     @Valid
     @JsonProperty("description")
     @NotNull
-    var description:String? = null
+    var description: String? = null
 
 }
 
@@ -111,7 +114,6 @@ class CertAuthConfig {
 }
 
 
-
 /**
  * This filter verify the access permissions for a user
  * based on a client certificate provided when authenticating the
@@ -120,7 +122,7 @@ class CertAuthConfig {
 @Priority(Priorities.AUTHENTICATION)
 @Provider
 //@PreMatching // XXX Enable if possible
-class CertificateAuthorizationFilter (rbac: RBACService): javax.ws.rs.container.ContainerRequestFilter {
+class CertificateAuthorizationFilter(val rbac: RBACService) : javax.ws.rs.container.ContainerRequestFilter {
 
     @Context
     private var resourceInfo: ResourceInfo? = null
@@ -130,11 +132,8 @@ class CertificateAuthorizationFilter (rbac: RBACService): javax.ws.rs.container.
     @Context
     private var request: HttpServletRequest? = null
 
-    private fun isUserAllowed(username: CertificateRBACUSER, rolesSet: Set<String>): Boolean {
-        var isAllowed = false
-
-        // XXX check this a little more thoroughly
-        return true
+    private fun isUserAllowed(user: CertificateRBACUSER, rolesSet: Set<String>): Boolean {
+        return rolesSet.intersect(user.roles.map{it.name}).isNotEmpty()
     }
 
     companion object {
@@ -146,10 +145,20 @@ class CertificateAuthorizationFilter (rbac: RBACService): javax.ws.rs.container.
     }
 
     //  XXX https://stackoverflow.com/questions/34654903/how-to-create-global-and-pre-post-matching-filter-in-restlet
-    private val dnRegex: Pattern = Pattern.compile(".*") // XXX Maximally permissive
 
     private fun certificateMatches(requestContext: ContainerRequestContext): CertificateRBACUSER? {
 
+        val clientCert = extractClientCertFromRequest(requestContext)
+        if (clientCert == null) {
+            return null
+        }
+
+        val certParams = CertificateIdParameters.parse(clientCert)
+
+        return rbac.findByCertParams(certParams)
+    }
+
+    private fun extractClientCertFromRequest(requestContext: ContainerRequestContext): X509Certificate? {
         val req = request
 
         if (req == null) {
@@ -158,7 +167,7 @@ class CertificateAuthorizationFilter (rbac: RBACService): javax.ws.rs.container.
         }
 
         val certificatesUncast = req.getAttribute(X509_CERTIFICATE_ATTRIBUTE)
-        if (certificatesUncast == null){
+        if (certificatesUncast == null) {
             requestContext.abortWith(buildForbiddenResponse("No certificate chain found!"))
             return null
         }
@@ -170,21 +179,10 @@ class CertificateAuthorizationFilter (rbac: RBACService): javax.ws.rs.container.
             return null
         }
 
-
         // The certificate of the client is always the first in the chain.
         val clientCert = certificateChain[0]
-        val clientCertDN = clientCert.subjectDN.name
-
-        // XXX Don't use regexp matching.  Parse the clientCertDN into constituents, and then require
-        //     perfect match, and based on the matching patterh infer
-        //     which party is using the certificate to authenticate.  It might also be a decent idea
-        //     to require a fingerprint match of the cert.
-        dnRegex.matcher(clientCertDN).matches()
-
-        // XXX Placeholder, should do lookup in user registry
-        return CertificateRBACUSER("foo", "bar", "baz", "gazonk", "foo")  // XXX should use loookup of the certificate instead of a static string
+        return clientCert
     }
-
 
     @Throws(IOException::class)
     override fun filter(requestContext: ContainerRequestContext) {
@@ -239,12 +237,13 @@ class CertificateAuthorizationFilter (rbac: RBACService): javax.ws.rs.container.
 }
 
 
-class RBACUserPrincipal(val id: String): Principal {
+class RBACUserPrincipal(val id: String) : Principal {
     override fun getName(): String {
         return id
     }
 }
-class RBACUserIdentity(val id:String) : UserIdentity {
+
+class RBACUserIdentity(val id: String) : UserIdentity {
 
     val principal: Principal
     val mySubject: Subject
@@ -268,16 +267,25 @@ class RBACUserIdentity(val id:String) : UserIdentity {
     }
 }
 
+
 /**
  * We're trying this out, not there yet.  The intent is to move towards a proper
  * RBAC system, so the role being referred to here is not really the same
  * as RBAC would assume.
  */
-data class CertificateRBACUSER (val id: String, val commonName: String, val country: String, val location: String, val organization: String) : Authentication.User {
+data class CertificateRBACUSER(
+        val id: String,
+        val roles: Set<RoleDef>,
+        val commonName: String,
+        val country: String,
+        val state: String,
+        val location: String,
+        val organization: String) : Authentication.User {
 
     val userId: UserIdentity
+
     init {
-        userId =  RBACUserIdentity(id)
+        userId = RBACUserIdentity(id)
     }
 
     override fun isUserInRole(p0: UserIdentity.Scope?, p1: String?): Boolean {
@@ -295,36 +303,113 @@ data class CertificateRBACUSER (val id: String, val commonName: String, val coun
     override fun logout() {
         TODO("not implemented")
     }
+
+    fun asCertificateIdParamerters(): CertificateIdParameters {
+        return CertificateIdParameters(country = country, state = state, location = location, organization = organization, commonName = commonName)
+    }
 }
 
 
-class RBACService(val rolesConfig: RolesConfig,  val certConfig:CertAuthConfig) {
+class RBACService(val rolesConfig: RolesConfig, val certConfig: CertAuthConfig) {
 
-    val roles : MutableMap<String, RoleDef>  = mutableMapOf<String, RoleDef>()
-    val users : MutableMap<String, CertificateRBACUSER> = mutableMapOf()
+    val roles: MutableMap<String, RoleDef> = mutableMapOf<String, RoleDef>()
+    val users: MutableMap<String, CertificateRBACUSER> = mutableMapOf()
 
     init {
-        rolesConfig.roles.forEach{
+        rolesConfig.roles.forEach {
             if (roles.putIfAbsent(it.name!!, it!!) != null) {
                 throw RuntimeException("Multiple declarations of role ${it.name}")
             }
         }
 
-         certConfig.certAuths.map {
-             val user = certAuthToUser(it)
-             users.put(user.id, user)
-         }
+        certConfig.certAuths.map {
+            val user = certAuthToUser(it)
+            users.put(user.id, user)
+        }
     }
 
-    private fun getRoleByName(name: String) : RoleDef {
+    private fun getRoleByName(name: String): RoleDef {
         if (!roles.containsKey(name)) {
             throw RuntimeException("Unknown role name $name")
         }
         return roles.get(name)!!
     }
 
-    private fun certAuthToUser(cc: CertConfig) : CertificateRBACUSER {
-        return CertificateRBACUSER(cc.userId!!, cc.commonName!!, cc.country!!, cc.location!!, cc.organization!!)
+    // R(val id: String, val commonName: String, val country: String, val state: String, val location: String, val organization: String) : Authentication.User {
+    private fun certAuthToUser(cc: CertConfig): CertificateRBACUSER {
+
+        var usersRoles = mutableSetOf<RoleDef>()
+
+        cc.roles.forEach {
+            if (roles.containsKey(it)) {
+                usersRoles.add(roles.get(it)!!)
+            } else {
+                throw RuntimeException("User ${cc.userId} claims to have role $it, but it doesn't exist")
+            }
+        }
+
+
+        return CertificateRBACUSER(id = cc.userId!!,  roles = usersRoles, commonName = cc.commonName!!, country =  cc.country!!, state = cc.state!!, location = cc.location!!, organization = cc.organization!!)
+    }
+
+    fun findByCertParams(certParams: CertificateIdParameters): CertificateRBACUSER? {
+        return users.values.find {
+            val cpm = it.asCertificateIdParamerters()
+            val match = cpm.equals(certParams)
+            match
+        }
+    }
+}
+
+// CN=*.not-really-ostelco.org, O=Not really SMDP org, L=Oslo, ST=Oslo, C=NO
+data class CertificateIdParameters(val commonName: String, val country: String, val state: String, val location: String, val organization: String) {
+    companion object {
+        fun parse(cert: X509Certificate): CertificateIdParameters {
+
+            val inputString= cert.subjectDN.name
+            val parts = inputString.split(",")
+
+            var countryName: String = ""
+            var commonName: String = ""
+            var location: String = ""
+            var organization: String = ""
+            var state: String = ""
+
+            parts.forEach {
+                val split = it.split("=")
+                if (split.size != 2) {
+                    throw RuntimeException("Illegal format for certificate")
+                }
+                val key = split[0].trim()
+                val value = split[1].trim()
+
+
+                if ("CN".equals(key)) {
+                    commonName = value
+                } else if ("C".equals(key)) {
+                    countryName = value
+                } else if ("OU".equals(key)) {
+                } // organizational unit
+                else if ("O".equals(key)) {
+                    organization = value
+                } // organization
+                else if ("L".equals(key)) {
+                    location = value
+                } // locality
+                else if ("S".equals(key)) {
+                    state = value
+                } // XXX  State or province name
+                else if ("ST".equals(key)) {
+                } //  State or province name
+            }
+
+            return CertificateIdParameters(
+                    commonName = commonName,
+                    country = countryName,
+                    location = location,
+                    state = state,
+                    organization = organization)
+        }
     }
 }
 

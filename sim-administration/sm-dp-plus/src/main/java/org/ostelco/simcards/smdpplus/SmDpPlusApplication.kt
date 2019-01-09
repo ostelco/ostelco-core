@@ -73,7 +73,6 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 
         // XXX Only until we're sure the client stuff works.
         jerseyEnvironment.register(PingResource())
-        // jerseyEnvironment.register(CertificateValidationFilter(".*"))
         jerseyEnvironment.register(CertificateAuthorizationFilter(RBACService(rolesConfig = config.rolesConfig, certConfig = config.certConfig)))
 
         this.client = HttpClientBuilder(env).using(config.httpClientConfiguration).build(getName())

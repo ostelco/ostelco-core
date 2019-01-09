@@ -50,13 +50,16 @@ httpClient:
     trustSelfSignedCertificates: true
 
 
+
+#  CN=*.not-really-ostelco.org, O=Not really SMDP org, L=Oslo, ST=Oslo, C=NO
 certAuth:
   certAuths:
-    - userId: foo
-      country: NO
-      location: Fornebu
-      organization: all of the above
-      commonName: foo.bar.baz
+    - userId: MrFish
+      country: 'NO'
+      location: Oslo
+      state: ''
+      organization: Not really SMDP org
+      commonName: '*.not-really-ostelco.org'
       roles:
         - flyfisher
 
