@@ -54,7 +54,7 @@ abstract class SimInventoryCreationDestructionDAO {
     // Creating and deleting tables (XXX only used for testing, and should be moved to
     // a test only DAO eventually)
     //
-    @SqlUpdate("create table sim_import_batches (id integer primary key autoincrement, status text, endedAt integer, importer text, size integer, hlr text, profileVendor text)")
+    @SqlUpdate("create table sim_import_batches (id integer primary key autoincrement, status text, endedAt integer, importer text, size integer, hlrId integer, profileVendorId integer)")
     abstract fun createImportBatchesTable()
 
     @SqlUpdate("drop  table sim_import_batches")
