@@ -1,19 +1,7 @@
 package org.ostelco.prime.storage
 
 import arrow.core.Either
-import org.ostelco.prime.model.ApplicationToken
-import org.ostelco.prime.model.Bundle
-import org.ostelco.prime.model.ChangeSegment
-import org.ostelco.prime.model.Offer
-import org.ostelco.prime.model.Plan
-import org.ostelco.prime.model.Product
-import org.ostelco.prime.model.ProductClass
-import org.ostelco.prime.model.PurchaseRecord
-import org.ostelco.prime.model.ScanInformation
-import org.ostelco.prime.model.Segment
-import org.ostelco.prime.model.Subscriber
-import org.ostelco.prime.model.SubscriberState
-import org.ostelco.prime.model.Subscription
+import org.ostelco.prime.model.*
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 
@@ -265,4 +253,8 @@ interface AdminGraphStore {
     // fun getOffer(id: String): Offer?
     // fun getSegment(id: String): Segment?
     // fun getProductClass(id: String): ProductClass?
+}
+
+interface ScanInformationStore {
+    fun upsertVendorScanInformation(subscriberId: String, vendorScanInformation: VendorScanInformation): Either<StoreError, Unit>
 }

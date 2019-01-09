@@ -3,6 +3,7 @@ package org.ostelco.prime.model
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.google.cloud.datastore.Blob
 import com.google.firebase.database.Exclude
 
 interface HasId {
@@ -85,6 +86,17 @@ data class ScanInformation(
         @JsonIgnore
         get() = scanId
 }
+
+data class VendorScanInformation(
+        val scanId: String,                     // Id of the scan
+        val scanDetails: String,                // JSON string representation of all the information from vendor
+        val scanImage: Blob,                    // image of the scan (JPEG or PNG)
+        val scanImageType: String,              // type of image (e.g. image/jpg)
+        val scanImageBackside: Blob?,           // back side image of the scan (JPEG or PNG) if available
+        val scanImageBacksideType: String?,     // type of back side image (e.g. image/jpg)
+        val scanImageFace: Blob?,               // face image of the scan (JPEG or PNG) if available
+        val scanImageFaceType: String?          // type of face image (e.g. image/jpg)
+)
 
 // TODO vihang: make ApplicationToken data class immutable
 // this data class is treated differently since it is stored in Firebase.
