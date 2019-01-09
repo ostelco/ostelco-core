@@ -4,13 +4,13 @@ import io.dropwizard.Application
 import io.dropwizard.jdbi.DBIFactory
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
+import io.dropwizard.client.JerseyClientBuilder
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
 import org.ostelco.sim.es2plus.SmDpPlusCallbackResource
 import org.ostelco.sim.es2plus.SmDpPlusCallbackService
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SimInventoryResource
-
 
 /**
  * The SIM manager
@@ -56,6 +56,10 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
                     resultData: String?,
                     timestamp: String) = Unit
         }
+
+        val client = JerseyClientBuilder(environment)
+                .using(configuration.getJerseyClientConfiguration())
+                .build(environment.name)
 
         val jerseyEnvironment = environment.jersey()
 

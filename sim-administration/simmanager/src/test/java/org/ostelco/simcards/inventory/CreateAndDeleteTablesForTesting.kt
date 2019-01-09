@@ -12,8 +12,7 @@ abstract class SimInventoryCreationDestructionDAO {
         createImportBatchesTable()
         createSimEntryTable()
         createHlrAdapterTable()
-        createSmdpPlusTable()
-        createSimProfileVendorTable()
+        createProfileVendorAdapterTable()
         createSimVendorsPermittedTable()
 
     }
@@ -32,15 +31,7 @@ abstract class SimInventoryCreationDestructionDAO {
         } catch (e: Exception) {
         }
         try {
-            dropSmdpPlusTable()
-        } catch (e: Exception) {
-        }
-        try {
-            dropSimProfileVendorTable()
-        } catch (e: Exception) {
-        }
-        try {
-            dropSimProfileVendorTable()
+            dropProfileVendorAdapterTable()
         } catch (e: Exception) {
         }
         try {
@@ -56,35 +47,26 @@ abstract class SimInventoryCreationDestructionDAO {
     @SqlUpdate("create table sim_import_batches (id integer primary key autoincrement, status text, endedAt integer, importer text, size integer, hlrId integer, profileVendorId integer)")
     abstract fun createImportBatchesTable()
 
-    @SqlUpdate("drop  table sim_import_batches")
+    @SqlUpdate("drop table sim_import_batches")
     abstract fun dropImportBatchesTable()
 
-
-    @SqlUpdate("create table sim_entries (id integer primary key autoincrement, hlrid text, smdpplus text, msisdn text, eid text, hlrActivation boolean, smdpPlusActivation boolean, batch integer, imsi varchar(15), iccid varchar(22), pin1 varchar(4), pin2 varchar(4), puk1 varchar(80), puk2 varchar(80), CONSTRAINT Unique_Imsi UNIQUE (imsi), CONSTRAINT Unique_Iccid UNIQUE (iccid))")
+    @SqlUpdate("create table sim_entries (id integer primary key autoincrement, profileVendorId integer, hlrid integer, msisdn text, eid text, hlrActivation boolean, smdpPlusActivation boolean, batch integer, imsi varchar(15), iccid varchar(22), pin1 varchar(4), pin2 varchar(4), puk1 varchar(80), puk2 varchar(80), CONSTRAINT Unique_Imsi UNIQUE (imsi), CONSTRAINT Unique_Iccid UNIQUE (iccid))")
     abstract fun createSimEntryTable()
 
-    @SqlUpdate("drop  table sim_entries")
+    @SqlUpdate("drop table sim_entries")
     abstract fun dropSimEntryTable()
 
     @SqlUpdate("create table hlr_adapters (id integer primary key autoincrement, name text,  CONSTRAINT Unique_Name UNIQUE (name))")
     abstract fun createHlrAdapterTable()
 
-    @SqlUpdate("drop  table hlr_adapters")
+    @SqlUpdate("drop table hlr_adapters")
     abstract fun dropHlrAdapterTable()
 
+    @SqlUpdate("create table profile_vendor_adapters (id integer primary key autoincrement, name text,  CONSTRAINT Unique_Name UNIQUE (name))")
+    abstract fun createProfileVendorAdapterTable()
 
-    @SqlUpdate("create table smdp_plus_adapters (id integer primary key autoincrement, name text,  CONSTRAINT Unique_Name UNIQUE (name))")
-    abstract fun createSmdpPlusTable()
-
-    @SqlUpdate("drop  table smdp_plus_adapters")
-    abstract fun dropSmdpPlusTable()
-
-
-    @SqlUpdate("create table sim_profile_vendor (id integer primary key autoincrement, name text,  CONSTRAINT Unique_Name UNIQUE (name))")
-    abstract fun createSimProfileVendorTable()
-
-    @SqlUpdate("drop  table sim_profile_vendor")
-    abstract fun dropSimProfileVendorTable()
+    @SqlUpdate("drop table profile_vendor_adapters")
+    abstract fun dropProfileVendorAdapterTable()
 
     @SqlUpdate("create table sim_vendors_permitted_hlrs (id integer primary key autoincrement, profileVendorId integer, hlrId integer,  CONSTRAINT Unique_pair UNIQUE (profileVendorId, hlrId))")
     abstract fun createSimVendorsPermittedTable()

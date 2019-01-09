@@ -75,9 +75,9 @@ class SimAdministrationTest {
     private fun presetTables() {
         val dao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().simInventoryDAO
 
-        dao.addSimProfileVendor(profileVendor)
+        dao.addProfileVendorAdapter(profileVendor)
         dao.addHlrAdapter(hlr)
-        dao.permitVendorForHlrByNames(vendor = profileVendor, hlr = hlr)
+        dao.permitVendorForHlrByNames(profileVendor = profileVendor, hlr = hlr)
     }
 
     /* The SIM dataset is the same that is used by the SM-DP+ emulator. */
@@ -98,9 +98,8 @@ class SimAdministrationTest {
         assertThat(response.status).isEqualTo(200)
     }
 
-    //@Test
+    @Test
     fun testActivateEsim() {
-        val hlr = "Footel"
         val iccid = "8901000000000000001"
         val response = client.target("http://localhost:${SIM_MANAGER_RULE.getLocalPort()}/ostelco/sim-inventory/${hlr}/iccid/${iccid}/activate/esim")
                 .request()

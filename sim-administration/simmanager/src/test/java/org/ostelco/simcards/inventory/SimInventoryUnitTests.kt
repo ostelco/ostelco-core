@@ -31,22 +31,21 @@ class SimInventoryUnitTests {
 
     private val fakeIccid1 = "01234567891234567890"
     private val fakeIccid2 = "01234567891234567891"
-    private val fakeIccid3 = "01234567891234567892"
     private val fakeImsi1 = "12345678912345"
     private val fakeImsi2 = "12345678912346"
     private val fakeMsisdn1 = "474747474747"
     private val fakeMsisdn2 = "464646464646"
 
-    private val fakeSimProfileVendor = "Idemia"
+    private val fakeProfileVendor = "Idemia"
     private val fakeHlr = "Loltel"
 
     private val fakeSimEntryWithoutMsisdn = SimEntry(
             id = 1L,
+            profileVendorId = 1L,
             hlrId = 1L,
             batch = 99L,
             iccid = fakeIccid1,
             imsi = fakeImsi1,
-            smdpplus = fakeHlr,
             eid = "bb",
             hlrActivation = false,
             smdpPlusActivation = false,
@@ -56,8 +55,8 @@ class SimInventoryUnitTests {
             puk2 = "ss")
     private val fakeSimEntryWithMsisdn = SimEntry(
             id = 1L,
+            profileVendorId = 1L,
             hlrId = 1L,
-            smdpplus = null,
             batch = 99L,
             iccid = fakeIccid1,
             imsi = fakeImsi1,
@@ -68,21 +67,6 @@ class SimInventoryUnitTests {
             pin2 = "ss",
             puk1 = "ss",
             puk2 = "ss")
-    private val fakeSimEntryWithoutMsisdnAndSmdpplus = SimEntry(
-            id = 1L,
-            hlrId = 1L,
-            batch = 99L,
-            iccid = fakeIccid2,
-            imsi = fakeImsi2,
-            msisdn = fakeMsisdn1,
-            eid = "bb",
-            hlrActivation = false,
-            smdpPlusActivation = false,
-            pin1 = "ss",
-            pin2 = "ss",
-            puk1 = "ss",
-            puk2 = "ss")
-
 
     @Before
     fun setUp() {
@@ -91,18 +75,12 @@ class SimInventoryUnitTests {
         val mockHlrAdapter = HlrAdapter(
                 id = 1L,
                 name = fakeHlr)
-        val mockSmdpplusAdapter = SmdpPlusAdapter(
-                id =1L,
-                name = fakeHlr)
-        val mockSimProfileVendor = SimProfileVendor(
+        val mockProfileVendorAdapter = ProfileVendorAdapter(
                 id = 1L,
-                name = fakeSimProfileVendor)
+                name = fakeProfileVendor)
 
         org.mockito.Mockito.`when`(dao.getSimProfileByIccid(fakeIccid1))
                 .thenReturn(fakeSimEntryWithoutMsisdn)
-
-        org.mockito.Mockito.`when`(dao.getSimProfileByIccid(fakeIccid3))
-                .thenReturn(fakeSimEntryWithoutMsisdnAndSmdpplus)
 
         org.mockito.Mockito.`when`(dao.getSimProfileById(fakeSimEntryWithoutMsisdn.id!!))
                 .thenReturn(fakeSimEntryWithoutMsisdn)
@@ -128,11 +106,11 @@ class SimInventoryUnitTests {
         org.mockito.Mockito.`when`(dao.getHlrAdapterByName(fakeHlr))
                 .thenReturn(mockHlrAdapter)
 
-        org.mockito.Mockito.`when`(dao.getSmdpPlusAdapterByName(fakeHlr))
-                .thenReturn(mockSmdpplusAdapter)
+        org.mockito.Mockito.`when`(dao.getProfileVendorAdapterByName(fakeProfileVendor))
+                .thenReturn(mockProfileVendorAdapter)
 
-        org.mockito.Mockito.`when`(dao.getProfilevendorByName(fakeSimProfileVendor))
-                .thenReturn(mockSimProfileVendor)
+        org.mockito.Mockito.`when`(dao.getProfileVendorAdapterById(1L))
+                .thenReturn(mockProfileVendorAdapter)
 
         org.mockito.Mockito.`when`(dao.getHlrAdapterByName(fakeHlr))
                 .thenReturn(mockHlrAdapter)
@@ -257,14 +235,6 @@ class SimInventoryUnitTests {
     }
 
     @Test
-    fun testActivateEsimFailinglyOnSimWithoutSmdpPlus() {
-        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/iccid/$fakeIccid3/activate/esim")
-                .request(MediaType.APPLICATION_JSON)
-                .get()// XXX Post
-        assertEquals(400, response.status)
-    }
-
-    @Test
     fun testDeactivate() {
         val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/iccid/$fakeIccid1/deactivate/hlr")
                 .request(MediaType.APPLICATION_JSON)
@@ -297,7 +267,7 @@ class SimInventoryUnitTests {
             123123, 123123, 1233,1233,1233,1233
             123123, 123123, 1233,1233,1233,1233
             """.trimIndent()
-        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/import-batch/profilevendor/$fakeSimProfileVendor")
+        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/import-batch/profilevendor/$fakeProfileVendor")
                 .request(MediaType.APPLICATION_JSON)
                 .put(Entity.entity(sampleCsvIinput, MediaType.TEXT_PLAIN))
         assertEquals(200, response.status)
