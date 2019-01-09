@@ -1,6 +1,5 @@
 package org.ostelco.ocsgw.data.grpc;
 
-import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountJwtAccessCredentials;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -15,15 +14,16 @@ import org.jdiameter.api.OverloadException;
 import org.jdiameter.api.RouteException;
 import org.jdiameter.api.cca.ServerCCASession;
 import org.ostelco.diameter.CreditControlContext;
-import org.ostelco.diameter.model.CreditControlAnswer;
-import org.ostelco.diameter.model.CreditControlRequest;
+import org.ostelco.diameter.model.*;
 import org.ostelco.diameter.model.FinalUnitAction;
 import org.ostelco.diameter.model.FinalUnitIndication;
 import org.ostelco.diameter.model.MultipleServiceCreditControl;
 import org.ostelco.diameter.model.RedirectAddressType;
 import org.ostelco.diameter.model.RedirectServer;
-import org.ostelco.diameter.model.SessionContext;
 import org.ostelco.ocs.api.*;
+import org.ostelco.ocs.api.PsInformation;
+import org.ostelco.ocs.api.ReportingReason;
+import org.ostelco.ocs.api.ServiceUnit;
 import org.ostelco.ocsgw.OcsServer;
 import org.ostelco.ocsgw.data.DataSource;
 import org.ostelco.prime.metrics.api.OcsgwAnalyticsReport;
@@ -407,38 +407,32 @@ public class GrpcDataSource implements DataSource {
     }
 
     private CreditControlRequestType getRequestType(CreditControlContext context) {
-        CreditControlRequestType type = CreditControlRequestType.NONE;
         switch (context.getOriginalCreditControlRequest().getRequestTypeAVPValue()) {
             case INITIAL_REQUEST:
-                type = CreditControlRequestType.INITIAL_REQUEST;
-                break;
+                return CreditControlRequestType.INITIAL_REQUEST;
             case UPDATE_REQUEST:
-                type = CreditControlRequestType.UPDATE_REQUEST;
-                break;
+                return CreditControlRequestType.UPDATE_REQUEST;
             case TERMINATION_REQUEST:
-                type = CreditControlRequestType.TERMINATION_REQUEST;
-                break;
+                return CreditControlRequestType.TERMINATION_REQUEST;
             case EVENT_REQUEST:
-                type = CreditControlRequestType.EVENT_REQUEST;
-                break;
+                return CreditControlRequestType.EVENT_REQUEST;
             default:
                 LOG.warn("Unknown request type");
-                break;
+                return CreditControlRequestType.NONE;
         }
-        return type;
     }
 
     private CreditControlAnswer createCreditControlAnswer(CreditControlAnswerInfo response) {
         if (response == null) {
             LOG.error("Empty CreditControlAnswerInfo received");
-            return new CreditControlAnswer(new ArrayList<>());
+            return new CreditControlAnswer(org.ostelco.diameter.model.ResultCode.DIAMETER_UNABLE_TO_COMPLY, new ArrayList<>());
         }
 
         final LinkedList<MultipleServiceCreditControl> multipleServiceCreditControls = new LinkedList<>();
         for (org.ostelco.ocs.api.MultipleServiceCreditControl mscc : response.getMsccList()) {
             multipleServiceCreditControls.add(convertMSCC(mscc));
         }
-        return new CreditControlAnswer(multipleServiceCreditControls);
+        return new CreditControlAnswer(convertResultCode(response.getResultCode()), multipleServiceCreditControls);
     }
 
     private void updateBlockedList(org.ostelco.ocs.api.MultipleServiceCreditControl msccAnswer, MultipleServiceCreditControl msccRequest, String msisdn) {
@@ -459,7 +453,13 @@ public class GrpcDataSource implements DataSource {
                 new org.ostelco.diameter.model.ServiceUnit(),
                 new org.ostelco.diameter.model.ServiceUnit(msccGRPC.getGranted().getTotalOctets(), 0, 0),
                 msccGRPC.getValidityTime(),
-                convertFinalUnitIndication(msccGRPC.getFinalUnitIndication()));
+                convertFinalUnitIndication(msccGRPC.getFinalUnitIndication()),
+                convertResultCode(msccGRPC.getResultCode()));
+    }
+
+    // We match the error codes on names in gRPC and internal model
+    private org.ostelco.diameter.model.ResultCode convertResultCode(org.ostelco.ocs.api.ResultCode resultCode) {
+        return org.ostelco.diameter.model.ResultCode.valueOf(resultCode.name());
     }
 
     private FinalUnitIndication convertFinalUnitIndication(org.ostelco.ocs.api.FinalUnitIndication fuiGrpc) {

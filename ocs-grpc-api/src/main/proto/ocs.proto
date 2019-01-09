@@ -56,6 +56,20 @@ enum ReportingReason {
   UNUSED_QUOTA_TIMER = 9;
 }
 
+enum ResultCode {
+  UNKNOWN = 0;
+  DIAMETER_SUCCESS = 2001;
+  DIAMETER_LIMITED_SUCCESS = 2002;
+  DIAMETER_END_USER_SERVICE_DENIED = 4010;
+  DIAMETER_CREDIT_CONTROL_NOT_APPLICABLE = 4011;
+  DIAMETER_CREDIT_LIMIT_REACHED = 4012;
+  DIAMETER_INVALID_AVP_VALUE = 5004;
+  DIAMETER_MISSING_AVP = 5005;
+  DIAMETER_UNABLE_TO_COMPLY = 5012;
+  DIAMETER_USER_UNKNOWN = 5030;
+  DIAMETER_RATING_FAILED = 5031;
+}
+
 message RedirectServer {
   RedirectAddressType redirectAddressType = 1;
   string redirectServerAddress = 2;
@@ -78,6 +92,7 @@ message MultipleServiceCreditControl {
     FinalUnitIndication finalUnitIndication = 6;
     uint32 validityTime = 7;
     ReportingReason reportingReason = 8;
+    ResultCode resultCode = 9;
 }
 
 message PsInformation {
@@ -102,6 +117,7 @@ message CreditControlAnswerInfo {
   string requestId = 1;
   string msisdn = 2;
   repeated MultipleServiceCreditControl mscc = 3;
+  ResultCode resultCode = 4;
 }
 
 
