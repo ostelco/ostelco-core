@@ -272,15 +272,15 @@ abstract class SimInventoryDAO {
     }
 
 
-    @SqlQuery("select id from sim_vendors_permitted_hlrs where vendorId = vendorId AND hlrId = :hlrId")
-    abstract fun findSimVendorForHlrPermissions(@Bind("vendorId") vendorId: Long, @Bind("hlrId") hlrId: Long): List<Long>
+    @SqlQuery("select id from sim_vendors_permitted_hlrs where profileVendorId = profileVendorId AND hlrId = :hlrId")
+    abstract fun findSimVendorForHlrPermissions(@Bind("profileVendorId") profileVendorId: Long, @Bind("hlrId") hlrId: Long): List<Long>
 
-    fun simVendorIsPermittedForHlr(@Bind("vendorId") vendorId: Long, @Bind("hlrId") hlrId: Long): Boolean {
-        return (findSimVendorForHlrPermissions(vendorId, hlrId).isNotEmpty())
+    fun simVendorIsPermittedForHlr(@Bind("profileVendorId") profileVendorId: Long, @Bind("hlrId") hlrId: Long): Boolean {
+        return (findSimVendorForHlrPermissions(profileVendorId, hlrId).isNotEmpty())
     }
 
-    @SqlUpdate("INSERT INTO sim_vendors_permitted_hlrs (vendorId, hlrId) VALUES (:vendorId, :hlrId)")
-    abstract fun storeSimVendorForHlrPermission(@Bind("vendorId") vendorId: Long, @Bind("hlrId") hlrId: Long)
+    @SqlUpdate("INSERT INTO sim_vendors_permitted_hlrs (profileVendorId, hlrId) VALUES (:profileVendorId, :hlrId)")
+    abstract fun storeSimVendorForHlrPermission(@Bind("profileVendorId") profileVendorId: Long, @Bind("hlrId") hlrId: Long)
 
     @SqlUpdate("INSERT INTO hlr_adapters (name) VALUES (:name)")
     abstract fun addHlrAdapter(@Bind("name") name: String)

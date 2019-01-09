@@ -8,7 +8,6 @@ import org.skife.jdbi.v2.sqlobject.SqlUpdate
  */
 abstract class SimInventoryCreationDestructionDAO {
 
-
     fun createAll() {
         createImportBatchesTable()
         createSimEntryTable()
@@ -87,10 +86,9 @@ abstract class SimInventoryCreationDestructionDAO {
     @SqlUpdate("drop  table sim_profile_vendor")
     abstract fun dropSimProfileVendorTable()
 
-    @SqlUpdate("create table sim_vendors_permitted_hlrs (id integer primary key autoincrement, vendorId integer, hlrId integer,  CONSTRAINT Unique_pair UNIQUE (vendorId, hlrId))")
+    @SqlUpdate("create table sim_vendors_permitted_hlrs (id integer primary key autoincrement, profileVendorId integer, hlrId integer,  CONSTRAINT Unique_pair UNIQUE (profileVendorId, hlrId))")
     abstract fun createSimVendorsPermittedTable()
 
     @SqlUpdate("drop  table sim_vendors_permitted_hlrs")
     abstract fun dropSimVendorsPermittedTable()
-
 }
