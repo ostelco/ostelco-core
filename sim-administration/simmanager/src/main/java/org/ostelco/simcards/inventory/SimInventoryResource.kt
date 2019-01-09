@@ -32,10 +32,10 @@ class SimInventoryResource(private val dao: SimInventoryDAO) {
     fun findByIccid(
             @NotEmpty @PathParam("hlr") hlr: String,
             @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
-
-        val sim = assertNonNull(dao.getSimProfileByIccid(iccid))
-        assertHlrsEqual(hlr, sim.hlrId)
-        return sim
+        val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
+        val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
+        assertHlrsEqual(hlr, hlrAdapter.name)
+        return simEntry
     }
 
     @Produces(MediaType.APPLICATION_JSON)
@@ -45,9 +45,10 @@ class SimInventoryResource(private val dao: SimInventoryDAO) {
     fun findByImsi(
             @NotEmpty @PathParam("hlr") hlr: String,
             @NotEmpty @PathParam("imsi") imsi: String): SimEntry {
-        val sim = assertNonNull(dao.getSimProfileByImsi(imsi))
-        assertHlrsEqual(hlr, sim.hlrId)
-        return sim
+        val simEntry = assertNonNull(dao.getSimProfileByImsi(imsi))
+        val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
+        assertHlrsEqual(hlr, hlrAdapter.name)
+        return simEntry
     }
 
 
@@ -77,12 +78,14 @@ class SimInventoryResource(private val dao: SimInventoryDAO) {
     fun activateByIccid(
             @NotEmpty @PathParam("hlr") hlr: String,
             @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
-        val sim = activateHlrProfileByIccid(hlr, iccid)
-        assertHlrsEqual(hlr, sim.hlrId)
-        return if (sim.smdpplus != null) {
+        val simEntry = activateHlrProfileByIccid(hlr, iccid)
+        val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
+        assertHlrsEqual(hlr, hlrAdapter.name)
+
+        return if (simEntry.smdpplus != null) {
             activateEsimProfileByIccid(hlr, iccid)
         } else {
-            sim
+            simEntry
         }
     }
 
@@ -103,8 +106,8 @@ class SimInventoryResource(private val dao: SimInventoryDAO) {
             @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
 
         val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
-        assertHlrsEqual(hlr, simEntry.hlrId)
-        val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
+        val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
+        assertHlrsEqual(hlr, hlrAdapter.name)
 
         try {
             hlrAdapter.activate(simEntry)
@@ -122,7 +125,8 @@ class SimInventoryResource(private val dao: SimInventoryDAO) {
             @NotEmpty @PathParam("hlr") hlr: String,
             @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
         val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
-        assertHlrsEqual(hlr, simEntry.hlrId)
+        val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
+        assertHlrsEqual(hlr, hlrAdapter.name)
 
         if (simEntry.smdpplus == null) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
@@ -145,9 +149,8 @@ class SimInventoryResource(private val dao: SimInventoryDAO) {
             @NotEmpty @PathParam("hlr") hlr: String,
             @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
         val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
-
-        assertHlrsEqual(hlr, simEntry.hlrId)
-        val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
+        val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
+        assertHlrsEqual(hlr, hlrAdapter.name)
 
         hlrAdapter.deactivate(simEntry)
         dao.setActivatedInHlr(simEntry.id!!)
@@ -164,18 +167,17 @@ class SimInventoryResource(private val dao: SimInventoryDAO) {
             @NotEmpty @PathParam("profilevendor") profilevendor: String,
             csvInputStream: InputStream): SimImportBatch {
 
-        val pvp = assertNonNull(dao.getProfilevendorByName(profilevendor))
-
+        val profileVendor = assertNonNull(dao.getProfilevendorByName(profilevendor))
         val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
 
-        if (!dao.simVendorIsPermittedForHlr(pvp.id, hlrAdapter.id)) {
+        if (!dao.simVendorIsPermittedForHlr(profileVendor.id, hlrAdapter.id)) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }
 
         return dao.importSims(
                 importer = "importer", // TODO: This is a very strange name for an importer .-)
-                hlr = hlr,
-                profileVendor = profilevendor,
+                hlrId = hlrAdapter.id,
+                profileVendorId = profileVendor.id,
                 csvInputStream = csvInputStream)
     }
 }

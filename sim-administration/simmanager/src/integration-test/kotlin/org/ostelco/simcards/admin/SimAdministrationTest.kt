@@ -92,8 +92,7 @@ class SimAdministrationTest {
     @Test
     fun testGetIccid() {
         val iccid = "8901000000000000001"
-        //val iccid = "1234567890123456805"
-        val response = client.target("http://localhost:${SIM_MANAGER_RULE.getLocalPort()}/ostelco/sim-inventory/1/iccid/${iccid}")
+        val response = client.target("http://localhost:${SIM_MANAGER_RULE.getLocalPort()}/ostelco/sim-inventory/${hlr}/iccid/${iccid}")
                 .request()
                 .get()
         assertThat(response.status).isEqualTo(200)

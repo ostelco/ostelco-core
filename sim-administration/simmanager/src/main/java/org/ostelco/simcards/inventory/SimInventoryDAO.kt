@@ -26,7 +26,7 @@ import javax.ws.rs.core.Response
 data class SimEntry(
         @JsonProperty("id") val id: Long? = null,
         @JsonProperty("batch") val batch: Long,
-        @JsonProperty("hlrId") val hlrId: String,
+        @JsonProperty("hlrId") val hlrId: Long,
         @JsonProperty("smdpplus") val smdpplus: String? = null,
         @JsonProperty("msisdn") val msisdn: String? = null,
         @JsonProperty("iccid") val iccid: String,
@@ -49,8 +49,8 @@ data class SimImportBatch(
         @JsonProperty("message") val status: String?,
         @JsonProperty("importer") val importer: String,
         @JsonProperty("size") val size: Long,
-        @JsonProperty("hlr") val hlr: String,
-        @JsonProperty("profileVendor") val profileVendor: String
+        @JsonProperty("hlrId") val hlrId: Long,
+        @JsonProperty("profileVendorId") val profileVendorId: Long
 )
 
 
@@ -96,7 +96,7 @@ data class SmdpPlusAdapter(
 }
 
 
-class SimEntryIterator(hlrId: String, batchId: Long, csvInputStream: InputStream) : Iterator<SimEntry> {
+class SimEntryIterator(hlrId: Long, batchId: Long, csvInputStream: InputStream) : Iterator<SimEntry> {
 
     var count = AtomicLong(0)
     // TODO: The current implementation puts everything in a deque at startup.
@@ -221,7 +221,7 @@ abstract class SimInventoryDAO {
 
             val id = r.getLong("id")
             val batch = r.getLong("batch")
-            val hlrId = r.getString("hlrId")
+            val hlrId = r.getLong("hlrId")
             val smdpplus = r.getString("smdpplus")
             val msisdn = r.getString("msisdn")
             val iccid = r.getString("iccid")
@@ -305,7 +305,7 @@ abstract class SimInventoryDAO {
 
     @SqlQuery("select * from hlr_adapters where id = :id")
     @RegisterMapper(HlrAdapterMapper::class)
-    abstract fun getHlrAdapterByName(@Bind("id") id: Long): HlrAdapter
+    abstract fun getHlrAdapterById(@Bind("id") id: Long): HlrAdapter
 
 
     class HlrAdapterMapper : ResultSetMapper<HlrAdapter> {
@@ -342,11 +342,11 @@ abstract class SimInventoryDAO {
     abstract fun insertAll(@BindBean entries: Iterator<SimEntry>)
 
 
-    @SqlUpdate("INSERT INTO sim_import_batches (status,  importer, hlr, profileVendor) VALUES ('STARTED', :importer, :hlr, :profileVendor)")
+    @SqlUpdate("INSERT INTO sim_import_batches (status,  importer, hlrId, profileVendorId) VALUES ('STARTED', :importer, :hlrId, :profileVendorId)")
     abstract fun createNewSimImportBatch(
             @Bind("importer") importer: String,
-            @Bind("hlr") hlr: String,
-            @Bind("profileVendor") profileVendor: String)
+            @Bind("hlrId") hlrId: Long,
+            @Bind("profileVendorId") profileVendorId: Long)
 
     abstract fun getIdOfBatchCreatedLast(): Long
 
@@ -360,16 +360,15 @@ abstract class SimInventoryDAO {
     @Transaction
     fun importSims(
             importer: String,
-            hlr: String,
-            profileVendor: String,
+            hlrId: Long,
+            profileVendorId: Long,
             csvInputStream: InputStream): SimImportBatch {
 
         createNewSimImportBatch(
                 importer = importer,
-                hlr = hlr,
-                profileVendor = profileVendor)
+                hlrId = hlrId,
+                profileVendorId = profileVendorId)
         val batchId = lastInsertRowid()
-        val hlrId = "1"
         val values = SimEntryIterator(
                 hlrId = hlrId,
                 batchId = batchId,
@@ -398,16 +397,16 @@ abstract class SimInventoryDAO {
             val id = r.getLong("id")
             val endedAt = r.getLong("endedAt")
             val status = r.getString("status")
-            val hlr = r.getString("hlr")
-            val profileVendor = r.getString("profileVendor")
+            val hlrId = r.getLong("hlrId")
+            val profileVendorId = r.getLong("profileVendorId")
             val size = r.getLong("size")
 
             return SimImportBatch(
                     id = id,
                     endedAt = endedAt,
                     status = status,
-                    hlr = hlr,
-                    profileVendor = profileVendor,
+                    hlrId = hlrId,
+                    profileVendorId = profileVendorId,
                     size = size,
                     importer = "XXX Replace with name of agent that facilitated the import")
         }

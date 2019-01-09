@@ -41,7 +41,7 @@ class SimInventoryUnitTests {
     private fun fakeEntryWithoutMsisdn() : SimEntry {
         return SimEntry(
                 id = 1L,
-                hlrId = "Loltel",
+                hlrId = 1L,
                 batch = 99L,
                 iccid = fakeIccid1,
                 imsi = fakeImsi1,
@@ -58,7 +58,7 @@ class SimInventoryUnitTests {
     private fun fakeEntryWithoutMsisdnAndSmdpplus() : SimEntry {
         return SimEntry(
                 id = 1L,
-                hlrId = fakeHlr,
+                hlrId = 1L,
                 smdpplus = null,
                 batch = 99L,
                 iccid = fakeIccid1,
@@ -75,7 +75,7 @@ class SimInventoryUnitTests {
     private fun fakeEntryWithMsisdn() : SimEntry {
         return SimEntry(
                 id = 1L,
-                hlrId = "Loltel",
+                hlrId = 1L,
                 batch = 99L,
                 iccid = fakeIccid2,
                 imsi = fakeImsi2,
@@ -105,7 +105,6 @@ class SimInventoryUnitTests {
         this.fakeSimEntryWithoutMsisdn = fakeEntryWithoutMsisdn()
         this.fakeSimEntryWithMsisdn = fakeEntryWithMsisdn()
         this.fakeEnrtryWithoutMsisdnAndSmdpplus = fakeEntryWithoutMsisdnAndSmdpplus()
-
 
         val mockHlrAdapter = HlrAdapter(1L, fakeHlr)
         val mockSmdpplusAdapter = SmdpPlusAdapter(1L, "Loltel")
@@ -150,6 +149,11 @@ class SimInventoryUnitTests {
         org.mockito.Mockito.`when`(dao.getProfilevendorByName("Idemia"))
                 .thenReturn(idemiaProfileVendor)
 
+        org.mockito.Mockito.`when`(dao.getHlrAdapterByName("Loltel"))
+                .thenReturn(mockHlrAdapter)
+
+        org.mockito.Mockito.`when`(dao.getHlrAdapterById(1L))
+                .thenReturn(mockHlrAdapter)
     }
 
     @Test
@@ -298,7 +302,7 @@ class SimInventoryUnitTests {
     fun testImport() {
 
         org.mockito.Mockito.`when`(dao.getBatchInfo(0))
-                .thenReturn(SimImportBatch(id = 0L, status = "SUCCESS", size = 4L, hlr = "Loltel", profileVendor = "Idemia", importer = "Testroutine", endedAt = 999L))
+                .thenReturn(SimImportBatch(id = 0L, status = "SUCCESS", size = 4L, hlrId = 1L, profileVendorId = 1L, importer = "Testroutine", endedAt = 999L))
 
 
         org.mockito.Mockito.`when`(dao.findSimVendorForHlrPermissions(0L, 1L))
