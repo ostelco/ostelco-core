@@ -27,7 +27,7 @@ data class SimEntry(
         @JsonProperty("id") val id: Long? = null,
         @JsonProperty("batch") val batch: Long,
         @JsonProperty("hlrId") val hlrId: Long,
-        @JsonProperty("smdpplus") val smdpplus: String? = null,
+        @JsonProperty("profileVendorId") val profileVendorId: Long,
         @JsonProperty("msisdn") val msisdn: String? = null,
         @JsonProperty("iccid") val iccid: String,
         @JsonProperty("imsi") val imsi: String,
@@ -78,10 +78,10 @@ data class HlrAdapter(
 
 
 /**
- * An adapter that can connect to HLR entries and activate/deactivate
- * individual SIM profiles.
+ * An adapter that can connect to SIM profile vendors and activate
+ * the requested SIM profile.
  */
-data class SmdpPlusAdapter(
+data class ProfileVendorAdapter(
         @JsonProperty("id") val id: Long,
         @JsonProperty("name") val name: String) {
 
@@ -96,7 +96,7 @@ data class SmdpPlusAdapter(
 }
 
 
-class SimEntryIterator(hlrId: Long, batchId: Long, csvInputStream: InputStream) : Iterator<SimEntry> {
+class SimEntryIterator(profileVendorId: Long, hlrId: Long, batchId: Long, csvInputStream: InputStream) : Iterator<SimEntry> {
 
     var count = AtomicLong(0)
     // TODO: The current implementation puts everything in a deque at startup.
@@ -135,6 +135,7 @@ class SimEntryIterator(hlrId: Long, batchId: Long, csvInputStream: InputStream) 
 
                     val value = SimEntry(
                             batch = batchId,
+                            profileVendorId = profileVendorId,
                             hlrId = hlrId,
                             iccid = iccid,
                             imsi = imsi,
@@ -193,7 +194,6 @@ class SimProfileVendorMapper : ResultSetMapper<SimProfileVendor> {
  */
 abstract class SimInventoryDAO {
 
-
     @SqlQuery("select * from sim_entries where id = :id")
     @RegisterMapper(SimEntryMapper::class)
     abstract fun getSimProfileById(@Bind("id") id: Long): SimEntry
@@ -221,8 +221,8 @@ abstract class SimInventoryDAO {
 
             val id = r.getLong("id")
             val batch = r.getLong("batch")
+            val profileVendorId = r.getLong("profileVendorId")
             val hlrId = r.getLong("hlrId")
-            val smdpplus = r.getString("smdpplus")
             val msisdn = r.getString("msisdn")
             val iccid = r.getString("iccid")
             val imsi = r.getString("imsi")
@@ -237,8 +237,8 @@ abstract class SimInventoryDAO {
             return SimEntry(
                     id = id,
                     batch = batch,
+                    profileVendorId = profileVendorId,
                     hlrId = hlrId,
-                    smdpplus = smdpplus,
                     msisdn = msisdn,
                     iccid = iccid,
                     imsi = imsi,
@@ -265,10 +265,10 @@ abstract class SimInventoryDAO {
     }
 
     @Transaction
-    fun permitVendorForHlrByNames(vendor: String, hlr: String) {
+    fun permitVendorForHlrByNames(profileVendor: String, hlr: String) {
+        val simVendorAdapter = assertNonNull(getProfileVendorAdapterByName(profileVendor))
         val hlrAdapter = assertNonNull(getHlrAdapterByName(hlr))
-        val simVendorEntry = assertNonNull(getProfilevendorByName(vendor))
-        storeSimVendorForHlrPermission(simVendorEntry.id, hlrAdapter.id)
+        storeSimVendorForHlrPermission(simVendorAdapter.id, hlrAdapter.id)
     }
 
 
@@ -285,28 +285,15 @@ abstract class SimInventoryDAO {
     @SqlUpdate("INSERT INTO hlr_adapters (name) VALUES (:name)")
     abstract fun addHlrAdapter(@Bind("name") name: String)
 
-    @SqlUpdate("INSERT INTO sim_profile_vendor (name) VALUES (:name)")
-    abstract fun addSimProfileVendor(@Bind("name") name: String)
-
-    @SqlQuery("select * from sim_profile_vendor where name = :name")
-    @RegisterMapper(SimProfileVendorMapper::class)
-    abstract fun getProfilevendorByName(@Bind("name") name: String): SimProfileVendor
-
-
-    @SqlQuery("select * from sim_profile_vendor where id = :id")
-    @RegisterMapper(SimProfileVendorMapper::class)
-    abstract fun getProfilevendorById(@Bind("id") id: Long): SimProfileVendor
 
 
     @SqlQuery("select * from hlr_adapters where name = :name")
     @RegisterMapper(HlrAdapterMapper::class)
     abstract fun getHlrAdapterByName(@Bind("name") name: String): HlrAdapter
 
-
     @SqlQuery("select * from hlr_adapters where id = :id")
     @RegisterMapper(HlrAdapterMapper::class)
     abstract fun getHlrAdapterById(@Bind("id") id: Long): HlrAdapter
-
 
     class HlrAdapterMapper : ResultSetMapper<HlrAdapter> {
 
@@ -325,7 +312,33 @@ abstract class SimInventoryDAO {
         }
     }
 
-    abstract fun getSmdpPlusAdapterByName(name: String): SmdpPlusAdapter?
+    @SqlUpdate("insert into profile_vendor_adapters (name) values (:name)")
+    abstract fun addProfileVendorAdapter(@Bind("name") name: String)
+
+    @SqlQuery("select * from profile_vendor_adapters where name = :name")
+    @RegisterMapper(ProfileVendorAdapterMapper::class)
+    abstract fun getProfileVendorAdapterByName(@Bind("name") name: String): ProfileVendorAdapter
+
+    @SqlQuery("select * from profile_vendor_adapters where id = :id")
+    @RegisterMapper(ProfileVendorAdapterMapper::class)
+    abstract fun getProfileVendorAdapterById(@Bind("id") id: Long): ProfileVendorAdapter
+
+    class ProfileVendorAdapterMapper : ResultSetMapper<ProfileVendorAdapter> {
+
+        @Throws(SQLException::class)
+        override fun map(index: Int, r: ResultSet, ctx: StatementContext): ProfileVendorAdapter? {
+            if (r.isAfterLast) {
+                return null
+            }
+
+            val id = r.getLong("id")
+            val name = r.getString("name")
+
+            return ProfileVendorAdapter(
+                    id = id,
+                    name = name)
+        }
+    }
 
     //
     // Getting the ID of the last insert, regardless of table
@@ -337,7 +350,7 @@ abstract class SimInventoryDAO {
     // Importing
     //
     @Transaction
-    @SqlBatch("INSERT INTO sim_entries (batch, hlrid, iccid, imsi, pin1, pin2, puk1, puk2) VALUES (:batch, :hlrId, :iccid, :imsi, :pin1, :pin2, :puk1, :puk2)")
+    @SqlBatch("INSERT INTO sim_entries (batch, profileVendorId, hlrid, iccid, imsi, pin1, pin2, puk1, puk2) VALUES (:batch, :profileVendorId, :hlrId, :iccid, :imsi, :pin1, :pin2, :puk1, :puk2)")
     @BatchChunkSize(1000)
     abstract fun insertAll(@BindBean entries: Iterator<SimEntry>)
 
@@ -370,6 +383,7 @@ abstract class SimInventoryDAO {
                 profileVendorId = profileVendorId)
         val batchId = lastInsertRowid()
         val values = SimEntryIterator(
+                profileVendorId = profileVendorId,
                 hlrId = hlrId,
                 batchId = batchId,
                 csvInputStream = csvInputStream)
@@ -397,16 +411,16 @@ abstract class SimInventoryDAO {
             val id = r.getLong("id")
             val endedAt = r.getLong("endedAt")
             val status = r.getString("status")
-            val hlrId = r.getLong("hlrId")
             val profileVendorId = r.getLong("profileVendorId")
+            val hlrId = r.getLong("hlrId")
             val size = r.getLong("size")
 
             return SimImportBatch(
                     id = id,
                     endedAt = endedAt,
                     status = status,
-                    hlrId = hlrId,
                     profileVendorId = profileVendorId,
+                    hlrId = hlrId,
                     size = size,
                     importer = "XXX Replace with name of agent that facilitated the import")
         }

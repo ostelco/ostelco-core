@@ -82,8 +82,11 @@ class SimInventoryResource(private val dao: SimInventoryDAO) {
         val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
         assertHlrsEqual(hlr, hlrAdapter.name)
 
-        return if (simEntry.smdpplus != null) {
+        val profileVendorAdapter = assertNonNull(dao.getProfileVendorAdapterById(simEntry.profileVendorId))
+
+        return if (profileVendorAdapter.name != null) {
             activateEsimProfileByIccid(hlr, iccid)
+            //activateHlrProfileByIccid(hlr, iccid)  // XXX do both?
         } else {
             simEntry
         }
@@ -128,13 +131,10 @@ class SimInventoryResource(private val dao: SimInventoryDAO) {
         val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
         assertHlrsEqual(hlr, hlrAdapter.name)
 
-        if (simEntry.smdpplus == null) {
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
-        }
-        val smdpPlusAdapter = assertNonNull(dao.getSmdpPlusAdapterByName(simEntry.smdpplus))
+        val simVendorAdapter = assertNonNull(dao.getProfileVendorAdapterById(simEntry.profileVendorId))
 
         try {
-            smdpPlusAdapter.activateEntry(simEntry)
+            simVendorAdapter.activateEntry(simEntry)
         } catch (e: Exception) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }
@@ -160,24 +160,24 @@ class SimInventoryResource(private val dao: SimInventoryDAO) {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.TEXT_PLAIN)
     @Throws(IOException::class)
-    @Path("/import-batch/profilevendor/{profilevendor}")
+    @Path("/import-batch/profilevendor/{simvendor}")
     @PUT
     fun importBatch(
             @NotEmpty @PathParam("hlr") hlr: String,
-            @NotEmpty @PathParam("profilevendor") profilevendor: String,
+            @NotEmpty @PathParam("simvendor") simVendor: String,
             csvInputStream: InputStream): SimImportBatch {
 
-        val profileVendor = assertNonNull(dao.getProfilevendorByName(profilevendor))
+        val simVendorAdapter = assertNonNull(dao.getProfileVendorAdapterByName(simVendor))
         val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
 
-        if (!dao.simVendorIsPermittedForHlr(profileVendor.id, hlrAdapter.id)) {
+        if (!dao.simVendorIsPermittedForHlr(simVendorAdapter.id, hlrAdapter.id)) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }
 
         return dao.importSims(
                 importer = "importer", // TODO: This is a very strange name for an importer .-)
                 hlrId = hlrAdapter.id,
-                profileVendorId = profileVendor.id,
+                profileVendorId = simVendorAdapter.id,
                 csvInputStream = csvInputStream)
     }
 }
