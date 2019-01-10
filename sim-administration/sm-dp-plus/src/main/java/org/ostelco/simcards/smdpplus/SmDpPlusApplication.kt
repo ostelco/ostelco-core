@@ -103,7 +103,7 @@ class PingResource {
     @RolesAllowed("flyfisher")
     @GET
     @Produces(MediaType.TEXT_PLAIN)
-    fun ping(// @Auth(required = false)  user: Authentication.User,
+    fun ping(//@Auth user: Authentication.User,
              @Context context:SecurityContext ): String  {
         return  "pong"
     }
