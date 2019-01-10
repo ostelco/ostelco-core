@@ -4,6 +4,7 @@ import org.apache.http.client.methods.HttpGet
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 
 
@@ -19,13 +20,14 @@ class PingPongSslRoundtripTest {
         SUPPORT.after()
     }
 
+
     @Test
     fun handleNonEncryptedHttp() {
         val client = HttpClientBuilder(SUPPORT.getEnvironment()).build("test client/http")
 
         val httpGet = HttpGet(String.format("http://localhost:%d/ping", 8080))
         val response = client.execute(httpGet)
-        assertThat(response.statusLine.statusCode).isEqualTo(200)
+        assertThat(response.statusLine.statusCode).isEqualTo(403)
     }
 
 
@@ -47,7 +49,7 @@ class PingPongSslRoundtripTest {
 
     companion object {
 
-        val SUPPORT = DropwizardTestSupport<SmDpPlusAppConfiguration>(
+        val SUPPORT = DropwizardTestSupport<PingPongAppConfiguration>(
                 SmDpPlusApplication::class.java,
                 "config.yml"
         )
