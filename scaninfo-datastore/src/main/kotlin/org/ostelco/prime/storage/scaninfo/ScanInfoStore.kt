@@ -143,4 +143,15 @@ object HttpDownloadUtility {
             httpConn.disconnect()
         }
     }
+
+    @JvmStatic
+    fun main(args: Array<String>) {
+        val fileURL = "https://jdbc.postgresql.org/download/postgresql-9.2-1002.jdbc4.jar"
+        try {
+            val ret = HttpDownloadUtility.downloadFileAsBlob(fileURL, "", "")
+            println(ret)
+        } catch (ex: IOException) {
+            ex.printStackTrace()
+        }
+    }
 }
