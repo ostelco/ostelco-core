@@ -31,13 +31,6 @@ httpClient:
     keyStoreType: JKS
     keyStorePath: sk_keys.jks
     keyStorePassword: superSecreet
-#    validateCerts: false
-#    keyStorePath: sk_keys.jks
-#    keyStorePassword: superSecreet
-#    keyStoreType: JKS
-#    trustStorePath: sk_trust.jks
-#    trustStorePassword: superSecreet
-#    trustStoreType: JKS
     verifyHostname: false
     trustSelfSignedCertificates: true
 

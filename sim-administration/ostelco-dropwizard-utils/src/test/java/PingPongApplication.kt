@@ -21,8 +21,7 @@ import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.SecurityContext
 
 
-
-class SmDpPlusApplication : Application<PingPongAppConfiguration>() {
+class PingPoingApplication : Application<PingPongAppConfiguration>() {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -53,15 +52,12 @@ class SmDpPlusApplication : Application<PingPongAppConfiguration>() {
                 config.httpClientConfiguration).build(getName())
     }
 
-
     companion object {
         @Throws(Exception::class)
         @JvmStatic
         fun main(args: Array<String>) {
-
             Security.insertProviderAt(OpenSSLProvider(), 1)
-
-            SmDpPlusApplication().run(*args)
+            PingPoingApplication().run(*args)
         }
     }
 }

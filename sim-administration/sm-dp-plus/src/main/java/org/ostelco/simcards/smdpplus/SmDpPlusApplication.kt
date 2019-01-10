@@ -11,21 +11,15 @@ import org.apache.http.client.HttpClient
 import org.conscrypt.OpenSSLProvider
 import org.ostelco.dropwizardutils.*
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
+import org.ostelco.sim.es2plus.ES2PlusClient
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
 import org.ostelco.sim.es2plus.SmDpPlusServerResource
 import org.ostelco.sim.es2plus.SmDpPlusService
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
 import java.security.Security
-import javax.annotation.security.RolesAllowed
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
-import javax.ws.rs.GET
-import javax.ws.rs.Path
-import javax.ws.rs.Produces
-import javax.ws.rs.core.Context
-import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.SecurityContext
 
 
 /**
@@ -56,7 +50,9 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         // TODO: application initialization
     }
 
-    lateinit var client: HttpClient
+    lateinit var httpClient: HttpClient
+
+    lateinit var es2plusClient: ES2PlusClient
 
     override fun run(config: SmDpPlusAppConfiguration,
                      env: Environment) {
@@ -71,11 +67,14 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 
         jerseyEnvironment.register(SmDpPlusServerResource(smDpPlus = smdpPlusService))
 
-        // XXX Only until we're sure the client stuff works.
-        jerseyEnvironment.register(PingResource())
-        jerseyEnvironment.register(CertificateAuthorizationFilter(RBACService(rolesConfig = config.rolesConfig, certConfig = config.certConfig)))
+        jerseyEnvironment.register(CertificateAuthorizationFilter(
+                RBACService(rolesConfig = config.rolesConfig,
+                        certConfig = config.certConfig)))
 
-        this.client = HttpClientBuilder(env).using(config.httpClientConfiguration).build(getName())
+        this.httpClient = HttpClientBuilder(env).using(config.httpClientConfiguration).build(getName())
+        this.es2plusClient = ES2PlusClient(
+                requesterId = config.es2plusConfig.requesterId,
+                client = httpClient)
     }
 
 
@@ -92,38 +91,12 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 }
 
 
-// XXX Can be removed once we're sure the client works well with
-//     encryption, and a test for that has been extended to work
-//     also for something other than ping.
-@Path("/ping")
-class PingResource {
-
-    private val log = LoggerFactory.getLogger(javaClass)
-
-    @RolesAllowed("flyfisher")
-    @GET
-    @Produces(MediaType.TEXT_PLAIN)
-    fun ping(//@Auth user: Authentication.User,
-             @Context context:SecurityContext ): String  {
-        return  "pong"
-    }
-}
-
-
 /**
  * A very reduced  functionality SmDpPlus, essentially handling only
  * happy day scenarios, and not particulary efficient, and in-memory
  * only etc.
  */
 class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusService {
-
-    /*
-    companion object {
-        init {
-            Security.addProvider(OpenSSLProvider())
-        }
-    }
-    */
 
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -247,11 +220,30 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
  */
 class SmDpPlusException(message: String) : Exception(message)
 
+
+// XXX Move this to the es2+ protocol code.
+class EsTwoPlusConfig {
+    @Valid
+    @NotNull
+    @JsonProperty("requesterId")
+    var requesterId: String = ""
+}
+
 /**
  * Configuration class for SM-DP+ emulator.
  */
 class SmDpPlusAppConfiguration : Configuration() {
 
+
+    /**
+     * Configuring how the Open API representation of the
+     * served resources will be presenting itself (owner,
+     * license etc.)
+     */
+    @Valid
+    @NotNull
+    @JsonProperty("es2plus")
+    var es2plusConfig = EsTwoPlusConfig()
 
     /**
      * Configuring how the Open API representation of the
@@ -272,7 +264,7 @@ class SmDpPlusAppConfiguration : Configuration() {
     var simBatchData: String = ""
 
     /**
-     * The client we use to connect to other services, including
+     * The httpClient we use to connect to other services, including
      * ES2+ services
      */
     @Valid
@@ -297,5 +289,6 @@ class SmDpPlusAppConfiguration : Configuration() {
     @JsonProperty("roles")
     @NotNull
     var rolesConfig = RolesConfig()
-
 }
+
+
