@@ -24,7 +24,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-class OcsgwMetrics {
+public class OcsgwMetrics {
 
     private static final Logger LOG = LoggerFactory.getLogger(OcsgwMetrics.class);
 
@@ -46,7 +46,7 @@ class OcsgwMetrics {
 
     private OcsgwAnalyticsReport lastActiveSessions = null;
 
-    OcsgwMetrics(String metricsServerHostname, ServiceAccountJwtAccessCredentials credentials) {
+    public OcsgwMetrics(String metricsServerHostname, ServiceAccountJwtAccessCredentials credentials) {
 
         try {
             final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder
@@ -73,7 +73,7 @@ class OcsgwMetrics {
         }
     }
 
-    void initAnalyticsRequest() {
+    public void initAnalyticsRequest() {
         ocsgwAnalyticsReport = ocsgwAnalyticsServiceStub.ocsgwAnalyticsEvent(
                 new StreamObserver<OcsgwAnalyticsReply>() {
 
@@ -101,7 +101,7 @@ class OcsgwMetrics {
     }
 
 
-    void sendAnalytics(OcsgwAnalyticsReport report) {
+    public void sendAnalytics(OcsgwAnalyticsReport report) {
         if (report != null) {
             ocsgwAnalyticsReport.onNext(report);
             lastActiveSessions = report;
