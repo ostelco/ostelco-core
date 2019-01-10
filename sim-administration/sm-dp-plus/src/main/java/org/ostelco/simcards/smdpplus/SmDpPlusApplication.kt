@@ -9,8 +9,8 @@ import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 import org.apache.http.client.HttpClient
 import org.conscrypt.OpenSSLProvider
+import org.ostelco.dropwizardutils.*
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
-import org.ostelco.dropwizardutils.OpenapiResourceAdderConfig
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
 import org.ostelco.sim.es2plus.SmDpPlusServerResource
 import org.ostelco.sim.es2plus.SmDpPlusService
