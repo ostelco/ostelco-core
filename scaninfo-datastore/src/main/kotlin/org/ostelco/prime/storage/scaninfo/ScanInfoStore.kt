@@ -29,13 +29,26 @@ object ScanInformationStoreSingleton : ScanInformationStore {
     private lateinit var localDatastoreHelper: LocalDatastoreHelper
 
     override fun upsertVendorScanInformation(subscriberId: String, vendorScanInformation: VendorScanInformation): Either<StoreError, Unit> {
-        val testKey = datastore.newKeyFactory().setKind("TestKind").newKey("testKey")
-        val testPropertyKey = "testPropertyKey"
-        val testPropertyValue = "testPropertyValue"
-        val testEntity = Entity.newBuilder(testKey).set(testPropertyKey, testPropertyValue).build()
-        datastore.put(testEntity)
-        val value = datastore.get(testKey).getString(testPropertyKey)
-        datastore.delete(testKey)
+        val key = datastore.newKeyFactory().setKind("VendorScanInformation").newKey(subscriberId)
+        val entityBuilder = Entity.newBuilder(key)
+
+        entityBuilder.set("scanId", vendorScanInformation.scanId)
+        entityBuilder.set("scanDetails", vendorScanInformation.scanDetails)
+        entityBuilder.set("scanImage", vendorScanInformation.scanImage)
+        entityBuilder.set("scanImageType", vendorScanInformation.scanImageType)
+        if (vendorScanInformation.scanImageBackside != null) {
+            entityBuilder.set("scanImageBackside", vendorScanInformation.scanImageBackside)
+        }
+        if (vendorScanInformation.scanImageBacksideType != null) {
+            entityBuilder.set("scanImageBacksideType", vendorScanInformation.scanImageBacksideType)
+        }
+        if (vendorScanInformation.scanImageFace != null) {
+            entityBuilder.set("scanImageFace", vendorScanInformation.scanImageFace)
+        }
+        if (vendorScanInformation.scanImageFaceType != null) {
+            entityBuilder.set("scanImageFace", vendorScanInformation.scanImageFaceType)
+        }
+        datastore.put(entityBuilder.build())
         return Either.right(Unit)
     }
 
