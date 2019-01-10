@@ -1,4 +1,4 @@
-package org.ostelco.simcards.smdpplus
+package org.ostelco.dropwizardutils
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.eclipse.jetty.server.Authentication
@@ -349,7 +349,7 @@ class RBACService(val rolesConfig: RolesConfig, val certConfig: CertAuthConfig) 
         }
 
 
-        return CertificateRBACUSER(id = cc.userId!!,  roles = usersRoles, commonName = cc.commonName!!, country =  cc.country!!, state = cc.state!!, location = cc.location!!, organization = cc.organization!!)
+        return CertificateRBACUSER(id = cc.userId!!, roles = usersRoles, commonName = cc.commonName!!, country = cc.country!!, state = cc.state!!, location = cc.location!!, organization = cc.organization!!)
     }
 
     fun findByCertParams(certParams: CertificateIdParameters): CertificateRBACUSER? {
