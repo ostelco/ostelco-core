@@ -4,6 +4,7 @@ import arrow.core.Either
 import org.ostelco.prime.model.*
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
+import com.google.cloud.datastore.Blob
 
 interface ClientDocumentStore {
 
@@ -257,4 +258,5 @@ interface AdminGraphStore {
 
 interface ScanInformationStore {
     fun upsertVendorScanInformation(subscriberId: String, vendorScanInformation: VendorScanInformation): Either<StoreError, Unit>
+    fun fetchScanImage(url: String): Either<StoreError, Pair<Blob, String>>
 }

@@ -21,7 +21,7 @@ dependencies {
 
   implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
   implementation "com.google.cloud:google-cloud-datastore:$googleCloudVersion"
-  
+
   testImplementation 'com.palantir.docker.compose:docker-compose-rule-junit4:0.34.0'
 
   testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"

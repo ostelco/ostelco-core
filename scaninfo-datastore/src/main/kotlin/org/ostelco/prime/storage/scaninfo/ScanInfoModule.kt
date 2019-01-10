@@ -24,6 +24,8 @@ class ScanInfoModule : PrimeModule {
 class Config : Configuration() {
     var datastoreType = "default"
     var namespace = ""
+    var apiToken = ""
+    var apiSecret = ""
 }
 
 object ConfigRegistry {

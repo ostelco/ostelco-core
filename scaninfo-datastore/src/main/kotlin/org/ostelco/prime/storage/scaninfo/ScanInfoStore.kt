@@ -3,6 +3,7 @@ package org.ostelco.prime.storage.scaninfo
 import arrow.core.Either
 import com.codahale.metrics.health.HealthCheck
 import com.google.cloud.NoCredentials
+import com.google.cloud.datastore.Blob
 import com.google.cloud.datastore.Datastore
 import com.google.cloud.datastore.DatastoreOptions
 import com.google.cloud.datastore.Entity
@@ -12,6 +13,10 @@ import io.dropwizard.setup.Environment
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.*
 import org.ostelco.prime.storage.*
+import java.io.IOException
+import java.net.HttpURLConnection
+import java.net.URL
+import java.util.*
 
 
 class ScanInfoStore : ScanInformationStore by ScanInformationStoreSingleton
@@ -32,6 +37,10 @@ object ScanInformationStoreSingleton : ScanInformationStore {
         val value = datastore.get(testKey).getString(testPropertyKey)
         datastore.delete(testKey)
         return Either.right(Unit)
+    }
+
+    override fun fetchScanImage(url: String): Either<StoreError, Pair<Blob, String>> {
+        return HttpDownloadUtility.downloadFileAsBlob(url, ConfigRegistry.config.apiToken, ConfigRegistry.config.apiSecret)
     }
 
     fun init(env: Environment?) {
@@ -97,5 +106,41 @@ object ScanInformationStoreSingleton : ScanInformationStore {
                 }
             }
         })
+    }
+}
+
+/**
+ * A utility that downloads a file from a URL.
+*/
+object HttpDownloadUtility {
+    /**
+     * Retrieves the contents of a file from a URL
+     */
+    fun downloadFileAsBlob(fileURL: String, username: String, password: String): Either<StoreError, Pair<Blob, String>> {
+        val url = URL(fileURL)
+        val httpConn = url.openConnection() as HttpURLConnection
+        val userpass = "$username:$password"
+        val authHeader = "Basic ${Base64.getEncoder().encodeToString(userpass.toByteArray())}"
+        httpConn.setRequestProperty("Authorization", authHeader)
+
+        try {
+            val responseCode = httpConn.responseCode
+            // always check HTTP response code first
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                val statusMessage = "$responseCode: ${httpConn.responseMessage}"
+                return Either.left(FileDownloadError(fileURL, statusMessage));
+            }
+            val contentType = httpConn.contentType
+            val inputStream = httpConn.inputStream
+            val fileData = Blob.copyFrom(inputStream)
+            inputStream.close()
+            return Either.right(Pair(fileData, contentType))
+        }
+        catch (e: IOException) {
+            val statusMessage = "IOException:  $e"
+            return Either.left(FileDownloadError(fileURL, statusMessage))
+        } finally {
+            httpConn.disconnect()
+        }
     }
 }
