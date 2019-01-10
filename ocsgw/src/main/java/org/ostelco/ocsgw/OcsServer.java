@@ -44,7 +44,7 @@ public class OcsServer {
     private OcsServer() {
     }
 
-    public synchronized void handleRequest(ServerCCASession session, JCreditControlRequest request) {
+    synchronized void handleRequest(ServerCCASession session, JCreditControlRequest request) {
 
         final CreditControlContext ccrContext = new CreditControlContext(
                 session.getSessionId(),

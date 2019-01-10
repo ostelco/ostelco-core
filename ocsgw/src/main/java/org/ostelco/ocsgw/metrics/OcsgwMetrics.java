@@ -1,4 +1,4 @@
-package org.ostelco.ocsgw.datasource.grpc;
+package org.ostelco.ocsgw.metrics;
 
 import com.google.auth.oauth2.ServiceAccountJwtAccessCredentials;
 import io.grpc.ManagedChannel;

@@ -24,6 +24,7 @@ import org.ostelco.ocs.api.ReportingReason;
 import org.ostelco.ocs.api.ServiceUnit;
 import org.ostelco.ocsgw.OcsServer;
 import org.ostelco.ocsgw.datasource.DataSource;
+import org.ostelco.ocsgw.metrics.OcsgwMetrics;
 import org.ostelco.prime.metrics.api.OcsgwAnalyticsReport;
 import org.ostelco.prime.metrics.api.User;
 import org.slf4j.Logger;
@@ -256,7 +257,7 @@ public class GrpcDataSource implements DataSource {
     }
 
 
-    private void handleGrpcCcrAnswer(CreditControlAnswerInfo answer) {
+    private synchronized void handleGrpcCcrAnswer(CreditControlAnswerInfo answer) {
         try {
             LOG.info("[<<] CreditControlAnswer for {}", answer.getMsisdn());
             final CreditControlContext ccrContext = ccrMap.remove(answer.getRequestId());
@@ -332,8 +333,20 @@ public class GrpcDataSource implements DataSource {
         }
     }
 
+    private boolean updateBlockedList(org.ostelco.ocs.api.MultipleServiceCreditControl msccAnswer, MultipleServiceCreditControl msccRequest, String msisdn) {
+        if (!msccRequest.getRequested().isEmpty()) {
+            if (msccAnswer.getGranted().getTotalOctets() < msccRequest.getRequested().get(0).getTotal()) {
+                blocked.add(msisdn);
+                return true;
+            } else {
+                blocked.remove(msisdn);
+            }
+        }
+        return false;
+    }
+
     @Override
-    public void handleRequest(final CreditControlContext context) {
+    public synchronized void handleRequest(final CreditControlContext context) {
         ccrMap.put(context.getSessionId(), context);
         addToSessionMap(context);
         LOG.info("[>>] creditControlRequest for {}", context.getCreditControlRequest().getMsisdn());
@@ -421,17 +434,6 @@ public class GrpcDataSource implements DataSource {
         return new CreditControlAnswer(GrpcDiameterConverter.convertResultCode(response.getResultCode()), multipleServiceCreditControls);
     }
 
-    private boolean updateBlockedList(org.ostelco.ocs.api.MultipleServiceCreditControl msccAnswer, MultipleServiceCreditControl msccRequest, String msisdn) {
-        if (!msccRequest.getRequested().isEmpty()) {
-            if (msccAnswer.getGranted().getTotalOctets() < msccRequest.getRequested().get(0).getTotal()) {
-                blocked.add(msisdn);
-                return true;
-            } else {
-                blocked.remove(msisdn);
-            }
-        }
-        return false;
-    }
 
     @Override
     public boolean isBlocked(final String msisdn) {
