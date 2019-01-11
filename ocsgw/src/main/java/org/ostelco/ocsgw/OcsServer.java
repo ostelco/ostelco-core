@@ -46,13 +46,18 @@ public class OcsServer {
 
     public synchronized void handleRequest(ServerCCASession session, JCreditControlRequest request) {
 
-        final CreditControlContext ccrContext = new CreditControlContext(
-                session.getSessionId(),
-                request,
-                stack.getMetaData().getLocalPeer().getUri().getFQDN(),
-                stack.getMetaData().getLocalPeer().getRealmName()
-        );
-        source.handleRequest(ccrContext);
+        try {
+
+            final CreditControlContext ccrContext = new CreditControlContext(
+                    session.getSessionId(),
+                    request,
+                    stack.getMetaData().getLocalPeer().getUri().getFQDN(),
+                    stack.getMetaData().getLocalPeer().getRealmName()
+            );
+            source.handleRequest(ccrContext);
+        } catch (Exception e) {
+            LOG.error("Failed to create CreditControlContext", e);
+        }
     }
 
     public Stack getStack() {

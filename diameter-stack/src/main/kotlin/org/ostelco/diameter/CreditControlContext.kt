@@ -29,7 +29,7 @@ class CreditControlContext(
 
     private val logger by logger()
 
-    // Set to true, when answer to not to be sent to PGw. Default value is false.
+    // Set to true, when answer to not to be sent to P-GW. Default value is false.
     var skipAnswer: Boolean = false
 
     val creditControlRequest: CreditControlRequest = AvpParser().parse(
