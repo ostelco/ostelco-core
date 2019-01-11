@@ -35,12 +35,15 @@ class EncryptedEs2PlusTest {
         assertEquals(FunctionExecutionStatusType.ExecutedSuccess, downloadResponse.header.functionExecutionStatus.status)
         assertEquals(iccid, downloadResponse.iccid)
 
-        val matchingId = "ABCD-EFGH-01234-5679-0987-6543"
+
         val confirmResponse =
                 client.confirmOrder(
                         iccid = iccid,
                         releaseFlag = true)
 
+        // This happens to be the matching ID used for everything in the test application, not a good
+        // assumption for production code, but this isn't that.
+        val matchingId = "0123-ABC-KGBC-IAMOS-SAD0"
         assertEquals(FunctionExecutionStatusType.ExecutedSuccess, confirmResponse.header.functionExecutionStatus.status)
         assertEquals(eid, confirmResponse.eid)
         assertEquals(matchingId, confirmResponse.matchingId)
