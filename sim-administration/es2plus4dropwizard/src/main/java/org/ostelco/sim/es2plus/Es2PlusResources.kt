@@ -118,10 +118,14 @@ class SmDpPlusServerResource(private val smDpPlus: SmDpPlusService) {
     @Path("confirmOrder")
     @POST
     fun confirmOrder(order: Es2ConfirmOrder): Es2ConfirmOrderResponse {
-        return Es2ConfirmOrderResponse(
-                eid = order.eid,
+        return smDpPlus.confirmOrder(
+                eid=order.eid,
+                iccid = order.iccid,
+                confirmationCode = order.confirmationCode,
                 smdsAddress = order.smdsAddress,
-                matchingId = order.matchingId)
+                machingId = order.matchingId,
+                releaseFlag =  order.releaseFlag
+        )
     }
 
     /**

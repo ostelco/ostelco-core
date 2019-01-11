@@ -5,4 +5,8 @@ class SmDpSimEntry (val iccid: String,
                     val profile: String) {
     var allocated: Boolean = false
     var eid: String? = null
+    var  released: Boolean = false
+    var confirmationCode: String? = null
+    var machingId: String? = null
+    var smdsAddress :String? = null
 }

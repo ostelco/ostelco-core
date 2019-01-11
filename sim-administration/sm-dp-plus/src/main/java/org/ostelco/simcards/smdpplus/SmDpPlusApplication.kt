@@ -11,10 +11,8 @@ import org.apache.http.client.HttpClient
 import org.conscrypt.OpenSSLProvider
 import org.ostelco.dropwizardutils.*
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
-import org.ostelco.sim.es2plus.ES2PlusClient
+import org.ostelco.sim.es2plus.*
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
-import org.ostelco.sim.es2plus.SmDpPlusServerResource
-import org.ostelco.sim.es2plus.SmDpPlusService
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
 import java.security.Security
@@ -74,7 +72,7 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         this.httpClient = HttpClientBuilder(env).using(config.httpClientConfiguration).build(getName())
         this.es2plusClient = ES2PlusClient(
                 requesterId = config.es2plusConfig.requesterId,
-                client = httpClient)
+                httpClient = httpClient)
     }
 
 
@@ -201,9 +199,37 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
         return entry
     }
 
+    override fun confirmOrder(eid: String?, iccid: String?, smdsAddress: String?, machingId: String?, confirmationCode: String?, releaseFlag: Boolean): Es2ConfirmOrderResponse {
 
-    override fun confirmOrder(eid: String, smdsAddress: String?, machingId: String?, confirmationCode: String?) {
-        TODO("not implemented")
+        if (iccid== null) {
+            throw RuntimeException("No ICCD, cannot confirm order")
+        }
+        if (!entriesByIccid.containsKey(iccid)) {
+            throw RuntimeException("Attempt to allocate nonexisting iccid $iccid")
+        }
+        val entry = entriesByIccid[iccid]!!
+
+
+        if (smdsAddress != null) {
+            entry.smdsAddress = smdsAddress
+        }
+
+        if (machingId != null) {
+            entry.machingId = confirmationCode
+        } else {
+            entry.machingId = "0123-ABC-KGBC-IAMOS-SAD0"
+        }
+
+        entry.released = releaseFlag
+
+        if (confirmationCode != null) {
+            entry.confirmationCode = confirmationCode
+        }
+
+        return Es2ConfirmOrderResponse(eS2SuccessResponseHeader(),
+                eid = entry.eid!!,
+                smdsAddress = entry.smdsAddress,
+                matchingId =  entry.machingId)
     }
 
     override fun cancelOrder(eid: String, iccid: String?, matchingId: String?, finalProfileStatusIndicator: String?) {

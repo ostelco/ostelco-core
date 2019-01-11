@@ -1,10 +1,12 @@
 package org.ostelco.simcards.smdpplus
 
 import io.dropwizard.testing.DropwizardTestSupport
+import junit.framework.Assert.assertEquals
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.ostelco.sim.es2plus.ES2PlusClient
+import org.ostelco.sim.es2plus.FunctionExecutionStatusType
 
 class EncryptedEs2PlusTest {
 
@@ -30,19 +32,18 @@ class EncryptedEs2PlusTest {
         val iccid = "8901000000000000001"
         val downloadResponse = client.downloadOrder(eid = eid, iccid = iccid, profileType = "FooTel_STD")
 
-        // XXX Check for correct return values
+        assertEquals(FunctionExecutionStatusType.ExecutedSuccess, downloadResponse.header.functionExecutionStatus.status)
+        assertEquals(iccid, downloadResponse.iccid)
 
-        val matchingCode = "ABCD-EFGH-01234-5679-0987-6543"
+        val matchingId = "ABCD-EFGH-01234-5679-0987-6543"
         val confirmResponse =
                 client.confirmOrder(
-                        eid = eid,  // XXX Should be null -> Not part of the invocation
                         iccid = iccid,
-                        confirmationCode = "4711", // should be null
-                        matchingId = matchingCode,  // XXX Should be null -> Not part of the invocation
-                        smdsAddress = "localhost", // XXX Should be null -> Not part of the invocation
                         releaseFlag = true)
 
-        // XXX Check return values
+        assertEquals(FunctionExecutionStatusType.ExecutedSuccess, confirmResponse.header.functionExecutionStatus.status)
+        assertEquals(eid, confirmResponse.eid)
+        assertEquals(matchingId, confirmResponse.matchingId)
     }
 
     companion object {

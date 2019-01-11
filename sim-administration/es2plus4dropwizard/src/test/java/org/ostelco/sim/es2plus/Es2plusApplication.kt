@@ -66,8 +66,8 @@ class PlaceholderSmDpPlusService : SmDpPlusService {
         return "01234567890123456789"
     }
 
-    @Throws(SmDpPlusException::class)
-    override fun confirmOrder(eid: String, smdsAddress: String?, machingId: String?, confirmationCode: String?) {
+    override fun confirmOrder(eid: String?, iccid: String?, smdsAddress: String?, machingId: String?, confirmationCode: String?, releaseFlag: Boolean): Es2ConfirmOrderResponse {
+        return Es2ConfirmOrderResponse(eS2SuccessResponseHeader(), eid="1234567890123456789012", matchingId = "foo", smdsAddress = "localhost")
     }
 
     @Throws(SmDpPlusException::class)
