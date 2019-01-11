@@ -76,13 +76,13 @@ class ES2PlusClient(
         }
 
         val xAdminProtocolHeader = result.getFirstHeader("X-Admin-Protocol")!!
-        if (xAdminProtocolHeader == null || !xAdminProtocolHeader.equals(X_ADMIN_PROTOCOL_HEADER_VALUE)) {
+        if (xAdminProtocolHeader == null || !xAdminProtocolHeader.value.equals(X_ADMIN_PROTOCOL_HEADER_VALUE)) {
             throw ES2PlusClientException("Expected header X-Admin-Protocol to be '$X_ADMIN_PROTOCOL_HEADER_VALUE' but it was '$xAdminProtocolHeader'")
         }
 
         val returnedContentType = result.getFirstHeader("Content-Type")!!
         val expectedContentType = "application/json"
-        if (returnedContentType == null || !returnedContentType.equals(expectedContentType)) {
+        if (returnedContentType == null || !returnedContentType.value.equals(expectedContentType)) {
             throw ES2PlusClientException("Expected header Content-Type to be '$expectedContentType' but was '$returnedContentType'")
         }
 
