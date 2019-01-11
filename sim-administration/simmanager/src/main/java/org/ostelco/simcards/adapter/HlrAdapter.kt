@@ -14,14 +14,25 @@ import javax.ws.rs.client.Client
  */
 data class HlrAdapter(
         @JsonProperty("id") val id: Long,
-        @JsonProperty("name") val name: String) : Adapter {
+        @JsonProperty("name") val name: String) {
 
-
-    override fun activate(client: Client, dao: SimInventoryDAO, simEntry: SimEntry) {
+    /**
+     * Requests the external HLR service to activate the SIM profile.
+     * @param client  HTTP client
+     * @param dao  DB interface
+     * @param simEntry  SIM profile to activate
+     */
+    fun activate(client: Client, dao: SimInventoryDAO, simEntry: SimEntry) {
         // XXX TBD
     }
 
-    override fun deactivate(client: Client, dao: SimInventoryDAO, simEntry: SimEntry) {
+    /**
+     * Requests the external HLR service to deactivate the SIM profile.
+     * @param client  HTTP client
+     * @param dao  DB interface
+     * @param simEntry  SIM profile to deactivate
+     */
+    fun deactivate(client: Client, dao: SimInventoryDAO, simEntry: SimEntry) {
         // XXX TBD
     }
 }

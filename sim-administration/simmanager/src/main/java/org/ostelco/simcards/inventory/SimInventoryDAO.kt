@@ -3,8 +3,6 @@ package org.ostelco.simcards.inventory
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
-import org.ostelco.sim.es2plus.*
-import org.ostelco.simcards.adapter.Adapter
 import org.ostelco.simcards.adapter.HlrAdapter
 import org.ostelco.simcards.adapter.ProfileVendorAdapter
 import org.skife.jdbi.v2.StatementContext
@@ -21,9 +19,6 @@ import java.sql.SQLException
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.AtomicLong
 import javax.ws.rs.WebApplicationException
-import javax.ws.rs.client.Client
-import javax.ws.rs.client.Entity
-import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
 
@@ -137,25 +132,6 @@ class SimEntryIterator(profileVendorId: Long, hlrId: Long, batchId: Long, csvInp
     }
 }
 
-data class SimProfileVendor(val id: Long, val name: String)
-
-class SimProfileVendorMapper : ResultSetMapper<SimProfileVendor> {
-
-    @Throws(SQLException::class)
-    override fun map(index: Int, r: ResultSet, ctx: StatementContext): SimProfileVendor? {
-        if (r.isAfterLast) {
-            return null
-        }
-
-        val id = r.getLong("id")
-        val name = r.getString("name")
-
-        return SimProfileVendor(
-                id = id,
-                name = name)
-    }
-}
-
 
 /**
  * The DAO we're using to access the SIM inventory, and also the
@@ -223,7 +199,6 @@ abstract class SimInventoryDAO {
         }
     }
 
-
     companion object {
         private fun <T> assertNonNull(v: T?): T {
             if (v == null) {
@@ -236,11 +211,10 @@ abstract class SimInventoryDAO {
 
     @Transaction
     fun permitVendorForHlrByNames(profileVendor: String, hlr: String) {
-        val simVendorAdapter = assertNonNull(getProfileVendorAdapterByName(profileVendor))
+        val profileVendorAdapter = assertNonNull(getProfileVendorAdapterByName(profileVendor))
         val hlrAdapter = assertNonNull(getHlrAdapterByName(hlr))
-        storeSimVendorForHlrPermission(simVendorAdapter.id, hlrAdapter.id)
+        storeSimVendorForHlrPermission(profileVendorAdapter.id, hlrAdapter.id)
     }
-
 
     @SqlQuery("select id from sim_vendors_permitted_hlrs where profileVendorId = profileVendorId AND hlrId = :hlrId")
     abstract fun findSimVendorForHlrPermissions(@Bind("profileVendorId") profileVendorId: Long, @Bind("hlrId") hlrId: Long): List<Long>
@@ -254,8 +228,6 @@ abstract class SimInventoryDAO {
 
     @SqlUpdate("INSERT INTO hlr_adapters (name) VALUES (:name)")
     abstract fun addHlrAdapter(@Bind("name") name: String)
-
-
 
     @SqlQuery("select * from hlr_adapters where name = :name")
     @RegisterMapper(HlrAdapterMapper::class)
@@ -310,20 +282,15 @@ abstract class SimInventoryDAO {
         }
     }
 
-    //
-    // Getting the ID of the last insert, regardless of table
-    //
-    @SqlQuery("select last_insert_rowid()")
-    abstract fun lastInsertRowid(): Long
 
     //
     // Importing
     //
+
     @Transaction
     @SqlBatch("INSERT INTO sim_entries (batch, profileVendorId, hlrid, smdpplusstate, iccid, imsi, pin1, pin2, puk1, puk2) VALUES (:batch, :profileVendorId, :hlrId, :smdpPlusState, :iccid, :imsi, :pin1, :pin2, :puk1, :puk2)")
     @BatchChunkSize(1000)
     abstract fun insertAll(@BindBean entries: Iterator<SimEntry>)
-
 
     @SqlUpdate("INSERT INTO sim_import_batches (status,  importer, hlrId, profileVendorId) VALUES ('STARTED', :importer, :hlrId, :profileVendorId)")
     abstract fun createNewSimImportBatch(
@@ -331,14 +298,16 @@ abstract class SimInventoryDAO {
             @Bind("hlrId") hlrId: Long,
             @Bind("profileVendorId") profileVendorId: Long)
 
-    abstract fun getIdOfBatchCreatedLast(): Long
-
     @SqlUpdate("UPDATE sim_import_batches SET size = :size, status = :status, endedAt = :endedAt  WHERE id = :id")
     abstract fun updateBatchState(
             @Bind("id") id: Long,
             @Bind("size") size: Long,
             @Bind("status") status: String,
             @Bind("endedAt") endedAt: Long)
+
+    /* Getting the ID of the last insert, regardless of table. */
+    @SqlQuery("select last_insert_rowid()")
+    abstract fun lastInsertedRowId(): Long
 
     @Transaction
     fun importSims(
@@ -351,7 +320,7 @@ abstract class SimInventoryDAO {
                 importer = importer,
                 hlrId = hlrId,
                 profileVendorId = profileVendorId)
-        val batchId = lastInsertRowid()
+        val batchId = lastInsertedRowId()
         val values = SimEntryIterator(
                 profileVendorId = profileVendorId,
                 hlrId = hlrId,
@@ -396,45 +365,35 @@ abstract class SimInventoryDAO {
         }
     }
 
+
     //
     // Setting activation statuses
     //
 
     @SqlUpdate("UPDATE sim_entries SET hlrActivation = :hlrActivation  WHERE id = :id")
-    abstract fun setHlrActivation(
+    abstract fun updateHlrActivation(
             @Bind("id") id: Long,
             @Bind("hlrActivation") hlrActivation: Boolean)
-
-
-    @SqlUpdate("UPDATE sim_entries SET smdpPlusState = :smdpPlusState  WHERE id = :id")
-    abstract fun setSmdpPlusState(
-            @Bind("id") id: Long,
-            @Bind("smdpPlusState") smdpPlusState: SmDpPlusState)
-
 
     /**
      * Set the entity to be marked as "active" in the HLR, then return the
      * SIM entry.
      */
-    fun setActivatedInHlr(id: Long): SimEntry? {
-        setHlrActivation(id, true)
+    fun setHlrState(id: Long, state: Boolean): SimEntry? {
+        updateHlrActivation(id, state)
         return getSimProfileById(id)
     }
 
-    fun setOrderDownloadedInSmdpPlus(id: Long): SimEntry? {
-        setSmdpPlusState(id, SmDpPlusState.ORDER_DOWNLOADED)
+    @SqlUpdate("UPDATE sim_entries SET smdpPlusState = :smdpPlusState  WHERE id = :id")
+    abstract fun updateSmDpPlusState(
+            @Bind("id") id: Long,
+            @Bind("smdpPlusState") smdpPlusState: SmDpPlusState)
+
+    fun setSmDpPlusState(id: Long, state: SmDpPlusState): SimEntry? {
+        updateSmDpPlusState(id, state)
         return getSimProfileById(id)
     }
 
-    fun setActivatedInSmdpPlus(id: Long): SimEntry? {
-        setSmdpPlusState(id, SmDpPlusState.ACTIVATED)
-        return getSimProfileById(id)
-    }
-
-    fun getSmdpPlusState(id: Long) : SmDpPlusState? {
-        val simEntry: SimEntry? = getSimProfileById(id)
-        return simEntry!!.smdpPlusState
-    }
 
     //
     //  Binding a SIM card to an MSISDN
