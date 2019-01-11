@@ -15,7 +15,7 @@ class ES2PlusResourceTest {
 
     private val iccid = "01234567890123456789"
     private val eid = "01234567890123456789012345678901"
-    private val matchingId = "foo"
+    private val matchingId = "FOO"
     private val confirmationCode = "bar"
 
 
