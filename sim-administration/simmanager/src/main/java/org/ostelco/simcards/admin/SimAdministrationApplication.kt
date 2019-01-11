@@ -66,7 +66,7 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
         addOpenapiResourceToJerseyEnv(jerseyEnvironment, configuration.openApi)
         addEs2PlusDefaultFiltersAndInterceptors(jerseyEnvironment)
 
-        jerseyEnvironment.register(SimInventoryResource(simInventoryDAO))
+        jerseyEnvironment.register(SimInventoryResource(client, simInventoryDAO))
         jerseyEnvironment.register(SmDpPlusCallbackResource(smdpPlusCallbackHandler))
     }
 

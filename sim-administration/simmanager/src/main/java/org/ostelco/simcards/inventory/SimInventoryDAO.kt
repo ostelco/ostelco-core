@@ -3,6 +3,7 @@ package org.ostelco.simcards.inventory
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
+import org.ostelco.sim.es2plus.*
 import org.skife.jdbi.v2.StatementContext
 import org.skife.jdbi.v2.sqlobject.*
 import org.skife.jdbi.v2.sqlobject.customizers.BatchChunkSize
@@ -17,6 +18,9 @@ import java.sql.SQLException
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.AtomicLong
 import javax.ws.rs.WebApplicationException
+import javax.ws.rs.client.Client
+import javax.ws.rs.client.Entity
+import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
 
@@ -90,8 +94,61 @@ data class ProfileVendorAdapter(
      * user equpiment tries to download a profile, it will get a profile to
      * download.
      */
-    fun activateEntry(simEntry: SimEntry) {
-        // XXX TBD
+    fun activateEntry(client: Client, simEntry: SimEntry) {
+        val orderStatus = downloadOrder(client, simEntry.iccid)
+        val confirmStatus = confirmOrder(client, "01010101010101010101010101010101", simEntry.iccid)
+    }
+
+    private fun downloadOrder(client: Client, iccid: String) : Es2DownloadOrderResponse {
+        val header = ES2RequestHeader(
+                functionRequesterIdentifier = "",
+                functionCallIdentifier = ""
+        )
+        val payload = Es2PlusDownloadOrder(
+                header = header,
+                iccid = iccid
+        )
+        val response = client.target("http://localhost:9080/gsma/rsp2/es2plus/downloadOrder")
+                .request()
+                .post(Entity.entity(payload, MediaType.APPLICATION_JSON))
+
+        if (response.status != 200) {
+            throw WebApplicationException(Response.Status.BAD_REQUEST)
+        }
+
+        val status = response.readEntity(Es2DownloadOrderResponse::class.java)
+
+        return if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess)
+            throw WebApplicationException(Response.Status.BAD_REQUEST)
+        else
+            status
+    }
+
+    private fun confirmOrder(client: Client, eid: String, iccid: String) : Es2ConfirmOrderResponse {
+        val header = ES2RequestHeader(
+                functionRequesterIdentifier = "",
+                functionCallIdentifier = ""
+        )
+        val payload = Es2ConfirmOrder(
+                header = header,
+                eid = eid,
+                iccid = iccid,
+                releaseFlag = true
+        )
+        val response = client.target("http://localhost:9080/gsma/rsp2/es2plus/confirmOrder")
+                .request()
+                .post(Entity.entity(payload, MediaType.APPLICATION_JSON))
+
+        if (response.status != 200) {
+            throw WebApplicationException(Response.Status.BAD_REQUEST)
+        }
+
+        val status = response.readEntity(Es2ConfirmOrderResponse::class.java)
+
+        return if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess)
+            throw WebApplicationException(Response.Status.BAD_REQUEST)
+        else
+            status
     }
 }
 
