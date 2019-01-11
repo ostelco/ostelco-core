@@ -3,10 +3,7 @@ package org.ostelco.sim.es2plus
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.http.HttpEntity
 import org.apache.http.HttpResponse
-import org.apache.http.client.methods.CloseableHttpResponse
-import org.apache.http.client.methods.HttpGet
-import org.apache.http.client.methods.HttpPut
-import org.apache.http.client.methods.HttpUriRequest
+import org.apache.http.client.methods.*
 import org.apache.http.entity.StringEntity
 import java.net.http.HttpRequest
 import javax.ws.rs.client.Entity
@@ -47,7 +44,8 @@ class ES2PlusClient(
                 .POST(HttpRequest.BodyPublishers.ofString(payload))
                 .build() */
 
-        val req = HttpPut("https://%s:%d%s".format(host, port, path))
+
+        val req = HttpPost("https://%s:%d%s".format(host, port, path))
 
         req.setHeader("User-Agent", "gsma-rsp-lpad")
         req.setHeader("X-Admin-Protocol", X_ADMIN_PROTOCOL_HEADER_VALUE)
