@@ -47,7 +47,9 @@ class ES2PlusResourceTest {
         reset(callbackService)
     }
 
-    private val client = ES2PlusClient("Integration test client", RULE.client())
+    private val client = ES2PlusClient(
+            requesterId = "Integration test client",
+            jerseyClient = RULE.client())
 
     @Test
     fun testDownloadOrder() {

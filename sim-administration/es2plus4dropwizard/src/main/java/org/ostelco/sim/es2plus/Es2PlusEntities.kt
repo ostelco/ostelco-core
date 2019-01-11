@@ -77,7 +77,7 @@ data class Es2DownloadOrderResponse(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Es2ConfirmOrder(
         @JsonProperty("header") val header: ES2RequestHeader,
-        @JsonProperty("eid") val eid: String,
+        @JsonProperty("eid") val eid: String? = null,
         @JsonProperty("iccid") val iccid: String,
         @JsonProperty("matchingId") val matchingId: String? = null,
         @JsonProperty("confirmationCode") val confirmationCode: String? = null,

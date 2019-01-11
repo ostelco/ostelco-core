@@ -1,26 +1,27 @@
 package org.ostelco.sim.es2plus
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.apache.http.HttpEntity
 import org.apache.http.HttpResponse
+import org.apache.http.client.HttpClient
 import org.apache.http.client.methods.*
 import org.apache.http.entity.StringEntity
-import java.net.http.HttpRequest
+import javax.ws.rs.client.Client
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
-
-
+import javax.ws.rs.core.Response
 
 
 /**
- * A client implementation that is able to talk all of the GSMA specified parts of
+ * A httpClient implementation that is able to talk all of the GSMA specified parts of
  * the ES2+ protocol.
  */
 class ES2PlusClient(
         private val requesterId: String,
         private val host: String = "127.0.0.1",
         private val port: Int = 8443,
-        private val client: org.apache.http.client.HttpClient) {
+        private val httpClient: HttpClient? = null,
+        private val jerseyClient: Client? = null) {
+
     companion object {
         val X_ADMIN_PROTOCOL_HEADER_VALUE = "gsma/rsp/v<x.y.z>"
     }
@@ -32,66 +33,87 @@ class ES2PlusClient(
             es2ProtocolPayload: T,
             sclass: Class<S>,
             expectedReturnCode: Int = 200): S {
-        val entity: Entity<T> = Entity.entity(es2ProtocolPayload, MediaType.APPLICATION_JSON)
-
-        val objectMapper  = ObjectMapper()
-        val payload = objectMapper.writeValueAsString(es2ProtocolPayload)
-
-       /* val request = HttpRequest.newBuilder()
-                .header("User-Agent", "gsma-rsp-lpad")
-                .header("X-Admin-Protocol", X_ADMIN_PROTOCOL_HEADER_VALUE)
-                .header("Content-Type", MediaType.APPLICATION_JSON)
-                .POST(HttpRequest.BodyPublishers.ofString(payload))
-                .build() */
 
 
-        val req = HttpPost("https://%s:%d%s".format(host, port, path))
+        /// XXX TODO:
+        //       We  currently need jersey client for integration test and  httpClient for functional
+        //       SSL.  This is unfortunate, but also seems to be the shortest path towards a
+        //       functioning & testable  ES2+ client.   Should be implemented using two different
+        //       methods, that should then share a lot of common code.
 
-        req.setHeader("User-Agent", "gsma-rsp-lpad")
-        req.setHeader("X-Admin-Protocol", X_ADMIN_PROTOCOL_HEADER_VALUE)
-        req.setHeader("Content-Type", MediaType.APPLICATION_JSON)
-        req.setHeader("Accept", "application/json")
-        req.setHeader("Content-type", "application/json")
-        req.setEntity(StringEntity(payload))
+        if (httpClient != null) {
 
-        val result: HttpResponse =  client.execute(req)
+            val objectMapper = ObjectMapper()
+            val payload = objectMapper.writeValueAsString(es2ProtocolPayload)
 
-        if (result == null) {
-            throw ES2PlusClientException("Null response from http client")
+            val req = HttpPost("https://%s:%d%s".format(host, port, path))
+
+            req.setHeader("User-Agent", "gsma-rsp-lpad")
+            req.setHeader("X-Admin-Protocol", X_ADMIN_PROTOCOL_HEADER_VALUE)
+            req.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            req.setHeader("Accept", "application/json")
+            req.setHeader("Content-type", "application/json")
+            req.setEntity(StringEntity(payload))
+
+            val result: HttpResponse = httpClient.execute(req)
+
+            if (result == null) {
+                throw ES2PlusClientException("Null response from http httpClient")
+            }
+
+            // Validate returned response
+            val statusCode = result.statusLine.statusCode
+            if (expectedReturnCode != statusCode) {
+                val msg = "Expected return value $expectedReturnCode, but got ${statusCode}.  Body was \"${result.getEntity().getContent()}\""
+                throw ES2PlusClientException(msg)
+            }
+
+            val xAdminProtocolHeader = result.getFirstHeader("X-Admin-Protocol")!!
+            if (xAdminProtocolHeader == null || !xAdminProtocolHeader.value.equals(X_ADMIN_PROTOCOL_HEADER_VALUE)) {
+                throw ES2PlusClientException("Expected header X-Admin-Protocol to be '$X_ADMIN_PROTOCOL_HEADER_VALUE' but it was '$xAdminProtocolHeader'")
+            }
+
+            val returnedContentType = result.getFirstHeader("Content-Type")!!
+            val expectedContentType = "application/json"
+            if (returnedContentType == null || !returnedContentType.value.equals(expectedContentType)) {
+                throw ES2PlusClientException("Expected header Content-Type to be '$expectedContentType' but was '$returnedContentType'")
+            }
+
+            val returnValue = objectMapper.readValue(result.getEntity().getContent(), sclass)
+
+            if (returnValue == null) {
+                throw ES2PlusClientException("null return value")
+            }
+            return returnValue
+        } else if (jerseyClient != null) {
+            val entity: Entity<T> = Entity.entity(es2ProtocolPayload, MediaType.APPLICATION_JSON)
+            val result: Response = jerseyClient.target(path)
+                    .request(MediaType.APPLICATION_JSON)
+                    .header("User-Agent", "gsma-rsp-lpad")
+                    .header("X-Admin-Protocol", X_ADMIN_PROTOCOL_HEADER_VALUE)
+                    .post(entity)
+
+            // Validate returned response
+            if (expectedReturnCode != result.status) {
+                val msg = "Expected return value $expectedReturnCode, but got ${result.status}.  Body was \"${result.readEntity(String::class.java)}\""
+                throw ES2PlusClientException(msg)
+            }
+
+            val xAdminProtocolHeader = result.getHeaderString("X-Admin-Protocol")
+            if (xAdminProtocolHeader == null || !xAdminProtocolHeader.equals(X_ADMIN_PROTOCOL_HEADER_VALUE)) {
+                throw ES2PlusClientException("Expected header X-Admin-Protocol to be '$X_ADMIN_PROTOCOL_HEADER_VALUE' but it was '$xAdminProtocolHeader'")
+            }
+
+            val returnedContentType = result.getHeaderString("Content-Type")
+            val expectedContentType = "application/json"
+            if (returnedContentType == null || !returnedContentType.equals(expectedContentType)) {
+                throw ES2PlusClientException("Expected header Content-Type to be '$expectedContentType' but was '$returnedContentType'")
+            }
+            val returnValue = result.readEntity(sclass)
+            return returnValue
+        } else {
+            throw RuntimeException("No jersey nor apache http client, bailing out!!")
         }
-
-        /*
-        val result: Response = client.target(path)
-                .request(MediaType.APPLICATION_JSON)
-                .header("User-Agent", "gsma-rsp-lpad")
-                .header("X-Admin-Protocol", X_ADMIN_PROTOCOL_HEADER_VALUE)
-                .post(entity)
-                */
-
-        // Validate returned response
-        val statusCode = result.statusLine.statusCode
-        if (expectedReturnCode != statusCode) {
-            val msg = "Expected return value $expectedReturnCode, but got ${statusCode}.  Body was \"${result.getEntity().getContent()}\""
-            throw ES2PlusClientException(msg)
-        }
-
-        val xAdminProtocolHeader = result.getFirstHeader("X-Admin-Protocol")!!
-        if (xAdminProtocolHeader == null || !xAdminProtocolHeader.value.equals(X_ADMIN_PROTOCOL_HEADER_VALUE)) {
-            throw ES2PlusClientException("Expected header X-Admin-Protocol to be '$X_ADMIN_PROTOCOL_HEADER_VALUE' but it was '$xAdminProtocolHeader'")
-        }
-
-        val returnedContentType = result.getFirstHeader("Content-Type")!!
-        val expectedContentType = "application/json"
-        if (returnedContentType == null || !returnedContentType.value.equals(expectedContentType)) {
-            throw ES2PlusClientException("Expected header Content-Type to be '$expectedContentType' but was '$returnedContentType'")
-        }
-
-        val returnValue = objectMapper.readValue(result.getEntity().getContent(), sclass)
-
-        if (returnValue == null) {
-            throw ES2PlusClientException("null return value")
-        }
-        return returnValue
     }
 
     fun downloadOrder(
@@ -113,11 +135,11 @@ class ES2PlusClient(
                 expectedReturnCode = 200)
     }
 
-    fun confirmOrder(eid: String,
+    fun confirmOrder(eid: String? = null,
                      iccid: String,
-                     matchingId: String,
-                     confirmationCode: String,
-                     smdsAddress: String,
+                     matchingId: String? = null,
+                     confirmationCode: String? = null,
+                     smdsAddress: String? = null,
                      releaseFlag: Boolean): Es2ConfirmOrderResponse {
         val es2ProtocolPayload =
                 Es2ConfirmOrder(
