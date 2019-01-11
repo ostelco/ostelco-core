@@ -1,1 +1,1 @@
-org.ostelco.prime.storage.graph.ScanInfoModule
+org.ostelco.prime.storage.graph.Neo4jModule

@@ -37,7 +37,9 @@ modules:
     configFile: /secret/pantel-prod.json
 - type: admin
 - type: graphql
-
+- type: scaninfo-datastore
+  config:
+    datastoreType: emulator
 server:
   applicationConnectors:
   - type: h2c

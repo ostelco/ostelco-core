@@ -28,6 +28,7 @@ modules:
   config:
     configFile: config/pantel-prod.json
 - type: admin
+- type: scaninfo-datastore
 
 server:
   applicationConnectors:

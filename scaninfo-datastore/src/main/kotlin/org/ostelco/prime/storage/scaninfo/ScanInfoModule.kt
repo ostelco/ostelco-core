@@ -10,18 +10,22 @@ import org.ostelco.prime.module.PrimeModule
 class ScanInfoModule : PrimeModule {
 
     @JsonProperty
-    fun setConfig(config: Config) {
+    fun setConfig(config: ScanInfoConfig) {
         ConfigRegistry.config = config
     }
 
     override fun init(env: Environment) {
+        println("Initializing ScanInfoModule")
+        ScanInformationStoreSingleton.init(env)
+        println("Done Initializing ScanInfoModule")
+
     }
 }
 
 /**
  * The configuration for Scan Information Datastore module.
  */
-class Config : Configuration() {
+class ScanInfoConfig : Configuration() {
     var datastoreType = "default"
     var namespace = ""
     var apiToken = ""
@@ -29,5 +33,5 @@ class Config : Configuration() {
 }
 
 object ConfigRegistry {
-    lateinit var config: Config
+    var config = ScanInfoConfig()
 }

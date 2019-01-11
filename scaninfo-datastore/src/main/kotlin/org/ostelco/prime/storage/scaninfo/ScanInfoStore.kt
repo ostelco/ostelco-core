@@ -3,10 +3,7 @@ package org.ostelco.prime.storage.scaninfo
 import arrow.core.Either
 import com.codahale.metrics.health.HealthCheck
 import com.google.cloud.NoCredentials
-import com.google.cloud.datastore.Blob
-import com.google.cloud.datastore.Datastore
-import com.google.cloud.datastore.DatastoreOptions
-import com.google.cloud.datastore.Entity
+import com.google.cloud.datastore.*
 import com.google.cloud.datastore.testing.LocalDatastoreHelper
 import com.google.cloud.http.HttpTransportOptions
 import io.dropwizard.setup.Environment
@@ -17,9 +14,24 @@ import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.*
+import kotlin.concurrent.schedule
 
 
 class ScanInfoStore : ScanInformationStore by ScanInformationStoreSingleton
+
+enum class ScanDatastore(val s: String) {
+    // Property names in VendorScanInformation
+    ID("scanId"),
+    DETAILS("scanDetails"),
+    IMAGE("scanImage"),
+    IMAGE_TYPE("scanImageType"),
+    IMAGEBACKSIDE("scanImageBackside"),
+    IMAGEBACKSIDE_TYPE("scanImageBacksideType"),
+    IMAGEFACE("scanImageFace"),
+    IMAGEFACE_TYPE("scanImageFaceType"),
+    // Name of the datastore type
+    TYPE_NAME("VendorScanInformation")
+}
 
 object ScanInformationStoreSingleton : ScanInformationStore {
 
@@ -29,31 +41,57 @@ object ScanInformationStoreSingleton : ScanInformationStore {
     private lateinit var localDatastoreHelper: LocalDatastoreHelper
 
     override fun upsertVendorScanInformation(subscriberId: String, vendorScanInformation: VendorScanInformation): Either<StoreError, Unit> {
-        val key = datastore.newKeyFactory().setKind("VendorScanInformation").newKey(subscriberId)
-        val entityBuilder = Entity.newBuilder(key)
+        try {
+            val key = datastore.newKeyFactory().setKind(ScanDatastore.TYPE_NAME.s).newKey(subscriberId)
 
-        entityBuilder.set("scanId", vendorScanInformation.scanId)
-        entityBuilder.set("scanDetails", vendorScanInformation.scanDetails)
-        entityBuilder.set("scanImage", vendorScanInformation.scanImage)
-        entityBuilder.set("scanImageType", vendorScanInformation.scanImageType)
-        if (vendorScanInformation.scanImageBackside != null) {
-            entityBuilder.set("scanImageBackside", vendorScanInformation.scanImageBackside)
+            val entityBuilder = Entity.newBuilder(key)
+
+            entityBuilder.set(ScanDatastore.ID.s, vendorScanInformation.scanId)
+            entityBuilder.set(ScanDatastore.DETAILS.s, vendorScanInformation.scanDetails)
+            entityBuilder.set(ScanDatastore.IMAGE.s, vendorScanInformation.scanImage)
+            entityBuilder.set(ScanDatastore.IMAGE_TYPE.s, vendorScanInformation.scanImageType)
+            if (vendorScanInformation.scanImageBackside != null) {
+                entityBuilder.set(ScanDatastore.IMAGEBACKSIDE.s, vendorScanInformation.scanImageBackside)
+            }
+            if (vendorScanInformation.scanImageBacksideType != null) {
+                entityBuilder.set(ScanDatastore.IMAGEBACKSIDE_TYPE.s, vendorScanInformation.scanImageBacksideType)
+            }
+            if (vendorScanInformation.scanImageFace != null) {
+                entityBuilder.set(ScanDatastore.IMAGEFACE.s, vendorScanInformation.scanImageFace)
+            }
+            if (vendorScanInformation.scanImageFaceType != null) {
+                entityBuilder.set(ScanDatastore.IMAGEFACE_TYPE.s, vendorScanInformation.scanImageFaceType)
+            }
+            datastore.put(entityBuilder.build())
         }
-        if (vendorScanInformation.scanImageBacksideType != null) {
-            entityBuilder.set("scanImageBacksideType", vendorScanInformation.scanImageBacksideType)
+        catch (e: DatastoreException) {
+            return Either.left(NotCreatedError(ScanDatastore.TYPE_NAME.s, subscriberId))
         }
-        if (vendorScanInformation.scanImageFace != null) {
-            entityBuilder.set("scanImageFace", vendorScanInformation.scanImageFace)
-        }
-        if (vendorScanInformation.scanImageFaceType != null) {
-            entityBuilder.set("scanImageFace", vendorScanInformation.scanImageFaceType)
-        }
-        datastore.put(entityBuilder.build())
         return Either.right(Unit)
     }
 
     override fun fetchScanImage(url: String): Either<StoreError, Pair<Blob, String>> {
         return HttpDownloadUtility.downloadFileAsBlob(url, ConfigRegistry.config.apiToken, ConfigRegistry.config.apiSecret)
+    }
+
+    fun __getVendorScanInformation(subscriberId: String): Either<StoreError, VendorScanInformation> {
+        try {
+            val key = datastore.newKeyFactory().setKind(ScanDatastore.TYPE_NAME.s).newKey(subscriberId)
+            val entity = datastore.get(key)
+            return Either.right(VendorScanInformation(
+                    entity.getString(ScanDatastore.ID.s),
+                    entity.getString(ScanDatastore.DETAILS.s),
+                    entity.getBlob(ScanDatastore.IMAGE.s),
+                    entity.getString(ScanDatastore.IMAGE_TYPE.s),
+                    if (entity.contains(ScanDatastore.IMAGEBACKSIDE.s)) entity.getBlob(ScanDatastore.IMAGEBACKSIDE.s) else null,
+                    if (entity.contains(ScanDatastore.IMAGEBACKSIDE_TYPE.s)) entity.getString(ScanDatastore.IMAGEBACKSIDE_TYPE.s) else null,
+                    if (entity.contains(ScanDatastore.IMAGEFACE.s)) entity.getBlob(ScanDatastore.IMAGEFACE.s) else null,
+                    if (entity.contains(ScanDatastore.IMAGEFACE_TYPE.s)) entity.getString(ScanDatastore.IMAGEFACE_TYPE.s) else null
+            ))
+        }
+        catch (e: DatastoreException) {
+            return Either.left(NotFoundError(ScanDatastore.TYPE_NAME.s, subscriberId))
+        }
     }
 
     fun init(env: Environment?) {
@@ -119,6 +157,33 @@ object ScanInformationStoreSingleton : ScanInformationStore {
                 }
             }
         })
+        Timer("SettingUp", false).schedule(1000) {
+            _checkStore()
+        }
+    }
+
+    fun _checkStore() {
+        val subscriberId= "test@example.com"
+        val scanId= "1xx"
+        val scanDetails= "{ \"data\": \"empty\"}"
+        val imageDataString = "asdfasfda";
+        val imageDataType = "image/jpeg";
+        val imageData: Blob = Blob.copyFrom(imageDataString.toByteArray())
+
+        ScanInformationStoreSingleton.upsertVendorScanInformation(subscriberId,
+                VendorScanInformation(scanId,
+                        scanDetails,
+                        imageData,
+                        imageDataType,
+                        null,
+                        null,
+                        null,
+                        null))
+        val savedRecord = ScanInformationStoreSingleton.__getVendorScanInformation(subscriberId)
+        assert(savedRecord.isRight())
+        savedRecord.map {
+            println("Got the saved data: $it")
+        }
     }
 }
 
