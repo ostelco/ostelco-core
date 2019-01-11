@@ -8,6 +8,8 @@ import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Test
 import org.mockito.Mockito.*
+import org.ostelco.simcards.adapter.HlrAdapter
+import org.ostelco.simcards.adapter.ProfileVendorAdapter
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
@@ -50,7 +52,7 @@ class SimInventoryUnitTests {
             imsi = fakeImsi1,
             eid = "bb",
             hlrActivation = false,
-            smdpPlusActivation = false,
+            smdpPlusState = SmDpPlusState.NOT_ACTIVATED,
             pin1 = "ss",
             pin2 = "ss",
             puk1 = "ss",
@@ -64,7 +66,7 @@ class SimInventoryUnitTests {
             imsi = fakeImsi1,
             eid = "bb",
             hlrActivation = false,
-            smdpPlusActivation = false,
+            smdpPlusState = SmDpPlusState.NOT_ACTIVATED,
             pin1 = "ss",
             pin2 = "ss",
             puk1 = "ss",

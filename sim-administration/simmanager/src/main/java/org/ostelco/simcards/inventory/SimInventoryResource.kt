@@ -114,7 +114,7 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
         assertHlrsEqual(hlr, hlrAdapter.name)
 
         try {
-            hlrAdapter.activate(simEntry)
+            hlrAdapter.activate(client, dao, simEntry)
         } catch (e: Exception) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }
@@ -135,7 +135,7 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
         val simVendorAdapter = assertNonNull(dao.getProfileVendorAdapterById(simEntry.profileVendorId))
 
         try {
-            simVendorAdapter.activateEntry(client, simEntry)
+            simVendorAdapter.activate(client, dao, simEntry)
         } catch (e: Exception) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }
@@ -153,7 +153,7 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
         val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
         assertHlrsEqual(hlr, hlrAdapter.name)
 
-        hlrAdapter.deactivate(simEntry)
+        hlrAdapter.deactivate(client, dao, simEntry)
         dao.setActivatedInHlr(simEntry.id!!)
         return dao.getSimProfileById(simEntry.id)
     }
