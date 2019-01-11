@@ -9,18 +9,17 @@ import java.io.FileInputStream
 import java.io.PrintWriter
 
 
-
 class SimCardBatchDescriptorReaderTest {
 
     val smdpInputCsvPath =
             ResourceHelpers.resourceFilePath("fixtures/sample-sim-batch-for-sm-dp+.csv")
+
     @Test
     fun testReadingListOfEntriesFromFile() {
         var foo = 0
         SmDpSimEntryIterator(FileInputStream(smdpInputCsvPath)).forEach {  foo++ }
         assertEquals(100, foo)
     }
-
 
     /**
      * This is not a test, it is utility code that is used to generate the input file
@@ -51,7 +50,6 @@ class SimCardBatchDescriptorReaderTest {
         writer.close()
     }
 }
-
 
 class ImsiGenerator(val mcc : Int, val mnc: Int, val msinStart : Int) : Iterator<String> {
 

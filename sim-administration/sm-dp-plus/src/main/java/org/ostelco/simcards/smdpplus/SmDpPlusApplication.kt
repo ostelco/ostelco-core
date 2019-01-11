@@ -65,8 +65,11 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         val simEntriesIterator = SmDpSimEntryIterator(FileInputStream(config.simBatchData))
         val smdpPlusService: SmDpPlusService = SmDpPlusEmulator(simEntriesIterator)
 
-        jerseyEnvironment.register(SmDpPlusServerResource(smDpPlus = smdpPlusService))
-
+        jerseyEnvironment.register(SmDpPlusServerResource(
+                smDpPlus = smdpPlusService))
+        jerseyEnvironment.register(CertificateAuthorizationFilter(RBACService(
+                rolesConfig = config.rolesConfig,
+                certConfig = config.certConfig)))
         jerseyEnvironment.register(CertificateAuthorizationFilter(
                 RBACService(rolesConfig = config.rolesConfig,
                         certConfig = config.certConfig)))
@@ -77,19 +80,16 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
                 client = httpClient)
     }
 
-
     companion object {
+
         @Throws(Exception::class)
         @JvmStatic
         fun main(args: Array<String>) {
-
             Security.insertProviderAt(OpenSSLProvider(), 1)
-
             SmDpPlusApplication().run(*args)
         }
     }
 }
-
 
 /**
  * A very reduced  functionality SmDpPlus, essentially handling only
@@ -234,7 +234,6 @@ class EsTwoPlusConfig {
  */
 class SmDpPlusAppConfiguration : Configuration() {
 
-
     /**
      * Configuring how the Open API representation of the
      * served resources will be presenting itself (owner,
@@ -272,7 +271,6 @@ class SmDpPlusAppConfiguration : Configuration() {
     @JsonProperty("httpClient")
     var httpClientConfiguration = HttpClientConfiguration()
 
-
     /**
      * Declaring the mapping between users and certificates, also
      * which roles the users are assigned to.
@@ -290,5 +288,3 @@ class SmDpPlusAppConfiguration : Configuration() {
     @NotNull
     var rolesConfig = RolesConfig()
 }
-
-
