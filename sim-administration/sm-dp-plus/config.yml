@@ -32,7 +32,9 @@ server:
       excludedProtocols: [SSLv2Hello, SSLv3]
 
 httpClient:
+  timeout: 5000000ms
   tls:
+    # Default is 500 milliseconds, we need more when debugging.
     protocol: TLSv1.2
     keyStoreType: JKS
     keyStorePath: sk_keys.jks

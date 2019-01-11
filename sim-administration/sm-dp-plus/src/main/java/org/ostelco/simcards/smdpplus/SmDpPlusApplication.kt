@@ -158,7 +158,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
      */
     private fun findMatchingFreeProfile(iccid: String?, profileType: String?): SmDpSimEntry? {
         if (iccid != null) {
-            return allocateByIccid(iccid, profileType)
+            return findUnallocatedByIccidAndProfileType(iccid, profileType)
         } else if (profileType == null) {
             throw RuntimeException("No iccid, no profile type, so don't know how to allocate sim entry")
         } else if (!entriesByProfile.containsKey(profileType)) {
@@ -182,7 +182,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
      * profile  associated with that ICCID matches the expected profile type
      * (if not null, null will match anything).
      */
-    private fun allocateByIccid(iccid: String, profileType: String?): SmDpSimEntry {
+    private fun findUnallocatedByIccidAndProfileType(iccid: String, profileType: String?): SmDpSimEntry {
         if (!entriesByIccid.containsKey(iccid)) {
             throw RuntimeException("Attempt to allocate nonexisting iccid $iccid")
         }

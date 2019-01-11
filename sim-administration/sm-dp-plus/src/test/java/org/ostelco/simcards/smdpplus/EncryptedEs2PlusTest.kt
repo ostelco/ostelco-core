@@ -26,9 +26,9 @@ class EncryptedEs2PlusTest {
     fun handleHappyDayScenario() {
         val client: ES2PlusClient =
                 SUPPORT.getApplication<SmDpPlusApplication>().es2plusClient
-        val eid = "123456789801234567890123456789012"
+        val eid = "12345678980123456789012345678901"
         val iccid = "8901000000000000001"
-        val downloadResponse = client.downloadOrder(eid = eid, iccid = iccid, profileType = "foo")
+        val downloadResponse = client.downloadOrder(eid = eid, iccid = iccid, profileType = "FooTel_STD")
 
         // XXX Check for correct return values
 
