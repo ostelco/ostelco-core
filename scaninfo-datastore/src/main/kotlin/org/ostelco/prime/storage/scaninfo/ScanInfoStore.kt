@@ -170,6 +170,8 @@ object ScanInformationStoreSingleton : ScanInformationStore {
         val imageDataType = "image/jpeg";
         val imageData: Blob = Blob.copyFrom(imageDataString.toByteArray())
 
+        logger.info("_checkStore()")
+
         ScanInformationStoreSingleton.upsertVendorScanInformation(subscriberId,
                 VendorScanInformation(scanId,
                         scanDetails,
@@ -182,7 +184,7 @@ object ScanInformationStoreSingleton : ScanInformationStore {
         val savedRecord = ScanInformationStoreSingleton.__getVendorScanInformation(subscriberId)
         assert(savedRecord.isRight())
         savedRecord.map {
-            println("Got the saved data: $it")
+            logger.info("Got the saved data: $it")
         }
     }
 }
