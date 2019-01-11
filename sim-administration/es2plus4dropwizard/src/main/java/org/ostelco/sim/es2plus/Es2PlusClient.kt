@@ -22,7 +22,7 @@ import javax.ws.rs.core.MediaType
 class ES2PlusClient(
         private val requesterId: String,
         private val host: String = "127.0.0.1",
-        private val port: Int = 8080,
+        private val port: Int = 8443,
         private val client: org.apache.http.client.HttpClient) {
     companion object {
         val X_ADMIN_PROTOCOL_HEADER_VALUE = "gsma/rsp/v<x.y.z>"

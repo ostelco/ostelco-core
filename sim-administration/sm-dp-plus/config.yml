@@ -1,6 +1,6 @@
 logging:
-#  level: ALL
-   level: INFO
+   level: ALL
+#  level: INFO
 
 simBatchData: sample-sim-batch-for-sm-dp+.csv
 
