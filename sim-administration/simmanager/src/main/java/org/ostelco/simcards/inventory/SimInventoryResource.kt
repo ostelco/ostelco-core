@@ -4,6 +4,7 @@ import org.hibernate.validator.constraints.NotEmpty
 import java.io.IOException
 import java.io.InputStream
 import javax.ws.rs.*
+import javax.ws.rs.client.Client
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
@@ -13,7 +14,7 @@ import javax.ws.rs.core.Response
 ///
 
 @Path("/ostelco/sim-inventory/{hlr}")
-class SimInventoryResource(private val dao: SimInventoryDAO) {
+class SimInventoryResource(private val client: Client, private val dao: SimInventoryDAO) {
 
     companion object {
         private fun <T> assertNonNull(v: T?): T {
@@ -134,7 +135,7 @@ class SimInventoryResource(private val dao: SimInventoryDAO) {
         val simVendorAdapter = assertNonNull(dao.getProfileVendorAdapterById(simEntry.profileVendorId))
 
         try {
-            simVendorAdapter.activateEntry(simEntry)
+            simVendorAdapter.activateEntry(client, simEntry)
         } catch (e: Exception) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }

@@ -8,6 +8,7 @@ import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Test
 import org.mockito.Mockito.*
+import javax.ws.rs.client.Client
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 
@@ -15,12 +16,13 @@ class SimInventoryUnitTests {
 
     companion object {
         private val dao = mock(SimInventoryDAO::class.java)
+        private val client = mock(Client::class.java)
 
         @JvmField
         @ClassRule
         val RULE: ResourceTestRule = ResourceTestRule
                 .builder()
-                .addResource(SimInventoryResource(dao))
+                .addResource(SimInventoryResource(client, dao))
                 .build()
 
         @JvmStatic
