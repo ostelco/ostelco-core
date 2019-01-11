@@ -43,9 +43,9 @@ class EsimInventoryBatchImportTest {
         // First delete whatever we can delete of old tables
         val dao = RULE.getApplication<SimAdministrationApplication>().simInventoryDAO
         // The set up the necessary entities to permit import.
-        dao.addSimProfileVendor("Idemia")
+        dao.addProfileVendorAdapter("Idemia")
         dao.addHlrAdapter("Loltel")
-        dao.permitVendorForHlrByNames(vendor = "Idemia", hlr = "Loltel")
+        dao.permitVendorForHlrByNames(profileVendor = "Idemia", hlr = "Loltel")
     }
 
     // FIXME make this test work in CircleCI

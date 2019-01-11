@@ -1,3 +1,5 @@
+package org.ostelco.simcards.smdpplus
+
 import io.dropwizard.client.HttpClientBuilder
 import io.dropwizard.testing.DropwizardTestSupport
 import org.apache.http.client.methods.HttpGet
@@ -6,8 +8,14 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
-
 class PingPongSslRoundtripTest {
+
+    companion object {
+        val SUPPORT = DropwizardTestSupport<SmDpPlusAppConfiguration>(
+                SmDpPlusApplication::class.java,
+                "config.yml"
+        )
+    }
 
     @Before
     fun setUp() {
@@ -19,16 +27,17 @@ class PingPongSslRoundtripTest {
         SUPPORT.after()
     }
 
+    /* From config file. */
+    val HTTP_PORT = 8080
+    val TLS_PORT = 8443
 
     @Test
     fun handleNonEncryptedHttp() {
-        val client = HttpClientBuilder(SUPPORT.getEnvironment()).build("test client/http")
-
-        val httpGet = HttpGet(String.format("http://localhost:%d/ping", 8080))
+        val client = SUPPORT.getApplication<SmDpPlusApplication>().client
+        val httpGet = HttpGet(String.format("http://localhost:%d/ping", HTTP_PORT))
         val response = client.execute(httpGet)
         assertThat(response.statusLine.statusCode).isEqualTo(403)
     }
-
 
     /**
      * This now works, since we disabled hostname  checking and enabled self-signed
@@ -40,17 +49,9 @@ class PingPongSslRoundtripTest {
      */
     @Test
     fun handleEncryptedHttp() {
-        val client = SUPPORT.getApplication<PingPoingApplication>().client
-        val httpGet = HttpGet(String.format("https://localhost:%d/ping", 8443))
+        val client = SUPPORT.getApplication<SmDpPlusApplication>().client
+        val httpGet = HttpGet(String.format("https://localhost:%d/ping", TLS_PORT))
         val response = client.execute(httpGet)
         assertThat(response.statusLine.statusCode).isEqualTo(200)
-    }
-
-    companion object {
-
-        val SUPPORT = DropwizardTestSupport<PingPongAppConfiguration>(
-                PingPoingApplication::class.java,
-                "config.yml"
-        )
     }
 }

@@ -1,0 +1,22 @@
+logging:
+  level: INFO
+
+openApi:
+  name: SIM admin
+  description: SIM Administration Service
+  termsOfService: http://example.org
+  contactEmail: dev@redotter.sg
+  resourcePackage: org.ostelco
+
+server:
+  type: default
+  applicationConnectors:
+    - type: http
+      port: 8080
+  adminConnectors:
+    - type: http
+      port: 8081
+
+database:
+  driverClass: org.sqlite.JDBC
+  url: jdbc:sqlite:/tmp/sim_inventory.db
