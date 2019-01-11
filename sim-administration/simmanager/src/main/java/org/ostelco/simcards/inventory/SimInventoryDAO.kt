@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.ostelco.sim.es2plus.*
+import org.ostelco.simcards.adapter.Adapter
+import org.ostelco.simcards.adapter.HlrAdapter
+import org.ostelco.simcards.adapter.ProfileVendorAdapter
 import org.skife.jdbi.v2.StatementContext
 import org.skife.jdbi.v2.sqlobject.*
 import org.skife.jdbi.v2.sqlobject.customizers.BatchChunkSize
@@ -24,6 +27,12 @@ import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
 
+enum class SmDpPlusState {
+    NOT_ACTIVATED,
+    ORDER_DOWNLOADED,
+    ACTIVATED,         /* I.e. previously downloaded order is confirmed. */
+}
+
 /**
  *  Representing a single SIM card.
  */
@@ -37,7 +46,7 @@ data class SimEntry(
         @JsonProperty("imsi") val imsi: String,
         @JsonProperty("eid") val eid: String? = null,
         @JsonProperty("hlrActivation") val hlrActivation: Boolean = false,
-        @JsonProperty("smdpPlusActivation") val smdpPlusActivation: Boolean = false,
+        @JsonProperty("smdpPlusState") val smdpPlusState: SmDpPlusState = SmDpPlusState.NOT_ACTIVATED,
         @JsonProperty("pin1") val pin1: String,
         @JsonProperty("pin2") val pin2: String,
         @JsonProperty("puk1") val puk1: String,
@@ -56,102 +65,6 @@ data class SimImportBatch(
         @JsonProperty("hlrId") val hlrId: Long,
         @JsonProperty("profileVendorId") val profileVendorId: Long
 )
-
-
-/**
- * An adapter that can connect to HLR entries and activate/deactivate
- * individual SIM profiles.
- */
-data class HlrAdapter(
-        @JsonProperty("id") val id: Long,
-        @JsonProperty("name") val name: String) {
-
-    /**
-     * Will connect to the HLR and then activate the profile, so that when
-     * a VLR asks the HLR for the an authentication triplet, then the HLR
-     * will know that it should give an answer.
-     */
-    fun activate(simEntry: SimEntry) {
-        // XXX TBD
-    }
-
-    fun deactivate(simEntry: SimEntry) {
-        // XXX TBD
-    }
-}
-
-
-/**
- * An adapter that can connect to SIM profile vendors and activate
- * the requested SIM profile.
- */
-data class ProfileVendorAdapter(
-        @JsonProperty("id") val id: Long,
-        @JsonProperty("name") val name: String) {
-
-    /**
-     * Will connect to the SM-DP+  and then activate the profile, so that when
-     * user equpiment tries to download a profile, it will get a profile to
-     * download.
-     */
-    fun activateEntry(client: Client, simEntry: SimEntry) {
-        val orderStatus = downloadOrder(client, simEntry.iccid)
-        val confirmStatus = confirmOrder(client, "01010101010101010101010101010101", simEntry.iccid)
-    }
-
-    private fun downloadOrder(client: Client, iccid: String) : Es2DownloadOrderResponse {
-        val header = ES2RequestHeader(
-                functionRequesterIdentifier = "",
-                functionCallIdentifier = ""
-        )
-        val payload = Es2PlusDownloadOrder(
-                header = header,
-                iccid = iccid
-        )
-        val response = client.target("http://localhost:9080/gsma/rsp2/es2plus/downloadOrder")
-                .request()
-                .post(Entity.entity(payload, MediaType.APPLICATION_JSON))
-
-        if (response.status != 200) {
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
-        }
-
-        val status = response.readEntity(Es2DownloadOrderResponse::class.java)
-
-        return if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess)
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
-        else
-            status
-    }
-
-    private fun confirmOrder(client: Client, eid: String, iccid: String) : Es2ConfirmOrderResponse {
-        val header = ES2RequestHeader(
-                functionRequesterIdentifier = "",
-                functionCallIdentifier = ""
-        )
-        val payload = Es2ConfirmOrder(
-                header = header,
-                eid = eid,
-                iccid = iccid,
-                releaseFlag = true
-        )
-        val response = client.target("http://localhost:9080/gsma/rsp2/es2plus/confirmOrder")
-                .request()
-                .post(Entity.entity(payload, MediaType.APPLICATION_JSON))
-
-        if (response.status != 200) {
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
-        }
-
-        val status = response.readEntity(Es2ConfirmOrderResponse::class.java)
-
-        return if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess)
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
-        else
-            status
-    }
-}
-
 
 class SimEntryIterator(profileVendorId: Long, hlrId: Long, batchId: Long, csvInputStream: InputStream) : Iterator<SimEntry> {
 
@@ -284,7 +197,7 @@ abstract class SimInventoryDAO {
             val iccid = r.getString("iccid")
             val imsi = r.getString("imsi")
             val eid = r.getString("eid")
-            val smdpPlusActivation = r.getBoolean("smdpPlusActivation")
+            val smdpPlusState = r.getString("smdpPlusState")
             val hlrActivation = r.getBoolean("hlrActivation")
             val pin1 = r.getString("pin1")
             val pin2 = r.getString("pin2")
@@ -300,7 +213,7 @@ abstract class SimInventoryDAO {
                     iccid = iccid,
                     imsi = imsi,
                     eid = eid,
-                    smdpPlusActivation = smdpPlusActivation,
+                    smdpPlusState = SmDpPlusState.valueOf(smdpPlusState.toUpperCase()),
                     hlrActivation = hlrActivation,
                     pin1 = pin1,
                     pin2 = pin2,
@@ -407,7 +320,7 @@ abstract class SimInventoryDAO {
     // Importing
     //
     @Transaction
-    @SqlBatch("INSERT INTO sim_entries (batch, profileVendorId, hlrid, iccid, imsi, pin1, pin2, puk1, puk2) VALUES (:batch, :profileVendorId, :hlrId, :iccid, :imsi, :pin1, :pin2, :puk1, :puk2)")
+    @SqlBatch("INSERT INTO sim_entries (batch, profileVendorId, hlrid, smdpplusstate, iccid, imsi, pin1, pin2, puk1, puk2) VALUES (:batch, :profileVendorId, :hlrId, :smdpPlusState, :iccid, :imsi, :pin1, :pin2, :puk1, :puk2)")
     @BatchChunkSize(1000)
     abstract fun insertAll(@BindBean entries: Iterator<SimEntry>)
 
@@ -493,10 +406,10 @@ abstract class SimInventoryDAO {
             @Bind("hlrActivation") hlrActivation: Boolean)
 
 
-    @SqlUpdate("UPDATE sim_entries SET smdpPlusActivation = :smdpPlusActivation  WHERE id = :id")
-    abstract fun setSmdpPlusActivation(
+    @SqlUpdate("UPDATE sim_entries SET smdpPlusState = :smdpPlusState  WHERE id = :id")
+    abstract fun setSmdpPlusState(
             @Bind("id") id: Long,
-            @Bind("smdpPlusActivation") smdpPlusActivation: Boolean)
+            @Bind("smdpPlusState") smdpPlusState: SmDpPlusState)
 
 
     /**
@@ -508,10 +421,19 @@ abstract class SimInventoryDAO {
         return getSimProfileById(id)
     }
 
+    fun setOrderDownloadedInSmdpPlus(id: Long): SimEntry? {
+        setSmdpPlusState(id, SmDpPlusState.ORDER_DOWNLOADED)
+        return getSimProfileById(id)
+    }
 
     fun setActivatedInSmdpPlus(id: Long): SimEntry? {
-        setSmdpPlusActivation(id, true)
+        setSmdpPlusState(id, SmDpPlusState.ACTIVATED)
         return getSimProfileById(id)
+    }
+
+    fun getSmdpPlusState(id: Long) : SmDpPlusState? {
+        val simEntry: SimEntry? = getSimProfileById(id)
+        return simEntry!!.smdpPlusState
     }
 
     //
