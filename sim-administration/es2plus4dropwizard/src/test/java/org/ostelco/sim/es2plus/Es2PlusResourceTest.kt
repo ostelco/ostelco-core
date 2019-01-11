@@ -15,7 +15,7 @@ class ES2PlusResourceTest {
 
     private val iccid = "01234567890123456789"
     private val eid = "01234567890123456789012345678901"
-    private val matchingId = "foo"
+    private val matchingId = "ABCD-EFGH-IJKL-MNOP-1234"
     private val confirmationCode = "bar"
 
 
@@ -64,12 +64,24 @@ class ES2PlusResourceTest {
                 eid = eid,
                 iccid = iccid,
                 profileType = "AProfileTypeOfSomeSort")
-        // XXX Do some verification
     }
 
 
     @Test
     fun testConfirmOrder() {
+
+        Mockito.`when`(smdpPlusService.confirmOrder(
+                eid = Mockito.anyString(),
+                iccid = Mockito.anyString(),
+                smdsAddress = Mockito.anyString(),
+                machingId = Mockito.anyString(),
+                confirmationCode = Mockito.anyString(),
+                releaseFlag = Mockito.anyBoolean()))
+                .thenReturn(
+                        Es2ConfirmOrderResponse(
+                                header = eS2SuccessResponseHeader(),
+                                eid = "12345678901234567890123456789012",
+                                matchingId = "BANANAS-ARE-GREAT"))
 
 
         client.confirmOrder(
@@ -79,7 +91,6 @@ class ES2PlusResourceTest {
                 confirmationCode = confirmationCode,
                 smdsAddress = "baz",
                 releaseFlag = true)
-        // XXX Do some verification
     }
 
     @Test
@@ -104,7 +115,7 @@ class ES2PlusResourceTest {
         client.handleDownloadProgressInfo(
                 iccid = iccid,
                 eid = eid,
-                profileType =  "profileType",
+                profileType = "profileType",
                 timestamp = "2001-12-17T09:30:47Z",
                 notificationPointId = 4711,
                 notificationPointStatus = ES2NotificationPointStatus()
