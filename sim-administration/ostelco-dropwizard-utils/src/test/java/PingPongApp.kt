@@ -1,3 +1,6 @@
+package org.ostelco.simcards.smdpplus
+
+
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.dropwizard.Application
 import io.dropwizard.Configuration
@@ -21,7 +24,7 @@ import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.SecurityContext
 
 
-class PingPoingApplication : Application<PingPongAppConfiguration>() {
+class PingPongApp : Application<PingPongAppConfiguration>() {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -57,7 +60,7 @@ class PingPoingApplication : Application<PingPongAppConfiguration>() {
         @JvmStatic
         fun main(args: Array<String>) {
             Security.insertProviderAt(OpenSSLProvider(), 1)
-            PingPoingApplication().run(*args)
+            PingPongApp().run(*args)
         }
     }
 }

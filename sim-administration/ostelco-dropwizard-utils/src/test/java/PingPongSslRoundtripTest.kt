@@ -11,8 +11,8 @@ import org.junit.Test
 class PingPongSslRoundtripTest {
 
     companion object {
-        val SUPPORT = DropwizardTestSupport<SmDpPlusAppConfiguration>(
-                SmDpPlusApplication::class.java,
+        val SUPPORT = DropwizardTestSupport<PingPongAppConfiguration>(
+                PingPongApp::class.java,
                 "config.yml"
         )
     }
@@ -33,10 +33,10 @@ class PingPongSslRoundtripTest {
 
     @Test
     fun handleNonEncryptedHttp() {
-        val client = SUPPORT.getApplication<SmDpPlusApplication>().client
+        val client = SUPPORT.getApplication<PingPongApp>().client
         val httpGet = HttpGet(String.format("http://localhost:%d/ping", HTTP_PORT))
         val response = client.execute(httpGet)
-        assertThat(response.statusLine.statusCode).isEqualTo(403)
+        assertThat(response.statusLine.statusCode).isEqualTo(200)
     }
 
     /**
@@ -49,7 +49,7 @@ class PingPongSslRoundtripTest {
      */
     @Test
     fun handleEncryptedHttp() {
-        val client = SUPPORT.getApplication<SmDpPlusApplication>().client
+        val client = SUPPORT.getApplication<PingPongApp>().client
         val httpGet = HttpGet(String.format("https://localhost:%d/ping", TLS_PORT))
         val response = client.execute(httpGet)
         assertThat(response.statusLine.statusCode).isEqualTo(200)
