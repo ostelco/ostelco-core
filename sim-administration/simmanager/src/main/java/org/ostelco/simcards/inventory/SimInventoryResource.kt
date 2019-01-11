@@ -83,14 +83,8 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
         val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
         assertHlrsEqual(hlr, hlrAdapter.name)
 
-        val profileVendorAdapter = assertNonNull(dao.getProfileVendorAdapterById(simEntry.profileVendorId))
-
-        return if (profileVendorAdapter.name != null) {
-            activateEsimProfileByIccid(hlr, iccid)
-            //activateHlrProfileByIccid(hlr, iccid)  // XXX do both?
-        } else {
-            simEntry
-        }
+        activateEsimProfileByIccid(hlr, iccid)
+        return activateHlrProfileByIccid(hlr, iccid)
     }
 
     private fun assertHlrsEqual(hlr1: String, hlr2: String) {
@@ -118,7 +112,7 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
         } catch (e: Exception) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }
-        return assertNonNull(dao.setActivatedInHlr(simEntry.id!!))
+        return assertNonNull(dao.setHlrState(simEntry.id!!, true))
     }
 
     @Produces(MediaType.APPLICATION_JSON)
@@ -132,14 +126,14 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
         val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
         assertHlrsEqual(hlr, hlrAdapter.name)
 
-        val simVendorAdapter = assertNonNull(dao.getProfileVendorAdapterById(simEntry.profileVendorId))
+        val adapter = assertNonNull(dao.getProfileVendorAdapterById(simEntry.profileVendorId))
 
         try {
-            simVendorAdapter.activate(client, dao, simEntry)
+            adapter.activate(client, dao, "01010101010101010101010101010101", simEntry)
         } catch (e: Exception) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }
-        return assertNonNull(dao.setActivatedInSmdpPlus(simEntry.id!!))
+        return assertNonNull(dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ACTIVATED))
     }
 
     @Produces(MediaType.APPLICATION_JSON)
@@ -154,7 +148,7 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
         assertHlrsEqual(hlr, hlrAdapter.name)
 
         hlrAdapter.deactivate(client, dao, simEntry)
-        dao.setActivatedInHlr(simEntry.id!!)
+        dao.setHlrState(simEntry.id!!, true)
         return dao.getSimProfileById(simEntry.id)
     }
 

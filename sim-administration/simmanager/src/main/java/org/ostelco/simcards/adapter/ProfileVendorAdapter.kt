@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import org.ostelco.sim.es2plus.*
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
+import org.ostelco.simcards.inventory.SmDpPlusState
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.Entity
@@ -20,25 +21,29 @@ import javax.ws.rs.core.Response
  */
 data class ProfileVendorAdapter (
         @JsonProperty("id") val id: Long,
-        @JsonProperty("name") val name: String) : Adapter {
+        @JsonProperty("name") val name: String) {
 
-    override fun activate(client: Client, dao: SimInventoryDAO, simEntry: SimEntry) {
-        val orderStatus = downloadOrder(client, simEntry.iccid)
-        val confirmStatus = confirmOrder(client, "01010101010101010101010101010101", simEntry.iccid)
+    /**
+     * Requests the external Profile Vendor to activate the
+     * SIM profile.
+     * @param client  HTTP client
+     * @param dao  DB interface
+     * @param eid  ESIM id
+     * @param simEntry  SIM profile to activate
+     */
+    fun activate(client: Client, dao: SimInventoryDAO, eid: String, simEntry: SimEntry) {
+        val orderStatus = downloadOrder(client, dao, simEntry)
+        val confirmStatus = confirmOrder(client, dao, eid, simEntry)
     }
 
-    override fun deactivate(client: Client, dao: SimInventoryDAO, simEntry: SimEntry) {
-        // XXX TBD
-    }
-
-    private fun downloadOrder(client: Client, iccid: String) : Es2DownloadOrderResponse {
+    private fun downloadOrder(client: Client, dao: SimInventoryDAO, simEntry: SimEntry) : Es2DownloadOrderResponse {
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = "",
                 functionCallIdentifier = ""
         )
         val payload = Es2PlusDownloadOrder(
                 header = header,
-                iccid = iccid
+                iccid = simEntry.iccid
         )
         val response = client.target("http://localhost:9080/gsma/rsp2/es2plus/downloadOrder")
                 .request()
@@ -53,11 +58,12 @@ data class ProfileVendorAdapter (
         return if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess)
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         else {
+            dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ORDER_DOWNLOADED)
             status
         }
     }
 
-    private fun confirmOrder(client: Client, eid: String, iccid: String) : Es2ConfirmOrderResponse {
+    private fun confirmOrder(client: Client, dao: SimInventoryDAO, eid: String, simEntry: SimEntry) : Es2ConfirmOrderResponse {
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = "",
                 functionCallIdentifier = ""
@@ -65,7 +71,7 @@ data class ProfileVendorAdapter (
         val payload = Es2ConfirmOrder(
                 header = header,
                 eid = eid,
-                iccid = iccid,
+                iccid = simEntry.iccid,
                 releaseFlag = true
         )
         val response = client.target("http://localhost:9080/gsma/rsp2/es2plus/confirmOrder")
@@ -80,7 +86,9 @@ data class ProfileVendorAdapter (
 
         return if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess)
             throw WebApplicationException(Response.Status.BAD_REQUEST)
-        else
+        else {
+            dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ACTIVATED)
             status
+        }
     }
 }
