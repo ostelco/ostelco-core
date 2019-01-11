@@ -37,17 +37,13 @@ import javax.ws.rs.ext.Provider
  * over the weekend.
  */
 
-
 class CertConfig {
-
-
     // Userid, used in other parts of the permission system, e.g. when
     // assigning roles etc.
     @Valid
     @JsonProperty("userId")
     @NotNull
     var userId: String? = null
-
 
     // All the X.509 identifying fields
     //  And so on for all the X.509 fields
@@ -92,7 +88,6 @@ class RolesConfig {
 
 }
 
-
 class RoleDef {
     @Valid
     @JsonProperty("name")
@@ -112,7 +107,6 @@ class CertAuthConfig {
     @NotNull
     var certAuths = mutableListOf<CertConfig>()
 }
-
 
 /**
  * This filter verify the access permissions for a user
@@ -187,6 +181,11 @@ class CertificateAuthorizationFilter(val rbac: RBACService) : javax.ws.rs.contai
     @Throws(IOException::class)
     override fun filter(requestContext: ContainerRequestContext) {
 
+        /* Fast exit if not called with https scheme.
+            XXX: There must of course be a better way to do this, or? */
+        if ("http".equals(requestContext.uriInfo.baseUri.scheme))
+            return
+
         ///  IMPLEMENT FULL RBOC (with stubbed out permissiveness matrix).
         /// 1. Check certificate chain
         /// 2. Get user from certificate (using config read from config file, later from rboc server?)
@@ -236,7 +235,6 @@ class CertificateAuthorizationFilter(val rbac: RBACService) : javax.ws.rs.contai
     }
 }
 
-
 class RBACUserPrincipal(val id: String) : Principal {
     override fun getName(): String {
         return id
@@ -247,7 +245,6 @@ class RBACUserIdentity(val id: String) : UserIdentity {
 
     val principal: Principal
     val mySubject: Subject
-
 
     init {
         this.principal = RBACUserPrincipal(id)
@@ -266,7 +263,6 @@ class RBACUserIdentity(val id: String) : UserIdentity {
         return principal
     }
 }
-
 
 /**
  * We're trying this out, not there yet.  The intent is to move towards a proper
@@ -308,7 +304,6 @@ data class CertificateRBACUSER(
         return CertificateIdParameters(country = country, state = state, location = location, organization = organization, commonName = commonName)
     }
 }
-
 
 class RBACService(val rolesConfig: RolesConfig, val certConfig: CertAuthConfig) {
 

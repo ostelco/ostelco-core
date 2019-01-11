@@ -69,23 +69,24 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         val simEntriesIterator = SmDpSimEntryIterator(FileInputStream(config.simBatchData))
         val smdpPlusService: SmDpPlusService = SmDpPlusEmulator(simEntriesIterator)
 
-        jerseyEnvironment.register(SmDpPlusServerResource(smDpPlus = smdpPlusService))
+        jerseyEnvironment.register(SmDpPlusServerResource(
+                smDpPlus = smdpPlusService))
+        jerseyEnvironment.register(CertificateAuthorizationFilter(RBACService(
+                rolesConfig = config.rolesConfig,
+                certConfig = config.certConfig)))
 
         // XXX Only until we're sure the client stuff works.
         jerseyEnvironment.register(PingResource())
-        jerseyEnvironment.register(CertificateAuthorizationFilter(RBACService(rolesConfig = config.rolesConfig, certConfig = config.certConfig)))
 
         this.client = HttpClientBuilder(env).using(config.httpClientConfiguration).build(getName())
     }
 
-
     companion object {
+
         @Throws(Exception::class)
         @JvmStatic
         fun main(args: Array<String>) {
-
             Security.insertProviderAt(OpenSSLProvider(), 1)
-
             SmDpPlusApplication().run(*args)
         }
     }
@@ -104,7 +105,7 @@ class PingResource {
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     fun ping(//@Auth user: Authentication.User,
-             @Context context:SecurityContext ): String  {
+            @Context context: SecurityContext): String  {
         return  "pong"
     }
 }
@@ -252,7 +253,6 @@ class SmDpPlusException(message: String) : Exception(message)
  */
 class SmDpPlusAppConfiguration : Configuration() {
 
-
     /**
      * Configuring how the Open API representation of the
      * served resources will be presenting itself (owner,
@@ -280,7 +280,6 @@ class SmDpPlusAppConfiguration : Configuration() {
     @JsonProperty("httpClient")
     var httpClientConfiguration = HttpClientConfiguration()
 
-
     /**
      * Declaring the mapping between users and certificates, also
      * which roles the users are assigned to.
@@ -297,5 +296,4 @@ class SmDpPlusAppConfiguration : Configuration() {
     @JsonProperty("roles")
     @NotNull
     var rolesConfig = RolesConfig()
-
 }

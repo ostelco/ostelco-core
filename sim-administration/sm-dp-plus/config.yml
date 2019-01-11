@@ -1,6 +1,5 @@
 logging:
-#  level: ALL
-   level: INFO
+  level: INFO
 
 simBatchData: sample-sim-batch-for-sm-dp+.csv
 
@@ -32,24 +31,21 @@ server:
       supportedProtocols: [TLSv1.1, TLSv1.2, TLSv1.3]
       excludedProtocols: [SSLv2Hello, SSLv3]
 
-
 httpClient:
   tls:
     protocol: TLSv1.2
     keyStoreType: JKS
     keyStorePath: sk_keys.jks
     keyStorePassword: superSecreet
-#    validateCerts: false
-#    keyStorePath: sk_keys.jks
-#    keyStorePassword: superSecreet
-#    keyStoreType: JKS
-#    trustStorePath: sk_trust.jks
-#    trustStorePassword: superSecreet
-#    trustStoreType: JKS
+    #    validateCerts: false
+    #    keyStorePath: sk_keys.jks
+    #    keyStorePassword: superSecreet
+    #    keyStoreType: JKS
+    #    trustStorePath: sk_trust.jks
+    #    trustStorePassword: superSecreet
+    #    trustStoreType: JKS
     verifyHostname: false
     trustSelfSignedCertificates: true
-
-
 
 #  CN=*.not-really-ostelco.org, O=Not really SMDP org, L=Oslo, ST=Oslo, C=NO
 certAuth:
@@ -63,11 +59,7 @@ certAuth:
       roles:
         - flyfisher
 
-
 roles:
   definitions:
     - name: flyfisher
       description: Obviously just a dummy role
-
-
-
