@@ -83,7 +83,7 @@ class SimAdministrationTest {
     /* The SIM dataset is the same that is used by the SM-DP+ emulator. */
     private fun loadSimData() {
         val entries = FileInputStream(SM_DP_PLUS_RULE.configuration.simBatchData)
-        val response = client.target("http://localhost:${SIM_MANAGER_RULE.getLocalPort()}/ostelco/sim-inventory/${hlr}/import-batch/profilevendor/${profileVendor}")
+        val response = client.target("http://localhost:${SIM_MANAGER_RULE.localPort}/ostelco/sim-inventory/${hlr}/import-batch/profilevendor/${profileVendor}")
                 .request()
                 .put(Entity.entity(entries, MediaType.TEXT_PLAIN))
         assertThat(response.status).isEqualTo(200)
@@ -92,7 +92,7 @@ class SimAdministrationTest {
     @Test
     fun testGetIccid() {
         val iccid = "8901000000000000001"
-        val response = client.target("http://localhost:${SIM_MANAGER_RULE.getLocalPort()}/ostelco/sim-inventory/${hlr}/iccid/${iccid}")
+        val response = client.target("http://localhost:${SIM_MANAGER_RULE.localPort}/ostelco/sim-inventory/${hlr}/iccid/${iccid}")
                 .request()
                 .get()
         assertThat(response.status).isEqualTo(200)
@@ -101,7 +101,7 @@ class SimAdministrationTest {
     @Test
     fun testActivateEsim() {
         val iccid = "8901000000000000001"
-        val response = client.target("http://localhost:${SIM_MANAGER_RULE.getLocalPort()}/ostelco/sim-inventory/${hlr}/iccid/${iccid}/activate/esim")
+        val response = client.target("http://localhost:${SIM_MANAGER_RULE.localPort}/ostelco/sim-inventory/${hlr}/iccid/${iccid}/activate/esim")
                 .request()
                 .get()
         assertThat(response.status).isEqualTo(200)

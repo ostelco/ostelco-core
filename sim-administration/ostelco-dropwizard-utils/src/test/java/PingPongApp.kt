@@ -10,8 +10,10 @@ import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 import org.apache.http.client.HttpClient
 import org.conscrypt.OpenSSLProvider
-import org.ostelco.dropwizardutils.*
-import org.slf4j.LoggerFactory
+import org.ostelco.dropwizardutils.CertAuthConfig
+import org.ostelco.dropwizardutils.CertificateAuthorizationFilter
+import org.ostelco.dropwizardutils.RBACService
+import org.ostelco.dropwizardutils.RolesConfig
 import java.security.Security
 import javax.annotation.security.RolesAllowed
 import javax.validation.Valid
@@ -25,8 +27,6 @@ import javax.ws.rs.core.SecurityContext
 
 
 class PingPongApp : Application<PingPongAppConfiguration>() {
-
-    private val log = LoggerFactory.getLogger(javaClass)
 
     override fun getName(): String {
         return "Dummy application implementing ping/pong protocol, for testing client certificate based authentication"
@@ -52,7 +52,7 @@ class PingPongApp : Application<PingPongAppConfiguration>() {
                             certConfig = config.certConfig)))
 
         this.client = HttpClientBuilder(env).using(
-                config.httpClientConfiguration).build(getName())
+                config.httpClientConfiguration).build(name)
     }
 
     companion object {
@@ -71,8 +71,6 @@ class PingPongApp : Application<PingPongAppConfiguration>() {
 //     also for something other than ping.
 @Path("/ping")
 class PingResource {
-
-    private val log = LoggerFactory.getLogger(javaClass)
 
     @RolesAllowed("flyfisher")
     @GET

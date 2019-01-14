@@ -57,7 +57,7 @@ class JsonSchemaValidator {
             try {
                 getSchema(schemaAnnotation.schemaKey).validate(JSONObject(body))
             } catch (t: ValidationException) {
-                var causes = t.causingExceptions.map { e: ValidationException -> "${e.keyword}: ${e.errorMessage}" }.joinToString(separator = ". ")
+                var causes = t.causingExceptions.joinToString(separator = ". ") { e: ValidationException -> "${e.keyword}: ${e.errorMessage}" }
                 if (causes.isBlank()) {
                     causes = t.errorMessage
                 }

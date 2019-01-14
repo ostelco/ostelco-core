@@ -1,6 +1,5 @@
 package org.ostelco.simcards.smdpplus
 
-import io.dropwizard.client.HttpClientBuilder
 import io.dropwizard.testing.DropwizardTestSupport
 import org.apache.http.client.methods.HttpGet
 import org.assertj.core.api.Assertions.assertThat

@@ -74,7 +74,7 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
                 RBACService(rolesConfig = config.rolesConfig,
                         certConfig = config.certConfig)))
 
-        this.httpClient = HttpClientBuilder(env).using(config.httpClientConfiguration).build(getName())
+        this.httpClient = HttpClientBuilder(env).using(config.httpClientConfiguration).build(name)
         this.es2plusClient = ES2PlusClient(
                 requesterId = config.es2plusConfig.requesterId,
                 httpClient = httpClient)
@@ -118,7 +118,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
             entriesByImsi[it.imsi] = it
             val entriesForProfile: MutableSet<SmDpSimEntry>
             if (!entriesByProfile.containsKey(it.profile)) {
-                entriesForProfile = mutableSetOf<SmDpSimEntry>()
+                entriesForProfile = mutableSetOf()
                 entriesByProfile[it.profile] = entriesForProfile
             } else {
                 entriesForProfile = entriesByProfile[it.profile]!!
@@ -132,11 +132,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
     // TODO; What about the reservation flag?
     override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): String {
         synchronized(entriesLock) {
-            val entry: SmDpSimEntry? = findMatchingFreeProfile(iccid, profileType)
-
-            if (entry == null) {
-                throw SmDpPlusException("Could not find download order matching criteria")
-            }
+            val entry: SmDpSimEntry = findMatchingFreeProfile(iccid, profileType) ?: throw SmDpPlusException("Could not find download order matching criteria")
 
             // If an EID is known, then mark this as the IED associated
             // with the entry.
@@ -195,7 +191,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
         }
 
         if (profileType != null) {
-            if (!entry.profile.equals(profileType)) {
+            if (entry.profile != profileType) {
                 throw SmDpPlusException("Profile of iccid = $iccid is ${entry.profile}, not $profileType")
             }
         }
