@@ -6,13 +6,7 @@ import org.jdiameter.api.OverloadException;
 import org.jdiameter.api.RouteException;
 import org.jdiameter.api.cca.ServerCCASession;
 import org.ostelco.diameter.CreditControlContext;
-import org.ostelco.diameter.model.CreditControlAnswer;
-import org.ostelco.diameter.model.FinalUnitAction;
-import org.ostelco.diameter.model.FinalUnitIndication;
-import org.ostelco.diameter.model.MultipleServiceCreditControl;
-import org.ostelco.diameter.model.RedirectAddressType;
-import org.ostelco.diameter.model.RedirectServer;
-import org.ostelco.diameter.model.ServiceUnit;
+import org.ostelco.diameter.model.*;
 import org.ostelco.ocs.api.CreditControlRequestType;
 import org.ostelco.ocsgw.OcsServer;
 import org.ostelco.ocsgw.data.DataSource;
@@ -88,12 +82,13 @@ public class LocalDataSource implements DataSource {
                     new ServiceUnit(mscc.getUsed().getTotal(), mscc.getUsed().getInput(), mscc.getUsed().getOutput()),
                     granted,
                     mscc.getValidityTime(),
-                    finalUnitIndication);
+                    finalUnitIndication,
+                    ResultCode.DIAMETER_SUCCESS);
 
             newMultipleServiceCreditControls.add(newMscc);
         }
 
-        return new CreditControlAnswer(newMultipleServiceCreditControls);
+        return new CreditControlAnswer(ResultCode.DIAMETER_SUCCESS, newMultipleServiceCreditControls);
     }
 
     public boolean isBlocked(final String msisdn) {
