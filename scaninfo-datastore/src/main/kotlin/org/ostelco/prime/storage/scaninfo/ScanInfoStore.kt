@@ -111,11 +111,16 @@ object ScanInformationStoreSingleton : ScanInformationStore {
     }
 
     fun init(env: Environment?, environmentVars:EnvironmentVars) {
-        apiToken = environmentVars.getVar("JUMIO_API_TOKEN")
-                ?: throw Error("Missing environment variable JUMIO_API_TOKEN")
-
-        apiSecret = environmentVars.getVar("JUMIO_API_SECRET")
-                ?: throw Error("Missing environment variable JUMIO_API_SECRET")
+        if (ConfigRegistry.config.datastoreType != "inmemory-emulator") {
+            // Don't throw error during local tests
+            apiToken = environmentVars.getVar("JUMIO_API_TOKEN")
+                    ?: throw Error("Missing environment variable JUMIO_API_TOKEN")
+            apiSecret = environmentVars.getVar("JUMIO_API_SECRET")
+                    ?: throw Error("Missing environment variable JUMIO_API_SECRET")
+        } else {
+            apiToken = ""
+            apiSecret = ""
+        }
         initDatastore(env)
     }
 

@@ -1,19 +1,14 @@
 package org.ostelco.prime.storage.scaninfo
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.cloud.datastore.Blob
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.mockito.Mockito
 import org.ostelco.prime.model.JumioScanData
-import org.ostelco.prime.model.VendorScanInformation
-import java.lang.Thread.sleep
 import javax.ws.rs.core.MultivaluedHashMap
 import javax.ws.rs.core.MultivaluedMap
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class ScanInfoStoreTest {
 
@@ -50,7 +45,7 @@ class ScanInfoStoreTest {
         @BeforeClass
         fun init() {
             val testEnvVars = Mockito.mock(EnvironmentVars::class.java)
-            Mockito.`when`(testEnvVars.getVar("JUMIO_API_TOKEN")).thenReturn("b")
+            Mockito.`when`(testEnvVars.getVar("JUMIO_API_TOKEN")).thenReturn("")
             Mockito.`when`(testEnvVars.getVar("JUMIO_API_SECRET")).thenReturn("")
 
             ConfigRegistry.config = ScanInfoConfig()

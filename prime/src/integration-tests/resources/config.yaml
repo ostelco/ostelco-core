@@ -29,7 +29,8 @@ modules:
     configFile: config/pantel-prod.json
 - type: admin
 - type: scaninfo-datastore
-
+  config:
+    datastoreType: inmemory-emulator
 server:
   applicationConnectors:
   - type: h2c
