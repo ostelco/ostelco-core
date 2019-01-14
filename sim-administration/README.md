@@ -14,10 +14,27 @@ requests and replies.
 
 TODO (Prioritized)
 ---
-* Make end to end non-encrypted acceptance test of download order,
-  all scenarios (with iccid, and with profile onyly).
+
 
 * Make class comments for every high level class.
+
+* Make an acceptance test that lets the service run in conjunction with
+  an ESP where the ESP terminates the SSL, using a client certificate,
+  as we are doing today using the dropwizard-terminated SSL.   The test will
+  have to send sufficient information in headers to the service so that it 
+  can still identify the incoming user.  It seems that this will have to be a
+  two-step process:
+  
+  1. Get the ESP to run locally in some trivial fashion, forwarding requests
+  to the sim management service:
+  
+      https://cloud.google.com/endpoints/docs/openapi/running-esp-localdev
+  
+  2. Then modify the ESP to accept client certificate authenticated
+  connections, and modify headers of forwarded requests to identify which
+  certificate has been used:
+  
+       https://fardog.io/blog/2017/12/30/client-side-certificate-authentication-with-nginx/
 
 * Make junit-tests that runs the dropwizard application in a mode to permit it
   to accept TSL connections that are signed by a self-signed certificate,
