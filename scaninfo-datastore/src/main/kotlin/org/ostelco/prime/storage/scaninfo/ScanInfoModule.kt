@@ -16,9 +16,8 @@ class ScanInfoModule : PrimeModule {
 
     override fun init(env: Environment) {
         println("Initializing ScanInfoModule")
-        ScanInformationStoreSingleton.init(env)
+        ScanInformationStoreSingleton.init(env, EnvironmentVars())
         println("Done Initializing ScanInfoModule")
-
     }
 }
 
@@ -28,8 +27,6 @@ class ScanInfoModule : PrimeModule {
 class ScanInfoConfig : Configuration() {
     var datastoreType = "default"
     var namespace = ""
-    var apiToken = ""
-    var apiSecret = ""
 }
 
 object ConfigRegistry {

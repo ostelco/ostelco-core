@@ -5,6 +5,7 @@ import org.ostelco.prime.model.*
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import com.google.cloud.datastore.Blob
+import javax.ws.rs.core.MultivaluedMap
 
 interface ClientDocumentStore {
 
@@ -238,7 +239,7 @@ interface AdminGraphStore {
     fun refundPurchase(subscriberId: String, purchaseRecordId: String, reason: String): Either<PaymentError, ProductInfo>
 
     // update the scan information with scan result
-    fun updateScanInformation(scanInformation: ScanInformation): Either<StoreError, Unit>
+    fun updateScanInformation(scanInformation: ScanInformation, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit>
 
     // Retrieve all scan information for the subscriber
     fun getAllScanInformation(subscriberId: String): Either<StoreError, Collection<ScanInformation>>
@@ -257,6 +258,5 @@ interface AdminGraphStore {
 }
 
 interface ScanInformationStore {
-    fun upsertVendorScanInformation(subscriberId: String, vendorScanInformation: VendorScanInformation): Either<StoreError, Unit>
-    fun fetchScanImage(url: String): Either<StoreError, Pair<Blob, String>>
+    fun upsertVendorScanInformation(subscriberId: String, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit>
 }
