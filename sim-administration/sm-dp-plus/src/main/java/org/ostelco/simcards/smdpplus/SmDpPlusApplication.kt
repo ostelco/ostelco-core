@@ -227,7 +227,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
         }
 
         return Es2ConfirmOrderResponse(eS2SuccessResponseHeader(),
-                eid = entry.eid!!,
+                eid = eid!!,
                 smdsAddress = entry.smdsAddress,
                 matchingId =  entry.machingId)
     }
