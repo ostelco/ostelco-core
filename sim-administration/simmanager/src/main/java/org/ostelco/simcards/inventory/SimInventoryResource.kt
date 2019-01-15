@@ -74,16 +74,13 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
 
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/iccid/{iccid}/activate/all")
-    @GET
+    @Path("/iccid/{iccid}/esim/{eid}/all")
+    @POST
     fun activateByIccid(
             @NotEmpty @PathParam("hlr") hlr: String,
-            @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
-        val simEntry = activateHlrProfileByIccid(hlr, iccid)
-        val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
-        assertHlrsEqual(hlr, hlrAdapter.name)
-
-        activateEsimProfileByIccid(hlr, iccid)
+            @NotEmpty @PathParam("iccid") iccid: String,
+            @NotEmpty @PathParam("eid") eid: String): SimEntry {
+        activateEsimProfileByIccid(hlr, eid, iccid)
         return activateHlrProfileByIccid(hlr, iccid)
     }
 
@@ -97,12 +94,33 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
 
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/iccid/{iccid}/activate/hlr")
-    @GET
+    @Path("/iccid/{iccid}/esim/{eid}")
+    @POST
+    fun activateEsimProfileByIccid(
+            @NotEmpty @PathParam("hlr") hlr: String,
+            @NotEmpty @PathParam("iccid") iccid: String,
+            @NotEmpty @PathParam("eid") eid: String): SimEntry {
+        val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
+        val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
+        assertHlrsEqual(hlr, hlrAdapter.name)
+
+        val adapter = assertNonNull(dao.getProfileVendorAdapterById(simEntry.profileVendorId))
+
+        try {
+            adapter.activate(client, dao, eid, simEntry)
+        } catch (e: Exception) {
+            throw WebApplicationException(Response.Status.BAD_REQUEST)
+        }
+        return assertNonNull(dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ACTIVATED))
+    }
+
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/iccid/{iccid}/hlr")
+    @POST
     fun activateHlrProfileByIccid(
             @NotEmpty @PathParam("hlr") hlr: String,
             @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
-
         val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
         val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
         assertHlrsEqual(hlr, hlrAdapter.name)
@@ -117,29 +135,8 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
 
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/iccid/{iccid}/activate/esim")
-    @GET
-    fun activateEsimProfileByIccid(
-            @NotEmpty @PathParam("hlr") hlr: String,
-            @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
-        val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
-        val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
-        assertHlrsEqual(hlr, hlrAdapter.name)
-
-        val adapter = assertNonNull(dao.getProfileVendorAdapterById(simEntry.profileVendorId))
-
-        try {
-            adapter.activate(client, dao, "01010101010101010101010101010101", simEntry)
-        } catch (e: Exception) {
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
-        }
-        return assertNonNull(dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ACTIVATED))
-    }
-
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/iccid/{iccid}/deactivate/hlr")
-    @GET
+    @Path("/iccid/{iccid}/hlr")
+    @DELETE
     fun deactrivateByIccid(
             @NotEmpty @PathParam("hlr") hlr: String,
             @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
@@ -168,7 +165,6 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
         if (!dao.simVendorIsPermittedForHlr(simVendorAdapter.id, hlrAdapter.id)) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }
-
         return dao.importSims(
                 importer = "importer", // TODO: This is a very strange name for an importer .-)
                 hlrId = hlrAdapter.id,

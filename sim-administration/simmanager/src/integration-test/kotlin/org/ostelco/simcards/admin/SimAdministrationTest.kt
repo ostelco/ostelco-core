@@ -101,9 +101,10 @@ class SimAdministrationTest {
     @Test
     fun testActivateEsim() {
         val iccid = "8901000000000000001"
-        val response = client.target("http://localhost:${SIM_MANAGER_RULE.getLocalPort()}/ostelco/sim-inventory/${hlr}/iccid/${iccid}/activate/esim")
+        val eid = "01010101010101010101010101010101"
+        val response = client.target("http://localhost:${SIM_MANAGER_RULE.getLocalPort()}/ostelco/sim-inventory/${hlr}/iccid/${iccid}/esim/${eid}")
                 .request()
-                .get()
+                .post(Entity.json(null))
         assertThat(response.status).isEqualTo(200)
     }
 }
