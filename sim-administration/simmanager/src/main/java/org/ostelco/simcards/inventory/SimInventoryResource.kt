@@ -34,7 +34,7 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
             @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
         val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
         val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
-        assertHlrsEqual(hlr, hlrAdapter.name)
+        assertCorrectHlr(hlr, hlr == hlrAdapter.name)
         return simEntry
     }
 
@@ -46,7 +46,7 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
             @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
         val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
         val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
-        assertHlrsEqual(hlr, hlrAdapter.name)
+        assertCorrectHlr(hlr, hlr == hlrAdapter.name)
 
         try {
             hlrAdapter.activate(client, dao, simEntry)
@@ -64,7 +64,7 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
             @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
         val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
         val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
-        assertHlrsEqual(hlr, hlrAdapter.name)
+        assertCorrectHlr(hlr, hlr == hlrAdapter.name)
 
         try {
             hlrAdapter.deactivate(client, dao, simEntry)
@@ -82,7 +82,7 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
             @NotEmpty @PathParam("imsi") imsi: String): SimEntry {
         val simEntry = assertNonNull(dao.getSimProfileByImsi(imsi))
         val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
-        assertHlrsEqual(hlr, hlrAdapter.name)
+        assertCorrectHlr(hlr, hlr == hlrAdapter.name)
         return simEntry
     }
 
@@ -94,7 +94,7 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
             @NotEmpty @PathParam("msisdn") msisdn: String): SimEntry {
         val simEntry = assertNonNull(dao.getSimProfileByMsisdn(msisdn))
         val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
-        assertHlrsEqual(hlr, hlrAdapter.name)
+        assertCorrectHlr(hlr, hlr == hlrAdapter.name)
         return simEntry
     }
 
@@ -131,7 +131,7 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
             dao.findNextFreeSimProfileForHlr(hlrAdapter.id)
         else
             dao.getSimProfileByIccid(iccid))
-        assertHlrsEqual(hlrAdapter.id, simEntry.hlrId)
+        assertCorrectHlr(hlr, hlrAdapter.id == simEntry.id)
 
         val simVendorAdapter = assertNonNull(dao.getProfileVendorAdapterById(simEntry.profileVendorId))
 
@@ -143,18 +143,9 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
         return assertNonNull(dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ACTIVATED))
     }
 
-    private fun assertHlrsEqual(hlr1: String, hlr2: String) {
-        if (hlr1 != hlr2) {
-            throw WebApplicationException(
-                    "Attempt to impersonate HLR.  '$hlr1', '$hlr2'",
-                    Response.Status.BAD_REQUEST)
-        }
-    }
-
-    private fun assertHlrsEqual(hlrId1: Long, hlrId2: Long) {
-        if (hlrId1 != hlrId2) {
-            throw WebApplicationException(
-                    "Attempt to impersonate HLR.  '$hlrId1', '$hlrId2'",
+    private fun assertCorrectHlr(hlr: String, match: Boolean) {
+        if (!match) {
+            throw WebApplicationException("Attempt at impersonating ${hlr} HLR",
                     Response.Status.BAD_REQUEST)
         }
     }
