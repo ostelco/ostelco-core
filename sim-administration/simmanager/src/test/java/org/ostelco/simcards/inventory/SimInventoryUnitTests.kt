@@ -43,6 +43,8 @@ class SimInventoryUnitTests {
 
     private val fakeProfileVendor = "Idemia"
     private val fakeHlr = "Loltel"
+    private val fakeProfileVendorId = 1L
+    private val fakeHlrId = 1L
 
     private val fakeSimEntryWithoutMsisdn = SimEntry(
             id = 1L,
@@ -120,7 +122,7 @@ class SimInventoryUnitTests {
         org.mockito.Mockito.`when`(dao.getSimProfileByMsisdn(fakeMsisdn2))
                 .thenReturn(null)
 
-        org.mockito.Mockito.`when`(dao.findNextFreeSimForMsisdn(fakeHlr))
+        org.mockito.Mockito.`when`(dao.findNextFreeSimProfileForHlr(fakeHlrId))
                 .thenReturn(fakeSimEntryWithoutMsisdn)
 
         org.mockito.Mockito.`when`(dao.getHlrAdapterByName(fakeHlr))

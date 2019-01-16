@@ -396,34 +396,34 @@ abstract class SimInventoryDAO {
 
 
     //
-    //  Binding a SIM card to an MSISDN
+    //  Binding a SIM card to a MSISDN
     //
 
     @SqlUpdate("UPDATE sim_entries SET msisdn = :msisdn  WHERE id = :id")
-    abstract fun setMsisdnOfSim(@Bind("id") id: Long, @Bind("msisdn") msisdn: String)
+    abstract fun updateMsisdnOfSimProfile(@Bind("id") id: Long, @Bind("msisdn") msisdn: String)
 
     //
     // Finding next free SIM card for a particular HLR.
     //
-    @SqlQuery("SELECT * FROM sim_entries WHERE hlr = :hlr AND msisdn = null limit 1")
+    @SqlQuery("SELECT * FROM sim_entries WHERE hlrId = :hlrId AND msisdn = null limit 1")
     @RegisterMapper(SimImportBatchMapper::class)
-    abstract fun findNextFreeSimForMsisdn(@Bind("hlr") hlr: String): SimEntry
+    abstract fun findNextFreeSimProfileForHlr(@Bind("hlrId") hlrId: Long): SimEntry?
 
     //
     // Allocating next free simcards in an HLR.
     //
     @Transaction
-    fun allocateNextFreeSimForMsisdn(hlr: String, msisdn: String): SimEntry? {
+    fun allocateNextFreeSimProfileForMsisdn(hlrId: Long, msisdn: String): SimEntry? {
+        val simEntry = findNextFreeSimProfileForHlr(hlrId)
 
-        // First find the the next free SIM that can be activated in the HLR
-        val sim: SimEntry = findNextFreeSimForMsisdn(hlr) // No sim cards available
+        /* No SIM cards available. */
+        if (simEntry == null) {
+            return null
+        }
 
-        // ... and if we can1t find any, return null.
+        /* Update entry of the SIM profile with MSISDN. */
+        updateMsisdnOfSimProfile(simEntry.id!!, msisdn)
 
-        // Now set the MSISDN for this particular SIM
-        setMsisdnOfSim(sim.id!!, msisdn)
-
-        // Finally return the SIM profile as it is stored.
         return getSimProfileByMsisdn(msisdn)
     }
 }

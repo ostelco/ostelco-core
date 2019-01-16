@@ -69,7 +69,8 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
     fun allocateNextFree(
             @NotEmpty @PathParam("hlr") hlr: String,
             @NotEmpty @PathParam("msisdn") msisdn: String): SimEntry {
-        return assertNonNull(dao.allocateNextFreeSimForMsisdn(hlr, msisdn))
+        val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
+        return assertNonNull(dao.allocateNextFreeSimProfileForMsisdn(hlrAdapter.id, msisdn))
     }
 
     @Produces(MediaType.APPLICATION_JSON)
