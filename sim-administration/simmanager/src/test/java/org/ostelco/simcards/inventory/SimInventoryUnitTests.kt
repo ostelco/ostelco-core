@@ -43,8 +43,6 @@ class SimInventoryUnitTests {
 
     private val fakeProfileVendor = "Idemia"
     private val fakeHlr = "Loltel"
-    private val fakeProfileVendorId = 1L
-    private val fakeHlrId = 1L
 
     private val fakeSimEntryWithoutMsisdn = SimEntry(
             id = 1L,
@@ -87,7 +85,9 @@ class SimInventoryUnitTests {
         org.mockito.Mockito.`when`(hlrAdapter.name)
                 .thenReturn(fakeHlr)
         org.mockito.Mockito.`when`(dao.setHlrState(fakeSimEntryWithoutMsisdn.id!!, true))
-                .thenReturn(fakeSimEntryWithoutMsisdn)
+                .thenReturn(fakeSimEntryWithoutMsisdn.copy(hlrActivation = true))
+        org.mockito.Mockito.`when`(dao.setHlrState(fakeSimEntryWithoutMsisdn.id!!, false))
+                .thenReturn(fakeSimEntryWithoutMsisdn.copy(hlrActivation = false))
 
         /* Profile vendor adapter. */
         org.mockito.Mockito.`when`(profileVendorAdapter.id)
@@ -95,7 +95,7 @@ class SimInventoryUnitTests {
         org.mockito.Mockito.`when`(profileVendorAdapter.name)
                 .thenReturn(fakeProfileVendor)
         org.mockito.Mockito.`when`(dao.setSmDpPlusState(fakeSimEntryWithoutMsisdn.id!!, SmDpPlusState.ACTIVATED))
-                .thenReturn(fakeSimEntryWithoutMsisdn)
+                .thenReturn(fakeSimEntryWithoutMsisdn.copy(smdpPlusState = SmDpPlusState.ACTIVATED))
 
         /* DAO. */
         org.mockito.Mockito.`when`(dao.getSimProfileByIccid(fakeIccid1))
@@ -122,8 +122,11 @@ class SimInventoryUnitTests {
         org.mockito.Mockito.`when`(dao.getSimProfileByMsisdn(fakeMsisdn2))
                 .thenReturn(null)
 
-        org.mockito.Mockito.`when`(dao.findNextFreeSimProfileForHlr(fakeHlrId))
+        org.mockito.Mockito.`when`(dao.findNextFreeSimProfileForHlr(1L))
                 .thenReturn(fakeSimEntryWithoutMsisdn)
+
+        org.mockito.Mockito.`when`(dao.allocateNextFreeSimProfileForMsisdn(1L, fakeMsisdn1))
+                .thenReturn(fakeSimEntryWithMsisdn)
 
         org.mockito.Mockito.`when`(dao.getHlrAdapterByName(fakeHlr))
                 .thenReturn(hlrAdapter)
@@ -208,9 +211,8 @@ class SimInventoryUnitTests {
     }
 
     @Test
-    @Ignore
     fun testAllocateNextFree() {
-        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/msisdn/$fakeMsisdn1/allocate-next-free")
+        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/msisdn/$fakeMsisdn1/next-free")
                 .request(MediaType.APPLICATION_JSON)
                 .get() // XXX Post (or put?)x'
         assertEquals(200, response.status)
@@ -220,11 +222,10 @@ class SimInventoryUnitTests {
         assertEquals(fakeSimEntryWithMsisdn, simEntry)
     }
 
-    // XXX: Known issue - to be fixed!
     @Test
-    @Ignore
     fun testActivateAll() {
-        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/iccid/$fakeIccid1/esim/$fakeEid/all")
+        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/esim/$fakeEid/all")
+                .queryParam("iccid", fakeIccid1)
                 .request(MediaType.APPLICATION_JSON)
                 .post(Entity.json(null))
         assertEquals(200, response.status)
@@ -233,10 +234,10 @@ class SimInventoryUnitTests {
         assertNotNull(simEntry)
     }
 
-    // XXX: Known issue - to be fixed!
     @Test
     fun testActivateEsim() {
-        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/iccid/$fakeIccid1/esim/$fakeEid")
+        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/esim/${fakeEid}")
+                .queryParam("iccid", fakeIccid1)
                 .request(MediaType.APPLICATION_JSON)
                 .post(Entity.json(null))
         assertEquals(200, response.status)
@@ -244,8 +245,8 @@ class SimInventoryUnitTests {
         val simEntry = response.readEntity(SimEntry::class.java)
         assertNotNull(simEntry)
 
+        verify(dao).getHlrAdapterByName(fakeHlr)
         verify(dao).getSimProfileByIccid(fakeSimEntryWithoutMsisdn.iccid)
-        verify(dao).getHlrAdapterById(fakeSimEntryWithoutMsisdn.hlrId)
         verify(dao).getProfileVendorAdapterById(fakeSimEntryWithoutMsisdn.profileVendorId)
 
         verify(profileVendorAdapter).activate(client, dao, fakeEid, fakeSimEntryWithoutMsisdn)
@@ -254,7 +255,7 @@ class SimInventoryUnitTests {
 
     @Test
     fun testActivateHlr() {
-        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/iccid/$fakeIccid1/hlr")
+        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/iccid/$fakeIccid1")
                 .request(MediaType.APPLICATION_JSON)
                 .post(Entity.json(null))
         assertEquals(200, response.status)
@@ -271,7 +272,7 @@ class SimInventoryUnitTests {
 
     @Test
     fun testDeactivateHlr() {
-        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/iccid/$fakeIccid1/hlr")
+        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/iccid/$fakeIccid1")
                 .request(MediaType.APPLICATION_JSON)
                 .delete()
         // XXX Check what return value to expect when updating, don't think it's 200
