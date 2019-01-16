@@ -25,6 +25,17 @@ import java.io.IOException
 
 
 //TODO: Prasanth, Remove after testing
+@Path("/")
+class IngressProbe {
+    private val logger by getLogger()
+
+    @GET
+    fun processProbe(): Response {
+        logger.info("/ GET handled by IngressProbe")
+        return Response.status(Response.Status.OK).build()
+    }
+}
+
 /**
  * Resource used to handle bundles related REST calls.
  */

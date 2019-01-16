@@ -20,6 +20,24 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  name: prime-api-test1
+  labels:
+    app: prime
+    tier: backend
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 9099
+  selector:
+    app: prime
+    tier: backend
+---
+apiVersion: v1
+kind: Service
+metadata:
   name: prime-api
   labels:
     app: prime
@@ -173,6 +191,17 @@ spec:
         - mountPath: /etc/nginx/ssl
           name: api-ostelco-ssl
           readOnly: true
+      - name: api-esp-test1
+        image: gcr.io/endpoints-release/endpoints-runtime:1
+        args: [
+          "--http_port=9099",
+          "--status_port=8099",
+          "--service=api.dev4life.org",
+          "--rollout_strategy=managed",
+          "--backend=127.0.0.1:8080"
+        ]
+        ports:
+          - containerPort: 9099
       - name: alvin-api-esp
         image: gcr.io/endpoints-release/endpoints-runtime:1
         args: [

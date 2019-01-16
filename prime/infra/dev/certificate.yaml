@@ -1,0 +1,19 @@
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: Certificate
+metadata:
+  name: api-dev4life-org-tls
+  namespace: default
+spec:
+  secretName: api-dev4life-org-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  commonName: api.dev4life.org
+  dnsNames:
+    - api.dev4life.org
+  acme:
+    config:
+      - http01:
+          ingress: prime-api-test1-ingress
+        domains:
+          - api.dev4life.org
