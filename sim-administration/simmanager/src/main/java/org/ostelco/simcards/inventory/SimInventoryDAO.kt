@@ -371,6 +371,7 @@ abstract class SimInventoryDAO {
     //
 
     @SqlUpdate("UPDATE sim_entries SET hlrActivation = :hlrActivation  WHERE id = :id")
+    @RegisterMapper(SimEntryMapper::class)
     abstract fun updateHlrActivation(
             @Bind("id") id: Long,
             @Bind("hlrActivation") hlrActivation: Boolean)
@@ -385,6 +386,7 @@ abstract class SimInventoryDAO {
     }
 
     @SqlUpdate("UPDATE sim_entries SET smdpPlusState = :smdpPlusState  WHERE id = :id")
+    @RegisterMapper(SimEntryMapper::class)
     abstract fun updateSmDpPlusState(
             @Bind("id") id: Long,
             @Bind("smdpPlusState") smdpPlusState: SmDpPlusState)
@@ -400,13 +402,16 @@ abstract class SimInventoryDAO {
     //
 
     @SqlUpdate("UPDATE sim_entries SET msisdn = :msisdn  WHERE id = :id")
+    @RegisterMapper(SimEntryMapper::class)
     abstract fun updateMsisdnOfSimProfile(@Bind("id") id: Long, @Bind("msisdn") msisdn: String)
 
     //
     // Finding next free SIM card for a particular HLR.
     //
-    @SqlQuery("SELECT * FROM sim_entries WHERE hlrId = :hlrId AND msisdn = null limit 1")
-    @RegisterMapper(SimImportBatchMapper::class)
+    @SqlQuery("""SELECT * FROM sim_entries
+                      WHERE hlrId = :hlrId AND COALESCE(msisdn, '') = '' AND smdpPlusState = 'NOT_ACTIVATED'
+                      LIMIT 1""")
+    @RegisterMapper(SimEntryMapper::class)
     abstract fun findNextFreeSimProfileForHlr(@Bind("hlrId") hlrId: Long): SimEntry?
 
     //
