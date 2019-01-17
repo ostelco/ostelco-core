@@ -30,13 +30,18 @@ data class ProfileVendorAdapter (
      * @param dao  DB interface
      * @param eid  ESIM id
      * @param simEntry  SIM profile to activate
+     * @return Updated SIM profile
      */
-    fun activate(client: Client, dao: SimInventoryDAO, eid: String, simEntry: SimEntry) {
-        val orderStatus = downloadOrder(client, dao, simEntry)
-        val confirmStatus = confirmOrder(client, dao, eid, simEntry)
+    fun activate(client: Client, dao: SimInventoryDAO, eid: String, simEntry: SimEntry) : SimEntry? {
+        return if (downloadOrder(client, dao, simEntry) != null)
+            confirmOrder(client, dao, eid, simEntry)
+         else
+            null
     }
 
-    private fun downloadOrder(client: Client, dao: SimInventoryDAO, simEntry: SimEntry) : Es2DownloadOrderResponse {
+    /* XXX Update SM-DP+ 'header' to correct content. */
+
+    private fun downloadOrder(client: Client, dao: SimInventoryDAO, simEntry: SimEntry) : SimEntry? {
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = "",
                 functionCallIdentifier = ""
@@ -57,13 +62,11 @@ data class ProfileVendorAdapter (
 
         return if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess)
             throw WebApplicationException(Response.Status.BAD_REQUEST)
-        else {
+        else
             dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ORDER_DOWNLOADED)
-            status
-        }
     }
 
-    private fun confirmOrder(client: Client, dao: SimInventoryDAO, eid: String, simEntry: SimEntry) : Es2ConfirmOrderResponse {
+    private fun confirmOrder(client: Client, dao: SimInventoryDAO, eid: String, simEntry: SimEntry) : SimEntry? {
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = "",
                 functionCallIdentifier = ""
@@ -87,8 +90,8 @@ data class ProfileVendorAdapter (
         return if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess)
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         else {
-            dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ACTIVATED)
-            status
+            dao.setEidOfSimProfile(simEntry.id!!, eid)     /* Update profile with 'eid' value. */
+            dao.setSmDpPlusState(simEntry.id, SmDpPlusState.ACTIVATED)
         }
     }
 }

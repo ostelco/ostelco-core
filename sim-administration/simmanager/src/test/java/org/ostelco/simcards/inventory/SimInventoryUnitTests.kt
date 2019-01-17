@@ -52,7 +52,7 @@ class SimInventoryUnitTests {
             iccid = fakeIccid1,
             imsi = fakeImsi1,
             eid = "bb",
-            hlrActivation = false,
+            hlrState = HlrState.NOT_ACTIVATED,
             smdpPlusState = SmDpPlusState.NOT_ACTIVATED,
             pin1 = "ss",
             pin2 = "ss",
@@ -66,7 +66,7 @@ class SimInventoryUnitTests {
             iccid = fakeIccid1,
             imsi = fakeImsi1,
             eid = "bb",
-            hlrActivation = false,
+            hlrState = HlrState.ACTIVATED,
             smdpPlusState = SmDpPlusState.NOT_ACTIVATED,
             pin1 = "ss",
             pin2 = "ss",
@@ -84,18 +84,22 @@ class SimInventoryUnitTests {
                 .thenReturn(1L)
         org.mockito.Mockito.`when`(hlrAdapter.name)
                 .thenReturn(fakeHlr)
-        org.mockito.Mockito.`when`(dao.setHlrState(fakeSimEntryWithoutMsisdn.id!!, true))
-                .thenReturn(fakeSimEntryWithoutMsisdn.copy(hlrActivation = true))
-        org.mockito.Mockito.`when`(dao.setHlrState(fakeSimEntryWithoutMsisdn.id!!, false))
-                .thenReturn(fakeSimEntryWithoutMsisdn.copy(hlrActivation = false))
+        org.mockito.Mockito.`when`(hlrAdapter.activate(client, dao, fakeSimEntryWithoutMsisdn))
+                .thenReturn(fakeSimEntryWithoutMsisdn.copy(
+                        hlrState = HlrState.ACTIVATED))
+        org.mockito.Mockito.`when`(hlrAdapter.deactivate(client, dao, fakeSimEntryWithoutMsisdn))
+                .thenReturn(fakeSimEntryWithoutMsisdn.copy(
+                        hlrState = HlrState.NOT_ACTIVATED))
 
         /* Profile vendor adapter. */
         org.mockito.Mockito.`when`(profileVendorAdapter.id)
                 .thenReturn(1L)
         org.mockito.Mockito.`when`(profileVendorAdapter.name)
                 .thenReturn(fakeProfileVendor)
-        org.mockito.Mockito.`when`(dao.setSmDpPlusState(fakeSimEntryWithoutMsisdn.id!!, SmDpPlusState.ACTIVATED))
-                .thenReturn(fakeSimEntryWithoutMsisdn.copy(smdpPlusState = SmDpPlusState.ACTIVATED))
+        org.mockito.Mockito.`when`(profileVendorAdapter.activate(client, dao, fakeEid, fakeSimEntryWithoutMsisdn))
+                .thenReturn(fakeSimEntryWithoutMsisdn.copy(
+                        smdpPlusState = SmDpPlusState.ACTIVATED,
+                        eid = fakeEid))
 
         /* DAO. */
         org.mockito.Mockito.`when`(dao.getSimProfileByIccid(fakeIccid1))
@@ -142,6 +146,18 @@ class SimInventoryUnitTests {
 
         org.mockito.Mockito.`when`(dao.getHlrAdapterById(1L))
                 .thenReturn(hlrAdapter)
+
+        org.mockito.Mockito.`when`(dao.setHlrState(fakeSimEntryWithoutMsisdn.id!!, HlrState.ACTIVATED))
+                .thenReturn(fakeSimEntryWithoutMsisdn.copy(
+                        hlrState = HlrState.ACTIVATED))
+
+        org.mockito.Mockito.`when`(dao.setHlrState(fakeSimEntryWithoutMsisdn.id!!, HlrState.NOT_ACTIVATED))
+                .thenReturn(fakeSimEntryWithoutMsisdn.copy(
+                        hlrState = HlrState.NOT_ACTIVATED))
+
+        org.mockito.Mockito.`when`(dao.setSmDpPlusState(fakeSimEntryWithoutMsisdn.id!!, SmDpPlusState.ACTIVATED))
+                .thenReturn(fakeSimEntryWithoutMsisdn.copy(
+                        smdpPlusState = SmDpPlusState.ACTIVATED))
     }
 
     @Test

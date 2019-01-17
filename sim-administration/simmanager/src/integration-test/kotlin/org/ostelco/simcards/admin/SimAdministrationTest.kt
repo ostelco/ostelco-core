@@ -10,7 +10,10 @@ import org.junit.Test
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.BeforeClass
 import org.junit.Before
+import org.ostelco.simcards.inventory.HlrState
+import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryCreationDestructionDAO
+import org.ostelco.simcards.inventory.SmDpPlusState
 import org.skife.jdbi.v2.DBI
 import java.io.FileInputStream
 import javax.ws.rs.client.Client
@@ -96,6 +99,9 @@ class SimAdministrationTest {
                 .request()
                 .get()
         assertThat(response.status).isEqualTo(200)
+
+        val simEntry = response.readEntity(SimEntry::class.java)
+        assertThat(simEntry.iccid).isEqualTo(iccid)
     }
 
     @Test
@@ -107,6 +113,12 @@ class SimAdministrationTest {
                 .request()
                 .post(Entity.json(null))
         assertThat(response.status).isEqualTo(200)
+
+        val simEntry = response.readEntity(SimEntry::class.java)
+        assertThat(simEntry.iccid).isEqualTo(iccid)
+        assertThat(simEntry.eid).isEqualTo(eid)
+        assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.ACTIVATED)
+        assertThat(simEntry.hlrState).isEqualTo(HlrState.NOT_ACTIVATED)  /* Not yet activated in HLR. */
     }
 
     @Test
@@ -116,5 +128,10 @@ class SimAdministrationTest {
                 .request()
                 .post(Entity.json(null))
         assertThat(response.status).isEqualTo(200)
+
+        val simEntry = response.readEntity(SimEntry::class.java)
+        assertThat(simEntry.eid).isEqualTo(eid)
+        assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.ACTIVATED)
+        assertThat(simEntry.hlrState).isEqualTo(HlrState.NOT_ACTIVATED)  /* Not yet activated in HLR. */
     }
 }

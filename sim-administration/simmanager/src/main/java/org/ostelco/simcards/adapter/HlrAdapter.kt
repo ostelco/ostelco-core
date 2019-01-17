@@ -1,6 +1,7 @@
 package org.ostelco.simcards.adapter
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import org.ostelco.simcards.inventory.HlrState
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import javax.ws.rs.client.Client
@@ -21,9 +22,11 @@ data class HlrAdapter(
      * @param client  HTTP client
      * @param dao  DB interface
      * @param simEntry  SIM profile to activate
+     * @return Updated SIM profile
      */
-    fun activate(client: Client, dao: SimInventoryDAO, simEntry: SimEntry) {
+    fun activate(client: Client, dao: SimInventoryDAO, simEntry: SimEntry) : SimEntry? {
         // XXX TBD
+        return dao.setHlrState(simEntry.id!!, HlrState.ACTIVATED)
     }
 
     /**
@@ -31,8 +34,10 @@ data class HlrAdapter(
      * @param client  HTTP client
      * @param dao  DB interface
      * @param simEntry  SIM profile to deactivate
+     * @return Updated SIM profile
      */
-    fun deactivate(client: Client, dao: SimInventoryDAO, simEntry: SimEntry) {
+    fun deactivate(client: Client, dao: SimInventoryDAO, simEntry: SimEntry) : SimEntry? {
         // XXX TBD
+        return dao.setHlrState(simEntry.id!!, HlrState.NOT_ACTIVATED)
     }
 }

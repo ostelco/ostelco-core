@@ -43,17 +43,16 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
     @Produces(MediaType.APPLICATION_JSON)
     fun activateHlrProfileByIccid(
             @NotEmpty @PathParam("hlr") hlr: String,
-            @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
+            @NotEmpty @PathParam("iccid") iccid: String): SimEntry? {
         val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
         val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
         assertCorrectHlr(hlr, hlr == hlrAdapter.name)
 
-        try {
+        return try {
             hlrAdapter.activate(client, dao, simEntry)
         } catch (e: Exception) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }
-        return assertNonNull(dao.setHlrState(simEntry.id!!, true))
     }
 
     @DELETE
@@ -61,17 +60,16 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
     @Produces(MediaType.APPLICATION_JSON)
     fun deactivateHlrProfileByIccid(
             @NotEmpty @PathParam("hlr") hlr: String,
-            @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
+            @NotEmpty @PathParam("iccid") iccid: String): SimEntry? {
         val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
         val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
         assertCorrectHlr(hlr, hlr == hlrAdapter.name)
 
-        try {
+        return try {
             hlrAdapter.deactivate(client, dao, simEntry)
         } catch (e: Exception) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }
-        return assertNonNull(dao.setHlrState(simEntry.id!!, false))
     }
 
     @GET
@@ -114,7 +112,7 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
     fun activateAllEsimProfileByIccid(
             @NotEmpty @PathParam("hlr") hlr: String,
             @NotEmpty @PathParam("eid") eid: String,
-            @QueryParam("iccid") iccid: String?): SimEntry {
+            @QueryParam("iccid") iccid: String?): SimEntry? {
         val simEntry = assertNonNull(activateEsimProfileByIccid(hlr, eid, iccid))
         return activateHlrProfileByIccid(hlr, simEntry.iccid)
     }
@@ -125,7 +123,7 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
     fun activateEsimProfileByIccid(
             @NotEmpty @PathParam("hlr") hlr: String,
             @NotEmpty @PathParam("eid") eid: String,
-            @QueryParam("iccid") iccid: String?): SimEntry {
+            @QueryParam("iccid") iccid: String?): SimEntry? {
         val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
         val simEntry = assertNonNull(if (iccid.isNullOrEmpty())
             dao.findNextFreeSimProfileForHlr(hlrAdapter.id)
@@ -135,12 +133,11 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
 
         val simVendorAdapter = assertNonNull(dao.getProfileVendorAdapterById(simEntry.profileVendorId))
 
-        try {
+        return try {
             simVendorAdapter.activate(client, dao, eid, simEntry)
         } catch (e: Exception) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }
-        return assertNonNull(dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ACTIVATED))
     }
 
     private fun assertCorrectHlr(hlr: String, match: Boolean) {

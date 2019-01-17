@@ -22,6 +22,11 @@ import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.Response
 
 
+enum class HlrState {
+    NOT_ACTIVATED,
+    ACTIVATED,
+}
+
 enum class SmDpPlusState {
     NOT_ACTIVATED,
     ORDER_DOWNLOADED,
@@ -40,7 +45,7 @@ data class SimEntry(
         @JsonProperty("iccid") val iccid: String,
         @JsonProperty("imsi") val imsi: String,
         @JsonProperty("eid") val eid: String? = null,
-        @JsonProperty("hlrActivation") val hlrActivation: Boolean = false,
+        @JsonProperty("hlrState") val hlrState: HlrState = HlrState.NOT_ACTIVATED,
         @JsonProperty("smdpPlusState") val smdpPlusState: SmDpPlusState = SmDpPlusState.NOT_ACTIVATED,
         @JsonProperty("pin1") val pin1: String,
         @JsonProperty("pin2") val pin2: String,
@@ -174,7 +179,7 @@ abstract class SimInventoryDAO {
             val imsi = r.getString("imsi")
             val eid = r.getString("eid")
             val smdpPlusState = r.getString("smdpPlusState")
-            val hlrActivation = r.getBoolean("hlrActivation")
+            val hlrState = r.getString("hlrState")
             val pin1 = r.getString("pin1")
             val pin2 = r.getString("pin2")
             val puk1 = r.getString("puk1")
@@ -190,7 +195,7 @@ abstract class SimInventoryDAO {
                     imsi = imsi,
                     eid = eid,
                     smdpPlusState = SmDpPlusState.valueOf(smdpPlusState.toUpperCase()),
-                    hlrActivation = hlrActivation,
+                    hlrState = HlrState.valueOf(hlrState.toUpperCase()),
                     pin1 = pin1,
                     pin2 = pin2,
                     puk1 = puk1,
@@ -288,8 +293,8 @@ abstract class SimInventoryDAO {
     //
 
     @Transaction
-    @SqlBatch("""INSERT INTO sim_entries (batch, profileVendorId, hlrid, smdpplusstate, iccid, imsi, pin1, pin2, puk1, puk2)
-                      VALUES (:batch, :profileVendorId, :hlrId, :smdpPlusState, :iccid, :imsi, :pin1, :pin2, :puk1, :puk2)""")
+    @SqlBatch("""INSERT INTO sim_entries (batch, profileVendorId, hlrid, hlrState, smdpplusstate, iccid, imsi, pin1, pin2, puk1, puk2)
+                      VALUES (:batch, :profileVendorId, :hlrId, :hlrState, :smdpPlusState, :iccid, :imsi, :pin1, :pin2, :puk1, :puk2)""")
     @BatchChunkSize(1000)
     abstract fun insertAll(@BindBean entries: Iterator<SimEntry>)
 
@@ -376,23 +381,23 @@ abstract class SimInventoryDAO {
     // Setting activation statuses
     //
 
-    @SqlUpdate("UPDATE sim_entries SET hlrActivation = :hlrActivation WHERE id = :id")
+    @SqlUpdate("UPDATE sim_entries SET hlrState = :hlrState WHERE id = :id")
     @RegisterMapper(SimEntryMapper::class)
-    abstract fun updateHlrActivation(
+    abstract fun updateHlrState(
             @Bind("id") id: Long,
-            @Bind("hlrActivation") hlrActivation: Boolean)
+            @Bind("hlrState") hlrState: HlrState)
 
     /**
      * Set the entity to be marked as "active" in the HLR, then return the
      * SIM entry.
      *
-     * XXX With postgresql this method can be removed provided that 'updateHlrActivation()'
-     *     is updated to: "UPDATE ... :hlrActivation WHERE id = :id RETURNING *". Not
+     * XXX With postgresql this method can be removed provided that 'updateHlrState()'
+     *     is updated to: "UPDATE ... :hlrState WHERE id = :id RETURNING *". Not
      *     sure if a 'list' or an object will be returned in cases where only one row is
      *     updated?
      */
-    fun setHlrState(id: Long, state: Boolean): SimEntry? {
-        updateHlrActivation(id, state)
+    fun setHlrState(id: Long, state: HlrState): SimEntry? {
+        updateHlrState(id, state)
         return getSimProfileById(id)
     }
 
@@ -451,7 +456,16 @@ abstract class SimInventoryDAO {
          *     removing the need for calling 'getSimProfileByMsisdn()'.
          */
         updateMsisdnOfSimProfile(simEntry.id!!, msisdn)
-
         return getSimProfileByMsisdn(msisdn)
+    }
+
+
+    @SqlUpdate("UPDATE sim_entries SET eid = :eid WHERE id = :id")
+    @RegisterMapper(SimEntryMapper::class)
+    abstract fun updateEidOfSimProfile(@Bind("id") id: Long, @Bind("eid") eid: String)
+
+    fun setEidOfSimProfile(id: Long, eid: String): SimEntry? {
+        updateEidOfSimProfile(id, eid)
+        return getSimProfileById(id)
     }
 }
