@@ -131,7 +131,7 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
             dao.findNextFreeSimProfileForHlr(hlrAdapter.id)
         else
             dao.getSimProfileByIccid(iccid))
-        assertCorrectHlr(hlr, hlrAdapter.id == simEntry.id)
+        assertCorrectHlr(hlr, hlrAdapter.id == simEntry.hlrId)
 
         val simVendorAdapter = assertNonNull(dao.getProfileVendorAdapterById(simEntry.profileVendorId))
 
