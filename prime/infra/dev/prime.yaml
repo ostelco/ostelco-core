@@ -194,12 +194,19 @@ spec:
       - name: api-esp-test1
         image: gcr.io/endpoints-release/endpoints-runtime:1
         args: [
-          "--http_port=9099",
+          "--http2_port=9099",
           "--status_port=8099",
           "--service=api.dev4life.org",
           "--rollout_strategy=managed",
-          "--backend=127.0.0.1:8080"
+          "--backend=127.0.0.1:8080",
+          "--healthz= "
         ]
+        # HEALTH CHECK START
+        # Used by ingress to perform health check
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 9099
         ports:
           - containerPort: 9099
       - name: alvin-api-esp
