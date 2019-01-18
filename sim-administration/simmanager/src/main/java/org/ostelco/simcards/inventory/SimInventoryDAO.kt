@@ -5,6 +5,8 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.ostelco.simcards.adapter.HlrAdapter
 import org.ostelco.simcards.adapter.ProfileVendorAdapter
+import org.ostelco.simcards.admin.HlrConfig
+import org.ostelco.simcards.admin.SmDpPlusConfig
 import org.skife.jdbi.v2.StatementContext
 import org.skife.jdbi.v2.sqlobject.*
 import org.skife.jdbi.v2.sqlobject.customizers.BatchChunkSize
@@ -221,7 +223,8 @@ abstract class SimInventoryDAO {
         storeSimVendorForHlrPermission(profileVendorAdapter.id, hlrAdapter.id)
     }
 
-    @SqlQuery("SELECT id FROM sim_vendors_permitted_hlrs WHERE profileVendorId = profileVendorId AND hlrId = :hlrId")
+    @SqlQuery("""SELECT id FROM sim_vendors_permitted_hlrs
+                      WHERE profileVendorId = profileVendorId AND hlrId = :hlrId""")
     abstract fun findSimVendorForHlrPermissions(@Bind("profileVendorId") profileVendorId: Long, @Bind("hlrId") hlrId: Long): List<Long>
 
     /**
@@ -232,10 +235,25 @@ abstract class SimInventoryDAO {
         return (findSimVendorForHlrPermissions(profileVendorId, hlrId).isNotEmpty())
     }
 
-    @SqlUpdate("INSERT INTO sim_vendors_permitted_hlrs (profileVendorId, hlrId) VALUES (:profileVendorId, :hlrId)")
-    abstract fun storeSimVendorForHlrPermission(@Bind("profileVendorId") profileVendorId: Long, @Bind("hlrId") hlrId: Long)
 
-    @SqlUpdate("INSERT INTO hlr_adapters (name) VALUES (:name)")
+    @SqlUpdate("""INSERT INTO sim_vendors_permitted_hlrs
+                                   (profilevendorid,
+                                    hlrid)
+                       SELECT :profileVendorId,
+                              :hlrId
+                       WHERE  NOT EXISTS (SELECT 1
+                                          FROM   sim_vendors_permitted_hlrs
+                                          WHERE  profilevendorid = :profileVendorId
+                                           AND hlrid = :hlrId)""")
+    abstract fun storeSimVendorForHlrPermission(@Bind("profileVendorId") profileVendorId: Long,
+                                                @Bind("hlrId") hlrId: Long)
+
+    @SqlUpdate("""INSERT INTO hlr_adapters
+                                   (NAME)
+                       SELECT :name
+                       WHERE  NOT EXISTS (SELECT 1
+                                          FROM   hlr_adapters
+                                          WHERE  NAME = :name)""")
     abstract fun addHlrAdapter(@Bind("name") name: String)
 
     @SqlQuery("SELECT * FROM hlr_adapters WHERE name = :name")
@@ -261,7 +279,12 @@ abstract class SimInventoryDAO {
         }
     }
 
-    @SqlUpdate("INSERT INTO profile_vendor_adapters (name) VALUES (:name)")
+    @SqlUpdate("""INSERT INTO profile_vendor_adapters
+                                   (NAME)
+                       SELECT :name
+                       WHERE  NOT EXISTS (SELECT 1
+                                          FROM   profile_vendor_adapters
+                                          WHERE  NAME = :name) """)
     abstract fun addProfileVendorAdapter(@Bind("name") name: String)
 
     @SqlQuery("SELECT * FROM profile_vendor_adapters WHERE name = :name")
@@ -293,7 +316,8 @@ abstract class SimInventoryDAO {
     //
 
     @Transaction
-    @SqlBatch("""INSERT INTO sim_entries (batch, profileVendorId, hlrid, hlrState, smdpplusstate, iccid, imsi, pin1, pin2, puk1, puk2)
+    @SqlBatch("""INSERT INTO sim_entries
+                                  (batch, profileVendorId, hlrid, hlrState, smdpplusstate, iccid, imsi, pin1, pin2, puk1, puk2)
                       VALUES (:batch, :profileVendorId, :hlrId, :hlrState, :smdpPlusState, :iccid, :imsi, :pin1, :pin2, :puk1, :puk2)""")
     @BatchChunkSize(1000)
     abstract fun insertAll(@BindBean entries: Iterator<SimEntry>)
@@ -305,7 +329,8 @@ abstract class SimInventoryDAO {
             @Bind("hlrId") hlrId: Long,
             @Bind("profileVendorId") profileVendorId: Long)
 
-    @SqlUpdate("UPDATE sim_import_batches SET size = :size, status = :status, endedAt = :endedAt  WHERE id = :id")
+    @SqlUpdate("""UPDATE sim_import_batches SET size = :size, status = :status, endedAt = :endedAt
+                       WHERE id = :id""")
     abstract fun updateBatchState(
             @Bind("id") id: Long,
             @Bind("size") size: Long,
@@ -346,7 +371,8 @@ abstract class SimInventoryDAO {
         return getBatchInfo(batchId)
     }
 
-    @SqlQuery("SELECT * FROM sim_import_batches WHERE id = :id")
+    @SqlQuery("""SELECT * FROM sim_import_batches
+                      WHERE id = :id""")
     @RegisterMapper(SimImportBatchMapper::class)
     abstract fun getBatchInfo(@Bind("id") id: Long): SimImportBatch
 
@@ -381,7 +407,8 @@ abstract class SimInventoryDAO {
     // Setting activation statuses
     //
 
-    @SqlUpdate("UPDATE sim_entries SET hlrState = :hlrState WHERE id = :id")
+    @SqlUpdate("""UPDATE sim_entries SET hlrState = :hlrState
+                       WHERE id = :id""")
     @RegisterMapper(SimEntryMapper::class)
     abstract fun updateHlrState(
             @Bind("id") id: Long,
@@ -401,7 +428,8 @@ abstract class SimInventoryDAO {
         return getSimProfileById(id)
     }
 
-    @SqlUpdate("UPDATE sim_entries SET smdpPlusState = :smdpPlusState WHERE id = :id")
+    @SqlUpdate("""UPDATE sim_entries SET smdpPlusState = :smdpPlusState
+                       WHERE id = :id""")
     @RegisterMapper(SimEntryMapper::class)
     abstract fun updateSmDpPlusState(
             @Bind("id") id: Long,
@@ -425,7 +453,8 @@ abstract class SimInventoryDAO {
     //  Binding a SIM card to a MSISDN
     //
 
-    @SqlUpdate("UPDATE sim_entries SET msisdn = :msisdn WHERE id = :id")
+    @SqlUpdate("""UPDATE sim_entries SET msisdn = :msisdn
+                       WHERE id = :id""")
     @RegisterMapper(SimEntryMapper::class)
     abstract fun updateMsisdnOfSimProfile(@Bind("id") id: Long, @Bind("msisdn") msisdn: String)
 

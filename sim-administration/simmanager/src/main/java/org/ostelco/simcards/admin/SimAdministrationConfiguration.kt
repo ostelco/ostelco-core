@@ -53,6 +53,11 @@ class SimAdministrationConfiguration : Configuration() {
                 smdp.map { it.name }.distinct().size == smdp.size &&
                 hlr.map { it.name }.containsAll(smdp.map { it.hlrs } .flatten())
     }
+
+    /* Helpers. */
+    fun hlrServiceNames() = hlr.map { it.name }
+    fun smDpPlusServiceNames() = smdp.map { it.name }
+    fun hlrNamesPerSmDpPlusService() = smdp.map { it.hlrs.map { hlr -> Pair(it.name, hlr) } }.flatten()
 }
 
 class HlrConfig {

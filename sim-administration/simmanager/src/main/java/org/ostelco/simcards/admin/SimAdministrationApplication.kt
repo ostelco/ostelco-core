@@ -1,6 +1,7 @@
 package org.ostelco.simcards.admin
 
 import io.dropwizard.Application
+import io.dropwizard.Configuration
 import io.dropwizard.jdbi.DBIFactory
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
@@ -63,6 +64,18 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
                 .using(config.getJerseyClientConfiguration())
                 .build(env.name)
         val jerseyEnv = env.jersey()
+
+        /* XXX Should work if connected to an exising DB. */
+        /* Load HLR and SMDP+ info into DB. */
+        config.hlrServiceNames().forEach {
+            name -> DAO.addHlrAdapter(name)
+        }
+        config.smDpPlusServiceNames().forEach {
+            name -> DAO.addProfileVendorAdapter(name)
+        }
+        config.hlrNamesPerSmDpPlusService().forEach { pair ->
+            DAO.permitVendorForHlrByNames(pair.first, pair.second)
+        }
 
         addOpenapiResourceToJerseyEnv(jerseyEnv, config.openApi)
         addEs2PlusDefaultFiltersAndInterceptors(jerseyEnv)
