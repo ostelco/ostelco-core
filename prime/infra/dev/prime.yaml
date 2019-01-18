@@ -199,13 +199,13 @@ spec:
           "--service=api.dev4life.org",
           "--rollout_strategy=managed",
           "--backend=127.0.0.1:8080",
-          "--healthz= "
+          "--healthz=healthz"
         ]
         # HEALTH CHECK START
         # Used by ingress to perform health check
         readinessProbe:
           httpGet:
-            path: /
+            path: /healthz
             port: 9099
         ports:
           - containerPort: 9099
