@@ -8,6 +8,24 @@ openApi:
   contactEmail: dev@redotter.sg
   resourcePackage: org.ostelco
 
+smdp:
+  - name: Foo
+    hlr:
+      - Bartel
+    host: footel.com
+    port: 8080
+  - name: Bar
+    hlr:
+      - Footel
+    host: bartel.com
+    port: 8080
+
+hlr:
+  - name: Footel
+    url: http://footel.com
+  - name: Bartel
+    url: http://bartel.com
+
 server:
   type: default
   applicationConnectors:

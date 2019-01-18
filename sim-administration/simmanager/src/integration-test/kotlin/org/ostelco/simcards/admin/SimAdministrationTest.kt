@@ -76,7 +76,7 @@ class SimAdministrationTest {
     }
 
     private fun presetTables() {
-        val dao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().simInventoryDAO
+        val dao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
 
         dao.addProfileVendorAdapter(profileVendor)
         dao.addHlrAdapter(hlr)

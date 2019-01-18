@@ -41,7 +41,7 @@ class EsimInventoryBatchImportTest {
         daoForCreationAndDeletion.createAll()
 
         // First delete whatever we can delete of old tables
-        val dao = RULE.getApplication<SimAdministrationApplication>().simInventoryDAO
+        val dao = RULE.getApplication<SimAdministrationApplication>().DAO
         // The set up the necessary entities to permit import.
         dao.addProfileVendorAdapter("Idemia")
         dao.addHlrAdapter("Loltel")
