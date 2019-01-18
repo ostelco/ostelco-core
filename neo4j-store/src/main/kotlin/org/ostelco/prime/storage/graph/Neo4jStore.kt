@@ -7,7 +7,6 @@ import arrow.core.left
 import arrow.core.right
 import arrow.effects.IO
 import arrow.instances.either.monad.monad
-import arrow.typeclasses.binding
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.getLogger
