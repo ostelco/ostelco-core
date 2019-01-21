@@ -13,7 +13,6 @@ import org.junit.BeforeClass
 import org.junit.Before
 import org.ostelco.simcards.inventory.HlrState
 import org.ostelco.simcards.inventory.SimEntry
-import org.ostelco.simcards.inventory.SimInventoryCreationDestructionDAO
 import org.ostelco.simcards.inventory.SmDpPlusState
 import org.skife.jdbi.v2.DBI
 import org.testcontainers.containers.PostgreSQLContainer
@@ -96,7 +95,7 @@ class SimAdministrationTest {
     }
 
     private fun clearTables() {
-        val dao = jdbi.onDemand(SimInventoryCreationDestructionDAO::class.java)
+        val dao = jdbi.onDemand(ClearTablesForTestingDAO::class.java)
 
         dao.clearTables()
     }

@@ -1,4 +1,4 @@
-package org.ostelco.simcards.inventory
+package org.ostelco.simcards.admin
 
 import org.skife.jdbi.v2.sqlobject.SqlUpdate
 
@@ -6,7 +6,7 @@ import org.skife.jdbi.v2.sqlobject.SqlUpdate
  * Clear tables.  This library shouldn't be part of normal
  * running code, should be part of the test harness.
  */
-abstract class SimInventoryCreationDestructionDAO {
+abstract class ClearTablesForTestingDAO {
 
     fun clearTables() {
         truncateImportBatchesTable()
