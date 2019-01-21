@@ -57,8 +57,8 @@ deploy () {
     echo "*******************************"
     echo
 
-    #gcloud compute instances update-container --zone ${ZONE} ocsgw-${ENVIRONMENT}-${INSTANCE} \
-    #--container-image eu.gcr.io/${PROJECT_ID}/ocsgw:${TAG_OCS}
+    gcloud compute instances update-container --zone ${ZONE} ocsgw-${ZONE}-${ENVIRONMENT}-${INSTANCE} \
+    --container-image eu.gcr.io/${PROJECT_ID}/ocsgw:${TAG_OCS}
 }
 
 set -e
@@ -131,10 +131,11 @@ fi
 
 
 echo "Building OCS-gw"
-#./gradlew ocsgw:clean ocsgw:build
-#docker build -t eu.gcr.io/${PROJECT_ID}/ocsgw:${TAG_OCS} ocsgw
+./gradlew ocsgw:clean ocsgw:build
+docker build -t eu.gcr.io/${PROJECT_ID}/ocsgw:${TAG_OCS} ocsgw
+
 echo "Uploading Docker image"
-#docker push eu.gcr.io/${PROJECT_ID}/ocsgw:${TAG_OCS}
+docker push eu.gcr.io/${PROJECT_ID}/ocsgw:${TAG_OCS}
 
 
 if [[ "$INSTANCE" == 1 ]] || [[ "$INSTANCE" == 2 ]]
