@@ -342,7 +342,7 @@ abstract class SimInventoryDAO {
      * XXX: For postgresql replace with;
      *      SELECT lastval()
      */
-    @SqlQuery("SELECT last_insert_rowid()")
+    @SqlQuery("SELECT lastval()")
     abstract fun lastInsertedRowId(): Long
 
     @Transaction

@@ -20,8 +20,10 @@ hlr:
     url: http://footel.com
 
 database:
-  driverClass: org.sqlite.JDBC
-  url: jdbc:sqlite:sim_inventory.db
+  driverClass: org.postgresql.Driver
+  user: test
+  password: test
+  url: jdbc:postgresql://db.example.com/db-prod
 
 httpClient:
   minThreads: 1

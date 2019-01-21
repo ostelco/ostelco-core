@@ -5,6 +5,7 @@ import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
 import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.jdbi.DBIFactory
+import io.dropwizard.testing.ConfigOverride
 import org.junit.ClassRule
 import org.junit.Test
 import org.assertj.core.api.Assertions.assertThat
@@ -15,10 +16,15 @@ import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryCreationDestructionDAO
 import org.ostelco.simcards.inventory.SmDpPlusState
 import org.skife.jdbi.v2.DBI
+import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import java.io.FileInputStream
+import java.time.Duration
+import java.time.temporal.ChronoUnit
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
+
 
 class SimAdministrationTest {
 
@@ -28,8 +34,25 @@ class SimAdministrationTest {
 
         @JvmField
         @ClassRule
+        val psql = KPostgresContainer("postgres:11-alpine")
+                .withInitScript("init.sql")
+                .withDatabaseName("sim_manager")
+                .withUsername("test")
+                .withPassword("test")
+                .withExposedPorts(5432).waitingFor(LogMessageWaitStrategy()
+                        .withRegEx(".*database system is ready to accept connections.*\\s")
+                        .withTimes(2)
+                        .withStartupTimeout(Duration.of(60, ChronoUnit.SECONDS)))
+
+        init {
+            psql.start()
+        }
+
+        @JvmField
+        @ClassRule
         val SIM_MANAGER_RULE = DropwizardAppRule(SimAdministrationApplication::class.java,
-                ResourceHelpers.resourceFilePath("sim-manager.yaml"))
+                    ResourceHelpers.resourceFilePath("sim-manager.yaml"),
+                    ConfigOverride.config("database.url", psql.jdbcUrl))
 
         @JvmField
         @ClassRule
@@ -52,6 +75,10 @@ class SimAdministrationTest {
         }
     }
 
+    /* Kotlin type magic from:
+       https://arnabmitra.github.io/jekyll/update/2018/01/18/TestContainers.html */
+    class KPostgresContainer(imageName: String) : PostgreSQLContainer<KPostgresContainer>(imageName)
+
     /**
      * Set up SIM Manager DB with test data by reading the 'sample-sim-batch.csv' and
      * load the data to the DB using the SIM Manager 'import-batch' API.
@@ -62,17 +89,16 @@ class SimAdministrationTest {
     val simProfile = "FooTel_STD"
 
     @Before
-    fun createTables() {
-        resetTables()
+    fun setupTables() {
+        clearTables()
         presetTables()
         loadSimData()
     }
 
-    private fun resetTables() {
+    private fun clearTables() {
         val dao = jdbi.onDemand(SimInventoryCreationDestructionDAO::class.java)
 
-        dao.dropAll()
-        dao.createAll()
+        dao.clearTables()
     }
 
     private fun presetTables() {

@@ -31,6 +31,12 @@ server:
     - type: http
       port: 8081
 
+#database:
+#  driverClass: org.sqlite.JDBC
+#  url: jdbc:sqlite:/tmp/sim_inventory.db
+
 database:
-  driverClass: org.sqlite.JDBC
-  url: jdbc:sqlite:/tmp/sim_inventory.db
+  driverClass: org.postgresql.Driver
+  user: test
+  password: test
+  url: jdbc:postgresql://db.example.com/db-prod

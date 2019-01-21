@@ -5,11 +5,9 @@ import io.dropwizard.jdbi.DBIFactory
 import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
 import junit.framework.TestCase
-import org.junit.Before
-import org.junit.ClassRule
-import org.junit.Ignore
-import org.junit.Test
+import org.junit.*
 import org.ostelco.simcards.admin.SimAdministrationApplication
+import org.skife.jdbi.v2.DBI
 import java.math.BigInteger
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
@@ -18,34 +16,43 @@ import javax.ws.rs.core.MediaType
 class EsimInventoryBatchImportTest {
 
     companion object {
+        private lateinit var jdbi: DBI
+
         @JvmField
         @ClassRule
-        val RULE =
-                DropwizardAppRule(
-                        SimAdministrationApplication::class.java,
-                        ResourceHelpers.resourceFilePath("config.yml"))
+        val RULE = DropwizardAppRule(SimAdministrationApplication::class.java,
+                ResourceHelpers.resourceFilePath("config.yml"))
+
+        @BeforeClass
+        @JvmStatic
+        fun setUpDb() {
+            jdbi = DBIFactory().build(RULE.environment,
+                    RULE.configuration.database,
+                    "db")
+        }
     }
 
+    val hlr = "Loltel"
+    val profileVendor = "Idemia"
+
     @Before
-    fun initializeApp() {
-        val factory = DBIFactory()
-        val jdbi2 = factory.build(
-                RULE.environment,
-                RULE.configuration.database, "sqlite2")
-        val daoForCreationAndDeletion =
-                jdbi2.onDemand(SimInventoryCreationDestructionDAO::class.java)
+    fun init() {
+        clearTables()
+        presetTables()
+    }
 
-        daoForCreationAndDeletion.dropAll()
+    private fun clearTables() {
+        val dao = jdbi.onDemand(SimInventoryCreationDestructionDAO::class.java)
 
-        // Then make new tables.
-        daoForCreationAndDeletion.createAll()
+        dao.clearTables()
+    }
 
-        // First delete whatever we can delete of old tables
+    private fun presetTables() {
         val dao = RULE.getApplication<SimAdministrationApplication>().DAO
-        // The set up the necessary entities to permit import.
-        dao.addProfileVendorAdapter("Idemia")
-        dao.addHlrAdapter("Loltel")
-        dao.permitVendorForHlrByNames(profileVendor = "Idemia", hlr = "Loltel")
+
+        dao.addProfileVendorAdapter(profileVendor)
+        dao.addHlrAdapter(hlr)
+        dao.permitVendorForHlrByNames(profileVendor = profileVendor, hlr = hlr)
     }
 
     // FIXME make this test work in CircleCI
@@ -62,7 +69,7 @@ class EsimInventoryBatchImportTest {
 
        // XXX This thing should be refactored into a client.
         val response = client
-                .target("http://localhost:8080/ostelco/sim-inventory/Loltel/import-batch/profilevendor/Idemia")
+                .target("http://localhost:${RULE.getLocalPort()}/ostelco/sim-inventory/${hlr}/import-batch/profilevendor/${profileVendor}")
                 .request(MediaType.APPLICATION_JSON)
                 .put(Entity.entity(sampleValue, MediaType.TEXT_PLAIN))
 
