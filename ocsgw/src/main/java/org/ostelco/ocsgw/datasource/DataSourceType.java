@@ -1,4 +1,4 @@
-package org.ostelco.ocsgw.data;
+package org.ostelco.ocsgw.datasource;
 
 public class DataSourceType {
     public static final String LOCAL = "Local";

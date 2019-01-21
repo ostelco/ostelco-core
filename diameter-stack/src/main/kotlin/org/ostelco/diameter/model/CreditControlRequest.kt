@@ -1,7 +1,6 @@
 package org.ostelco.diameter.model
 
 import org.jdiameter.api.Avp
-import org.jdiameter.api.AvpSet
 import org.ostelco.diameter.model.SubscriptionType.END_USER_E164
 import org.ostelco.diameter.model.SubscriptionType.END_USER_IMSI
 import org.ostelco.diameter.parser.AvpField
@@ -43,14 +42,4 @@ class CreditControlRequest {
 
     @AvpField(Avp.ORIGIN_REALM)
     var originRealm: String? = ""
-
-    var ccrAvps: AvpSet? = null
-
-    // TODO martin: This should be connected to rating groups
-    val requestedUnits: Long
-        get() = this.multipleServiceCreditControls.first().requested[0].total
-
-    // TODO martin: This only get the total. There is also input/output if needed
-    val usedUnits: Long
-        get() = this.multipleServiceCreditControls.first().used.total
 }
