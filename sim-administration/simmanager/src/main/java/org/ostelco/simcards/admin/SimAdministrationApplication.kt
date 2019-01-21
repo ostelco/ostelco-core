@@ -65,18 +65,6 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
                 .build(env.name)
         val jerseyEnv = env.jersey()
 
-        /* XXX Should work if connected to an exising DB. */
-        /* Load HLR and SMDP+ info into DB. */
-        config.hlrServiceNames().forEach {
-            name -> DAO.addHlrAdapter(name)
-        }
-        config.smDpPlusServiceNames().forEach {
-            name -> DAO.addProfileVendorAdapter(name)
-        }
-        config.hlrNamesPerSmDpPlusService().forEach { pair ->
-            DAO.permitVendorForHlrByNames(pair.first, pair.second)
-        }
-
         addOpenapiResourceToJerseyEnv(jerseyEnv, config.openApi)
         addEs2PlusDefaultFiltersAndInterceptors(jerseyEnv)
 

@@ -6,7 +6,6 @@ import io.dropwizard.client.JerseyClientConfiguration
 import io.dropwizard.db.DataSourceFactory
 import org.ostelco.dropwizardutils.OpenapiResourceAdderConfig
 import javax.validation.Valid
-import javax.validation.constraints.AssertTrue
 import javax.validation.constraints.NotNull
 
 
@@ -48,16 +47,12 @@ class SimAdministrationConfiguration : Configuration() {
      *     been configured
      * @return true if valid HLR/SMDP+ configuration
      */
-    fun validate() : Boolean {
-        return hlr.map { it.name }.distinct().size == hlr.size &&
-                smdp.map { it.name }.distinct().size == smdp.size &&
-                hlr.map { it.name }.containsAll(smdp.map { it.hlrs } .flatten())
-    }
+    fun validate() = hlr.map { it.name }.distinct().size == hlr.size &&
+            smdp.map { it.name }.distinct().size == smdp.size
 
     /* Helpers. */
     fun hlrServiceNames() = hlr.map { it.name }
     fun smDpPlusServiceNames() = smdp.map { it.name }
-    fun hlrNamesPerSmDpPlusService() = smdp.map { it.hlrs.map { hlr -> Pair(it.name, hlr) } }.flatten()
 }
 
 class HlrConfig {
@@ -87,9 +82,4 @@ class SmDpPlusConfig {
     @NotNull
     @JsonProperty("port")
     var port: Int = 0
-
-    @Valid
-    @NotNull
-    @JsonProperty("hlr")
-    lateinit var hlrs: List<String>
 }

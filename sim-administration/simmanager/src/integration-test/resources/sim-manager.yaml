@@ -10,13 +10,9 @@ openApi:
 
 smdp:
   - name: Foo
-    hlr:
-      - Bartel
     host: footel.com
     port: 8080
   - name: Bar
-    hlr:
-      - Footel
     host: bartel.com
     port: 8080
 

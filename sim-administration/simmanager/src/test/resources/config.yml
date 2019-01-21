@@ -12,8 +12,6 @@ openApi:
 
 smdp:
   - name: Foo
-    hlr:
-      - Footel
     host: footel.com
     port: 8080
 
