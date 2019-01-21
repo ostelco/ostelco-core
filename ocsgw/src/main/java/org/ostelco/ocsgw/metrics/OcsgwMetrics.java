@@ -1,4 +1,4 @@
-package org.ostelco.ocsgw.data.grpc;
+package org.ostelco.ocsgw.metrics;
 
 import com.google.auth.oauth2.ServiceAccountJwtAccessCredentials;
 import io.grpc.ManagedChannel;
@@ -24,7 +24,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-class OcsgwMetrics {
+public class OcsgwMetrics {
 
     private static final Logger LOG = LoggerFactory.getLogger(OcsgwMetrics.class);
 
@@ -46,7 +46,7 @@ class OcsgwMetrics {
 
     private OcsgwAnalyticsReport lastActiveSessions = null;
 
-    OcsgwMetrics(String metricsServerHostname, ServiceAccountJwtAccessCredentials credentials) {
+    public OcsgwMetrics(String metricsServerHostname, ServiceAccountJwtAccessCredentials credentials) {
 
         try {
             final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder
@@ -73,37 +73,63 @@ class OcsgwMetrics {
         }
     }
 
-    private abstract class AnalyticsRequestObserver<T> implements StreamObserver<T> {
-        public final void onError(Throwable t) {
-            LOG.error("AnalyticsRequestObserver error", t);
-            if (t instanceof StatusRuntimeException) {
-                reconnectAnalyticsReport();
-            }
-        }
+    public void initAnalyticsRequest() {
+        ocsgwAnalyticsReport = ocsgwAnalyticsServiceStub.ocsgwAnalyticsEvent(
+                new StreamObserver<OcsgwAnalyticsReply>() {
 
-        public final void onCompleted() {
-            // Nothing to do here
+                    @Override
+                    public void onNext(OcsgwAnalyticsReply value) {
+                        // Ignore reply from Prime
+                    }
+
+                    @Override
+                    public void onError(Throwable t) {
+                        LOG.error("AnalyticsRequestObserver error", t);
+                        if (t instanceof StatusRuntimeException) {
+                            reconnectAnalyticsReport();
+                        }
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                        // Nothing to do here
+                    }
+                }
+        );
+        initKeepAlive();
+        initAutoReportAnalyticsReport();
+    }
+
+
+    public void sendAnalytics(OcsgwAnalyticsReport report) {
+        if (report != null) {
+            ocsgwAnalyticsReport.onNext(report);
+            lastActiveSessions = report;
         }
     }
 
     private void reconnectKeepAlive() {
-        LOG.info("reconnectKeepAlive called");
+        LOG.debug("reconnectKeepAlive called");
         if (keepAliveFuture != null) {
             keepAliveFuture.cancel(true);
         }
     }
 
     private void reconnectAnalyticsReport() {
-        LOG.info("reconnectAnalyticsReport called");
+        LOG.debug("reconnectAnalyticsReport called");
+
+        if (autoReportAnalyticsFuture != null) {
+            autoReportAnalyticsFuture.cancel(true);
+        }
 
         if (initAnalyticsFuture != null) {
             initAnalyticsFuture.cancel(true);
         }
 
-        LOG.info("Schedule new Callable initAnalyticsRequest");
+        LOG.debug("Schedule new Callable initAnalyticsRequest");
         initAnalyticsFuture = executorService.schedule((Callable<Object>) () -> {
                     reconnectKeepAlive();
-                    LOG.info("Calling initAnalyticsRequest");
+                    LOG.debug("Calling initAnalyticsRequest");
                     initAnalyticsRequest();
                     sendAnalytics(lastActiveSessions);
                     return "Called!";
@@ -121,20 +147,6 @@ class OcsgwMetrics {
                 TimeUnit.MINUTES);
     }
 
-    void initAnalyticsRequest() {
-        ocsgwAnalyticsReport = ocsgwAnalyticsServiceStub.ocsgwAnalyticsEvent(
-                new AnalyticsRequestObserver<OcsgwAnalyticsReply>() {
-
-                    @Override
-                    public void onNext(OcsgwAnalyticsReply value) {
-                        // Ignore reply from Prime
-                    }
-                }
-        );
-        initKeepAlive();
-        initAutoReportAnalyticsReport();
-    }
-
     private void initKeepAlive() {
         // this is used to keep connection alive
         keepAliveFuture = executorService.scheduleWithFixedDelay(() -> {
@@ -143,12 +155,5 @@ class OcsgwMetrics {
                 15,
                 50,
                 TimeUnit.SECONDS);
-    }
-
-    void sendAnalytics(OcsgwAnalyticsReport report) {
-        if (report != null) {
-            ocsgwAnalyticsReport.onNext(report);
-            lastActiveSessions = report;
-        }
     }
 }
