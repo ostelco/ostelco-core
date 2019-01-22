@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
 
+# Script to deploy the OCS-gw to GCP Compute engine container
+
+##### Constants
+
+PROJECT_ID="$(gcloud config get-value project -q)"
+OCSGW_VERSION="$(./gradlew ocsgw:properties -q | grep "version:" | awk '{print $2}' | tr -d '[:space:]')"
+SHORT_SHA="$(git log -1 --pretty=format:%h)"
+TAG_OCS="${OCSGW_VERSION}-${SHORT_SHA}"
+
+##### Functions
 
 getInstance () {
     echo
@@ -61,6 +71,8 @@ deploy () {
     --container-image eu.gcr.io/${PROJECT_ID}/ocsgw:${TAG_OCS}
 }
 
+##### Main
+
 set -e
 
 if [[ ! -f ocsgw/infra/script/deploy-ocsgw.sh ]]; then
@@ -71,6 +83,18 @@ fi
 # Instance can be passed as first parameter ( 1 - 3 )
 if [[ ! -z "$1" ]]; then
     INSTANCE=$1
+fi
+
+# If instance is not passed to the script we get it from terminal
+if [[ -z "$INSTANCE" ]]
+then
+    while true; do
+      getInstance
+      if [[ "$INSTANCE" == 1 ]] || [[ "$INSTANCE" == 2 ]]  || [[ "$INSTANCE" == 3 ]]
+      then
+        break
+      fi
+    done
 fi
 
 # Environment can be passed as second parameter ( dev / prod ) : default [dev]
@@ -87,12 +111,6 @@ else
     REGION="europe-west1"
 fi
 
-
-PROJECT_ID="$(gcloud config get-value project -q)"
-OCSGW_VERSION="$(./gradlew ocsgw:properties -q | grep "version:" | awk '{print $2}' | tr -d '[:space:]')"
-SHORT_SHA="$(git log -1 --pretty=format:%h)"
-TAG_OCS="${OCSGW_VERSION}-${SHORT_SHA}"
-
 echo "Deployment script for OCS-gw to Google Cloud"
 echo
 echo "*******************************"
@@ -102,20 +120,6 @@ echo SHORT_SHA=${SHORT_SHA}
 echo TAG_OCS=${TAG_OCS}
 echo "*******************************"
 echo
-
-
-
-# If instance is not passed to the script we get it from terminal
-if [[ -z "$INSTANCE" ]]
-then
-    while true; do
-      getInstance
-      if [[ "$INSTANCE" == 1 ]] || [[ "$INSTANCE" == 2 ]]  || [[ "$INSTANCE" == 3 ]]
-      then
-        break
-      fi
-    done
-fi
 
 if ! checkEnvironment;
 then
