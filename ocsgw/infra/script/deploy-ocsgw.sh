@@ -57,7 +57,7 @@ deploy () {
     echo "*******************************"
     echo
 
-    gcloud compute instances update-container --zone ${ZONE} ocsgw-${ZONE}-${ENVIRONMENT}-${INSTANCE} \
+    gcloud compute instances update-container --zone ${ZONE} ocsgw-${REGION}-${ENVIRONMENT}-${INSTANCE} \
     --container-image eu.gcr.io/${PROJECT_ID}/ocsgw:${TAG_OCS}
 }
 
