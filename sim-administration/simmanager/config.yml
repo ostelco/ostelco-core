@@ -8,14 +8,13 @@ openApi:
   contactEmail: rmz@telenordigital.com
   resourcePackage: org.ostelco
 
-smdp:
-  - name: Foo
-    host: footel.com
-    port: 8080
+profileVendors:
+  - name: Idemia
+    url: http://idemia.com
 
-hlr:
-  - name: Footel
-    url: http://footel.com
+hlrs:
+  - name: Loltel
+    url: http://loltel.com
 
 database:
   driverClass: org.postgresql.Driver

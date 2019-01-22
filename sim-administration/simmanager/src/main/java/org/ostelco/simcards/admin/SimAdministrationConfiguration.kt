@@ -31,13 +31,13 @@ class SimAdministrationConfiguration : Configuration() {
 
     @Valid
     @NotNull
-    @JsonProperty("smdp")
-    lateinit var smdp: List<SmDpPlusConfig>
+    @JsonProperty("profileVendors")
+    lateinit var profileVendors: List<ProfileVendorConfig>
 
     @Valid
     @NotNull
-    @JsonProperty("hlr")
-    lateinit var hlr: List<HlrConfig>
+    @JsonProperty("hlrs")
+    lateinit var hlrVendors: List<HlrConfig>
 }
 
 class HlrConfig {
@@ -52,7 +52,7 @@ class HlrConfig {
     lateinit var url: String
 }
 
-class SmDpPlusConfig {
+class ProfileVendorConfig {
     @Valid
     @NotNull
     @JsonProperty("name")

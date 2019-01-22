@@ -5,8 +5,6 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.ostelco.simcards.adapter.HlrAdapter
 import org.ostelco.simcards.adapter.ProfileVendorAdapter
-import org.ostelco.simcards.admin.HlrConfig
-import org.ostelco.simcards.admin.SmDpPlusConfig
 import org.skife.jdbi.v2.StatementContext
 import org.skife.jdbi.v2.sqlobject.*
 import org.skife.jdbi.v2.sqlobject.customizers.BatchChunkSize

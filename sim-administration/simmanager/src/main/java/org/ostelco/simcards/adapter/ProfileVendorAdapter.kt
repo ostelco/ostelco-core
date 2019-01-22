@@ -2,7 +2,7 @@ package org.ostelco.simcards.adapter
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.ostelco.sim.es2plus.*
-import org.ostelco.simcards.admin.SmDpPlusConfig
+import org.ostelco.simcards.admin.ProfileVendorConfig
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SmDpPlusState
@@ -35,7 +35,7 @@ data class ProfileVendorAdapter (
      * @return Updated SIM profile
      */
     fun activate(client: Client,
-                 config: SmDpPlusConfig,
+                 config: ProfileVendorConfig,
                  dao: SimInventoryDAO,
                  eid: String,
                  simEntry: SimEntry) : SimEntry? {
@@ -47,7 +47,7 @@ data class ProfileVendorAdapter (
 
     /* XXX Update SM-DP+ 'header' to correct content. */
 
-    private fun downloadOrder(client: Client, config: SmDpPlusConfig, dao: SimInventoryDAO, simEntry: SimEntry) : SimEntry? {
+    private fun downloadOrder(client: Client, config: ProfileVendorConfig, dao: SimInventoryDAO, simEntry: SimEntry) : SimEntry? {
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = "",
                 functionCallIdentifier = ""
@@ -72,7 +72,7 @@ data class ProfileVendorAdapter (
             dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ORDER_DOWNLOADED)
     }
 
-    private fun confirmOrder(client: Client, config: SmDpPlusConfig, dao: SimInventoryDAO, eid: String, simEntry: SimEntry) : SimEntry? {
+    private fun confirmOrder(client: Client, config: ProfileVendorConfig, dao: SimInventoryDAO, eid: String, simEntry: SimEntry) : SimEntry? {
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = "",
                 functionCallIdentifier = ""

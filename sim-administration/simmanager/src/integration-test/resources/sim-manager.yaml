@@ -8,11 +8,11 @@ openApi:
   contactEmail: dev@redotter.sg
   resourcePackage: org.ostelco
 
-smdp:
+profileVendors:
   - name: Bar
     url: http://localhost:9080/gsma/rsp2/es2plus
 
-hlr:
+hlrs:
   - name: Foo
     url: http://bartel.com
 
@@ -24,10 +24,6 @@ server:
   adminConnectors:
     - type: http
       port: 8081
-
-#database:
-#  driverClass: org.sqlite.JDBC
-#  url: jdbc:sqlite:/tmp/sim_inventory.db
 
 database:
   driverClass: org.postgresql.Driver

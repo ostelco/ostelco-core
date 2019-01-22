@@ -1,7 +1,6 @@
 package org.ostelco.simcards.admin
 
 import io.dropwizard.Application
-import io.dropwizard.Configuration
 import io.dropwizard.jdbi.DBIFactory
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
@@ -42,10 +41,10 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
                      env: Environment) {
         val factory = DBIFactory()
         val jdbi = factory.build(env,
-                config.database, "sqlite")
+                config.database, "postgresql")
         this.DAO = jdbi.onDemand(SimInventoryDAO::class.java)
 
-        val smdpPlusCallbackHandler = object : SmDpPlusCallbackService {
+        val profileVendorCallbackHandler = object : SmDpPlusCallbackService {
             // TODO: Not implemented.
             override fun handleDownloadProgressInfo(
                     eid: String?,
@@ -65,7 +64,7 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
         addEs2PlusDefaultFiltersAndInterceptors(jerseyEnv)
 
         jerseyEnv.register(SimInventoryResource(client, config, DAO))
-        jerseyEnv.register(SmDpPlusCallbackResource(smdpPlusCallbackHandler))
+        jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
     }
 
     companion object {
