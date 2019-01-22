@@ -38,21 +38,6 @@ class SimAdministrationConfiguration : Configuration() {
     @NotNull
     @JsonProperty("hlr")
     lateinit var hlr: List<HlrConfig>
-
-    /**
-     * Checks for:
-     *   - No duplicates in list of HLR services
-     *   - No duplicates in list of SMDP+ services
-     *   - That no SMDP+ service refers to a HLR service that has not
-     *     been configured
-     * @return true if valid HLR/SMDP+ configuration
-     */
-    fun validate() = hlr.map { it.name }.distinct().size == hlr.size &&
-            smdp.map { it.name }.distinct().size == smdp.size
-
-    /* Helpers. */
-    fun hlrServiceNames() = hlr.map { it.name }
-    fun smDpPlusServiceNames() = smdp.map { it.name }
 }
 
 class HlrConfig {
@@ -75,11 +60,6 @@ class SmDpPlusConfig {
 
     @Valid
     @NotNull
-    @JsonProperty("host")
-    lateinit var host: String
-
-    @Valid
-    @NotNull
-    @JsonProperty("port")
-    var port: Int = 0
+    @JsonProperty("url")
+    lateinit var url: String
 }

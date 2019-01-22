@@ -1,6 +1,8 @@
 package org.ostelco.simcards.inventory
 
 import org.hibernate.validator.constraints.NotEmpty
+import org.ostelco.simcards.admin.SimAdministrationConfiguration
+import org.ostelco.simcards.admin.SmDpPlusConfig
 import java.io.IOException
 import java.io.InputStream
 import javax.ws.rs.*
@@ -14,7 +16,9 @@ import javax.ws.rs.core.Response
 ///
 
 @Path("/ostelco/sim-inventory/{hlr}")
-class SimInventoryResource(private val client: Client, private val dao: SimInventoryDAO) {
+class SimInventoryResource(private val client: Client,
+                           private val config: SimAdministrationConfiguration,
+                           private val dao: SimInventoryDAO) {
 
     companion object {
         private fun <T> assertNonNull(v: T?): T {
@@ -131,10 +135,14 @@ class SimInventoryResource(private val client: Client, private val dao: SimInven
             dao.getSimProfileByIccid(iccid))
         assertCorrectHlr(hlr, hlrAdapter.id == simEntry.hlrId)
 
-        val simVendorAdapter = assertNonNull(dao.getProfileVendorAdapterById(simEntry.profileVendorId))
+        val simVendorAdapter = assertNonNull(dao.getProfileVendorAdapterById(
+                simEntry.profileVendorId))
+        val config: SmDpPlusConfig = assertNonNull(config.smdp.filter {
+            it.name == simVendorAdapter.name
+        }.firstOrNull())
 
         return try {
-            simVendorAdapter.activate(client, dao, eid, simEntry)
+            simVendorAdapter.activate(client, config, dao, eid, simEntry)
         } catch (e: Exception) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }

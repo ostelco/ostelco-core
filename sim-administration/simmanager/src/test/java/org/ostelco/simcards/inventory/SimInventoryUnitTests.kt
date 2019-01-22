@@ -7,6 +7,8 @@ import org.junit.*
 import org.mockito.Mockito.*
 import org.ostelco.simcards.adapter.HlrAdapter
 import org.ostelco.simcards.adapter.ProfileVendorAdapter
+import org.ostelco.simcards.admin.SimAdministrationConfiguration
+import org.ostelco.simcards.admin.SmDpPlusConfig
 import java.io.ByteArrayInputStream
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.Entity
@@ -15,6 +17,8 @@ import javax.ws.rs.core.MediaType
 class SimInventoryUnitTests {
 
     companion object {
+        private val config = mock(SimAdministrationConfiguration::class.java)
+        private val smDpPlusConfig = mock(SmDpPlusConfig::class.java)
         private val dao = mock(SimInventoryDAO::class.java)
         private val hlrAdapter = mock(HlrAdapter::class.java)
         private val profileVendorAdapter = mock(ProfileVendorAdapter::class.java)
@@ -24,7 +28,7 @@ class SimInventoryUnitTests {
         @ClassRule
         val RULE: ResourceTestRule = ResourceTestRule
                 .builder()
-                .addResource(SimInventoryResource(client, dao))
+                .addResource(SimInventoryResource(client, config, dao))
                 .build()
 
         @JvmStatic
@@ -79,6 +83,16 @@ class SimInventoryUnitTests {
         reset(hlrAdapter)
         reset(profileVendorAdapter)
 
+        /* SmDpPlusConfig */
+        org.mockito.Mockito.`when`(smDpPlusConfig.name)
+                .thenReturn(fakeProfileVendor)
+        org.mockito.Mockito.`when`(smDpPlusConfig.url)
+                .thenReturn("http://localhost:8080/somewhere")
+
+        /* Config. */
+        org.mockito.Mockito.`when`(config.smdp)
+                .thenReturn(listOf(smDpPlusConfig))
+
         /* HLR adapter. */
         org.mockito.Mockito.`when`(hlrAdapter.id)
                 .thenReturn(1L)
@@ -96,7 +110,7 @@ class SimInventoryUnitTests {
                 .thenReturn(1L)
         org.mockito.Mockito.`when`(profileVendorAdapter.name)
                 .thenReturn(fakeProfileVendor)
-        org.mockito.Mockito.`when`(profileVendorAdapter.activate(client, dao, fakeEid, fakeSimEntryWithoutMsisdn))
+        org.mockito.Mockito.`when`(profileVendorAdapter.activate(client, smDpPlusConfig, dao, fakeEid, fakeSimEntryWithoutMsisdn))
                 .thenReturn(fakeSimEntryWithoutMsisdn.copy(
                         smdpPlusState = SmDpPlusState.ACTIVATED,
                         eid = fakeEid))
@@ -265,7 +279,7 @@ class SimInventoryUnitTests {
         verify(dao).getSimProfileByIccid(fakeSimEntryWithoutMsisdn.iccid)
         verify(dao).getProfileVendorAdapterById(fakeSimEntryWithoutMsisdn.profileVendorId)
 
-        verify(profileVendorAdapter).activate(client, dao, fakeEid, fakeSimEntryWithoutMsisdn)
+        verify(profileVendorAdapter).activate(client, smDpPlusConfig, dao, fakeEid, fakeSimEntryWithoutMsisdn)
         // XXX Missing a bunch of verifications
     }
 

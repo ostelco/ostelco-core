@@ -2,6 +2,7 @@ package org.ostelco.simcards.adapter
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.ostelco.sim.es2plus.*
+import org.ostelco.simcards.admin.SmDpPlusConfig
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SmDpPlusState
@@ -27,21 +28,26 @@ data class ProfileVendorAdapter (
      * Requests the external Profile Vendor to activate the
      * SIM profile.
      * @param client  HTTP client
+     * @param config SIM vendor specific configuration
      * @param dao  DB interface
      * @param eid  ESIM id
      * @param simEntry  SIM profile to activate
      * @return Updated SIM profile
      */
-    fun activate(client: Client, dao: SimInventoryDAO, eid: String, simEntry: SimEntry) : SimEntry? {
-        return if (downloadOrder(client, dao, simEntry) != null)
-            confirmOrder(client, dao, eid, simEntry)
+    fun activate(client: Client,
+                 config: SmDpPlusConfig,
+                 dao: SimInventoryDAO,
+                 eid: String,
+                 simEntry: SimEntry) : SimEntry? {
+        return if (downloadOrder(client, config, dao, simEntry) != null)
+            confirmOrder(client, config, dao, eid, simEntry)
          else
             null
     }
 
     /* XXX Update SM-DP+ 'header' to correct content. */
 
-    private fun downloadOrder(client: Client, dao: SimInventoryDAO, simEntry: SimEntry) : SimEntry? {
+    private fun downloadOrder(client: Client, config: SmDpPlusConfig, dao: SimInventoryDAO, simEntry: SimEntry) : SimEntry? {
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = "",
                 functionCallIdentifier = ""
@@ -50,7 +56,7 @@ data class ProfileVendorAdapter (
                 header = header,
                 iccid = simEntry.iccid
         )
-        val response = client.target("http://localhost:9080/gsma/rsp2/es2plus/downloadOrder")
+        val response = client.target("${config.url}/downloadOrder")
                 .request()
                 .post(Entity.entity(payload, MediaType.APPLICATION_JSON))
 
@@ -66,7 +72,7 @@ data class ProfileVendorAdapter (
             dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ORDER_DOWNLOADED)
     }
 
-    private fun confirmOrder(client: Client, dao: SimInventoryDAO, eid: String, simEntry: SimEntry) : SimEntry? {
+    private fun confirmOrder(client: Client, config: SmDpPlusConfig, dao: SimInventoryDAO, eid: String, simEntry: SimEntry) : SimEntry? {
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = "",
                 functionCallIdentifier = ""
@@ -77,7 +83,7 @@ data class ProfileVendorAdapter (
                 iccid = simEntry.iccid,
                 releaseFlag = true
         )
-        val response = client.target("http://localhost:9080/gsma/rsp2/es2plus/confirmOrder")
+        val response = client.target("${config.url}/confirmOrder")
                 .request()
                 .post(Entity.entity(payload, MediaType.APPLICATION_JSON))
 

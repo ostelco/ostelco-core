@@ -40,10 +40,6 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
 
     override fun run(config: SimAdministrationConfiguration,
                      env: Environment) {
-        require(config.validate() == true) {
-            "Invalid configuration of HLR and/or SMDP+ services in config file"
-        }
-
         val factory = DBIFactory()
         val jdbi = factory.build(env,
                 config.database, "sqlite")
@@ -68,7 +64,7 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
         addOpenapiResourceToJerseyEnv(jerseyEnv, config.openApi)
         addEs2PlusDefaultFiltersAndInterceptors(jerseyEnv)
 
-        jerseyEnv.register(SimInventoryResource(client, DAO))
+        jerseyEnv.register(SimInventoryResource(client, config, DAO))
         jerseyEnv.register(SmDpPlusCallbackResource(smdpPlusCallbackHandler))
     }
 

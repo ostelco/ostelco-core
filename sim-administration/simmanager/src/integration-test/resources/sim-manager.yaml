@@ -9,17 +9,11 @@ openApi:
   resourcePackage: org.ostelco
 
 smdp:
-  - name: Foo
-    host: footel.com
-    port: 8080
   - name: Bar
-    host: bartel.com
-    port: 8080
+    url: http://localhost:9080/gsma/rsp2/es2plus
 
 hlr:
-  - name: Footel
-    url: http://footel.com
-  - name: Bartel
+  - name: Foo
     url: http://bartel.com
 
 server:
