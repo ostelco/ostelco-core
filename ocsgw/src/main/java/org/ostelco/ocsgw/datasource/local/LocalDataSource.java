@@ -1,4 +1,4 @@
-package org.ostelco.ocsgw.data.local;
+package org.ostelco.ocsgw.datasource.local;
 
 import org.jdiameter.api.IllegalDiameterStateException;
 import org.jdiameter.api.InternalException;
@@ -9,7 +9,7 @@ import org.ostelco.diameter.CreditControlContext;
 import org.ostelco.diameter.model.*;
 import org.ostelco.ocs.api.CreditControlRequestType;
 import org.ostelco.ocsgw.OcsServer;
-import org.ostelco.ocsgw.data.DataSource;
+import org.ostelco.ocsgw.datasource.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
