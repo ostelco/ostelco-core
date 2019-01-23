@@ -14,7 +14,7 @@ profileVendors:
 
 hlrs:
   - name: Foo
-    url: http://bartel.com
+    url: http://localhost:9081/default/provision
 
 server:
   type: default

@@ -3,7 +3,7 @@
 import os
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-PORT = 8080
+PORT = 9081
 
 class handler(BaseHTTPRequestHandler):
 
@@ -13,7 +13,7 @@ class handler(BaseHTTPRequestHandler):
         ]
         if self.path in paths:
             self.send_response(200)
-            self.send_header('Content-type', 'text/plain')
+            self.send_header('Content-Type', 'text/plain')
             self.end_headers()
             self.wfile.write(bytes('pong', 'UTF-8'))
         else:
@@ -24,8 +24,6 @@ class handler(BaseHTTPRequestHandler):
         paths = [
             '/default/provision/activate',
         ]
-        content_length = int(self.headers['Content-Length'])
-        data = self.rfile.read(content_length) #
         if self.path in paths:
             self.send_response(201)
             self.end_headers()
