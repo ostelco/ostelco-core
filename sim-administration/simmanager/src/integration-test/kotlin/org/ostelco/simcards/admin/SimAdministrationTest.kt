@@ -15,6 +15,7 @@ import org.ostelco.simcards.inventory.HlrState
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SmDpPlusState
 import org.skife.jdbi.v2.DBI
+import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
@@ -39,7 +40,8 @@ class SimAdministrationTest {
                 .withDatabaseName("sim_manager")
                 .withUsername("test")
                 .withPassword("test")
-                .withExposedPorts(5432).waitingFor(LogMessageWaitStrategy()
+                .withExposedPorts(5432)
+                .waitingFor(LogMessageWaitStrategy()
                         .withRegEx(".*database system is ready to accept connections.*\\s")
                         .withTimes(2)
                         .withStartupTimeout(Duration.of(60, ChronoUnit.SECONDS)))
@@ -57,6 +59,14 @@ class SimAdministrationTest {
                         "RESPONSE" to "HTTP/1.1 200 OK\r\nConnection: keep-alive\r\n\r\nOK\r\n"
                 ))
                 .withCommand( "/bin/sh", "-c", String.format("while : ; do echo -en \"\$RESPONSE\" | nc -l -p \"\$PORT\"; done"))
+
+        @JvmField
+        @ClassRule
+        val WG2_HLR_RULE = KGenericContainer("python:3-alpine")
+                .withExposedPorts(8080)
+                .withClasspathResourceMapping("wg2-hlr.py", "/service.py",
+                        BindMode.READ_ONLY)
+                .withCommand( "python", "/service.py")
 
         @JvmField
         @ClassRule
@@ -131,7 +141,7 @@ class SimAdministrationTest {
 
     @Test
     fun ping() {
-        val response = client.target("http://localhost:${HLR_RULE.getMappedPort(8080)}/ping")
+        val response = client.target("http://localhost:${WG2_HLR_RULE.getMappedPort(8080)}/ping")
                 .request()
                 .get()
         assertThat(response.status).isEqualTo(200)
