@@ -15,6 +15,7 @@ import org.ostelco.simcards.inventory.HlrState
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SmDpPlusState
 import org.skife.jdbi.v2.DBI
+import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import java.io.FileInputStream
@@ -49,6 +50,16 @@ class SimAdministrationTest {
 
         @JvmField
         @ClassRule
+        val HLR_RULE = KGenericContainer("alpine:3.8")
+                .withExposedPorts(8080)
+                .withEnv(mapOf(
+                        "PORT" to "8080",
+                        "RESPONSE" to "HTTP/1.1 200 OK\r\nConnection: keep-alive\r\n\r\nOK\r\n"
+                ))
+                .withCommand( "/bin/sh", "-c", String.format("while : ; do echo -en \"\$RESPONSE\" | nc -l -p \"\$PORT\"; done"))
+
+        @JvmField
+        @ClassRule
         val SIM_MANAGER_RULE = DropwizardAppRule(SimAdministrationApplication::class.java,
                     ResourceHelpers.resourceFilePath("sim-manager.yaml"),
                     ConfigOverride.config("database.url", psql.jdbcUrl))
@@ -77,6 +88,7 @@ class SimAdministrationTest {
     /* Kotlin type magic from:
        https://arnabmitra.github.io/jekyll/update/2018/01/18/TestContainers.html */
     class KPostgresContainer(imageName: String) : PostgreSQLContainer<KPostgresContainer>(imageName)
+    class KGenericContainer(imageName: String) : GenericContainer<KGenericContainer>(imageName)
 
     /**
      * Set up SIM Manager DB with test data by reading the 'sample-sim-batch.csv' and
@@ -114,6 +126,14 @@ class SimAdministrationTest {
         val response = client.target("http://localhost:${SIM_MANAGER_RULE.getLocalPort()}/ostelco/sim-inventory/${hlr}/import-batch/profilevendor/${profileVendor}")
                 .request()
                 .put(Entity.entity(entries, MediaType.TEXT_PLAIN))
+        assertThat(response.status).isEqualTo(200)
+    }
+
+    @Test
+    fun ping() {
+        val response = client.target("http://localhost:${HLR_RULE.getMappedPort(8080)}/ping")
+                .request()
+                .get()
         assertThat(response.status).isEqualTo(200)
     }
 
