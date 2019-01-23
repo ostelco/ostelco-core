@@ -679,7 +679,7 @@ object Neo4jStoreSingleton : GraphStore {
     //
 
     private fun createSubscriberState(subscriberId: String, status: SubscriberStatus, transaction: PrimeTransaction): Either<StoreError, SubscriberState> {
-        val state = SubscriberState(status, Date().time, subscriberId)
+        val state = SubscriberState(status, Date().time, null, subscriberId)
         return subscriberStateStore.create(state, transaction).flatMap {
             subscriberStateRelationStore.create(subscriberId, subscriberId, transaction)
                     .map { state }
@@ -694,12 +694,12 @@ object Neo4jStoreSingleton : GraphStore {
                 )
     }
 
-    private fun updateSubscriberState(subscriberId: String, status: SubscriberStatus, transaction: PrimeTransaction): Either<StoreError, SubscriberState> {
+    private fun updateSubscriberState(subscriberId: String, status: SubscriberStatus, scanId:String?, transaction: PrimeTransaction): Either<StoreError, SubscriberState> {
         return subscriberStateStore.get(subscriberId, transaction)
                 .fold(
                         { createSubscriberState(subscriberId, status, transaction) },
                         {
-                            val state = SubscriberState(status, Date().time, subscriberId)
+                            val state = SubscriberState(status, Date().time, scanId, subscriberId)
                             subscriberStateStore.update(state, transaction)
                                     .map { state }
                         }
@@ -765,11 +765,11 @@ object Neo4jStoreSingleton : GraphStore {
                         // Update the scan information store with the new scan data
                         scanInformationDatastore.upsertVendorScanInformation(subscriber.id, vendorData).flatMap {
                             // Update the state if the scan was successful and we are waiting for eKYC results
-                            updateSubscriberState(subscriber.id, SubscriberStatus.EKYC_APPROVED, transaction).map { Unit }
+                            updateSubscriberState(subscriber.id, SubscriberStatus.EKYC_APPROVED, scanInformation.scanId, transaction).map { Unit }
                         }
                     } else if (scanInformation.status == ScanStatus.REJECTED && subcriberState.status == SubscriberStatus.REGISTERED) {
                         // Update the state if the scan was a failure and we are waiting for eKYC results
-                        updateSubscriberState(subscriber.id, SubscriberStatus.EKYC_REJECTED, transaction).map { Unit }
+                        updateSubscriberState(subscriber.id, SubscriberStatus.EKYC_REJECTED, null, transaction).map { Unit }
                     } else {
                         // Remain in the previous state
                         Either.right(Unit)

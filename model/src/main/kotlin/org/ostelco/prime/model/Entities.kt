@@ -55,6 +55,7 @@ enum class SubscriberStatus {
 data class SubscriberState(
         val status: SubscriberStatus,   // Current status of the subscriber
         val modifiedTimestamp: Long,    // last modification time of the subscriber status
+        val scanId: String?,            // id of the last successful scan.
         override val id: String
 ): HasId
 
