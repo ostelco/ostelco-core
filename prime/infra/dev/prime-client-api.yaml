@@ -795,6 +795,6 @@ securityDefinitions:
     authorizationUrl: ""
     flow: "implicit"
     type: "oauth2"
-    x-google-issuer: "https://client-auth-dev.redotter.sg/"
-    x-google-jwks_uri: "https://client-auth-dev.redotter.sg/.well-known/jwks.json"
+    x-google-issuer: "https://auth-dev.oya.world/"
+    x-google-jwks_uri: "https://auth-dev.oya.world/.well-known/jwks.json"
     x-google-audiences: "http://google_api"
