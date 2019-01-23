@@ -5,6 +5,7 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.ostelco.simcards.adapter.HlrAdapter
 import org.ostelco.simcards.adapter.ProfileVendorAdapter
+import org.ostelco.simcards.adapter.Wg2HlrAdapter
 import org.skife.jdbi.v2.StatementContext
 import org.skife.jdbi.v2.sqlobject.*
 import org.skife.jdbi.v2.sqlobject.customizers.BatchChunkSize
@@ -20,6 +21,7 @@ import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.AtomicLong
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.Response
+import kotlin.reflect.KClass
 
 
 enum class HlrState {
@@ -259,12 +261,13 @@ abstract class SimInventoryDAO {
     }
 
     @SqlUpdate("""INSERT INTO hlr_adapters
-                                   (NAME)
-                       SELECT :name
+                                   (name, provider)
+                       SELECT :name, :provider
                        WHERE  NOT EXISTS (SELECT 1
                                           FROM   hlr_adapters
-                                          WHERE  NAME = :name)""")
-    abstract fun addHlrAdapter(@Bind("name") name: String): Int
+                                          WHERE  name = :name)""")
+    abstract fun addHlrAdapter(@Bind("name") name: String,
+                               @Bind("provider") provider: String): Int
 
     @SqlQuery("SELECT * FROM hlr_adapters WHERE name = :name")
     @RegisterMapper(HlrAdapterMapper::class)
@@ -284,17 +287,21 @@ abstract class SimInventoryDAO {
 
             val id = row.getLong("id")
             val name = row.getString("name")
+            val provider = row.getString("provider")
 
-            return HlrAdapter(id = id, name = name)
+            return if (provider.toLowerCase() == "wg2")
+                Wg2HlrAdapter(id = id, name = name)
+            else
+                null
         }
     }
 
     @SqlUpdate("""INSERT INTO profile_vendor_adapters
-                                   (NAME)
+                                   (name)
                        SELECT :name
                        WHERE  NOT EXISTS (SELECT 1
                                           FROM   profile_vendor_adapters
-                                          WHERE  NAME = :name) """)
+                                          WHERE  name = :name) """)
     abstract fun addProfileVendorAdapter(@Bind("name") name: String): Int
 
     @SqlQuery("SELECT * FROM profile_vendor_adapters WHERE name = :name")

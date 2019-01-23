@@ -106,6 +106,7 @@ class SimAdministrationTest {
      */
 
     val hlr = "Foo"
+    val hlrProvider = "wg2"
     val profileVendor = "Bar"
     val simProfile = "FooTel_STD"
 
@@ -126,7 +127,7 @@ class SimAdministrationTest {
         val dao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
 
         dao.addProfileVendorAdapter(profileVendor)
-        dao.addHlrAdapter(hlr)
+        dao.addHlrAdapter(hlr, hlrProvider)
         dao.permitVendorForHlrByNames(profileVendor = profileVendor, hlr = hlr)
     }
 

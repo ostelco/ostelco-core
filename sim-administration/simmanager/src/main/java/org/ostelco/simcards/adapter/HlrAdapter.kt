@@ -1,7 +1,6 @@
 package org.ostelco.simcards.adapter
 
-import com.fasterxml.jackson.annotation.JsonProperty
-import org.ostelco.simcards.inventory.HlrState
+import org.ostelco.simcards.admin.HlrConfig
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import javax.ws.rs.client.Client
@@ -13,9 +12,9 @@ import javax.ws.rs.client.Client
  * When a VLR asks the HLR for the an authentication triplet, then the
  * HLR will know that it should give an answer.
  */
-data class HlrAdapter(
-        @JsonProperty("id") val id: Long,
-        @JsonProperty("name") val name: String) {
+interface HlrAdapter {
+    val id: Long
+    val name: String
 
     /**
      * Requests the external HLR service to activate the SIM profile.
@@ -24,10 +23,7 @@ data class HlrAdapter(
      * @param simEntry  SIM profile to activate
      * @return Updated SIM profile
      */
-    fun activate(client: Client, dao: SimInventoryDAO, simEntry: SimEntry) : SimEntry? {
-        // XXX TBD
-        return dao.setHlrState(simEntry.id!!, HlrState.ACTIVATED)
-    }
+    fun activate(client: Client, config: HlrConfig, dao: SimInventoryDAO, simEntry: SimEntry) : SimEntry?
 
     /**
      * Requests the external HLR service to deactivate the SIM profile.
@@ -36,8 +32,5 @@ data class HlrAdapter(
      * @param simEntry  SIM profile to deactivate
      * @return Updated SIM profile
      */
-    fun deactivate(client: Client, dao: SimInventoryDAO, simEntry: SimEntry) : SimEntry? {
-        // XXX TBD
-        return dao.setHlrState(simEntry.id!!, HlrState.NOT_ACTIVATED)
-    }
+    fun deactivate(client: Client, config: HlrConfig, dao: SimInventoryDAO, simEntry: SimEntry) : SimEntry?
 }

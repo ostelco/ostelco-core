@@ -1,6 +1,7 @@
 package org.ostelco.simcards.inventory
 
 import org.hibernate.validator.constraints.NotEmpty
+import org.ostelco.simcards.admin.HlrConfig
 import org.ostelco.simcards.admin.SimAdministrationConfiguration
 import org.ostelco.simcards.admin.ProfileVendorConfig
 import java.io.IOException
@@ -52,8 +53,12 @@ class SimInventoryResource(private val client: Client,
         val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
         assertCorrectHlr(hlr, hlr == hlrAdapter.name)
 
+        val config: HlrConfig = assertNonNull(config.hlrVendors.filter {
+            it.name == hlrAdapter.name
+        }.firstOrNull())
+
         return try {
-            hlrAdapter.activate(client, dao, simEntry)
+            hlrAdapter.activate(client, config, dao, simEntry)
         } catch (e: Exception) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }
@@ -69,8 +74,12 @@ class SimInventoryResource(private val client: Client,
         val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
         assertCorrectHlr(hlr, hlr == hlrAdapter.name)
 
+        val config: HlrConfig = assertNonNull(config.hlrVendors.filter {
+            it.name == hlrAdapter.name
+        }.firstOrNull())
+
         return try {
-            hlrAdapter.deactivate(client, dao, simEntry)
+            hlrAdapter.deactivate(client, config, dao, simEntry)
         } catch (e: Exception) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }
