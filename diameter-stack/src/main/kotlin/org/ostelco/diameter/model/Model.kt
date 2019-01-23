@@ -25,12 +25,16 @@ object RequestType {
 /**
  * Internal representation of the Credit-Control-Answer
  */
-data class CreditControlAnswer(val multipleServiceCreditControls: List<MultipleServiceCreditControl>)
+data class CreditControlAnswer(val resultCode: ResultCode, val multipleServiceCreditControls: List<MultipleServiceCreditControl>)
 
-enum class CreditControlResultCode(val value: Int) {
+enum class ResultCode(val value: Int) {
+    DIAMETER_SUCCESS(2001),
     DIAMETER_END_USER_SERVICE_DENIED(4010),
     DIAMETER_CREDIT_CONTROL_NOT_APPLICABLE(4011),
     DIAMETER_CREDIT_LIMIT_REACHED(4012),
+    DIAMETER_INVALID_AVP_VALUE(5004),
+    DIAMETER_MISSING_AVP(5005),
+    DIAMETER_UNABLE_TO_COMPLY(5012),
     DIAMETER_RATING_FAILED(5031),
     DIAMETER_USER_UNKNOWN(5030)
 }
@@ -108,12 +112,14 @@ class MultipleServiceCreditControl() {
     @AvpField(Avp.REPORTING_REASON)
     var reportingReason: ReportingReason? = null
 
+    var resultCode: ResultCode = ResultCode.DIAMETER_SUCCESS
+
     var validityTime = 86400
 
     // https://tools.ietf.org/html/rfc4006#section-8.34
     var finalUnitIndication: FinalUnitIndication? = null
 
-    constructor(ratingGroup: Long, serviceIdentifier: Long, requested: List<ServiceUnit>, used: ServiceUnit, granted: ServiceUnit, validityTime: Int, finalUnitIndication: FinalUnitIndication?) : this() {
+    constructor(ratingGroup: Long, serviceIdentifier: Long, requested: List<ServiceUnit>, used: ServiceUnit, granted: ServiceUnit, validityTime: Int, finalUnitIndication: FinalUnitIndication?, resultCode: ResultCode) : this() {
         this.ratingGroup = ratingGroup
         this.serviceIdentifier = serviceIdentifier
         this.requested = requested
@@ -121,6 +127,7 @@ class MultipleServiceCreditControl() {
         this.granted = granted
         this.validityTime = validityTime
         this.finalUnitIndication = finalUnitIndication
+        this.resultCode = resultCode
     }
 }
 
@@ -209,7 +216,7 @@ enum class UserEquipmentInfoType {
 
 data class SessionContext(
         val sessionId: String,
-        val originHost: String,
-        val originRealm: String,
-        val apn: String,
-        val mccMnc: String)
+        val originHost: String?,
+        val originRealm: String?,
+        val apn: String?,
+        val mccMnc: String?)
