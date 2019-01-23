@@ -54,30 +54,25 @@ class SimInventoryUnitTests {
             id = 1L,
             profileVendorId = 1L,
             hlrId = 1L,
-            batch = 99L,
-            iccid = fakeIccid1,
-            imsi = fakeImsi1,
-            eid = "bb",
+            msisdn = "",
+            eid = "",
             hlrState = HlrState.NOT_ACTIVATED,
             smdpPlusState = SmDpPlusState.NOT_ACTIVATED,
-            pin1 = "ss",
-            pin2 = "ss",
-            puk1 = "ss",
-            puk2 = "ss")
-    private val fakeSimEntryWithMsisdn = SimEntry(
-            id = 2L,
-            profileVendorId = 1L,
-            hlrId = 1L,
             batch = 99L,
-            iccid = fakeIccid1,
             imsi = fakeImsi1,
-            eid = "bb",
+            iccid = fakeIccid1,
+            pin1 = "0000",
+            pin2 = "0000",
+            puk1 = "0000",
+            puk2 = "0000")
+
+    private val fakeSimEntryWithMsisdn = fakeSimEntryWithoutMsisdn.copy(
+            msisdn = fakeMsisdn1,
+            eid = fakeEid,
             hlrState = HlrState.ACTIVATED,
-            smdpPlusState = SmDpPlusState.NOT_ACTIVATED,
-            pin1 = "ss",
-            pin2 = "ss",
-            puk1 = "ss",
-            puk2 = "ss")
+            smdpPlusState = SmDpPlusState.ACTIVATED
+    )
+
 
     @Before
     fun setUp() {
