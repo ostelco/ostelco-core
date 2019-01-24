@@ -257,6 +257,21 @@ spec:
             secretKeyRef:
               name: stripe-secrets
               key: stripeEndpointSecret
+        - name: SCANINFO_STORAGE_BUCKET
+          valueFrom:
+            secretKeyRef:
+              name: scaninfo-secrets
+              key: bucketName
+        - name: JUMIO_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: jumio-secrets
+              key: apiToken
+        - name: JUMIO_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: jumio-secrets
+              key: apiSecret
         volumeMounts:
         - name: secret-config
           mountPath: "/secret"
