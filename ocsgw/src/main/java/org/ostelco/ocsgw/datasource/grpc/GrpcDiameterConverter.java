@@ -21,9 +21,7 @@ class GrpcDiameterConverter {
         return new MultipleServiceCreditControl(
                 msccGRPC.getRatingGroup(),
                 (int) msccGRPC.getServiceIdentifier(),
-                Collections.singletonList(new org.ostelco.diameter.model.ServiceUnit()),
-                new org.ostelco.diameter.model.ServiceUnit(),
-                new org.ostelco.diameter.model.ServiceUnit(msccGRPC.getGranted().getTotalOctets(), 0, 0),
+                Collections.singletonList(new ServiceUnit()), new ServiceUnit(), new ServiceUnit(msccGRPC.getGranted().getTotalOctets(), 0, 0),
                 msccGRPC.getValidityTime(),
                 convertFinalUnitIndication(msccGRPC.getFinalUnitIndication()),
                 convertResultCode(msccGRPC.getResultCode()));
@@ -64,7 +62,7 @@ class GrpcDiameterConverter {
     }
 
     // We match the error codes on names in gRPC and internal model
-    static org.ostelco.diameter.model.ResultCode convertResultCode(org.ostelco.ocs.api.ResultCode resultCode) {
-        return org.ostelco.diameter.model.ResultCode.valueOf(resultCode.name());
+    static ResultCode convertResultCode(org.ostelco.ocs.api.ResultCode resultCode) {
+        return ResultCode.valueOf(resultCode.name());
     }
 }
