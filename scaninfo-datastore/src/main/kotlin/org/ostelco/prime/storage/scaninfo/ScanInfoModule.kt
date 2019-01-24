@@ -6,7 +6,7 @@ import io.dropwizard.Configuration
 import io.dropwizard.setup.Environment
 import org.ostelco.prime.module.PrimeModule
 
-@JsonTypeName("scaninfo-datastore")
+@JsonTypeName("scaninfo-store")
 class ScanInfoModule : PrimeModule {
 
     @JsonProperty
@@ -26,7 +26,6 @@ class ScanInfoModule : PrimeModule {
  */
 class ScanInfoConfig : Configuration() {
     var storeType = "default"
-    var namespace = ""
 }
 
 object ConfigRegistry {

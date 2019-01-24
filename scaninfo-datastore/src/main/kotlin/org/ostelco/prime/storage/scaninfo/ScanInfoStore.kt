@@ -84,7 +84,6 @@ object ScanInformationStoreSingleton : ScanInformationStore {
             Either.monad<StoreError>().binding {
                 // Only works with local files
                 val fileName = "$scanId.zip"
-                logger.info("No bucket set, saving file locally $fileName")
                 JumioHelper.loadLocalZipFile(fileName).bind()
             }.fix()
         }.unsafeRunSync()

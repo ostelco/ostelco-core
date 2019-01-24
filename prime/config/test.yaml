@@ -37,7 +37,7 @@ modules:
     configFile: /secret/pantel-prod.json
 - type: admin
 - type: graphql
-- type: scaninfo-datastore
+- type: scaninfo-store
   config:
     storeType: emulator
 server:

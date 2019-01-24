@@ -52,7 +52,7 @@ class ScanInfoStoreTest {
             Mockito.`when`(testEnvVars.getVar("JUMIO_API_SECRET")).thenReturn("")
             Mockito.`when`(testEnvVars.getVar("SCANINFO_STORAGE_BUCKET")).thenReturn("")
             ConfigRegistry.config = ScanInfoConfig()
-                    .apply { this.datastoreType = "inmemory-emulator" }
+                    .apply { this.storeType = "emulator" }
             ScanInformationStoreSingleton.init(null, testEnvVars)
         }
 
