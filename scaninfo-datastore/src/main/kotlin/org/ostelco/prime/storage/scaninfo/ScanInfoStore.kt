@@ -4,29 +4,29 @@ import arrow.core.Either
 import arrow.core.fix
 import arrow.effects.IO
 import arrow.instances.either.monad.monad
-import com.codahale.metrics.health.HealthCheck
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.cloud.NoCredentials
-import com.google.cloud.datastore.*
-import com.google.cloud.datastore.testing.LocalDatastoreHelper
-import com.google.cloud.http.HttpTransportOptions
+import com.google.cloud.datastore.Blob
 import com.google.cloud.storage.BlobId
 import com.google.cloud.storage.BlobInfo
 import com.google.cloud.storage.StorageException
 import com.google.cloud.storage.StorageOptions
 import io.dropwizard.setup.Environment
 import org.ostelco.prime.getLogger
-import org.ostelco.prime.model.*
-import org.ostelco.prime.storage.*
+import org.ostelco.prime.model.JumioScanData
+import org.ostelco.prime.model.VendorScanData
+import org.ostelco.prime.model.VendorScanInformation
+import org.ostelco.prime.storage.FileDownloadError
+import org.ostelco.prime.storage.NotCreatedError
+import org.ostelco.prime.storage.ScanInformationStore
+import org.ostelco.prime.storage.StoreError
+import java.io.*
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.*
-import javax.ws.rs.core.MultivaluedMap
 import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
-import java.io.*
-import java.io.FileOutputStream
 import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
+import javax.ws.rs.core.MultivaluedMap
 
 
 class ScanInfoStore : ScanInformationStore by ScanInformationStoreSingleton
@@ -90,8 +90,8 @@ object ScanInformationStoreSingleton : ScanInformationStore {
         }.unsafeRunSync()
     }
 
-    fun init(env: Environment?, environmentVars:EnvironmentVars) {
-        if (ConfigRegistry.config.datastoreType != "inmemory-emulator") {
+    fun init(env: Environment?, environmentVars: EnvironmentVars) {
+        if (ConfigRegistry.config.storeType != "emulator") {
             // Don't throw error during local tests
             apiToken = environmentVars.getVar("JUMIO_API_TOKEN")
                     ?: throw Error("Missing environment variable JUMIO_API_TOKEN")
@@ -112,7 +112,7 @@ object ScanInformationStoreSingleton : ScanInformationStore {
 
 /**
  * A utility for downloading and creating the scan information for Jumio clients.
-*/
+ */
 object JumioHelper {
     /**
      * Retrieves the contents of a file from a URL
@@ -136,8 +136,7 @@ object JumioHelper {
             val fileData = Blob.copyFrom(inputStream)
             inputStream.close()
             return Either.right(Pair(fileData, contentType))
-        }
-        catch (e: IOException) {
+        } catch (e: IOException) {
             val statusMessage = "IOException: $e"
             return Either.left(FileDownloadError(fileURL, statusMessage))
         } finally {
@@ -146,7 +145,7 @@ object JumioHelper {
     }
 
     fun generateVendorScanInformation(vendorData: MultivaluedMap<String, String>, apiToken: String, apiSecret: String): Either<StoreError, VendorScanInformation> {
-        var scanImage:Blob? = null
+        var scanImage: Blob? = null
         var scanImageType: String? = null
         var scanImageBackside: Blob? = null
         var scanImageBacksideType: String? = null
@@ -156,8 +155,8 @@ object JumioHelper {
         val scanId: String = vendorData.getFirst(JumioScanData.SCAN_ID.s)
         val scanDetails: String = ObjectMapper().writeValueAsString(vendorData)
         val scanImageUrl: String? = vendorData.getFirst(JumioScanData.SCAN_IMAGE.s)
-        val scanImageBacksideUrl:String? = vendorData.getFirst(JumioScanData.SCAN_IMAGE_BACKSIDE.s)
-        val scanImageFaceUrl:String? = vendorData.getFirst(JumioScanData.SCAN_IMAGE_FACE.s)
+        val scanImageBacksideUrl: String? = vendorData.getFirst(JumioScanData.SCAN_IMAGE_BACKSIDE.s)
+        val scanImageFaceUrl: String? = vendorData.getFirst(JumioScanData.SCAN_IMAGE_FACE.s)
 
         return IO {
             Either.monad<StoreError>().binding {
@@ -228,12 +227,12 @@ object JumioHelper {
         if (idx == -1) {
             return mimeType
         } else {
-            return mimeType.drop(idx+1)
+            return mimeType.drop(idx + 1)
         }
     }
 
     fun uploadZipFile(bucket: String, fileName: String, data: ByteArray): Either<StoreError, String> {
-       val storage = StorageOptions.getDefaultInstance().getService()
+        val storage = StorageOptions.getDefaultInstance().getService()
         val blobId = BlobId.of(bucket, fileName)
         val blobInfo = BlobInfo.newBuilder(blobId).setContentType("application/octet-stream").build()
         var mediaLink: String

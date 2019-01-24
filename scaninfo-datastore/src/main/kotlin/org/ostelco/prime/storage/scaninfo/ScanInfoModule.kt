@@ -25,7 +25,7 @@ class ScanInfoModule : PrimeModule {
  * The configuration for Scan Information Datastore module.
  */
 class ScanInfoConfig : Configuration() {
-    var datastoreType = "default"
+    var storeType = "default"
     var namespace = ""
 }
 

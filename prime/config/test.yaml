@@ -39,7 +39,7 @@ modules:
 - type: graphql
 - type: scaninfo-datastore
   config:
-    datastoreType: emulator
+    storeType: emulator
 server:
   applicationConnectors:
   - type: h2c
