@@ -74,12 +74,12 @@ object ScanInformationStoreSingleton : ScanInformationStore {
         }.unsafeRunSync()
     }
 
-    fun createVendorScanInformation(vendorData: MultivaluedMap<String, String>): Either<StoreError, VendorScanInformation> {
+    private fun createVendorScanInformation(vendorData: MultivaluedMap<String, String>): Either<StoreError, VendorScanInformation> {
         return JumioHelper.generateVendorScanInformation(vendorData, apiToken, apiSecret)
     }
 
 
-    fun __getVendorScanInformation(subscriberId: String, scanId: String): Either<StoreError, ZipInputStream> {
+    internal fun __getVendorScanInformation(subscriberId: String, scanId: String): Either<StoreError, ZipInputStream> {
         return IO {
             Either.monad<StoreError>().binding {
                 // Only works with local files
