@@ -91,7 +91,6 @@ object ScanInformationStoreSingleton : ScanInformationStore {
 
     fun init(env: Environment?, environmentVars: EnvironmentVars) {
         if (ConfigRegistry.config.storeType != "emulator") {
-            logger.info("Initializing vars with ENVIRONMENT variables")
             // Don't throw error during local tests
             apiToken = environmentVars.getVar("JUMIO_API_TOKEN")
                     ?: throw Error("Missing environment variable JUMIO_API_TOKEN")
@@ -100,7 +99,6 @@ object ScanInformationStoreSingleton : ScanInformationStore {
             storageBucket = environmentVars.getVar("SCANINFO_STORAGE_BUCKET")
                     ?: throw Error("Missing environment variable SCANINFO_STORAGE_BUCKET")
         } else {
-            logger.info("Initializing vars with empty Strings")
             apiToken = ""
             apiSecret = ""
             storageBucket = ""
