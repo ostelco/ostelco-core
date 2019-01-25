@@ -654,6 +654,9 @@ class PurchaseTest {
 }
 
 class eKYCTest {
+    val imgUrl = "https://www.gstatic.com/webp/gallery3/1.png"
+    val imgUrl2 = "https://www.gstatic.com/webp/gallery3/2.png"
+
     @Test
     fun `jersey test - GET new-ekyc-scanId - generate new scanId for eKYC`() {
 
@@ -843,6 +846,7 @@ class eKYCTest {
 
             assertNotNull(newScanInfo.scanId, message = "Failed to get new scanId")
 
+
             dataMap.clear()
             dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
             dataMap.put("idScanStatus", listOf("SUCCESS"))
@@ -854,6 +858,9 @@ class eKYCTest {
             dataMap.put("idLastName", listOf("Test Family"))
             dataMap.put("idDob", listOf("1990-12-09"))
             dataMap.put("merchantIdScanReference", listOf(newScanInfo.scanId))
+            dataMap.put("idScanImage", listOf(imgUrl))
+            dataMap.put("idScanImageBackside", listOf(imgUrl2))
+
 
             post<ScanInformation>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
                 path = "/ekyc/callback"
@@ -897,6 +904,8 @@ class eKYCTest {
             dataMap.put("idLastName", listOf("Test Family"))
             dataMap.put("idDob", listOf("1990-12-09"))
             dataMap.put("merchantIdScanReference", listOf(scanInfo.scanId))
+            dataMap.put("idScanImage", listOf(imgUrl))
+            dataMap.put("idScanImageBackside", listOf(imgUrl2))
 
             post<ScanInformation>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
                 path = "/ekyc/callback"
@@ -977,6 +986,8 @@ class eKYCTest {
             dataMap.put("idLastName", listOf("Test Family"))
             dataMap.put("idDob", listOf("1990-12-09"))
             dataMap.put("merchantIdScanReference", listOf(newScanInfo.scanId))
+            dataMap.put("idScanImage", listOf(imgUrl))
+            dataMap.put("idScanImageBackside", listOf(imgUrl2))
 
             post<ScanInformation>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
                 path = "/ekyc/callback"

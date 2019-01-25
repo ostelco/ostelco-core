@@ -232,6 +232,15 @@ kubectl create secret generic metrics-ostelco-ssl \
   --from-file=certs/dev.ostelco.org/nginx.crt \
   --from-file=certs/dev.ostelco.org/nginx.key
 ```
+
+```bash
+kubectl create secret generic jumio-secrets --from-literal=apiToken='jumioApiToken' --from-literal=apiSecret='jumioApiSecret'
+```
+
+```bash
+kubectl create secret generic scaninfo-secrets --from-literal=bucketName='bucketname'
+```
+
 ### Cloud Pub/Sub
 
 ```bash
