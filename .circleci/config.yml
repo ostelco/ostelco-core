@@ -203,6 +203,8 @@ jobs:
             gcloud endpoints services deploy ocs_descriptor.pb prime/infra/new-dev/ocs-api.yaml
             gcloud endpoints services deploy metrics_descriptor.pb prime/infra/new-dev/metrics-api.yaml
             gcloud endpoints services deploy prime/infra/new-dev/prime-client-api.yaml
+            gcloud endpoints services deploy prime/infra/new-dev/prime-webhooks.yaml
+            gcloud endpoints services deploy prime/infra/new-dev/prime-houston-api.yaml
       
       - run:
            name: notify slack on failure
@@ -285,6 +287,8 @@ jobs:
             gcloud endpoints services deploy ocs_descriptor.pb prime/infra/new-prod/ocs-api.yaml
             gcloud endpoints services deploy metrics_descriptor.pb prime/infra/new-prod/metrics-api.yaml
             gcloud endpoints services deploy prime/infra/new-prod/prime-client-api.yaml
+            # gcloud endpoints services deploy prime/infra/new-prod/prime-webhooks.yaml
+            # gcloud endpoints services deploy prime/infra/new-prod/prime-houston-api.yaml
       
       - run:
            name: notify slack on failure
