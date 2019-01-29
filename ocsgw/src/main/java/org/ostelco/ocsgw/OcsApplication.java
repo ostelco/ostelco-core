@@ -119,11 +119,12 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
 
     @Override
     public Answer processRequest(Request request) {
-        LOG.info("<< Received Request");
+        LOG.info("<< Received Request [{}]", request.getSessionId());
         try {
             ServerCCASessionImpl session =
                     (sessionFactory).getNewAppSession(request.getSessionId(), ApplicationId.createByAuthAppId(4L), ServerCCASession.class);
             session.processRequest(request);
+            LOG.info("processRequest finished [{}]", request.getSessionId());
         }
         catch (InternalException e) {
             LOG.error(">< Failure handling received request.", e);
@@ -139,7 +140,7 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
             case RequestType.INITIAL_REQUEST:
             case RequestType.UPDATE_REQUEST:
             case RequestType.TERMINATION_REQUEST:
-                LOG.info("<< Received Credit-Control-Request from P-GW [ {} ]", RequestType.getTypeAsString(request.getRequestTypeAVPValue()));
+                LOG.info("<< Received Credit-Control-Request from P-GW [ {} ] [{}]", RequestType.getTypeAsString(request.getRequestTypeAVPValue()), session.getSessionId());
                 try {
                     OcsServer.getInstance().handleRequest(session, request);
                 } catch (Exception e) {
