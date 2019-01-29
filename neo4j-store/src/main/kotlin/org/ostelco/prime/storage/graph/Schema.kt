@@ -339,6 +339,15 @@ class UniqueRelationStore<FROM: HasId, TO: HasId>(private val relationType: Rela
         }
     }
 
+    fun getFrom(to: String, transaction: Transaction) : Either<StoreError, List<FROM>> {
+        return read("""MATCH (from:${relationType.from.name})-[r:${relationType.relation.name}]->(to:${relationType.to.name} {id: '${to}'})
+                RETURN from""".trimMargin(), transaction) {
+            Either.cond(it.hasNext(),
+                    ifTrue = { it.list { relationType.from.createEntity(it["from"].asMap()) }.filterNotNull() },
+                    ifFalse = { NotFoundError(relationType.relation.name, to) })
+        }
+    }
+
     fun create(from: String, to: String, transaction: Transaction) : Either<StoreError, Unit> {
         return write("""MATCH (from:${relationType.from.name} {id: '${from}'}),(to:${relationType.to.name} {id: '${to}'})
                 MERGE (from)-[:${relationType.relation.name}]->(to)""".trimMargin(), transaction) {

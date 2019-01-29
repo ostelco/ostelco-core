@@ -1,5 +1,5 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.3.10"
+  id "org.jetbrains.kotlin.jvm" version "1.3.11"
   id "application"
   id "com.github.johnrengelman.shadow" version "4.0.3"
   id "idea"
@@ -18,7 +18,7 @@ sourceSets {
   }
 }
 
-version = "1.20.0"
+version = "1.21.0"
 
 repositories {
   maven {
@@ -31,7 +31,7 @@ dependencies {
   implementation project(':prime-modules')
 
   // prime-modules
-  runtimeOnly project(':ocs')
+  runtimeOnly project(':ocs-ktc')
   runtimeOnly project(':firebase-store')
   runtimeOnly project(':neo4j-store')
   runtimeOnly project(':pseudonym-server')
@@ -44,6 +44,7 @@ dependencies {
   runtimeOnly project(':slack')
   runtimeOnly project(':imei-lookup')
   runtimeOnly project(':jersey')
+  runtimeOnly project(':scaninfo-datastore')
 
   implementation "io.dropwizard:dropwizard-http2:$dropwizardVersion"
   runtimeOnly "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"

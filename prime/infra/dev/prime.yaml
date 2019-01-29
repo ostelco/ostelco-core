@@ -108,7 +108,7 @@ spec:
     app: prime
     tier: backend
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: prime
@@ -116,7 +116,11 @@ metadata:
     app: prime
     tier: backend
 spec:
-  replicas: 1
+  replicas: 3
+  selector:
+    matchLabels:
+      app: prime
+      tier: backend
   template:
     metadata:
       labels:
@@ -253,6 +257,21 @@ spec:
             secretKeyRef:
               name: stripe-secrets
               key: stripeEndpointSecret
+        - name: SCANINFO_STORAGE_BUCKET
+          valueFrom:
+            secretKeyRef:
+              name: scaninfo-secrets
+              key: bucketName
+        - name: JUMIO_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: jumio-secrets
+              key: apiToken
+        - name: JUMIO_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: jumio-secrets
+              key: apiSecret
         volumeMounts:
         - name: secret-config
           mountPath: "/secret"

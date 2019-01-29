@@ -1,0 +1,49 @@
+logging:
+  level: INFO
+
+simBatchData: sample-sim-batch-for-sm-dp+.csv
+
+openApi:
+  name: SM-DP-emulator
+  description: Test fixture simulating ES2+ interactions of an SM-DP+
+  termsOfService: http://example.org
+  contactEmail: rmz@telenordigital.com
+  resourcePackage: org.ostelco
+
+httpClient:
+
+  # The minimum number of threads to use for asynchronous calls.
+  minThreads: 1
+
+  # The maximum number of threads to use for asynchronous calls.
+  maxThreads: 128
+
+  # If true, the client will automatically decode response entities
+  # with gzip content encoding.
+  gzipEnabled: true
+
+  # If true, the client will encode request entities with gzip
+  # content encoding. (Requires gzipEnabled to be true).
+  gzipEnabledForRequests: true
+
+
+# Maybe this can help https://stackoverflow.com/questions/35002780/setting-up-ssl-in-dropwizard
+server:
+  type: simple
+  connector:
+    type: https
+    port: 8443
+    jceProvider: Conscrypt
+    # keyStoreType: JKS
+#    keyStorePath: ../certificate-authority-simulated/crypto-artefacts/sm-dp-plus/sk_keys.jks
+#    keyStorePassword: superSecreet
+    keyStoreType: PKCS12
+    keyStorePath: ../certificate-authority-simulated/mykeystore.pkcs12
+    keyStorePassword: superSecreet
+
+    #trustStorePath: ../certificate-authority-simulated/crypto-artefacts/sm-dp-plus/sk_trust.jks
+    #trustStorePassword: superSecreet
+    certAlias: sm-dp-plus_sk.crt
+    validateCerts: false
+    validatePeers: false
+

@@ -33,6 +33,7 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
 
     private static final Logger LOG = LoggerFactory.getLogger(OcsApplication.class);
     private static final String DIAMETER_CONFIG_FILE = "server-jdiameter-config.xml";
+    private static final String CONFIG_FOLDER = "/config/";
     private static final long APPLICATION_ID = 4L;  // Diameter Credit Control Application (4)
     private static Stack stack = null;
 
@@ -41,7 +42,18 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
         Runtime.getRuntime().addShutdownHook(new Thread(OcsApplication::shutdown));
 
         OcsApplication app = new OcsApplication();
-        app.start("/config/");
+
+        String configFile = System.getenv("DIAMETER_CONFIG_FILE");
+        if (configFile == null) {
+            configFile = DIAMETER_CONFIG_FILE;
+        }
+
+        String configFolder = System.getenv("CONFIG_FOLDER");
+        if (configFolder == null) {
+            configFolder = CONFIG_FOLDER;
+        }
+
+        app.start(configFolder, configFile);
     }
 
 
@@ -57,7 +69,7 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
         }
     }
 
-    private void fetchConfig(final String configDir) {
+    private void fetchConfig(final String configDir, final String configFile) {
         final String vpcEnv = System.getenv("VPC_ENV");
         final String instance = System.getenv("INSTANCE");
         final String serviceFile = System.getenv("SERVICE_FILE");
@@ -68,8 +80,8 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
 
             Storage storage = StorageOptions.getDefaultInstance().getService();
 
-            Blob blobConfigFile = storage.get(BlobId.of(bucket, DIAMETER_CONFIG_FILE));
-            final Path destConfigurationFilePath = Paths.get(configDir + "/" + DIAMETER_CONFIG_FILE);
+            Blob blobConfigFile = storage.get(BlobId.of(bucket, configFile));
+            final Path destConfigurationFilePath = Paths.get(configDir + "/" + configFile);
             blobConfigFile.downloadTo(destConfigurationFilePath);
 
             Blob blobServiceAccountFile = storage.get(BlobId.of(bucket, serviceFile));
@@ -79,12 +91,12 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
     }
 
 
-    public void start(final String configDir) {
+    public void start(final String configDir, final String configFile) {
         try {
 
-            fetchConfig(configDir);
+            fetchConfig(configDir, configFile);
 
-            Configuration diameterConfig = new XMLConfiguration(configDir +  DIAMETER_CONFIG_FILE);
+            Configuration diameterConfig = new XMLConfiguration(configDir +  configFile);
             stack = new StackImpl();
             stack.init(diameterConfig);
 

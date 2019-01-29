@@ -3,7 +3,9 @@ package org.ostelco.prime.model
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.google.cloud.datastore.Blob
 import com.google.firebase.database.Exclude
+import java.time.Instant
 
 interface HasId {
     val id: String
@@ -39,6 +41,95 @@ data class Subscriber(
     override val id: String
         @JsonIgnore
         get() = email
+}
+
+
+enum class SubscriberStatus {
+    REGISTERED,         // User has registered an account, eKYC results are pending
+    EKYC_REJECTED,      // eKYC documents were rejected
+    EKYC_APPROVED,      // eKYC documents were approved
+    ACTIVE,             // Subscriber is active
+    INACTIVE            // Inactive subscriber
+}
+
+data class SubscriberState(
+        val status: SubscriberStatus,   // Current status of the subscriber
+        val modifiedTimestamp: Long,    // last modification time of the subscriber status
+        val scanId: String?,            // id of the last successful scan.
+        override val id: String
+): HasId
+
+enum class ScanStatus {
+    PENDING,        // scan results are pending
+    REJECTED,       // scanned Id was rejected
+    APPROVED        // scanned Id was approved
+}
+
+data class ScanResult(
+        val vendorScanReference: String,
+        val verificationStatus: String,
+        val time: Long,
+        val type: String?,
+        val country: String?,
+        val firstName: String?,
+        val lastName: String?,
+        val dob: String?,
+        val rejectReason: String?
+)
+
+data class ScanInformation(
+        val scanId:String,
+        val status: ScanStatus,
+        val scanResult: ScanResult?
+) : HasId {
+
+    override val id: String
+        @Exclude
+        @JsonIgnore
+        get() = scanId
+}
+
+data class VendorScanInformation(
+        val scanId: String,                     // Id of the scan
+        val scanDetails: String,                // JSON string representation of all the information from vendor
+        val scanImage: Blob?,                   // image of the scan (JPEG or PNG)
+        val scanImageType: String?,             // type of image (e.g. image/jpg)
+        val scanImageBackside: Blob?,           // back side image of the scan (JPEG or PNG) if available
+        val scanImageBacksideType: String?,     // type of back side image (e.g. image/jpg)
+        val scanImageFace: Blob?,               // face image of the scan (JPEG or PNG) if available
+        val scanImageFaceType: String?          // type of face image (e.g. image/jpg)
+)
+
+enum class JumioScanData(val s: String) {
+    // Property names in POST data from Jumio
+    JUMIO_SCAN_ID("jumioIdScanReference"),
+    SCAN_ID("merchantIdScanReference"),
+    SCAN_STATUS("idScanStatus"),
+    VERIFICATION_STATUS("verificationStatus"),
+    CALLBACK_DATE("callbackDate"),
+    ID_TYPE("idType"),
+    ID_COUNTRY("idCountry"),
+    ID_FIRSTNAME("idFirstName"),
+    ID_LASTNAME("idLastName"),
+    ID_DOB("idDob"),
+    SCAN_IMAGE("idScanImage"),
+    SCAN_IMAGE_FACE("idScanImageFace"),
+    SCAN_IMAGE_BACKSIDE("idScanImageBackside"),
+    REJECT_REASON("rejectReason")
+}
+
+enum class VendorScanData(val s: String) {
+    // Property names in VendorScanInformation
+    ID("scanId"),
+    DETAILS("scanDetails"),
+    IMAGE("scanImage"),
+    IMAGE_TYPE("scanImageType"),
+    IMAGEBACKSIDE("scanImageBackside"),
+    IMAGEBACKSIDE_TYPE("scanImageBacksideType"),
+    IMAGEFACE("scanImageFace"),
+    IMAGEFACE_TYPE("scanImageFaceType"),
+    // Name of the datastore type
+    TYPE_NAME("VendorScanInformation")
 }
 
 // TODO vihang: make ApplicationToken data class immutable
@@ -92,8 +183,8 @@ data class Plan(
         val price: Price,
         val interval: String,
         val intervalCount: Long = 1L,
-        val planId: String = "",
-        val productId: String = "") : HasId {
+        val properties: Map<String, String> = emptyMap(),
+        val presentation: Map<String, String> = emptyMap()) : HasId {
 
     override val id: String
         @JsonIgnore

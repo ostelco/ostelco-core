@@ -25,4 +25,4 @@ RUN ["java", "-Dfile.encoding=UTF-8", "-Xshare:on", "-Xshare:dump", "-jar", "/bq
 # Finally the actual entry point
 #
 
-ENTRYPOINT ["/start.sh"]
+CMD ["/start.sh"]

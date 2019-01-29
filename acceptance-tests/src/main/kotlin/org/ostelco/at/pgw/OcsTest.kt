@@ -11,6 +11,7 @@ import org.ostelco.at.common.createSubscription
 import org.ostelco.at.common.getLogger
 import org.ostelco.at.common.randomInt
 import org.ostelco.at.jersey.get
+import org.ostelco.diameter.model.FinalUnitAction
 import org.ostelco.diameter.model.RequestType
 import org.ostelco.diameter.test.TestClient
 import org.ostelco.diameter.test.TestHelper
@@ -29,12 +30,16 @@ class OcsTest {
 
     private val logger by getLogger()
 
+    //configuration file
+    private val configFile = "client-jdiameter-config.xml"
+
     private var testClient: TestClient? = null
 
     @Before
     fun setUp() {
         testClient = TestClient()
-        testClient?.initStack("/")
+        testClient?.initStack("/", configFile)
+        createTestUserAndSubscription()
     }
 
     @After
@@ -160,12 +165,15 @@ class OcsTest {
                 session
         ) ?: fail("Failed to create request")
 
-        TestHelper.createInitRequest(request.avps, "4333333333", BUCKET_SIZE)
+
+        // Requesting one more bucket then the balance for the user
+        TestHelper.createInitRequest(request.avps, MSISDN, INITIAL_BALANCE + BUCKET_SIZE)
 
         client.sendNextRequest(request, session)
 
         waitForAnswer()
 
+        // First request should reserve the full balance
         run {
             assertEquals(2001L, client.resultCodeAvp?.integer32?.toLong())
             val resultAvps = client.resultAvps ?: fail("Missing AVPs")
@@ -176,9 +184,11 @@ class OcsTest {
             assertEquals(2001L, resultMSCC.grouped.getAvp(Avp.RESULT_CODE).integer32.toLong())
             assertEquals(1, resultMSCC.grouped.getAvp(Avp.SERVICE_IDENTIFIER_CCA).integer32.toLong())
             val granted = resultMSCC.grouped.getAvp(Avp.GRANTED_SERVICE_UNIT)
-            assertEquals(0L, granted.grouped.getAvp(Avp.CC_TOTAL_OCTETS).unsigned64)
+            assertEquals(INITIAL_BALANCE, granted.grouped.getAvp(Avp.CC_TOTAL_OCTETS).unsigned64)
+            var finalUnitIndication = resultMSCC.grouped.getAvp(Avp.FINAL_UNIT_INDICATION)
+            assertEquals(FinalUnitAction.TERMINATE.ordinal, finalUnitIndication.grouped.getAvp(Avp.FINAL_UNIT_ACTION).integer32)
         }
-        // There is 2 step in graceful shutdown. First OCS send terminate, then P-GW report used units in a final update
+        // There is 2 step in graceful shutdown. First OCS send terminate in Final-Unit-Indication, then P-GW report used units in a final update
 
         val updateRequest = client.createRequest(
                 DEST_REALM,
@@ -186,7 +196,7 @@ class OcsTest {
                 session
         ) ?: fail("Failed to create request")
 
-        TestHelper.createUpdateRequestFinal(updateRequest.avps, "4333333333")
+        TestHelper.createUpdateRequestFinal(updateRequest.avps, MSISDN, INITIAL_BALANCE)
 
         client.sendNextRequest(updateRequest, session)
 
@@ -205,13 +215,13 @@ class OcsTest {
             assertEquals(86400L, validTime.unsigned32)
         }
 
-        // Last step is user disconnecting connection forcing a terminate
+        // Last step is P-GW sending CCR-Terminate
         val terminateRequest = client.createRequest(
                 DEST_REALM,
                 DEST_HOST,
                 session
         ) ?: fail("Failed to create request")
-        TestHelper.createTerminateRequest(terminateRequest.avps, "4333333333")
+        TestHelper.createTerminateRequest(terminateRequest.avps, MSISDN)
 
         client.sendNextRequest(terminateRequest, session)
 
@@ -223,6 +233,36 @@ class OcsTest {
             assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
             assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
             assertEquals(RequestType.TERMINATION_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+        }
+    }
+
+
+    @Test
+    fun creditControlRequestInitUnknownUser() {
+
+        val client = testClient ?: fail("Test client is null")
+
+        val session = client.createSession() ?: fail("Failed to create session")
+        val request = client.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        ) ?: fail("Failed to create request")
+
+
+        // Requesting bucket for msisdn not in our system
+        TestHelper.createInitRequest(request.avps, "93682751", BUCKET_SIZE)
+
+        client.sendNextRequest(request, session)
+
+        waitForAnswer()
+
+        run {
+            assertEquals(5030L, client.resultCodeAvp?.integer32?.toLong())
+            val resultAvps = client.resultAvps ?: fail("Missing AVPs")
+            assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
+            assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
+            assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
         }
     }
 
@@ -255,8 +295,6 @@ class OcsTest {
         private lateinit var EMAIL: String
         private lateinit var MSISDN: String
 
-        @BeforeClass
-        @JvmStatic
         fun createTestUserAndSubscription() {
 
             EMAIL = "ocs-${randomInt()}@test.com"

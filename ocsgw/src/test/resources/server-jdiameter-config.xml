@@ -74,6 +74,7 @@
     </Realms>
   </Network>
 
-  <Extensions />
+  <Extensions/>
+
 
 </Configuration>
