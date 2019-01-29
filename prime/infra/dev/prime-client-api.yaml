@@ -75,7 +75,7 @@ paths:
           description: "User not found."
       security:
         - auth0_jwt: []
-  "/customer/scanStatus":
+  "/customer/scanStatus/{scanId}":
     get:
       description: "Get status of eKYC scan."
       produces:
