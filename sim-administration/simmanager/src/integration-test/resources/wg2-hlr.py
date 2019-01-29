@@ -1,9 +1,10 @@
 #! /usr/bin/python
 
 import os
+import sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-PORT = 9081
+PORT = int(os.getenv("PORT", "8080"))
 
 class handler(BaseHTTPRequestHandler):
 

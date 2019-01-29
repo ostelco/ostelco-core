@@ -33,6 +33,9 @@ class SimAdministrationTest {
         private lateinit var jdbi: DBI
         private lateinit var client: Client
 
+        /* Emulated HLR port. */
+        private var HLR_PORT = (20_000..50_000).random()
+
         @JvmField
         @ClassRule
         val psql = KPostgresContainer("postgres:11-alpine")
@@ -52,20 +55,11 @@ class SimAdministrationTest {
 
         @JvmField
         @ClassRule
-        val HLR_RULE = KGenericContainer("alpine:3.8")
-                .withExposedPorts(8080)
-                .withEnv(mapOf(
-                        "PORT" to "8080",
-                        "RESPONSE" to "HTTP/1.1 200 OK\r\nConnection: keep-alive\r\n\r\nOK\r\n"
-                ))
-                .withCommand( "/bin/sh", "-c", String.format("while : ; do echo -en \"\$RESPONSE\" | nc -l -p \"\$PORT\"; done"))
-
-        @JvmField
-        @ClassRule
         val WG2_HLR_RULE = KGenericContainer("python:3-alpine")
-                .withExposedPorts(9081)
+                .withExposedPorts(HLR_PORT)
                 .withClasspathResourceMapping("wg2-hlr.py", "/service.py",
                         BindMode.READ_ONLY)
+                .withEnv("PORT", "${HLR_PORT}")
                 .withCommand( "python", "/service.py")
 
         @JvmField
@@ -142,10 +136,26 @@ class SimAdministrationTest {
 
     @Test
     fun ping() {
-        val response = client.target("http://localhost:${WG2_HLR_RULE.getMappedPort(9081)}/ping")
+        val response = client.target("http://localhost:${WG2_HLR_RULE.getMappedPort(HLR_PORT)}/ping")
                 .request()
                 .get()
         assertThat(response.status).isEqualTo(200)
+    }
+
+    @Test
+    fun testActivateWithHlr() {
+        val apiKey = "nope"
+        val payload = mapOf(
+                "bssid" to hlr,
+                "iccid" to "8901000000000000001",
+                "msidn" to "4790000001",
+                "userid" to "userid"
+        )
+        val response = client.target("http://localhost:${WG2_HLR_RULE.getMappedPort(HLR_PORT)}/default/provision/activate")
+                .request(MediaType.APPLICATION_JSON)
+                .header("x-api-key", apiKey)
+                .post(Entity.entity(payload, MediaType.APPLICATION_JSON))
+        assertThat(response.status).isEqualTo(201)
     }
 
     @Test
@@ -158,22 +168,6 @@ class SimAdministrationTest {
 
         val simEntry = response.readEntity(SimEntry::class.java)
         assertThat(simEntry.iccid).isEqualTo(iccid)
-    }
-
-    @Test
-    fun testActivateWithHlr() {
-        val apiKey = "nope"
-        val payload = mapOf(
-                "bssid" to hlr,
-                "iccid" to "8901000000000000001",
-                "msidn" to "4790000001",
-                "userid" to "userid"
-        )
-        val response = client.target("http://localhost:${WG2_HLR_RULE.getMappedPort(9081)}/default/provision/activate")
-                .request(MediaType.APPLICATION_JSON)
-                .header("x-api-key", apiKey)
-                .post(Entity.entity(payload, MediaType.APPLICATION_JSON))
-        assertThat(response.status).isEqualTo(201)
     }
 
     @Test
