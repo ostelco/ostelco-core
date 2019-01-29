@@ -24,12 +24,12 @@ import org.ostelco.diameter.util.DiameterUtilities
 class CreditControlContext(
         val sessionId: String,
         val originalCreditControlRequest: JCreditControlRequest,
-        val originHost: String,
-        val originRealm: String) {
+        private val originHost: String,
+        private val originRealm: String) {
 
     private val logger by logger()
 
-    // Set to true, when answer to not to be sent to P-GW. Default value is false.
+    // Set to true, when answer to not to be sent to P-GW.
     var skipAnswer: Boolean = false
 
     val creditControlRequest: CreditControlRequest = AvpParser().parse(
@@ -54,36 +54,9 @@ class CreditControlContext(
             ccaAvps.addAvp(Avp.ORIGIN_HOST, originHost, true, false, true)
             ccaAvps.addAvp(Avp.ORIGIN_REALM, originRealm, true, false, true)
 
-            for (mscc in creditControlAnswer.multipleServiceCreditControls) {
+            addMultipleServiceCreditControls(ccaAvps, creditControlAnswer)
 
-                val answerMSCC = ccaAvps.addGroupedAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL, true, false)
-                if (mscc.ratingGroup > 0) {
-                    answerMSCC.addAvp(Avp.RATING_GROUP, mscc.ratingGroup, true, false, true)
-                }
-
-                if (mscc.serviceIdentifier > 0) {
-                    // This is a bug in jDiameter due to which this unsigned32 field has to be set as Int and not Long.
-                    answerMSCC.addAvp(Avp.SERVICE_IDENTIFIER_CCA, mscc.serviceIdentifier.toInt(), true, false)
-                }
-
-                if (originalCreditControlRequest.requestTypeAVPValue != RequestType.TERMINATION_REQUEST) {
-
-                    if (mscc.finalUnitIndication != null) {
-                        addFinalUnitAction(answerMSCC, mscc)
-                    }
-
-                    if (mscc.granted.total > -1) {
-                        val gsuAvp = answerMSCC.addGroupedAvp(Avp.GRANTED_SERVICE_UNIT, true, false)
-                        gsuAvp.addAvp(Avp.CC_INPUT_OCTETS, 0L, true, false)
-                        gsuAvp.addAvp(Avp.CC_OUTPUT_OCTETS, 0L, true, false)
-                        gsuAvp.addAvp(Avp.CC_TOTAL_OCTETS, mscc.granted.total, true, false)
-                    }
-                }
-
-                answerMSCC.addAvp(Avp.RESULT_CODE, mscc.resultCode.value, true, false)
-                answerMSCC.addAvp(Avp.VALIDITY_TIME, mscc.validityTime, true, false)
-            }
-            logger.info("Created Credit-Control-Answer [{}]", creditControlRequest.msisdn)
+            logger.info("Created Credit-Control-Answer")
             DiameterUtilities().printAvps(ccaAvps)
 
         } catch (e: InternalException) {
@@ -91,6 +64,40 @@ class CreditControlContext(
         }
 
         return answer
+    }
+
+    private fun addMultipleServiceCreditControls(ccaAvps: AvpSet, creditControlAnswer: CreditControlAnswer) {
+        for (mscc in creditControlAnswer.multipleServiceCreditControls) {
+
+            val answerMSCC = ccaAvps.addGroupedAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL, true, false)
+            if (mscc.ratingGroup > 0) {
+                answerMSCC.addAvp(Avp.RATING_GROUP, mscc.ratingGroup, true, false, true)
+            }
+
+            if (mscc.serviceIdentifier > 0) {
+                // This is a bug in jDiameter due to which this unsigned32 field has to be set as Int and not Long.
+                answerMSCC.addAvp(Avp.SERVICE_IDENTIFIER_CCA, mscc.serviceIdentifier.toInt(), true, false)
+            }
+
+            if (originalCreditControlRequest.requestTypeAVPValue != RequestType.TERMINATION_REQUEST) {
+
+                if (mscc.finalUnitIndication != null) {
+                    addFinalUnitAction(answerMSCC, mscc)
+                }
+
+                if (mscc.granted.total > -1) {
+                    val gsuAvp = answerMSCC.addGroupedAvp(Avp.GRANTED_SERVICE_UNIT, true, false)
+                    gsuAvp.addAvp(Avp.CC_INPUT_OCTETS, 0L, true, false)
+                    gsuAvp.addAvp(Avp.CC_OUTPUT_OCTETS, 0L, true, false)
+                    gsuAvp.addAvp(Avp.CC_TOTAL_OCTETS, mscc.granted.total, true, false)
+                }
+            }
+            logger.info("Created Credit-Control-Answer [{}]", creditControlRequest.msisdn)
+            DiameterUtilities().printAvps(ccaAvps)
+
+            answerMSCC.addAvp(Avp.RESULT_CODE, mscc.resultCode.value, true, false)
+            answerMSCC.addAvp(Avp.VALIDITY_TIME, mscc.validityTime, true, false)
+        }
     }
 
     private fun addFinalUnitAction(answerMSCC: AvpSet, mscc: MultipleServiceCreditControl) {

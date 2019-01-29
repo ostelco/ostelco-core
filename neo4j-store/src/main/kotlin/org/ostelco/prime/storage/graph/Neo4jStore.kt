@@ -33,14 +33,7 @@ import org.ostelco.prime.paymentprocessor.core.ForbiddenError
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
-import org.ostelco.prime.storage.AlreadyExistsError
-import org.ostelco.prime.storage.GraphStore
-import org.ostelco.prime.storage.NotCreatedError
-import org.ostelco.prime.storage.NotDeletedError
-import org.ostelco.prime.storage.NotFoundError
-import org.ostelco.prime.storage.NotUpdatedError
-import org.ostelco.prime.storage.StoreError
-import org.ostelco.prime.storage.ValidationError
+import org.ostelco.prime.storage.*
 import org.ostelco.prime.storage.graph.Graph.read
 import org.ostelco.prime.storage.graph.Graph.write
 import org.ostelco.prime.storage.graph.Relation.BELONG_TO_SEGMENT
@@ -54,6 +47,7 @@ import org.ostelco.prime.storage.graph.Relation.REFERRED
 import java.time.Instant
 import java.util.*
 import java.util.stream.Collectors
+import javax.ws.rs.core.MultivaluedMap
 
 enum class Relation {
     HAS_SUBSCRIPTION,      // (Subscriber) -[HAS_SUBSCRIPTION]-> (Subscription)
@@ -76,6 +70,7 @@ class Neo4jStore : GraphStore by Neo4jStoreSingleton
 object Neo4jStoreSingleton : GraphStore {
 
     private val logger by getLogger()
+    private val scanInformationDatastore by lazy { getResource<ScanInformationStore>() }
 
     //
     // Entity
@@ -684,7 +679,7 @@ object Neo4jStoreSingleton : GraphStore {
     //
 
     private fun createSubscriberState(subscriberId: String, status: SubscriberStatus, transaction: PrimeTransaction): Either<StoreError, SubscriberState> {
-        val state = SubscriberState(status, Date().time, subscriberId)
+        val state = SubscriberState(status, Date().time, null, subscriberId)
         return subscriberStateStore.create(state, transaction).flatMap {
             subscriberStateRelationStore.create(subscriberId, subscriberId, transaction)
                     .map { state }
@@ -699,12 +694,12 @@ object Neo4jStoreSingleton : GraphStore {
                 )
     }
 
-    private fun updateSubscriberState(subscriberId: String, status: SubscriberStatus, transaction: PrimeTransaction): Either<StoreError, SubscriberState> {
+    private fun updateSubscriberState(subscriberId: String, status: SubscriberStatus, scanId:String?, transaction: PrimeTransaction): Either<StoreError, SubscriberState> {
         return subscriberStateStore.get(subscriberId, transaction)
                 .fold(
                         { createSubscriberState(subscriberId, status, transaction) },
                         {
-                            val state = SubscriberState(status, Date().time, subscriberId)
+                            val state = SubscriberState(status, Date().time, scanId, subscriberId)
                             subscriberStateStore.update(state, transaction)
                                     .map { state }
                         }
@@ -760,18 +755,21 @@ object Neo4jStoreSingleton : GraphStore {
         subscriberStore.getRelated(subscriberId, scanInformationRelation, transaction)
     }
 
-    override fun updateScanInformation(scanInformation: ScanInformation): Either<StoreError, Unit> = writeTransaction {
+    override fun updateScanInformation(scanInformation: ScanInformation, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit> = writeTransaction {
         logger.info("updateScanInformation : ${scanInformation.scanId} status: ${scanInformation.status}")
         getSubscriberId(scanInformation.scanId, transaction).flatMap { subscriber ->
             scanInformationStore.update(scanInformation, transaction).flatMap {
                 logger.info("updating scan Information for : ${subscriber.email} id: ${scanInformation.scanId} status: ${scanInformation.status}")
                 getOrCreateSubscriberState(subscriber.id, SubscriberStatus.REGISTERED, transaction).flatMap { subcriberState ->
                     if (scanInformation.status == ScanStatus.APPROVED && (subcriberState.status == SubscriberStatus.REGISTERED || subcriberState.status == SubscriberStatus.EKYC_REJECTED)) {
-                        // Update the state if the scan was successul and we are waiting for eKYC results
-                        updateSubscriberState(subscriber.id, SubscriberStatus.EKYC_APPROVED, transaction).map { Unit }
+                        // Update the scan information store with the new scan data
+                        scanInformationDatastore.upsertVendorScanInformation(subscriber.id, vendorData).flatMap {
+                            // Update the state if the scan was successful and we are waiting for eKYC results
+                            updateSubscriberState(subscriber.id, SubscriberStatus.EKYC_APPROVED, scanInformation.scanId, transaction).map { Unit }
+                        }
                     } else if (scanInformation.status == ScanStatus.REJECTED && subcriberState.status == SubscriberStatus.REGISTERED) {
                         // Update the state if the scan was a failure and we are waiting for eKYC results
-                        updateSubscriberState(subscriber.id, SubscriberStatus.EKYC_REJECTED, transaction).map { Unit }
+                        updateSubscriberState(subscriber.id, SubscriberStatus.EKYC_REJECTED, null, transaction).map { Unit }
                     } else {
                         // Remain in the previous state
                         Either.right(Unit)

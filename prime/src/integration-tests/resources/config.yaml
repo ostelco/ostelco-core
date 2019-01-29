@@ -28,7 +28,9 @@ modules:
   config:
     configFile: config/pantel-prod.json
 - type: admin
-
+- type: scaninfo-store
+  config:
+    storeType: emulator
 server:
   applicationConnectors:
   - type: h2c
