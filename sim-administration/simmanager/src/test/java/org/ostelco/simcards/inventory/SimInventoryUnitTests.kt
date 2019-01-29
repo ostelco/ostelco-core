@@ -259,7 +259,8 @@ class SimInventoryUnitTests {
 
     @Test
     fun testActivateAll() {
-        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/esim/$fakeEid/all")
+        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/esim/all")
+                .queryParam("eid", fakeEid)
                 .queryParam("iccid", fakeIccid1)
                 .request(MediaType.APPLICATION_JSON)
                 .post(Entity.json(null))
@@ -271,7 +272,8 @@ class SimInventoryUnitTests {
 
     @Test
     fun testActivateEsim() {
-        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/esim/${fakeEid}")
+        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/esim")
+                .queryParam("eid", fakeEid)
                 .queryParam("iccid", fakeIccid1)
                 .request(MediaType.APPLICATION_JSON)
                 .post(Entity.json(null))

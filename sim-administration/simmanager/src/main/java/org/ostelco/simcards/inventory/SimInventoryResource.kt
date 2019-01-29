@@ -120,22 +120,22 @@ class SimInventoryResource(private val client: Client,
     }
 
     @POST
-    @Path("esim/{eid}/all")
+    @Path("esim/all")
     @Produces(MediaType.APPLICATION_JSON)
     fun activateAllEsimProfileByIccid(
             @NotEmpty @PathParam("hlrVendors") hlr: String,
-            @NotEmpty @PathParam("eid") eid: String,
+            @QueryParam("eid") eid: String?,
             @QueryParam("iccid") iccid: String?): SimEntry? {
         val simEntry = assertNonNull(activateEsimProfileByIccid(hlr, eid, iccid))
         return activateHlrProfileByIccid(hlr, simEntry.iccid)
     }
 
     @POST
-    @Path("esim/{eid}")
+    @Path("esim")
     @Produces(MediaType.APPLICATION_JSON)
     fun activateEsimProfileByIccid(
             @NotEmpty @PathParam("hlrVendors") hlr: String,
-            @NotEmpty @PathParam("eid") eid: String,
+            @QueryParam("eid") eid: String?,
             @QueryParam("iccid") iccid: String?): SimEntry? {
         val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
         val simEntry = assertNonNull(if (iccid.isNullOrEmpty())

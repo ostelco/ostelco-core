@@ -104,6 +104,16 @@ class SimAdministrationTest {
     val profileVendor = "Bar"
     val simProfile = "FooTel_STD"
 
+    /* ICCID with corresponding EID. To be expanded as needed.
+       On changes update same table in SmDpPlus emulator (in the "SmDpPlusApplication"
+       class). */
+    val iccidToEidTable = mapOf(
+            "8901000000000000001" to "01010101010101010101010101010101",
+            "8901000000000000019" to "01010101010101010101010101010110",
+            "8901000000000000027" to "01010101010101010101010101011100",
+            "8901000000000000035" to "01010101010101010101010101111100"
+    )
+
     @Before
     fun setupTables() {
         clearTables()
@@ -173,8 +183,9 @@ class SimAdministrationTest {
     @Test
     fun testActivateEsim() {
         val iccid = "8901000000000000001"
-        val eid = "01010101010101010101010101010101"
-        val response = client.target("http://localhost:${SIM_MANAGER_RULE.getLocalPort()}/ostelco/sim-inventory/${hlr}/esim/${eid}")
+        val eid = iccidToEidTable.getOrDefault(iccid, null)
+        val response = client.target("http://localhost:${SIM_MANAGER_RULE.getLocalPort()}/ostelco/sim-inventory/${hlr}/esim")
+                .queryParam("eid", eid)
                 .queryParam("iccid", iccid)
                 .request()
                 .post(Entity.json(null))
@@ -188,9 +199,29 @@ class SimAdministrationTest {
     }
 
     @Test
+    fun testActivateEsimNoEid() {
+        val iccid = "8901000000000000019"
+        val eid = iccidToEidTable.getOrDefault(iccid, null)
+        val response = client.target("http://localhost:${SIM_MANAGER_RULE.getLocalPort()}/ostelco/sim-inventory/${hlr}/esim")
+                .queryParam("iccid", iccid)
+                .request()
+                .post(Entity.json(null))
+        assertThat(response.status).isEqualTo(200)
+
+        val simEntry = response.readEntity(SimEntry::class.java)
+        assertThat(simEntry.iccid).isEqualTo(iccid)
+        // XXX Add when 'progress' handling has been implemented
+        //assertThat(simEntry.eid).isEqualTo(eid)
+        assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.ACTIVATED)
+        assertThat(simEntry.hlrState).isEqualTo(HlrState.NOT_ACTIVATED)  /* Not yet activated in HLR. */
+    }
+
+    @Test
     fun testActivateNextEsim() {
-        val eid = "10101010101010101010101010101010"
-        val response = client.target("http://localhost:${SIM_MANAGER_RULE.getLocalPort()}/ostelco/sim-inventory/${hlr}/esim/${eid}")
+        val iccid = "8901000000000000027"
+        val eid = iccidToEidTable.getOrDefault(iccid, null)
+        val response = client.target("http://localhost:${SIM_MANAGER_RULE.getLocalPort()}/ostelco/sim-inventory/${hlr}/esim")
+                .queryParam("eid", eid)
                 .request()
                 .post(Entity.json(null))
         assertThat(response.status).isEqualTo(200)

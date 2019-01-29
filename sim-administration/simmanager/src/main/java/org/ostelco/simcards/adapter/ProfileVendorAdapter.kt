@@ -37,7 +37,7 @@ data class ProfileVendorAdapter (
     fun activate(client: Client,
                  config: ProfileVendorConfig,
                  dao: SimInventoryDAO,
-                 eid: String,
+                 eid: String?,
                  simEntry: SimEntry) : SimEntry? {
         return if (downloadOrder(client, config, dao, simEntry) != null)
             confirmOrder(client, config, dao, eid, simEntry)
@@ -72,7 +72,7 @@ data class ProfileVendorAdapter (
             dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ORDER_DOWNLOADED)
     }
 
-    private fun confirmOrder(client: Client, config: ProfileVendorConfig, dao: SimInventoryDAO, eid: String, simEntry: SimEntry) : SimEntry? {
+    private fun confirmOrder(client: Client, config: ProfileVendorConfig, dao: SimInventoryDAO, eid: String?, simEntry: SimEntry) : SimEntry? {
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = "",
                 functionCallIdentifier = ""
@@ -96,8 +96,10 @@ data class ProfileVendorAdapter (
         return if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess)
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         else {
-            dao.setEidOfSimProfile(simEntry.id!!, eid)     /* Update profile with 'eid' value. */
-            dao.setSmDpPlusState(simEntry.id, SmDpPlusState.ACTIVATED)
+            eid?.let {
+                dao.setEidOfSimProfile(simEntry.id!!, eid)     /* Update profile with 'eid' value. */
+            }
+            dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ACTIVATED)
         }
     }
 }
