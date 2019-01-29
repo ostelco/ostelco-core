@@ -64,26 +64,6 @@ class KYCResource {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
 
-    fun isJSON(jsonInString: String): Boolean {
-        try {
-            val mapper = ObjectMapper()
-            mapper.readTree(jsonInString)
-            return true
-        } catch (e: IOException) {
-            return false
-        }
-    }
-    fun convertToPlainText(jsonString: String): String {
-        var plainText = jsonString.replace("\"", "")
-        plainText = plainText.replace(",", " , ")
-        plainText = plainText.replace(":", "-")
-        plainText = plainText.replace("[", "")
-        plainText = plainText.replace("]", "")
-        plainText = plainText.replace("{", "")
-        plainText = plainText.replace("}", "")
-        return plainText
-    }
-
     private fun toRegularMap(m: MultivaluedMap<String, String>?): Map<String, String> {
         val map = HashMap<String, String>()
         if (m == null) {
@@ -95,11 +75,7 @@ class KYCResource {
                 if (sb.length > 0) {
                     sb.append(',')
                 }
-                if (isJSON(s)) {
-                    sb.append(convertToPlainText(s))
-                } else {
-                    sb.append(s)
-                }
+                sb.append(s)
             }
             map[entry.key] = sb.toString()
         }
