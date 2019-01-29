@@ -7,13 +7,10 @@ import org.ostelco.prime.apierror.*
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
-import org.ostelco.prime.model.ScanInformation
-import org.ostelco.prime.model.ScanResult
-import org.ostelco.prime.model.ScanStatus
+import org.ostelco.prime.model.*
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.AdminDataSource
 import java.net.URLDecoder
-import java.text.SimpleDateFormat
 import java.time.Instant
 import java.util.*
 import javax.servlet.http.HttpServletRequest
@@ -118,17 +115,17 @@ class KYCResource {
 
     private fun toScanInformation(dataMap: Map<String, String>): ScanInformation? {
         try {
-            val vendorScanReference: String = dataMap["jumioIdScanReference"]!!
-            val status: ScanStatus = toScanStatus(dataMap["idScanStatus"]!!)
-            val verificationStatus: String = dataMap["verificationStatus"]!!
-            val time: Long = Instant.parse(dataMap["callbackDate"]!!).toEpochMilli()
-            val type: String? = dataMap["idType"]
-            val country: String? = dataMap["idCountry"]
-            val firstName: String? = dataMap["idFirstName"]
-            val lastName: String? = dataMap["idLastName"]
-            val dob: String? = dataMap["idDob"]
-            val rejectReason: String? = dataMap["rejectReason"]
-            val scanId: String = dataMap["merchantIdScanReference"]!!
+            val vendorScanReference: String = dataMap[JumioScanData.JUMIO_SCAN_ID.s]!!
+            val status: ScanStatus = toScanStatus(dataMap[JumioScanData.SCAN_STATUS.s]!!)
+            val verificationStatus: String = dataMap[JumioScanData.VERIFICATION_STATUS.s]!!
+            val time: Long = Instant.parse(dataMap[JumioScanData.CALLBACK_DATE.s]!!).toEpochMilli()
+            val type: String? = dataMap[JumioScanData.ID_TYPE.s]
+            val country: String? = dataMap[JumioScanData.ID_COUNTRY.s]
+            val firstName: String? = dataMap[JumioScanData.ID_FIRSTNAME.s]
+            val lastName: String? = dataMap[JumioScanData.ID_LASTNAME.s]
+            val dob: String? = dataMap[JumioScanData.ID_DOB.s]
+            val rejectReason: String? = dataMap[JumioScanData.REJECT_REASON.s]
+            val scanId: String = dataMap[JumioScanData.SCAN_ID.s]!!
 
             return ScanInformation(scanId, status, ScanResult(
                     vendorScanReference = vendorScanReference,
@@ -157,21 +154,19 @@ class KYCResource {
         dumpRequestInfo(request, httpHeaders, formData)
         val scanInformation = toScanInformation(toRegularMap(formData))
         if (scanInformation == null) {
+            logger.info("Unable to convert scan information from form data")
             val reqError = BadRequestError("Missing mandatory fields in scan result", ApiErrorCode.FAILED_TO_UPDATE_SCAN_RESULTS)
             return Response.status(reqError.status).entity(asJson(reqError)).build()
         }
         logger.info("Updating scan information ${scanInformation.scanId} jumioIdScanReference ${scanInformation.scanResult?.vendorScanReference}")
-        return updateScanInformation(scanInformation).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                {
-                    Response.status(Response.Status.OK).entity(asJson(scanInformation))
-                })
-                .build()
+        return updateScanInformation(scanInformation, formData).fold(
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                        { Response.status(Response.Status.OK).entity(asJson(scanInformation)) }).build()
     }
 
-    private fun updateScanInformation(scanInformation: ScanInformation): Either<ApiError, Unit> {
+    private fun updateScanInformation(scanInformation: ScanInformation, formData: MultivaluedMap<String, String>): Either<ApiError, Unit> {
         return try {
-            return storage.updateScanInformation(scanInformation).mapLeft {
+            return storage.updateScanInformation(scanInformation, formData).mapLeft {
                 logger.error("Failed to update scan information ${scanInformation.scanId} jumioIdScanReference ${scanInformation.scanResult?.vendorScanReference}")
                 NotFoundError("Failed to update scan information. ${it.message}", ApiErrorCode.FAILED_TO_UPDATE_SCAN_RESULTS)
             }

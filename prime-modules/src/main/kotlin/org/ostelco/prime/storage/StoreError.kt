@@ -24,3 +24,8 @@ class ValidationError(
         id: String,
         message: String,
         error: InternalError? = null) : StoreError(type, id, message = message, error = error)
+
+class FileDownloadError(
+        filename: String,
+        status: String,
+        error: InternalError? = null) : StoreError("Download Error", filename,  message = "File download error : $filename, status : $status", error = error)

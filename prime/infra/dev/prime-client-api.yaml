@@ -760,6 +760,9 @@ definitions:
       id:
         description: "User Id"
         type: string
+      scanId:
+        description: "The id for the last successful ekyc scan"
+        type: string
       status:
         description: "Current status of the subscriber"
         type: string
