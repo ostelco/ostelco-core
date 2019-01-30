@@ -3,6 +3,7 @@ package org.ostelco.simcards.adapter
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.ostelco.sim.es2plus.*
 import org.ostelco.simcards.admin.ProfileVendorConfig
+import org.ostelco.simcards.admin.getLogger
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SmDpPlusState
@@ -23,6 +24,8 @@ import javax.ws.rs.core.Response
 data class ProfileVendorAdapter (
         @JsonProperty("id") val id: Long,
         @JsonProperty("name") val name: String) {
+
+    private val logger by getLogger()
 
     /**
      * Requests the external Profile Vendor to activate the
@@ -96,8 +99,16 @@ data class ProfileVendorAdapter (
         return if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess)
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         else {
-            eid?.let {
-                dao.setEidOfSimProfile(simEntry.id!!, eid)     /* Update profile with 'eid' value. */
+            // XXX Is just logging good enough?
+            if (status.eid.isEmpty()) {
+                logger.warn("No EID returned from SM-DP+ service {} for ICCID {}",
+                        config.name, simEntry.iccid)
+            } else {
+                dao.setEidOfSimProfile(simEntry.id!!, status.eid)     /* Update profile with 'eid' value. */
+            }
+            if (!eid.isNullOrEmpty() && eid != status.eid) {
+                logger.warn("EID returned from SM-DP+ service {} does not match provided EID ({} <> {})",
+                        config.name, eid, status.eid)
             }
             dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ACTIVATED)
         }

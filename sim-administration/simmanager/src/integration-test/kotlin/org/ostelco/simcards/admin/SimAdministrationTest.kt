@@ -210,8 +210,7 @@ class SimAdministrationTest {
 
         val simEntry = response.readEntity(SimEntry::class.java)
         assertThat(simEntry.iccid).isEqualTo(iccid)
-        // XXX Add when 'progress' handling has been implemented
-        //assertThat(simEntry.eid).isEqualTo(eid)
+        assertThat(simEntry.eid).isEqualTo(eid)
         assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.ACTIVATED)
         assertThat(simEntry.hlrState).isEqualTo(HlrState.NOT_ACTIVATED)  /* Not yet activated in HLR. */
     }
