@@ -6,11 +6,8 @@ import io.dropwizard.testing.junit.DropwizardAppRule
 import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.jdbi.DBIFactory
 import io.dropwizard.testing.ConfigOverride
-import org.junit.ClassRule
-import org.junit.Test
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.BeforeClass
-import org.junit.Before
+import org.junit.*
 import org.ostelco.simcards.inventory.HlrState
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SmDpPlusState
@@ -101,15 +98,12 @@ class SimAdministrationTest {
     /* Test endpoint. */
     val simManagerEndpoint = "http://localhost:${SIM_MANAGER_RULE.getLocalPort()}/ostelco/sim-inventory"
 
-    /* ICCID with corresponding EID. To be expanded as needed.
-       On changes update same table in SmDpPlus emulator (in the "SmDpPlusApplication"
-       class). */
-    val iccidToEidTable = mapOf(
-            "8901000000000000001" to "01010101010101010101010101010101",
-            "8901000000000000019" to "01010101010101010101010101010110",
-            "8901000000000000027" to "01010101010101010101010101011100",
-            "8901000000000000035" to "01010101010101010101010101111100"
-    )
+    /* Generate a fixed corresponding EID based on ICCID.
+       Same code is used in SM-DP+ emulator. */
+    private fun getEidFromIccid(iccid: String): String? = if (iccid.isNotEmpty())
+        "01010101010101010101" + iccid.takeLast(12)
+    else
+        null
 
     /**
      * Set up SIM Manager DB with test data by reading the 'sample-sim-batch.csv' and
@@ -187,7 +181,7 @@ class SimAdministrationTest {
     @Test
     fun testActivateEsim() {
         val iccid = "8901000000000000001"
-        val eid = iccidToEidTable.getOrDefault(iccid, null)
+        val eid = getEidFromIccid(iccid)
         val response = client.target("${simManagerEndpoint}/${hlr}/esim")
                 .queryParam("eid", eid)
                 .queryParam("iccid", iccid)
@@ -205,7 +199,6 @@ class SimAdministrationTest {
     @Test
     fun testActivateEsimNoEid() {
         val iccid = "8901000000000000019"
-        val eid = iccidToEidTable.getOrDefault(iccid, null)
         val response = client.target("${simManagerEndpoint}/${hlr}/esim")
                 .queryParam("iccid", iccid)
                 .request()
@@ -214,7 +207,7 @@ class SimAdministrationTest {
 
         val simEntry = response.readEntity(SimEntry::class.java)
         assertThat(simEntry.iccid).isEqualTo(iccid)
-        assertThat(simEntry.eid).isEqualTo(eid)
+        assertThat(simEntry.eid).isEqualTo(getEidFromIccid(iccid))
         assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.ACTIVATED)
         assertThat(simEntry.hlrState).isEqualTo(HlrState.NOT_ACTIVATED)
     }
@@ -222,7 +215,7 @@ class SimAdministrationTest {
     @Test
     fun testActivateNextEsim() {
         val iccid = "8901000000000000027"
-        val eid = iccidToEidTable.getOrDefault(iccid, null)
+        val eid = getEidFromIccid(iccid)
         val response = client.target("${simManagerEndpoint}/${hlr}/esim")
                 .queryParam("eid", eid)
                 .request()
@@ -236,9 +229,8 @@ class SimAdministrationTest {
     }
 
     @Test
-    fun testActivateEsimAllNoEid() {
+    fun testActivateEsimNoEidAll() {
         val iccid = "8901000000000000035"
-        val eid = iccidToEidTable.getOrDefault(iccid, null)
         val response = client.target("${simManagerEndpoint}/${hlr}/esim/all")
                 .queryParam("iccid", iccid)
                 .request()
@@ -247,7 +239,22 @@ class SimAdministrationTest {
 
         val simEntry = response.readEntity(SimEntry::class.java)
         assertThat(simEntry.iccid).isEqualTo(iccid)
-        assertThat(simEntry.eid).isEqualTo(eid)
+        assertThat(simEntry.eid).isEqualTo(getEidFromIccid(iccid))
+        assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.ACTIVATED)
+        assertThat(simEntry.hlrState).isEqualTo(HlrState.ACTIVATED)
+    }
+
+    /* XXX Fails due to DB being reset after each test. */
+    @Test
+    @Ignore
+    fun testActivateNextEsimNoEidAll() {
+        val response = client.target("${simManagerEndpoint}/${hlr}/esim/all")
+                .request()
+                .post(Entity.json(null))
+        assertThat(response.status).isEqualTo(200)
+
+        val simEntry = response.readEntity(SimEntry::class.java)
+        assertThat(simEntry.eid).isEqualTo(getEidFromIccid(simEntry.iccid))
         assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.ACTIVATED)
         assertThat(simEntry.hlrState).isEqualTo(HlrState.ACTIVATED)
     }

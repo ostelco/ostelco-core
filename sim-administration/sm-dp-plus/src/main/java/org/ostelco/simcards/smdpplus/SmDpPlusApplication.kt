@@ -199,15 +199,11 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
         return entry
     }
 
-    /* ICCID with corresponding EID. To be expanded as needed.
-       On changes update same table in SIM Manager integration test (in the "SimAdministrationTest"
-       class). */
-    val iccidToEidTable = mapOf(
-            "8901000000000000001" to "01010101010101010101010101010101",
-            "8901000000000000019" to "01010101010101010101010101010110",
-            "8901000000000000027" to "01010101010101010101010101011100",
-            "8901000000000000035" to "01010101010101010101010101111100"
-    )
+    /* Generate a fixed corresponding EID based on ICCID. */
+    private fun getEidFromIccid(iccid: String): String? = if (iccid.isNotEmpty())
+        "01010101010101010101" + iccid.takeLast(12)
+    else
+        null
 
     override fun confirmOrder(eid: String?, iccid: String?, smdsAddress: String?, machingId: String?, confirmationCode: String?, releaseFlag: Boolean): Es2ConfirmOrderResponse {
 
@@ -237,7 +233,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
         }
 
         val eidReturned = if (eid.isNullOrEmpty())
-            iccidToEidTable.getOrDefault(iccid, null)
+            getEidFromIccid(iccid)
         else
             eid
 
