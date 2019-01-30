@@ -121,7 +121,7 @@ class KYCResource {
                 val identityVerification = toRegularMap(identityVerificationData)
                 if (identityVerification == null) {
                     // something gone wrong while parsing identityVerification
-                    rejectReason = "Missing ${JumioScanData.IDENTITY_VERIFICATION.s} information"
+                    rejectReason = """{ "message": "Missing ${JumioScanData.IDENTITY_VERIFICATION.s} information" }"""
                     status = ScanStatus.REJECTED
                 } else {
                     // identityVerification field is present
