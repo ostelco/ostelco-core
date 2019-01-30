@@ -160,6 +160,19 @@ class SimAdministrationTest {
     }
 
     @Test
+    fun testDeactivateWithHlr() {
+        val iccid = "8901000000000000001"
+        val response = client.target("${simManagerEndpoint}/${hlr}/iccid/${iccid}")
+                .request()
+                .delete()
+        assertThat(response.status).isEqualTo(200)
+
+        val simEntry = response.readEntity(SimEntry::class.java)
+        assertThat(simEntry.iccid).isEqualTo(iccid)
+        assertThat(simEntry.hlrState).isEqualTo(HlrState.NOT_ACTIVATED)
+    }
+
+    @Test
     fun testGetIccid() {
         val iccid = "8901000000000000001"
         val response = client.target("${simManagerEndpoint}/${hlr}/iccid/${iccid}")

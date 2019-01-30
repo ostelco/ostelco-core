@@ -30,6 +30,11 @@ data class HlrAdapter(
      * @return Updated SIM profile
      */
     fun activate(client: Client, config: HlrConfig, dao: SimInventoryDAO, simEntry: SimEntry) : SimEntry? {
+        if (simEntry.iccid.isEmpty()) {
+            throw WebApplicationException(String.format("Illegal parameter in SIM activation request to HLR service %s",
+                    config.name),
+                    Response.Status.BAD_REQUEST)
+        }
         val payload = mapOf(
                 "bssid" to config.name,
                 "iccid" to simEntry.iccid,
@@ -41,7 +46,9 @@ data class HlrAdapter(
                 .header("x-api-key", config.apiKey)
                 .post(Entity.entity(payload, MediaType.APPLICATION_JSON))
         if (response.status != 201) {
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
+            throw WebApplicationException(String.format("Failed to deactivate ICCID %s with HLR service %s",
+                    simEntry.iccid, config.name),
+                    Response.Status.BAD_REQUEST)
         }
 
         return dao.setHlrState(simEntry.id!!, HlrState.ACTIVATED)
@@ -55,6 +62,21 @@ data class HlrAdapter(
      * @return Updated SIM profile
      */
     fun deactivate(client: Client, config: HlrConfig, dao: SimInventoryDAO, simEntry: SimEntry) : SimEntry? {
+        if (simEntry.iccid.isEmpty()) {
+            throw WebApplicationException(String.format("Illegal parameter in SIM deactivation request to HLR service %s",
+                    config.name),
+                    Response.Status.BAD_REQUEST)
+        }
+        val response = client.target("${config.url}/deactivate/${simEntry.iccid}")
+                .request(MediaType.APPLICATION_JSON)
+                .header("x-api-key", config.apiKey)
+                .delete()
+        if (response.status != 200) {
+            throw WebApplicationException(String.format("Failed to deactivate ICCID %s with HLR service %s",
+                    simEntry.iccid, config.name),
+                    Response.Status.BAD_REQUEST)
+        }
+
         return dao.setHlrState(simEntry.id!!, HlrState.NOT_ACTIVATED)
     }
 }

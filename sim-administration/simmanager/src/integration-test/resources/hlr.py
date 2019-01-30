@@ -26,12 +26,20 @@ class handler(BaseHTTPRequestHandler):
     def do_POST(self):
         paths = [
             '/default/provision/activate',
-            '/default/provision/deactivate',
         ]
         if self.path in paths and self.path.endswith('/activate'):
             self.send_response(201)
             self.end_headers()
-        elif self.path in paths and self.path.endswith('/deactivate'):
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def do_DELETE(self):
+        paths = [
+            '/default/provision/deactivate',
+        ]
+        front, _ = self.path.rsplit('/', 1)
+        if any(front in p for p  in paths) and front.endswith('/deactivate'):
             self.send_response(200)
             self.end_headers()
         else:
