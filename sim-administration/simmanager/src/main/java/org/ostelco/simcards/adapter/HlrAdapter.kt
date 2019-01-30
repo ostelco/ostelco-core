@@ -33,14 +33,13 @@ data class HlrAdapter(
         val payload = mapOf(
                 "bssid" to config.name,
                 "iccid" to simEntry.iccid,
-                "msidn" to simEntry.msisdn,
+                "msisdn" to simEntry.msisdn,
                 "userid" to config.userId
         )
-        val response = client.target("${config.url}/acivate")
+        val response = client.target("${config.url}/activate")
                 .request(MediaType.APPLICATION_JSON)
                 .header("x-api-key", config.apiKey)
                 .post(Entity.entity(payload, MediaType.APPLICATION_JSON))
-
         if (response.status != 201) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }

@@ -16,7 +16,7 @@ import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SmDpPlusState
 import org.skife.jdbi.v2.DBI
 import org.testcontainers.containers.BindMode
-import org.testcontainers.containers.GenericContainer
+import org.testcontainers.containers.FixedHostPortGenericContainer
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import java.io.FileInputStream
@@ -33,8 +33,8 @@ class SimAdministrationTest {
         private lateinit var jdbi: DBI
         private lateinit var client: Client
 
-        /* Emulated HLR port. */
-        private var HLR_PORT = (20_000..50_000).random()
+        /* Port number exposed to host by the emulated HLR service. */
+        private var HLR_PORT = (20_000..29_999).random()
 
         @JvmField
         @ClassRule
@@ -55,23 +55,24 @@ class SimAdministrationTest {
 
         @JvmField
         @ClassRule
-        val HLR_RULE = KGenericContainer("python:3-alpine")
-                .withExposedPorts(HLR_PORT)
+        val SM_DP_PLUS_RULE = DropwizardAppRule(SmDpPlusApplication::class.java,
+                ResourceHelpers.resourceFilePath("sm-dp-plus.yaml"))
+
+        @JvmField
+        @ClassRule
+        val HLR_RULE = KFixedHostPortGenericContainer("python:3-alpine")
+                .withFixedExposedPort(HLR_PORT, 8080)
+                .withExposedPorts(8080)
                 .withClasspathResourceMapping("hlr.py", "/service.py",
                         BindMode.READ_ONLY)
-                .withEnv("PORT", "${HLR_PORT}")
                 .withCommand( "python", "/service.py")
 
         @JvmField
         @ClassRule
         val SIM_MANAGER_RULE = DropwizardAppRule(SimAdministrationApplication::class.java,
                     ResourceHelpers.resourceFilePath("sim-manager.yaml"),
-                    ConfigOverride.config("database.url", psql.jdbcUrl))
-
-        @JvmField
-        @ClassRule
-        val SM_DP_PLUS_RULE = DropwizardAppRule(SmDpPlusApplication::class.java,
-                ResourceHelpers.resourceFilePath("sm-dp-plus.yaml"))
+                    ConfigOverride.config("database.url", psql.jdbcUrl),
+                    ConfigOverride.config("hlrs[0].url", "http://localhost:${HLR_PORT}/default/provision"))
 
         @BeforeClass
         @JvmStatic
@@ -92,18 +93,12 @@ class SimAdministrationTest {
     /* Kotlin type magic from:
        https://arnabmitra.github.io/jekyll/update/2018/01/18/TestContainers.html */
     class KPostgresContainer(imageName: String) : PostgreSQLContainer<KPostgresContainer>(imageName)
-    class KGenericContainer(imageName: String) : GenericContainer<KGenericContainer>(imageName)
-
-    /**
-     * Set up SIM Manager DB with test data by reading the 'sample-sim-batch.csv' and
-     * load the data to the DB using the SIM Manager 'import-batch' API.
-     */
+    class KFixedHostPortGenericContainer(imageName: String) : FixedHostPortGenericContainer<KFixedHostPortGenericContainer>(imageName)
 
     val hlr = "Foo"
     val profileVendor = "Bar"
 
-    /* Test endpoints. */
-    val hlrEndpoint = "http://localhost:${HLR_RULE.getMappedPort(HLR_PORT)}/default/provision"
+    /* Test endpoint. */
     val simManagerEndpoint = "http://localhost:${SIM_MANAGER_RULE.getLocalPort()}/ostelco/sim-inventory"
 
     /* ICCID with corresponding EID. To be expanded as needed.
@@ -115,6 +110,11 @@ class SimAdministrationTest {
             "8901000000000000027" to "01010101010101010101010101011100",
             "8901000000000000035" to "01010101010101010101010101111100"
     )
+
+    /**
+     * Set up SIM Manager DB with test data by reading the 'sample-sim-batch.csv' and
+     * load the data to the DB using the SIM Manager 'import-batch' API.
+     */
 
     @Before
     fun setupTables() {
@@ -148,18 +148,15 @@ class SimAdministrationTest {
 
     @Test
     fun testActivateWithHlr() {
-        val apiKey = "nope"
-        val payload = mapOf(
-                "bssid" to hlr,
-                "iccid" to "8901000000000000001",
-                "msidn" to "4790000001",
-                "userid" to "userid"
-        )
-        val response = client.target("${hlrEndpoint}/activate")
-                .request(MediaType.APPLICATION_JSON)
-                .header("x-api-key", apiKey)
-                .post(Entity.entity(payload, MediaType.APPLICATION_JSON))
-        assertThat(response.status).isEqualTo(201)
+        val iccid = "8901000000000000001"
+        val response = client.target("${simManagerEndpoint}/${hlr}/iccid/${iccid}")
+                .request()
+                .post(Entity.json(null))
+        assertThat(response.status).isEqualTo(200)
+
+        val simEntry = response.readEntity(SimEntry::class.java)
+        assertThat(simEntry.iccid).isEqualTo(iccid)
+        assertThat(simEntry.hlrState).isEqualTo(HlrState.ACTIVATED)
     }
 
     @Test
