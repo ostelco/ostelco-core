@@ -8,13 +8,15 @@ openApi:
   contactEmail: rmz@telenordigital.com
   resourcePackage: org.ostelco
 
-profileVendors:
-  - name: Idemia
-    url: http://idemia.com
-
 hlrs:
-  - name: Loltel
-    url: http://loltel.com
+  - name: Foo
+    url: http://foo.com/default/provision
+    userId: user
+    apiKey: abc
+
+profileVendors:
+  - name: Bar
+    url: http://bar.com/gsma/rsp2/es2plus
 
 database:
   driverClass: org.postgresql.Driver

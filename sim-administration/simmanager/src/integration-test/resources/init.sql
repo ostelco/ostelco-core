@@ -23,7 +23,6 @@ create table sim_entries (id bigserial primary key,
                           UNIQUE (iccid));
 create table hlr_adapters (id bigserial primary key,
                            name text,
-                           provider text,
                            UNIQUE (name));
 create table profile_vendor_adapters (id bigserial primary key,
                                       name text,

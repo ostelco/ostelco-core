@@ -3,9 +3,8 @@ package org.ostelco.simcards.inventory
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
-import org.ostelco.simcards.adapter.HlrAdapter
 import org.ostelco.simcards.adapter.ProfileVendorAdapter
-import org.ostelco.simcards.adapter.Wg2HlrAdapter
+import org.ostelco.simcards.adapter.HlrAdapter
 import org.skife.jdbi.v2.StatementContext
 import org.skife.jdbi.v2.sqlobject.*
 import org.skife.jdbi.v2.sqlobject.customizers.BatchChunkSize
@@ -21,7 +20,6 @@ import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.AtomicLong
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.Response
-import kotlin.reflect.KClass
 
 
 enum class HlrState {
@@ -261,13 +259,12 @@ abstract class SimInventoryDAO {
     }
 
     @SqlUpdate("""INSERT INTO hlr_adapters
-                                   (name, provider)
-                       SELECT :name, :provider
+                                   (name)
+                       SELECT :name
                        WHERE  NOT EXISTS (SELECT 1
                                           FROM   hlr_adapters
                                           WHERE  name = :name)""")
-    abstract fun addHlrAdapter(@Bind("name") name: String,
-                               @Bind("provider") provider: String): Int
+    abstract fun addHlrAdapter(@Bind("name") name: String): Int
 
     @SqlQuery("SELECT * FROM hlr_adapters WHERE name = :name")
     @RegisterMapper(HlrAdapterMapper::class)
@@ -287,12 +284,8 @@ abstract class SimInventoryDAO {
 
             val id = row.getLong("id")
             val name = row.getString("name")
-            val provider = row.getString("provider")
 
-            return if (provider.toLowerCase() == "wg2")
-                Wg2HlrAdapter(id = id, name = name)
-            else
-                null
+            return HlrAdapter(id = id, name = name)
         }
     }
 

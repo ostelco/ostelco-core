@@ -55,9 +55,9 @@ class SimAdministrationTest {
 
         @JvmField
         @ClassRule
-        val WG2_HLR_RULE = KGenericContainer("python:3-alpine")
+        val HLR_RULE = KGenericContainer("python:3-alpine")
                 .withExposedPorts(HLR_PORT)
-                .withClasspathResourceMapping("wg2-hlr.py", "/service.py",
+                .withClasspathResourceMapping("hlr.py", "/service.py",
                         BindMode.READ_ONLY)
                 .withEnv("PORT", "${HLR_PORT}")
                 .withCommand( "python", "/service.py")
@@ -100,7 +100,6 @@ class SimAdministrationTest {
      */
 
     val hlr = "Foo"
-    val hlrProvider = "wg2"
     val profileVendor = "Bar"
     val simProfile = "FooTel_STD"
 
@@ -131,7 +130,7 @@ class SimAdministrationTest {
         val dao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
 
         dao.addProfileVendorAdapter(profileVendor)
-        dao.addHlrAdapter(hlr, hlrProvider)
+        dao.addHlrAdapter(hlr)
         dao.permitVendorForHlrByNames(profileVendor = profileVendor, hlr = hlr)
     }
 
@@ -146,7 +145,7 @@ class SimAdministrationTest {
 
     @Test
     fun ping() {
-        val response = client.target("http://localhost:${WG2_HLR_RULE.getMappedPort(HLR_PORT)}/ping")
+        val response = client.target("http://localhost:${HLR_RULE.getMappedPort(HLR_PORT)}/ping")
                 .request()
                 .get()
         assertThat(response.status).isEqualTo(200)
@@ -161,7 +160,7 @@ class SimAdministrationTest {
                 "msidn" to "4790000001",
                 "userid" to "userid"
         )
-        val response = client.target("http://localhost:${WG2_HLR_RULE.getMappedPort(HLR_PORT)}/default/provision/activate")
+        val response = client.target("http://localhost:${HLR_RULE.getMappedPort(HLR_PORT)}/default/provision/activate")
                 .request(MediaType.APPLICATION_JSON)
                 .header("x-api-key", apiKey)
                 .post(Entity.entity(payload, MediaType.APPLICATION_JSON))

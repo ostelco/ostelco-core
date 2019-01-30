@@ -50,6 +50,16 @@ class HlrConfig {
     @NotNull
     @JsonProperty("url")
     lateinit var url: String
+
+    @Valid
+    @NotNull
+    @JsonProperty("userId")
+    lateinit var userId: String
+
+    @Valid
+    @NotNull
+    @JsonProperty("apiKey")
+    lateinit var apiKey: String
 }
 
 class ProfileVendorConfig {

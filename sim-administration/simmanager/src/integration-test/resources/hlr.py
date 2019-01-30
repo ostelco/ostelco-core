@@ -1,5 +1,7 @@
 #! /usr/bin/python
 
+# Emulates a generic HLR service for use in integration tests.
+
 import os
 import sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -24,9 +26,13 @@ class handler(BaseHTTPRequestHandler):
     def do_POST(self):
         paths = [
             '/default/provision/activate',
+            '/default/provision/deactivate',
         ]
-        if self.path in paths:
+        if self.path in paths and self.path.endswith('/activate'):
             self.send_response(201)
+            self.end_headers()
+        elif self.path in paths and self.path.endswith('/deactivate'):
+            self.send_response(200)
             self.end_headers()
         else:
             self.send_response(404)
