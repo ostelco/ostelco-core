@@ -92,6 +92,7 @@ class SimAdministrationTest {
     @Test
     fun testGetIccid() {
         val iccid = "8901000000000000001"
+
         val response = client.target("http://localhost:${SIM_MANAGER_RULE.localPort}/ostelco/sim-inventory/${hlr}/iccid/${iccid}")
                 .request()
                 .get()

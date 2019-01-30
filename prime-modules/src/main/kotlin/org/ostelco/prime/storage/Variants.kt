@@ -1,21 +1,11 @@
 package org.ostelco.prime.storage
 
 import arrow.core.Either
-import org.ostelco.prime.model.ApplicationToken
-import org.ostelco.prime.model.Bundle
-import org.ostelco.prime.model.ChangeSegment
-import org.ostelco.prime.model.Offer
-import org.ostelco.prime.model.Plan
-import org.ostelco.prime.model.Product
-import org.ostelco.prime.model.ProductClass
-import org.ostelco.prime.model.PurchaseRecord
-import org.ostelco.prime.model.ScanInformation
-import org.ostelco.prime.model.Segment
-import org.ostelco.prime.model.Subscriber
-import org.ostelco.prime.model.SubscriberState
-import org.ostelco.prime.model.Subscription
+import org.ostelco.prime.model.*
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
+import com.google.cloud.datastore.Blob
+import javax.ws.rs.core.MultivaluedMap
 
 interface ClientDocumentStore {
 
@@ -249,7 +239,7 @@ interface AdminGraphStore {
     fun refundPurchase(subscriberId: String, purchaseRecordId: String, reason: String): Either<PaymentError, ProductInfo>
 
     // update the scan information with scan result
-    fun updateScanInformation(scanInformation: ScanInformation): Either<StoreError, Unit>
+    fun updateScanInformation(scanInformation: ScanInformation, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit>
 
     // Retrieve all scan information for the subscriber
     fun getAllScanInformation(subscriberId: String): Either<StoreError, Collection<ScanInformation>>
@@ -265,4 +255,8 @@ interface AdminGraphStore {
     // fun getOffer(id: String): Offer?
     // fun getSegment(id: String): Segment?
     // fun getProductClass(id: String): ProductClass?
+}
+
+interface ScanInformationStore {
+    fun upsertVendorScanInformation(subscriberId: String, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit>
 }

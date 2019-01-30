@@ -45,7 +45,7 @@ class TestPrimeConfig {
         @JvmStatic
         @BeforeClass
         fun beforeClass() {
-            SUPPORT.before()
+           SUPPORT.before()
         }
 
         @JvmStatic

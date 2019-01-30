@@ -1,5 +1,6 @@
 package org.ostelco.prime.storage.graph
 
+import arrow.core.Either
 import arrow.core.right
 import com.palantir.docker.compose.DockerComposeRule
 import com.palantir.docker.compose.connection.waiting.HealthChecks
@@ -10,20 +11,15 @@ import org.junit.ClassRule
 import org.mockito.Mockito
 import org.neo4j.driver.v1.AccessMode.WRITE
 import org.ostelco.prime.analytics.AnalyticsService
-import org.ostelco.prime.model.Offer
-import org.ostelco.prime.model.Price
-import org.ostelco.prime.model.Product
-import org.ostelco.prime.model.PurchaseRecord
-import org.ostelco.prime.model.ScanInformation
-import org.ostelco.prime.model.ScanResult
-import org.ostelco.prime.model.ScanStatus
-import org.ostelco.prime.model.Segment
-import org.ostelco.prime.model.Subscriber
-import org.ostelco.prime.model.Subscription
+import org.ostelco.prime.model.*
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.storage.ScanInformationStore
+import org.ostelco.prime.storage.StoreError
 import java.time.Instant
 import java.util.*
+import javax.ws.rs.core.MultivaluedHashMap
+import javax.ws.rs.core.MultivaluedMap
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -36,6 +32,9 @@ class MockPaymentProcessor : PaymentProcessor by mockPaymentProcessor
 
 private val mockAnalyticsService = Mockito.mock(AnalyticsService::class.java)
 class MockAnalyticsService : AnalyticsService by mockAnalyticsService
+
+private val mockScanInformationStore = Mockito.mock(ScanInformationStore::class.java)
+class MockScanInformationStore  : ScanInformationStore by mockScanInformationStore
 
 class GraphStoreTest {
 
@@ -377,7 +376,17 @@ class GraphStoreTest {
                             rejectReason = null
                     )
             )
-            Neo4jStoreSingleton.updateScanInformation(newScanInformation).mapLeft {
+            val vendorData: MultivaluedMap<String, String> = MultivaluedHashMap<String, String>()
+            val scanId = "id1"
+            val imgUrl = "https://www.gstatic.com/webp/gallery3/1.png"
+            val imgUrl2 = "https://www.gstatic.com/webp/gallery3/2.png"
+            vendorData.add(JumioScanData.SCAN_ID.s, scanId)
+            vendorData.add(JumioScanData.SCAN_IMAGE.s, imgUrl)
+            vendorData.add(JumioScanData.SCAN_IMAGE_BACKSIDE.s, imgUrl2)
+
+            Mockito.`when`(mockScanInformationStore.upsertVendorScanInformation(subscriberId = EMAIL, vendorData = vendorData)).thenReturn(Either.right(Unit))
+
+            Neo4jStoreSingleton.updateScanInformation(newScanInformation, vendorData).mapLeft {
                 fail(it.message)
             }
         }.mapLeft {
@@ -406,7 +415,14 @@ class GraphStoreTest {
                             rejectReason = null
                     )
             )
-            Neo4jStoreSingleton.updateScanInformation(newScanInformation).bimap(
+            val vendorData: MultivaluedMap<String, String> = MultivaluedHashMap<String, String>()
+            val scanId = "id1"
+            val imgUrl = "https://www.gstatic.com/webp/gallery3/1.png"
+            val imgUrl2 = "https://www.gstatic.com/webp/gallery3/2.png"
+            vendorData.add(JumioScanData.SCAN_ID.s, scanId)
+            vendorData.add(JumioScanData.SCAN_IMAGE.s, imgUrl)
+            vendorData.add(JumioScanData.SCAN_IMAGE_BACKSIDE.s, imgUrl2)
+            Neo4jStoreSingleton.updateScanInformation(newScanInformation, vendorData).bimap(
                     { assertEquals("ScanInformation - fakeId not found.", it.message) },
                     { fail("Expected to fail since scanId is fake.") })
         }.mapLeft {

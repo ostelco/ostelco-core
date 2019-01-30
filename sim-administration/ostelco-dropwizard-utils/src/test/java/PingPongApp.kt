@@ -10,6 +10,7 @@ import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 import org.apache.http.client.HttpClient
 import org.conscrypt.OpenSSLProvider
+
 import org.ostelco.dropwizardutils.CertAuthConfig
 import org.ostelco.dropwizardutils.CertificateAuthorizationFilter
 import org.ostelco.dropwizardutils.RBACService
@@ -27,6 +28,7 @@ import javax.ws.rs.core.SecurityContext
 
 
 class PingPongApp : Application<PingPongAppConfiguration>() {
+
 
     override fun getName(): String {
         return "Dummy application implementing ping/pong protocol, for testing client certificate based authentication"
@@ -52,7 +54,11 @@ class PingPongApp : Application<PingPongAppConfiguration>() {
                             certConfig = config.certConfig)))
 
         this.client = HttpClientBuilder(env).using(
+<<<<<<< HEAD
                 config.httpClientConfiguration).build(name)
+=======
+                config.httpClientConfiguration).build(getName())
+>>>>>>> 2a89a1806d74adebe225e4dcf6142b2d82c671b0
     }
 
     companion object {

@@ -1,4 +1,4 @@
-package org.ostelco.ocsgw.data;
+package org.ostelco.ocsgw.datasource;
 
 
 import org.ostelco.diameter.CreditControlContext;
@@ -10,7 +10,7 @@ import org.ostelco.diameter.CreditControlContext;
 public interface DataSource {
 
     /**
-     *  Initiates the data source
+     *  Initiates the datasource
      */
     void init();
 

@@ -3,6 +3,7 @@ package org.ostelco.sim.es2plus
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.http.HttpResponse
 import org.apache.http.client.HttpClient
+
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
 import javax.ws.rs.client.Client
@@ -55,28 +56,31 @@ class ES2PlusClient(
             req.setHeader("Content-type", "application/json")
             req.setEntity(StringEntity(payload))
 
+
             val result: HttpResponse = httpClient.execute(req) ?: throw ES2PlusClientException("Null response from http httpClient")
 
             // Validate returned response
             val statusCode = result.statusLine.statusCode
             if (expectedReturnCode != statusCode) {
+
                 val msg = "Expected return value $expectedReturnCode, but got ${statusCode}.  Body was \"${result.entity.getContent()}\""
                 throw ES2PlusClientException(msg)
             }
 
             val xAdminProtocolHeader = result.getFirstHeader("X-Admin-Protocol")!!
+
             if (xAdminProtocolHeader == null || xAdminProtocolHeader.value != X_ADMIN_PROTOCOL_HEADER_VALUE) {
                 throw ES2PlusClientException("Expected header X-Admin-Protocol to be '$X_ADMIN_PROTOCOL_HEADER_VALUE' but it was '$xAdminProtocolHeader'")
             }
 
             val returnedContentType = result.getFirstHeader("Content-Type")!!
             val expectedContentType = "application/json"
+
             if (returnedContentType == null || returnedContentType.value != expectedContentType) {
                 throw ES2PlusClientException("Expected header Content-Type to be '$expectedContentType' but was '$returnedContentType'")
             }
 
             val returnValue = objectMapper.readValue(result.getEntity().getContent(), sclass) ?: throw ES2PlusClientException("null return value")
-
             return returnValue
         } else if (jerseyClient != null) {
             val entity: Entity<T> = Entity.entity(es2ProtocolPayload, MediaType.APPLICATION_JSON)
@@ -93,12 +97,14 @@ class ES2PlusClient(
             }
 
             val xAdminProtocolHeader = result.getHeaderString("X-Admin-Protocol")
+
             if (xAdminProtocolHeader == null || xAdminProtocolHeader != X_ADMIN_PROTOCOL_HEADER_VALUE) {
                 throw ES2PlusClientException("Expected header X-Admin-Protocol to be '$X_ADMIN_PROTOCOL_HEADER_VALUE' but it was '$xAdminProtocolHeader'")
             }
 
             val returnedContentType = result.getHeaderString("Content-Type")
             val expectedContentType = "application/json"
+
             if (returnedContentType == null || returnedContentType != expectedContentType) {
                 throw ES2PlusClientException("Expected header Content-Type to be '$expectedContentType' but was '$returnedContentType'")
             }

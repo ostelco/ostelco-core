@@ -13,11 +13,11 @@ import java.util.*
 
 
 /**
- * Serves incoming GRPC analytics requests.
+ * Serves incoming gRPC analytics requests.
  *
  * It's implemented as a subclass of [OcsServiceGrpc.OcsServiceImplBase] overriding
  * methods that together implements the protocol described in the  analytics protobuf
- * file: ocs_analytics.proto
+ * file: analytics.proto
  *`
  * service OcsgwAnalyticsService {
  *    rpc OcsgwAnalyticsEvent (stream OcsgwAnalyticsReport) returns (OcsgwAnalyticsReply) {}

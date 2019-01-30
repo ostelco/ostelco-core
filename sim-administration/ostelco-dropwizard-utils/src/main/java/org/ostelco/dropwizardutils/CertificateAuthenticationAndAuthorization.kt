@@ -84,8 +84,8 @@ class RolesConfig {
     @Valid
     @JsonProperty("definitions")
     @NotNull
-    var roles: MutableList<RoleDef> = mutableListOf()
 
+    var roles: MutableList<RoleDef> = mutableListOf()
 }
 
 class RoleDef {
@@ -135,12 +135,14 @@ class CertificateAuthorizationFilter(val rbac: RBACService) : javax.ws.rs.contai
                 .entity("You cannot access this resource").build()
         private val ACCESS_FORBIDDEN = Response.status(Response.Status.FORBIDDEN)
                 .entity("Access blocked for all users !!").build()
+
         private const val X509_CERTIFICATE_ATTRIBUTE = "javax.servlet.request.X509Certificate"
     }
 
     //  XXX https://stackoverflow.com/questions/34654903/how-to-create-global-and-pre-post-matching-filter-in-restlet
 
     private fun certificateMatches(requestContext: ContainerRequestContext): CertificateRBACUSER? {
+
 
         val clientCert = extractClientCertFromRequest(requestContext) ?: return null
 
@@ -165,12 +167,14 @@ class CertificateAuthorizationFilter(val rbac: RBACService) : javax.ws.rs.contai
 
         val certificateChain = certificatesUncast as Array<X509Certificate>
 
+
         if (certificateChain == null || certificateChain.isEmpty() || certificateChain[0] == null) {
             requestContext.abortWith(buildForbiddenResponse("No certificate chain found!"))
             return null
         }
 
         // The certificate of the client is always the first in the chain.
+
         return certificateChain[0]
     }
 
@@ -179,6 +183,7 @@ class CertificateAuthorizationFilter(val rbac: RBACService) : javax.ws.rs.contai
 
         /* Fast exit if not called with https scheme.
             XXX: There must of course be a better way to do this, or? */
+
         if ("http" == requestContext.uriInfo.baseUri.scheme)
             return
 
@@ -236,6 +241,7 @@ class RBACUserPrincipal(val id: String) : Principal {
         return id
     }
 }
+
 
 class RBACUserIdentity(id: String) : UserIdentity {
 
@@ -303,11 +309,13 @@ data class CertificateRBACUSER(
 
 class RBACService(val rolesConfig: RolesConfig, val certConfig: CertAuthConfig) {
 
+
     val roles: MutableMap<String, RoleDef> = mutableMapOf()
     val users: MutableMap<String, CertificateRBACUSER> = mutableMapOf()
 
     init {
         rolesConfig.roles.forEach {
+
             if (roles.putIfAbsent(it.name!!, it) != null) {
                 throw RuntimeException("Multiple declarations of role ${it.name}")
             }
@@ -323,11 +331,13 @@ class RBACService(val rolesConfig: RolesConfig, val certConfig: CertAuthConfig) 
         if (!roles.containsKey(name)) {
             throw RuntimeException("Unknown role name $name")
         }
+
         return roles[name]!!
     }
 
     // R(val id: String, val commonName: String, val country: String, val state: String, val location: String, val organization: String) : Authentication.User {
     private fun certAuthToUser(cc: CertConfig): CertificateRBACUSER {
+
 
         val usersRoles = mutableSetOf<RoleDef>()
 
@@ -346,6 +356,7 @@ class RBACService(val rolesConfig: RolesConfig, val certConfig: CertAuthConfig) 
     fun findByCertParams(certParams: CertificateIdParameters): CertificateRBACUSER? {
         return users.values.find {
             val cpm = it.asCertificateIdParamerters()
+
             val match = cpm == certParams
             match
         }
@@ -373,6 +384,7 @@ data class CertificateIdParameters(val commonName: String, val country: String, 
                 }
                 val key = split[0].trim()
                 val value = split[1].trim()
+
 
 
                 if ("CN" == key) {

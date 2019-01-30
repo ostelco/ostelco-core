@@ -80,6 +80,7 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
                 httpClient = httpClient)
     }
 
+
     companion object {
 
         @Throws(Exception::class)
@@ -90,7 +91,6 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         }
     }
 }
-
 
 /**
  * A very reduced  functionality SmDpPlus, essentially handling only
@@ -312,5 +312,4 @@ class SmDpPlusAppConfiguration : Configuration() {
     @JsonProperty("roles")
     @NotNull
     var rolesConfig = RolesConfig()
-
 }

@@ -216,7 +216,7 @@ enum class UserEquipmentInfoType {
 
 data class SessionContext(
         val sessionId: String,
-        val originHost: String,
-        val originRealm: String,
-        val apn: String,
-        val mccMnc: String)
+        val originHost: String?,
+        val originRealm: String?,
+        val apn: String?,
+        val mccMnc: String?)
