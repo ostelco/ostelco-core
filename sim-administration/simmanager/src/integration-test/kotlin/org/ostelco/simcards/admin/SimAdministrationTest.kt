@@ -199,7 +199,7 @@ class SimAdministrationTest {
         assertThat(simEntry.iccid).isEqualTo(iccid)
         assertThat(simEntry.eid).isEqualTo(eid)
         assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.ACTIVATED)
-        assertThat(simEntry.hlrState).isEqualTo(HlrState.NOT_ACTIVATED)  /* Not yet activated in HLR. */
+        assertThat(simEntry.hlrState).isEqualTo(HlrState.NOT_ACTIVATED)
     }
 
     @Test
@@ -216,7 +216,7 @@ class SimAdministrationTest {
         assertThat(simEntry.iccid).isEqualTo(iccid)
         assertThat(simEntry.eid).isEqualTo(eid)
         assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.ACTIVATED)
-        assertThat(simEntry.hlrState).isEqualTo(HlrState.NOT_ACTIVATED)  /* Not yet activated in HLR. */
+        assertThat(simEntry.hlrState).isEqualTo(HlrState.NOT_ACTIVATED)
     }
 
     @Test
@@ -232,6 +232,23 @@ class SimAdministrationTest {
         val simEntry = response.readEntity(SimEntry::class.java)
         assertThat(simEntry.eid).isEqualTo(eid)
         assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.ACTIVATED)
-        assertThat(simEntry.hlrState).isEqualTo(HlrState.NOT_ACTIVATED)  /* Not yet activated in HLR. */
+        assertThat(simEntry.hlrState).isEqualTo(HlrState.NOT_ACTIVATED)
+    }
+
+    @Test
+    fun testActivateEsimAllNoEid() {
+        val iccid = "8901000000000000035"
+        val eid = iccidToEidTable.getOrDefault(iccid, null)
+        val response = client.target("${simManagerEndpoint}/${hlr}/esim/all")
+                .queryParam("iccid", iccid)
+                .request()
+                .post(Entity.json(null))
+        assertThat(response.status).isEqualTo(200)
+
+        val simEntry = response.readEntity(SimEntry::class.java)
+        assertThat(simEntry.iccid).isEqualTo(iccid)
+        assertThat(simEntry.eid).isEqualTo(eid)
+        assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.ACTIVATED)
+        assertThat(simEntry.hlrState).isEqualTo(HlrState.ACTIVATED)
     }
 }
