@@ -50,7 +50,10 @@ data class ProfileVendorAdapter (
 
     /* XXX Update SM-DP+ 'header' to correct content. */
 
-    private fun downloadOrder(client: Client, config: ProfileVendorConfig, dao: SimInventoryDAO, simEntry: SimEntry) : SimEntry? {
+    private fun downloadOrder(client: Client,
+                              config: ProfileVendorConfig,
+                              dao: SimInventoryDAO,
+                              simEntry: SimEntry) : SimEntry? {
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = "",
                 functionCallIdentifier = ""
@@ -64,18 +67,26 @@ data class ProfileVendorAdapter (
                 .post(Entity.entity(payload, MediaType.APPLICATION_JSON))
 
         if (response.status != 200) {
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
+            throw WebApplicationException(String.format("Order download to SM-DP+ service %s for ICCID %s failed with status code %d",
+                    config.name, simEntry.iccid, response.status),
+                    Response.Status.BAD_REQUEST)
         }
 
         val status = response.readEntity(Es2DownloadOrderResponse::class.java)
 
         return if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess)
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
+            throw WebApplicationException(String.format("Order download to SM-DP+ service %s for ICCID %s failed with execution status %s",
+                    config.name, simEntry.iccid, status.header.functionExecutionStatus),
+                    Response.Status.BAD_REQUEST)
         else
             dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ORDER_DOWNLOADED)
     }
 
-    private fun confirmOrder(client: Client, config: ProfileVendorConfig, dao: SimInventoryDAO, eid: String?, simEntry: SimEntry) : SimEntry? {
+    private fun confirmOrder(client: Client,
+                             config: ProfileVendorConfig,
+                             dao: SimInventoryDAO,
+                             eid: String?,
+                             simEntry: SimEntry) : SimEntry? {
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = "",
                 functionCallIdentifier = ""
@@ -91,13 +102,17 @@ data class ProfileVendorAdapter (
                 .post(Entity.entity(payload, MediaType.APPLICATION_JSON))
 
         if (response.status != 200) {
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
+            throw WebApplicationException(String.format("Order confirm messageto SM-DP+ service %s for ICCID %s failed with status code %d",
+                    config.name, simEntry.iccid, response.status),
+                    Response.Status.BAD_REQUEST)
         }
 
         val status = response.readEntity(Es2ConfirmOrderResponse::class.java)
 
         return if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess)
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
+            throw WebApplicationException(String.format("Order confirm message to SM-DP+ service %s for ICCID %s failed with execution status %s",
+                    config.name, simEntry.iccid, status.header.functionExecutionStatus),
+                    Response.Status.BAD_REQUEST)
         else {
             // XXX Is just logging good enough?
             if (status.eid.isEmpty()) {
