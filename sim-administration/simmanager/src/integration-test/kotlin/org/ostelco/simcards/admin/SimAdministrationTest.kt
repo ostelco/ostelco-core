@@ -101,7 +101,10 @@ class SimAdministrationTest {
 
     val hlr = "Foo"
     val profileVendor = "Bar"
-    val simProfile = "FooTel_STD"
+
+    /* Test endpoints. */
+    val hlrEndpoint = "http://localhost:${HLR_RULE.getMappedPort(HLR_PORT)}/default/provision"
+    val simManagerEndpoint = "http://localhost:${SIM_MANAGER_RULE.getLocalPort()}/ostelco/sim-inventory"
 
     /* ICCID with corresponding EID. To be expanded as needed.
        On changes update same table in SmDpPlus emulator (in the "SmDpPlusApplication"
@@ -137,17 +140,9 @@ class SimAdministrationTest {
     /* The SIM dataset is the same that is used by the SM-DP+ emulator. */
     private fun loadSimData() {
         val entries = FileInputStream(SM_DP_PLUS_RULE.configuration.simBatchData)
-        val response = client.target("http://localhost:${SIM_MANAGER_RULE.getLocalPort()}/ostelco/sim-inventory/${hlr}/import-batch/profilevendor/${profileVendor}")
+        val response = client.target("${simManagerEndpoint}/${hlr}/import-batch/profilevendor/${profileVendor}")
                 .request()
                 .put(Entity.entity(entries, MediaType.TEXT_PLAIN))
-        assertThat(response.status).isEqualTo(200)
-    }
-
-    @Test
-    fun ping() {
-        val response = client.target("http://localhost:${HLR_RULE.getMappedPort(HLR_PORT)}/ping")
-                .request()
-                .get()
         assertThat(response.status).isEqualTo(200)
     }
 
@@ -160,7 +155,7 @@ class SimAdministrationTest {
                 "msidn" to "4790000001",
                 "userid" to "userid"
         )
-        val response = client.target("http://localhost:${HLR_RULE.getMappedPort(HLR_PORT)}/default/provision/activate")
+        val response = client.target("${hlrEndpoint}/activate")
                 .request(MediaType.APPLICATION_JSON)
                 .header("x-api-key", apiKey)
                 .post(Entity.entity(payload, MediaType.APPLICATION_JSON))
@@ -170,7 +165,7 @@ class SimAdministrationTest {
     @Test
     fun testGetIccid() {
         val iccid = "8901000000000000001"
-        val response = client.target("http://localhost:${SIM_MANAGER_RULE.getLocalPort()}/ostelco/sim-inventory/${hlr}/iccid/${iccid}")
+        val response = client.target("${simManagerEndpoint}/${hlr}/iccid/${iccid}")
                 .request()
                 .get()
         assertThat(response.status).isEqualTo(200)
@@ -183,7 +178,7 @@ class SimAdministrationTest {
     fun testActivateEsim() {
         val iccid = "8901000000000000001"
         val eid = iccidToEidTable.getOrDefault(iccid, null)
-        val response = client.target("http://localhost:${SIM_MANAGER_RULE.getLocalPort()}/ostelco/sim-inventory/${hlr}/esim")
+        val response = client.target("${simManagerEndpoint}/${hlr}/esim")
                 .queryParam("eid", eid)
                 .queryParam("iccid", iccid)
                 .request()
@@ -201,7 +196,7 @@ class SimAdministrationTest {
     fun testActivateEsimNoEid() {
         val iccid = "8901000000000000019"
         val eid = iccidToEidTable.getOrDefault(iccid, null)
-        val response = client.target("http://localhost:${SIM_MANAGER_RULE.getLocalPort()}/ostelco/sim-inventory/${hlr}/esim")
+        val response = client.target("${simManagerEndpoint}/${hlr}/esim")
                 .queryParam("iccid", iccid)
                 .request()
                 .post(Entity.json(null))
@@ -218,7 +213,7 @@ class SimAdministrationTest {
     fun testActivateNextEsim() {
         val iccid = "8901000000000000027"
         val eid = iccidToEidTable.getOrDefault(iccid, null)
-        val response = client.target("http://localhost:${SIM_MANAGER_RULE.getLocalPort()}/ostelco/sim-inventory/${hlr}/esim")
+        val response = client.target("${simManagerEndpoint}/${hlr}/esim")
                 .queryParam("eid", eid)
                 .request()
                 .post(Entity.json(null))
