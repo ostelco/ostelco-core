@@ -53,8 +53,4 @@ class PingPongSslRoundtripTest {
         val response = client.execute(httpGet)
         assertThat(response.statusLine.statusCode).isEqualTo(200)
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 2a89a1806d74adebe225e4dcf6142b2d82c671b0
