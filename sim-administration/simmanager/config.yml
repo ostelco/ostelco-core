@@ -1,8 +1,5 @@
 logging:
   level: INFO
-  loggers:
-    org.ostelco: DEBUG
-
 
 openApi:
   name: Sim admin
@@ -11,27 +8,25 @@ openApi:
   contactEmail: rmz@telenordigital.com
   resourcePackage: org.ostelco
 
-# Database settings
-database:
-  # the name of your JDBC driver
-  driverClass: org.sqlite.JDBC
+hlrs:
+  - name: Foo
+    url: http://foo.com/default/provision
+    userId: user
+    apiKey: abc
 
-  # the JDBC URL
-  url: jdbc:sqlite:sim_inventory.db
+profileVendors:
+  - name: Bar
+    url: http://bar.com/gsma/rsp2/es2plus
+
+database:
+  driverClass: org.postgresql.Driver
+  user: test
+  password: test
+  url: jdbc:postgresql://db.example.com/db-prod
 
 httpClient:
-
-  # The minimum number of threads to use for asynchronous calls.
   minThreads: 1
-
-  # The maximum number of threads to use for asynchronous calls.
   maxThreads: 128
-
-  # If true, the client will automatically decode response entities
-  # with gzip content encoding.
   gzipEnabled: true
-
-  # If true, the client will encode request entities with gzip
-  # content encoding. (Requires gzipEnabled to be true).
   gzipEnabledForRequests: true
 

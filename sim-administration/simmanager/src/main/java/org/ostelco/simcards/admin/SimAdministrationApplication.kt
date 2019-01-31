@@ -25,28 +25,26 @@ import org.ostelco.simcards.inventory.SimInventoryResource
  * The inventory can then serve as an intermidiary between the
  * rest of the BSS and the OSS in the form of HSS and SM-DP+.
  */
-class SimAdministrationApplication : Application<SimAdministrationAppConfiguration>() {
+class SimAdministrationApplication : Application<SimAdministrationConfiguration>() {
 
     override fun getName(): String {
         return "SIM inventory application"
     }
 
-    override fun initialize(bootstrap: Bootstrap<SimAdministrationAppConfiguration>) {
+    override fun initialize(bootstrap: Bootstrap<SimAdministrationConfiguration>) {
         // TODO: application initialization
     }
 
-    lateinit var simInventoryDAO: SimInventoryDAO
+    lateinit var DAO: SimInventoryDAO
 
-    override fun run(configuration: SimAdministrationAppConfiguration,
-                     environment: Environment) {
-
+    override fun run(config: SimAdministrationConfiguration,
+                     env: Environment) {
         val factory = DBIFactory()
-        val jdbi = factory.build(
-                environment,
-                configuration.database, "sqlite")
-        this.simInventoryDAO = jdbi.onDemand(SimInventoryDAO::class.java)
+        val jdbi = factory.build(env,
+                config.database, "postgresql")
+        this.DAO = jdbi.onDemand(SimInventoryDAO::class.java)
 
-        val smdpPlusCallbackHandler = object : SmDpPlusCallbackService {
+        val profileVendorCallbackHandler = object : SmDpPlusCallbackService {
             // TODO: Not implemented.
             override fun handleDownloadProgressInfo(
                     eid: String?,
@@ -57,17 +55,16 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
                     timestamp: String) = Unit
         }
 
-        val client = JerseyClientBuilder(environment)
-                .using(configuration.getJerseyClientConfiguration())
-                .build(environment.name)
+        val client = JerseyClientBuilder(env)
+                .using(config.getJerseyClientConfiguration())
+                .build(env.name)
+        val jerseyEnv = env.jersey()
 
-        val jerseyEnvironment = environment.jersey()
+        addOpenapiResourceToJerseyEnv(jerseyEnv, config.openApi)
+        addEs2PlusDefaultFiltersAndInterceptors(jerseyEnv)
 
-        addOpenapiResourceToJerseyEnv(jerseyEnvironment, configuration.openApi)
-        addEs2PlusDefaultFiltersAndInterceptors(jerseyEnvironment)
-
-        jerseyEnvironment.register(SimInventoryResource(client, simInventoryDAO))
-        jerseyEnvironment.register(SmDpPlusCallbackResource(smdpPlusCallbackHandler))
+        jerseyEnv.register(SimInventoryResource(client, config, DAO))
+        jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
     }
 
     companion object {

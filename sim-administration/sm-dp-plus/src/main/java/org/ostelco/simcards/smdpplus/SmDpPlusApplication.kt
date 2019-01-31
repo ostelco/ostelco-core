@@ -198,6 +198,12 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
         return entry
     }
 
+    /* Generate a fixed corresponding EID based on ICCID. */
+    private fun getEidFromIccid(iccid: String): String? = if (iccid.isNotEmpty())
+        "01010101010101010101" + iccid.takeLast(12)
+    else
+        null
+
     override fun confirmOrder(eid: String?, iccid: String?, smdsAddress: String?, machingId: String?, confirmationCode: String?, releaseFlag: Boolean): Es2ConfirmOrderResponse {
 
         if (iccid== null) {
@@ -225,8 +231,13 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
             entry.confirmationCode = confirmationCode
         }
 
+        val eidReturned = if (eid.isNullOrEmpty())
+            getEidFromIccid(iccid)
+        else
+            eid
+
         return Es2ConfirmOrderResponse(eS2SuccessResponseHeader(),
-                eid = entry.eid!!,
+                eid = eidReturned!!,
                 smdsAddress = entry.smdsAddress,
                 matchingId =  entry.machingId)
     }

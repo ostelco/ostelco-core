@@ -38,6 +38,7 @@ class EncryptedEs2PlusTest {
 
         val confirmResponse =
                 client.confirmOrder(
+                        eid = eid,
                         iccid = iccid,
                         releaseFlag = true)
 

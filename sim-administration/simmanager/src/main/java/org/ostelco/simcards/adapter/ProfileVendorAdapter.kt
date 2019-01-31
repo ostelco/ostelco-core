@@ -2,6 +2,8 @@ package org.ostelco.simcards.adapter
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.ostelco.sim.es2plus.*
+import org.ostelco.simcards.admin.ProfileVendorConfig
+import org.ostelco.simcards.admin.getLogger
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SmDpPlusState
@@ -23,20 +25,35 @@ data class ProfileVendorAdapter (
         @JsonProperty("id") val id: Long,
         @JsonProperty("name") val name: String) {
 
+    private val logger by getLogger()
+
     /**
      * Requests the external Profile Vendor to activate the
      * SIM profile.
      * @param client  HTTP client
+     * @param config SIM vendor specific configuration
      * @param dao  DB interface
      * @param eid  ESIM id
      * @param simEntry  SIM profile to activate
+     * @return Updated SIM profile
      */
-    fun activate(client: Client, dao: SimInventoryDAO, eid: String, simEntry: SimEntry) {
-        val orderStatus = downloadOrder(client, dao, simEntry)
-        val confirmStatus = confirmOrder(client, dao, eid, simEntry)
+    fun activate(client: Client,
+                 config: ProfileVendorConfig,
+                 dao: SimInventoryDAO,
+                 eid: String?,
+                 simEntry: SimEntry) : SimEntry? {
+        return if (downloadOrder(client, config, dao, simEntry) != null)
+            confirmOrder(client, config, dao, eid, simEntry)
+         else
+            null
     }
 
-    private fun downloadOrder(client: Client, dao: SimInventoryDAO, simEntry: SimEntry) : Es2DownloadOrderResponse {
+    /* XXX Update SM-DP+ 'header' to correct content. */
+
+    private fun downloadOrder(client: Client,
+                              config: ProfileVendorConfig,
+                              dao: SimInventoryDAO,
+                              simEntry: SimEntry) : SimEntry? {
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = "",
                 functionCallIdentifier = ""
@@ -45,25 +62,31 @@ data class ProfileVendorAdapter (
                 header = header,
                 iccid = simEntry.iccid
         )
-        val response = client.target("http://localhost:9080/gsma/rsp2/es2plus/downloadOrder")
+        val response = client.target("${config.url}/downloadOrder")
                 .request()
                 .post(Entity.entity(payload, MediaType.APPLICATION_JSON))
 
         if (response.status != 200) {
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
+            throw WebApplicationException(String.format("Order download to SM-DP+ service %s for ICCID %s failed with status code %d",
+                    config.name, simEntry.iccid, response.status),
+                    Response.Status.BAD_REQUEST)
         }
 
         val status = response.readEntity(Es2DownloadOrderResponse::class.java)
 
         return if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess)
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
-        else {
+            throw WebApplicationException(String.format("Order download to SM-DP+ service %s for ICCID %s failed with execution status %s",
+                    config.name, simEntry.iccid, status.header.functionExecutionStatus),
+                    Response.Status.BAD_REQUEST)
+        else
             dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ORDER_DOWNLOADED)
-            status
-        }
     }
 
-    private fun confirmOrder(client: Client, dao: SimInventoryDAO, eid: String, simEntry: SimEntry) : Es2ConfirmOrderResponse {
+    private fun confirmOrder(client: Client,
+                             config: ProfileVendorConfig,
+                             dao: SimInventoryDAO,
+                             eid: String?,
+                             simEntry: SimEntry) : SimEntry? {
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = "",
                 functionCallIdentifier = ""
@@ -74,21 +97,35 @@ data class ProfileVendorAdapter (
                 iccid = simEntry.iccid,
                 releaseFlag = true
         )
-        val response = client.target("http://localhost:9080/gsma/rsp2/es2plus/confirmOrder")
+        val response = client.target("${config.url}/confirmOrder")
                 .request()
                 .post(Entity.entity(payload, MediaType.APPLICATION_JSON))
 
         if (response.status != 200) {
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
+            throw WebApplicationException(String.format("Order confirm messageto SM-DP+ service %s for ICCID %s failed with status code %d",
+                    config.name, simEntry.iccid, response.status),
+                    Response.Status.BAD_REQUEST)
         }
 
         val status = response.readEntity(Es2ConfirmOrderResponse::class.java)
 
         return if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess)
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
+            throw WebApplicationException(String.format("Order confirm message to SM-DP+ service %s for ICCID %s failed with execution status %s",
+                    config.name, simEntry.iccid, status.header.functionExecutionStatus),
+                    Response.Status.BAD_REQUEST)
         else {
+            // XXX Is just logging good enough?
+            if (status.eid.isEmpty()) {
+                logger.warn("No EID returned from SM-DP+ service {} for ICCID {}",
+                        config.name, simEntry.iccid)
+            } else {
+                dao.setEidOfSimProfile(simEntry.id!!, status.eid)     /* Update profile with 'eid' value. */
+            }
+            if (!eid.isNullOrEmpty() && eid != status.eid) {
+                logger.warn("EID returned from SM-DP+ service {} does not match provided EID ({} <> {})",
+                        config.name, eid, status.eid)
+            }
             dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ACTIVATED)
-            status
         }
     }
 }

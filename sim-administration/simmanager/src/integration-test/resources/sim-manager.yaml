@@ -8,6 +8,16 @@ openApi:
   contactEmail: dev@redotter.sg
   resourcePackage: org.ostelco
 
+hlrs:
+  - name: Foo
+    url: http://localhost:9180/default/provision
+    userId: user
+    apiKey: xyz
+
+profileVendors:
+  - name: Bar
+    url: http://localhost:9080/gsma/rsp2/es2plus
+
 server:
   type: default
   applicationConnectors:
@@ -18,5 +28,7 @@ server:
       port: 8081
 
 database:
-  driverClass: org.sqlite.JDBC
-  url: jdbc:sqlite:/tmp/sim_inventory.db
+  driverClass: org.postgresql.Driver
+  user: test
+  password: test
+  url: jdbc:postgresql://db.example.com/db-prod
