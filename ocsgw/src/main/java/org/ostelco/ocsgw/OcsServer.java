@@ -44,7 +44,7 @@ public class OcsServer {
     private OcsServer() {
     }
 
-    synchronized void handleRequest(ServerCCASession session, JCreditControlRequest request) {
+    void handleRequest(ServerCCASession session, JCreditControlRequest request) {
 
         try {
 

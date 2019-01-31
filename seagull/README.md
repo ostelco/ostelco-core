@@ -4,7 +4,7 @@ A Dockerized version of [Seagull](http://gull.sourceforge.net/ "Seagull") - a mu
 
 Based on https://github.com/codeghar/Seagull
 
-####To test with this Image
+####To test with this Image with docker-compose
 
 * Use the docker-compose file for seagull to start Prime and OCS-gw
 

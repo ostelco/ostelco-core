@@ -84,6 +84,7 @@ services:
     - DIAMETER_CONFIG_FILE=server-jdiameter-config.xml
     - OCS_DATASOURCE_TYPE=Local
     - CONFIG_FOLDER=/config/
+    - "JAVA_OPTS=-Xms512m -Xmx1024m -server"
     volumes:
     - ./ocsgw/cert:/cert/
     - ./ocsgw/config:/config/
@@ -92,17 +93,6 @@ services:
         aliases:
         - "ocsgw"
         ipv4_address: 172.16.238.3
-
-  seagull:
-    container_name: seagull
-    build: seagull
-    depends_on:
-    - "ocsgw"
-    - "prime"
-    networks:
-      net:
-        ipv4_address: 172.16.238.2
-      default:
 
   neo4j:
     container_name: "neo4j"
@@ -128,9 +118,6 @@ services:
     - DATASTORE_DATASET=pantel-2decb
     command: ["gcloud", "beta", "emulators", "datastore", "start", "--host-port=0.0.0.0:8081"]
 
-  ext-auth-provider:
-    container_name: ext-auth-provider
-    build: ext-auth-provider
 
 networks:
   net:

@@ -4,6 +4,7 @@
   <counter>
     <counterdef name="HbH-counter" init="1000"> </counterdef>
     <counterdef name="EtE-counter" init="2000"> </counterdef>
+    <counterdef name="Subscription-Id-Data-counter" init="0"> </counterdef>
     <counterdef name="session-counter" init="1000000000"> </counterdef>
   </counter>
 
@@ -15,7 +16,7 @@
         <avp name="Origin-Realm" value="seagull"> </avp>
         <avp name="Host-IP-Address" value="0x00010A060103"> </avp> <!-- 127.0.0.1 -->
         <avp name="Vendor-Id" value="10415"> </avp>
-        <avp name="Product-Name" value="Seagull Server Tester"> </avp>
+        <avp name="Product-Name" value="Seagull Tester"> </avp>
         <avp name="Origin-State-Id" value="14"> </avp>
         <avp name="Supported-Vendor-Id" value="10415"> </avp>
         <avp name="Supported-Vendor-Id" value="12645"> </avp>
@@ -36,15 +37,17 @@
     <send channel="channel-1">
       <action>
         <!-- select MSISDN from msisdn.csv file -->
-        <restore-from-external field="0" entity="Subscription-Id-Data"> </restore-from-external>
+        <!--<restore-from-external field="0" entity="Subscription-Id-Data"> </restore-from-external>-->
    
         <!-- For each new call, increment the session-ID counter -->
         <inc-counter name="HbH-counter"> </inc-counter>
         <inc-counter name="EtE-counter"> </inc-counter>
+        <inc-counter name="Subscription-Id-Data-counter"> </inc-counter>
         <inc-counter name="session-counter"> </inc-counter>
           <set-value name="HbH-id" format="$(HbH-counter)"> </set-value>
           <set-value name="EtE-id" format="$(EtE-counter)"> </set-value>
           <set-value name="Session-Id" format="seagull-01:28122012:$(session-counter)"> </set-value>
+          <set-value name="Subscription-Id-Data" format="$(Subscription-Id-Data-counter)"> </set-value>
       </action>
    
       <command name="CCR">
@@ -86,6 +89,13 @@
           <avp name="User-Equipment-Info-Type" value="0"> </avp>
           <avp name="User-Equipment-Info-Value" value="38:36:31:39:35:35:30:33:30:37:38:31:30:33:35:36"> </avp>
         </avp>
+
+<!--        <avp name="Service-Information">
+          <avp name="PS-Information">
+            <avp name="Called-Station-Id" value="loltel"> </avp>
+            <avp name="3GPP-SGSN-MCC-MNC" value="24201"> </avp>
+          </avp>
+        </avp>-->
 
       </command>
       

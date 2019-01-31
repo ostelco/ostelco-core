@@ -26,6 +26,7 @@
     <AcceptUndefinedPeer value="true" />
     <DuplicateProtection value="true" />
     <DuplicateTimer value="240000" />
+    <DuplicateSize value="5000"/>
     <UseUriAsFqdn value="false" />
     <QueueSize value="10000" />
     <MessageTimeOut value="60000" />
@@ -43,7 +44,10 @@
       <Entity name="PeerOverloadTimer" size="1" />
       <Entity name="ConnectionTimer" size="1" />
       <Entity name="StatisticTimer" size="1" />
+      <!-- Entity name="ApplicationSession" size="128"/ -->
     </Concurrent>
+
+    <RequestTable size="0" clear_size="0" />
 
   </Parameters>
 
@@ -54,6 +58,13 @@
     </Peers>
     <Realms>
       <Realm name="loltel" peers="127.0.0.1" local_action="LOCAL" dynamic="false" exp_time="1">
+        <ApplicationID>
+          <VendorId value="10415" />
+          <AuthApplId value="4" />
+          <AcctApplId value="19302" />
+        </ApplicationID>
+      </Realm>
+      <Realm name="seagull" peers="172.16.238.2" local_action="LOCAL" dynamic="false" exp_time="1">
         <ApplicationID>
           <VendorId value="10415" />
           <AuthApplId value="4" />

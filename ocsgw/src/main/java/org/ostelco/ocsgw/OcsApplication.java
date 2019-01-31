@@ -1,16 +1,7 @@
 package org.ostelco.ocsgw;
 
 import com.google.cloud.storage.*;
-import org.jdiameter.api.Answer;
-import org.jdiameter.api.ApplicationId;
-import org.jdiameter.api.Configuration;
-import org.jdiameter.api.IllegalDiameterStateException;
-import org.jdiameter.api.InternalException;
-import org.jdiameter.api.Mode;
-import org.jdiameter.api.Network;
-import org.jdiameter.api.NetworkReqListener;
-import org.jdiameter.api.Request;
-import org.jdiameter.api.Stack;
+import org.jdiameter.api.*;
 import org.jdiameter.api.cca.ServerCCASession;
 import org.jdiameter.api.cca.events.JCreditControlRequest;
 import org.jdiameter.client.api.ISessionFactory;
@@ -61,7 +52,7 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
         LOG.info("Shutting down OcsApplication...");
         if (stack != null) {
             try {
-                stack.stop(30000, TimeUnit.MILLISECONDS ,0);
+                stack.stop(30000, TimeUnit.MILLISECONDS , DisconnectCause.REBOOTING);
             } catch (IllegalDiameterStateException | InternalException e) {
                 LOG.error("Failed to gracefully shutdown OcsApplication", e);
             }
@@ -98,7 +89,7 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
 
             Configuration diameterConfig = new XMLConfiguration(configDir +  configFile);
             stack = new StackImpl();
-            stack.init(diameterConfig);
+            sessionFactory = (ISessionFactory) stack.init(diameterConfig);
 
             OcsServer.getInstance().init(stack, new AppConfig());
 
@@ -107,7 +98,6 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
 
             stack.start(Mode.ALL_PEERS, 30000, TimeUnit.MILLISECONDS);
 
-            sessionFactory = (ISessionFactory) stack.getSessionFactory();
             init(sessionFactory);
             sessionFactory.registerAppFacory(ServerCCASession.class, this);
             printAppIds();
@@ -121,8 +111,7 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
     public Answer processRequest(Request request) {
         LOG.info("<< Received Request [{}]", request.getSessionId());
         try {
-            ServerCCASessionImpl session =
-                    (sessionFactory).getNewAppSession(request.getSessionId(), ApplicationId.createByAuthAppId(4L), ServerCCASession.class);
+            ServerCCASessionImpl session = sessionFactory.getNewAppSession(request.getSessionId(), ApplicationId.createByAuthAppId(4L), ServerCCASession.class);
             session.processRequest(request);
             LOG.info("processRequest finished [{}]", request.getSessionId());
         }
