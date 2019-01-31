@@ -17,7 +17,7 @@ class SimCardBatchDescriptorReaderTest {
     @Test
     fun testReadingListOfEntriesFromFile() {
         var foo = 0
-        SmDpSimEntryIterator(FileInputStream(smdpInputCsvPath)).forEach {  foo++ }
+        SmDpSimEntryIterator(FileInputStream(smdpInputCsvPath)).forEach { _ -> foo++ }
         assertEquals(100, foo)
     }
 
