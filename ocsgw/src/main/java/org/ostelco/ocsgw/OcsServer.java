@@ -36,6 +36,8 @@ public class OcsServer {
     private static final OcsServer INSTANCE = new OcsServer();
     private Stack stack;
     private DataSource source;
+    private String localPeerFQDN;
+    private String localPeerRealm;
 
     public static OcsServer getInstance() {
         return INSTANCE;
@@ -51,8 +53,8 @@ public class OcsServer {
             final CreditControlContext ccrContext = new CreditControlContext(
                     session.getSessionId(),
                     request,
-                    stack.getMetaData().getLocalPeer().getUri().getFQDN(),
-                    stack.getMetaData().getLocalPeer().getRealmName()
+                    localPeerFQDN,
+                    localPeerRealm
             );
             source.handleRequest(ccrContext);
         } catch (Exception e) {
@@ -96,6 +98,8 @@ public class OcsServer {
 
     void init(Stack stack, AppConfig appConfig) throws IOException {
         this.stack = stack;
+        this.localPeerFQDN = stack.getMetaData().getLocalPeer().getUri().getFQDN();
+        this.localPeerRealm = stack.getMetaData().getLocalPeer().getRealmName();
 
         switch (appConfig.getDataStoreType()) {
             case DataSourceType.GRPC:
