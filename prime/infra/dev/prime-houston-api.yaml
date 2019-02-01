@@ -345,27 +345,6 @@ paths:
           description: "The email of the user"
           required: true
           type: string
-  "/new-ekyc-scanId/{email}":
-    get:
-      description: "Get a new Id for eKYC scanning."
-      produces:
-        - application/json
-      operationId: "newEKYCScanId"
-      responses:
-        200:
-          description: "Successfully retrieved new ScanId."
-          schema:
-            $ref: '#/definitions/ScanInformation'
-        404:
-          description: "User not found."
-      security:
-        - auth0_jwt: []
-      parameters:
-        - name: email
-          in: path
-          description: "The email of the user"
-          required: true
-          type: string
 definitions:
   Profile:
     type: object
@@ -524,6 +503,9 @@ definitions:
     properties:
       scanId:
         description: "New scan Id for eKYC"
+        type: string
+      countryCode:
+        description: "The 3 letter country code (or global) for the scan "
         type: string
       status:
         description: "The status of the scan"

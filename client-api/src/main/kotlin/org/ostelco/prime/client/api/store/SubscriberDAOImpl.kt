@@ -310,9 +310,14 @@ class SubscriberDAOImpl : SubscriberDAO {
                 .mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_GENERATE_STRIPE_EPHEMERAL_KEY, error) }
     }
 
-    override fun newEKYCScanId(subscriberId: String): Either<ApiError, ScanInformation> {
-        return storage.newEKYCScanId(subscriberId)
+    override fun newEKYCScanId(subscriberId: String, countryCode: String): Either<ApiError, ScanInformation> {
+        return storage.newEKYCScanId(subscriberId, countryCode)
                 .mapLeft { mapStorageErrorToApiError("Failed to create new scanId", ApiErrorCode.FAILED_TO_CREATE_SCANID, it) }
+    }
+
+    override fun getCountryCodeForScan(scanId: String): Either<ApiError, String> {
+        return storage.getCountryCodeForScan(scanId)
+                .mapLeft { mapStorageErrorToApiError("Failed to get country code of the scanId", ApiErrorCode.FAILED_TO_FETCH_SCAN_INFORMATION, it) }
     }
 
     override fun getScanInformation(subscriberId: String, scanId: String): Either<ApiError, ScanInformation> {

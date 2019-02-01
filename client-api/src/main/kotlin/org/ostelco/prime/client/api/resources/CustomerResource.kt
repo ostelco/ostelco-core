@@ -45,16 +45,20 @@ class CustomerResource(private val dao: SubscriberDAO) {
     }
 
     @GET
-    @Path("new-ekyc-scanId")
+    @Path("new-ekyc-scanId/{countryCode}")
     @Produces(MediaType.APPLICATION_JSON)
     fun newEKYCScanId(
-            @Auth token: AccessTokenPrincipal?): Response {
+            @Auth token: AccessTokenPrincipal?,
+            @NotNull
+            @PathParam("countryCode")
+            countryCode: String
+    ): Response {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
 
-        return dao.newEKYCScanId(subscriberId = token.name).fold(
+        return dao.newEKYCScanId(subscriberId = token.name, countryCode = countryCode).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { scanInformation -> Response.status(Response.Status.OK).entity(scanInformation) })
                 .build()

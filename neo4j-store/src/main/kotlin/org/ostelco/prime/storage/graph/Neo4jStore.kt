@@ -714,11 +714,11 @@ object Neo4jStoreSingleton : GraphStore {
     // eKYC
     //
 
-    override fun newEKYCScanId(subscriberId: String): Either<StoreError, ScanInformation> = writeTransaction {
+    override fun newEKYCScanId(subscriberId: String, countryCode:String): Either<StoreError, ScanInformation> = writeTransaction {
         subscriberStore.get(subscriberId, transaction).flatMap { subscriber ->
             // Generate new id for the scan
             val scanId = UUID.randomUUID().toString()
-            val newScan = ScanInformation(scanId = scanId, status = ScanStatus.PENDING, scanResult = null)
+            val newScan = ScanInformation(scanId = scanId, countryCode = countryCode, status = ScanStatus.PENDING, scanResult = null)
             scanInformationStore.create(newScan, transaction).flatMap {
                 scanInformationRelationStore.create(subscriber.id, newScan.id, transaction).flatMap { Either.right(newScan) }
             }
@@ -733,6 +733,19 @@ object Neo4jStoreSingleton : GraphStore {
                 transaction) {
             if (it.hasNext())
                 Either.right(subscriberEntity.createEntity(it.single().get("subscriber").asMap()))
+            else
+                Either.left(NotFoundError(type = scanInformationEntity.name, id = scanId))
+        }
+    }
+
+    override fun getCountryCodeForScan(scanId: String): Either<StoreError, String> = readTransaction {
+        read("""
+                MATCH (scanInformation:${scanInformationEntity.name} {scanId: '${scanId}'})
+                RETURN scanInformation
+                """.trimIndent(),
+                transaction) {
+            if (it.hasNext())
+                Either.right(scanInformationEntity.createEntity(it.single().get("scanInformation").asMap()).countryCode)
             else
                 Either.left(NotFoundError(type = scanInformationEntity.name, id = scanId))
         }
@@ -763,7 +776,7 @@ object Neo4jStoreSingleton : GraphStore {
                 getOrCreateSubscriberState(subscriber.id, SubscriberStatus.REGISTERED, transaction).flatMap { subcriberState ->
                     if (scanInformation.status == ScanStatus.APPROVED && (subcriberState.status == SubscriberStatus.REGISTERED || subcriberState.status == SubscriberStatus.EKYC_REJECTED)) {
                         // Update the scan information store with the new scan data
-                        scanInformationDatastore.upsertVendorScanInformation(subscriber.id, vendorData).flatMap {
+                        scanInformationDatastore.upsertVendorScanInformation(subscriber.id, scanInformation.countryCode, vendorData).flatMap {
                             // Update the state if the scan was successful and we are waiting for eKYC results
                             updateSubscriberState(subscriber.id, SubscriberStatus.EKYC_APPROVED, scanInformation.scanId, transaction).map { Unit }
                         }
