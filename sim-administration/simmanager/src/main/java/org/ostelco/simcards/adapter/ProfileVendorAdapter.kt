@@ -28,7 +28,7 @@ data class ProfileVendorAdapter (
     private val logger by getLogger()
 
     /**
-     * Requests the external Profile Vendor to activate the
+     * Requests the an external Profile Vendor to activate the
      * SIM profile.
      * @param client  HTTP client
      * @param config SIM vendor specific configuration
@@ -50,10 +50,19 @@ data class ProfileVendorAdapter (
 
     /* XXX Update SM-DP+ 'header' to correct content. */
 
-    private fun downloadOrder(client: Client,
-                              config: ProfileVendorConfig,
-                              dao: SimInventoryDAO,
-                              simEntry: SimEntry) : SimEntry? {
+    /**
+     * Initiate activation of a SIM profile with an external Profile Vendor
+     * by sending a SM-DP+ 'download-order' message.
+     * @param client  HTTP client
+     * @param config SIM vendor specific configuration
+     * @param dao  DB interface
+     * @param simEntry  SIM profile to activate
+     * @return Updated SIM profile
+     */
+    fun downloadOrder(client: Client,
+                      config: ProfileVendorConfig,
+                      dao: SimInventoryDAO,
+                      simEntry: SimEntry) : SimEntry? {
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = "",
                 functionCallIdentifier = ""
@@ -82,11 +91,21 @@ data class ProfileVendorAdapter (
             dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ORDER_DOWNLOADED)
     }
 
-    private fun confirmOrder(client: Client,
-                             config: ProfileVendorConfig,
-                             dao: SimInventoryDAO,
-                             eid: String?,
-                             simEntry: SimEntry) : SimEntry? {
+    /**
+     * Complete the activation of a SIM profile with an external Profile Vendor
+     * by sending a SM-DP+ 'confirmation' message.
+     * @param client  HTTP client
+     * @param config SIM vendor specific configuration
+     * @param dao  DB interface
+     * @param eid  ESIM id
+     * @param simEntry  SIM profile to activate
+     * @return Updated SIM profile
+     */
+    fun confirmOrder(client: Client,
+                     config: ProfileVendorConfig,
+                     dao: SimInventoryDAO,
+                     eid: String?,
+                     simEntry: SimEntry) : SimEntry? {
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = "",
                 functionCallIdentifier = ""

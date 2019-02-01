@@ -58,7 +58,14 @@ class SimInventoryResource(private val client: Client,
         }.firstOrNull())
 
         return try {
-            hlrAdapter.activate(client, config, dao, simEntry)
+            when (simEntry.hlrState) {
+                HlrState.NOT_ACTIVATED -> {
+                    hlrAdapter.activate(client, config, dao, simEntry)
+                }
+                HlrState.ACTIVATED -> {
+                    simEntry
+                }
+            }
         } catch (e: Exception) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }
@@ -79,7 +86,14 @@ class SimInventoryResource(private val client: Client,
         }.firstOrNull())
 
         return try {
-            hlrAdapter.deactivate(client, config, dao, simEntry)
+            when (simEntry.hlrState) {
+                HlrState.NOT_ACTIVATED -> {
+                    simEntry
+                }
+                HlrState.ACTIVATED -> {
+                    hlrAdapter.deactivate(client, config, dao, simEntry)
+                }
+            }
         } catch (e: Exception) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }
@@ -155,8 +169,20 @@ class SimInventoryResource(private val client: Client,
             it.name == simVendorAdapter.name
         }.firstOrNull())
 
+        /* XXX Check state names with chap. 1.22 figure 1 pp ?? */
+
         return try {
-            simVendorAdapter.activate(client, config, dao, eid, simEntry)
+            when (simEntry.smdpPlusState) {
+                SmDpPlusState.NOT_ACTIVATED -> {
+                    simVendorAdapter.activate(client, config, dao, eid, simEntry)
+                }
+                SmDpPlusState.ORDER_DOWNLOADED -> {
+                    simVendorAdapter.confirmOrder(client, config, dao, eid, simEntry)
+                }
+                SmDpPlusState.ACTIVATED -> {
+                    simEntry
+                }
+            }
         } catch (e: Exception) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }
