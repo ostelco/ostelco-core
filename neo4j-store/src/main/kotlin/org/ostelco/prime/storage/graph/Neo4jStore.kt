@@ -774,17 +774,21 @@ object Neo4jStoreSingleton : GraphStore {
             scanInformationStore.update(scanInformation, transaction).flatMap {
                 logger.info("updating scan Information for : ${subscriber.email} id: ${scanInformation.scanId} status: ${scanInformation.status}")
                 getOrCreateSubscriberState(subscriber.id, SubscriberStatus.REGISTERED, transaction).flatMap { subcriberState ->
-                    if (scanInformation.status == ScanStatus.APPROVED && (subcriberState.status == SubscriberStatus.REGISTERED || subcriberState.status == SubscriberStatus.EKYC_REJECTED)) {
+                    if (scanInformation.status == ScanStatus.APPROVED) {
                         // Update the scan information store with the new scan data
+                        logger.info("Inserting scan Information to cloud storage : id: ${scanInformation.scanId} countryCode: ${scanInformation.countryCode}")
                         scanInformationDatastore.upsertVendorScanInformation(subscriber.id, scanInformation.countryCode, vendorData).flatMap {
                             // Update the state if the scan was successful and we are waiting for eKYC results
+                            logger.info("Done Inserting scan Information to cloud storage : id: ${scanInformation.scanId} countryCode: ${scanInformation.countryCode}")
                             updateSubscriberState(subscriber.id, SubscriberStatus.EKYC_APPROVED, scanInformation.scanId, transaction).map { Unit }
                         }
                     } else if (scanInformation.status == ScanStatus.REJECTED && subcriberState.status == SubscriberStatus.REGISTERED) {
                         // Update the state if the scan was a failure and we are waiting for eKYC results
+                        logger.info("Setting Rejected Status : id: ${scanInformation.scanId} countryCode: ${scanInformation.countryCode}")
                         updateSubscriberState(subscriber.id, SubscriberStatus.EKYC_REJECTED, null, transaction).map { Unit }
                     } else {
                         // Remain in the previous state
+                        logger.info("Keeping old status : id: ${scanInformation.scanId} status: ${subcriberState.status}")
                         Either.right(Unit)
                     }
                 }
