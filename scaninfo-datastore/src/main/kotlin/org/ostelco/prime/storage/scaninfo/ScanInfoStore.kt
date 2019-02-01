@@ -68,12 +68,10 @@ object ScanInformationStoreSingleton : ScanInformationStore {
                     val globalBucket = "${bucketName}-global"
                     val countryBucket = "${bucketName}-${countryCode.toLowerCase()}"
                     logger.info("Saving in cloud store $globalBucket --> $fileName")
-                    var mediaLink = JumioHelper.uploadZipFile(globalBucket, fileName, zipData).bind()
-                    logger.info("Uploaded scan information for ${vendorScanInformation.scanId} $mediaLink")
+                    JumioHelper.uploadZipFile(globalBucket, fileName, zipData).bind()
                     if (countryBucket != globalBucket) {
                         logger.info("Saving in cloud store $countryBucket --> $fileName")
-                        mediaLink = JumioHelper.uploadZipFile(countryBucket, fileName, zipData).bind()
-                        logger.info("Uploaded scan information for ${vendorScanInformation.scanId} $mediaLink")
+                        JumioHelper.uploadZipFile(countryBucket, fileName, zipData).bind()
                     }
                 }
                 Unit

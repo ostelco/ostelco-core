@@ -779,7 +779,6 @@ object Neo4jStoreSingleton : GraphStore {
                         logger.info("Inserting scan Information to cloud storage : id: ${scanInformation.scanId} countryCode: ${scanInformation.countryCode}")
                         scanInformationDatastore.upsertVendorScanInformation(subscriber.id, scanInformation.countryCode, vendorData).flatMap {
                             // Update the state if the scan was successful and we are waiting for eKYC results
-                            logger.info("Done Inserting scan Information to cloud storage : id: ${scanInformation.scanId} countryCode: ${scanInformation.countryCode}")
                             updateSubscriberState(subscriber.id, SubscriberStatus.EKYC_APPROVED, scanInformation.scanId, transaction).map { Unit }
                         }
                     } else if (scanInformation.status == ScanStatus.REJECTED && subcriberState.status == SubscriberStatus.REGISTERED) {
