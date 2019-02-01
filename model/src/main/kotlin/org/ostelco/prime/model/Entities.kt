@@ -79,6 +79,7 @@ data class ScanResult(
 
 data class ScanInformation(
         val scanId:String,
+        val countryCode: String,
         val status: ScanStatus,
         val scanResult: ScanResult?
 ) : HasId {

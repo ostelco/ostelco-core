@@ -665,7 +665,7 @@ class eKYCTest {
             createProfile(name = "Test User for eKYC", email = email)
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId"
+                path = "/customer/new-ekyc-scanId/global"
                 subscriberId = email
             }
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
@@ -687,7 +687,7 @@ class eKYCTest {
             createProfile(name = "Test User for eKYC", email = email)
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId"
+                path = "/customer/new-ekyc-scanId/global"
                 subscriberId = email
             }
 
@@ -728,7 +728,7 @@ class eKYCTest {
             createProfile(name = "Test User for eKYC", email = email)
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId"
+                path = "/customer/new-ekyc-scanId/global"
                 subscriberId = email
             }
 
@@ -772,7 +772,7 @@ class eKYCTest {
             createProfile(name = "Test User for eKYC", email = email)
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId"
+                path = "/customer/new-ekyc-scanId/global"
                 subscriberId = email
             }
 
@@ -816,7 +816,7 @@ class eKYCTest {
             createProfile(name = "Test User for eKYC", email = email)
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId"
+                path = "/customer/new-ekyc-scanId/global"
                 subscriberId = email
             }
 
@@ -858,7 +858,7 @@ class eKYCTest {
             createProfile(name = "Test User for eKYC", email = email)
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId"
+                path = "/customer/new-ekyc-scanId/global"
                 subscriberId = email
             }
 
@@ -900,7 +900,7 @@ class eKYCTest {
             createProfile(name = "Test User for eKYC", email = email)
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId"
+                path = "/customer/new-ekyc-scanId/global"
                 subscriberId = email
             }
 
@@ -930,7 +930,7 @@ class eKYCTest {
             assertEquals("EKYC_REJECTED", subscriberState.status, message = "Wrong state")
 
             val newScanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId"
+                path = "/customer/new-ekyc-scanId/global"
                 subscriberId = email
             }
 
@@ -978,7 +978,7 @@ class eKYCTest {
             createProfile(name = "Test User for eKYC", email = email)
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId"
+                path = "/customer/new-ekyc-scanId/global"
                 subscriberId = email
             }
 
@@ -1032,7 +1032,7 @@ class eKYCTest {
             createProfile(name = "Test User for eKYC", email = email)
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId"
+                path = "/customer/new-ekyc-scanId/global"
                 subscriberId = email
             }
 
@@ -1062,7 +1062,7 @@ class eKYCTest {
             assertEquals("EKYC_REJECTED", subscriberState.status, message = "Wrong state")
 
             val newScanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId"
+                path = "/customer/new-ekyc-scanId/global"
                 subscriberId = email
             }
 
@@ -1119,7 +1119,7 @@ class eKYCTest {
             createProfile(name = "Test User for eKYC", email = email)
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId"
+                path = "/customer/new-ekyc-scanId/global"
                 subscriberId = email
             }
 

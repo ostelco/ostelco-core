@@ -329,7 +329,7 @@ class GraphStoreTest {
 
         assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null).isRight())
 
-        Neo4jStoreSingleton.newEKYCScanId(EMAIL).map {
+        Neo4jStoreSingleton.newEKYCScanId(EMAIL, COUNTRY).map {
             Neo4jStoreSingleton.getScanInformation(EMAIL, scanId = it.scanId).mapLeft {
                 fail(it.message)
             }
@@ -343,7 +343,7 @@ class GraphStoreTest {
 
         assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null).isRight())
 
-        Neo4jStoreSingleton.newEKYCScanId(EMAIL).map { newScan ->
+        Neo4jStoreSingleton.newEKYCScanId(EMAIL, COUNTRY).map { newScan ->
             Neo4jStoreSingleton.getAllScanInformation(EMAIL).map { infoList ->
                 assertEquals(1, infoList.size, "More scans than expected.")
                 assertEquals(newScan.scanId, infoList.elementAt(0).scanId, "Wrong scan returned.")
@@ -360,9 +360,10 @@ class GraphStoreTest {
 
         assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null).isRight())
 
-        Neo4jStoreSingleton.newEKYCScanId(EMAIL).map {
+        Neo4jStoreSingleton.newEKYCScanId(EMAIL, COUNTRY).map {
             val newScanInformation = ScanInformation(
                     scanId = it.scanId,
+                    countryCode = COUNTRY,
                     status = ScanStatus.APPROVED,
                     scanResult = ScanResult(
                             vendorScanReference = UUID.randomUUID().toString(),
@@ -384,7 +385,7 @@ class GraphStoreTest {
             vendorData.add(JumioScanData.SCAN_IMAGE.s, imgUrl)
             vendorData.add(JumioScanData.SCAN_IMAGE_BACKSIDE.s, imgUrl2)
 
-            Mockito.`when`(mockScanInformationStore.upsertVendorScanInformation(subscriberId = EMAIL, vendorData = vendorData)).thenReturn(Either.right(Unit))
+            Mockito.`when`(mockScanInformationStore.upsertVendorScanInformation(subscriberId = EMAIL, countryCode = COUNTRY, vendorData = vendorData)).thenReturn(Either.right(Unit))
 
             Neo4jStoreSingleton.updateScanInformation(newScanInformation, vendorData).mapLeft {
                 fail(it.message)
@@ -399,9 +400,10 @@ class GraphStoreTest {
 
         assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null).isRight())
 
-        Neo4jStoreSingleton.newEKYCScanId(EMAIL).map {
+        Neo4jStoreSingleton.newEKYCScanId(EMAIL, COUNTRY).map {
             val newScanInformation = ScanInformation(
                     scanId = "fakeId",
+                    countryCode = COUNTRY,
                     status = ScanStatus.APPROVED,
                     scanResult = ScanResult(
                             vendorScanReference = UUID.randomUUID().toString(),
@@ -436,10 +438,10 @@ class GraphStoreTest {
         assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null).isRight())
         assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = `FAKE-EMAIL`, name = NAME, country = COUNTRY), referredBy = null).isRight())
 
-        Neo4jStoreSingleton.newEKYCScanId(`FAKE-EMAIL`).mapLeft {
+        Neo4jStoreSingleton.newEKYCScanId(`FAKE-EMAIL`, COUNTRY).mapLeft {
             fail(it.message)
         }
-        Neo4jStoreSingleton.newEKYCScanId(EMAIL).map {
+        Neo4jStoreSingleton.newEKYCScanId(EMAIL, COUNTRY).map {
             Neo4jStoreSingleton.getScanInformation(`FAKE-EMAIL`, scanId = it.scanId).bimap(
                     { assertEquals("Not allowed", it.message) },
                     { fail("Expected to fail since the requested subscriber is wrong.") })
