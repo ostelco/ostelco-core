@@ -49,6 +49,8 @@ class SimInventoryUnitTests {
 
     private val fakeProfileVendor = "Foo"
     private val fakeHlr = "Bar"
+    private val fakePhoneType = "_"
+    private val fakeProfile = "PROFILE_1"
 
     private val fakeSimEntryWithoutMsisdn = SimEntry(
             id = 1L,
@@ -56,6 +58,7 @@ class SimInventoryUnitTests {
             hlrId = 1L,
             msisdn = "",
             eid = "",
+            profile = fakeProfile,
             hlrState = HlrState.NOT_ACTIVATED,
             smdpPlusState = SmDpPlusState.NOT_ACTIVATED,
             batch = 99L,
@@ -97,6 +100,8 @@ class SimInventoryUnitTests {
                 .thenReturn(listOf(hlrConfig))
         org.mockito.Mockito.`when`(config.profileVendors)
                 .thenReturn(listOf(profileVendorConfig))
+        org.mockito.Mockito.`when`(config.getProfileForPhoneType(fakePhoneType))
+                .thenReturn(fakeProfile)
 
         /* HLR adapter. */
         org.mockito.Mockito.`when`(hlrAdapter.id)
@@ -145,10 +150,10 @@ class SimInventoryUnitTests {
         org.mockito.Mockito.`when`(dao.getSimProfileByMsisdn(fakeMsisdn2))
                 .thenReturn(null)
 
-        org.mockito.Mockito.`when`(dao.findNextFreeSimProfileForHlr(1L))
+        org.mockito.Mockito.`when`(dao.findNextFreeSimProfileForHlr(1L, fakeProfile))
                 .thenReturn(fakeSimEntryWithoutMsisdn)
 
-        org.mockito.Mockito.`when`(dao.allocateNextFreeSimProfileForMsisdn(1L, fakeMsisdn1))
+        org.mockito.Mockito.`when`(dao.allocateNextFreeSimProfileForMsisdn(1L, fakeMsisdn1, fakeProfile))
                 .thenReturn(fakeSimEntryWithMsisdn)
 
         org.mockito.Mockito.`when`(dao.getHlrAdapterByName(fakeHlr))
@@ -248,6 +253,7 @@ class SimInventoryUnitTests {
     @Test
     fun testAllocateNextFree() {
         val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/msisdn/$fakeMsisdn1/next-free")
+                .queryParam("phoneType", fakePhoneType)
                 .request(MediaType.APPLICATION_JSON)
                 .get() // XXX Post (or put?)x'
         assertEquals(200, response.status)
@@ -337,7 +343,7 @@ class SimInventoryUnitTests {
         val data = ByteArrayInputStream(sampleCsvIinput.toByteArray(Charsets.UTF_8))
 
         // XXX For some reason this mock fails to match...
-        org.mockito.Mockito.`when`(dao.importSims("importer", 1L, 1L, data))
+        org.mockito.Mockito.`when`(dao.importSims("importer", 1L, 1L, fakeProfile, data))
                 .thenReturn(SimImportBatch(
                         id = 0L,
                         status = "SUCCESS",

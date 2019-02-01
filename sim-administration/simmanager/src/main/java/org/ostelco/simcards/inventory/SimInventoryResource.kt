@@ -114,9 +114,11 @@ class SimInventoryResource(private val client: Client,
     @Produces(MediaType.APPLICATION_JSON)
     fun allocateSimProfileForMsisdn(
             @NotEmpty @PathParam("hlrVendors") hlr: String,
-            @NotEmpty @PathParam("msisdn") msisdn: String): SimEntry {
+            @NotEmpty @PathParam("msisdn") msisdn: String,
+            @DefaultValue("_") @QueryParam("phoneType") phoneType: String): SimEntry {
         val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
-        return assertNonNull(dao.allocateNextFreeSimProfileForMsisdn(hlrAdapter.id, msisdn))
+        val profile = config.getProfileForPhoneType(phoneType)
+        return assertNonNull(dao.allocateNextFreeSimProfileForMsisdn(hlrAdapter.id, msisdn, profile))
     }
 
     @POST
@@ -125,8 +127,9 @@ class SimInventoryResource(private val client: Client,
     fun activateAllEsimProfileByIccid(
             @NotEmpty @PathParam("hlrVendors") hlr: String,
             @QueryParam("eid") eid: String?,
-            @QueryParam("iccid") iccid: String?): SimEntry? {
-        val simEntry = assertNonNull(activateEsimProfileByIccid(hlr, eid, iccid))
+            @QueryParam("iccid") iccid: String?,
+            @DefaultValue("_") @QueryParam("phoneType") phoneType: String): SimEntry? {
+        val simEntry = assertNonNull(activateEsimProfileByIccid(hlr, eid, iccid, phoneType))
         return activateHlrProfileByIccid(hlr, simEntry.iccid)
     }
 
@@ -136,10 +139,12 @@ class SimInventoryResource(private val client: Client,
     fun activateEsimProfileByIccid(
             @NotEmpty @PathParam("hlrVendors") hlr: String,
             @QueryParam("eid") eid: String?,
-            @QueryParam("iccid") iccid: String?): SimEntry? {
+            @QueryParam("iccid") iccid: String?,
+            @DefaultValue("_") @QueryParam("phoneType") phoneType: String): SimEntry? {
         val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
+        val profile = config.getProfileForPhoneType(phoneType)
         val simEntry = assertNonNull(if (iccid.isNullOrEmpty())
-            dao.findNextFreeSimProfileForHlr(hlrAdapter.id)
+            dao.findNextFreeSimProfileForHlr(hlrAdapter.id, profile)
         else
             dao.getSimProfileByIccid(iccid))
         assertCorrectHlr(hlr, hlrAdapter.id == simEntry.hlrId)
@@ -165,16 +170,18 @@ class SimInventoryResource(private val client: Client,
     }
 
     @PUT
-    @Path("import-batch/profilevendor/{simvendor}")
+    @Path("import-batch/profilevendor/{simVendor}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.TEXT_PLAIN)
     @Throws(IOException::class)
     fun importBatch(
             @NotEmpty @PathParam("hlrVendors") hlr: String,
-            @NotEmpty @PathParam("simvendor") simVendor: String,
+            @NotEmpty @PathParam("simVendor") simVendor: String,
+            @NotEmpty @QueryParam("phoneType") phoneType: String,
             csvInputStream: InputStream): SimImportBatch {
         val profileVendorAdapter = assertNonNull(dao.getProfileVendorAdapterByName(simVendor))
         val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
+        val profile = config.getProfileForPhoneType(phoneType)
 
         if (!dao.simVendorIsPermittedForHlr(profileVendorAdapter.id, hlrAdapter.id)) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
@@ -183,6 +190,7 @@ class SimInventoryResource(private val client: Client,
                 importer = "importer", // TODO: This is a very strange name for an importer .-)
                 hlrId = hlrAdapter.id,
                 profileVendorId = profileVendorAdapter.id,
+                profile = profile,
                 csvInputStream = csvInputStream)
     }
 }

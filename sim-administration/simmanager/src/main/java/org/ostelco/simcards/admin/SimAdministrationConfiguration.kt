@@ -38,6 +38,23 @@ class SimAdministrationConfiguration : Configuration() {
     @NotNull
     @JsonProperty("hlrs")
     lateinit var hlrVendors: List<HlrConfig>
+
+    @Valid
+    @NotNull
+    @JsonProperty("phoneTypes")
+    lateinit var phoneTypes: List<PhoneTypeConfig>
+
+    /* XXX Ideally the regex should be buildt when the config file is loaded,
+           not when it is used. */
+
+    /**
+     * Get profile based on given phone type/getProfileForPhoneType.
+     * @param name  phone type/getProfileForPhoneType
+     * @return  profile name
+     */
+    fun getProfileForPhoneType(name: String) = phoneTypes.filter { name.matches(it.regex.toRegex(RegexOption.IGNORE_CASE)) }
+            .map { it.profile }
+            .first()
 }
 
 class HlrConfig {
@@ -72,4 +89,16 @@ class ProfileVendorConfig {
     @NotNull
     @JsonProperty("url")
     lateinit var url: String
+}
+
+class PhoneTypeConfig {
+    @Valid
+    @NotNull
+    @JsonProperty("regex")
+    lateinit var regex: String
+
+    @Valid
+    @NotNull
+    @JsonProperty("profile")
+    lateinit var profile: String
 }
