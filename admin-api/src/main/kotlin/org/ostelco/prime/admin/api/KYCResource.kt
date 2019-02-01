@@ -2,6 +2,7 @@ package org.ostelco.prime.admin.api
 
 import arrow.core.Either
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.dropwizard.auth.Auth
 import org.ostelco.prime.apierror.*
 import org.ostelco.prime.auth.AccessTokenPrincipal
@@ -64,26 +65,6 @@ class KYCResource {
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
 
-    fun isJSON(jsonInString: String): Boolean {
-        try {
-            val mapper = ObjectMapper()
-            mapper.readTree(jsonInString)
-            return true
-        } catch (e: IOException) {
-            return false
-        }
-    }
-    fun convertToPlainText(jsonString: String): String {
-        var plainText = jsonString.replace("\"", "")
-        plainText = plainText.replace(",", " , ")
-        plainText = plainText.replace(":", "-")
-        plainText = plainText.replace("[", "")
-        plainText = plainText.replace("]", "")
-        plainText = plainText.replace("{", "")
-        plainText = plainText.replace("}", "")
-        return plainText
-    }
-
     private fun toRegularMap(m: MultivaluedMap<String, String>?): Map<String, String> {
         val map = HashMap<String, String>()
         if (m == null) {
@@ -95,11 +76,7 @@ class KYCResource {
                 if (sb.length > 0) {
                     sb.append(',')
                 }
-                if (isJSON(s)) {
-                    sb.append(convertToPlainText(s))
-                } else {
-                    sb.append(s)
-                }
+                sb.append(s)
             }
             map[entry.key] = sb.toString()
         }
@@ -113,10 +90,21 @@ class KYCResource {
         }
     }
 
+    private fun toRegularMap(jsonData: String?): Map<String, String>? {
+        try {
+            if (jsonData != null) {
+                return ObjectMapper().readValue(jsonData)
+            }
+        } catch (e: IOException) {
+            logger.error("Cannot parse Json Data: $jsonData")
+        }
+        return null;
+    }
+
     private fun toScanInformation(dataMap: Map<String, String>): ScanInformation? {
         try {
             val vendorScanReference: String = dataMap[JumioScanData.JUMIO_SCAN_ID.s]!!
-            val status: ScanStatus = toScanStatus(dataMap[JumioScanData.SCAN_STATUS.s]!!)
+            var status: ScanStatus = toScanStatus(dataMap[JumioScanData.SCAN_STATUS.s]!!)
             val verificationStatus: String = dataMap[JumioScanData.VERIFICATION_STATUS.s]!!
             val time: Long = Instant.parse(dataMap[JumioScanData.CALLBACK_DATE.s]!!).toEpochMilli()
             val type: String? = dataMap[JumioScanData.ID_TYPE.s]
@@ -124,8 +112,28 @@ class KYCResource {
             val firstName: String? = dataMap[JumioScanData.ID_FIRSTNAME.s]
             val lastName: String? = dataMap[JumioScanData.ID_LASTNAME.s]
             val dob: String? = dataMap[JumioScanData.ID_DOB.s]
-            val rejectReason: String? = dataMap[JumioScanData.REJECT_REASON.s]
+            var rejectReason: String? = dataMap[JumioScanData.REJECT_REASON.s]
             val scanId: String = dataMap[JumioScanData.SCAN_ID.s]!!
+            val identityVerificationData: String? = dataMap[JumioScanData.IDENTITY_VERIFICATION.s]
+
+            // Check if the id matched with the photo.
+            if (verificationStatus.toUpperCase() == JumioScanData.APPROVED_VERIFIED.s) {
+                val identityVerification = toRegularMap(identityVerificationData)
+                if (identityVerification == null) {
+                    // something gone wrong while parsing identityVerification
+                    rejectReason = """{ "message": "Missing ${JumioScanData.IDENTITY_VERIFICATION.s} information" }"""
+                    status = ScanStatus.REJECTED
+                } else {
+                    // identityVerification field is present
+                    val similarity = identityVerification[JumioScanData.SIMILARITY.s]
+                    val validity = identityVerification[JumioScanData.VALIDITY.s]
+                    if (!(similarity != null && similarity.toUpperCase() == JumioScanData.MATCH.s &&
+                            validity != null && validity.toUpperCase() == JumioScanData.TRUE.s)) {
+                        status = ScanStatus.REJECTED
+                        rejectReason = identityVerificationData
+                    }
+                }
+            }
 
             return ScanInformation(scanId, status, ScanResult(
                     vendorScanReference = vendorScanReference,
