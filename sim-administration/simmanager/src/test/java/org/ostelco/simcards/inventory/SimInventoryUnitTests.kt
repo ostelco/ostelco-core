@@ -47,8 +47,8 @@ class SimInventoryUnitTests {
     private val fakeMsisdn2 = "464646464646"
     private val fakeEid = "01010101010101010101010101010101"
 
-    private val fakeProfileVendor = "Idemia"
-    private val fakeHlr = "Loltel"
+    private val fakeProfileVendor = "Foo"
+    private val fakeHlr = "Bar"
 
     private val fakeSimEntryWithoutMsisdn = SimEntry(
             id = 1L,
