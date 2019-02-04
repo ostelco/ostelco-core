@@ -27,10 +27,17 @@ enum class HlrState {
     ACTIVATED,
 }
 
+/* ES2+ interface description - GSMA states forward transition. */
 enum class SmDpPlusState {
-    NOT_ACTIVATED,
-    ORDER_DOWNLOADED,
-    ACTIVATED,         /* I.e. previously downloaded order is confirmed. */
+    /* ES2+ protocol - between SM-DP+ servcie and backend. */
+    AVAILABLE,
+    ALLOCATED,
+    CONFIRMED,         /* Not used as 'releaseFlag' is set to true in 'confirm-order' message. */
+    RELEASED,
+    /* ES9+ protocol - between SM-DP+ service and handset. */
+    DOWNLOADED,
+    INSTALLED,
+    ENABLED,
 }
 
 /**
@@ -47,7 +54,7 @@ data class SimEntry(
         @JsonProperty("eid") val eid: String? = null,
         @JsonProperty("profile") val profile: String,
         @JsonProperty("hlrState") val hlrState: HlrState = HlrState.NOT_ACTIVATED,
-        @JsonProperty("smdpPlusState") val smdpPlusState: SmDpPlusState = SmDpPlusState.NOT_ACTIVATED,
+        @JsonProperty("smdpPlusState") val smdpPlusState: SmDpPlusState = SmDpPlusState.AVAILABLE,
         @JsonProperty("matchingId") val matchingId: String? = null,
         @JsonProperty("pin1") val pin1: String,
         @JsonProperty("pin2") val pin2: String,
@@ -508,11 +515,12 @@ abstract class SimInventoryDAO {
     // Finding next free SIM card for a particular HLR.
     //
     @SqlQuery("""SELECT * FROM sim_entries
-                      WHERE hlrId = :hlrId AND COALESCE(msisdn, '') = '' AND smdpPlusState = 'NOT_ACTIVATED' AND profile = :profile
+                      WHERE hlrId = :hlrId AND COALESCE(msisdn, '') = '' AND smdpPlusState = :smdpPlusState AND profile = :profile
                       LIMIT 1""")
     @RegisterMapper(SimEntryMapper::class)
     abstract fun findNextFreeSimProfileForHlr(@Bind("hlrId") hlrId: Long,
-                                              @Bind("profile") profile: String): SimEntry?
+                                              @Bind("profile") profile: String,
+                                              @Bind("smdpPlusState") smdpPlusState: SmDpPlusState = SmDpPlusState.AVAILABLE): SimEntry?
 
     /**
      * Allocates the next free SIM card on a HLR and set the MSISDN
