@@ -89,6 +89,11 @@ class ProfileVendorConfig {
     @NotNull
     @JsonProperty("endpoint")
     lateinit var endpoint: String
+
+    @Valid
+    @NotNull
+    @JsonProperty("requesterIdentifier")
+    lateinit var requesterIndentifier: String
 }
 
 class PhoneTypeConfig {

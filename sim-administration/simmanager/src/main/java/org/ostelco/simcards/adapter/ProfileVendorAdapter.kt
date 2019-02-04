@@ -7,6 +7,7 @@ import org.ostelco.simcards.admin.getLogger
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SmDpPlusState
+import java.util.*
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.Entity
@@ -64,8 +65,8 @@ data class ProfileVendorAdapter (
                       dao: SimInventoryDAO,
                       simEntry: SimEntry) : SimEntry? {
         val header = ES2RequestHeader(
-                functionRequesterIdentifier = "",
-                functionCallIdentifier = ""
+                functionRequesterIdentifier = config.requesterIndentifier,
+                functionCallIdentifier = UUID.randomUUID().toString()
         )
         val payload = Es2PlusDownloadOrder(
                 header = header,
@@ -107,8 +108,8 @@ data class ProfileVendorAdapter (
                      eid: String?,
                      simEntry: SimEntry) : SimEntry? {
         val header = ES2RequestHeader(
-                functionRequesterIdentifier = "",
-                functionCallIdentifier = ""
+                functionRequesterIdentifier = config.requesterIndentifier,
+                functionCallIdentifier = UUID.randomUUID().toString()
         )
         val payload = Es2ConfirmOrder(
                 header = header,

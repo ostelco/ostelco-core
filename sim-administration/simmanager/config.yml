@@ -17,6 +17,7 @@ hlrs:
 profileVendors:
   - name: Bar
     endpoint: http://bar.com/gsma/rsp2/es2plus
+    requesterIdentifier: 123
 
 # Note, list must end with a wildcard match
 phoneTypes:
