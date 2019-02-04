@@ -18,6 +18,15 @@ profileVendors:
   - name: Bar
     url: http://localhost:9080/gsma/rsp2/es2plus
 
+# Note, list must end with a wildcard match
+phoneTypes:
+  - regex: "android.*"
+    profile: ANDROID_PROFILE_1
+  - regex: "iphone.*"
+    profile: IPHONE_PROFILE_1
+  - regex: ".*"
+    profile: IPHONE_PROFILE_2
+
 server:
   type: default
   applicationConnectors:

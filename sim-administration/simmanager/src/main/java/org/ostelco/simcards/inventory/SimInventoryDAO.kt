@@ -45,6 +45,7 @@ data class SimEntry(
         @JsonProperty("iccid") val iccid: String,
         @JsonProperty("imsi") val imsi: String,
         @JsonProperty("eid") val eid: String? = null,
+        @JsonProperty("profile") val profile: String,
         @JsonProperty("hlrState") val hlrState: HlrState = HlrState.NOT_ACTIVATED,
         @JsonProperty("smdpPlusState") val smdpPlusState: SmDpPlusState = SmDpPlusState.NOT_ACTIVATED,
         @JsonProperty("pin1") val pin1: String,
@@ -66,7 +67,11 @@ data class SimImportBatch(
         @JsonProperty("profileVendorId") val profileVendorId: Long
 )
 
-class SimEntryIterator(profileVendorId: Long, hlrId: Long, batchId: Long, csvInputStream: InputStream): Iterator<SimEntry> {
+class SimEntryIterator(profileVendorId: Long,
+                       hlrId: Long,
+                       batchId: Long,
+                       profile: String,
+                       csvInputStream: InputStream): Iterator<SimEntry> {
 
     var count = AtomicLong(0)
     // TODO: The current implementation puts everything in a deque at startup.
@@ -106,6 +111,7 @@ class SimEntryIterator(profileVendorId: Long, hlrId: Long, batchId: Long, csvInp
                     val value = SimEntry(
                             batch = batchId,
                             profileVendorId = profileVendorId,
+                            profile = profile,
                             hlrId = hlrId,
                             iccid = iccid,
                             imsi = imsi,
@@ -178,6 +184,7 @@ abstract class SimInventoryDAO {
             val iccid = r.getString("iccid")
             val imsi = r.getString("imsi")
             val eid = r.getString("eid")
+            val profile = r.getString("profile")
             val smdpPlusState = r.getString("smdpPlusState")
             val hlrState = r.getString("hlrState")
             val pin1 = r.getString("pin1")
@@ -194,6 +201,7 @@ abstract class SimInventoryDAO {
                     iccid = iccid,
                     imsi = imsi,
                     eid = eid,
+                    profile = profile,
                     smdpPlusState = SmDpPlusState.valueOf(smdpPlusState.toUpperCase()),
                     hlrState = HlrState.valueOf(hlrState.toUpperCase()),
                     pin1 = pin1,
@@ -327,8 +335,8 @@ abstract class SimInventoryDAO {
 
     @Transaction
     @SqlBatch("""INSERT INTO sim_entries
-                                  (batch, profileVendorId, hlrid, hlrState, smdpplusstate, iccid, imsi, pin1, pin2, puk1, puk2)
-                      VALUES (:batch, :profileVendorId, :hlrId, :hlrState, :smdpPlusState, :iccid, :imsi, :pin1, :pin2, :puk1, :puk2)""")
+                                  (batch, profileVendorId, hlrid, hlrState, smdpplusstate, profile, iccid, imsi, pin1, pin2, puk1, puk2)
+                      VALUES (:batch, :profileVendorId, :hlrId, :hlrState, :smdpPlusState, :profile, :iccid, :imsi, :pin1, :pin2, :puk1, :puk2)""")
     @BatchChunkSize(1000)
     abstract fun insertAll(@BindBean entries: Iterator<SimEntry>)
 
@@ -356,6 +364,7 @@ abstract class SimInventoryDAO {
             importer: String,
             hlrId: Long,
             profileVendorId: Long,
+            profile: String,
             csvInputStream: InputStream): SimImportBatch {
 
         createNewSimImportBatch(
@@ -366,6 +375,7 @@ abstract class SimInventoryDAO {
         val values = SimEntryIterator(
                 profileVendorId = profileVendorId,
                 hlrId = hlrId,
+                profile = profile,
                 batchId = batchId,
                 csvInputStream = csvInputStream)
         insertAll(values)
@@ -471,10 +481,11 @@ abstract class SimInventoryDAO {
     // Finding next free SIM card for a particular HLR.
     //
     @SqlQuery("""SELECT * FROM sim_entries
-                      WHERE hlrId = :hlrId AND COALESCE(msisdn, '') = '' AND smdpPlusState = 'NOT_ACTIVATED'
+                      WHERE hlrId = :hlrId AND COALESCE(msisdn, '') = '' AND smdpPlusState = 'NOT_ACTIVATED' AND profile = :profile
                       LIMIT 1""")
     @RegisterMapper(SimEntryMapper::class)
-    abstract fun findNextFreeSimProfileForHlr(@Bind("hlrId") hlrId: Long): SimEntry?
+    abstract fun findNextFreeSimProfileForHlr(@Bind("hlrId") hlrId: Long,
+                                              @Bind("profile") profile: String): SimEntry?
 
     /**
      * Allocates the next free SIM card on a HLR and set the MSISDN
@@ -484,8 +495,8 @@ abstract class SimInventoryDAO {
      * @return next free SIM card or null if no cards is available
      */
     @Transaction
-    fun allocateNextFreeSimProfileForMsisdn(hlrId: Long, msisdn: String): SimEntry? {
-        val simEntry = findNextFreeSimProfileForHlr(hlrId)
+    fun allocateNextFreeSimProfileForMsisdn(hlrId: Long, msisdn: String, profile: String): SimEntry? {
+        val simEntry = findNextFreeSimProfileForHlr(hlrId, profile)
 
         /* No SIM cards available. */
         if (simEntry == null) {
