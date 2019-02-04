@@ -86,13 +86,13 @@ class SimInventoryUnitTests {
         /* HlrConfig */
         org.mockito.Mockito.`when`(hlrConfig.name)
                 .thenReturn(fakeHlr)
-        org.mockito.Mockito.`when`(hlrConfig.url)
+        org.mockito.Mockito.`when`(hlrConfig.endpoint)
                 .thenReturn("http://localhost:8080/nowhere")
 
         /* ProfileVendorConfig */
         org.mockito.Mockito.`when`(profileVendorConfig.name)
                 .thenReturn(fakeProfileVendor)
-        org.mockito.Mockito.`when`(profileVendorConfig.url)
+        org.mockito.Mockito.`when`(profileVendorConfig.endpoint)
                 .thenReturn("http://localhost:8080/somewhere")
 
         /* Top level config. */

@@ -69,7 +69,7 @@ class SimAdministrationTest {
         val SIM_MANAGER_RULE = DropwizardAppRule(SimAdministrationApplication::class.java,
                     ResourceHelpers.resourceFilePath("sim-manager.yaml"),
                     ConfigOverride.config("database.url", psql.jdbcUrl),
-                    ConfigOverride.config("hlrs[0].url", "http://localhost:${HLR_PORT}/default/provision"))
+                    ConfigOverride.config("hlrs[0].endpoint", "http://localhost:${HLR_PORT}/default/provision"))
 
         @BeforeClass
         @JvmStatic

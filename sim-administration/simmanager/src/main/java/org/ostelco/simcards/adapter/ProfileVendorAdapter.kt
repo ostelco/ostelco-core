@@ -71,7 +71,7 @@ data class ProfileVendorAdapter (
                 header = header,
                 iccid = simEntry.iccid
         )
-        val response = client.target("${config.url}/downloadOrder")
+        val response = client.target("${config.endpoint}/downloadOrder")
                 .request()
                 .post(Entity.entity(payload, MediaType.APPLICATION_JSON))
 
@@ -116,7 +116,7 @@ data class ProfileVendorAdapter (
                 iccid = simEntry.iccid,
                 releaseFlag = true
         )
-        val response = client.target("${config.url}/confirmOrder")
+        val response = client.target("${config.endpoint}/confirmOrder")
                 .request()
                 .post(Entity.entity(payload, MediaType.APPLICATION_JSON))
 

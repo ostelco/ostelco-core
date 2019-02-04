@@ -10,13 +10,13 @@ openApi:
 
 hlrs:
   - name: Foo
-    url: http://foo.com/default/provision
+    endpoint: http://foo.com/default/provision
     userId: user
     apiKey: abc
 
 profileVendors:
   - name: Bar
-    url: http://bar.com/gsma/rsp2/es2plus
+    endpoint: http://bar.com/gsma/rsp2/es2plus
 
 # Note, list must end with a wildcard match
 phoneTypes:

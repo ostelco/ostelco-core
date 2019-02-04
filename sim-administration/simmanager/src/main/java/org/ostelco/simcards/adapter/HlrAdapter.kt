@@ -41,7 +41,7 @@ data class HlrAdapter(
                 "msisdn" to simEntry.msisdn,
                 "userid" to config.userId
         )
-        val response = client.target("${config.url}/activate")
+        val response = client.target("${config.endpoint}/activate")
                 .request(MediaType.APPLICATION_JSON)
                 .header("x-api-key", config.apiKey)
                 .post(Entity.entity(payload, MediaType.APPLICATION_JSON))
@@ -67,7 +67,7 @@ data class HlrAdapter(
                     config.name),
                     Response.Status.BAD_REQUEST)
         }
-        val response = client.target("${config.url}/deactivate/${simEntry.iccid}")
+        val response = client.target("${config.endpoint}/deactivate/${simEntry.iccid}")
                 .request(MediaType.APPLICATION_JSON)
                 .header("x-api-key", config.apiKey)
                 .delete()
