@@ -175,7 +175,7 @@ data class ProfileVendorAdapter (
                     config.name,
                     simEntry.iccid,
                     header.functionCallIdentifier)
-            dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ACTIVATED)
+            dao.setSmDpPlusStateAndMatchingId(simEntry.id!!, SmDpPlusState.ACTIVATED, status.matchingId!!)
         }
     }
 }

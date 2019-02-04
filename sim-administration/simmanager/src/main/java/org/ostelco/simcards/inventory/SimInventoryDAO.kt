@@ -48,6 +48,7 @@ data class SimEntry(
         @JsonProperty("profile") val profile: String,
         @JsonProperty("hlrState") val hlrState: HlrState = HlrState.NOT_ACTIVATED,
         @JsonProperty("smdpPlusState") val smdpPlusState: SmDpPlusState = SmDpPlusState.NOT_ACTIVATED,
+        @JsonProperty("matchingId") val matchingId: String? = null,
         @JsonProperty("pin1") val pin1: String,
         @JsonProperty("pin2") val pin2: String,
         @JsonProperty("puk1") val puk1: String,
@@ -187,6 +188,7 @@ abstract class SimInventoryDAO {
             val profile = r.getString("profile")
             val smdpPlusState = r.getString("smdpPlusState")
             val hlrState = r.getString("hlrState")
+            val matchingId = r.getString("matchingId")
             val pin1 = r.getString("pin1")
             val pin2 = r.getString("pin2")
             val puk1 = r.getString("puk1")
@@ -204,6 +206,7 @@ abstract class SimInventoryDAO {
                     profile = profile,
                     smdpPlusState = SmDpPlusState.valueOf(smdpPlusState.toUpperCase()),
                     hlrState = HlrState.valueOf(hlrState.toUpperCase()),
+                    matchingId = matchingId,
                     pin1 = pin1,
                     pin2 = pin2,
                     puk1 = puk1,
@@ -335,8 +338,8 @@ abstract class SimInventoryDAO {
 
     @Transaction
     @SqlBatch("""INSERT INTO sim_entries
-                                  (batch, profileVendorId, hlrid, hlrState, smdpplusstate, profile, iccid, imsi, pin1, pin2, puk1, puk2)
-                      VALUES (:batch, :profileVendorId, :hlrId, :hlrState, :smdpPlusState, :profile, :iccid, :imsi, :pin1, :pin2, :puk1, :puk2)""")
+                                  (batch, profileVendorId, hlrid, hlrState, smdpplusstate, matchingId, profile, iccid, imsi, pin1, pin2, puk1, puk2)
+                      VALUES (:batch, :profileVendorId, :hlrId, :hlrState, :smdpPlusState, :matchingId, :profile, :iccid, :imsi, :pin1, :pin2, :puk1, :puk2)""")
     @BatchChunkSize(1000)
     abstract fun insertAll(@BindBean entries: Iterator<SimEntry>)
 
@@ -347,7 +350,9 @@ abstract class SimInventoryDAO {
             @Bind("hlrId") hlrId: Long,
             @Bind("profileVendorId") profileVendorId: Long): Int
 
-    @SqlUpdate("""UPDATE sim_import_batches SET size = :size, status = :status, endedAt = :endedAt
+    @SqlUpdate("""UPDATE sim_import_batches SET size = :size,
+                                                     status = :status,
+                                                     endedAt = :endedAt
                        WHERE id = :id""")
     abstract fun updateBatchState(
             @Bind("id") id: Long,
@@ -466,6 +471,28 @@ abstract class SimInventoryDAO {
             null
     }
 
+    @SqlUpdate("""UPDATE sim_entries SET smdpPlusState = :smdpPlusState,
+                                              matchingId = :matchingId
+                       WHERE id = :id""")
+    @RegisterMapper(SimEntryMapper::class)
+    abstract fun updateSmDpPlusStateAndMatchingId(
+            @Bind("id") id: Long,
+            @Bind("smdpPlusState") smdpPlusState: SmDpPlusState,
+            @Bind("matchingId") matchingId: String): Int
+
+    /**
+     * Updates state of SIM profile and returns the updated profile.
+     * @param id  row to update
+     * @param state  new state from SMDP+ service interaction
+     * @return updated row or null on no match
+     */
+    @Transaction
+    fun setSmDpPlusStateAndMatchingId(id: Long, state: SmDpPlusState, matchingId: String): SimEntry? {
+        return if (updateSmDpPlusStateAndMatchingId(id, state, matchingId) > 0)
+            getSimProfileById(id)
+        else
+            null
+    }
 
     //
     //  Binding a SIM card to a MSISDN
