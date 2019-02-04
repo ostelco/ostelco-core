@@ -77,19 +77,32 @@ data class ProfileVendorAdapter (
                 .post(Entity.entity(payload, MediaType.APPLICATION_JSON))
 
         if (response.status != 200) {
-            throw WebApplicationException(String.format("Order download to SM-DP+ service %s for ICCID %s failed with status code %d",
-                    config.name, simEntry.iccid, response.status),
+            throw WebApplicationException(
+                    String.format("Order download to SM-DP+ service %s for ICCID %s failed with status code %d (call-id: %s)",
+                            config.name,
+                            simEntry.iccid,
+                            response.status,
+                            header.functionCallIdentifier),
                     Response.Status.BAD_REQUEST)
         }
 
         val status = response.readEntity(Es2DownloadOrderResponse::class.java)
 
         return if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess)
-            throw WebApplicationException(String.format("Order download to SM-DP+ service %s for ICCID %s failed with execution status %s",
-                    config.name, simEntry.iccid, status.header.functionExecutionStatus),
+            throw WebApplicationException(
+                    String.format("Order download to SM-DP+ service %s for ICCID %s failed with execution status %s (call-id: %s)",
+                            config.name,
+                            simEntry.iccid,
+                            status.header.functionExecutionStatus,
+                            header.functionCallIdentifier),
                     Response.Status.BAD_REQUEST)
-        else
+        else {
+            logger.info("Order download message to SM-DP+ service {} for ICCID {} completed OK (call-id: {})",
+                    config.name,
+                    simEntry.iccid,
+                    header.functionCallIdentifier)
             dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ORDER_DOWNLOADED)
+        }
     }
 
     /**
@@ -122,29 +135,46 @@ data class ProfileVendorAdapter (
                 .post(Entity.entity(payload, MediaType.APPLICATION_JSON))
 
         if (response.status != 200) {
-            throw WebApplicationException(String.format("Order confirm messageto SM-DP+ service %s for ICCID %s failed with status code %d",
-                    config.name, simEntry.iccid, response.status),
+            throw WebApplicationException(
+                    String.format("Order confirm messageto SM-DP+ service %s for ICCID %s failed with status code %d (call-id: %s)",
+                            config.name,
+                            simEntry.iccid,
+                            response.status,
+                            header.functionCallIdentifier),
                     Response.Status.BAD_REQUEST)
         }
 
         val status = response.readEntity(Es2ConfirmOrderResponse::class.java)
 
         return if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess)
-            throw WebApplicationException(String.format("Order confirm message to SM-DP+ service %s for ICCID %s failed with execution status %s",
-                    config.name, simEntry.iccid, status.header.functionExecutionStatus),
+            throw WebApplicationException(
+                    String.format("Order confirm message to SM-DP+ service %s for ICCID %s failed with execution status %s (call-id: %s)",
+                            config.name,
+                            simEntry.iccid,
+                            status.header.functionExecutionStatus,
+                            header.functionCallIdentifier),
                     Response.Status.BAD_REQUEST)
         else {
             // XXX Is just logging good enough?
             if (status.eid.isEmpty()) {
-                logger.warn("No EID returned from SM-DP+ service {} for ICCID {}",
-                        config.name, simEntry.iccid)
+                logger.warn("No EID returned from SM-DP+ service {} for ICCID {} for order confirm message (call-id: {})",
+                        config.name,
+                        simEntry.iccid,
+                        header.functionCallIdentifier)
             } else {
-                dao.setEidOfSimProfile(simEntry.id!!, status.eid)     /* Update profile with 'eid' value. */
+                dao.setEidOfSimProfile(simEntry.id!!, status.eid)
             }
             if (!eid.isNullOrEmpty() && eid != status.eid) {
-                logger.warn("EID returned from SM-DP+ service {} does not match provided EID ({} <> {})",
-                        config.name, eid, status.eid)
+                logger.warn("EID returned from SM-DP+ service {} does not match provided EID ({} <> {}) in order confirm message (call-id: {})",
+                        config.name,
+                        eid,
+                        status.eid,
+                        header.functionCallIdentifier)
             }
+            logger.info("Order confirm message to SM-DP+ service {} for ICCID {} completed OK (call-id: {})",
+                    config.name,
+                    simEntry.iccid,
+                    header.functionCallIdentifier)
             dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ACTIVATED)
         }
     }
