@@ -10,6 +10,7 @@ import com.google.cloud.storage.BlobId
 import com.google.cloud.storage.BlobInfo
 import com.google.cloud.storage.StorageException
 import com.google.cloud.storage.StorageOptions
+import com.google.crypto.tink.config.TinkConfig
 import io.dropwizard.setup.Environment
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.JumioScanData
@@ -27,6 +28,7 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import javax.ws.rs.core.MultivaluedMap
+import kotlin.collections.HashMap
 
 
 class ScanInfoStore : ScanInformationStore by ScanInformationStoreSingleton
@@ -52,13 +54,31 @@ object ScanInformationStoreSingleton : ScanInformationStore {
 
     private lateinit var storageBucket: String
 
+    // Path name prefix for the keyset files.
+    private lateinit var keysetFilePathPrefix: String
+    // KMS key name for decrypting the public key set.
+    private var masterKeyUri: String? = null
+    // Encryptors for used for each country
+    private var encrypters:HashMap<String, ScanInfoEncrypt> = HashMap()
+
+    fun getEncrypter(countryCode: String): ScanInfoEncrypt {
+        if (encrypters.containsKey(countryCode)) {
+            return encrypters[countryCode]!!
+        } else {
+            val encrypt = ScanInfoEncrypt("${keysetFilePathPrefix}_${countryCode}", masterKeyUri)
+            encrypters.put(countryCode, encrypt)
+            return encrypt
+        }
+    }
+
     override fun upsertVendorScanInformation(subscriberId: String, countryCode:String, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit> {
         return IO {
             Either.monad<StoreError>().binding {
                 val vendorScanInformation = createVendorScanInformation(vendorData).bind()
                 // TODO: find the right bucket for this scan (may be they are in a different region)
                 val bucketName = storageBucket
-                val zipData = JumioHelper.generateZipFile(vendorScanInformation).bind()
+                val plainZipData = JumioHelper.generateZipFile(vendorScanInformation).bind()
+                val zipData = getEncrypter(countryCode).encryptData(plainZipData)
                 if (bucketName.isNullOrEmpty()) {
                     val fileName = "${countryCode}_${vendorScanInformation.scanId}.zip"
                     logger.info("No bucket set, saving file locally $fileName")
@@ -83,18 +103,14 @@ object ScanInformationStoreSingleton : ScanInformationStore {
         return JumioHelper.generateVendorScanInformation(vendorData, apiToken, apiSecret)
     }
 
-
-    internal fun __getVendorScanInformation(subscriberId: String, countryCode:String, scanId: String): Either<StoreError, ZipInputStream> {
-        return IO {
-            Either.monad<StoreError>().binding {
-                // Only works with local files
-                val fileName = "${countryCode}_$scanId.zip"
-                JumioHelper.loadLocalZipFile(fileName).bind()
-            }.fix()
-        }.unsafeRunSync()
+    internal fun __getVendorScanInformationFile(subscriberId: String, countryCode:String, scanId: String): Either<StoreError, String> {
+        return Either.right("${countryCode}_$scanId.zip")
     }
 
     fun init(env: Environment?, environmentVars: EnvironmentVars) {
+        TinkConfig.register()
+        keysetFilePathPrefix = ConfigRegistry.config.keysetFilePathPrefix
+        masterKeyUri = ConfigRegistry.config.masterKeyUri
         if (ConfigRegistry.config.storeType != "emulator") {
             // Don't throw error during local tests
             apiToken = environmentVars.getVar("JUMIO_API_TOKEN")

@@ -22,6 +22,7 @@ dependencies {
   implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
   implementation "com.google.cloud:google-cloud-datastore:$googleCloudVersion"
   implementation "com.google.cloud:google-cloud-storage:$googleCloudVersion"
+  implementation "com.google.crypto.tink:tink:$tinkVersion"
 
   testImplementation 'com.palantir.docker.compose:docker-compose-rule-junit4:0.34.0'
 
@@ -29,6 +30,7 @@ dependencies {
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
 
   testImplementation "org.mockito:mockito-core:$mockitoVersion"
+  //testImplementation "com.google.crypto.tink:tink:$tinkVersion"
 }
 
 apply from: '../gradle/jacoco.gradle'
