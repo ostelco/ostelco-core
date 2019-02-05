@@ -247,6 +247,7 @@ function self_signed_cert {
     else 
 	generate_cert_config "$cert_config" "$keyfile" "$distinguished_name" "$country" "$state" "$location" "$organization" "$common_name"
 	openssl req \
+            -days 730 \
 	    -config $cert_config \
 	    -new -x509 -sha256  \
 	    -keyout $keyfile \
@@ -281,7 +282,7 @@ function generate_csr {
 	echo "Certificate signing request (CSR) file  file '$csr_file' already exist, not creating again"
     else 
 	generate_cert_config "$cert_config" "$keyfile" "$distinguished_name" "$country" "$state" "$location" "$organization" "$common_name"
-	openssl req -new -out "$csr_file" -config "$cert_config"
+	openssl req -days 730 -new -out "$csr_file" -config "$cert_config"
     fi
 }
 
