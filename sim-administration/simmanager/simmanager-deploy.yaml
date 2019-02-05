@@ -1,0 +1,32 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: simmanager
+  labels:
+    app: simmanager
+    tier: backend
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: simmanager
+        tier: backend
+    spec:
+      containers:
+        - name: simmanager
+          image: eu.gcr.io/pantel-2decb/simmanager:SIMMANAGER_VERSION
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: simmgr-test-secrets
+                  key: user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: simmgr-test-secrets
+                  key: password
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
