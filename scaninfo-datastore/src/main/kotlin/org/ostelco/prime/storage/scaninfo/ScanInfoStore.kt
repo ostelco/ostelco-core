@@ -301,6 +301,11 @@ object JumioHelper {
     }
 
     fun __testDecryption() {
+        // The files created during the acceptance tests can be verified using this function
+        // Download encrypted files created in the root folder of prime docker image
+        // Find files by logging into the docker image `docker exec -ti prime bash`
+        // Copy files from docker image using `docker cp prime:/global_f1a6a509-7998-405c-b186-08983c91b422 .`
+        // Replace the path for the input files in the method & run.
         TinkConfig.register()
         val file = File("global_f1a6a509-7998-405c-b186-08983c91b422.zip") // File downloaded form docker image after AT
         val fis = FileInputStream(file)
