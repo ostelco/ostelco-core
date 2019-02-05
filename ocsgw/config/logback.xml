@@ -7,16 +7,16 @@
     </encoder>
   </appender>
 
-  <logger name="org.ostelco" level="DEBUG"/>
+  <logger name="org.ostelco" level="WARN"/>
   <logger name="org.mobicents.tests.diameter" level="INFO"/>
   <logger name="org.jdiameter.common.impl.validation" level="INFO"/>
   <logger name="jdiameter.statistic" level="INFO"/>
-  <logger name="org.jdiameter" level="INFO"/>
+  <logger name="org.jdiameter" level="WARN"/>
   <logger name="io.grpc.netty" level="INFO"/>
   <logger name="io.lettuce.core" level="INFO" />
   <logger name="io.netty" level="INFO" />
 
-  <root level="DEBUG">
+  <root level="WARN">
     <appender-ref ref="STDOUT"/>
   </root>
 
