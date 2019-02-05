@@ -61,8 +61,8 @@ class ScanInfoStoreTest {
             assertEquals("id.png", image.name)
             val imageBackside = zip.nextEntry
             assertEquals("id_backside.png", imageBackside.name)
+            File(filename).delete()
         }
-        File("global_$scanId.zip").delete()
     }
 
     companion object {

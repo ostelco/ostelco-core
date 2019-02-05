@@ -83,11 +83,11 @@ object ScanInformationStoreSingleton : ScanInformationStore {
                 val plainZipData = JumioHelper.generateZipFile(vendorScanInformation).bind()
                 val zipData = getEncrypter(countryCode).encryptData(plainZipData)
                 if (bucketName.isNullOrEmpty()) {
-                    val fileName = "${countryCode}_${vendorScanInformation.scanId}.zip"
+                    val fileName = "${countryCode}_${vendorScanInformation.scanId}.zip.tk"
                     logger.info("No bucket set, saving file locally $fileName")
                     JumioHelper.saveZipFile(fileName, zipData).bind()
                 } else {
-                    val fileName = "${subscriberId}/${vendorScanInformation.scanId}.zip"
+                    val fileName = "${subscriberId}/${vendorScanInformation.scanId}.zip.tk"
                     val globalBucket = "${bucketName}-global"
                     val countryBucket = "${bucketName}-${countryCode.toLowerCase()}"
                     logger.info("Saving in cloud store $globalBucket --> $fileName")
@@ -107,7 +107,7 @@ object ScanInformationStoreSingleton : ScanInformationStore {
     }
 
     internal fun __getVendorScanInformationFile(subscriberId: String, countryCode:String, scanId: String): Either<StoreError, String> {
-        return Either.right("${countryCode}_$scanId.zip")
+        return Either.right("${countryCode}_$scanId.zip.tk")
     }
 
     fun init(env: Environment?, environmentVars: EnvironmentVars) {
@@ -304,10 +304,10 @@ object JumioHelper {
         // The files created during the acceptance tests can be verified using this function
         // Download encrypted files created in the root folder of prime docker image
         // Find files by logging into the docker image `docker exec -ti prime bash`
-        // Copy files from docker image using `docker cp prime:/global_f1a6a509-7998-405c-b186-08983c91b422 .`
+        // Copy files from docker image using `docker cp prime:/global_f1a6a509-7998-405c-b186-08983c91b422.zip.tk .`
         // Replace the path for the input files in the method & run.
         TinkConfig.register()
-        val file = File("global_f1a6a509-7998-405c-b186-08983c91b422.zip") // File downloaded form docker image after AT
+        val file = File("global_f1a6a509-7998-405c-b186-08983c91b422.zip.tk") // File downloaded form docker image after AT
         val fis = FileInputStream(file)
         val data = ByteArray(file.length().toInt())
         fis.read(data)
