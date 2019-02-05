@@ -1,5 +1,6 @@
 package org.ostelco.simcards.inventory
 
+import com.fasterxml.jackson.databind.JsonSerializer
 import org.hibernate.validator.constraints.NotEmpty
 import org.ostelco.simcards.admin.HlrConfig
 import org.ostelco.simcards.admin.SimAdministrationConfiguration
@@ -169,17 +170,18 @@ class SimInventoryResource(private val client: Client,
             it.name == simVendorAdapter.name
         }.firstOrNull())
 
-        /* XXX Check state names with chap. 1.22 figure 1 pp ?? */
-
+        /* As 'confirm-order' message is issued with 'releaseFlag' set to true, the
+           CONFIRMED state should not occur. */
         return try {
             when (simEntry.smdpPlusState) {
-                SmDpPlusState.NOT_ACTIVATED -> {
+                SmDpPlusState.AVAILABLE -> {
                     simVendorAdapter.activate(client, config, dao, eid, simEntry)
                 }
-                SmDpPlusState.ORDER_DOWNLOADED -> {
+                SmDpPlusState.ALLOCATED -> {
                     simVendorAdapter.confirmOrder(client, config, dao, eid, simEntry)
                 }
-                SmDpPlusState.ACTIVATED -> {
+                /* ESIM already 'released'. */
+                else -> {
                     simEntry
                 }
             }

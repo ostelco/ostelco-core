@@ -65,8 +65,8 @@ class HlrConfig {
 
     @Valid
     @NotNull
-    @JsonProperty("url")
-    lateinit var url: String
+    @JsonProperty("endpoint")
+    lateinit var endpoint: String
 
     @Valid
     @NotNull
@@ -87,8 +87,13 @@ class ProfileVendorConfig {
 
     @Valid
     @NotNull
-    @JsonProperty("url")
-    lateinit var url: String
+    @JsonProperty("endpoint")
+    lateinit var endpoint: String
+
+    @Valid
+    @NotNull
+    @JsonProperty("requesterIdentifier")
+    lateinit var requesterIndentifier: String
 }
 
 class PhoneTypeConfig {

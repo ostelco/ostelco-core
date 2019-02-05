@@ -10,13 +10,14 @@ openApi:
 
 hlrs:
   - name: Foo
-    url: http://localhost:9180/default/provision
+    endpoint: http://localhost:9180/default/provision
     userId: user
     apiKey: xyz
 
 profileVendors:
   - name: Bar
-    url: http://localhost:9080/gsma/rsp2/es2plus
+    endpoint: http://localhost:9080/gsma/rsp2/es2plus
+    requesterIdentifier: 123
 
 # Note, list must end with a wildcard match
 phoneTypes:

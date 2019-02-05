@@ -69,7 +69,7 @@ class SimAdministrationTest {
         val SIM_MANAGER_RULE = DropwizardAppRule(SimAdministrationApplication::class.java,
                     ResourceHelpers.resourceFilePath("sim-manager.yaml"),
                     ConfigOverride.config("database.url", psql.jdbcUrl),
-                    ConfigOverride.config("hlrs[0].url", "http://localhost:${HLR_PORT}/default/provision"))
+                    ConfigOverride.config("hlrs[0].endpoint", "http://localhost:${HLR_PORT}/default/provision"))
 
         @BeforeClass
         @JvmStatic
@@ -196,7 +196,7 @@ class SimAdministrationTest {
         assertThat(simEntry.iccid).isEqualTo(iccid)
         assertThat(simEntry.eid).isEqualTo(eid)
         assertThat(simEntry.profile).isEqualTo(expectedProfile)
-        assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.ACTIVATED)
+        assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.RELEASED)
         assertThat(simEntry.hlrState).isEqualTo(HlrState.NOT_ACTIVATED)
     }
 
@@ -213,7 +213,7 @@ class SimAdministrationTest {
         assertThat(simEntry.iccid).isEqualTo(iccid)
         assertThat(simEntry.eid).isEqualTo(getEidFromIccid(iccid))
         assertThat(simEntry.profile).isEqualTo(expectedProfile)
-        assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.ACTIVATED)
+        assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.RELEASED)
         assertThat(simEntry.hlrState).isEqualTo(HlrState.NOT_ACTIVATED)
     }
 
@@ -230,7 +230,7 @@ class SimAdministrationTest {
         val simEntry = response.readEntity(SimEntry::class.java)
         assertThat(simEntry.eid).isEqualTo(eid)
         assertThat(simEntry.profile).isEqualTo(expectedProfile)
-        assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.ACTIVATED)
+        assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.RELEASED)
         assertThat(simEntry.hlrState).isEqualTo(HlrState.NOT_ACTIVATED)
     }
 
@@ -247,7 +247,7 @@ class SimAdministrationTest {
         assertThat(simEntry.iccid).isEqualTo(iccid)
         assertThat(simEntry.eid).isEqualTo(getEidFromIccid(iccid))
         assertThat(simEntry.profile).isEqualTo(expectedProfile)
-        assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.ACTIVATED)
+        assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.RELEASED)
         assertThat(simEntry.hlrState).isEqualTo(HlrState.ACTIVATED)
     }
 
@@ -263,7 +263,7 @@ class SimAdministrationTest {
         val simEntry = response.readEntity(SimEntry::class.java)
         assertThat(simEntry.eid).isEqualTo(getEidFromIccid(simEntry.iccid))
         assertThat(simEntry.profile).isEqualTo(expectedProfile)
-        assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.ACTIVATED)
+        assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.RELEASED)
         assertThat(simEntry.hlrState).isEqualTo(HlrState.ACTIVATED)
     }
 }

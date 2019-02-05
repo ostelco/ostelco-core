@@ -60,7 +60,7 @@ class SimInventoryUnitTests {
             eid = "",
             profile = fakeProfile,
             hlrState = HlrState.NOT_ACTIVATED,
-            smdpPlusState = SmDpPlusState.NOT_ACTIVATED,
+            smdpPlusState = SmDpPlusState.AVAILABLE,
             batch = 99L,
             imsi = fakeImsi1,
             iccid = fakeIccid1,
@@ -73,7 +73,7 @@ class SimInventoryUnitTests {
             msisdn = fakeMsisdn1,
             eid = fakeEid,
             hlrState = HlrState.ACTIVATED,
-            smdpPlusState = SmDpPlusState.ACTIVATED
+            smdpPlusState = SmDpPlusState.RELEASED
     )
 
 
@@ -86,13 +86,13 @@ class SimInventoryUnitTests {
         /* HlrConfig */
         org.mockito.Mockito.`when`(hlrConfig.name)
                 .thenReturn(fakeHlr)
-        org.mockito.Mockito.`when`(hlrConfig.url)
+        org.mockito.Mockito.`when`(hlrConfig.endpoint)
                 .thenReturn("http://localhost:8080/nowhere")
 
         /* ProfileVendorConfig */
         org.mockito.Mockito.`when`(profileVendorConfig.name)
                 .thenReturn(fakeProfileVendor)
-        org.mockito.Mockito.`when`(profileVendorConfig.url)
+        org.mockito.Mockito.`when`(profileVendorConfig.endpoint)
                 .thenReturn("http://localhost:8080/somewhere")
 
         /* Top level config. */
@@ -122,7 +122,7 @@ class SimInventoryUnitTests {
                 .thenReturn(fakeProfileVendor)
         org.mockito.Mockito.`when`(profileVendorAdapter.activate(client, profileVendorConfig, dao, fakeEid, fakeSimEntryWithoutMsisdn))
                 .thenReturn(fakeSimEntryWithoutMsisdn.copy(
-                        smdpPlusState = SmDpPlusState.ACTIVATED,
+                        smdpPlusState = SmDpPlusState.RELEASED,
                         eid = fakeEid))
 
         /* DAO. */
@@ -179,9 +179,9 @@ class SimInventoryUnitTests {
                 .thenReturn(fakeSimEntryWithoutMsisdn.copy(
                         hlrState = HlrState.NOT_ACTIVATED))
 
-        org.mockito.Mockito.`when`(dao.setSmDpPlusState(fakeSimEntryWithoutMsisdn.id!!, SmDpPlusState.ACTIVATED))
+        org.mockito.Mockito.`when`(dao.setSmDpPlusState(fakeSimEntryWithoutMsisdn.id!!, SmDpPlusState.RELEASED))
                 .thenReturn(fakeSimEntryWithoutMsisdn.copy(
-                        smdpPlusState = SmDpPlusState.ACTIVATED))
+                        smdpPlusState = SmDpPlusState.RELEASED))
     }
 
     @Test
