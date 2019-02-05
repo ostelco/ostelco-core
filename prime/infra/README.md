@@ -241,6 +241,22 @@ kubectl create secret generic jumio-secrets --from-literal=apiToken='jumioApiTok
 kubectl create secret generic scaninfo-secrets --from-literal=bucketName='bucketname'
 ```
 
+### Keysets for scan information store
+
+The keys are generated using `Tinkey` tool provied as part of the google tink project
+More information can be found here: https://github.com/google/tink/blob/v1.2.2/docs/TINKEY.md
+
+To create a new private key set for testing
+```bash
+bazel-bin/tools/tinkey/tinkey create-keyset --key-template ECIES_P256_HKDF_HMAC_SHA256_AES128_GCM --out test_keyset_pvt_cltxt
+```
+ Generate a public key set from the above private keyset.
+```bash
+bazel-bin/tools/tinkey/tinkey create-public-keyset --in test_keyset_pvt_cltxt --out test_keyset_pub_cltxt
+```
+
+The keysets for production (public key only) needs to be encrypted using GCP KMS. More details can be found in docs for `--master-key-uri` option in `tinkey`
+
 ### Cloud Pub/Sub
 
 ```bash

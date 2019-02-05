@@ -19,6 +19,7 @@ COPY config/pantel-prod.json /secret/pantel-prod.json
 COPY config/testDb.csv /config-data/imeiDb.csv
 COPY config/subscriber.graphqls /config/subscriber.graphqls
 COPY config/test.yaml /config/config.yaml
+COPY config/test_keyset_pub_cltxt /config/test_keyset_pub_cltxt_global
 
 COPY build/libs/prime-uber.jar /prime.jar
 

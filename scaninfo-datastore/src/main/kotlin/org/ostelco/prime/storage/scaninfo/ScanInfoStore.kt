@@ -10,7 +10,10 @@ import com.google.cloud.storage.BlobId
 import com.google.cloud.storage.BlobInfo
 import com.google.cloud.storage.StorageException
 import com.google.cloud.storage.StorageOptions
+import com.google.crypto.tink.CleartextKeysetHandle
+import com.google.crypto.tink.JsonKeysetReader
 import com.google.crypto.tink.config.TinkConfig
+import com.google.crypto.tink.hybrid.HybridDecryptFactory
 import io.dropwizard.setup.Environment
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.JumioScanData
@@ -294,5 +297,20 @@ object JumioHelper {
         } catch (ex: IOException) {
             ex.printStackTrace()
         }
+        __testDecryption()
+    }
+
+    fun __testDecryption() {
+        TinkConfig.register()
+        val file = File("global_f1a6a509-7998-405c-b186-08983c91b422.zip") // File downloaded form docker image after AT
+        val fis = FileInputStream(file)
+        val data = ByteArray(file.length().toInt())
+        fis.read(data)
+        fis.close()
+        val pvtKeysetFilename = "prime/config/test_keyset_pvt_cltxt" // The test private keys used in AT
+        val keysetHandle = CleartextKeysetHandle.read(JsonKeysetReader.withFile(File(pvtKeysetFilename)))
+        val hybridDecrypt = HybridDecryptFactory.getPrimitive(keysetHandle)
+        val decrypted = hybridDecrypt.decrypt(data, null)
+        saveZipFile("decrypted.zip", decrypted)
     }
 }
