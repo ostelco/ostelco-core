@@ -79,6 +79,7 @@ data class ScanResult(
 
 data class ScanInformation(
         val scanId:String,
+        val countryCode: String,
         val status: ScanStatus,
         val scanResult: ScanResult?
 ) : HasId {
@@ -115,7 +116,13 @@ enum class JumioScanData(val s: String) {
     SCAN_IMAGE("idScanImage"),
     SCAN_IMAGE_FACE("idScanImageFace"),
     SCAN_IMAGE_BACKSIDE("idScanImageBackside"),
-    REJECT_REASON("rejectReason")
+    REJECT_REASON("rejectReason"),
+    IDENTITY_VERIFICATION("identityVerification"),
+    SIMILARITY("similarity"),
+    VALIDITY("validity"),
+    APPROVED_VERIFIED("APPROVED_VERIFIED"),
+    MATCH("MATCH"),
+    TRUE("TRUE")
 }
 
 enum class VendorScanData(val s: String) {

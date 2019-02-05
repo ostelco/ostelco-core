@@ -60,12 +60,18 @@ paths:
           description: "No state information available for this user."
       security:
         - auth0_jwt: []
-  "/customer/new-ekyc-scanId":
+  "/customer/new-ekyc-scanId/{countryCode}":
     get:
       description: "Get a new Id for eKYC scanning."
       produces:
         - application/json
       operationId: "newEKYCScanId"
+      parameters:
+        - name: countryCode
+          in: path
+          description: "Country code in ISO 3166-1 alpha-3 format"
+          required: true
+          type: string
       responses:
         200:
           description: "Successfully retrieved new ScanId."
@@ -75,7 +81,7 @@ paths:
           description: "User not found."
       security:
         - auth0_jwt: []
-  "/customer/scanStatus":
+  "/customer/scanStatus/{scanId}":
     get:
       description: "Get status of eKYC scan."
       produces:
@@ -784,6 +790,9 @@ definitions:
       scanId:
         description: "New scan Id for eKYC"
         type: string
+      countryCode:
+        description: "The 3 letter country code (or global) for the scan "
+        type: string
       status:
         description: "The status of the scan"
         type: string
@@ -798,6 +807,6 @@ securityDefinitions:
     authorizationUrl: ""
     flow: "implicit"
     type: "oauth2"
-    x-google-issuer: "https://ostelco.eu.auth0.com/"
-    x-google-jwks_uri: "https://ostelco.eu.auth0.com/.well-known/jwks.json"
+    x-google-issuer: "https://auth-dev.oya.world/"
+    x-google-jwks_uri: "https://auth-dev.oya.world/.well-known/jwks.json"
     x-google-audiences: "http://google_api"

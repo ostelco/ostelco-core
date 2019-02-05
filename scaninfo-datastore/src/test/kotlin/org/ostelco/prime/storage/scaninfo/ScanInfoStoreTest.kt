@@ -29,8 +29,8 @@ class ScanInfoStoreTest {
         vendorData.add(JumioScanData.SCAN_IMAGE.s, imgUrl)
         vendorData.add(JumioScanData.SCAN_IMAGE_BACKSIDE.s, imgUrl2)
 
-        ScanInformationStoreSingleton.upsertVendorScanInformation(subscriberId, vendorData)
-        val savedRecord = ScanInformationStoreSingleton.__getVendorScanInformation(subscriberId, scanId)
+        ScanInformationStoreSingleton.upsertVendorScanInformation(subscriberId, "global", vendorData)
+        val savedRecord = ScanInformationStoreSingleton.__getVendorScanInformation(subscriberId, "global", scanId)
         assert(savedRecord.isRight())
         savedRecord.map { zip ->
             val details = zip.nextEntry
@@ -40,7 +40,7 @@ class ScanInfoStoreTest {
             val imageBackside = zip.nextEntry
             assertEquals("id_backside.png", imageBackside.name)
         }
-        File("$scanId.zip").delete()
+        File("global_$scanId.zip").delete()
     }
 
     companion object {

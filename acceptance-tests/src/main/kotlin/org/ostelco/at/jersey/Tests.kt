@@ -665,7 +665,7 @@ class eKYCTest {
             createProfile(name = "Test User for eKYC", email = email)
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId"
+                path = "/customer/new-ekyc-scanId/global"
                 subscriberId = email
             }
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
@@ -687,7 +687,7 @@ class eKYCTest {
             createProfile(name = "Test User for eKYC", email = email)
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId"
+                path = "/customer/new-ekyc-scanId/global"
                 subscriberId = email
             }
 
@@ -696,7 +696,7 @@ class eKYCTest {
             var dataMap = MultivaluedHashMap<String,String>()
             dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
             dataMap.put("idScanStatus", listOf("ERROR"))
-            dataMap.put("verificationStatus", listOf("FRAUD"))
+            dataMap.put("verificationStatus", listOf("DENIED_FRAUD"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
             dataMap.put("idType", listOf("LICENSE"))
             dataMap.put("idCountry", listOf("NOR"))
@@ -728,7 +728,7 @@ class eKYCTest {
             createProfile(name = "Test User for eKYC", email = email)
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId"
+                path = "/customer/new-ekyc-scanId/global"
                 subscriberId = email
             }
 
@@ -745,6 +745,8 @@ class eKYCTest {
             dataMap.put("idLastName", listOf("Test Family"))
             dataMap.put("idDob", listOf("1990-12-09"))
             dataMap.put("merchantIdScanReference", listOf(scanInfo.scanId))
+            val identityVerification="""{ "similarity":"MATCH", "validity":"TRUE"}"""
+            dataMap.put("identityVerification", listOf(identityVerification))
 
             post<ScanInformation>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
                 path = "/ekyc/callback"
@@ -761,6 +763,51 @@ class eKYCTest {
             StripePayment.deleteCustomer(email = email)
         }
     }
+
+    @Test
+    fun `jersey test - ekyc callback - process failure of face id`() {
+
+        val email = "ekyc-${randomInt()}@test.com"
+        try {
+            createProfile(name = "Test User for eKYC", email = email)
+
+            val scanInfo: ScanInformation = get {
+                path = "/customer/new-ekyc-scanId/global"
+                subscriberId = email
+            }
+
+            assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
+
+            var dataMap = MultivaluedHashMap<String,String>()
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            dataMap.put("idScanStatus", listOf("SUCCESS"))
+            dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
+            dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
+            dataMap.put("idType", listOf("LICENSE"))
+            dataMap.put("idCountry", listOf("NOR"))
+            dataMap.put("idFirstName", listOf("Test User"))
+            dataMap.put("idLastName", listOf("Test Family"))
+            dataMap.put("idDob", listOf("1990-12-09"))
+            dataMap.put("merchantIdScanReference", listOf(scanInfo.scanId))
+            val identityVerification="""{ "similarity":"MATCH", "validity":"FALSE", "reason": "ENTIRE_ID_USED_AS_SELFIE" }"""
+            dataMap.put("identityVerification", listOf(identityVerification))
+
+            post<ScanInformation>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
+                path = "/ekyc/callback"
+                body = dataMap
+            }
+
+            val subscriberState: SubscriberState = get {
+                path = "/customer/subscriberState"
+                subscriberId = email
+            }
+            assertEquals("EKYC_REJECTED", subscriberState.status, message = "Wrong state")
+
+        } finally {
+            StripePayment.deleteCustomer(email = email)
+        }
+    }
+
     @Test
     fun `jersey test - ekyc callback - process incomplete form data`() {
 
@@ -769,7 +816,7 @@ class eKYCTest {
             createProfile(name = "Test User for eKYC", email = email)
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId"
+                path = "/customer/new-ekyc-scanId/global"
                 subscriberId = email
             }
 
@@ -802,6 +849,49 @@ class eKYCTest {
             StripePayment.deleteCustomer(email = email)
         }
     }
+
+    @Test
+    fun `jersey test - ekyc callback - incomplete face id verification data`() {
+
+        val email = "ekyc-${randomInt()}@test.com"
+        try {
+            createProfile(name = "Test User for eKYC", email = email)
+
+            val scanInfo: ScanInformation = get {
+                path = "/customer/new-ekyc-scanId/global"
+                subscriberId = email
+            }
+
+            assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
+
+            var dataMap = MultivaluedHashMap<String,String>()
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            dataMap.put("idScanStatus", listOf("SUCCESS"))
+            dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
+            dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
+            dataMap.put("idType", listOf("LICENSE"))
+            dataMap.put("idCountry", listOf("NOR"))
+            dataMap.put("idFirstName", listOf("Test User"))
+            dataMap.put("idLastName", listOf("Test Family"))
+            dataMap.put("idDob", listOf("1990-12-09"))
+            dataMap.put("merchantIdScanReference", listOf(scanInfo.scanId))
+
+            post<ScanInformation>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
+                path = "/ekyc/callback"
+                body = dataMap
+            }
+
+            val subscriberState: SubscriberState = get {
+                path = "/customer/subscriberState"
+                subscriberId = email
+            }
+            assertEquals("EKYC_REJECTED", subscriberState.status, message = "Wrong state")
+
+        } finally {
+            StripePayment.deleteCustomer(email = email)
+        }
+    }
+
     @Test
     fun `jersey test - ekyc callback - reject & approve`() {
 
@@ -810,7 +900,7 @@ class eKYCTest {
             createProfile(name = "Test User for eKYC", email = email)
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId"
+                path = "/customer/new-ekyc-scanId/global"
                 subscriberId = email
             }
 
@@ -819,7 +909,7 @@ class eKYCTest {
             var dataMap = MultivaluedHashMap<String, String>()
             dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
             dataMap.put("idScanStatus", listOf("ERROR"))
-            dataMap.put("verificationStatus", listOf("FRAUD"))
+            dataMap.put("verificationStatus", listOf("DENIED_FRAUD"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
             dataMap.put("idType", listOf("LICENSE"))
             dataMap.put("idCountry", listOf("NOR"))
@@ -840,7 +930,7 @@ class eKYCTest {
             assertEquals("EKYC_REJECTED", subscriberState.status, message = "Wrong state")
 
             val newScanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId"
+                path = "/customer/new-ekyc-scanId/global"
                 subscriberId = email
             }
 
@@ -850,7 +940,7 @@ class eKYCTest {
             dataMap.clear()
             dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
             dataMap.put("idScanStatus", listOf("SUCCESS"))
-            dataMap.put("verificationStatus", listOf("VERIFIED"))
+            dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
             dataMap.put("idType", listOf("LICENSE"))
             dataMap.put("idCountry", listOf("NOR"))
@@ -860,7 +950,8 @@ class eKYCTest {
             dataMap.put("merchantIdScanReference", listOf(newScanInfo.scanId))
             dataMap.put("idScanImage", listOf(imgUrl))
             dataMap.put("idScanImageBackside", listOf(imgUrl2))
-
+            val identityVerification="""{ "similarity":"MATCH", "validity":"TRUE"}"""
+            dataMap.put("identityVerification", listOf(identityVerification))
 
             post<ScanInformation>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
                 path = "/ekyc/callback"
@@ -887,7 +978,7 @@ class eKYCTest {
             createProfile(name = "Test User for eKYC", email = email)
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId"
+                path = "/customer/new-ekyc-scanId/global"
                 subscriberId = email
             }
 
@@ -906,6 +997,8 @@ class eKYCTest {
             dataMap.put("merchantIdScanReference", listOf(scanInfo.scanId))
             dataMap.put("idScanImage", listOf(imgUrl))
             dataMap.put("idScanImageBackside", listOf(imgUrl2))
+            val identityVerification="""{ "similarity":"MATCH", "validity":"TRUE"}"""
+            dataMap.put("identityVerification", listOf(identityVerification))
 
             post<ScanInformation>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
                 path = "/ekyc/callback"
@@ -939,7 +1032,7 @@ class eKYCTest {
             createProfile(name = "Test User for eKYC", email = email)
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId"
+                path = "/customer/new-ekyc-scanId/global"
                 subscriberId = email
             }
 
@@ -948,7 +1041,7 @@ class eKYCTest {
             var dataMap = MultivaluedHashMap<String, String>()
             dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
             dataMap.put("idScanStatus", listOf("ERROR"))
-            dataMap.put("verificationStatus", listOf("FRAUD"))
+            dataMap.put("verificationStatus", listOf("DENIED_FRAUD"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
             dataMap.put("idType", listOf("LICENSE"))
             dataMap.put("idCountry", listOf("NOR"))
@@ -969,7 +1062,7 @@ class eKYCTest {
             assertEquals("EKYC_REJECTED", subscriberState.status, message = "Wrong state")
 
             val newScanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId"
+                path = "/customer/new-ekyc-scanId/global"
                 subscriberId = email
             }
 
@@ -978,7 +1071,7 @@ class eKYCTest {
             dataMap.clear()
             dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
             dataMap.put("idScanStatus", listOf("SUCCESS"))
-            dataMap.put("verificationStatus", listOf("VERIFIED"))
+            dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
             dataMap.put("idType", listOf("LICENSE"))
             dataMap.put("idCountry", listOf("NOR"))
@@ -988,6 +1081,8 @@ class eKYCTest {
             dataMap.put("merchantIdScanReference", listOf(newScanInfo.scanId))
             dataMap.put("idScanImage", listOf(imgUrl))
             dataMap.put("idScanImageBackside", listOf(imgUrl2))
+            val identityVerification="""{ "similarity":"MATCH", "validity":"TRUE"}"""
+            dataMap.put("identityVerification", listOf(identityVerification))
 
             post<ScanInformation>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
                 path = "/ekyc/callback"
@@ -1011,6 +1106,49 @@ class eKYCTest {
                 verifiedItemIndex = 1
             }
             assertEquals("APPROVED", scanInformationList.elementAt(verifiedItemIndex).status, message = "Wrong status")
+        } finally {
+            StripePayment.deleteCustomer(email = email)
+        }
+    }
+
+    @Test
+    fun `jersey test - ekyc rejected with detailed reject reason`() {
+
+        val email = "ekyc-${randomInt()}@test.com"
+        try {
+            createProfile(name = "Test User for eKYC", email = email)
+
+            val scanInfo: ScanInformation = get {
+                path = "/customer/new-ekyc-scanId/global"
+                subscriberId = email
+            }
+
+            assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
+            val rejectReason="""{ "rejectReasonCode":"100", "rejectReasonDescription":"MANIPULATED_DOCUMENT", "rejectReasonDetails": [{ "detailsCode": "1001", "detailsDescription": "PHOTO" },{ "detailsCode": "1004", "detailsDescription": "DOB" }]}"""
+
+            var dataMap = MultivaluedHashMap<String, String>()
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            dataMap.put("idScanStatus", listOf("ERROR"))
+            dataMap.put("verificationStatus", listOf("DENIED_FRAUD"))
+            dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
+            dataMap.put("idType", listOf("LICENSE"))
+            dataMap.put("idCountry", listOf("NOR"))
+            dataMap.put("idFirstName", listOf("Test User"))
+            dataMap.put("idLastName", listOf("Test Family"))
+            dataMap.put("idDob", listOf("1990-12-09"))
+            dataMap.put("merchantIdScanReference", listOf(scanInfo.scanId))
+            dataMap.put("rejectReason", listOf(rejectReason))
+
+            post<ScanInformation>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
+                path = "/ekyc/callback"
+                body = dataMap
+            }
+
+            val subscriberState: SubscriberState = get {
+                path = "/customer/subscriberState"
+                subscriberId = email
+            }
+            assertEquals("EKYC_REJECTED", subscriberState.status, message = "Wrong state")
         } finally {
             StripePayment.deleteCustomer(email = email)
         }

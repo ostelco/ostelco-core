@@ -8,6 +8,7 @@ import org.ostelco.prime.model.*
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
+import org.ostelco.prime.storage.StoreError
 
 
 /**
@@ -61,7 +62,9 @@ interface SubscriberDAO {
 
     fun getStripeEphemeralKey(subscriberId: String, apiVersion: String): Either<ApiError, String>
 
-    fun newEKYCScanId(subscriberId: String): Either<ApiError, ScanInformation>
+    fun newEKYCScanId(subscriberId: String, countryCode: String): Either<ApiError, ScanInformation>
+
+    fun getCountryCodeForScan(scanId: String): Either<ApiError, String>
 
     fun getScanInformation(subscriberId: String, scanId: String): Either<ApiError, ScanInformation>
 

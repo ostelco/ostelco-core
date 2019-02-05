@@ -52,7 +52,7 @@ object ScanInformationStoreSingleton : ScanInformationStore {
 
     private lateinit var storageBucket: String
 
-    override fun upsertVendorScanInformation(subscriberId: String, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit> {
+    override fun upsertVendorScanInformation(subscriberId: String, countryCode:String, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit> {
         return IO {
             Either.monad<StoreError>().binding {
                 val vendorScanInformation = createVendorScanInformation(vendorData).bind()
@@ -60,14 +60,19 @@ object ScanInformationStoreSingleton : ScanInformationStore {
                 val bucketName = storageBucket
                 val zipData = JumioHelper.generateZipFile(vendorScanInformation).bind()
                 if (bucketName.isNullOrEmpty()) {
-                    val fileName = "${vendorScanInformation.scanId}.zip"
+                    val fileName = "${countryCode}_${vendorScanInformation.scanId}.zip"
                     logger.info("No bucket set, saving file locally $fileName")
                     JumioHelper.saveZipFile(fileName, zipData).bind()
                 } else {
                     val fileName = "${subscriberId}/${vendorScanInformation.scanId}.zip"
-                    logger.info("Saving in cloud store $fileName")
-                    val mediaLink = JumioHelper.uploadZipFile(bucketName, fileName, zipData).bind()
-                    logger.info("Uploaded scan information for ${vendorScanInformation.scanId} $mediaLink")
+                    val globalBucket = "${bucketName}-global"
+                    val countryBucket = "${bucketName}-${countryCode.toLowerCase()}"
+                    logger.info("Saving in cloud store $globalBucket --> $fileName")
+                    JumioHelper.uploadZipFile(globalBucket, fileName, zipData).bind()
+                    if (countryBucket != globalBucket) {
+                        logger.info("Saving in cloud store $countryBucket --> $fileName")
+                        JumioHelper.uploadZipFile(countryBucket, fileName, zipData).bind()
+                    }
                 }
                 Unit
             }.fix()
@@ -79,11 +84,11 @@ object ScanInformationStoreSingleton : ScanInformationStore {
     }
 
 
-    internal fun __getVendorScanInformation(subscriberId: String, scanId: String): Either<StoreError, ZipInputStream> {
+    internal fun __getVendorScanInformation(subscriberId: String, countryCode:String, scanId: String): Either<StoreError, ZipInputStream> {
         return IO {
             Either.monad<StoreError>().binding {
                 // Only works with local files
-                val fileName = "$scanId.zip"
+                val fileName = "${countryCode}_$scanId.zip"
                 JumioHelper.loadLocalZipFile(fileName).bind()
             }.fix()
         }.unsafeRunSync()

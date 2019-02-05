@@ -151,7 +151,7 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
 
         return exists(entity.id, transaction).flatMap {
             val properties = getProperties(entity)
-            val setClause: String = properties.entries.fold("") { acc, entry -> """$acc SET node.`${entry.key}` = "${entry.value}" """ }
+            val setClause: String = properties.entries.fold("") { acc, entry -> """$acc SET node.`${entry.key}` = '${entry.value}' """ }
             write("""MATCH (node:${entityType.name} { id: '${entity.id}' }) $setClause ;""",
                     transaction) {
                 Either.cond(

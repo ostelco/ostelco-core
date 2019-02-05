@@ -128,7 +128,12 @@ interface ClientGraphStore {
     /**
      * Generate new eKYC scanId for the subscriber.
      */
-    fun newEKYCScanId(subscriberId: String): Either<StoreError, ScanInformation>
+    fun newEKYCScanId(subscriberId: String, countryCode: String): Either<StoreError, ScanInformation>
+
+    /**
+     * Get the country code for the scan.
+     */
+    fun getCountryCodeForScan(scanId: String): Either<StoreError, String>
 
     /**
      * Get information about an eKYC scan for the subscriber.
@@ -258,5 +263,5 @@ interface AdminGraphStore {
 }
 
 interface ScanInformationStore {
-    fun upsertVendorScanInformation(subscriberId: String, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit>
+    fun upsertVendorScanInformation(subscriberId: String, countryCode: String, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit>
 }
