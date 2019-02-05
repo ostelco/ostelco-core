@@ -47,8 +47,10 @@ class SimInventoryUnitTests {
     private val fakeMsisdn2 = "464646464646"
     private val fakeEid = "01010101010101010101010101010101"
 
-    private val fakeProfileVendor = "Idemia"
-    private val fakeHlr = "Loltel"
+    private val fakeProfileVendor = "Foo"
+    private val fakeHlr = "Bar"
+    private val fakePhoneType = "_"
+    private val fakeProfile = "PROFILE_1"
 
     private val fakeSimEntryWithoutMsisdn = SimEntry(
             id = 1L,
@@ -56,8 +58,9 @@ class SimInventoryUnitTests {
             hlrId = 1L,
             msisdn = "",
             eid = "",
+            profile = fakeProfile,
             hlrState = HlrState.NOT_ACTIVATED,
-            smdpPlusState = SmDpPlusState.NOT_ACTIVATED,
+            smdpPlusState = SmDpPlusState.AVAILABLE,
             batch = 99L,
             imsi = fakeImsi1,
             iccid = fakeIccid1,
@@ -70,7 +73,7 @@ class SimInventoryUnitTests {
             msisdn = fakeMsisdn1,
             eid = fakeEid,
             hlrState = HlrState.ACTIVATED,
-            smdpPlusState = SmDpPlusState.ACTIVATED
+            smdpPlusState = SmDpPlusState.RELEASED
     )
 
 
@@ -83,13 +86,13 @@ class SimInventoryUnitTests {
         /* HlrConfig */
         org.mockito.Mockito.`when`(hlrConfig.name)
                 .thenReturn(fakeHlr)
-        org.mockito.Mockito.`when`(hlrConfig.url)
+        org.mockito.Mockito.`when`(hlrConfig.endpoint)
                 .thenReturn("http://localhost:8080/nowhere")
 
         /* ProfileVendorConfig */
         org.mockito.Mockito.`when`(profileVendorConfig.name)
                 .thenReturn(fakeProfileVendor)
-        org.mockito.Mockito.`when`(profileVendorConfig.url)
+        org.mockito.Mockito.`when`(profileVendorConfig.endpoint)
                 .thenReturn("http://localhost:8080/somewhere")
 
         /* Top level config. */
@@ -97,6 +100,8 @@ class SimInventoryUnitTests {
                 .thenReturn(listOf(hlrConfig))
         org.mockito.Mockito.`when`(config.profileVendors)
                 .thenReturn(listOf(profileVendorConfig))
+        org.mockito.Mockito.`when`(config.getProfileForPhoneType(fakePhoneType))
+                .thenReturn(fakeProfile)
 
         /* HLR adapter. */
         org.mockito.Mockito.`when`(hlrAdapter.id)
@@ -117,7 +122,7 @@ class SimInventoryUnitTests {
                 .thenReturn(fakeProfileVendor)
         org.mockito.Mockito.`when`(profileVendorAdapter.activate(client, profileVendorConfig, dao, fakeEid, fakeSimEntryWithoutMsisdn))
                 .thenReturn(fakeSimEntryWithoutMsisdn.copy(
-                        smdpPlusState = SmDpPlusState.ACTIVATED,
+                        smdpPlusState = SmDpPlusState.RELEASED,
                         eid = fakeEid))
 
         /* DAO. */
@@ -145,10 +150,10 @@ class SimInventoryUnitTests {
         org.mockito.Mockito.`when`(dao.getSimProfileByMsisdn(fakeMsisdn2))
                 .thenReturn(null)
 
-        org.mockito.Mockito.`when`(dao.findNextFreeSimProfileForHlr(1L))
+        org.mockito.Mockito.`when`(dao.findNextFreeSimProfileForHlr(1L, fakeProfile))
                 .thenReturn(fakeSimEntryWithoutMsisdn)
 
-        org.mockito.Mockito.`when`(dao.allocateNextFreeSimProfileForMsisdn(1L, fakeMsisdn1))
+        org.mockito.Mockito.`when`(dao.allocateNextFreeSimProfileForMsisdn(1L, fakeMsisdn1, fakeProfile))
                 .thenReturn(fakeSimEntryWithMsisdn)
 
         org.mockito.Mockito.`when`(dao.getHlrAdapterByName(fakeHlr))
@@ -174,9 +179,9 @@ class SimInventoryUnitTests {
                 .thenReturn(fakeSimEntryWithoutMsisdn.copy(
                         hlrState = HlrState.NOT_ACTIVATED))
 
-        org.mockito.Mockito.`when`(dao.setSmDpPlusState(fakeSimEntryWithoutMsisdn.id!!, SmDpPlusState.ACTIVATED))
+        org.mockito.Mockito.`when`(dao.setSmDpPlusState(fakeSimEntryWithoutMsisdn.id!!, SmDpPlusState.RELEASED))
                 .thenReturn(fakeSimEntryWithoutMsisdn.copy(
-                        smdpPlusState = SmDpPlusState.ACTIVATED))
+                        smdpPlusState = SmDpPlusState.RELEASED))
     }
 
     @Test
@@ -248,6 +253,7 @@ class SimInventoryUnitTests {
     @Test
     fun testAllocateNextFree() {
         val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/msisdn/$fakeMsisdn1/next-free")
+                .queryParam("phoneType", fakePhoneType)
                 .request(MediaType.APPLICATION_JSON)
                 .get() // XXX Post (or put?)x'
         assertEquals(200, response.status)
@@ -337,7 +343,7 @@ class SimInventoryUnitTests {
         val data = ByteArrayInputStream(sampleCsvIinput.toByteArray(Charsets.UTF_8))
 
         // XXX For some reason this mock fails to match...
-        org.mockito.Mockito.`when`(dao.importSims("importer", 1L, 1L, data))
+        org.mockito.Mockito.`when`(dao.importSims("importer", 1L, 1L, fakeProfile, data))
                 .thenReturn(SimImportBatch(
                         id = 0L,
                         status = "SUCCESS",
