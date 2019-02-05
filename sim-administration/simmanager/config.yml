@@ -2,7 +2,7 @@ logging:
   level: INFO
 
 openApi:
-  name: Sim admin
+  name: SIM admin
   description: SIM administration service
   termsOfService: http://example.org
   contactEmail: rmz@telenordigital.com
@@ -30,9 +30,9 @@ phoneTypes:
 
 database:
   driverClass: org.postgresql.Driver
-  user: test
-  password: test
-  url: jdbc:postgresql://db.example.com/db-prod
+  user: ${DB_USER:-test}
+  password: ${DB_PASSWORD:-test}
+  url: jdbc:postgresql://172.29.192.3/simmgr_test
 
 httpClient:
   minThreads: 1

@@ -5,6 +5,8 @@ import io.dropwizard.jdbi.DBIFactory
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 import io.dropwizard.client.JerseyClientBuilder
+import io.dropwizard.configuration.EnvironmentVariableSubstitutor
+import io.dropwizard.configuration.SubstitutingSourceProvider
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
 import org.ostelco.sim.es2plus.SmDpPlusCallbackResource
@@ -32,7 +34,11 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
     }
 
     override fun initialize(bootstrap: Bootstrap<SimAdministrationConfiguration>) {
-        // TODO: application initialization
+        /* Enables ENV variable substitution in config file. */
+        bootstrap.configurationSourceProvider = SubstitutingSourceProvider(
+                bootstrap.configurationSourceProvider,
+                EnvironmentVariableSubstitutor(false)
+        )
     }
 
     lateinit var DAO: SimInventoryDAO
