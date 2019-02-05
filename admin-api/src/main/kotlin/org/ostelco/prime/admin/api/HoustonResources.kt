@@ -2,12 +2,23 @@ package org.ostelco.prime.admin.api
 
 import arrow.core.Either
 import io.dropwizard.auth.Auth
-import org.ostelco.prime.apierror.*
+import org.ostelco.prime.apierror.ApiError
+import org.ostelco.prime.apierror.ApiErrorCode
+import org.ostelco.prime.apierror.ApiErrorMapper
+import org.ostelco.prime.apierror.BadGatewayError
+import org.ostelco.prime.apierror.NotFoundError
 import org.ostelco.prime.appnotifier.AppNotifier
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
-import org.ostelco.prime.model.*
+import org.ostelco.prime.model.Bundle
+import org.ostelco.prime.model.Customer
+import org.ostelco.prime.model.CustomerState
+import org.ostelco.prime.model.Identity
+import org.ostelco.prime.model.Plan
+import org.ostelco.prime.model.PurchaseRecord
+import org.ostelco.prime.model.ScanInformation
+import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.core.ForbiddenError
@@ -16,7 +27,15 @@ import org.ostelco.prime.storage.AdminDataSource
 import java.net.URLDecoder
 import java.util.regex.Pattern
 import javax.validation.constraints.NotNull
-import javax.ws.rs.*
+import javax.ws.rs.Consumes
+import javax.ws.rs.DELETE
+import javax.ws.rs.GET
+import javax.ws.rs.POST
+import javax.ws.rs.PUT
+import javax.ws.rs.Path
+import javax.ws.rs.PathParam
+import javax.ws.rs.Produces
+import javax.ws.rs.QueryParam
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
@@ -35,9 +54,9 @@ class ProfilesResource {
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
     fun getProfile(@Auth token: AccessTokenPrincipal?,
-                          @NotNull
-                          @PathParam("id")
-                          id: String): Response {
+                   @NotNull
+                   @PathParam("id")
+                   id: String): Response {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
@@ -51,7 +70,7 @@ class ProfilesResource {
                     .build()
         } else {
             logger.info("${token.name} Accessing profile for email:$decodedId")
-            return getProfile(decodedId).fold(
+            return getProfile(Identity(decodedId, "EMAIL", "email")).fold(
                     { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                     { Response.status(Response.Status.OK).entity(asJson(it)) })
                     .build()
@@ -74,29 +93,29 @@ class ProfilesResource {
         }
         val decodedId = URLDecoder.decode(email, "UTF-8")
         logger.info("${token.name} Accessing state for email:$decodedId")
-        return getSubscriberState(decodedId).fold(
+        return getSubscriberState(Identity(decodedId, "EMAIL", "email")).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
     }
 
-   /**
+    /**
      * Get the subscriptions for this subscriber.
      */
     @GET
     @Path("{email}/subscriptions")
     @Produces(MediaType.APPLICATION_JSON)
     fun getSubscriptions(@Auth token: AccessTokenPrincipal?,
-                   @NotNull
-                   @PathParam("email")
-                   email: String): Response {
+                         @NotNull
+                         @PathParam("email")
+                         email: String): Response {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
         val decodedId = URLDecoder.decode(email, "UTF-8")
         logger.info("${token.name} Accessing subscriptions for email:$decodedId")
-        return getSubscriptions(decodedId).fold(
+        return getSubscriptions(Identity(decodedId, "EMAIL", "email")).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
@@ -109,40 +128,40 @@ class ProfilesResource {
     @Path("{email}/scans")
     @Produces(MediaType.APPLICATION_JSON)
     fun getAllScanInformation(@Auth token: AccessTokenPrincipal?,
-                         @NotNull
-                         @PathParam("email")
-                         email: String): Response {
+                              @NotNull
+                              @PathParam("email")
+                              email: String): Response {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
         val decodedId = URLDecoder.decode(email, "UTF-8")
         logger.info("${token.name} Accessing scan information for email:$decodedId")
-        return getAllScanInformation(decodedId).fold(
+        return getAllScanInformation(identity = Identity(id = decodedId, type = "EMAIL", provider = "email")).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
     }
 
-    private fun getAllScanInformation(subscriberId: String): Either<ApiError, Collection<ScanInformation>> {
+    private fun getAllScanInformation(identity: Identity): Either<ApiError, Collection<ScanInformation>> {
         return try {
-            storage.getAllScanInformation(subscriberId).mapLeft {
+            storage.getAllScanInformation(identity = identity).mapLeft {
                 NotFoundError("Failed to fetch scan information.", ApiErrorCode.FAILED_TO_FETCH_SCAN_INFORMATION, it)
             }
         } catch (e: Exception) {
-            logger.error("Failed to fetch scan information $subscriberId", e)
+            logger.error("Failed to fetch scan information for customer with identity - $identity", e)
             Either.left(NotFoundError("Failed to fetch scan information", ApiErrorCode.FAILED_TO_FETCH_SCAN_INFORMATION))
         }
     }
 
     // TODO: Reuse the one from SubscriberDAO
-    private fun getProfile(subscriberId: String): Either<ApiError, Subscriber> {
+    private fun getProfile(identity: Identity): Either<ApiError, Customer> {
         return try {
-            storage.getSubscriber(subscriberId).mapLeft {
+            storage.getCustomer(identity).mapLeft {
                 NotFoundError("Failed to fetch profile.", ApiErrorCode.FAILED_TO_FETCH_PROFILE, it)
             }
         } catch (e: Exception) {
-            logger.error("Failed to fetch profile for subscriberId $subscriberId", e)
+            logger.error("Failed to fetch profile for customer with identity - $identity", e)
             Either.left(NotFoundError("Failed to fetch profile", ApiErrorCode.FAILED_TO_FETCH_PROFILE))
         }
     }
@@ -150,12 +169,12 @@ class ProfilesResource {
     private fun isEmail(email: String): Boolean {
         val regex = "^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$"
         val pattern = Pattern.compile(regex)
-        return pattern.matcher(email).matches();
+        return pattern.matcher(email).matches()
     }
 
-    private fun getProfileForMsisdn(msisdn: String): Either<ApiError, Subscriber> {
+    private fun getProfileForMsisdn(msisdn: String): Either<ApiError, Customer> {
         return try {
-            storage.getSubscriberForMsisdn(msisdn).mapLeft {
+            storage.getCustomerForMsisdn(msisdn).mapLeft {
                 NotFoundError("Failed to fetch profile.", ApiErrorCode.FAILED_TO_FETCH_PROFILE, it)
             }
         } catch (e: Exception) {
@@ -165,24 +184,25 @@ class ProfilesResource {
     }
 
     // TODO: Reuse the one from SubscriberDAO
-    private fun getSubscriptions(subscriberId: String): Either<ApiError, Collection<Subscription>> {
+    private fun getSubscriptions(identity: Identity): Either<ApiError, Collection<Subscription>> {
         try {
-            return storage.getSubscriptions(subscriberId).mapLeft {
+            return storage.getSubscriptions(identity).mapLeft {
                 NotFoundError("Failed to get subscriptions.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS, it)
             }
         } catch (e: Exception) {
-            logger.error("Failed to get subscriptions for subscriberId $subscriberId", e)
+            logger.error("Failed to get subscriptions for customer with identity - $identity", e)
             return Either.left(BadGatewayError("Failed to get subscriptions", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS))
         }
     }
+
     // TODO: Reuse the one from SubscriberDAO
-    private fun getSubscriberState(subscriberId: String): Either<ApiError, SubscriberState> {
+    private fun getSubscriberState(identity: Identity): Either<ApiError, CustomerState> {
         try {
-            return storage.getSubscriberState(subscriberId).mapLeft {
+            return storage.getCustomerState(identity).mapLeft {
                 NotFoundError("Failed to fetch state of subscriber.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIBER_STATE, it)
             }
         } catch (e: Exception) {
-            logger.error("Error fetching state for subscriberId $subscriberId", e)
+            logger.error("Error fetching state for customer with identity - $identity", e)
             return Either.left(BadGatewayError("Error fetching state", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIBER_STATE))
         }
     }
@@ -195,7 +215,7 @@ class ProfilesResource {
     @Path("{email}/plans")
     @Produces("application/json")
     fun getPlans(@PathParam("email") email: String): Response {
-        return storage.getPlans(email).fold(
+        return storage.getPlans(identity = Identity(id = email, type = "EMAIL", provider = "email")).fold(
                 {
                     val err = ApiErrorMapper.mapStorageErrorToApiError("Failed to fetch plans",
                             ApiErrorCode.FAILED_TO_FETCH_PLANS_FOR_SUBSCRIBER,
@@ -215,7 +235,10 @@ class ProfilesResource {
     fun attachPlan(@PathParam("email") email: String,
                    @PathParam("planId") planId: String,
                    @QueryParam("trial_end") trialEnd: Long): Response {
-        return storage.subscribeToPlan(email, planId, trialEnd).fold(
+        return storage.subscribeToPlan(
+                identity = Identity(id = email, type = "EMAIL", provider = "email"),
+                planId = planId,
+                trialEnd = trialEnd).fold(
                 {
                     val err = ApiErrorMapper.mapStorageErrorToApiError("Failed to store subscription",
                             ApiErrorCode.FAILED_TO_STORE_SUBSCRIPTION,
@@ -234,7 +257,9 @@ class ProfilesResource {
     @Produces("application/json")
     fun detachPlan(@PathParam("email") email: String,
                    @PathParam("planId") planId: String): Response {
-        return storage.unsubscribeFromPlan(email, planId).fold(
+        return storage.unsubscribeFromPlan(
+                identity = Identity(id = email, type = "EMAIL", provider = "email"),
+                planId = planId).fold(
                 {
                     val err = ApiErrorMapper.mapStorageErrorToApiError("Failed to remove subscription",
                             ApiErrorCode.FAILED_TO_REMOVE_SUBSCRIPTION,
@@ -270,20 +295,20 @@ class BundlesResource {
         }
         val decodedEmail = URLDecoder.decode(email, "UTF-8")
         logger.info("${token.name} Accessing bundles for $decodedEmail")
-        return getBundles(decodedEmail).fold(
+        return getBundles(Identity(decodedEmail, "EMAIL", "email")).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
     }
 
     // TODO: Reuse the one from SubscriberDAO
-    private fun getBundles(subscriberId: String): Either<ApiError, Collection<Bundle>> {
+    private fun getBundles(identity: Identity): Either<ApiError, Collection<Bundle>> {
         return try {
-            storage.getBundles(subscriberId).mapLeft {
+            storage.getBundles(identity).mapLeft {
                 NotFoundError("Failed to get bundles. ${it.message}", ApiErrorCode.FAILED_TO_FETCH_BUNDLES)
             }
         } catch (e: Exception) {
-            logger.error("Failed to get bundles for subscriberId $subscriberId", e)
+            logger.error("Failed to get bundles for customer with identity - $identity", e)
             Either.left(NotFoundError("Failed to get bundles", ApiErrorCode.FAILED_TO_FETCH_BUNDLES))
         }
     }
@@ -313,20 +338,20 @@ class PurchaseResource {
         }
         val decodedEmail = URLDecoder.decode(email, "UTF-8")
         logger.info("${token.name} Accessing bundles for $decodedEmail")
-        return getPurchaseHistory(decodedEmail).fold(
+        return getPurchaseHistory(Identity(decodedEmail, "EMAIL", "email")).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
     }
 
     // TODO: Reuse the one from SubscriberDAO
-    private fun getPurchaseHistory(subscriberId: String): Either<ApiError, Collection<PurchaseRecord>> {
+    private fun getPurchaseHistory(identity: Identity): Either<ApiError, Collection<PurchaseRecord>> {
         return try {
-            return storage.getPurchaseRecords(subscriberId).bimap(
+            return storage.getPurchaseRecords(identity).bimap(
                     { NotFoundError("Failed to get purchase history.", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_HISTORY, it) },
                     { it.toList() })
         } catch (e: Exception) {
-            logger.error("Failed to get purchase history for subscriberId $subscriberId", e)
+            logger.error("Failed to get purchase history for customer with identity - $identity", e)
             Either.left(BadGatewayError("Failed to get purchase history", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_HISTORY))
         }
     }
@@ -374,7 +399,7 @@ class RefundResource {
     private fun refundPurchase(subscriberId: String, purchaseRecordId: String, reason: String): Either<ApiError, ProductInfo> {
         return try {
             return storage.refundPurchase(subscriberId, purchaseRecordId, reason).mapLeft {
-                when(it) {
+                when (it) {
                     is ForbiddenError -> org.ostelco.prime.apierror.ForbiddenError("Failed to refund purchase. ${it.description}", ApiErrorCode.FAILED_TO_REFUND_PURCHASE)
                     else -> NotFoundError("Failed to refund purchase. ${it.description}", ApiErrorCode.FAILED_TO_REFUND_PURCHASE)
                 }
@@ -401,21 +426,21 @@ class NotifyResource {
     @Path("{email}")
     @Produces(MediaType.APPLICATION_JSON)
     fun sendNotificationByEmail(@Auth token: AccessTokenPrincipal?,
-                              @NotNull
-                              @PathParam("email")
-                              email: String,
-                              @NotNull
-                              @QueryParam("title")
-                              title: String,
-                              @NotNull
-                              @QueryParam("message")
-                              message: String): Response {
+                                @NotNull
+                                @PathParam("email")
+                                email: String,
+                                @NotNull
+                                @QueryParam("title")
+                                title: String,
+                                @NotNull
+                                @QueryParam("message")
+                                message: String): Response {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
         val decodedEmail = URLDecoder.decode(email, "UTF-8")
-        return getMsisdn(decodedEmail).fold(
+        return getMsisdn(email = decodedEmail).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 { msisdn ->
                     logger.info("${token.name} Sending notification to $decodedEmail msisdn: $msisdn")
@@ -427,13 +452,13 @@ class NotifyResource {
     }
 
     // TODO: Reuse the one from SubscriberDAO
-    private fun getMsisdn(subscriberId: String): Either<ApiError, String> {
+    private fun getMsisdn(email: String): Either<ApiError, String> {
         return try {
-            storage.getMsisdn(subscriberId).mapLeft {
+            storage.getMsisdn(identity = Identity(id = email, type = "EMAIL", provider = "email")).mapLeft {
                 NotFoundError("Did not find msisdn for this subscription.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS, it)
             }
         } catch (e: Exception) {
-            logger.error("Did not find msisdn for subscriberId $subscriberId", e)
+            logger.error("Did not find msisdn for email $email", e)
             Either.left(BadGatewayError("Did not find subscription", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS))
         }
     }
@@ -445,7 +470,6 @@ class NotifyResource {
 @Path("/plans")
 class PlanResource() {
 
-    private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }
 
     /**
@@ -493,7 +517,7 @@ class PlanResource() {
     @Path("{planId}")
     @Produces("application/json")
     fun delete(@NotNull
-               @PathParam("planId") planId: String) : Response {
+               @PathParam("planId") planId: String): Response {
         return storage.deletePlan(planId).fold(
                 {
                     val err = ApiErrorMapper.mapStorageErrorToApiError("Failed to remove plan",
@@ -501,7 +525,7 @@ class PlanResource() {
                             it)
                     Response.status(err.status).entity(asJson(err))
                 },
-                { Response.status(Response.Status.OK).entity(asJson(it))}
+                { Response.status(Response.Status.OK).entity(asJson(it)) }
         ).build()
     }
 }

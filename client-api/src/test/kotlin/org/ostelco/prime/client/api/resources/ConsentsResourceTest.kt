@@ -20,6 +20,7 @@ import org.ostelco.prime.auth.OAuthAuthenticator
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
+import org.ostelco.prime.model.Identity
 import java.util.*
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.GenericType
@@ -41,12 +42,12 @@ class ConsentsResourceTest {
     @Before
     fun setUp() {
         `when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
-                .thenReturn(Optional.of(AccessTokenPrincipal(email)))
+                .thenReturn(Optional.of(AccessTokenPrincipal(email, "email")))
     }
 
     @Test
     fun getConsents() {
-        val arg = argumentCaptor<String>()
+        val arg = argumentCaptor<Identity>()
 
         `when`(DAO.getConsents(arg.capture())).thenReturn(Either.right(consents))
 
@@ -60,12 +61,12 @@ class ConsentsResourceTest {
         assertThat(resp.readEntity(object : GenericType<List<Consent>>() {
 
         })).isEqualTo(consents)
-        assertThat(arg.firstValue).isEqualTo(email)
+        assertThat(arg.firstValue).isEqualTo(Identity(email, "EMAIL", "email"))
     }
 
     @Test
     fun acceptConsent() {
-        val arg1 = argumentCaptor<String>()
+        val arg1 = argumentCaptor<Identity>()
         val arg2 = argumentCaptor<String>()
 
         val consentId = consents[0].consentId
@@ -81,13 +82,13 @@ class ConsentsResourceTest {
                 .put(Entity.text(""))
 
         assertThat(resp.status).isEqualTo(Response.Status.OK.statusCode)
-        assertThat(arg1.firstValue).isEqualTo(email)
+        assertThat(arg1.firstValue).isEqualTo(Identity(email, "EMAIL", "email"))
         assertThat(arg2.firstValue).isEqualTo(consentId)
     }
 
     @Test
     fun rejectConsent() {
-        val arg1 = argumentCaptor<String>()
+        val arg1 = argumentCaptor<Identity>()
         val arg2 = argumentCaptor<String>()
 
         val consentId = consents[0].consentId
@@ -103,7 +104,7 @@ class ConsentsResourceTest {
                 .put(Entity.text(""))
 
         assertThat(resp.status).isEqualTo(Response.Status.OK.statusCode)
-        assertThat(arg1.firstValue).isEqualTo(email)
+        assertThat(arg1.firstValue).isEqualTo(Identity(email, "EMAIL", "email"))
         assertThat(arg2.firstValue).isEqualTo(consentId)
     }
 

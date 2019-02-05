@@ -4,6 +4,7 @@ import io.dropwizard.auth.Auth
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.jsonmapper.asJson
+import org.ostelco.prime.model.Identity
 import javax.ws.rs.GET
 import javax.ws.rs.Path
 import javax.ws.rs.Produces
@@ -32,9 +33,11 @@ class SubscriptionResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        return dao.getActivePseudonymForSubscriber(token.name).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { pseudonym -> Response.status(Response.Status.OK).entity(pseudonym) })
+        return dao.getActivePseudonymForSubscriber(
+                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider))
+                .fold(
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                        { pseudonym -> Response.status(Response.Status.OK).entity(pseudonym) })
                 .build()
     }
 }
@@ -50,9 +53,11 @@ class SubscriptionsResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        return dao.getSubscriptions(token.name).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.OK).entity(asJson(it)) })
+        return dao.getSubscriptions(
+                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider))
+                .fold(
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                        { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
     }
 }

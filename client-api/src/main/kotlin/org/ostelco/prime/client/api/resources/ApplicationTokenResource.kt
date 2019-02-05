@@ -5,6 +5,7 @@ import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.model.ApplicationToken
+import org.ostelco.prime.model.Identity
 import javax.validation.constraints.NotNull
 import javax.ws.rs.Consumes
 import javax.ws.rs.POST
@@ -30,13 +31,14 @@ class ApplicationTokenResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        return dao.getMsisdn(authToken.name).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { msisdn ->
-                    dao.storeApplicationToken(msisdn, applicationToken).fold(
-                            { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                            { Response.status(Response.Status.CREATED).entity(asJson(it)) })
-                })
+        return dao.getProfile(identity = Identity(id = authToken.name, type = "EMAIL", provider = authToken.provider))
+                .fold(
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                        { customer ->
+                            dao.storeApplicationToken(customer.id, applicationToken).fold(
+                                    { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                                    { Response.status(Response.Status.CREATED).entity(asJson(it)) })
+                        })
                 .build()
     }
 }

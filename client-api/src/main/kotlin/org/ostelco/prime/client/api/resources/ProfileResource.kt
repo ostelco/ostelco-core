@@ -4,7 +4,9 @@ import io.dropwizard.auth.Auth
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.jsonmapper.asJson
-import org.ostelco.prime.model.Subscriber
+import org.ostelco.prime.model.Customer
+import org.ostelco.prime.model.Identity
+import java.util.*
 import javax.validation.constraints.NotNull
 import javax.ws.rs.Consumes
 import javax.ws.rs.GET
@@ -31,9 +33,10 @@ class ProfileResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        return dao.getProfile(token.name).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.OK).entity(asJson(it)) })
+        return dao.getProfile(identity = Identity(id = token.name, type = "EMAIL", provider = token.provider))
+                .fold(
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                        { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
     }
 
@@ -41,7 +44,7 @@ class ProfileResource(private val dao: SubscriberDAO) {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     fun createProfile(@Auth token: AccessTokenPrincipal?,
-                      @NotNull profile: Subscriber,
+                      @NotNull profile: Customer,
                       @QueryParam("referred_by") referredBy: String?): Response {
 
         if (token == null) {
@@ -49,9 +52,16 @@ class ProfileResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        return dao.createProfile(token.name, profile, referredBy).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.CREATED).entity(asJson(it)) })
+        return dao.createProfile(
+                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                profile = profile.copy(
+                        id = UUID.randomUUID().toString(),
+                        email = token.name,
+                        referralId = UUID.randomUUID().toString()),
+                referredBy = referredBy)
+                .fold(
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                        { Response.status(Response.Status.CREATED).entity(asJson(it)) })
                 .build()
     }
 
@@ -59,15 +69,18 @@ class ProfileResource(private val dao: SubscriberDAO) {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     fun updateProfile(@Auth token: AccessTokenPrincipal?,
-                      @NotNull profile: Subscriber): Response {
+                      @NotNull profile: Customer): Response {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
 
-        return dao.updateProfile(token.name, profile).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.OK).entity(asJson(it)) })
+        return dao.updateProfile(
+                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                profile = profile)
+                .fold(
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                        { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
     }
 }

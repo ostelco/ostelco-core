@@ -22,7 +22,7 @@ import javax.ws.rs.core.Response
  * https://www.dropwizard.io/1.3.2/docs/manual/auth.html#oauth2
  */
 
-private const val DEFAULT_USER_INFO_ENDPOINT = "https://ostelco.eu.auth0.com/userinfo"
+private const val DEFAULT_USER_INFO_ENDPOINT = "https://auth.oya.world/userinfo"
 private const val NAMESPACE = "https://ostelco"
 
 class OAuthAuthenticator(private val client: Client) : Authenticator<String, AccessTokenPrincipal> {
@@ -33,13 +33,15 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
 
         var userInfoEndpoint = DEFAULT_USER_INFO_ENDPOINT
 
+        var provider: String = ""
         try {
             val claims = getClaims(accessToken)
             if (claims != null) {
 
                 val email =  getEmail(claims)
+                provider = getSubjectPrefix(claims)
                 if(email != null) {
-                    return Optional.of(AccessTokenPrincipal(email))
+                    return Optional.of(AccessTokenPrincipal(email = email, provider = provider))
                 }
 
                 userInfoEndpoint = getUserInfoEndpointFromAudience(claims)
@@ -55,7 +57,7 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
             logger.warn("email is missing in userInfo")
             return Optional.empty()
         }
-        return Optional.of(AccessTokenPrincipal(email))
+        return Optional.of(AccessTokenPrincipal(email = email, provider = provider))
     }
 
     private fun getUserInfo(userInfoEndpoint: String, accessToken: String): UserInfo {
@@ -136,12 +138,21 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
 
     private fun getEmail(claims: JsonNode): String? {
 
-        if (claims.has("$NAMESPACE/email")) {
-            return claims.get("$NAMESPACE/email").textValue()
+        return if (claims.has("$NAMESPACE/email")) {
+            claims.get("$NAMESPACE/email").textValue()
         } else {
             logger.error("Missing '{}/email' field in claims part of JWT token {}",
                     NAMESPACE, claims)
-            return null
+            null
+        }
+    }
+
+    private fun getSubjectPrefix(claims: JsonNode): String {
+        return if (claims.has("sub")) {
+            claims.get("sub").textValue().split('|').first()
+        } else {
+            logger.error("Missing 'sub' field in claims part of JWT token {}", claims)
+            ""
         }
     }
 }

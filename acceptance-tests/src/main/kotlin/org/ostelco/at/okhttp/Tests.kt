@@ -52,7 +52,6 @@ class ProfileTest {
 
         assertEquals(email, profile.email, "Incorrect 'email' in fetched profile")
         assertEquals(createProfile.name, profile.name, "Incorrect 'name' in fetched profile")
-        assertEquals(email, profile.referralId, "Incorrect 'referralId' in fetched profile")
 
         profile
                 .address("Some place")
@@ -211,9 +210,10 @@ class SourceTest {
     fun `okhttp test - POST source create`() {
 
         val email = "purchase-${randomInt()}@test.com"
+        var customerId = ""
         try {
 
-            createProfile(name = "Test Payment Source", email = email)
+            customerId = createProfile(name = "Test Payment Source", email = email).id
 
             val client = clientForSubject(subject = email)
 
@@ -231,7 +231,7 @@ class SourceTest {
             assertNotNull(sources.first { it.id == cardId },
                     "Expected card $cardId in list of payment sources for profile $email")
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
@@ -239,8 +239,9 @@ class SourceTest {
     fun `okhttp test - GET list sources`() {
 
         val email = "purchase-${randomInt()}@test.com"
+        var customerId = ""
         try {
-            createProfile(name = "Test Payment Source", email = email)
+            customerId = createProfile(name = "Test Payment Source", email = email).id
 
             val client = clientForSubject(subject = email)
 
@@ -266,7 +267,7 @@ class SourceTest {
                 }
             }
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
@@ -275,7 +276,9 @@ class SourceTest {
 
         val email = "purchase-${randomInt()}@test.com"
 
+        var customerId = ""
         try {
+            customerId = createProfile(name = "Test get list Sources", email = email).id
 
             val client = clientForSubject(subject = email)
 
@@ -285,10 +288,10 @@ class SourceTest {
 
             assert(sources.isEmpty()) { "Expected no payment source for profile $email" }
 
-            assertNotNull(StripePayment.getCustomerIdForEmail(email)) { "Customer Id should have been created" }
+            assertNotNull(StripePayment.getStripeCustomerId(customerId = customerId)) { "Customer Id should have been created" }
 
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
@@ -296,8 +299,9 @@ class SourceTest {
     fun `okhttp test - PUT source set default`() {
 
         val email = "purchase-${randomInt()}@test.com"
+        var customerId = ""
         try {
-            createProfile(name = "Test Payment Source", email = email)
+            customerId = createProfile(name = "Test Payment Source", email = email).id
 
             val client = clientForSubject(subject = email)
 
@@ -315,19 +319,19 @@ class SourceTest {
             client.createSource(newTokenId)
 
             // TODO: Update to fetch the Stripe customerId from 'admin' API when ready.
-            val customerId = StripePayment.getCustomerIdForEmail(email)
+            val stripeCustomerId = StripePayment.getStripeCustomerId(customerId = customerId)
 
             // Verify that original 'sourceId/card' is default.
-            assertEquals(cardId, StripePayment.getDefaultSourceForCustomer(customerId),
-                    "Expected $cardId to be default source for $customerId")
+            assertEquals(cardId, StripePayment.getDefaultSourceForCustomer(stripeCustomerId),
+                    "Expected $cardId to be default source for $stripeCustomerId")
 
             // Set new default card.
             client.setDefaultSource(newCardId)
 
-            assertEquals(newCardId, StripePayment.getDefaultSourceForCustomer(customerId),
-                    "Expected $newCardId to be default source for $customerId")
+            assertEquals(newCardId, StripePayment.getDefaultSourceForCustomer(stripeCustomerId),
+                    "Expected $newCardId to be default source for $stripeCustomerId")
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
@@ -335,10 +339,10 @@ class SourceTest {
     fun `okhttp test - DELETE source`() {
 
         val email = "purchase-${randomInt()}@test.com"
-
+        var customerId = ""
         try {
 
-            createProfile(name = "Test Payment Source", email = email)
+            customerId = createProfile(name = "Test Payment Source", email = email).id
 
             val client = clientForSubject(subject = email)
 
@@ -353,7 +357,7 @@ class SourceTest {
                 "Failed to delete one or more sources: ${createdIds.toSet() - deletedIds.toSet()}"
             }
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
@@ -396,8 +400,9 @@ class PurchaseTest {
     fun `okhttp test - POST products purchase`() {
 
         val email = "purchase-${randomInt()}@test.com"
+        var customerId = ""
         try {
-            createProfile(name = "Test Purchase User", email = email)
+            customerId = createProfile(name = "Test Purchase User", email = email).id
 
             val client = clientForSubject(subject = email)
 
@@ -420,7 +425,7 @@ class PurchaseTest {
             assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
             assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
@@ -428,8 +433,9 @@ class PurchaseTest {
     fun `okhttp test - POST products purchase using default source`() {
 
         val email = "purchase-${randomInt()}@test.com"
+        var customerId = ""
         try {
-            createProfile(name = "Test Purchase User with Default Payment Source", email = email)
+            customerId = createProfile(name = "Test Purchase User with Default Payment Source", email = email).id
 
             val sourceId = StripePayment.createPaymentTokenId()
 
@@ -458,7 +464,7 @@ class PurchaseTest {
             assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
             assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
@@ -466,8 +472,9 @@ class PurchaseTest {
     fun `okhttp test - POST products purchase add source then pay with it`() {
 
         val email = "purchase-${randomInt()}@test.com"
+        var customerId = ""
         try {
-            createProfile(name = "Test Purchase User with Default Payment Source", email = email)
+            customerId = createProfile(name = "Test Purchase User with Default Payment Source", email = email).id
 
             val sourceId = StripePayment.createPaymentTokenId()
 
@@ -496,7 +503,7 @@ class PurchaseTest {
             assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
             assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 }
@@ -512,7 +519,7 @@ class AnalyticsTest {
         post<String> {
             path = "/analytics"
             body = "event"
-            subscriberId = email
+            this.email = email
         }
     }
 }

@@ -18,7 +18,7 @@ import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import org.apache.commons.codec.binary.Hex
 import org.ostelco.prime.getLogger
-import org.ostelco.prime.model.Subscriber
+import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.AdminDataSource
@@ -241,7 +241,7 @@ class SubscriberMsisdnMappingExporter(
     private fun exportAllPages(table: Table, pageSize: Int) {
         // Dump pseudonyms to BQ, one page at a time. Since all records in a
         // page are inserted at once, use a small page size
-        val map: Map<Subscriber, Subscription> = storage.getSubscriberToMsisdnMap()
+        val map: Map<Customer, Subscription> = storage.getCustomerToMsisdnMap()
         var rows = ArrayList<RowToInsert>()
         for ((subscriber, subscription) in map) {
             val encodedSubscriberId = URLEncoder.encode(subscriber.email, "UTF-8")

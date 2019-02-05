@@ -5,6 +5,7 @@ import org.ostelco.prime.disruptor.EventProducer
 import org.ostelco.prime.handler.OcsStateUpdateHandler
 import org.ostelco.prime.handler.PurchaseRequestHandler
 import org.ostelco.prime.model.Bundle
+import org.ostelco.prime.model.Identity
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.ClientDataSource
 
@@ -26,8 +27,8 @@ object OcsPrimeServiceSingleton : OcsSubscriberService, OcsAdminService {
         ocsStateUpdateHandler = OcsStateUpdateHandler(producer)
     }
 
-    override fun topup(subscriberId: String, sku: String): Either<String, Unit> {
-        return purchaseRequestHandler.handlePurchaseRequest(subscriberId, sku)
+    override fun topup(identity: Identity, sku: String): Either<String, Unit> {
+        return purchaseRequestHandler.handlePurchaseRequest(identity, sku)
     }
 
     override fun addBundle(bundle: Bundle) {
