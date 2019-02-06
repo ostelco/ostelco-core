@@ -39,6 +39,6 @@ server:
 
 database:
   driverClass: org.postgresql.Driver
-  user: test
-  password: test
-  url: jdbc:postgresql://db.example.com/db-prod
+  user: ${DB_USER:-test}
+  password: ${DB_PASSWORD:-test}
+  url: jdbc:postgresql://example.com/simmgr_test
