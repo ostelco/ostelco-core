@@ -14,4 +14,4 @@ docker push eu.gcr.io/${PROJECT_ID}/simmanager:${TAG}
 
 echo "Deploying eu.gcr.io/${PROJECT_ID}/simmanager:${TAG} to GKE"
 
-#sed -e s/SIMMANAGER_VERSION/${TAG}/g simmanager-deploy.yaml | kubectl apply -f -
+sed -e s/SIMMANAGER_VERSION/${TAG}/g simmanager-deploy.yaml | kubectl apply -f -

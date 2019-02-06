@@ -9,15 +9,15 @@ openApi:
   resourcePackage: org.ostelco
 
 hlrs:
-  - name: Foo
-    endpoint: http://foo.com/default/provision
-    userId: user
-    apiKey: abc
+  - name: Loltel
+    endpoint: ${WG2_ENDPOINT}
+    userId: ${WG2_USER}
+    apiKey: ${WG2_API_KEY}
 
 profileVendors:
-  - name: Bar
-    endpoint: http://bar.com/gsma/rsp2/es2plus
-    requesterIdentifier: 123
+  - name: Idemia
+    endpoint: ${ES2PLUS_ENDPOINT}
+    requesterIdentifier: ${FUNCTION_REQUESTER_IDENTIFIER}
 
 # Note, list must end with a wildcard match
 phoneTypes:
@@ -30,13 +30,12 @@ phoneTypes:
 
 database:
   driverClass: org.postgresql.Driver
-  user: ${DB_USER:-test}
-  password: ${DB_PASSWORD:-test}
-  url: jdbc:postgresql://172.29.192.3/simmgr_test
+  user: ${DB_USER}
+  password: ${DB_PASSWORD}
+  url: ${DB_URL}
 
 httpClient:
   minThreads: 1
   maxThreads: 128
   gzipEnabled: true
   gzipEnabledForRequests: true
-

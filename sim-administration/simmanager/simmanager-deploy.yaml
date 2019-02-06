@@ -21,12 +21,42 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: simmgr-test-secrets
-                  key: user
+                  key: dbUser
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: simmgr-test-secrets
-                  key: password
+                  key: dbPassword
+            - name: DB_URL
+              valueFrom:
+                secetKeyRef:
+                  name: simmgr-test-secrets
+                  key: dbUrl
+            - name: WG2_USER
+              valueFrom:
+                secetKeyRef:
+                  name: simmgr-test-secrets
+                  key: wg2User
+            - name: WG2_API_KEY
+              valueFrom:
+                secetKeyRef:
+                  name: simmgr-test-secrets
+                  key: wg2ApiKey
+            - name: WG2_ENDPOINT
+              valueFrom:
+                secetKeyRef:
+                  name: simmgr-test-secrets
+                  key: wg2Endpoint
+            - name: ES2PLUS_ENDPOINT
+              valueFrom:
+                secetKeyRef:
+                  name: simmgr-test-secrets
+                  key: es2plusEndpoint
+            - name: FUNCTION_REQUESTER_IDENTIFIER
+              valueFrom:
+                secretKeyRef:
+                  name: simmgr-test-secrets
+                  key: functionRequesterIdentifier
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
