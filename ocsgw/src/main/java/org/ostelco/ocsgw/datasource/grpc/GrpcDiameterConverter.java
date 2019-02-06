@@ -81,7 +81,7 @@ class GrpcDiameterConverter {
 
                 if (!mscc.getRequested().isEmpty()) {
 
-                    org.ostelco.diameter.model.ServiceUnit requested = mscc.getRequested().get(0);
+                    ServiceUnit requested = mscc.getRequested().get(0);
 
                     protoMscc.setRequested(org.ostelco.ocs.api.ServiceUnit.newBuilder()
                             .setInputOctets(0L)
@@ -90,7 +90,7 @@ class GrpcDiameterConverter {
                             .build());
                 }
 
-                org.ostelco.diameter.model.ServiceUnit used = mscc.getUsed();
+                ServiceUnit used = mscc.getUsed();
 
                 protoMscc.setUsed(org.ostelco.ocs.api.ServiceUnit.newBuilder()
                         .setInputOctets(used.getInput())
@@ -114,7 +114,7 @@ class GrpcDiameterConverter {
                     .setImsi(context.getCreditControlRequest().getImsi());
 
             if (!context.getCreditControlRequest().getServiceInformation().isEmpty()) {
-                final org.ostelco.diameter.model.PsInformation psInformation
+                final PsInformation psInformation
                         = context.getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0);
 
                 if (psInformation != null
