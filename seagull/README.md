@@ -18,5 +18,32 @@ docker run --rm -it --network="ostelco-core_net" --ip="172.16.238.2" -v <path to
 
 Testing can then be done with the command:
 
-```/config/logs# seagull -conf /config/config/conf.client.xml -dico /config/config/base_cc.xml -scen /config/scenario/ccr-cca.client.multiple-cc-units.init-term.xml -log /config/logs/log.log -llevel A```
+```seagull -conf /config/config/conf.client.xml -dico /config/config/base_cc.xml -scen /config/scenario/ccr-cca.client.multiple-cc-units.init.xml -log /config/logs/log.log -llevel N```
 
+Tuning of seagull is done in the configuration file
+``` /config/conf.client.xml ```
+
+
+####To test without docker-compose
+
+**Start Seagull**
+
+Check your local IP.
+
+Update /config/conf.client with your local IP
+
+docker run --rm -it --net=host -v ./seagull/:/config -h ocs seagull
+
+**Start OCS-gw**
+
+Update IPAddress for your LocalPeer in /src/resources/server-jdiameter-config.xml with your local IP
+
+Start OCS-gw
+
+**Run test**
+
+In Seagull:
+
+cd /config/logs
+
+seagull -conf /config/config/conf.client.xml -dico /config/config/base_cc.xml -scen /config/scenario/ccr-cca.client.multiple-cc-units.init.xml -log /config/logs/log.log -llevel N

@@ -4,12 +4,15 @@ About the project
 
 This project makes it possible to connect the Gy interface from a GGSN/P-GW to this OCS gateway.
 The gateway will parse the Diameter traffic and pass it through to the OCS component.
-Currently it supports a gRPC or a local adapter.
+Currently it supports a gRPC, Local or Proxy datasource.
 
-The Local adapter will accept all Credit-Control-Requests and send a Credit-Control-Answer that grant
+The Local datasource will accept all Credit-Control-Requests and send a Credit-Control-Answer that grant
 any service units requested.
 
-The gRPC adapter will translate the Credit-Control-Request to gRPC and forward this to the OCS server.
+The gRPC datasource will translate the Credit-Control-Request to gRPC and forward this to the OCS server.
+
+The Proxy datasource is a combination of the Local and gRPC datasource that will forward all traffic to OCS using the
+gRPC datasource but also the Local datasource to get low latency.
 
 Note that this project does not implement a full Online Charging System.
 
@@ -44,8 +47,10 @@ docker build -t ocsgw .
 docker run --rm --name ocsgw -p 3868:3868 ocsgw
 
 
-Testing with seagull
+Testing
 =====================
+
+Seagull can be used for load testing. Please see : [seagull](../seagull/README.md)
  
 **Build Seagull docker image:**
 
