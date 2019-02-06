@@ -2,7 +2,9 @@ package org.ostelco.ocsgw.datasource.grpc;
 
 import org.ostelco.diameter.CreditControlContext;
 import org.ostelco.diameter.model.*;
+import org.ostelco.ocs.api.CreditControlRequestInfo;
 import org.ostelco.ocs.api.CreditControlRequestType;
+import org.ostelco.ocs.api.ServiceInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,5 +66,74 @@ class GrpcDiameterConverter {
     // We match the error codes on names in gRPC and internal model
     static ResultCode convertResultCode(org.ostelco.ocs.api.ResultCode resultCode) {
         return ResultCode.valueOf(resultCode.name());
+    }
+
+    static CreditControlRequestInfo convertRequestToGrpc(final CreditControlContext context) {
+
+        try {
+            CreditControlRequestInfo.Builder builder = CreditControlRequestInfo
+                    .newBuilder()
+                    .setType(getRequestType(context));
+
+            for (MultipleServiceCreditControl mscc : context.getCreditControlRequest().getMultipleServiceCreditControls()) {
+
+                org.ostelco.ocs.api.MultipleServiceCreditControl.Builder protoMscc = org.ostelco.ocs.api.MultipleServiceCreditControl.newBuilder();
+
+                if (!mscc.getRequested().isEmpty()) {
+
+                    ServiceUnit requested = mscc.getRequested().get(0);
+
+                    protoMscc.setRequested(org.ostelco.ocs.api.ServiceUnit.newBuilder()
+                            .setInputOctets(0L)
+                            .setOutputOctetes(0L)
+                            .setTotalOctets(requested.getTotal())
+                            .build());
+                }
+
+                ServiceUnit used = mscc.getUsed();
+
+                protoMscc.setUsed(org.ostelco.ocs.api.ServiceUnit.newBuilder()
+                        .setInputOctets(used.getInput())
+                        .setOutputOctetes(used.getOutput())
+                        .setTotalOctets(used.getTotal())
+                        .build());
+
+                protoMscc.setRatingGroup(mscc.getRatingGroup());
+                protoMscc.setServiceIdentifier(mscc.getServiceIdentifier());
+
+                if (mscc.getReportingReason() != null) {
+                    protoMscc.setReportingReasonValue(mscc.getReportingReason().ordinal());
+                } else {
+                    protoMscc.setReportingReasonValue(org.ostelco.ocs.api.ReportingReason.UNRECOGNIZED.ordinal());
+                }
+                builder.addMscc(protoMscc.build());
+            }
+
+            builder.setRequestId(context.getSessionId())
+                    .setMsisdn(context.getCreditControlRequest().getMsisdn())
+                    .setImsi(context.getCreditControlRequest().getImsi());
+
+            if (!context.getCreditControlRequest().getServiceInformation().isEmpty()) {
+                final PsInformation psInformation
+                        = context.getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0);
+
+                if (psInformation != null
+                        && psInformation.getCalledStationId() != null
+                        && psInformation.getSgsnMccMnc() != null) {
+
+                    builder.setServiceInformation(
+                            ServiceInfo.newBuilder()
+                                    .setPsInformation(org.ostelco.ocs.api.PsInformation.newBuilder()
+                                            .setCalledStationId(psInformation.getCalledStationId())
+                                            .setSgsnMccMnc(psInformation.getSgsnMccMnc())
+                                            .build()).build());
+                }
+            }
+            return builder.build();
+
+        } catch (Exception e) {
+            LOG.error("Failed to create CreditControlRequestInfo", e);
+        }
+        return null;
     }
 }
