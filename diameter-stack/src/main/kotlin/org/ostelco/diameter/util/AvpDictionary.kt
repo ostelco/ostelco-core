@@ -14,9 +14,21 @@ object AvpDictionary {
     private val avpTypeMap: MutableMap<String, AvpType?> = HashMap()
 
     init {
-        AvpDictionary.INSTANCE.parseDictionary("config/dictionary.xml")
-        AvpRep.values().forEach { avpRepMap[it.avpCode] =  it.avpType }
-        AvpType.values().forEach { avpTypeMap[it.label] =  it }
+        try {
+            AvpDictionary.INSTANCE.parseDictionary(dictionaryPath())
+            AvpRep.values().forEach { avpRepMap[it.avpCode] = it.avpType }
+            AvpType.values().forEach { avpTypeMap[it.label] = it }
+        } catch (e:Exception) {
+            LOG.error("Failed to init AvpDictionary", e)
+        }
+    }
+
+    private fun dictionaryPath(): String {
+        var configPath: String? = System.getenv("CONFIG_FOLDER")
+        if (configPath == null) {
+            configPath = "config"
+        }
+        return configPath + "/dictionary.xml"
     }
 
     fun getType(avp: Avp): AvpType? {

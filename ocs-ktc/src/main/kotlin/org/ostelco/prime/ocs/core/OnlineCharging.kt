@@ -8,17 +8,21 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
 import org.ostelco.ocs.api.*
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.ocs.analytics.AnalyticsReporter
 import org.ostelco.prime.ocs.consumption.OcsAsyncRequestConsumer
 import org.ostelco.prime.ocs.notifications.Notifications
 import org.ostelco.prime.storage.ClientDataSource
+import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 
 object OnlineCharging : OcsAsyncRequestConsumer {
 
-    private val threadContext = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+    private val logger by getLogger()
+
+    private val threadContext = Executors.newFixedThreadPool(100).asCoroutineDispatcher()
 
     private val ccaStreamMap = ConcurrentHashMap<String, StreamObserver<CreditControlAnswerInfo>>()
     private val activateStreamMap = ConcurrentHashMap<String, StreamObserver<ActivateResponse>>()
@@ -41,6 +45,8 @@ object OnlineCharging : OcsAsyncRequestConsumer {
     }
 
     override fun creditControlRequestEvent(streamId: String, request: CreditControlRequestInfo) {
+
+        val timestampStart = Instant.now()
 
         val msisdn = request.msisdn
 
@@ -104,8 +110,11 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                         response.addMscc(responseMscc)
                     })
                 }
-
-                ccaStreamMap[streamId]?.onNext(response.build())
+                synchronized(OnlineCharging) {
+                    ccaStreamMap[streamId]?.onNext(response.build())
+                }
+                val timestampStop = Instant.now()
+                logger.info("Latency {} msec ", timestampStop.toEpochMilli() - timestampStart.toEpochMilli())
             }
         }
     }

@@ -101,7 +101,7 @@ public class OcsgwMetrics {
     }
 
 
-    public void sendAnalytics(OcsgwAnalyticsReport report) {
+    public synchronized void sendAnalytics(OcsgwAnalyticsReport report) {
         if (report != null) {
             ocsgwAnalyticsReport.onNext(report);
             lastActiveSessions = report;
