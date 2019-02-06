@@ -88,7 +88,6 @@ class ScanInfoStoreTest {
         @JvmStatic
         @AfterClass
         fun cleanup() {
-            ScanInformationStoreSingleton.cleanup()
             File("encrypt_key_global").delete()
         }
 

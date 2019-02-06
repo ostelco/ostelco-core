@@ -257,6 +257,11 @@ spec:
             secretKeyRef:
               name: stripe-secrets
               key: stripeEndpointSecret
+        - name: SCANINFO_MASTERKEY_URI
+          valueFrom:
+            secretKeyRef:
+              name: scaninfo-keys
+              key: masterKeyUri
         - name: SCANINFO_STORAGE_BUCKET
           valueFrom:
             secretKeyRef:
@@ -279,6 +284,9 @@ spec:
         - name: config-data
           mountPath: "/config-data"
           readOnly: true
+        - name: scaninfo-keysets
+          mountPath: "/scaninfo-keysets"
+          readOnly: true
         ports:
         - containerPort: 8080
         - containerPort: 8081
@@ -291,6 +299,9 @@ spec:
       - name: api-ostelco-ssl
         secret:
           secretName: api-ostelco-ssl
+      - name: scaninfo-keysets
+        secret:
+          secretName: scaninfo-keysets
       - name: ocs-ostelco-ssl
         secret:
           secretName: ocs-ostelco-ssl

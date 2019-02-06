@@ -113,24 +113,25 @@ object ScanInformationStoreSingleton : ScanInformationStore {
     fun init(env: Environment?, environmentVars: EnvironmentVars) {
         TinkConfig.register()
         keysetFilePathPrefix = ConfigRegistry.config.keysetFilePathPrefix
-        masterKeyUri = ConfigRegistry.config.masterKeyUri
         if (ConfigRegistry.config.storeType != "emulator") {
-            // Don't throw error during local tests
             apiToken = environmentVars.getVar("JUMIO_API_TOKEN")
                     ?: throw Error("Missing environment variable JUMIO_API_TOKEN")
             apiSecret = environmentVars.getVar("JUMIO_API_SECRET")
                     ?: throw Error("Missing environment variable JUMIO_API_SECRET")
             storageBucket = environmentVars.getVar("SCANINFO_STORAGE_BUCKET")
                     ?: throw Error("Missing environment variable SCANINFO_STORAGE_BUCKET")
+            masterKeyUri = environmentVars.getVar("SCANINFO_MASTERKEY_URI")
+                    ?: throw Error("Missing environment variable SCANINFO_MASTERKEY_URI")
+            logger.info("masterKeyUri = ${masterKeyUri}")
         } else {
+            // Don't throw error during local tests
             apiToken = ""
             apiSecret = ""
             storageBucket = ""
+            masterKeyUri = null
         }
     }
 
-    fun cleanup() {
-    }
 }
 
 /**

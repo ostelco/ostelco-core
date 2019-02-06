@@ -257,6 +257,35 @@ bazel-bin/tools/tinkey/tinkey create-public-keyset --in test_keyset_pvt_cltxt --
 
 The keysets for production (public key only) needs to be encrypted using GCP KMS. More details can be found in docs for `--master-key-uri` option in `tinkey`
 
+- Create Key ring and master key to be used for encrypting the public keys
+    ```bash
+    gcloud kms keyrings create scan-dev --location global
+    gcloud kms keys create scan-info --location global --keyring scan-dev --purpose encryption
+    ```
+
+- Set the master key URI for decrypting the keysets.
+    ```bash
+    kubectl create secret generic scaninfo-keys --from-literal=masterKeyUri='gcp-kms://projects/pantel-2decb/locations/global/keyRings/scan-dev/cryptoKeys/scan-info'
+    ```
+- Create keysets for an environment. Use `tinkey` to generate
+    ```bash
+    bazel-bin/tools/tinkey/tinkey create-keyset --key-template ECIES_P256_HKDF_HMAC_SHA256_AES128_GCM --out clear_encrypt_key_global_pvt
+    bazel-bin/tools/tinkey/tinkey create-public-keyset --in clear_encrypt_key_global_pvt --out clear_encrypt_key_global_pub
+    bazel-bin/tools/tinkey/tinkey convert-keyset --out encrypt_key_global --in clear_encrypt_key_global_pub \
+    --new-master-key-uri gcp-kms://projects/pantel-2decb/locations/global/keyRings/scan-dev/cryptoKeys/scan-info
+    
+    bazel-bin/tools/tinkey/tinkey create-keyset --key-template ECIES_P256_HKDF_HMAC_SHA256_AES128_GCM --out clear_encrypt_key_sgp_pvt
+    bazel-bin/tools/tinkey/tinkey create-public-keyset --in clear_encrypt_key_sgp_pvt --out clear_encrypt_key_sgp_pub
+    bazel-bin/tools/tinkey/tinkey convert-keyset --out encrypt_key_sgp --in clear_encrypt_key_sgp_pub \
+    --new-master-key-uri gcp-kms://projects/pantel-2decb/locations/global/keyRings/scan-dev/cryptoKeys/scan-info
+    ```
+- Set the encryption keysets (public keys only) as kubernetes secrets.
+    ```bash
+    kubectl create secret generic scaninfo-keysets \
+      --from-file=./encrypt_key_global \
+      --from-file=./encrypt_key_sgp
+    ```
+
 ### Cloud Pub/Sub
 
 ```bash

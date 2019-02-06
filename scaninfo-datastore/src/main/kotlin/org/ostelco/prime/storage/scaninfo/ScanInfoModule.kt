@@ -28,7 +28,6 @@ class ScanInfoModule : PrimeModule {
 class ScanInfoConfig : Configuration() {
     var storeType = "default"
     var keysetFilePathPrefix = "encrypt_key"
-    var masterKeyUri:String? = null
 }
 
 object ConfigRegistry {
