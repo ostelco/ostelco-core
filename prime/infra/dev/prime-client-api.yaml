@@ -515,6 +515,8 @@ definitions:
         type: string
     required:
       - email
+      - country
+      - name
   SubscriptionList:
     type: array
     items:
