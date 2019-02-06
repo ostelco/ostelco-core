@@ -136,7 +136,7 @@ object ScanInformationStoreSingleton : ScanInformationStore {
             logger.info("Initializing ScanInfoEncrypt(${countryCode}, keysetFilename ${keysetFilePathPrefix}_${countryCode} masterKeyUri = ${masterKeyUri}")
             val encrypt = ScanInfoEncrypt("${keysetFilePathPrefix}_${countryCode}", masterKeyUri)
         } catch (e: Exception) {
-            logger.error("Error initializing ScanInfoEncrypt(${countryCode}, keysetFilename ${keysetFilePathPrefix}_${countryCode} masterKeyUri = ${masterKeyUri}")
+            logger.error("Error initializing ScanInfoEncrypt(${countryCode}, keysetFilename ${keysetFilePathPrefix}_${countryCode} masterKeyUri = ${masterKeyUri}", e)
         }
 
     }
