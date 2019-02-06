@@ -29,27 +29,27 @@ spec:
                   key: dbPassword
             - name: DB_URL
               valueFrom:
-                secetKeyRef:
+                secretKeyRef:
                   name: simmgr-test-secrets
                   key: dbUrl
             - name: WG2_USER
               valueFrom:
-                secetKeyRef:
+                secretKeyRef:
                   name: simmgr-test-secrets
                   key: wg2User
             - name: WG2_API_KEY
               valueFrom:
-                secetKeyRef:
+                secretKeyRef:
                   name: simmgr-test-secrets
                   key: wg2ApiKey
             - name: WG2_ENDPOINT
               valueFrom:
-                secetKeyRef:
+                secretKeyRef:
                   name: simmgr-test-secrets
                   key: wg2Endpoint
             - name: ES2PLUS_ENDPOINT
               valueFrom:
-                secetKeyRef:
+                secretKeyRef:
                   name: simmgr-test-secrets
                   key: es2plusEndpoint
             - name: FUNCTION_REQUESTER_IDENTIFIER
