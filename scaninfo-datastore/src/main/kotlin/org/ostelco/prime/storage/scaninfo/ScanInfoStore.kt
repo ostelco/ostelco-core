@@ -82,7 +82,7 @@ object ScanInformationStoreSingleton : ScanInformationStore {
                 // TODO: find the right bucket for this scan (may be they are in a different region)
                 val bucketName = storageBucket
                 val plainZipData = JumioHelper.generateZipFile(vendorScanInformation).bind()
-                val zipData = getEncrypter(countryCode).encryptData(plainZipData)
+                val zipData = getEncrypter("global").encryptData(plainZipData)
                 if (bucketName.isNullOrEmpty()) {
                     val fileName = "${countryCode}_${vendorScanInformation.scanId}.zip.tk"
                     logger.info("No bucket set, saving file locally $fileName")
@@ -95,7 +95,8 @@ object ScanInformationStoreSingleton : ScanInformationStore {
                     JumioHelper.uploadZipFile(globalBucket, fileName, zipData).bind()
                     if (countryBucket != globalBucket) {
                         logger.info("Saving in cloud store $countryBucket --> $fileName")
-                        JumioHelper.uploadZipFile(countryBucket, fileName, zipData).bind()
+                        val localZipData = getEncrypter(countryCode).encryptData(plainZipData)
+                        JumioHelper.uploadZipFile(countryBucket, fileName, localZipData).bind()
                     }
                 }
                 Unit
