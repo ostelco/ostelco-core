@@ -68,7 +68,7 @@ object ScanInformationStoreSingleton : ScanInformationStore {
         if (encrypters.containsKey(countryCode)) {
             return encrypters[countryCode]!!
         } else {
-            logger.info("Initializing ScanInfoEncrypt(${countryCode}, keysetFilename ${keysetFilePathPrefix}_${countryCode} masterKeyUri = ${masterKeyUri}")
+            logger.info("Initializing ScanInfoEncrypt for country:${countryCode}")
             val encrypt = ScanInfoEncrypt("${keysetFilePathPrefix}_${countryCode}", masterKeyUri)
             encrypters.put(countryCode, encrypt)
             return encrypt
@@ -131,14 +131,6 @@ object ScanInformationStoreSingleton : ScanInformationStore {
             storageBucket = ""
             masterKeyUri = null
         }
-        val countryCode = "sgp"
-        try {
-            logger.info("Initializing ScanInfoEncrypt(${countryCode}, keysetFilename ${keysetFilePathPrefix}_${countryCode} masterKeyUri = ${masterKeyUri}")
-            val encrypt = ScanInfoEncrypt("${keysetFilePathPrefix}_${countryCode}", masterKeyUri)
-        } catch (e: Exception) {
-            logger.error("Error initializing ScanInfoEncrypt(${countryCode}, keysetFilename ${keysetFilePathPrefix}_${countryCode} masterKeyUri = ${masterKeyUri}", e)
-        }
-
     }
 
 }

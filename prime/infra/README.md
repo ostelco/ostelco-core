@@ -285,6 +285,10 @@ The keysets for production (public key only) needs to be encrypted using GCP KMS
       --from-file=./encrypt_key_global \
       --from-file=./encrypt_key_sgp
     ```
+Prime will use CloudKMS (through tink library) to decrypt the keysets. It requires an IAM role to enable these APIs.
+```bash
+gcloud projects add-iam-policy-binding pantel-2decb --member serviceAccount:prime-service-account@pantel-2decb.iam.gserviceaccount.com  --role roles/cloudkms.cryptoKeyEncrypterDecrypter
+```
 
 ### Cloud Pub/Sub
 
