@@ -259,24 +259,6 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
 class SmDpPlusException(message: String) : Exception(message)
 
 
-// XXX Move this to the es2+ protocol code.
-class EsTwoPlusConfig {
-    @Valid
-    @NotNull
-    @JsonProperty("requesterId")
-    var requesterId: String = ""
-
-    @Valid
-    @NotNull
-    @JsonProperty("host")
-    var host: String = ""
-
-    @Valid
-    @NotNull
-    @JsonProperty("port")
-    var port: Int = 4711
-}
-
 /**
  * Configuration class for SM-DP+ emulator.
  */

@@ -1,11 +1,14 @@
 package org.ostelco.sim.es2plus
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.http.HttpResponse
 import org.apache.http.client.HttpClient
 
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.StringEntity
+import javax.validation.Valid
+import javax.validation.constraints.NotNull
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
@@ -229,4 +232,27 @@ class ES2PlusClient(
  * Thrown when something goes wrong with the ES2+ protocol.
  */
 class ES2PlusClientException(msg: String) : Exception(msg)
+
+
+/**
+ * Configuration class to be used in application's config
+ * when a client is necessary.
+ */
+class EsTwoPlusConfig {
+    @Valid
+    @NotNull
+    @JsonProperty("requesterId")
+    var requesterId: String = ""
+
+    @Valid
+    @NotNull
+    @JsonProperty("host")
+    var host: String = ""
+
+    @Valid
+    @NotNull
+    @JsonProperty("port")
+    var port: Int = 4711
+}
+
 
