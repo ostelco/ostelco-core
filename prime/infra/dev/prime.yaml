@@ -277,6 +277,8 @@ spec:
             secretKeyRef:
               name: jumio-secrets
               key: apiSecret
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /secret/pantel-prod.json
         volumeMounts:
         - name: secret-config
           mountPath: "/secret"
