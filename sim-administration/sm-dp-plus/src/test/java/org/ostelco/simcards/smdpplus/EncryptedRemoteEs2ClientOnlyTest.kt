@@ -7,6 +7,9 @@ import org.junit.Before
 import org.junit.Test
 import org.ostelco.sim.es2plus.FunctionExecutionStatusType
 
+// XXX This test should be placed in the es2plus4dropwizard library, and
+//     should be run as part of testing that application, not the SM-DP-Plus application.
+
 class EncryptedRemoteEs2ClientOnlyTest {
 
     @Before
@@ -27,9 +30,20 @@ class EncryptedRemoteEs2ClientOnlyTest {
     fun handleHappyDayScenario() {
 
         val client = SUPPORT.getApplication<SmDpPlusApplication>().es2plusClient
+        val iccid = "8947000000000000020"
 
-        val iccid = "8901000000000000001"
-        val downloadResponse = client.downloadOrder(iccid = iccid, profileType = "Loltel_STD")
+        val profileStatus =
+                client.profileStatus(iccidList = listOf(iccid))
+        assertEquals(FunctionExecutionStatusType.ExecutedSuccess, profileStatus.header.functionExecutionStatus.status)
+        assertEquals(1, profileStatus.profileStatusList!!.size)
+        assertEquals(iccid, profileStatus.profileStatusList!!.get(0).iccid)
+
+        // XXX TODO: fill in the blanks for a happy day scenario.
+        // If profile not available, then reset it to state available, then run through a
+        // happy day provisioning scenario.
+
+
+        val downloadResponse = client.downloadOrder(iccid = iccid)
 
         assertEquals(FunctionExecutionStatusType.ExecutedSuccess, downloadResponse.header.functionExecutionStatus.status)
         assertEquals(iccid, downloadResponse.iccid)

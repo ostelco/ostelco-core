@@ -151,15 +151,15 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
     }
 
     /**
-     * Find a free profile that either matches both iccid and profile type (if iccid != null),
-     * or just profile type (if iccid == null).  Throw runtime exception if parameter
+     * Find a free profile that either matches both profileStatusList and profile type (if profileStatusList != null),
+     * or just profile type (if profileStatusList == null).  Throw runtime exception if parameter
      * errors are discovered, but return null if no matching profile is found.
      */
     private fun findMatchingFreeProfile(iccid: String?, profileType: String?): SmDpSimEntry? {
         if (iccid != null) {
             return findUnallocatedByIccidAndProfileType(iccid, profileType)
         } else if (profileType == null) {
-            throw RuntimeException("No iccid, no profile type, so don't know how to allocate sim entry")
+            throw RuntimeException("No profileStatusList, no profile type, so don't know how to allocate sim entry")
         } else if (!entriesByProfile.containsKey(profileType)) {
             throw SmDpPlusException("Unknown profile type $profileType")
         } else {
@@ -177,13 +177,13 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
     }
 
     /**
-     * Allocate by ICCID, but only do so if the iccid exists, and the
+     * Allocate by ICCID, but only do so if the profileStatusList exists, and the
      * profile  associated with that ICCID matches the expected profile type
      * (if not null, null will match anything).
      */
     private fun findUnallocatedByIccidAndProfileType(iccid: String, profileType: String?): SmDpSimEntry {
         if (!entriesByIccid.containsKey(iccid)) {
-            throw RuntimeException("Attempt to allocate nonexisting iccid $iccid")
+            throw RuntimeException("Attempt to allocate nonexisting profileStatusList $iccid")
         }
 
         val entry = entriesByIccid[iccid]!!
@@ -194,7 +194,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
 
         if (profileType != null) {
             if (entry.profile != profileType) {
-                throw SmDpPlusException("Profile of iccid = $iccid is ${entry.profile}, not $profileType")
+                throw SmDpPlusException("Profile of profileStatusList = $iccid is ${entry.profile}, not $profileType")
             }
         }
         return entry
@@ -212,7 +212,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
             throw RuntimeException("No ICCD, cannot confirm order")
         }
         if (!entriesByIccid.containsKey(iccid)) {
-            throw RuntimeException("Attempt to allocate nonexisting iccid $iccid")
+            throw RuntimeException("Attempt to allocate nonexisting profileStatusList $iccid")
         }
         val entry = entriesByIccid[iccid]!!
 

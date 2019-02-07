@@ -19,9 +19,6 @@ import javax.ws.rs.ext.ExceptionMapper
 import javax.ws.rs.ext.Provider
 
 
-
-
-
 @Provider
 class ES2PlusIncomingHeadersFilter : ContainerRequestFilter {
 

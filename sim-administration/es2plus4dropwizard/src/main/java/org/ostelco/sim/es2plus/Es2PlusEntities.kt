@@ -58,7 +58,7 @@ data class StatusCodeData(
 data class Es2PlusDownloadOrder(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("eid") val eid: String? = null,
-        @JsonProperty("iccid") val iccid: String? = null,
+        @JsonProperty("profileStatusList") val iccid: String? = null,
         @JsonProperty("profileType") val profileType: String? = null
 )
 
@@ -66,8 +66,45 @@ data class Es2PlusDownloadOrder(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Es2DownloadOrderResponse(
         @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader(),
-        @JsonProperty("iccid") val iccid: String
+        @JsonProperty("profileStatusList") val iccid: String? = null
 )
+
+///
+///   The ProfileStatus function
+///
+
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Es2PlusProfileStatus(
+        @JsonProperty("header") val header: ES2RequestHeader,
+        @JsonProperty("iccidList") val iccidList: List<IccidListEntry> = listOf()
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class IccidListEntry(
+        @JsonProperty("iccid") val iccid: String?
+)
+
+
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Es2ProfileStatusResponse(
+        @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader(),
+        @JsonProperty("profileStatusList") val profileStatusList: List<ProfileStatus>? = listOf(),
+        @JsonProperty("completionTimestamp") val completionTimestamp: String?
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class ProfileStatus(
+        @JsonProperty("status_last_update_timestamp") val lastUpdateTimestamp:String? = null,
+        @JsonProperty("profileStatusList") val profileStatusList: List<ProfileStatus>? = listOf(),
+        @JsonProperty("acToken") val acToken: String? = null,
+        @JsonProperty("state") val state: String? = null,
+        @JsonProperty("eid") val eid: String? = null,
+        @JsonProperty("iccid") val iccid: String? = null,
+        @JsonProperty("lockFlag") val lockFlag: Boolean? = null
+)
+
 
 ///
 /// The ConfirmOrder function
@@ -78,7 +115,7 @@ data class Es2DownloadOrderResponse(
 data class Es2ConfirmOrder(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("eid") val eid: String? = null,
-        @JsonProperty("iccid") val iccid: String,
+        @JsonProperty("profileStatusList") val iccid: String,
         @JsonProperty("matchingId") val matchingId: String? = null,
         @JsonProperty("confirmationCode") val confirmationCode: String? = null,
         @JsonProperty("smdsAddress") val smdsAddress: String? = null,
@@ -89,7 +126,7 @@ data class Es2ConfirmOrder(
 @JsonSchema("ES2+ConfirmOrder-response")
 data class Es2ConfirmOrderResponse(
         @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader(),
-        @JsonProperty("eid") val eid: String,
+        @JsonProperty("eid") val eid: String? = null,
         @JsonProperty("matchingId") val matchingId: String? = null,
         @JsonProperty("smdsAddress") val smdsAddress: String? = null
 )
@@ -103,7 +140,7 @@ data class Es2ConfirmOrderResponse(
 data class Es2CancelOrder(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("eid") val eid: String,
-        @JsonProperty("iccid") val iccid: String? = null,
+        @JsonProperty("profileStatusList") val iccid: String? = null,
         @JsonProperty("matchingId") val matchingId: String? = null,
         @JsonProperty("finalProfileStatusIndicator") val finalProfileStatusIndicator: String? = null
 )
@@ -120,7 +157,7 @@ data class HeaderOnlyResponse(@JsonProperty("header") val header: ES2ResponseHea
 @JsonSchema("ES2+ReleaseProfile-def")
 data class Es2ReleaseProfile(
         @JsonProperty("header") val header: ES2RequestHeader,
-        @JsonProperty("iccid") val iccid: String
+        @JsonProperty("profileStatusList") val iccid: String
 )
 
 
@@ -134,7 +171,7 @@ data class Es2ReleaseProfile(
 data class Es2HandleDownloadProgressInfo(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("eid") val eid: String? = null,
-        @JsonProperty("iccid") val iccid: String,
+        @JsonProperty("profileStatusList") val iccid: String,
         @JsonProperty("profileType") val profileType: String,
         @JsonProperty("timestamp") val timestamp: String,
         @JsonProperty("notificationPointId") val notificationPointId: Int,

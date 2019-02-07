@@ -49,7 +49,7 @@ data class SimEntry(
         @JsonProperty("hlrId") val hlrId: Long,
         @JsonProperty("profileVendorId") val profileVendorId: Long,
         @JsonProperty("msisdn") val msisdn: String? = null,
-        @JsonProperty("iccid") val iccid: String,
+        @JsonProperty("profileStatusList") val iccid: String,
         @JsonProperty("imsi") val imsi: String,
         @JsonProperty("eid") val eid: String? = null,
         @JsonProperty("profile") val profile: String,
@@ -163,9 +163,9 @@ abstract class SimInventoryDAO {
     @RegisterMapper(SimEntryMapper::class)
     abstract fun getSimProfileById(@Bind("id") id: Long): SimEntry
 
-    @SqlQuery("SELECT * FROM sim_entries WHERE iccid = :iccid")
+    @SqlQuery("SELECT * FROM sim_entries WHERE profileStatusList = :profileStatusList")
     @RegisterMapper(SimEntryMapper::class)
-    abstract fun getSimProfileByIccid(@Bind("iccid") iccid: String): SimEntry
+    abstract fun getSimProfileByIccid(@Bind("profileStatusList") iccid: String): SimEntry
 
     @SqlQuery("SELECT * FROM sim_entries WHERE imsi = :imsi")
     @RegisterMapper(SimEntryMapper::class)
@@ -189,7 +189,7 @@ abstract class SimInventoryDAO {
             val profileVendorId = r.getLong("profileVendorId")
             val hlrId = r.getLong("hlrId")
             val msisdn = r.getString("msisdn")
-            val iccid = r.getString("iccid")
+            val iccid = r.getString("profileStatusList")
             val imsi = r.getString("imsi")
             val eid = r.getString("eid")
             val profile = r.getString("profile")
@@ -345,8 +345,8 @@ abstract class SimInventoryDAO {
 
     @Transaction
     @SqlBatch("""INSERT INTO sim_entries
-                                  (batch, profileVendorId, hlrid, hlrState, smdpplusstate, matchingId, profile, iccid, imsi, pin1, pin2, puk1, puk2)
-                      VALUES (:batch, :profileVendorId, :hlrId, :hlrState, :smdpPlusState, :matchingId, :profile, :iccid, :imsi, :pin1, :pin2, :puk1, :puk2)""")
+                                  (batch, profileVendorId, hlrid, hlrState, smdpplusstate, matchingId, profile, profileStatusList, imsi, pin1, pin2, puk1, puk2)
+                      VALUES (:batch, :profileVendorId, :hlrId, :hlrState, :smdpPlusState, :matchingId, :profile, :profileStatusList, :imsi, :pin1, :pin2, :puk1, :puk2)""")
     @BatchChunkSize(1000)
     abstract fun insertAll(@BindBean entries: Iterator<SimEntry>)
 

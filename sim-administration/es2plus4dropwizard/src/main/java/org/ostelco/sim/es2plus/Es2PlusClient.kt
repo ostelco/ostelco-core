@@ -123,10 +123,29 @@ class ES2PlusClient(
         }
     }
 
+
+    fun profileStatus(
+            iccidList: List<String>): Es2ProfileStatusResponse {
+
+        val wrappedIccidList = iccidList.map { IccidListEntry(iccid=it) }
+
+        val es2ProtocolPayload = Es2PlusProfileStatus(
+                header = ES2RequestHeader(
+                        functionRequesterIdentifier = requesterId,
+                        functionCallIdentifier = "profileStatus"),
+                iccidList = wrappedIccidList)
+
+        return postEs2ProtocolCmd(
+                "/gsma/rsp2/es2plus/getProfileStatus",
+                es2ProtocolPayload,
+                Es2ProfileStatusResponse::class.java,
+                expectedReturnCode = 200)
+    }
+
     fun downloadOrder(
             eid: String? = null,
             iccid: String,
-            profileType: String): Es2DownloadOrderResponse {
+            profileType: String?=null): Es2DownloadOrderResponse {
         val es2ProtocolPayload = Es2PlusDownloadOrder(
                 header = ES2RequestHeader(
                         functionRequesterIdentifier = requesterId,

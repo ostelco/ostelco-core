@@ -33,11 +33,11 @@ class SimInventoryResource(private val client: Client,
     }
 
     @GET
-    @Path("iccid/{iccid}")
+    @Path("profileStatusList/{profileStatusList}")
     @Produces(MediaType.APPLICATION_JSON)
     fun findSimProfileByIccid(
             @NotEmpty @PathParam("hlrVendors") hlr: String,
-            @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
+            @NotEmpty @PathParam("profileStatusList") iccid: String): SimEntry {
         val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
         val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
         assertCorrectHlr(hlr, hlr == hlrAdapter.name)
@@ -45,11 +45,11 @@ class SimInventoryResource(private val client: Client,
     }
 
     @POST
-    @Path("iccid/{iccid}")
+    @Path("profileStatusList/{profileStatusList}")
     @Produces(MediaType.APPLICATION_JSON)
     fun activateHlrProfileByIccid(
             @NotEmpty @PathParam("hlrVendors") hlr: String,
-            @NotEmpty @PathParam("iccid") iccid: String): SimEntry? {
+            @NotEmpty @PathParam("profileStatusList") iccid: String): SimEntry? {
         val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
         val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
         assertCorrectHlr(hlr, hlr == hlrAdapter.name)
@@ -73,11 +73,11 @@ class SimInventoryResource(private val client: Client,
     }
 
     @DELETE
-    @Path("iccid/{iccid}")
+    @Path("profileStatusList/{profileStatusList}")
     @Produces(MediaType.APPLICATION_JSON)
     fun deactivateHlrProfileByIccid(
             @NotEmpty @PathParam("hlrVendors") hlr: String,
-            @NotEmpty @PathParam("iccid") iccid: String): SimEntry? {
+            @NotEmpty @PathParam("profileStatusList") iccid: String): SimEntry? {
         val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
         val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
         assertCorrectHlr(hlr, hlr == hlrAdapter.name)
@@ -142,7 +142,7 @@ class SimInventoryResource(private val client: Client,
     fun activateAllEsimProfileByIccid(
             @NotEmpty @PathParam("hlrVendors") hlr: String,
             @QueryParam("eid") eid: String?,
-            @QueryParam("iccid") iccid: String?,
+            @QueryParam("profileStatusList") iccid: String?,
             @DefaultValue("_") @QueryParam("phoneType") phoneType: String): SimEntry? {
         val simEntry = assertNonNull(activateEsimProfileByIccid(hlr, eid, iccid, phoneType))
         return activateHlrProfileByIccid(hlr, simEntry.iccid)
@@ -154,7 +154,7 @@ class SimInventoryResource(private val client: Client,
     fun activateEsimProfileByIccid(
             @NotEmpty @PathParam("hlrVendors") hlr: String,
             @QueryParam("eid") eid: String?,
-            @QueryParam("iccid") iccid: String?,
+            @QueryParam("profileStatusList") iccid: String?,
             @DefaultValue("_") @QueryParam("phoneType") phoneType: String): SimEntry? {
         val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
         val profile = config.getProfileForPhoneType(phoneType)
