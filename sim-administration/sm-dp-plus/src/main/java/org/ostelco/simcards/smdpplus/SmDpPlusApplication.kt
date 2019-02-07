@@ -77,6 +77,8 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         this.httpClient = HttpClientBuilder(env).using(config.httpClientConfiguration).build(name)
         this.es2plusClient = ES2PlusClient(
                 requesterId = config.es2plusConfig.requesterId,
+                host = config.es2plusConfig.host,
+                port = config.es2plusConfig.port,
                 httpClient = httpClient)
     }
 
@@ -263,6 +265,16 @@ class EsTwoPlusConfig {
     @NotNull
     @JsonProperty("requesterId")
     var requesterId: String = ""
+
+    @Valid
+    @NotNull
+    @JsonProperty("host")
+    var host: String = ""
+
+    @Valid
+    @NotNull
+    @JsonProperty("port")
+    var port: Int = 4711
 }
 
 /**
@@ -277,7 +289,7 @@ class SmDpPlusAppConfiguration : Configuration() {
      */
     @Valid
     @NotNull
-    @JsonProperty("es2plus")
+    @JsonProperty("es2plusClient")
     var es2plusConfig = EsTwoPlusConfig()
 
     /**

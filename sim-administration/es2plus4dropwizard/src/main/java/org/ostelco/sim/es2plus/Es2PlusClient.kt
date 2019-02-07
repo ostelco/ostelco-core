@@ -24,7 +24,7 @@ class ES2PlusClient(
         private val jerseyClient: Client? = null) {
 
     companion object {
-        const val X_ADMIN_PROTOCOL_HEADER_VALUE = "gsma/rsp/v<x.y.z>"
+        const val X_ADMIN_PROTOCOL_HEADER_VALUE = "gsma/rsp/v2.0.0"
     }
 
 
@@ -69,7 +69,13 @@ class ES2PlusClient(
 
             val xAdminProtocolHeader = result.getFirstHeader("X-Admin-Protocol")!!
 
-            if (xAdminProtocolHeader == null || xAdminProtocolHeader.value != X_ADMIN_PROTOCOL_HEADER_VALUE) {
+            if (xAdminProtocolHeader == null) {
+                throw ES2PlusClientException("Expected header X-Admin-Protocol to be non null")
+            }
+
+            val protocolVersion = xAdminProtocolHeader.value
+
+            if (protocolVersion != X_ADMIN_PROTOCOL_HEADER_VALUE) {
                 throw ES2PlusClientException("Expected header X-Admin-Protocol to be '$X_ADMIN_PROTOCOL_HEADER_VALUE' but it was '$xAdminProtocolHeader'")
             }
 
@@ -115,7 +121,7 @@ class ES2PlusClient(
     }
 
     fun downloadOrder(
-            eid: String,
+            eid: String? = null,
             iccid: String,
             profileType: String): Es2DownloadOrderResponse {
         val es2ProtocolPayload = Es2PlusDownloadOrder(

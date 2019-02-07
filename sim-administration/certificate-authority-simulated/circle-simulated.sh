@@ -139,7 +139,8 @@ function crt_config_filename {
 
 function generate_cert_config {
     local cert_config=$1
-    local keyfile=$2
+    local key
+file=$2
     local distinguished_name=$3
     local country=$4
     local state=$5
