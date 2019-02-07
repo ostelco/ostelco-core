@@ -28,7 +28,6 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.*
 import java.util.zip.ZipEntry
-import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import javax.ws.rs.core.MultivaluedMap
 import kotlin.collections.HashMap
@@ -42,11 +41,14 @@ class ScanInfoStore : ScanInformationStore by ScanInformationStoreSingleton
  */
 open class EnvironmentVars {
     /**
-     * Retrieve the value of the environbment variable.
+     * Retrieve the value of the environment variable.
      */
     open fun getVar(name: String): String? = System.getenv(name)
 }
 
+/**
+ * Object implementing the Cloud-Storage, Jumio based Scan Store
+ */
 object ScanInformationStoreSingleton : ScanInformationStore {
 
     private val logger by getLogger()
@@ -55,6 +57,7 @@ object ScanInformationStoreSingleton : ScanInformationStore {
     private lateinit var apiToken: String
     private lateinit var apiSecret: String
 
+    // Cloud storage bucket prefix for storing zip files
     private lateinit var storageBucket: String
 
     // Path name prefix for the keyset files.
@@ -64,7 +67,7 @@ object ScanInformationStoreSingleton : ScanInformationStore {
     // Encryptors for used for each country
     private var encrypters:HashMap<String, ScanInfoEncrypt> = HashMap()
 
-    fun getEncrypter(countryCode: String): ScanInfoEncrypt {
+    private fun getEncrypter(countryCode: String): ScanInfoEncrypt {
         if (encrypters.containsKey(countryCode)) {
             return encrypters[countryCode]!!
         } else {
@@ -75,28 +78,36 @@ object ScanInformationStoreSingleton : ScanInformationStore {
         }
     }
 
+    /**
+     * Save the scan information in cloud storage.
+     * Downloads images and create the zip file. The zip file is then
+     * encrypted with the keys for right buckets.
+     *  - Saves the zip files in two locations,
+     *  1) <bucket>-global/<subscriber-id>/<scan-id>.zip.tk
+     *  2) <bucket>-<country-code>/<subscriber-id>/<scan-id>.zip.tk
+     */
     override fun upsertVendorScanInformation(subscriberId: String, countryCode:String, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit> {
         return IO {
             Either.monad<StoreError>().binding {
                 val vendorScanInformation = createVendorScanInformation(vendorData).bind()
-                // TODO: find the right bucket for this scan (may be they are in a different region)
                 val bucketName = storageBucket
                 val plainZipData = JumioHelper.generateZipFile(vendorScanInformation).bind()
                 val zipData = getEncrypter("global").encryptData(plainZipData)
                 if (bucketName.isNullOrEmpty()) {
                     val fileName = "${countryCode}_${vendorScanInformation.scanId}.zip.tk"
                     logger.info("No bucket set, saving file locally $fileName")
-                    JumioHelper.saveZipFile(fileName, zipData).bind()
+                    JumioHelper.saveLocalFile(fileName, zipData).bind()
                 } else {
+                    // the zip f
                     val fileName = "${subscriberId}/${vendorScanInformation.scanId}.zip.tk"
                     val globalBucket = "${bucketName}-global"
                     val countryBucket = "${bucketName}-${countryCode.toLowerCase()}"
-                    logger.info("Saving in cloud store $globalBucket --> $fileName")
-                    JumioHelper.uploadZipFile(globalBucket, fileName, zipData).bind()
+                    logger.info("Saving in cloud storage $globalBucket --> $fileName")
+                    JumioHelper.uploadFileToCloudStorage(globalBucket, fileName, zipData).bind()
                     if (countryBucket != globalBucket) {
-                        logger.info("Saving in cloud store $countryBucket --> $fileName")
+                        logger.info("Saving in cloud storage $countryBucket --> $fileName")
                         val localZipData = getEncrypter(countryCode).encryptData(plainZipData)
-                        JumioHelper.uploadZipFile(countryBucket, fileName, localZipData).bind()
+                        JumioHelper.uploadFileToCloudStorage(countryBucket, fileName, localZipData).bind()
                     }
                 }
                 Unit
@@ -108,10 +119,12 @@ object ScanInformationStoreSingleton : ScanInformationStore {
         return JumioHelper.generateVendorScanInformation(vendorData, apiToken, apiSecret)
     }
 
+    // Internal function used by unit test to check the encrypted zip file
     internal fun __getVendorScanInformationFile(subscriberId: String, countryCode:String, scanId: String): Either<StoreError, String> {
         return Either.right("${countryCode}_$scanId.zip.tk")
     }
 
+    // Initialize the object, get all the environment variables and initialize the encrypter library.
     fun init(env: Environment?, environmentVars: EnvironmentVars) {
         TinkConfig.register()
         keysetFilePathPrefix = ConfigRegistry.config.keysetFilePathPrefix
@@ -169,6 +182,10 @@ object JumioHelper {
         }
     }
 
+    /**
+     * Creates the VendorScanInformation from the input map.
+     * - Downloads all the required images
+     */
     fun generateVendorScanInformation(vendorData: MultivaluedMap<String, String>, apiToken: String, apiSecret: String): Either<StoreError, VendorScanInformation> {
         var scanImage: Blob? = null
         var scanImageType: String? = null
@@ -215,6 +232,9 @@ object JumioHelper {
         }.unsafeRunSync()
     }
 
+    /**
+     * Creates the zip file from VendorScanInformation.
+     */
     fun generateZipFile(vendorData: VendorScanInformation): Either<StoreError, ByteArray> {
         val outputStream = ByteArrayOutputStream()
         val zos = ZipOutputStream(BufferedOutputStream(outputStream))
@@ -247,6 +267,9 @@ object JumioHelper {
         return Either.right(outputStream.toByteArray());
     }
 
+    /**
+     * Creates the file extension from  mime-type.
+     */
     fun getFileExtFromType(mimeType: String): String {
         val idx = mimeType.lastIndexOf("/")
         if (idx == -1) {
@@ -256,7 +279,10 @@ object JumioHelper {
         }
     }
 
-    fun uploadZipFile(bucket: String, fileName: String, data: ByteArray): Either<StoreError, String> {
+    /**
+     * Upload the byte array to the given cloud storage object.
+     */
+    fun uploadFileToCloudStorage(bucket: String, fileName: String, data: ByteArray): Either<StoreError, String> {
         val storage = StorageOptions.getDefaultInstance().getService()
         val blobId = BlobId.of(bucket, fileName)
         val blobInfo = BlobInfo.newBuilder(blobId).setContentType("application/octet-stream").build()
@@ -270,7 +296,10 @@ object JumioHelper {
         return Either.right(mediaLink);
     }
 
-    fun saveZipFile(fileName: String, data: ByteArray): Either<StoreError, String> {
+    /**
+     * Save byte array as local file, used only for testing
+     */
+    fun saveLocalFile(fileName: String, data: ByteArray): Either<StoreError, String> {
         val fos = FileOutputStream(File(fileName))
         try {
             fos.write(data)
@@ -281,15 +310,7 @@ object JumioHelper {
         return Either.right(fileName);
     }
 
-    fun loadLocalZipFile(fileName: String): Either<StoreError, ZipInputStream> {
-        try {
-            val fis = FileInputStream(File(fileName))
-            return Either.right(ZipInputStream(fis));
-        } catch (e: FileNotFoundException) {
-            return Either.left(NotCreatedError(VendorScanData.TYPE_NAME.s, "$fileName"))
-        }
-    }
-
+    // Manual test helpers.
     @JvmStatic
     fun main(args: Array<String>) {
         val fileURL = "https://jdbc.postgresql.org/download/postgresql-9.2-1002.jdbc4.jar"
@@ -302,7 +323,7 @@ object JumioHelper {
         __testDecryption()
     }
 
-    fun __testDecryption() {
+    private fun __testDecryption() {
         // The files created during the acceptance tests can be verified using this function
         // Download encrypted files created in the root folder of prime docker image
         // Find files by logging into the docker image `docker exec -ti prime bash`
@@ -318,6 +339,6 @@ object JumioHelper {
         val keysetHandle = CleartextKeysetHandle.read(JsonKeysetReader.withFile(File(pvtKeysetFilename)))
         val hybridDecrypt = HybridDecryptFactory.getPrimitive(keysetHandle)
         val decrypted = hybridDecrypt.decrypt(data, null)
-        saveZipFile("decrypted.zip", decrypted)
+        saveLocalFile("decrypted.zip", decrypted)
     }
 }
