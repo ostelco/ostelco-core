@@ -123,7 +123,6 @@ object ScanInformationStoreSingleton : ScanInformationStore {
                     ?: throw Error("Missing environment variable SCANINFO_STORAGE_BUCKET")
             masterKeyUri = environmentVars.getVar("SCANINFO_MASTERKEY_URI")
                     ?: throw Error("Missing environment variable SCANINFO_MASTERKEY_URI")
-            logger.info("masterKeyUri = ${masterKeyUri}")
         } else {
             // Don't throw error during local tests
             apiToken = ""

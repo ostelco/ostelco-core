@@ -5,11 +5,9 @@ import com.google.crypto.tink.JsonKeysetReader
 import com.google.crypto.tink.KeysetHandle
 import com.google.crypto.tink.hybrid.HybridEncryptFactory
 import com.google.crypto.tink.integration.gcpkms.GcpKmsClient
-import org.ostelco.prime.getLogger
 import java.io.File
 
 class ScanInfoEncrypt(val keysetFilename: String, val masterKeyUri: String?) {
-    private val logger by getLogger()
     private val keysetHandle: KeysetHandle
     init {
         if (masterKeyUri != null) {
