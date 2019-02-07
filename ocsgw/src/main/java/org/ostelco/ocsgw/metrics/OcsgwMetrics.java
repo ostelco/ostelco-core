@@ -8,6 +8,7 @@ import io.grpc.auth.MoreCallCredentials;
 import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.StreamObserver;
+import org.ostelco.ocsgw.utils.EventConsumer;
 import org.ostelco.prime.metrics.api.OcsgwAnalyticsReply;
 import org.ostelco.prime.metrics.api.OcsgwAnalyticsReport;
 import org.ostelco.prime.metrics.api.OcsgwAnalyticsServiceGrpc;
@@ -18,11 +19,7 @@ import javax.net.ssl.SSLException;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class OcsgwMetrics {
 
@@ -45,6 +42,8 @@ public class OcsgwMetrics {
     private ScheduledFuture autoReportAnalyticsFuture = null;
 
     private OcsgwAnalyticsReport lastActiveSessions = null;
+
+    private final ConcurrentLinkedQueue<OcsgwAnalyticsReport> reportQueue = new ConcurrentLinkedQueue<>();
 
     public OcsgwMetrics(String metricsServerHostname, ServiceAccountJwtAccessCredentials credentials) {
 
@@ -98,13 +97,26 @@ public class OcsgwMetrics {
         );
         initKeepAlive();
         initAutoReportAnalyticsReport();
+
+        EventConsumer<OcsgwAnalyticsReport> analyticsReportConsumer = new EventConsumer(reportQueue, ocsgwAnalyticsReport);
+        new Thread(analyticsReportConsumer).start();
     }
 
 
-    public synchronized void sendAnalytics(OcsgwAnalyticsReport report) {
+    public void sendAnalytics(OcsgwAnalyticsReport report) {
         if (report != null) {
-            ocsgwAnalyticsReport.onNext(report);
-            lastActiveSessions = report;
+            queueReport(report);
+        }
+    }
+
+    private void queueReport(OcsgwAnalyticsReport report) {
+        try {
+            reportQueue.add(report);
+            synchronized (reportQueue) {
+                reportQueue.notifyAll();
+            }
+        } catch (NullPointerException e) {
+            LOG.error("Failed to queue Report", e);
         }
     }
 

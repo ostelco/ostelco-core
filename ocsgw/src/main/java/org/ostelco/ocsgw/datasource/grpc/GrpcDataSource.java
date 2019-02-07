@@ -22,6 +22,7 @@ import org.ostelco.ocs.api.*;
 import org.ostelco.ocsgw.OcsServer;
 import org.ostelco.ocsgw.datasource.DataSource;
 import org.ostelco.ocsgw.metrics.OcsgwMetrics;
+import org.ostelco.ocsgw.utils.EventConsumer;
 import org.ostelco.prime.metrics.api.OcsgwAnalyticsReport;
 import org.ostelco.prime.metrics.api.User;
 import org.slf4j.Logger;
@@ -66,6 +67,8 @@ public class GrpcDataSource implements DataSource {
     private final ConcurrentHashMap<String, CreditControlContext> ccrMap = new ConcurrentHashMap<>(MAX_ENTRIES, .75F);
 
     private final ConcurrentHashMap<String, SessionContext> sessionIdMap = new ConcurrentHashMap<>(MAX_ENTRIES, .75F);
+
+    private final ConcurrentLinkedQueue<CreditControlRequestInfo> requestQueue = new ConcurrentLinkedQueue<>();
 
 
     /**
@@ -116,6 +119,9 @@ public class GrpcDataSource implements DataSource {
         initActivate();
         initKeepAlive();
         ocsgwAnalytics.initAnalyticsRequest();
+
+        EventConsumer<CreditControlRequestInfo> requestInfoConsumer = new EventConsumer(requestQueue, creditControlRequest);
+        new Thread(requestInfoConsumer).start();
     }
 
 
@@ -189,7 +195,7 @@ public class GrpcDataSource implements DataSource {
                     final CreditControlRequestInfo ccr = CreditControlRequestInfo.newBuilder()
                             .setType(CreditControlRequestType.NONE)
                             .build();
-                    creditControlRequest.onNext(ccr);
+                    queueRequest(ccr);
                 },
                 15,
                 50,
@@ -339,21 +345,20 @@ public class GrpcDataSource implements DataSource {
         if (creditControlRequestInfo != null) {
             ccrMap.put(context.getSessionId(), context);
             addToSessionMap(context);
-            sendRequest(creditControlRequestInfo);
+            queueRequest(creditControlRequestInfo);
         } else {
             // ToDo : Send diameter failure to P-GW.
         }
     }
 
-    private synchronized void sendRequest(CreditControlRequestInfo requestInfo) {
-        if (creditControlRequest != null) {
-            try {
-                creditControlRequest.onNext(requestInfo);
-            } catch (Exception e) {
-                LOG.error("Failed to send Request", e);
+    private void queueRequest(CreditControlRequestInfo requestInfo) {
+        try {
+            requestQueue.add(requestInfo);
+            synchronized (requestQueue) {
+                requestQueue.notifyAll();
             }
-        } else {
-            LOG.warn("[!!] creditControlRequest is null");
+        } catch (NullPointerException e) {
+            LOG.error("Failed to queue Request", e);
         }
     }
 
