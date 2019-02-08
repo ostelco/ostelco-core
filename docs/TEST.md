@@ -53,3 +53,12 @@ cp nginx.crt ../../ocsgw/cert/metrics.crt
 gradlew clean build  
 docker-compose up --build --abort-on-container-exit
 ```    
+
+#### Verify Scan information data
+
+Acceptance tests will create few encrypted zip files, these can be verified by running the `__testDecryption()` method in `ScanInfostore.kt`.
+- Download encrypted files created in the root folder of prime docker image.
+- Find files by logging into the docker image `docker exec -ti prime bash`.
+- Copy files from docker image using `docker cp prime:/global_f1a6a509-7998-405c-b186-08983c91b422 .`
+- Replace the path for the input files in the method & run. It will create a `decrypted.zip` output file.
+- Manually decompress and verify the contents.
