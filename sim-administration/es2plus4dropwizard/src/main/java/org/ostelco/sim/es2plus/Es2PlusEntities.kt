@@ -69,6 +69,26 @@ data class Es2DownloadOrderResponse(
         @JsonProperty("profileStatusList") val iccid: String? = null
 )
 
+
+///
+///  The CancelOrder function
+///
+
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Es2PlusCancelOrder(
+        @JsonProperty("header") val header: ES2RequestHeader,
+        @JsonProperty("iccid") val iccid: String? = null,
+        @JsonProperty("finalProfileStatusIndicator") val finalProfileStatusIndicator: String? = null
+)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Es2PlusCancelOrderResponse(
+        @JsonProperty("header") val header: ES2RequestHeader,
+        @JsonProperty("iccid") val iccid: String? = null,
+        @JsonProperty("finalProfileStatusIndicator") val finalProfileStatusIndicator: String? = null
+)
+
 ///
 ///   The ProfileStatus function
 ///
@@ -118,7 +138,7 @@ data class Es2ConfirmOrder(
         @JsonProperty("profileStatusList") val iccid: String,
         @JsonProperty("matchingId") val matchingId: String? = null,
         @JsonProperty("confirmationCode") val confirmationCode: String? = null,
-        @JsonProperty("smdsAddress") val smdsAddress: String? = null,
+        @JsonProperty("smdpAddress") val smdpAddress: String? = null,
         @JsonProperty("releaseFlag") val releaseFlag: Boolean
 )
 
@@ -128,7 +148,7 @@ data class Es2ConfirmOrderResponse(
         @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader(),
         @JsonProperty("eid") val eid: String? = null,
         @JsonProperty("matchingId") val matchingId: String? = null,
-        @JsonProperty("smdsAddress") val smdsAddress: String? = null
+        @JsonProperty("smdpAddress") val smdsAddress: String? = null
 )
 
 ///
@@ -136,12 +156,13 @@ data class Es2ConfirmOrderResponse(
 ///
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonSchema("ES2+CancelOrder-def")
+// XXX CXHeck @JsonSchema("ES2+CancelOrder-def")
 data class Es2CancelOrder(
         @JsonProperty("header") val header: ES2RequestHeader,
-        @JsonProperty("eid") val eid: String,
-        @JsonProperty("profileStatusList") val iccid: String? = null,
+        @JsonProperty("eid") val eid: String?=null,
+        @JsonProperty("profileStatusList") val profileStatusList: String? = null,
         @JsonProperty("matchingId") val matchingId: String? = null,
+        @JsonProperty("iccid") val iccid: String?=null,
         @JsonProperty("finalProfileStatusIndicator") val finalProfileStatusIndicator: String? = null
 )
 

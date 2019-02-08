@@ -14,7 +14,7 @@ interface SmDpPlusService {
     fun confirmOrder(eid: String?, iccid: String?, smdsAddress: String?, machingId: String?, confirmationCode: String?, releaseFlag:Boolean): Es2ConfirmOrderResponse
 
     @Throws(SmDpPlusException::class)
-    fun cancelOrder(eid: String, iccid: String?, matchingId: String?, finalProfileStatusIndicator: String?)
+    fun cancelOrder(eid: String?, iccid: String?, matchingId: String?, finalProfileStatusIndicator: String?)
 
     @Throws(SmDpPlusException::class)
     fun releaseProfile(iccid: String)

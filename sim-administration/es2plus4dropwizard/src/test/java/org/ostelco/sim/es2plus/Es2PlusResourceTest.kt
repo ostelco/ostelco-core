@@ -89,7 +89,7 @@ class ES2PlusResourceTest {
                 iccid = iccid,
                 matchingId = matchingId,
                 confirmationCode = confirmationCode,
-                smdsAddress = "baz",
+                smdpAddress = "baz",
                 releaseFlag = true)
     }
 

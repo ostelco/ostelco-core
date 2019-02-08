@@ -142,6 +142,8 @@ class ES2PlusClient(
                 expectedReturnCode = 200)
     }
 
+
+
     fun downloadOrder(
             eid: String? = null,
             iccid: String,
@@ -165,7 +167,7 @@ class ES2PlusClient(
                      iccid: String,
                      matchingId: String? = null,
                      confirmationCode: String? = null,
-                     smdsAddress: String? = null,
+                     smdpAddress: String? = null,
                      releaseFlag: Boolean): Es2ConfirmOrderResponse {
         val es2ProtocolPayload =
                 Es2ConfirmOrder(
@@ -176,7 +178,7 @@ class ES2PlusClient(
                         iccid = iccid,
                         matchingId = matchingId,
                         confirmationCode = confirmationCode,
-                        smdsAddress = smdsAddress,
+                        smdpAddress = smdpAddress,
                         releaseFlag = releaseFlag)
         return postEs2ProtocolCmd(
                 "/gsma/rsp2/es2plus/confirmOrder",
@@ -185,19 +187,14 @@ class ES2PlusClient(
                 sclass = Es2ConfirmOrderResponse::class.java)
     }
 
-    fun cancelOrder(eid: String,
-                    iccid: String,
-                    matchingId: String,
-                    finalProfileStatusIndicator: String): HeaderOnlyResponse {
+    fun cancelOrder(iccid: String, finalProfileStatusIndicator: String): HeaderOnlyResponse {
         return postEs2ProtocolCmd("/gsma/rsp2/es2plus/cancelOrder",
                 es2ProtocolPayload = Es2CancelOrder(
                         header = ES2RequestHeader(
                                 functionRequesterIdentifier = requesterId,
                                 functionCallIdentifier = "cancelOrder"
                         ),
-                        eid = eid,
                         iccid = iccid,
-                        matchingId = matchingId,
                         finalProfileStatusIndicator = finalProfileStatusIndicator),
                 sclass = HeaderOnlyResponse::class.java,
                 expectedReturnCode = 200)

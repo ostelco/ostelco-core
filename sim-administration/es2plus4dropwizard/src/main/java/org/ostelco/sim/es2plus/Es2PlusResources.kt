@@ -119,7 +119,7 @@ class SmDpPlusServerResource(private val smDpPlus: SmDpPlusService) {
                 eid=order.eid,
                 iccid = order.iccid,
                 confirmationCode = order.confirmationCode,
-                smdsAddress = order.smdsAddress,
+                smdsAddress = order.smdpAddress,
                 machingId = order.matchingId,
                 releaseFlag =  order.releaseFlag
         )

@@ -200,7 +200,10 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
         return entry
     }
 
-    /* Generate a fixed corresponding EID based on ICCID. */
+    /**
+     *  Generate a fixed corresponding EID based on ICCID.
+    * XXX Whoot?
+    **/
     private fun getEidFromIccid(iccid: String): String? = if (iccid.isNotEmpty())
         "01010101010101010101" + iccid.takeLast(12)
     else
@@ -224,7 +227,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
         if (machingId != null) {
             entry.machingId = confirmationCode
         } else {
-            entry.machingId = "0123-ABC-KGBC-IAMOS-SAD0"
+            entry.machingId = "0123-ABC-KGBC-IAMOS-SAD0"  /// XXX This is obviously bogus code!
         }
 
         entry.released = releaseFlag
@@ -244,7 +247,8 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
                 matchingId =  entry.machingId)
     }
 
-    override fun cancelOrder(eid: String, iccid: String?, matchingId: String?, finalProfileStatusIndicator: String?) {
+
+    override fun cancelOrder(eid: String?, iccid: String?, matchingId: String?, finalProfileStatusIndicator: String?) {
         TODO("not implemented")
     }
 
