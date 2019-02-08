@@ -17,9 +17,6 @@ import org.slf4j.LoggerFactory
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
 
-// XXX This test should be placed in the es2plus4dropwizard library, and
-//     should be run as part of testing that application, not the SM-DP-Plus application.
-
 class EncryptedRemoteEs2ClientOnlyTest {
 
     // This ICCID should be reserved for testing only, and should never be used
@@ -147,7 +144,6 @@ class DummyAppUsingSmDpPlusClient : Application<DummyAppUsingSmDpPlusClientConfi
         @Throws(Exception::class)
         @JvmStatic
         fun main(args: Array<String>) {
-           // Security.insertProviderAt(OpenSSLProvider(), 1)
             DummyAppUsingSmDpPlusClient().run(*args)
         }
     }
