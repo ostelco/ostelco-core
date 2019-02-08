@@ -19,6 +19,7 @@ import org.ostelco.prime.auth.OAuthAuthenticator
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
 import org.ostelco.prime.jsonmapper.objectMapper
+import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.Subscription
 import java.util.*
 import javax.ws.rs.client.Invocation
@@ -38,12 +39,12 @@ class SubscriptionsResourceTest {
     @Before
     fun setUp() {
         `when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
-                .thenReturn(Optional.of(AccessTokenPrincipal(email)))
+                .thenReturn(Optional.of(AccessTokenPrincipal(email, "email")))
     }
 
     @Test
     fun getSubscriptions() {
-        val arg = argumentCaptor<String>()
+        val arg = argumentCaptor<Identity>()
 
         `when`<Either<ApiError, Collection<Subscription>>>(DAO.getSubscriptions(arg.capture())).thenReturn(Either.right(listOf(subscription)))
 
@@ -57,7 +58,7 @@ class SubscriptionsResourceTest {
 
         // assertThat and assertEquals is not working
         assertThat(subscription).isEqualTo(resp.readEntity(Array<Subscription>::class.java)[0])
-        assertThat(arg.firstValue).isEqualTo(email)
+        assertThat(arg.firstValue).isEqualTo(Identity(email, "EMAIL", "email"))
     }
 
     companion object {

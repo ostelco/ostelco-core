@@ -7,6 +7,7 @@ import org.ostelco.prime.disruptor.EventMessageType.TOPUP_DATA_BUNDLE_BALANCE
 import org.ostelco.prime.disruptor.EventProducer
 import org.ostelco.prime.disruptor.OcsEvent
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.model.Identity
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.ClientGraphStore
 import java.util.*
@@ -23,13 +24,13 @@ class PurchaseRequestHandler(
     private val requestMap = ConcurrentHashMap<String, CompletableFuture<String>>()
 
     fun handlePurchaseRequest(
-            subscriberId: String,
+            identity: Identity,
             productSku: String): Either<String, Unit> {
 
-        logger.info("Handling purchase request - subscriberId: {} sku = {}", subscriberId, productSku)
+        logger.info("Handling purchase request - customer identity: {} sku = {}", identity, productSku)
 
         // get Product by SKU
-        return storage.getProduct(subscriberId, productSku)
+        return storage.getProduct(identity, productSku)
                 // if left, map StoreError to String
                 .mapLeft {
                     "Unable to Topup. Not a valid SKU: $productSku. ${it.message}"
@@ -47,13 +48,13 @@ class PurchaseRequestHandler(
                 }
                 // map noOfBytes to (noOfBytes, bundleId)
                 .flatMap { noOfBytes ->
-                    storage.getBundles(subscriberId)
-                            .mapLeft { "Unable to Topup. No bundles found for subscriberId: $subscriberId" }
+                        storage.getBundles(identity)
+                            .mapLeft { "Unable to Topup. No bundles found for customer with identity: $identity" }
                             .flatMap { bundles ->
                                 bundles.firstOrNull()
                                         ?.id
                                         ?.let { Either.right(Pair(noOfBytes, it)) }
-                                        ?: Either.left("Unable to Topup. No bundles or invalid bundle found for subscriberId: $subscriberId")
+                                        ?: Either.left("Unable to Topup. No bundles or invalid bundle found for customer with identity: $identity")
                             }
                 }
                 .flatMap { (noOfBytes, bundleId) ->

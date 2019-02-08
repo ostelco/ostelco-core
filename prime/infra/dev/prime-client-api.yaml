@@ -45,17 +45,17 @@ paths:
           description: "User not found."
       security:
         - auth0_jwt: []
-  "/customer/subscriberState":
+  "/customer/customerState":
     get:
       description: "Get state of the user."
       produces:
         - application/json
-      operationId: "getSubscriberState"
+      operationId: "getCustomerState"
       responses:
         200:
           description: "Successfully retrieved the state."
           schema:
-            $ref: '#/definitions/SubscriberState'
+            $ref: '#/definitions/CustomerState'
         404:
           description: "No state information available for this user."
       security:
@@ -498,6 +498,8 @@ definitions:
   Profile:
     type: object
     properties:
+      id:
+        type: string
       name:
         type: string
       address:
@@ -760,7 +762,7 @@ definitions:
       variables:
         description: "GraphQL query variables."
         type: object
-  SubscriberState:
+  CustomerState:
     type: object
     properties:
       id:
@@ -770,7 +772,7 @@ definitions:
         description: "The id for the last successful ekyc scan"
         type: string
       status:
-        description: "Current status of the subscriber"
+        description: "Current status of the customer"
         type: string
       modifiedTimestamp:
         description: "Last modified time for the status (Unix timestamp)"

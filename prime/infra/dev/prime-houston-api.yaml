@@ -329,7 +329,7 @@ paths:
       description: "Get state of the user."
       produces:
         - application/json
-      operationId: "getSubscriberState"
+      operationId: "getCustomerState"
       responses:
         200:
           description: "Successfully retrieved the state."

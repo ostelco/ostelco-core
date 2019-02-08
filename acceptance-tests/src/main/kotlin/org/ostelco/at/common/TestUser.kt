@@ -5,9 +5,10 @@ import org.ostelco.at.jersey.post
 import org.ostelco.prime.client.model.Profile
 import java.util.*
 
-fun createProfile(name: String, email: String) {
+fun createProfile(name: String, email: String): Profile {
 
     val createProfile = Profile()
+            .id("")
             .email(email)
             .name(name)
             .address("")
@@ -16,10 +17,10 @@ fun createProfile(name: String, email: String) {
             .postCode("")
             .referralId("")
 
-    post<Profile> {
+    return post {
         path = "/profile"
         body = createProfile
-        subscriberId = email
+        this.email = email
     }
 }
 

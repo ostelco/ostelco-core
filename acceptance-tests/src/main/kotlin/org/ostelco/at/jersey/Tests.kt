@@ -1,17 +1,43 @@
 package org.ostelco.at.jersey
 
 import org.junit.Test
-import org.ostelco.at.common.*
-import org.ostelco.prime.client.model.*
+import org.ostelco.at.common.StripePayment
+import org.ostelco.at.common.createProfile
+import org.ostelco.at.common.createSubscription
+import org.ostelco.at.common.expectedProducts
+import org.ostelco.at.common.getLogger
+import org.ostelco.at.common.randomInt
+import org.ostelco.prime.client.model.ActivePseudonyms
+import org.ostelco.prime.client.model.ApplicationToken
+import org.ostelco.prime.client.model.Bundle
+import org.ostelco.prime.client.model.BundleList
+import org.ostelco.prime.client.model.Consent
+import org.ostelco.prime.client.model.CustomerState
+import org.ostelco.prime.client.model.PaymentSource
+import org.ostelco.prime.client.model.PaymentSourceList
+import org.ostelco.prime.client.model.Person
+import org.ostelco.prime.client.model.Plan
+import org.ostelco.prime.client.model.Price
+import org.ostelco.prime.client.model.Product
+import org.ostelco.prime.client.model.ProductInfo
+import org.ostelco.prime.client.model.Profile
+import org.ostelco.prime.client.model.PurchaseRecord
+import org.ostelco.prime.client.model.PurchaseRecordList
+import org.ostelco.prime.client.model.ScanInformation
+import org.ostelco.prime.client.model.Subscription
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.util.*
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.MultivaluedHashMap
-import javax.ws.rs.core.MultivaluedMap
-import kotlin.collections.HashMap
-import kotlin.test.*
+import kotlin.test.assertEquals
+import kotlin.test.assertFails
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 
 class ProfileTest {
@@ -22,6 +48,7 @@ class ProfileTest {
         val email = "profile-${randomInt()}@test.com"
 
         val createProfile = Profile()
+                .id("")
                 .email(email)
                 .name("Test Profile User")
                 .address("")
@@ -33,21 +60,19 @@ class ProfileTest {
         val createdProfile: Profile = post {
             path = "/profile"
             body = createProfile
-            subscriberId = email
+            this.email = email
         }
 
         assertEquals(createProfile.email, createdProfile.email, "Incorrect 'email' in created profile")
         assertEquals(createProfile.name, createdProfile.name, "Incorrect 'name' in created profile")
-        assertEquals(createProfile.email, createdProfile.referralId, "Incorrect 'referralId' in created profile")
 
         val profile: Profile = get {
             path = "/profile"
-            subscriberId = email
+            this.email = email
         }
 
         assertEquals(email, profile.email, "Incorrect 'email' in fetched profile")
         assertEquals(createProfile.name, profile.name, "Incorrect 'name' in fetched profile")
-        assertEquals(email, profile.referralId, "Incorrect 'referralId' in fetched profile")
 
         profile
                 .address("Some place")
@@ -58,7 +83,7 @@ class ProfileTest {
         val updatedProfile: Profile = put {
             path = "/profile"
             body = profile
-            subscriberId = email
+            this.email = email
         }
 
         assertEquals(email, updatedProfile.email, "Incorrect 'email' in response after updating profile")
@@ -76,7 +101,7 @@ class ProfileTest {
         val clearedProfile: Profile = put {
             path = "/profile"
             body = updatedProfile
-            subscriberId = email
+            this.email = email
         }
 
         assertEquals(email, clearedProfile.email, "Incorrect 'email' in response after clearing profile")
@@ -93,7 +118,7 @@ class ProfileTest {
             put {
                 path = "/profile"
                 body = updatedProfile
-                subscriberId = email
+                this.email = email
             }
         }
     }
@@ -118,7 +143,7 @@ class ProfileTest {
         val reply: ApplicationToken = post {
             path = "/applicationtoken"
             body = testToken
-            subscriberId = email
+            this.email = email
         }
 
         assertEquals(token, reply.token, "Incorrect token in reply after posting new token")
@@ -138,7 +163,7 @@ class GetSubscriptions {
 
         val subscriptions: Collection<Subscription> = get {
             path = "/subscriptions"
-            subscriberId = email
+            this.email = email
         }
 
         assertEquals(listOf(msisdn), subscriptions.map { it.msisdn })
@@ -157,7 +182,7 @@ class BundlesAndPurchasesTest {
 
         val bundles: BundleList = get {
             path = "/bundles"
-            subscriberId = email
+            this.email = email
         }
 
         logger.info("Balance: ${bundles[0].balance}")
@@ -173,7 +198,7 @@ class BundlesAndPurchasesTest {
 
         val purchaseRecords: PurchaseRecordList = get {
             path = "/purchases"
-            subscriberId = email
+            this.email = email
         }
         purchaseRecords.sortBy { it.timestamp }
 
@@ -195,7 +220,7 @@ class GetPseudonymsTest {
 
         val activePseudonyms: ActivePseudonyms = get {
             path = "/subscription/activePseudonyms"
-            subscriberId = email
+            this.email = email
         }
 
         logger.info("Current: ${activePseudonyms.current.pseudonym}")
@@ -216,7 +241,7 @@ class GetProductsTest {
 
         val products: List<Product> = get {
             path = "/products"
-            subscriberId = email
+            this.email = email
         }
 
         assertEquals(expectedProducts().toSet(), products.toSet(), "Incorrect 'Products' fetched")
@@ -229,16 +254,17 @@ class SourceTest {
     fun `jersey test - POST source create`() {
 
         val email = "purchase-${randomInt()}@test.com"
+        var customerId = ""
         try {
 
-            createProfile(name = "Test Payment Source", email = email)
+            customerId = createProfile(name = "Test Payment Source", email = email).id
 
             val tokenId = StripePayment.createPaymentTokenId()
 
             // Ties source with user profile both local and with Stripe
             post<PaymentSource> {
                 path = "/paymentSources"
-                subscriberId = email
+                this.email = email
                 queryParams = mapOf("sourceId" to tokenId)
             }
 
@@ -246,14 +272,14 @@ class SourceTest {
 
             val sources: PaymentSourceList = get {
                 path = "/paymentSources"
-                subscriberId = email
+                this.email = email
             }
             assert(sources.isNotEmpty()) { "Expected at least one payment source for profile $email" }
 
             val cardId = StripePayment.getCardIdForTokenId(tokenId)
             assertNotNull(sources.first { it.id == cardId }, "Expected card $cardId in list of payment sources for profile $email")
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
@@ -261,9 +287,9 @@ class SourceTest {
     fun `jersey test - GET list sources`() {
 
         val email = "purchase-${randomInt()}@test.com"
-
+        var customerId = ""
         try {
-            createProfile(name = "Test Payment Source", email = email)
+            customerId = createProfile(name = "Test Payment Source", email = email).id
 
             Thread.sleep(200)
 
@@ -274,7 +300,7 @@ class SourceTest {
 
             val sources: PaymentSourceList = get {
                 path = "/paymentSources"
-                subscriberId = email
+                this.email = email
             }
 
             val ids = createdIds.map { getCardIdForTokenFromStripe(it) }
@@ -290,7 +316,7 @@ class SourceTest {
                 }
             }
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
@@ -299,19 +325,21 @@ class SourceTest {
 
         val email = "purchase-${randomInt()}@test.com"
 
+        var customerId = ""
         try {
+            customerId = createProfile(name = "Test List Payment Sources", email = email).id
 
             val sources: PaymentSourceList = get {
                 path = "/paymentSources"
-                subscriberId = email
+                this.email = email
             }
 
             assert(sources.isEmpty()) { "Expected no payment source for profile $email" }
 
-            assertNotNull(StripePayment.getCustomerIdForEmail(email)) { "Customer Id should have been created" }
+            assertNotNull(StripePayment.getStripeCustomerId(customerId = customerId)) { "Customer Id should have been created" }
 
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
@@ -319,8 +347,9 @@ class SourceTest {
     fun `jersey test - PUT source set default`() {
 
         val email = "purchase-${randomInt()}@test.com"
+        var customerId = ""
         try {
-            createProfile(name = "Test Payment Source", email = email)
+            customerId = createProfile(name = "Test Payment Source", email = email).id
 
             val tokenId = StripePayment.createPaymentTokenId()
             val cardId = StripePayment.getCardIdForTokenId(tokenId)
@@ -328,7 +357,7 @@ class SourceTest {
             // Ties source with user profile both local and with Stripe
             post<PaymentSource> {
                 path = "/paymentSources"
-                subscriberId = email
+                this.email = email
                 queryParams = mapOf("sourceId" to tokenId)
             }
 
@@ -339,28 +368,28 @@ class SourceTest {
 
             post<PaymentSource> {
                 path = "/paymentSources"
-                subscriberId = email
+                this.email = email
                 queryParams = mapOf("sourceId" to newTokenId)
             }
 
             // TODO: Update to fetch the Stripe customerId from 'admin' API when ready.
-            val customerId = StripePayment.getCustomerIdForEmail(email)
+            val stripeCustomerId = StripePayment.getStripeCustomerId(customerId = customerId)
 
             // Verify that original 'sourceId/card' is default.
-            assertEquals(cardId, StripePayment.getDefaultSourceForCustomer(customerId),
-                    "Expected $cardId to be default source for $customerId")
+            assertEquals(cardId, StripePayment.getDefaultSourceForCustomer(stripeCustomerId),
+                    "Expected $cardId to be default source for $stripeCustomerId")
 
             // Set new default card.
             put<PaymentSource> {
                 path = "/paymentSources"
-                subscriberId = email
+                this.email = email
                 queryParams = mapOf("sourceId" to newCardId)
             }
 
-            assertEquals(newCardId, StripePayment.getDefaultSourceForCustomer(customerId),
-                    "Expected $newCardId to be default source for $customerId")
+            assertEquals(newCardId, StripePayment.getDefaultSourceForCustomer(stripeCustomerId),
+                    "Expected $newCardId to be default source for $stripeCustomerId")
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
@@ -368,10 +397,10 @@ class SourceTest {
     fun `jersey test - DELETE source`() {
 
         val email = "purchase-${randomInt()}@test.com"
-
+        var customerId = ""
         try {
 
-            createProfile(name = "Test Payment Source", email = email)
+            customerId = createProfile(name = "Test Payment Source", email = email).id
 
             Thread.sleep(200)
 
@@ -384,7 +413,7 @@ class SourceTest {
                 "Failed to delete one or more sources: ${createdIds.toSet() - deletedIds.toSet()}"
             }
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
@@ -402,7 +431,7 @@ class SourceTest {
 
         post<PaymentSource> {
             path = "/paymentSources"
-            subscriberId = email
+            this.email = email
             queryParams = mapOf("sourceId" to tokenId)
         }
 
@@ -414,7 +443,7 @@ class SourceTest {
 
         post<PaymentSource> {
             path = "/paymentSources"
-            subscriberId = email
+            this.email = email
             queryParams = mapOf("sourceId" to sourceId)
         }
 
@@ -424,7 +453,7 @@ class SourceTest {
     private fun removeSourceWithStripe(email: String, sourceId: String): String {
         val removedSource = delete<PaymentSource> {
             path = "/paymentSources"
-            subscriberId = email
+            this.email = email
             queryParams = mapOf("sourceId" to sourceId)
         }
 
@@ -440,12 +469,13 @@ class PurchaseTest {
     fun `jersey test - POST products purchase`() {
 
         val email = "purchase-${randomInt()}@test.com"
+        var customerId = ""
         try {
-            createProfile(name = "Test Purchase User", email = email)
+            customerId = createProfile(name = "Test Purchase User", email = email).id
 
             val balanceBefore = get<List<Bundle>> {
                 path = "/bundles"
-                subscriberId = email
+                this.email = email
             }.first().balance
 
             val productSku = "1GB_249NOK"
@@ -453,7 +483,7 @@ class PurchaseTest {
 
             post<String> {
                 path = "/products/$productSku/purchase"
-                subscriberId = email
+                this.email = email
                 queryParams = mapOf("sourceId" to sourceId)
             }
 
@@ -461,14 +491,14 @@ class PurchaseTest {
 
             val balanceAfter = get<List<Bundle>> {
                 path = "/bundles"
-                subscriberId = email
+                this.email = email
             }.first().balance
 
             assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
 
             val purchaseRecords: PurchaseRecordList = get {
                 path = "/purchases"
-                subscriberId = email
+                this.email = email
             }
 
             purchaseRecords.sortBy { it.timestamp }
@@ -476,7 +506,7 @@ class PurchaseTest {
             assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
             assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
@@ -484,14 +514,15 @@ class PurchaseTest {
     fun `jersey test - POST products purchase using default source`() {
 
         val email = "purchase-${randomInt()}@test.com"
+        var customerId = ""
         try {
-            createProfile(name = "Test Purchase User with Default Payment Source", email = email)
+            customerId = createProfile(name = "Test Purchase User with Default Payment Source", email = email).id
 
             val sourceId = StripePayment.createPaymentTokenId()
 
             val paymentSource: PaymentSource = post {
                 path = "/paymentSources"
-                subscriberId = email
+                this.email = email
                 queryParams = mapOf("sourceId" to sourceId)
             }
 
@@ -499,28 +530,28 @@ class PurchaseTest {
 
             val balanceBefore = get<List<Bundle>> {
                 path = "/bundles"
-                subscriberId = email
+                this.email = email
             }.first().balance
 
             val productSku = "1GB_249NOK"
 
             post<String> {
                 path = "/products/$productSku/purchase"
-                subscriberId = email
+                this.email = email
             }
 
             Thread.sleep(100) // wait for 100 ms for balance to be updated in db
 
             val balanceAfter = get<List<Bundle>> {
                 path = "/bundles"
-                subscriberId = email
+                this.email = email
             }.first().balance
 
             assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
 
             val purchaseRecords: PurchaseRecordList = get {
                 path = "/purchases"
-                subscriberId = email
+                this.email = email
             }
 
             purchaseRecords.sortBy { it.timestamp }
@@ -528,7 +559,7 @@ class PurchaseTest {
             assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
             assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
@@ -536,14 +567,15 @@ class PurchaseTest {
     fun `jersey test - Refund purchase using default source`() {
 
         val email = "purchase-${randomInt()}@test.com"
+        var customerId = ""
         try {
-            createProfile(name = "Test Purchase User with Default Payment Source", email = email)
+            customerId = createProfile(name = "Test Purchase User with Default Payment Source", email = email).id
 
             val sourceId = StripePayment.createPaymentTokenId()
 
             val paymentSource: PaymentSource = post {
                 path = "/paymentSources"
-                subscriberId = email
+                this.email = email
                 queryParams = mapOf("sourceId" to sourceId)
             }
 
@@ -551,28 +583,28 @@ class PurchaseTest {
 
             val balanceBefore = get<List<Bundle>> {
                 path = "/bundles"
-                subscriberId = email
+                this.email = email
             }.first().balance
 
             val productSku = "1GB_249NOK"
 
             post<String> {
                 path = "/products/$productSku/purchase"
-                subscriberId = email
+                this.email = email
             }
 
             Thread.sleep(100) // wait for 100 ms for balance to be updated in db
 
             val balanceAfter = get<List<Bundle>> {
                 path = "/bundles"
-                subscriberId = email
+                this.email = email
             }.first().balance
 
             assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
 
             val purchaseRecords: PurchaseRecordList = get {
                 path = "/purchases"
-                subscriberId = email
+                this.email = email
             }
 
             purchaseRecords.sortBy { it.timestamp }
@@ -583,7 +615,7 @@ class PurchaseTest {
             val encodedEmail = URLEncoder.encode(email, "UTF-8")
             val refundedProduct: ProductInfo = put<ProductInfo> {
                 path = "/refund/$encodedEmail"
-                subscriberId = email
+                this.email = email
                 queryParams = mapOf(
                         "purchaseRecordId" to purchaseRecords.last().id,
                         "reason" to "requested_by_customer")
@@ -592,7 +624,7 @@ class PurchaseTest {
             assertEquals(productSku, refundedProduct.id, "Refund returned a different product")
 
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
@@ -600,14 +632,15 @@ class PurchaseTest {
     fun `jersey test - POST products purchase add source then pay with it`() {
 
         val email = "purchase-${randomInt()}@test.com"
+        var customerId = ""
         try {
-            createProfile(name = "Test Purchase User with Default Payment Source", email = email)
+            customerId = createProfile(name = "Test Purchase User with Default Payment Source", email = email).id
 
             val sourceId = StripePayment.createPaymentTokenId()
 
             val paymentSource: PaymentSource = post {
                 path = "/paymentSources"
-                subscriberId = email
+                this.email = email
                 queryParams = mapOf("sourceId" to sourceId)
             }
 
@@ -615,7 +648,7 @@ class PurchaseTest {
 
             val bundlesBefore: BundleList = get {
                 path = "/bundles"
-                subscriberId = email
+                this.email = email
             }
             val balanceBefore = bundlesBefore[0].balance
 
@@ -623,7 +656,7 @@ class PurchaseTest {
 
             post<String> {
                 path = "/products/$productSku/purchase"
-                subscriberId = email
+                this.email = email
                 queryParams = mapOf("sourceId" to paymentSource.id)
             }
 
@@ -631,7 +664,7 @@ class PurchaseTest {
 
             val bundlesAfter: BundleList = get {
                 path = "/bundles"
-                subscriberId = email
+                this.email = email
             }
             val balanceAfter = bundlesAfter[0].balance
 
@@ -639,7 +672,7 @@ class PurchaseTest {
 
             val purchaseRecords: PurchaseRecordList = get {
                 path = "/purchases"
-                subscriberId = email
+                this.email = email
             }
 
             purchaseRecords.sortBy { it.timestamp }
@@ -647,54 +680,58 @@ class PurchaseTest {
             assert(Instant.now().toEpochMilli() - purchaseRecords.last().timestamp < 10_000) { "Missing Purchase Record" }
             assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
 }
 
 class eKYCTest {
-    val imgUrl = "https://www.gstatic.com/webp/gallery3/1.png"
-    val imgUrl2 = "https://www.gstatic.com/webp/gallery3/2.png"
+
+    private val imgUrl = "https://www.gstatic.com/webp/gallery3/1.png"
+    private val imgUrl2 = "https://www.gstatic.com/webp/gallery3/2.png"
 
     @Test
     fun `jersey test - GET new-ekyc-scanId - generate new scanId for eKYC`() {
 
         val email = "ekyc-${randomInt()}@test.com"
+        var customerId = ""
         try {
-            createProfile(name = "Test User for eKYC", email = email)
+            customerId = createProfile(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
                 path = "/customer/new-ekyc-scanId/global"
-                subscriberId = email
+                this.email = email
             }
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
-            val subscriberState: SubscriberState = get {
-                path = "/customer/subscriberState"
-                subscriberId = email
+            val customerState: CustomerState = get {
+                path = "/customer/customerState"
+                this.email = email
             }
-            assertEquals("REGISTERED", subscriberState.status, message = "Incorrect State")
+            assertEquals("REGISTERED", customerState.status, message = "Incorrect State")
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
+
     @Test
     fun `jersey test - ekyc callback - test the call back processing`() {
 
         val email = "ekyc-${randomInt()}@test.com"
+        var customerId = ""
         try {
-            createProfile(name = "Test User for eKYC", email = email)
+            customerId = createProfile(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
                 path = "/customer/new-ekyc-scanId/global"
-                subscriberId = email
+                this.email = email
             }
 
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
-            var dataMap = MultivaluedHashMap<String,String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            val dataMap = MultivaluedHashMap<String,String>()
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("ERROR"))
             dataMap.put("verificationStatus", listOf("DENIED_FRAUD"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
@@ -710,32 +747,34 @@ class eKYCTest {
                 body = dataMap
             }
 
-            val subscriberState: SubscriberState = get {
-                path = "/customer/subscriberState"
-                subscriberId = email
+            val customerState: CustomerState = get {
+                path = "/customer/customerState"
+                this.email = email
             }
-            assertEquals("EKYC_REJECTED", subscriberState.status, message = "Wrong state")
+            assertEquals("EKYC_REJECTED", customerState.status, message = "Wrong state")
 
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
+
     @Test
     fun `jersey test - ekyc callback - process success`() {
 
         val email = "ekyc-${randomInt()}@test.com"
+        var customerId = ""
         try {
-            createProfile(name = "Test User for eKYC", email = email)
+            customerId = createProfile(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
                 path = "/customer/new-ekyc-scanId/global"
-                subscriberId = email
+                this.email = email
             }
 
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
-            var dataMap = MultivaluedHashMap<String,String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            val dataMap = MultivaluedHashMap<String,String>()
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("SUCCESS"))
             dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
@@ -753,14 +792,14 @@ class eKYCTest {
                 body = dataMap
             }
 
-            val subscriberState: SubscriberState = get {
-                path = "/customer/subscriberState"
-                subscriberId = email
+            val customerState: CustomerState = get {
+                path = "/customer/customerState"
+                this.email = email
             }
-            assertEquals("EKYC_APPROVED", subscriberState.status, message = "Wrong state")
+            assertEquals("EKYC_APPROVED", customerState.status, message = "Wrong state")
 
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
@@ -768,17 +807,18 @@ class eKYCTest {
     fun `jersey test - ekyc callback - process failure of face id`() {
 
         val email = "ekyc-${randomInt()}@test.com"
+        var customerId = ""
         try {
-            createProfile(name = "Test User for eKYC", email = email)
+            customerId = createProfile(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
                 path = "/customer/new-ekyc-scanId/global"
-                subscriberId = email
+                this.email = email
             }
 
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
-            var dataMap = MultivaluedHashMap<String,String>()
+            val dataMap = MultivaluedHashMap<String,String>()
             dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
             dataMap.put("idScanStatus", listOf("SUCCESS"))
             dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
@@ -797,14 +837,14 @@ class eKYCTest {
                 body = dataMap
             }
 
-            val subscriberState: SubscriberState = get {
-                path = "/customer/subscriberState"
-                subscriberId = email
+            val customerState: CustomerState = get {
+                path = "/customer/customerState"
+                this.email = email
             }
-            assertEquals("EKYC_REJECTED", subscriberState.status, message = "Wrong state")
+            assertEquals("EKYC_REJECTED", customerState.status, message = "Wrong state")
 
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
@@ -812,18 +852,19 @@ class eKYCTest {
     fun `jersey test - ekyc callback - process incomplete form data`() {
 
         val email = "ekyc-${randomInt()}@test.com"
+        var customerId = ""
         try {
-            createProfile(name = "Test User for eKYC", email = email)
+            customerId = createProfile(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
                 path = "/customer/new-ekyc-scanId/global"
-                subscriberId = email
+                this.email = email
             }
 
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
-            var dataMap = MultivaluedHashMap<String,String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            val dataMap = MultivaluedHashMap<String,String>()
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("SUCCESS"))
             dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
@@ -839,14 +880,14 @@ class eKYCTest {
                 body = dataMap
             }
 
-            val subscriberState: SubscriberState = get {
-                path = "/customer/subscriberState"
-                subscriberId = email
+            val customerState: CustomerState = get {
+                path = "/customer/customerState"
+                this.email = email
             }
-            assertEquals("REGISTERED", subscriberState.status, message = "Wrong state")
+            assertEquals("REGISTERED", customerState.status, message = "Wrong state")
 
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
@@ -854,12 +895,13 @@ class eKYCTest {
     fun `jersey test - ekyc callback - incomplete face id verification data`() {
 
         val email = "ekyc-${randomInt()}@test.com"
+        var customerId = ""
         try {
-            createProfile(name = "Test User for eKYC", email = email)
+            customerId = createProfile(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
                 path = "/customer/new-ekyc-scanId/global"
-                subscriberId = email
+                this.email = email
             }
 
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
@@ -881,14 +923,14 @@ class eKYCTest {
                 body = dataMap
             }
 
-            val subscriberState: SubscriberState = get {
-                path = "/customer/subscriberState"
-                subscriberId = email
+            val customerState: CustomerState = get {
+                path = "/customer/customerState"
+                this.email = email
             }
-            assertEquals("EKYC_REJECTED", subscriberState.status, message = "Wrong state")
+            assertEquals("EKYC_REJECTED", customerState.status, message = "Wrong state")
 
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
@@ -896,18 +938,19 @@ class eKYCTest {
     fun `jersey test - ekyc callback - reject & approve`() {
 
         val email = "ekyc-${randomInt()}@test.com"
+        var customerId = ""
         try {
-            createProfile(name = "Test User for eKYC", email = email)
+            customerId = createProfile(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
                 path = "/customer/new-ekyc-scanId/global"
-                subscriberId = email
+                this.email = email
             }
 
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
-            var dataMap = MultivaluedHashMap<String, String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            val dataMap = MultivaluedHashMap<String, String>()
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("ERROR"))
             dataMap.put("verificationStatus", listOf("DENIED_FRAUD"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
@@ -923,22 +966,22 @@ class eKYCTest {
                 body = dataMap
             }
 
-            val subscriberState: SubscriberState = get {
-                path = "/customer/subscriberState"
-                subscriberId = email
+            val customerState: CustomerState = get {
+                path = "/customer/customerState"
+                this.email = email
             }
-            assertEquals("EKYC_REJECTED", subscriberState.status, message = "Wrong state")
+            assertEquals("EKYC_REJECTED", customerState.status, message = "Wrong state")
 
             val newScanInfo: ScanInformation = get {
                 path = "/customer/new-ekyc-scanId/global"
-                subscriberId = email
+                this.email = email
             }
 
             assertNotNull(newScanInfo.scanId, message = "Failed to get new scanId")
 
 
             dataMap.clear()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("SUCCESS"))
             dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
@@ -958,15 +1001,15 @@ class eKYCTest {
                 body = dataMap
             }
 
-            val newSsubscriberState: SubscriberState = get {
-                path = "/customer/subscriberState"
-                subscriberId = email
+            val newCustomerState: CustomerState = get {
+                path = "/customer/customerState"
+                this.email = email
             }
-            assertEquals("EKYC_APPROVED", newSsubscriberState.status, message = "Wrong state")
+            assertEquals("EKYC_APPROVED", newCustomerState.status, message = "Wrong state")
 
 
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
@@ -974,18 +1017,19 @@ class eKYCTest {
     fun `jersey test - ekyc verify scan information`() {
 
         val email = "ekyc-${randomInt()}@test.com"
+        var customerId = ""
         try {
-            createProfile(name = "Test User for eKYC", email = email)
+            customerId = createProfile(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
                 path = "/customer/new-ekyc-scanId/global"
-                subscriberId = email
+                this.email = email
             }
 
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
-            var dataMap = MultivaluedHashMap<String, String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            val dataMap = MultivaluedHashMap<String, String>()
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("SUCCESS"))
             dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
@@ -1007,20 +1051,20 @@ class eKYCTest {
 
             val scanInformation: ScanInformation = get {
                 path = "/customer/scanStatus/${scanInfo.scanId}"
-                subscriberId = email
+                this.email = email
             }
             assertEquals("APPROVED", scanInformation.status, message = "Wrong status")
 
             val encodedEmail = URLEncoder.encode(email, "UTF-8")
             val scanInformationList = get<Collection<ScanInformation>> {
                 path = "/profiles/$encodedEmail/scans"
-                subscriberId = email
+                this.email = email
             }
             assertEquals(1, scanInformationList.size, message = "More scans than expected")
             assertEquals("APPROVED", scanInformationList.elementAt(0).status, message = "Wrong status")
 
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
@@ -1028,18 +1072,19 @@ class eKYCTest {
     fun `jersey test - ekyc verify 2 scans`() {
 
         val email = "ekyc-${randomInt()}@test.com"
+        var customerId = ""
         try {
-            createProfile(name = "Test User for eKYC", email = email)
+            customerId = createProfile(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
                 path = "/customer/new-ekyc-scanId/global"
-                subscriberId = email
+                this.email = email
             }
 
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
-            var dataMap = MultivaluedHashMap<String, String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            val dataMap = MultivaluedHashMap<String, String>()
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("ERROR"))
             dataMap.put("verificationStatus", listOf("DENIED_FRAUD"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
@@ -1055,21 +1100,21 @@ class eKYCTest {
                 body = dataMap
             }
 
-            val subscriberState: SubscriberState = get {
-                path = "/customer/subscriberState"
-                subscriberId = email
+            val customerState: CustomerState = get {
+                path = "/customer/customerState"
+                this.email = email
             }
-            assertEquals("EKYC_REJECTED", subscriberState.status, message = "Wrong state")
+            assertEquals("EKYC_REJECTED", customerState.status, message = "Wrong state")
 
             val newScanInfo: ScanInformation = get {
                 path = "/customer/new-ekyc-scanId/global"
-                subscriberId = email
+                this.email = email
             }
 
             assertNotNull(newScanInfo.scanId, message = "Failed to get new scanId")
 
             dataMap.clear()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("SUCCESS"))
             dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
@@ -1089,16 +1134,16 @@ class eKYCTest {
                 body = dataMap
             }
 
-            val newSsubscriberState: SubscriberState = get {
-                path = "/customer/subscriberState"
-                subscriberId = email
+            val newCustomerState: CustomerState = get {
+                path = "/customer/customerState"
+                this.email = email
             }
-            assertEquals("EKYC_APPROVED", newSsubscriberState.status, message = "Wrong state")
+            assertEquals("EKYC_APPROVED", newCustomerState.status, message = "Wrong state")
 
             val encodedEmail = URLEncoder.encode(email, "UTF-8")
             val scanInformationList = get<Collection<ScanInformation>> {
                 path = "/profiles/$encodedEmail/scans"
-                subscriberId = email
+                this.email = email
             }
             assertEquals(2, scanInformationList.size, message = "More scans than expected")
             var verifiedItemIndex = 0
@@ -1107,7 +1152,7 @@ class eKYCTest {
             }
             assertEquals("APPROVED", scanInformationList.elementAt(verifiedItemIndex).status, message = "Wrong status")
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
@@ -1115,19 +1160,20 @@ class eKYCTest {
     fun `jersey test - ekyc rejected with detailed reject reason`() {
 
         val email = "ekyc-${randomInt()}@test.com"
+        var customerId = ""
         try {
-            createProfile(name = "Test User for eKYC", email = email)
+            customerId = createProfile(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
                 path = "/customer/new-ekyc-scanId/global"
-                subscriberId = email
+                this.email = email
             }
 
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
             val rejectReason="""{ "rejectReasonCode":"100", "rejectReasonDescription":"MANIPULATED_DOCUMENT", "rejectReasonDetails": [{ "detailsCode": "1001", "detailsDescription": "PHOTO" },{ "detailsCode": "1004", "detailsDescription": "DOB" }]}"""
 
-            var dataMap = MultivaluedHashMap<String, String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            val dataMap = MultivaluedHashMap<String, String>()
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("ERROR"))
             dataMap.put("verificationStatus", listOf("DENIED_FRAUD"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
@@ -1144,13 +1190,13 @@ class eKYCTest {
                 body = dataMap
             }
 
-            val subscriberState: SubscriberState = get {
-                path = "/customer/subscriberState"
-                subscriberId = email
+            val customerState: CustomerState = get {
+                path = "/customer/customerState"
+                this.email = email
             }
-            assertEquals("EKYC_REJECTED", subscriberState.status, message = "Wrong state")
+            assertEquals("EKYC_REJECTED", customerState.status, message = "Wrong state")
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
@@ -1167,7 +1213,7 @@ class AnalyticsTest {
         post<String> {
             path = "/analytics"
             body = "event"
-            subscriberId = email
+            this.email = email
         }
     }
 }
@@ -1184,7 +1230,7 @@ class ConsentTest {
 
         val defaultConsent: List<Consent> = get {
             path = "/consents"
-            subscriberId = email
+            this.email = email
         }
 
         assertEquals(1, defaultConsent.size, "Incorrect number of consents fetched")
@@ -1192,7 +1238,7 @@ class ConsentTest {
 
         val acceptedConsent: Consent = put {
             path = "/consents/$consentId"
-            subscriberId = email
+            this.email = email
         }
 
         assertEquals(consentId, acceptedConsent.consentId, "Incorrect 'consent id' in response after accepting consent")
@@ -1202,7 +1248,7 @@ class ConsentTest {
         val rejectedConsent: Consent = put {
             path = "/consents/$consentId"
             queryParams = mapOf("accepted" to "false")
-            subscriberId = email
+            this.email = email
         }
 
         assertEquals(consentId, rejectedConsent.consentId, "Incorrect 'consent id' in response after rejecting consent")
@@ -1233,7 +1279,7 @@ class ReferralTest {
             post<Profile> {
                 path = "/profile"
                 body = profile
-                subscriberId = email
+                this.email = email
                 queryParams = mapOf("referred_by" to invalid)
             }
         }
@@ -1245,7 +1291,7 @@ class ReferralTest {
         val failedToGet = assertFails {
             get<Profile> {
                 path = "/profile"
-                subscriberId = email
+                this.email = email
             }
         }
 
@@ -1274,20 +1320,20 @@ class ReferralTest {
         post<Profile> {
             path = "/profile"
             body = profile
-            subscriberId = secondEmail
+            email = secondEmail
             queryParams = mapOf("referred_by" to firstEmail)
         }
 
         // for first
         val referralsForFirst: List<Person> = get {
             path = "/referred"
-            subscriberId = firstEmail
+            email = firstEmail
         }
         assertEquals(listOf("Test Referral Second User"), referralsForFirst.map { it.name })
 
         val referredByForFirst: Person = get {
             path = "/referred/by"
-            subscriberId = firstEmail
+            email = firstEmail
         }
         assertNull(referredByForFirst.name)
 
@@ -1296,26 +1342,26 @@ class ReferralTest {
         // for referred_by_foo
         val referralsForSecond: List<Person> = get {
             path = "/referred"
-            subscriberId = secondEmail
+            email = secondEmail
         }
         assertEquals(emptyList(), referralsForSecond.map { it.name })
 
         val referredByForSecond: Person = get {
             path = "/referred/by"
-            subscriberId = secondEmail
+            email = secondEmail
         }
         assertEquals("Test Referral First User", referredByForSecond.name)
 
         val secondSubscriberBundles: BundleList = get {
             path = "/bundles"
-            subscriberId = secondEmail
+            email = secondEmail
         }
 
         assertEquals(1_000_000_000, secondSubscriberBundles[0].balance)
 
         val secondSubscriberPurchases: PurchaseRecordList = get {
             path = "/purchases"
-            subscriberId = secondEmail
+            email = secondEmail
         }
 
         val freeProductForReferred = Product()
@@ -1378,7 +1424,7 @@ class PlanTest {
     }
 
     @Test
-    fun `jersey test - POST subscription`() {
+    fun `jersey test - POST profiles plans`() {
 
         val email = "purchase-${randomInt()}@test.com"
 
@@ -1393,16 +1439,18 @@ class PlanTest {
                 .properties(emptyMap<String, Any>())
                 .presentation(emptyMap<String, Any>())
 
+        var customerId = ""
+
         try {
             // Create subscriber with payment source.
 
-            createProfile(name = "Test Purchase User with Default Payment Source", email = email)
+            customerId = createProfile(name = "Test Purchase User with Default Payment Source", email = email).id
 
             val sourceId = StripePayment.createPaymentTokenId()
 
             val paymentSource: PaymentSource = post {
                 path = "/paymentSources"
-                subscriberId = email
+                this.email = email
                 queryParams = mapOf("sourceId" to sourceId)
             }
 
@@ -1424,11 +1472,11 @@ class PlanTest {
             // Now create and verify the subscription.
 
             post<Unit> {
-                path = "/profiles/${email}/plans/${plan.name}"
+                path = "/profiles/$email/plans/${plan.name}"
             }
 
             val plans: List<Plan> = get {
-                path = "/profiles/${email}/plans"
+                path = "/profiles/$email/plans"
             }
 
             assert(plans.isNotEmpty())
@@ -1439,7 +1487,7 @@ class PlanTest {
             assertEquals(plan.intervalCount, plans[0].intervalCount)
 
             delete<Unit> {
-                path = "/profiles/${email}/plans/${plan.name}"
+                path = "/profiles/$email/plans/${plan.name}"
             }
 
             // Cleanup - remove plan.
@@ -1449,7 +1497,7 @@ class PlanTest {
             assertEquals(plan.name, deletedPLan.name)
 
         } finally {
-            StripePayment.deleteCustomer(email = email)
+            StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 }
@@ -1477,7 +1525,7 @@ class GraphQlTests {
 
         val subscriber = post<GraphQlResponse>(expectedResultCode = 200) {
             path = "/graphql"
-            subscriberId = email
+            this.email = email
             body = mapOf("query" to """{ subscriber { profile { email } subscriptions { msisdn } } }""")
         }.data?.subscriber
 
@@ -1495,7 +1543,7 @@ class GraphQlTests {
 
         val subscriber = get<GraphQlResponse> {
             path = "/graphql"
-            subscriberId = email
+            this.email = email
             queryParams = mapOf("query" to URLEncoder.encode("""{subscriber{profile{email}subscriptions{msisdn}}}""", StandardCharsets.UTF_8.name()))
         }.data?.subscriber
 
