@@ -23,6 +23,7 @@ import org.ostelco.ocsgw.OcsServer;
 import org.ostelco.ocsgw.datasource.DataSource;
 import org.ostelco.ocsgw.metrics.OcsgwMetrics;
 import org.ostelco.ocsgw.utils.EventConsumer;
+import org.ostelco.ocsgw.utils.EventProducer;
 import org.ostelco.prime.metrics.api.OcsgwAnalyticsReport;
 import org.ostelco.prime.metrics.api.User;
 import org.slf4j.Logger;
@@ -70,6 +71,8 @@ public class GrpcDataSource implements DataSource {
 
     private final ConcurrentLinkedQueue<CreditControlRequestInfo> requestQueue = new ConcurrentLinkedQueue<>();
 
+    private final EventProducer<CreditControlRequestInfo> producer;
+
 
     /**
      * Generate a new instance that connects to an endpoint, and
@@ -110,6 +113,8 @@ public class GrpcDataSource implements DataSource {
                 .withCallCredentials(MoreCallCredentials.from(credentials));
 
         ocsgwAnalytics = new OcsgwMetrics(metricsServerHostname, credentials);
+
+        producer = new EventProducer<>(requestQueue);
     }
 
     @Override
@@ -195,7 +200,7 @@ public class GrpcDataSource implements DataSource {
                     final CreditControlRequestInfo ccr = CreditControlRequestInfo.newBuilder()
                             .setType(CreditControlRequestType.NONE)
                             .build();
-                    queueRequest(ccr);
+                    producer.queueEvent(ccr);
                 },
                 15,
                 50,
@@ -346,18 +351,7 @@ public class GrpcDataSource implements DataSource {
         if (creditControlRequestInfo != null) {
             ccrMap.put(context.getSessionId(), context);
             addToSessionMap(context);
-            queueRequest(creditControlRequestInfo);
-        }
-    }
-
-    private void queueRequest(CreditControlRequestInfo requestInfo) {
-        try {
-            requestQueue.add(requestInfo);
-            synchronized (requestQueue) {
-                requestQueue.notifyAll();
-            }
-        } catch (NullPointerException e) {
-            LOG.error("Failed to queue Request", e);
+            producer.queueEvent(creditControlRequestInfo);
         }
     }
 

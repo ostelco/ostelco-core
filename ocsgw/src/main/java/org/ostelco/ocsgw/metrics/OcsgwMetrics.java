@@ -9,6 +9,7 @@ import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import org.ostelco.ocsgw.utils.EventConsumer;
+import org.ostelco.ocsgw.utils.EventProducer;
 import org.ostelco.prime.metrics.api.OcsgwAnalyticsReply;
 import org.ostelco.prime.metrics.api.OcsgwAnalyticsReport;
 import org.ostelco.prime.metrics.api.OcsgwAnalyticsServiceGrpc;
@@ -43,6 +44,8 @@ public class OcsgwMetrics {
 
     private final ConcurrentLinkedQueue<OcsgwAnalyticsReport> reportQueue = new ConcurrentLinkedQueue<>();
 
+    private EventProducer<OcsgwAnalyticsReport> producer;
+
     public OcsgwMetrics(String metricsServerHostname, ServiceAccountJwtAccessCredentials credentials) {
 
         try {
@@ -65,6 +68,9 @@ public class OcsgwMetrics {
             } else {
                 ocsgwAnalyticsServiceStub = OcsgwAnalyticsServiceGrpc.newStub(channel);
             }
+
+            producer = new EventProducer<>(reportQueue);
+
         } catch (SSLException e) {
             LOG.warn("Failed to setup OcsMetrics", e);
         }
@@ -103,18 +109,7 @@ public class OcsgwMetrics {
 
     public void sendAnalytics(OcsgwAnalyticsReport report) {
         if (report != null) {
-            queueReport(report);
-        }
-    }
-
-    private void queueReport(OcsgwAnalyticsReport report) {
-        try {
-            reportQueue.add(report);
-            synchronized (reportQueue) {
-                reportQueue.notifyAll();
-            }
-        } catch (NullPointerException e) {
-            LOG.error("Failed to queue Report", e);
+            producer.queueEvent(report);
         }
     }
 
