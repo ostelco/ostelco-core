@@ -42,7 +42,7 @@ class EncryptedRemoteEs2ClientOnlyTest {
         assertNotNull(profileStatusResponse.state)
         return profileStatusResponse.state!!
     }
-    
+
 
     /**
      * Run the typical scenario we run when allocating a sim profile.
