@@ -156,13 +156,13 @@ data class ProfileVendorAdapter (
                     Response.Status.BAD_REQUEST)
         else {
             // XXX Is just logging good enough?
-            if (status.eid.isEmpty()) {
+            if (status.eid?.isEmpty()!!) {
                 logger.warn("No EID returned from SM-DP+ service {} for ICCID {} for order confirm message (call-id: {})",
                         config.name,
                         simEntry.iccid,
                         header.functionCallIdentifier)
             } else {
-                dao.setEidOfSimProfile(simEntry.id!!, status.eid)
+                dao.setEidOfSimProfile(simEntry.id!!, status.eid!!)
             }
             if (!eid.isNullOrEmpty() && eid != status.eid) {
                 logger.warn("EID returned from SM-DP+ service {} does not match provided EID ({} <> {}) in order confirm message (call-id: {})",
