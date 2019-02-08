@@ -263,5 +263,6 @@ interface AdminGraphStore {
 }
 
 interface ScanInformationStore {
+    // Function to upsert scan information data from the 3rd party eKYC scan
     fun upsertVendorScanInformation(subscriberId: String, countryCode: String, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit>
 }

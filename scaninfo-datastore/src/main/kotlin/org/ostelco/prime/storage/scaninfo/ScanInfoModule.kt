@@ -17,7 +17,6 @@ class ScanInfoModule : PrimeModule {
     }
 
     override fun init(env: Environment) {
-        logger.info("Initializing ScanInfoModule")
         ScanInformationStoreSingleton.init(env, EnvironmentVars())
     }
 }
@@ -27,6 +26,7 @@ class ScanInfoModule : PrimeModule {
  */
 class ScanInfoConfig : Configuration() {
     var storeType = "default"
+    var keysetFilePathPrefix = "encrypt_key"
 }
 
 object ConfigRegistry {
