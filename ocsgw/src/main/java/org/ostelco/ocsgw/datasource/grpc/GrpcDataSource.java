@@ -120,7 +120,7 @@ public class GrpcDataSource implements DataSource {
         initKeepAlive();
         ocsgwAnalytics.initAnalyticsRequest();
 
-        EventConsumer<CreditControlRequestInfo> requestInfoConsumer = new EventConsumer(requestQueue, creditControlRequest);
+        EventConsumer<CreditControlRequestInfo> requestInfoConsumer = new EventConsumer<>(requestQueue, creditControlRequest);
         new Thread(requestInfoConsumer).start();
     }
 

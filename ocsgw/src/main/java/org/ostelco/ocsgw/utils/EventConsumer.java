@@ -11,7 +11,7 @@ public class EventConsumer<T> implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(EventConsumer.class);
 
     private final ConcurrentLinkedQueue<T> queue;
-    StreamObserver<T> streamObserver;
+    private StreamObserver<T> streamObserver;
 
     public EventConsumer(ConcurrentLinkedQueue<T> queue, StreamObserver<T> streamObserver) {
         this.queue = queue;

@@ -96,7 +96,7 @@ public class OcsgwMetrics {
         initKeepAlive();
         initAutoReportAnalyticsReport();
 
-        EventConsumer<OcsgwAnalyticsReport> analyticsReportConsumer = new EventConsumer(reportQueue, ocsgwAnalyticsReport);
+        EventConsumer<OcsgwAnalyticsReport> analyticsReportConsumer = new EventConsumer<>(reportQueue, ocsgwAnalyticsReport);
         new Thread(analyticsReportConsumer).start();
     }
 
@@ -149,7 +149,7 @@ public class OcsgwMetrics {
     }
 
     private void initAutoReportAnalyticsReport() {
-        autoReportAnalyticsFuture = executorService.scheduleAtFixedRate((Runnable) () -> {
+        autoReportAnalyticsFuture = executorService.scheduleAtFixedRate(() -> {
                     sendAnalytics(lastActiveSessions);
                 },
                 30,
