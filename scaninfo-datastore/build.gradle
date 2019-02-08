@@ -30,7 +30,6 @@ dependencies {
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
 
   testImplementation "org.mockito:mockito-core:$mockitoVersion"
-  //testImplementation "com.google.crypto.tink:tink:$tinkVersion"
 }
 
 apply from: '../gradle/jacoco.gradle'
