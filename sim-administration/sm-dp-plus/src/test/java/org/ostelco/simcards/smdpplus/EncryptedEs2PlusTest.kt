@@ -27,7 +27,7 @@ class EncryptedEs2PlusTest {
     @Test
     fun handleHappyDayScenario() {
         val client: ES2PlusClient =
-                SUPPORT.getApplication<SmDpPlusApplication>().es2plusClient
+                SUPPORT.getApplication<DummyAppUsingSmDpPlusClient>().es2plusClient
         val eid = "12345678980123456789012345678901"
         val iccid = "8901000000000000001"
         val downloadResponse = client.downloadOrder(eid = eid, iccid = iccid, profileType = "FooTel_STD")
@@ -51,8 +51,8 @@ class EncryptedEs2PlusTest {
     }
 
     companion object {
-        val SUPPORT = DropwizardTestSupport<SmDpPlusAppConfiguration>(
-                SmDpPlusApplication::class.java,
+        val SUPPORT = DropwizardTestSupport<DummyAppUsingSmDpPlusClientConfig>(
+                DummyAppUsingSmDpPlusClient::class.java,
                 "config.yml"
         )
     }
