@@ -33,8 +33,6 @@ public class OcsgwMetrics {
 
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
-    private StreamObserver<OcsgwAnalyticsReport> ocsgwAnalyticsReport;
-
     private ScheduledFuture initAnalyticsFuture = null;
 
     private ScheduledFuture keepAliveFuture = null;
@@ -73,7 +71,7 @@ public class OcsgwMetrics {
     }
 
     public void initAnalyticsRequest() {
-        ocsgwAnalyticsReport = ocsgwAnalyticsServiceStub.ocsgwAnalyticsEvent(
+        StreamObserver<OcsgwAnalyticsReport> ocsgwAnalyticsReport = ocsgwAnalyticsServiceStub.ocsgwAnalyticsEvent(
                 new StreamObserver<OcsgwAnalyticsReply>() {
 
                     @Override

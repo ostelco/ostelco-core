@@ -62,7 +62,7 @@ public class GrpcDataSource implements DataSource {
 
     private static final int MAX_ENTRIES = 50000;
 
-    Set<String> blocked = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private Set<String> blocked = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     private final ConcurrentHashMap<String, CreditControlContext> ccrMap = new ConcurrentHashMap<>(MAX_ENTRIES, .75F);
 
@@ -341,13 +341,12 @@ public class GrpcDataSource implements DataSource {
 
         LOG.info("[>>] creditControlRequest for {}", context.getCreditControlRequest().getMsisdn());
 
+        // FixMe: We should handle conversion errors
         CreditControlRequestInfo creditControlRequestInfo = convertRequestToGrpc(context);
         if (creditControlRequestInfo != null) {
             ccrMap.put(context.getSessionId(), context);
             addToSessionMap(context);
             queueRequest(creditControlRequestInfo);
-        } else {
-            // ToDo : Send diameter failure to P-GW.
         }
     }
 
