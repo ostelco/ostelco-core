@@ -1,4 +1,4 @@
-package org.ostelco.simcards.smdpplus
+package org.ostelco.sim.es2plus
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.dropwizard.Application
@@ -10,15 +10,10 @@ import io.dropwizard.setup.Environment
 import io.dropwizard.testing.DropwizardTestSupport
 import junit.framework.Assert.*
 import org.apache.http.client.HttpClient
-import org.conscrypt.OpenSSLProvider
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import org.ostelco.sim.es2plus.ES2PlusClient
-import org.ostelco.sim.es2plus.EsTwoPlusConfig
-import org.ostelco.sim.es2plus.FunctionExecutionStatusType
 import org.slf4j.LoggerFactory
-import java.security.Security
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
 
@@ -27,6 +22,8 @@ import javax.validation.constraints.NotNull
 
 class EncryptedRemoteEs2ClientOnlyTest {
 
+    // This ICCID should be reserved for testing only, and should never be used
+    // for any other purpose.
     val iccid = "8947000000000000038"
 
 
@@ -64,7 +61,7 @@ class EncryptedRemoteEs2ClientOnlyTest {
      * in that state.
      */
     @Test
-    fun handleHappyDayScenario() {
+    fun handleHappyDayScenarioTowardsRemote() {
 
         if ("AVAILABLE" != getState()) {
             setStateToAvailable()
@@ -150,7 +147,7 @@ class DummyAppUsingSmDpPlusClient : Application<DummyAppUsingSmDpPlusClientConfi
         @Throws(Exception::class)
         @JvmStatic
         fun main(args: Array<String>) {
-            Security.insertProviderAt(OpenSSLProvider(), 1)
+           // Security.insertProviderAt(OpenSSLProvider(), 1)
             DummyAppUsingSmDpPlusClient().run(*args)
         }
     }

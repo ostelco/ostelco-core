@@ -135,7 +135,7 @@ data class ProfileStatus(
 data class Es2ConfirmOrder(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("eid") val eid: String? = null,
-        @JsonProperty("profileStatusList") val iccid: String,
+        @JsonProperty("iccid") val iccid: String,
         @JsonProperty("matchingId") val matchingId: String? = null,
         @JsonProperty("confirmationCode") val confirmationCode: String? = null,
         @JsonProperty("smdpAddress") val smdpAddress: String? = null,
@@ -178,7 +178,7 @@ data class HeaderOnlyResponse(@JsonProperty("header") val header: ES2ResponseHea
 @JsonSchema("ES2+ReleaseProfile-def")
 data class Es2ReleaseProfile(
         @JsonProperty("header") val header: ES2RequestHeader,
-        @JsonProperty("profileStatusList") val iccid: String
+        @JsonProperty("iccid") val iccid: String
 )
 
 
@@ -192,7 +192,7 @@ data class Es2ReleaseProfile(
 data class Es2HandleDownloadProgressInfo(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("eid") val eid: String? = null,
-        @JsonProperty("profileStatusList") val iccid: String,
+        @JsonProperty("iccid") val iccid: String,
         @JsonProperty("profileType") val profileType: String,
         @JsonProperty("timestamp") val timestamp: String,
         @JsonProperty("notificationPointId") val notificationPointId: Int,

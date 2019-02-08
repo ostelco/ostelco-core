@@ -14,6 +14,9 @@ dependencies {
 
     testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
     testImplementation "org.mockito:mockito-core:$mockitoVersion"
+    testImplementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
+    testImplementation "javax.xml.bind:jaxb-api:2.3.0"
+    testImplementation "javax.activation:activation:1.1.1"
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {

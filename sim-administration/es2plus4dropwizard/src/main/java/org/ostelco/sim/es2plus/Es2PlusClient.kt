@@ -187,7 +187,7 @@ class ES2PlusClient(
                 sclass = Es2ConfirmOrderResponse::class.java)
     }
 
-    fun cancelOrder(iccid: String, finalProfileStatusIndicator: String): HeaderOnlyResponse {
+    fun cancelOrder(iccid: String, finalProfileStatusIndicator: String, eid: String? = null,matchingId: String? = null): HeaderOnlyResponse {
         return postEs2ProtocolCmd("/gsma/rsp2/es2plus/cancelOrder",
                 es2ProtocolPayload = Es2CancelOrder(
                         header = ES2RequestHeader(
@@ -195,6 +195,8 @@ class ES2PlusClient(
                                 functionCallIdentifier = "cancelOrder"
                         ),
                         iccid = iccid,
+                        eid = eid,
+                        matchingId = matchingId,
                         finalProfileStatusIndicator = finalProfileStatusIndicator),
                 sclass = HeaderOnlyResponse::class.java,
                 expectedReturnCode = 200)
