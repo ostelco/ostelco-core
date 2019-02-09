@@ -1446,4 +1446,13 @@ object Neo4jStoreSingleton : GraphStore {
     // override fun getSegment(id: String): Segment? = segmentStore.get(id)?.let { Segment().apply { this.id = it.id } }
 
     // override fun getProductClass(id: String): ProductClass? = productClassStore.get(id)
+
+    //
+    // Indexes
+    //
+
+    fun createIndex() = writeTransaction {
+        write(query = "CREATE INDEX ON :${identityEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${subscriptionEntity.name}(id)", transaction = transaction) {}
+    }
 }
