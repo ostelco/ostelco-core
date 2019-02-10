@@ -87,7 +87,7 @@ object Neo4jClient : Managed {
         val config = org.neo4j.driver.v1.Config.build()
                 .withoutEncryption()
                 .withConnectionTimeout(10, SECONDS)
-                .withMaxConnectionPoolSize(1000)
+                .withMaxConnectionPoolSize(10000)
                 .toConfig()
         driver = GraphDatabase.driver(
                 URI("${ConfigRegistry.config.protocol}://${ConfigRegistry.config.host}:7687"),

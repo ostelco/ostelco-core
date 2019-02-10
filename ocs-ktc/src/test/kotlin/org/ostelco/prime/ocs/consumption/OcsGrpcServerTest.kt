@@ -3,6 +3,7 @@ package org.ostelco.prime.ocs.consumption
 import arrow.core.right
 import io.grpc.ManagedChannelBuilder
 import io.grpc.stub.StreamObserver
+import kotlinx.coroutines.runBlocking
 import org.junit.Ignore
 import org.junit.Test
 import org.mockito.Mockito
@@ -17,7 +18,6 @@ import org.ostelco.prime.ocs.mockGraphStore
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.CountDownLatch
-import kotlin.streams.toList
 import kotlin.test.AfterTest
 import kotlin.test.fail
 
@@ -27,7 +27,7 @@ class OcsGrpcServerTest {
 
     @Ignore
     @Test
-    fun `load test OCS using gRPC`() {
+    fun `load test OCS using gRPC`() = runBlocking {
 
         // Add delay to DB call and skip analytics and low balance notification
         OnlineCharging.loadUnitTest = true
@@ -82,11 +82,9 @@ class OcsGrpcServerTest {
         val start = Instant.now()
 
         // Send the same request COUNT times
-        (1..COUNT)
-                .toList()
-                .parallelStream()
-                .map { _ -> requestStream.onNext(request) }
-                .toList()
+        repeat(COUNT) {
+            requestStream.onNext(request)
+        }
 
         // Wait for all the responses to be returned
         println("Waiting for all responses to be returned")
@@ -103,13 +101,13 @@ class OcsGrpcServerTest {
         val rate = COUNT * 1000.0 / diff
         println("Rate: %,.2f req/sec".format(rate))
 
-        server.stop()
+        server.forceStop()
     }
 
     @AfterTest
     fun cleanup() {
         if (::server.isInitialized) {
-            server.stop()
+            server.forceStop()
         }
     }
 

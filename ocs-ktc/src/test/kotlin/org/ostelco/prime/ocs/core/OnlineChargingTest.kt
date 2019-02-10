@@ -2,6 +2,7 @@ package org.ostelco.prime.ocs.core
 
 import arrow.core.right
 import io.grpc.stub.StreamObserver
+import kotlinx.coroutines.runBlocking
 import org.junit.Ignore
 import org.junit.Test
 import org.mockito.Mockito.`when`
@@ -13,14 +14,13 @@ import org.ostelco.prime.ocs.mockGraphStore
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.CountDownLatch
-import kotlin.streams.toList
 import kotlin.test.fail
 
 class OnlineChargingTest {
 
     @Ignore
     @Test
-    fun `load test OnlineCharging directly`() {
+    fun `load test OnlineCharging directly`() = runBlocking {
 
         // Add delay to DB call and skip analytics and low balance notification
         OnlineCharging.loadUnitTest = true
@@ -67,11 +67,9 @@ class OnlineChargingTest {
         val start = Instant.now()
 
         // Send the same request COUNT times
-        (1..COUNT)
-                .toList()
-                .parallelStream()
-                .map { _ -> OnlineCharging.creditControlRequestEvent(streamId = streamId, request = request) }
-                .toList()
+        repeat(COUNT) {
+            OnlineCharging.creditControlRequestEvent(streamId = streamId, request = request)
+        }
 
         // Wait for all the responses to be returned
         println("Waiting for all responses to be returned")

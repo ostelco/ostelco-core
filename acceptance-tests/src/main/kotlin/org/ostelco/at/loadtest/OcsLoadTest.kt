@@ -126,7 +126,7 @@ class OcsLoadTest {
         // consumed = COUNT * USED_BYTES
         // reserved = REQUESTED_BYTES
         assertEquals(
-                expected = 100_000_000 - COUNT * USED_BYTES / USER_COUNT - REQUESTED_BYTES,
+                expected = 100_000_000 - COUNT * USED_BYTES / USER_COUNT + USED_BYTES - REQUESTED_BYTES,
                 actual = balance,
                 message = "Balance does not match after load test consumption")
         //}

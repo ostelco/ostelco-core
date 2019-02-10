@@ -110,7 +110,7 @@ interface ClientGraphStore {
     /**
      * Set balance after OCS Topup or Consumption
      */
-    fun consume(msisdn: String, usedBytes: Long, requestedBytes: Long): Either<StoreError, Pair<Long, Long>>
+    suspend fun consume(msisdn: String, usedBytes: Long, requestedBytes: Long): Either<StoreError, Pair<Long, Long>>
 
     /**
      * Get msisdn for the given subscription-id

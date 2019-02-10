@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.right
 import com.palantir.docker.compose.DockerComposeRule
 import com.palantir.docker.compose.connection.waiting.HealthChecks
+import kotlinx.coroutines.runBlocking
 import org.joda.time.Duration
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -189,7 +190,7 @@ class GraphStoreTest {
     }
 
     @Test
-    fun `test - consume`() {
+    fun `test - consume`() = runBlocking {
         Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
                 customer = CUSTOMER)

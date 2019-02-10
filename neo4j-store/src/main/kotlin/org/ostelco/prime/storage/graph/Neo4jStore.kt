@@ -44,6 +44,7 @@ import org.ostelco.prime.storage.StoreError
 import org.ostelco.prime.storage.ValidationError
 import org.ostelco.prime.storage.graph.Graph.read
 import org.ostelco.prime.storage.graph.Graph.write
+import org.ostelco.prime.storage.graph.Graph.writeSuspended
 import org.ostelco.prime.storage.graph.Relation.BELONG_TO_SEGMENT
 import org.ostelco.prime.storage.graph.Relation.HAS_BUNDLE
 import org.ostelco.prime.storage.graph.Relation.HAS_SUBSCRIPTION
@@ -334,7 +335,7 @@ object Neo4jStoreSingleton : GraphStore {
                 val subscription = subscriptionStore.get(msisdn, transaction).bind()
                 val customer = customerStore.get(customerId, transaction).bind()
                 bundles.forEach { bundle ->
-                    subscriptionToBundleStore.create(subscription, bundle, transaction).bind()
+                    subscriptionToBundleStore.create(subscription, mapOf("reservedBytes" to "0") ,bundle, transaction).bind()
                 }
                 subscriptionRelationStore.create(customer, subscription, transaction).bind()
                 // TODO Remove hardcoded country code.
@@ -443,59 +444,35 @@ object Neo4jStoreSingleton : GraphStore {
      * @param requestedBytes Bytes requested for consumption.
      *
      */
-    override fun consume(msisdn: String, usedBytes: Long, requestedBytes: Long): Either<StoreError, Pair<Long, Long>> {
+    override suspend fun consume(msisdn: String, usedBytes: Long, requestedBytes: Long): Either<StoreError, Pair<Long, Long>> {
 
         // Note: _LOCK_ dummy property is set in the relation 'r' and node 'bundle' so that they get locked.
         // Ref: https://neo4j.com/docs/java-reference/current/transactions/#transactions-isolation
 
-        return writeTransaction {
-            IO {
-                Either.monad<StoreError>().binding {
-                    val (reservedBytes, balance) = read("""
+        return suspendedWriteTransaction {
+
+            writeSuspended("""
                             MATCH (:${subscriptionEntity.name} {id: '$msisdn'})-[r:${subscriptionToBundleRelation.relation.name}]->(bundle:${bundleEntity.name})
-                            SET r._LOCK_ = true, bundle._LOCK_ = true
-                            RETURN r.reservedBytes AS reservedBytes, bundle.balance AS balance
-                            """.trimIndent(),
-                            transaction) { statementResult ->
-                        if (statementResult.hasNext()) {
-                            val record = statementResult.single()
-                            val reservedBytes = record.get("reservedBytes").asString("0").toLong()
-                            val balance = record.get("balance").asString("0").toLong()
-                            Pair(reservedBytes, balance).right()
-                        } else {
-                            NotFoundError("Bundle for ${subscriptionEntity.name}", msisdn).left()
-                        }
-                    }.bind()
-
-                    // First adjust reserved and used bytes
-                    // Balance cannot be negative
-                    var newBalance = Math.max(balance + reservedBytes - usedBytes, 0)
-
-                    // Then check how much of requested bytes can be granted
-                    val granted = Math.min(newBalance, requestedBytes)
-                    newBalance -= granted
-
-                    write("""
-                            MATCH (:${subscriptionEntity.name} {id: '$msisdn'})-[r:${subscriptionToBundleRelation.relation.name}]->(bundle:${bundleEntity.name})
-                            SET r.reservedBytes = '$granted', bundle.balance = '$newBalance'
+                            SET bundle._LOCK_ = true, r._LOCK_ = true
+                            WITH r, bundle, (CASE WHEN ((toInteger(bundle.balance) + toInteger(r.reservedBytes) - $usedBytes) > 0) THEN (toInteger(bundle.balance) + toInteger(r.reservedBytes) - $usedBytes) ELSE 0 END) AS tmpBalance
+                            WITH r, bundle, tmpBalance, (CASE WHEN (tmpBalance < $requestedBytes) THEN tmpBalance ELSE $requestedBytes END) as tmpGranted
+                            SET r.reservedBytes = toString(tmpGranted), bundle.balance = toString(tmpBalance - tmpGranted)
                             REMOVE r._LOCK_, bundle._LOCK_
                             RETURN r.reservedBytes AS granted, bundle.balance AS balance
                             """.trimIndent(),
-                            transaction) { statementResult ->
-                        if (statementResult.hasNext()) {
-                            val record = statementResult.single()
-                            val savedBalance = record.get("balance").asString("0").toLong()
-                            if (savedBalance != newBalance) {
-                                logger.error(NOTIFY_OPS_MARKER, "Wrong balance set for msisdn: $msisdn to instead of $newBalance")
-                            }
-                            val savedGranted = record.get("granted").asString("0").toLong()
-                            Pair(savedGranted, savedBalance).right()
-                        } else {
-                            NotUpdatedError("Balance for ${subscriptionEntity.name}", msisdn).left()
-                        }
-                    }.bind()
-                }.fix()
-            }.unsafeRunSync()//.ifFailedThenRollback(transaction)
+                    transaction) { statementResult ->
+                if (statementResult.hasNext()) {
+                    val record = statementResult.single()
+                    val balance = record.get("balance").asString("0").toLong()
+                    val granted = record.get("granted").asString("0").toLong()
+
+                    logger.trace("requestedBytes = %,d, balance = %,d, granted = %,d".format(requestedBytes, balance, granted))
+
+                    Pair(granted, balance).right()
+                } else {
+                    NotUpdatedError("Balance for ${subscriptionEntity.name}", msisdn).left()
+                }
+            }.ifFailedThenRollback(transaction)
         }
     }
 
