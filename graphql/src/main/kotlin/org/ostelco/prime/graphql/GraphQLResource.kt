@@ -4,6 +4,7 @@ import io.dropwizard.auth.Auth
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.jsonmapper.objectMapper
+import org.ostelco.prime.model.Identity
 import javax.ws.rs.Consumes
 import javax.ws.rs.GET
 import javax.ws.rs.POST
@@ -27,7 +28,9 @@ class GraphQLResource(private val queryHandler: QueryHandler) {
             return Response.status(Response.Status.UNAUTHORIZED).build()
         }
 
-        return executeOperation(subscriberId = token.name, request = request)
+        return executeOperation(
+                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                request = request)
     }
 
     @GET
@@ -41,11 +44,13 @@ class GraphQLResource(private val queryHandler: QueryHandler) {
             return Response.status(Response.Status.UNAUTHORIZED).build()
         }
 
-        return executeOperation(subscriberId = token.name, request = GraphQLRequest(query = query))
+        return executeOperation(
+                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                request = GraphQLRequest(query = query))
     }
 
-    private fun executeOperation(subscriberId: String, request: GraphQLRequest): Response {
-        val executionResult = queryHandler.execute(subscriberId = subscriberId, query = request.query, variables = request.variables)
+    private fun executeOperation(identity: Identity, request: GraphQLRequest): Response {
+        val executionResult = queryHandler.execute(identity = identity, query = request.query, variables = request.variables)
         val result = mutableMapOf<String, Any>()
         if (executionResult.errors.isNotEmpty()) {
             result["errors"] = executionResult.errors

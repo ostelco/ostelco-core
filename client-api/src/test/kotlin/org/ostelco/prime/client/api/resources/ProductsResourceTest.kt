@@ -20,6 +20,7 @@ import org.ostelco.prime.auth.OAuthAuthenticator
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
 import org.ostelco.prime.jsonmapper.objectMapper
+import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
@@ -57,12 +58,12 @@ class ProductsResourceTest {
     @Before
     fun setUp() {
         `when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
-                .thenReturn(Optional.of(AccessTokenPrincipal(email)))
+                .thenReturn(Optional.of(AccessTokenPrincipal(email, "email")))
     }
 
     @Test
     fun getProducts() {
-        val arg = argumentCaptor<String>()
+        val arg = argumentCaptor<Identity>()
 
         `when`<Either<ApiError, Collection<Product>>>(DAO.getProducts(arg.capture())).thenReturn(Either.right(products))
 
@@ -79,12 +80,12 @@ class ProductsResourceTest {
         assertTrue(products == resp.readEntity(object : GenericType<List<Product>>() {
 
         }))
-        assertThat(arg.firstValue).isEqualTo(email)
+        assertThat(arg.firstValue).isEqualTo(Identity(email, "EMAIL", "email"))
     }
 
     @Test
     fun purchaseProduct() {
-        val emailArg = argumentCaptor<String>()
+        val identityArg = argumentCaptor<Identity>()
         val skuArg = argumentCaptor<String>()
         val sourceIdArg = argumentCaptor<String>()
         val saveSourceArg = argumentCaptor<Boolean>()
@@ -93,7 +94,7 @@ class ProductsResourceTest {
         val sourceId = "amex"
 
         `when`(DAO.purchaseProduct(
-                emailArg.capture(),
+                identityArg.capture(),
                 skuArg.capture(),
                 sourceIdArg.capture(),
                 saveSourceArg.capture())).thenReturn(Either.right(ProductInfo(sku)))
@@ -106,7 +107,7 @@ class ProductsResourceTest {
                 .post(Entity.text(""))
 
         assertThat(resp.status).isEqualTo(Response.Status.CREATED.statusCode)
-        assertThat(emailArg.allValues.toSet()).isEqualTo(setOf(email))
+        assertThat(identityArg.allValues.toSet()).isEqualTo(setOf(Identity(email, "EMAIL", "email")))
         assertThat(skuArg.allValues.toSet()).isEqualTo(setOf(sku))
         assertThat(sourceIdArg.allValues.toSet()).isEqualTo(setOf(sourceId))
         assertThat(saveSourceArg.allValues.toSet()).isEqualTo(setOf(false))

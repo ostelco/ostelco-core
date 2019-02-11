@@ -11,11 +11,21 @@ import org.junit.ClassRule
 import org.mockito.Mockito
 import org.neo4j.driver.v1.AccessMode.WRITE
 import org.ostelco.prime.analytics.AnalyticsService
-import org.ostelco.prime.model.*
+import org.ostelco.prime.model.Customer
+import org.ostelco.prime.model.Identity
+import org.ostelco.prime.model.JumioScanData
+import org.ostelco.prime.model.Offer
+import org.ostelco.prime.model.Price
+import org.ostelco.prime.model.Product
+import org.ostelco.prime.model.PurchaseRecord
+import org.ostelco.prime.model.ScanInformation
+import org.ostelco.prime.model.ScanResult
+import org.ostelco.prime.model.ScanStatus
+import org.ostelco.prime.model.Segment
+import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.storage.ScanInformationStore
-import org.ostelco.prime.storage.StoreError
 import java.time.Instant
 import java.util.*
 import javax.ws.rs.core.MultivaluedHashMap
@@ -62,14 +72,17 @@ class GraphStoreTest {
     }
 
     @Test
-    fun `test - add subscriber`() {
+    fun `test - add customer`() {
 
-        Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null)
+        Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER,
+                referredBy = null)
                 .mapLeft { fail(it.message) }
 
-        Neo4jStoreSingleton.getSubscriber(EMAIL).bimap(
+        Neo4jStoreSingleton.getCustomer(IDENTITY).bimap(
                 { fail(it.message) },
-                { assertEquals(Subscriber(email = EMAIL, name = NAME, referralId = EMAIL, country = COUNTRY), it) })
+                { assertEquals(CUSTOMER, it) })
 
         // TODO vihang: fix argument captor for neo4j-store tests
 //        val bundleArgCaptor: ArgumentCaptor<Bundle> = ArgumentCaptor.forClass(Bundle::class.java)
@@ -78,31 +91,35 @@ class GraphStoreTest {
     }
 
     @Test
-    fun `test - fail to add subscriber with invalid referred by`() {
+    fun `test - fail to add customer with invalid referred by`() {
 
-        Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = "blah")
+        Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER, referredBy = "blah")
                 .fold({
                     assertEquals(
-                            expected = "Failed to create REFERRED - blah -> foo@bar.com",
+                            expected = "Failed to create REFERRED - blah -> ${CUSTOMER.id}",
                             actual = it.message)
                 },
-                        { fail("Created subscriber in spite of invalid 'referred by'") })
+                        { fail("Created customer in spite of invalid 'referred by'") })
     }
 
     @Test
     fun `test - add subscription`() {
 
-        Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null)
+        Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER)
                 .mapLeft { fail(it.message) }
 
-        Neo4jStoreSingleton.addSubscription(EMAIL, MSISDN)
+        Neo4jStoreSingleton.addSubscription(identity = IDENTITY, msisdn = MSISDN)
                 .mapLeft { fail(it.message) }
 
-        Neo4jStoreSingleton.getMsisdn(EMAIL).bimap(
+        Neo4jStoreSingleton.getMsisdn(identity = IDENTITY).bimap(
                 { fail(it.message) },
                 { assertEquals(MSISDN, it) })
 
-        Neo4jStoreSingleton.getSubscriptions(EMAIL).bimap(
+        Neo4jStoreSingleton.getSubscriptions(IDENTITY).bimap(
                 { fail(it.message) },
                 { assertEquals(listOf(Subscription(MSISDN)), it) })
 
@@ -120,7 +137,7 @@ class GraphStoreTest {
         val sku = "1GB_249NOK"
         val chargeId = UUID.randomUUID().toString()
         // mock
-        Mockito.`when`(mockPaymentProcessor.getPaymentProfile(userEmail = EMAIL))
+        Mockito.`when`(mockPaymentProcessor.getPaymentProfile(customerId = CUSTOMER.id))
                 .thenReturn(ProfileInfo(EMAIL).right())
 
         Mockito.`when`(mockPaymentProcessor.authorizeCharge(
@@ -138,10 +155,12 @@ class GraphStoreTest {
         ).thenReturn(chargeId.right())
 
         // prep
-        Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null)
+        Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER)
                 .mapLeft { fail(it.message) }
 
-        Neo4jStoreSingleton.addSubscription(EMAIL, MSISDN)
+        Neo4jStoreSingleton.addSubscription(IDENTITY, MSISDN)
                 .mapLeft { fail(it.message) }
 
         Neo4jStoreSingleton.createProduct(createProduct(sku = sku, amount = 24900))
@@ -156,11 +175,11 @@ class GraphStoreTest {
                 .mapLeft { fail(it.message) }
 
         // test
-        Neo4jStoreSingleton.purchaseProduct(subscriberId = EMAIL, sku = sku, sourceId = null, saveCard = false)
+        Neo4jStoreSingleton.purchaseProduct(identity = IDENTITY, sku = sku, sourceId = null, saveCard = false)
                 .mapLeft { fail(it.message) }
 
         // assert
-        Neo4jStoreSingleton.getBundles(subscriberId = EMAIL).bimap(
+        Neo4jStoreSingleton.getBundles(IDENTITY).bimap(
                 { fail(it.message) },
                 { bundles ->
                     bundles.forEach { bundle ->
@@ -171,10 +190,12 @@ class GraphStoreTest {
 
     @Test
     fun `test - consume`() {
-        Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null)
+        Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER)
                 .mapLeft { fail(it.message) }
 
-        Neo4jStoreSingleton.addSubscription(EMAIL, MSISDN)
+        Neo4jStoreSingleton.addSubscription(IDENTITY, MSISDN)
                 .mapLeft { fail(it.message) }
 
         // balance = 100_000_000
@@ -213,7 +234,9 @@ class GraphStoreTest {
 
     @Test
     fun `set and get Purchase record`() {
-        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null).isRight())
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
 
         val product = createProduct("1GB_249NOK", 24900)
         val now = Instant.now().toEpochMilli()
@@ -222,20 +245,22 @@ class GraphStoreTest {
                 .mapLeft { fail(it.message) }
 
         val purchaseRecord = PurchaseRecord(product = product, timestamp = now, id = UUID.randomUUID().toString(), msisdn = "")
-        Neo4jStoreSingleton.addPurchaseRecord(EMAIL, purchaseRecord).bimap(
+        Neo4jStoreSingleton.addPurchaseRecord(customerId = CUSTOMER.id, purchase = purchaseRecord).bimap(
                 { fail(it.message) },
                 { assertNotNull(it) }
         )
 
-        Neo4jStoreSingleton.getPurchaseRecords(EMAIL).bimap(
+        Neo4jStoreSingleton.getPurchaseRecords(IDENTITY).bimap(
                 { fail(it.message) },
                 { assertTrue(it.contains(purchaseRecord)) }
         )
     }
 
     @Test
-    fun `create products, offer, segment and then get products for a subscriber`() {
-        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null).isRight())
+    fun `create products, offer, segment and then get products for a customer`() {
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
 
         Neo4jStoreSingleton.createProduct(createProduct("1GB_249NOK", 24900))
                 .mapLeft { fail(it.message) }
@@ -248,7 +273,7 @@ class GraphStoreTest {
 
         val segment = Segment(
                 id = "NEW_SEGMENT",
-                subscribers = listOf(EMAIL))
+                subscribers = listOf(CUSTOMER.id))
         Neo4jStoreSingleton.createSegment(segment)
                 .mapLeft { fail(it.message) }
 
@@ -259,14 +284,14 @@ class GraphStoreTest {
         Neo4jStoreSingleton.createOffer(offer)
                 .mapLeft { fail(it.message) }
 
-        Neo4jStoreSingleton.getProducts(EMAIL).bimap(
+        Neo4jStoreSingleton.getProducts(IDENTITY).bimap(
                 { fail(it.message) },
                 { products ->
                     assertEquals(1, products.size)
                     assertEquals(createProduct("3GB_349NOK", 34900), products.values.first())
                 })
 
-        Neo4jStoreSingleton.getProduct(EMAIL, "2GB_299NOK").bimap(
+        Neo4jStoreSingleton.getProduct(IDENTITY, "2GB_299NOK").bimap(
                 { assertEquals("Product - 2GB_299NOK not found.", it.message) },
                 { fail("Expected get product to fail since it is not linked to any subscriber --> segment --> offer") })
     }
@@ -327,10 +352,12 @@ class GraphStoreTest {
     @Test
     fun `eKYCScan - generate new scanId`() {
 
-        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null).isRight())
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
 
-        Neo4jStoreSingleton.newEKYCScanId(EMAIL, COUNTRY).map {
-            Neo4jStoreSingleton.getScanInformation(EMAIL, scanId = it.scanId).mapLeft {
+        Neo4jStoreSingleton.newEKYCScanId(identity = IDENTITY, countryCode = COUNTRY).map {
+            Neo4jStoreSingleton.getScanInformation(identity = IDENTITY, scanId = it.scanId).mapLeft {
                 fail(it.message)
             }
         }.mapLeft {
@@ -341,10 +368,12 @@ class GraphStoreTest {
     @Test
     fun `eKYCScan - get all scans`() {
 
-        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null).isRight())
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
 
-        Neo4jStoreSingleton.newEKYCScanId(EMAIL, COUNTRY).map { newScan ->
-            Neo4jStoreSingleton.getAllScanInformation(EMAIL).map { infoList ->
+        Neo4jStoreSingleton.newEKYCScanId(identity = IDENTITY, countryCode = COUNTRY).map { newScan ->
+            Neo4jStoreSingleton.getAllScanInformation(identity = IDENTITY).map { infoList ->
                 assertEquals(1, infoList.size, "More scans than expected.")
                 assertEquals(newScan.scanId, infoList.elementAt(0).scanId, "Wrong scan returned.")
             }.mapLeft {
@@ -358,9 +387,11 @@ class GraphStoreTest {
     @Test
     fun `eKYCScan - update scan information`() {
 
-        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null).isRight())
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
 
-        Neo4jStoreSingleton.newEKYCScanId(EMAIL, COUNTRY).map {
+        Neo4jStoreSingleton.newEKYCScanId(identity = IDENTITY, countryCode = COUNTRY).map {
             val newScanInformation = ScanInformation(
                     scanId = it.scanId,
                     countryCode = COUNTRY,
@@ -385,7 +416,7 @@ class GraphStoreTest {
             vendorData.add(JumioScanData.SCAN_IMAGE.s, imgUrl)
             vendorData.add(JumioScanData.SCAN_IMAGE_BACKSIDE.s, imgUrl2)
 
-            Mockito.`when`(mockScanInformationStore.upsertVendorScanInformation(subscriberId = EMAIL, countryCode = COUNTRY, vendorData = vendorData)).thenReturn(Either.right(Unit))
+            Mockito.`when`(mockScanInformationStore.upsertVendorScanInformation(customerId = CUSTOMER.id, countryCode = COUNTRY, vendorData = vendorData)).thenReturn(Either.right(Unit))
 
             Neo4jStoreSingleton.updateScanInformation(newScanInformation, vendorData).mapLeft {
                 fail(it.message)
@@ -398,9 +429,11 @@ class GraphStoreTest {
     @Test
     fun `eKYCScan - update with unknown scanId`() {
 
-        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null).isRight())
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
 
-        Neo4jStoreSingleton.newEKYCScanId(EMAIL, COUNTRY).map {
+        Neo4jStoreSingleton.newEKYCScanId(identity = IDENTITY, countryCode = COUNTRY).map {
             val newScanInformation = ScanInformation(
                     scanId = "fakeId",
                     countryCode = COUNTRY,
@@ -434,15 +467,20 @@ class GraphStoreTest {
 
     @Test
     fun `eKYCScan - illegal access`() {
-        val `FAKE-EMAIL` = "fake-$EMAIL"
-        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = EMAIL, name = NAME, country = COUNTRY), referredBy = null).isRight())
-        assert(Neo4jStoreSingleton.addSubscriber(Subscriber(email = `FAKE-EMAIL`, name = NAME, country = COUNTRY), referredBy = null).isRight())
+        val fakeEmail = "fake-$EMAIL"
+        val fakeIdentity = Identity(id = fakeEmail, type = "EMAIL", provider = "email")
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = fakeIdentity,
+                customer = Customer(email = fakeEmail, name = NAME, country = COUNTRY)).isRight())
 
-        Neo4jStoreSingleton.newEKYCScanId(`FAKE-EMAIL`, COUNTRY).mapLeft {
+        Neo4jStoreSingleton.newEKYCScanId(fakeIdentity, COUNTRY).mapLeft {
             fail(it.message)
         }
-        Neo4jStoreSingleton.newEKYCScanId(EMAIL, COUNTRY).map {
-            Neo4jStoreSingleton.getScanInformation(`FAKE-EMAIL`, scanId = it.scanId).bimap(
+        Neo4jStoreSingleton.newEKYCScanId(identity = IDENTITY, countryCode = COUNTRY).map {
+            Neo4jStoreSingleton.getScanInformation(fakeIdentity, scanId = it.scanId).bimap(
                     { assertEquals("Not allowed", it.message) },
                     { fail("Expected to fail since the requested subscriber is wrong.") })
         }.mapLeft {
@@ -456,6 +494,8 @@ class GraphStoreTest {
         const val CURRENCY = "NOK"
         const val COUNTRY = "NO"
         const val MSISDN = "4712345678"
+        val IDENTITY = Identity(id = EMAIL, type = "EMAIL", provider = "email")
+        val CUSTOMER = Customer(email = EMAIL, name = NAME, country = COUNTRY)
 
         @ClassRule
         @JvmField

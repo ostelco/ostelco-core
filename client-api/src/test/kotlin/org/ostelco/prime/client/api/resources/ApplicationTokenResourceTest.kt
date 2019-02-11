@@ -1,6 +1,7 @@
 package org.ostelco.prime.client.api.resources
 
 import arrow.core.Either
+import arrow.core.right
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import io.dropwizard.auth.AuthDynamicFeature
 import io.dropwizard.auth.AuthValueFactoryProvider
@@ -20,6 +21,8 @@ import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
 import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.ApplicationToken
+import org.ostelco.prime.model.Customer
+import org.ostelco.prime.model.Identity
 import java.util.*
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.Entity
@@ -46,7 +49,7 @@ class ApplicationTokenResourceTest {
     @Before
     fun setUp() {
         `when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
-                .thenReturn(Optional.of(AccessTokenPrincipal(email)))
+                .thenReturn(Optional.of(AccessTokenPrincipal(email, "email")))
     }
 
     @Test
@@ -54,12 +57,12 @@ class ApplicationTokenResourceTest {
         val arg1 = argumentCaptor<String>()
         val arg2 = argumentCaptor<ApplicationToken>()
 
-        val argMsisdn = argumentCaptor<String>()
-        val msisdn = "4790300001"
+        val argIdentity = argumentCaptor<Identity>()
+        val customer = Customer(email = email)
 
         `when`(DAO.storeApplicationToken(arg1.capture(), arg2.capture()))
                 .thenReturn(Either.right(applicationToken))
-        `when`<Either<ApiError, String>>(DAO.getMsisdn(argMsisdn.capture())).thenReturn(Either.right(msisdn))
+        `when`<Either<ApiError, Customer>>(DAO.getProfile(argIdentity.capture())).thenReturn(customer.right())
 
         val resp = RULE.target("/applicationtoken")
                 .request(MediaType.APPLICATION_JSON)
@@ -73,7 +76,7 @@ class ApplicationTokenResourceTest {
 
         assertThat(resp.status).isEqualTo(Response.Status.CREATED.statusCode)
         assertThat(resp.mediaType.toString()).isEqualTo(MediaType.APPLICATION_JSON)
-        assertThat(arg1.firstValue).isEqualTo(msisdn)
+        assertThat(arg1.firstValue).isEqualTo(customer.id)
         assertThat(arg2.firstValue.token).isEqualTo(token)
         assertThat(arg2.firstValue.applicationID).isEqualTo(applicationID)
         assertThat(arg2.firstValue.tokenType).isEqualTo(tokenType)

@@ -4,7 +4,7 @@ import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Subscription
-import org.ostelco.prime.model.Subscriber as Profile
+import org.ostelco.prime.model.Customer as Profile
 
 data class GraphQLRequest(
         val query: String,

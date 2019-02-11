@@ -3,7 +3,11 @@ package org.ostelco.prime.admin.api
 import arrow.core.Either
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import org.ostelco.prime.apierror.*
+import org.ostelco.prime.apierror.ApiError
+import org.ostelco.prime.apierror.ApiErrorCode
+import org.ostelco.prime.apierror.BadGatewayError
+import org.ostelco.prime.apierror.BadRequestError
+import org.ostelco.prime.apierror.NotFoundError
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.model.JumioScanData
@@ -19,7 +23,11 @@ import javax.servlet.http.HttpServletRequest
 import javax.ws.rs.POST
 import javax.ws.rs.Path
 import javax.ws.rs.Produces
-import javax.ws.rs.core.*
+import javax.ws.rs.core.Context
+import javax.ws.rs.core.HttpHeaders
+import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.MultivaluedMap
+import javax.ws.rs.core.Response
 
 
 /**
@@ -118,7 +126,7 @@ class KYCResource {
         }
         catch (e: NullPointerException) {
             logger.error("Missing mandatory fields in scan result ${dataMap}")
-            return null;
+            return null
         }
     }
 
