@@ -78,17 +78,13 @@ class SimInventoryResource(private val client: Client,
             it.name == hlrAdapter.name
         }.firstOrNull())
 
-        return try {
-            when (simEntry.hlrState) {
-                HlrState.NOT_ACTIVATED -> {
-                    hlrAdapter.activate(client, config, dao, simEntry)
-                }
-                HlrState.ACTIVATED -> {
-                    simEntry
-                }
+        return when (simEntry.hlrState) {
+            HlrState.NOT_ACTIVATED -> {
+                hlrAdapter.activate(client, config, dao, simEntry)
             }
-        } catch (e: Exception) {
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
+            HlrState.ACTIVATED -> {
+                simEntry
+            }
         }
     }
 
@@ -106,17 +102,13 @@ class SimInventoryResource(private val client: Client,
             it.name == hlrAdapter.name
         }.firstOrNull())
 
-        return try {
-            when (simEntry.hlrState) {
-                HlrState.NOT_ACTIVATED -> {
-                    simEntry
-                }
-                HlrState.ACTIVATED -> {
-                    hlrAdapter.deactivate(client, config, dao, simEntry)
-                }
+        return when (simEntry.hlrState) {
+            HlrState.NOT_ACTIVATED -> {
+                simEntry
             }
-        } catch (e: Exception) {
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
+            HlrState.ACTIVATED -> {
+                hlrAdapter.deactivate(client, config, dao, simEntry)
+            }
         }
     }
 
@@ -192,21 +184,17 @@ class SimInventoryResource(private val client: Client,
 
         /* As 'confirm-order' message is issued with 'releaseFlag' set to true, the
            CONFIRMED state should not occur. */
-        return try {
-            when (simEntry.smdpPlusState) {
-                SmDpPlusState.AVAILABLE -> {
-                    simVendorAdapter.activate(client, config, dao, eid, simEntry)
-                }
-                SmDpPlusState.ALLOCATED -> {
-                    simVendorAdapter.confirmOrder(client, config, dao, eid, simEntry)
-                }
-                /* ESIM already 'released'. */
-                else -> {
-                    simEntry
-                }
+        return when (simEntry.smdpPlusState) {
+            SmDpPlusState.AVAILABLE -> {
+                simVendorAdapter.activate(client, config, dao, eid, simEntry)
             }
-        } catch (e: Exception) {
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
+            SmDpPlusState.ALLOCATED -> {
+                simVendorAdapter.confirmOrder(client, config, dao, eid, simEntry)
+            }
+            /* ESIM already 'released'. */
+            else -> {
+                simEntry
+            }
         }
     }
 
