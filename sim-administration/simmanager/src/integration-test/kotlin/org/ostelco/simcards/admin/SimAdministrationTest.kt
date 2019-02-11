@@ -143,6 +143,18 @@ class SimAdministrationTest {
         assertThat(response.status).isEqualTo(200)
     }
 
+    /* XXX SM-DP+ emuluator must be extended to support the 'getProfileStatus'
+       message before this test can be enabled. */
+    @Test
+    @Ignore
+    fun testGetProfileStatus() {
+        val iccid = "8901000000000000001"
+        val response = client.target("${simManagerEndpoint}/${hlr}/profileStatusList/${iccid}")
+                .request()
+                .get()
+        assertThat(response.status).isEqualTo(200)
+    }
+
     @Test
     fun testActivateWithHlr() {
         val iccid = "8901000000000000001"

@@ -2,6 +2,7 @@ package org.ostelco.simcards.inventory
 
 import com.fasterxml.jackson.databind.JsonSerializer
 import org.hibernate.validator.constraints.NotEmpty
+import org.ostelco.sim.es2plus.ProfileStatus
 import org.ostelco.simcards.admin.HlrConfig
 import org.ostelco.simcards.admin.SimAdministrationConfiguration
 import org.ostelco.simcards.admin.ProfileVendorConfig
@@ -30,6 +31,25 @@ class SimInventoryResource(private val client: Client,
                 return v
             }
         }
+    }
+
+    @GET
+    @Path("profileStatusList/{iccid}")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun getSimProfileStatus(
+            @NotEmpty @PathParam("hlrVendors") hlr: String,
+            @NotEmpty @PathParam("iccid") iccid: String): ProfileStatus? {
+        val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
+        val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
+        assertCorrectHlr(hlr, hlr == hlrAdapter.name)
+
+        val simVendorAdapter = assertNonNull(dao.getProfileVendorAdapterById(
+                simEntry.profileVendorId))
+        val config: ProfileVendorConfig = assertNonNull(config.profileVendors.filter {
+            it.name == simVendorAdapter.name
+        }.firstOrNull())
+
+        return simVendorAdapter.getProfileStatus(client, config, iccid)
     }
 
     @GET
