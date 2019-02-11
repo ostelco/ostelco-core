@@ -22,6 +22,8 @@ import org.ostelco.ocs.api.*;
 import org.ostelco.ocsgw.OcsServer;
 import org.ostelco.ocsgw.datasource.DataSource;
 import org.ostelco.ocsgw.metrics.OcsgwMetrics;
+import org.ostelco.ocsgw.utils.EventConsumer;
+import org.ostelco.ocsgw.utils.EventProducer;
 import org.ostelco.prime.metrics.api.OcsgwAnalyticsReport;
 import org.ostelco.prime.metrics.api.User;
 import org.slf4j.Logger;
@@ -61,11 +63,15 @@ public class GrpcDataSource implements DataSource {
 
     private static final int MAX_ENTRIES = 50000;
 
-    Set<String> blocked = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private Set<String> blocked = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     private final ConcurrentHashMap<String, CreditControlContext> ccrMap = new ConcurrentHashMap<>(MAX_ENTRIES, .75F);
 
     private final ConcurrentHashMap<String, SessionContext> sessionIdMap = new ConcurrentHashMap<>(MAX_ENTRIES, .75F);
+
+    private final ConcurrentLinkedQueue<CreditControlRequestInfo> requestQueue = new ConcurrentLinkedQueue<>();
+
+    private final EventProducer<CreditControlRequestInfo> producer;
 
 
     /**
@@ -107,6 +113,8 @@ public class GrpcDataSource implements DataSource {
                 .withCallCredentials(MoreCallCredentials.from(credentials));
 
         ocsgwAnalytics = new OcsgwMetrics(metricsServerHostname, credentials);
+
+        producer = new EventProducer<>(requestQueue);
     }
 
     @Override
@@ -116,6 +124,9 @@ public class GrpcDataSource implements DataSource {
         initActivate();
         initKeepAlive();
         ocsgwAnalytics.initAnalyticsRequest();
+
+        EventConsumer<CreditControlRequestInfo> requestInfoConsumer = new EventConsumer<>(requestQueue, creditControlRequest);
+        new Thread(requestInfoConsumer).start();
     }
 
 
@@ -189,7 +200,7 @@ public class GrpcDataSource implements DataSource {
                     final CreditControlRequestInfo ccr = CreditControlRequestInfo.newBuilder()
                             .setType(CreditControlRequestType.NONE)
                             .build();
-                    creditControlRequest.onNext(ccr);
+                    producer.queueEvent(ccr);
                 },
                 15,
                 50,
@@ -335,25 +346,12 @@ public class GrpcDataSource implements DataSource {
 
         LOG.info("[>>] creditControlRequest for {}", context.getCreditControlRequest().getMsisdn());
 
+        // FixMe: We should handle conversion errors
         CreditControlRequestInfo creditControlRequestInfo = convertRequestToGrpc(context);
         if (creditControlRequestInfo != null) {
             ccrMap.put(context.getSessionId(), context);
             addToSessionMap(context);
-            sendRequest(creditControlRequestInfo);
-        } else {
-            // ToDo : Send diameter failure to P-GW.
-        }
-    }
-
-    private synchronized void sendRequest(CreditControlRequestInfo requestInfo) {
-        if (creditControlRequest != null) {
-            try {
-                creditControlRequest.onNext(requestInfo);
-            } catch (Exception e) {
-                LOG.error("Failed to send Request", e);
-            }
-        } else {
-            LOG.warn("[!!] creditControlRequest is null");
+            producer.queueEvent(creditControlRequestInfo);
         }
     }
 
