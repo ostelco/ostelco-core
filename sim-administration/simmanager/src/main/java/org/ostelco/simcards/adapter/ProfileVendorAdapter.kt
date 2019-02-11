@@ -78,7 +78,7 @@ data class ProfileVendorAdapter (
 
         if (response.status != 200) {
             throw WebApplicationException(
-                    String.format("Order download to SM-DP+ service %s for ICCID %s failed with status code %d (call-id: %s)",
+                    String.format("SM-DP+ 'order-download' message to service %s for ICCID %s failed with status code %d (call-id: %s)",
                             config.name,
                             simEntry.iccid,
                             response.status,
@@ -90,14 +90,14 @@ data class ProfileVendorAdapter (
 
         return if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess)
             throw WebApplicationException(
-                    String.format("Order download to SM-DP+ service %s for ICCID %s failed with execution status %s (call-id: %s)",
+                    String.format("SM-DP+ 'order-download' message to service %s for ICCID %s failed with execution status %s (call-id: %s)",
                             config.name,
                             simEntry.iccid,
                             status.header.functionExecutionStatus,
                             header.functionCallIdentifier),
                     Response.Status.BAD_REQUEST)
         else {
-            logger.info("Order download message to SM-DP+ service {} for ICCID {} completed OK (call-id: {})",
+            logger.info("SM-DP+ 'order-download' message to service {} for ICCID {} completed OK (call-id: {})",
                     config.name,
                     simEntry.iccid,
                     header.functionCallIdentifier)
@@ -136,7 +136,7 @@ data class ProfileVendorAdapter (
 
         if (response.status != 200) {
             throw WebApplicationException(
-                    String.format("Order confirm messageto SM-DP+ service %s for ICCID %s failed with status code %d (call-id: %s)",
+                    String.format("SM-DP+ 'order-confirm' message to service %s for ICCID %s failed with status code %d (call-id: %s)",
                             config.name,
                             simEntry.iccid,
                             response.status,
@@ -148,7 +148,7 @@ data class ProfileVendorAdapter (
 
         return if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess)
             throw WebApplicationException(
-                    String.format("Order confirm message to SM-DP+ service %s for ICCID %s failed with execution status %s (call-id: %s)",
+                    String.format("SM-DP+ 'order-confirm' message to service %s for ICCID %s failed with execution status %s (call-id: %s)",
                             config.name,
                             simEntry.iccid,
                             status.header.functionExecutionStatus,
@@ -157,7 +157,7 @@ data class ProfileVendorAdapter (
         else {
             // XXX Is just logging good enough?
             if (status.eid?.isEmpty()!!) {
-                logger.warn("No EID returned from SM-DP+ service {} for ICCID {} for order confirm message (call-id: {})",
+                logger.warn("No EID returned from service {} for ICCID {} for SM-DP+ 'order-confirm' message (call-id: {})",
                         config.name,
                         simEntry.iccid,
                         header.functionCallIdentifier)
@@ -165,13 +165,13 @@ data class ProfileVendorAdapter (
                 dao.setEidOfSimProfile(simEntry.id!!, status.eid!!)
             }
             if (!eid.isNullOrEmpty() && eid != status.eid) {
-                logger.warn("EID returned from SM-DP+ service {} does not match provided EID ({} <> {}) in order confirm message (call-id: {})",
+                logger.warn("EID returned from service {} does not match provided EID ({} <> {}) in SM-DP+ 'order-confirm' message (call-id: {})",
                         config.name,
                         eid,
                         status.eid,
                         header.functionCallIdentifier)
             }
-            logger.info("Order confirm message to SM-DP+ service {} for ICCID {} completed OK (call-id: {})",
+            logger.info("SM-DP+ 'order-confirm' message to service {} for ICCID {} completed OK (call-id: {})",
                     config.name,
                     simEntry.iccid,
                     header.functionCallIdentifier)
@@ -234,7 +234,7 @@ data class ProfileVendorAdapter (
 
         if (response.status != 200) {
             throw WebApplicationException(
-                    String.format("The SM-DP+ 'profile-status' message to service %s for ICCID %s failed with status code %d (call-id: %s)",
+                    String.format("SM-DP+ 'profile-status' message to service %s for ICCID %s failed with status code %d (call-id: %s)",
                             config.name,
                             iccidList.joinToString(prefix = "[", postfix = "]"),
                             response.status,
@@ -246,14 +246,14 @@ data class ProfileVendorAdapter (
 
         return if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess)
             throw WebApplicationException(
-                    String.format("The SM-DP+ 'profile-status' message to service %s for ICCID %s failed with execution status %s (call-id: %s)",
+                    String.format("SM-DP+ 'profile-status' message to service %s for ICCID %s failed with execution status %s (call-id: %s)",
                             config.name,
                             iccidList.joinToString(prefix = "[", postfix = "]"),
                             status.header.functionExecutionStatus,
                             header.functionCallIdentifier),
                     Response.Status.BAD_REQUEST)
         else {
-            logger.info("The SM-DP+ 'profile-status' message to service {} for ICCID {} completed OK (call-id: {})",
+            logger.info("SM-DP+ 'profile-status' message to service {} for ICCID {} completed OK (call-id: {})",
                     config.name,
                     iccidList.joinToString(prefix = "[", postfix = "]"),
                     header.functionCallIdentifier)
