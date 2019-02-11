@@ -23,3 +23,24 @@ paths:
           description: "Failed to process event report."
         500:
           description: "Unexpected error."
+  "/ekyc/callback":
+    post:
+      description: "Endpoint for event reports from eKYC."
+      produces:
+        - application/json
+      operationId: "handleCallback"
+      responses:
+        200:
+          description: "Event report processed successfully."
+        400:
+          description: "Failed to process event report."
+        500:
+          description: "Unexpected error."
+      security:
+        - api_key: []
+securityDefinitions:
+  # This section configures basic authentication with an API key.
+  api_key:
+    type: "apiKey"
+    name: "key"
+    in: "query"
