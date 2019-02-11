@@ -22,6 +22,8 @@ import org.ostelco.ocs.api.*;
 import org.ostelco.ocsgw.OcsServer;
 import org.ostelco.ocsgw.datasource.DataSource;
 import org.ostelco.ocsgw.metrics.OcsgwMetrics;
+import org.ostelco.ocsgw.utils.EventConsumer;
+import org.ostelco.ocsgw.utils.EventProducer;
 import org.ostelco.prime.metrics.api.OcsgwAnalyticsReport;
 import org.ostelco.prime.metrics.api.User;
 import org.slf4j.Logger;
@@ -33,11 +35,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+
+import static org.ostelco.ocsgw.datasource.grpc.GrpcDiameterConverter.convertRequestToGrpc;
 
 
 /**
@@ -48,8 +48,6 @@ public class GrpcDataSource implements DataSource {
     private static final Logger LOG = LoggerFactory.getLogger(GrpcDataSource.class);
 
     private final OcsServiceGrpc.OcsServiceStub ocsServiceStub;
-
-    private final Set<String> blocked = new HashSet<>();
 
     private StreamObserver<CreditControlRequestInfo> creditControlRequest;
 
@@ -65,19 +63,15 @@ public class GrpcDataSource implements DataSource {
 
     private static final int MAX_ENTRIES = 50000;
 
-    private final LinkedHashMap<String, CreditControlContext> ccrMap = new LinkedHashMap<String, CreditControlContext>(MAX_ENTRIES, .75F) {
-        @Override
-        protected boolean removeEldestEntry(Map.Entry<String, CreditControlContext> eldest) {
-            return size() > MAX_ENTRIES;
-        }
-    };
+    private Set<String> blocked = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-    private final LinkedHashMap<String, SessionContext> sessionIdMap = new LinkedHashMap<String, SessionContext>(MAX_ENTRIES, .75F) {
-        @Override
-        protected boolean removeEldestEntry(Map.Entry<String, SessionContext> eldest) {
-            return size() > MAX_ENTRIES;
-        }
-    };
+    private final ConcurrentHashMap<String, CreditControlContext> ccrMap = new ConcurrentHashMap<>(MAX_ENTRIES, .75F);
+
+    private final ConcurrentHashMap<String, SessionContext> sessionIdMap = new ConcurrentHashMap<>(MAX_ENTRIES, .75F);
+
+    private final ConcurrentLinkedQueue<CreditControlRequestInfo> requestQueue = new ConcurrentLinkedQueue<>();
+
+    private final EventProducer<CreditControlRequestInfo> producer;
 
 
     /**
@@ -119,6 +113,8 @@ public class GrpcDataSource implements DataSource {
                 .withCallCredentials(MoreCallCredentials.from(credentials));
 
         ocsgwAnalytics = new OcsgwMetrics(metricsServerHostname, credentials);
+
+        producer = new EventProducer<>(requestQueue);
     }
 
     @Override
@@ -128,6 +124,9 @@ public class GrpcDataSource implements DataSource {
         initActivate();
         initKeepAlive();
         ocsgwAnalytics.initAnalyticsRequest();
+
+        EventConsumer<CreditControlRequestInfo> requestInfoConsumer = new EventConsumer<>(requestQueue, creditControlRequest);
+        new Thread(requestInfoConsumer).start();
     }
 
 
@@ -201,7 +200,7 @@ public class GrpcDataSource implements DataSource {
                     final CreditControlRequestInfo ccr = CreditControlRequestInfo.newBuilder()
                             .setType(CreditControlRequestType.NONE)
                             .build();
-                    creditControlRequest.onNext(ccr);
+                    producer.queueEvent(ccr);
                 },
                 15,
                 50,
@@ -254,7 +253,7 @@ public class GrpcDataSource implements DataSource {
     }
 
 
-    private synchronized void handleGrpcCcrAnswer(CreditControlAnswerInfo answer) {
+    private void handleGrpcCcrAnswer(CreditControlAnswerInfo answer) {
         try {
             LOG.info("[<<] CreditControlAnswer for {}", answer.getMsisdn());
             final CreditControlContext ccrContext = ccrMap.remove(answer.getRequestId());
@@ -343,78 +342,16 @@ public class GrpcDataSource implements DataSource {
     }
 
     @Override
-    public synchronized void handleRequest(final CreditControlContext context) {
-        ccrMap.put(context.getSessionId(), context);
-        addToSessionMap(context);
+    public void handleRequest(final CreditControlContext context) {
+
         LOG.info("[>>] creditControlRequest for {}", context.getCreditControlRequest().getMsisdn());
 
-        if (creditControlRequest != null) {
-            try {
-                CreditControlRequestInfo.Builder builder = CreditControlRequestInfo
-                        .newBuilder()
-                        .setType(GrpcDiameterConverter.getRequestType(context));
-
-                for (MultipleServiceCreditControl mscc : context.getCreditControlRequest().getMultipleServiceCreditControls()) {
-
-                    org.ostelco.ocs.api.MultipleServiceCreditControl.Builder protoMscc = org.ostelco.ocs.api.MultipleServiceCreditControl.newBuilder();
-
-                    if (!mscc.getRequested().isEmpty()) {
-
-                        org.ostelco.diameter.model.ServiceUnit requested = mscc.getRequested().get(0);
-
-                        protoMscc.setRequested(ServiceUnit.newBuilder()
-                                .setInputOctets(0L)
-                                .setOutputOctetes(0L)
-                                .setTotalOctets(requested.getTotal())
-                                .build());
-                    }
-
-                    org.ostelco.diameter.model.ServiceUnit used = mscc.getUsed();
-
-                    protoMscc.setUsed(ServiceUnit.newBuilder()
-                            .setInputOctets(used.getInput())
-                            .setOutputOctetes(used.getOutput())
-                            .setTotalOctets(used.getTotal())
-                            .build());
-
-                    protoMscc.setRatingGroup(mscc.getRatingGroup());
-                    protoMscc.setServiceIdentifier(mscc.getServiceIdentifier());
-
-                    if (mscc.getReportingReason() != null) {
-                        protoMscc.setReportingReasonValue(mscc.getReportingReason().ordinal());
-                    } else {
-                        protoMscc.setReportingReasonValue(ReportingReason.UNRECOGNIZED.ordinal());
-                    }
-                    builder.addMscc(protoMscc.build());
-                }
-
-                builder.setRequestId(context.getSessionId())
-                        .setMsisdn(context.getCreditControlRequest().getMsisdn())
-                        .setImsi(context.getCreditControlRequest().getImsi());
-
-                if (!context.getCreditControlRequest().getServiceInformation().isEmpty()) {
-                    final org.ostelco.diameter.model.PsInformation psInformation
-                            = context.getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0);
-
-                    if (psInformation != null
-                            && psInformation.getCalledStationId() != null
-                            && psInformation.getSgsnMccMnc() != null) {
-
-                        builder.setServiceInformation(
-                                ServiceInfo.newBuilder()
-                                        .setPsInformation(PsInformation.newBuilder()
-                                                .setCalledStationId(psInformation.getCalledStationId())
-                                                .setSgsnMccMnc(psInformation.getSgsnMccMnc())
-                                                .build()).build());
-                    }
-                }
-                creditControlRequest.onNext(builder.build());
-
-            } catch (Exception e) {
-                LOG.error("What just happened", e);
-            }
-        } else {
-            LOG.warn("[!!] creditControlRequest is null");
+        // FixMe: We should handle conversion errors
+        CreditControlRequestInfo creditControlRequestInfo = convertRequestToGrpc(context);
+        if (creditControlRequestInfo != null) {
+            ccrMap.put(context.getSessionId(), context);
+            addToSessionMap(context);
+            producer.queueEvent(creditControlRequestInfo);
         }
     }
 

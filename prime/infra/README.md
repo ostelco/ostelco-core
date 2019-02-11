@@ -241,6 +241,55 @@ kubectl create secret generic jumio-secrets --from-literal=apiToken='jumioApiTok
 kubectl create secret generic scaninfo-secrets --from-literal=bucketName='bucketname'
 ```
 
+### Keysets for scan information store
+
+The keys are generated using `Tinkey` tool provied as part of the google tink project
+More information can be found here: https://github.com/google/tink/blob/v1.2.2/docs/TINKEY.md
+
+To create a new private key set for testing
+```bash
+bazel-bin/tools/tinkey/tinkey create-keyset --key-template ECIES_P256_HKDF_HMAC_SHA256_AES128_GCM --out test_keyset_pvt_cltxt
+```
+ Generate a public key set from the above private keyset.
+```bash
+bazel-bin/tools/tinkey/tinkey create-public-keyset --in test_keyset_pvt_cltxt --out test_keyset_pub_cltxt
+```
+
+The keysets for production (public key only) needs to be encrypted using GCP KMS. More details can be found in docs for `--master-key-uri` option in `tinkey`
+
+- Create Key ring and master key to be used for encrypting the public keys
+    ```bash
+    gcloud kms keyrings create scan-dev --location global
+    gcloud kms keys create scan-info --location global --keyring scan-dev --purpose encryption
+    ```
+
+- Set the master key URI for decrypting the keysets.
+    ```bash
+    kubectl create secret generic scaninfo-keys --from-literal=masterKeyUri='gcp-kms://projects/pantel-2decb/locations/global/keyRings/scan-dev/cryptoKeys/scan-info'
+    ```
+- Create keysets for an environment. Use `tinkey` to generate
+    ```bash
+    bazel-bin/tools/tinkey/tinkey create-keyset --key-template ECIES_P256_HKDF_HMAC_SHA256_AES128_GCM --out clear_encrypt_key_global_pvt
+    bazel-bin/tools/tinkey/tinkey create-public-keyset --in clear_encrypt_key_global_pvt --out clear_encrypt_key_global_pub
+    bazel-bin/tools/tinkey/tinkey convert-keyset --out encrypt_key_global --in clear_encrypt_key_global_pub \
+    --new-master-key-uri gcp-kms://projects/pantel-2decb/locations/global/keyRings/scan-dev/cryptoKeys/scan-info
+    
+    bazel-bin/tools/tinkey/tinkey create-keyset --key-template ECIES_P256_HKDF_HMAC_SHA256_AES128_GCM --out clear_encrypt_key_sgp_pvt
+    bazel-bin/tools/tinkey/tinkey create-public-keyset --in clear_encrypt_key_sgp_pvt --out clear_encrypt_key_sgp_pub
+    bazel-bin/tools/tinkey/tinkey convert-keyset --out encrypt_key_sgp --in clear_encrypt_key_sgp_pub \
+    --new-master-key-uri gcp-kms://projects/pantel-2decb/locations/global/keyRings/scan-dev/cryptoKeys/scan-info
+    ```
+- Set the encryption keysets (public keys only) as kubernetes secrets.
+    ```bash
+    kubectl create secret generic scaninfo-keysets \
+      --from-file=./encrypt_key_global \
+      --from-file=./encrypt_key_sgp
+    ```
+Prime will use CloudKMS (through tink library) to decrypt the keysets. It requires an IAM role to enable these APIs.
+```bash
+gcloud projects add-iam-policy-binding pantel-2decb --member serviceAccount:prime-service-account@pantel-2decb.iam.gserviceaccount.com  --role roles/cloudkms.cryptoKeyEncrypterDecrypter
+```
+
 ### Cloud Pub/Sub
 
 ```bash

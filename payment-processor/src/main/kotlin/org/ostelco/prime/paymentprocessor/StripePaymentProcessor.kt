@@ -32,16 +32,16 @@ import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
 import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 
 
 class StripePaymentProcessor : PaymentProcessor {
 
     private val logger by getLogger()
 
-    override fun getSavedSources(customerId: String): Either<PaymentError, List<SourceDetailsInfo>> =
-            either("Failed to retrieve sources for customer $customerId") {
-                val customer = Customer.retrieve(customerId)
+    override fun getSavedSources(stripeCustomerId: String): Either<PaymentError, List<SourceDetailsInfo>> =
+            either("Failed to retrieve sources for customer $stripeCustomerId") {
+                val customer = Customer.retrieve(stripeCustomerId)
                 val sources: List<SourceDetailsInfo> = customer.sources.data.map {
                     val details = getAccountDetails(it)
                     SourceDetailsInfo(it.id, getAccountType(details), details)
@@ -114,20 +114,22 @@ class StripePaymentProcessor : PaymentProcessor {
         return System.currentTimeMillis() / 1000L
     }
 
-    override fun createPaymentProfile(userEmail: String): Either<PaymentError, ProfileInfo> =
-            either("Failed to create profile for user $userEmail") {
-                val customerParams = mapOf("email" to userEmail)
+    override fun createPaymentProfile(customerId: String): Either<PaymentError, ProfileInfo> =
+            either("Failed to create profile for user $customerId") {
+                val customerParams = mapOf(
+                        "email" to "$customerId@ostelco.org",
+                        "metadata" to mapOf("customerId" to customerId))
                 ProfileInfo(Customer.create(customerParams).id)
             }
 
-    override fun getPaymentProfile(userEmail: String): Either<PaymentError, ProfileInfo> {
+    override fun getPaymentProfile(customerId: String): Either<PaymentError, ProfileInfo> {
         val customerParams = mapOf(
                 "limit" to "1",
-                "email" to userEmail)
+                "email" to "$customerId@ostelco.org")
         val customerList = Customer.list(customerParams)
         return when {
-            customerList.data.isEmpty() -> Either.left(NotFoundError("Could not find a payment profile for user $userEmail"))
-            customerList.data.size > 1 -> Either.left(NotFoundError("Multiple profiles for user $userEmail found"))
+            customerList.data.isEmpty() -> Either.left(NotFoundError("Could not find a payment profile for user $customerId"))
+            customerList.data.size > 1 -> Either.left(NotFoundError("Multiple profiles for user $customerId found"))
             else -> Either.right(ProfileInfo(customerList.data.first().id))
         }
     }
@@ -166,38 +168,38 @@ class StripePaymentProcessor : PaymentProcessor {
                 ProductInfo(product.delete().id)
             }
 
-    override fun addSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo> =
-            either("Failed to add source $sourceId to customer $customerId") {
-                val customer = Customer.retrieve(customerId)
-                val sourceParams = mapOf("source" to sourceId,
+    override fun addSource(stripeCustomerId: String, stripeSourceId: String): Either<PaymentError, SourceInfo> =
+            either("Failed to add source $stripeSourceId to customer $stripeCustomerId") {
+                val customer = Customer.retrieve(stripeCustomerId)
+                val sourceParams = mapOf("source" to stripeSourceId,
                         "metadata" to mapOf("created" to getSecondsSinceEpoch()))
                 SourceInfo(customer.sources.create(sourceParams).id)
             }
 
-    override fun setDefaultSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo> =
-            either("Failed to set default source $sourceId for customer $customerId") {
-                val customer = Customer.retrieve(customerId)
+    override fun setDefaultSource(stripeCustomerId: String, sourceId: String): Either<PaymentError, SourceInfo> =
+            either("Failed to set default source $sourceId for customer $stripeCustomerId") {
+                val customer = Customer.retrieve(stripeCustomerId)
                 val updateParams = mapOf("default_source" to sourceId)
                 val customerUpdated = customer.update(updateParams)
                 SourceInfo(customerUpdated.defaultSource)
             }
 
-    override fun getDefaultSource(customerId: String): Either<PaymentError, SourceInfo> =
-            either("Failed to get default source for customer $customerId") {
-                SourceInfo(Customer.retrieve(customerId).defaultSource)
+    override fun getDefaultSource(stripeCustomerId: String): Either<PaymentError, SourceInfo> =
+            either("Failed to get default source for customer $stripeCustomerId") {
+                SourceInfo(Customer.retrieve(stripeCustomerId).defaultSource)
             }
 
-    override fun deletePaymentProfile(customerId: String): Either<PaymentError, ProfileInfo> =
-            either("Failed to delete customer $customerId") {
-                val customer = Customer.retrieve(customerId)
+    override fun deletePaymentProfile(stripeCustomerId: String): Either<PaymentError, ProfileInfo> =
+            either("Failed to delete customer $stripeCustomerId") {
+                val customer = Customer.retrieve(stripeCustomerId)
                 ProfileInfo(customer.delete().id)
             }
 
-    override fun createSubscription(planId: String, customerId: String, trialEnd: Long): Either<PaymentError, SubscriptionInfo> =
-            either("Failed to subscribe customer $customerId to plan $planId") {
+    override fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long): Either<PaymentError, SubscriptionInfo> =
+            either("Failed to subscribe customer $stripeCustomerId to plan $planId") {
                 val item =  mapOf("plan" to planId)
                 val subscriptionParams = mapOf(
-                        "customer" to customerId,
+                        "customer" to stripeCustomerId,
                         "items" to mapOf("0" to item),
                         *( if (trialEnd > Instant.now().epochSecond)
                                arrayOf("trial_end" to trialEnd.toString())
@@ -274,9 +276,9 @@ class StripePaymentProcessor : PaymentProcessor {
                 }
             }
 
-    override fun removeSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo> =
-            either("Failed to remove source $sourceId from customer $customerId") {
-                val accountInfo = Customer.retrieve(customerId).sources.retrieve(sourceId)
+    override fun removeSource(stripeCustomerId: String, sourceId: String): Either<PaymentError, SourceInfo> =
+            either("Failed to remove source $sourceId for stripeCustomerId $stripeCustomerId") {
+                val accountInfo = Customer.retrieve(stripeCustomerId).sources.retrieve(sourceId)
                 when (accountInfo) {
                     is Card -> accountInfo.delete()
                     is Source -> accountInfo.detach()
@@ -286,10 +288,10 @@ class StripePaymentProcessor : PaymentProcessor {
                 SourceInfo(sourceId)
             }
 
-    override fun getStripeEphemeralKey(userEmail: String, apiVersion: String): Either<PaymentError, String> =
-            getPaymentProfile(userEmail)
+    override fun getStripeEphemeralKey(customerId: String, apiVersion: String): Either<PaymentError, String> =
+            getPaymentProfile(customerId)
                     .fold(
-                            { createPaymentProfile(userEmail) },
+                            { createPaymentProfile(customerId) },
                             { profileInfo -> profileInfo.right() }
                     ).flatMap { profileInfo ->
                         either("Failed to create stripe ephemeral key") {

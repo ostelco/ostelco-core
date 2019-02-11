@@ -1,9 +1,9 @@
 package org.ostelco.tools.migration
 
-import org.ostelco.prime.model.Subscriber
+import org.ostelco.prime.model.Customer
 
 
-fun createSubscriber(subscriber: Subscriber) = """
+fun createSubscriber(subscriber: Customer) = """
 CREATE(node:Subscriber {id:         '${subscriber.email}',
                         `email`: '${subscriber.email}',
                         `name`: '${subscriber.name}',

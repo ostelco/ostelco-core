@@ -4,6 +4,7 @@ import io.dropwizard.auth.Auth
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.jsonmapper.asJson
+import org.ostelco.prime.model.Identity
 import javax.ws.rs.GET
 import javax.ws.rs.Path
 import javax.ws.rs.Produces
@@ -20,9 +21,11 @@ class ReferralResource(private val dao: SubscriberDAO) {
             return Response.status(Response.Status.UNAUTHORIZED).build()
         }
 
-        return dao.getReferrals(token.name).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.OK).entity(it) })
+        return dao.getReferrals(
+                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider))
+                .fold(
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                        { Response.status(Response.Status.OK).entity(it) })
                 .build()
     }
 
@@ -34,9 +37,11 @@ class ReferralResource(private val dao: SubscriberDAO) {
             return Response.status(Response.Status.UNAUTHORIZED).build()
         }
 
-        return dao.getReferredBy(token.name).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.OK).entity(it) })
+        return dao.getReferredBy(
+                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider))
+                .fold(
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                        { Response.status(Response.Status.OK).entity(it) })
                 .build()
     }
 }

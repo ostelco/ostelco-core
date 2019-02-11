@@ -4,10 +4,20 @@ import arrow.core.Either
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.client.api.model.Consent
 import org.ostelco.prime.client.api.model.Person
-import org.ostelco.prime.model.*
+import org.ostelco.prime.model.ActivePseudonyms
+import org.ostelco.prime.model.ApplicationToken
+import org.ostelco.prime.model.Bundle
+import org.ostelco.prime.model.Customer
+import org.ostelco.prime.model.CustomerState
+import org.ostelco.prime.model.Identity
+import org.ostelco.prime.model.Product
+import org.ostelco.prime.model.PurchaseRecord
+import org.ostelco.prime.model.ScanInformation
+import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
 import org.ostelco.prime.paymentprocessor.core.SourceInfo
+import org.ostelco.prime.storage.StoreError
 
 
 /**
@@ -15,64 +25,64 @@ import org.ostelco.prime.paymentprocessor.core.SourceInfo
  */
 interface SubscriberDAO {
 
-    fun getProfile(subscriberId: String): Either<ApiError, Subscriber>
+    fun getProfile(identity: Identity): Either<ApiError, Customer>
 
-    fun createProfile(subscriberId: String, profile: Subscriber, referredBy: String?): Either<ApiError, Subscriber>
+    fun createProfile(identity: Identity, profile: Customer, referredBy: String?): Either<ApiError, Customer>
 
-    fun updateProfile(subscriberId: String, profile: Subscriber): Either<ApiError, Subscriber>
+    fun updateProfile(identity: Identity, profile: Customer): Either<ApiError, Customer>
 
-    fun getSubscriptions(subscriberId: String): Either<ApiError, Collection<Subscription>>
+    fun getSubscriptions(identity: Identity): Either<ApiError, Collection<Subscription>>
 
-    fun getBundles(subscriberId: String): Either<ApiError, Collection<Bundle>>
+    fun getBundles(identity: Identity): Either<ApiError, Collection<Bundle>>
 
-    fun getPurchaseHistory(subscriberId: String): Either<ApiError, Collection<PurchaseRecord>>
+    fun getPurchaseHistory(identity: Identity): Either<ApiError, Collection<PurchaseRecord>>
 
-    fun getProduct(subscriptionId: String, sku: String): Either<ApiError, Product>
+    fun getProduct(identity: Identity, sku: String): Either<ApiError, Product>
 
-    fun getMsisdn(subscriberId: String): Either<ApiError, String>
+    fun getProducts(identity: Identity): Either<ApiError, Collection<Product>>
 
-    fun getProducts(subscriberId: String): Either<ApiError, Collection<Product>>
+    fun purchaseProduct(identity: Identity, sku: String, sourceId: String?, saveCard: Boolean): Either<ApiError, ProductInfo>
 
-    fun purchaseProduct(subscriberId: String, sku: String, sourceId: String?, saveCard: Boolean): Either<ApiError, ProductInfo>
+    fun getConsents(identity: Identity): Either<ApiError, Collection<Consent>>
 
-    fun getConsents(subscriberId: String): Either<ApiError, Collection<Consent>>
+    fun acceptConsent(identity: Identity, consentId: String): Either<ApiError, Consent>
 
-    fun acceptConsent(subscriberId: String, consentId: String): Either<ApiError, Consent>
+    fun rejectConsent(identity: Identity, consentId: String): Either<ApiError, Consent>
 
-    fun rejectConsent(subscriberId: String, consentId: String): Either<ApiError, Consent>
+    fun reportAnalytics(identity: Identity, events: String): Either<ApiError, Unit>
 
-    fun reportAnalytics(subscriberId: String, events: String): Either<ApiError, Unit>
+    fun storeApplicationToken(customerId: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken>
 
-    fun storeApplicationToken(msisdn: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken>
+    fun getReferrals(identity: Identity): Either<ApiError, Collection<Person>>
 
-    fun getReferrals(subscriberId: String): Either<ApiError, Collection<Person>>
+    fun getReferredBy(identity: Identity): Either<ApiError, Person>
 
-    fun getReferredBy(subscriberId: String): Either<ApiError, Person>
+    fun createSource(identity: Identity, sourceId: String): Either<ApiError, SourceInfo>
 
-    fun createSource(subscriberId: String, sourceId: String): Either<ApiError, SourceInfo>
+    fun setDefaultSource(identity: Identity, sourceId: String): Either<ApiError, SourceInfo>
 
-    fun setDefaultSource(subscriberId: String, sourceId: String): Either<ApiError, SourceInfo>
+    fun listSources(identity: Identity): Either<ApiError, List<SourceDetailsInfo>>
 
-    fun listSources(subscriberId: String): Either<ApiError, List<SourceDetailsInfo>>
+    fun removeSource(identity: Identity, sourceId: String): Either<ApiError, SourceInfo>
 
-    fun removeSource(subscriberId: String, sourceId: String): Either<ApiError, SourceInfo>
+    fun getActivePseudonymForSubscriber(identity: Identity): Either<ApiError, ActivePseudonyms>
 
-    fun getActivePseudonymForSubscriber(subscriberId: String): Either<ApiError, ActivePseudonyms>
+    fun getStripeEphemeralKey(identity: Identity, apiVersion: String): Either<ApiError, String>
 
-    fun getStripeEphemeralKey(subscriberId: String, apiVersion: String): Either<ApiError, String>
+    fun newEKYCScanId(identity: Identity, countryCode: String): Either<ApiError, ScanInformation>
 
-    fun newEKYCScanId(subscriberId: String): Either<ApiError, ScanInformation>
+    fun getCountryCodeForScan(scanId: String): Either<ApiError, String>
 
-    fun getScanInformation(subscriberId: String, scanId: String): Either<ApiError, ScanInformation>
+    fun getScanInformation(identity: Identity, scanId: String): Either<ApiError, ScanInformation>
 
-    fun getSubscriberState(subscriberId: String): Either<ApiError, SubscriberState>
+    fun getSubscriberState(identity: Identity): Either<ApiError, CustomerState>
 
     companion object {
 
         /**
          * Profile is only valid when name and email set.
          */
-        fun isValidProfile(profile: Subscriber?): Boolean {
+        fun isValidProfile(profile: Customer?): Boolean {
             return (profile != null
                     && !profile.name.isEmpty()
                     && !profile.email.isEmpty()

@@ -18,7 +18,8 @@ import org.ostelco.prime.auth.OAuthAuthenticator
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
 import org.ostelco.prime.jsonmapper.objectMapper
-import org.ostelco.prime.model.Subscriber
+import org.ostelco.prime.model.Customer
+import org.ostelco.prime.model.Identity
 import java.util.*
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
@@ -36,17 +37,17 @@ class ProfileResourceTest {
     private val postCode = "132 23"
     private val city = "Oslo"
 
-    private val profile = Subscriber(email)
+    private val profile = Customer(email = email)
 
     @Before
     fun setUp() {
         `when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
-                .thenReturn(Optional.of(AccessTokenPrincipal(email)))
+                .thenReturn(Optional.of(AccessTokenPrincipal(email, "email")))
     }
 
     @Test
     fun getProfile() {
-        val arg = argumentCaptor<String>()
+        val arg = argumentCaptor<Identity>()
 
         `when`(DAO.getProfile(arg.capture())).thenReturn(Either.right(profile))
 
@@ -58,14 +59,14 @@ class ProfileResourceTest {
         assertThat(resp.status).isEqualTo(Response.Status.OK.statusCode)
         assertThat(resp.mediaType.toString()).isEqualTo(MediaType.APPLICATION_JSON)
 
-        assertThat(resp.readEntity(Subscriber::class.java)).isEqualTo(profile)
-        assertThat(arg.firstValue).isEqualTo(email)
+        assertThat(resp.readEntity(Customer::class.java)).isEqualTo(profile)
+        assertThat(arg.firstValue).isEqualTo(Identity(email, "EMAIL", "email"))
     }
 
     @Test
     fun createProfile() {
-        val arg1 = argumentCaptor<String>()
-        val arg2 = argumentCaptor<Subscriber>()
+        val arg1 = argumentCaptor<Identity>()
+        val arg2 = argumentCaptor<Customer>()
         val arg3 = argumentCaptor<String>()
 
 
@@ -85,7 +86,7 @@ class ProfileResourceTest {
 
         assertThat(resp.status).isEqualTo(Response.Status.CREATED.statusCode)
         assertThat(resp.mediaType.toString()).isEqualTo(MediaType.APPLICATION_JSON)
-        assertThat(arg1.firstValue).isEqualTo(email)
+        assertThat(arg1.firstValue).isEqualTo(Identity(email, "EMAIL", "email"))
         assertThat(arg2.firstValue.email).isEqualTo(email)
         assertThat(arg2.firstValue.name).isEqualTo(name)
         assertThat(arg2.firstValue.address).isEqualTo(address)
@@ -96,8 +97,8 @@ class ProfileResourceTest {
 
     @Test
     fun createProfileWithReferral() {
-        val arg1 = argumentCaptor<String>()
-        val arg2 = argumentCaptor<Subscriber>()
+        val arg1 = argumentCaptor<Identity>()
+        val arg2 = argumentCaptor<Customer>()
         val arg3 = argumentCaptor<String>()
 
         val referredBy = "foo@bar.com"
@@ -119,7 +120,7 @@ class ProfileResourceTest {
 
         assertThat(resp.status).isEqualTo(Response.Status.CREATED.statusCode)
         assertThat(resp.mediaType.toString()).isEqualTo(MediaType.APPLICATION_JSON)
-        assertThat(arg1.firstValue).isEqualTo(email)
+        assertThat(arg1.firstValue).isEqualTo(Identity(email, "EMAIL", "email"))
         assertThat(arg2.firstValue.email).isEqualTo(email)
         assertThat(arg2.firstValue.name).isEqualTo(name)
         assertThat(arg2.firstValue.address).isEqualTo(address)
@@ -130,8 +131,8 @@ class ProfileResourceTest {
 
     @Test
     fun updateProfile() {
-        val arg1 = argumentCaptor<String>()
-        val arg2 = argumentCaptor<Subscriber>()
+        val arg1 = argumentCaptor<Identity>()
+        val arg2 = argumentCaptor<Customer>()
 
         val newAddress = "Storvej 10"
         val newPostCode = "132 23"
@@ -152,7 +153,7 @@ class ProfileResourceTest {
 
         assertThat(resp.status).isEqualTo(Response.Status.OK.statusCode)
         assertThat(resp.mediaType.toString()).isEqualTo(MediaType.APPLICATION_JSON)
-        assertThat(arg1.firstValue).isEqualTo(email)
+        assertThat(arg1.firstValue).isEqualTo(Identity(email, "EMAIL", "email"))
         assertThat(arg2.firstValue.email).isEqualTo(email)
         assertThat(arg2.firstValue.name).isEqualTo(name)
         assertThat(arg2.firstValue.address).isEqualTo(newAddress)

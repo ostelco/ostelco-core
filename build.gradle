@@ -54,6 +54,7 @@ subprojects {
     neo4jVersion="3.5.1"
     stripeVersion = "7.17.0"
     swaggerVersion = "2.0.6"
+    tinkVersion = "1.2.2"
   }
 }
 

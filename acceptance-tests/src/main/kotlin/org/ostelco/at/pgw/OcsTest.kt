@@ -4,7 +4,6 @@ import org.jdiameter.api.Avp
 import org.jdiameter.api.Session
 import org.junit.After
 import org.junit.Before
-import org.junit.BeforeClass
 import org.junit.Test
 import org.ostelco.at.common.createProfile
 import org.ostelco.at.common.createSubscription
@@ -109,7 +108,7 @@ class OcsTest {
 
         return get<List<Bundle>> {
             path = "/bundles"
-            subscriberId = EMAIL
+            email = EMAIL
         }.first().balance
     }
 

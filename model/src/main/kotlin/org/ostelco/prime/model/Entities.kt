@@ -1,11 +1,9 @@
 package org.ostelco.prime.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.cloud.datastore.Blob
 import com.google.firebase.database.Exclude
-import java.time.Instant
+import java.util.*
 
 interface HasId {
     val id: String
@@ -25,39 +23,35 @@ data class ChangeSegment(
         val targetSegmentId: String,
         val subscribers: Collection<String>)
 
-data class Subscriber(
+data class Customer(
+        override val id: String = UUID.randomUUID().toString(),
         val email: String,
         val name: String = "",
         val address: String = "",
         val postCode: String = "",
         val city: String = "",
         val country: String = "",
-        private val referralId: String = email) : HasId {
+        val referralId: String = UUID.randomUUID().toString()) : HasId
 
-    constructor(email: String): this(email = email, referralId = email)
+data class Identity(
+        override val id: String,
+        val type: String,
+        val provider: String) : HasId
 
-    fun getReferralId() = email
-
-    override val id: String
-        @JsonIgnore
-        get() = email
-}
-
-
-enum class SubscriberStatus {
+enum class CustomerStatus {
     REGISTERED,         // User has registered an account, eKYC results are pending
     EKYC_REJECTED,      // eKYC documents were rejected
     EKYC_APPROVED,      // eKYC documents were approved
     ACTIVE,             // Subscriber is active
-    INACTIVE            // Inactive subscriber
+    INACTIVE            // Inactive customer
 }
 
-data class SubscriberState(
-        val status: SubscriberStatus,   // Current status of the subscriber
-        val modifiedTimestamp: Long,    // last modification time of the subscriber status
+data class CustomerState(
+        val status: CustomerStatus,   // Current status of the customer
+        val modifiedTimestamp: Long,    // last modification time of the customer status
         val scanId: String?,            // id of the last successful scan.
         override val id: String
-): HasId
+) : HasId
 
 enum class ScanStatus {
     PENDING,        // scan results are pending
@@ -74,11 +68,11 @@ data class ScanResult(
         val firstName: String?,
         val lastName: String?,
         val dob: String?,
-        val rejectReason: String?
-)
+        val rejectReason: String?)
 
 data class ScanInformation(
         val scanId:String,
+        val countryCode: String,
         val status: ScanStatus,
         val scanResult: ScanResult?
 ) : HasId {
@@ -115,7 +109,13 @@ enum class JumioScanData(val s: String) {
     SCAN_IMAGE("idScanImage"),
     SCAN_IMAGE_FACE("idScanImageFace"),
     SCAN_IMAGE_BACKSIDE("idScanImageBackside"),
-    REJECT_REASON("rejectReason")
+    REJECT_REASON("rejectReason"),
+    IDENTITY_VERIFICATION("identityVerification"),
+    SIMILARITY("similarity"),
+    VALIDITY("validity"),
+    APPROVED_VERIFIED("APPROVED_VERIFIED"),
+    MATCH("MATCH"),
+    TRUE("TRUE")
 }
 
 enum class VendorScanData(val s: String) {

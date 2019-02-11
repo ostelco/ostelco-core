@@ -10,6 +10,92 @@ x-google-endpoints:
 schemes:
   - "https"
 paths:
+  "/customer/activePseudonyms":
+    get:
+      description: "Get currently active pseudonyms for the user (identified by bearer token)."
+      produces:
+        - application/json
+      operationId: "getActivePseudonyms"
+      responses:
+        200:
+          description: "Get active pseudonyms for the user."
+          schema:
+            $ref: '#/definitions/ActivePseudonyms'
+        404:
+          description: "User not found"
+      security:
+        - auth0_jwt: []
+  "/customer/stripe-ephemeral-key":
+    get:
+      description: "Get Stripe Ephemeral key."
+      produces:
+        - application/json
+      operationId: "getStripeEphemeralKey"
+      parameters:
+        - name: api_version
+          in: query
+          description: "Stripe API version"
+          type: string
+      responses:
+        200:
+          description: "Get Stripe Ephemeral key."
+          schema:
+            type: string
+        404:
+          description: "User not found."
+      security:
+        - auth0_jwt: []
+  "/customer/customerState":
+    get:
+      description: "Get state of the user."
+      produces:
+        - application/json
+      operationId: "getCustomerState"
+      responses:
+        200:
+          description: "Successfully retrieved the state."
+          schema:
+            $ref: '#/definitions/CustomerState'
+        404:
+          description: "No state information available for this user."
+      security:
+        - auth0_jwt: []
+  "/customer/new-ekyc-scanId":
+    get:
+      description: "Get a new Id for eKYC scanning."
+      produces:
+        - application/json
+      operationId: "newEKYCScanId"
+      responses:
+        200:
+          description: "Successfully retrieved new ScanId."
+          schema:
+            $ref: '#/definitions/ScanInformation'
+        404:
+          description: "User not found."
+      security:
+        - auth0_jwt: []
+  "/customer/scanStatus/{scanId}":
+    get:
+      description: "Get status of eKYC scan."
+      produces:
+        - application/json
+      operationId: "getScanStatus"
+      parameters:
+        - name: scanId
+          in: path
+          description: "Id of the scan being queried"
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Successfully retrieved Scan information."
+          schema:
+            $ref: '#/definitions/ScanInformation'
+        404:
+          description: "Scan not found."
+      security:
+        - auth0_jwt: []
   "/profile":
     get:
       description: "Get profile for the user (email-id present in the bearer token)."
@@ -101,7 +187,7 @@ paths:
           schema:
             $ref: '#/definitions/ApplicationToken'
         400:
-          descripton: "Token malformed. Not able to store"
+          description: "Token malformed. Not able to store"
         404:
           description: "User not found."
         507:
@@ -298,17 +384,17 @@ paths:
         - auth0_jwt: []
   "/subscription/activePseudonyms":
     get:
-      description: "Get currently active pseudonyms for the user's msisdn (identified by bearer token)."
+      description: "Get currently active pseudonyms for the user (identified by bearer token)."
       produces:
         - application/json
-      operationId: "getActivePseudonyms"
+      operationId: "getActivePseudonymsDeprecated"
       responses:
         200:
-          description: "Get active pseudonyms for the user's msisdn."
+          description: "Get active pseudonyms for the user."
           schema:
             $ref: '#/definitions/ActivePseudonyms'
         404:
-          description: "No subscription found for this user."
+          description: "User not found."
       security:
         - auth0_jwt: []
   "/referred":
@@ -406,6 +492,8 @@ definitions:
   Profile:
     type: object
     properties:
+      id:
+        type: string
       name:
         type: string
       address:
@@ -469,6 +557,8 @@ definitions:
         format: int64
       product:
         $ref: '#/definitions/Product'
+      refund:
+        $ref: '#/definitions/Refund'
     required:
       - timestamp
       - product
@@ -491,6 +581,31 @@ definitions:
     required:
       - sku
       - price
+  ProductInfo:
+    type: object
+    properties:
+      id:
+        description: "A unique Id representing a SKU"
+        type: string
+    required:
+    - id
+  Refund:
+    type: object
+    properties:
+      id:
+        description: "A unique Id representing a refund object"
+        type: string
+      reason:
+        description: "Reason provided while refunding"
+        type: string
+      timestamp:
+        description: "The time stamp of the refund"
+        type: integer
+        format: int64
+    required:
+    - id
+    - reason
+    - timestamp
   PaymentSourceList:
     type: array
     items:
@@ -596,6 +711,39 @@ definitions:
     required:
       - current
       - next
+  Plan:
+    type: object
+    properties:
+      name:
+        description: "An unique name representing the plan"
+        type: string
+      price:
+        $ref: '#/definitions/Price'
+      interval:
+        description: "The recurring period for the plan"
+        type: string
+        enum: [ day, week, month, year ]
+      intervalCount:
+        description: "Number of intervals in a period"
+        type: integer
+        default: 1
+        minimum: 1
+      properties:
+        description: "Free form key/value pairs"
+        type: object
+        additionalProperties: true
+      presentation:
+        description: "Pretty print version of plan"
+        type: object
+        additionalProperties: true
+    required:
+      - name
+      - price
+      - interval
+  PlanList:
+    type: array
+    items:
+      $ref: '#/definitions/Plan'
   GraphQLRequest:
     type: object
     properties:
@@ -608,11 +756,50 @@ definitions:
       variables:
         description: "GraphQL query variables."
         type: object
+  CustomerState:
+    type: object
+    properties:
+      id:
+        description: "User Id"
+        type: string
+      scanId:
+        description: "The id for the last successful ekyc scan"
+        type: string
+      status:
+        description: "Current status of the customer"
+        type: string
+      modifiedTimestamp:
+        description: "Last modified time for the status (Unix timestamp)"
+        type: integer
+        format: int64
+    required:
+      - id
+      - status
+      - modifiedTimestamp
+  ScanInformationList:
+    type: array
+    items:
+      $ref: '#/definitions/ScanInformation'
+  ScanInformation:
+    type: object
+    properties:
+      scanId:
+        description: "New scan Id for eKYC"
+        type: string
+      status:
+        description: "The status of the scan"
+        type: string
+      scanResult:
+        description: "The result from the vendor"
+        type: object
+    required:
+      - scanId
+      - status
 securityDefinitions:
   auth0_jwt:
     authorizationUrl: ""
     flow: "implicit"
     type: "oauth2"
-    x-google-issuer: "https://ostelco.eu.auth0.com/"
-    x-google-jwks_uri: "https://ostelco.eu.auth0.com/.well-known/jwks.json"
+    x-google-issuer: "https://auth.oya.world/"
+    x-google-jwks_uri: "https://auth.oya.world/.well-known/jwks.json"
     x-google-audiences: "http://google_api"

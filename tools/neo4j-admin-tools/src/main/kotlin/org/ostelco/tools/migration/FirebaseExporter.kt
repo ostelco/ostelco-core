@@ -1,7 +1,7 @@
 package org.ostelco.tools.migration
 
 import com.google.firebase.database.FirebaseDatabase
-import org.ostelco.prime.model.Subscriber
+import org.ostelco.prime.model.Customer
 import org.ostelco.prime.storage.firebase.EntityStore
 import org.ostelco.prime.storage.firebase.EntityType
 import org.ostelco.prime.storage.firebase.FirebaseConfig
@@ -16,7 +16,7 @@ fun initFirebase() {
 // Code moved here from FirebaseStorageSingleton
 private val balanceEntity = EntityType("balance", Long::class.java)
 private val subscriptionEntity = EntityType("subscriptions", String::class.java)
-private val subscriberEntity = EntityType("subscribers", Subscriber::class.java)
+private val subscriberEntity = EntityType("subscribers", Customer::class.java)
 
 // FirebaseDatabase.getInstance() will work only if FirebaseStorageSingleton.setupFirebaseInstance() is already executed.
 private val balanceStore = EntityStore(FirebaseDatabase.getInstance(), balanceEntity)

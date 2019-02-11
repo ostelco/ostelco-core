@@ -29,7 +29,7 @@ class GraphQLResourceTest {
     @Before
     fun setUp() {
         `when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
-                .thenReturn(Optional.of(AccessTokenPrincipal(email)))
+                .thenReturn(Optional.of(AccessTokenPrincipal(email, provider = "email")))
     }
 
     @Test

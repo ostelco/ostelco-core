@@ -5,6 +5,7 @@ import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
+import org.ostelco.prime.model.Identity
 import javax.validation.constraints.NotNull
 import javax.ws.rs.DELETE
 import javax.ws.rs.GET
@@ -36,11 +37,13 @@ class PaymentSourcesResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        return dao.createSource(token.name, sourceId)
+        return dao.createSource(
+                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                sourceId = sourceId)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                        { sourceInfo -> Response.status(Response.Status.CREATED).entity(sourceInfo)}
-                ).build()
+                        { sourceInfo -> Response.status(Response.Status.CREATED).entity(sourceInfo) })
+                .build()
     }
 
 
@@ -51,11 +54,12 @@ class PaymentSourcesResource(private val dao: SubscriberDAO) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
-        return dao.listSources(token.name)
+        return dao.listSources(
+                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider))
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                        { sourceList -> Response.status(Response.Status.OK).entity(sourceList)}
-                ).build()
+                        { sourceList -> Response.status(Response.Status.OK).entity(sourceList) })
+                .build()
     }
 
     @PUT
@@ -69,11 +73,13 @@ class PaymentSourcesResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        return dao.setDefaultSource(token.name, sourceId)
+        return dao.setDefaultSource(
+                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                sourceId = sourceId)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                        { sourceInfo -> Response.status(Response.Status.OK).entity(sourceInfo)}
-                ).build()
+                        { sourceInfo -> Response.status(Response.Status.OK).entity(sourceInfo) })
+                .build()
     }
 
     @DELETE
@@ -87,10 +93,12 @@ class PaymentSourcesResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        return dao.removeSource(token.name, sourceId)
+        return dao.removeSource(
+                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                sourceId = sourceId)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                        { sourceInfo -> Response.status(Response.Status.OK).entity(sourceInfo)}
-                ).build()
+                        { sourceInfo -> Response.status(Response.Status.OK).entity(sourceInfo) })
+                .build()
     }
 }

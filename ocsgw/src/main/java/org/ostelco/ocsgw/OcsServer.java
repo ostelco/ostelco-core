@@ -36,6 +36,8 @@ public class OcsServer {
     private static final OcsServer INSTANCE = new OcsServer();
     private Stack stack;
     private DataSource source;
+    private String localPeerFQDN;
+    private String localPeerRealm;
 
     public static OcsServer getInstance() {
         return INSTANCE;
@@ -44,15 +46,20 @@ public class OcsServer {
     private OcsServer() {
     }
 
-    synchronized void handleRequest(ServerCCASession session, JCreditControlRequest request) {
+    void handleRequest(ServerCCASession session, JCreditControlRequest request) {
 
-        final CreditControlContext ccrContext = new CreditControlContext(
-                session.getSessionId(),
-                request,
-                stack.getMetaData().getLocalPeer().getUri().getFQDN(),
-                stack.getMetaData().getLocalPeer().getRealmName()
-        );
-        source.handleRequest(ccrContext);
+        try {
+
+            final CreditControlContext ccrContext = new CreditControlContext(
+                    session.getSessionId(),
+                    request,
+                    localPeerFQDN,
+                    localPeerRealm
+            );
+            source.handleRequest(ccrContext);
+        } catch (Exception e) {
+            LOG.error("Failed to create CreditControlContext", e);
+        }
     }
 
     public Stack getStack() {
@@ -91,6 +98,8 @@ public class OcsServer {
 
     void init(Stack stack, AppConfig appConfig) throws IOException {
         this.stack = stack;
+        this.localPeerFQDN = stack.getMetaData().getLocalPeer().getUri().getFQDN();
+        this.localPeerRealm = stack.getMetaData().getLocalPeer().getRealmName();
 
         switch (appConfig.getDataStoreType()) {
             case DataSourceType.GRPC:
