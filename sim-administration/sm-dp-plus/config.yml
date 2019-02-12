@@ -65,3 +65,8 @@ roles:
   definitions:
     - name: flyfisher
       description: Obviously just a dummy role
+
+es2plusClient:
+  requesterId: abc
+  host: localhost
+  port: 8080

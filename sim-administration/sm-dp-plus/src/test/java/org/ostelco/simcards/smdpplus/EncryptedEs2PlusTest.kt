@@ -4,6 +4,7 @@ import io.dropwizard.testing.DropwizardTestSupport
 import junit.framework.Assert.assertEquals
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.ostelco.sim.es2plus.ES2PlusClient
 import org.ostelco.sim.es2plus.FunctionExecutionStatusType
@@ -24,7 +25,9 @@ class EncryptedEs2PlusTest {
      * These are the two scenarios that needs to be run in sequence from a
      * sim-adminstrator, in pretty much the same way as it being run here.
      */
+    /* Disabled as remote is not configured to support SSL. */
     @Test
+    @Ignore
     fun handleHappyDayScenario() {
         val client: ES2PlusClient =
                 SUPPORT.getApplication<SmDpPlusApplication>().es2plusClient
