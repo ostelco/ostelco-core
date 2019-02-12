@@ -5,6 +5,7 @@
 # These files are needed for the docker compose acceptance tests.
 
 #### sanity check
+### PRIME_GOOGLE_SECRETS_FILE is temporarily populated with pantel-prod (pantel-2deb) credentials
 if [ -z "${PRIME_GOOGLE_SECRETS_FILE}" ] ; then
   echo "ERROR: PRIME_GOOGLE_SECRETS_FILE env var is empty. Aborting!"
   exit 1
