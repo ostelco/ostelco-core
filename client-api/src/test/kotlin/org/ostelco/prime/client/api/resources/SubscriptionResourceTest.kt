@@ -20,6 +20,7 @@ import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
 import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.ActivePseudonyms
+import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PseudonymEntity
@@ -47,12 +48,12 @@ class SubscriptionResourceTest {
     @Before
     fun setUp() {
         `when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
-                .thenReturn(Optional.of(AccessTokenPrincipal(email)))
+                .thenReturn(Optional.of(AccessTokenPrincipal(email, "email")))
     }
 
     @Test
     fun getActivePseudonyms() {
-        val arg = argumentCaptor<String>()
+        val arg = argumentCaptor<Identity>()
 
         val msisdn = "4790300001"
         val pseudonym = PseudonymEntity(msisdn, "random", 0, 1)

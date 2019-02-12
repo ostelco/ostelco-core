@@ -92,6 +92,8 @@ class CreditControlContext(
                     gsuAvp.addAvp(Avp.CC_TOTAL_OCTETS, mscc.granted.total, true, false)
                 }
             }
+            logger.info("Created Credit-Control-Answer [{}]", creditControlRequest.msisdn)
+            DiameterUtilities().printAvps(ccaAvps)
 
             answerMSCC.addAvp(Avp.RESULT_CODE, mscc.resultCode.value, true, false)
             answerMSCC.addAvp(Avp.VALIDITY_TIME, mscc.validityTime, true, false)

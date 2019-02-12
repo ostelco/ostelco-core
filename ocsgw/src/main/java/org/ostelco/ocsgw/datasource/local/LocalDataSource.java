@@ -34,10 +34,11 @@ public class LocalDataSource implements DataSource {
     @Override
     public void handleRequest(CreditControlContext context) {
         CreditControlAnswer answer = createCreditControlAnswer(context);
-        LOG.info("Sending Credit-Control-Answer");
+        LOG.info("Got Credit-Control-Request [{}]", context.getCreditControlRequest().getMsisdn());
         try {
             final ServerCCASession session = OcsServer.getInstance().getStack().getSession(context.getSessionId(), ServerCCASession.class);
             session.sendCreditControlAnswer(context.createCCA(answer));
+            LOG.info("Sent Credit-Control-Answer [{}]", context.getCreditControlRequest().getMsisdn());
         } catch (InternalException | IllegalDiameterStateException | RouteException | OverloadException | NullPointerException e) {
             LOG.error("Failed to send Credit-Control-Answer. SessionId : {}", context.getSessionId(), e);
         }

@@ -2,13 +2,14 @@ package org.ostelco.prime.ocs
 
 import arrow.core.Either
 import org.ostelco.prime.model.Bundle
+import org.ostelco.prime.model.Identity
 import kotlin.DeprecationLevel.ERROR
 import kotlin.DeprecationLevel.WARNING
 
 @Deprecated(message = "This service bas been discontinued", level = WARNING)
 interface OcsSubscriberService {
     @Deprecated(message = "This service bas been discontinued", level = ERROR)
-    fun topup(subscriberId: String, sku: String): Either<String, Unit>
+    fun topup(identity: Identity, sku: String): Either<String, Unit>
 }
 
 @Deprecated(message = "This service bas been discontinued", level = WARNING)

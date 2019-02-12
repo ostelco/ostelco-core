@@ -8,6 +8,8 @@ import io.grpc.auth.MoreCallCredentials;
 import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.StreamObserver;
+import org.ostelco.ocsgw.utils.EventConsumer;
+import org.ostelco.ocsgw.utils.EventProducer;
 import org.ostelco.prime.metrics.api.OcsgwAnalyticsReply;
 import org.ostelco.prime.metrics.api.OcsgwAnalyticsReport;
 import org.ostelco.prime.metrics.api.OcsgwAnalyticsServiceGrpc;
@@ -18,11 +20,7 @@ import javax.net.ssl.SSLException;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class OcsgwMetrics {
 
@@ -36,8 +34,6 @@ public class OcsgwMetrics {
 
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
-    private StreamObserver<OcsgwAnalyticsReport> ocsgwAnalyticsReport;
-
     private ScheduledFuture initAnalyticsFuture = null;
 
     private ScheduledFuture keepAliveFuture = null;
@@ -45,6 +41,10 @@ public class OcsgwMetrics {
     private ScheduledFuture autoReportAnalyticsFuture = null;
 
     private OcsgwAnalyticsReport lastActiveSessions = null;
+
+    private final ConcurrentLinkedQueue<OcsgwAnalyticsReport> reportQueue = new ConcurrentLinkedQueue<>();
+
+    private EventProducer<OcsgwAnalyticsReport> producer;
 
     public OcsgwMetrics(String metricsServerHostname, ServiceAccountJwtAccessCredentials credentials) {
 
@@ -68,13 +68,16 @@ public class OcsgwMetrics {
             } else {
                 ocsgwAnalyticsServiceStub = OcsgwAnalyticsServiceGrpc.newStub(channel);
             }
+
+            producer = new EventProducer<>(reportQueue);
+
         } catch (SSLException e) {
             LOG.warn("Failed to setup OcsMetrics", e);
         }
     }
 
     public void initAnalyticsRequest() {
-        ocsgwAnalyticsReport = ocsgwAnalyticsServiceStub.ocsgwAnalyticsEvent(
+        StreamObserver<OcsgwAnalyticsReport> ocsgwAnalyticsReport = ocsgwAnalyticsServiceStub.ocsgwAnalyticsEvent(
                 new StreamObserver<OcsgwAnalyticsReply>() {
 
                     @Override
@@ -98,13 +101,15 @@ public class OcsgwMetrics {
         );
         initKeepAlive();
         initAutoReportAnalyticsReport();
+
+        EventConsumer<OcsgwAnalyticsReport> analyticsReportConsumer = new EventConsumer<>(reportQueue, ocsgwAnalyticsReport);
+        new Thread(analyticsReportConsumer).start();
     }
 
 
     public void sendAnalytics(OcsgwAnalyticsReport report) {
         if (report != null) {
-            ocsgwAnalyticsReport.onNext(report);
-            lastActiveSessions = report;
+            producer.queueEvent(report);
         }
     }
 

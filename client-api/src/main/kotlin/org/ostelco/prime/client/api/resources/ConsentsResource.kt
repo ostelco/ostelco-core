@@ -4,6 +4,7 @@ import io.dropwizard.auth.Auth
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.jsonmapper.asJson
+import org.ostelco.prime.model.Identity
 
 import javax.validation.constraints.NotNull
 import javax.ws.rs.DefaultValue
@@ -30,9 +31,11 @@ class ConsentsResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        return dao.getConsents(token.name).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.OK).entity(asJson(it)) })
+        return dao.getConsents(
+                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider))
+                .fold(
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                        { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
     }
 
@@ -44,15 +47,20 @@ class ConsentsResource(private val dao: SubscriberDAO) {
                       @PathParam("consent-id")
                       consentId: String,
                       @DefaultValue("true") @QueryParam("accepted") accepted: Boolean): Response {
+
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
 
         val result = if (accepted) {
-            dao.acceptConsent(token.name, consentId)
+            dao.acceptConsent(
+                    identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                    consentId = consentId)
         } else {
-            dao.rejectConsent(token.name, consentId)
+            dao.rejectConsent(
+                    identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                    consentId = consentId)
         }
 
         return result.fold(

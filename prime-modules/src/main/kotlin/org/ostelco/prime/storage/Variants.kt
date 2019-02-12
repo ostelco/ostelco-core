@@ -1,10 +1,22 @@
 package org.ostelco.prime.storage
 
 import arrow.core.Either
-import org.ostelco.prime.model.*
+import org.ostelco.prime.model.ApplicationToken
+import org.ostelco.prime.model.Bundle
+import org.ostelco.prime.model.ChangeSegment
+import org.ostelco.prime.model.Customer
+import org.ostelco.prime.model.CustomerState
+import org.ostelco.prime.model.Identity
+import org.ostelco.prime.model.Offer
+import org.ostelco.prime.model.Plan
+import org.ostelco.prime.model.Product
+import org.ostelco.prime.model.ProductClass
+import org.ostelco.prime.model.PurchaseRecord
+import org.ostelco.prime.model.ScanInformation
+import org.ostelco.prime.model.Segment
+import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
-import com.google.cloud.datastore.Blob
 import javax.ws.rs.core.MultivaluedMap
 
 interface ClientDocumentStore {
@@ -22,7 +34,7 @@ interface ClientDocumentStore {
     /**
      * Get token used for sending notification to user application
      */
-    fun getNotificationToken(msisdn: String, applicationID: String): ApplicationToken?
+    fun getNotificationToken(customerId: String, applicationID: String): ApplicationToken?
 
     /**
      * Get token used for sending notification to user application
@@ -41,49 +53,54 @@ interface AdminDocumentStore
 interface ClientGraphStore {
 
     /**
-     * Get Subscriber Profile
+     * Get Customer Id
      */
-    fun getSubscriber(subscriberId: String): Either<StoreError, Subscriber>
+    fun getCustomerId(identity: Identity): Either<StoreError, String>
 
     /**
-     * Create Subscriber Profile
+     * Get Customer Profile
      */
-    fun addSubscriber(subscriber: Subscriber, referredBy: String? = null): Either<StoreError, Unit>
+    fun getCustomer(identity: Identity): Either<StoreError, Customer>
 
     /**
-     * Update Subscriber Profile
+     * Create Customer Profile
      */
-    fun updateSubscriber(subscriber: Subscriber): Either<StoreError, Unit>
+    fun addCustomer(identity: Identity, customer: Customer, referredBy: String? = null): Either<StoreError, Unit>
 
     /**
-     * Remove Subscriber for testing
+     * Update Customer Profile
      */
-    fun removeSubscriber(subscriberId: String): Either<StoreError, Unit>
+    fun updateCustomer(identity: Identity, customer: Customer): Either<StoreError, Unit>
 
     /**
-     * Link Subscriber to MSISDN
+     * Remove Customer for testing
      */
-    fun addSubscription(subscriberId: String, msisdn: String): Either<StoreError, Unit>
+    fun removeCustomer(identity: Identity): Either<StoreError, Unit>
 
     /**
-     * Get Products for a given subscriber
+     * Link Customer to MSISDN
      */
-    fun getProducts(subscriberId: String): Either<StoreError, Map<String, Product>>
+    fun addSubscription(identity: Identity, msisdn: String): Either<StoreError, Unit>
+
+    /**
+     * Get Products for a given Customer
+     */
+    fun getProducts(identity: Identity): Either<StoreError, Map<String, Product>>
 
     /**
      * Get Product to perform OCS Topup
      */
-    fun getProduct(subscriberId: String, sku: String): Either<StoreError, Product>
+    fun getProduct(identity: Identity, sku: String): Either<StoreError, Product>
 
     /**
-     * Get subscriptions for Client
+     * Get subscriptions for Customer
      */
-    fun getSubscriptions(subscriberId: String): Either<StoreError, Collection<Subscription>>
+    fun getSubscriptions(identity: Identity): Either<StoreError, Collection<Subscription>>
 
     /**
      * Get balance for Client
      */
-    fun getBundles(subscriberId: String): Either<StoreError, Collection<Bundle>>
+    fun getBundles(identity: Identity): Either<StoreError, Collection<Bundle>>
 
     /**
      * Set balance after OCS Topup or Consumption
@@ -98,56 +115,61 @@ interface ClientGraphStore {
     /**
      * Get msisdn for the given subscription-id
      */
-    fun getMsisdn(subscriptionId: String): Either<StoreError, String>
+    fun getMsisdn(identity: Identity): Either<StoreError, String>
 
     /**
      * Get all PurchaseRecords
      */
-    fun getPurchaseRecords(subscriberId: String): Either<StoreError, Collection<PurchaseRecord>>
+    fun getPurchaseRecords(identity: Identity): Either<StoreError, Collection<PurchaseRecord>>
 
     /**
      * Add PurchaseRecord after Purchase operation
      */
-    fun addPurchaseRecord(subscriberId: String, purchase: PurchaseRecord): Either<StoreError, String>
+    fun addPurchaseRecord(customerId: String, purchase: PurchaseRecord): Either<StoreError, String>
 
     /**
      * Get list of users this user has referred to
      */
-    fun getReferrals(subscriberId: String): Either<StoreError, Collection<String>>
+    fun getReferrals(identity: Identity): Either<StoreError, Collection<String>>
 
     /**
      * Get user who has referred this user.
      */
-    fun getReferredBy(subscriberId: String): Either<StoreError, String?>
+    fun getReferredBy(identity: Identity): Either<StoreError, String?>
 
     /**
      * Temporary method to perform purchase as atomic transaction
      */
-    fun purchaseProduct(subscriberId: String, sku: String, sourceId: String?, saveCard: Boolean): Either<PaymentError, ProductInfo>
+    fun purchaseProduct(identity: Identity, sku: String, sourceId: String?, saveCard: Boolean): Either<PaymentError, ProductInfo>
 
     /**
-     * Generate new eKYC scanId for the subscriber.
+     * Generate new eKYC scanId for the customer.
      */
-    fun newEKYCScanId(subscriberId: String): Either<StoreError, ScanInformation>
+    fun newEKYCScanId(identity: Identity, countryCode: String): Either<StoreError, ScanInformation>
 
     /**
-     * Get information about an eKYC scan for the subscriber.
+     * Get the country code for the scan.
      */
-    fun getScanInformation(subscriberId: String, scanId: String): Either<StoreError, ScanInformation>
+    fun getCountryCodeForScan(scanId: String): Either<StoreError, String>
 
     /**
-     * Get state of the subscriber.
+     * Get information about an eKYC scan for the customer.
      */
-    fun getSubscriberState(subscriberId: String): Either<StoreError, SubscriberState>
+    fun getScanInformation(identity: Identity, scanId: String): Either<StoreError, ScanInformation>
+
+    /**
+     * Get state of the customer.
+     */
+    fun getCustomerState(identity: Identity): Either<StoreError, CustomerState>
 }
 
 interface AdminGraphStore {
 
     fun getMsisdnToBundleMap(): Map<Subscription, Bundle>
     fun getAllBundles(): Collection<Bundle>
-    fun getSubscriberToBundleIdMap(): Map<Subscriber, Bundle>
-    fun getSubscriberToMsisdnMap(): Map<Subscriber, Subscription>
-    fun getSubscriberForMsisdn(msisdn: String): Either<StoreError, Subscriber>
+    fun getCustomerToBundleIdMap(): Map<Customer, Bundle>
+    fun getCustomerToMsisdnMap(): Map<Customer, Subscription>
+    fun getCustomerForMsisdn(msisdn: String): Either<StoreError, Customer>
 
     // simple create
     fun createProductClass(productClass: ProductClass): Either<StoreError, Unit>
@@ -173,11 +195,11 @@ interface AdminGraphStore {
     fun getPlan(planId: String): Either<StoreError, Plan>
 
     /**
-     * Get all plans that a subscriber subscribes to.
-     * @param subscriberId - The subscriber
+     * Get all plans that a customer subscribes to.
+     * @param identity - The identity of the customer
      * @return List with plan details if found
      */
-    fun getPlans(subscriberId: String): Either<StoreError, List<Plan>>
+    fun getPlans(identity: Identity): Either<StoreError, List<Plan>>
 
     /**
      * Create a new plan.
@@ -194,33 +216,33 @@ interface AdminGraphStore {
     fun deletePlan(planId: String): Either<StoreError, Plan>
 
     /**
-     * Set up a subscriber with a subscription to a specific plan.
-     * @param subscriberId - The id of the subscriber
+     * Set up a customer with a subscription to a specific plan.
+     * @param identity - The identity of the customer
      * @param planId - The name/id of the plan
      * @param trialEnd - Epoch timestamp for when the trial period ends
      * @return Unit value if the subscription was created successfully
      */
-    fun subscribeToPlan(subscriberId: String, planId: String, trialEnd: Long = 0): Either<StoreError, Plan>
+    fun subscribeToPlan(identity: Identity, planId: String, trialEnd: Long = 0): Either<StoreError, Plan>
 
     /**
      * Remove the subscription to a plan for a specific subscrber.
-     * @param subscriberId - The id of the subscriber
+     * @param identity - The identity of the customer
      * @param planId - The name/id of the plan
      * @param atIntervalEnd - Remove at end of curren subscription period
      * @return Unit value if the subscription was removed successfully
      */
-    fun unsubscribeFromPlan(subscriberId: String, planId: String, atIntervalEnd: Boolean = false): Either<StoreError, Plan>
+    fun unsubscribeFromPlan(identity: Identity, planId: String, atIntervalEnd: Boolean = false): Either<StoreError, Plan>
 
     /**
-     * Adds a purchase record to subscriber on start of or renewal
+     * Adds a purchase record to customer on start of or renewal
      * of a subscription.
      * @param invoiceId - The reference to the invoice that has been paid
-     * @param subscriberId - The subscriber that got charged
+     * @param customerId - The customer that got charged
      * @param sku - The product/plan bought
      * @param amount - Cost of the product/plan
      * @param currency - Currency used
      */
-    fun subscriptionPurchaseReport(invoiceId: String, subscriberId: String, sku: String, amount: Long, currency: String): Either<StoreError, Plan>
+    fun subscriptionPurchaseReport(invoiceId: String, customerId: String, sku: String, amount: Long, currency: String): Either<StoreError, Plan>
 
     // atomic import of Offer + Product + Segment
     fun atomicCreateOffer(
@@ -236,13 +258,13 @@ interface AdminGraphStore {
     fun atomicChangeSegments(changeSegments: Collection<ChangeSegment>): Either<StoreError, Unit>
 
     // Method to perform a full refund of a purchase
-    fun refundPurchase(subscriberId: String, purchaseRecordId: String, reason: String): Either<PaymentError, ProductInfo>
+    fun refundPurchase(customerId: String, purchaseRecordId: String, reason: String): Either<PaymentError, ProductInfo>
 
     // update the scan information with scan result
     fun updateScanInformation(scanInformation: ScanInformation, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit>
 
-    // Retrieve all scan information for the subscriber
-    fun getAllScanInformation(subscriberId: String): Either<StoreError, Collection<ScanInformation>>
+    // Retrieve all scan information for the customer
+    fun getAllScanInformation(identity: Identity): Either<StoreError, Collection<ScanInformation>>
 
     // simple getAll
     // fun getOffers(): Collection<Offer>
@@ -258,5 +280,6 @@ interface AdminGraphStore {
 }
 
 interface ScanInformationStore {
-    fun upsertVendorScanInformation(subscriberId: String, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit>
+    // Function to upsert scan information data from the 3rd party eKYC scan
+    fun upsertVendorScanInformation(customerId: String, countryCode: String, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit>
 }

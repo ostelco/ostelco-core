@@ -43,6 +43,8 @@ modules:
 - type: admin
 - type: graphql
 - type: scaninfo-store
+  config:
+    keysetFilePathPrefix: /scaninfo-keysets/encrypt_key
 
 server:
   applicationConnectors:

@@ -3,59 +3,32 @@ package org.ostelco.prime.admin.api
 import arrow.core.Either
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.dropwizard.auth.Auth
-import org.ostelco.prime.apierror.*
-import org.ostelco.prime.auth.AccessTokenPrincipal
+import org.ostelco.prime.apierror.ApiError
+import org.ostelco.prime.apierror.ApiErrorCode
+import org.ostelco.prime.apierror.BadGatewayError
+import org.ostelco.prime.apierror.BadRequestError
+import org.ostelco.prime.apierror.NotFoundError
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
-import org.ostelco.prime.model.*
+import org.ostelco.prime.model.JumioScanData
+import org.ostelco.prime.model.ScanInformation
+import org.ostelco.prime.model.ScanResult
+import org.ostelco.prime.model.ScanStatus
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.storage.AdminDataSource
-import java.net.URLDecoder
+import java.io.IOException
 import java.time.Instant
 import java.util.*
 import javax.servlet.http.HttpServletRequest
-import javax.ws.rs.*
-import javax.ws.rs.core.*
-import java.io.IOException
+import javax.ws.rs.POST
+import javax.ws.rs.Path
+import javax.ws.rs.Produces
+import javax.ws.rs.core.Context
+import javax.ws.rs.core.HttpHeaders
+import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.MultivaluedMap
+import javax.ws.rs.core.Response
 
-
-
-
-//TODO: Prasanth, Remove after testing
-/**
- * Resource used to handle bundles related REST calls.
- */
-@Path("/new-ekyc-scanId")
-class KYCTestHelperResource {
-    private val logger by getLogger()
-    private val storage by lazy { getResource<AdminDataSource>() }
-
-    @GET
-    @Path("{email}")
-    @Produces(MediaType.APPLICATION_JSON)
-    fun newEKYCScanId(@Auth token: AccessTokenPrincipal?,
-                      @PathParam("email")
-                      email: String
-                      ): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-        val decodedEmail = URLDecoder.decode(email, "UTF-8")
-        logger.info("${token.name} Generate new ScanId for $decodedEmail")
-
-        return newEKYCScanId(subscriberId = decodedEmail).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { scanInformation -> Response.status(Response.Status.OK).entity(scanInformation) })
-                .build()
-    }
-
-    private fun newEKYCScanId(subscriberId: String): Either<ApiError, ScanInformation> {
-        return storage.newEKYCScanId(subscriberId)
-                .mapLeft { ApiErrorMapper.mapStorageErrorToApiError("Failed to create new scanId", ApiErrorCode.FAILED_TO_CREATE_SCANID, it) }
-    }
-}
 
 /**
  * Resource used to handle the eKYC related REST calls.
@@ -134,18 +107,22 @@ class KYCResource {
                     }
                 }
             }
-
-            return ScanInformation(scanId, status, ScanResult(
-                    vendorScanReference = vendorScanReference,
-                    verificationStatus = verificationStatus,
-                    time = time,
-                    type = type,
-                    country = country,
-                    firstName = firstName,
-                    lastName = lastName,
-                    dob = dob,
-                    rejectReason = rejectReason
-            ))
+            val countryCode = getCountryCodeForScan(scanId)
+            if (countryCode != null) {
+                return ScanInformation(scanId, countryCode, status, ScanResult(
+                        vendorScanReference = vendorScanReference,
+                        verificationStatus = verificationStatus,
+                        time = time,
+                        type = type,
+                        country = country,
+                        firstName = firstName,
+                        lastName = lastName,
+                        dob = dob,
+                        rejectReason = rejectReason
+                ))
+            } else {
+                return null;
+            }
         }
         catch (e: NullPointerException) {
             logger.error("Missing mandatory fields in scan result ${dataMap}")
@@ -170,6 +147,20 @@ class KYCResource {
         return updateScanInformation(scanInformation, formData).fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { Response.status(Response.Status.OK).entity(asJson(scanInformation)) }).build()
+    }
+
+    private fun getCountryCodeForScan(scanId: String): String? {
+        return try {
+            storage.getCountryCodeForScan(scanId).fold({
+                logger.error("Failed to get country code for scan ${scanId}")
+                null
+            }, {
+                it
+            })
+        } catch (e: Exception) {
+            logger.error("Caught error while getting country code for scan ${scanId}")
+            return null
+        }
     }
 
     private fun updateScanInformation(scanInformation: ScanInformation, formData: MultivaluedMap<String, String>): Either<ApiError, Unit> {

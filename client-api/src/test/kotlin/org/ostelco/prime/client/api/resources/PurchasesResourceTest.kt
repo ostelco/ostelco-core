@@ -18,6 +18,7 @@ import org.ostelco.prime.auth.OAuthAuthenticator
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
 import org.ostelco.prime.jsonmapper.objectMapper
+import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
@@ -42,12 +43,12 @@ class PurchasesResourceTest {
     @Before
     fun setUp() {
         Mockito.`when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
-                .thenReturn(Optional.of(AccessTokenPrincipal(email)))
+                .thenReturn(Optional.of(AccessTokenPrincipal(email, "email")))
     }
 
     @Test
     fun testGetPurchaseRecords() {
-        val arg1 = argumentCaptor<String>()
+        val arg1 = argumentCaptor<Identity>()
 
         val product = Product("1", Price(10, "NOK"), Collections.emptyMap(), Collections.emptyMap())
         val now = Instant.now().toEpochMilli()

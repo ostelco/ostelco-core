@@ -37,9 +37,9 @@ class OcsModule : PrimeModule {
         val server = OcsGrpcServer(8082, ocsService.ocsGrpcService)
 
         // Events flow:
-        //      Producer:(OcsService, Subscriber)
+        //      Producer:(OcsService, Customer)
         //          -> Handler:(OcsState)
-        //              -> Handler:(OcsService, Subscriber, AnalyticsPublisher)
+        //              -> Handler:(OcsService, Customer, AnalyticsPublisher)
         //                  -> Clear
 
         disruptor.disruptor

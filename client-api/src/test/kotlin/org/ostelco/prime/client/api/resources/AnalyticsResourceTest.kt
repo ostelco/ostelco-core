@@ -19,6 +19,7 @@ import org.ostelco.prime.auth.OAuthAuthenticator
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.client.api.util.AccessToken
 import org.ostelco.prime.jsonmapper.objectMapper
+import org.ostelco.prime.model.Identity
 import java.io.IOException
 import java.util.*
 import javax.ws.rs.client.Entity
@@ -36,12 +37,12 @@ class AnalyticsResourceTest {
     @Before
     fun setUp() {
         `when`(AUTHENTICATOR.authenticate(ArgumentMatchers.anyString()))
-                .thenReturn(Optional.of(AccessTokenPrincipal(email)))
+                .thenReturn(Optional.of(AccessTokenPrincipal(email, "email")))
     }
 
     @Test
     fun reportAnalytics() {
-        val arg1 = argumentCaptor<String>()
+        val arg1 = argumentCaptor<Identity>()
         val arg2 = argumentCaptor<String>()
 
         `when`(DAO.reportAnalytics(arg1.capture(), arg2.capture())).thenReturn(Either.right(Unit))
@@ -68,7 +69,7 @@ class AnalyticsResourceTest {
 
         assertThat(resp.status).isEqualTo(Response.Status.CREATED.statusCode)
         assertThat(resp.mediaType).isNull()
-        assertThat(arg1.firstValue).isEqualTo(email)
+        assertThat(arg1.firstValue).isEqualTo(Identity(email, "EMAIL", "email"))
         assertThat(isValidJson(events)).isTrue()
         assertThat(isValidJson(arg2.firstValue)).isTrue()
     }

@@ -2,6 +2,7 @@ package org.ostelco.prime.graphql
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.ostelco.prime.model.Identity
 import java.io.File
 
 class QueryHandlerTest {
@@ -11,7 +12,7 @@ class QueryHandlerTest {
     private val email = "foo@test.com"
 
     private fun execute(query: String): Map<String, Any> = queryHandler
-            .execute(subscriberId = email, query = query)
+            .execute(identity = Identity(id = email, type = "EMAIL", provider = "email"), query = query)
             .getData<Map<String, Any>>()
 
     @Test

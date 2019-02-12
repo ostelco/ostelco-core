@@ -4,6 +4,7 @@ import io.dropwizard.auth.Auth
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.client.api.store.SubscriberDAO
 import org.ostelco.prime.jsonmapper.asJson
+import org.ostelco.prime.model.Identity
 import javax.validation.constraints.NotNull
 import javax.ws.rs.GET
 import javax.ws.rs.POST
@@ -30,9 +31,10 @@ class ProductsResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        return dao.getProducts(token.name).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.OK).entity(asJson(it)) })
+        return dao.getProducts(identity = Identity(id = token.name, type = "EMAIL", provider = token.provider))
+                .fold(
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                        { Response.status(Response.Status.OK).entity(asJson(it)) })
                 .build()
     }
 
@@ -53,10 +55,14 @@ class ProductsResource(private val dao: SubscriberDAO) {
                     .build()
         }
 
-        return dao.purchaseProduct(token.name, sku, sourceId, saveCard ?: false)
+        return dao.purchaseProduct(
+                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                sku = sku,
+                sourceId = sourceId,
+                saveCard = saveCard ?: false)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                        { productInfo -> Response.status(CREATED).entity(productInfo) }
-                ).build()
+                        { productInfo -> Response.status(CREATED).entity(productInfo) })
+                .build()
     }
 }
