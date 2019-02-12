@@ -234,7 +234,7 @@ jobs:
             helm repo update
             helm upgrade prime ostelco/prime --install --namespace dev \
              -f .circleci/prime-dev-values.yaml \
-             --set prime.tag=${CIRCLE_SHA1:0:9} \
+             --set prime.tag=${CIRCLE_SHA1:0:9} 
        
       - run:
            name: notify slack on failure
@@ -313,7 +313,7 @@ jobs:
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
             helm repo update
             helm upgrade prime ostelco/prime --version 0.4.1 --install --namespace prod \
-             -f .circleci/prime-prod-values.yaml \
+             -f .circleci/prime-prod-values.yaml 
 
       - run:
            name: notify slack on failure
