@@ -186,7 +186,7 @@ class SimInventoryUnitTests {
 
     @Test
     fun testFindByIccidPositiveResult() {
-        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/profileStatusList/$fakeIccid1")
+        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/iccid/$fakeIccid1")
                 .request(MediaType.APPLICATION_JSON)
                 .get()
         assertEquals(200, response.status)
@@ -199,7 +199,7 @@ class SimInventoryUnitTests {
 
     @Test
     fun testFindByIccidNegativeResult() {
-        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/profileStatusList/$fakeIccid2")
+        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/iccid/$fakeIccid2")
                 .request(MediaType.APPLICATION_JSON)
                 .get()
         assertEquals(404, response.status)
@@ -267,7 +267,7 @@ class SimInventoryUnitTests {
     fun testActivateAll() {
         val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/esim/all")
                 .queryParam("eid", fakeEid)
-                .queryParam("profileStatusList", fakeIccid1)
+                .queryParam("iccid", fakeIccid1)
                 .request(MediaType.APPLICATION_JSON)
                 .post(Entity.json(null))
         assertEquals(200, response.status)
@@ -280,7 +280,7 @@ class SimInventoryUnitTests {
     fun testActivateEsim() {
         val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/esim")
                 .queryParam("eid", fakeEid)
-                .queryParam("profileStatusList", fakeIccid1)
+                .queryParam("iccid", fakeIccid1)
                 .request(MediaType.APPLICATION_JSON)
                 .post(Entity.json(null))
         assertEquals(200, response.status)
@@ -298,7 +298,7 @@ class SimInventoryUnitTests {
 
     @Test
     fun testActivateHlr() {
-        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/profileStatusList/$fakeIccid1")
+        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/iccid/$fakeIccid1")
                 .request(MediaType.APPLICATION_JSON)
                 .post(Entity.json(null))
         assertEquals(200, response.status)
@@ -315,7 +315,7 @@ class SimInventoryUnitTests {
 
     @Test
     fun testDeactivateHlr() {
-        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/profileStatusList/$fakeIccid1")
+        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/iccid/$fakeIccid1")
                 .request(MediaType.APPLICATION_JSON)
                 .delete()
         // XXX Check what return value to expect when updating, don't think it's 200

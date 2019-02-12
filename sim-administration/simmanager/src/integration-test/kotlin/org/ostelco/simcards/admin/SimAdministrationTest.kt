@@ -143,10 +143,22 @@ class SimAdministrationTest {
         assertThat(response.status).isEqualTo(200)
     }
 
+    /* XXX SM-DP+ emuluator must be extended to support the 'getProfileStatus'
+       message before this test can be enabled. */
+    @Test
+    @Ignore
+    fun testGetProfileStatus() {
+        val iccid = "8901000000000000001"
+        val response = client.target("${simManagerEndpoint}/${hlr}/profileStatusList/${iccid}")
+                .request()
+                .get()
+        assertThat(response.status).isEqualTo(200)
+    }
+
     @Test
     fun testActivateWithHlr() {
         val iccid = "8901000000000000001"
-        val response = client.target("${simManagerEndpoint}/${hlr}/profileStatusList/${iccid}")
+        val response = client.target("${simManagerEndpoint}/${hlr}/iccid/${iccid}")
                 .request()
                 .post(Entity.json(null))
         assertThat(response.status).isEqualTo(200)
@@ -159,7 +171,7 @@ class SimAdministrationTest {
     @Test
     fun testDeactivateWithHlr() {
         val iccid = "8901000000000000001"
-        val response = client.target("${simManagerEndpoint}/${hlr}/profileStatusList/${iccid}")
+        val response = client.target("${simManagerEndpoint}/${hlr}/iccid/${iccid}")
                 .request()
                 .delete()
         assertThat(response.status).isEqualTo(200)
@@ -172,7 +184,7 @@ class SimAdministrationTest {
     @Test
     fun testGetIccid() {
         val iccid = "8901000000000000001"
-        val response = client.target("${simManagerEndpoint}/${hlr}/profileStatusList/${iccid}")
+        val response = client.target("${simManagerEndpoint}/${hlr}/iccid/${iccid}")
                 .request()
                 .get()
         assertThat(response.status).isEqualTo(200)
@@ -187,7 +199,7 @@ class SimAdministrationTest {
         val eid = getEidFromIccid(iccid)
         val response = client.target("${simManagerEndpoint}/${hlr}/esim")
                 .queryParam("eid", eid)
-                .queryParam("profileStatusList", iccid)
+                .queryParam("iccid", iccid)
                 .request()
                 .post(Entity.json(null))
         assertThat(response.status).isEqualTo(200)
@@ -204,7 +216,7 @@ class SimAdministrationTest {
     fun testActivateEsimNoEid() {
         val iccid = "8901000000000000019"
         val response = client.target("${simManagerEndpoint}/${hlr}/esim")
-                .queryParam("profileStatusList", iccid)
+                .queryParam("iccid", iccid)
                 .request()
                 .post(Entity.json(null))
         assertThat(response.status).isEqualTo(200)
@@ -238,7 +250,7 @@ class SimAdministrationTest {
     fun testActivateEsimNoEidAll() {
         val iccid = "8901000000000000035"
         val response = client.target("${simManagerEndpoint}/${hlr}/esim/all")
-                .queryParam("profileStatusList", iccid)
+                .queryParam("iccid", iccid)
                 .request()
                 .post(Entity.json(null))
         assertThat(response.status).isEqualTo(200)

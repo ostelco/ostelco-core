@@ -41,7 +41,7 @@ data class HlrAdapter(
         }
         val payload = mapOf(
                 "bssid" to config.name,
-                "profileStatusList" to simEntry.iccid,
+                "iccid" to simEntry.iccid,
                 "msisdn" to simEntry.msisdn,
                 "userid" to config.userId
         )

@@ -2,6 +2,7 @@ package org.ostelco.simcards.inventory
 
 import com.fasterxml.jackson.databind.JsonSerializer
 import org.hibernate.validator.constraints.NotEmpty
+import org.ostelco.sim.es2plus.ProfileStatus
 import org.ostelco.simcards.admin.HlrConfig
 import org.ostelco.simcards.admin.SimAdministrationConfiguration
 import org.ostelco.simcards.admin.ProfileVendorConfig
@@ -33,11 +34,30 @@ class SimInventoryResource(private val client: Client,
     }
 
     @GET
-    @Path("profileStatusList/{profileStatusList}")
+    @Path("profileStatusList/{iccid}")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun getSimProfileStatus(
+            @NotEmpty @PathParam("hlrVendors") hlr: String,
+            @NotEmpty @PathParam("iccid") iccid: String): ProfileStatus? {
+        val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
+        val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
+        assertCorrectHlr(hlr, hlr == hlrAdapter.name)
+
+        val simVendorAdapter = assertNonNull(dao.getProfileVendorAdapterById(
+                simEntry.profileVendorId))
+        val config: ProfileVendorConfig = assertNonNull(config.profileVendors.filter {
+            it.name == simVendorAdapter.name
+        }.firstOrNull())
+
+        return simVendorAdapter.getProfileStatus(client, config, iccid)
+    }
+
+    @GET
+    @Path("iccid/{iccid}")
     @Produces(MediaType.APPLICATION_JSON)
     fun findSimProfileByIccid(
             @NotEmpty @PathParam("hlrVendors") hlr: String,
-            @NotEmpty @PathParam("profileStatusList") iccid: String): SimEntry {
+            @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
         val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
         val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
         assertCorrectHlr(hlr, hlr == hlrAdapter.name)
@@ -45,11 +65,11 @@ class SimInventoryResource(private val client: Client,
     }
 
     @POST
-    @Path("profileStatusList/{profileStatusList}")
+    @Path("iccid/{iccid}")
     @Produces(MediaType.APPLICATION_JSON)
     fun activateHlrProfileByIccid(
             @NotEmpty @PathParam("hlrVendors") hlr: String,
-            @NotEmpty @PathParam("profileStatusList") iccid: String): SimEntry? {
+            @NotEmpty @PathParam("iccid") iccid: String): SimEntry? {
         val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
         val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
         assertCorrectHlr(hlr, hlr == hlrAdapter.name)
@@ -58,26 +78,22 @@ class SimInventoryResource(private val client: Client,
             it.name == hlrAdapter.name
         }.firstOrNull())
 
-        return try {
-            when (simEntry.hlrState) {
-                HlrState.NOT_ACTIVATED -> {
-                    hlrAdapter.activate(client, config, dao, simEntry)
-                }
-                HlrState.ACTIVATED -> {
-                    simEntry
-                }
+        return when (simEntry.hlrState) {
+            HlrState.NOT_ACTIVATED -> {
+                hlrAdapter.activate(client, config, dao, simEntry)
             }
-        } catch (e: Exception) {
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
+            HlrState.ACTIVATED -> {
+                simEntry
+            }
         }
     }
 
     @DELETE
-    @Path("profileStatusList/{profileStatusList}")
+    @Path("iccid/{iccid}")
     @Produces(MediaType.APPLICATION_JSON)
     fun deactivateHlrProfileByIccid(
             @NotEmpty @PathParam("hlrVendors") hlr: String,
-            @NotEmpty @PathParam("profileStatusList") iccid: String): SimEntry? {
+            @NotEmpty @PathParam("iccid") iccid: String): SimEntry? {
         val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
         val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
         assertCorrectHlr(hlr, hlr == hlrAdapter.name)
@@ -86,17 +102,13 @@ class SimInventoryResource(private val client: Client,
             it.name == hlrAdapter.name
         }.firstOrNull())
 
-        return try {
-            when (simEntry.hlrState) {
-                HlrState.NOT_ACTIVATED -> {
-                    simEntry
-                }
-                HlrState.ACTIVATED -> {
-                    hlrAdapter.deactivate(client, config, dao, simEntry)
-                }
+        return when (simEntry.hlrState) {
+            HlrState.NOT_ACTIVATED -> {
+                simEntry
             }
-        } catch (e: Exception) {
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
+            HlrState.ACTIVATED -> {
+                hlrAdapter.deactivate(client, config, dao, simEntry)
+            }
         }
     }
 
@@ -142,7 +154,7 @@ class SimInventoryResource(private val client: Client,
     fun activateAllEsimProfileByIccid(
             @NotEmpty @PathParam("hlrVendors") hlr: String,
             @QueryParam("eid") eid: String?,
-            @QueryParam("profileStatusList") iccid: String?,
+            @QueryParam("iccid") iccid: String?,
             @DefaultValue("_") @QueryParam("phoneType") phoneType: String): SimEntry? {
         val simEntry = assertNonNull(activateEsimProfileByIccid(hlr, eid, iccid, phoneType))
         return activateHlrProfileByIccid(hlr, simEntry.iccid)
@@ -154,7 +166,7 @@ class SimInventoryResource(private val client: Client,
     fun activateEsimProfileByIccid(
             @NotEmpty @PathParam("hlrVendors") hlr: String,
             @QueryParam("eid") eid: String?,
-            @QueryParam("profileStatusList") iccid: String?,
+            @QueryParam("iccid") iccid: String?,
             @DefaultValue("_") @QueryParam("phoneType") phoneType: String): SimEntry? {
         val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
         val profile = config.getProfileForPhoneType(phoneType)
@@ -172,21 +184,17 @@ class SimInventoryResource(private val client: Client,
 
         /* As 'confirm-order' message is issued with 'releaseFlag' set to true, the
            CONFIRMED state should not occur. */
-        return try {
-            when (simEntry.smdpPlusState) {
-                SmDpPlusState.AVAILABLE -> {
-                    simVendorAdapter.activate(client, config, dao, eid, simEntry)
-                }
-                SmDpPlusState.ALLOCATED -> {
-                    simVendorAdapter.confirmOrder(client, config, dao, eid, simEntry)
-                }
-                /* ESIM already 'released'. */
-                else -> {
-                    simEntry
-                }
+        return when (simEntry.smdpPlusState) {
+            SmDpPlusState.AVAILABLE -> {
+                simVendorAdapter.activate(client, config, dao, eid, simEntry)
             }
-        } catch (e: Exception) {
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
+            SmDpPlusState.ALLOCATED -> {
+                simVendorAdapter.confirmOrder(client, config, dao, eid, simEntry)
+            }
+            /* ESIM already 'released'. */
+            else -> {
+                simEntry
+            }
         }
     }
 
