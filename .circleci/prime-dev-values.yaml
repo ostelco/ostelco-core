@@ -6,7 +6,7 @@ replicaCount: 2
   
 prime:
   image: eu.gcr.io/pi-ostelco-dev/prime
-  tag: 016b0f06c
+  tag: 9ca9ca976
   pullPolicy: Always
   configDataBucket: "gs://pi-ostelco-dev-prime-files/dev"
   secrets:
@@ -37,6 +37,9 @@ prime:
     - name: SCANINFO_STORAGE_BUCKET 
       secretName: scaninfo-secrets
       secretKey:  bucketName
+    - name: SCANINFO_MASTERKEY_URI
+      secretName: scaninfo-keys
+      secretKey: masterKeyUri  
     - name: JUMIO_API_TOKEN
       secretName: jumio-secrets
       secretKey: apiToken        
@@ -135,18 +138,18 @@ services:
     host: metrics.new.dev.ostelco.org
     grpcOrHttp2: true
   prime-houston-api: 
-    name: prime-houston-api
+    name: houston-api
     type: ClusterIP
-    port: 443
-    targetPort: 7443  
-    portName: https
+    port: 80
+    targetPort: 9006  
+    portName: http
     host: houston-api.new.dev.ostelco.org
   prime-alvin-api: 
     name: alvin-api
     type: ClusterIP
     port: 80
     targetPort: 9008  
-    portName: https
+    portName: http
     host: alvin-api.new.dev.ostelco.org
   pseudonym-server: 
     name: pseudonym-server
