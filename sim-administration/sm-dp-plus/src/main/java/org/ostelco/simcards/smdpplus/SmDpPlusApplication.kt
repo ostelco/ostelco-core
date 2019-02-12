@@ -38,8 +38,6 @@ import javax.validation.constraints.NotNull
  */
 class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 
-    private val log = LoggerFactory.getLogger(javaClass)
-
     override fun getName(): String {
         return "SM-DP+ implementation (partial, only for testing of sim admin service)"
     }
@@ -48,7 +46,7 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         // TODO: application initialization
     }
 
-    lateinit var httpClient: HttpClient
+    private lateinit var httpClient: HttpClient
 
     lateinit var es2plusClient: ES2PlusClient
 
@@ -106,12 +104,12 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
     /**
      * Global lock, just in case.
      */
-    val entriesLock = Object()
+    private val entriesLock = Object()
 
-    val entries: MutableSet<SmDpSimEntry> = mutableSetOf()
-    val entriesByIccid = mutableMapOf<String, SmDpSimEntry>()
-    val entriesByImsi = mutableMapOf<String, SmDpSimEntry>()
-    val entriesByProfile = mutableMapOf<String, MutableSet<SmDpSimEntry>>()
+    private val entries: MutableSet<SmDpSimEntry> = mutableSetOf()
+    private val entriesByIccid = mutableMapOf<String, SmDpSimEntry>()
+    private val entriesByImsi = mutableMapOf<String, SmDpSimEntry>()
+    private val entriesByProfile = mutableMapOf<String, MutableSet<SmDpSimEntry>>()
 
     init {
         incomingEntries.forEach {
@@ -157,14 +155,14 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
      * errors are discovered, but return null if no matching profile is found.
      */
     private fun findMatchingFreeProfile(iccid: String?, profileType: String?): SmDpSimEntry? {
-        if (iccid != null) {
-            return findUnallocatedByIccidAndProfileType(iccid, profileType)
+        return if (iccid != null) {
+            findUnallocatedByIccidAndProfileType(iccid, profileType)
         } else if (profileType == null) {
             throw RuntimeException("No profileStatusList, no profile type, so don't know how to allocate sim entry")
         } else if (!entriesByProfile.containsKey(profileType)) {
             throw SmDpPlusException("Unknown profile type $profileType")
         } else {
-            return allocateByProfile(profileType)
+            allocateByProfile(profileType)
         }
     }
 

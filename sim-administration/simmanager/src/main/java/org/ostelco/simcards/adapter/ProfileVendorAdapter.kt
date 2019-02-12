@@ -60,7 +60,7 @@ data class ProfileVendorAdapter (
      * @param simEntry  SIM profile to activate
      * @return Updated SIM profile
      */
-    fun downloadOrder(client: Client,
+    private fun downloadOrder(client: Client,
                       config: ProfileVendorConfig,
                       dao: SimInventoryDAO,
                       simEntry: SimEntry) : SimEntry? {
@@ -209,7 +209,7 @@ data class ProfileVendorAdapter (
      * @param iccidList  list with ICCID
      * @return  A list with SM-DP+ 'profile status' information
      */
-    fun getProfileStatus(client: Client,
+    private fun getProfileStatus(client: Client,
                          config: ProfileVendorConfig,
                          iccidList: List<String>): List<ProfileStatus>? {
         if (iccidList.isNullOrEmpty()) {

@@ -14,7 +14,6 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
-import org.slf4j.LoggerFactory
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
 
@@ -22,7 +21,7 @@ class EncryptedRemoteEs2ClientOnlyTest {
 
     // This ICCID should be reserved for testing only, and should never be used
     // for any other purpose.
-    val iccid = "8947000000000000038"
+    private val iccid = "8947000000000000038"
 
 
     private lateinit var client: ES2PlusClient
@@ -39,13 +38,13 @@ class EncryptedRemoteEs2ClientOnlyTest {
     }
 
 
-    fun getState(): String {
+    private fun getState(): String {
         val profileStatus =
                 client.profileStatus(iccidList = listOf(iccid))
         assertEquals(FunctionExecutionStatusType.ExecutedSuccess, profileStatus.header.functionExecutionStatus.status)
         assertEquals(1, profileStatus.profileStatusList!!.size)
 
-        var profileStatusResponse = profileStatus.profileStatusList!!.get(0)
+        val profileStatusResponse = profileStatus.profileStatusList!![0]
 
         assertTrue(profileStatusResponse.iccid!!.startsWith(iccid))
         assertNotNull(profileStatusResponse.state)
@@ -115,8 +114,6 @@ class EncryptedRemoteEs2ClientOnlyTest {
 
 class DummyAppUsingSmDpPlusClient : Application<DummyAppUsingSmDpPlusClientConfig>() {
 
-    private val log = LoggerFactory.getLogger(javaClass)
-
     override fun getName(): String {
         return "Dummy, just for initialization and setting up a client"
     }
@@ -125,7 +122,7 @@ class DummyAppUsingSmDpPlusClient : Application<DummyAppUsingSmDpPlusClientConfi
         // TODO: application initialization
     }
 
-    lateinit var httpClient: HttpClient
+    private lateinit var httpClient: HttpClient
 
     lateinit var es2plusClient: ES2PlusClient
 

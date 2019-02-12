@@ -1,11 +1,10 @@
 package org.ostelco.simcards.inventory
 
-import com.fasterxml.jackson.databind.JsonSerializer
 import org.hibernate.validator.constraints.NotEmpty
 import org.ostelco.sim.es2plus.ProfileStatus
 import org.ostelco.simcards.admin.HlrConfig
-import org.ostelco.simcards.admin.SimAdministrationConfiguration
 import org.ostelco.simcards.admin.ProfileVendorConfig
+import org.ostelco.simcards.admin.SimAdministrationConfiguration
 import java.io.IOException
 import java.io.InputStream
 import javax.ws.rs.*
@@ -45,9 +44,9 @@ class SimInventoryResource(private val client: Client,
 
         val simVendorAdapter = assertNonNull(dao.getProfileVendorAdapterById(
                 simEntry.profileVendorId))
-        val config: ProfileVendorConfig = assertNonNull(config.profileVendors.filter {
+        val config: ProfileVendorConfig = assertNonNull(config.profileVendors.firstOrNull {
             it.name == simVendorAdapter.name
-        }.firstOrNull())
+        })
 
         return simVendorAdapter.getProfileStatus(client, config, iccid)
     }
@@ -200,7 +199,7 @@ class SimInventoryResource(private val client: Client,
 
     private fun assertCorrectHlr(hlr: String, match: Boolean) {
         if (!match) {
-            throw WebApplicationException("Attempt at impersonating ${hlr} HLR",
+            throw WebApplicationException("Attempt at impersonating $hlr HLR",
                     Response.Status.BAD_REQUEST)
         }
     }

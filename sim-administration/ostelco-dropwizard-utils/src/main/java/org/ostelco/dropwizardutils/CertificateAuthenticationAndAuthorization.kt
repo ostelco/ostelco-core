@@ -116,7 +116,7 @@ class CertAuthConfig {
 @Priority(Priorities.AUTHENTICATION)
 @Provider
 //@PreMatching // XXX Enable if possible
-class CertificateAuthorizationFilter(val rbac: RBACService) : javax.ws.rs.container.ContainerRequestFilter {
+class CertificateAuthorizationFilter(private val rbac: RBACService) : javax.ws.rs.container.ContainerRequestFilter {
 
     @Context
     private var resourceInfo: ResourceInfo? = null
@@ -236,7 +236,7 @@ class CertificateAuthorizationFilter(val rbac: RBACService) : javax.ws.rs.contai
     }
 }
 
-class RBACUserPrincipal(val id: String) : Principal {
+class RBACUserPrincipal(private val id: String) : Principal {
     override fun getName(): String {
         return id
     }
@@ -245,8 +245,8 @@ class RBACUserPrincipal(val id: String) : Principal {
 
 class RBACUserIdentity(id: String) : UserIdentity {
 
-    val principal: Principal
-    val mySubject: Subject
+    private val principal: Principal
+    private val mySubject: Subject
 
     init {
         this.principal = RBACUserPrincipal(id)
@@ -280,7 +280,7 @@ data class CertificateRBACUSER(
         val location: String,
         val organization: String) : Authentication.User {
 
-    val userId: UserIdentity
+    private val userId: UserIdentity
 
     init {
         userId = RBACUserIdentity(id)
@@ -310,8 +310,8 @@ data class CertificateRBACUSER(
 class RBACService(val rolesConfig: RolesConfig, val certConfig: CertAuthConfig) {
 
 
-    val roles: MutableMap<String, RoleDef> = mutableMapOf()
-    val users: MutableMap<String, CertificateRBACUSER> = mutableMapOf()
+    private val roles: MutableMap<String, RoleDef> = mutableMapOf()
+    private val users: MutableMap<String, CertificateRBACUSER> = mutableMapOf()
 
     init {
         rolesConfig.roles.forEach {
@@ -371,7 +371,7 @@ data class CertificateIdParameters(val commonName: String, val country: String, 
             val inputString= cert.subjectDN.name
             val parts = inputString.split(",")
 
-            var countryName: String = ""
+            var countryName = ""
             var commonName: String = ""
             var location: String = ""
             var organization: String = ""

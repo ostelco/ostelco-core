@@ -11,7 +11,7 @@ import java.io.PrintWriter
 
 class SimCardBatchDescriptorReaderTest {
 
-    val smdpInputCsvPath: String? =
+    private val smdpInputCsvPath: String? =
             ResourceHelpers.resourceFilePath("fixtures/sample-sim-batch-for-sm-dp+.csv")
 
     @Test
@@ -53,7 +53,7 @@ class SimCardBatchDescriptorReaderTest {
 
 class ImsiGenerator(val mcc : Int, val mnc: Int, val msinStart : Int) : Iterator<String> {
 
-    var msin = msinStart
+    private var msin = msinStart
 
     @Throws(NoSuchElementException::class)
     override fun next(): String {
@@ -67,7 +67,7 @@ class ImsiGenerator(val mcc : Int, val mnc: Int, val msinStart : Int) : Iterator
 
 class IccidGenerator(val startSerialNum: Int = 0) : Iterator<String> {
 
-    var serialNumber:Int = startSerialNum
+    private var serialNumber:Int = startSerialNum
     /**
      * Returns the next element in the iteration.
      */

@@ -66,15 +66,11 @@ class ES2PlusClient(
             val statusCode = result.statusLine.statusCode
             if (expectedReturnCode != statusCode) {
 
-                val msg = "Expected return value $expectedReturnCode, but got ${statusCode}.  Body was \"${result.entity.content}\""
+                val msg = "Expected return value $expectedReturnCode, but got $statusCode.  Body was \"${result.entity.content}\""
                 throw ES2PlusClientException(msg)
             }
 
-            val xAdminProtocolHeader = result.getFirstHeader("X-Admin-Protocol")!!
-
-            if (xAdminProtocolHeader == null) {
-                throw ES2PlusClientException("Expected header X-Admin-Protocol to be non null")
-            }
+            val xAdminProtocolHeader = result.getFirstHeader("X-Admin-Protocol")!! ?: throw ES2PlusClientException("Expected header X-Admin-Protocol to be non null")
 
             val protocolVersion = xAdminProtocolHeader.value
 
@@ -89,8 +85,7 @@ class ES2PlusClient(
                 throw ES2PlusClientException("Expected header Content-Type to be '$expectedContentType' but was '$returnedContentType'")
             }
 
-            val returnValue = objectMapper.readValue(result.entity.content, sclass) ?: throw ES2PlusClientException("null return value")
-            return returnValue
+            return objectMapper.readValue(result.entity.content, sclass) ?: throw ES2PlusClientException("null return value")
         } else if (jerseyClient != null) {
             val entity: Entity<T> = Entity.entity(es2ProtocolPayload, MediaType.APPLICATION_JSON)
             val result: Response = jerseyClient.target(path)

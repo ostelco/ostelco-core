@@ -57,7 +57,7 @@ class SimAdministrationTest {
 
         @JvmField
         @ClassRule
-        val HLR_RULE = KFixedHostPortGenericContainer("python:3-alpine")
+        val HLR_RULE: KFixedHostPortGenericContainer = KFixedHostPortGenericContainer("python:3-alpine")
                 .withFixedExposedPort(HLR_PORT, 8080)
                 .withExposedPorts(8080)
                 .withClasspathResourceMapping("hlr.py", "/service.py",
@@ -69,7 +69,7 @@ class SimAdministrationTest {
         val SIM_MANAGER_RULE = DropwizardAppRule(SimAdministrationApplication::class.java,
                     ResourceHelpers.resourceFilePath("sim-manager.yaml"),
                     ConfigOverride.config("database.url", psql.jdbcUrl),
-                    ConfigOverride.config("hlrs[0].endpoint", "http://localhost:${HLR_PORT}/default/provision"))
+                    ConfigOverride.config("hlrs[0].endpoint", "http://localhost:$HLR_PORT/default/provision"))
 
         @BeforeClass
         @JvmStatic
@@ -92,13 +92,13 @@ class SimAdministrationTest {
     class KPostgresContainer(imageName: String) : PostgreSQLContainer<KPostgresContainer>(imageName)
     class KFixedHostPortGenericContainer(imageName: String) : FixedHostPortGenericContainer<KFixedHostPortGenericContainer>(imageName)
 
-    val hlr = "Foo"
-    val profileVendor = "Bar"
-    val phoneType = "rababara"
-    val expectedProfile = "IPHONE_PROFILE_2"
+    private val hlr = "Foo"
+    private val profileVendor = "Bar"
+    private val phoneType = "rababara"
+    private val expectedProfile = "IPHONE_PROFILE_2"
 
     /* Test endpoint. */
-    val simManagerEndpoint = "http://localhost:${SIM_MANAGER_RULE.localPort}/ostelco/sim-inventory"
+    private val simManagerEndpoint = "http://localhost:${SIM_MANAGER_RULE.localPort}/ostelco/sim-inventory"
 
     /* Generate a fixed corresponding EID based on ICCID.
        Same code is used in SM-DP+ emulator. */
@@ -136,7 +136,7 @@ class SimAdministrationTest {
     /* The SIM dataset is the same that is used by the SM-DP+ emulator. */
     private fun loadSimData() {
         val entries = FileInputStream(SM_DP_PLUS_RULE.configuration.simBatchData)
-        val response = client.target("${simManagerEndpoint}/${hlr}/import-batch/profilevendor/${profileVendor}")
+        val response = client.target("$simManagerEndpoint/$hlr/import-batch/profilevendor/$profileVendor")
                 .queryParam("phoneType", phoneType)
                 .request()
                 .put(Entity.entity(entries, MediaType.TEXT_PLAIN))
@@ -149,7 +149,7 @@ class SimAdministrationTest {
     @Ignore
     fun testGetProfileStatus() {
         val iccid = "8901000000000000001"
-        val response = client.target("${simManagerEndpoint}/${hlr}/profileStatusList/${iccid}")
+        val response = client.target("$simManagerEndpoint/$hlr/profileStatusList/$iccid")
                 .request()
                 .get()
         assertThat(response.status).isEqualTo(200)
@@ -158,7 +158,7 @@ class SimAdministrationTest {
     @Test
     fun testActivateWithHlr() {
         val iccid = "8901000000000000001"
-        val response = client.target("${simManagerEndpoint}/${hlr}/iccid/${iccid}")
+        val response = client.target("$simManagerEndpoint/$hlr/iccid/$iccid")
                 .request()
                 .post(Entity.json(null))
         assertThat(response.status).isEqualTo(200)
@@ -171,7 +171,7 @@ class SimAdministrationTest {
     @Test
     fun testDeactivateWithHlr() {
         val iccid = "8901000000000000001"
-        val response = client.target("${simManagerEndpoint}/${hlr}/iccid/${iccid}")
+        val response = client.target("$simManagerEndpoint/$hlr/iccid/$iccid")
                 .request()
                 .delete()
         assertThat(response.status).isEqualTo(200)
@@ -184,7 +184,7 @@ class SimAdministrationTest {
     @Test
     fun testGetIccid() {
         val iccid = "8901000000000000001"
-        val response = client.target("${simManagerEndpoint}/${hlr}/iccid/${iccid}")
+        val response = client.target("$simManagerEndpoint/$hlr/iccid/$iccid")
                 .request()
                 .get()
         assertThat(response.status).isEqualTo(200)
@@ -197,7 +197,7 @@ class SimAdministrationTest {
     fun testActivateEsim() {
         val iccid = "8901000000000000001"
         val eid = getEidFromIccid(iccid)
-        val response = client.target("${simManagerEndpoint}/${hlr}/esim")
+        val response = client.target("$simManagerEndpoint/$hlr/esim")
                 .queryParam("eid", eid)
                 .queryParam("iccid", iccid)
                 .request()
@@ -215,7 +215,7 @@ class SimAdministrationTest {
     @Test
     fun testActivateEsimNoEid() {
         val iccid = "8901000000000000019"
-        val response = client.target("${simManagerEndpoint}/${hlr}/esim")
+        val response = client.target("$simManagerEndpoint/$hlr/esim")
                 .queryParam("iccid", iccid)
                 .request()
                 .post(Entity.json(null))
@@ -233,7 +233,7 @@ class SimAdministrationTest {
     fun testActivateNextEsim() {
         val iccid = "8901000000000000027"
         val eid = getEidFromIccid(iccid)
-        val response = client.target("${simManagerEndpoint}/${hlr}/esim")
+        val response = client.target("$simManagerEndpoint/$hlr/esim")
                 .queryParam("eid", eid)
                 .request()
                 .post(Entity.json(null))
@@ -249,7 +249,7 @@ class SimAdministrationTest {
     @Test
     fun testActivateEsimNoEidAll() {
         val iccid = "8901000000000000035"
-        val response = client.target("${simManagerEndpoint}/${hlr}/esim/all")
+        val response = client.target("$simManagerEndpoint/$hlr/esim/all")
                 .queryParam("iccid", iccid)
                 .request()
                 .post(Entity.json(null))
@@ -267,7 +267,7 @@ class SimAdministrationTest {
     @Test
     @Ignore
     fun testActivateNextEsimNoEidAll() {
-        val response = client.target("${simManagerEndpoint}/${hlr}/esim/all")
+        val response = client.target("$simManagerEndpoint/$hlr/esim/all")
                 .request()
                 .post(Entity.json(null))
         assertThat(response.status).isEqualTo(200)

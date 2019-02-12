@@ -75,7 +75,7 @@ class DynamicES2ValidatorAdder : DynamicFeature {
         val allAnnotations = mutableSetOf<Any>()
 
         resourceInfo.resourceMethod.returnType.annotations.map { allAnnotations.add(it.annotationClass.java) }
-        resourceInfo.resourceMethod.parameterTypes.map {it.annotations.map { allAnnotations.add(it.annotationClass.java) }}
+        resourceInfo.resourceMethod.parameterTypes.map { it -> it.annotations.map { allAnnotations.add(it.annotationClass.java) }}
 
         if (allAnnotations.contains(JsonSchema::class.java)) {
              context.register(RequestServerReaderWriterInterceptor::class.java)
@@ -121,7 +121,7 @@ private class RequestServerReaderWriterInterceptor : ReaderInterceptor, WriterIn
 
         val originalStream = ctx.inputStream
         val originalByteArray = toByteArray(originalStream)
-        val body: String = String(originalByteArray, Charset.forName("UTF-8"))
+        val body = String(originalByteArray, Charset.forName("UTF-8"))
 
         validator.validateString(ctx.type, body, Response.Status.BAD_REQUEST)
 

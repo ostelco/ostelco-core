@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicLong
  */
 class SmDpSimEntryIterator(csvInputStream: InputStream) : Iterator<SmDpSimEntry> {
 
-    var count = AtomicLong(0)
+    private var count = AtomicLong(0)
 
     private val values = ConcurrentLinkedDeque<SmDpSimEntry>()
 

@@ -3,8 +3,8 @@ package org.ostelco.simcards.inventory
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
-import org.ostelco.simcards.adapter.ProfileVendorAdapter
 import org.ostelco.simcards.adapter.HlrAdapter
+import org.ostelco.simcards.adapter.ProfileVendorAdapter
 import org.skife.jdbi.v2.StatementContext
 import org.skife.jdbi.v2.sqlobject.*
 import org.skife.jdbi.v2.sqlobject.customizers.BatchChunkSize
@@ -266,7 +266,7 @@ abstract class SimInventoryDAO {
      * Set permission for a SIM profile vendor to activate SIM profiles
      * with a specific HLR.
      * @param profileVendor  name of SIM profile vendor
-     * @param hrl  name of HLR
+     * @param hlr  name of HLR
      * @return true on successful update
      */
     @Transaction
@@ -526,17 +526,14 @@ abstract class SimInventoryDAO {
      * Allocates the next free SIM card on a HLR and set the MSISDN
      * number.
      * @param hlrId  id of HLR to find next free SIM card with
-     * @param msidn  MSISDN to search for
+     * @param msisdn  MSISDN to search for
      * @return next free SIM card or null if no cards is available
      */
     @Transaction
     fun allocateNextFreeSimProfileForMsisdn(hlrId: Long, msisdn: String, profile: String): SimEntry? {
-        val simEntry = findNextFreeSimProfileForHlr(hlrId, profile)
+        val simEntry = findNextFreeSimProfileForHlr(hlrId, profile) ?: return null
 
         /* No SIM cards available. */
-        if (simEntry == null) {
-            return null
-        }
 
         return if (updateMsisdnOfSimProfile(simEntry.id!!, msisdn) > 0)
             getSimProfileByMsisdn(msisdn)
