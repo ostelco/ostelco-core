@@ -39,3 +39,12 @@ httpClient:
   maxThreads: 128
   gzipEnabled: true
   gzipEnabledForRequests: true
+  timeout: 10000ms
+  tls:
+    # Default is 500 milliseconds, we need more when debugging.
+    # protocol: TLSv1.2
+    keyStoreType: JKS
+    keyStorePath: /certs/idemia-client-cert.jks
+    keyStorePassword: foobar
+    verifyHostname: false
+    trustSelfSignedCertificates: true
