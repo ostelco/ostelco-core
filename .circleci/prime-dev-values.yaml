@@ -2,21 +2,47 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-replicaCount: 1
-firebaseServiceAccount: ""
+replicaCount: 2
   
-
 prime:
   image: eu.gcr.io/pi-ostelco-dev/prime
-  tag: 2f47ab570
+  tag: 016b0f06c
   pullPolicy: Always
+  configDataBucket: "gs://pi-ostelco-dev-prime-files/dev"
+  secrets:
+    - secretName: "prime-sa-key-temp"  
+      containerMountPath: "/secret"
   env: 
-    FIREBASE_ROOT_PATH: dev_new
+    FIREBASE_ROOT_PATH: dev
     NEO4J_HOST: neo4j-neo4j.neo4j.svc.cluster.local
-    STRIPE_API_KEY: ""
-    DATA_TRAFFIC_TOPIC: "data-traffic"
-    PURCHASE_INFO_TOPIC: "purchase-info"
-    ACTIVE_USERS_TOPIC: "active-users"
+    SLACK_CHANNEL: prime-alerts-new
+    DATASTORE_NAMESPACE: dev
+    DATA_TRAFFIC_TOPIC: data-traffic
+    PURCHASE_INFO_TOPIC: purchase-info
+    ACTIVE_USERS_TOPIC: active-users
+    GOOGLE_CREDENTIALS_PATH: "/secret/pantel-prod.json"
+    PROJECT_ID: pi-ostelco-dev 
+
+
+  envFromSecret:
+    - name: SLACK_WEBHOOK_URI
+      secretName: slack-secrets
+      secretKey: slackWebHookUri
+    - name: STRIPE_API_KEY
+      secretName: stripe-secrets
+      secretKey: stripeApiKey
+    - name: STRIPE_ENDPOINT_SECRET 
+      secretName: stripe-secrets
+      secretKey: stripeEndpointSecret
+    - name: SCANINFO_STORAGE_BUCKET 
+      secretName: scaninfo-secrets
+      secretKey:  bucketName
+    - name: JUMIO_API_TOKEN
+      secretName: jumio-secrets
+      secretKey: apiToken        
+    - name: JUMIO_API_SECRET
+      secretName: jumio-secrets
+      secretKey: apiSecret   
   ports:
     - 8080
     - 8081
@@ -30,16 +56,19 @@ prime:
       cpu: 100m
       memory: 200Mi  
   livenessProbe: {}
-    # path: /
-    # port: 8081
-  readinessProbe: {}
-    # path: /
-    # port: 8081  
+  readinessProbe: {} 
   annotations: 
     prometheus.io/scrape: 'true'
     prometheus.io/path: '/prometheus-metrics'
     prometheus.io/port: '8081'  
 
+
+canary: {}
+  # weight: 25
+  # headers: # only route requests with these headers to the canary service
+  #   x-mode: canary
+  # tag: e449ed672
+  
 esp:
   image: gcr.io/endpoints-release/endpoints-runtime
   tag: 1
@@ -50,72 +79,90 @@ ocsEsp:
   env: {}
   endpointAddress: ocs.new.dev.ostelco.org
   ports:
-    - 9000
-    - 8443
-  
+    http2_port: 9000
 
 apiEsp: 
   enabled: true
   env: {}
   endpointAddress: api.new.dev.ostelco.org
   ports:
-    - 9002
-    - 443  
+    http2_port: 9002
 
 metricsEsp:
   enabled: true
   env: {}
   endpointAddress: metrics.new.dev.ostelco.org
   ports:
-    - 9004
-    - 9443
-   
+    http2_port: 9004
+
+alvinApiEsp:
+  enabled: true
+  env: {}  
+  endpointAddress: alvin-api.new.dev.ostelco.org
+  ports: 
+    http_port: 9008  
+
+houstonApiEsp:
+  enabled: true
+  env: {}  
+  endpointAddress: houston-api.new.dev.ostelco.org
+  ports: 
+    http_port: 9006    
 
 services:
-  prime:
-    name: prime-service
-    type: LoadBalancer
-    port: 443
-    targetPort: 8443
+  ocs:
+    name: ocs
+    type: ClusterIP
+    port: 80
+    targetPort: 9000
     portName: grpc 
-   # loadBalancerIP: x.y.z.n
+    host: ocs.new.dev.ostelco.org
+    grpcOrHttp2: true
   api:
-    name: prime-api
-    type: LoadBalancer
-    port: 443
-    targetPort: 443
-    portName: https
-    # loadBalancerIP: x.y.z.n
+    name: api
+    type: ClusterIP
+    port: 80
+    targetPort: 9002
+    portName: http
+    host: api.new.dev.ostelco.org
+    grpcOrHttp2: true
   metrics: 
-    name: prime-metrics
-    type: LoadBalancer
-    port: 443
-    targetPort: 9443  
+    name: metrics
+    type: ClusterIP
+    port: 80
+    targetPort: 9004 
     portName: grpc
-    # loadBalancerIP: x.y.z.n
+    host: metrics.new.dev.ostelco.org
+    grpcOrHttp2: true
+  prime-houston-api: 
+    name: prime-houston-api
+    type: ClusterIP
+    port: 443
+    targetPort: 7443  
+    portName: https
+    host: houston-api.new.dev.ostelco.org
+  prime-alvin-api: 
+    name: alvin-api
+    type: ClusterIP
+    port: 80
+    targetPort: 9008  
+    portName: https
+    host: alvin-api.new.dev.ostelco.org
+  pseudonym-server: 
+    name: pseudonym-server
+    type: ClusterIP
+    port: 80
+    targetPort: 8080  
+    portName: http
 
-ingress:
-  enabled: false
-  annotations: {}
-    # kubernetes.io/ingress.class: nginx
-  path: /
-  hosts:
-    - prime.local
-  tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
 
 certs: 
   enabled: true
   dnsProvider: dev-clouddns
-  issuer: letsencrypt-production # or letsencrypt-staging
-  apiDns: 
-    - api.new.dev.ostelco.org
-  ocsDns: 
-    - ocs.new.dev.ostelco.org
-  metricsDns: 
-    - metrics.new.dev.ostelco.org
+  issuer: letsencrypt-production 
+  tlsSecretName: new-dev-ostelco-tls
+  hosts:
+    - '*.new.dev.ostelco.org'
 
 disruptionBudget: 
   enabled: false
