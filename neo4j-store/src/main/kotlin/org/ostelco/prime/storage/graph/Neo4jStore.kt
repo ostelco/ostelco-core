@@ -335,7 +335,7 @@ object Neo4jStoreSingleton : GraphStore {
                 val subscription = subscriptionStore.get(msisdn, transaction).bind()
                 val customer = customerStore.get(customerId, transaction).bind()
                 bundles.forEach { bundle ->
-                    subscriptionToBundleStore.create(subscription, mapOf("reservedBytes" to "0") ,bundle, transaction).bind()
+                    subscriptionToBundleStore.create(subscription, mapOf("reservedBytes" to "0"), bundle, transaction).bind()
                 }
                 subscriptionRelationStore.create(customer, subscription, transaction).bind()
                 // TODO Remove hardcoded country code.
@@ -444,12 +444,12 @@ object Neo4jStoreSingleton : GraphStore {
      * @param requestedBytes Bytes requested for consumption.
      *
      */
-    override suspend fun consume(msisdn: String, usedBytes: Long, requestedBytes: Long): Either<StoreError, Pair<Long, Long>> {
+    override suspend fun consume(msisdn: String, usedBytes: Long, requestedBytes: Long, callback: (Either<StoreError, Pair<Long, Long>>) -> Unit) {
 
         // Note: _LOCK_ dummy property is set in the relation 'r' and node 'bundle' so that they get locked.
         // Ref: https://neo4j.com/docs/java-reference/current/transactions/#transactions-isolation
 
-        return suspendedWriteTransaction {
+        suspendedWriteTransaction {
 
             writeSuspended("""
                             MATCH (:${subscriptionEntity.name} {id: '$msisdn'})-[r:${subscriptionToBundleRelation.relation.name}]->(bundle:${bundleEntity.name})
@@ -460,19 +460,25 @@ object Neo4jStoreSingleton : GraphStore {
                             REMOVE r._LOCK_, bundle._LOCK_
                             RETURN r.reservedBytes AS granted, bundle.balance AS balance
                             """.trimIndent(),
-                    transaction) { statementResult ->
-                if (statementResult.hasNext()) {
-                    val record = statementResult.single()
-                    val balance = record.get("balance").asString("0").toLong()
-                    val granted = record.get("granted").asString("0").toLong()
+                    transaction) { completionStage ->
+                completionStage
+                        .thenApply { it.singleAsync() }
+                        .thenAcceptAsync {
+                            it.handle { record, throwable ->
 
-                    logger.trace("requestedBytes = %,d, balance = %,d, granted = %,d".format(requestedBytes, balance, granted))
+                                if (throwable != null) {
+                                    callback(NotUpdatedError(type = "Balance for ${subscriptionEntity.name}", id = msisdn).left())
+                                }
+                                else {
+                                    val balance = record.get("balance").asString("0").toLong()
+                                    val granted = record.get("granted").asString("0").toLong()
 
-                    Pair(granted, balance).right()
-                } else {
-                    NotUpdatedError("Balance for ${subscriptionEntity.name}", msisdn).left()
-                }
-            }.ifFailedThenRollback(transaction)
+                                    logger.trace("requestedBytes = %,d, balance = %,d, granted = %,d".format(requestedBytes, balance, granted))
+                                    callback(Pair(granted, balance).right())
+                                }
+                            }
+                        }
+            }
         }
     }
 
@@ -1431,5 +1437,6 @@ object Neo4jStoreSingleton : GraphStore {
     fun createIndex() = writeTransaction {
         write(query = "CREATE INDEX ON :${identityEntity.name}(id)", transaction = transaction) {}
         write(query = "CREATE INDEX ON :${subscriptionEntity.name}(id)", transaction = transaction) {}
+        write(query = "CREATE INDEX ON :${bundleEntity.name}(id)", transaction = transaction) {}
     }
 }

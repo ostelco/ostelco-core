@@ -24,12 +24,12 @@ interface ClientDocumentStore {
     /**
      * Get token used for sending notification to user application
      */
-    fun getNotificationTokens(msisdn : String): Collection<ApplicationToken>
+    fun getNotificationTokens(msisdn: String): Collection<ApplicationToken>
 
     /**
      * Add token used for sending notification to user application
      */
-    fun addNotificationToken(msisdn: String, token: ApplicationToken) : Boolean
+    fun addNotificationToken(msisdn: String, token: ApplicationToken): Boolean
 
     /**
      * Get token used for sending notification to user application
@@ -110,7 +110,7 @@ interface ClientGraphStore {
     /**
      * Set balance after OCS Topup or Consumption
      */
-    suspend fun consume(msisdn: String, usedBytes: Long, requestedBytes: Long): Either<StoreError, Pair<Long, Long>>
+    suspend fun consume(msisdn: String, usedBytes: Long, requestedBytes: Long, callback: (Either<StoreError, Pair<Long, Long>>) -> Unit)
 
     /**
      * Get msisdn for the given subscription-id
@@ -173,6 +173,7 @@ interface AdminGraphStore {
 
     // simple create
     fun createProductClass(productClass: ProductClass): Either<StoreError, Unit>
+
     fun createProduct(product: Product): Either<StoreError, Unit>
     fun createSegment(segment: Segment): Either<StoreError, Unit>
     fun createOffer(offer: Offer): Either<StoreError, Unit>
@@ -248,7 +249,7 @@ interface AdminGraphStore {
     fun atomicCreateOffer(
             offer: Offer,
             segments: Collection<Segment> = emptyList(),
-            products: Collection<Product> = emptyList()) : Either<StoreError, Unit>
+            products: Collection<Product> = emptyList()): Either<StoreError, Unit>
 
     fun atomicCreateSegments(createSegments: Collection<Segment>): Either<StoreError, Unit>
 

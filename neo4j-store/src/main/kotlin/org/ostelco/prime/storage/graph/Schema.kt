@@ -8,6 +8,7 @@ import kotlinx.coroutines.withContext
 import org.neo4j.driver.v1.AccessMode.READ
 import org.neo4j.driver.v1.AccessMode.WRITE
 import org.neo4j.driver.v1.StatementResult
+import org.neo4j.driver.v1.StatementResultCursor
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
@@ -22,6 +23,7 @@ import org.ostelco.prime.storage.StoreError
 import org.ostelco.prime.storage.graph.Graph.read
 import org.ostelco.prime.storage.graph.Graph.write
 import org.ostelco.prime.storage.graph.ObjectHandler.getProperties
+import java.util.concurrent.CompletionStage
 
 //
 // Schema classes
@@ -404,10 +406,10 @@ object Graph {
         return transaction.run(query).let(transform)
     }
 
-    suspend fun <R> writeSuspended(query: String, transaction: Transaction, transform: (StatementResult) -> R): R {
+    suspend fun <R> writeSuspended(query: String, transaction: Transaction, transform: (CompletionStage<StatementResultCursor>) -> R) {
         LOG.trace("write:[\n$query\n]")
-        return withContext(Dispatchers.Default) {
-            transaction.run(query)
+        withContext(Dispatchers.Default) {
+            transaction.runAsync(query)
         }.let(transform)
     }
 }

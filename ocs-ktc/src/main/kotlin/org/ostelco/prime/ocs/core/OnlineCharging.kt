@@ -68,52 +68,53 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                             .setValidityTime(86400)
 
 
-                    storage.consume(msisdn, used, requested)
-                            .fold(
-                                    {
-                                        // TODO martin : Should we handle all errors as NotFoundError?
-                                        response.setResultCode(ResultCode.DIAMETER_USER_UNKNOWN)
-                                    },
-                                    {
-                                        val (granted, balance) = it
+                    storage.consume(msisdn, used, requested) { storeResult ->
+                        storeResult.fold(
+                            {
+                                // TODO martin : Should we handle all errors as NotFoundError?
+                                response.setResultCode(ResultCode.DIAMETER_USER_UNKNOWN)
+                            },
+                            {
+                                val (granted, balance) = it
 
-                                        val grantedTotalOctets = if (mscc.reportingReason != ReportingReason.FINAL
-                                                && mscc.requested.totalOctets > 0) {
+                                val grantedTotalOctets = if (mscc.reportingReason != ReportingReason.FINAL
+                                        && mscc.requested.totalOctets > 0) {
 
-                                            if (granted < mscc.requested.totalOctets) {
-                                                responseMscc.finalUnitIndication = FinalUnitIndication.newBuilder()
-                                                        .setFinalUnitAction(FinalUnitAction.TERMINATE)
-                                                        .setIsSet(true)
-                                                        .build()
-                                            }
+                                    if (granted < mscc.requested.totalOctets) {
+                                        responseMscc.finalUnitIndication = FinalUnitIndication.newBuilder()
+                                                .setFinalUnitAction(FinalUnitAction.TERMINATE)
+                                                .setIsSet(true)
+                                                .build()
+                                    }
 
-                                            granted
+                                    granted
 
-                                        } else {
-                                            // Use -1 to indicate no granted service unit should be included in the answer
-                                            -1
-                                        }
+                                } else {
+                                    // Use -1 to indicate no granted service unit should be included in the answer
+                                    -1
+                                }
 
-                                        responseMscc.granted = ServiceUnit.newBuilder().setTotalOctets(grantedTotalOctets).build()
+                                responseMscc.granted = ServiceUnit.newBuilder().setTotalOctets(grantedTotalOctets).build()
 
-                                        responseMscc.resultCode = ResultCode.DIAMETER_SUCCESS
+                                responseMscc.resultCode = ResultCode.DIAMETER_SUCCESS
 
-                                        if (!loadUnitTest && !loadAcceptanceTest) {
-                                            launch {
-                                                AnalyticsReporter.report(
-                                                        request = request,
-                                                        bundleBytes = balance)
-                                            }
+                                if (!loadUnitTest && !loadAcceptanceTest) {
+                                    launch {
+                                        AnalyticsReporter.report(
+                                                request = request,
+                                                bundleBytes = balance)
+                                    }
 
-                                            launch {
-                                                Notifications.lowBalanceAlert(
-                                                        msisdn = msisdn,
-                                                        reserved = granted,
-                                                        balance = balance)
-                                            }
-                                        }
-                                        response.addMscc(responseMscc)
-                                    })
+                                    launch {
+                                        Notifications.lowBalanceAlert(
+                                                msisdn = msisdn,
+                                                reserved = granted,
+                                                balance = balance)
+                                    }
+                                }
+                                response.addMscc(responseMscc)
+                            })
+                    }
                 }
                 synchronized(OnlineCharging) {
                     ccaStreamMap[streamId]?.onNext(response.build())

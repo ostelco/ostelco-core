@@ -16,6 +16,7 @@ import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.Segment
 import java.time.Instant
+import java.util.concurrent.CountDownLatch
 import kotlin.test.BeforeTest
 import kotlin.test.Ignore
 import kotlin.test.Test
@@ -32,6 +33,8 @@ class Neo4jLoadTest {
                 it.run("MATCH (n) DETACH DELETE n")
             }
         }
+
+        Neo4jStoreSingleton.createIndex()
 
         Neo4jStoreSingleton.createProduct(
                 Product(sku = "100MB_FREE_ON_JOINING",
@@ -74,22 +77,28 @@ class Neo4jLoadTest {
         // Start timestamp in millisecond
         val start = Instant.now()
 
+        val cdl = CountDownLatch(COUNT)
+
         runBlocking(Dispatchers.Default) {
             repeat(COUNT) { i ->
                 launch {
-                    Neo4jStoreSingleton.consume(msisdn = "${i % USERS}", usedBytes = USED, requestedBytes = REQUESTED)
-                            .fold(
-                                    { fail(it.message) },
-                                    {
-                                        // println("Balance = %,d, Granted = %,d".format(it.second, it.first))
-                                        assert(true)
-                                    })
+                    Neo4jStoreSingleton.consume(msisdn = "${i % USERS}", usedBytes = USED, requestedBytes = REQUESTED) { storeResult ->
+                        storeResult.fold(
+                                { fail(it.message) },
+                                {
+                                    // println("Balance = %,d, Granted = %,d".format(it.second, it.first))
+                                    cdl.countDown()
+                                    assert(true)
+                                })
+                    }
                 }
             }
 
             // Wait for all the responses to be returned
             println("Waiting for all responses to be returned")
         }
+
+        cdl.await()
 
         // Stop timestamp in millisecond
         val stop = Instant.now()
