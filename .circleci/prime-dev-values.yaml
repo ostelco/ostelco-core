@@ -105,7 +105,7 @@ alvinApiEsp:
 houstonApiEsp:
   enabled: true
   env: {}  
-  endpointAddress: houston-api.new.dev.ostelco.org
+  endpointAddress: houston-api1.new.dev.ostelco.org
   ports: 
     http_port: 9006    
 
