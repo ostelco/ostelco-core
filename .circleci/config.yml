@@ -338,7 +338,7 @@ workflows:
         filters:
           branches:
             only:
-            - update/circleci-pipeline 
+            - develop 
     - build-image:
         requires:
           - build-code
