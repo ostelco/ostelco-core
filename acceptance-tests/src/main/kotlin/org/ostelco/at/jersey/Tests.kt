@@ -694,7 +694,7 @@ class eKYCTest {
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
             var dataMap = MultivaluedHashMap<String,String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("ERROR"))
             dataMap.put("verificationStatus", listOf("DENIED_FRAUD"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
@@ -735,7 +735,7 @@ class eKYCTest {
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
             var dataMap = MultivaluedHashMap<String,String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("SUCCESS"))
             dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
@@ -779,7 +779,7 @@ class eKYCTest {
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
             var dataMap = MultivaluedHashMap<String,String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("SUCCESS"))
             dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
@@ -823,7 +823,7 @@ class eKYCTest {
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
             var dataMap = MultivaluedHashMap<String,String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("SUCCESS"))
             dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
@@ -865,7 +865,7 @@ class eKYCTest {
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
             var dataMap = MultivaluedHashMap<String,String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("SUCCESS"))
             dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
@@ -907,7 +907,7 @@ class eKYCTest {
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
             var dataMap = MultivaluedHashMap<String, String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("ERROR"))
             dataMap.put("verificationStatus", listOf("DENIED_FRAUD"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
@@ -938,7 +938,7 @@ class eKYCTest {
 
 
             dataMap.clear()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("SUCCESS"))
             dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
@@ -985,7 +985,7 @@ class eKYCTest {
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
             var dataMap = MultivaluedHashMap<String, String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("SUCCESS"))
             dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
@@ -1039,7 +1039,7 @@ class eKYCTest {
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
             var dataMap = MultivaluedHashMap<String, String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("ERROR"))
             dataMap.put("verificationStatus", listOf("DENIED_FRAUD"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
@@ -1069,7 +1069,7 @@ class eKYCTest {
             assertNotNull(newScanInfo.scanId, message = "Failed to get new scanId")
 
             dataMap.clear()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("SUCCESS"))
             dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
@@ -1127,7 +1127,7 @@ class eKYCTest {
             val rejectReason="""{ "rejectReasonCode":"100", "rejectReasonDescription":"MANIPULATED_DOCUMENT", "rejectReasonDetails": [{ "detailsCode": "1001", "detailsDescription": "PHOTO" },{ "detailsCode": "1004", "detailsDescription": "DOB" }]}"""
 
             var dataMap = MultivaluedHashMap<String, String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("ERROR"))
             dataMap.put("verificationStatus", listOf("DENIED_FRAUD"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))

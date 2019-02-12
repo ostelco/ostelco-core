@@ -1,16 +1,16 @@
 package org.ostelco.simcards.admin
 
-import org.ostelco.simcards.smdpplus.SmDpPlusApplication
-import io.dropwizard.testing.ResourceHelpers
-import io.dropwizard.testing.junit.DropwizardAppRule
 import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.jdbi.DBIFactory
 import io.dropwizard.testing.ConfigOverride
+import io.dropwizard.testing.ResourceHelpers
+import io.dropwizard.testing.junit.DropwizardAppRule
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.*
 import org.ostelco.simcards.inventory.HlrState
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SmDpPlusState
+import org.ostelco.simcards.smdpplus.SmDpPlusApplication
 import org.skife.jdbi.v2.DBI
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.FixedHostPortGenericContainer
@@ -35,7 +35,7 @@ class SimAdministrationTest {
 
         @JvmField
         @ClassRule
-        val psql = KPostgresContainer("postgres:11-alpine")
+        val psql: KPostgresContainer = KPostgresContainer("postgres:11-alpine")
                 .withInitScript("init.sql")
                 .withDatabaseName("sim_manager")
                 .withUsername("test")
@@ -98,7 +98,7 @@ class SimAdministrationTest {
     val expectedProfile = "IPHONE_PROFILE_2"
 
     /* Test endpoint. */
-    val simManagerEndpoint = "http://localhost:${SIM_MANAGER_RULE.getLocalPort()}/ostelco/sim-inventory"
+    val simManagerEndpoint = "http://localhost:${SIM_MANAGER_RULE.localPort}/ostelco/sim-inventory"
 
     /* Generate a fixed corresponding EID based on ICCID.
        Same code is used in SM-DP+ emulator. */

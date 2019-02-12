@@ -89,7 +89,7 @@ class SubscriptionResourceTest {
                                 .setPrefix("Bearer")
                                 .buildAuthFilter()))
                 .addResource(AuthValueFactoryProvider.Binder(AccessTokenPrincipal::class.java))
-                .addResource(SubscriptionResource(DAO))
+                .addResource(CustomerResource(DAO))
                 .build()
     }
 }

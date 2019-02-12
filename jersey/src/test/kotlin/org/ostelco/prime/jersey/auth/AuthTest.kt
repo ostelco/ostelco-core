@@ -87,7 +87,7 @@ class AuthTest {
         @BeforeClass
         @JvmStatic
         fun setUpClient() {
-            client = JerseyClientBuilder(RULE.environment).build("test client");
+            client = JerseyClientBuilder(RULE.environment).build("test client")
         }
     }
 }

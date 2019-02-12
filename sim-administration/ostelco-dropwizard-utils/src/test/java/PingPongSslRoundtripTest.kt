@@ -14,6 +14,9 @@ class PingPongSslRoundtripTest {
                 PingPongApp::class.java,
                 "config.yml"
         )
+        /* From config file. */
+        const val HTTP_PORT = 8080
+        const val TLS_PORT  = 8443
     }
 
     @Before
@@ -25,10 +28,6 @@ class PingPongSslRoundtripTest {
     fun tearDown() {
         SUPPORT.after()
     }
-
-    /* From config file. */
-    val HTTP_PORT = 8080
-    val TLS_PORT = 8443
 
     @Test
     fun handleNonEncryptedHttp() {

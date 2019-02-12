@@ -4,7 +4,7 @@ export const getTextType = (text) => {
   if (isPhoneNumber) return 'phonenumber';
   if (isEmail) return 'email';
   return 'unknown';
-}
+};
 
 export const humanReadableBytes = (sizeInBytes) => {
   var i = -1;
@@ -14,12 +14,12 @@ export const humanReadableBytes = (sizeInBytes) => {
     i++;
   } while (sizeInBytes > 1024);
   return `${Math.max(sizeInBytes, 0.1).toFixed(1)} ${byteUnits[i]}`;
-}
+};
 
 export const convertTimestampToDate = (timestamp) => {
   const date = new Date(timestamp);
   return date.toLocaleString('en-GB', { timeZone: 'UTC' });
-}
+};
 
 export const isChrome = () => {
   // please note,
@@ -52,6 +52,6 @@ export const isChrome = () => {
     // not Google Chrome
     return false;
   }
-}
+};
 
 export const encodeEmail = (email) => (email ? encodeURIComponent(email) : email);

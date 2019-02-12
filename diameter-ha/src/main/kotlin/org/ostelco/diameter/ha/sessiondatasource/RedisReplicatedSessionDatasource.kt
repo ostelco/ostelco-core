@@ -68,7 +68,7 @@ class RedisReplicatedSessionDatasource(val container: IContainer) : ISessionData
     }
 
     override fun isClustered(): Boolean {
-        return false;
+        return false
     }
 
     override fun start() {

@@ -139,7 +139,7 @@ public class OcsgwMetrics {
     }
 
     private void initAutoReportAnalyticsReport() {
-        autoReportAnalyticsFuture = executorService.scheduleAtFixedRate((Runnable) () -> {
+        autoReportAnalyticsFuture = executorService.scheduleAtFixedRate(() -> {
                     sendAnalytics(lastActiveSessions);
                 },
                 30,

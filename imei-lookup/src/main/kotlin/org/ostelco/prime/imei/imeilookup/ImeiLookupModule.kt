@@ -13,7 +13,7 @@ class ImeiLookupModule : PrimeModule {
     lateinit var config: Config
 
     override fun init(env: Environment) {
-        ImeiDdSingleton.loadFile(config.csvFile);
+        ImeiDdSingleton.loadFile(config.csvFile)
     }
 }
 

@@ -150,7 +150,7 @@ class ProfilesResource {
     private fun isEmail(email: String): Boolean {
         val regex = "^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$"
         val pattern = Pattern.compile(regex)
-        return pattern.matcher(email).matches();
+        return pattern.matcher(email).matches()
     }
 
     private fun getProfileForMsisdn(msisdn: String): Either<ApiError, Subscriber> {
@@ -443,7 +443,7 @@ class NotifyResource {
  * Resource used to handle plans related REST calls.
  */
 @Path("/plans")
-class PlanResource() {
+class PlanResource {
 
     private val logger by getLogger()
     private val storage by lazy { getResource<AdminDataSource>() }

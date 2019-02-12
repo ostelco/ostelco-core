@@ -7,14 +7,14 @@ import PaymentHistory from "./PaymentHistory";
 class SearchResults extends React.Component {
   render() {
     return (
-      <div className="container">
+      <div; className="container">
         <Profile />
         <br />
         <DataUsage />
         <br />
         <PaymentHistory />
-      </div>
-    );
+      </div>;
+  )
   }
 }
 

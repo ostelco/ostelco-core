@@ -57,7 +57,7 @@ class ES2PlusClient(
             req.setHeader("Content-Type", MediaType.APPLICATION_JSON)
             req.setHeader("Accept", "application/json")
             req.setHeader("Content-type", "application/json")
-            req.setEntity(StringEntity(payload))
+            req.entity = StringEntity(payload)
 
 
             val result: HttpResponse = httpClient.execute(req) ?: throw ES2PlusClientException("Null response from http httpClient")
@@ -66,7 +66,7 @@ class ES2PlusClient(
             val statusCode = result.statusLine.statusCode
             if (expectedReturnCode != statusCode) {
 
-                val msg = "Expected return value $expectedReturnCode, but got ${statusCode}.  Body was \"${result.entity.getContent()}\""
+                val msg = "Expected return value $expectedReturnCode, but got ${statusCode}.  Body was \"${result.entity.content}\""
                 throw ES2PlusClientException(msg)
             }
 
@@ -89,7 +89,7 @@ class ES2PlusClient(
                 throw ES2PlusClientException("Expected header Content-Type to be '$expectedContentType' but was '$returnedContentType'")
             }
 
-            val returnValue = objectMapper.readValue(result.getEntity().getContent(), sclass) ?: throw ES2PlusClientException("null return value")
+            val returnValue = objectMapper.readValue(result.entity.content, sclass) ?: throw ES2PlusClientException("null return value")
             return returnValue
         } else if (jerseyClient != null) {
             val entity: Entity<T> = Entity.entity(es2ProtocolPayload, MediaType.APPLICATION_JSON)
