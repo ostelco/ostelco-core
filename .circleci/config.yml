@@ -188,7 +188,7 @@ jobs:
             
   update-dev-endpoints:
     docker:
-      - image: eu.gcr.io/pi-ostelco-dev/python-gcloud
+      - image: eu.gcr.io/pi-ostelco-prod/python-gcloud
     steps: 
       - checkout
       - run:
@@ -245,7 +245,7 @@ jobs:
     working_directory: ~/project
 
     docker:
-    - image: eu.gcr.io/pi-ostelco-dev/github-hub:2.5.0
+    - image: eu.gcr.io/pi-ostelco-prod/github-hub:2.5.0
 
     steps:
       - checkout
@@ -270,7 +270,7 @@ jobs:
   ### JOBS FOR  on-PR-merge-to-master PIPELINE
   update-prod-endpoints:
     docker:
-      - image: eu.gcr.io/pi-ostelco-dev/python-gcloud
+      - image: eu.gcr.io/pi-ostelco-prod/python-gcloud
     steps: 
       - checkout
       - run:
@@ -295,7 +295,7 @@ jobs:
   
   deploy-to-prod:
     docker:
-    - image: praqma/gcloud-kubectl-helm:v2.8.1
+    - image: praqma/gcloud-kubectl-helm:v2.11.0
       environment: 
         PROJECT: pi-ostelco-prod
         CLUSTER: pi-prod
@@ -338,7 +338,7 @@ workflows:
         filters:
           branches:
             only:
-            - feature/update-circleci-pipeline
+            - update/circleci-pipeline 
     - build-image:
         requires:
           - build-code
