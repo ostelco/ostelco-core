@@ -28,6 +28,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.*
 import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import javax.ws.rs.core.MultivaluedMap
 import kotlin.collections.HashMap
