@@ -134,7 +134,8 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
     // TODO; What about the reservation flag?
     override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): String {
         synchronized(entriesLock) {
-            val entry: SmDpSimEntry = findMatchingFreeProfile(iccid, profileType) ?: throw SmDpPlusException("Could not find download order matching criteria")
+            val entry: SmDpSimEntry = findMatchingFreeProfile(iccid, profileType)
+                    ?: throw SmDpPlusException("Could not find download order matching criteria")
 
             // If an EID is known, then mark this as the IED associated
             // with the entry.
@@ -202,8 +203,8 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
 
     /**
      *  Generate a fixed corresponding EID based on ICCID.
-    * XXX Whoot?
-    **/
+     *  XXX Whoot?
+     **/
     private fun getEidFromIccid(iccid: String): String? = if (iccid.isNotEmpty())
         "01010101010101010101" + iccid.takeLast(12)
     else
@@ -211,7 +212,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
 
     override fun confirmOrder(eid: String?, iccid: String?, smdsAddress: String?, machingId: String?, confirmationCode: String?, releaseFlag: Boolean): Es2ConfirmOrderResponse {
 
-        if (iccid== null) {
+        if (iccid == null) {
             throw RuntimeException("No ICCD, cannot confirm order")
         }
         if (!entriesByIccid.containsKey(iccid)) {
@@ -244,9 +245,8 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
         return Es2ConfirmOrderResponse(eS2SuccessResponseHeader(),
                 eid = eidReturned!!,
                 smdsAddress = entry.smdsAddress,
-                matchingId =  entry.machingId)
+                matchingId = entry.machingId)
     }
-
 
     override fun cancelOrder(eid: String?, iccid: String?, matchingId: String?, finalProfileStatusIndicator: String?) {
         TODO("not implemented")
