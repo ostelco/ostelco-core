@@ -19,6 +19,7 @@ services:
     - LOCAL_TESTING=true
     ports:
     - "9090:8080"
+    - "8082:8082"
     depends_on:
     - "pubsub-emulator"
     - "neo4j"
@@ -101,6 +102,7 @@ services:
     command: ["./wait.sh"]
     environment:
     - PRIME_SOCKET=prime:8080
+    - OCS_SOCKET=prime:8082
     - STRIPE_API_KEY=${STRIPE_API_KEY}
     - GOOGLE_APPLICATION_CREDENTIALS=/secret/pantel-prod.json
     networks:

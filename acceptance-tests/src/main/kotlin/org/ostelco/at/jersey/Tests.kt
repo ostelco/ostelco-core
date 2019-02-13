@@ -791,7 +791,7 @@ class eKYCTest {
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
             val dataMap = MultivaluedHashMap<String,String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("SUCCESS"))
             dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
@@ -878,7 +878,7 @@ class eKYCTest {
 
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
-            var dataMap = MultivaluedHashMap<String,String>()
+            val dataMap = MultivaluedHashMap<String,String>()
             dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("SUCCESS"))
             dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
