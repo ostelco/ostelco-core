@@ -38,6 +38,7 @@ class ScanInfoStoreTest {
         val imgUrl = "https://www.gstatic.com/webp/gallery3/1.png"
         val imgUrl2 = "https://www.gstatic.com/webp/gallery3/2.png"
         vendorData.add(JumioScanData.SCAN_ID.s, scanId)
+        vendorData.add(JumioScanData.JUMIO_SCAN_ID.s, scanId)
         vendorData.add(JumioScanData.SCAN_IMAGE.s, imgUrl)
         vendorData.add(JumioScanData.SCAN_IMAGE_BACKSIDE.s, imgUrl2)
         vendorData.addAll(JumioScanData.SCAN_LIVENESS_IMAGES.s, listOf(imgUrl, imgUrl2))
