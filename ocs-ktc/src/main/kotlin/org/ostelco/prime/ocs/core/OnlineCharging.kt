@@ -72,7 +72,8 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                         storeResult.fold(
                             {
                                 // TODO martin : Should we handle all errors as NotFoundError?
-                                response.setResultCode(ResultCode.DIAMETER_USER_UNKNOWN)
+                                response.resultCode = ResultCode.DIAMETER_USER_UNKNOWN
+                                ccaStreamMap[streamId]?.onNext(response.build())
                             },
                             {
                                 val (granted, balance) = it
@@ -113,11 +114,14 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                                     }
                                 }
                                 response.addMscc(responseMscc)
+                                ccaStreamMap[streamId]?.onNext(response.build())
                             })
                     }
                 }
-                synchronized(OnlineCharging) {
-                    ccaStreamMap[streamId]?.onNext(response.build())
+                else {
+                    synchronized(OnlineCharging) {
+                        ccaStreamMap[streamId]?.onNext(response.build())
+                    }
                 }
             }
         }
