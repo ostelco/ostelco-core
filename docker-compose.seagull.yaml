@@ -1,4 +1,4 @@
-version: "3.3"
+version: "3.7"
 
 services:
   prime:
@@ -10,6 +10,8 @@ services:
     - FIREBASE_ROOT_PATH=test
     - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
     - PUBSUB_PROJECT_ID=pantel-2decb
+    - JUMIO_API_TOKEN=
+    - JUMIO_API_SECRET=
     - STRIPE_API_KEY=${STRIPE_API_KEY}
     - STRIPE_ENDPOINT_SECRET=${STRIPE_ENDPOINT_SECRET}
     - DATASTORE_EMULATOR_HOST=localhost:9090
@@ -17,6 +19,7 @@ services:
     - LOCAL_TESTING=true
     ports:
     - "9090:8080"
+    - "8082:8082"
     depends_on:
     - "pubsub-emulator"
     - "neo4j"

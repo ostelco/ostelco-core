@@ -37,6 +37,7 @@ class Neo4jModule : PrimeModule {
 }
 
 fun initDatabase() {
+    Neo4jStoreSingleton.createIndex()
     Neo4jStoreSingleton.createProduct(createProduct(sku = "1GB_249NOK", amount = 24900))
     Neo4jStoreSingleton.createProduct(createProduct(sku = "2GB_299NOK", amount = 29900))
     Neo4jStoreSingleton.createProduct(createProduct(sku = "3GB_349NOK", amount = 34900))
@@ -86,6 +87,7 @@ object Neo4jClient : Managed {
         val config = org.neo4j.driver.v1.Config.build()
                 .withoutEncryption()
                 .withConnectionTimeout(10, SECONDS)
+                .withMaxConnectionPoolSize(1000)
                 .toConfig()
         driver = GraphDatabase.driver(
                 URI("${ConfigRegistry.config.protocol}://${ConfigRegistry.config.host}:7687"),
