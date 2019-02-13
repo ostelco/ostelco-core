@@ -33,8 +33,9 @@ class OcsGrpcServerTest {
         OnlineCharging.loadUnitTest = true
 
         // call to graphStore always return 100 as reserved Bucket bytes and 200 as balance Bundle bytes
-        Mockito.`when`(mockGraphStore.consume(MSISDN, 80, 100))
-                .thenReturn(Pair(100L, 200L).right())
+        Mockito.`when`(mockGraphStore.consume(MSISDN, 80, 100) {
+            Pair(100L, 200L).right()
+        })
 
         server = OcsGrpcServer(8082, OcsGrpcService(OnlineCharging))
 

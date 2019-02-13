@@ -26,8 +26,9 @@ class OnlineChargingTest {
         OnlineCharging.loadUnitTest = true
 
         // call to graphStore always return 100 as reserved Bucket bytes and 200 as balance Bundle bytes
-        `when`(mockGraphStore.consume(MSISDN, 80, 100))
-                .thenReturn(Pair(100L, 200L).right())
+        `when`(mockGraphStore.consume(MSISDN, 80, 100) {
+            Pair(100L, 200L).right()
+        })
 
         val streamId = UUID.randomUUID().toString()
 
