@@ -75,8 +75,7 @@ data class ProfileVendorAdapter (
         )
         val body = Es2PlusDownloadOrder(
                 header = header,
-                iccid = simEntry.iccid,
-                profileType = simEntry.profile
+                iccid = simEntry.iccid
         )
         val payload = mapper.writeValueAsString(body)
 
@@ -174,7 +173,7 @@ data class ProfileVendorAdapter (
 
                     } else {
                         // XXX Is just logging good enough?
-                        if (status.eid?.isEmpty()!!) {
+                        if (status.eid.isNullOrEmpty()) {
                             logger.warn("No EID returned from service {} for ICCID {} for SM-DP+ 'order-confirm' message (call-id: {})",
                                     config.name,
                                     simEntry.iccid,
