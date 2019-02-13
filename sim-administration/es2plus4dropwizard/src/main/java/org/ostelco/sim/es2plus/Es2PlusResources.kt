@@ -100,13 +100,11 @@ class SmDpPlusServerResource(private val smDpPlus: SmDpPlusService) {
     @Path("downloadOrder")
     @POST
     fun downloadOrder(order: Es2PlusDownloadOrder): Es2DownloadOrderResponse {
-
-        val iccid = smDpPlus.downloadOrder(
+        return smDpPlus.downloadOrder(
                 eid = order.eid,
                 iccid = order.iccid,
-                profileType = order.profileType)
-
-        return Es2DownloadOrderResponse(iccid = iccid)
+                profileType = order.profileType
+        )
     }
 
     /**

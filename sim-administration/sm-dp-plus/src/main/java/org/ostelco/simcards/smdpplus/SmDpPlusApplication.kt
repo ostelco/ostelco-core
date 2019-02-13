@@ -130,7 +130,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
     }
 
     // TODO; What about the reservation flag?
-    override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): String {
+    override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): Es2DownloadOrderResponse {
         synchronized(entriesLock) {
             val entry: SmDpSimEntry = findMatchingFreeProfile(iccid, profileType)
                     ?: throw SmDpPlusException("Could not find download order matching criteria")
@@ -145,7 +145,8 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
             entry.allocated = true
 
             // Finally return the ICCID uniquely identifying the profile instance.
-            return entry.iccid
+            return Es2DownloadOrderResponse(eS2SuccessResponseHeader(),
+                    iccid = entry.iccid)
         }
     }
 

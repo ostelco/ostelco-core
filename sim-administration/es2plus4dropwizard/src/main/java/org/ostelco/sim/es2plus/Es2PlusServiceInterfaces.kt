@@ -8,7 +8,7 @@ class SmDpPlusException(val statusCodeData: StatusCodeData) : Exception()
 interface SmDpPlusService {
 
     @Throws(SmDpPlusException::class)
-    fun downloadOrder(eid: String?, iccid: String?, profileType: String?): String
+    fun downloadOrder(eid: String?, iccid: String?, profileType: String?): Es2DownloadOrderResponse
 
     @Throws(SmDpPlusException::class)
     fun confirmOrder(eid: String?, iccid: String?, smdsAddress: String?, machingId: String?, confirmationCode: String?, releaseFlag:Boolean): Es2ConfirmOrderResponse
