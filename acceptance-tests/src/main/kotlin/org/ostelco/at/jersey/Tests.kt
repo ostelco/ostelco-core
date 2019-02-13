@@ -1128,7 +1128,9 @@ class eKYCTest {
             dataMap.put("merchantIdScanReference", listOf(newScanInfo.scanId))
             dataMap.put("idScanImage", listOf(imgUrl))
             dataMap.put("idScanImageBackside", listOf(imgUrl2))
-            dataMap.put("livenessImages", listOf(imgUrl, imgUrl2))
+            // JUMIO POST data for livenesss images are interpreted like this by HTTP client in prime.
+            val stringList = "[ \"$imgUrl\", \"$imgUrl2\" ]"
+            dataMap.put("livenessImages", listOf(stringList))
             val identityVerification="""{ "similarity":"MATCH", "validity":"TRUE"}"""
             dataMap.put("identityVerification", listOf(identityVerification))
 

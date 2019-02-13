@@ -5,6 +5,7 @@ import arrow.core.fix
 import arrow.effects.IO
 import arrow.instances.either.monad.monad
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.cloud.datastore.Blob
 import com.google.cloud.storage.BlobId
 import com.google.cloud.storage.BlobInfo
@@ -31,6 +32,9 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import javax.ws.rs.core.MultivaluedMap
 import kotlin.collections.HashMap
+import java.io.IOException
+
+
 
 
 class ScanInfoStore : ScanInformationStore by ScanInformationStoreSingleton
@@ -152,6 +156,7 @@ object ScanInformationStoreSingleton : ScanInformationStore {
  * A utility for downloading and creating the scan information for Jumio clients.
  */
 object JumioHelper {
+    private val logger by getLogger()
     /**
      * Retrieves the contents of a file from a URL
      */
@@ -180,6 +185,30 @@ object JumioHelper {
         } finally {
             httpConn.disconnect()
         }
+    }
+
+    fun isJSONArray(jsonData: String): Boolean {
+        try {
+            val mapper = ObjectMapper()
+            return mapper.readTree(jsonData).isArray
+        } catch (e: IOException) {
+            return false
+        }
+    }
+
+    private fun flattenList(list: List<String>): List<String> {
+        try {
+            if (list.size > 1) {
+                return list //already flattened.
+            }
+            val jsonData:String = list[0]
+            if (isJSONArray(jsonData)) {
+                return ObjectMapper().readValue(jsonData)
+            }
+        } catch (e: IOException) {
+            logger.error("Cannot flattenList Json Data $list", e)
+        }
+        return list;
     }
 
     /**
@@ -217,8 +246,9 @@ object JumioHelper {
                 if(scanlivenessImagesUrl != null) {
                     val urls = scanlivenessImagesUrl.toMutableList()
                     urls.sort() // The url list is not in sequence
+                    val flattenedList = flattenList(urls)
                     var imageIndex = 0
-                    for (imageUrl in urls) {
+                    for (imageUrl in flattenedList) {
                         result = downloadFileAsBlob(imageUrl, apiToken, apiSecret).bind()
                         val filename = "liveness-${++imageIndex}.${getFileExtFromType(result.second)}"
                         images.put(filename, result.first)
