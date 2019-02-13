@@ -1,14 +1,16 @@
 package org.ostelco.simcards.adapter
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import org.apache.http.client.methods.RequestBuilder
+import org.apache.http.entity.StringEntity
+import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.simcards.admin.HlrConfig
 import org.ostelco.simcards.admin.getLogger
 import org.ostelco.simcards.inventory.HlrState
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import javax.ws.rs.WebApplicationException
-import javax.ws.rs.client.Client
-import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
@@ -25,6 +27,9 @@ data class HlrAdapter(
 
     private val logger by getLogger()
 
+    /* For payload serializing. */
+    private val mapper = jacksonObjectMapper()
+
     /**
      * Requests the external HLR service to activate the SIM profile.
      * @param client  HTTP client
@@ -32,35 +37,48 @@ data class HlrAdapter(
      * @param simEntry  SIM profile to activate
      * @return Updated SIM profile
      */
-    fun activate(client: Client, config: HlrConfig, dao: SimInventoryDAO, simEntry: SimEntry) : SimEntry? {
+    fun activate(httpClient: CloseableHttpClient,
+                 config: HlrConfig,
+                 dao: SimInventoryDAO,
+                 simEntry: SimEntry): SimEntry? {
         if (simEntry.iccid.isEmpty()) {
             throw WebApplicationException(
                     String.format("Illegal parameter in SIM activation request to BSSID %s",
                             config.name),
                     Response.Status.BAD_REQUEST)
         }
-        val payload = mapOf(
+        val body = mapOf(
                 "bssid" to config.name,
                 "iccid" to simEntry.iccid,
                 "msisdn" to simEntry.msisdn,
                 "userid" to config.userId
         )
-        val response = client.target("${config.endpoint}/activate")
-                .request(MediaType.APPLICATION_JSON)
-                .header("x-api-key", config.apiKey)
-                .post(Entity.entity(payload, MediaType.APPLICATION_JSON))
-        if (response.status != 201) {
-            throw WebApplicationException(
-                    String.format("Failed to deactivate ICCID %s with BSSID %s",
-                            simEntry.iccid,
-                            config.name),
-                    Response.Status.BAD_REQUEST)
-        }
+        val payload = mapper.writeValueAsString(body)
 
-        logger.info("HLR activation message to BSSID {} for ICCID {} completed OK",
-                config.name,
-                simEntry.iccid)
-        return dao.setHlrState(simEntry.id!!, HlrState.ACTIVATED)
+        val request = RequestBuilder.post()
+                .setUri("${config.endpoint}/activate")
+                .setHeader("x-api-key", config.apiKey)
+                .setHeader("Content-Type", MediaType.APPLICATION_JSON)
+                .setEntity(StringEntity(payload))
+                .build()
+
+        return httpClient.execute(request).use {
+            when (it.statusLine.statusCode) {
+                201 -> {
+                    logger.info("HLR activation message to BSSID {} for ICCID {} completed OK",
+                            config.name,
+                            simEntry.iccid)
+                    dao.setHlrState(simEntry.id!!, HlrState.ACTIVATED)
+                }
+                else -> {
+                    throw WebApplicationException(
+                            String.format("Failed to deactivate ICCID %s with BSSID %s",
+                                    simEntry.iccid,
+                                    config.name),
+                            Response.Status.BAD_REQUEST)
+                }
+            }
+        }
     }
 
     /**
@@ -70,28 +88,39 @@ data class HlrAdapter(
      * @param simEntry  SIM profile to deactivate
      * @return Updated SIM profile
      */
-    fun deactivate(client: Client, config: HlrConfig, dao: SimInventoryDAO, simEntry: SimEntry) : SimEntry? {
+    fun deactivate(httpClient: CloseableHttpClient,
+                   config: HlrConfig,
+                   dao: SimInventoryDAO,
+                   simEntry: SimEntry): SimEntry? {
         if (simEntry.iccid.isEmpty()) {
             throw WebApplicationException(
                     String.format("Illegal parameter in SIM deactivation request to BSSID %s",
                             config.name),
                     Response.Status.BAD_REQUEST)
         }
-        val response = client.target("${config.endpoint}/deactivate/${simEntry.iccid}")
-                .request(MediaType.APPLICATION_JSON)
-                .header("x-api-key", config.apiKey)
-                .delete()
-        if (response.status != 200) {
-            throw WebApplicationException(
-                    String.format("Failed to deactivate ICCID %s with BSSID %s",
-                            simEntry.iccid,
-                            config.name),
-                    Response.Status.BAD_REQUEST)
-        }
 
-        logger.info("HLR deactivation message to BSSID {} for ICCID {} completed OK",
-                config.name,
-                simEntry.iccid)
-        return dao.setHlrState(simEntry.id!!, HlrState.NOT_ACTIVATED)
+        val request = RequestBuilder.delete()
+                .setUri("${config.endpoint}/deactivate/${simEntry.iccid}")
+                .setHeader("x-api-key", config.apiKey)
+                .setHeader("Content-Type", MediaType.APPLICATION_JSON)
+                .build()
+
+        return httpClient.execute(request).use {
+            when (it.statusLine.statusCode) {
+                200 -> {
+                    logger.info("HLR deactivation message to BSSID {} for ICCID {} completed OK",
+                            config.name,
+                            simEntry.iccid)
+                    dao.setHlrState(simEntry.id!!, HlrState.NOT_ACTIVATED)
+                }
+                else -> {
+                    throw WebApplicationException(
+                            String.format("Failed to deactivate ICCID %s with BSSID %s",
+                                    simEntry.iccid,
+                                    config.name),
+                            Response.Status.BAD_REQUEST)
+                }
+            }
+        }
     }
 }

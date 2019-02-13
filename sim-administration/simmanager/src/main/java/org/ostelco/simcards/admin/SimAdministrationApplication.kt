@@ -1,10 +1,10 @@
 package org.ostelco.simcards.admin
 
 import io.dropwizard.Application
+import io.dropwizard.client.HttpClientBuilder
 import io.dropwizard.jdbi.DBIFactory
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
-import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor
 import io.dropwizard.configuration.SubstitutingSourceProvider
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
@@ -61,15 +61,15 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
                     timestamp: String) = Unit
         }
 
-        val client = JerseyClientBuilder(env)
-                .using(config.getJerseyClientConfiguration())
-                .build(env.name)
+        val httpClient = HttpClientBuilder(env)
+                .using(config.httpClient)
+                .build(name)
         val jerseyEnv = env.jersey()
 
         addOpenapiResourceToJerseyEnv(jerseyEnv, config.openApi)
         addEs2PlusDefaultFiltersAndInterceptors(jerseyEnv)
 
-        jerseyEnv.register(SimInventoryResource(client, config, DAO))
+        jerseyEnv.register(SimInventoryResource(httpClient, config, DAO))
         jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
     }
 

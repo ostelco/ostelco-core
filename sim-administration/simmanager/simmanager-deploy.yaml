@@ -16,6 +16,9 @@ spec:
       containers:
         - name: simmanager
           image: eu.gcr.io/pantel-2decb/simmanager:SIMMANAGER_VERSION
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
           env:
             - name: DB_USER
               valueFrom:
@@ -57,6 +60,14 @@ spec:
                 secretKeyRef:
                   name: simmgr-test-secrets
                   key: functionRequesterIdentifier
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 8080
+          volumeMounts:
+            - name: keystore
+              mountPath: "/certs"
+              readOnly: true
+      volumes:
+        - name: keystore
+          secret:
+            secretName: simmgr-test-secrets
+            items:
+              - key: idemiaClientCert
+                path: idemia-client-cert.jks

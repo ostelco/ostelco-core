@@ -58,7 +58,10 @@ class ES2PlusResourceTest {
                 eid = Mockito.anyString(),
                 iccid = Mockito.anyString(),
                 profileType = Mockito.anyString()))
-                .thenReturn(iccid)
+                .thenReturn(Es2DownloadOrderResponse(
+                        header = eS2SuccessResponseHeader(),
+                        iccid = iccid
+                ))
 
         val result = client.downloadOrder(
                 eid = eid,

@@ -58,7 +58,7 @@ data class StatusCodeData(
 data class Es2PlusDownloadOrder(
         @JsonProperty("header") val header: ES2RequestHeader,
         @JsonProperty("eid") val eid: String? = null,
-        @JsonProperty("profileStatusList") val iccid: String? = null,
+        @JsonProperty("iccid") val iccid: String? = null,
         @JsonProperty("profileType") val profileType: String? = null
 )
 
@@ -66,7 +66,7 @@ data class Es2PlusDownloadOrder(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Es2DownloadOrderResponse(
         @JsonProperty("header") val header: ES2ResponseHeader = eS2SuccessResponseHeader(),
-        @JsonProperty("profileStatusList") val iccid: String? = null
+        @JsonProperty("iccid") val iccid: String? = null
 )
 
 

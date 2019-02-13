@@ -1,5 +1,8 @@
 package org.ostelco.simcards.inventory
 
+import com.fasterxml.jackson.databind.JsonSerializer
+import org.apache.http.client.HttpClient
+import org.apache.http.impl.client.CloseableHttpClient
 import org.hibernate.validator.constraints.NotEmpty
 import org.ostelco.sim.es2plus.ProfileStatus
 import org.ostelco.simcards.admin.HlrConfig
@@ -18,7 +21,7 @@ import javax.ws.rs.core.Response
 ///
 
 @Path("/ostelco/sim-inventory/{hlrVendors}")
-class SimInventoryResource(private val client: Client,
+class SimInventoryResource(private val httpClient: CloseableHttpClient,
                            private val config: SimAdministrationConfiguration,
                            private val dao: SimInventoryDAO) {
 
@@ -48,7 +51,7 @@ class SimInventoryResource(private val client: Client,
             it.name == simVendorAdapter.name
         })
 
-        return simVendorAdapter.getProfileStatus(client, config, iccid)
+        return simVendorAdapter.getProfileStatus(httpClient, config, iccid)
     }
 
     @GET
@@ -79,7 +82,7 @@ class SimInventoryResource(private val client: Client,
 
         return when (simEntry.hlrState) {
             HlrState.NOT_ACTIVATED -> {
-                hlrAdapter.activate(client, config, dao, simEntry)
+                hlrAdapter.activate(httpClient, config, dao, simEntry)
             }
             HlrState.ACTIVATED -> {
                 simEntry
@@ -106,7 +109,7 @@ class SimInventoryResource(private val client: Client,
                 simEntry
             }
             HlrState.ACTIVATED -> {
-                hlrAdapter.deactivate(client, config, dao, simEntry)
+                hlrAdapter.deactivate(httpClient, config, dao, simEntry)
             }
         }
     }
@@ -185,10 +188,10 @@ class SimInventoryResource(private val client: Client,
            CONFIRMED state should not occur. */
         return when (simEntry.smdpPlusState) {
             SmDpPlusState.AVAILABLE -> {
-                simVendorAdapter.activate(client, config, dao, eid, simEntry)
+                simVendorAdapter.activate(httpClient, config, dao, eid, simEntry)
             }
             SmDpPlusState.ALLOCATED -> {
-                simVendorAdapter.confirmOrder(client, config, dao, eid, simEntry)
+                simVendorAdapter.confirmOrder(httpClient, config, dao, eid, simEntry)
             }
             /* ESIM already 'released'. */
             else -> {

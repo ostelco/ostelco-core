@@ -2,6 +2,7 @@ package org.ostelco.simcards.admin
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.dropwizard.Configuration
+import io.dropwizard.client.HttpClientConfiguration
 import io.dropwizard.client.JerseyClientConfiguration
 import io.dropwizard.db.DataSourceFactory
 import org.ostelco.dropwizardutils.OpenapiResourceAdderConfig
@@ -18,11 +19,7 @@ class SimAdministrationConfiguration : Configuration() {
     @Valid
     @NotNull
     @JsonProperty
-    private val httpClient = JerseyClientConfiguration()
-
-    fun getJerseyClientConfiguration(): JerseyClientConfiguration {
-        return httpClient
-    }
+    val httpClient = HttpClientConfiguration()
 
     @Valid
     @NotNull
