@@ -3,9 +3,12 @@ package org.ostelco.prime.storage.graph
 import arrow.core.Either
 import arrow.core.flatMap
 import com.fasterxml.jackson.core.type.TypeReference
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.neo4j.driver.v1.AccessMode.READ
 import org.neo4j.driver.v1.AccessMode.WRITE
 import org.neo4j.driver.v1.StatementResult
+import org.neo4j.driver.v1.StatementResultCursor
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
@@ -20,6 +23,7 @@ import org.ostelco.prime.storage.StoreError
 import org.ostelco.prime.storage.graph.Graph.read
 import org.ostelco.prime.storage.graph.Graph.write
 import org.ostelco.prime.storage.graph.ObjectHandler.getProperties
+import java.util.concurrent.CompletionStage
 
 //
 // Schema classes
@@ -328,9 +332,9 @@ class ChangeableRelationStore<FROM : HasId, TO : HasId, RELATION : HasId>(privat
 // Usage: output = re.replace(input, "$1$2$3")
 val re = Regex("""([,{])\s*"([^"]+)"\s*(:)""")
 
-class UniqueRelationStore<FROM: HasId, TO: HasId>(private val relationType: RelationType<FROM, *, TO>) {
+class UniqueRelationStore<FROM : HasId, TO : HasId>(private val relationType: RelationType<FROM, *, TO>) {
 
-    fun get(from: String, transaction: Transaction) : Either<StoreError, List<TO>> {
+    fun get(from: String, transaction: Transaction): Either<StoreError, List<TO>> {
         return read("""MATCH (from:${relationType.from.name} {id: '${from}'})-[r:${relationType.relation.name}]->(to:${relationType.to.name})
                 RETURN to""".trimMargin(), transaction) {
             Either.cond(it.hasNext(),
@@ -339,7 +343,7 @@ class UniqueRelationStore<FROM: HasId, TO: HasId>(private val relationType: Rela
         }
     }
 
-    fun getFrom(to: String, transaction: Transaction) : Either<StoreError, List<FROM>> {
+    fun getFrom(to: String, transaction: Transaction): Either<StoreError, List<FROM>> {
         return read("""MATCH (from:${relationType.from.name})-[r:${relationType.relation.name}]->(to:${relationType.to.name} {id: '${to}'})
                 RETURN from""".trimMargin(), transaction) {
             Either.cond(it.hasNext(),
@@ -348,7 +352,7 @@ class UniqueRelationStore<FROM: HasId, TO: HasId>(private val relationType: Rela
         }
     }
 
-    fun create(from: String, to: String, transaction: Transaction) : Either<StoreError, Unit> {
+    fun create(from: String, to: String, transaction: Transaction): Either<StoreError, Unit> {
         return write("""MATCH (from:${relationType.from.name} {id: '${from}'}),(to:${relationType.to.name} {id: '${to}'})
                 MERGE (from)-[:${relationType.relation.name}]->(to)""".trimMargin(), transaction) {
             Either.cond(it.summary().counters().relationshipsCreated() == 1,
@@ -357,7 +361,7 @@ class UniqueRelationStore<FROM: HasId, TO: HasId>(private val relationType: Rela
         }
     }
 
-    fun delete(from: String, to: String, transaction: Transaction) : Either<StoreError, Unit> {
+    fun delete(from: String, to: String, transaction: Transaction): Either<StoreError, Unit> {
         return write("""MATCH (from:${relationType.from.name} { id: '$from'})-[r:${relationType.relation.name}]->(to:${relationType.to.name} {id: '${to}'})
                 DELETE r""".trimMargin(), transaction) {
             Either.cond(it.summary().counters().relationshipsDeleted() == 1,
@@ -366,7 +370,7 @@ class UniqueRelationStore<FROM: HasId, TO: HasId>(private val relationType: Rela
         }
     }
 
-    fun getProperties(from: String, to: String, transaction: Transaction) : Either<StoreError, Map<String, Any>> {
+    fun getProperties(from: String, to: String, transaction: Transaction): Either<StoreError, Map<String, Any>> {
         return read("""MATCH (from:${relationType.from.name} {id: '${from}'})-[r:${relationType.relation.name}]->(to:${relationType.to.name} {id: '${to}'})
                 RETURN r""".trimMargin(), transaction) {
             Either.cond(it.hasNext(),
@@ -375,7 +379,7 @@ class UniqueRelationStore<FROM: HasId, TO: HasId>(private val relationType: Rela
         }
     }
 
-    fun setProperties(from: String, to: String, properties: Map<String, Any>, transaction: Transaction) : Either<StoreError, Unit> {
+    fun setProperties(from: String, to: String, properties: Map<String, Any>, transaction: Transaction): Either<StoreError, Unit> {
         return write("""MATCH (from:${relationType.from.name} {id: '${from}'})-[r:${relationType.relation.name}]->(to:${relationType.to.name} {id: '${to}'})
                 SET r = ${re.replace(asJson(properties), "$1$2$3")}""".trimMargin(), transaction) {
             Either.cond(it.summary().counters().propertiesSet() > 0,
@@ -401,6 +405,13 @@ object Graph {
         LOG.trace("read:[\n$query\n]")
         return transaction.run(query).let(transform)
     }
+
+    suspend fun <R> writeSuspended(query: String, transaction: Transaction, transform: (CompletionStage<StatementResultCursor>) -> R) {
+        LOG.trace("write:[\n$query\n]")
+        withContext(Dispatchers.Default) {
+            transaction.runAsync(query)
+        }.let(transform)
+    }
 }
 
 fun <R> readTransaction(action: ReadTransaction.() -> R): R =
@@ -417,6 +428,15 @@ fun <R> writeTransaction(action: WriteTransaction.() -> R): R =
                     session.writeTransaction {
                         action(WriteTransaction(PrimeTransaction(it)))
                     }
+                }
+
+suspend fun <R> suspendedWriteTransaction(action: suspend WriteTransaction.() -> R): R =
+        Neo4jClient.driver.session(WRITE)
+                .use { session ->
+                    val transaction = PrimeTransaction(session.beginTransaction())
+                    val result = action(WriteTransaction(transaction))
+                    transaction.success()
+                    result
                 }
 
 data class ReadTransaction(val transaction: PrimeTransaction)
@@ -463,7 +483,7 @@ object ObjectHandler {
             if (key.contains(SEPARATOR)) {
                 val keys = key.split(SEPARATOR)
                 var loopMap = outputMap
-                for (i in 0..(keys.size - 2)) {
+                repeat(keys.size - 1) { i ->
                     loopMap.putIfAbsent(keys[i], LinkedHashMap<String, Any>())
                     loopMap = loopMap[keys[i]] as MutableMap<String, Any>
                 }
