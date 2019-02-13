@@ -40,6 +40,7 @@ class ScanInfoStoreTest {
         vendorData.add(JumioScanData.SCAN_ID.s, scanId)
         vendorData.add(JumioScanData.SCAN_IMAGE.s, imgUrl)
         vendorData.add(JumioScanData.SCAN_IMAGE_BACKSIDE.s, imgUrl2)
+        vendorData.addAll(JumioScanData.SCAN_LIVENESS_IMAGES.s, listOf(imgUrl, imgUrl2))
 
         ScanInformationStoreSingleton.upsertVendorScanInformation(subscriberId, "global", vendorData)
         val savedFile = ScanInformationStoreSingleton.__getVendorScanInformationFile(subscriberId, "global", scanId)
