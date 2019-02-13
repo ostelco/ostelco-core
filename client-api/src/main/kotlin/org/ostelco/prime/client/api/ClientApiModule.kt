@@ -4,17 +4,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName
 import io.dropwizard.setup.Environment
 import org.eclipse.jetty.servlets.CrossOriginFilter
 import org.ostelco.prime.client.api.metrics.reportMetricsAtStartUp
-import org.ostelco.prime.client.api.resources.AnalyticsResource
-import org.ostelco.prime.client.api.resources.ApplicationTokenResource
-import org.ostelco.prime.client.api.resources.BundlesResource
-import org.ostelco.prime.client.api.resources.ConsentsResource
-import org.ostelco.prime.client.api.resources.CustomerResource
-import org.ostelco.prime.client.api.resources.PaymentSourcesResource
-import org.ostelco.prime.client.api.resources.ProductsResource
-import org.ostelco.prime.client.api.resources.ProfileResource
-import org.ostelco.prime.client.api.resources.PurchaseResource
-import org.ostelco.prime.client.api.resources.ReferralResource
-import org.ostelco.prime.client.api.resources.SubscriptionsResource
+import org.ostelco.prime.client.api.resources.*
 import org.ostelco.prime.client.api.store.SubscriberDAOImpl
 import org.ostelco.prime.module.PrimeModule
 import java.util.*
@@ -51,7 +41,7 @@ class ClientApiModule : PrimeModule {
         jerseyEnv.register(ProfileResource(dao))
         jerseyEnv.register(ReferralResource(dao))
         jerseyEnv.register(PaymentSourcesResource(dao))
-        jerseyEnv.register(CustomerResource(dao))
+        jerseyEnv.register(SubscriptionResource(dao))
         jerseyEnv.register(BundlesResource(dao))
         jerseyEnv.register(SubscriptionsResource(dao))
         jerseyEnv.register(CustomerResource(dao))
