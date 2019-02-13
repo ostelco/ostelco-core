@@ -72,7 +72,7 @@ data class HlrAdapter(
                 }
                 else -> {
                     throw WebApplicationException(
-                            String.format("Failed to deactivate ICCID %s with BSSID %s",
+                            String.format("Failed to activate ICCID %s with BSSID %s",
                                     simEntry.iccid,
                                     config.name),
                             Response.Status.BAD_REQUEST)
