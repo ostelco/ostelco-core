@@ -22,11 +22,11 @@ profileVendors:
 # Note, list must end with a wildcard match
 phoneTypes:
   - regex: "android.*"
-    profile: ANDROID_PROFILE_1
+    profile: Loltel_ANDROID_1
   - regex: "iphone.*"
-    profile: IPHONE_PROFILE_1
+    profile: LOLTEL_IPHONE_1
   - regex: ".*"
-    profile: IPHONE_PROFILE_2
+    profile: LOLTEL_IPHONE_1
 
 database:
   driverClass: org.postgresql.Driver
@@ -35,10 +35,6 @@ database:
   url: ${DB_URL}
 
 httpClient:
-  minThreads: 1
-  maxThreads: 128
-  gzipEnabled: true
-  gzipEnabledForRequests: true
   timeout: 10000ms
   tls:
     # Default is 500 milliseconds, we need more when debugging.
@@ -48,3 +44,4 @@ httpClient:
     keyStorePassword: foobar
     verifyHostname: false
     trustSelfSignedCertificates: true
+    
