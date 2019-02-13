@@ -85,6 +85,7 @@ data class ScanInformation(
 
 data class VendorScanInformation(
         val id: String,                 // Id of the scan
+        val scanReference: String,      // Jumio transaction reference
         val details: String,            // JSON string representation of all the information from vendor
         val images: Map<String, Blob>?  // liveness images (JPEG or PNG) if available
 )

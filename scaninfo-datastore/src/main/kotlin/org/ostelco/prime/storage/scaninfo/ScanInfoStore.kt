@@ -20,10 +20,7 @@ import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.JumioScanData
 import org.ostelco.prime.model.VendorScanData
 import org.ostelco.prime.model.VendorScanInformation
-import org.ostelco.prime.storage.FileDownloadError
-import org.ostelco.prime.storage.NotCreatedError
-import org.ostelco.prime.storage.ScanInformationStore
-import org.ostelco.prime.storage.StoreError
+import org.ostelco.prime.storage.*
 import java.io.*
 import java.net.HttpURLConnection
 import java.net.URL
@@ -63,6 +60,9 @@ object ScanInformationStoreSingleton : ScanInformationStore {
 
     // Cloud storage bucket prefix for storing zip files
     private lateinit var storageBucket: String
+
+    private var deleteScan: Boolean = false
+    private lateinit var deleteUrl: String
 
     // Path name prefix for the keyset files.
     private lateinit var keysetFilePathPrefix: String
@@ -114,6 +114,13 @@ object ScanInformationStoreSingleton : ScanInformationStore {
                         JumioHelper.uploadFileToCloudStorage(countryBucket, fileName, localZipData).bind()
                     }
                 }
+                if (deleteScan) {
+                    JumioHelper.deleteScanInformation(
+                            vendorScanInformation.scanReference,
+                            deleteUrl,
+                            apiToken,
+                            apiSecret).bind()
+                }
                 Unit
             }.fix()
         }.unsafeRunSync()
@@ -132,6 +139,8 @@ object ScanInformationStoreSingleton : ScanInformationStore {
     fun init(env: Environment?, environmentVars: EnvironmentVars) {
         TinkConfig.register()
         keysetFilePathPrefix = ConfigRegistry.config.keysetFilePathPrefix
+        deleteScan = ConfigRegistry.config.deleteScan
+        deleteUrl = ConfigRegistry.config.deleteUrl
         if (ConfigRegistry.config.storeType != "emulator") {
             apiToken = environmentVars.getVar("JUMIO_API_TOKEN")
                     ?: throw Error("Missing environment variable JUMIO_API_TOKEN")
@@ -219,6 +228,7 @@ object JumioHelper {
         var images:MutableMap<String, Blob> = mutableMapOf<String, Blob>()
 
         val scanId: String = vendorData.getFirst(JumioScanData.SCAN_ID.s)
+        val scanReference: String = vendorData.getFirst(JumioScanData.JUMIO_SCAN_ID.s)
         val scanDetails: String = ObjectMapper().writeValueAsString(vendorData)
         val scanImageUrl: String? = vendorData.getFirst(JumioScanData.SCAN_IMAGE.s)
         val scanImageBacksideUrl: String? = vendorData.getFirst(JumioScanData.SCAN_IMAGE_BACKSIDE.s)
@@ -254,11 +264,41 @@ object JumioHelper {
                         images.put(filename, result.first)
                     }
                 }
-                VendorScanInformation(scanId, scanDetails, images)
+                VendorScanInformation(scanId, scanReference, scanDetails, images)
             }.fix()
         }.unsafeRunSync()
     }
 
+    /**
+     * Deletes the scan information from Jumio database.
+     */
+    fun deleteScanInformation(vendorScanId: String, baserUrl:String, username: String, password: String): Either<StoreError, Unit> {
+        val url = URL("$baserUrl/$vendorScanId")
+        val httpConn = url.openConnection() as HttpURLConnection
+        val userpass = "$username:$password"
+        val authHeader = "Basic ${Base64.getEncoder().encodeToString(userpass.toByteArray())}"
+        httpConn.setRequestProperty("Authorization", authHeader)
+        httpConn.setRequestProperty("Accept", "application/json")
+        httpConn.setRequestProperty("User-Agent", "ScanInformationStore")
+        httpConn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+        httpConn.setDoOutput(true);
+        httpConn.setRequestMethod("DELETE");
+
+        try {
+            val responseCode = httpConn.responseCode
+            // always check HTTP response code first
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                val statusMessage = "$responseCode: ${httpConn.responseMessage}"
+                return Either.left(FileDeleteError(url.toString(), statusMessage));
+            }
+            return Either.right(Unit)
+        } catch (e: IOException) {
+            val statusMessage = "IOException: $e"
+            return Either.left(FileDeleteError(url.toString(), statusMessage))
+        } finally {
+            httpConn.disconnect()
+        }
+    }
     /**
      * Creates the zip file from VendorScanInformation.
      */
