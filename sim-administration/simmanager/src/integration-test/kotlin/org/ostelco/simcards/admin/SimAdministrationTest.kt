@@ -6,6 +6,7 @@ import io.dropwizard.testing.ConfigOverride
 import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
 import org.assertj.core.api.Assertions.assertThat
+import org.glassfish.jersey.client.ClientProperties
 import org.junit.*
 import org.ostelco.simcards.inventory.HlrState
 import org.ostelco.simcards.inventory.SimEntry
@@ -83,6 +84,7 @@ class SimAdministrationTest {
         @JvmStatic
         fun setUpClient() {
             client = JerseyClientBuilder(SIM_MANAGER_RULE.environment)
+                    .withProperty(ClientProperties.READ_TIMEOUT, 5000)
                     .build("test client")
         }
     }
