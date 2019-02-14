@@ -6,15 +6,11 @@ import kotlinx.coroutines.runBlocking
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.mockito.Mockito
-import org.mockito.Mockito.mock
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import org.mockito.Mockito.`when`
 import org.ostelco.prime.model.ScanMetadataEnum
-import org.ostelco.prime.model.VendorScanInformation
 import java.io.File
 import java.time.Instant
-import kotlin.test.assertNotEquals
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 /**
  * Class for testing the Datastore queries.
@@ -41,7 +37,7 @@ class MetadataQueryTest {
 
     @Test
     fun testShred() {
-        var testTime = Instant.now().toEpochMilli() - (scanInfoShredder.expiryDuration) - 10
+        var testTime = Instant.now().toEpochMilli() - (scanInfoShredder.expiryDuration) - 10000
         // Add 200 records
         for (i in 1..200) {
             saveScanMetaData("cid1", "sgp", "id{$i}", "ref${i}", testTime)
