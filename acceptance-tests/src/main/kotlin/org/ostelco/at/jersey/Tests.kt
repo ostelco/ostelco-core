@@ -786,7 +786,7 @@ class eKYCTest {
             dataMap.put("merchantIdScanReference", listOf(scanInfo.scanId))
             val identityVerification="""{ "similarity":"MATCH", "validity":"TRUE"}"""
             dataMap.put("identityVerification", listOf(identityVerification))
-
+            dataMap.put("livenessImages", listOf(imgUrl, imgUrl2))
             post<ScanInformation>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
                 path = "/ekyc/callback"
                 body = dataMap
@@ -819,7 +819,7 @@ class eKYCTest {
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
             val dataMap = MultivaluedHashMap<String,String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("SUCCESS"))
             dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
@@ -906,8 +906,8 @@ class eKYCTest {
 
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
-            var dataMap = MultivaluedHashMap<String,String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()));
+            val dataMap = MultivaluedHashMap<String,String>()
+            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("SUCCESS"))
             dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
             dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
@@ -993,6 +993,7 @@ class eKYCTest {
             dataMap.put("merchantIdScanReference", listOf(newScanInfo.scanId))
             dataMap.put("idScanImage", listOf(imgUrl))
             dataMap.put("idScanImageBackside", listOf(imgUrl2))
+            dataMap.put("livenessImages", listOf(imgUrl, imgUrl2))
             val identityVerification="""{ "similarity":"MATCH", "validity":"TRUE"}"""
             dataMap.put("identityVerification", listOf(identityVerification))
 
@@ -1041,6 +1042,7 @@ class eKYCTest {
             dataMap.put("merchantIdScanReference", listOf(scanInfo.scanId))
             dataMap.put("idScanImage", listOf(imgUrl))
             dataMap.put("idScanImageBackside", listOf(imgUrl2))
+            dataMap.put("livenessImages", listOf(imgUrl, imgUrl2))
             val identityVerification="""{ "similarity":"MATCH", "validity":"TRUE"}"""
             dataMap.put("identityVerification", listOf(identityVerification))
 
@@ -1126,6 +1128,9 @@ class eKYCTest {
             dataMap.put("merchantIdScanReference", listOf(newScanInfo.scanId))
             dataMap.put("idScanImage", listOf(imgUrl))
             dataMap.put("idScanImageBackside", listOf(imgUrl2))
+            // JUMIO POST data for livenesss images are interpreted like this by HTTP client in prime.
+            val stringList = "[ \"$imgUrl\", \"$imgUrl2\" ]"
+            dataMap.put("livenessImages", listOf(stringList))
             val identityVerification="""{ "similarity":"MATCH", "validity":"TRUE"}"""
             dataMap.put("identityVerification", listOf(identityVerification))
 

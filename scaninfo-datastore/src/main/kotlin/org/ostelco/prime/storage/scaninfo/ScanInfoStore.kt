@@ -5,6 +5,7 @@ import arrow.core.fix
 import arrow.effects.IO
 import arrow.instances.either.monad.monad
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.cloud.datastore.Blob
 import com.google.cloud.storage.BlobId
 import com.google.cloud.storage.BlobInfo
@@ -31,6 +32,9 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import javax.ws.rs.core.MultivaluedMap
 import kotlin.collections.HashMap
+import java.io.IOException
+
+
 
 
 class ScanInfoStore : ScanInformationStore by ScanInformationStoreSingleton
@@ -94,12 +98,12 @@ object ScanInformationStoreSingleton : ScanInformationStore {
                 val plainZipData = JumioHelper.generateZipFile(vendorScanInformation).bind()
                 val zipData = getEncrypter("global").encryptData(plainZipData)
                 if (bucketName.isNullOrEmpty()) {
-                    val fileName = "${countryCode}_${vendorScanInformation.scanId}.zip.tk"
+                    val fileName = "${countryCode}_${vendorScanInformation.id}.zip.tk"
                     logger.info("No bucket set, saving file locally $fileName")
                     JumioHelper.saveLocalFile(fileName, zipData).bind()
                 } else {
                     // the zip f
-                    val fileName = "${subscriberId}/${vendorScanInformation.scanId}.zip.tk"
+                    val fileName = "${subscriberId}/${vendorScanInformation.id}.zip.tk"
                     val globalBucket = "${bucketName}-global"
                     val countryBucket = "${bucketName}-${countryCode.toLowerCase()}"
                     logger.info("Saving in cloud storage $globalBucket --> $fileName")
@@ -152,6 +156,7 @@ object ScanInformationStoreSingleton : ScanInformationStore {
  * A utility for downloading and creating the scan information for Jumio clients.
  */
 object JumioHelper {
+    private val logger by getLogger()
     /**
      * Retrieves the contents of a file from a URL
      */
@@ -182,52 +187,74 @@ object JumioHelper {
         }
     }
 
+    fun isJSONArray(jsonData: String): Boolean {
+        try {
+            val mapper = ObjectMapper()
+            return mapper.readTree(jsonData).isArray
+        } catch (e: IOException) {
+            return false
+        }
+    }
+
+    private fun flattenList(list: List<String>): List<String> {
+        try {
+            if (list.size > 1) {
+                return list //already flattened.
+            }
+            val jsonData:String = list[0]
+            if (isJSONArray(jsonData)) {
+                return ObjectMapper().readValue(jsonData)
+            }
+        } catch (e: IOException) {
+            logger.error("Cannot flattenList Json Data $list", e)
+        }
+        return list;
+    }
+
     /**
      * Creates the VendorScanInformation from the input map.
      * - Downloads all the required images
      */
     fun generateVendorScanInformation(vendorData: MultivaluedMap<String, String>, apiToken: String, apiSecret: String): Either<StoreError, VendorScanInformation> {
-        var scanImage: Blob? = null
-        var scanImageType: String? = null
-        var scanImageBackside: Blob? = null
-        var scanImageBacksideType: String? = null
-        var scanImageFace: Blob? = null
-        var scanImageFaceType: String? = null
+        var images:MutableMap<String, Blob> = mutableMapOf<String, Blob>()
 
         val scanId: String = vendorData.getFirst(JumioScanData.SCAN_ID.s)
         val scanDetails: String = ObjectMapper().writeValueAsString(vendorData)
         val scanImageUrl: String? = vendorData.getFirst(JumioScanData.SCAN_IMAGE.s)
         val scanImageBacksideUrl: String? = vendorData.getFirst(JumioScanData.SCAN_IMAGE_BACKSIDE.s)
         val scanImageFaceUrl: String? = vendorData.getFirst(JumioScanData.SCAN_IMAGE_FACE.s)
+        val scanlivenessImagesUrl: List<String>? = vendorData.get(JumioScanData.SCAN_LIVENESS_IMAGES.s)
 
         return IO {
             Either.monad<StoreError>().binding {
                 var result: Pair<Blob, String>
                 if (scanImageUrl != null) {
                     result = downloadFileAsBlob(scanImageUrl, apiToken, apiSecret).bind()
-                    scanImage = result.first
-                    scanImageType = result.second
+                    val filename = "id.${getFileExtFromType(result.second)}"
+                    images.put(filename, result.first)
                 }
                 if (scanImageBacksideUrl != null) {
                     result = downloadFileAsBlob(scanImageBacksideUrl, apiToken, apiSecret).bind()
-                    scanImageBackside = result.first
-                    scanImageBacksideType = result.second
+                    val filename = "id_backside.${getFileExtFromType(result.second)}"
+                    images.put(filename, result.first)
                 }
                 if (scanImageFaceUrl != null) {
                     result = downloadFileAsBlob(scanImageFaceUrl, apiToken, apiSecret).bind()
-                    scanImageFace = result.first
-                    scanImageFaceType = result.second
+                    val filename = "face.${getFileExtFromType(result.second)}"
+                    images.put(filename, result.first)
                 }
-                VendorScanInformation(
-                        scanId,
-                        scanDetails,
-                        scanImage,
-                        scanImageType,
-                        scanImageBackside,
-                        scanImageBacksideType,
-                        scanImageFace,
-                        scanImageFaceType
-                )
+                if(scanlivenessImagesUrl != null) {
+                    val urls = scanlivenessImagesUrl.toMutableList()
+                    urls.sort() // The url list is not in sequence
+                    val flattenedList = flattenList(urls)
+                    var imageIndex = 0
+                    for (imageUrl in flattenedList) {
+                        result = downloadFileAsBlob(imageUrl, apiToken, apiSecret).bind()
+                        val filename = "liveness-${++imageIndex}.${getFileExtFromType(result.second)}"
+                        images.put(filename, result.first)
+                    }
+                }
+                VendorScanInformation(scanId, scanDetails, images)
             }.fix()
         }.unsafeRunSync()
     }
@@ -241,26 +268,20 @@ object JumioHelper {
 
         try {
             zos.putNextEntry(ZipEntry("postdata.json"))
-            zos.write(vendorData.scanDetails.toByteArray())
+            zos.write(vendorData.details.toByteArray())
             zos.closeEntry()
-            if (vendorData.scanImage != null && vendorData.scanImageType != null) {
-                zos.putNextEntry(ZipEntry("id.${getFileExtFromType(vendorData.scanImageType!!)}"))
-                zos.write(vendorData.scanImage!!.toByteArray())
-                zos.closeEntry()
-            }
-            if (vendorData.scanImageBackside != null && vendorData.scanImageBacksideType != null) {
-                zos.putNextEntry(ZipEntry("id_backside.${getFileExtFromType(vendorData.scanImageBacksideType!!)}"))
-                zos.write(vendorData.scanImageBackside!!.toByteArray())
-                zos.closeEntry()
-            }
-            if (vendorData.scanImageFace != null && vendorData.scanImageFaceType != null) {
-                zos.putNextEntry(ZipEntry("id_face.${getFileExtFromType(vendorData.scanImageFaceType!!)}"))
-                zos.write(vendorData.scanImageFace!!.toByteArray())
-                zos.closeEntry()
+            // Append all images
+            if (vendorData.images != null) {
+                vendorData.images?.map { (filename, data) ->
+                    zos.putNextEntry(ZipEntry(filename))
+                    zos.write(data.toByteArray())
+                    zos.closeEntry()
+                    Unit
+                }
             }
             zos.finish()
         } catch (e: IOException) {
-            return Either.left(NotCreatedError(VendorScanData.TYPE_NAME.s, vendorData.scanId))
+            return Either.left(NotCreatedError(VendorScanData.TYPE_NAME.s, vendorData.id))
         } finally {
             zos.close()
         }

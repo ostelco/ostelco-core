@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.right
 import com.palantir.docker.compose.DockerComposeRule
 import com.palantir.docker.compose.connection.waiting.HealthChecks
+import kotlinx.coroutines.runBlocking
 import org.joda.time.Duration
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -189,7 +190,7 @@ class GraphStoreTest {
     }
 
     @Test
-    fun `test - consume`() {
+    fun `test - consume`() = runBlocking {
         Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
                 customer = CUSTOMER)
@@ -203,33 +204,35 @@ class GraphStoreTest {
 
         // requested = 40_000_000
         val dataBucketSize = 40_000_000L
-        Neo4jStoreSingleton.consume(msisdn = MSISDN, usedBytes = 0, requestedBytes = dataBucketSize)
-                .fold(
+        Neo4jStoreSingleton.consume(msisdn = MSISDN, usedBytes = 0, requestedBytes = dataBucketSize) { storeResult ->
+                storeResult.fold(
                         { fail(it.message) },
                         {
                             assertEquals(dataBucketSize, it.first) // reserved = 40_000_000
                             assertEquals(60_000_000L, it.second) // balance = 60_000_000
                         })
-
+    }
         // used = 50_000_000
         // requested = 40_000_000
-        Neo4jStoreSingleton.consume(msisdn = MSISDN, usedBytes = 50_000_000L, requestedBytes = dataBucketSize)
-                .fold(
-                        { fail(it.message) },
-                        {
-                            assertEquals(dataBucketSize, it.first) // reserved = 40_000_000
-                            assertEquals(10_000_000L, it.second) // balance = 10_000_000
-                        })
+        Neo4jStoreSingleton.consume(msisdn = MSISDN, usedBytes = 50_000_000L, requestedBytes = dataBucketSize) { storeResult ->
+            storeResult.fold(
+                    { fail(it.message) },
+                    {
+                        assertEquals(dataBucketSize, it.first) // reserved = 40_000_000
+                        assertEquals(10_000_000L, it.second) // balance = 10_000_000
+                    })
+        }
 
         // used = 30_000_000
         // requested = 40_000_000
-        Neo4jStoreSingleton.consume(msisdn = MSISDN, usedBytes = 30_000_000L, requestedBytes = dataBucketSize)
-                .fold(
-                        { fail(it.message) },
-                        {
-                            assertEquals(20_000_000L, it.first) // reserved = 20_000_000
-                            assertEquals(0L, it.second) // balance = 0
-                        })
+        Neo4jStoreSingleton.consume(msisdn = MSISDN, usedBytes = 30_000_000L, requestedBytes = dataBucketSize) { storeResult ->
+            storeResult.fold(
+                { fail(it.message) },
+                {
+                    assertEquals(20_000_000L, it.first) // reserved = 20_000_000
+                    assertEquals(0L, it.second) // balance = 0
+                })
+        }
     }
 
     @Test
