@@ -1,12 +1,10 @@
 package org.ostelco.prime.ocs.consumption
 
-import arrow.core.right
 import io.grpc.ManagedChannelBuilder
 import io.grpc.stub.StreamObserver
 import kotlinx.coroutines.runBlocking
 import org.junit.Ignore
 import org.junit.Test
-import org.mockito.Mockito
 import org.ostelco.ocs.api.CreditControlAnswerInfo
 import org.ostelco.ocs.api.CreditControlRequestInfo
 import org.ostelco.ocs.api.CreditControlRequestType.UPDATE_REQUEST
@@ -14,7 +12,6 @@ import org.ostelco.ocs.api.MultipleServiceCreditControl
 import org.ostelco.ocs.api.OcsServiceGrpc
 import org.ostelco.ocs.api.ServiceUnit
 import org.ostelco.prime.ocs.core.OnlineCharging
-import org.ostelco.prime.ocs.mockGraphStore
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.CountDownLatch
@@ -31,11 +28,6 @@ class OcsGrpcServerTest {
 
         // Add delay to DB call and skip analytics and low balance notification
         OnlineCharging.loadUnitTest = true
-
-        // call to graphStore always return 100 as reserved Bucket bytes and 200 as balance Bundle bytes
-        Mockito.`when`(mockGraphStore.consume(MSISDN, 80, 100) {
-            Pair(100L, 200L).right()
-        })
 
         server = OcsGrpcServer(8082, OcsGrpcService(OnlineCharging))
 
