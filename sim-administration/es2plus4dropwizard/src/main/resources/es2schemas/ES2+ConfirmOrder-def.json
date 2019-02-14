@@ -30,6 +30,7 @@
     },
     "matchingId": {
       "type": "string",
+      "pattern": "^[-0-9A-Z]*$",
       "description": "as defined in section {5.3.2}"
     },
     "confirmationCode": {

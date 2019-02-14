@@ -1,0 +1,13 @@
+es2plusClient:
+  requesterId: xx
+  host: localhost
+  port: 8080
+
+httpClient:
+  timeout: 500ms
+  connectionTimeout: 500ms
+  timeToLive: 1 hour
+  cookiesEnabled: false
+  maxConnections: 1024
+  maxConnectionsPerRoute: 1024
+  keepAlive: 0s

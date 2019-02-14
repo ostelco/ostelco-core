@@ -37,7 +37,7 @@ class ClientCCASessionDataReplicatedImpl(id: String, replicatedStorage: Replicat
         if (!replicatedStorage.exist(id)) {
             setAppSessionIface(ClientAccSession::class.java)
         }
-        messageParser = container.assemblerFacility.getComponentInstance(IMessageParser::class.java);
+        messageParser = container.assemblerFacility.getComponentInstance(IMessageParser::class.java)
     }
 
 

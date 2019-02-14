@@ -37,7 +37,7 @@ class GenerateBatchDescriptionTest {
     }
 
 
-    fun prettyPrintSimBatchDescription(bd: SimBatchDescription): String {
+    private fun prettyPrintSimBatchDescription(bd: SimBatchDescription): String {
         return """
             *HEADER DESCRIPTION
             ***************************************

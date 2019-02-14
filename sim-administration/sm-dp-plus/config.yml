@@ -10,40 +10,63 @@ openApi:
   contactEmail: rmz@telenordigital.com
   resourcePackage: org.ostelco
 
-httpClient:
-
-  # The minimum number of threads to use for asynchronous calls.
-  minThreads: 1
-
-  # The maximum number of threads to use for asynchronous calls.
-  maxThreads: 128
-
-  # If true, the client will automatically decode response entities
-  # with gzip content encoding.
-  gzipEnabled: true
-
-  # If true, the client will encode request entities with gzip
-  # content encoding. (Requires gzipEnabled to be true).
-  gzipEnabledForRequests: true
-
-
-# Maybe this can help https://stackoverflow.com/questions/35002780/setting-up-ssl-in-dropwizard
 server:
-  type: simple
-  connector:
-    type: https
-    port: 8443
-    jceProvider: Conscrypt
-    # keyStoreType: JKS
-#    keyStorePath: ../certificate-authority-simulated/crypto-artefacts/sm-dp-plus/sk_keys.jks
-#    keyStorePassword: superSecreet
-    keyStoreType: PKCS12
-    keyStorePath: ../certificate-authority-simulated/mykeystore.pkcs12
+  adminMinThreads: 1
+  adminMaxThreads: 64
+  adminContextPath: /
+  applicationContextPath: /
+  applicationConnectors:
+    - type: http
+      port: 8080
+    - type: https
+      port: 8443
+      # Enabling conscrypt blows the whole thing up, so don't do that.
+      #jceProvider: Conscrypt
+      keyStoreType: JKS
+      keyStorePath: sk_keys.jks
+      keyStorePassword: superSecreet
+      validateCerts: false
+      needClientAuth: true
+      wantClientAuth: true
+      supportedProtocols: [TLSv1.1, TLSv1.2, TLSv1.3]
+      excludedProtocols: [SSLv2Hello, SSLv3]
+
+httpClient:
+  timeout: 5000000ms
+  tls:
+    # Default is 500 milliseconds, we need more when debugging.
+    protocol: TLSv1.2
+    keyStoreType: JKS
+    keyStorePath: sk_keys.jks
     keyStorePassword: superSecreet
+    #    validateCerts: false
+    #    keyStorePath: sk_keys.jks
+    #    keyStorePassword: superSecreet
+    #    keyStoreType: JKS
+    #    trustStorePath: sk_trust.jks
+    #    trustStorePassword: superSecreet
+    #    trustStoreType: JKS
+    verifyHostname: false
+    trustSelfSignedCertificates: true
 
-    #trustStorePath: ../certificate-authority-simulated/crypto-artefacts/sm-dp-plus/sk_trust.jks
-    #trustStorePassword: superSecreet
-    certAlias: sm-dp-plus_sk.crt
-    validateCerts: false
-    validatePeers: false
+#  CN=*.not-really-ostelco.org, O=Not really SMDP org, L=Oslo, ST=Oslo, C=NO
+certAuth:
+  certAuths:
+    - userId: MrFish
+      country: 'NO'
+      location: Oslo
+      state: ''
+      organization: Not really SMDP org
+      commonName: '*.not-really-ostelco.org'
+      roles:
+        - flyfisher
 
+roles:
+  definitions:
+    - name: flyfisher
+      description: Obviously just a dummy role
+
+es2plusClient:
+  requesterId: abc
+  host: localhost
+  port: 8080

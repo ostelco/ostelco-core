@@ -1,0 +1,31 @@
+server:
+  adminMinThreads: 1
+  adminMaxThreads: 64
+  adminContextPath: /
+  applicationContextPath: /
+  applicationConnectors:
+    - type: http
+      port: 8080
+    - type: https
+      port: 8443
+      keyStorePath: sk_keys.jks
+      keyStorePassword: superSecreet
+      validateCerts: false
+
+httpClient:
+  tls:
+    protocol: TLSv1.2
+    keyStorePath: sk_keys.jks
+    keyStorePassword: superSecreet
+    keyStoreType: JKS
+    trustStorePath: sk_trust.jks
+    trustStorePassword: superSecreet
+    trustStoreType: JKS
+    verifyHostname: false
+    trustSelfSignedCertificates: true
+#    supportedProtocols: TLSv1.2, TLSv1.1
+#     supportedCipherSuites: TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
+
+
+logging:
+  level: INFO

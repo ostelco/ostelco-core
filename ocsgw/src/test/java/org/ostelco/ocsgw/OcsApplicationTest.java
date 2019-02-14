@@ -21,6 +21,7 @@ import javax.xml.bind.DatatypeConverter;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertEquals;
 
@@ -64,7 +65,7 @@ public class OcsApplicationTest {
         client.shutdown();
         client = null;
 
-        application.shutdown();
+        OcsApplication.shutdown();
     }
 
     private void simpleCreditControlRequestInit(Session session) {
@@ -214,11 +215,11 @@ public class OcsApplicationTest {
         psInformation.addAvp(Avp.TGPP_CHARGING_CHARACTERISTICS, "0800", VENDOR_ID_3GPP, true, false, true);
         psInformation.addAvp(Avp.GPP_SGSN_MCC_MNC, "24201", VENDOR_ID_3GPP, true, false, false);
         byte[] timeZoneBytes = new byte[] {64, 00};
-        String timeZone = new String(timeZoneBytes, "UTF-8");
+        String timeZone = new String(timeZoneBytes, StandardCharsets.UTF_8);
         psInformation.addAvp(Avp.TGPP_MS_TIMEZONE, timeZone, VENDOR_ID_3GPP, true, false, true);
         psInformation.addAvp(Avp.CHARGING_RULE_BASE_NAME, "RB1", VENDOR_ID_3GPP, true, false, false);
         byte[] ratTypeBytes = new byte[] {06};
-        String ratType = new String(ratTypeBytes, "UTF-8");
+        String ratType = new String(ratTypeBytes, StandardCharsets.UTF_8);
         psInformation.addAvp(Avp.TGPP_RAT_TYPE, ratType , VENDOR_ID_3GPP, true, false, true);
 
         String s = "8242f21078b542f2100103c703";
@@ -247,7 +248,7 @@ public class OcsApplicationTest {
         while (!client.isAnswerReceived() && i<10) {
             i++;
             try {
-                Thread.currentThread().sleep(500);
+                Thread.sleep(500);
             } catch (InterruptedException e) {
                 // continue
             }
@@ -260,7 +261,7 @@ public class OcsApplicationTest {
         while (!client.isRequestReceived() && i<10) {
             i++;
             try {
-                Thread.currentThread().sleep(500);
+                Thread.sleep(500);
             } catch (InterruptedException e) {
                 // continue
             }

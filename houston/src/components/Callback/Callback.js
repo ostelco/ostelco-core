@@ -6,7 +6,7 @@ import { connect } from 'react-redux';
 class Callback extends Component {
   render() {
     if (this.props.loggedIn) {
-      return <Redirect to="/" />;
+      return; <Redirect; to="/" />;
     }
 
     const style = {
@@ -23,10 +23,10 @@ class Callback extends Component {
     };
 
     return (
-      <div style={style}>
-        <img src={loading} alt="loading" />
-      </div>
-    );
+      <div; style={style}>
+        <img; src={loading}; alt="loading" />
+      </div>;
+  )
   }
 }
 
@@ -35,6 +35,5 @@ function mapStateToProps(state) {
   return {
     loggedIn
   };
-};
-
+}
 export default connect(mapStateToProps)(Callback);

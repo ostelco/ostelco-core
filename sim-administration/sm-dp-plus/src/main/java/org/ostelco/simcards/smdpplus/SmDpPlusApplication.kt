@@ -3,22 +3,21 @@ package org.ostelco.simcards.smdpplus
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.dropwizard.Application
 import io.dropwizard.Configuration
-import io.dropwizard.client.JerseyClientConfiguration
+import io.dropwizard.client.HttpClientBuilder
+import io.dropwizard.client.HttpClientConfiguration
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
+import org.apache.http.client.HttpClient
 import org.conscrypt.OpenSSLProvider
+import org.ostelco.dropwizardutils.*
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
-import org.ostelco.dropwizardutils.OpenapiResourceAdderConfig
+import org.ostelco.sim.es2plus.*
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
-import org.ostelco.sim.es2plus.SmDpPlusServerResource
-import org.ostelco.sim.es2plus.SmDpPlusService
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
 import java.security.Security
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
-
-
 
 
 /**
@@ -39,8 +38,6 @@ import javax.validation.constraints.NotNull
  */
 class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 
-    private val log = LoggerFactory.getLogger(javaClass)
-
     override fun getName(): String {
         return "SM-DP+ implementation (partial, only for testing of sim admin service)"
     }
@@ -49,30 +46,51 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         // TODO: application initialization
     }
 
-    override fun run(configuration: SmDpPlusAppConfiguration,
-                     environment: Environment) {
+    private lateinit var httpClient: HttpClient
 
-        val jerseyEnvironment = environment.jersey()
+    lateinit var es2plusClient: ES2PlusClient
 
-        addOpenapiResourceToJerseyEnv(jerseyEnvironment, configuration.openApi)
+    override fun run(config: SmDpPlusAppConfiguration,
+                     env: Environment) {
+
+        val jerseyEnvironment = env.jersey()
+
+        addOpenapiResourceToJerseyEnv(jerseyEnvironment, config.openApi)
         addEs2PlusDefaultFiltersAndInterceptors(jerseyEnvironment)
 
-        val simEntriesIterator = SmDpSimEntryIterator(FileInputStream(configuration.simBatchData))
+        val simEntriesIterator = SmDpSimEntryIterator(FileInputStream(config.simBatchData))
         val smdpPlusService: SmDpPlusService = SmDpPlusEmulator(simEntriesIterator)
 
-        jerseyEnvironment.register(SmDpPlusServerResource(smDpPlus = smdpPlusService))
+        jerseyEnvironment.register(SmDpPlusServerResource(
+                smDpPlus = smdpPlusService))
+        jerseyEnvironment.register(CertificateAuthorizationFilter(RBACService(
+                rolesConfig = config.rolesConfig,
+                certConfig = config.certConfig)))
+
+
+        jerseyEnvironment.register(CertificateAuthorizationFilter(
+                RBACService(rolesConfig = config.rolesConfig,
+                        certConfig = config.certConfig)))
+
+        this.httpClient = HttpClientBuilder(env).using(config.httpClientConfiguration).build(name)
+        this.es2plusClient = ES2PlusClient(
+                requesterId = config.es2plusConfig.requesterId,
+                host = config.es2plusConfig.host,
+                port = config.es2plusConfig.port,
+                httpClient = httpClient)
     }
 
 
     companion object {
+
         @Throws(Exception::class)
         @JvmStatic
         fun main(args: Array<String>) {
+            Security.insertProviderAt(OpenSSLProvider(), 1)
             SmDpPlusApplication().run(*args)
         }
     }
 }
-
 
 /**
  * A very reduced  functionality SmDpPlus, essentially handling only
@@ -81,23 +99,17 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
  */
 class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusService {
 
-    companion object {
-        init {
-            Security.addProvider(OpenSSLProvider ())
-        }
-    }
-
     private val log = LoggerFactory.getLogger(javaClass)
 
     /**
      * Global lock, just in case.
      */
-    val entriesLock = Object()
+    private val entriesLock = Object()
 
-    val entries: MutableSet<SmDpSimEntry> = mutableSetOf()
-    val entriesByIccid = mutableMapOf<String, SmDpSimEntry>()
-    val entriesByImsi = mutableMapOf<String, SmDpSimEntry>()
-    val entriesByProfile = mutableMapOf<String, MutableSet<SmDpSimEntry>>()
+    private val entries: MutableSet<SmDpSimEntry> = mutableSetOf()
+    private val entriesByIccid = mutableMapOf<String, SmDpSimEntry>()
+    private val entriesByImsi = mutableMapOf<String, SmDpSimEntry>()
+    private val entriesByProfile = mutableMapOf<String, MutableSet<SmDpSimEntry>>()
 
     init {
         incomingEntries.forEach {
@@ -106,7 +118,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
             entriesByImsi[it.imsi] = it
             val entriesForProfile: MutableSet<SmDpSimEntry>
             if (!entriesByProfile.containsKey(it.profile)) {
-                entriesForProfile = mutableSetOf<SmDpSimEntry>()
+                entriesForProfile = mutableSetOf()
                 entriesByProfile[it.profile] = entriesForProfile
             } else {
                 entriesForProfile = entriesByProfile[it.profile]!!
@@ -118,13 +130,10 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
     }
 
     // TODO; What about the reservation flag?
-    override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): String {
+    override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): Es2DownloadOrderResponse {
         synchronized(entriesLock) {
-            val entry: SmDpSimEntry? =  findMatchingFreeProfile(iccid, profileType)
-
-            if (entry == null) {
-                throw SmDpPlusException("Could not find download order matching criteria")
-            }
+            val entry: SmDpSimEntry = findMatchingFreeProfile(iccid, profileType)
+                    ?: throw SmDpPlusException("Could not find download order matching criteria")
 
             // If an EID is known, then mark this as the IED associated
             // with the entry.
@@ -136,24 +145,25 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
             entry.allocated = true
 
             // Finally return the ICCID uniquely identifying the profile instance.
-            return entry.iccid
+            return Es2DownloadOrderResponse(eS2SuccessResponseHeader(),
+                    iccid = entry.iccid)
         }
     }
 
     /**
-     * Find a free profile that either matches both iccid and profile type (if iccid != null),
-     * or just profile type (if iccid == null).  Throw runtime exception if parameter
+     * Find a free profile that either matches both profileStatusList and profile type (if profileStatusList != null),
+     * or just profile type (if profileStatusList == null).  Throw runtime exception if parameter
      * errors are discovered, but return null if no matching profile is found.
      */
     private fun findMatchingFreeProfile(iccid: String?, profileType: String?): SmDpSimEntry? {
-        if (iccid != null) {
-            return allocateByIccid(iccid, profileType)
+        return if (iccid != null) {
+            findUnallocatedByIccidAndProfileType(iccid, profileType)
         } else if (profileType == null) {
-            throw RuntimeException("No iccid, no profile type, so don't know how to allocate sim entry")
+            throw RuntimeException("No profileStatusList, no profile type, so don't know how to allocate sim entry")
         } else if (!entriesByProfile.containsKey(profileType)) {
             throw SmDpPlusException("Unknown profile type $profileType")
         } else {
-            return allocateByProfile(profileType)
+            allocateByProfile(profileType)
         }
     }
 
@@ -163,17 +173,17 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
      */
     private fun allocateByProfile(profileType: String): SmDpSimEntry? {
         val entriesForProfile = entriesByProfile[profileType] ?: return null
-        return  entriesForProfile.find { !it.allocated}
+        return entriesForProfile.find { !it.allocated }
     }
 
     /**
-     * Allocate by ICCID, but only do so if the iccid exists, and the
+     * Allocate by ICCID, but only do so if the profileStatusList exists, and the
      * profile  associated with that ICCID matches the expected profile type
      * (if not null, null will match anything).
      */
-    private fun allocateByIccid(iccid: String, profileType: String?) : SmDpSimEntry {
+    private fun findUnallocatedByIccidAndProfileType(iccid: String, profileType: String?): SmDpSimEntry {
         if (!entriesByIccid.containsKey(iccid)) {
-            throw RuntimeException("Attempt to allocate nonexisting iccid $iccid")
+            throw RuntimeException("Attempt to allocate nonexisting profileStatusList $iccid")
         }
 
         val entry = entriesByIccid[iccid]!!
@@ -183,19 +193,61 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
         }
 
         if (profileType != null) {
-            if (!entry.profile.equals(profileType)) {
-                throw SmDpPlusException("Profile of iccid = $iccid is ${entry.profile}, not $profileType")
+            if (entry.profile != profileType) {
+                throw SmDpPlusException("Profile of profileStatusList = $iccid is ${entry.profile}, not $profileType")
             }
         }
         return entry
     }
 
+    /**
+     *  Generate a fixed corresponding EID based on ICCID.
+     *  XXX Whoot?
+     **/
+    private fun getEidFromIccid(iccid: String): String? = if (iccid.isNotEmpty())
+        "01010101010101010101" + iccid.takeLast(12)
+    else
+        null
 
-    override fun confirmOrder(eid: String, smdsAddress: String?, machingId: String?, confirmationCode: String?) {
-        TODO("not implemented")
+    override fun confirmOrder(eid: String?, iccid: String?, smdsAddress: String?, machingId: String?, confirmationCode: String?, releaseFlag: Boolean): Es2ConfirmOrderResponse {
+
+        if (iccid == null) {
+            throw RuntimeException("No ICCD, cannot confirm order")
+        }
+        if (!entriesByIccid.containsKey(iccid)) {
+            throw RuntimeException("Attempt to allocate nonexisting profileStatusList $iccid")
+        }
+        val entry = entriesByIccid[iccid]!!
+
+
+        if (smdsAddress != null) {
+            entry.smdsAddress = smdsAddress
+        }
+
+        if (machingId != null) {
+            entry.machingId = confirmationCode
+        } else {
+            entry.machingId = "0123-ABC-KGBC-IAMOS-SAD0"  /// XXX This is obviously bogus code!
+        }
+
+        entry.released = releaseFlag
+
+        if (confirmationCode != null) {
+            entry.confirmationCode = confirmationCode
+        }
+
+        val eidReturned = if (eid.isNullOrEmpty())
+            getEidFromIccid(iccid)
+        else
+            eid
+
+        return Es2ConfirmOrderResponse(eS2SuccessResponseHeader(),
+                eid = eidReturned!!,
+                smdsAddress = entry.smdsAddress,
+                matchingId = entry.machingId)
     }
 
-    override fun cancelOrder(eid: String, iccid: String?, matchingId: String?, finalProfileStatusIndicator: String?) {
+    override fun cancelOrder(eid: String?, iccid: String?, matchingId: String?, finalProfileStatusIndicator: String?) {
         TODO("not implemented")
     }
 
@@ -209,11 +261,21 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
  */
 class SmDpPlusException(message: String) : Exception(message)
 
+
 /**
- * Configuration class for  Sm-dp+ emulator.
+ * Configuration class for SM-DP+ emulator.
  */
 class SmDpPlusAppConfiguration : Configuration() {
 
+    /**
+     * Configuring how the Open API representation of the
+     * served resources will be presenting itself (owner,
+     * license etc.)
+     */
+    @Valid
+    @NotNull
+    @JsonProperty("es2plusClient")
+    var es2plusConfig = EsTwoPlusConfig()
 
     /**
      * Configuring how the Open API representation of the
@@ -225,7 +287,6 @@ class SmDpPlusAppConfiguration : Configuration() {
     @JsonProperty("openApi")
     var openApi = OpenapiResourceAdderConfig()
 
-
     /**
      * Path to file containing simulated SIM data.
      */
@@ -235,15 +296,28 @@ class SmDpPlusAppConfiguration : Configuration() {
     var simBatchData: String = ""
 
     /**
-     * Configuration of the jersey client that is used
-     * for the ES2+ callbacks.
+     * The httpClient we use to connect to other services, including
+     * ES2+ services
      */
     @Valid
     @NotNull
-    @JsonProperty
-    private val httpClient = JerseyClientConfiguration()
+    @JsonProperty("httpClient")
+    var httpClientConfiguration = HttpClientConfiguration()
 
-    fun getJerseyClientConfiguration(): JerseyClientConfiguration {
-        return httpClient
-    }
+    /**
+     * Declaring the mapping between users and certificates, also
+     * which roles the users are assigned to.
+     */
+    @Valid
+    @JsonProperty("certAuth")
+    @NotNull
+    var certConfig = CertAuthConfig()
+
+    /**
+     * Declaring which roles we will permit
+     */
+    @Valid
+    @JsonProperty("roles")
+    @NotNull
+    var rolesConfig = RolesConfig()
 }

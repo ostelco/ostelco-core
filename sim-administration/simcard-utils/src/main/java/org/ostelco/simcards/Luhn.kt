@@ -36,7 +36,7 @@ class LuhnChecksum {
          */
         fun luhnComplete(s: String): String {
             for (c in listOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")) {
-                val candidate = "${s}${c}"
+                val candidate = "$s$c"
                 if (luhnCheck(candidate)) {
                     return candidate
                 }

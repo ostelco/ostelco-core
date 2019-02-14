@@ -468,7 +468,7 @@ class NotifyResource {
  * Resource used to handle plans related REST calls.
  */
 @Path("/plans")
-class PlanResource() {
+class PlanResource {
 
     private val storage by lazy { getResource<AdminDataSource>() }
 

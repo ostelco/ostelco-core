@@ -51,7 +51,7 @@ class OcsEvent {
         reservedBucketBytes = 0
         ocsgwStreamId = null
         request = null
-        topupContext = null;
+        topupContext = null
     }
 
     //FIXME vihang: We need to think about roaming

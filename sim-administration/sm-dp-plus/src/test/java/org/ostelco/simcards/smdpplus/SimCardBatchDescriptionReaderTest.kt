@@ -9,18 +9,17 @@ import java.io.FileInputStream
 import java.io.PrintWriter
 
 
+class SimCardBatchDescriptorReaderTest {
 
-class SimCarfBatchDescriptorReaderTest {
-
-    val smdpInputCsvPath =
+    private val smdpInputCsvPath: String? =
             ResourceHelpers.resourceFilePath("fixtures/sample-sim-batch-for-sm-dp+.csv")
+
     @Test
     fun testReadingListOfEntriesFromFile() {
         var foo = 0
-        SmDpSimEntryIterator(FileInputStream(smdpInputCsvPath)).forEach {  foo++ }
+        SmDpSimEntryIterator(FileInputStream(smdpInputCsvPath)).forEach { _ -> foo++ }
         assertEquals(100, foo)
     }
-
 
     /**
      * This is not a test, it is utility code that is used to generate the input file
@@ -28,6 +27,9 @@ class SimCarfBatchDescriptorReaderTest {
      * but when new testdata needs to be generated, it should be un-ignored, and run,
      * then the generated data should be copied to wherever it should be stored, and
      * ordinary testing can continue.
+     *
+     * XXX Take this out of the test code, make it into an utility app that can
+     *     be easily run from the command line.
      */
     @Test
     @Ignore
@@ -49,10 +51,9 @@ class SimCarfBatchDescriptorReaderTest {
     }
 }
 
-
 class ImsiGenerator(val mcc : Int, val mnc: Int, val msinStart : Int) : Iterator<String> {
 
-    var msin = msinStart
+    private var msin = msinStart
 
     @Throws(NoSuchElementException::class)
     override fun next(): String {
@@ -66,7 +67,7 @@ class ImsiGenerator(val mcc : Int, val mnc: Int, val msinStart : Int) : Iterator
 
 class IccidGenerator(val startSerialNum: Int = 0) : Iterator<String> {
 
-    var serialNumber:Int = startSerialNum
+    private var serialNumber:Int = startSerialNum
     /**
      * Returns the next element in the iteration.
      */

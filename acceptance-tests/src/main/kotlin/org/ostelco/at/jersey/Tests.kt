@@ -1,43 +1,15 @@
 package org.ostelco.at.jersey
 
 import org.junit.Test
-import org.ostelco.at.common.StripePayment
-import org.ostelco.at.common.createProfile
-import org.ostelco.at.common.createSubscription
-import org.ostelco.at.common.expectedProducts
-import org.ostelco.at.common.getLogger
-import org.ostelco.at.common.randomInt
-import org.ostelco.prime.client.model.ActivePseudonyms
-import org.ostelco.prime.client.model.ApplicationToken
-import org.ostelco.prime.client.model.Bundle
-import org.ostelco.prime.client.model.BundleList
-import org.ostelco.prime.client.model.Consent
-import org.ostelco.prime.client.model.CustomerState
-import org.ostelco.prime.client.model.PaymentSource
-import org.ostelco.prime.client.model.PaymentSourceList
-import org.ostelco.prime.client.model.Person
-import org.ostelco.prime.client.model.Plan
-import org.ostelco.prime.client.model.Price
-import org.ostelco.prime.client.model.Product
-import org.ostelco.prime.client.model.ProductInfo
-import org.ostelco.prime.client.model.Profile
-import org.ostelco.prime.client.model.PurchaseRecord
-import org.ostelco.prime.client.model.PurchaseRecordList
-import org.ostelco.prime.client.model.ScanInformation
-import org.ostelco.prime.client.model.Subscription
+import org.ostelco.at.common.*
+import org.ostelco.prime.client.model.*
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.util.*
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.MultivaluedHashMap
-import kotlin.test.assertEquals
-import kotlin.test.assertFails
-import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 
 class ProfileTest {
@@ -730,7 +702,7 @@ class eKYCTest {
 
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
-            val dataMap = MultivaluedHashMap<String,String>()
+            var dataMap = MultivaluedHashMap<String,String>()
             dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("ERROR"))
             dataMap.put("verificationStatus", listOf("DENIED_FRAUD"))

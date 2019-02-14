@@ -29,6 +29,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.*
 import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import javax.ws.rs.core.MultivaluedMap
 import kotlin.collections.HashMap
@@ -172,7 +173,7 @@ object JumioHelper {
             // always check HTTP response code first
             if (responseCode != HttpURLConnection.HTTP_OK) {
                 val statusMessage = "$responseCode: ${httpConn.responseMessage}"
-                return Either.left(FileDownloadError(fileURL, statusMessage));
+                return Either.left(FileDownloadError(fileURL, statusMessage))
             }
             val contentType = httpConn.contentType
             val inputStream = httpConn.inputStream
@@ -285,7 +286,7 @@ object JumioHelper {
         } finally {
             zos.close()
         }
-        return Either.right(outputStream.toByteArray());
+        return Either.right(outputStream.toByteArray())
     }
 
     /**
@@ -299,6 +300,7 @@ object JumioHelper {
             return mimeType.drop(idx + 1)
         }
     }
+
 
     /**
      * Upload the byte array to the given cloud storage object.
@@ -314,7 +316,7 @@ object JumioHelper {
         } catch (e: StorageException) {
             return Either.left(NotCreatedError(VendorScanData.TYPE_NAME.s, "$bucket/$fileName"))
         }
-        return Either.right(mediaLink);
+        return Either.right(mediaLink)
     }
 
     /**
@@ -328,10 +330,19 @@ object JumioHelper {
         } catch (e: IOException) {
             return Either.left(NotCreatedError(VendorScanData.TYPE_NAME.s, "$fileName"))
         }
-        return Either.right(fileName);
+        return Either.right(fileName)
     }
 
-    // Manual test helpers.
+
+    fun loadLocalZipFile(fileName: String): Either<StoreError, ZipInputStream> {
+        try {
+            val fis = FileInputStream(File(fileName))
+            return Either.right(ZipInputStream(fis))
+        } catch (e: FileNotFoundException) {
+            return Either.left(NotCreatedError(VendorScanData.TYPE_NAME.s, "$fileName"))
+        }
+    }
+
     @JvmStatic
     fun main(args: Array<String>) {
         val fileURL = "https://jdbc.postgresql.org/download/postgresql-9.2-1002.jdbc4.jar"
