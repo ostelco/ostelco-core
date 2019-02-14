@@ -8,6 +8,13 @@
 ##
 
 
+DEPS="gradle openssl"
+for dep in DEPS ; do
+    if [[ -z "$(which $dep)" ]] ; then
+	echo "$0  ERROR:  Missing dependency $dep"
+	exit 1
+    fi
+done
 
 #
 # Check for the presence of the pantel-decb2 access file
