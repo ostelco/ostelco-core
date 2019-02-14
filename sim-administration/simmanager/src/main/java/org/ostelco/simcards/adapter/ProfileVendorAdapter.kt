@@ -90,7 +90,7 @@ data class ProfileVendorAdapter (
         return httpClient.execute(request).use {
             when (it.statusLine.statusCode) {
                 200 -> {
-                    val status = mapper.readValue(it.entity.content, Es2ProfileStatusResponse::class.java)
+                    val status = mapper.readValue(it.entity.content, Es2DownloadOrderResponse::class.java)
 
                     if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess) {
                         throw WebApplicationException(
