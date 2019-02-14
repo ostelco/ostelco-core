@@ -48,7 +48,7 @@ data class SimEntry(
         @JsonProperty("batch") val batch: Long,
         @JsonProperty("hlrId") val hlrId: Long,
         @JsonProperty("profileVendorId") val profileVendorId: Long,
-        @JsonProperty("msisdn") val msisdn: String? = null,
+        @JsonProperty("msisdn") val msisdn: String,
         @JsonProperty("iccid") val iccid: String,
         @JsonProperty("imsi") val imsi: String,
         @JsonProperty("eid") val eid: String? = null,
@@ -78,7 +78,6 @@ data class SimImportBatch(
 class SimEntryIterator(profileVendorId: Long,
                        hlrId: Long,
                        batchId: Long,
-                       profile: String,
                        csvInputStream: InputStream): Iterator<SimEntry> {
 
     var count = AtomicLong(0)
@@ -111,10 +110,12 @@ class SimEntryIterator(profileVendorId: Long,
 
                     val iccid = record.get("ICCID")
                     val imsi = record.get("IMSI")
+                    val msisdn = record.get("MSISDN")
                     val pin1 = record.get("PIN1")
                     val pin2 = record.get("PIN2")
                     val puk1 = record.get("PUK1")
                     val puk2 = record.get("PUK2")
+                    val profile = record.get("PROFILE")
 
                     val value = SimEntry(
                             batch = batchId,
@@ -123,6 +124,7 @@ class SimEntryIterator(profileVendorId: Long,
                             hlrId = hlrId,
                             iccid = iccid,
                             imsi = imsi,
+                            msisdn = msisdn,
                             pin1 = pin1,
                             puk1 = puk1,
                             puk2 = puk2,
@@ -345,8 +347,8 @@ abstract class SimInventoryDAO {
 
     @Transaction
     @SqlBatch("""INSERT INTO sim_entries
-                                  (batch, profileVendorId, hlrid, hlrState, smdpplusstate, matchingId, profile, iccid, imsi, pin1, pin2, puk1, puk2)
-                      VALUES (:batch, :profileVendorId, :hlrId, :hlrState, :smdpPlusState, :matchingId, :profile, :iccid, :imsi, :pin1, :pin2, :puk1, :puk2)""")
+                                  (batch, profileVendorId, hlrid, hlrState, smdpplusstate, matchingId, profile, iccid, imsi, msisdn, pin1, pin2, puk1, puk2)
+                      VALUES (:batch, :profileVendorId, :hlrId, :hlrState, :smdpPlusState, :matchingId, :profile, :iccid, :imsi, :msisdn, :pin1, :pin2, :puk1, :puk2)""")
     @BatchChunkSize(1000)
     abstract fun insertAll(@BindBean entries: Iterator<SimEntry>)
 
@@ -376,7 +378,6 @@ abstract class SimInventoryDAO {
             importer: String,
             hlrId: Long,
             profileVendorId: Long,
-            profile: String,
             csvInputStream: InputStream): SimImportBatch {
 
         createNewSimImportBatch(
@@ -387,7 +388,6 @@ abstract class SimInventoryDAO {
         val values = SimEntryIterator(
                 profileVendorId = profileVendorId,
                 hlrId = hlrId,
-                profile = profile,
                 batchId = batchId,
                 csvInputStream = csvInputStream)
         insertAll(values)
@@ -502,44 +502,17 @@ abstract class SimInventoryDAO {
     }
 
     //
-    //  Binding a SIM card to a MSISDN
-    //
-
-    @SqlUpdate("""UPDATE sim_entries SET msisdn = :msisdn
-                       WHERE id = :id""")
-    @RegisterMapper(SimEntryMapper::class)
-    abstract fun updateMsisdnOfSimProfile(@Bind("id") id: Long,
-                                          @Bind("msisdn") msisdn: String): Int
-
-    //
     // Finding next free SIM card for a particular HLR.
     //
     @SqlQuery("""SELECT * FROM sim_entries
-                      WHERE hlrId = :hlrId AND COALESCE(msisdn, '') = '' AND smdpPlusState = :smdpPlusState AND profile = :profile
+                      WHERE hlrId = :hlrId AND hlrState = :hlrState AND smdpPlusState = :smdpPlusState AND profile = :profile
                       LIMIT 1""")
     @RegisterMapper(SimEntryMapper::class)
     abstract fun findNextFreeSimProfileForHlr(@Bind("hlrId") hlrId: Long,
                                               @Bind("profile") profile: String,
+                                              @Bind("hlrState") hlrState: HlrState = HlrState.NOT_ACTIVATED,
                                               @Bind("smdpPlusState") smdpPlusState: SmDpPlusState = SmDpPlusState.AVAILABLE): SimEntry?
 
-    /**
-     * Allocates the next free SIM card on a HLR and set the MSISDN
-     * number.
-     * @param hlrId  id of HLR to find next free SIM card with
-     * @param msisdn  MSISDN to search for
-     * @return next free SIM card or null if no cards is available
-     */
-    @Transaction
-    fun allocateNextFreeSimProfileForMsisdn(hlrId: Long, msisdn: String, profile: String): SimEntry? {
-        val simEntry = findNextFreeSimProfileForHlr(hlrId, profile) ?: return null
-
-        /* No SIM cards available. */
-
-        return if (updateMsisdnOfSimProfile(simEntry.id!!, msisdn) > 0)
-            getSimProfileByMsisdn(msisdn)
-        else
-            null
-    }
 
     @SqlUpdate("UPDATE sim_entries SET eid = :eid WHERE id = :id")
     @RegisterMapper(SimEntryMapper::class)

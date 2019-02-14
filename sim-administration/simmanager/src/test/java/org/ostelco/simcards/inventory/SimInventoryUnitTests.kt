@@ -153,9 +153,6 @@ class SimInventoryUnitTests {
         org.mockito.Mockito.`when`(dao.findNextFreeSimProfileForHlr(1L, fakeProfile))
                 .thenReturn(fakeSimEntryWithoutMsisdn)
 
-        org.mockito.Mockito.`when`(dao.allocateNextFreeSimProfileForMsisdn(1L, fakeMsisdn1, fakeProfile))
-                .thenReturn(fakeSimEntryWithMsisdn)
-
         org.mockito.Mockito.`when`(dao.getHlrAdapterByName(fakeHlr))
                 .thenReturn(hlrAdapter)
 
@@ -251,19 +248,6 @@ class SimInventoryUnitTests {
     }
 
     @Test
-    fun testAllocateNextFree() {
-        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/msisdn/$fakeMsisdn1/next-free")
-                .queryParam("phoneType", fakePhoneType)
-                .request(MediaType.APPLICATION_JSON)
-                .get() // XXX Post (or put?)x'
-        assertEquals(200, response.status)
-
-        val simEntry = response.readEntity(SimEntry::class.java)
-        assertNotNull(simEntry)
-        assertEquals(fakeSimEntryWithMsisdn, simEntry)
-    }
-
-    @Test
     fun testActivateAll() {
         val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/esim/all")
                 .queryParam("eid", fakeEid)
@@ -334,16 +318,16 @@ class SimInventoryUnitTests {
                 .thenReturn(true)
 
         val sampleCsvIinput = """
-            ICCID, IMSI, PIN1, PIN2, PUK1, PUK2
-            123123, 123123, 1233, 1233, 1233, 1233
-            123123, 123123, 1233, 1233, 1233, 1233
-            123123, 123123, 1233, 1233, 1233, 1233
-            123123, 123123, 1233, 1233, 1233, 1233
+            ICCID, IMSI, MSISDN, PIN1, PIN2, PUK1, PUK2, PROFILE
+            123123, 123123, 4790000001, 1233, 1233, 1233, 1233, PROFILE_1
+            123123, 123123, 4790000002, 1233, 1233, 1233, 1233, PROFILE_1
+            123123, 123123, 4790000003, 1233, 1233, 1233, 1233, PROFILE_1
+            123123, 123123, 4790000004, 1233, 1233, 1233, 1233, PROFILE_1
             """.trimIndent()
         val data = ByteArrayInputStream(sampleCsvIinput.toByteArray(Charsets.UTF_8))
 
         // XXX For some reason this mock fails to match...
-        org.mockito.Mockito.`when`(dao.importSims("importer", 1L, 1L, fakeProfile, data))
+        org.mockito.Mockito.`when`(dao.importSims("importer", 1L, 1L, data))
                 .thenReturn(SimImportBatch(
                         id = 0L,
                         status = "SUCCESS",

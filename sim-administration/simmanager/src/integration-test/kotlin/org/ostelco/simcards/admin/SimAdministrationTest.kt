@@ -139,7 +139,6 @@ class SimAdministrationTest {
     private fun loadSimData() {
         val entries = FileInputStream(SM_DP_PLUS_RULE.configuration.simBatchData)
         val response = client.target("$simManagerEndpoint/$hlr/import-batch/profilevendor/$profileVendor")
-                .queryParam("phoneType", phoneType)
                 .request()
                 .put(Entity.entity(entries, MediaType.TEXT_PLAIN))
         assertThat(response.status).isEqualTo(200)

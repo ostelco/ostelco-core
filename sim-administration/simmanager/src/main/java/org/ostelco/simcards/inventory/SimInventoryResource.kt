@@ -138,18 +138,6 @@ class SimInventoryResource(private val httpClient: CloseableHttpClient,
         return simEntry
     }
 
-    @GET
-    @Path("msisdn/{msisdn}/next-free")
-    @Produces(MediaType.APPLICATION_JSON)
-    fun allocateSimProfileForMsisdn(
-            @NotEmpty @PathParam("hlrVendors") hlr: String,
-            @NotEmpty @PathParam("msisdn") msisdn: String,
-            @DefaultValue("_") @QueryParam("phoneType") phoneType: String): SimEntry {
-        val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
-        val profile = config.getProfileForPhoneType(phoneType)
-        return assertNonNull(dao.allocateNextFreeSimProfileForMsisdn(hlrAdapter.id, msisdn, profile))
-    }
-
     @POST
     @Path("esim/all")
     @Produces(MediaType.APPLICATION_JSON)
@@ -215,11 +203,9 @@ class SimInventoryResource(private val httpClient: CloseableHttpClient,
     fun importBatch(
             @NotEmpty @PathParam("hlrVendors") hlr: String,
             @NotEmpty @PathParam("simVendor") simVendor: String,
-            @NotEmpty @QueryParam("phoneType") phoneType: String,
             csvInputStream: InputStream): SimImportBatch {
         val profileVendorAdapter = assertNonNull(dao.getProfileVendorAdapterByName(simVendor))
         val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
-        val profile = config.getProfileForPhoneType(phoneType)
 
         if (!dao.simVendorIsPermittedForHlr(profileVendorAdapter.id, hlrAdapter.id)) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
@@ -228,7 +214,6 @@ class SimInventoryResource(private val httpClient: CloseableHttpClient,
                 importer = "importer", // TODO: This is a very strange name for an importer .-)
                 hlrId = hlrAdapter.id,
                 profileVendorId = profileVendorAdapter.id,
-                profile = profile,
                 csvInputStream = csvInputStream)
     }
 }
