@@ -1,16 +1,13 @@
 package org.ostelco.prime.ocs.core
 
-import arrow.core.right
 import io.grpc.stub.StreamObserver
 import kotlinx.coroutines.runBlocking
 import org.junit.Ignore
 import org.junit.Test
-import org.mockito.Mockito.`when`
 import org.ostelco.ocs.api.CreditControlAnswerInfo
 import org.ostelco.ocs.api.CreditControlRequestInfo
 import org.ostelco.ocs.api.MultipleServiceCreditControl
 import org.ostelco.ocs.api.ServiceUnit
-import org.ostelco.prime.ocs.mockGraphStore
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.CountDownLatch
@@ -24,11 +21,6 @@ class OnlineChargingTest {
 
         // Add delay to DB call and skip analytics and low balance notification
         OnlineCharging.loadUnitTest = true
-
-        // call to graphStore always return 100 as reserved Bucket bytes and 200 as balance Bundle bytes
-        `when`(mockGraphStore.consume(MSISDN, 80, 100) {
-            Pair(100L, 200L).right()
-        })
 
         val streamId = UUID.randomUUID().toString()
 
