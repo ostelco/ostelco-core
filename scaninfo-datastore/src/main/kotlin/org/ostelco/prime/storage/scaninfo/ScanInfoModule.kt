@@ -26,9 +26,8 @@ class ScanInfoModule : PrimeModule {
  */
 class ScanInfoConfig : Configuration() {
     var storeType = "default"
+    var namespace = ""
     var keysetFilePathPrefix = "encrypt_key"
-    var deleteScan = false // Flag for deleting the scan data from the backend
-    var deleteUrl = "https://netverify.com/api/netverify/v2/scans/" // URL prefix for delete API for backend
 }
 
 object ConfigRegistry {

@@ -45,7 +45,6 @@ modules:
 - type: scaninfo-store
   config:
     keysetFilePathPrefix: /scaninfo-keysets/encrypt_key
-    deleteScan: true
 
 server:
   applicationConnectors:
