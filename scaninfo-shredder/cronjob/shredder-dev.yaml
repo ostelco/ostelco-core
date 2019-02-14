@@ -17,4 +17,14 @@ spec:
               value: pantel-2decb
             - name: DATASET_MODIFIER
               value: _dev
+            - name: JUMIO_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: jumio-secrets
+                  key: apiToken
+            - name: JUMIO_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jumio-secrets
+                  key: apiSecret
           restartPolicy: Never
