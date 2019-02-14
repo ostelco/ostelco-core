@@ -6,13 +6,14 @@ import org.everit.json.schema.ValidationException
 import org.json.JSONException
 import org.json.JSONObject
 import org.json.JSONTokener
-
 import java.io.*
 import java.nio.charset.Charset
 import javax.ws.rs.WebApplicationException
+import javax.ws.rs.container.DynamicFeature
+import javax.ws.rs.container.ResourceInfo
+import javax.ws.rs.core.FeatureContext
 import javax.ws.rs.core.Response
 import javax.ws.rs.ext.*
-
 
 
 @Target(AnnotationTarget.CLASS)
@@ -56,7 +57,7 @@ class JsonSchemaValidator {
             try {
                 getSchema(schemaAnnotation.schemaKey).validate(JSONObject(body))
             } catch (t: ValidationException) {
-                var causes = t.causingExceptions.map { e: ValidationException -> "${e.keyword}: ${e.errorMessage}" }.joinToString(separator = ". ")
+                var causes = t.causingExceptions.joinToString(separator = ". ") { e: ValidationException -> "${e.keyword}: ${e.errorMessage}" }
                 if (causes.isBlank()) {
                     causes = t.errorMessage
                 }
@@ -68,7 +69,22 @@ class JsonSchemaValidator {
 }
 
 @Provider
-class RequestServerReaderWriterInterceptor : ReaderInterceptor, WriterInterceptor {
+class DynamicES2ValidatorAdder : DynamicFeature {
+
+    override fun configure(resourceInfo: ResourceInfo, context: FeatureContext) {
+        val allAnnotations = mutableSetOf<Any>()
+
+        resourceInfo.resourceMethod.returnType.annotations.map { allAnnotations.add(it.annotationClass.java) }
+        resourceInfo.resourceMethod.parameterTypes.map { it -> it.annotations.map { allAnnotations.add(it.annotationClass.java) }}
+
+        if (allAnnotations.contains(JsonSchema::class.java)) {
+             context.register(RequestServerReaderWriterInterceptor::class.java)
+        }
+    }
+}
+
+@Provider
+private class RequestServerReaderWriterInterceptor : ReaderInterceptor, WriterInterceptor {
 
     private val validator = JsonSchemaValidator()
 
@@ -102,9 +118,10 @@ class RequestServerReaderWriterInterceptor : ReaderInterceptor, WriterIntercepto
 
     @Throws(IOException::class, WebApplicationException::class)
     override fun aroundReadFrom(ctx: ReaderInterceptorContext): Any {
+
         val originalStream = ctx.inputStream
         val originalByteArray = toByteArray(originalStream)
-        val body: String = String(originalByteArray, Charset.forName("UTF-8"))
+        val body = String(originalByteArray, Charset.forName("UTF-8"))
 
         validator.validateString(ctx.type, body, Response.Status.BAD_REQUEST)
 

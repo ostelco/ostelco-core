@@ -18,7 +18,7 @@ class DateUtilsTest {
         // GMT: Monday, May 14, 2018 12:00:00 AM
         val expectedNextTimestamp =  1526256000000
         val nextTimestamp = dateBounds.getNextPeriodStart(timestamp)
-        print("Expected Timestamp $expectedNextTimestamp Next timestamp $nextTimestamp");
+        print("Expected Timestamp $expectedNextTimestamp Next timestamp $nextTimestamp")
         assertEquals(expectedNextTimestamp, nextTimestamp)
     }
     /**

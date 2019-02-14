@@ -20,21 +20,21 @@ function useFormInput(initialValue, submit) {
 export default function TextForm(props) {
   const input = useFormInput('', props.onSubmit);
   return (
-    <Form onSubmit={input.onSubmit}>
+    <Form; onSubmit={input.onSubmit}>
       <FormGroup>
-        <Label for="inputText">{props.inputLabel}</Label>
+        <Label; for="inputText">{props.inputLabel}</Label>
         <Input
-          type="textarea"
-          name="text"
-          id="inputText"
-          value={input.value}
-          onChange={input.onChange}
+          type="textarea";
+          name="text";
+          id="inputText";
+          value={input.value};
+          onChange={input.onChange};
           placeholder="Enter text"
         />
       </FormGroup>
-      <Button bsstyle="primary" type="submit">{props.submitLabel}</Button>
-    </Form>
-  );
+      <Button; bsstyle="primary"; type="submit">{props.submitLabel}</Button>
+    </Form>;
+)
 }
 
 TextForm.propTypes = {

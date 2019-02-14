@@ -1,7 +1,7 @@
 package org.ostelco.sim.es2plus
 
 import io.dropwizard.jersey.setup.JerseyEnvironment
-import org.ostelco.jsonschema.RequestServerReaderWriterInterceptor
+import org.ostelco.jsonschema.DynamicES2ValidatorAdder
 import org.ostelco.sim.es2plus.ES2PlusClient.Companion.X_ADMIN_PROTOCOL_HEADER_VALUE
 import org.ostelco.sim.es2plus.SmDpPlusServerResource.Companion.ES2PLUS_PATH_PREFIX
 import java.io.IOException
@@ -19,18 +19,19 @@ import javax.ws.rs.ext.ExceptionMapper
 import javax.ws.rs.ext.Provider
 
 
-
-
-
 @Provider
 class ES2PlusIncomingHeadersFilter : ContainerRequestFilter {
 
     companion object {
         fun addEs2PlusDefaultFiltersAndInterceptors(env: JerseyEnvironment) {
+
+            // XXX Replace these with dynamic adders
             env.register(ES2PlusIncomingHeadersFilter())
             env.register(ES2PlusOutgoingHeadersFilter())
-            env.register(RequestServerReaderWriterInterceptor())
             env.register(SmdpExceptionMapper())
+
+            // Like this one...
+            env.register(DynamicES2ValidatorAdder())
         }
     }
 
@@ -99,13 +100,11 @@ class SmDpPlusServerResource(private val smDpPlus: SmDpPlusService) {
     @Path("downloadOrder")
     @POST
     fun downloadOrder(order: Es2PlusDownloadOrder): Es2DownloadOrderResponse {
-
-        val iccid = smDpPlus.downloadOrder(
+        return smDpPlus.downloadOrder(
                 eid = order.eid,
                 iccid = order.iccid,
-                profileType = order.profileType)
-
-        return Es2DownloadOrderResponse(iccid = iccid)
+                profileType = order.profileType
+        )
     }
 
     /**
@@ -114,10 +113,14 @@ class SmDpPlusServerResource(private val smDpPlus: SmDpPlusService) {
     @Path("confirmOrder")
     @POST
     fun confirmOrder(order: Es2ConfirmOrder): Es2ConfirmOrderResponse {
-        return Es2ConfirmOrderResponse(
-                eid = order.eid,
-                smdsAddress = order.smdsAddress,
-                matchingId = order.matchingId)
+        return smDpPlus.confirmOrder(
+                eid=order.eid,
+                iccid = order.iccid,
+                confirmationCode = order.confirmationCode,
+                smdsAddress = order.smdpAddress,
+                machingId = order.matchingId,
+                releaseFlag =  order.releaseFlag
+        )
     }
 
     /**

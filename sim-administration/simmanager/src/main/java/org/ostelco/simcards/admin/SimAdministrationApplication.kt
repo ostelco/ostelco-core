@@ -1,16 +1,18 @@
 package org.ostelco.simcards.admin
 
 import io.dropwizard.Application
+import io.dropwizard.client.HttpClientBuilder
 import io.dropwizard.jdbi.DBIFactory
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
+import io.dropwizard.configuration.EnvironmentVariableSubstitutor
+import io.dropwizard.configuration.SubstitutingSourceProvider
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
 import org.ostelco.sim.es2plus.SmDpPlusCallbackResource
 import org.ostelco.sim.es2plus.SmDpPlusCallbackService
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SimInventoryResource
-
 
 /**
  * The SIM manager
@@ -25,28 +27,30 @@ import org.ostelco.simcards.inventory.SimInventoryResource
  * The inventory can then serve as an intermidiary between the
  * rest of the BSS and the OSS in the form of HSS and SM-DP+.
  */
-class SimAdministrationApplication : Application<SimAdministrationAppConfiguration>() {
+class SimAdministrationApplication : Application<SimAdministrationConfiguration>() {
 
     override fun getName(): String {
         return "SIM inventory application"
     }
 
-    override fun initialize(bootstrap: Bootstrap<SimAdministrationAppConfiguration>) {
-        // TODO: application initialization
+    override fun initialize(bootstrap: Bootstrap<SimAdministrationConfiguration>) {
+        /* Enables ENV variable substitution in config file. */
+        bootstrap.configurationSourceProvider = SubstitutingSourceProvider(
+                bootstrap.configurationSourceProvider,
+                EnvironmentVariableSubstitutor(false)
+        )
     }
 
-    lateinit var simInventoryDAO: SimInventoryDAO
+    lateinit var DAO: SimInventoryDAO
 
-    override fun run(configuration: SimAdministrationAppConfiguration,
-                     environment: Environment) {
-
+    override fun run(config: SimAdministrationConfiguration,
+                     env: Environment) {
         val factory = DBIFactory()
-        val jdbi = factory.build(
-                environment,
-                configuration.database, "sqlite")
-        this.simInventoryDAO = jdbi.onDemand(SimInventoryDAO::class.java)
+        val jdbi = factory.build(env,
+                config.database, "postgresql")
+        this.DAO = jdbi.onDemand(SimInventoryDAO::class.java)
 
-        val smdpPlusCallbackHandler = object : SmDpPlusCallbackService {
+        val profileVendorCallbackHandler = object : SmDpPlusCallbackService {
             // TODO: Not implemented.
             override fun handleDownloadProgressInfo(
                     eid: String?,
@@ -57,13 +61,16 @@ class SimAdministrationApplication : Application<SimAdministrationAppConfigurati
                     timestamp: String) = Unit
         }
 
-        val jerseyEnvironment = environment.jersey()
+        val httpClient = HttpClientBuilder(env)
+                .using(config.httpClient)
+                .build(name)
+        val jerseyEnv = env.jersey()
 
-        addOpenapiResourceToJerseyEnv(jerseyEnvironment, configuration.openApi)
-        addEs2PlusDefaultFiltersAndInterceptors(jerseyEnvironment)
+        addOpenapiResourceToJerseyEnv(jerseyEnv, config.openApi)
+        addEs2PlusDefaultFiltersAndInterceptors(jerseyEnv)
 
-        jerseyEnvironment.register(SimInventoryResource(simInventoryDAO))
-        jerseyEnvironment.register(SmDpPlusCallbackResource(smdpPlusCallbackHandler))
+        jerseyEnv.register(SimInventoryResource(httpClient, config, DAO))
+        jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
     }
 
     companion object {

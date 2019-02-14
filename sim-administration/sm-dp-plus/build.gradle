@@ -12,11 +12,17 @@ dependencies {
 
     compile group: 'javax.activation', name: 'javax.activation-api', version: '1.2.0'
 
+    // https://mvnrepository.com/artifact/org.conscrypt/conscrypt-openjdk
+    //  XXX Delete next line?
+    compile group: 'org.conscrypt', name: 'conscrypt-openjdk', version: '1.4.2'
+
     implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
 
-    
+    implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
+
     implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
+    implementation "io.dropwizard:dropwizard-auth:$dropwizardVersion"
     implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
     implementation "io.dropwizard:dropwizard-jdbi:$dropwizardVersion"
 

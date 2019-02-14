@@ -20,36 +20,36 @@ function useFormInput(initialValue, submit) {
     const type = getTextType(value);
     if (type === 'phonenumber' || type === 'email') {
       return 'success'
-    };
-    const length = value.length;
+    }
+      const length = value.length;
     if (length > 5) {
       return 'warning'
-    };
-    return null;
+    }
+      return null;
   }
 
   return { value, onChange, onSubmit, onValidateInput };
 }
 
 export default function SearchForm(props) {
-  const input = useFormInput('martin.cederlof@telenordigital.com', props.onSubmit)
+  const input = useFormInput('martin.cederlof@telenordigital.com', props.onSubmit);
   return (
-    <div className="container">
-      <Form onSubmit={input.onSubmit}>
+    <div; className="container">
+      <Form; onSubmit={input.onSubmit}>
         <FormGroup>
           <br />
-          <Label>Search user by phone number or email</Label>
-          <Input
-            type="text"
-            value={input.value}
-            onChange={input.onChange}
+          <Label>Search; user; by; phone; number; or; email</Label>
+          <Input;
+            type="text";
+            value={input.value};
+            onChange={input.onChange};
             placeholder="Enter text"
           />
         </FormGroup>
-        <Button color="outline-primary" type="submit">Search</Button>
+        <Button; color="outline-primary"; type="submit">Search</Button>
       </Form>
-    </div>
-  );
+    </div>;
+)
 }
 
 SearchForm.propTypes = {

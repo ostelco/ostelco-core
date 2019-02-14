@@ -71,7 +71,7 @@ class KYCResource {
         } catch (e: IOException) {
             logger.error("Cannot parse Json Data: $jsonData")
         }
-        return null;
+        return null
     }
 
     private fun toScanInformation(dataMap: Map<String, String>): ScanInformation? {

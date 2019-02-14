@@ -88,7 +88,7 @@ class Auth {
     const picture = localStorage.getItem('picture');
     this.user = { accessToken, expiresAt, name, email, picture };
     setTimeout(() =>  store.dispatch(authActions.loginSuccess(this.user)));
-  }
+  };
 
   logout() {
     this.clearLocalStorage();
@@ -132,7 +132,7 @@ class Auth {
       return { error };
     }
     return { header };
-  }
+  };
 
   isAuthenticated() {
     const user = _.get(store.getState(), "authentication.user");
