@@ -2,10 +2,13 @@ package org.ostelco.storage.scaninfo.shredder
 
 import com.google.cloud.datastore.DatastoreException
 import com.google.cloud.datastore.Entity
+import com.google.cloud.datastore.Query
+import com.google.cloud.datastore.StructuredQuery
 import kotlinx.coroutines.runBlocking
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.mockito.Mockito
+import org.ostelco.prime.model.ScanMetadata
 import org.ostelco.prime.model.ScanMetadataEnum
 import java.io.File
 import java.time.Instant
@@ -48,6 +51,17 @@ class MetadataQueryTest {
         runBlocking {
             val totalItems = scanInfoShredder.shred()
             assertEquals(100, totalItems, "Missing some items while scanning for items")
+            val query = Query.newEntityQueryBuilder()
+                    .setKind(ScanMetadataEnum.KIND.s)
+                    .setLimit(1000)
+                    .build()
+            val resultList = scanInfoShredder.datastore.run(query)
+            var count  = 0
+            while (resultList.hasNext()) {
+                resultList.next()
+                count++
+            }
+            assertEquals(100, totalItems, "Non expected count")
         }
     }
 

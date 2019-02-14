@@ -193,7 +193,7 @@ internal class ScanInfoShredder(val config: ScanInfoShredderConfig) {
     /**
      * Deletes the scan information from Jumio database.
      */
-    fun deleteScanInformation(vendorScanId: String, baserUrl:String, username: String, password: String): Boolean {
+    private fun deleteScanInformation(vendorScanId: String, baserUrl:String, username: String, password: String): Boolean {
         val url = URL("$baserUrl/$vendorScanId")
         val httpConn = url.openConnection() as HttpURLConnection
         val userpass = "$username:$password"
@@ -239,28 +239,45 @@ internal class ScanInfoShredder(val config: ScanInfoShredderConfig) {
     }
 
     private fun listScans(startCursorString: String?): Pair<List<ScanMetadata>, String?> {
-        var startCursor: Cursor? = null
-        if (startCursorString != null && startCursorString != "") {
-            startCursor = Cursor.fromUrlSafe(startCursorString)                 // Where we left off
-        }
-        val query = Query.newEntityQueryBuilder()                               // Build the Query
-                .setKind(ScanMetadataEnum.KIND.s)                               // We only care about ScanMetadata
-                .setLimit(100)                                                  // Only process 100 at a time
-                .setStartCursor(startCursor)                                    // Where we left off
-                .setFilter(filter)                                              // Which are expired
-                .setOrderBy(OrderBy.asc(ScanMetadataEnum.PROCESSED_TIME.s))     // Sorted by "processedTime"
-                .build()
-        val resultList = datastore.run(query)
-        val resultScans = entitiesToScanMetadata(resultList)                    // Retrieve and convert Entities
-        val cursor = resultList.getCursorAfter()                                // Where to start next time
-        if (resultScans.size == 100) {                                          // Are we paging? Save Cursor
-            val cursorString = cursor!!.toUrlSafe()                             // Cursors are WebSafe
-            return Pair(resultScans, cursorString)
-        } else {
-            return Pair(resultScans, null)
+       try {
+           var startCursor: Cursor? = null
+           if (startCursorString != null && startCursorString != "") {
+               startCursor = Cursor.fromUrlSafe(startCursorString)                 // Where we left off
+           }
+           val query = Query.newEntityQueryBuilder()                               // Build the Query
+                    .setKind(ScanMetadataEnum.KIND.s)                               // We only care about ScanMetadata
+                    .setLimit(100)                                                  // Only process 100 at a time
+                    .setStartCursor(startCursor)                                    // Where we left off
+                    .setFilter(filter)                                              // Which are expired
+                    .setOrderBy(OrderBy.asc(ScanMetadataEnum.PROCESSED_TIME.s))     // Sorted by "processedTime"
+                    .build()
+            val resultList = datastore.run(query)
+            val resultScans = entitiesToScanMetadata(resultList)                    // Retrieve and convert Entities
+            val cursor = resultList.getCursorAfter()                                // Where to start next time
+            if (resultScans.size == 100) {                                          // Are we paging? Save Cursor
+                val cursorString = cursor!!.toUrlSafe()                             // Cursors are WebSafe
+                return Pair(resultScans, cursorString)
+            } else {
+                return Pair(resultScans, null)
+            }
+        } catch (e: DatastoreException) {
+            logger.error("Caught exception while scanning metadata", e)
+            return Pair(ArrayList<ScanMetadata>(), null)
         }
     }
-    // Deletes the scan information from Jumio database
+
+    // Deletes the scan metadata from datastore
+    private fun deleteScanMetadata(data: ScanMetadata): Boolean {
+        try {
+            val keyString = "${data.customerId}-${data.id}"
+            datastore.delete(keyFactory.newKey(keyString))
+        } catch (e: DatastoreException) {
+            logger.error("Caught exception while scanning metadata", e)
+            return false
+        }
+        return true;
+    }
+
     suspend fun shred(): Int {
         var totalItems = 0
         logger.info("Querying Datastore for Scan which are expired")
@@ -276,6 +293,7 @@ internal class ScanInfoShredder(val config: ScanInfoShredderConfig) {
                         } else {
                             logger.info("Delete disabled, skipping ${it.scanReference}")
                         }
+                        deleteScanMetadata(it)
                     }
                 }
                 totalItems +=  scanResult.first.size
