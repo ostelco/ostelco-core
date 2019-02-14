@@ -177,7 +177,7 @@ abstract class MetricBuilder(
      * Function to expand the environment variables in the SQL.
      */
     fun expandSql(): String {
-        val regex:Regex = "\\$\\{\\S*?\\}".toRegex(RegexOption.MULTILINE);
+        val regex:Regex = "\\$\\{\\S*?\\}".toRegex(RegexOption.MULTILINE)
         val expandedSql = regex.replace(sql) {it: MatchResult ->
             // The variable is of the format ${VAR}
             // extract variable name
@@ -203,13 +203,13 @@ abstract class MetricBuilder(
                 QueryJobConfiguration.newBuilder(
                         expandSql())
                         .setUseLegacySql(false)
-                        .build();
+                        .build()
 
         // Create a job ID so that we can safely retry.
-        val jobId: JobId = JobId.of(UUID.randomUUID().toString());
-        var queryJob: BQJob = bigquery.create(JobInfo.newBuilder(queryConfig).setJobId(jobId).build());
+        val jobId: JobId = JobId.of(UUID.randomUUID().toString())
+        var queryJob: BQJob = bigquery.create(JobInfo.newBuilder(queryConfig).setJobId(jobId).build())
 
-       // Wait for the query to complete.
+        // Wait for the query to complete.
         // Retry maximum 4 times for up to 2 minutes.
         queryJob = async {
             queryJob.waitFor(
@@ -217,16 +217,16 @@ abstract class MetricBuilder(
                     RetryOption.retryDelayMultiplier(2.0),
                     RetryOption.maxRetryDelay(Duration.ofSeconds(20)),
                     RetryOption.maxAttempts(5),
-                    RetryOption.totalTimeout(Duration.ofMinutes(2)));
+                    RetryOption.totalTimeout(Duration.ofMinutes(2)))
         }.await()
 
         // Check for errors
         if (queryJob == null) {
-            throw  BqMetricsExtractionException("Job no longer exists");
-        } else if (queryJob.getStatus().getError() != null) {
+            throw  BqMetricsExtractionException("Job no longer exists")
+        } else if (queryJob.status.error != null) {
             // You can also look at queryJob.getStatus().getExecutionErrors() for all
             // errors, not just the latest one.
-            throw BqMetricsExtractionException(queryJob.getStatus().getError().toString());
+            throw BqMetricsExtractionException(queryJob.status.error.toString())
         }
         val result = queryJob.getQueryResults()
         if (result.totalRows != 1L) {

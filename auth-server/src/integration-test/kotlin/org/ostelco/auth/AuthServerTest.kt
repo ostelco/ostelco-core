@@ -26,7 +26,7 @@ class AuthServerTest {
     fun testAuthServer() {
 
         val response = JerseyClientBuilder().build()
-                ?.target("http://0.0.0.0:${RULE.getLocalPort()}/auth/token")
+                ?.target("http://0.0.0.0:${RULE.localPort}/auth/token")
                 ?.request()
                 ?.header("X-MSISDN", msisdn)
                 ?.get()

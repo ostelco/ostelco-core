@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit
 
 class RedisStorage : ReplicatedStorage {
 
-    private val redisURI = RedisURI.Builder.redis(getRedisHostName(), getRedisPort()).build();
+    private val redisURI = RedisURI.Builder.redis(getRedisHostName(), getRedisPort()).build()
     private val redisClient : RedisClient = RedisClient.create(redisURI)
     private lateinit var connection : StatefulRedisConnection<String, String>
     private lateinit var asyncCommands: RedisAsyncCommands<String, String>

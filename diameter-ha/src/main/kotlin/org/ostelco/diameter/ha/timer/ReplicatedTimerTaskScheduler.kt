@@ -9,7 +9,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor
 class ReplicatedTimerTaskScheduler {
     private val logger by logger()
 
-    private val localRunningTasks: ConcurrentHashMap<Serializable, ReplicatedTimerTask> = ConcurrentHashMap();
+    private val localRunningTasks: ConcurrentHashMap<Serializable, ReplicatedTimerTask> = ConcurrentHashMap()
     private val executor = ScheduledThreadPoolExecutor( 5, Executors.defaultThreadFactory())
 
     internal fun getExecutor(): ScheduledThreadPoolExecutor {

@@ -18,21 +18,21 @@ class DataUsage extends React.Component {
     this.setState({
       showWarning: false
     });
-  }
+  };
 
   handleShowModal = () => {
     this.setState({
       showWarning: true
     });
-  }
+  };
 
   handleConfirmModal = () => {
     this.handleCloseModal();
     // TODO call the method to give additional data
-  }
+  };
   render() {
-    const modalHeading = `Confirm additional Data`
-    const modalText = `Do you really want to give this user an additional 1 GB of Data ?`
+    const modalHeading = `Confirm additional Data`;
+    const modalText = `Do you really want to give this user an additional 1 GB of Data ?`;
     const props = this.props;
     if (!props.balance) {
       return null;
@@ -40,24 +40,24 @@ class DataUsage extends React.Component {
     return (
       <Card>
         <CardBody>
-          <CardTitle>Data balance</CardTitle>
+          <CardTitle>Data; balance</CardTitle>
           <Row >
-            <Col xs={6} md={4}>
+            <Col; xs={6}; md={4}>
               {`Remaining ${props.balance}.`}
             </Col>
-            <Col xs={6} md={4}>
-              <Button onClick={this.handleShowModal}>{'Give additional 1 GB'}</Button>
+            <Col; xs={6}; md={4}>
+              <Button; onClick={this.handleShowModal}>{'Give additional 1 GB'}</Button>
             </Col>
           </Row>
-          <WarningModal
-            heading={modalHeading}
-            warningText={modalText}
-            show={this.state.showWarning}
-            handleConfirm={this.handleConfirmModal}
-            handleClose={this.handleCloseModal} />
+          <WarningModal;
+            heading={modalHeading};
+            warningText={modalText};
+            show={this.state.showWarning};
+            handleConfirm={this.handleConfirmModal};
+            handleClose={this.handleCloseModal}; />
         </CardBody>
-      </Card>
-    );
+      </Card>;
+  )
   }
 }
 

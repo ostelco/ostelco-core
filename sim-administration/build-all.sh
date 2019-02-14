@@ -31,7 +31,6 @@ fi
 
 for x in simadmin sm-dp-plus ; do 
 
-
     docker build --file dockerfiles/Dockerfile.$x --tag ostelco/$x .
 
 done

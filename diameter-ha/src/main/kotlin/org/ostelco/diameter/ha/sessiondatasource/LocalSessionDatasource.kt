@@ -60,7 +60,7 @@ class LocalSessionDatasource(container: IContainer) : ISessionDatasource {
     }
 
     override fun isClustered(): Boolean {
-        return false;
+        return false
     }
 
     override fun start() {

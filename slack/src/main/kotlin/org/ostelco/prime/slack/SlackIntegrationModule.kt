@@ -19,7 +19,7 @@ class SlackIntegrationModule : PrimeModule {
 
             val httpClient = HttpClientBuilder(env)
                     .using(this.httpClientConfiguration)
-                    .build("slack");
+                    .build("slack")
 
             Registry.slackWebHookClient = SlackWebHookClient(
                     webHookUri = this.webHookUri,
