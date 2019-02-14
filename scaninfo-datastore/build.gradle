@@ -1,5 +1,5 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.3.11"
+  id "org.jetbrains.kotlin.jvm" version "1.3.21"
   id "java-library"
 }
 
@@ -24,7 +24,7 @@ dependencies {
   implementation "com.google.cloud:google-cloud-storage:$googleCloudVersion"
   implementation "com.google.crypto.tink:tink:$tinkVersion"
 
-  testImplementation 'com.palantir.docker.compose:docker-compose-rule-junit4:0.34.0'
+  testImplementation "com.palantir.docker.compose:docker-compose-rule-junit4:$dockerComposeJunitRuleVersion"
 
   testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
