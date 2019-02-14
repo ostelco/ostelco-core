@@ -61,7 +61,7 @@ public class OcsgwMetrics {
                         : nettyChannelBuilder;
 
             final ManagedChannel channel = channelBuilder
-                    .usePlaintext()
+                    .useTransportSecurity()
                     .build();
             if (credentials != null) {
                 ocsgwAnalyticsServiceStub  = OcsgwAnalyticsServiceGrpc.newStub(channel)

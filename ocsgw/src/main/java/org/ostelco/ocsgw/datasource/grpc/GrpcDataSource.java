@@ -105,7 +105,7 @@ public class GrpcDataSource implements DataSource {
         final ServiceAccountJwtAccessCredentials credentials =
                 ServiceAccountJwtAccessCredentials.fromStream(new FileInputStream(serviceAccountFile));
         final ManagedChannel channel = channelBuilder
-                 .useTransportSecurity()
+                .useTransportSecurity()
                 .build();
         ocsServiceStub = OcsServiceGrpc.newStub(channel)
                 .withCallCredentials(MoreCallCredentials.from(credentials));
