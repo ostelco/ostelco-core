@@ -3,6 +3,7 @@ package org.ostelco.storage.scaninfo.shredder
 
 import com.google.cloud.NoCredentials
 import com.google.cloud.datastore.*
+import com.google.cloud.datastore.StructuredQuery.OrderBy
 import com.google.cloud.datastore.testing.LocalDatastoreHelper
 import com.google.cloud.http.HttpTransportOptions
 import io.dropwizard.Application
@@ -14,18 +15,14 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import net.sourceforge.argparse4j.inf.Namespace
+import org.ostelco.prime.model.ScanMetadata
 import org.ostelco.prime.model.ScanMetadataEnum
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.awt.print.Book
-import com.google.cloud.datastore.StructuredQuery.OrderBy
-import com.google.cloud.datastore.Query.newEntityQueryBuilder
-import org.ostelco.prime.model.ScanMetadata
-import java.time.Instant
-import com.google.cloud.datastore.QueryResults
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
+import java.time.Instant
 import java.util.*
 
 
@@ -214,8 +211,8 @@ internal class ScanInfoShredder(val config: ScanInfoShredderConfig) {
             if (responseCode != HttpURLConnection.HTTP_OK) {
                 val statusMessage = "$responseCode: ${httpConn.responseMessage}"
                 logger.error("Failed to delete ${url.toString()} $statusMessage")
+                return false
             }
-            return false
         } catch (e: IOException) {
             logger.error("Caught exception while trying to delete scan", e)
             return false
@@ -256,7 +253,7 @@ internal class ScanInfoShredder(val config: ScanInfoShredderConfig) {
         val resultList = datastore.run(query)
         val resultScans = entitiesToScanMetadata(resultList)                    // Retrieve and convert Entities
         val cursor = resultList.getCursorAfter()                                // Where to start next time
-        if (cursor != null && resultScans.size == 100) {                        // Are we paging? Save Cursor
+        if (resultScans.size == 100) {                                          // Are we paging? Save Cursor
             val cursorString = cursor!!.toUrlSafe()                             // Cursors are WebSafe
             return Pair(resultScans, cursorString)
         } else {
