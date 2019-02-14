@@ -16,7 +16,7 @@
 PANTEL_DIRS=$(grep -i pantel $(find . -name '.gitignore') | awk -F: '{print $1}' | sort | uniq | sed 's/.gitignore//g')
 
 for PANTEL_DIR in $PANTEL_DIRS ; do
-    PANTEL_FILE="${PANTEL_DIR}/pantel-prod.json"
+    PANTEL_FILE="${PANTEL_DIR}pantel-prod.json"
     if [[ ! -f "$PANTEL_FILE" ]] ; then
 	echo "$0 ERROR:   Expected to find $PANTEL_FILE, but didn't.  Cannot run regression tests."
 	exit 1
