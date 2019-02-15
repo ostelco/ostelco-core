@@ -61,13 +61,11 @@ public class GrpcDataSource implements DataSource {
 
     private ScheduledFuture initCCRFuture = null;
 
-    private static final int MAX_ENTRIES = 50000;
-
     private Set<String> blocked = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-    private final ConcurrentHashMap<String, CreditControlContext> ccrMap = new ConcurrentHashMap<>(MAX_ENTRIES, .75F);
+    private final ConcurrentHashMap<String, CreditControlContext> ccrMap = new ConcurrentHashMap<>();
 
-    private final ConcurrentHashMap<String, SessionContext> sessionIdMap = new ConcurrentHashMap<>(MAX_ENTRIES, .75F);
+    private final ConcurrentHashMap<String, SessionContext> sessionIdMap = new ConcurrentHashMap<>();
 
     private final ConcurrentLinkedQueue<CreditControlRequestInfo> requestQueue = new ConcurrentLinkedQueue<>();
 
@@ -112,8 +110,7 @@ public class GrpcDataSource implements DataSource {
         ocsServiceStub = OcsServiceGrpc.newStub(channel)
                 .withCallCredentials(MoreCallCredentials.from(credentials));
 
-        ocsgwAnalytics = new OcsgwMetrics(metricsServerHostname, credentials);
-
+        ocsgwAnalytics = new OcsgwMetrics(metricsServerHostname, credentials, this);
         producer = new EventProducer<>(requestQueue);
     }
 
@@ -288,9 +285,7 @@ public class GrpcDataSource implements DataSource {
                     creditControlContext.getCreditControlRequest().getOriginRealm(),
                     creditControlContext.getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0).getCalledStationId(),
                     creditControlContext.getCreditControlRequest().getServiceInformation().get(0).getPsInformation().get(0).getSgsnMccMnc());
-            if (sessionIdMap.put(creditControlContext.getCreditControlRequest().getMsisdn(), sessionContext) == null) {
-                updateAnalytics();
-            }
+            sessionIdMap.put(creditControlContext.getCreditControlRequest().getMsisdn(), sessionContext);
         } catch (Exception e) {
             LOG.error("Failed to update session map", e);
         }
@@ -299,19 +294,17 @@ public class GrpcDataSource implements DataSource {
     private void removeFromSessionMap(CreditControlContext creditControlContext) {
         if (GrpcDiameterConverter.getRequestType(creditControlContext) == CreditControlRequestType.TERMINATION_REQUEST) {
             sessionIdMap.remove(creditControlContext.getCreditControlRequest().getMsisdn());
-            updateAnalytics();
         }
     }
 
-    private void updateAnalytics() {
+    public OcsgwAnalyticsReport getAnalyticsReport() {
         LOG.info("Number of active sessions is {}", sessionIdMap.size());
-
         OcsgwAnalyticsReport.Builder builder = OcsgwAnalyticsReport.newBuilder().setActiveSessions(sessionIdMap.size());
         builder.setKeepAlive(false);
         sessionIdMap.forEach((msisdn, sessionContext) -> {
             builder.addUsers(User.newBuilder().setApn(sessionContext.getApn()).setMccMnc(sessionContext.getMccMnc()).setMsisdn(msisdn).build());
         });
-        ocsgwAnalytics.sendAnalytics(builder.build());
+        return builder.build();
     }
 
     /**
