@@ -298,7 +298,6 @@ public class GrpcDataSource implements DataSource {
     }
 
     public OcsgwAnalyticsReport getAnalyticsReport() {
-        LOG.info("Number of active sessions is {}", sessionIdMap.size());
         OcsgwAnalyticsReport.Builder builder = OcsgwAnalyticsReport.newBuilder().setActiveSessions(sessionIdMap.size());
         builder.setKeepAlive(false);
         sessionIdMap.forEach((msisdn, sessionContext) -> {

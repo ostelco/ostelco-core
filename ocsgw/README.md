@@ -22,29 +22,42 @@ For diameter HA setup please see : [diameter-ha](../diameter-ha/README.md)
 
 Build
 ===============
-
-gradlew build
-
+```
+./gradlew build
+```
 
 Run
 ===============
-
-gradle run
-
+```
+./gradlew run
+```
 
 Test
-=====================
-gradle test
+===============
+```
+./gradlew test
+```
+
+Deploy to GCP
+===============
+Please see the script for usage
+```
+./ocsgw/infra/script/deploy-ocsgw.sh
+```
 
 
 Docker
 ===============
 
 **Build**
+```
 docker build -t ocsgw .
+```
 
 **Run**
+```
 docker run --rm --name ocsgw -p 3868:3868 ocsgw
+```
 
 
 Testing
@@ -56,26 +69,30 @@ Seagull can be used for load testing. Please see : [seagull](../seagull/README.m
 
  in ./testsuite/seagull/docker
  
+```
 docker build -t seagull .
+```
 
 **Start Seagull**
 
 Check your local IP.
 
-Update /config/conf.client with your local IP
-
+Update /config/conf.client with your local IP`
+```
 docker run --rm -it --net=host -v ./seagull/:/config -h ocs seagull
+```
 
 **Start OCSgw**
 
-update IPAddress for your LocalPeer in /src/resources/server-jdiameter-config.xml with your local IP
+Update IPAddress for your LocalPeer in /src/resources/server-jdiameter-config.xml with your local IP
 
 Start OCSgw
 
 **Run test**
 
 In Seagull:
-
+```
 cd /config/logs
 
 seagull -conf /config/config/conf.client.xml -dico /config/config/base_cc.xml -scen /config/scenario/ccr-cca.client.multiple-cc-units.init.xml -log /config/logs/log.log -llevel N
+``
