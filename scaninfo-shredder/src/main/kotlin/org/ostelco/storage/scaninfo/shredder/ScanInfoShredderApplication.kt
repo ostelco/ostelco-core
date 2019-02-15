@@ -146,6 +146,7 @@ internal class ScanInfoShredder(val config: ScanInfoShredderConfig) {
             apiToken = ""
             apiSecret = ""
         }
+        logger.info("Config storeType = ${config.storeType}, namespace = ${config.namespace}, deleteScan = ${config.deleteScan} deleteUrl = ${config.deleteUrl} ")
         initDatastore()
     }
 
@@ -178,11 +179,12 @@ internal class ScanInfoShredder(val config: ScanInfoShredderConfig) {
                         .build()
             }
             else -> {
+                var optionsBuilder = DatastoreOptions.newBuilder()
+                if (!config.namespace.isNullOrEmpty()) {
+                    optionsBuilder = optionsBuilder.setNamespace(config.namespace)
+                }
                 logger.info("Created default instance of datastore client")
-                DatastoreOptions
-                        .newBuilder()
-                        .setNamespace(config.namespace)
-                        .build()
+                optionsBuilder.setNamespace(config.namespace).build()
             }
         }.service
         keyFactory =  datastore.newKeyFactory().setKind(ScanMetadataEnum.KIND.s)
