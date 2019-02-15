@@ -142,7 +142,6 @@ public class OcsgwMetrics {
         autoReportAnalyticsFuture = executorService.scheduleAtFixedRate(() -> {
                     lastActiveSessions = datasource.getAnalyticsReport();
                     sendAnalytics(lastActiveSessions);
-                    LOG.debug("Sent analytics report");
                 },
                 5,
                 5,
