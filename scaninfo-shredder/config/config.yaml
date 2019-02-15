@@ -9,7 +9,6 @@ logging:
         customFieldNames:
            level: severity
 
-shredder:
-  deleteScan: true
-  deleteUrl: "https://netverify.com/api/netverify/v2/scans/"
-  namespace: ${DATASTORE_NAMESPACE:-""}
+deleteScan: true
+deleteUrl: "https://netverify.com/api/netverify/v2/scans/"
+namespace: ${DATASTORE_NAMESPACE:-""}
