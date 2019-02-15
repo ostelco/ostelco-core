@@ -32,7 +32,9 @@ Check your local IP.
 
 Update /config/conf.client with your local IP
 
+```
 docker run --rm -it --net=host -v ./seagull/:/config -h ocs seagull
+```
 
 **Start OCS-gw**
 
@@ -44,6 +46,8 @@ Start OCS-gw
 
 In Seagull:
 
+```
 cd /config/logs
 
 seagull -conf /config/config/conf.client.xml -dico /config/config/base_cc.xml -scen /config/scenario/ccr-cca.client.multiple-cc-units.init.xml -log /config/logs/log.log -llevel N
+```
