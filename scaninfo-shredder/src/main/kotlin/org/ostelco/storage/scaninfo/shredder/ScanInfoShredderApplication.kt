@@ -24,40 +24,8 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.time.Instant
 import java.util.*
-
-
-/**
- * Bridge between "latent metrics" stored in BigQuery and Prometheus
- * metrics available for instrumentation ana alerting services.
- *
- * Common usecase:
- *
- *       java -jar /bq-metrics-extractor.jar query --pushgateway pushgateway:8080 config/config.yaml
- *
- * the pushgateway:8080 is the hostname  (dns resolvable) and portnumber of the
- * Prometheus Push Gateway.
- *
- * The config.yaml file contains specifications of queries and how they map
- * to metrics:
- *
- *      bqmetrics:
- *      - type: summary
- *        name: active_users
- *        help: Number of active users
- *        resultColumn: count
- *        sql: >
- *        SELECT count(distinct user_pseudo_id) AS count FROM `pantel-2decb.analytics_160712959.events_*`
- *        WHERE event_name = "first_open"
- *        LIMIT 1000
- *
- *  Use standard SQL syntax  (not legacy) for queries.
- *  See: https://cloud.google.com/bigquery/sql-reference/
- *
- *  If not running in a google kubernetes cluster (e.g. in docker compose, or from the command line),
- *  it's necessary to set the environment variable GOOGLE_APPLICATION_CREDENTIALS to point to
- *  a credentials file that will provide access for the BigQuery library.
- *
- */
+import io.dropwizard.configuration.EnvironmentVariableSubstitutor
+import io.dropwizard.configuration.SubstitutingSourceProvider
 
 
 /**
@@ -76,11 +44,15 @@ class ScanInfoShredderConfig : Configuration() {
 }
 
 /**
- * Main entry point to the bq-metrics-extractor API server.
+ * Main entry point to the scaninfo-shredder API server.
  */
 private class ScanInfoShredderApplication : Application<ScanInfoShredderConfig>() {
 
     override fun initialize(bootstrap: Bootstrap<ScanInfoShredderConfig>) {
+        // Enable variable substitution with environment variables
+        bootstrap.configurationSourceProvider = SubstitutingSourceProvider(
+                bootstrap.configurationSourceProvider,
+                EnvironmentVariableSubstitutor(false))
         bootstrap.addCommand(ShredScans())
         bootstrap.addCommand(CacheJars())
     }
