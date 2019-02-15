@@ -28,6 +28,8 @@ if [[ -z "$TARGET_CLUSTER_CONTEXT" ]] ; then
     for cluster in  $(kubectl config get-contexts --output name ) ; do 
 	echo "    $cluster"
     done
+    echo "$0  Perhaps you should run 'gcloud container clusters get-credentials $TARGET_CLUSTER'"
+    echo "$0  to inform kubectl that you intend to use the cluster $TARGET_CLUSTER"
     exit 1
 fi
 
