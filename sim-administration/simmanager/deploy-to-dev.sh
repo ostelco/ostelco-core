@@ -34,7 +34,6 @@ if [[ -z "$TARGET_CLUSTER_CONTEXT" ]] ; then
 fi
 
 # From now on,  exit on errors
-set -e
 
 
 kubectl config use-context "$TARGET_CLUSTER_CONTEXT"
@@ -53,7 +52,20 @@ TAG=$(git log -1 --pretty=format:%h)-dev
 echo "Building eu.gcr.io/${PROJECT_ID}/simmanager:${TAG}"
 
 docker build -t eu.gcr.io/${PROJECT_ID}/simmanager:${TAG} .
+if [ $? -ne 0 ]; then
+    echo "$0 ERROR: Building docker image failed.  Please review Dockerfile."
+    exit 1
+fi
+
 docker push eu.gcr.io/${PROJECT_ID}/simmanager:${TAG}
+
+if [ $? -ne 0 ]; then
+    echo "$0 ERROR: Not able to push to registry."
+    echo "$0        Perhaps you should run 'gcloud auth configure-docker'?"
+    exit 1
+fi
+
+
 
 # finally deploying it
 echo "Deploying eu.gcr.io/${PROJECT_ID}/simmanager:${TAG} to GKE"
@@ -61,3 +73,12 @@ echo "Deploying eu.gcr.io/${PROJECT_ID}/simmanager:${TAG} to GKE"
 # A bit of ghetto-style templating here to create the actual
 # config for the kubectl...
 sed -e s/SIMMANAGER_VERSION/${TAG}/g simmanager-deploy.yaml | kubectl apply -f -
+
+
+if [ $? -ne 0 ]; then
+    echo "$0 ERROR: Deployment to kubernetes failed. Please review and try again"
+    exit 1
+else 
+    echo "$0 SUCCESS.  Deployment succeeded."
+    exit 0
+fi
