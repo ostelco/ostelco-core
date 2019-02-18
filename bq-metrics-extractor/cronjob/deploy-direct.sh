@@ -26,4 +26,4 @@ docker push eu.gcr.io/${GCP_PROJECT_ID}/bq-metrics-extractor:${TAG}
 
 echo "Deploying bq-metrics-extractor to GKE"
 
-sed -e 's/EXTRACTOR_VERSION/${TAG}/g; s/GCP_PROJECT_ID/${GCP_PROJECT_ID}/g' bq-metrics-extractor/cronjob/extractor.yaml | kubectl apply -f -
+sed -e 's/EXTRACTOR_VERSION/'"${TAG}"'/g; s/GCP_PROJECT_ID/'"${GCP_PROJECT_ID}"'/g' bq-metrics-extractor/cronjob/extractor.yaml | kubectl apply -f -

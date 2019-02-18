@@ -26,4 +26,4 @@ docker push eu.gcr.io/${GCP_PROJECT_ID}/prime:${TAG}
 
 echo "Deploying prime to GKE"
 
-sed -e 's/PRIME_VERSION/${TAG}/g; s/GCP_PROJECT_ID/${GCP_PROJECT_ID}/g' prime/infra/dev/prime.yaml | kubectl apply -f -
+sed -e 's/PRIME_VERSION/'"${TAG}"'/g; s/_GCP_PROJECT_ID/'"${GCP_PROJECT_ID}"'/g' prime/infra/dev/prime.yaml | kubectl apply -f -

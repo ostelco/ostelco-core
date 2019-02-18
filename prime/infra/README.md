@@ -131,7 +131,7 @@ Update the tag (version) of prime's docker image in `infra/prod/prime.yaml`.
 Apply the deployment & service
 
 ```bash
-sed -e 's/PRIME_VERSION/${PRIME_VERSION}/g; s/GCP_PROJECT_ID/${GCP_PROJECT_ID}/g' prime/infra/prod/prime.yaml | kubectl apply -f -
+sed -e 's/PRIME_VERSION/${PRIME_VERSION}/g; s/_GCP_PROJECT_ID/'"${GCP_PROJECT_ID}"'/g' prime/infra/prod/prime.yaml | kubectl apply -f -
 ```
 
 Details of the deployment
