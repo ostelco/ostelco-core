@@ -267,12 +267,17 @@ internal class ScanInfoShredder(val config: ScanInfoShredderConfig) {
                 val scanResult = listScans(startCursor)
                 scanResult.first.forEach {
                     launch {
+                        var infoDeleted = false
                         if (config.deleteScan) {
-                            deleteScanInformation(it.scanReference, config.deleteUrl, apiToken, apiSecret)
+                            infoDeleted = deleteScanInformation(it.scanReference, config.deleteUrl, apiToken, apiSecret)
                         } else {
                             logger.info("Delete disabled, skipping ${it.scanReference}")
+                            infoDeleted = true
                         }
-                        deleteScanMetadata(it)
+                        if (infoDeleted) {
+                            // Delete the datastore record.
+                            deleteScanMetadata(it)
+                        }
                     }
                 }
                 totalItems +=  scanResult.first.size
