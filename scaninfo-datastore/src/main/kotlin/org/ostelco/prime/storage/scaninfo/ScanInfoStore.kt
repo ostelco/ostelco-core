@@ -146,7 +146,7 @@ object ScanInformationStoreSingleton : ScanInformationStore {
                     .set(ScanMetadataEnum.PROCESSED_TIME.s, Instant.now().toEpochMilli())
                     .build()
             datastore.add(entity)
-            logger.error("saveScanMetaData for ${keyString}")
+            logger.error("Saved ScanMetaData for ${keyString}")
         } catch (e: DatastoreException) {
             logger.error("Caught exception while storing the scan meta data", e)
             return Either.left(NotCreatedError("ScanMetaData", keyString))
@@ -238,7 +238,6 @@ object ScanInformationStoreSingleton : ScanInformationStore {
             }
         }.service
         keyFactory =  datastore.newKeyFactory().setKind(ScanMetadataEnum.KIND.s)
-        logger.info("Namespace for Datastore ${ConfigRegistry.config.namespace}")
     }
 }
 
