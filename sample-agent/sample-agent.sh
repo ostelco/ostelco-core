@@ -54,9 +54,9 @@ done
 #  sanity.
 #
 
-PROJECT_ID=$(gcloud config get-value project)
+GCP_PROJECT_ID=$(gcloud config get-value project)
 
-if [[ -z "$PROJECT_ID" ]] ; then
+if [[ -z "GCP_PROJECT_ID" ]] ; then
     echo "ERROR: Unknown google project ID"
     exit 1
 fi
@@ -174,7 +174,7 @@ function gsExportCsvFilename {
 	componentName="-$componentName"
     fi
 
-    echo "gs://${PROJECT_ID}-dataconsumption-export/${exportId}${componentName}.csv"
+    echo "gs://${GCP_PROJECT_ID}-dataconsumption-export/${exportId}${componentName}.csv"
 }
 
 

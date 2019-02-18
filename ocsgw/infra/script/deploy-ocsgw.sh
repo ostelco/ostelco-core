@@ -4,7 +4,7 @@
 
 ##### Constants
 
-PROJECT_ID="$(gcloud config get-value project -q)"
+GCP_PROJECT_ID="$(gcloud config get-value project -q)"
 OCSGW_VERSION="$(./gradlew ocsgw:properties -q | grep "version:" | awk '{print $2}' | tr -d '[:space:]')"
 SHORT_SHA="$(git log -1 --pretty=format:%h)"
 TAG_OCS="${OCSGW_VERSION}-${SHORT_SHA}"
@@ -68,7 +68,7 @@ deploy () {
     echo
 
     gcloud compute instances update-container --zone ${ZONE} ocsgw-${REGION}-${ENVIRONMENT}-${INSTANCE} \
-    --container-image eu.gcr.io/${PROJECT_ID}/ocsgw:${TAG_OCS}
+    --container-image eu.gcr.io/${GCP_PROJECT_ID}/ocsgw:${TAG_OCS}
 }
 
 ##### Main
@@ -114,7 +114,7 @@ fi
 echo "Deployment script for OCS-gw to Google Cloud"
 echo
 echo "*******************************"
-echo PROJECT_ID=${PROJECT_ID}
+echo GCP_PROJECT_ID=${GCP_PROJECT_ID}
 echo OCSGW_VERSION=${OCSGW_VERSION}
 echo SHORT_SHA=${SHORT_SHA}
 echo TAG_OCS=${TAG_OCS}
@@ -136,10 +136,10 @@ fi
 
 echo "Building OCS-gw"
 ./gradlew ocsgw:clean ocsgw:build
-docker build -t eu.gcr.io/${PROJECT_ID}/ocsgw:${TAG_OCS} ocsgw
+docker build -t eu.gcr.io/${GCP_PROJECT_ID}/ocsgw:${TAG_OCS} ocsgw
 
 echo "Uploading Docker image"
-docker push eu.gcr.io/${PROJECT_ID}/ocsgw:${TAG_OCS}
+docker push eu.gcr.io/${GCP_PROJECT_ID}/ocsgw:${TAG_OCS}
 
 
 if [[ "$INSTANCE" == 1 ]] || [[ "$INSTANCE" == 2 ]]

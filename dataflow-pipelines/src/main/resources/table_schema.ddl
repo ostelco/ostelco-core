@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS
-`pantel-2decb.data_consumption.hourly_consumption`
+`GCP_PROJECT_ID.data_consumption.hourly_consumption`
 (
   msisdn STRING NOT NULL,
   bytes INT64 NOT NULL,
@@ -11,7 +11,7 @@ PARTITION BY DATE(timestamp);
 
 
 CREATE TABLE IF NOT EXISTS
-`pantel-2decb.data_consumption.raw_consumption`
+`GCP_PROJECT_ID.data_consumption.raw_consumption`
 (
   msisdn STRING NOT NULL,
   bucketBytes INT64 NOT NULL,
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS
 PARTITION BY DATE(timestamp);
 
 CREATE TABLE IF NOT EXISTS
-`pantel-2decb.data_consumption_dev.hourly_consumption`
+`GCP_PROJECT_ID.data_consumption_dev.hourly_consumption`
 (
   msisdn STRING NOT NULL,
   bytes INT64 NOT NULL,
@@ -35,7 +35,7 @@ PARTITION BY DATE(timestamp);
 
 
 CREATE TABLE IF NOT EXISTS
-`pantel-2decb.data_consumption_dev.raw_consumption`
+`GCP_PROJECT_ID.data_consumption_dev.raw_consumption`
 (
   msisdn STRING NOT NULL,
   bucketBytes INT64 NOT NULL,

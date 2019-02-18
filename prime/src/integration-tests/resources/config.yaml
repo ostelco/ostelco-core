@@ -14,7 +14,7 @@ modules:
     protocol: bolt
 - type: analytics
   config:
-    projectId: pantel-2decb
+    projectId: ${GCP_PROJECT_ID}
     dataTrafficTopicId: data-traffic
     purchaseInfoTopicId: purchase-info
     activeUsersTopicId: active-users

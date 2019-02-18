@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: simmanager
-          image: eu.gcr.io/pantel-2decb/simmanager:SIMMANAGER_VERSION
+          image: eu.gcr.io/GCP_PROJECT_ID/simmanager:SIMMANAGER_VERSION
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
