@@ -15,8 +15,6 @@ spec:
             env:
             - name: DATASET_PROJECT
               value: pantel-2decb
-            - name: DATASET_MODIFIER
-              value: _dev
             - name: DATASTORE_NAMESPACE
               value: dev
             - name: JUMIO_API_TOKEN

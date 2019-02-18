@@ -92,7 +92,8 @@ internal class ScanInfoShredder(val config: ScanInfoShredderConfig) {
 
     private val logger: Logger = LoggerFactory.getLogger(ScanInfoShredder::class.java)
 
-    val expiryDuration = 1209600000 // 2 Weeks in Milliseconds
+    //val expiryDuration = 1209600000 // 2 Weeks in Milliseconds
+    val expiryDuration = 30000 // TODO Remove
 
     internal lateinit var datastore: Datastore
     internal lateinit var keyFactory: KeyFactory
