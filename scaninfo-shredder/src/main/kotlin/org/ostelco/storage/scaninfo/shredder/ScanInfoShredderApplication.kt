@@ -169,7 +169,8 @@ internal class ScanInfoShredder(val config: ScanInfoShredderConfig) {
      * Deletes the scan information from Jumio database.
      */
     private fun deleteScanInformation(vendorScanId: String, baserUrl:String, username: String, password: String): Boolean {
-        val url = URL("$baserUrl/$vendorScanId")
+        val seperator:String = if(baserUrl.endsWith("/")) "" else "/"
+        val url = URL("$baserUrl${seperator}$vendorScanId")
         val httpConn = url.openConnection() as HttpURLConnection
         val userpass = "$username:$password"
         val authHeader = "Basic ${Base64.getEncoder().encodeToString(userpass.toByteArray())}"
