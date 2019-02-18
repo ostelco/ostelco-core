@@ -169,7 +169,7 @@ internal class ScanInfoShredder(val config: ScanInfoShredderConfig) {
      * Deletes the scan information from Jumio database.
      */
     private fun deleteScanInformation(vendorScanId: String, baserUrl:String, username: String, password: String): Boolean {
-        val seperator:String = if(baserUrl.endsWith("/")) "" else "/"
+        val seperator:String = if (baserUrl.endsWith("/")) "" else "/"
         val url = URL("$baserUrl${seperator}$vendorScanId")
         val httpConn = url.openConnection() as HttpURLConnection
         val userpass = "$username:$password"
@@ -177,9 +177,9 @@ internal class ScanInfoShredder(val config: ScanInfoShredderConfig) {
         httpConn.setRequestProperty("Authorization", authHeader)
         httpConn.setRequestProperty("Accept", "application/json")
         httpConn.setRequestProperty("User-Agent", "ScanInformationStore")
-        httpConn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-        httpConn.setDoOutput(true);
+        //httpConn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
         httpConn.setRequestMethod("DELETE");
+        httpConn.setDoOutput(true);
 
         try {
             val responseCode = httpConn.responseCode
