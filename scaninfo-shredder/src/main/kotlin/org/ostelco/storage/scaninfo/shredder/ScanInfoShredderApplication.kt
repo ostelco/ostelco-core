@@ -187,6 +187,8 @@ internal class ScanInfoShredder(val config: ScanInfoShredderConfig) {
                 val statusMessage = "$responseCode: ${httpConn.responseMessage}"
                 logger.error("Failed to delete ${url.toString()} $statusMessage")
                 return false
+            } else {
+                logger.info("Deleted ${url.toString()}")
             }
         } catch (e: IOException) {
             logger.error("Caught exception while trying to delete scan", e)
@@ -246,6 +248,7 @@ internal class ScanInfoShredder(val config: ScanInfoShredderConfig) {
         try {
             val keyString = "${data.customerId}-${data.id}"
             datastore.delete(keyFactory.newKey(keyString))
+            logger.info("Deleted datastore record for ${keyString}")
         } catch (e: DatastoreException) {
             logger.error("Caught exception while scanning metadata", e)
             return false
