@@ -10,9 +10,9 @@ spec:
         spec:
           containers:
           - name:  bq-metrics-extractor
-            image: eu.gcr.io/pantel-2decb/bq-metrics-extractor:EXTRACTOR_VERSION
+            image: eu.gcr.io/GCP_PROJECT_ID/bq-metrics-extractor:EXTRACTOR_VERSION
             imagePullPolicy: Always
             env:
               - name: DATASET_PROJECT
-                value: pantel-2decb
+                value: GCP_PROJECT_ID
           restartPolicy: Never

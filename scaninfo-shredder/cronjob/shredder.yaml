@@ -10,11 +10,11 @@ spec:
         spec:
           containers:
           - name:  scaninfo-shredder
-            image: eu.gcr.io/pantel-2decb/scaninfo-shredder:SHREDDER_VERSION
+            image: eu.gcr.io/GCP_PROJECT_ID/scaninfo-shredder:SHREDDER_VERSION
             imagePullPolicy: Always
             env:
               - name: DATASET_PROJECT
-                value: pantel-2decb
+                value: GCP_PROJECT_ID
               - name: JUMIO_API_TOKEN
                 valueFrom:
                   secretKeyRef:

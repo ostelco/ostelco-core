@@ -17,11 +17,11 @@
 
 Set variables by doing this in `prime` directory:
 
-    #PROJECT_ID=pantel-2decb
+    #GCP_PROJECT_ID=$(gcloud config get-value project -q)
 
 ```bash
-export PROJECT_ID="$(gcloud config get-value project -q)"
-echo "PROJECT_ID=$PROJECT_ID"
+export GCP_PROJECT_ID="$(gcloud config get-value project -q)"
+echo "GCP_PROJECT_ID=GCP_PROJECT_ID"
 export PRIME_VERSION="$(gradle properties -q | grep "version:" | awk '{print $2}' | tr -d '[:space:]')"
 echo "PRIME_VERSION=$PRIME_VERSION"
 ```    
@@ -117,13 +117,13 @@ Increment the docker image tag (version) for next two steps.
 Build the Docker image (In the folder with Dockerfile)
 
 ```bash
-docker build -t eu.gcr.io/${PROJECT_ID}/prime:${PRIME_VERSION} prime
+docker build -t eu.gcr.io/${GCP_PROJECT_ID}/prime:${PRIME_VERSION} prime
 ```
 
 Push to the registry
 
 ```bash
-docker push eu.gcr.io/${PROJECT_ID}/prime:${PRIME_VERSION}
+docker push eu.gcr.io/${GCP_PROJECT_ID}/prime:${PRIME_VERSION}
 ```
 
 Update the tag (version) of prime's docker image in `infra/prod/prime.yaml`.
@@ -131,7 +131,7 @@ Update the tag (version) of prime's docker image in `infra/prod/prime.yaml`.
 Apply the deployment & service
 
 ```bash
-sed -e s/PRIME_VERSION/${PRIME_VERSION}/g prime/infra/prod/prime.yaml | kubectl apply -f -
+sed -e 's/PRIME_VERSION/${PRIME_VERSION}/g; s/GCP_PROJECT_ID/${GCP_PROJECT_ID}/g' prime/infra/prod/prime.yaml | kubectl apply -f -
 ```
 
 Details of the deployment
@@ -265,19 +265,19 @@ The keysets for production (public key only) needs to be encrypted using GCP KMS
 
 - Set the master key URI for decrypting the keysets.
     ```bash
-    kubectl create secret generic scaninfo-keys --from-literal=masterKeyUri='gcp-kms://projects/pantel-2decb/locations/global/keyRings/scan-dev/cryptoKeys/scan-info'
+    kubectl create secret generic scaninfo-keys --from-literal=masterKeyUri='gcp-kms://projects/${GCP_PROJECT_ID}/locations/global/keyRings/scan-dev/cryptoKeys/scan-info'
     ```
 - Create keysets for an environment. Use `tinkey` to generate
     ```bash
     bazel-bin/tools/tinkey/tinkey create-keyset --key-template ECIES_P256_HKDF_HMAC_SHA256_AES128_GCM --out clear_encrypt_key_global_pvt
     bazel-bin/tools/tinkey/tinkey create-public-keyset --in clear_encrypt_key_global_pvt --out clear_encrypt_key_global_pub
     bazel-bin/tools/tinkey/tinkey convert-keyset --out encrypt_key_global --in clear_encrypt_key_global_pub \
-    --new-master-key-uri gcp-kms://projects/pantel-2decb/locations/global/keyRings/scan-dev/cryptoKeys/scan-info
+    --new-master-key-uri gcp-kms://projects/${GCP_PROJECT_ID}/locations/global/keyRings/scan-dev/cryptoKeys/scan-info
     
     bazel-bin/tools/tinkey/tinkey create-keyset --key-template ECIES_P256_HKDF_HMAC_SHA256_AES128_GCM --out clear_encrypt_key_sgp_pvt
     bazel-bin/tools/tinkey/tinkey create-public-keyset --in clear_encrypt_key_sgp_pvt --out clear_encrypt_key_sgp_pub
     bazel-bin/tools/tinkey/tinkey convert-keyset --out encrypt_key_sgp --in clear_encrypt_key_sgp_pub \
-    --new-master-key-uri gcp-kms://projects/pantel-2decb/locations/global/keyRings/scan-dev/cryptoKeys/scan-info
+    --new-master-key-uri gcp-kms://projects/${GCP_PROJECT_ID}/locations/global/keyRings/scan-dev/cryptoKeys/scan-info
     ```
 - Set the encryption keysets (public keys only) as kubernetes secrets.
     ```bash
@@ -287,7 +287,7 @@ The keysets for production (public key only) needs to be encrypted using GCP KMS
     ```
 Prime will use CloudKMS (through tink library) to decrypt the keysets. It requires an IAM role to enable these APIs.
 ```bash
-gcloud projects add-iam-policy-binding pantel-2decb --member serviceAccount:prime-service-account@pantel-2decb.iam.gserviceaccount.com  --role roles/cloudkms.cryptoKeyEncrypterDecrypter
+gcloud projects add-iam-policy-binding ${GCP_PROJECT_ID} --member serviceAccount:prime-service-account@${GCP_PROJECT_ID}.iam.gserviceaccount.com  --role roles/cloudkms.cryptoKeyEncrypterDecrypter
 ```
 
 ### Cloud Pub/Sub
@@ -385,14 +385,14 @@ prime/script/deploy-dev-direct.sh
 OR
 
 ```bash
-export PROJECT_ID="$(gcloud config get-value project -q)"
+export GCP_PROJECT_ID="$(gcloud config get-value project -q)"
 export SHORT_SHA="$(git log -1 --pretty=format:%h)"
 
-echo PROJECT_ID=${PROJECT_ID}
+echo GCP_PROJECT_ID=${GCP_PROJECT_ID}
 echo SHORT_SHA=${SHORT_SHA}
 
-docker build -t eu.gcr.io/${PROJECT_ID}/prime:${SHORT_SHA} .
-docker push eu.gcr.io/${PROJECT_ID}/prime:${SHORT_SHA}
+docker build -t eu.gcr.io/${GCP_PROJECT_ID}/prime:${SHORT_SHA} .
+docker push eu.gcr.io/${GCP_PROJECT_ID}/prime:${SHORT_SHA}
 sed -e s/PRIME_VERSION/${SHORT_SHA}/g prime/infra/dev/prime.yaml | kubectl apply -f -
 ```
 
@@ -403,7 +403,7 @@ Goto `https://console.cloud.google.com/logs/viewer` and advanced search for
 ```text
 resource.type="container"
 resource.labels.cluster_name="dev-cluster"
-logName="projects/pantel-2decb/logs/prime"
+logName="projects/${GCP_PROJECT_ID}/logs/prime"
 ```
 
 ## Connect using Neo4j Browser
@@ -418,8 +418,8 @@ gcloud dataflow jobs run active-users-dev \
     --gcs-location gs://dataflow-templates/latest/PubSub_to_BigQuery \
     --region europe-west1 \
     --parameters \
-inputTopic=projects/pantel-2decb/topics/active-users-dev,\
-outputTableSpec=pantel-2decb:ocs_gateway_dev.raw_activeusers
+inputTopic=projects/${GCP_PROJECT_ID}/topics/active-users-dev,\
+outputTableSpec=${GCP_PROJECT_ID}:ocs_gateway_dev.raw_activeusers
 
 
 # For production cluster
@@ -427,8 +427,8 @@ gcloud dataflow jobs run active-users \
     --gcs-location gs://dataflow-templates/latest/PubSub_to_BigQuery \
     --region europe-west1 \
     --parameters \
-inputTopic=projects/pantel-2decb/topics/active-users,\
-outputTableSpec=pantel-2decb:ocs_gateway.raw_activeusers
+inputTopic=projects/${GCP_PROJECT_ID}/topics/active-users,\
+outputTableSpec=${GCP_PROJECT_ID}:ocs_gateway.raw_activeusers
 
 ```
 
@@ -440,8 +440,8 @@ gcloud dataflow jobs run purchase-records-dev \
     --gcs-location gs://dataflow-templates/latest/PubSub_to_BigQuery \
     --region europe-west1 \
     --parameters \
-inputTopic=projects/pantel-2decb/topics/purchase-info-dev,\
-outputTableSpec=pantel-2decb:purchases_dev.raw_purchases
+inputTopic=projects/${GCP_PROJECT_ID}/topics/purchase-info-dev,\
+outputTableSpec=${GCP_PROJECT_ID}:purchases_dev.raw_purchases
 
 
 # For production cluster
@@ -449,7 +449,7 @@ gcloud dataflow jobs run purchase-records \
     --gcs-location gs://dataflow-templates/latest/PubSub_to_BigQuery \
     --region europe-west1 \
     --parameters \
-inputTopic=projects/pantel-2decb/topics/purchase-info,\
-outputTableSpec=pantel-2decb:purchases.raw_purchases
+inputTopic=projects/${GCP_PROJECT_ID}/topics/purchase-info,\
+outputTableSpec=${GCP_PROJECT_ID}:purchases.raw_purchases
 
 ```

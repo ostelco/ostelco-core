@@ -37,7 +37,7 @@ The config.yaml file contains specifications of queries and how they map to metr
           help: Number of active users
           resultColumn: count
           sql: >
-          SELECT count(distinct user_pseudo_id) AS count FROM `pantel-2decb.analytics_160712959.events_*`
+          SELECT count(distinct user_pseudo_id) AS count FROM `$GCP_PROJECT_ID.analytics_160712959.events_*`
           WHERE event_name = "first_open"
           LIMIT 1000
   

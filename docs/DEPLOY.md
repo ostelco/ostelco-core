@@ -11,7 +11,7 @@ If no parameters passed it will deploy all instances in dev environment.
 
 Set env variable
 
-    export PROJECT_ID="$(gcloud config get-value project -q)"
+    export GCP_PROJECT_ID="$(gcloud config get-value project -q)"
 
 For the commands below:
 
@@ -36,11 +36,11 @@ If cluster already exists, fetch authentication credentials for the Kubernetes c
 
 Build the Docker image (In the folder with Dockerfile)
 
-    docker build -t eu.gcr.io/${PROJECT_ID}/<app>:<version> .
+    docker build -t eu.gcr.io/${GCP_PROJECT_ID}/<app>:<version> .
 
 Push to the registry
 
-    docker push eu.gcr.io/${PROJECT_ID}/<app>:<version>
+    docker push eu.gcr.io/${GCP_PROJECT_ID}/<app>:<version>
 
 Apply the deployment
 

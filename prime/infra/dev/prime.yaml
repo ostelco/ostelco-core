@@ -225,7 +225,7 @@ spec:
           name: api-ostelco-ssl
           readOnly: true
       - name: prime
-        image: eu.gcr.io/pantel-2decb/prime:PRIME_VERSION
+        image: eu.gcr.io/GCP_PROJECT_ID/prime:PRIME_VERSION
         imagePullPolicy: Always
         env:
         - name: SLACK_CHANNEL
