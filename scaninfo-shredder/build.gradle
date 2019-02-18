@@ -1,0 +1,38 @@
+plugins {
+  id "org.jetbrains.kotlin.jvm" version "1.3.21"
+  id "application"
+  // Keeping version to 4.0.1 - https://github.com/johnrengelman/shadow/issues/425
+  id "com.github.johnrengelman.shadow" version "4.0.1"
+}
+
+version = "1.0.0"
+
+dependencies {
+  api project(':model')
+
+  implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
+  implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
+  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinXCoroutinesVersion"
+
+  implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
+
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+  implementation "com.google.cloud:google-cloud-datastore:$googleCloudVersion"
+
+  runtimeOnly "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"
+
+  testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+  testImplementation "org.mockito:mockito-core:$mockitoVersion"
+  testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
+  testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
+
+}
+
+shadowJar {
+  mainClassName = 'org.ostelco.storage.scaninfo.shredder.ScanInfoShredderApplicationKt'
+  mergeServiceFiles()
+  classifier = "uber"
+  version = null
+}
+
+apply from: '../gradle/jacoco.gradle'

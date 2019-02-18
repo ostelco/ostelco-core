@@ -71,7 +71,7 @@ data class ScanResult(
         val rejectReason: String?)
 
 data class ScanInformation(
-        val scanId:String,
+        val scanId: String,
         val countryCode: String,
         val status: ScanStatus,
         val scanResult: ScanResult?
@@ -85,9 +85,30 @@ data class ScanInformation(
 
 data class VendorScanInformation(
         val id: String,                 // Id of the scan
+        val scanReference: String,      // Jumio transaction reference
         val details: String,            // JSON string representation of all the information from vendor
         val images: Map<String, Blob>?  // liveness images (JPEG or PNG) if available
 )
+
+
+data class ScanMetadata(
+        val id: String,                 // Id of the scan
+        val scanReference: String,      // Jumio transaction reference
+        val countryCode: String,        // The country for which the scan was done
+        val customerId: String,         // The owner of the scan
+        val processedTime: Long         // The time when callback was processed.
+)
+
+enum class ScanMetadataEnum(val s: String) {
+    // Property names for Datastore
+    ID("id"),
+    SCAN_REFERENCE("scanReference"),
+    COUNTRY_CODE("countryCode"),
+    CUSTOMER_ID("customerId"),
+    PROCESSED_TIME("processedTime"),
+    // Type name of the Object
+    KIND("ScanMetaData")
+}
 
 enum class JumioScanData(val s: String) {
     // Property names in POST data from Jumio

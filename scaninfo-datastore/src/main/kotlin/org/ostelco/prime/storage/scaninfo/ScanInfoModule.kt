@@ -22,10 +22,11 @@ class ScanInfoModule : PrimeModule {
 }
 
 /**
- * The configuration for Scan Information Datastore module.
+ * The configuration for Scan Information Cloud Storage module.
  */
 class ScanInfoConfig : Configuration() {
     var storeType = "default"
+    var namespace = ""
     var keysetFilePathPrefix = "encrypt_key"
 }
 
