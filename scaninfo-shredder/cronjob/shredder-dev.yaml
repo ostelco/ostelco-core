@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: scaninfo-shredder
 spec:
-  schedule: "*/1 * * * *"
+  schedule: "*/30 * * * *"
   jobTemplate:
     spec:
       template:
