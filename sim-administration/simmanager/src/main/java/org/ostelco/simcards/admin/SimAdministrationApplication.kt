@@ -2,11 +2,11 @@ package org.ostelco.simcards.admin
 
 import io.dropwizard.Application
 import io.dropwizard.client.HttpClientBuilder
+import io.dropwizard.configuration.EnvironmentVariableSubstitutor
+import io.dropwizard.configuration.SubstitutingSourceProvider
 import io.dropwizard.jdbi.DBIFactory
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
-import io.dropwizard.configuration.EnvironmentVariableSubstitutor
-import io.dropwizard.configuration.SubstitutingSourceProvider
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
 import org.ostelco.sim.es2plus.SmDpPlusCallbackResource
@@ -69,8 +69,13 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
         addOpenapiResourceToJerseyEnv(jerseyEnv, config.openApi)
         addEs2PlusDefaultFiltersAndInterceptors(jerseyEnv)
 
+        // Add resoures that should be run from the outside via REST.
         jerseyEnv.register(SimInventoryResource(httpClient, config, DAO))
         jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
+
+        // Add task that should be triggered periodically by external
+        // cron job via tasks/preallocate_sim_profiles url.
+        env.admin().addTask(PreallocateProfiles());
     }
 
     companion object {
