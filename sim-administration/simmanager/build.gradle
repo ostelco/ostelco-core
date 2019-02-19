@@ -55,12 +55,12 @@ configurations {
     integrationTestRuntime.extendsFrom testRuntime
 }
 
-task integrationTest(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
+task integration(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
 }
 
-integrationTest.mustRunAfter test
+build.dependsOn integration
 
 idea {
     module {

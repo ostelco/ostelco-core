@@ -279,4 +279,15 @@ class SimAdministrationTest {
         assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.RELEASED)
         assertThat(simEntry.hlrState).isEqualTo(HlrState.ACTIVATED)
     }
+
+
+
+
+    @Test
+    fun testGetListOfHlrs() {
+        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
+
+        val hlrs = simDao.getListOfHLRs()
+        println("HLRs = $hlrs")
+    }
 }

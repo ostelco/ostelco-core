@@ -41,7 +41,7 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
         )
     }
 
-    lateinit var DAO: SimInventoryDAO
+    public lateinit var DAO: SimInventoryDAO
 
     override fun run(config: SimAdministrationConfiguration,
                      env: Environment) {
