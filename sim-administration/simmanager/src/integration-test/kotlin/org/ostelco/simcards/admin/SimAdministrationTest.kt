@@ -96,7 +96,7 @@ class SimAdministrationTest {
     class KPostgresContainer(imageName: String) : PostgreSQLContainer<KPostgresContainer>(imageName)
     class KFixedHostPortGenericContainer(imageName: String) : FixedHostPortGenericContainer<KFixedHostPortGenericContainer>(imageName)
 
-    private val hlr = "Foo"
+    private val hlrName = "Foo"
     private val profileVendor = "Bar"
     private val phoneType = "rababara"
     private val expectedProfile = "IPHONE_PROFILE_2"
@@ -133,14 +133,14 @@ class SimAdministrationTest {
         val dao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
 
         dao.addProfileVendorAdapter(profileVendor)
-        dao.addHlrAdapter(hlr)
-        dao.permitVendorForHlrByNames(profileVendor = profileVendor, hlr = hlr)
+        dao.addHlrAdapter(hlrName)
+        dao.permitVendorForHlrByNames(profileVendor = profileVendor, hlr = hlrName)
     }
 
     /* The SIM dataset is the same that is used by the SM-DP+ emulator. */
     private fun loadSimData() {
         val entries = FileInputStream(SM_DP_PLUS_RULE.configuration.simBatchData)
-        val response = client.target("$simManagerEndpoint/$hlr/import-batch/profilevendor/$profileVendor")
+        val response = client.target("$simManagerEndpoint/$hlrName/import-batch/profilevendor/$profileVendor")
                 .request()
                 .put(Entity.entity(entries, MediaType.TEXT_PLAIN))
         assertThat(response.status).isEqualTo(200)
@@ -152,7 +152,7 @@ class SimAdministrationTest {
     @Ignore
     fun testGetProfileStatus() {
         val iccid = "8901000000000000001"
-        val response = client.target("$simManagerEndpoint/$hlr/profileStatusList/$iccid")
+        val response = client.target("$simManagerEndpoint/$hlrName/profileStatusList/$iccid")
                 .request()
                 .get()
         assertThat(response.status).isEqualTo(200)
@@ -161,7 +161,7 @@ class SimAdministrationTest {
     @Test
     fun testActivateWithHlr() {
         val iccid = "8901000000000000001"
-        val response = client.target("$simManagerEndpoint/$hlr/iccid/$iccid")
+        val response = client.target("$simManagerEndpoint/$hlrName/iccid/$iccid")
                 .request()
                 .post(Entity.json(null))
         assertThat(response.status).isEqualTo(200)
@@ -174,7 +174,7 @@ class SimAdministrationTest {
     @Test
     fun testDeactivateWithHlr() {
         val iccid = "8901000000000000001"
-        val response = client.target("$simManagerEndpoint/$hlr/iccid/$iccid")
+        val response = client.target("$simManagerEndpoint/$hlrName/iccid/$iccid")
                 .request()
                 .delete()
         assertThat(response.status).isEqualTo(200)
@@ -187,7 +187,7 @@ class SimAdministrationTest {
     @Test
     fun testGetIccid() {
         val iccid = "8901000000000000001"
-        val response = client.target("$simManagerEndpoint/$hlr/iccid/$iccid")
+        val response = client.target("$simManagerEndpoint/$hlrName/iccid/$iccid")
                 .request()
                 .get()
         assertThat(response.status).isEqualTo(200)
@@ -200,7 +200,7 @@ class SimAdministrationTest {
     fun testActivateEsim() {
         val iccid = "8901000000000000001"
         val eid = getEidFromIccid(iccid)
-        val response = client.target("$simManagerEndpoint/$hlr/esim")
+        val response = client.target("$simManagerEndpoint/$hlrName/esim")
                 .queryParam("eid", eid)
                 .queryParam("iccid", iccid)
                 .request()
@@ -218,7 +218,7 @@ class SimAdministrationTest {
     @Test
     fun testActivateEsimNoEid() {
         val iccid = "8901000000000000019"
-        val response = client.target("$simManagerEndpoint/$hlr/esim")
+        val response = client.target("$simManagerEndpoint/$hlrName/esim")
                 .queryParam("iccid", iccid)
                 .request()
                 .post(Entity.json(null))
@@ -236,7 +236,7 @@ class SimAdministrationTest {
     fun testActivateNextEsim() {
         val iccid = "8901000000000000027"
         val eid = getEidFromIccid(iccid)
-        val response = client.target("$simManagerEndpoint/$hlr/esim")
+        val response = client.target("$simManagerEndpoint/$hlrName/esim")
                 .queryParam("eid", eid)
                 .request()
                 .post(Entity.json(null))
@@ -252,7 +252,7 @@ class SimAdministrationTest {
     @Test
     fun testActivateEsimNoEidAll() {
         val iccid = "8901000000000000035"
-        val response = client.target("$simManagerEndpoint/$hlr/esim/all")
+        val response = client.target("$simManagerEndpoint/$hlrName/esim/all")
                 .queryParam("iccid", iccid)
                 .request()
                 .post(Entity.json(null))
@@ -270,7 +270,7 @@ class SimAdministrationTest {
     @Test
     @Ignore
     fun testActivateNextEsimNoEidAll() {
-        val response = client.target("$simManagerEndpoint/$hlr/esim/all")
+        val response = client.target("$simManagerEndpoint/$hlrName/esim/all")
                 .request()
                 .post(Entity.json(null))
         assertThat(response.status).isEqualTo(200)
@@ -283,14 +283,20 @@ class SimAdministrationTest {
     }
 
 
-
-
     @Test
     fun testGetListOfHlrs() {
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
 
-        val hlrs = simDao.getListOfHLRs()
+        val hlrs = simDao.getHlrAdapters()
         assertEquals(1,hlrs.size)
-        assertTrue(hlrs.contains("Foo"))
+        assertTrue(hlrs.map{it.name}.contains(hlrName))
+    }
+
+
+    @Test
+    fun getProfilesForHlr() {
+        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
+        val profiles : List<String> = simDao.getProfileNamesForHlr(hlrName)
+        assertEquals(1, hlrs.size)
     }
 }

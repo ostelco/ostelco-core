@@ -2,8 +2,11 @@ package org.ostelco.simcards.admin
 
 import com.google.common.collect.ImmutableMultimap
 import io.dropwizard.servlets.tasks.Task
+import org.ostelco.simcards.adapter.HlrAdapter
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import java.io.PrintWriter
+
+
 
 
 class PreallocateProfiles(val simInventoryDAO: SimInventoryDAO) : Task("preallocate_sim_profiles") {
@@ -11,15 +14,15 @@ class PreallocateProfiles(val simInventoryDAO: SimInventoryDAO) : Task("prealloc
     @Throws(Exception::class)
     override fun execute(parameters: ImmutableMultimap<String, String>, output: PrintWriter) {
 
-        /* TODO: This is commented out just to  permit merging of the rest of the  branch
-           to develop. Laziness & convenience.
-        var hlrs : Collection<String> = simInventoryDAO.getListOfHLRs()
+        var hlrs : Collection<HlrAdapter> = simInventoryDAO.getHlrAdapters()
 
-        for (hlr in hlrs) {
-            for (profile in simInventory.getProfile)
+       /* for (hlr in hlrs) {
+            val profiles : Collection<String> = simInventoryDAO.getProfileNames(hlr.id)
+            for (profileStats: SimInventoryDAO.SimProfileKeyStatistics in simInventory.getProfileStats(hlr)) {
+
+            }
         }
-*/
-
+        */
         // TODO:
         // * List all of the HLRs
         // * For each HLR, figure out

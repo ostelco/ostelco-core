@@ -536,6 +536,26 @@ abstract class SimInventoryDAO {
     /**
      * Find all the different HLRs that are present.
      */
-    @SqlQuery("""SELECT name FROM hlr_adapters""")
-    abstract fun getListOfHLRs(): Collection<String>
+    @SqlQuery("SELECT * FROM hlr_adapters")
+    @RegisterMapper(HlrAdapterMapper::class)
+    abstract fun getHlrAdapters(): List<HlrAdapter>
+
+
+    /**
+     * Find the names of profiles that are associated with
+     * a particular HLR.
+     */
+    @SqlQuery("""SELECT DISTINCT profile  FROM sim_entries""")
+    abstract fun getProfileNamesForHlr(hlrName: String): List<String>
+
+
+    /**
+     * Get key numbers from a particular named Sim profile.
+
+    abstract fun getProfileStats(hlr:String, simProfile:String):SimProfileKeyStatistics?
+
+
+
+    class SimProfileKeyStatistics
+     */
 }
