@@ -2,10 +2,11 @@ package org.ostelco.simcards.admin
 
 import com.google.common.collect.ImmutableMultimap
 import io.dropwizard.servlets.tasks.Task
+import org.ostelco.simcards.inventory.SimInventoryDAO
 import java.io.PrintWriter
 
 
-class PreallocateProfiles() : Task("preallocate_sim_profiles") {
+class PreallocateProfiles(dao: SimInventoryDAO) : Task("preallocate_sim_profiles") {
 
     @Throws(Exception::class)
     override fun execute(parameters: ImmutableMultimap<String, String>, output: PrintWriter) {

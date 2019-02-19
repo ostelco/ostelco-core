@@ -70,12 +70,12 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
         addEs2PlusDefaultFiltersAndInterceptors(jerseyEnv)
 
         // Add resoures that should be run from the outside via REST.
-        jerseyEnv.register(SimInventoryResource(httpClient, config, DAO))
+        jerseyEnv.register(SimInventoryResource(httpClient, config, this.DAO))
         jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
 
         // Add task that should be triggered periodically by external
         // cron job via tasks/preallocate_sim_profiles url.
-        env.admin().addTask(PreallocateProfiles());
+        env.admin().addTask(PreallocateProfiles(this.DAO));
     }
 
     companion object {
