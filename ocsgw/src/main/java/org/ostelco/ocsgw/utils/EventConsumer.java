@@ -27,7 +27,7 @@ public class EventConsumer<T> implements Runnable {
                     queue.wait();
                 }
             } catch (InterruptedException e) {
-                LOG.error("Failed to send Request", e);
+                break;
             }
         }
     }

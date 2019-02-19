@@ -47,19 +47,21 @@ public class GrpcDataSource implements DataSource {
 
     private static final Logger LOG = LoggerFactory.getLogger(GrpcDataSource.class);
 
-    private final OcsServiceGrpc.OcsServiceStub ocsServiceStub;
+    private OcsServiceGrpc.OcsServiceStub ocsServiceStub;
 
-    private StreamObserver<CreditControlRequestInfo> creditControlRequest;
+    private StreamObserver<CreditControlRequestInfo> creditControlRequestStream;
+
+    private ManagedChannel grpcChannel;
+
+    private ServiceAccountJwtAccessCredentials jwtAccessCredentials;
+
+    private ManagedChannelBuilder channelBuilder;
 
     private OcsgwMetrics ocsgwAnalytics;
 
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
-    private ScheduledFuture keepAliveFuture = null;
-
-    private ScheduledFuture initActivateFuture = null;
-
-    private ScheduledFuture initCCRFuture = null;
+    private ScheduledFuture reconnectStreamFuture = null;
 
     private Set<String> blocked = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
@@ -70,6 +72,8 @@ public class GrpcDataSource implements DataSource {
     private final ConcurrentLinkedQueue<CreditControlRequestInfo> requestQueue = new ConcurrentLinkedQueue<>();
 
     private final EventProducer<CreditControlRequestInfo> producer;
+
+    private Thread consumerThread;
 
 
     /**
@@ -93,37 +97,58 @@ public class GrpcDataSource implements DataSource {
                 .keepAliveTimeout(1, TimeUnit.MINUTES)
                 .keepAliveTime(50, TimeUnit.SECONDS);
 
-        final ManagedChannelBuilder channelBuilder =
-                Files.exists(Paths.get("/cert/ocs.crt"))
-                        ? nettyChannelBuilder.sslContext(GrpcSslContexts.forClient().trustManager(new File("/cert/ocs.crt")).build())
-                        : nettyChannelBuilder;
+        channelBuilder = Files.exists(Paths.get("/cert/ocs.crt"))
+                ? nettyChannelBuilder.sslContext(GrpcSslContexts.forClient().trustManager(new File("/cert/ocs.crt")).build())
+                : nettyChannelBuilder;
 
         // Not using the standard GOOGLE_APPLICATION_CREDENTIALS for this
         // as we need to download the file using container credentials in
         // OcsApplication.
         final String serviceAccountFile = "/config/" + System.getenv("SERVICE_FILE");
-        final ServiceAccountJwtAccessCredentials credentials =
-                ServiceAccountJwtAccessCredentials.fromStream(new FileInputStream(serviceAccountFile));
-        final ManagedChannel channel = channelBuilder
-                .useTransportSecurity()
-                .build();
-        ocsServiceStub = OcsServiceGrpc.newStub(channel)
-                .withCallCredentials(MoreCallCredentials.from(credentials));
+        jwtAccessCredentials = ServiceAccountJwtAccessCredentials.fromStream(new FileInputStream(serviceAccountFile));
 
-        ocsgwAnalytics = new OcsgwMetrics(metricsServerHostname, credentials, this);
+        ocsgwAnalytics = new OcsgwMetrics(metricsServerHostname, jwtAccessCredentials, this);
         producer = new EventProducer<>(requestQueue);
     }
 
     @Override
     public void init() {
 
-        initCreditControlRequest();
-        initActivate();
+        setupChannel();
+        initCreditControlRequestStream();
+        initActivateStream();
         initKeepAlive();
-        ocsgwAnalytics.initAnalyticsRequest();
+        ocsgwAnalytics.initAnalyticsRequestStream();
 
-        EventConsumer<CreditControlRequestInfo> requestInfoConsumer = new EventConsumer<>(requestQueue, creditControlRequest);
-        new Thread(requestInfoConsumer).start();
+        setupEventConsumer();
+    }
+
+    private void setupEventConsumer() {
+
+        // ToDo : Is this enough to know the thread stopped?
+        if (consumerThread != null) {
+            consumerThread.interrupt();
+        }
+
+        EventConsumer<CreditControlRequestInfo> requestInfoConsumer = new EventConsumer<>(requestQueue, creditControlRequestStream);
+        consumerThread = new Thread(requestInfoConsumer);
+        consumerThread.start();
+    }
+
+    private void setupChannel() {
+        if (grpcChannel != null) {
+            grpcChannel.shutdownNow();
+            try {
+                boolean isShutdown = grpcChannel.awaitTermination(3, TimeUnit.SECONDS);
+                LOG.info("grpcChannel is shutdown : ", isShutdown);
+            } catch (InterruptedException e) {
+                LOG.info("Error shutting down gRPC channel");
+            }
+        }
+        grpcChannel = channelBuilder
+                .useTransportSecurity()
+                .build();
+        ocsServiceStub = OcsServiceGrpc.newStub(grpcChannel).withCallCredentials(MoreCallCredentials.from(jwtAccessCredentials));
     }
 
 
@@ -131,8 +156,8 @@ public class GrpcDataSource implements DataSource {
      * Init the gRPC channel that will be used to send/receive
      * diameter messages to the OCS module in Prime.
      */
-    private void initCreditControlRequest() {
-        creditControlRequest = ocsServiceStub.creditControlRequest(
+    private void initCreditControlRequestStream() {
+        creditControlRequestStream = ocsServiceStub.creditControlRequest(
                 new StreamObserver<CreditControlAnswerInfo>() {
                     public void onNext(CreditControlAnswerInfo answer) {
                         handleGrpcCcrAnswer(answer);
@@ -140,9 +165,9 @@ public class GrpcDataSource implements DataSource {
 
                     @Override
                     public void onError(Throwable t) {
-                        LOG.error("CreditControlRequestObserver error", t);
+                        LOG.error("CreditControlRequestStream error", t);
                         if (t instanceof StatusRuntimeException) {
-                            reconnectCreditControlRequest();
+                            reconnectStreams();
                         }
                     }
 
@@ -158,7 +183,7 @@ public class GrpcDataSource implements DataSource {
      *  OCS. These requests are send when we need to reactivate a diameter session. For
      *  example on a topup event.
      */
-    private void initActivate() {
+    private void initActivateStream() {
         ActivateRequest dummyActivate = ActivateRequest.newBuilder().build();
         ocsServiceStub.activate(dummyActivate, new StreamObserver<ActivateResponse>() {
             @Override
@@ -176,7 +201,7 @@ public class GrpcDataSource implements DataSource {
             public void onError(Throwable t) {
                 LOG.error("ActivateObserver error", t);
                 if (t instanceof StatusRuntimeException) {
-                    reconnectActivate();
+                    reconnectStreams();
                 }
             }
 
@@ -188,12 +213,12 @@ public class GrpcDataSource implements DataSource {
     }
 
     /**
-     * The keep alive messages are sent on the  CreditControlRequest stream
+     * The keep alive messages are sent on the creditControlRequestStream
      * to force it to stay open avoiding reconnects on the gRPC channel.
      */
     private void initKeepAlive() {
         // this is used to keep connection alive
-        keepAliveFuture = executorService.scheduleWithFixedDelay(() -> {
+        executorService.scheduleWithFixedDelay(() -> {
                     final CreditControlRequestInfo ccr = CreditControlRequestInfo.newBuilder()
                             .setType(CreditControlRequestType.NONE)
                             .build();
@@ -204,49 +229,30 @@ public class GrpcDataSource implements DataSource {
                 TimeUnit.SECONDS);
     }
 
-    private void reconnectActivate() {
-        LOG.debug("reconnectActivate called");
 
-        if (initActivateFuture != null) {
-            initActivateFuture.cancel(true);
+    private void reconnectStreams() {
+        LOG.debug("reconnectStreams called");
+
+        if (!isReconnecting()) {
+
+            reconnectStreamFuture = executorService.schedule((Callable<Object>) () -> {
+                        LOG.debug("Reconnecting GRPC streams");
+                        setupChannel();
+                        initCreditControlRequestStream();
+                        setupEventConsumer();
+                        initActivateStream();
+                        return "Called!";
+                    },
+                    5,
+                    TimeUnit.SECONDS);
         }
-
-        LOG.debug("Schedule new Callable initActivate");
-        initActivateFuture = executorService.schedule((Callable<Object>) () -> {
-                    LOG.debug("Calling initActivate");
-                    initActivate();
-                    return "Called!";
-                },
-                5,
-                TimeUnit.SECONDS);
     }
 
-    private void reconnectCcrKeepAlive() {
-        LOG.debug("reconnectCcrKeepAlive called");
-        if (keepAliveFuture != null) {
-            keepAliveFuture.cancel(true);
+    private boolean isReconnecting() {
+        if (reconnectStreamFuture != null) {
+            return !reconnectStreamFuture.isDone();
         }
-
-        initKeepAlive();
-    }
-
-
-    private void reconnectCreditControlRequest() {
-        LOG.debug("reconnectCreditControlRequest called");
-
-        if (initCCRFuture != null) {
-            initCCRFuture.cancel(true);
-        }
-
-        LOG.debug("Schedule new Callable initCreditControlRequest");
-        initCCRFuture = executorService.schedule((Callable<Object>) () -> {
-                    reconnectCcrKeepAlive();
-                    LOG.debug("Calling initCreditControlRequest");
-                    initCreditControlRequest();
-                    return "Called!";
-                },
-                5,
-                TimeUnit.SECONDS);
+        return false;
     }
 
 
