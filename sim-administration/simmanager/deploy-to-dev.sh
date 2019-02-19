@@ -6,8 +6,6 @@
 ##  and to deploy it to  a kubernetes cluster.
 ##
 
-<<<<<<< HEAD
-
 DEPENDENCIES="kubectl docker gcloud"
 for DEP in $DEPENDENCIDES ; do 
     if  [[ -z "$(which  $DEP)" ]] ; then
