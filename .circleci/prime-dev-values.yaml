@@ -20,7 +20,6 @@ prime:
     DATA_TRAFFIC_TOPIC: data-traffic
     PURCHASE_INFO_TOPIC: purchase-info
     ACTIVE_USERS_TOPIC: active-users
-    GOOGLE_CREDENTIALS_PATH: "/secret/prime-sa.json"
     GCP_PROJECT_ID: pi-ostelco-dev 
 
 
