@@ -551,25 +551,49 @@ abstract class SimInventoryDAO {
 
     /**
      * Get key numbers from a particular named Sim profile.
+     * TODO:Extend this stat calculation into the stats we need to guide the regulator.
      */
-    @RegisterMapper(ProfileStatsMapper::class)
-    @SqlQuery("""SELECT  count(*)  AS NO_OF_ENTRIES  FROM sim_entries WHERE hlrId = :hlrId AND profile = :simProfile""")
-    abstract fun getProfileStats(
+    @RegisterMapper(KeyValueMapper::class)
+    @SqlQuery("""
+        SELECT 'NO_OF_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries WHERE hlrId = :hlrId AND profile = :simProfile
+        UNION
+        SELECT 'NO_OF_UNALLOCATED_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries WHERE hlrId = :hlrId AND profile = :simProfile
+    """)
+    abstract fun getProfileStatsAsKeyValuePairs(
             @Bind("hlrId") hlrId: Long,
-            @Bind("simProfile") simProfile: String): SimProfileKeyStatistics?
+            @Bind("simProfile") simProfile: String): List<KeyValuePair>
 
 
-    class ProfileStatsMapper : ResultSetMapper<SimProfileKeyStatistics> {
+    fun getProfileStats(
+            @Bind("hlrId") hlrId: Long,
+            @Bind("simProfile") simProfile: String): SimProfileKeyStatistics {
+
+        val keyValuePairs = mutableMapOf<String, Long>()
+
+        getProfileStatsAsKeyValuePairs(hlrId, simProfile).forEach { keyValuePairs.put(it.key, it.value) }
+        val noOfEntries = keyValuePairs.get("NO_OF_ENTRIES")!!
+        val noOfUnallocatedEntries = keyValuePairs.get("NO_OF_UNALLOCATED_ENTRIES")!!
+
+        return SimProfileKeyStatistics(
+                noOfEntries = noOfEntries,
+                noOfUnallocatedEntries = noOfUnallocatedEntries)
+    }
+
+
+    class SimProfileKeyStatistics (val noOfEntries: Long, val noOfUnallocatedEntries: Long)
+
+    class KeyValueMapper : ResultSetMapper<KeyValuePair> {
         @Throws(SQLException::class)
-        override fun map(index: Int, row: ResultSet, ctx: StatementContext): SimProfileKeyStatistics? {
+        override fun map(index: Int, row: ResultSet, ctx: StatementContext): KeyValuePair? {
             if (row.isAfterLast) {
                 return null
             }
 
-            val noOfEntries = row.getLong("NO_OF_ENTRIES")
-            return SimProfileKeyStatistics(noOfEntries=noOfEntries)
+            val value = row.getLong("VALUE")
+            val key = row.getString("KEY")
+            return KeyValuePair(key  = key, value = value)
         }
     }
 
-    data class SimProfileKeyStatistics(val noOfEntries: Long)
+    data class KeyValuePair(val key: String, val value: Long)
 }

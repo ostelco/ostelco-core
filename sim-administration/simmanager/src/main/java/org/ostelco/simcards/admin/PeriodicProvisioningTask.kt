@@ -7,7 +7,15 @@ import org.ostelco.simcards.inventory.SimInventoryDAO
 import java.io.PrintWriter
 
 
-
+/**
+ * A dropwizard "task" that is intended to be invoked as an administrative step
+ * by an external agent that is part of the serving system, not a customer of it.
+ *
+ * The task implements preallocation of profiles in both HLR and SM-DP+ so that
+ * there will be a number of profiles available for quick allocation to customers
+ * without having to synchronously wait for a profile to be provisioned by these
+ * two.x
+ */
 
 class PreallocateProfilesTask(val simInventoryDAO: SimInventoryDAO) : Task("preallocate_sim_profiles") {
 
