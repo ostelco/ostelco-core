@@ -5,6 +5,8 @@ import io.dropwizard.jdbi.DBIFactory
 import io.dropwizard.testing.ConfigOverride
 import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
+import junit.framework.Assert.assertEquals
+import junit.framework.Assert.assertTrue
 import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.client.ClientProperties
 import org.junit.*
@@ -288,6 +290,7 @@ class SimAdministrationTest {
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
 
         val hlrs = simDao.getListOfHLRs()
-        println("HLRs = $hlrs")
+        assertEquals(1,hlrs.size)
+        assertTrue(hlrs.contains("Foo"))
     }
 }
