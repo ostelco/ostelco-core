@@ -7,7 +7,7 @@
 ##
 
 DEPENDENCIES="kubectl docker gcloud"
-for DEP in $DEPENDENCIDES ; do 
+for DEP in $DEPENDENCIES ; do 
     if  [[ -z "$(which  $DEP)" ]] ; then
 	echo "$0 ERROR: Missing dependency $DEP"
 	exit 1
