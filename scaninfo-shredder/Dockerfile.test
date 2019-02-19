@@ -7,7 +7,7 @@ LABEL maintainer="dev@redotter.sg"
 #
 
 COPY script/start.sh /start.sh
-COPY config/pantel-prod.json /secret/pantel-prod.json
+COPY config/prime-service-account.json /secret/prime-service-account.json
 COPY config/config.yaml /config/config.yaml
 COPY build/libs/bq-metrics-extractor-uber.jar /scaninfo-shredder.jar
 

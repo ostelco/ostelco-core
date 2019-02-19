@@ -194,7 +194,7 @@ spec:
       volumes:
       - name: secret-config
         secret:
-          secretName: pantel-prod.json
+          secretName: prime-service-account.json
       - name: api-ostelco-ssl
         secret:
           secretName: api-ostelco-ssl

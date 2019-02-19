@@ -70,7 +70,7 @@ gcloud container builds submit \
 ## Secrets
 
 ```bash
-kubectl create secret generic pantel-prod.json --from-file prime/config/pantel-prod.json
+kubectl create secret generic prime-service-account.json --from-file prime/config/prime-service-account.json
 kubectl create secret generic imeiDb.csv.zip --from-file imeiDb.csv.zip
 ```
 
@@ -202,7 +202,7 @@ gcloud container node-pools delete default-pool \
  * Create k8s secrets
 
 ```bash
-kubectl create secret generic pantel-prod.json --from-file prime/config/pantel-prod.json
+kubectl create secret generic prime-service-account.json --from-file prime/config/prime-service-account.json
 ```
 
 Note: To update the secrets defined using yaml, delete and created them again. They are not updated.

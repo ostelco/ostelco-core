@@ -9,7 +9,7 @@ import org.ostelco.prime.storage.firebase.FirebaseConfigRegistry
 
 fun initFirebase() {
     FirebaseConfigRegistry.firebaseConfig = FirebaseConfig(
-            configFile = "../../prime/config/pantel-prod.json",
+            configFile = "../../prime/config/prime-service-account.json",
             rootPath = "v2")
 }
 

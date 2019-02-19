@@ -234,7 +234,7 @@ Notes
 Make a certificate https://console.cloud.google.com/apis/credentials
 To authenticate
 
-     export GOOGLE_APPLICATION_CREDENTIALS=/some/path/pantel-credentials.json
+     export GOOGLE_APPLICATION_CREDENTIALS=/some/path/prime-service-account.json
 
 then
 
@@ -255,7 +255,7 @@ To authenticvate Authenticate
 
 Set your project:
 
-   gcloud config set project pantel
+   gcloud config set project GCP_PROJECT_ID
 
 .. or some other project
 

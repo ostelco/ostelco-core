@@ -6,7 +6,7 @@ modules:
       timeout: 3s
 - type: firebase
   config:
-    configFile: config/pantel-prod.json
+    configFile: config/prime-service-account.json
     rootPath: test
 - type: neo4j
   config:
@@ -26,7 +26,7 @@ modules:
 - type: stripe-payment-processor
 - type: firebase-app-notifier
   config:
-    configFile: config/pantel-prod.json
+    configFile: config/prime-service-account.json
 - type: admin
 - type: scaninfo-store
   config:
