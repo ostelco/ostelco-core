@@ -9,30 +9,30 @@ import java.io.PrintWriter
 
 
 
-class PreallocateProfiles(val simInventoryDAO: SimInventoryDAO) : Task("preallocate_sim_profiles") {
+class PreallocateProfilesTask(val simInventoryDAO: SimInventoryDAO) : Task("preallocate_sim_profiles") {
 
     @Throws(Exception::class)
     override fun execute(parameters: ImmutableMultimap<String, String>, output: PrintWriter) {
 
+        preallocateProfiles()
+    }
+
+    /**
+     * Made public to be testable.   Perform
+     * allocation of profiles so that if possible, there will be tasks available for
+     * provisioning.
+     */
+    fun preallocateProfiles() {
         var hlrs: Collection<HlrAdapter> = simInventoryDAO.getHlrAdapters()
 
-        /*
         for (hlr in hlrs) {
             val profiles: Collection<String> = simInventoryDAO.getProfileNamesForHlr(hlr.id)
             for (profile in profiles) {
-                val profileStats: SimInventoryDAO.SimProfileKeyStatistics = simInventoryDAO.getProfileStats(hlr, profile)
+                val profileStats = simInventoryDAO.getProfileStats(hlr.id, profile)
+
+                // XXX TODO regulate & log based on profileStats.
 
             }
-        }*/
-
-        // TODO:
-        // * List all of the HLRs
-        // * For each HLR, figure out
-        //    - How many profiles are available for respectively android and default
-        //    - If the numbers are below low-water marks, preallocate a chunk.  That chunk
-        //      should be sufficiently small to ensure that the task will terminate in a reasonable
-        //      amount of time
-        //    - If the amount of available SIMs are getting low (for some definition of low), then
-        //      sound the alert via logging or some other method.
+        }
     }
 }

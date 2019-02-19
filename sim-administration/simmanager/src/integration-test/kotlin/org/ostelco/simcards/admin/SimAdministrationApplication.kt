@@ -75,6 +75,6 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
 
         // Add task that should be triggered periodically by external
         // cron job via tasks/preallocate_sim_profiles url.
-        env.admin().addTask(PreallocateProfiles(this.DAO));
+        env.admin().addTask(PreallocateProfilesTask(this.DAO));
     }
 }
