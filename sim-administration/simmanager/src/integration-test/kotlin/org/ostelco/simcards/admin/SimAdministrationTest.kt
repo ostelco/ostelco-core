@@ -310,7 +310,6 @@ class SimAdministrationTest {
         assertNotNull(stats)
     }
 
-
     // XXX This one should be in a separate file, but then we need to refactor
     //     out the fixture components first, so as a prelimnary step we'll just
     //     put it here

@@ -554,7 +554,9 @@ abstract class SimInventoryDAO {
      */
     @RegisterMapper(ProfileStatsMapper::class)
     @SqlQuery("""SELECT  *  FROM sim_entries WHERE hlrId = :hlrId AND profile = :simProfile""")
-    abstract fun getProfileStats(@Bind("hlrId") hlrId: Long, @Bind("simProfile") simProfile: String): SimProfileKeyStatistics?
+    abstract fun getProfileStats(
+            @Bind("hlrId") hlrId: Long,
+            @Bind("simProfile") simProfile: String): SimProfileKeyStatistics?
 
 
     class ProfileStatsMapper : ResultSetMapper<SimProfileKeyStatistics> {
