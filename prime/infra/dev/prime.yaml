@@ -278,9 +278,50 @@ spec:
               name: jumio-secrets
               key: apiSecret
         - name: GOOGLE_APPLICATION_CREDENTIALS
-          value: /secret/pantel-prod.json
+          value: /secret/prime-service-account.json
         - name: GCP_PROJECT_ID
           value: _GCP_PROJECT_ID
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: simmgr-test-secrets
+              key: dbUser
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: simmgr-test-secrets
+              key: dbPassword
+        - name: DB_URL
+          valueFrom:
+            secretKeyRef:
+              name: simmgr-test-secrets
+              key: dbUrl
+        - name: WG2_USER
+          valueFrom:
+            secretKeyRef:
+              name: simmgr-test-secrets
+              key: wg2User
+        - name: WG2_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: simmgr-test-secrets
+              key: wg2ApiKey
+        - name: WG2_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: simmgr-test-secrets
+              key: wg2Endpoint
+        - name: ES2PLUS_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: simmgr-test-secrets
+              key: es2plusEndpoint
+        - name: FUNCTION_REQUESTER_IDENTIFIER
+          valueFrom:
+            secretKeyRef:
+              name: simmgr-test-secrets
+              key: functionRequesterIdentifier
+
         volumeMounts:
         - name: secret-config
           mountPath: "/secret"
@@ -291,6 +332,9 @@ spec:
         - name: scaninfo-keysets
           mountPath: "/scaninfo-keysets"
           readOnly: true
+        - name: keystore
+          mountPath: "/certs"
+          readOnly: true
         ports:
         - containerPort: 8080
         - containerPort: 8081
@@ -299,7 +343,7 @@ spec:
       volumes:
       - name: secret-config
         secret:
-          secretName: pantel-prod.json
+          secretName: prime-service-account.json
       - name: api-ostelco-ssl
         secret:
           secretName: api-ostelco-ssl
@@ -312,5 +356,11 @@ spec:
       - name: metrics-ostelco-ssl
         secret:
           secretName: metrics-ostelco-ssl
+      - name: keystore
+        secret:
+          secretName: simmgr-test-secrets
+          items:
+            - key: idemiaClientCert
+              path: idemia-client-cert.jks
       - name: config-data
         emptyDir: {}
