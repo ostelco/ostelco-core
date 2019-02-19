@@ -79,6 +79,7 @@ if [ $? -ne 0 ]; then
     echo "$0 ERROR: Deployment to kubernetes failed. Please review and try again"
     exit 1
 else 
-    echo "$0 SUCCESS.  Deployment succeeded."
-    exit 0
+    echo "$0 SUCCESS.  Deployment of new image  succeeded."
 fi
+
+
