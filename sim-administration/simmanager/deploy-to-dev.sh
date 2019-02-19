@@ -6,6 +6,7 @@
 ##  and to deploy it to  a kubernetes cluster.
 ##
 
+<<<<<<< HEAD
 
 DEPENDENCIES="kubectl docker gcloud"
 for DEP in $DEPENDENCIDES ; do 
@@ -42,22 +43,22 @@ kubectl config use-context "$TARGET_CLUSTER_CONTEXT"
 # Extract the project ID from gcloud and
 # latest tag from git.  We'll use both of these when naming the
 # docker image we're building.
-PROJECT_ID=$(gcloud config get-value project -q 2> /dev/null)
+GCP_PROJECT_ID=$(gcloud config get-value project -q 2> /dev/null)
 TAG=$(git log -1 --pretty=format:%h)-dev
 
 
 
 # Then build a new docker image and pushing it to the
 # registry for the project.
-echo "Building eu.gcr.io/${PROJECT_ID}/simmanager:${TAG}"
+echo "Building eu.gcr.io/${GCP_PROJECT_ID}/simmanager:${TAG}"
 
-docker build -t eu.gcr.io/${PROJECT_ID}/simmanager:${TAG} .
+docker build -t eu.gcr.io/${GCP_PROJECT_ID}/simmanager:${TAG} .
 if [ $? -ne 0 ]; then
     echo "$0 ERROR: Building docker image failed.  Please review Dockerfile."
     exit 1
 fi
 
-docker push eu.gcr.io/${PROJECT_ID}/simmanager:${TAG}
+docker push eu.gcr.io/${GCP_PROJECT_ID}/simmanager:${TAG}
 
 if [ $? -ne 0 ]; then
     echo "$0 ERROR: Not able to push to registry."
@@ -68,7 +69,7 @@ fi
 
 
 # finally deploying it
-echo "Deploying eu.gcr.io/${PROJECT_ID}/simmanager:${TAG} to GKE"
+echo "Deploying eu.gcr.io/${GCP_PROJECT_ID}/simmanager:${TAG} to GKE"
 
 # A bit of ghetto-style templating here to create the actual
 # config for the kubectl...
@@ -81,5 +82,3 @@ if [ $? -ne 0 ]; then
 else 
     echo "$0 SUCCESS.  Deployment of new image  succeeded."
 fi
-
-

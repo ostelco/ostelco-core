@@ -50,7 +50,7 @@ import com.google.cloud.bigquery.Job as BQJob
  *        help: Number of active users
  *        resultColumn: count
  *        sql: >
- *        SELECT count(distinct user_pseudo_id) AS count FROM `pantel-2decb.analytics_160712959.events_*`
+ *        SELECT count(distinct user_pseudo_id) AS count FROM `GCP_PROJECT_ID.analytics_160712959.events_*`
  *        WHERE event_name = "first_open"
  *        LIMIT 1000
  *

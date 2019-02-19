@@ -262,7 +262,7 @@ Set your project:
 Run a script to get some data, e.g.
 
 
-    bq head -n 10 pantel-2decb:data_consumption.hourly_consumption
+    bq head -n 10 $GCP_PROJECT_ID:data_consumption.hourly_consumption
 
 to get ten lines of consumption data displayed.
 

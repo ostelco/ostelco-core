@@ -25,7 +25,7 @@ modules:
     protocol: bolt+routing
 - type: analytics
   config:
-    projectId: pantel-2decb
+    projectId: ${GCP_PROJECT_ID}
     dataTrafficTopicId: ${DATA_TRAFFIC_TOPIC}
     purchaseInfoTopicId: ${PURCHASE_INFO_TOPIC}
     activeUsersTopicId: ${ACTIVE_USERS_TOPIC}
@@ -45,6 +45,7 @@ modules:
 - type: scaninfo-store
   config:
     keysetFilePathPrefix: /scaninfo-keysets/encrypt_key
+    namespace: ${DATASTORE_NAMESPACE:-""}
 
 server:
   applicationConnectors:

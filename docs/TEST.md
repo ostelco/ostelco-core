@@ -2,7 +2,7 @@
 
 ### Setup
 
- * Configure firebase project - `pantel-2decb`
+ * Configure firebase project - `GCP_PROJECT_ID`
  
  * Save `pantel-prod.json` in all folders where this file is added in `.gitignore`.  You can find these directories by
    executing the command:

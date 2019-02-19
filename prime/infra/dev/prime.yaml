@@ -225,7 +225,7 @@ spec:
           name: api-ostelco-ssl
           readOnly: true
       - name: prime
-        image: eu.gcr.io/pantel-2decb/prime:PRIME_VERSION
+        image: eu.gcr.io/_GCP_PROJECT_ID/prime:PRIME_VERSION
         imagePullPolicy: Always
         env:
         - name: SLACK_CHANNEL
@@ -279,6 +279,8 @@ spec:
               key: apiSecret
         - name: GOOGLE_APPLICATION_CREDENTIALS
           value: /secret/pantel-prod.json
+        - name: GCP_PROJECT_ID
+          value: _GCP_PROJECT_ID
         volumeMounts:
         - name: secret-config
           mountPath: "/secret"

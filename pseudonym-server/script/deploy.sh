@@ -20,10 +20,10 @@ if [ ! -f ${CHECK_REPO} ]; then
     exit 1
 fi
 
-PROJECT_ID="$(gcloud config get-value project -q)"
+GCP_PROJECT_ID="$(gcloud config get-value project -q)"
 BRANCH_NAME=$(git branch | grep \* | cut -d ' ' -f2)
 
-echo PROJECT_ID=${PROJECT_ID}
+echo GCP_PROJECT_ID=${GCP_PROJECT_ID}
 echo BRANCH_NAME=${BRANCH_NAME}
 
 echo "Deploying $module to GKE"

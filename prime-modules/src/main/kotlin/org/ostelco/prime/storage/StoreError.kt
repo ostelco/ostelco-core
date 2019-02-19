@@ -29,3 +29,8 @@ class FileDownloadError(
         filename: String,
         status: String,
         error: InternalError? = null) : StoreError("Download Error", filename,  message = "File download error : $filename, status : $status", error = error)
+
+class FileDeleteError(
+        filename: String,
+        status: String,
+        error: InternalError? = null) : StoreError("Delete failed", filename,  message = "File delete error : $filename, status : $status", error = error)
