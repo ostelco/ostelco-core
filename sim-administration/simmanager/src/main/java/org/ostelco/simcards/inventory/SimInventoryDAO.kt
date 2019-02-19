@@ -545,17 +545,23 @@ abstract class SimInventoryDAO {
      * Find the names of profiles that are associated with
      * a particular HLR.
      */
-    @SqlQuery("""SELECT DISTINCT profile  FROM sim_entries""")
-    abstract fun getProfileNamesForHlr(hlrName: String): List<String>
+    @SqlQuery("""SELECT DISTINCT profile  FROM sim_entries WHERE hlrId = :hlrId""")
+    abstract fun getProfileNamesForHlr(@Bind("hlrId") hlrId: Long): List<String>
 
 
     /**
      * Get key numbers from a particular named Sim profile.
-
-    abstract fun getProfileStats(hlr:String, simProfile:String):SimProfileKeyStatistics?
-
-
-
-    class SimProfileKeyStatistics
      */
+    @RegisterMapper(ProfileStatsMapper::class)
+    @SqlQuery("""SELECT  *  FROM sim_entries WHERE hlrId = :hlrId AND profile = :simProfile""")
+    abstract fun getProfileStats(@Bind("hlrId") hlrId: Long, @Bind("simProfile") simProfile: String): SimProfileKeyStatistics?
+
+
+    class ProfileStatsMapper : ResultSetMapper<SimProfileKeyStatistics> {
+        @Throws(SQLException::class)
+        override fun map(index: Int, row: ResultSet, ctx: StatementContext): SimProfileKeyStatistics? {
+            return SimProfileKeyStatistics()
+        }
+    }
+    class SimProfileKeyStatistics
 }

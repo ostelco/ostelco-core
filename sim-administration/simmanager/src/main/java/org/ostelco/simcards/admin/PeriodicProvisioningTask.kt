@@ -14,15 +14,17 @@ class PreallocateProfiles(val simInventoryDAO: SimInventoryDAO) : Task("prealloc
     @Throws(Exception::class)
     override fun execute(parameters: ImmutableMultimap<String, String>, output: PrintWriter) {
 
-        var hlrs : Collection<HlrAdapter> = simInventoryDAO.getHlrAdapters()
+        var hlrs: Collection<HlrAdapter> = simInventoryDAO.getHlrAdapters()
 
-       /* for (hlr in hlrs) {
-            val profiles : Collection<String> = simInventoryDAO.getProfileNames(hlr.id)
-            for (profileStats: SimInventoryDAO.SimProfileKeyStatistics in simInventory.getProfileStats(hlr)) {
+        /*
+        for (hlr in hlrs) {
+            val profiles: Collection<String> = simInventoryDAO.getProfileNamesForHlr(hlr.id)
+            for (profile in profiles) {
+                val profileStats: SimInventoryDAO.SimProfileKeyStatistics = simInventoryDAO.getProfileStats(hlr, profile)
 
             }
-        }
-        */
+        }*/
+
         // TODO:
         // * List all of the HLRs
         // * For each HLR, figure out

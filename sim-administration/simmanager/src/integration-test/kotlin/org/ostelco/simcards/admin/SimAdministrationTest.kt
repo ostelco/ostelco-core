@@ -6,12 +6,13 @@ import io.dropwizard.testing.ConfigOverride
 import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
 import junit.framework.Assert.assertEquals
-import junit.framework.Assert.assertTrue
+import junit.framework.Assert.assertNotNull
 import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.client.ClientProperties
 import org.junit.*
 import org.ostelco.simcards.inventory.HlrState
 import org.ostelco.simcards.inventory.SimEntry
+import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SmDpPlusState
 import org.ostelco.simcards.smdpplus.SmDpPlusApplication
 import org.skife.jdbi.v2.DBI
@@ -97,6 +98,7 @@ class SimAdministrationTest {
     class KFixedHostPortGenericContainer(imageName: String) : FixedHostPortGenericContainer<KFixedHostPortGenericContainer>(imageName)
 
     private val hlrName = "Foo"
+    private val hlrId = 1L
     private val profileVendor = "Bar"
     private val phoneType = "rababara"
     private val expectedProfile = "IPHONE_PROFILE_2"
@@ -283,20 +285,30 @@ class SimAdministrationTest {
     }
 
 
+
     @Test
     fun testGetListOfHlrs() {
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
 
         val hlrs = simDao.getHlrAdapters()
         assertEquals(1,hlrs.size)
-        assertTrue(hlrs.map{it.name}.contains(hlrName))
+        assertEquals(hlrName, hlrs[0].name)
+        assertEquals(hlrId, hlrs[0].id)
     }
 
 
     @Test
-    fun getProfilesForHlr() {
+    fun testGetProfilesForHlr() {
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
-        val profiles : List<String> = simDao.getProfileNamesForHlr(hlrName)
-        assertEquals(1, hlrs.size)
+        val profiles : List<String> = simDao.getProfileNamesForHlr(hlrId)
+        assertEquals(1, profiles.size)
+        assertEquals(expectedProfile, profiles.get(0))
+    }
+
+    @Test
+    fun  testGetProfileStats() {
+        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
+        val stats : SimInventoryDAO.SimProfileKeyStatistics? = simDao.getProfileStats(hlrId, expectedProfile)
+        assertNotNull(stats)
     }
 }
