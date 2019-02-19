@@ -532,4 +532,10 @@ abstract class SimInventoryDAO {
         else
             null
     }
+
+    /**
+     * Find all the different HLRs that are present.
+     */
+    @SqlQuery("""SELECT name FROM hlr_adapters""")
+    abstract fun getListOfHLRs(): Collection<String>
 }

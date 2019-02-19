@@ -6,10 +6,20 @@ import org.ostelco.simcards.inventory.SimInventoryDAO
 import java.io.PrintWriter
 
 
-class PreallocateProfiles(dao: SimInventoryDAO) : Task("preallocate_sim_profiles") {
+class PreallocateProfiles(val simInventoryDAO: SimInventoryDAO) : Task("preallocate_sim_profiles") {
 
     @Throws(Exception::class)
     override fun execute(parameters: ImmutableMultimap<String, String>, output: PrintWriter) {
+
+        /* TODO: This is commented out just to  permit merging of the rest of the  branch
+           to develop. Laziness & convenience.
+        var hlrs : Collection<String> = simInventoryDAO.getListOfHLRs()
+
+        for (hlr in hlrs) {
+            for (profile in simInventory.getProfile)
+        }
+*/
+
         // TODO:
         // * List all of the HLRs
         // * For each HLR, figure out
