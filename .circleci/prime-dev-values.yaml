@@ -10,7 +10,7 @@ prime:
   pullPolicy: Always
   configDataBucket: "gs://pi-ostelco-dev-prime-files/dev"
   secrets:
-    - secretName: "prime-sa-key-temp"  
+    - secretName: "prime-sa-key"  
       containerMountPath: "/secret"
   env: 
     FIREBASE_ROOT_PATH: dev
@@ -20,8 +20,8 @@ prime:
     DATA_TRAFFIC_TOPIC: data-traffic
     PURCHASE_INFO_TOPIC: purchase-info
     ACTIVE_USERS_TOPIC: active-users
-    GOOGLE_CREDENTIALS_PATH: "/secret/pantel-prod.json"
-    PROJECT_ID: pi-ostelco-dev 
+    GOOGLE_CREDENTIALS_PATH: "/secret/prime-sa.json"
+    GCP_PROJECT_ID: pi-ostelco-dev 
 
 
   envFromSecret:
