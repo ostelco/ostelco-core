@@ -553,7 +553,7 @@ abstract class SimInventoryDAO {
      * Get key numbers from a particular named Sim profile.
      */
     @RegisterMapper(ProfileStatsMapper::class)
-    @SqlQuery("""SELECT  count(*)  AS NOOFENTRIES  FROM sim_entries WHERE hlrId = :hlrId AND profile = :simProfile""")
+    @SqlQuery("""SELECT  count(*)  AS NO_OF_ENTRIES  FROM sim_entries WHERE hlrId = :hlrId AND profile = :simProfile""")
     abstract fun getProfileStats(
             @Bind("hlrId") hlrId: Long,
             @Bind("simProfile") simProfile: String): SimProfileKeyStatistics?
@@ -566,7 +566,7 @@ abstract class SimInventoryDAO {
                 return null
             }
 
-            val noOfEntries = row.getLong("NOOFENTRIES")
+            val noOfEntries = row.getLong("NO_OF_ENTRIES")
             return SimProfileKeyStatistics(noOfEntries=noOfEntries)
         }
     }
