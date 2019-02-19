@@ -30,11 +30,11 @@ jobs:
             gsutil cp gs://pi-ostelco-core-gradle-cache/caches.tar.gz ~/caches.tar.gz
             mkdir -p ~/.gradle/caches/
             tar -xzvf ~/caches.tar.gz -C ~/.gradle/caches/ .
-      # Copying pantel prod secret to locations where it is needed for docker compose tests.
+      # Copying prime-service-account secret file to locations where it is needed for docker compose tests.
       - run:
-          name: Distribute google secret from env var.
+          name: Distribute prime-service-account.json secret from env var.
           command: |
-            scripts/distribute-google-secrets.sh
+            scripts/distribute-prime-service-account-secrets.sh
       # run gradle build. Skipping neo4j tests as they fail
       - run:
           name: Build entire repo

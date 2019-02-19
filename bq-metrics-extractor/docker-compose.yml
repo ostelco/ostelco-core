@@ -18,7 +18,7 @@ services:
     depends_on:
     - pushgateway
     environment:
-    - GOOGLE_APPLICATION_CREDENTIALS=/secret/pantel-prod.json
+    - GOOGLE_APPLICATION_CREDENTIALS=/secret/prime-service-account.json
 
   emulator:
     container_name: emulator

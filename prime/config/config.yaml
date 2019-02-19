@@ -17,7 +17,7 @@ modules:
     csvFile: /config-data/imeiDb.csv
 - type: firebase
   config:
-    configFile: ${GOOGLE_CREDENTIALS_PATH}
+    configFile: /secret/prime-service-account.json
     rootPath: ${FIREBASE_ROOT_PATH}
 - type: neo4j
   config:
@@ -39,7 +39,7 @@ modules:
 - type: stripe-payment-processor
 - type: firebase-app-notifier
   config:
-    configFile: ${GOOGLE_CREDENTIALS_PATH}
+    configFile: /secret/prime-service-account.json
 - type: admin
 - type: graphql
 - type: scaninfo-store
