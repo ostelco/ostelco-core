@@ -18,7 +18,7 @@ sourceSets {
   }
 }
 
-version = "1.22.2"
+version = "1.23.0"
 
 repositories {
   maven {
@@ -45,6 +45,7 @@ dependencies {
   runtimeOnly project(':imei-lookup')
   runtimeOnly project(':jersey')
   runtimeOnly project(':scaninfo-datastore')
+  runtimeOnly project(':sim-administration:simmanager')
 
   implementation "io.dropwizard:dropwizard-http2:$dropwizardVersion"
   runtimeOnly "io.dropwizard:dropwizard-json-logging:$dropwizardVersion"

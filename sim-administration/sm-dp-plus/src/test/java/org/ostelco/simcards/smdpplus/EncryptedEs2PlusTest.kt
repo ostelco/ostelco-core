@@ -1,8 +1,8 @@
 package org.ostelco.simcards.smdpplus
 
 import io.dropwizard.testing.DropwizardTestSupport
-import junit.framework.Assert.assertEquals
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
@@ -56,7 +56,7 @@ class EncryptedEs2PlusTest {
     companion object {
         val SUPPORT = DropwizardTestSupport<SmDpPlusAppConfiguration>(
                 SmDpPlusApplication::class.java,
-                "config.yml"
+                "src/test/resources/config.yml"
         )
     }
 }
