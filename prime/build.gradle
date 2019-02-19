@@ -18,7 +18,7 @@ sourceSets {
   }
 }
 
-version = "1.22.1"
+version = "1.22.2"
 
 repositories {
   maven {
@@ -68,7 +68,7 @@ configurations {
 }
 
 task integration(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
-  environment("GOOGLE_APPLICATION_CREDENTIALS", "config/pantel-prod.json")
+  environment("GOOGLE_APPLICATION_CREDENTIALS", "config/prime-service-account.json")
   testClassesDirs = sourceSets.integration.output.classesDirs
   classpath = sourceSets.integration.runtimeClasspath
 }

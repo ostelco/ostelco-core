@@ -5,7 +5,7 @@ services:
     container_name: dataflow-pipelines
     build: .
     environment:
-      - GOOGLE_APPLICATION_CREDENTIALS=/config/pantel-prod.json
+      - GOOGLE_APPLICATION_CREDENTIALS=/config/prime-service-account.json
       - PROJECT=${GCP_PROJECT_ID}
       - JOB_NAME=data-traffic-dev
       - PUBSUB_TOPIC=data-traffic-dev
