@@ -1,9 +1,17 @@
 package org.ostelco.simcards.inventory
 
+import com.fasterxml.jackson.databind.JsonSerializer
+import org.apache.http.client.HttpClient
+import org.apache.http.impl.client.CloseableHttpClient
 import org.hibernate.validator.constraints.NotEmpty
+import org.ostelco.sim.es2plus.ProfileStatus
+import org.ostelco.simcards.admin.HlrConfig
+import org.ostelco.simcards.admin.ProfileVendorConfig
+import org.ostelco.simcards.admin.SimAdministrationConfiguration
 import java.io.IOException
 import java.io.InputStream
 import javax.ws.rs.*
+import javax.ws.rs.client.Client
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
@@ -12,8 +20,10 @@ import javax.ws.rs.core.Response
 ///  The web resource using the protocol domain model.
 ///
 
-@Path("/ostelco/sim-inventory/{hlr}/")
-class SimInventoryResource(private val dao: SimInventoryDAO) {
+@Path("/ostelco/sim-inventory/{hlrVendors}")
+class SimInventoryResource(private val httpClient: CloseableHttpClient,
+                           private val config: SimAdministrationConfiguration,
+                           private val dao: SimInventoryDAO) {
 
     companion object {
         private fun <T> assertNonNull(v: T?): T {
@@ -25,158 +35,185 @@ class SimInventoryResource(private val dao: SimInventoryDAO) {
         }
     }
 
+    @GET
+    @Path("profileStatusList/{iccid}")
     @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
+    fun getSimProfileStatus(
+            @NotEmpty @PathParam("hlrVendors") hlr: String,
+            @NotEmpty @PathParam("iccid") iccid: String): ProfileStatus? {
+        val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
+        val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
+        assertCorrectHlr(hlr, hlr == hlrAdapter.name)
+
+        val simVendorAdapter = assertNonNull(dao.getProfileVendorAdapterById(
+                simEntry.profileVendorId))
+        val config: ProfileVendorConfig = assertNonNull(config.profileVendors.firstOrNull {
+            it.name == simVendorAdapter.name
+        })
+
+        return simVendorAdapter.getProfileStatus(httpClient, config, iccid)
+    }
+
+    @GET
     @Path("iccid/{iccid}")
-    @GET
-    fun findByIccid(
-            @NotEmpty @PathParam("hlr") hlr: String,
+    @Produces(MediaType.APPLICATION_JSON)
+    fun findSimProfileByIccid(
+            @NotEmpty @PathParam("hlrVendors") hlr: String,
             @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
-
-        val sim = assertNonNull(dao.getSimProfileByIccid(iccid))
-        assertHlrsEqual(hlr, sim.hlrId)
-        return sim
+        val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
+        val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
+        assertCorrectHlr(hlr, hlr == hlrAdapter.name)
+        return simEntry
     }
 
+    @POST
+    @Path("iccid/{iccid}")
     @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("imsi/{imsi}")
-    @GET
-    fun findByImsi(
-            @NotEmpty @PathParam("hlr") hlr: String,
-            @NotEmpty @PathParam("imsi") imsi: String): SimEntry {
-        val sim = assertNonNull(dao.getSimProfileByImsi(imsi))
-        assertHlrsEqual(hlr, sim.hlrId)
-        return sim
-    }
+    fun activateHlrProfileByIccid(
+            @NotEmpty @PathParam("hlrVendors") hlr: String,
+            @NotEmpty @PathParam("iccid") iccid: String): SimEntry? {
+        val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
+        val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
+        assertCorrectHlr(hlr, hlr == hlrAdapter.name)
 
+        val config: HlrConfig = assertNonNull(config.hlrVendors.filter {
+            it.name == hlrAdapter.name
+        }.firstOrNull())
 
-    @Path("msisdn/{msisdn}")
-    @GET
-    fun findByMsisdn(
-            @NotEmpty @PathParam("hlr") hlr: String,
-            @NotEmpty @PathParam("msisdn") msisdn: String): SimEntry {
-        return assertNonNull(dao.getSimProfileByMsisdn(msisdn))
-    }
-
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-
-    @Path("msisdn/{msisdn}/allocate-next-free")
-    @GET
-    fun allocateNextFree(
-            @NotEmpty @PathParam("hlr") hlr: String,
-            @NotEmpty @PathParam("msisdn") msisdn: String): SimEntry {
-        return assertNonNull(dao.allocateNextFreeSimForMsisdn(hlr, msisdn))
-    }
-
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/iccid/{iccid}/activate/all")
-    @GET
-    fun activateByIccid(
-            @NotEmpty @PathParam("hlr") hlr: String,
-            @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
-        val sim = activateHlrProfileByIccid(hlr, iccid)
-        assertHlrsEqual(hlr, sim.hlrId)
-        return if (sim.smdpplus != null) {
-            activateEsimProfileByIccid(hlr, iccid)
-        } else {
-            sim
+        return when (simEntry.hlrState) {
+            HlrState.NOT_ACTIVATED -> {
+                hlrAdapter.activate(httpClient, config, dao, simEntry)
+            }
+            HlrState.ACTIVATED -> {
+                simEntry
+            }
         }
     }
 
-    private fun assertHlrsEqual(hlr1: String, hlr2: String) {
-        if (hlr1 != hlr2) {
-            throw WebApplicationException(
-                    "Attempt to impersonate HLR.  '$hlr1', '$hlr2'",
+    @DELETE
+    @Path("iccid/{iccid}")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun deactivateHlrProfileByIccid(
+            @NotEmpty @PathParam("hlrVendors") hlr: String,
+            @NotEmpty @PathParam("iccid") iccid: String): SimEntry? {
+        val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
+        val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
+        assertCorrectHlr(hlr, hlr == hlrAdapter.name)
+
+        val config: HlrConfig = assertNonNull(config.hlrVendors.filter {
+            it.name == hlrAdapter.name
+        }.firstOrNull())
+
+        return when (simEntry.hlrState) {
+            HlrState.NOT_ACTIVATED -> {
+                simEntry
+            }
+            HlrState.ACTIVATED -> {
+                hlrAdapter.deactivate(httpClient, config, dao, simEntry)
+            }
+        }
+    }
+
+    @GET
+    @Path("imsi/{imsi}")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun findSimProfileByImsi(
+            @NotEmpty @PathParam("hlrVendors") hlr: String,
+            @NotEmpty @PathParam("imsi") imsi: String): SimEntry {
+        val simEntry = assertNonNull(dao.getSimProfileByImsi(imsi))
+        val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
+        assertCorrectHlr(hlr, hlr == hlrAdapter.name)
+        return simEntry
+    }
+
+    @GET
+    @Path("msisdn/{msisdn}")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun findByMsisdn(
+            @NotEmpty @PathParam("hlrVendors") hlr: String,
+            @NotEmpty @PathParam("msisdn") msisdn: String): SimEntry {
+        val simEntry = assertNonNull(dao.getSimProfileByMsisdn(msisdn))
+        val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
+        assertCorrectHlr(hlr, hlr == hlrAdapter.name)
+        return simEntry
+    }
+
+    @POST
+    @Path("esim/all")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun activateAllEsimProfileByIccid(
+            @NotEmpty @PathParam("hlrVendors") hlr: String,
+            @QueryParam("eid") eid: String?,
+            @QueryParam("iccid") iccid: String?,
+            @DefaultValue("_") @QueryParam("phoneType") phoneType: String): SimEntry? {
+        val simEntry = assertNonNull(activateEsimProfileByIccid(hlr, eid, iccid, phoneType))
+        return activateHlrProfileByIccid(hlr, simEntry.iccid)
+    }
+
+    @POST
+    @Path("esim")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun activateEsimProfileByIccid(
+            @NotEmpty @PathParam("hlrVendors") hlr: String,
+            @QueryParam("eid") eid: String?,
+            @QueryParam("iccid") iccid: String?,
+            @DefaultValue("_") @QueryParam("phoneType") phoneType: String): SimEntry? {
+        val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
+        val profile = config.getProfileForPhoneType(phoneType)
+        val simEntry = assertNonNull(if (iccid.isNullOrEmpty())
+            dao.findNextFreeSimProfileForHlr(hlrAdapter.id, profile)
+        else
+            dao.getSimProfileByIccid(iccid))
+        assertCorrectHlr(hlr, hlrAdapter.id == simEntry.hlrId)
+
+        val simVendorAdapter = assertNonNull(dao.getProfileVendorAdapterById(
+                simEntry.profileVendorId))
+        val config: ProfileVendorConfig = assertNonNull(config.profileVendors.filter {
+            it.name == simVendorAdapter.name
+        }.firstOrNull())
+
+        /* As 'confirm-order' message is issued with 'releaseFlag' set to true, the
+           CONFIRMED state should not occur. */
+        return when (simEntry.smdpPlusState) {
+            SmDpPlusState.AVAILABLE -> {
+                simVendorAdapter.activate(httpClient, config, dao, eid, simEntry)
+            }
+            SmDpPlusState.ALLOCATED -> {
+                simVendorAdapter.confirmOrder(httpClient, config, dao, eid, simEntry)
+            }
+            /* ESIM already 'released'. */
+            else -> {
+                simEntry
+            }
+        }
+    }
+
+    private fun assertCorrectHlr(hlr: String, match: Boolean) {
+        if (!match) {
+            throw WebApplicationException("Attempt at impersonating $hlr HLR",
                     Response.Status.BAD_REQUEST)
         }
     }
 
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/iccid/{iccid}/activate/hlr")
-    @GET
-    fun activateHlrProfileByIccid(
-            @NotEmpty @PathParam("hlr") hlr: String,
-            @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
-
-        val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
-        assertHlrsEqual(hlr, simEntry.hlrId)
-        val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
-
-        try {
-            hlrAdapter.activate(simEntry)
-        } catch (e: Exception) {
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
-        }
-        return assertNonNull(dao.setActivatedInHlr(simEntry.id!!))
-    }
-
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/iccid/{iccid}/activate/esim")
-    @GET
-    fun activateEsimProfileByIccid(
-            @NotEmpty @PathParam("hlr") hlr: String,
-            @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
-        val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
-        assertHlrsEqual(hlr, simEntry.hlrId)
-
-        if (simEntry.smdpplus == null) {
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
-        }
-        val smdpPlusAdpter = assertNonNull(dao.getSmdpPlusAdapterByName(simEntry.smdpplus))
-
-        try {
-            smdpPlusAdpter.activateEntry(simEntry)
-        } catch (e: Exception) {
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
-        }
-        return assertNonNull(dao.setActivatedInSmdpPlus(simEntry.id!!))
-    }
-
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/iccid/{iccid}/deactivate/hlr")
-    @GET
-    fun deactrivateByIccid(
-            @NotEmpty @PathParam("hlr") hlr: String,
-            @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
-        val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
-
-        assertHlrsEqual(hlr, simEntry.hlrId)
-        val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
-
-        hlrAdapter.deactivate(simEntry)
-        dao.setActivatedInHlr(simEntry.id!!)
-        return dao.getSimProfileById(simEntry.id)
-    }
-
+    @PUT
+    @Path("import-batch/profilevendor/{simVendor}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.TEXT_PLAIN)
     @Throws(IOException::class)
-    @Path("/import-batch/profilevendor/{profilevendor}")
-    @PUT
     fun importBatch(
-            @NotEmpty @PathParam("hlr") hlr: String,
-            @NotEmpty @PathParam("profilevendor") profilevendor: String,
+            @NotEmpty @PathParam("hlrVendors") hlr: String,
+            @NotEmpty @PathParam("simVendor") simVendor: String,
             csvInputStream: InputStream): SimImportBatch {
-
-        val  pvp  =
-                assertNonNull(dao.getProfilevendorByName(profilevendor))
-
+        val profileVendorAdapter = assertNonNull(dao.getProfileVendorAdapterByName(simVendor))
         val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
 
-        if (!dao.simVendorIsPermittedForHlr(pvp.id, hlrAdapter.id)) {
+        if (!dao.simVendorIsPermittedForHlr(profileVendorAdapter.id, hlrAdapter.id)) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }
-
         return dao.importSims(
                 importer = "importer", // TODO: This is a very strange name for an importer .-)
-                hlr = hlr,
-                profileVendor = profilevendor,
+                hlrId = hlrAdapter.id,
+                profileVendorId = profileVendorAdapter.id,
                 csvInputStream = csvInputStream)
     }
 }

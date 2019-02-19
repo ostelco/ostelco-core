@@ -83,8 +83,7 @@ internal class OcsEventToGrpcResponseMapper(private val ocsAsyncResponseProducer
                     if (request.msccCount > 0) {
                         val msccBuilder = MultipleServiceCreditControl.newBuilder()
                         msccBuilder.setServiceIdentifier(request.getMscc(0).serviceIdentifier)
-                                .setRatingGroup(request.getMscc(0).ratingGroup)
-                                .setValidityTime(86400)
+                                .setRatingGroup(request.getMscc(0).ratingGroup).validityTime = 86400
 
                         if ((request.getMscc(0).reportingReason != ReportingReason.FINAL) && (request.getMscc(0).requested.totalOctets > 0)) {
                             msccBuilder.granted = ServiceUnit.newBuilder()

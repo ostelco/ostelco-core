@@ -1,28 +1,29 @@
 package org.ostelco.prime.ocs.core
 
-import arrow.core.flatMap
-import arrow.core.right
-import arrow.instances.either.monad.flatMap
 import io.grpc.stub.StreamObserver
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.ostelco.ocs.api.*
-import org.ostelco.prime.getLogger
+import org.ostelco.ocs.api.ActivateResponse
+import org.ostelco.ocs.api.CreditControlAnswerInfo
+import org.ostelco.ocs.api.CreditControlRequestInfo
+import org.ostelco.ocs.api.FinalUnitAction
+import org.ostelco.ocs.api.FinalUnitIndication
+import org.ostelco.ocs.api.MultipleServiceCreditControl
+import org.ostelco.ocs.api.ReportingReason
+import org.ostelco.ocs.api.ResultCode
+import org.ostelco.ocs.api.ServiceUnit
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.ocs.analytics.AnalyticsReporter
 import org.ostelco.prime.ocs.consumption.OcsAsyncRequestConsumer
 import org.ostelco.prime.ocs.notifications.Notifications
 import org.ostelco.prime.storage.ClientDataSource
-import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
 
 object OnlineCharging : OcsAsyncRequestConsumer {
 
-    private val logger by getLogger()
-
-    private val threadContext = Executors.newFixedThreadPool(100).asCoroutineDispatcher()
+    var loadUnitTest = false
+    private val loadAcceptanceTest = System.getenv("LOAD_TESTING") == "true"
 
     private val ccaStreamMap = ConcurrentHashMap<String, StreamObserver<CreditControlAnswerInfo>>()
     private val activateStreamMap = ConcurrentHashMap<String, StreamObserver<ActivateResponse>>()
@@ -46,13 +47,11 @@ object OnlineCharging : OcsAsyncRequestConsumer {
 
     override fun creditControlRequestEvent(streamId: String, request: CreditControlRequestInfo) {
 
-        val timestampStart = Instant.now()
-
         val msisdn = request.msisdn
 
         if (msisdn != null) {
 
-            CoroutineScope(threadContext).launch {
+            CoroutineScope(Dispatchers.Default).launch {
 
                 val response = CreditControlAnswerInfo.newBuilder()
                         .setRequestId(request.requestId)
@@ -68,53 +67,66 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                             .newBuilder(mscc)
                             .setValidityTime(86400)
 
-                    storage.consume(msisdn, used, requested).fold({
-                        // ToDo : Should we handle all errors as NotFoundError
-                        response.setResultCode(ResultCode.DIAMETER_USER_UNKNOWN)
-                    }, {
-                        val (granted, balance) = it
 
-                        val grantedTotalOctets = if (mscc.reportingReason != ReportingReason.FINAL
-                                && mscc.requested.totalOctets > 0) {
+                    storage.consume(msisdn, used, requested) { storeResult ->
+                        storeResult.fold(
+                            {
+                                // TODO martin : Should we handle all errors as NotFoundError?
+                                response.resultCode = ResultCode.DIAMETER_USER_UNKNOWN
+                                synchronized(OnlineCharging) {
+                                    ccaStreamMap[streamId]?.onNext(response.build())
+                                }
+                            },
+                            {
+                                val (granted, balance) = it
 
-                            if (granted < mscc.requested.totalOctets) {
-                                responseMscc.finalUnitIndication = FinalUnitIndication.newBuilder()
-                                        .setFinalUnitAction(FinalUnitAction.TERMINATE)
-                                        .setIsSet(true)
-                                        .build()
-                            }
+                                val grantedTotalOctets = if (mscc.reportingReason != ReportingReason.FINAL
+                                        && mscc.requested.totalOctets > 0) {
 
-                            granted
+                                    if (granted < mscc.requested.totalOctets) {
+                                        responseMscc.finalUnitIndication = FinalUnitIndication.newBuilder()
+                                                .setFinalUnitAction(FinalUnitAction.TERMINATE)
+                                                .setIsSet(true)
+                                                .build()
+                                    }
 
-                        } else {
-                            // Use -1 to indicate no granted service unit should be included in the answer
-                            -1
-                        }
+                                    granted
 
-                        responseMscc.granted = ServiceUnit.newBuilder().setTotalOctets(grantedTotalOctets).build()
+                                } else {
+                                    // Use -1 to indicate no granted service unit should be included in the answer
+                                    -1
+                                }
 
-                        responseMscc.resultCode = ResultCode.DIAMETER_SUCCESS
+                                responseMscc.granted = ServiceUnit.newBuilder().setTotalOctets(grantedTotalOctets).build()
 
-                        launch {
-                            AnalyticsReporter.report(
-                                    request = request,
-                                    bundleBytes = balance)
-                        }
+                                responseMscc.resultCode = ResultCode.DIAMETER_SUCCESS
 
-                        launch {
-                            Notifications.lowBalanceAlert(
-                                    msisdn = msisdn,
-                                    reserved = granted,
-                                    balance = balance)
-                        }
-                        response.addMscc(responseMscc)
-                    })
+                                if (!loadUnitTest && !loadAcceptanceTest) {
+                                    launch {
+                                        AnalyticsReporter.report(
+                                                request = request,
+                                                bundleBytes = balance)
+                                    }
+
+                                    launch {
+                                        Notifications.lowBalanceAlert(
+                                                msisdn = msisdn,
+                                                reserved = granted,
+                                                balance = balance)
+                                    }
+                                }
+                                response.addMscc(responseMscc)
+                                synchronized(OnlineCharging) {
+                                    ccaStreamMap[streamId]?.onNext(response.build())
+                                }
+                            })
+                    }
                 }
-                synchronized(OnlineCharging) {
-                    ccaStreamMap[streamId]?.onNext(response.build())
+                else {
+                    synchronized(OnlineCharging) {
+                        ccaStreamMap[streamId]?.onNext(response.build())
+                    }
                 }
-                val timestampStop = Instant.now()
-                logger.info("Latency {} msec ", timestampStop.toEpochMilli() - timestampStart.toEpochMilli())
             }
         }
     }

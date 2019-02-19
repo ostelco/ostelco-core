@@ -2,7 +2,7 @@
 
 ### Setup
 
- * Configure firebase project - `pantel-2decb`
+ * Configure firebase project - `GCP_PROJECT_ID`
  
  * Save `pantel-prod.json` in all folders where this file is added in `.gitignore`.  You can find these directories by
    executing the command:
@@ -30,7 +30,8 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./nginx.key -out ./n
 cp nginx.crt ../../ocsgw/cert/metrics.crt
 ```
 
- * Set Stripe API key as env variable - `STRIPE_API_KEY`
+ * Set Stripe API key as env variable - `STRIPE_API_KEY`.   Note: It is the key denoted as "Secret key" that shuld
+   be set in this env variable.
 
  * Set Stripe Enpoint Secret (for Stripe events) as env variable - `STRIPE_ENDPOINT_SECRET`
  

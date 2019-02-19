@@ -11,17 +11,17 @@ class Notifications extends React.Component {
   onSubmitEmail = (title, message) => {
     //handle form processing here....
     console.log("Search On Submit");
-  }
+  };
   render() {
     return (
-      <div className="container">
+      <div; className="container">
         <AlertMessage />
         <Card>
           <CardBody>
             <CardTitle>Notifications</CardTitle>
-            <NotificationEditor
-              submitLabel="Send Notification"
-              titleLabel="Enter title"
+            <NotificationEditor;
+              submitLabel="Send Notification";
+              titleLabel="Enter title";
               messageLabel="Enter Message"
             />
           </CardBody>
@@ -29,16 +29,16 @@ class Notifications extends React.Component {
         <br />
         <Card>
           <CardBody>
-            <CardTitle>Global Emails</CardTitle>
-            <TextForm
-              onSubmit={this.onSubmitEmail}
-              submitLabel="Send Email"
+            <CardTitle>Global; Emails</CardTitle>
+            <TextForm;
+              onSubmit={this.onSubmitEmail};
+              submitLabel="Send Email";
               inputLabel="Enter email text"
             />
           </CardBody>
         </Card>
-      </div>
-    );
+      </div>;
+  )
   }
 }
 

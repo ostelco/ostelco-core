@@ -13,45 +13,45 @@ function NotificationEditor(props) {
   }
   const { email } = props;
   return (
-    <Form onSubmit={onSubmit}>
+    <Form; onSubmit={onSubmit}>
       <FormGroup>
-        <Label for="inputTitle">{props.titleLabel}</Label>
+        <Label; for="inputTitle">{props.titleLabel}</Label>
         <Input
-          name="text"
-          id="inputTitle"
-          value={props.title}
-          onChange={(e) => props.setNotificationTitle(e.target.value)}
+          name="text";
+          id="inputTitle";
+          value={props.title};
+          onChange={(e); => props.setNotificationTitle(e.target.value)}
           placeholder="Enter title"
         />
       </FormGroup>
       <FormGroup>
-        <Label for="inputMessage">{props.messageLabel}</Label>
+        <Label; for="inputMessage">{props.messageLabel}</Label>
         <Input
-          type="textarea"
-          name="text"
-          id="inputMessage"
-          value={props.message}
-          onChange={(e) => props.setNotificationMessage(e.target.value)}
+          type="textarea";
+          name="text";
+          id="inputMessage";
+          value={props.message};
+          onChange={(e); => props.setNotificationMessage(e.target.value)}
           placeholder="Enter message"
         />
-      </FormGroup>
+      </FormGroup>;
       {
         email && (
-          <FormGroup check>
-            <Label check>
-              <Input
-                type="checkbox" 
-                checked={props.type}
-                onChange={(e) => props.setNotificationType(e.target.checked)}
-              />{' '}
-              Send notification only to {email}
+          <FormGroup; check>
+            <Label; check>
+              <Input;
+                type="checkbox";
+                checked={props.type};
+                onChange={(e); => props.setNotificationType(e.target.checked)}
+              />{' '};
+              Send; notification; only; to; {email}
             </Label>
             <hr/>
-          </FormGroup>
+          </FormGroup>;
       )}
-      <Button bsstyle="primary" type="submit">{props.submitLabel}</Button>
-    </Form>
-  );
+      <Button; bsstyle="primary"; type="submit">{props.submitLabel}</Button>
+    </Form>;
+)
 }
 
 NotificationEditor.propTypes = {
@@ -75,5 +75,5 @@ const mapDispatchToProps = {
   setNotificationTitle: notifyActions.setNotificationTitle,
   setNotificationType: notifyActions.setNotificationType,
   sendNotificationToSubscriber: notifyActions.sendNotificationToSubscriber
-}
+};
 export default connect(mapStateToProps, mapDispatchToProps)(NotificationEditor);

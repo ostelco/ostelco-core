@@ -1,0 +1,73 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: simmanager
+  labels:
+    app: simmanager
+    tier: backend
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: simmanager
+        tier: backend
+    spec:
+      containers:
+        - name: simmanager
+          image: eu.gcr.io/GCP_PROJECT_ID/simmanager:SIMMANAGER_VERSION
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: simmgr-test-secrets
+                  key: dbUser
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: simmgr-test-secrets
+                  key: dbPassword
+            - name: DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: simmgr-test-secrets
+                  key: dbUrl
+            - name: WG2_USER
+              valueFrom:
+                secretKeyRef:
+                  name: simmgr-test-secrets
+                  key: wg2User
+            - name: WG2_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: simmgr-test-secrets
+                  key: wg2ApiKey
+            - name: WG2_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: simmgr-test-secrets
+                  key: wg2Endpoint
+            - name: ES2PLUS_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: simmgr-test-secrets
+                  key: es2plusEndpoint
+            - name: FUNCTION_REQUESTER_IDENTIFIER
+              valueFrom:
+                secretKeyRef:
+                  name: simmgr-test-secrets
+                  key: functionRequesterIdentifier
+          volumeMounts:
+            - name: keystore
+              mountPath: "/certs"
+              readOnly: true
+      volumes:
+        - name: keystore
+          secret:
+            secretName: simmgr-test-secrets
+            items:
+              - key: idemiaClientCert
+                path: idemia-client-cert.jks

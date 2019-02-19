@@ -32,9 +32,9 @@ kubectl exec -it <exporter pod name> -- /bin/bash
 # Run exporter from the above shell
 /export_data.sh
 # This results in 3 csv files in GCS
-1) Data consumption Records: gs://pantel-2decb-dataconsumption-export/<exportID>.csv
-2) Purchase Records: gs://pantel-2decb-dataconsumption-export/<exportID>-purchases.csv
-3) Subscriber to MSISDN mappings: gs://pantel-2decb-dataconsumption-export/<exportID>-sub2msisdn.csv
+1) Data consumption Records: gs://GCP_PROJECT_ID-dataconsumption-export/<exportID>.csv
+2) Purchase Records: gs://GCP_PROJECT_ID-dataconsumption-export/<exportID>-purchases.csv
+3) Subscriber to MSISDN mappings: gs://GCP_PROJECT_ID-dataconsumption-export/<exportID>-sub2msisdn.csv
 
 # Run subsciber reverse lookup from the above shell
 /map_subscribers.sh <exportID>

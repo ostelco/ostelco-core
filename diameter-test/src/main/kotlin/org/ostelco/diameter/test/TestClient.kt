@@ -89,7 +89,7 @@ class TestClient : EventListener<Request, Answer> {
             network.addNetworkReqListener(
                     NetworkReqListener { request ->
                         logger.info("Got a request")
-                        resultAvps = request.getAvps()
+                        resultAvps = request.avps
                         DiameterUtilities().printAvps(resultAvps)
                         isRequestReceived = true
                         null
@@ -175,7 +175,7 @@ class TestClient : EventListener<Request, Answer> {
             val ccr = JCreditControlRequestImpl(request)
             try {
                 session.send(ccr.message, this)
-                logger.info("Sending request of type [" + RequestType.getTypeAsString(ccr.getRequestTypeAVPValue()) + "]");
+                logger.info("Sending request of type [" + RequestType.getTypeAsString(ccr.requestTypeAVPValue) + "]")
                 return true
             } catch (e: InternalException) {
                 logger.error("Failed to send request", e)

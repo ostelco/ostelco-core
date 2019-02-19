@@ -71,7 +71,7 @@ data class ScanResult(
         val rejectReason: String?)
 
 data class ScanInformation(
-        val scanId:String,
+        val scanId: String,
         val countryCode: String,
         val status: ScanStatus,
         val scanResult: ScanResult?
@@ -84,15 +84,31 @@ data class ScanInformation(
 }
 
 data class VendorScanInformation(
-        val scanId: String,                     // Id of the scan
-        val scanDetails: String,                // JSON string representation of all the information from vendor
-        val scanImage: Blob?,                   // image of the scan (JPEG or PNG)
-        val scanImageType: String?,             // type of image (e.g. image/jpg)
-        val scanImageBackside: Blob?,           // back side image of the scan (JPEG or PNG) if available
-        val scanImageBacksideType: String?,     // type of back side image (e.g. image/jpg)
-        val scanImageFace: Blob?,               // face image of the scan (JPEG or PNG) if available
-        val scanImageFaceType: String?          // type of face image (e.g. image/jpg)
+        val id: String,                 // Id of the scan
+        val scanReference: String,      // Jumio transaction reference
+        val details: String,            // JSON string representation of all the information from vendor
+        val images: Map<String, Blob>?  // liveness images (JPEG or PNG) if available
 )
+
+
+data class ScanMetadata(
+        val id: String,                 // Id of the scan
+        val scanReference: String,      // Jumio transaction reference
+        val countryCode: String,        // The country for which the scan was done
+        val customerId: String,         // The owner of the scan
+        val processedTime: Long         // The time when callback was processed.
+)
+
+enum class ScanMetadataEnum(val s: String) {
+    // Property names for Datastore
+    ID("id"),
+    SCAN_REFERENCE("scanReference"),
+    COUNTRY_CODE("countryCode"),
+    CUSTOMER_ID("customerId"),
+    PROCESSED_TIME("processedTime"),
+    // Type name of the Object
+    KIND("ScanMetaData")
+}
 
 enum class JumioScanData(val s: String) {
     // Property names in POST data from Jumio
@@ -109,6 +125,7 @@ enum class JumioScanData(val s: String) {
     SCAN_IMAGE("idScanImage"),
     SCAN_IMAGE_FACE("idScanImageFace"),
     SCAN_IMAGE_BACKSIDE("idScanImageBackside"),
+    SCAN_LIVENESS_IMAGES("livenessImages"),
     REJECT_REASON("rejectReason"),
     IDENTITY_VERIFICATION("identityVerification"),
     SIMILARITY("similarity"),

@@ -62,16 +62,16 @@ class Es2plusApplication : Application<Es2plusConfiguration>() {
 
 class PlaceholderSmDpPlusService : SmDpPlusService {
     @Throws(SmDpPlusException::class)
-    override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): String {
-        return "01234567890123456789"
+    override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): Es2DownloadOrderResponse {
+        return Es2DownloadOrderResponse(eS2SuccessResponseHeader(), iccid="01234567890123456789")
+    }
+
+    override fun confirmOrder(eid: String?, iccid: String?, smdsAddress: String?, machingId: String?, confirmationCode: String?, releaseFlag: Boolean): Es2ConfirmOrderResponse {
+        return Es2ConfirmOrderResponse(eS2SuccessResponseHeader(), eid="1234567890123456789012", matchingId = "foo", smdsAddress = "localhost")
     }
 
     @Throws(SmDpPlusException::class)
-    override fun confirmOrder(eid: String, smdsAddress: String?, machingId: String?, confirmationCode: String?) {
-    }
-
-    @Throws(SmDpPlusException::class)
-    override fun cancelOrder(eid: String, iccid: String?, matchingId: String?, finalProfileStatusIndicator: String?) {
+    override fun cancelOrder(iccid: String?, matchingId: String?, eid: String?, finalProfileStatusIndicator: String?) {
     }
 
     @Throws(SmDpPlusException::class)

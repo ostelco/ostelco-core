@@ -303,7 +303,7 @@ public class OcsHATest {
         while (!testPGW.isAnswerReceived() && i<10) {
             i++;
             try {
-                Thread.currentThread().sleep(500);
+                Thread.sleep(500);
             } catch (InterruptedException e) {
                 // continue
             }

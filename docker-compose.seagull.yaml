@@ -1,4 +1,4 @@
-version: "3.3"
+version: "3.7"
 
 services:
   prime:
@@ -7,16 +7,20 @@ services:
       context: prime
       dockerfile: Dockerfile.test
     environment:
+    - GCP_PROJECT_ID=${GCP_PROJECT_ID}
     - FIREBASE_ROOT_PATH=test
     - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
-    - PUBSUB_PROJECT_ID=pantel-2decb
+    - PUBSUB_PROJECT_ID=${GCP_PROJECT_ID}
+    - JUMIO_API_TOKEN=
+    - JUMIO_API_SECRET=
     - STRIPE_API_KEY=${STRIPE_API_KEY}
     - STRIPE_ENDPOINT_SECRET=${STRIPE_ENDPOINT_SECRET}
     - DATASTORE_EMULATOR_HOST=localhost:9090
-    - DATASTORE_PROJECT_ID=pantel-2decb
+    - DATASTORE_PROJECT_ID=${GCP_PROJECT_ID}
     - LOCAL_TESTING=true
     ports:
     - "9090:8080"
+    - "8082:8082"
     depends_on:
     - "pubsub-emulator"
     - "neo4j"
@@ -80,7 +84,7 @@ services:
     - OCS_GRPC_SERVER=ocs.dev.ostelco.org
     - METRICS_GRPC_SERVER=metrics.dev.ostelco.org
     - SERVICE_FILE=pantel-prod.json
-    - GOOGLE_CLOUD_PROJECT=pantel-2decb
+    - GOOGLE_CLOUD_PROJECT=${GCP_PROJECT_ID}
     - DIAMETER_CONFIG_FILE=server-jdiameter-config.xml
     - OCS_DATASOURCE_TYPE=Local
     - CONFIG_FOLDER=/config/
@@ -114,8 +118,8 @@ services:
     expose:
     - "8081"
     environment:
-    - CLOUDSDK_CORE_PROJECT=pantel-2decb
-    - DATASTORE_DATASET=pantel-2decb
+    - CLOUDSDK_CORE_PROJECT=${GCP_PROJECT_ID}
+    - DATASTORE_DATASET=${GCP_PROJECT_ID}
     command: ["gcloud", "beta", "emulators", "datastore", "start", "--host-port=0.0.0.0:8081"]
 
 

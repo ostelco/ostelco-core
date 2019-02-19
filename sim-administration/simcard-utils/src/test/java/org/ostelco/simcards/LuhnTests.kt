@@ -35,5 +35,4 @@ class LuhnTests {
     fun testLuhnComplete() {
         TestCase.assertTrue(luhnCheck(luhnComplete("79927398710")))
     }
-
 }
