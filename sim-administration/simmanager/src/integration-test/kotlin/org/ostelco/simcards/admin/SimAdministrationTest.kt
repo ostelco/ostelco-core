@@ -6,8 +6,7 @@ import io.dropwizard.jdbi.DBIFactory
 import io.dropwizard.testing.ConfigOverride
 import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
-import junit.framework.Assert.assertEquals
-import junit.framework.Assert.assertNotNull
+import junit.framework.Assert.*
 import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.client.ClientProperties
 import org.junit.*
@@ -329,7 +328,7 @@ class SimAdministrationTest {
         val hlrConfig = HlrConfig()
 
         hlrConfig.endpoint = "${HLR_RULE.containerIpAddress}:8080"
-        hlrConfig.name = "daName"
+        hlrConfig.name = "Foo"
         hlrConfig.userId = "baz"
         hlrConfig.apiKey = "daKey"
 
@@ -341,6 +340,6 @@ class SimAdministrationTest {
                 httpClient = httpClient,
                 hlrConfigs = hlrConfigs)
 
-        task.preallocateProfiles()
+        assertTrue("Unable to preallocate all (or perhaps any)  profiles successfully", task.preallocateProfiles())
     }
 }

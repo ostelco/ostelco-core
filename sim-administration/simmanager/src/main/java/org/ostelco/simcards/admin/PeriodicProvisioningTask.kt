@@ -84,7 +84,7 @@ class PreallocateProfilesTask(
 
     fun doPreprovisioning(hlrAdapter: HlrAdapter,
                           profile: String,
-                          profileStats: SimInventoryDAO.SimProfileKeyStatistics) {
+                          profileStats: SimInventoryDAO.SimProfileKeyStatistics) : Boolean{
         val noOfProfilesToActuallyAllocate =
                 Math.min(maxNoOfProfileToAllocate.toLong(), profileStats.noOfUnallocatedEntries)
 
@@ -96,11 +96,13 @@ class PreallocateProfilesTask(
             if (simEntry != null) {
                 if (preprovision(simEntry = simEntry, hlrAdapter =  hlrAdapter)) {
                     log.error("Failed to preprovision simEntry = $simEntry")
+                    return false
                 }
             } else {
                 log.info("Could not find any free SIM entry to preprovision")
             }
         }
+        return true
     }
 
 
@@ -110,7 +112,7 @@ class PreallocateProfilesTask(
      * allocation of profiles so that if possible, there will be tasks available for
      * provisioning.
      */
-    fun preallocateProfiles() {
+    fun preallocateProfiles() : Boolean {
         var hlrs: Collection<HlrAdapter> = simInventoryDAO.getHlrAdapters()
 
         for (hlr in hlrs) {
@@ -119,9 +121,12 @@ class PreallocateProfilesTask(
                 val profileStats =
                         simInventoryDAO.getProfileStats(hlr.id, profile)
                 if (profileStats.noOfEntriesAvailableForImmediateUse < lowWaterMark) {
-                    doPreprovisioning(hlrAdapter= hlr, profile = profile, profileStats = profileStats)
+                    if (! doPreprovisioning(hlrAdapter= hlr, profile = profile, profileStats = profileStats)) {
+                        return false
+                    }
                 }
             }
         }
+        return true
     }
 }
