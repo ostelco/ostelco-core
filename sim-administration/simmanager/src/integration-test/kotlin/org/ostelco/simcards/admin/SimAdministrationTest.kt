@@ -310,6 +310,8 @@ class SimAdministrationTest {
         assertNotNull(stats)
         assertEquals(100, stats!!.noOfEntries)
         assertEquals(100, stats!!.noOfUnallocatedEntries)
+        assertEquals(0, stats!!.noOfReleasedEntries)
+        assertEquals(0, stats!!.noOfDownloadedEntries)
     }
 
     // XXX This one should be in a separate file, but then we need to refactor

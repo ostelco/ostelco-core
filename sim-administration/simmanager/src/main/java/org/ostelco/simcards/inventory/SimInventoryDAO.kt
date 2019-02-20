@@ -551,7 +551,8 @@ abstract class SimInventoryDAO {
 
     /**
      * Get key numbers from a particular named Sim profile.
-     * TODO:Extend this stat calculation into the stats we need to guide the regulator.
+     * NOTE: This method is intended as an internal helper method for getProfileStats, its signature
+     * can change at any time, so don't use it unless you really know what you're doing.
      */
     @RegisterMapper(KeyValueMapper::class)
     @SqlQuery("""
@@ -561,34 +562,51 @@ abstract class SimInventoryDAO {
                    WHERE hlrId = :hlrId AND profile = :simProfile AND
                          smdpPlusState =  :smdpUnallocatedState AND
                          hlrState = :hlrUnallocatedState
-
+        UNION
+        SELECT 'NO_OF_RELEASED_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries
+                   WHERE hlrId = :hlrId AND profile = :simProfile AND
+                         smdpPlusState =  :smdpAllocatedState AND
+                         hlrState = :hlrAllocatedState
+        UNION
+        SELECT 'NO_OF_DOWNLOADED_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries
+                   WHERE hlrId = :hlrId AND profile = :simProfile AND
+                         smdpPlusState =  :smdpDownloadedState AND
+                         hlrState = :hlrAllocatedState
     """)
     abstract fun getProfileStatsAsKeyValuePairs(
             @Bind("hlrId") hlrId: Long,
             @Bind("simProfile") simProfile: String,
-            @Bind("hlrUnallocatedState") hlrUnallocatedState: String,
-            @Bind("smdpUnallocatedState") smdpUnallocatedState: String): List<KeyValuePair>
+            @Bind("hlrUnallocatedState") hlrUnallocatedState: String = HlrState.NOT_ACTIVATED.name,
+            @Bind("smdpUnallocatedState") smdpUnallocatedState: String = SmDpPlusState.AVAILABLE.name,
+            @Bind("hlrAllocatedState") hlrAllocatedState: String = HlrState.ACTIVATED.name,
+            @Bind("smdpAllocatedState") smdpAllocatedState: String =  SmDpPlusState.RELEASED.name,
+            @Bind("smdpDownloadedState") smdpDownloadedState: String = SmDpPlusState.DOWNLOADED.name): List<KeyValuePair>
 
+    /**
+     * Get relevant statistics for a particular profile type for a particular HLR.
+     */
     fun getProfileStats(
             @Bind("hlrId") hlrId: Long,
             @Bind("simProfile") simProfile: String): SimProfileKeyStatistics {
 
         val keyValuePairs = mutableMapOf<String, Long>()
 
-        getProfileStatsAsKeyValuePairs(hlrId = hlrId, simProfile = simProfile,
-                hlrUnallocatedState = HlrState.NOT_ACTIVATED.name,
-                smdpUnallocatedState = SmDpPlusState.AVAILABLE.name
+        getProfileStatsAsKeyValuePairs(hlrId = hlrId, simProfile = simProfile
                 ).forEach { keyValuePairs.put(it.key, it.value) }
         val noOfEntries = keyValuePairs.get("NO_OF_ENTRIES")!!
         val noOfUnallocatedEntries = keyValuePairs.get("NO_OF_UNALLOCATED_ENTRIES")!!
+        val noOfReleasedEntries = keyValuePairs.get("NO_OF_RELEASED_ENTRIES")!!
+        val noOfDownloadedEntries = keyValuePairs.get("NO_OF_DOWNLOADED_ENTRIES")!!
 
         return SimProfileKeyStatistics(
                 noOfEntries = noOfEntries,
-                noOfUnallocatedEntries = noOfUnallocatedEntries)
+                noOfUnallocatedEntries = noOfUnallocatedEntries,
+                noOfReleasedEntries = noOfReleasedEntries,
+                noOfDownloadedEntries = noOfDownloadedEntries)
     }
 
 
-    class SimProfileKeyStatistics (val noOfEntries: Long, val noOfUnallocatedEntries: Long)
+    class SimProfileKeyStatistics (val noOfEntries: Long, val noOfUnallocatedEntries: Long, val noOfReleasedEntries: Long, val noOfDownloadedEntries: Long)
 
     class KeyValueMapper : ResultSetMapper<KeyValuePair> {
         @Throws(SQLException::class)
