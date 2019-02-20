@@ -2,13 +2,23 @@ package org.ostelco.storage.scaninfo.shredder
 
 
 import com.google.cloud.NoCredentials
-import com.google.cloud.datastore.*
+import com.google.cloud.datastore.Cursor
+import com.google.cloud.datastore.Datastore
+import com.google.cloud.datastore.DatastoreException
+import com.google.cloud.datastore.DatastoreOptions
+import com.google.cloud.datastore.Entity
+import com.google.cloud.datastore.KeyFactory
+import com.google.cloud.datastore.Query
+import com.google.cloud.datastore.QueryResults
+import com.google.cloud.datastore.StructuredQuery
 import com.google.cloud.datastore.StructuredQuery.OrderBy
 import com.google.cloud.datastore.testing.LocalDatastoreHelper
 import com.google.cloud.http.HttpTransportOptions
 import io.dropwizard.Application
 import io.dropwizard.Configuration
 import io.dropwizard.cli.ConfiguredCommand
+import io.dropwizard.configuration.EnvironmentVariableSubstitutor
+import io.dropwizard.configuration.SubstitutingSourceProvider
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 import kotlinx.coroutines.coroutineScope
@@ -24,8 +34,6 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.time.Instant
 import java.util.*
-import io.dropwizard.configuration.EnvironmentVariableSubstitutor
-import io.dropwizard.configuration.SubstitutingSourceProvider
 
 
 /**
@@ -78,17 +86,13 @@ open class EnvironmentVars {
  * Thrown when something really bad is detected and it's necessary to terminate
  * execution immediately.  No cleanup of anything will be done.
  */
-private class ScanInfoShredderException : RuntimeException {
-    constructor(message: String, ex: Exception?) : super(message, ex)
-    constructor(message: String) : super(message)
-    constructor(ex: Exception) : super(ex)
-}
+private class ScanInfoShredderException(message: String) : RuntimeException(message)
 
 
 /**
  * Adapter class that will delete Scan Information from Jumio.
  */
-internal class ScanInfoShredder(val config: ScanInfoShredderConfig) {
+internal class ScanInfoShredder(private val config: ScanInfoShredderConfig) {
 
     private val logger: Logger = LoggerFactory.getLogger(ScanInfoShredder::class.java)
 
@@ -152,24 +156,24 @@ internal class ScanInfoShredder(val config: ScanInfoShredderConfig) {
             }
             else -> {
                 var optionsBuilder = DatastoreOptions.newBuilder()
-                if (!config.namespace.isNullOrEmpty()) {
+                if (!config.namespace.isEmpty()) {
                     optionsBuilder = optionsBuilder.setNamespace(config.namespace)
                 }
                 logger.info("Created default instance of datastore client")
                 optionsBuilder.setNamespace(config.namespace).build()
             }
         }.service
-        keyFactory =  datastore.newKeyFactory().setKind(ScanMetadataEnum.KIND.s)
-        val expiryTime:Long = Instant.now().toEpochMilli() - expiryDuration
+        keyFactory = datastore.newKeyFactory().setKind(ScanMetadataEnum.KIND.s)
+        val expiryTime: Long = Instant.now().toEpochMilli() - expiryDuration
         filter = StructuredQuery.PropertyFilter.le(ScanMetadataEnum.PROCESSED_TIME.s, expiryTime)
     }
 
     /**
      * Deletes the scan information from Jumio database.
      */
-    private fun deleteScanInformation(vendorScanId: String, baserUrl:String, username: String, password: String): Boolean {
-        val seperator:String = if (baserUrl.endsWith("/")) "" else "/"
-        val url = URL("$baserUrl${seperator}$vendorScanId")
+    private fun deleteScanInformation(vendorScanId: String, baserUrl: String, username: String, password: String): Boolean {
+        val seperator: String = if (baserUrl.endsWith("/")) "" else "/"
+        val url = URL("$baserUrl$seperator$vendorScanId")
         val httpConn = url.openConnection() as HttpURLConnection
         val userpass = "$username:$password"
         val authHeader = "Basic ${Base64.getEncoder().encodeToString(userpass.toByteArray())}"
@@ -177,18 +181,18 @@ internal class ScanInfoShredder(val config: ScanInfoShredderConfig) {
         httpConn.setRequestProperty("Accept", "application/json")
         httpConn.setRequestProperty("User-Agent", "ScanInformationStore")
         //httpConn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-        httpConn.setRequestMethod("DELETE");
-        httpConn.setDoOutput(true);
+        httpConn.requestMethod = "DELETE"
+        httpConn.doOutput = true
 
         try {
             val responseCode = httpConn.responseCode
             // always check HTTP response code first
             if (responseCode != HttpURLConnection.HTTP_OK) {
                 val statusMessage = "$responseCode: ${httpConn.responseMessage}"
-                logger.error("Failed to delete ${url.toString()} $statusMessage")
+                logger.error("Failed to delete $url $statusMessage")
                 return false
             } else {
-                logger.info("Deleted ${url.toString()}")
+                logger.info("Deleted $url")
             }
         } catch (e: IOException) {
             logger.error("Caught exception while trying to delete scan", e)
@@ -216,12 +220,12 @@ internal class ScanInfoShredder(val config: ScanInfoShredderConfig) {
     }
 
     private fun listScans(startCursorString: String?): Pair<List<ScanMetadata>, String?> {
-       try {
-           var startCursor: Cursor? = null
-           if (startCursorString != null && startCursorString != "") {
-               startCursor = Cursor.fromUrlSafe(startCursorString)                 // Where we left off
-           }
-           val query = Query.newEntityQueryBuilder()                               // Build the Query
+        try {
+            var startCursor: Cursor? = null
+            if (startCursorString != null && startCursorString != "") {
+                startCursor = Cursor.fromUrlSafe(startCursorString)                 // Where we left off
+            }
+            val query = Query.newEntityQueryBuilder()                               // Build the Query
                     .setKind(ScanMetadataEnum.KIND.s)                               // We only care about ScanMetadata
                     .setLimit(100)                                                  // Only process 100 at a time
                     .setStartCursor(startCursor)                                    // Where we left off
@@ -230,16 +234,16 @@ internal class ScanInfoShredder(val config: ScanInfoShredderConfig) {
                     .build()
             val resultList = datastore.run(query)
             val resultScans = entitiesToScanMetadata(resultList)                    // Retrieve and convert Entities
-            val cursor = resultList.getCursorAfter()                                // Where to start next time
-            if (resultScans.size == 100) {                                          // Are we paging? Save Cursor
+            val cursor = resultList.cursorAfter                                // Where to start next time
+            return if (resultScans.size == 100) {                                          // Are we paging? Save Cursor
                 val cursorString = cursor!!.toUrlSafe()                             // Cursors are WebSafe
-                return Pair(resultScans, cursorString)
+                Pair(resultScans, cursorString)
             } else {
-                return Pair(resultScans, null)
+                Pair(resultScans, null)
             }
         } catch (e: DatastoreException) {
             logger.error("Caught exception while scanning metadata", e)
-            return Pair(ArrayList<ScanMetadata>(), null)
+            return Pair(ArrayList(), null)
         }
     }
 
@@ -248,12 +252,12 @@ internal class ScanInfoShredder(val config: ScanInfoShredderConfig) {
         try {
             val keyString = "${data.customerId}-${data.id}"
             datastore.delete(keyFactory.newKey(keyString))
-            logger.info("Deleted datastore record for ${keyString}")
+            logger.info("Deleted datastore record for $keyString")
         } catch (e: DatastoreException) {
             logger.error("Caught exception while scanning metadata", e)
             return false
         }
-        return true;
+        return true
     }
 
     suspend fun shred(): Int {
@@ -266,12 +270,11 @@ internal class ScanInfoShredder(val config: ScanInfoShredderConfig) {
                 val scanResult = listScans(startCursor)
                 scanResult.first.forEach {
                     launch {
-                        var infoDeleted = false
-                        if (config.deleteScan) {
-                            infoDeleted = deleteScanInformation(it.scanReference, config.deleteUrl, apiToken, apiSecret)
+                        val infoDeleted = if (config.deleteScan) {
+                            deleteScanInformation(it.scanReference, config.deleteUrl, apiToken, apiSecret)
                         } else {
                             logger.info("Delete disabled, skipping ${it.scanReference}")
-                            infoDeleted = true
+                            true
                         }
                         if (infoDeleted) {
                             // Delete the datastore record.
@@ -279,13 +282,13 @@ internal class ScanInfoShredder(val config: ScanInfoShredderConfig) {
                         }
                     }
                 }
-                totalItems +=  scanResult.first.size
+                totalItems += scanResult.first.size
                 startCursor = scanResult.second
-            } while(startCursor != null)
+            } while (startCursor != null)
         }
         // coroutineScope waits for all children to finish.
         val end = System.currentTimeMillis()
-        logger.info("Queries finished in ${(end - start)/1000} seconds")
+        logger.info("Queries finished in ${(end - start) / 1000} seconds")
         return totalItems
     }
 }
@@ -312,6 +315,7 @@ private class ShredScans : ConfiguredCommand<ScanInfoShredderConfig>(
         }
     }
 }
+
 private class CacheJars : ConfiguredCommand<ScanInfoShredderConfig>(
         "quit",
         "Do nothing, only used to prime caches") {

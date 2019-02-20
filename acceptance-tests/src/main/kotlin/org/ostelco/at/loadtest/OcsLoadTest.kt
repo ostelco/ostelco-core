@@ -3,7 +3,7 @@ package org.ostelco.at.loadtest
 import io.grpc.ManagedChannelBuilder
 import io.grpc.stub.StreamObserver
 import org.junit.Test
-import org.ostelco.at.common.createProfile
+import org.ostelco.at.common.createCustomer
 import org.ostelco.at.common.createSubscription
 import org.ostelco.at.common.ocsSocket
 import org.ostelco.at.jersey.get
@@ -13,7 +13,7 @@ import org.ostelco.ocs.api.CreditControlRequestType.UPDATE_REQUEST
 import org.ostelco.ocs.api.MultipleServiceCreditControl
 import org.ostelco.ocs.api.OcsServiceGrpc
 import org.ostelco.ocs.api.ServiceUnit
-import org.ostelco.prime.client.model.BundleList
+import org.ostelco.prime.customer.model.BundleList
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.CountDownLatch
@@ -38,7 +38,7 @@ class OcsLoadTest {
                     val email = "ocs-load-test-$i@test.com"
 
                     // Create Customer
-                    createProfile(name = "OCS Load Test", email = email)
+                    createCustomer(name = "OCS Load Test", email = email)
 
                     // Assign MSISDN to customer
                     val msisdn = createSubscription(email = email)

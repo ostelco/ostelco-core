@@ -86,8 +86,7 @@ class Neo4jStorageTest {
         val purchase = PurchaseRecord(
                 product = DATA_TOPUP_3GB,
                 timestamp = now,
-                id = UUID.randomUUID().toString(),
-                msisdn = "")
+                id = UUID.randomUUID().toString())
         storage.addPurchaseRecord(EPHERMERAL_EMAIL, purchase)
     }
 

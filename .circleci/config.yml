@@ -202,7 +202,7 @@ jobs:
             python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=analytics-grpc-api/src/main/proto --descriptor_set_out=metrics_descriptor.pb prime_metrics.proto
             gcloud endpoints services deploy ocs_descriptor.pb prime/infra/new-dev/ocs-api.yaml
             gcloud endpoints services deploy metrics_descriptor.pb prime/infra/new-dev/metrics-api.yaml
-            gcloud endpoints services deploy prime/infra/new-dev/prime-client-api.yaml
+            gcloud endpoints services deploy prime/infra/new-dev/prime-customer-api.yaml
             gcloud endpoints services deploy prime/infra/new-dev/prime-webhooks.yaml
             gcloud endpoints services deploy prime/infra/new-dev/prime-houston-api.yaml
       
@@ -284,7 +284,7 @@ jobs:
             python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=analytics-grpc-api/src/main/proto --descriptor_set_out=metrics_descriptor.pb prime_metrics.proto
             gcloud endpoints services deploy ocs_descriptor.pb prime/infra/new-prod/ocs-api.yaml
             gcloud endpoints services deploy metrics_descriptor.pb prime/infra/new-prod/metrics-api.yaml
-            gcloud endpoints services deploy prime/infra/new-prod/prime-client-api.yaml
+            gcloud endpoints services deploy prime/infra/new-prod/prime-customer-api.yaml
             # gcloud endpoints services deploy prime/infra/new-prod/prime-webhooks.yaml
             # gcloud endpoints services deploy prime/infra/new-prod/prime-houston-api.yaml
       

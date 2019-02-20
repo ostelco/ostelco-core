@@ -278,7 +278,7 @@ object Neo4jStoreSingleton : GraphStore {
                 val product = productStore.get(productId, transaction).bind()
                 createPurchaseRecordRelation(
                         customer.id,
-                        PurchaseRecord(id = UUID.randomUUID().toString(), product = product, timestamp = Instant.now().toEpochMilli(), msisdn = ""),
+                        PurchaseRecord(id = UUID.randomUUID().toString(), product = product, timestamp = Instant.now().toEpochMilli()),
                         transaction)
                 subscriberToBundleStore.create(customer.id, bundleId, transaction).bind()
                 // TODO Remove hardcoded country code.
@@ -625,8 +625,7 @@ object Neo4jStoreSingleton : GraphStore {
                 val purchaseRecord = PurchaseRecord(
                         id = chargeId,
                         product = product,
-                        timestamp = Instant.now().toEpochMilli(),
-                        msisdn = "")
+                        timestamp = Instant.now().toEpochMilli())
                 createPurchaseRecordRelation(customerId, purchaseRecord, transaction)
                         .mapLeft {
                             logger.error("Failed to save purchase record, for paymentCustomerId $paymentCustomerId, chargeId $chargeId, payment will be unclaimed in Stripe")
@@ -1171,13 +1170,12 @@ object Neo4jStoreSingleton : GraphStore {
                         .bind()
                 val plan = planProductRelationStore.getFrom(sku, transaction)
                         .flatMap {
-                            Either.right(it.get(0))
+                            it[0].right()
                         }.bind()
                 val purchaseRecord = PurchaseRecord(
                         id = invoiceId,
                         product = product,
-                        timestamp = Instant.now().toEpochMilli(),
-                        msisdn = "")
+                        timestamp = Instant.now().toEpochMilli())
 
                 createPurchaseRecordRelation(customerId, purchaseRecord, transaction)
                         .flatMap {
@@ -1232,7 +1230,6 @@ object Neo4jStoreSingleton : GraphStore {
                         id = purchaseRecord.id,
                         product = purchaseRecord.product,
                         timestamp = purchaseRecord.timestamp,
-                        msisdn = "",
                         refund = refund)
                 updatePurchaseRecord(changedPurchaseRecord, transaction)
                         .mapLeft {

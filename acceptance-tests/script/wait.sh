@@ -18,24 +18,22 @@ done
 
 echo "Prime launched"
 
-java -cp '/acceptance-tests.jar' org.junit.runner.JUnitCore \
-     org.ostelco.at.okhttp.GetPseudonymsTest \
-     org.ostelco.at.okhttp.GetProductsTest \
-     org.ostelco.at.okhttp.BundlesAndPurchasesTest \
-     org.ostelco.at.okhttp.SourceTest \
-     org.ostelco.at.okhttp.PurchaseTest \
-     org.ostelco.at.okhttp.ConsentTest \
-     org.ostelco.at.okhttp.ProfileTest \
-     org.ostelco.at.okhttp.GraphQlTests \
-     org.ostelco.at.jersey.GetPseudonymsTest \
-     org.ostelco.at.jersey.GetProductsTest \
-     org.ostelco.at.jersey.BundlesAndPurchasesTest \
-     org.ostelco.at.jersey.SourceTest \
-     org.ostelco.at.jersey.PurchaseTest \
-     org.ostelco.at.jersey.PlanTest \
-     org.ostelco.at.jersey.AnalyticsTest \
-     org.ostelco.at.jersey.ConsentTest \
-     org.ostelco.at.jersey.ProfileTest \
-     org.ostelco.at.jersey.GraphQlTests \
-     org.ostelco.at.jersey.eKYCTest\
-     org.ostelco.at.pgw.OcsTest
+java -cp '/acceptance-tests.jar' org.junit.runner.JUnitCore org.ostelco.at.TestSuite
+
+#java -cp '/acceptance-tests.jar' org.junit.runner.JUnitCore \
+#     org.ostelco.at.okhttp.GetProductsTest \
+#     org.ostelco.at.okhttp.BundlesAndPurchasesTest \
+#     org.ostelco.at.okhttp.SourceTest \
+#     org.ostelco.at.okhttp.PurchaseTest \
+#     org.ostelco.at.okhttp.CustomerTest \
+#     org.ostelco.at.okhttp.GraphQlTests \
+#     org.ostelco.at.jersey.GetProductsTest \
+#     org.ostelco.at.jersey.BundlesAndPurchasesTest \
+#     org.ostelco.at.jersey.SourceTest \
+#     org.ostelco.at.jersey.PurchaseTest \
+#     org.ostelco.at.jersey.PlanTest \
+#     org.ostelco.at.jersey.CustomerTest \
+#     org.ostelco.at.jersey.GraphQlTests \
+#     org.ostelco.at.jersey.eKYCTest \
+#     org.ostelco.at.pgw.OcsTest
+

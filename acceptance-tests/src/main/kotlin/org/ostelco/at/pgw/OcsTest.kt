@@ -5,7 +5,7 @@ import org.jdiameter.api.Session
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import org.ostelco.at.common.createProfile
+import org.ostelco.at.common.createCustomer
 import org.ostelco.at.common.createSubscription
 import org.ostelco.at.common.getLogger
 import org.ostelco.at.common.randomInt
@@ -14,7 +14,7 @@ import org.ostelco.diameter.model.FinalUnitAction
 import org.ostelco.diameter.model.RequestType
 import org.ostelco.diameter.test.TestClient
 import org.ostelco.diameter.test.TestHelper
-import org.ostelco.prime.client.model.Bundle
+import org.ostelco.prime.customer.model.Bundle
 import java.lang.Thread.sleep
 import kotlin.test.assertEquals
 import kotlin.test.fail
@@ -184,7 +184,7 @@ class OcsTest {
             assertEquals(1, resultMSCC.grouped.getAvp(Avp.SERVICE_IDENTIFIER_CCA).integer32.toLong())
             val granted = resultMSCC.grouped.getAvp(Avp.GRANTED_SERVICE_UNIT)
             assertEquals(INITIAL_BALANCE, granted.grouped.getAvp(Avp.CC_TOTAL_OCTETS).unsigned64)
-            var finalUnitIndication = resultMSCC.grouped.getAvp(Avp.FINAL_UNIT_INDICATION)
+            val finalUnitIndication = resultMSCC.grouped.getAvp(Avp.FINAL_UNIT_INDICATION)
             assertEquals(FinalUnitAction.TERMINATE.ordinal, finalUnitIndication.grouped.getAvp(Avp.FINAL_UNIT_ACTION).integer32)
         }
         // There is 2 step in graceful shutdown. First OCS send terminate in Final-Unit-Indication, then P-GW report used units in a final update
@@ -297,7 +297,7 @@ class OcsTest {
         fun createTestUserAndSubscription() {
 
             EMAIL = "ocs-${randomInt()}@test.com"
-            createProfile(name = "Test OCS User", email = EMAIL)
+            createCustomer(name = "Test OCS User", email = EMAIL)
 
             MSISDN = createSubscription(EMAIL)
         }

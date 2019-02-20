@@ -247,7 +247,7 @@ class GraphStoreTest {
         Neo4jStoreSingleton.createProduct(product)
                 .mapLeft { fail(it.message) }
 
-        val purchaseRecord = PurchaseRecord(product = product, timestamp = now, id = UUID.randomUUID().toString(), msisdn = "")
+        val purchaseRecord = PurchaseRecord(product = product, timestamp = now, id = UUID.randomUUID().toString())
         Neo4jStoreSingleton.addPurchaseRecord(customerId = CUSTOMER.id, purchase = purchaseRecord).bimap(
                 { fail(it.message) },
                 { assertNotNull(it) }

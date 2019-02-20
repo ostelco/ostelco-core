@@ -1,7 +1,7 @@
 package org.ostelco.at.common
 
-import org.ostelco.prime.client.model.Price
-import org.ostelco.prime.client.model.Product
+import org.ostelco.prime.customer.model.Price
+import org.ostelco.prime.customer.model.Product
 
 fun expectedProducts(): List<Product> {
     return listOf(

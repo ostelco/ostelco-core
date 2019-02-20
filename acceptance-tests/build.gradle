@@ -11,7 +11,7 @@ dependencies {
   }
 
   implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
-  implementation project(":prime-client-api")
+  implementation project(":prime-customer-api")
   implementation project(':diameter-test')
   implementation project(':ocs-grpc-api')
 
