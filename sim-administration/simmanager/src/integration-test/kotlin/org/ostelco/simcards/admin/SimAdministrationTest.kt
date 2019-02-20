@@ -122,7 +122,7 @@ class SimAdministrationTest {
     }
 
     private fun clearTables() {
-        val dao = jdbi.onDemand(ClearTablesForTestingDAO::class.java)
+        val dao = ClearTablesForTestingDAO(jdbi.onDemand(ClearTablesForTestingDB::class.java))
 
         dao.clearTables()
     }
