@@ -8,6 +8,7 @@ import io.dropwizard.jdbi.DBIFactory
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
+import org.ostelco.sim.es2plus.ES2PlusClient
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
 import org.ostelco.sim.es2plus.SmDpPlusCallbackResource
 import org.ostelco.sim.es2plus.SmDpPlusCallbackService
@@ -75,6 +76,10 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
 
         // Add task that should be triggered periodically by external
         // cron job via tasks/preallocate_sim_profiles url.
-        env.admin().addTask(PreallocateProfilesTask(this.DAO));
+
+
+
+        val es2plusclient = ES2PlusClient(requesterId = "foo.bar.baz", port = 8080, host = "sm-dp-plus", httpClient = httpClient)
+        env.admin().addTask(PreallocateProfilesTask(simInventoryDAO = this.DAO, httpClient = httpClient, hlrConfigs = config.hlrVendors, es2PlusClient = es2plusclient));
     }
 }

@@ -1,5 +1,6 @@
 package org.ostelco.simcards.admin
 
+import io.dropwizard.client.HttpClientBuilder
 import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.jdbi.DBIFactory
 import io.dropwizard.testing.ConfigOverride
@@ -10,6 +11,7 @@ import junit.framework.Assert.assertNotNull
 import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.client.ClientProperties
 import org.junit.*
+import org.ostelco.sim.es2plus.ES2PlusClient
 import org.ostelco.simcards.inventory.HlrState
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
@@ -311,17 +313,34 @@ class SimAdministrationTest {
         assertEquals(100, stats!!.noOfEntries)
         assertEquals(100, stats!!.noOfUnallocatedEntries)
         assertEquals(0, stats!!.noOfReleasedEntries)
-        assertEquals(0, stats!!.noOfDownloadedEntries)
     }
 
     // XXX This one should be in a separate file, but then we need to refactor
     //     out the fixture components first, so as a prelimnary step we'll just
     //     put it here
 
+
     @Test
     fun testPeriodicProvisioningTask() {
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
-        val task = PreallocateProfilesTask(simInventoryDAO = simDao)
+
+        val httpClient  = HttpClientBuilder(SIM_MANAGER_RULE.environment).build("periodicProvisioningTaskClient")
+        val eS2PlusClient = ES2PlusClient(httpClient = httpClient, requesterId = "foo", port = 8443, host = "127.0.0.1")
+        val hlrConfig = HlrConfig()
+
+        hlrConfig.endpoint = "${HLR_RULE.containerIpAddress}:8080"
+        hlrConfig.name = "daName"
+        hlrConfig.userId = "baz"
+        hlrConfig.apiKey = "daKey"
+
+        val hlrConfigs = listOf<HlrConfig>(hlrConfig)
+
+        val task = PreallocateProfilesTask(
+                simInventoryDAO = simDao,
+                es2PlusClient = eS2PlusClient,
+                httpClient = httpClient,
+                hlrConfigs = hlrConfigs)
+
         task.preallocateProfiles()
     }
 }

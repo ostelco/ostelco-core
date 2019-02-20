@@ -565,21 +565,22 @@ abstract class SimInventoryDAO {
         UNION
         SELECT 'NO_OF_RELEASED_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries
                    WHERE hlrId = :hlrId AND profile = :simProfile AND
-                         smdpPlusState =  :smdpAllocatedState AND
+                         smdpPlusState =  :smdpReleasedState AND
                          hlrState = :hlrAllocatedState
         UNION
-        SELECT 'NO_OF_DOWNLOADED_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries
+        SELECT 'NO_OF_ENTRIES_READY_FOR_IMMEDIATE_USE' AS KEY,  count(*)  AS VALUE  FROM sim_entries
                    WHERE hlrId = :hlrId AND profile = :simProfile AND
-                         smdpPlusState =  :smdpDownloadedState AND
+                         smdpPlusState =  :smdpReleasedState AND
                          hlrState = :hlrAllocatedState
     """)
     abstract fun getProfileStatsAsKeyValuePairs(
             @Bind("hlrId") hlrId: Long,
             @Bind("simProfile") simProfile: String,
+            @Bind("smdpReleasedState") smdpReleasedState: String = SmDpPlusState.RELEASED.name,
             @Bind("hlrUnallocatedState") hlrUnallocatedState: String = HlrState.NOT_ACTIVATED.name,
             @Bind("smdpUnallocatedState") smdpUnallocatedState: String = SmDpPlusState.AVAILABLE.name,
             @Bind("hlrAllocatedState") hlrAllocatedState: String = HlrState.ACTIVATED.name,
-            @Bind("smdpAllocatedState") smdpAllocatedState: String =  SmDpPlusState.RELEASED.name,
+            @Bind("smdpAllocatedState") smdpAllocatedState: String =  SmDpPlusState.ALLOCATED.name,
             @Bind("smdpDownloadedState") smdpDownloadedState: String = SmDpPlusState.DOWNLOADED.name): List<KeyValuePair>
 
     /**
@@ -596,17 +597,17 @@ abstract class SimInventoryDAO {
         val noOfEntries = keyValuePairs.get("NO_OF_ENTRIES")!!
         val noOfUnallocatedEntries = keyValuePairs.get("NO_OF_UNALLOCATED_ENTRIES")!!
         val noOfReleasedEntries = keyValuePairs.get("NO_OF_RELEASED_ENTRIES")!!
-        val noOfDownloadedEntries = keyValuePairs.get("NO_OF_DOWNLOADED_ENTRIES")!!
+        val noOfEntriesAvailableForImmediateUse = keyValuePairs.get("NO_OF_ENTRIES_READY_FOR_IMMEDIATE_USE")!!
 
         return SimProfileKeyStatistics(
                 noOfEntries = noOfEntries,
                 noOfUnallocatedEntries = noOfUnallocatedEntries,
-                noOfReleasedEntries = noOfReleasedEntries,
-                noOfDownloadedEntries = noOfDownloadedEntries)
+                noOfEntriesAvailableForImmediateUse = noOfEntriesAvailableForImmediateUse,
+                noOfReleasedEntries = noOfReleasedEntries)
     }
 
 
-    class SimProfileKeyStatistics (val noOfEntries: Long, val noOfUnallocatedEntries: Long, val noOfReleasedEntries: Long, val noOfDownloadedEntries: Long)
+    class SimProfileKeyStatistics (val noOfEntries: Long, val noOfUnallocatedEntries: Long, val noOfReleasedEntries: Long,  val noOfEntriesAvailableForImmediateUse : Long)
 
     class KeyValueMapper : ResultSetMapper<KeyValuePair> {
         @Throws(SQLException::class)
