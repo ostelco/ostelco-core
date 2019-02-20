@@ -4,7 +4,7 @@ import io.dropwizard.Application
 import io.dropwizard.client.HttpClientBuilder
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor
 import io.dropwizard.configuration.SubstitutingSourceProvider
-import io.dropwizard.jdbi.DBIFactory
+import io.dropwizard.jdbi3.JdbiFactory
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
@@ -45,7 +45,7 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
 
     override fun run(config: SimAdministrationConfiguration,
                      env: Environment) {
-        val factory = DBIFactory()
+        val factory = JdbiFactory()
         val jdbi = factory.build(env,
                 config.database, "postgresql")
         this.DAO = jdbi.onDemand(SimInventoryDAO::class.java)

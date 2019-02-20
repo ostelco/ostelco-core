@@ -3,13 +3,18 @@ package org.ostelco.simcards.inventory
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
+import org.jdbi.v3.core.statement.StatementContext
+import org.jdbi.v3.sqlobject.customizer.Bind
+import org.jdbi.v3.sqlobject.customizer.BindBean
+import org.jdbi.v3.sqlobject.statement.BatchChunkSize
+import org.jdbi.v3.sqlobject.statement.SqlBatch
+import org.jdbi.v3.sqlobject.statement.SqlQuery
+import org.jdbi.v3.sqlobject.statement.SqlUpdate
+import org.jdbi.v3.sqlobject.transaction.Transaction
 import org.ostelco.simcards.adapter.HlrAdapter
 import org.ostelco.simcards.adapter.ProfileVendorAdapter
-import org.skife.jdbi.v2.StatementContext
-import org.skife.jdbi.v2.sqlobject.*
-import org.skife.jdbi.v2.sqlobject.customizers.BatchChunkSize
-import org.skife.jdbi.v2.sqlobject.customizers.RegisterMapper
-import org.skife.jdbi.v2.tweak.ResultSetMapper
+import org.jdbi.v3.core.mapper.RowMapper
+import org.jdbi.v3.sqlobject.config.RegisterRowMapper
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
@@ -162,26 +167,26 @@ class SimEntryIterator(profileVendorId: Long,
 abstract class SimInventoryDAO {
 
     @SqlQuery("SELECT * FROM sim_entries WHERE id = :id")
-    @RegisterMapper(SimEntryMapper::class)
+    @RegisterRowMapper(SimEntryMapper::class)
     abstract fun getSimProfileById(@Bind("id") id: Long): SimEntry
 
     @SqlQuery("SELECT * FROM sim_entries WHERE iccid = :iccid")
-    @RegisterMapper(SimEntryMapper::class)
+    @RegisterRowMapper(SimEntryMapper::class)
     abstract fun getSimProfileByIccid(@Bind("iccid") iccid: String): SimEntry
 
     @SqlQuery("SELECT * FROM sim_entries WHERE imsi = :imsi")
-    @RegisterMapper(SimEntryMapper::class)
+    @RegisterRowMapper(SimEntryMapper::class)
     abstract fun getSimProfileByImsi(@Bind("imsi") imsi: String): SimEntry
 
     @SqlQuery("SELECT * FROM sim_entries WHERE msisdn = :msisdn")
-    @RegisterMapper(SimEntryMapper::class)
+    @RegisterRowMapper(SimEntryMapper::class)
     abstract fun getSimProfileByMsisdn(@Bind("msisdn") msisdn: String): SimEntry
 
 
-    class SimEntryMapper : ResultSetMapper<SimEntry> {
+    class SimEntryMapper : RowMapper<SimEntry> {
 
         @Throws(SQLException::class)
-        override fun map(index: Int, r: ResultSet, ctx: StatementContext): SimEntry? {
+        override fun map(r: ResultSet, ctx: StatementContext): SimEntry? {
             if (r.isAfterLast) {
                 return null
             }
@@ -287,17 +292,17 @@ abstract class SimInventoryDAO {
     abstract fun addHlrAdapter(@Bind("name") name: String): Int
 
     @SqlQuery("SELECT * FROM hlr_adapters WHERE name = :name")
-    @RegisterMapper(HlrAdapterMapper::class)
+    @RegisterRowMapper(HlrAdapterMapper::class)
     abstract fun getHlrAdapterByName(@Bind("name") name: String): HlrAdapter
 
     @SqlQuery("SELECT * FROM hlr_adapters WHERE id = :id")
-    @RegisterMapper(HlrAdapterMapper::class)
+    @RegisterRowMapper(HlrAdapterMapper::class)
     abstract fun getHlrAdapterById(@Bind("id") id: Long): HlrAdapter
 
-    class HlrAdapterMapper : ResultSetMapper<HlrAdapter> {
+    class HlrAdapterMapper : RowMapper<HlrAdapter> {
 
         @Throws(SQLException::class)
-        override fun map(index: Int, row: ResultSet, ctx: StatementContext): HlrAdapter? {
+        override fun map(row: ResultSet, ctx: StatementContext): HlrAdapter? {
             if (row.isAfterLast) {
                 return null
             }
@@ -318,17 +323,17 @@ abstract class SimInventoryDAO {
     abstract fun addProfileVendorAdapter(@Bind("name") name: String): Int
 
     @SqlQuery("SELECT * FROM profile_vendor_adapters WHERE name = :name")
-    @RegisterMapper(ProfileVendorAdapterMapper::class)
+    @RegisterRowMapper(ProfileVendorAdapterMapper::class)
     abstract fun getProfileVendorAdapterByName(@Bind("name") name: String): ProfileVendorAdapter
 
     @SqlQuery("SELECT * FROM profile_vendor_adapters WHERE id = :id")
-    @RegisterMapper(ProfileVendorAdapterMapper::class)
+    @RegisterRowMapper(ProfileVendorAdapterMapper::class)
     abstract fun getProfileVendorAdapterById(@Bind("id") id: Long): ProfileVendorAdapter
 
-    class ProfileVendorAdapterMapper : ResultSetMapper<ProfileVendorAdapter> {
+    class ProfileVendorAdapterMapper : RowMapper<ProfileVendorAdapter> {
 
         @Throws(SQLException::class)
-        override fun map(index: Int, row: ResultSet, ctx: StatementContext): ProfileVendorAdapter? {
+        override fun map(row: ResultSet, ctx: StatementContext): ProfileVendorAdapter? {
             if (row.isAfterLast) {
                 return null
             }
@@ -401,13 +406,13 @@ abstract class SimInventoryDAO {
 
     @SqlQuery("""SELECT * FROM sim_import_batches
                       WHERE id = :id""")
-    @RegisterMapper(SimImportBatchMapper::class)
+    @RegisterRowMapper(SimImportBatchMapper::class)
     abstract fun getBatchInfo(@Bind("id") id: Long): SimImportBatch
 
-    class SimImportBatchMapper : ResultSetMapper<SimImportBatch> {
+    class SimImportBatchMapper : RowMapper<SimImportBatch> {
 
         @Throws(SQLException::class)
-        override fun map(index: Int, row: ResultSet, ctx: StatementContext): SimImportBatch? {
+        override fun map(row: ResultSet, ctx: StatementContext): SimImportBatch? {
             if (row.isAfterLast) {
                 return null
             }
@@ -437,7 +442,7 @@ abstract class SimInventoryDAO {
 
     @SqlUpdate("""UPDATE sim_entries SET hlrState = :hlrState
                        WHERE id = :id""")
-    @RegisterMapper(SimEntryMapper::class)
+    @RegisterRowMapper(SimEntryMapper::class)
     abstract fun updateHlrState(
             @Bind("id") id: Long,
             @Bind("hlrState") hlrState: HlrState): Int
@@ -459,7 +464,7 @@ abstract class SimInventoryDAO {
 
     @SqlUpdate("""UPDATE sim_entries SET smdpPlusState = :smdpPlusState
                        WHERE id = :id""")
-    @RegisterMapper(SimEntryMapper::class)
+    @RegisterRowMapper(SimEntryMapper::class)
     abstract fun updateSmDpPlusState(
             @Bind("id") id: Long,
             @Bind("smdpPlusState") smdpPlusState: SmDpPlusState): Int
@@ -481,7 +486,7 @@ abstract class SimInventoryDAO {
     @SqlUpdate("""UPDATE sim_entries SET smdpPlusState = :smdpPlusState,
                                               matchingId = :matchingId
                        WHERE id = :id""")
-    @RegisterMapper(SimEntryMapper::class)
+    @RegisterRowMapper(SimEntryMapper::class)
     abstract fun updateSmDpPlusStateAndMatchingId(
             @Bind("id") id: Long,
             @Bind("smdpPlusState") smdpPlusState: SmDpPlusState,
@@ -507,7 +512,7 @@ abstract class SimInventoryDAO {
     @SqlQuery("""SELECT * FROM sim_entries
                       WHERE hlrId = :hlrId AND hlrState = :hlrState AND smdpPlusState = :smdpPlusState AND profile = :profile
                       LIMIT 1""")
-    @RegisterMapper(SimEntryMapper::class)
+    @RegisterRowMapper(SimEntryMapper::class)
     abstract fun findNextFreeSimProfileForHlr(@Bind("hlrId") hlrId: Long,
                                               @Bind("profile") profile: String,
                                               @Bind("hlrState") hlrState: HlrState = HlrState.NOT_ACTIVATED,
@@ -515,7 +520,7 @@ abstract class SimInventoryDAO {
 
 
     @SqlUpdate("UPDATE sim_entries SET eid = :eid WHERE id = :id")
-    @RegisterMapper(SimEntryMapper::class)
+    @RegisterRowMapper(SimEntryMapper::class)
     abstract fun updateEidOfSimProfile(@Bind("id") id: Long,
                                        @Bind("eid") eid: String): Int
 

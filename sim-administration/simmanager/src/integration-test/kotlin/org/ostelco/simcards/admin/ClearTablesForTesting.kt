@@ -1,6 +1,6 @@
 package org.ostelco.simcards.admin
 
-import org.skife.jdbi.v2.sqlobject.SqlUpdate
+import org.jdbi.v3.sqlobject.statement.SqlUpdate
 
 /**
  * Clear tables.  This library shouldn't be part of normal
