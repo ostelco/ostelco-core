@@ -3,13 +3,11 @@ package org.ostelco.simcards.inventory
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
+import org.jdbi.v3.core.statement.StatementContext
+import org.jdbi.v3.sqlobject.transaction.Transaction
 import org.ostelco.simcards.adapter.HlrAdapter
 import org.ostelco.simcards.adapter.ProfileVendorAdapter
-import org.skife.jdbi.v2.StatementContext
-import org.skife.jdbi.v2.sqlobject.*
-import org.skife.jdbi.v2.sqlobject.customizers.BatchChunkSize
-import org.skife.jdbi.v2.sqlobject.customizers.RegisterMapper
-import org.skife.jdbi.v2.tweak.ResultSetMapper
+import org.jdbi.v3.core.mapper.RowMapper
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
@@ -74,6 +72,7 @@ data class SimImportBatch(
         @JsonProperty("hlrId") val hlrId: Long,
         @JsonProperty("profileVendorId") val profileVendorId: Long
 )
+
 
 class SimEntryIterator(profileVendorId: Long,
                        hlrId: Long,
@@ -154,90 +153,113 @@ class SimEntryIterator(profileVendorId: Long,
 }
 
 
-/**
- * The DAO we're using to access the SIM inventory, and also the
- * pieces of SM-DP+/HLR infrastucture the SIM management needs to
- * be aware of.
- */
-abstract class SimInventoryDAO {
+class SimEntryMapper : RowMapper<SimEntry> {
 
-    @SqlQuery("SELECT * FROM sim_entries WHERE id = :id")
-    @RegisterMapper(SimEntryMapper::class)
-    abstract fun getSimProfileById(@Bind("id") id: Long): SimEntry
-
-    @SqlQuery("SELECT * FROM sim_entries WHERE iccid = :iccid")
-    @RegisterMapper(SimEntryMapper::class)
-    abstract fun getSimProfileByIccid(@Bind("iccid") iccid: String): SimEntry
-
-    @SqlQuery("SELECT * FROM sim_entries WHERE imsi = :imsi")
-    @RegisterMapper(SimEntryMapper::class)
-    abstract fun getSimProfileByImsi(@Bind("imsi") imsi: String): SimEntry
-
-    @SqlQuery("SELECT * FROM sim_entries WHERE msisdn = :msisdn")
-    @RegisterMapper(SimEntryMapper::class)
-    abstract fun getSimProfileByMsisdn(@Bind("msisdn") msisdn: String): SimEntry
-
-
-    class SimEntryMapper : ResultSetMapper<SimEntry> {
-
-        @Throws(SQLException::class)
-        override fun map(index: Int, r: ResultSet, ctx: StatementContext): SimEntry? {
-            if (r.isAfterLast) {
-                return null
-            }
-
-            val id = r.getLong("id")
-            val batch = r.getLong("batch")
-            val profileVendorId = r.getLong("profileVendorId")
-            val hlrId = r.getLong("hlrId")
-            val msisdn = r.getString("msisdn")
-            val iccid = r.getString("iccid")
-            val imsi = r.getString("imsi")
-            val eid = r.getString("eid")
-            val profile = r.getString("profile")
-            val smdpPlusState = r.getString("smdpPlusState")
-            val hlrState = r.getString("hlrState")
-            val matchingId = r.getString("matchingId")
-            val pin1 = r.getString("pin1")
-            val pin2 = r.getString("pin2")
-            val puk1 = r.getString("puk1")
-            val puk2 = r.getString("puk2")
-
-            return SimEntry(
-                    id = id,
-                    batch = batch,
-                    profileVendorId = profileVendorId,
-                    hlrId = hlrId,
-                    msisdn = msisdn,
-                    iccid = iccid,
-                    imsi = imsi,
-                    eid = eid,
-                    profile = profile,
-                    smdpPlusState = SmDpPlusState.valueOf(smdpPlusState.toUpperCase()),
-                    hlrState = HlrState.valueOf(hlrState.toUpperCase()),
-                    matchingId = matchingId,
-                    pin1 = pin1,
-                    pin2 = pin2,
-                    puk1 = puk1,
-                    puk2 = puk2
-            )
+    @Throws(SQLException::class)
+    override fun map(r: ResultSet, ctx: StatementContext): SimEntry? {
+        if (r.isAfterLast) {
+            return null
         }
-    }
 
-    companion object {
-        private fun <T> assertNonNull(v: T?): T {
-            if (v == null) {
-                throw WebApplicationException(Response.Status.NOT_FOUND)
-            } else {
-                return v
-            }
+        val id = r.getLong("id")
+        val batch = r.getLong("batch")
+        val profileVendorId = r.getLong("profileVendorId")
+        val hlrId = r.getLong("hlrId")
+        val msisdn = r.getString("msisdn")
+        val iccid = r.getString("iccid")
+        val imsi = r.getString("imsi")
+        val eid = r.getString("eid")
+        val profile = r.getString("profile")
+        val smdpPlusState = r.getString("smdpPlusState")
+        val hlrState = r.getString("hlrState")
+        val matchingId = r.getString("matchingId")
+        val pin1 = r.getString("pin1")
+        val pin2 = r.getString("pin2")
+        val puk1 = r.getString("puk1")
+        val puk2 = r.getString("puk2")
+
+        return SimEntry(
+                id = id,
+                batch = batch,
+                profileVendorId = profileVendorId,
+                hlrId = hlrId,
+                msisdn = msisdn,
+                iccid = iccid,
+                imsi = imsi,
+                eid = eid,
+                profile = profile,
+                smdpPlusState = SmDpPlusState.valueOf(smdpPlusState.toUpperCase()),
+                hlrState = HlrState.valueOf(hlrState.toUpperCase()),
+                matchingId = matchingId,
+                pin1 = pin1,
+                pin2 = pin2,
+                puk1 = puk1,
+                puk2 = puk2
+        )
+    }
+}
+
+
+class HlrAdapterMapper : RowMapper<HlrAdapter> {
+
+    @Throws(SQLException::class)
+    override fun map(row: ResultSet, ctx: StatementContext): HlrAdapter? {
+        if (row.isAfterLast) {
+            return null
         }
-    }
 
-    @SqlQuery("""SELECT id FROM sim_vendors_permitted_hlrs
-                      WHERE profileVendorId = profileVendorId AND hlrId = :hlrId""")
-    abstract fun findSimVendorForHlrPermissions(@Bind("profileVendorId") profileVendorId: Long,
-                                                @Bind("hlrId") hlrId: Long): List<Long>
+        val id = row.getLong("id")
+        val name = row.getString("name")
+
+        return HlrAdapter(id = id, name = name)
+    }
+}
+
+
+class ProfileVendorAdapterMapper : RowMapper<ProfileVendorAdapter> {
+
+    @Throws(SQLException::class)
+    override fun map(row: ResultSet, ctx: StatementContext): ProfileVendorAdapter? {
+        if (row.isAfterLast) {
+            return null
+        }
+
+        val id = row.getLong("id")
+        val name = row.getString("name")
+
+        return ProfileVendorAdapter(id = id, name = name)
+    }
+}
+
+
+class SimImportBatchMapper : RowMapper<SimImportBatch> {
+
+    @Throws(SQLException::class)
+    override fun map(row: ResultSet, ctx: StatementContext): SimImportBatch? {
+        if (row.isAfterLast) {
+            return null
+        }
+
+        val id = row.getLong("id")
+        val endedAt = row.getLong("endedAt")
+        val status = row.getString("status")
+        val profileVendorId = row.getLong("profileVendorId")
+        val hlrId = row.getLong("hlrId")
+        val size = row.getLong("size")
+
+        return SimImportBatch(
+                id = id,
+                endedAt = endedAt,
+                status = status,
+                profileVendorId = profileVendorId,
+                hlrId = hlrId,
+                size = size,
+                importer = "XXX Replace with name of agent that facilitated the import")
+    }
+}
+
+
+class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
 
     /**
      * Check if the  SIM vendor can be use for handling SIMs handled
@@ -246,23 +268,11 @@ abstract class SimInventoryDAO {
      * @param hlrId  HLR to check
      * @return true if permitted false otherwise
      */
-    fun simVendorIsPermittedForHlr(@Bind("profileVendorId") profileVendorId: Long,
-                                   @Bind("hlrId") hlrId: Long): Boolean {
+    fun simVendorIsPermittedForHlr(profileVendorId: Long,
+                                   hlrId: Long): Boolean {
         return findSimVendorForHlrPermissions(profileVendorId, hlrId)
                 .isNotEmpty()
     }
-
-    @SqlUpdate("""INSERT INTO sim_vendors_permitted_hlrs
-                                   (profilevendorid,
-                                    hlrid)
-                       SELECT :profileVendorId,
-                              :hlrId
-                       WHERE  NOT EXISTS (SELECT 1
-                                          FROM   sim_vendors_permitted_hlrs
-                                          WHERE  profilevendorid = :profileVendorId
-                                           AND hlrid = :hlrId)""")
-    abstract fun storeSimVendorForHlrPermission(@Bind("profileVendorId") profileVendorId: Long,
-                                                @Bind("hlrId") hlrId: Long): Int
 
     /**
      * Set permission for a SIM profile vendor to activate SIM profiles
@@ -278,100 +288,13 @@ abstract class SimInventoryDAO {
         return storeSimVendorForHlrPermission(profileVendorAdapter.id, hlrAdapter.id) > 0
     }
 
-    @SqlUpdate("""INSERT INTO hlr_adapters
-                                   (name)
-                       SELECT :name
-                       WHERE  NOT EXISTS (SELECT 1
-                                          FROM   hlr_adapters
-                                          WHERE  name = :name)""")
-    abstract fun addHlrAdapter(@Bind("name") name: String): Int
-
-    @SqlQuery("SELECT * FROM hlr_adapters WHERE name = :name")
-    @RegisterMapper(HlrAdapterMapper::class)
-    abstract fun getHlrAdapterByName(@Bind("name") name: String): HlrAdapter
-
-    @SqlQuery("SELECT * FROM hlr_adapters WHERE id = :id")
-    @RegisterMapper(HlrAdapterMapper::class)
-    abstract fun getHlrAdapterById(@Bind("id") id: Long): HlrAdapter
-
-    class HlrAdapterMapper : ResultSetMapper<HlrAdapter> {
-
-        @Throws(SQLException::class)
-        override fun map(index: Int, row: ResultSet, ctx: StatementContext): HlrAdapter? {
-            if (row.isAfterLast) {
-                return null
-            }
-
-            val id = row.getLong("id")
-            val name = row.getString("name")
-
-            return HlrAdapter(id = id, name = name)
-        }
-    }
-
-    @SqlUpdate("""INSERT INTO profile_vendor_adapters
-                                   (name)
-                       SELECT :name
-                       WHERE  NOT EXISTS (SELECT 1
-                                          FROM   profile_vendor_adapters
-                                          WHERE  name = :name) """)
-    abstract fun addProfileVendorAdapter(@Bind("name") name: String): Int
-
-    @SqlQuery("SELECT * FROM profile_vendor_adapters WHERE name = :name")
-    @RegisterMapper(ProfileVendorAdapterMapper::class)
-    abstract fun getProfileVendorAdapterByName(@Bind("name") name: String): ProfileVendorAdapter
-
-    @SqlQuery("SELECT * FROM profile_vendor_adapters WHERE id = :id")
-    @RegisterMapper(ProfileVendorAdapterMapper::class)
-    abstract fun getProfileVendorAdapterById(@Bind("id") id: Long): ProfileVendorAdapter
-
-    class ProfileVendorAdapterMapper : ResultSetMapper<ProfileVendorAdapter> {
-
-        @Throws(SQLException::class)
-        override fun map(index: Int, row: ResultSet, ctx: StatementContext): ProfileVendorAdapter? {
-            if (row.isAfterLast) {
-                return null
-            }
-
-            val id = row.getLong("id")
-            val name = row.getString("name")
-
-            return ProfileVendorAdapter(id = id, name = name)
-        }
-    }
-
-
     //
     // Importing
     //
 
-    @Transaction
-    @SqlBatch("""INSERT INTO sim_entries
-                                  (batch, profileVendorId, hlrid, hlrState, smdpplusstate, matchingId, profile, iccid, imsi, msisdn, pin1, pin2, puk1, puk2)
-                      VALUES (:batch, :profileVendorId, :hlrId, :hlrState, :smdpPlusState, :matchingId, :profile, :iccid, :imsi, :msisdn, :pin1, :pin2, :puk1, :puk2)""")
-    @BatchChunkSize(1000)
-    abstract fun insertAll(@BindBean entries: Iterator<SimEntry>)
-
-    @SqlUpdate("""INSERT INTO sim_import_batches (status,  importer, hlrId, profileVendorId)
-                       VALUES ('STARTED', :importer, :hlrId, :profileVendorId)""")
-    abstract fun createNewSimImportBatch(
-            @Bind("importer") importer: String,
-            @Bind("hlrId") hlrId: Long,
-            @Bind("profileVendorId") profileVendorId: Long): Int
-
-    @SqlUpdate("""UPDATE sim_import_batches SET size = :size,
-                                                     status = :status,
-                                                     endedAt = :endedAt
-                       WHERE id = :id""")
-    abstract fun updateBatchState(
-            @Bind("id") id: Long,
-            @Bind("size") size: Long,
-            @Bind("status") status: String,
-            @Bind("endedAt") endedAt: Long): Int
-
-    /* Getting the ID of the last insert, regardless of table. */
-    @SqlQuery("SELECT lastval()")
-    abstract fun lastInsertedRowId(): Long
+    override fun insertAll(entries: Iterator<SimEntry>) {
+        db.insertAll(entries)
+    }
 
     @Transaction
     fun importSims(
@@ -399,48 +322,9 @@ abstract class SimInventoryDAO {
         return getBatchInfo(batchId)
     }
 
-    @SqlQuery("""SELECT * FROM sim_import_batches
-                      WHERE id = :id""")
-    @RegisterMapper(SimImportBatchMapper::class)
-    abstract fun getBatchInfo(@Bind("id") id: Long): SimImportBatch
-
-    class SimImportBatchMapper : ResultSetMapper<SimImportBatch> {
-
-        @Throws(SQLException::class)
-        override fun map(index: Int, row: ResultSet, ctx: StatementContext): SimImportBatch? {
-            if (row.isAfterLast) {
-                return null
-            }
-
-            val id = row.getLong("id")
-            val endedAt = row.getLong("endedAt")
-            val status = row.getString("status")
-            val profileVendorId = row.getLong("profileVendorId")
-            val hlrId = row.getLong("hlrId")
-            val size = row.getLong("size")
-
-            return SimImportBatch(
-                    id = id,
-                    endedAt = endedAt,
-                    status = status,
-                    profileVendorId = profileVendorId,
-                    hlrId = hlrId,
-                    size = size,
-                    importer = "XXX Replace with name of agent that facilitated the import")
-        }
-    }
-
-
     //
     // Setting activation statuses
     //
-
-    @SqlUpdate("""UPDATE sim_entries SET hlrState = :hlrState
-                       WHERE id = :id""")
-    @RegisterMapper(SimEntryMapper::class)
-    abstract fun updateHlrState(
-            @Bind("id") id: Long,
-            @Bind("hlrState") hlrState: HlrState): Int
 
     /**
      * Set the entity to be marked as "active" in the HLR, then return the
@@ -457,13 +341,6 @@ abstract class SimInventoryDAO {
             null
     }
 
-    @SqlUpdate("""UPDATE sim_entries SET smdpPlusState = :smdpPlusState
-                       WHERE id = :id""")
-    @RegisterMapper(SimEntryMapper::class)
-    abstract fun updateSmDpPlusState(
-            @Bind("id") id: Long,
-            @Bind("smdpPlusState") smdpPlusState: SmDpPlusState): Int
-
     /**
      * Updates state of SIM profile and returns the updated profile.
      * @param id  row to update
@@ -477,15 +354,6 @@ abstract class SimInventoryDAO {
         else
             null
     }
-
-    @SqlUpdate("""UPDATE sim_entries SET smdpPlusState = :smdpPlusState,
-                                              matchingId = :matchingId
-                       WHERE id = :id""")
-    @RegisterMapper(SimEntryMapper::class)
-    abstract fun updateSmDpPlusStateAndMatchingId(
-            @Bind("id") id: Long,
-            @Bind("smdpPlusState") smdpPlusState: SmDpPlusState,
-            @Bind("matchingId") matchingId: String): Int
 
     /**
      * Updates state of SIM profile and returns the updated profile.
@@ -504,20 +372,6 @@ abstract class SimInventoryDAO {
     //
     // Finding next free SIM card for a particular HLR.
     //
-    @SqlQuery("""SELECT * FROM sim_entries
-                      WHERE hlrId = :hlrId AND hlrState = :hlrState AND smdpPlusState = :smdpPlusState AND profile = :profile
-                      LIMIT 1""")
-    @RegisterMapper(SimEntryMapper::class)
-    abstract fun findNextFreeSimProfileForHlr(@Bind("hlrId") hlrId: Long,
-                                              @Bind("profile") profile: String,
-                                              @Bind("hlrState") hlrState: HlrState = HlrState.NOT_ACTIVATED,
-                                              @Bind("smdpPlusState") smdpPlusState: SmDpPlusState = SmDpPlusState.AVAILABLE): SimEntry?
-
-
-    @SqlUpdate("UPDATE sim_entries SET eid = :eid WHERE id = :id")
-    @RegisterMapper(SimEntryMapper::class)
-    abstract fun updateEidOfSimProfile(@Bind("id") id: Long,
-                                       @Bind("eid") eid: String): Int
 
     /**
      * Sets the EID value of a SIM entry (profile).
@@ -531,5 +385,15 @@ abstract class SimInventoryDAO {
             getSimProfileById(id)
         else
             null
+    }
+
+    companion object {
+        private fun <T> assertNonNull(v: T?): T {
+            if (v == null) {
+                throw WebApplicationException(Response.Status.NOT_FOUND)
+            } else {
+                return v
+            }
+        }
     }
 }

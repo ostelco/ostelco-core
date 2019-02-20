@@ -4,7 +4,7 @@ import io.dropwizard.Application
 import io.dropwizard.client.HttpClientBuilder
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor
 import io.dropwizard.configuration.SubstitutingSourceProvider
-import io.dropwizard.jdbi.DBIFactory
+import io.dropwizard.jdbi3.JdbiFactory
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
@@ -12,6 +12,7 @@ import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2Plus
 import org.ostelco.sim.es2plus.SmDpPlusCallbackResource
 import org.ostelco.sim.es2plus.SmDpPlusCallbackService
 import org.ostelco.simcards.inventory.SimInventoryDAO
+import org.ostelco.simcards.inventory.SimInventoryDB
 import org.ostelco.simcards.inventory.SimInventoryResource
 
 /**
@@ -45,10 +46,10 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
 
     override fun run(config: SimAdministrationConfiguration,
                      env: Environment) {
-        val factory = DBIFactory()
+        val factory = JdbiFactory()
         val jdbi = factory.build(env,
                 config.database, "postgresql")
-        this.DAO = jdbi.onDemand(SimInventoryDAO::class.java)
+        this.DAO = SimInventoryDAO(jdbi.onDemand(SimInventoryDB::class.java))
 
         val profileVendorCallbackHandler = object : SmDpPlusCallbackService {
             // TODO: Not implemented.
