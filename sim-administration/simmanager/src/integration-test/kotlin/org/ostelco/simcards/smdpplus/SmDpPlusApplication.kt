@@ -22,6 +22,8 @@ import org.ostelco.sim.es2plus.EsTwoPlusConfig
 import org.ostelco.sim.es2plus.SmDpPlusServerResource
 import org.ostelco.sim.es2plus.SmDpPlusService
 import org.ostelco.sim.es2plus.eS2SuccessResponseHeader
+import org.ostelco.simcards.smdpplus.SmDpSimEntry
+import org.ostelco.simcards.smdpplus.SmDpSimEntryIterator
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
 import javax.validation.Valid

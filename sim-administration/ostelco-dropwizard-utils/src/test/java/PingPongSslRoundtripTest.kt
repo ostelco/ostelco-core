@@ -12,7 +12,7 @@ class PingPongSslRoundtripTest {
     companion object {
         val SUPPORT = DropwizardTestSupport<PingPongAppConfiguration>(
                 PingPongApp::class.java,
-                "config.yml"
+                "src/test/resources/config.yml"
         )
         /* From config file. */
         const val HTTP_PORT = 8080
