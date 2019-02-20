@@ -309,6 +309,7 @@ class SimAdministrationTest {
         val stats : SimInventoryDAO.SimProfileKeyStatistics? = simDao.getProfileStats(hlrId, expectedProfile)
         assertNotNull(stats)
         assertEquals(100, stats!!.noOfEntries)
+        assertEquals(100, stats!!.noOfUnallocatedEntries)
     }
 
     // XXX This one should be in a separate file, but then we need to refactor

@@ -557,12 +557,17 @@ abstract class SimInventoryDAO {
     @SqlQuery("""
         SELECT 'NO_OF_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries WHERE hlrId = :hlrId AND profile = :simProfile
         UNION
-        SELECT 'NO_OF_UNALLOCATED_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries WHERE hlrId = :hlrId AND profile = :simProfile
+        SELECT 'NO_OF_UNALLOCATED_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries
+                   WHERE hlrId = :hlrId AND profile = :simProfile AND
+                         smdpPlusState =  :smdpUnallocatedState AND
+                         hlrState = :hlrUnallocatedState
+
     """)
     abstract fun getProfileStatsAsKeyValuePairs(
             @Bind("hlrId") hlrId: Long,
-            @Bind("simProfile") simProfile: String): List<KeyValuePair>
-
+            @Bind("simProfile") simProfile: String,
+            @Bind("hlrUnallocatedState") hlrUnallocatedState: String,
+            @Bind("smdpUnallocatedState") smdpUnallocatedState: String): List<KeyValuePair>
 
     fun getProfileStats(
             @Bind("hlrId") hlrId: Long,
@@ -570,7 +575,10 @@ abstract class SimInventoryDAO {
 
         val keyValuePairs = mutableMapOf<String, Long>()
 
-        getProfileStatsAsKeyValuePairs(hlrId, simProfile).forEach { keyValuePairs.put(it.key, it.value) }
+        getProfileStatsAsKeyValuePairs(hlrId = hlrId, simProfile = simProfile,
+                hlrUnallocatedState = HlrState.NOT_ACTIVATED.name,
+                smdpUnallocatedState = SmDpPlusState.AVAILABLE.name
+                ).forEach { keyValuePairs.put(it.key, it.value) }
         val noOfEntries = keyValuePairs.get("NO_OF_ENTRIES")!!
         val noOfUnallocatedEntries = keyValuePairs.get("NO_OF_UNALLOCATED_ENTRIES")!!
 
