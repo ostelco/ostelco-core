@@ -122,7 +122,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
         entriesByProfile.clear()
         entriesByImsi.clear()
 
-        originalEntries.toList().forEach {
+        originalEntries.map{it.clone()}.forEach {
             entries.add(it)
             entriesByIccid[it.iccid] = it
             entriesByImsi[it.imsi] = it
@@ -135,6 +135,10 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
             }
             entriesForProfile.add(it)
         }
+
+        // Just checking.  This shouldn't happen, but if the original entries were not
+        // properly copied by toList, it could heasily happen.
+        entries.forEach { if (it.allocated) throw RuntimeException("Already allocated new entry $it")}
     }
 
 
