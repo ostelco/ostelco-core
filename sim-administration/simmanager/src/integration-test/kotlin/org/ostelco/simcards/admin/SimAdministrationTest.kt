@@ -317,27 +317,19 @@ class SimAdministrationTest {
         assertEquals(0, stats!!.noOfReleasedEntries)
     }
 
-    // XXX This one should be in a separate file, but then we need to refactor
-    //     out the fixture components first, so as a prelimnary step we'll just
-    //     put it here
-
-
-    @Ignore @Test
+    @Test
     fun testPeriodicProvisioningTask() {
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
 
+        val profileVendors = SIM_MANAGER_RULE.configuration.profileVendors
+        val hlrConfigs = SIM_MANAGER_RULE.configuration.hlrVendors
+
         val httpClient  = HttpClientBuilder(SIM_MANAGER_RULE.environment).build("periodicProvisioningTaskClient")
         val eS2PlusClient = ES2PlusClient(httpClient = httpClient, requesterId = "foo", port = 8443, host = "127.0.0.1")
-        val hlrConfig = HlrConfig()
 
-        hlrConfig.endpoint = "${HLR_RULE.containerIpAddress}:8080"
-        hlrConfig.name = "Foo"
-        hlrConfig.userId = "baz"
-        hlrConfig.apiKey = "daKey"
-
-        val hlrConfigs = listOf<HlrConfig>(hlrConfig)
 
         val task = PreallocateProfilesTask(
+                profileVendors = profileVendors,
                 simInventoryDAO = simDao,
                 es2PlusClient = eS2PlusClient,
                 httpClient = httpClient,

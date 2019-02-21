@@ -1,7 +1,15 @@
 #!/bin/bash
 
 
-DEPENDENCIES="gradle docker-compose"
+#
+# Cd to script directory
+#
+
+cd $(dirname $0)
+
+
+
+DEPENDENCIES="gradle docker-compose ./gradlew"
 
 
 #
@@ -14,9 +22,6 @@ for dep in $DEPENDENCIES ; do
    exit 1
  fi
 done
-
-
-
 
 #
 # Do we have the necessary environment variables set
@@ -35,16 +40,10 @@ fi
 
 
 #
-# Cd to script directory
-#
-
-cd $(dirname $0)
-
-#
 # Then start running the build
 #
 
-gradle clean build
+./gradlew clean build
 
 #
 # If that didn't go too well, then bail out.
@@ -57,5 +56,7 @@ else
    echo "$0 INFO: Building/unit tests went well, Proceeding to acceptance tests."
 fi
 
-
+#
+# Acceptance test
+#
 docker-compose up --build --abort-on-container-exit

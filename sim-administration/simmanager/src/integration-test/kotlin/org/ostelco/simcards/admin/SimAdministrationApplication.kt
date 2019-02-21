@@ -82,6 +82,6 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
 
 
         val es2plusclient = ES2PlusClient(requesterId = "foo.bar.baz", port = 8080, host = "sm-dp-plus", httpClient = httpClient)
-        env.admin().addTask(PreallocateProfilesTask(simInventoryDAO = this.DAO, httpClient = httpClient, hlrConfigs = config.hlrVendors, es2PlusClient = es2plusclient));
+        env.admin().addTask(PreallocateProfilesTask(simInventoryDAO = this.DAO, es2PlusClient = es2plusclient, httpClient = httpClient, hlrConfigs = config.hlrVendors, profileVendors = config.profileVendors));
     }
 }
