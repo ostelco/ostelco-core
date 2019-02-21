@@ -341,7 +341,8 @@ class SimAdministrationTest {
 
         val postAllocationStats  = simDao.getProfileStats(hlrId, expectedProfile)
 
-        val noOfAllocatedProfiles = postAllocationStats.noOfEntriesAvailableForImmediateUse - preAllocationStats.noOfEntriesAvailableForImmediateUse
+        val noOfAllocatedProfiles =
+                postAllocationStats.noOfEntriesAvailableForImmediateUse - preAllocationStats.noOfEntriesAvailableForImmediateUse
         assertEquals(maxNoOfProfilesToAllocate,
                 noOfAllocatedProfiles)
     }
