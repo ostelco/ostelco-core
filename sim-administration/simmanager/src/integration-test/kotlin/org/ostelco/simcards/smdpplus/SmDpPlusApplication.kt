@@ -8,22 +8,10 @@ import io.dropwizard.client.HttpClientConfiguration
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 import org.apache.http.client.HttpClient
-import org.ostelco.dropwizardutils.CertAuthConfig
-import org.ostelco.dropwizardutils.CertificateAuthorizationFilter
+import org.ostelco.dropwizardutils.*
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
-import org.ostelco.dropwizardutils.OpenapiResourceAdderConfig
-import org.ostelco.dropwizardutils.RBACService
-import org.ostelco.dropwizardutils.RolesConfig
-import org.ostelco.sim.es2plus.ES2PlusClient
+import org.ostelco.sim.es2plus.*
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
-import org.ostelco.sim.es2plus.Es2ConfirmOrderResponse
-import org.ostelco.sim.es2plus.Es2DownloadOrderResponse
-import org.ostelco.sim.es2plus.EsTwoPlusConfig
-import org.ostelco.sim.es2plus.SmDpPlusServerResource
-import org.ostelco.sim.es2plus.SmDpPlusService
-import org.ostelco.sim.es2plus.eS2SuccessResponseHeader
-import org.ostelco.simcards.smdpplus.SmDpSimEntry
-import org.ostelco.simcards.smdpplus.SmDpSimEntryIterator
 import org.slf4j.LoggerFactory
 import java.io.FileInputStream
 import javax.validation.Valid
@@ -60,6 +48,11 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 
     lateinit var es2plusClient: ES2PlusClient
 
+    lateinit var serverResource: SmDpPlusServerResource
+
+
+    lateinit var smdpPlusService: SmDpPlusEmulator
+
     override fun run(config: SmDpPlusAppConfiguration,
                      env: Environment) {
 
@@ -69,10 +62,11 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
         addEs2PlusDefaultFiltersAndInterceptors(jerseyEnvironment)
 
         val simEntriesIterator = SmDpSimEntryIterator(FileInputStream(config.simBatchData))
-        val smdpPlusService: SmDpPlusService = SmDpPlusEmulator(simEntriesIterator)
+        this.smdpPlusService = SmDpPlusEmulator(simEntriesIterator)
 
-        jerseyEnvironment.register(SmDpPlusServerResource(
-                smDpPlus = smdpPlusService))
+        this.serverResource = SmDpPlusServerResource(
+                smDpPlus = smdpPlusService)
+        jerseyEnvironment.register(serverResource)
         jerseyEnvironment.register(CertificateAuthorizationFilter(RBACService(
                 rolesConfig = config.rolesConfig,
                 certConfig = config.certConfig)))
@@ -88,6 +82,10 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
                 host = config.es2plusConfig.host,
                 port = config.es2plusConfig.port,
                 httpClient = httpClient)
+    }
+
+    fun reset() {
+        this.smdpPlusService.reset();
     }
 }
 
@@ -110,8 +108,21 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
     private val entriesByImsi = mutableMapOf<String, SmDpSimEntry>()
     private val entriesByProfile = mutableMapOf<String, MutableSet<SmDpSimEntry>>()
 
+    private val originlEntries : MutableSet<SmDpSimEntry> = mutableSetOf()
+
     init {
-        incomingEntries.forEach {
+        incomingEntries.forEach { originlEntries.add(it) }
+
+        log.info("Just read ${entries.size} SIM entries.")
+    }
+
+    fun reset() {
+        entries.clear()
+        entriesByIccid.clear()
+        entriesByProfile.clear()
+        entriesByImsi.clear()
+
+        originlEntries.toList().forEach {
             entries.add(it)
             entriesByIccid[it.iccid] = it
             entriesByImsi[it.imsi] = it
@@ -124,9 +135,8 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
             }
             entriesForProfile.add(it)
         }
-
-        log.info("Just read ${entries.size} SIM entries.")
     }
+
 
     // TODO; What about the reservation flag?
     override fun downloadOrder(eid: String?, iccid: String?, profileType: String?): Es2DownloadOrderResponse {
@@ -253,6 +263,8 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
     override fun releaseProfile(iccid: String) {
         TODO("not implemented")
     }
+
+
 }
 
 /**

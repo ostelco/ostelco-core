@@ -121,6 +121,7 @@ class SimAdministrationTest {
 
     @Before
     fun setupTables() {
+        SM_DP_PLUS_RULE.getApplication<SmDpPlusApplication>().reset()
         clearTables()
         presetTables()
         loadSimData()
@@ -287,7 +288,7 @@ class SimAdministrationTest {
         assertThat(simEntry.hlrState).isEqualTo(HlrState.ACTIVATED)
     }
 
-    @Ignore @Test // XXX Insufficient separation between tests!
+    @Test
     fun testGetListOfHlrs() {
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
 
@@ -298,7 +299,7 @@ class SimAdministrationTest {
     }
 
 
-    @Ignore @Test // XXX Insufficient separation between tests!
+    @Test
     fun testGetProfilesForHlr() {
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
         val profiles : List<String> = simDao.getProfileNamesForHlr(hlrId)
@@ -316,7 +317,7 @@ class SimAdministrationTest {
         assertEquals(0, stats!!.noOfReleasedEntries)
     }
 
-    @Ignore @Test // XXX Insufficient separation between tests!
+    @Test
     fun testPeriodicProvisioningTask() {
 
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
@@ -343,7 +344,10 @@ class SimAdministrationTest {
 
         val noOfAllocatedProfiles =
                 postAllocationStats.noOfEntriesAvailableForImmediateUse - preAllocationStats.noOfEntriesAvailableForImmediateUse
-        assertEquals(maxNoOfProfilesToAllocate,
+
+
+        assertEquals(
+                maxNoOfProfilesToAllocate.toLong(),
                 noOfAllocatedProfiles)
     }
 }
