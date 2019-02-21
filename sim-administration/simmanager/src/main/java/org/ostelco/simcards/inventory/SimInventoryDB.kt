@@ -1,6 +1,6 @@
 package org.ostelco.simcards.inventory
 
-import org.jdbi.v3.sqlobject.customizer.Bind
+import org.jdbi.v3.sqlobject.config.RegisterRowMapper
 import org.jdbi.v3.sqlobject.customizer.BindBean
 import org.jdbi.v3.sqlobject.statement.BatchChunkSize
 import org.jdbi.v3.sqlobject.statement.SqlBatch
@@ -190,6 +190,7 @@ interface SimInventoryDB {
      */
     @SqlQuery("SELECT * FROM hlr_adapters")
     // TODO(RMZ): @RegisterMapper(HlrAdapterMapper::class)
+    @RegisterRowMapper(SimInventoryDAO.HlrAdapterMapper::class)
     fun getHlrAdapters(): List<HlrAdapter>
 
 
@@ -198,7 +199,7 @@ interface SimInventoryDB {
      * a particular HLR.
      */
     @SqlQuery("""SELECT DISTINCT profile  FROM sim_entries WHERE hlrId = :hlrId""")
-    fun getProfileNamesForHlr(@Bind("hlrId") hlrId: Long): List<String>
+    fun getProfileNamesForHlr(hlrId: Long): List<String>
 
 
     /**
@@ -206,7 +207,6 @@ interface SimInventoryDB {
      * NOTE: This method is intended as an internal helper method for getProfileStats, its signature
      * can change at any time, so don't use it unless you really know what you're doing.
      */
-    // TODO(RMZ): @RegisterMapper(KeyValueMapper::class)
     @SqlQuery("""
         SELECT 'NO_OF_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries WHERE hlrId = :hlrId AND profile = :simProfile
         UNION
@@ -225,13 +225,14 @@ interface SimInventoryDB {
                          smdpPlusState =  :smdpReleasedState AND
                          hlrState = :hlrAllocatedState
     """)
+    @RegisterRowMapper(SimInventoryDAO.KeyValueMapper::class)
     fun getProfileStatsAsKeyValuePairs(
-            @Bind("hlrId") hlrId: Long,
-            @Bind("simProfile") simProfile: String,
-            @Bind("smdpReleasedState") smdpReleasedState: String = SmDpPlusState.RELEASED.name,
-            @Bind("hlrUnallocatedState") hlrUnallocatedState: String = HlrState.NOT_ACTIVATED.name,
-            @Bind("smdpUnallocatedState") smdpUnallocatedState: String = SmDpPlusState.AVAILABLE.name,
-            @Bind("hlrAllocatedState") hlrAllocatedState: String = HlrState.ACTIVATED.name,
-            @Bind("smdpAllocatedState") smdpAllocatedState: String = SmDpPlusState.ALLOCATED.name,
-            @Bind("smdpDownloadedState") smdpDownloadedState: String = SmDpPlusState.DOWNLOADED.name): List<SimInventoryDAO.KeyValuePair>
+            hlrId: Long,
+            simProfile: String,
+            smdpReleasedState: String = SmDpPlusState.RELEASED.name,
+            hlrUnallocatedState: String = HlrState.NOT_ACTIVATED.name,
+            smdpUnallocatedState: String = SmDpPlusState.AVAILABLE.name,
+            hlrAllocatedState: String = HlrState.ACTIVATED.name,
+            smdpAllocatedState: String = SmDpPlusState.ALLOCATED.name,
+            smdpDownloadedState: String = SmDpPlusState.DOWNLOADED.name): List<SimInventoryDAO.KeyValuePair>
 }

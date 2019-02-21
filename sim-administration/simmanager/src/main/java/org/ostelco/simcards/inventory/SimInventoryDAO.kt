@@ -3,12 +3,16 @@ package org.ostelco.simcards.inventory
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
+import org.jdbi.v3.core.mapper.RowMapper
+import org.jdbi.v3.core.statement.StatementContext
 import org.jdbi.v3.sqlobject.customizer.Bind
 import org.jdbi.v3.sqlobject.transaction.Transaction
+import org.ostelco.simcards.adapter.HlrAdapter
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.nio.charset.Charset
+import java.sql.ResultSet
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.AtomicLong
 import javax.ws.rs.WebApplicationException
@@ -321,8 +325,6 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
     }
 
 
-
-
     /**
      * Get relevant statistics for a particular profile type for a particular HLR.
      */
@@ -348,11 +350,11 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
 
 
     class SimProfileKeyStatistics(val noOfEntries: Long, val noOfUnallocatedEntries: Long, val noOfReleasedEntries: Long, val noOfEntriesAvailableForImmediateUse: Long)
-    // TODO(RMZ):
-    /*
-    class KeyValueMapper : ResultSetMapper<KeyValuePair> {
-        @Throws(SQLException::class)
-        override fun map(index: Int, row: ResultSet, ctx: StatementContext): KeyValuePair? {
+
+
+    class KeyValueMapper : RowMapper<KeyValuePair> {
+
+        override fun map(row: ResultSet, ctx: StatementContext): KeyValuePair? {
             if (row.isAfterLast) {
                 return null
             }
@@ -362,7 +364,21 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
             return KeyValuePair(key = key, value = value)
         }
     }
-*/
+
+
+    class HlrAdapterMapper  : RowMapper<HlrAdapter> {
+        override fun map(row: ResultSet, ctx: StatementContext): HlrAdapter? {
+            if (row.isAfterLast) {
+                return null
+            }
+
+            val id = row.getLong("id")
+            val name = row.getString("name")
+            return HlrAdapter(id = id, name = name)
+        }
+    }
+
+
     data class KeyValuePair(val key: String, val value: Long)
 
 
@@ -375,5 +391,7 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
             }
         }
     }
+
+
 }
 
