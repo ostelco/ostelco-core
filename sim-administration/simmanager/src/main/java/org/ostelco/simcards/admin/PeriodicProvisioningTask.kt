@@ -38,7 +38,7 @@ class PreallocateProfilesTask(
 
     fun doPreprovisioning(hlrAdapter: HlrAdapter,
                           profile: String,
-                          profileStats: SimInventoryDAO.SimProfileKeyStatistics): Boolean {
+                          profileStats: SimInventoryDAO.SimProfileKeyStatistics) {
         val noOfProfilesToActuallyAllocate =
                 Math.min(maxNoOfProfileToAllocate.toLong(), profileStats.noOfUnallocatedEntries)
 
@@ -47,24 +47,18 @@ class PreallocateProfilesTask(
                     simInventoryDAO.findNextFreeSimProfileForHlr(
                             hlrId = hlrAdapter.id,
                             profile = profile)
-
-            if (simEntry != null) {
-
-                val simVendorAdapter = simInventoryDAO.getProfileVendorAdapterById(simEntry.profileVendorId)
-                val hlrConfig = hlrConfigs.find { it.name == hlrAdapter.name }!!
-                val profileVendorConfig = profileVendors.find { it.name == simVendorAdapter.name }!!
-                simVendorAdapter.downloadOrder(httpClient = httpClient, dao = simInventoryDAO, simEntry = simEntry, config = profileVendorConfig)
-                simVendorAdapter.confirmOrder(httpClient = httpClient, dao = simInventoryDAO, simEntry = simEntry, config = profileVendorConfig)
-                try {
-                    hlrAdapter.activate(simEntry = simEntry, httpClient = httpClient, config = hlrConfig, dao = simInventoryDAO)
-                } catch (e: WebApplicationException) {
-                    return false  // TODO(RMZ) On error, but state information is actually set right at this time
-                }
+            if (simEntry == null) {
+                throw WebApplicationException("Could not find SIM profile for hlr '${hlrAdapter.name}' matching profile '${profile}'")
             }
-        }
-        return true // XXX TODO (Rmz):
-    }
+            val simVendorAdapter = simInventoryDAO.getProfileVendorAdapterById(simEntry.profileVendorId)
+            val hlrConfig = hlrConfigs.find { it.name == hlrAdapter.name }!!
+            val profileVendorConfig = profileVendors.find { it.name == simVendorAdapter.name }!!
 
+            simVendorAdapter.downloadOrder(httpClient = httpClient, dao = simInventoryDAO, simEntry = simEntry, config = profileVendorConfig)
+            simVendorAdapter.confirmOrder(httpClient = httpClient, dao = simInventoryDAO, simEntry = simEntry, config = profileVendorConfig)
+            hlrAdapter.activate(simEntry = simEntry, httpClient = httpClient, config = hlrConfig, dao = simInventoryDAO)
+        }
+    }
 
 
     /**
@@ -72,7 +66,7 @@ class PreallocateProfilesTask(
      * allocation of profiles so that if possible, there will be tasks available for
      * provisioning.
      */
-    fun preallocateProfiles() : Boolean {
+    fun preallocateProfiles() {
         var hlrs: Collection<HlrAdapter> = simInventoryDAO.getHlrAdapters()
 
         for (hlr in hlrs) {
@@ -81,12 +75,9 @@ class PreallocateProfilesTask(
                 val profileStats =
                         simInventoryDAO.getProfileStats(hlr.id, profile)
                 if (profileStats.noOfEntriesAvailableForImmediateUse < lowWaterMark) {
-                    if (! doPreprovisioning(hlrAdapter= hlr, profile = profile, profileStats = profileStats)) {
-                        return false
-                    }
+                    doPreprovisioning(hlrAdapter = hlr, profile = profile, profileStats = profileStats)
                 }
             }
         }
-        return true
     }
 }

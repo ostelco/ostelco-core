@@ -6,7 +6,8 @@ import io.dropwizard.jdbi3.JdbiFactory
 import io.dropwizard.testing.ConfigOverride
 import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
-import junit.framework.Assert.*
+import junit.framework.Assert.assertEquals
+import junit.framework.Assert.assertNotNull
 import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.client.ClientProperties
 import org.jdbi.v3.core.Jdbi
@@ -342,7 +343,7 @@ class SimAdministrationTest {
                 httpClient = httpClient,
                 hlrConfigs = hlrConfigs)
 
-        assertTrue("Unable to preallocate all (or perhaps any)  profiles successfully", task.preallocateProfiles())
+        task.preallocateProfiles()
 
         val postAllocationStats  = simDao.getProfileStats(hlrId, expectedProfile)
 
