@@ -85,10 +85,10 @@ interface SimInventoryDB {
 
     @Transaction
     @SqlBatch("""INSERT INTO sim_entries
-                                  (batch, profileVendorId, hlrid, hlrState, smdpplusstate, matchingId, profile, iccid, imsi, msisdn, pin1, pin2, puk1, puk2)
-                      VALUES (:batch, :profileVendorId, :hlrId, :hlrState, :smdpPlusState, :matchingId, :profile, :iccid, :imsi, :msisdn, :pin1, :pin2, :puk1, :puk2)""")
+                                  (batch, profileVendorId, hlrid, hlrState, smdpplusstate, provisionState, matchingId, profile, iccid, imsi, msisdn, pin1, pin2, puk1, puk2)
+                      VALUES (:batch, :profileVendorId, :hlrId, :hlrState, :smdpPlusState, :provisionState, :matchingId, :profile, :iccid, :imsi, :msisdn, :pin1, :pin2, :puk1, :puk2)""")
     @BatchChunkSize(1000)
-    abstract fun insertAll(@BindBean entries: Iterator<SimEntry>)
+    fun insertAll(@BindBean entries: Iterator<SimEntry>)
 
     @SqlUpdate("""INSERT INTO sim_import_batches (status,  importer, hlrId, profileVendorId)
                        VALUES ('STARTED', :importer, :hlrId, :profileVendorId)""")
@@ -127,6 +127,24 @@ interface SimInventoryDB {
             @Bind("id") id: Long,
             @Bind("hlrState") hlrState: HlrState): Int
 
+    @SqlUpdate("""UPDATE sim_entries SET provisionState = :provisionState
+                       WHERE id = :id""")
+    @RegisterRowMapper(SimEntryMapper::class)
+    fun updateProvisionState(
+            @Bind("id") id: Long,
+            @Bind("provisionState") provisionState: ProvisionState): Int
+
+
+    @SqlUpdate("""UPDATE sim_entries SET hlrState = :hlrState,
+                                              provisionState = :provisionState
+                       WHERE id = :id""")
+    @RegisterRowMapper(SimEntryMapper::class)
+    fun updateHlrStateAndProvisionState(
+            @Bind("id") id: Long,
+            @Bind("hlrState") hlrState: HlrState,
+            @Bind("provisionState") provisionState: ProvisionState): Int
+
+
     @SqlUpdate("""UPDATE sim_entries SET smdpPlusState = :smdpPlusState
                        WHERE id = :id""")
     @RegisterRowMapper(SimEntryMapper::class)
@@ -146,14 +164,31 @@ interface SimInventoryDB {
     //
     // Finding next free SIM card for a particular HLR.
     //
-    @SqlQuery("""SELECT * FROM sim_entries
-                      WHERE hlrId = :hlrId AND hlrState = :hlrState AND smdpPlusState = :smdpPlusState AND profile = :profile
-                      LIMIT 1""")
+    @SqlQuery("""SELECT a.*
+                      FROM   sim_entries a
+                             JOIN (SELECT id,
+                                          CASE
+                                            WHEN hlrstate = 'ACTIVATED'
+                                                 AND smdpplusstate = 'ALLOCATED' THEN 1
+                                            WHEN hlrstate = 'NOT_ACTIVATED'
+                                                 AND smdpplusstate = 'ALLOCATED' THEN 2
+                                            WHEN hlrstate = 'NOT_ACTIVATED'
+                                                 AND smdpplusstate = 'AVAILABLE' THEN 3
+                                            ELSE 9999
+                                          END AS position
+                                  FROM   sim_entries
+                                  WHERE  provisionState = 'AVAILABLE'
+                                         AND hlrId = :hlrId
+                                         AND profile = :profile
+                                  ORDER  BY position ASC,
+                                           id ASC) b
+                             ON ( a.id = b.id
+                                  AND b.position < 9999 )
+                      LIMIT  1""")
     @RegisterRowMapper(SimEntryMapper::class)
     fun findNextFreeSimProfileForHlr(@Bind("hlrId") hlrId: Long,
-                                     @Bind("profile") profile: String,
-                                     @Bind("hlrState") hlrState: HlrState = HlrState.NOT_ACTIVATED,
-                                     @Bind("smdpPlusState") smdpPlusState: SmDpPlusState = SmDpPlusState.AVAILABLE): SimEntry?
+                                     @Bind("profile") profile: String): SimEntry?
+
 
     @SqlUpdate("UPDATE sim_entries SET eid = :eid WHERE id = :id")
     @RegisterRowMapper(SimEntryMapper::class)
