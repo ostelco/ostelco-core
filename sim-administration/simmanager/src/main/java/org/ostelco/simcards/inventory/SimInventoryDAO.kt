@@ -62,10 +62,10 @@ data class SimEntry(
         @JsonProperty("smdpPlusState") val smdpPlusState: SmDpPlusState = SmDpPlusState.AVAILABLE,
         @JsonProperty("provisionState") val provisionState: ProvisionState = ProvisionState.AVAILABLE,
         @JsonProperty("matchingId") val matchingId: String? = null,
-        @JsonProperty("pin1") val pin1: String,
-        @JsonProperty("pin2") val pin2: String,
-        @JsonProperty("puk1") val puk1: String,
-        @JsonProperty("puk2") val puk2: String
+        @JsonProperty("pin1") val pin1: String? = null,
+        @JsonProperty("pin2") val pin2: String? = null,
+        @JsonProperty("puk1") val puk1: String? = null,
+        @JsonProperty("puk2") val puk2: String? = null
 )
 
 /**
@@ -108,33 +108,35 @@ class SimEntryIterator(profileVendorId: Long,
                 .withFirstRecordAsHeader()
                 .withIgnoreEmptyLines(true)
                 .withTrim()
+                .withIgnoreSurroundingSpaces()
+                .withNullString("")
                 .withDelimiter(',')
 
         BufferedReader(InputStreamReader(csvInputStream, Charset.forName(
                 "ISO-8859-1"))).use { reader ->
             CSVParser(reader, csvFileFormat).use { csvParser ->
-                for (record in csvParser) {
-                    val iccid = record.get("ICCID")
-                    val imsi = record.get("IMSI")
-                    val msisdn = record.get("MSISDN")
-                    val pin1 = record.get("PIN1")
-                    val pin2 = record.get("PIN2")
-                    val puk1 = record.get("PUK1")
-                    val puk2 = record.get("PUK2")
-                    val profile = record.get("PROFILE")
+                for (row in csvParser) {
+                    val iccid = row.get("ICCID")
+                    val imsi = row.get("IMSI")
+                    val msisdn = row.get("MSISDN")
+                    val pin1 = row?.get("PIN1")
+                    val pin2 = row?.get("PIN2")
+                    val puk1 = row?.get("PUK1")
+                    val puk2 = row?.get("PUK2")
+                    val profile = row.get("PROFILE")
 
                     val value = SimEntry(
                             batch = batchId,
-                            profileVendorId = profileVendorId,
-                            profile = profile,
                             hlrId = hlrId,
+                            profileVendorId = profileVendorId,
                             iccid = iccid,
                             imsi = imsi,
                             msisdn = msisdn,
                             pin1 = pin1,
                             puk1 = puk1,
                             puk2 = puk2,
-                            pin2 = pin2
+                            pin2 = pin2,
+                            profile = profile
                     )
 
                     values.add(value)
@@ -159,115 +161,9 @@ class SimEntryIterator(profileVendorId: Long,
     }
 }
 
-
-class SimEntryMapper : RowMapper<SimEntry> {
-
-    @Throws(SQLException::class)
-    override fun map(r: ResultSet, ctx: StatementContext): SimEntry? {
-        if (r.isAfterLast) {
-            return null
-        }
-
-        val id = r.getLong("id")
-        val batch = r.getLong("batch")
-        val profileVendorId = r.getLong("profileVendorId")
-        val hlrId = r.getLong("hlrId")
-        val msisdn = r.getString("msisdn")
-        val iccid = r.getString("iccid")
-        val imsi = r.getString("imsi")
-        val eid = r.getString("eid")
-        val profile = r.getString("profile")
-        val smdpPlusState = r.getString("smdpPlusState")
-        val hlrState = r.getString("hlrState")
-        val provisionState = r.getString("provisionState")
-        val matchingId = r.getString("matchingId")
-        val pin1 = r.getString("pin1")
-        val pin2 = r.getString("pin2")
-        val puk1 = r.getString("puk1")
-        val puk2 = r.getString("puk2")
-
-        return SimEntry(
-                id = id,
-                batch = batch,
-                profileVendorId = profileVendorId,
-                hlrId = hlrId,
-                msisdn = msisdn,
-                iccid = iccid,
-                imsi = imsi,
-                eid = eid,
-                profile = profile,
-                smdpPlusState = SmDpPlusState.valueOf(smdpPlusState.toUpperCase()),
-                hlrState = HlrState.valueOf(hlrState.toUpperCase()),
-                provisionState = ProvisionState.valueOf(provisionState.toUpperCase()),
-                matchingId = matchingId,
-                pin1 = pin1,
-                pin2 = pin2,
-                puk1 = puk1,
-                puk2 = puk2
-        )
-    }
-}
-
-
-class HlrAdapterMapper : RowMapper<HlrAdapter> {
-
-    @Throws(SQLException::class)
-    override fun map(row: ResultSet, ctx: StatementContext): HlrAdapter? {
-        if (row.isAfterLast) {
-            return null
-        }
-
-        val id = row.getLong("id")
-        val name = row.getString("name")
-
-        return HlrAdapter(id = id, name = name)
-    }
-}
-
-
-class ProfileVendorAdapterMapper : RowMapper<ProfileVendorAdapter> {
-
-    @Throws(SQLException::class)
-    override fun map(row: ResultSet, ctx: StatementContext): ProfileVendorAdapter? {
-        if (row.isAfterLast) {
-            return null
-        }
-
-        val id = row.getLong("id")
-        val name = row.getString("name")
-
-        return ProfileVendorAdapter(id = id, name = name)
-    }
-}
-
-
-class SimImportBatchMapper : RowMapper<SimImportBatch> {
-
-    @Throws(SQLException::class)
-    override fun map(row: ResultSet, ctx: StatementContext): SimImportBatch? {
-        if (row.isAfterLast) {
-            return null
-        }
-
-        val id = row.getLong("id")
-        val endedAt = row.getLong("endedAt")
-        val status = row.getString("status")
-        val profileVendorId = row.getLong("profileVendorId")
-        val hlrId = row.getLong("hlrId")
-        val size = row.getLong("size")
-
-        return SimImportBatch(
-                id = id,
-                endedAt = endedAt,
-                status = status,
-                profileVendorId = profileVendorId,
-                hlrId = hlrId,
-                size = size,
-                importer = "XXX Replace with name of agent that facilitated the import")
-    }
-}
-
-
+/**
+ * SIM DB DAO.
+ */
 class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
 
     /**
