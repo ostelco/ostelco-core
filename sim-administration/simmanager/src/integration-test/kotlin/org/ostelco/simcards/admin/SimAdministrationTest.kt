@@ -99,7 +99,6 @@ class SimAdministrationTest {
     class KFixedHostPortGenericContainer(imageName: String) : FixedHostPortGenericContainer<KFixedHostPortGenericContainer>(imageName)
 
     private val hlrName = "Foo"
-    private val hlrId = 1L
     private val profileVendor = "Bar"
     private val phoneType = "rababara"
     private val expectedProfile = "IPHONE_PROFILE_2"
@@ -120,7 +119,7 @@ class SimAdministrationTest {
      */
 
     @Before
-    fun setupTables() {
+    fun setUp() {
         SM_DP_PLUS_RULE.getApplication<SmDpPlusApplication>().reset()
         clearTables()
         presetTables()
@@ -295,13 +294,14 @@ class SimAdministrationTest {
         val hlrs = simDao.getHlrAdapters()
         assertEquals(1,hlrs.size)
         assertEquals(hlrName, hlrs[0].name)
-        assertEquals(hlrId, hlrs[0].id)
     }
 
 
     @Test
     fun testGetProfilesForHlr() {
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
+        val hlrs = simDao.getHlrAdapters()
+        val hlrId = hlrs[0].id
         val profiles : List<String> = simDao.getProfileNamesForHlr(hlrId)
         assertEquals(1, profiles.size)
         assertEquals(expectedProfile, profiles.get(0))
@@ -310,11 +310,13 @@ class SimAdministrationTest {
     @Test
     fun  testGetProfileStats() {
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
+        val hlrs = simDao.getHlrAdapters()
+        val hlrId = hlrs[0].id
         val stats : SimInventoryDAO.SimProfileKeyStatistics? = simDao.getProfileStats(hlrId, expectedProfile)
         assertNotNull(stats)
-        assertEquals(100, stats!!.noOfEntries)
-        assertEquals(100, stats!!.noOfUnallocatedEntries)
-        assertEquals(0, stats!!.noOfReleasedEntries)
+        assertEquals(100L, stats!!.noOfEntries)
+        assertEquals(100L, stats!!.noOfUnallocatedEntries)
+        assertEquals(0L, stats!!.noOfReleasedEntries)
     }
 
     @Test
@@ -328,6 +330,8 @@ class SimAdministrationTest {
         val httpClient  = HttpClientBuilder(SIM_MANAGER_RULE.environment).build("periodicProvisioningTaskClient")
 
         val maxNoOfProfilesToAllocate = 10
+        val hlrs = simDao.getHlrAdapters()
+        val hlrId = hlrs[0].id
 
         val preAllocationStats = simDao.getProfileStats(hlrId, expectedProfile)
 
@@ -344,7 +348,6 @@ class SimAdministrationTest {
 
         val noOfAllocatedProfiles =
                 postAllocationStats.noOfEntriesAvailableForImmediateUse - preAllocationStats.noOfEntriesAvailableForImmediateUse
-
 
         assertEquals(
                 maxNoOfProfilesToAllocate.toLong(),

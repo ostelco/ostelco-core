@@ -108,10 +108,10 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
     private val entriesByImsi = mutableMapOf<String, SmDpSimEntry>()
     private val entriesByProfile = mutableMapOf<String, MutableSet<SmDpSimEntry>>()
 
-    private val originlEntries : MutableSet<SmDpSimEntry> = mutableSetOf()
+    private val originalEntries : MutableSet<SmDpSimEntry> = mutableSetOf()
 
     init {
-        incomingEntries.forEach { originlEntries.add(it) }
+        incomingEntries.forEach { originalEntries.add(it) }
 
         log.info("Just read ${entries.size} SIM entries.")
     }
@@ -122,7 +122,7 @@ class SmDpPlusEmulator(incomingEntries: Iterator<SmDpSimEntry>) : SmDpPlusServic
         entriesByProfile.clear()
         entriesByImsi.clear()
 
-        originlEntries.toList().forEach {
+        originalEntries.toList().forEach {
             entries.add(it)
             entriesByIccid[it.iccid] = it
             entriesByImsi[it.imsi] = it
