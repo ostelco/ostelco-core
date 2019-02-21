@@ -47,8 +47,9 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
     override fun run(config: SimAdministrationConfiguration,
                      env: Environment) {
         val factory = JdbiFactory()
-        val jdbi = factory.build(env,
-                config.database, "postgresql")
+        val jdbi = factory
+                .build(env, config.database, "postgresql")
+                .installPlugins()
         this.DAO = SimInventoryDAO(jdbi.onDemand(SimInventoryDB::class.java))
 
         val profileVendorCallbackHandler = object : SmDpPlusCallbackService {

@@ -75,9 +75,10 @@ class SimAdministrationTest {
         @BeforeClass
         @JvmStatic
         fun setUpDb() {
-            jdbi = JdbiFactory().build(SIM_MANAGER_RULE.environment,
-                    SIM_MANAGER_RULE.configuration.database,
-                    "db")
+            jdbi = JdbiFactory()
+                    .build(SIM_MANAGER_RULE.environment, SIM_MANAGER_RULE.configuration.database,
+                            "db")
+                    .installPlugins()
         }
 
         @BeforeClass
@@ -232,16 +233,12 @@ class SimAdministrationTest {
 
     @Test
     fun testActivateNextEsim() {
-        val iccid = "8901000000000000027"
-        val eid = getEidFromIccid(iccid)
         val response = client.target("$simManagerEndpoint/$hlr/esim")
-                .queryParam("eid", eid)
                 .request()
                 .post(Entity.json(null))
         assertThat(response.status).isEqualTo(200)
 
         val simEntry = response.readEntity(SimEntry::class.java)
-        assertThat(simEntry.eid).isEqualTo(eid)
         assertThat(simEntry.profile).isEqualTo(expectedProfile)
         assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.RELEASED)
         assertThat(simEntry.hlrState).isEqualTo(HlrState.NOT_ACTIVATED)

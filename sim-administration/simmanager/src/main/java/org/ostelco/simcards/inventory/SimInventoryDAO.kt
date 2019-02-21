@@ -38,6 +38,13 @@ enum class SmDpPlusState {
     ENABLED,
 }
 
+enum class ProvisionState {
+    AVAILABLE,
+    PROVISIONED,       /* The SIM profile has been taken into use (by a subscriber). */
+    RESERVED           /* Reserved SIM profile (f.ex. used for testing). */
+}
+
+
 /**
  *  Representing a single SIM card.
  */
@@ -53,6 +60,7 @@ data class SimEntry(
         @JsonProperty("profile") val profile: String,
         @JsonProperty("hlrState") val hlrState: HlrState = HlrState.NOT_ACTIVATED,
         @JsonProperty("smdpPlusState") val smdpPlusState: SmDpPlusState = SmDpPlusState.AVAILABLE,
+        @JsonProperty("provisionState") val provisionState: ProvisionState = ProvisionState.AVAILABLE,
         @JsonProperty("matchingId") val matchingId: String? = null,
         @JsonProperty("pin1") val pin1: String,
         @JsonProperty("pin2") val pin2: String,
@@ -106,7 +114,6 @@ class SimEntryIterator(profileVendorId: Long,
                 "ISO-8859-1"))).use { reader ->
             CSVParser(reader, csvFileFormat).use { csvParser ->
                 for (record in csvParser) {
-
                     val iccid = record.get("ICCID")
                     val imsi = record.get("IMSI")
                     val msisdn = record.get("MSISDN")
@@ -172,6 +179,7 @@ class SimEntryMapper : RowMapper<SimEntry> {
         val profile = r.getString("profile")
         val smdpPlusState = r.getString("smdpPlusState")
         val hlrState = r.getString("hlrState")
+        val provisionState = r.getString("provisionState")
         val matchingId = r.getString("matchingId")
         val pin1 = r.getString("pin1")
         val pin2 = r.getString("pin2")
@@ -190,6 +198,7 @@ class SimEntryMapper : RowMapper<SimEntry> {
                 profile = profile,
                 smdpPlusState = SmDpPlusState.valueOf(smdpPlusState.toUpperCase()),
                 hlrState = HlrState.valueOf(hlrState.toUpperCase()),
+                provisionState = ProvisionState.valueOf(provisionState.toUpperCase()),
                 matchingId = matchingId,
                 pin1 = pin1,
                 pin2 = pin2,
@@ -342,6 +351,36 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
     }
 
     /**
+     * Set the provision state of a SIM entry, then return the entry.
+     * @param id row to update
+     * @param state new state from HLR service interaction
+     * @return updated row or null on no match
+     */
+    @Transaction
+    fun setProvisionState(id: Long, state: ProvisionState): SimEntry? {
+        return if (updateProvisionState(id, state) > 0)
+            getSimProfileById(id)
+        else
+            null
+    }
+
+    /**
+     * Set the entity to be marked as "active" in the HLR and the provision
+     * state, then return the SIM entry.
+     * @param id row to update
+     * @param hlrState new state from HLR service interaction
+     * @param provisionState new provision state
+     * @return updated row or null on no match
+     */
+    @Transaction
+    fun setHlrStateAndProvisionState(id: Long, hlrState: HlrState, provisionState: ProvisionState): SimEntry? {
+        return if (updateHlrStateAndProvisionState(id, hlrState, provisionState) > 0)
+            getSimProfileById(id)
+        else
+            null
+    }
+
+    /**
      * Updates state of SIM profile and returns the updated profile.
      * @param id  row to update
      * @param state  new state from SMDP+ service interaction
@@ -357,8 +396,11 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
 
     /**
      * Updates state of SIM profile and returns the updated profile.
+     * Updates state and the 'matching-id' of a SIM profile and return
+     * the updated profile.
      * @param id  row to update
      * @param state  new state from SMDP+ service interaction
+     * @param matchingId  SM-DP+ ES2 'matching-id' to be sent to handset
      * @return updated row or null on no match
      */
     @Transaction

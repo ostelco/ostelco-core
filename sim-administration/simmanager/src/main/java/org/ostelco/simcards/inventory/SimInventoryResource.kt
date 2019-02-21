@@ -146,14 +146,14 @@ class SimInventoryResource(private val httpClient: CloseableHttpClient,
             @QueryParam("eid") eid: String?,
             @QueryParam("iccid") iccid: String?,
             @DefaultValue("_") @QueryParam("phoneType") phoneType: String): SimEntry? {
-        val simEntry = assertNonNull(activateEsimProfileByIccid(hlr, eid, iccid, phoneType))
+        val simEntry = assertNonNull(activateEsimProfile(hlr, eid, iccid, phoneType))
         return activateHlrProfileByIccid(hlr, simEntry.iccid)
     }
 
     @POST
     @Path("esim")
     @Produces(MediaType.APPLICATION_JSON)
-    fun activateEsimProfileByIccid(
+    fun activateEsimProfile(
             @NotEmpty @PathParam("hlrVendors") hlr: String,
             @QueryParam("eid") eid: String?,
             @QueryParam("iccid") iccid: String?,
