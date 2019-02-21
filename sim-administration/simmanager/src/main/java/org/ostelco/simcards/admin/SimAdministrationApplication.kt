@@ -50,7 +50,7 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
         val jdbi = factory
                 .build(env, config.database, "postgresql")
                 .installPlugins()
-        this.DAO = SimInventoryDAO(jdbi.onDemand(SimInventoryDB::class.java))
+        DAO = SimInventoryDAO(jdbi.onDemand(SimInventoryDB::class.java))
 
         val profileVendorCallbackHandler = object : SmDpPlusCallbackService {
             // TODO: Not implemented.

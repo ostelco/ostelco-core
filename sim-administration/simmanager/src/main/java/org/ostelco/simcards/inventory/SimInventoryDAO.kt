@@ -62,10 +62,10 @@ data class SimEntry(
         @JsonProperty("smdpPlusState") val smdpPlusState: SmDpPlusState = SmDpPlusState.AVAILABLE,
         @JsonProperty("provisionState") val provisionState: ProvisionState = ProvisionState.AVAILABLE,
         @JsonProperty("matchingId") val matchingId: String? = null,
-        @JsonProperty("pin1") val pin1: String,
-        @JsonProperty("pin2") val pin2: String,
-        @JsonProperty("puk1") val puk1: String,
-        @JsonProperty("puk2") val puk2: String
+        @JsonProperty("pin1") val pin1: String? = null,
+        @JsonProperty("pin2") val pin2: String? = null,
+        @JsonProperty("puk1") val puk1: String? = null,
+        @JsonProperty("puk2") val puk2: String? = null
 )
 
 /**
@@ -108,33 +108,35 @@ class SimEntryIterator(profileVendorId: Long,
                 .withFirstRecordAsHeader()
                 .withIgnoreEmptyLines(true)
                 .withTrim()
+                .withIgnoreSurroundingSpaces()
+                .withNullString("")
                 .withDelimiter(',')
 
         BufferedReader(InputStreamReader(csvInputStream, Charset.forName(
                 "ISO-8859-1"))).use { reader ->
             CSVParser(reader, csvFileFormat).use { csvParser ->
-                for (record in csvParser) {
-                    val iccid = record.get("ICCID")
-                    val imsi = record.get("IMSI")
-                    val msisdn = record.get("MSISDN")
-                    val pin1 = record.get("PIN1")
-                    val pin2 = record.get("PIN2")
-                    val puk1 = record.get("PUK1")
-                    val puk2 = record.get("PUK2")
-                    val profile = record.get("PROFILE")
+                for (row in csvParser) {
+                    val iccid = row.get("ICCID")
+                    val imsi = row.get("IMSI")
+                    val msisdn = row.get("MSISDN")
+                    val pin1 = row?.get("PIN1")
+                    val pin2 = row?.get("PIN2")
+                    val puk1 = row?.get("PUK1")
+                    val puk2 = row?.get("PUK2")
+                    val profile = row.get("PROFILE")
 
                     val value = SimEntry(
                             batch = batchId,
-                            profileVendorId = profileVendorId,
-                            profile = profile,
                             hlrId = hlrId,
+                            profileVendorId = profileVendorId,
                             iccid = iccid,
                             imsi = imsi,
                             msisdn = msisdn,
                             pin1 = pin1,
                             puk1 = puk1,
                             puk2 = puk2,
-                            pin2 = pin2
+                            pin2 = pin2,
+                            profile = profile
                     )
 
                     values.add(value)
@@ -159,7 +161,9 @@ class SimEntryIterator(profileVendorId: Long,
     }
 }
 
-
+/**
+ * SIM DB DAO.
+ */
 class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
 
     /**
