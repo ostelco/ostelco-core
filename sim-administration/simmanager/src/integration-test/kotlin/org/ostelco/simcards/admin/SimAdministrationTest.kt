@@ -322,7 +322,7 @@ class SimAdministrationTest {
     //     put it here
 
 
-    @Test
+    @Ignore @Test
     fun testPeriodicProvisioningTask() {
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
 

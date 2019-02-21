@@ -1,5 +1,6 @@
 package org.ostelco.simcards.inventory
 
+import org.jdbi.v3.sqlobject.customizer.Bind
 import org.jdbi.v3.sqlobject.customizer.BindBean
 import org.jdbi.v3.sqlobject.statement.BatchChunkSize
 import org.jdbi.v3.sqlobject.statement.SqlBatch
@@ -183,4 +184,54 @@ interface SimInventoryDB {
      */
     @SqlQuery("SELECT lastval()")
     fun lastInsertedRowId(): Long
+
+    /**
+     * Find all the different HLRs that are present.
+     */
+    @SqlQuery("SELECT * FROM hlr_adapters")
+    // TODO(RMZ): @RegisterMapper(HlrAdapterMapper::class)
+    fun getHlrAdapters(): List<HlrAdapter>
+
+
+    /**
+     * Find the names of profiles that are associated with
+     * a particular HLR.
+     */
+    @SqlQuery("""SELECT DISTINCT profile  FROM sim_entries WHERE hlrId = :hlrId""")
+    fun getProfileNamesForHlr(@Bind("hlrId") hlrId: Long): List<String>
+
+
+    /**
+     * Get key numbers from a particular named Sim profile.
+     * NOTE: This method is intended as an internal helper method for getProfileStats, its signature
+     * can change at any time, so don't use it unless you really know what you're doing.
+     */
+    // TODO(RMZ): @RegisterMapper(KeyValueMapper::class)
+    @SqlQuery("""
+        SELECT 'NO_OF_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries WHERE hlrId = :hlrId AND profile = :simProfile
+        UNION
+        SELECT 'NO_OF_UNALLOCATED_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries
+                   WHERE hlrId = :hlrId AND profile = :simProfile AND
+                         smdpPlusState =  :smdpUnallocatedState AND
+                         hlrState = :hlrUnallocatedState
+        UNION
+        SELECT 'NO_OF_RELEASED_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries
+                   WHERE hlrId = :hlrId AND profile = :simProfile AND
+                         smdpPlusState =  :smdpReleasedState AND
+                         hlrState = :hlrAllocatedState
+        UNION
+        SELECT 'NO_OF_ENTRIES_READY_FOR_IMMEDIATE_USE' AS KEY,  count(*)  AS VALUE  FROM sim_entries
+                   WHERE hlrId = :hlrId AND profile = :simProfile AND
+                         smdpPlusState =  :smdpReleasedState AND
+                         hlrState = :hlrAllocatedState
+    """)
+    fun getProfileStatsAsKeyValuePairs(
+            @Bind("hlrId") hlrId: Long,
+            @Bind("simProfile") simProfile: String,
+            @Bind("smdpReleasedState") smdpReleasedState: String = SmDpPlusState.RELEASED.name,
+            @Bind("hlrUnallocatedState") hlrUnallocatedState: String = HlrState.NOT_ACTIVATED.name,
+            @Bind("smdpUnallocatedState") smdpUnallocatedState: String = SmDpPlusState.AVAILABLE.name,
+            @Bind("hlrAllocatedState") hlrAllocatedState: String = HlrState.ACTIVATED.name,
+            @Bind("smdpAllocatedState") smdpAllocatedState: String = SmDpPlusState.ALLOCATED.name,
+            @Bind("smdpDownloadedState") smdpDownloadedState: String = SmDpPlusState.DOWNLOADED.name): List<SimInventoryDAO.KeyValuePair>
 }

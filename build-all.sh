@@ -51,7 +51,7 @@ gradle clean build
 #
 
 if [[ $? -ne 0 ]] ; then echo 
-   echo "Compilation failed, aborting"
+   echo "Compilation failed, aborting. Not running acceptance tests."
    exit 1
 else
    echo "$0 INFO: Building/unit tests went well, Proceeding to acceptance tests."

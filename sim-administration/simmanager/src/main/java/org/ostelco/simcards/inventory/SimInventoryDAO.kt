@@ -3,18 +3,12 @@ package org.ostelco.simcards.inventory
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
-import org.jdbi.v3.core.statement.StatementContext
+import org.jdbi.v3.sqlobject.customizer.Bind
 import org.jdbi.v3.sqlobject.transaction.Transaction
-import org.ostelco.simcards.adapter.HlrAdapter
-import org.ostelco.simcards.adapter.ProfileVendorAdapter
-import org.jdbi.v3.core.mapper.RowMapper
-import org.skife.jdbi.v2.sqlobject.Bind
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.nio.charset.Charset
-import java.sql.ResultSet
-import java.sql.SQLException
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.AtomicLong
 import javax.ws.rs.WebApplicationException
@@ -327,55 +321,7 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
     }
 
 
-    /**
-     * Find all the different HLRs that are present.
-     */
-    @SqlQuery("SELECT * FROM hlr_adapters")
-    @RegisterMapper(HlrAdapterMapper::class)
-    abstract fun getHlrAdapters(): List<HlrAdapter>
 
-
-    /**
-     * Find the names of profiles that are associated with
-     * a particular HLR.
-     */
-    @SqlQuery("""SELECT DISTINCT profile  FROM sim_entries WHERE hlrId = :hlrId""")
-    abstract fun getProfileNamesForHlr(@Bind("hlrId") hlrId: Long): List<String>
-
-
-    /**
-     * Get key numbers from a particular named Sim profile.
-     * NOTE: This method is intended as an internal helper method for getProfileStats, its signature
-     * can change at any time, so don't use it unless you really know what you're doing.
-     */
-    @RegisterMapper(KeyValueMapper::class)
-    @SqlQuery("""
-        SELECT 'NO_OF_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries WHERE hlrId = :hlrId AND profile = :simProfile
-        UNION
-        SELECT 'NO_OF_UNALLOCATED_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries
-                   WHERE hlrId = :hlrId AND profile = :simProfile AND
-                         smdpPlusState =  :smdpUnallocatedState AND
-                         hlrState = :hlrUnallocatedState
-        UNION
-        SELECT 'NO_OF_RELEASED_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries
-                   WHERE hlrId = :hlrId AND profile = :simProfile AND
-                         smdpPlusState =  :smdpReleasedState AND
-                         hlrState = :hlrAllocatedState
-        UNION
-        SELECT 'NO_OF_ENTRIES_READY_FOR_IMMEDIATE_USE' AS KEY,  count(*)  AS VALUE  FROM sim_entries
-                   WHERE hlrId = :hlrId AND profile = :simProfile AND
-                         smdpPlusState =  :smdpReleasedState AND
-                         hlrState = :hlrAllocatedState
-    """)
-    abstract fun getProfileStatsAsKeyValuePairs(
-            @Bind("hlrId") hlrId: Long,
-            @Bind("simProfile") simProfile: String,
-            @Bind("smdpReleasedState") smdpReleasedState: String = SmDpPlusState.RELEASED.name,
-            @Bind("hlrUnallocatedState") hlrUnallocatedState: String = HlrState.NOT_ACTIVATED.name,
-            @Bind("smdpUnallocatedState") smdpUnallocatedState: String = SmDpPlusState.AVAILABLE.name,
-            @Bind("hlrAllocatedState") hlrAllocatedState: String = HlrState.ACTIVATED.name,
-            @Bind("smdpAllocatedState") smdpAllocatedState: String = SmDpPlusState.ALLOCATED.name,
-            @Bind("smdpDownloadedState") smdpDownloadedState: String = SmDpPlusState.DOWNLOADED.name): List<KeyValuePair>
 
     /**
      * Get relevant statistics for a particular profile type for a particular HLR.
@@ -402,7 +348,8 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
 
 
     class SimProfileKeyStatistics(val noOfEntries: Long, val noOfUnallocatedEntries: Long, val noOfReleasedEntries: Long, val noOfEntriesAvailableForImmediateUse: Long)
-
+    // TODO(RMZ):
+    /*
     class KeyValueMapper : ResultSetMapper<KeyValuePair> {
         @Throws(SQLException::class)
         override fun map(index: Int, row: ResultSet, ctx: StatementContext): KeyValuePair? {
@@ -415,7 +362,7 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
             return KeyValuePair(key = key, value = value)
         }
     }
-
+*/
     data class KeyValuePair(val key: String, val value: Long)
 
 
