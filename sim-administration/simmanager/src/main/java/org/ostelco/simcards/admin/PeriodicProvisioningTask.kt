@@ -3,7 +3,6 @@ package org.ostelco.simcards.admin
 import com.google.common.collect.ImmutableMultimap
 import io.dropwizard.servlets.tasks.Task
 import org.apache.http.impl.client.CloseableHttpClient
-import org.ostelco.sim.es2plus.ES2PlusClient
 import org.ostelco.simcards.adapter.HlrAdapter
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.slf4j.LoggerFactory
@@ -25,7 +24,6 @@ class PreallocateProfilesTask(
         val lowWaterMark: Int = 10,
         val maxNoOfProfileToAllocate: Int = 30,
         val simInventoryDAO: SimInventoryDAO,
-        val es2PlusClient: ES2PlusClient,
         val httpClient: CloseableHttpClient,
         val hlrConfigs: List<HlrConfig>,
         val profileVendors: List<ProfileVendorConfig>) : Task("preallocate_sim_profiles") {

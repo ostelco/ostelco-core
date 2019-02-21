@@ -11,7 +11,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.client.ClientProperties
 import org.jdbi.v3.core.Jdbi
 import org.junit.*
-import org.ostelco.sim.es2plus.ES2PlusClient
 import org.ostelco.simcards.inventory.HlrState
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
@@ -325,13 +324,10 @@ class SimAdministrationTest {
         val hlrConfigs = SIM_MANAGER_RULE.configuration.hlrVendors
 
         val httpClient  = HttpClientBuilder(SIM_MANAGER_RULE.environment).build("periodicProvisioningTaskClient")
-        val eS2PlusClient = ES2PlusClient(httpClient = httpClient, requesterId = "foo", port = 8443, host = "127.0.0.1")
-
 
         val task = PreallocateProfilesTask(
                 profileVendors = profileVendors,
                 simInventoryDAO = simDao,
-                es2PlusClient = eS2PlusClient,
                 httpClient = httpClient,
                 hlrConfigs = hlrConfigs)
 

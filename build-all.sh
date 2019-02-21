@@ -9,7 +9,7 @@ cd $(dirname $0)
 
 
 
-DEPENDENCIES="gradle docker-compose ./gradlew"
+DEPENDENCIES="docker-compose ./gradlew"
 
 
 #
@@ -22,6 +22,21 @@ for dep in $DEPENDENCIES ; do
    exit 1
  fi
 done
+
+
+
+
+DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS="acceptance-tests/config dataflow-pipelines/config /ocsgw/config/bq-metrics-extractor/config /auth-server/config prime/config"
+
+for DIR in $DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS ; do 
+    FILE="$DIR/prime-service-account.json"
+    if [[ ! -f $FILE ]] ; then
+	echo "$0 ERROR: COuld not find service account file $FILE, aborting."
+	exit 1
+    fi
+done
+
+
 
 #
 # Do we have the necessary environment variables set
@@ -52,11 +67,12 @@ fi
 if [[ $? -ne 0 ]] ; then echo 
    echo "Compilation failed, aborting. Not running acceptance tests."
    exit 1
-else
-   echo "$0 INFO: Building/unit tests went well, Proceeding to acceptance tests."
 fi
 
 #
-# Acceptance test
+# .... but it did go well, so we'll proceed to acceptance test
 #
+
+echo "$0 INFO: Building/unit tests went well, Proceeding to acceptance tests."
+
 docker-compose up --build --abort-on-container-exit
