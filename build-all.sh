@@ -58,7 +58,7 @@ fi
 # Then start running the build
 #
 
-./gradlew clean build
+./gradlew build
 
 #
 # If that didn't go too well, then bail out.
