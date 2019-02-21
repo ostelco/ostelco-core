@@ -2,13 +2,14 @@ package org.ostelco.simcards.admin
 
 import io.dropwizard.client.HttpClientBuilder
 import io.dropwizard.client.JerseyClientBuilder
-import io.dropwizard.jdbi.DBIFactory
+import io.dropwizard.jdbi3.JdbiFactory
 import io.dropwizard.testing.ConfigOverride
 import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
 import junit.framework.Assert.*
 import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.client.ClientProperties
+import org.jdbi.v3.core.Jdbi
 import org.junit.*
 import org.ostelco.sim.es2plus.ES2PlusClient
 import org.ostelco.simcards.inventory.HlrState
@@ -16,7 +17,6 @@ import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SmDpPlusState
 import org.ostelco.simcards.smdpplus.SmDpPlusApplication
-import org.skife.jdbi.v2.DBI
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.FixedHostPortGenericContainer
 import org.testcontainers.containers.PostgreSQLContainer
@@ -32,7 +32,7 @@ import javax.ws.rs.core.MediaType
 class SimAdministrationTest {
 
     companion object {
-        private lateinit var jdbi: DBI
+        private lateinit var jdbi: Jdbi
         private lateinit var client: Client
 
         /* Port number exposed to host by the emulated HLR service. */
@@ -79,9 +79,10 @@ class SimAdministrationTest {
         @BeforeClass
         @JvmStatic
         fun setUpDb() {
-            jdbi = DBIFactory().build(SIM_MANAGER_RULE.environment,
-                    SIM_MANAGER_RULE.configuration.database,
-                    "db")
+            jdbi = JdbiFactory()
+                    .build(SIM_MANAGER_RULE.environment, SIM_MANAGER_RULE.configuration.database,
+                            "db")
+                    .installPlugins()
         }
 
         @BeforeClass
@@ -127,7 +128,7 @@ class SimAdministrationTest {
     }
 
     private fun clearTables() {
-        val dao = jdbi.onDemand(ClearTablesForTestingDAO::class.java)
+        val dao = ClearTablesForTestingDAO(jdbi.onDemand(ClearTablesForTestingDB::class.java))
 
         dao.clearTables()
     }
@@ -241,12 +242,14 @@ class SimAdministrationTest {
         val eid = getEidFromIccid(iccid)
         val response = client.target("$simManagerEndpoint/$hlrName/esim")
                 .queryParam("eid", eid)
+
+        // TODO (Rmz): Remove this line: val response = client.target("$simManagerEndpoint/$hlr/esim")
+
                 .request()
                 .post(Entity.json(null))
         assertThat(response.status).isEqualTo(200)
 
         val simEntry = response.readEntity(SimEntry::class.java)
-        assertThat(simEntry.eid).isEqualTo(eid)
         assertThat(simEntry.profile).isEqualTo(expectedProfile)
         assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.RELEASED)
         assertThat(simEntry.hlrState).isEqualTo(HlrState.NOT_ACTIVATED)
