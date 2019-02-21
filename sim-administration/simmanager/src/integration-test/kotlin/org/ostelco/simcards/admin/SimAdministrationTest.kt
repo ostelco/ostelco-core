@@ -326,12 +326,23 @@ class SimAdministrationTest {
 
         val httpClient  = HttpClientBuilder(SIM_MANAGER_RULE.environment).build("periodicProvisioningTaskClient")
 
+        val maxNoOfProfilesToAllocate = 10
+
+        val preAllocationStats = simDao.getProfileStats(hlrId, expectedProfile)
+
         val task = PreallocateProfilesTask(
                 profileVendors = profileVendors,
                 simInventoryDAO = simDao,
+                maxNoOfProfileToAllocate = maxNoOfProfilesToAllocate,
                 httpClient = httpClient,
                 hlrConfigs = hlrConfigs)
 
         assertTrue("Unable to preallocate all (or perhaps any)  profiles successfully", task.preallocateProfiles())
+
+        val postAllocationStats  = simDao.getProfileStats(hlrId, expectedProfile)
+
+        val noOfAllocatedProfiles = postAllocationStats.noOfEntriesAvailableForImmediateUse - preAllocationStats.noOfEntriesAvailableForImmediateUse
+        assertEquals(maxNoOfProfilesToAllocate,
+                noOfAllocatedProfiles)
     }
 }
