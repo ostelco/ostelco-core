@@ -21,6 +21,7 @@ dependencies {
     implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
     implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
     implementation "io.dropwizard:dropwizard-jdbi3:$dropwizardVersion"
+    implementation "com.google.guava:guava:$guavaVersion"
 
     // Jdbi3 plugins.
     // Ver. 3.2.1 as ver. 1.3.8 of dropwizard loads jdbi3-core ver. 3.2.1 etc.
