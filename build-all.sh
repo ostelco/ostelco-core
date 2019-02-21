@@ -26,7 +26,7 @@ done
 
 
 
-DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS="acceptance-tests/config dataflow-pipelines/config /ocsgw/config/bq-metrics-extractor/config /auth-server/config prime/config"
+DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS="acceptance-tests/config dataflow-pipelines/config ocsgw/config/bq-metrics-extractor/config auth-server/config prime/config"
 
 for DIR in $DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS ; do 
     FILE="$DIR/prime-service-account.json"
