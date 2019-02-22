@@ -45,7 +45,7 @@ class PreallocateProfilesTask(
 
         for (i in 1..noOfProfilesToActuallyAllocate) {
             val simEntry =
-                    simInventoryDAO.findNextFreeSimProfileForHlr(
+                    simInventoryDAO.findNextNonProvisionedSimProfileForHlr(
                             hlrId = hlrAdapter.id,
                             profile = profile)
             if (simEntry == null) {

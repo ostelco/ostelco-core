@@ -84,7 +84,7 @@ data class SimImportBatch(
 class SimEntryIterator(profileVendorId: Long,
                        hlrId: Long,
                        batchId: Long,
-                       csvInputStream: InputStream) : Iterator<SimEntry> {
+                       csvInputStream: InputStream): Iterator<SimEntry> {
 
     var count = AtomicLong(0)
     // TODO: The current implementation puts everything in a deque at startup.
