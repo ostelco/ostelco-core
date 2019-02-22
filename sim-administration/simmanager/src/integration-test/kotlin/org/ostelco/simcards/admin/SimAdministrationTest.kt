@@ -242,9 +242,6 @@ class SimAdministrationTest {
         val eid = getEidFromIccid(iccid)
         val response = client.target("$simManagerEndpoint/$hlrName/esim")
                 .queryParam("eid", eid)
-
-        // TODO (Rmz): Remove this line: val response = client.target("$simManagerEndpoint/$hlr/esim")
-
                 .request()
                 .post(Entity.json(null))
         assertThat(response.status).isEqualTo(200)
