@@ -65,6 +65,12 @@ class SimAdministrationModule : PrimeModule {
 
         jerseyEnv.register(SimInventoryResource(httpClient, config, DAO))
         jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
+
+        env.admin().addTask(PreallocateProfilesTask(
+                simInventoryDAO = this.DAO,
+                httpClient = httpClient,
+                hlrConfigs = config.hlrVendors,
+                profileVendors = config.profileVendors));
     }
 }
 

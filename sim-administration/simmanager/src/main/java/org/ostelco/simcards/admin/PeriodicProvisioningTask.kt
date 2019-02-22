@@ -5,6 +5,7 @@ import io.dropwizard.servlets.tasks.Task
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.simcards.adapter.HlrAdapter
 import org.ostelco.simcards.inventory.SimInventoryDAO
+import org.ostelco.simcards.inventory.SimProfileKeyStatistics
 import org.slf4j.LoggerFactory
 import java.io.PrintWriter
 import javax.ws.rs.WebApplicationException
@@ -14,10 +15,10 @@ import javax.ws.rs.WebApplicationException
  * A dropwizard "task" that is intended to be invoked as an administrative step
  * by an external agent that is part of the serving system, not a customer of it.
  *
- * The task implements preallocation of profiles in both HLR and SM-DP+ so that
+ * The task implements pre-allocation of profiles in both HLR and SM-DP+ so that
  * there will be a number of profiles available for quick allocation to customers
  * without having to synchronously wait for a profile to be provisioned by these
- * two.x
+ * two.
  */
 
 class PreallocateProfilesTask(
@@ -38,7 +39,7 @@ class PreallocateProfilesTask(
 
     fun doPreprovisioning(hlrAdapter: HlrAdapter,
                           profile: String,
-                          profileStats: SimInventoryDAO.SimProfileKeyStatistics) {
+                          profileStats: SimProfileKeyStatistics) {
         val noOfProfilesToActuallyAllocate =
                 Math.min(maxNoOfProfileToAllocate.toLong(), profileStats.noOfUnallocatedEntries)
 

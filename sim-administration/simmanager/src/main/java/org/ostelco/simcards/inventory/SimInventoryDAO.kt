@@ -324,7 +324,6 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
             null
     }
 
-
     /**
      * Get relevant statistics for a particular profile type for a particular HLR.
      */
@@ -334,8 +333,10 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
 
         val keyValuePairs = mutableMapOf<String, Long>()
 
-        getProfileStatsAsKeyValuePairs(hlrId = hlrId, simProfile = simProfile
-        ).forEach { keyValuePairs.put(it.key, it.value) }
+        getProfileStatsAsKeyValuePairs(hlrId = hlrId, simProfile = simProfile)
+
+
+                .forEach { keyValuePairs.put(it.key, it.value) }
         val noOfEntries = keyValuePairs.get("NO_OF_ENTRIES")!!
         val noOfUnallocatedEntries = keyValuePairs.get("NO_OF_UNALLOCATED_ENTRIES")!!
         val noOfReleasedEntries = keyValuePairs.get("NO_OF_RELEASED_ENTRIES")!!
@@ -348,40 +349,6 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
                 noOfReleasedEntries = noOfReleasedEntries)
     }
 
-
-    class SimProfileKeyStatistics(val noOfEntries: Long, val noOfUnallocatedEntries: Long, val noOfReleasedEntries: Long, val noOfEntriesAvailableForImmediateUse: Long)
-
-
-    class KeyValueMapper : RowMapper<KeyValuePair> {
-
-        override fun map(row: ResultSet, ctx: StatementContext): KeyValuePair? {
-            if (row.isAfterLast) {
-                return null
-            }
-
-            val value = row.getLong("VALUE")
-            val key = row.getString("KEY")
-            return KeyValuePair(key = key, value = value)
-        }
-    }
-
-
-    class HlrAdapterMapper  : RowMapper<HlrAdapter> {
-        override fun map(row: ResultSet, ctx: StatementContext): HlrAdapter? {
-            if (row.isAfterLast) {
-                return null
-            }
-
-            val id = row.getLong("id")
-            val name = row.getString("name")
-            return HlrAdapter(id = id, name = name)
-        }
-    }
-
-
-    data class KeyValuePair(val key: String, val value: Long)
-
-
     companion object {
         private fun <T> assertNonNull(v: T?): T {
             if (v == null) {
@@ -391,7 +358,40 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
             }
         }
     }
+}
 
 
+class SimProfileKeyStatistics(
+        val noOfEntries: Long,
+        val noOfUnallocatedEntries: Long,
+        val noOfReleasedEntries: Long,
+        val noOfEntriesAvailableForImmediateUse: Long)
+
+
+class KeyValueMapper : RowMapper<KeyValuePair> {
+
+    override fun map(row: ResultSet, ctx: StatementContext): KeyValuePair? {
+        if (row.isAfterLast) {
+            return null
+        }
+
+        val value = row.getLong("VALUE")
+        val key = row.getString("KEY")
+        return KeyValuePair(key = key, value = value)
+    }
+}
+
+data class KeyValuePair(val key: String, val value: Long)
+
+class HlrAdapterMapper  : RowMapper<HlrAdapter> {
+    override fun map(row: ResultSet, ctx: StatementContext): HlrAdapter? {
+        if (row.isAfterLast) {
+            return null
+        }
+
+        val id = row.getLong("id")
+        val name = row.getString("name")
+        return HlrAdapter(id = id, name = name)
+    }
 }
 
