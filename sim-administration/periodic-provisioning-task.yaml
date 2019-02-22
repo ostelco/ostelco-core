@@ -1,0 +1,21 @@
+#  To start this job, do 
+#    kubectl create -f ./cronjob.yaml
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: preallocate-sim-profiles
+spec:
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: preallocate-sim-profiles
+            image: busybox-curl
+            args:
+            - /bin/sh
+            - -c
+            - date; echo Triggering sim preallocation
+	    - curl http://prime:8080/tasks/preallocate_sim_profiles
+          restartPolicy: OnFailure

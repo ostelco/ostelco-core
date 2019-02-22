@@ -324,7 +324,6 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
             null
     }
 
-
     /**
      * Get relevant statistics for a particular profile type for a particular HLR.
      */
@@ -391,7 +390,5 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
             }
         }
     }
-
-
 }
 
