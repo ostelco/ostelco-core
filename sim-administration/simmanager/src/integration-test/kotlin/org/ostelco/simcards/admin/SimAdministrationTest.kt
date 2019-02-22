@@ -285,6 +285,12 @@ class SimAdministrationTest {
         assertThat(simEntry.hlrState).isEqualTo(HlrState.ACTIVATED)
     }
 
+
+    ///
+    ///   Tests related to the cron job that will allocate new SIM cards
+    ///   as they are required.
+    ///
+
     @Test
     fun testGetListOfHlrs() {
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
