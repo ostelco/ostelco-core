@@ -9,7 +9,7 @@ modules:
       connectionRequestTimeout: 1s
 - type: firebase
   config:
-    configFile: /secret/pantel-prod.json
+    configFile: /secret/prime-service-account.json
     rootPath: test
 - type: Imei-lookup
   config:
@@ -20,7 +20,7 @@ modules:
     protocol: bolt
 - type: analytics
   config:
-    projectId: pantel-2decb
+    projectId: ${GCP_PROJECT_ID}
     dataTrafficTopicId: data-traffic
     purchaseInfoTopicId: purchase-info
     activeUsersTopicId: active-users
@@ -34,7 +34,7 @@ modules:
 - type: stripe-payment-processor
 - type: firebase-app-notifier
   config:
-    configFile: /secret/pantel-prod.json
+    configFile: /secret/prime-service-account.json
 - type: admin
 - type: graphql
 - type: scaninfo-store

@@ -234,7 +234,7 @@ Notes
 Make a certificate https://console.cloud.google.com/apis/credentials
 To authenticate
 
-     export GOOGLE_APPLICATION_CREDENTIALS=/some/path/pantel-credentials.json
+     export GOOGLE_APPLICATION_CREDENTIALS=/some/path/prime-service-account.json
 
 then
 
@@ -255,14 +255,14 @@ To authenticvate Authenticate
 
 Set your project:
 
-   gcloud config set project pantel
+   gcloud config set project GCP_PROJECT_ID
 
 .. or some other project
 
 Run a script to get some data, e.g.
 
 
-    bq head -n 10 pantel-2decb:data_consumption.hourly_consumption
+    bq head -n 10 $GCP_PROJECT_ID:data_consumption.hourly_consumption
 
 to get ten lines of consumption data displayed.
 

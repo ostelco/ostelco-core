@@ -8,7 +8,9 @@ import io.dropwizard.client.HttpClientConfiguration
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 import io.dropwizard.testing.DropwizardTestSupport
-import junit.framework.Assert.*
+import junit.framework.Assert.assertEquals
+import junit.framework.Assert.assertNotNull
+import junit.framework.Assert.assertTrue
 import org.apache.http.client.HttpClient
 import org.junit.After
 import org.junit.Before
@@ -105,7 +107,7 @@ class EncryptedRemoteEs2ClientOnlyTest {
     companion object {
         val SUPPORT = DropwizardTestSupport<DummyAppUsingSmDpPlusClientConfig>(
                 DummyAppUsingSmDpPlusClient::class.java,
-                "config-external-smdp.yml"
+                "src/test/resources/config-external-smdp.yml"
         )
     }
 }

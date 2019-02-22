@@ -2,13 +2,13 @@
 
 ### Setup
 
- * Configure firebase project - `pantel-2decb`
+ * Configure firebase project - `GCP_PROJECT_ID`
  
- * Save `pantel-prod.json` in all folders where this file is added in `.gitignore`.  You can find these directories by
+ * Save `prime-service-account.json` in all folders where this file is added in `.gitignore`.  You can find these directories by
    executing the command:
 
 ```bash
-grep -i pantel $(find . -name '.gitignore') | awk -F: '{print $1}' | sort | uniq | sed 's/.gitignore//g'
+grep -i prime-service-account $(find . -name '.gitignore') | awk -F: '{print $1}' | sort | uniq | sed 's/.gitignore//g'
 ```     
  
  * Create self-signed certificate for nginx with domain as `ocs.dev.ostelco.org` and place them at following location:
@@ -51,6 +51,7 @@ cp nginx.crt ../../ocsgw/cert/metrics.crt
 ### Test acceptance-tests
 
 ```bash
+cd acceptance-tests
 gradlew clean build  
 docker-compose up --build --abort-on-container-exit
 ```    

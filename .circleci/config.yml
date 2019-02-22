@@ -30,11 +30,11 @@ jobs:
             gsutil cp gs://pi-ostelco-core-gradle-cache/caches.tar.gz ~/caches.tar.gz
             mkdir -p ~/.gradle/caches/
             tar -xzvf ~/caches.tar.gz -C ~/.gradle/caches/ .
-      # Copying pantel prod secret to locations where it is needed for docker compose tests.
+      # Copying prime-service-account secret file to locations where it is needed for docker compose tests.
       - run:
-          name: Distribute pantel-prod.json secret from env var.
+          name: Distribute prime-service-account.json secret from env var.
           command: |
-            scripts/distribute-pantel-secrets.sh
+            scripts/distribute-prime-service-account-secrets.sh
       # run gradle build. Skipping neo4j tests as they fail
       - run:
           name: Build entire repo
@@ -188,7 +188,7 @@ jobs:
             
   update-dev-endpoints:
     docker:
-      - image: eu.gcr.io/pi-ostelco-dev/python-gcloud
+      - image: eu.gcr.io/pi-ostelco-prod/python-gcloud
     steps: 
       - checkout
       - run:
@@ -203,6 +203,8 @@ jobs:
             gcloud endpoints services deploy ocs_descriptor.pb prime/infra/new-dev/ocs-api.yaml
             gcloud endpoints services deploy metrics_descriptor.pb prime/infra/new-dev/metrics-api.yaml
             gcloud endpoints services deploy prime/infra/new-dev/prime-client-api.yaml
+            gcloud endpoints services deploy prime/infra/new-dev/prime-webhooks.yaml
+            gcloud endpoints services deploy prime/infra/new-dev/prime-houston-api.yaml
       
       - run:
            name: notify slack on failure
@@ -214,7 +216,7 @@ jobs:
     working_directory: ~/project
 
     docker:
-    - image: praqma/gcloud-kubectl-helm:v2.8.1
+    - image: praqma/gcloud-kubectl-helm:v2.11.0
       environment: 
         PROJECT: pi-ostelco-dev
         CLUSTER: pi-dev
@@ -232,9 +234,7 @@ jobs:
             helm repo update
             helm upgrade prime ostelco/prime --install --namespace dev \
              -f .circleci/prime-dev-values.yaml \
-             --set prime.env.STRIPE_API_KEY=${STRIPE_API_KEY} \
-             --set prime.tag=${CIRCLE_SHA1:0:9} \
-             --set firebaseServiceAccount=${PANTEL_SECRETS_FILE}
+             --set prime.tag=${CIRCLE_SHA1:0:9} 
        
       - run:
            name: notify slack on failure
@@ -245,7 +245,7 @@ jobs:
     working_directory: ~/project
 
     docker:
-    - image: eu.gcr.io/pi-ostelco-dev/github-hub:2.5.0
+    - image: eu.gcr.io/pi-ostelco-prod/github-hub:2.5.0
 
     steps:
       - checkout
@@ -270,7 +270,7 @@ jobs:
   ### JOBS FOR  on-PR-merge-to-master PIPELINE
   update-prod-endpoints:
     docker:
-      - image: eu.gcr.io/pi-ostelco-dev/python-gcloud
+      - image: eu.gcr.io/pi-ostelco-prod/python-gcloud
     steps: 
       - checkout
       - run:
@@ -285,6 +285,8 @@ jobs:
             gcloud endpoints services deploy ocs_descriptor.pb prime/infra/new-prod/ocs-api.yaml
             gcloud endpoints services deploy metrics_descriptor.pb prime/infra/new-prod/metrics-api.yaml
             gcloud endpoints services deploy prime/infra/new-prod/prime-client-api.yaml
+            # gcloud endpoints services deploy prime/infra/new-prod/prime-webhooks.yaml
+            # gcloud endpoints services deploy prime/infra/new-prod/prime-houston-api.yaml
       
       - run:
            name: notify slack on failure
@@ -293,7 +295,7 @@ jobs:
   
   deploy-to-prod:
     docker:
-    - image: praqma/gcloud-kubectl-helm:v2.8.1
+    - image: praqma/gcloud-kubectl-helm:v2.11.0
       environment: 
         PROJECT: pi-ostelco-prod
         CLUSTER: pi-prod
@@ -310,10 +312,8 @@ jobs:
             /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
             helm repo update
-            helm upgrade prime ostelco/prime --version 0.3.1 --install --namespace prod \
-             -f .circleci/prime-prod-values.yaml \
-             --set prime.env.STRIPE_API_KEY=${STRIPE_API_KEY} \
-             --set firebaseServiceAccount=${PANTEL_SECRETS_FILE}
+            helm upgrade prime ostelco/prime --version 0.4.1 --install --namespace prod \
+             -f .circleci/prime-prod-values.yaml 
 
       - run:
            name: notify slack on failure
@@ -327,7 +327,7 @@ workflows:
       - build-test-repo:
           filters:
             branches:
-              only: /feature/.*/
+              only:  /feature/.*/
       - code-coverage:
          requires:
            - build-test-repo
@@ -338,7 +338,7 @@ workflows:
         filters:
           branches:
             only:
-            - develop
+            - develop 
     - build-image:
         requires:
           - build-code

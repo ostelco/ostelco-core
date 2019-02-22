@@ -31,7 +31,7 @@ This phase contains the following jobs:
 | GOOGLE_DEV_ENDPOINTS_CREDENTIALS  |               |            |
 | GOOGLE_GCR_CREDENTIALS            |               |            |
 | GOOGLE_PROD_ENDPOINTS_CREDENTIALS |               |            |
-| PANTEL_SECRETS_FILE               |               |            |
+| GCP_SERVICE_ACCOUNT_SECRETS_FILE  |               |            |
 | PI_DEV_CLUSTER_CREDENTIALS        |               |            |
 | PI_PROD_CLUSTER_CREDENTIALS       |               |            |
 | PROD_PROJECT                      |               |            |

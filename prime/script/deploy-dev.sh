@@ -7,10 +7,10 @@ if [ ! -f prime/script/deploy.sh ]; then
     exit 1
 fi
 
-PROJECT_ID="$(gcloud config get-value project -q)"
+GCP_PROJECT_ID="$(gcloud config get-value project -q)"
 SHORT_SHA="$(git log -1 --pretty=format:%h)"
 
-echo PROJECT_ID=${PROJECT_ID}
+echo GCP_PROJECT_ID=${GCP_PROJECT_ID}
 echo SHORT_SHA=${SHORT_SHA}
 
 echo "Deploying prime to GKE"

@@ -5,9 +5,9 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.apache.http.client.methods.RequestBuilder
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
+import org.ostelco.prime.getLogger
 import org.ostelco.sim.es2plus.*
 import org.ostelco.simcards.admin.ProfileVendorConfig
-import org.ostelco.simcards.admin.getLogger
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SmDpPlusState
@@ -90,9 +90,7 @@ data class ProfileVendorAdapter (
         return httpClient.execute(request).use {
             when (it.statusLine.statusCode) {
                 200 -> {
-                    println(">>> status 200")
                     val status = mapper.readValue(it.entity.content, Es2DownloadOrderResponse::class.java)
-                    println(">>> status: ${status}")
 
                     if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess) {
                         throw WebApplicationException(
@@ -136,7 +134,7 @@ data class ProfileVendorAdapter (
     fun confirmOrder(httpClient: CloseableHttpClient,
                      config: ProfileVendorConfig,
                      dao: SimInventoryDAO,
-                     eid: String?,
+                     eid: String? = null,
                      simEntry: SimEntry): SimEntry? {
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = config.requesterIndentifier,

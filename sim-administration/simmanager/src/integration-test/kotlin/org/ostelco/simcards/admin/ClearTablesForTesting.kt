@@ -1,20 +1,12 @@
 package org.ostelco.simcards.admin
 
-import org.skife.jdbi.v2.sqlobject.SqlUpdate
+import org.jdbi.v3.sqlobject.statement.SqlUpdate
 
 /**
  * Clear tables.  This library shouldn't be part of normal
  * running code, should be part of the test harness.
  */
-abstract class ClearTablesForTestingDAO {
-
-    fun clearTables() {
-        truncateImportBatchesTable()
-        truncateSimEntryTable()
-        truncateHlrAdapterTable()
-        truncateProfileVendorAdapterTable()
-        truncateSimVendorsPermittedTable()
-    }
+interface ClearTablesForTestingDB {
 
     @SqlUpdate("TRUNCATE sim_import_batches")
     abstract fun truncateImportBatchesTable()
@@ -30,4 +22,15 @@ abstract class ClearTablesForTestingDAO {
 
     @SqlUpdate("TRUNCATE sim_vendors_permitted_hlrs")
     abstract fun truncateSimVendorsPermittedTable()
+}
+
+class ClearTablesForTestingDAO(val db: ClearTablesForTestingDB) {
+
+    fun clearTables() {
+        db.truncateImportBatchesTable()
+        db.truncateSimEntryTable()
+        db.truncateHlrAdapterTable()
+        db.truncateProfileVendorAdapterTable()
+        db.truncateSimVendorsPermittedTable()
+    }
 }
