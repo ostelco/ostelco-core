@@ -14,7 +14,7 @@ import org.jdbi.v3.core.Jdbi
 import org.junit.*
 import org.ostelco.simcards.inventory.HlrState
 import org.ostelco.simcards.inventory.SimEntry
-import org.ostelco.simcards.inventory.SimInventoryDAO
+import org.ostelco.simcards.inventory.SimProfileKeyStatistics
 import org.ostelco.simcards.inventory.SmDpPlusState
 import org.ostelco.simcards.smdpplus.SmDpPlusApplication
 import org.testcontainers.containers.BindMode
@@ -316,7 +316,7 @@ class SimAdministrationTest {
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
         val hlrs = simDao.getHlrAdapters()
         val hlrId = hlrs[0].id
-        val stats : SimInventoryDAO.SimProfileKeyStatistics? = simDao.getProfileStats(hlrId, expectedProfile)
+        val stats : SimProfileKeyStatistics? = simDao.getProfileStats(hlrId, expectedProfile)
         assertNotNull(stats)
         assertEquals(100L, stats!!.noOfEntries)
         assertEquals(100L, stats!!.noOfUnallocatedEntries)

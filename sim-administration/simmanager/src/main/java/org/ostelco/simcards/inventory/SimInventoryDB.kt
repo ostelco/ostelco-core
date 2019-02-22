@@ -190,7 +190,7 @@ interface SimInventoryDB {
      */
     @SqlQuery("SELECT * FROM hlr_adapters")
     // TODO(RMZ): @RegisterMapper(HlrAdapterMapper::class)
-    @RegisterRowMapper(SimInventoryDAO.HlrAdapterMapper::class)
+    @RegisterRowMapper(HlrAdapterMapper::class)
     fun getHlrAdapters(): List<HlrAdapter>
 
 
@@ -225,7 +225,7 @@ interface SimInventoryDB {
                          smdpPlusState =  :smdpReleasedState AND
                          hlrState = :hlrAllocatedState
     """)
-    @RegisterRowMapper(SimInventoryDAO.KeyValueMapper::class)
+    @RegisterRowMapper(KeyValueMapper::class)
     fun getProfileStatsAsKeyValuePairs(
             hlrId: Long,
             simProfile: String,
@@ -234,5 +234,5 @@ interface SimInventoryDB {
             smdpUnallocatedState: String = SmDpPlusState.AVAILABLE.name,
             hlrAllocatedState: String = HlrState.ACTIVATED.name,
             smdpAllocatedState: String = SmDpPlusState.ALLOCATED.name,
-            smdpDownloadedState: String = SmDpPlusState.DOWNLOADED.name): List<SimInventoryDAO.KeyValuePair>
+            smdpDownloadedState: String = SmDpPlusState.DOWNLOADED.name): List<KeyValuePair>
 }

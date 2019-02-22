@@ -1,5 +1,9 @@
+#
 #  To start this job, do 
 #    kubectl create -f ./cronjob.yaml
+#  https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/
+#
+
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:

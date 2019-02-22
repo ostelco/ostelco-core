@@ -5,6 +5,7 @@ import io.dropwizard.servlets.tasks.Task
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.simcards.adapter.HlrAdapter
 import org.ostelco.simcards.inventory.SimInventoryDAO
+import org.ostelco.simcards.inventory.SimProfileKeyStatistics
 import org.slf4j.LoggerFactory
 import java.io.PrintWriter
 import javax.ws.rs.WebApplicationException
@@ -38,7 +39,7 @@ class PreallocateProfilesTask(
 
     fun doPreprovisioning(hlrAdapter: HlrAdapter,
                           profile: String,
-                          profileStats: SimInventoryDAO.SimProfileKeyStatistics) {
+                          profileStats: SimProfileKeyStatistics) {
         val noOfProfilesToActuallyAllocate =
                 Math.min(maxNoOfProfileToAllocate.toLong(), profileStats.noOfUnallocatedEntries)
 
