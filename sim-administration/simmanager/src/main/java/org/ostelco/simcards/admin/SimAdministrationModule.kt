@@ -3,7 +3,7 @@ package org.ostelco.simcards.admin
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonTypeName
 import io.dropwizard.client.HttpClientBuilder
-import io.dropwizard.jdbi.DBIFactory
+import io.dropwizard.jdbi3.JdbiFactory
 import io.dropwizard.setup.Environment
 import org.ostelco.dropwizardutils.OpenapiResourceAdder
 import org.ostelco.prime.module.PrimeModule
@@ -38,9 +38,10 @@ class SimAdministrationModule : PrimeModule {
     }
 
     override fun init(env: Environment) {
-        val factory = DBIFactory()
+        val factory = JdbiFactory()
         val jdbi = factory.build(env,
                 config.database, "postgresql")
+                .installPlugins()
         this.DAO = jdbi.onDemand(SimInventoryDAO::class.java)
 
         val profileVendorCallbackHandler = object : SmDpPlusCallbackService {

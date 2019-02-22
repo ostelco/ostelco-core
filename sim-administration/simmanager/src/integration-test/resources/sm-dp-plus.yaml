@@ -11,7 +11,7 @@ logging:
 # then set the "simBatchData" variable for all appl. that are started,
 # causing start of the "sim-manager" appl. to fail as that appl. don't
 # know (or use) this variable.
-simBatchData: ./build/resources/integrationTest/sample-sim-batch.csv
+simBatchData: src/integration-test/resources/sample-sim-batch.csv
 
 openApi:
   name: SM-DP+ emulator
