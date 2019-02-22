@@ -62,11 +62,11 @@ class PreallocateProfilesTask(
 
 
     /**
-     * Made public to be testable.   Perform
+     * Made internal to be testable.   Perform
      * allocation of profiles so that if possible, there will be tasks available for
      * provisioning.
      */
-    fun preallocateProfiles() {
+    internal fun preallocateProfiles() {
         var hlrs: Collection<HlrAdapter> = simInventoryDAO.getHlrAdapters()
 
         for (hlr in hlrs) {
