@@ -31,6 +31,7 @@ data class Customer(
         val postCode: String = "",
         val city: String = "",
         val country: String = "",
+        val analyticsId: String = UUID.randomUUID().toString(),
         val referralId: String = UUID.randomUUID().toString()) : HasId
 
 data class Identity(
@@ -164,6 +165,7 @@ data class ApplicationToken(
 
 data class Subscription(
         val msisdn: String,
+        val analyticsId: String = UUID.randomUUID().toString(),
         val alias: String = "") : HasId {
 
     override val id: String

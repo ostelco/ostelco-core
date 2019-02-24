@@ -18,7 +18,7 @@ object DataConsumptionInfoPublisher :
 
     private val logger by getLogger()
 
-    fun publish(msisdn: String, usedBucketBytes: Long, bundleBytes: Long, apn: String?, mccMnc: String?) {
+    fun publish(msisdnAnalyticsId: String, usedBucketBytes: Long, bundleBytes: Long, apn: String?, mccMnc: String?) {
 
         if (usedBucketBytes == 0L) {
             return
@@ -27,7 +27,7 @@ object DataConsumptionInfoPublisher :
         val now = Instant.now().toEpochMilli()
 
         val data = DataTrafficInfo.newBuilder()
-                .setMsisdn(msisdn)
+                .setMsisdn(msisdnAnalyticsId)
                 .setBucketBytes(usedBucketBytes)
                 .setBundleBytes(bundleBytes)
                 .setTimestamp(Timestamps.fromMillis(now))
@@ -52,7 +52,7 @@ object DataConsumptionInfoPublisher :
                     logger.warn("Status code: {}", throwable.statusCode.code)
                     logger.warn("Retrying: {}", throwable.isRetryable)
                 }
-                logger.warn("Error publishing message for msisdn: {}", msisdn)
+                logger.warn("Error publishing message for msisdnAnalyticsId: {}", msisdnAnalyticsId)
             }
 
             override fun onSuccess(messageId: String) {

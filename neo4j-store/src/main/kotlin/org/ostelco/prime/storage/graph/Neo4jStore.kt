@@ -34,6 +34,7 @@ import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.storage.AlreadyExistsError
+import org.ostelco.prime.storage.ConsumptionResult
 import org.ostelco.prime.storage.GraphStore
 import org.ostelco.prime.storage.NotCreatedError
 import org.ostelco.prime.storage.NotDeletedError
@@ -59,6 +60,7 @@ import java.util.*
 import java.util.stream.Collectors
 import javax.ws.rs.core.MultivaluedMap
 import org.ostelco.prime.model.Identity as ModelIdentity
+import org.ostelco.prime.paymentprocessor.core.NotFoundError as NotFoundPaymentError
 
 enum class Relation {
     IDENTIFIES,            // (Identity) -[IDENTIFIES]-> (Customer)
@@ -207,6 +209,18 @@ object Neo4jStoreSingleton : GraphStore {
                         NotFoundError(type = identity.type, id = identity.id).left()
                     } else {
                         it.single().id.right()
+                    }
+                }
+    }
+
+    private fun getCustomerAndAnalyticsId(identity: org.ostelco.prime.model.Identity, transaction: Transaction): Either<StoreError, Pair<String, String>> {
+        return identityStore.getRelated(id = identity.id, relationType = identifiesRelation, transaction = transaction)
+                .flatMap {
+                    if (it.isEmpty()) {
+                        NotFoundError(type = identity.type, id = identity.id).left()
+                    } else {
+                        val customer = it.single()
+                        Pair(customer.id, customer.analyticsId).right()
                     }
                 }
     }
@@ -444,7 +458,7 @@ object Neo4jStoreSingleton : GraphStore {
      * @param requestedBytes Bytes requested for consumption.
      *
      */
-    override suspend fun consume(msisdn: String, usedBytes: Long, requestedBytes: Long, callback: (Either<StoreError, Pair<Long, Long>>) -> Unit) {
+    override suspend fun consume(msisdn: String, usedBytes: Long, requestedBytes: Long, callback: (Either<StoreError, ConsumptionResult>) -> Unit) {
 
         // Note: _LOCK_ dummy property is set in the relation 'r' and node 'bundle' so that they get locked.
         // Ref: https://neo4j.com/docs/java-reference/current/transactions/#transactions-isolation
@@ -452,13 +466,13 @@ object Neo4jStoreSingleton : GraphStore {
         suspendedWriteTransaction {
 
             writeSuspended("""
-                            MATCH (:${subscriptionEntity.name} {id: '$msisdn'})-[r:${subscriptionToBundleRelation.relation.name}]->(bundle:${bundleEntity.name})
+                            MATCH (sn:${subscriptionEntity.name} {id: '$msisdn'})-[r:${subscriptionToBundleRelation.relation.name}]->(bundle:${bundleEntity.name})
                             SET bundle._LOCK_ = true, r._LOCK_ = true
-                            WITH r, bundle, (CASE WHEN ((toInteger(bundle.balance) + toInteger(r.reservedBytes) - $usedBytes) > 0) THEN (toInteger(bundle.balance) + toInteger(r.reservedBytes) - $usedBytes) ELSE 0 END) AS tmpBalance
-                            WITH r, bundle, tmpBalance, (CASE WHEN (tmpBalance < $requestedBytes) THEN tmpBalance ELSE $requestedBytes END) as tmpGranted
+                            WITH r, bundle, sn.analyticsId AS msisdnAnalyticsId, (CASE WHEN ((toInteger(bundle.balance) + toInteger(r.reservedBytes) - $usedBytes) > 0) THEN (toInteger(bundle.balance) + toInteger(r.reservedBytes) - $usedBytes) ELSE 0 END) AS tmpBalance
+                            WITH r, bundle, msisdnAnalyticsId, tmpBalance, (CASE WHEN (tmpBalance < $requestedBytes) THEN tmpBalance ELSE $requestedBytes END) as tmpGranted
                             SET r.reservedBytes = toString(tmpGranted), bundle.balance = toString(tmpBalance - tmpGranted)
                             REMOVE r._LOCK_, bundle._LOCK_
-                            RETURN r.reservedBytes AS granted, bundle.balance AS balance
+                            RETURN msisdnAnalyticsId, r.reservedBytes AS granted, bundle.balance AS balance
                             """.trimIndent(),
                     transaction) { completionStage ->
                 completionStage
@@ -472,9 +486,10 @@ object Neo4jStoreSingleton : GraphStore {
                                 else {
                                     val balance = record.get("balance").asString("0").toLong()
                                     val granted = record.get("granted").asString("0").toLong()
+                                    val msisdnAnalyticsId = record.get("msisdnAnalyticsId").asString(msisdn)
 
                                     logger.trace("requestedBytes = %,d, balance = %,d, granted = %,d".format(requestedBytes, balance, granted))
-                                    callback(Pair(granted, balance).right())
+                                    callback(ConsumptionResult(msisdnAnalyticsId = msisdnAnalyticsId, granted = granted, balance = balance).right())
                                 }
                             }
                         }
@@ -583,7 +598,7 @@ object Neo4jStoreSingleton : GraphStore {
         IO {
             Either.monad<PaymentError>().binding {
 
-                val customerId = getCustomerId(identity = identity, transaction = transaction)
+                val (customerId, customerAnalyticsId) = getCustomerAndAnalyticsId(identity = identity, transaction = transaction)
                         .mapLeft {
                             org.ostelco.prime.paymentprocessor.core.NotFoundError(
                                     "Failed to get customerId for customer with identity - $identity",
@@ -634,7 +649,7 @@ object Neo4jStoreSingleton : GraphStore {
                         }.bind()
 
                 //TODO: While aborting transactions, send a record with "reverted" status
-                analyticsReporter.reportPurchaseInfo(purchaseRecord, customerId, "success")
+                analyticsReporter.reportPurchaseInfo(purchaseRecord = purchaseRecord, customerAnalyticsId = customerAnalyticsId, status = "success")
 
                 // Topup
                 val bytes = product.properties["noOfBytes"]?.replace("_", "")?.toLongOrNull() ?: 0L
@@ -1209,11 +1224,17 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     override fun refundPurchase(
-            customerId: String,
+            identity: org.ostelco.prime.model.Identity,
             purchaseRecordId: String,
             reason: String): Either<PaymentError, ProductInfo> = writeTransaction {
         IO {
             Either.monad<PaymentError>().binding {
+                val (_, customerAnalyticsId) = getCustomerAndAnalyticsId(identity = identity, transaction = transaction)
+                        .mapLeft {
+                            logger.error("Failed to find customer with identity - $identity")
+                            NotFoundPaymentError("Failed to find customer with identity - $identity",
+                                    error = it)
+                        }.bind()
                 val purchaseRecord = changablePurchaseRelationStore.get(purchaseRecordId, transaction)
                         // If we can't find the record, return not-found
                         .mapLeft {
@@ -1237,7 +1258,7 @@ object Neo4jStoreSingleton : GraphStore {
                             BadGatewayError("Failed to update purchase record for refund ${refund.id}",
                                     error = it)
                         }.bind()
-                analyticsReporter.reportPurchaseInfo(purchaseRecord, customerId, "refunded")
+                analyticsReporter.reportPurchaseInfo(purchaseRecord, customerAnalyticsId, "refunded")
                 ProductInfo(purchaseRecord.product.sku)
             }.fix()
         }.unsafeRunSync()
