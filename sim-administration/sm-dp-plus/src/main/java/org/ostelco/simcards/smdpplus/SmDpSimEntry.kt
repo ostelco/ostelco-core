@@ -9,4 +9,9 @@ class SmDpSimEntry (val iccid: String,
     var confirmationCode: String? = null
     var machingId: String? = null
     var smdsAddress :String? = null
+
+
+    fun clone(): SmDpSimEntry {
+        return SmDpSimEntry(iccid = iccid, imsi=imsi, profile=profile)
+    }
 }

@@ -6,16 +6,7 @@ import org.apache.http.client.methods.RequestBuilder
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.getLogger
-import org.ostelco.sim.es2plus.ES2RequestHeader
-import org.ostelco.sim.es2plus.Es2ConfirmOrder
-import org.ostelco.sim.es2plus.Es2ConfirmOrderResponse
-import org.ostelco.sim.es2plus.Es2DownloadOrderResponse
-import org.ostelco.sim.es2plus.Es2PlusDownloadOrder
-import org.ostelco.sim.es2plus.Es2PlusProfileStatus
-import org.ostelco.sim.es2plus.Es2ProfileStatusResponse
-import org.ostelco.sim.es2plus.FunctionExecutionStatusType
-import org.ostelco.sim.es2plus.IccidListEntry
-import org.ostelco.sim.es2plus.ProfileStatus
+import org.ostelco.sim.es2plus.*
 import org.ostelco.simcards.admin.ProfileVendorConfig
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
@@ -99,9 +90,7 @@ data class ProfileVendorAdapter (
         return httpClient.execute(request).use {
             when (it.statusLine.statusCode) {
                 200 -> {
-                    println(">>> status 200")
                     val status = mapper.readValue(it.entity.content, Es2DownloadOrderResponse::class.java)
-                    println(">>> status: ${status}")
 
                     if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess) {
                         throw WebApplicationException(
@@ -145,7 +134,7 @@ data class ProfileVendorAdapter (
     fun confirmOrder(httpClient: CloseableHttpClient,
                      config: ProfileVendorConfig,
                      dao: SimInventoryDAO,
-                     eid: String?,
+                     eid: String? = null,
                      simEntry: SimEntry): SimEntry? {
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = config.requesterIndentifier,
