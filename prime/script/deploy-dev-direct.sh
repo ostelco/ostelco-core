@@ -11,7 +11,7 @@ for DEP in $DEPENDENCIES; do
 	echo "$0  ERROR: Missing dependency $DEP"
 	exit 1
     fi
-fi
+done
 
 # On error fail.
 set -e
