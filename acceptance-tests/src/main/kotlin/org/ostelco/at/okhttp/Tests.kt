@@ -12,7 +12,6 @@ import org.ostelco.at.okhttp.ClientFactory.clientForSubject
 import org.ostelco.prime.customer.ApiException
 import org.ostelco.prime.customer.api.DefaultApi
 import org.ostelco.prime.customer.model.ApplicationToken
-import org.ostelco.prime.customer.model.Consent
 import org.ostelco.prime.customer.model.Customer
 import org.ostelco.prime.customer.model.GraphQLRequest
 import org.ostelco.prime.customer.model.PaymentSource
@@ -161,30 +160,6 @@ class BundlesAndPurchasesTest {
         purchaseRecords.sortBy { it.timestamp }
 
         assertEquals(freeProduct, purchaseRecords.first().product, "Incorrect first 'Product' in purchase record")
-    }
-}
-
-class GetPseudonymsTest {
-
-    private val logger by getLogger()
-
-    @Test
-    fun `okhttp test - GET active pseudonyms`() {
-
-        val email = "pseu-${randomInt()}@test.com"
-        createCustomer(name = "Test Pseudonyms User", email = email)
-
-        val client = clientForSubject(subject = email)
-
-        createSubscription(email)
-
-        val activePseudonyms = client.activePseudonyms
-
-        logger.info("Current: ${activePseudonyms.current.pseudonym}")
-        logger.info("Next: ${activePseudonyms.next.pseudonym}")
-        assertNotNull(activePseudonyms.current.pseudonym, "Empty current pseudonym")
-        assertNotNull(activePseudonyms.next.pseudonym, "Empty next pseudonym")
-        assertEquals(activePseudonyms.current.end + 1, activePseudonyms.next.start, "The pseudonyms are not in order")
     }
 }
 
@@ -521,38 +496,6 @@ class AnalyticsTest {
             body = "event"
             this.email = email
         }
-    }
-}
-
-class ConsentTest {
-
-    private val consentId = "privacy"
-
-    @Test
-    fun `okhttp test - GET and PUT consent`() {
-
-        val email = "consent-${randomInt()}@test.com"
-        createCustomer(name = "Test Consent User", email = email)
-
-        val client = clientForSubject(subject = email)
-
-        val defaultConsent: List<Consent> = client.consents.toList()
-
-        assertEquals(1, defaultConsent.size, "Incorrect number of consents fetched")
-        assertEquals(consentId, defaultConsent[0].consentId, "Incorrect 'consent id' in fetched consent")
-
-        // TODO vihang: Update consent operation is missing response entity
-//         val acceptedConsent: Consent =
-        client.updateConsent(consentId, true)
-
-//        assertEquals(consentId, acceptedConsent.consentId, "Incorrect 'consent id' in response after accepting consent")
-//        assertTrue(acceptedConsent.isAccepted ?: false, "Accepted consent not reflected in response after accepting consent")
-
-//        val rejectedConsent: Consent =
-        client.updateConsent(consentId, false)
-
-//        assertEquals(consentId, rejectedConsent.consentId, "Incorrect 'consent id' in response after rejecting consent")
-//        assertFalse(rejectedConsent.isAccepted ?: true, "Accepted consent not reflected in response after rejecting consent")
     }
 }
 

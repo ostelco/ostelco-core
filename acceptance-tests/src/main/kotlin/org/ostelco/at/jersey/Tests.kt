@@ -7,11 +7,9 @@ import org.ostelco.at.common.createSubscription
 import org.ostelco.at.common.expectedProducts
 import org.ostelco.at.common.getLogger
 import org.ostelco.at.common.randomInt
-import org.ostelco.prime.customer.model.ActivePseudonyms
 import org.ostelco.prime.customer.model.ApplicationToken
 import org.ostelco.prime.customer.model.Bundle
 import org.ostelco.prime.customer.model.BundleList
-import org.ostelco.prime.customer.model.Consent
 import org.ostelco.prime.customer.model.Customer
 import org.ostelco.prime.customer.model.CustomerState
 import org.ostelco.prime.customer.model.PaymentSource
@@ -34,10 +32,8 @@ import javax.ws.rs.core.MultivaluedHashMap
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
 import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 
 class CustomerTest {
@@ -203,31 +199,6 @@ class BundlesAndPurchasesTest {
         purchaseRecords.sortBy { it.timestamp }
 
         assertEquals(listOf(freeProduct), purchaseRecords.map { it.product }, "Incorrect first 'Product' in purchase record")
-    }
-}
-
-class GetPseudonymsTest {
-
-    private val logger by getLogger()
-
-    @Test
-    fun `jersey test - GET active pseudonyms`() {
-
-        val email = "pseu-${randomInt()}@test.com"
-        createCustomer(name = "Test Pseudonyms User", email = email)
-
-        createSubscription(email)
-
-        val activePseudonyms: ActivePseudonyms = get {
-            path = "/subscription/activePseudonyms"
-            this.email = email
-        }
-
-        logger.info("Current: ${activePseudonyms.current.pseudonym}")
-        logger.info("Next: ${activePseudonyms.next.pseudonym}")
-        assertNotNull(activePseudonyms.current.pseudonym, "Empty current pseudonym")
-        assertNotNull(activePseudonyms.next.pseudonym, "Empty next pseudonym")
-        assertEquals(activePseudonyms.current.end + 1, activePseudonyms.next.start, "The pseudonyms are not in order")
     }
 }
 
@@ -1220,45 +1191,6 @@ class AnalyticsTest {
             body = "event"
             this.email = email
         }
-    }
-}
-
-class ConsentTest {
-
-    private val consentId = "privacy"
-
-    @Test
-    fun `jersey test - GET and PUT consent`() {
-
-        val email = "consent-${randomInt()}@test.com"
-        createCustomer(name = "Test Consent User", email = email)
-
-        val defaultConsent: List<Consent> = get {
-            path = "/consents"
-            this.email = email
-        }
-
-        assertEquals(1, defaultConsent.size, "Incorrect number of consents fetched")
-        assertEquals(consentId, defaultConsent[0].consentId, "Incorrect 'consent id' in fetched consent")
-
-        val acceptedConsent: Consent = put {
-            path = "/consents/$consentId"
-            this.email = email
-        }
-
-        assertEquals(consentId, acceptedConsent.consentId, "Incorrect 'consent id' in response after accepting consent")
-        assertTrue(acceptedConsent.isAccepted
-                ?: false, "Accepted consent not reflected in response after accepting consent")
-
-        val rejectedConsent: Consent = put {
-            path = "/consents/$consentId"
-            queryParams = mapOf("accepted" to "false")
-            this.email = email
-        }
-
-        assertEquals(consentId, rejectedConsent.consentId, "Incorrect 'consent id' in response after rejecting consent")
-        assertFalse(rejectedConsent.isAccepted
-                ?: true, "Accepted consent not reflected in response after rejecting consent")
     }
 }
 
