@@ -186,8 +186,18 @@ class SimInventoryResource(private val httpClient: CloseableHttpClient,
         val simEntry = assertNonNull(dao.findNextReadyToUseSimProfileForHlr(hlrAdapter.id,
                 profile))
         assertCorrectHlr(hlr, hlrAdapter.id == simEntry.hlrId)
+
+        val simVendorAdapter = assertNonNull(dao.getProfileVendorAdapterById(
+                simEntry.profileVendorId))
+        val profileVendorConfig: ProfileVendorConfig = assertNonNull(config.profileVendors.filter {
+            it.name == simVendorAdapter.name
+        }.firstOrNull())
+
+        /* Add 'code' field content. */
         return assertNonNull(dao.setProvisionState(simEntry.id!!,
-                ProvisionState.PROVISIONED))
+                ProvisionState.PROVISIONED)!!.let {
+            it.copy(code = "LPA:${profileVendorConfig.es9plusEndpoint}:${it.matchingId}")
+        })
     }
 
     private fun assertCorrectHlr(hlr: String, match: Boolean) {
