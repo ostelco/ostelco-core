@@ -16,8 +16,9 @@ hlrs:
 
 profileVendors:
   - name: Idemia
-    endpoint: ${ES2PLUS_ENDPOINT}
+    es2plusEndpoint: ${ES2PLUS_ENDPOINT}
     requesterIdentifier: ${FUNCTION_REQUESTER_IDENTIFIER}
+    es9plusEndpoint: ${ES9PLUS_ENDPOINT}
 
 # Note, list must end with a wildcard match
 phoneTypes:
