@@ -108,6 +108,22 @@ spec:
     app: prime
     tier: backend
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prime-dwadmin-service
+  labels:
+    app: prime
+    tier: backend
+spec:
+  ports:
+    - protocol: TCP
+      port: 8081
+      targetPort: 8081
+  selector:
+    app: prime
+    tier: backend
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
