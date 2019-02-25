@@ -332,6 +332,11 @@ spec:
             secretKeyRef:
               name: simmgr-test-secrets
               key: es2plusEndpoint
+        - name: ES9PLUS_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: simmgr-test-secrets
+              key: es9plusEndpoint
         - name: FUNCTION_REQUESTER_IDENTIFIER
           valueFrom:
             secretKeyRef:
