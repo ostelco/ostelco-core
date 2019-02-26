@@ -29,6 +29,7 @@ import org.ostelco.prime.metrics.api.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -37,7 +38,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
 
-import static org.ostelco.ocsgw.datasource.grpc.GrpcDiameterConverter.convertRequestToGrpc;
+import static org.ostelco.ocsgw.datasource.grpc.ProtobufToDiameterConverter.convertRequestToGrpc;
 
 
 /**
@@ -51,11 +52,11 @@ public class GrpcDataSource implements DataSource {
 
     private StreamObserver<CreditControlRequestInfo> creditControlRequestStream;
 
+    private String ocsServerHostname;
+
     private ManagedChannel grpcChannel;
 
     private ServiceAccountJwtAccessCredentials jwtAccessCredentials;
-
-    private ManagedChannelBuilder channelBuilder;
 
     private OcsgwMetrics ocsgwAnalytics;
 
@@ -85,21 +86,11 @@ public class GrpcDataSource implements DataSource {
      */
     public GrpcDataSource(final String ocsServerHostname, final String metricsServerHostname) throws IOException {
 
+        this.ocsServerHostname = ocsServerHostname;
+
         LOG.info("Created GrpcDataSource");
         LOG.info("ocsServerHostname : {}", ocsServerHostname);
         LOG.info("metricsServerHostname : {}", metricsServerHostname);
-
-        // Set up a channel to be used to communicate as an OCS instance,
-        // to a gRPC instance.
-        final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder
-                .forTarget(ocsServerHostname)
-                .keepAliveWithoutCalls(true)
-                .keepAliveTimeout(1, TimeUnit.MINUTES)
-                .keepAliveTime(50, TimeUnit.SECONDS);
-
-        channelBuilder = Files.exists(Paths.get("/cert/ocs.crt"))
-                ? nettyChannelBuilder.sslContext(GrpcSslContexts.forClient().trustManager(new File("/cert/ocs.crt")).build())
-                : nettyChannelBuilder;
 
         // Not using the standard GOOGLE_APPLICATION_CREDENTIALS for this
         // as we need to download the file using container credentials in
@@ -136,19 +127,40 @@ public class GrpcDataSource implements DataSource {
     }
 
     private void setupChannel() {
-        if (grpcChannel != null) {
-            grpcChannel.shutdownNow();
-            try {
-                boolean isShutdown = grpcChannel.awaitTermination(3, TimeUnit.SECONDS);
-                LOG.info("grpcChannel is shutdown : ", isShutdown);
-            } catch (InterruptedException e) {
-                LOG.info("Error shutting down gRPC channel");
+
+
+        ManagedChannelBuilder channelBuilder;
+
+        // Set up a channel to be used to communicate as an OCS instance,
+        // to a gRPC instance.
+        final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder
+                .forTarget(ocsServerHostname);
+
+        try {
+            channelBuilder = Files.exists(Paths.get("/cert/ocs.crt"))
+                    ? nettyChannelBuilder.sslContext(GrpcSslContexts.forClient().trustManager(new File("/cert/ocs.crt")).build())
+                    : nettyChannelBuilder;
+
+
+            if (grpcChannel != null) {
+                grpcChannel.shutdownNow();
+                try {
+                    boolean isShutdown = grpcChannel.awaitTermination(3, TimeUnit.SECONDS);
+                    LOG.info("grpcChannel is shutdown : " + isShutdown);
+                } catch (InterruptedException e) {
+                    LOG.info("Error shutting down gRPC channel");
+                }
             }
+            grpcChannel = channelBuilder
+                    .useTransportSecurity()
+                    .keepAliveWithoutCalls(true)
+                    .keepAliveTimeout(1, TimeUnit.MINUTES)
+                    .keepAliveTime(30, TimeUnit.SECONDS)
+                    .build();
+            ocsServiceStub = OcsServiceGrpc.newStub(grpcChannel).withCallCredentials(MoreCallCredentials.from(jwtAccessCredentials));
+        } catch (SSLException e) {
+            LOG.warn("Failed to setup gRPC channel", e);
         }
-        grpcChannel = channelBuilder
-                .useTransportSecurity()
-                .build();
-        ocsServiceStub = OcsServiceGrpc.newStub(grpcChannel).withCallCredentials(MoreCallCredentials.from(jwtAccessCredentials));
     }
 
 
@@ -224,8 +236,8 @@ public class GrpcDataSource implements DataSource {
                             .build();
                     producer.queueEvent(ccr);
                 },
-                15,
-                50,
+                10,
+                5,
                 TimeUnit.SECONDS);
     }
 
@@ -298,7 +310,7 @@ public class GrpcDataSource implements DataSource {
     }
 
     private void removeFromSessionMap(CreditControlContext creditControlContext) {
-        if (GrpcDiameterConverter.getRequestType(creditControlContext) == CreditControlRequestType.TERMINATION_REQUEST) {
+        if (ProtobufToDiameterConverter.getRequestType(creditControlContext) == CreditControlRequestType.TERMINATION_REQUEST) {
             sessionIdMap.remove(creditControlContext.getCreditControlRequest().getMsisdn());
         }
     }
@@ -361,9 +373,9 @@ public class GrpcDataSource implements DataSource {
 
         final LinkedList<MultipleServiceCreditControl> multipleServiceCreditControls = new LinkedList<>();
         for (org.ostelco.ocs.api.MultipleServiceCreditControl mscc : response.getMsccList()) {
-            multipleServiceCreditControls.add(GrpcDiameterConverter.convertMSCC(mscc));
+            multipleServiceCreditControls.add(ProtobufToDiameterConverter.convertMSCC(mscc));
         }
-        return new CreditControlAnswer(GrpcDiameterConverter.convertResultCode(response.getResultCode()), multipleServiceCreditControls);
+        return new CreditControlAnswer(ProtobufToDiameterConverter.convertResultCode(response.getResultCode()), multipleServiceCreditControls);
     }
 
 
