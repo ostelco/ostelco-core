@@ -12,7 +12,7 @@ import java.util.Collections;
 
 import static org.ostelco.diameter.model.RequestType.*;
 
-class GrpcDiameterConverter {
+class ProtobufToDiameterConverter {
 
     private static final Logger LOG = LoggerFactory.getLogger(GrpcDataSource.class);
 

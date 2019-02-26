@@ -52,13 +52,14 @@ modules:
         contactEmail: rmz@telenordigital.com
         resourcePackage: org.ostelco
       hlrs:
-        - name: Loltel
+        - name: loltel
           endpoint: ${WG2_ENDPOINT}
           userId: ${WG2_USER}
           apiKey: ${WG2_API_KEY}
       profileVendors:
         - name: Idemia
-          endpoint: ${ES2PLUS_ENDPOINT}
+          es2plusEndpoint: ${ES2PLUS_ENDPOINT}
+          es9plusEndpoint: ${ES9PLUS_ENDPOINT}
           requesterIdentifier: ${FUNCTION_REQUESTER_IDENTIFIER}
       # Note, list must end with a wildcard match
       phoneTypes:

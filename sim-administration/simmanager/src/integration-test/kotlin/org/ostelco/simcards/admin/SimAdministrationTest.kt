@@ -239,6 +239,10 @@ class SimAdministrationTest {
 
         /* EID is constructed using ICCID in SM-DP+ emulator. */
         assertThat(simEntry.eid).isEqualTo(getEidFromIccid(simEntry.iccid))
+
+        /* Verify that 'code' field is set. */
+        val es9plusEndpoint = SIM_MANAGER_RULE.configuration.profileVendors[0].es9plusEndpoint
+        assertThat(simEntry.code).isEqualToIgnoringCase("LPA:${es9plusEndpoint}:${simEntry.matchingId}")
     }
 
     ///

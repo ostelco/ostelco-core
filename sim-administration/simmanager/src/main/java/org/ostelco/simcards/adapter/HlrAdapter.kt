@@ -71,10 +71,16 @@ data class HlrAdapter(
                     dao.setHlrState(simEntry.id!!, HlrState.ACTIVATED)
                 }
                 else -> {
+                    logger.warn("HLR activation message to BSSID {} for ICCID {} failed with status ({}) {}",
+                            config.name,
+                            simEntry.iccid,
+                            it.statusLine.statusCode,
+                            it.statusLine.reasonPhrase)
                     throw WebApplicationException(
-                            String.format("Failed to activate ICCID %s with BSSID %s",
+                            String.format("Failed to activate ICCID %s with BSSID %s (status-code: %d)",
                                     simEntry.iccid,
-                                    config.name),
+                                    config.name,
+                                    it.statusLine.statusCode),
                             Response.Status.BAD_REQUEST)
                 }
             }
@@ -114,10 +120,16 @@ data class HlrAdapter(
                     dao.setHlrState(simEntry.id!!, HlrState.NOT_ACTIVATED)
                 }
                 else -> {
+                    logger.warn("HLR deactivation message to BSSID {} for ICCID {} failed with status ({}) {}",
+                            config.name,
+                            simEntry.iccid,
+                            it.statusLine.statusCode,
+                            it.statusLine.reasonPhrase)
                     throw WebApplicationException(
-                            String.format("Failed to deactivate ICCID %s with BSSID %s",
+                            String.format("Failed to deactivate ICCID %s with BSSID %s (status-code: %d)",
                                     simEntry.iccid,
-                                    config.name),
+                                    config.name,
+                                    it.statusLine.statusCode),
                             Response.Status.BAD_REQUEST)
                 }
             }

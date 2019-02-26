@@ -88,7 +88,7 @@ class SimInventoryUnitTests {
         /* ProfileVendorConfig */
         org.mockito.Mockito.`when`(profileVendorConfig.name)
                 .thenReturn(fakeProfileVendor)
-        org.mockito.Mockito.`when`(profileVendorConfig.endpoint)
+        org.mockito.Mockito.`when`(profileVendorConfig.es2plusEndpoint)
                 .thenReturn("http://localhost:8080/somewhere")
 
         /* Top level config. */
