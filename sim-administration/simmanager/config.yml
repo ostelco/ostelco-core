@@ -9,7 +9,7 @@ openApi:
   resourcePackage: org.ostelco
 
 hlrs:
-  - name: Loltel
+  - name: loltel
     endpoint: ${WG2_ENDPOINT}
     userId: ${WG2_USER}
     apiKey: ${WG2_API_KEY}
