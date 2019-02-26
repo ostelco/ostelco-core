@@ -3,13 +3,17 @@ package org.ostelco.at
 import org.junit.Test
 import org.junit.experimental.ParallelComputer
 import org.junit.runner.JUnitCore
+import org.ostelco.at.common.getLogger
+import kotlin.test.assertEquals
 
 class TestSuite {
+
+    private val logger by getLogger()
 
     @Test
     fun `run all tests in parallel`() {
 
-        JUnitCore.runClasses(
+        val result = JUnitCore.runClasses(
                 ParallelComputer(true, true),
                 org.ostelco.at.okhttp.GetProductsTest::class.java,
                 org.ostelco.at.okhttp.BundlesAndPurchasesTest::class.java,
@@ -26,5 +30,11 @@ class TestSuite {
                 org.ostelco.at.jersey.GraphQlTests::class.java,
                 org.ostelco.at.jersey.eKYCTest::class.java,
                 org.ostelco.at.pgw.OcsTest::class.java)
+
+        result.failures.forEach {
+            logger.error("{} {} {} {}", it.testHeader, it.message, it.description, it.trace)
+        }
+
+        assertEquals(expected = 0, actual = result.failureCount)
     }
 }

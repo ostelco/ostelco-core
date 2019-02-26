@@ -15,6 +15,7 @@ fun createCustomer(name: String, email: String): Customer {
             .city("")
             .country("NO")
             .postCode("")
+            .analyticsId("")
             .referralId("")
 
     return post {

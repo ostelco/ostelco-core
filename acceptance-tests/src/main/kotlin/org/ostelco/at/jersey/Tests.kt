@@ -51,6 +51,7 @@ class CustomerTest {
                 .city("")
                 .country("NO")
                 .postCode("")
+                .analyticsId("")
                 .referralId("")
 
         val createdCustomer: Customer = post {
