@@ -27,6 +27,7 @@ public class EventConsumer<T> implements Runnable {
                     queue.wait();
                 }
             } catch (InterruptedException e) {
+                LOG.info("Interrupted");
                 break;
             }
         }
