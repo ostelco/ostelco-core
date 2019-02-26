@@ -63,12 +63,39 @@ deploy () {
     echo "Deploying OCS-gw"
     echo "Instance : ${INSTANCE}"
     echo "Environment : ${ENVIRONMENT}"
+    echo "REGION : ${REGION}"
     echo "Zone : ${ZONE}"
     echo "*******************************"
     echo
 
     gcloud compute instances update-container --zone ${ZONE} ocsgw-${REGION}-${ENVIRONMENT}-${INSTANCE} \
     --container-image eu.gcr.io/${GCP_PROJECT_ID}/ocsgw:${TAG_OCS}
+}
+
+printInfo() {
+
+echo
+echo "Deployment script for OCS-gw to Google Cloud"
+echo
+echo "*******************************"
+echo GCP_PROJECT_ID=${GCP_PROJECT_ID}
+echo OCSGW_VERSION=${OCSGW_VERSION}
+echo SHORT_SHA=${SHORT_SHA}
+echo TAG_OCS=${TAG_OCS}
+echo "*******************************"
+echo
+
+}
+
+printEnvironment() {
+
+echo
+echo "*******************************"
+echo ENVIRONMENT=${ENVIRONMENT}
+echo REGION=${REGION}
+echo "*******************************"
+echo
+
 }
 
 ##### Main
@@ -84,6 +111,8 @@ fi
 if [[ ! -z "$1" ]]; then
     INSTANCE=$1
 fi
+
+printInfo
 
 # If instance is not passed to the script we get it from terminal
 if [[ -z "$INSTANCE" ]]
@@ -111,15 +140,6 @@ else
     REGION="europe-west1"
 fi
 
-echo "Deployment script for OCS-gw to Google Cloud"
-echo
-echo "*******************************"
-echo GCP_PROJECT_ID=${GCP_PROJECT_ID}
-echo OCSGW_VERSION=${OCSGW_VERSION}
-echo SHORT_SHA=${SHORT_SHA}
-echo TAG_OCS=${TAG_OCS}
-echo "*******************************"
-echo
 
 if ! checkEnvironment;
 then
@@ -132,6 +152,8 @@ then
     echo "Not a valid region : ${REGION}"
     exit 1
 fi
+
+printEnvironment
 
 
 echo "Building OCS-gw"

@@ -36,6 +36,11 @@
     <DwaTimeOut value="10000" />
     <DpaTimeOut value="5000" />
     <RecTimeOut value="10000" />
+
+
+    <!-- Peer FSM Thread Count Configuration -->
+    <PeerFSMThreadCount value="16" />
+
     <Concurrent>
       <Entity name="ThreadGroup" size="64" />
       <Entity name="ProcessingMessageTimer" size="1" />
