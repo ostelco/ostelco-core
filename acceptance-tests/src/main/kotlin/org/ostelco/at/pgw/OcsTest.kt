@@ -38,7 +38,6 @@ class OcsTest {
     fun setUp() {
         testClient = TestClient()
         testClient?.initStack("/", configFile)
-        createTestUserAndSubscription()
     }
 
     @After
@@ -47,7 +46,7 @@ class OcsTest {
         testClient = null
     }
 
-    private fun simpleCreditControlRequestInit(session: Session) {
+    private fun simpleCreditControlRequestInit(session: Session, msisdn: String) {
 
         val client = testClient ?: fail("Test client is null")
 
@@ -57,7 +56,7 @@ class OcsTest {
                 session
         ) ?: fail("Failed to create request")
 
-        TestHelper.createInitRequest(request.avps, MSISDN, BUCKET_SIZE)
+        TestHelper.createInitRequest(request.avps, msisdn, BUCKET_SIZE)
 
         client.sendNextRequest(request, session)
 
@@ -76,7 +75,7 @@ class OcsTest {
         assertEquals(BUCKET_SIZE, granted.grouped.getAvp(Avp.CC_TOTAL_OCTETS).unsigned64)
     }
 
-    private fun simpleCreditControlRequestUpdate(session: Session) {
+    private fun simpleCreditControlRequestUpdate(session: Session, msisdn: String) {
 
         val client = testClient ?: fail("Test client is null")
 
@@ -86,7 +85,7 @@ class OcsTest {
                 session
         ) ?: fail("Failed to create request")
 
-        TestHelper.createUpdateRequest(request.avps, MSISDN, BUCKET_SIZE, BUCKET_SIZE)
+        TestHelper.createUpdateRequest(request.avps, msisdn, BUCKET_SIZE, BUCKET_SIZE)
 
         client.sendNextRequest(request, session)
 
@@ -103,26 +102,31 @@ class OcsTest {
         assertEquals(BUCKET_SIZE, granted.grouped.getAvp(Avp.CC_TOTAL_OCTETS).unsigned64)
     }
 
-    private fun getBalance(): Long {
+    private fun getBalance(email: String): Long {
         sleep(200) // wait for 200 ms for balance to be updated in db
 
         return get<List<Bundle>> {
             path = "/bundles"
-            email = EMAIL
+            this.email = email
         }.first().balance
     }
 
     @Test
     fun simpleCreditControlRequestInitUpdateAndTerminate() {
 
+        val email = "ocs-${randomInt()}@test.com"
+        createCustomer(name = "Test OCS User", email = email)
+
+        val msisdn = createSubscription(email = email)
+
         val client = testClient ?: fail("Test client is null")
 
         val session = client.createSession() ?: fail("Failed to create session")
-        simpleCreditControlRequestInit(session)
-        assertEquals(INITIAL_BALANCE - BUCKET_SIZE, getBalance(), message = "Incorrect balance after init")
+        simpleCreditControlRequestInit(session, msisdn)
+        assertEquals(INITIAL_BALANCE - BUCKET_SIZE, getBalance(email = email), message = "Incorrect balance after init")
 
-        simpleCreditControlRequestUpdate(session)
-        assertEquals(INITIAL_BALANCE - 2 * BUCKET_SIZE, getBalance(), message = "Incorrect balance after update")
+        simpleCreditControlRequestUpdate(session, msisdn)
+        assertEquals(INITIAL_BALANCE - 2 * BUCKET_SIZE, getBalance(email = email), message = "Incorrect balance after update")
 
         val request = client.createRequest(
                 DEST_REALM,
@@ -130,7 +134,7 @@ class OcsTest {
                 session
         ) ?: fail("Failed to create request")
 
-        TestHelper.createTerminateRequest(request.avps, MSISDN, BUCKET_SIZE)
+        TestHelper.createTerminateRequest(request.avps, msisdn, BUCKET_SIZE)
 
         client.sendNextRequest(request, session)
 
@@ -148,12 +152,17 @@ class OcsTest {
         val validTime = resultMSCC.grouped.getAvp(Avp.VALIDITY_TIME)
         assertEquals(86400L, validTime.unsigned32)
 
-        assertEquals(INITIAL_BALANCE - 2 * BUCKET_SIZE, getBalance(), message = "Incorrect balance after terminate")
+        assertEquals(INITIAL_BALANCE - 2 * BUCKET_SIZE, getBalance(email = email), message = "Incorrect balance after terminate")
     }
 
 
     @Test
     fun creditControlRequestInitTerminateNoCredit() {
+
+        val email = "ocs-${randomInt()}@test.com"
+        createCustomer(name = "Test OCS User", email = email)
+
+        val msisdn = createSubscription(email = email)
 
         val client = testClient ?: fail("Test client is null")
 
@@ -166,7 +175,7 @@ class OcsTest {
 
 
         // Requesting one more bucket then the balance for the user
-        TestHelper.createInitRequest(request.avps, MSISDN, INITIAL_BALANCE + BUCKET_SIZE)
+        TestHelper.createInitRequest(request.avps, msisdn, INITIAL_BALANCE + BUCKET_SIZE)
 
         client.sendNextRequest(request, session)
 
@@ -195,7 +204,7 @@ class OcsTest {
                 session
         ) ?: fail("Failed to create request")
 
-        TestHelper.createUpdateRequestFinal(updateRequest.avps, MSISDN, INITIAL_BALANCE)
+        TestHelper.createUpdateRequestFinal(updateRequest.avps, msisdn, INITIAL_BALANCE)
 
         client.sendNextRequest(updateRequest, session)
 
@@ -220,7 +229,7 @@ class OcsTest {
                 DEST_HOST,
                 session
         ) ?: fail("Failed to create request")
-        TestHelper.createTerminateRequest(terminateRequest.avps, MSISDN)
+        TestHelper.createTerminateRequest(terminateRequest.avps, msisdn)
 
         client.sendNextRequest(terminateRequest, session)
 
@@ -290,16 +299,5 @@ class OcsTest {
 
         private const val INITIAL_BALANCE = 100_000_000L
         private const val BUCKET_SIZE = 500L
-
-        private lateinit var EMAIL: String
-        private lateinit var MSISDN: String
-
-        fun createTestUserAndSubscription() {
-
-            EMAIL = "ocs-${randomInt()}@test.com"
-            createCustomer(name = "Test OCS User", email = EMAIL)
-
-            MSISDN = createSubscription(EMAIL)
-        }
     }
 }
