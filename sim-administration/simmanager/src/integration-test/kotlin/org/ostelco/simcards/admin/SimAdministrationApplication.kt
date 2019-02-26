@@ -11,6 +11,7 @@ import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiReso
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
 import org.ostelco.sim.es2plus.SmDpPlusCallbackResource
 import org.ostelco.sim.es2plus.SmDpPlusCallbackService
+import org.ostelco.simcards.inventory.SimInventoryCallbackService
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SimInventoryDB
 import org.ostelco.simcards.inventory.SimInventoryResource
@@ -52,16 +53,7 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
                 .installPlugins()
         DAO = SimInventoryDAO(jdbi.onDemand(SimInventoryDB::class.java))
 
-        val profileVendorCallbackHandler = object : SmDpPlusCallbackService {
-            // TODO: Not implemented.
-            override fun handleDownloadProgressInfo(
-                    eid: String?,
-                    iccid: String,
-                    notificationPointId: Int,
-                    profileType: String?,
-                    resultData: String?,
-                    timestamp: String) = Unit
-        }
+        val profileVendorCallbackHandler = SimInventoryCallbackService(DAO)
 
         val httpClient = HttpClientBuilder(env)
                 .using(config.httpClient)
