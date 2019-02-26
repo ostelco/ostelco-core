@@ -63,11 +63,7 @@ class SimInventoryUnitTests {
             smdpPlusState = SmDpPlusState.AVAILABLE,
             batch = 99L,
             imsi = fakeImsi1,
-            iccid = fakeIccid1,
-            pin1 = "0000",
-            pin2 = "0000",
-            puk1 = "0000",
-            puk2 = "0000")
+            iccid = fakeIccid1)
 
     private val fakeSimEntryWithMsisdn = fakeSimEntryWithoutMsisdn.copy(
             msisdn = fakeMsisdn1,
@@ -92,7 +88,7 @@ class SimInventoryUnitTests {
         /* ProfileVendorConfig */
         org.mockito.Mockito.`when`(profileVendorConfig.name)
                 .thenReturn(fakeProfileVendor)
-        org.mockito.Mockito.`when`(profileVendorConfig.endpoint)
+        org.mockito.Mockito.`when`(profileVendorConfig.es2plusEndpoint)
                 .thenReturn("http://localhost:8080/somewhere")
 
         /* Top level config. */
@@ -120,10 +116,9 @@ class SimInventoryUnitTests {
                 .thenReturn(1L)
         org.mockito.Mockito.`when`(profileVendorAdapter.name)
                 .thenReturn(fakeProfileVendor)
-        org.mockito.Mockito.`when`(profileVendorAdapter.activate(httpClient, profileVendorConfig, dao, fakeEid, fakeSimEntryWithoutMsisdn))
+        org.mockito.Mockito.`when`(profileVendorAdapter.activate(httpClient, profileVendorConfig, dao, null, fakeSimEntryWithoutMsisdn))
                 .thenReturn(fakeSimEntryWithoutMsisdn.copy(
-                        smdpPlusState = SmDpPlusState.RELEASED,
-                        eid = fakeEid))
+                        smdpPlusState = SmDpPlusState.RELEASED))
 
         /* DAO. */
         org.mockito.Mockito.`when`(dao.getSimProfileByIccid(fakeIccid1))
@@ -150,7 +145,10 @@ class SimInventoryUnitTests {
         org.mockito.Mockito.`when`(dao.getSimProfileByMsisdn(fakeMsisdn2))
                 .thenReturn(null)
 
-        org.mockito.Mockito.`when`(dao.findNextFreeSimProfileForHlr(1L, fakeProfile))
+        org.mockito.Mockito.`when`(dao.findNextNonProvisionedSimProfileForHlr(1L, fakeProfile))
+                .thenReturn(fakeSimEntryWithoutMsisdn)
+
+        org.mockito.Mockito.`when`(dao.findNextReadyToUseSimProfileForHlr(1L, fakeProfile))
                 .thenReturn(fakeSimEntryWithoutMsisdn)
 
         org.mockito.Mockito.`when`(dao.getHlrAdapterByName(fakeHlr))
@@ -179,6 +177,12 @@ class SimInventoryUnitTests {
         org.mockito.Mockito.`when`(dao.setSmDpPlusState(fakeSimEntryWithoutMsisdn.id!!, SmDpPlusState.RELEASED))
                 .thenReturn(fakeSimEntryWithoutMsisdn.copy(
                         smdpPlusState = SmDpPlusState.RELEASED))
+
+        org.mockito.Mockito.`when`(dao.setProvisionState(1L, ProvisionState.PROVISIONED))
+                .thenReturn(fakeSimEntryWithoutMsisdn)
+
+        org.mockito.Mockito.`when`(config.getProfileForPhoneType(fakePhoneType))
+                .thenReturn(fakeProfile)
     }
 
     @Test
@@ -248,23 +252,8 @@ class SimInventoryUnitTests {
     }
 
     @Test
-    fun testActivateAll() {
-        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/esim/all")
-                .queryParam("eid", fakeEid)
-                .queryParam("iccid", fakeIccid1)
-                .request(MediaType.APPLICATION_JSON)
-                .post(Entity.json(null))
-        assertEquals(200, response.status)
-
-        val simEntry = response.readEntity(SimEntry::class.java)
-        assertNotNull(simEntry)
-    }
-
-    @Test
-    fun testActivateEsim() {
+    fun testProvisionEsim() {
         val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/esim")
-                .queryParam("eid", fakeEid)
-                .queryParam("iccid", fakeIccid1)
                 .request(MediaType.APPLICATION_JSON)
                 .post(Entity.json(null))
         assertEquals(200, response.status)
@@ -276,8 +265,24 @@ class SimInventoryUnitTests {
         verify(dao).getSimProfileByIccid(fakeSimEntryWithoutMsisdn.iccid)
         verify(dao).getProfileVendorAdapterById(fakeSimEntryWithoutMsisdn.profileVendorId)
 
-        verify(profileVendorAdapter).activate(httpClient, profileVendorConfig, dao, fakeEid, fakeSimEntryWithoutMsisdn)
+        verify(profileVendorAdapter).activate(httpClient, profileVendorConfig, dao, null, fakeSimEntryWithoutMsisdn)
         // XXX Missing a bunch of verifications
+    }
+
+    @Test
+    fun testActivateEsim() {
+        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/esim")
+                .request(MediaType.APPLICATION_JSON)
+                .get()
+        assertEquals(200, response.status)
+
+        val simEntry = response.readEntity(SimEntry::class.java)
+        assertNotNull(simEntry)
+
+        verify(dao).getHlrAdapterByName(fakeHlr)
+        verify(config).getProfileForPhoneType(fakePhoneType)
+        verify(dao).findNextReadyToUseSimProfileForHlr(hlrAdapter.id, fakeProfile)
+        verify(dao).setProvisionState(simEntry.id!!, ProvisionState.PROVISIONED)
     }
 
     @Test

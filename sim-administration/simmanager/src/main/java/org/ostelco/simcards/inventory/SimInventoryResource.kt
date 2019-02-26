@@ -139,53 +139,65 @@ class SimInventoryResource(private val httpClient: CloseableHttpClient,
     }
 
     @POST
-    @Path("esim/all")
-    @Produces(MediaType.APPLICATION_JSON)
-    fun activateAllEsimProfileByIccid(
-            @NotEmpty @PathParam("hlrVendors") hlr: String,
-            @QueryParam("eid") eid: String?,
-            @QueryParam("iccid") iccid: String?,
-            @DefaultValue("_") @QueryParam("phoneType") phoneType: String): SimEntry? {
-        val simEntry = assertNonNull(activateEsimProfile(hlr, eid, iccid, phoneType))
-        return activateHlrProfileByIccid(hlr, simEntry.iccid)
-    }
-
-    @POST
     @Path("esim")
     @Produces(MediaType.APPLICATION_JSON)
-    fun activateEsimProfile(
+    fun activateNextEsimProfile(
             @NotEmpty @PathParam("hlrVendors") hlr: String,
-            @QueryParam("eid") eid: String?,
-            @QueryParam("iccid") iccid: String?,
             @DefaultValue("_") @QueryParam("phoneType") phoneType: String): SimEntry? {
         val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
         val profile = config.getProfileForPhoneType(phoneType)
-        val simEntry = assertNonNull(if (iccid.isNullOrEmpty())
-            dao.findNextFreeSimProfileForHlr(hlrAdapter.id, profile)
-        else
-            dao.getSimProfileByIccid(iccid))
+        val simEntry = assertNonNull(dao.findNextNonProvisionedSimProfileForHlr(hlrAdapter.id,
+                profile))
         assertCorrectHlr(hlr, hlrAdapter.id == simEntry.hlrId)
 
         val simVendorAdapter = assertNonNull(dao.getProfileVendorAdapterById(
                 simEntry.profileVendorId))
-        val config: ProfileVendorConfig = assertNonNull(config.profileVendors.filter {
+        val profileVendorConfig: ProfileVendorConfig = assertNonNull(config.profileVendors.filter {
             it.name == simVendorAdapter.name
         }.firstOrNull())
 
         /* As 'confirm-order' message is issued with 'releaseFlag' set to true, the
            CONFIRMED state should not occur. */
-        return when (simEntry.smdpPlusState) {
+        val updatedSimEntry = when (simEntry.smdpPlusState) {
             SmDpPlusState.AVAILABLE -> {
-                simVendorAdapter.activate(httpClient, config, dao, eid, simEntry)
+                simVendorAdapter.activate(httpClient, profileVendorConfig, dao, null, simEntry)
             }
             SmDpPlusState.ALLOCATED -> {
-                simVendorAdapter.confirmOrder(httpClient, config, dao, eid, simEntry)
+                simVendorAdapter.confirmOrder(httpClient, profileVendorConfig, dao, null, simEntry)
             }
             /* ESIM already 'released'. */
             else -> {
                 simEntry
             }
         }
+
+        /* Enable SIM profile with HLR. */
+        return activateHlrProfileByIccid(hlr, updatedSimEntry!!.iccid)
+    }
+
+    @GET
+    @Path("esim")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun allocateNextEsimProfile(
+            @NotEmpty @PathParam("hlrVendors") hlr: String,
+            @DefaultValue("_") @QueryParam("phoneType") phoneType: String): SimEntry? {
+        val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
+        val profile = config.getProfileForPhoneType(phoneType)
+        val simEntry = assertNonNull(dao.findNextReadyToUseSimProfileForHlr(hlrAdapter.id,
+                profile))
+        assertCorrectHlr(hlr, hlrAdapter.id == simEntry.hlrId)
+
+        val simVendorAdapter = assertNonNull(dao.getProfileVendorAdapterById(
+                simEntry.profileVendorId))
+        val profileVendorConfig: ProfileVendorConfig = assertNonNull(config.profileVendors.filter {
+            it.name == simVendorAdapter.name
+        }.firstOrNull())
+
+        /* Add 'code' field content. */
+        return assertNonNull(dao.setProvisionState(simEntry.id!!,
+                ProvisionState.PROVISIONED)!!.let {
+            it.copy(code = "LPA:${profileVendorConfig.es9plusEndpoint}:${it.matchingId}")
+        })
     }
 
     private fun assertCorrectHlr(hlr: String, match: Boolean) {

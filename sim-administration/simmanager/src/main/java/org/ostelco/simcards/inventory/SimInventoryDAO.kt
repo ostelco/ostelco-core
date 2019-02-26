@@ -64,7 +64,8 @@ data class SimEntry(
         @JsonProperty("pin1") val pin1: String? = null,
         @JsonProperty("pin2") val pin2: String? = null,
         @JsonProperty("puk1") val puk1: String? = null,
-        @JsonProperty("puk2") val puk2: String? = null
+        @JsonProperty("puk2") val puk2: String? = null,
+        @JsonProperty("code") val code: String? = null
 )
 
 /**
@@ -84,7 +85,7 @@ data class SimImportBatch(
 class SimEntryIterator(profileVendorId: Long,
                        hlrId: Long,
                        batchId: Long,
-                       csvInputStream: InputStream) : Iterator<SimEntry> {
+                       csvInputStream: InputStream): Iterator<SimEntry> {
 
     var count = AtomicLong(0)
     // TODO: The current implementation puts everything in a deque at startup.

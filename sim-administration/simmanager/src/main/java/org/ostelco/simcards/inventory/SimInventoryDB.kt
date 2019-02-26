@@ -33,18 +33,18 @@ interface SimInventoryDB {
     fun getSimProfileByMsisdn(msisdn: String): SimEntry
 
     /*
-     * Find next available SIM card for a particular HLR
-     * and profile (phone type).
+     * Find next available SIM card for a particular HLR ready
+     * to be 'provisioned' with the SM-DP+ and HLR vendors.
      */
     @SqlQuery("""SELECT a.*
                       FROM   sim_entries a
                              JOIN (SELECT id,
                                           CASE
+                                            WHEN hlrstate = 'NOT_ACTIVATED'
+                                                 AND smdpplusstate = 'AVAILABLE' THEN 1
+                                            WHEN hlrstate = 'NOT_ACTIVATED'
+                                                 AND smdpplusstate = 'RELEASED' THEN 2
                                             WHEN hlrstate = 'ACTIVATED'
-                                                 AND smdpplusstate = 'ALLOCATED' THEN 1
-                                            WHEN hlrstate = 'NOT_ACTIVATED'
-                                                 AND smdpplusstate = 'ALLOCATED' THEN 2
-                                            WHEN hlrstate = 'NOT_ACTIVATED'
                                                  AND smdpplusstate = 'AVAILABLE' THEN 3
                                             ELSE 9999
                                           END AS position
@@ -57,8 +57,24 @@ interface SimInventoryDB {
                              ON ( a.id = b.id
                                   AND b.position < 9999 )
                       LIMIT  1""")
-    fun findNextFreeSimProfileForHlr(hlrId: Long,
+    fun findNextNonProvisionedSimProfileForHlr(hlrId: Long,
                                      profile: String): SimEntry?
+
+    /*
+     * Find next ready to use SIM card for a particular HLR
+     * and profile (phone type).
+     */
+    @SqlQuery("""SELECT *
+                      FROM   sim_entries
+                      WHERE  hlrState = 'ACTIVATED'
+                             AND smdpplusstate = 'RELEASED'
+                             AND provisionState = 'AVAILABLE'
+                             AND hlrId = :hlrId
+                             AND profile = :profile
+                      LIMIT  1""")
+    fun findNextReadyToUseSimProfileForHlr(hlrId: Long,
+                                           profile: String): SimEntry?
+
 
     @SqlUpdate("""UPDATE sim_entries SET eid = :eid
                        WHERE id = :id""")

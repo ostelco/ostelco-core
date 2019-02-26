@@ -12,10 +12,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.client.ClientProperties
 import org.jdbi.v3.core.Jdbi
 import org.junit.*
-import org.ostelco.simcards.inventory.HlrState
-import org.ostelco.simcards.inventory.SimEntry
-import org.ostelco.simcards.inventory.SimProfileKeyStatistics
-import org.ostelco.simcards.inventory.SmDpPlusState
+import org.ostelco.simcards.inventory.*
 import org.ostelco.simcards.smdpplus.SmDpPlusApplication
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.FixedHostPortGenericContainer
@@ -200,91 +197,53 @@ class SimAdministrationTest {
         assertThat(simEntry.iccid).isEqualTo(iccid)
     }
 
-    @Test
-    fun testActivateEsim() {
-        val iccid = "8901000000000000001"
-        val eid = getEidFromIccid(iccid)
-        val response = client.target("$simManagerEndpoint/$hlrName/esim")
-                .queryParam("eid", eid)
-                .queryParam("iccid", iccid)
-                .request()
-                .post(Entity.json(null))
-        assertThat(response.status).isEqualTo(200)
-
-        val simEntry = response.readEntity(SimEntry::class.java)
-        assertThat(simEntry.iccid).isEqualTo(iccid)
-        assertThat(simEntry.eid).isEqualTo(eid)
-        assertThat(simEntry.profile).isEqualTo(expectedProfile)
-        assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.RELEASED)
-        assertThat(simEntry.hlrState).isEqualTo(HlrState.NOT_ACTIVATED)
-    }
-
-    @Test
-    fun testActivateEsimNoEid() {
-        val iccid = "8901000000000000019"
-        val response = client.target("$simManagerEndpoint/$hlrName/esim")
-                .queryParam("iccid", iccid)
-                .request()
-                .post(Entity.json(null))
-        assertThat(response.status).isEqualTo(200)
-
-        val simEntry = response.readEntity(SimEntry::class.java)
-        assertThat(simEntry.iccid).isEqualTo(iccid)
-        assertThat(simEntry.eid).isEqualTo(getEidFromIccid(iccid))
-        assertThat(simEntry.profile).isEqualTo(expectedProfile)
-        assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.RELEASED)
-        assertThat(simEntry.hlrState).isEqualTo(HlrState.NOT_ACTIVATED)
-    }
 
     @Test
     fun testActivateNextEsim() {
-        val iccid = "8901000000000000027"
-        val eid = getEidFromIccid(iccid)
         val response = client.target("$simManagerEndpoint/$hlrName/esim")
-                .queryParam("eid", eid)
                 .request()
                 .post(Entity.json(null))
         assertThat(response.status).isEqualTo(200)
 
         val simEntry = response.readEntity(SimEntry::class.java)
         assertThat(simEntry.profile).isEqualTo(expectedProfile)
-        assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.RELEASED)
-        assertThat(simEntry.hlrState).isEqualTo(HlrState.NOT_ACTIVATED)
-    }
-
-    @Test
-    fun testActivateEsimNoEidAll() {
-        val iccid = "8901000000000000035"
-        val response = client.target("$simManagerEndpoint/$hlrName/esim/all")
-                .queryParam("iccid", iccid)
-                .request()
-                .post(Entity.json(null))
-        assertThat(response.status).isEqualTo(200)
-
-        val simEntry = response.readEntity(SimEntry::class.java)
-        assertThat(simEntry.iccid).isEqualTo(iccid)
-        assertThat(simEntry.eid).isEqualTo(getEidFromIccid(iccid))
-        assertThat(simEntry.profile).isEqualTo(expectedProfile)
-        assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.RELEASED)
         assertThat(simEntry.hlrState).isEqualTo(HlrState.ACTIVATED)
-    }
+        assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.RELEASED)
+        assertThat(simEntry.provisionState).isEqualTo(ProvisionState.AVAILABLE)
 
-    /* XXX Fails due to DB being reset after each test. */
-    @Test
-    @Ignore
-    fun testActivateNextEsimNoEidAll() {
-        val response = client.target("$simManagerEndpoint/$hlrName/esim/all")
-                .request()
-                .post(Entity.json(null))
-        assertThat(response.status).isEqualTo(200)
-
-        val simEntry = response.readEntity(SimEntry::class.java)
+        /* EID is constructed using ICCID in SM-DP+ emulator. */
         assertThat(simEntry.eid).isEqualTo(getEidFromIccid(simEntry.iccid))
-        assertThat(simEntry.profile).isEqualTo(expectedProfile)
-        assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.RELEASED)
-        assertThat(simEntry.hlrState).isEqualTo(HlrState.ACTIVATED)
     }
 
+    @Test
+    fun testAllocateNextEsim() {
+        /* Must enable one SIM ready first. */
+        val createResponse = client.target("$simManagerEndpoint/$hlrName/esim")
+                .request()
+                .post(Entity.json(null))
+        assertThat(createResponse.status).isEqualTo(200)
+
+        /* Preprovision a SIM card. */
+        createResponse.readEntity(SimEntry::class.java)
+
+        val response = client.target("$simManagerEndpoint/$hlrName/esim")
+                .request()
+                .get()
+        assertThat(response.status).isEqualTo(200)
+
+        val simEntry = response.readEntity(SimEntry::class.java)
+        assertThat(simEntry.profile).isEqualTo(expectedProfile)
+        assertThat(simEntry.hlrState).isEqualTo(HlrState.ACTIVATED)
+        assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.RELEASED)
+        assertThat(simEntry.provisionState).isEqualTo(ProvisionState.PROVISIONED)
+
+        /* EID is constructed using ICCID in SM-DP+ emulator. */
+        assertThat(simEntry.eid).isEqualTo(getEidFromIccid(simEntry.iccid))
+
+        /* Verify that 'code' field is set. */
+        val es9plusEndpoint = SIM_MANAGER_RULE.configuration.profileVendors[0].es9plusEndpoint
+        assertThat(simEntry.code).isEqualToIgnoringCase("LPA:${es9plusEndpoint}:${simEntry.matchingId}")
+    }
 
     ///
     ///   Tests related to the cron job that will allocate new SIM cards
