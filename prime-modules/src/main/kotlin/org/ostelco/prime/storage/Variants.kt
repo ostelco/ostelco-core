@@ -110,7 +110,7 @@ interface ClientGraphStore {
     /**
      * Set balance after OCS Topup or Consumption
      */
-    suspend fun consume(msisdn: String, usedBytes: Long, requestedBytes: Long, callback: (Either<StoreError, Pair<Long, Long>>) -> Unit)
+    suspend fun consume(msisdn: String, usedBytes: Long, requestedBytes: Long, callback: (Either<StoreError, ConsumptionResult>) -> Unit)
 
     /**
      * Get msisdn for the given subscription-id
@@ -162,6 +162,8 @@ interface ClientGraphStore {
      */
     fun getCustomerState(identity: Identity): Either<StoreError, CustomerState>
 }
+
+data class ConsumptionResult(val msisdnAnalyticsId: String, val granted: Long, val balance: Long)
 
 interface AdminGraphStore {
 
@@ -259,7 +261,7 @@ interface AdminGraphStore {
     fun atomicChangeSegments(changeSegments: Collection<ChangeSegment>): Either<StoreError, Unit>
 
     // Method to perform a full refund of a purchase
-    fun refundPurchase(customerId: String, purchaseRecordId: String, reason: String): Either<PaymentError, ProductInfo>
+    fun refundPurchase(identity: Identity, purchaseRecordId: String, reason: String): Either<PaymentError, ProductInfo>
 
     // update the scan information with scan result
     fun updateScanInformation(scanInformation: ScanInformation, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit>

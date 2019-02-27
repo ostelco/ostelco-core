@@ -32,9 +32,6 @@ modules:
   - type: ocs
     config:
       lowBalanceThreshold: 100000000
-  - type: pseudonymizer
-    config:
-      namespace: ${DATASTORE_NAMESPACE:-""}
   - type: api
   - type: stripe-payment-processor
   - type: firebase-app-notifier

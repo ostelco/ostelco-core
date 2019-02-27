@@ -1,52 +1,49 @@
 # This config is used as config.yaml when prime is running using docker-compose for Acceptance Testing
 
 modules:
-- type: jersey
-  config:
-    authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
-    jerseyClient:
-      timeout: 3s
-      connectionRequestTimeout: 1s
-- type: firebase
-  config:
-    configFile: /secret/prime-service-account.json
-    rootPath: test
-- type: Imei-lookup
-  config:
-    csvFile: /config-data/imeiDb.csv
-- type: neo4j
-  config:
-    host: neo4j
-    protocol: bolt
-- type: analytics
-  config:
-    projectId: ${GCP_PROJECT_ID}
-    dataTrafficTopicId: data-traffic
-    purchaseInfoTopicId: purchase-info
-    activeUsersTopicId: active-users
-- type: ocs
-  config:
-    lowBalanceThreshold: 0
-- type: pseudonymizer
-  config:
-    datastoreType: emulator
-- type: api
-- type: stripe-payment-processor
-- type: firebase-app-notifier
-  config:
-    configFile: /secret/prime-service-account.json
-- type: admin
-- type: graphql
-- type: scaninfo-store
-  config:
-    storeType: emulator
-    keysetFilePathPrefix: /config/test_keyset_pub_cltxt
+  - type: jersey
+    config:
+      authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
+      jerseyClient:
+        timeout: 3s
+        connectionRequestTimeout: 1s
+  - type: firebase
+    config:
+      configFile: /secret/prime-service-account.json
+      rootPath: test
+  - type: Imei-lookup
+    config:
+      csvFile: /config-data/imeiDb.csv
+  - type: neo4j
+    config:
+      host: neo4j
+      protocol: bolt
+  - type: analytics
+    config:
+      projectId: ${GCP_PROJECT_ID}
+      dataTrafficTopicId: data-traffic
+      purchaseInfoTopicId: purchase-info
+      activeUsersTopicId: active-users
+  - type: ocs
+    config:
+      lowBalanceThreshold: 0
+  - type: api
+  - type: stripe-payment-processor
+  - type: firebase-app-notifier
+    config:
+      configFile: /secret/prime-service-account.json
+  - type: admin
+  - type: graphql
+  - type: scaninfo-store
+    config:
+      storeType: emulator
+      keysetFilePathPrefix: /config/test_keyset_pub_cltxt
 server:
   applicationConnectors:
-  - type: h2c
-    port: 8080
-    maxConcurrentStreams: 1024
-    initialStreamRecvWindow: 65535
+    - type: h2c
+      port: 8080
+      maxConcurrentStreams: 1024
+      initialStreamRecvWindow: 65535
 
 logging:
   level: INFO

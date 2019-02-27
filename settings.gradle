@@ -7,7 +7,7 @@ include ':analytics-grpc-api'
 include ':analytics-module'
 include ':auth-server'
 include ':bq-metrics-extractor'
-include ':client-api'
+include ':customer-endpoint'
 include ':dataflow-pipelines'
 include ':diameter-ha'
 include ':diameter-stack'
@@ -28,8 +28,7 @@ include ':ostelco-lib'
 include ':payment-processor'
 include ':prime'
 include ':prime-modules'
-include ':prime-client-api'
-include ':pseudonym-server'
+include ':prime-customer-api'
 include ':scaninfo-datastore'
 include ':scaninfo-shredder'
 include ':slack'
@@ -49,7 +48,7 @@ project(':analytics-grpc-api').projectDir = "$rootDir/analytics-grpc-api" as Fil
 project(':analytics-module').projectDir = "$rootDir/analytics-module" as File
 project(':auth-server').projectDir = "$rootDir/auth-server" as File
 project(':bq-metrics-extractor').projectDir = "$rootDir/bq-metrics-extractor" as File
-project(':client-api').projectDir = "$rootDir/client-api" as File
+project(':customer-endpoint').projectDir = "$rootDir/customer-endpoint" as File
 project(':dataflow-pipelines').projectDir = "$rootDir/dataflow-pipelines" as File
 project(':diameter-ha').projectDir = "$rootDir/diameter-ha" as File
 project(':diameter-stack').projectDir = "$rootDir/diameter-stack" as File
@@ -70,8 +69,7 @@ project(':ostelco-lib').projectDir = "$rootDir/ostelco-lib" as File
 project(':payment-processor').projectDir = "$rootDir/payment-processor" as File
 project(':prime').projectDir = "$rootDir/prime" as File
 project(':prime-modules').projectDir = "$rootDir/prime-modules" as File
-project(':prime-client-api').projectDir = "$rootDir/prime-client-api" as File
-project(':pseudonym-server').projectDir = "$rootDir/pseudonym-server" as File
+project(':prime-customer-api').projectDir = "$rootDir/prime-customer-api" as File
 project(':scaninfo-datastore').projectDir = "$rootDir/scaninfo-datastore" as File
 project(':scaninfo-shredder').projectDir = "$rootDir/scaninfo-shredder" as File
 project(':slack').projectDir = "$rootDir/slack" as File

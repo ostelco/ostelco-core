@@ -31,6 +31,7 @@ data class Customer(
         val postCode: String = "",
         val city: String = "",
         val country: String = "",
+        val analyticsId: String = UUID.randomUUID().toString(),
         val referralId: String = UUID.randomUUID().toString()) : HasId
 
 data class Identity(
@@ -164,6 +165,7 @@ data class ApplicationToken(
 
 data class Subscription(
         val msisdn: String,
+        val analyticsId: String = UUID.randomUUID().toString(),
         val alias: String = "") : HasId {
 
     override val id: String
@@ -215,7 +217,6 @@ data class RefundRecord(
 
 data class PurchaseRecord(
         override val id: String,
-        @Deprecated("Will be removed in future") val msisdn: String,
         val product: Product,
         val timestamp: Long,
         val refund: RefundRecord? = null) : HasId
@@ -232,13 +233,3 @@ data class PurchaseRecordInfo(override val id: String,
             purchaseRecord.timestamp,
             status)
 }
-
-data class PseudonymEntity(
-        val sourceId: String,
-        val pseudonym: String,
-        val start: Long,
-        val end: Long)
-
-data class ActivePseudonyms(
-        val current: PseudonymEntity,
-        val next: PseudonymEntity)

@@ -11,8 +11,6 @@ import org.ostelco.analytics.api.ActiveUsersInfo
 import org.ostelco.prime.analytics.ConfigRegistry
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.metrics.api.User
-import org.ostelco.prime.module.getResource
-import org.ostelco.prime.pseudonymizer.PseudonymizerService
 import java.time.Instant
 
 /**
@@ -23,7 +21,6 @@ object ActiveUsersPublisher :
 
     private val logger by getLogger()
 
-    private val pseudonymizerService by lazy { getResource<PseudonymizerService>() }
     private val jsonPrinter = JsonFormat.printer().includingDefaultValueFields()
 
     private fun convertToJson(activeUsersInfo: ActiveUsersInfo): ByteString =
@@ -34,8 +31,7 @@ object ActiveUsersPublisher :
         val activeUsersInfoBuilder = ActiveUsersInfo.newBuilder().setTimestamp(Timestamps.fromMillis(timestamp))
         for (user in userList) {
             val userBuilder = org.ostelco.analytics.api.User.newBuilder()
-            val pseudonym = pseudonymizerService.getMsisdnPseudonym(user.msisdn, timestamp).pseudonym
-            activeUsersInfoBuilder.addUsers(userBuilder.setApn(user.apn).setMccMnc(user.mccMnc).setMsisdn(pseudonym).build())
+            activeUsersInfoBuilder.addUsers(userBuilder.setApn(user.apn).setMccMnc(user.mccMnc).setMsisdn(user.msisdn).build())
         }
 
         val pubsubMessage = PubsubMessage.newBuilder()

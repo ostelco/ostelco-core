@@ -1,95 +1,120 @@
 package org.ostelco.at.jersey
 
 import org.junit.Test
-import org.ostelco.at.common.*
-import org.ostelco.prime.client.model.*
+import org.ostelco.at.common.StripePayment
+import org.ostelco.at.common.createCustomer
+import org.ostelco.at.common.createSubscription
+import org.ostelco.at.common.expectedProducts
+import org.ostelco.at.common.getLogger
+import org.ostelco.at.common.randomInt
+import org.ostelco.prime.customer.model.ApplicationToken
+import org.ostelco.prime.customer.model.Bundle
+import org.ostelco.prime.customer.model.BundleList
+import org.ostelco.prime.customer.model.Customer
+import org.ostelco.prime.customer.model.CustomerState
+import org.ostelco.prime.customer.model.PaymentSource
+import org.ostelco.prime.customer.model.PaymentSourceList
+import org.ostelco.prime.customer.model.Person
+import org.ostelco.prime.customer.model.Plan
+import org.ostelco.prime.customer.model.Price
+import org.ostelco.prime.customer.model.Product
+import org.ostelco.prime.customer.model.ProductInfo
+import org.ostelco.prime.customer.model.PurchaseRecord
+import org.ostelco.prime.customer.model.PurchaseRecordList
+import org.ostelco.prime.customer.model.ScanInformation
+import org.ostelco.prime.customer.model.Subscription
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.util.*
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.MultivaluedHashMap
-import kotlin.test.*
+import kotlin.test.assertEquals
+import kotlin.test.assertFails
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 
-class ProfileTest {
+class CustomerTest {
 
     @Test
-    fun `jersey test - GET and PUT profile`() {
+    fun `jersey test - GET and PUT customer`() {
 
-        val email = "profile-${randomInt()}@test.com"
+        val email = "customer-${randomInt()}@test.com"
 
-        val createProfile = Profile()
+        val createCustomer = Customer()
                 .id("")
                 .email(email)
-                .name("Test Profile User")
+                .name("Test Customer")
                 .address("")
                 .city("")
                 .country("NO")
                 .postCode("")
+                .analyticsId("")
                 .referralId("")
 
-        val createdProfile: Profile = post {
-            path = "/profile"
-            body = createProfile
+        val createdCustomer: Customer = post {
+            path = "/customer"
+            body = createCustomer
             this.email = email
         }
 
-        assertEquals(createProfile.email, createdProfile.email, "Incorrect 'email' in created profile")
-        assertEquals(createProfile.name, createdProfile.name, "Incorrect 'name' in created profile")
+        assertEquals(createCustomer.email, createdCustomer.email, "Incorrect 'email' in created customer")
+        assertEquals(createCustomer.name, createdCustomer.name, "Incorrect 'name' in created customer")
 
-        val profile: Profile = get {
-            path = "/profile"
+        val customer: Customer = get {
+            path = "/customer"
             this.email = email
         }
 
-        assertEquals(email, profile.email, "Incorrect 'email' in fetched profile")
-        assertEquals(createProfile.name, profile.name, "Incorrect 'name' in fetched profile")
+        assertEquals(email, customer.email, "Incorrect 'email' in fetched customer")
+        assertEquals(createCustomer.name, customer.name, "Incorrect 'name' in fetched customer")
 
-        profile
+        customer
                 .address("Some place")
                 .postCode("418")
                 .city("Udacity")
                 .country("Online")
 
-        val updatedProfile: Profile = put {
-            path = "/profile"
-            body = profile
+        val updatedCustomer: Customer = put {
+            path = "/customer"
+            body = customer
             this.email = email
         }
 
-        assertEquals(email, updatedProfile.email, "Incorrect 'email' in response after updating profile")
-        assertEquals(createProfile.name, updatedProfile.name, "Incorrect 'name' in response after updating profile")
-        assertEquals("Some place", updatedProfile.address, "Incorrect 'address' in response after updating profile")
-        assertEquals("418", updatedProfile.postCode, "Incorrect 'postcode' in response after updating profile")
-        assertEquals("Udacity", updatedProfile.city, "Incorrect 'city' in response after updating profile")
-        assertEquals("Online", updatedProfile.country, "Incorrect 'country' in response after updating profile")
+        assertEquals(email, updatedCustomer.email, "Incorrect 'email' in response after updating customer")
+        assertEquals(createCustomer.name, updatedCustomer.name, "Incorrect 'name' in response after updating customer")
+        assertEquals("Some place", updatedCustomer.address, "Incorrect 'address' in response after updating customer")
+        assertEquals("418", updatedCustomer.postCode, "Incorrect 'postcode' in response after updating customer")
+        assertEquals("Udacity", updatedCustomer.city, "Incorrect 'city' in response after updating customer")
+        assertEquals("Online", updatedCustomer.country, "Incorrect 'country' in response after updating customer")
 
-        updatedProfile
+        updatedCustomer
                 .address("")
                 .postCode("")
                 .city("")
 
-        val clearedProfile: Profile = put {
-            path = "/profile"
-            body = updatedProfile
+        val clearedCustomer: Customer = put {
+            path = "/customer"
+            body = updatedCustomer
             this.email = email
         }
 
-        assertEquals(email, clearedProfile.email, "Incorrect 'email' in response after clearing profile")
-        assertEquals(createProfile.name, clearedProfile.name, "Incorrect 'name' in response after clearing profile")
-        assertEquals("", clearedProfile.address, "Incorrect 'address' in response after clearing profile")
-        assertEquals("", clearedProfile.postCode, "Incorrect 'postcode' in response after clearing profile")
-        assertEquals("", clearedProfile.city, "Incorrect 'city' in response after clearing profile")
+        assertEquals(email, clearedCustomer.email, "Incorrect 'email' in response after clearing customer")
+        assertEquals(createCustomer.name, clearedCustomer.name, "Incorrect 'name' in response after clearing customer")
+        assertEquals("", clearedCustomer.address, "Incorrect 'address' in response after clearing customer")
+        assertEquals("", clearedCustomer.postCode, "Incorrect 'postcode' in response after clearing customer")
+        assertEquals("", clearedCustomer.city, "Incorrect 'city' in response after clearing customer")
 
-        updatedProfile.country("")
+        updatedCustomer.country("")
 
         // A test in 'HttpClientUtil' checks for status code 200 while the
         // expected status code is actually 400.
         assertFailsWith(AssertionError::class, "Incorrectly accepts that 'country' is cleared/not set") {
             put {
-                path = "/profile"
-                body = updatedProfile
+                path = "/customer"
+                body = updatedCustomer
                 this.email = email
             }
         }
@@ -99,7 +124,7 @@ class ProfileTest {
     fun `jersey test - POST application token`() {
 
         val email = "token-${randomInt()}@test.com"
-        createProfile("Test Token User", email)
+        createCustomer("Test Token User", email)
 
         createSubscription(email)
 
@@ -130,7 +155,7 @@ class GetSubscriptions {
     fun `jersey test - GET subscriptions`() {
 
         val email = "subs-${randomInt()}@test.com"
-        createProfile(name = "Test Subscriptions User", email = email)
+        createCustomer(name = "Test Subscriptions User", email = email)
         val msisdn = createSubscription(email)
 
         val subscriptions: Collection<Subscription> = get {
@@ -150,7 +175,7 @@ class BundlesAndPurchasesTest {
     fun `jersey test - GET bundles`() {
 
         val email = "balance-${randomInt()}@test.com"
-        createProfile(name = "Test Balance User", email = email)
+        createCustomer(name = "Test Balance User", email = email)
 
         val bundles: BundleList = get {
             path = "/bundles"
@@ -178,38 +203,13 @@ class BundlesAndPurchasesTest {
     }
 }
 
-class GetPseudonymsTest {
-
-    private val logger by getLogger()
-
-    @Test
-    fun `jersey test - GET active pseudonyms`() {
-
-        val email = "pseu-${randomInt()}@test.com"
-        createProfile(name = "Test Pseudonyms User", email = email)
-
-        createSubscription(email)
-
-        val activePseudonyms: ActivePseudonyms = get {
-            path = "/subscription/activePseudonyms"
-            this.email = email
-        }
-
-        logger.info("Current: ${activePseudonyms.current.pseudonym}")
-        logger.info("Next: ${activePseudonyms.next.pseudonym}")
-        assertNotNull(activePseudonyms.current.pseudonym, "Empty current pseudonym")
-        assertNotNull(activePseudonyms.next.pseudonym, "Empty next pseudonym")
-        assertEquals(activePseudonyms.current.end + 1, activePseudonyms.next.start, "The pseudonyms are not in order")
-    }
-}
-
 class GetProductsTest {
 
     @Test
     fun `jersey test - GET products`() {
 
         val email = "products-${randomInt()}@test.com"
-        createProfile(name = "Test Products User", email = email)
+        createCustomer(name = "Test Products User", email = email)
 
         val products: List<Product> = get {
             path = "/products"
@@ -229,7 +229,7 @@ class SourceTest {
         var customerId = ""
         try {
 
-            customerId = createProfile(name = "Test Payment Source", email = email).id
+            customerId = createCustomer(name = "Test create Payment Source", email = email).id
 
             val tokenId = StripePayment.createPaymentTokenId()
 
@@ -261,7 +261,7 @@ class SourceTest {
         val email = "purchase-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createProfile(name = "Test Payment Source", email = email).id
+            customerId = createCustomer(name = "Test list Payment Source", email = email).id
 
             Thread.sleep(200)
 
@@ -299,7 +299,7 @@ class SourceTest {
 
         var customerId = ""
         try {
-            customerId = createProfile(name = "Test List Payment Sources", email = email).id
+            customerId = createCustomer(name = "Test List Payment Sources", email = email).id
 
             val sources: PaymentSourceList = get {
                 path = "/paymentSources"
@@ -321,7 +321,7 @@ class SourceTest {
         val email = "purchase-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createProfile(name = "Test Payment Source", email = email).id
+            customerId = createCustomer(name = "Test update Payment Source", email = email).id
 
             val tokenId = StripePayment.createPaymentTokenId()
             val cardId = StripePayment.getCardIdForTokenId(tokenId)
@@ -372,7 +372,7 @@ class SourceTest {
         var customerId = ""
         try {
 
-            customerId = createProfile(name = "Test Payment Source", email = email).id
+            customerId = createCustomer(name = "Test delete Payment Source", email = email).id
 
             Thread.sleep(200)
 
@@ -443,7 +443,7 @@ class PurchaseTest {
         val email = "purchase-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createProfile(name = "Test Purchase User", email = email).id
+            customerId = createCustomer(name = "Test Purchase User", email = email).id
 
             val balanceBefore = get<List<Bundle>> {
                 path = "/bundles"
@@ -488,7 +488,7 @@ class PurchaseTest {
         val email = "purchase-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createProfile(name = "Test Purchase User with Default Payment Source", email = email).id
+            customerId = createCustomer(name = "Test Purchase with Default Payment Source", email = email).id
 
             val sourceId = StripePayment.createPaymentTokenId()
 
@@ -541,7 +541,7 @@ class PurchaseTest {
         val email = "purchase-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createProfile(name = "Test Purchase User with Default Payment Source", email = email).id
+            customerId = createCustomer(name = "Test refund Purchase User with Default Payment Source", email = email).id
 
             val sourceId = StripePayment.createPaymentTokenId()
 
@@ -606,7 +606,7 @@ class PurchaseTest {
         val email = "purchase-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createProfile(name = "Test Purchase User with Default Payment Source", email = email).id
+            customerId = createCustomer(name = "Test Purchase with adding Payment Source", email = email).id
 
             val sourceId = StripePayment.createPaymentTokenId()
 
@@ -669,7 +669,7 @@ class eKYCTest {
         val email = "ekyc-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createProfile(name = "Test User for eKYC", email = email).id
+            customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
                 path = "/customer/new-ekyc-scanId/global"
@@ -693,7 +693,7 @@ class eKYCTest {
         val email = "ekyc-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createProfile(name = "Test User for eKYC", email = email).id
+            customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
                 path = "/customer/new-ekyc-scanId/global"
@@ -702,7 +702,7 @@ class eKYCTest {
 
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
-            var dataMap = MultivaluedHashMap<String,String>()
+            val dataMap = MultivaluedHashMap<String,String>()
             dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
             dataMap.put("idScanStatus", listOf("ERROR"))
             dataMap.put("verificationStatus", listOf("DENIED_FRAUD"))
@@ -736,7 +736,7 @@ class eKYCTest {
         val email = "ekyc-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createProfile(name = "Test User for eKYC", email = email).id
+            customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
                 path = "/customer/new-ekyc-scanId/global"
@@ -781,7 +781,7 @@ class eKYCTest {
         val email = "ekyc-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createProfile(name = "Test User for eKYC", email = email).id
+            customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
                 path = "/customer/new-ekyc-scanId/global"
@@ -826,7 +826,7 @@ class eKYCTest {
         val email = "ekyc-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createProfile(name = "Test User for eKYC", email = email).id
+            customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
                 path = "/customer/new-ekyc-scanId/global"
@@ -869,7 +869,7 @@ class eKYCTest {
         val email = "ekyc-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createProfile(name = "Test User for eKYC", email = email).id
+            customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
                 path = "/customer/new-ekyc-scanId/global"
@@ -912,7 +912,7 @@ class eKYCTest {
         val email = "ekyc-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createProfile(name = "Test User for eKYC", email = email).id
+            customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
                 path = "/customer/new-ekyc-scanId/global"
@@ -992,7 +992,7 @@ class eKYCTest {
         val email = "ekyc-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createProfile(name = "Test User for eKYC", email = email).id
+            customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
                 path = "/customer/new-ekyc-scanId/global"
@@ -1048,7 +1048,7 @@ class eKYCTest {
         val email = "ekyc-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createProfile(name = "Test User for eKYC", email = email).id
+            customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
                 path = "/customer/new-ekyc-scanId/global"
@@ -1139,7 +1139,7 @@ class eKYCTest {
         val email = "ekyc-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createProfile(name = "Test User for eKYC", email = email).id
+            customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
                 path = "/customer/new-ekyc-scanId/global"
@@ -1185,7 +1185,7 @@ class AnalyticsTest {
     fun testReportEvent() {
 
         val email = "analytics-${randomInt()}@test.com"
-        createProfile(name = "Test Analytics User", email = email)
+        createCustomer(name = "Test Analytics User", email = email)
 
         post<String> {
             path = "/analytics"
@@ -1195,55 +1195,16 @@ class AnalyticsTest {
     }
 }
 
-class ConsentTest {
-
-    private val consentId = "privacy"
-
-    @Test
-    fun `jersey test - GET and PUT consent`() {
-
-        val email = "consent-${randomInt()}@test.com"
-        createProfile(name = "Test Consent User", email = email)
-
-        val defaultConsent: List<Consent> = get {
-            path = "/consents"
-            this.email = email
-        }
-
-        assertEquals(1, defaultConsent.size, "Incorrect number of consents fetched")
-        assertEquals(consentId, defaultConsent[0].consentId, "Incorrect 'consent id' in fetched consent")
-
-        val acceptedConsent: Consent = put {
-            path = "/consents/$consentId"
-            this.email = email
-        }
-
-        assertEquals(consentId, acceptedConsent.consentId, "Incorrect 'consent id' in response after accepting consent")
-        assertTrue(acceptedConsent.isAccepted
-                ?: false, "Accepted consent not reflected in response after accepting consent")
-
-        val rejectedConsent: Consent = put {
-            path = "/consents/$consentId"
-            queryParams = mapOf("accepted" to "false")
-            this.email = email
-        }
-
-        assertEquals(consentId, rejectedConsent.consentId, "Incorrect 'consent id' in response after rejecting consent")
-        assertFalse(rejectedConsent.isAccepted
-                ?: true, "Accepted consent not reflected in response after rejecting consent")
-    }
-}
-
 class ReferralTest {
 
     @Test
-    fun `jersey test - POST profile with invalid referred by`() {
+    fun `jersey test - POST customer with invalid referred by`() {
 
         val email = "referred_by_invalid-${randomInt()}@test.com"
 
         val invalid = "invalid_referrer@test.com"
 
-        val profile = Profile()
+        val customer = Customer()
                 .email(email)
                 .name("Test Referral Second User")
                 .address("")
@@ -1253,39 +1214,39 @@ class ReferralTest {
                 .referralId("")
 
         val failedToCreate = assertFails {
-            post<Profile> {
-                path = "/profile"
-                body = profile
+            post<Customer> {
+                path = "/customer"
+                body = customer
                 this.email = email
                 queryParams = mapOf("referred_by" to invalid)
             }
         }
 
         assertEquals("""
-{"description":"Incomplete profile description. Subscriber - $invalid not found."} expected:<201> but was:<403>
+{"description":"Incomplete customer description. Subscriber - $invalid not found."} expected:<201> but was:<403>
         """.trimIndent(), failedToCreate.message)
 
         val failedToGet = assertFails {
-            get<Profile> {
-                path = "/profile"
+            get<Customer> {
+                path = "/customer"
                 this.email = email
             }
         }
 
         assertEquals("""
-{"description":"Incomplete profile description. Subscriber - $email not found."} expected:<200> but was:<404>
+{"description":"Incomplete customer description. Subscriber - $email not found."} expected:<200> but was:<404>
         """.trimIndent(), failedToGet.message)
     }
 
     @Test
-    fun `jersey test - POST profile`() {
+    fun `jersey test - POST customer`() {
 
         val firstEmail = "referral_first-${randomInt()}@test.com"
-        createProfile(name = "Test Referral First User", email = firstEmail)
+        createCustomer(name = "Test Referral First User", email = firstEmail)
 
         val secondEmail = "referral_second-${randomInt()}@test.com"
 
-        val profile = Profile()
+        val customer = Customer()
                 .email(secondEmail)
                 .name("Test Referral Second User")
                 .address("")
@@ -1294,9 +1255,9 @@ class ReferralTest {
                 .postCode("")
                 .referralId("")
 
-        post<Profile> {
-            path = "/profile"
-            body = profile
+        post<Customer> {
+            path = "/customer"
+            body = customer
             email = secondEmail
             queryParams = mapOf("referred_by" to firstEmail)
         }
@@ -1363,7 +1324,7 @@ class PlanTest {
                 .amount(100)
                 .currency("nok")
         val plan = Plan()
-                .name("PLAN_1_NOK_PER_DAY")
+                .name("PLAN_1_NOK_PER_DAY-${randomInt()}")
                 .price(price)
                 .interval(Plan.IntervalEnum.DAY)
                 .intervalCount(1)
@@ -1409,7 +1370,7 @@ class PlanTest {
                 .amount(100)
                 .currency("nok")
         val plan = Plan()
-                .name("test")
+                .name("plan-${randomInt()}")
                 .price(price)
                 .interval(Plan.IntervalEnum.DAY)
                 .intervalCount(1)
@@ -1421,7 +1382,7 @@ class PlanTest {
         try {
             // Create subscriber with payment source.
 
-            customerId = createProfile(name = "Test Purchase User with Default Payment Source", email = email).id
+            customerId = createCustomer(name = "Test create Profile Plans", email = email).id
 
             val sourceId = StripePayment.createPaymentTokenId()
 
@@ -1481,50 +1442,50 @@ class PlanTest {
 
 class GraphQlTests {
 
-    data class Subscriber(
-            val profile: Profile? = null,
+    data class Customer(
+            val profile: org.ostelco.prime.customer.model.Customer? = null,
             val bundles: Collection<Bundle>? = null,
             val subscriptions: Collection<Subscription>? = null,
             val products: Collection<Product>? = null,
             val purchases: Collection<PurchaseRecord>? = null)
 
-    data class Data(var subscriber: Subscriber? = null)
+    data class Data(var customer: Customer? = null)
 
-    data class GraphQlResponse(var data: Data? = null)
+    data class GraphQlResponse(var data: Data? = null, var errors: List<String>? = null)
 
     @Test
     fun `jersey test - POST graphql`() {
 
         val email = "graphql-${randomInt()}@test.com"
-        createProfile("Test GraphQL Endpoint", email)
+        createCustomer("Test GraphQL Endpoint", email)
 
         val msisdn = createSubscription(email)
 
-        val subscriber = post<GraphQlResponse>(expectedResultCode = 200) {
+        val customer = post<GraphQlResponse>(expectedResultCode = 200) {
             path = "/graphql"
             this.email = email
-            body = mapOf("query" to """{ subscriber { profile { email } subscriptions { msisdn } } }""")
-        }.data?.subscriber
+            body = mapOf("query" to """{ customer { profile { email } subscriptions { msisdn } } }""")
+        }.data?.customer
 
-        assertEquals(expected = email, actual = subscriber?.profile?.email)
-        assertEquals(expected = msisdn, actual = subscriber?.subscriptions?.first()?.msisdn)
+        assertEquals(expected = email, actual = customer?.profile?.email)
+        assertEquals(expected = msisdn, actual = customer?.subscriptions?.first()?.msisdn)
     }
 
     @Test
     fun `jersey test - GET graphql`() {
 
         val email = "graphql-${randomInt()}@test.com"
-        createProfile("Test GraphQL Endpoint", email)
+        createCustomer("Test GraphQL Endpoint", email)
 
         val msisdn = createSubscription(email)
 
-        val subscriber = get<GraphQlResponse> {
+        val customer = get<GraphQlResponse> {
             path = "/graphql"
             this.email = email
-            queryParams = mapOf("query" to URLEncoder.encode("""{subscriber{profile{email}subscriptions{msisdn}}}""", StandardCharsets.UTF_8.name()))
-        }.data?.subscriber
+            queryParams = mapOf("query" to URLEncoder.encode("""{customer{profile{email}subscriptions{msisdn}}}""", StandardCharsets.UTF_8.name()))
+        }.data?.customer
 
-        assertEquals(expected = email, actual = subscriber?.profile?.email)
-        assertEquals(expected = msisdn, actual = subscriber?.subscriptions?.first()?.msisdn)
+        assertEquals(expected = email, actual = customer?.profile?.email)
+        assertEquals(expected = msisdn, actual = customer?.subscriptions?.first()?.msisdn)
     }
 }

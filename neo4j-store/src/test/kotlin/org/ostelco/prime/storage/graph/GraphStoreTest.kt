@@ -23,7 +23,6 @@ import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.ScanResult
 import org.ostelco.prime.model.ScanStatus
 import org.ostelco.prime.model.Segment
-import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.storage.ScanInformationStore
@@ -122,7 +121,7 @@ class GraphStoreTest {
 
         Neo4jStoreSingleton.getSubscriptions(IDENTITY).bimap(
                 { fail(it.message) },
-                { assertEquals(listOf(Subscription(MSISDN)), it) })
+                { assertEquals(MSISDN, it.single().msisdn) })
 
         // TODO vihang: fix argument captor for neo4j-store tests
 //        val msisdnArgCaptor: ArgumentCaptor<String> = ArgumentCaptor.forClass(String::class.java)
@@ -208,8 +207,8 @@ class GraphStoreTest {
                 storeResult.fold(
                         { fail(it.message) },
                         {
-                            assertEquals(dataBucketSize, it.first) // reserved = 40_000_000
-                            assertEquals(60_000_000L, it.second) // balance = 60_000_000
+                            assertEquals(dataBucketSize, it.granted) // reserved = 40_000_000
+                            assertEquals(60_000_000L, it.balance) // balance = 60_000_000
                         })
     }
         // used = 50_000_000
@@ -218,8 +217,8 @@ class GraphStoreTest {
             storeResult.fold(
                     { fail(it.message) },
                     {
-                        assertEquals(dataBucketSize, it.first) // reserved = 40_000_000
-                        assertEquals(10_000_000L, it.second) // balance = 10_000_000
+                        assertEquals(dataBucketSize, it.granted) // reserved = 40_000_000
+                        assertEquals(10_000_000L, it.balance) // balance = 10_000_000
                     })
         }
 
@@ -229,8 +228,8 @@ class GraphStoreTest {
             storeResult.fold(
                 { fail(it.message) },
                 {
-                    assertEquals(20_000_000L, it.first) // reserved = 20_000_000
-                    assertEquals(0L, it.second) // balance = 0
+                    assertEquals(20_000_000L, it.granted) // reserved = 20_000_000
+                    assertEquals(0L, it.balance) // balance = 0
                 })
         }
     }
@@ -247,7 +246,7 @@ class GraphStoreTest {
         Neo4jStoreSingleton.createProduct(product)
                 .mapLeft { fail(it.message) }
 
-        val purchaseRecord = PurchaseRecord(product = product, timestamp = now, id = UUID.randomUUID().toString(), msisdn = "")
+        val purchaseRecord = PurchaseRecord(product = product, timestamp = now, id = UUID.randomUUID().toString())
         Neo4jStoreSingleton.addPurchaseRecord(customerId = CUSTOMER.id, purchase = purchaseRecord).bimap(
                 { fail(it.message) },
                 { assertNotNull(it) }

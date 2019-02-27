@@ -10,16 +10,16 @@ class AnalyticsServiceImpl : AnalyticsService {
 
     private val logger by getLogger()
 
-    override fun reportTrafficInfo(msisdn: String, usedBytes: Long, bundleBytes: Long, apn: String?, mccMnc: String?) {
-        logger.info("reportTrafficInfo : msisdn {} usedBytes {} bundleBytes {} apn {} mccMnc {}", msisdn, usedBytes, bundleBytes, apn, mccMnc)
-        DataConsumptionInfoPublisher.publish(msisdn, usedBytes, bundleBytes, apn, mccMnc)
+    override fun reportTrafficInfo(msisdnAnalyticsId: String, usedBytes: Long, bundleBytes: Long, apn: String?, mccMnc: String?) {
+        logger.info("reportTrafficInfo : msisdnAnalyticsId {} usedBytes {} bundleBytes {} apn {} mccMnc {}", msisdnAnalyticsId, usedBytes, bundleBytes, apn, mccMnc)
+        DataConsumptionInfoPublisher.publish(msisdnAnalyticsId, usedBytes, bundleBytes, apn, mccMnc)
     }
 
     override fun reportMetric(primeMetric: PrimeMetric, value: Long) {
         CustomMetricsRegistry.updateMetricValue(primeMetric, value)
     }
 
-    override fun reportPurchaseInfo(purchaseRecord: PurchaseRecord, subscriberId: String, status: String) {
-        PurchaseInfoPublisher.publish(purchaseRecord, subscriberId, status)
+    override fun reportPurchaseInfo(purchaseRecord: PurchaseRecord, customerAnalyticsId: String, status: String) {
+        PurchaseInfoPublisher.publish(purchaseRecord, customerAnalyticsId, status)
     }
 }

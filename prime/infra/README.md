@@ -150,7 +150,7 @@ kubectl describe service prime-service
 ## API Endpoint
 
 ```bash
-gcloud endpoints services deploy prime/infra/prod/prime-client-api.yaml
+gcloud endpoints services deploy prime/infra/prod/prime-customer-api.yaml
 ```
 
 ## SSL secrets for api.ostelco.org, ocs.ostelco.org & metrics.ostelco.org
@@ -330,7 +330,7 @@ gcloud endpoints services deploy metrics_descriptor.pb prime/infra/dev/metrics-a
  * Client API HTTP endpoint
 
 ```bash
-gcloud endpoints services deploy prime/infra/dev/prime-client-api.yaml
+gcloud endpoints services deploy prime/infra/dev/prime-customer-api.yaml
 ```
 
 ## Deploy to Dev cluster
