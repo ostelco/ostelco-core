@@ -91,4 +91,22 @@ object StripePayment {
         customers.filter { it.email == stripeEmail }
                 .forEach { it.delete() }
     }
+
+    fun deleteAllCustomers() {
+        // https://stripe.com/docs/api/java#create_card_token
+        Stripe.apiKey = System.getenv("STRIPE_API_KEY")
+        while (true) {
+            val customers = Customer.list(emptyMap()).data
+            if (customers.isEmpty()) {
+                break
+            }
+            customers.forEach {
+                        println(it.email)
+                        it.delete()
+                    }
+        }
+    }
 }
+
+// use this just for cleanup
+fun main() = StripePayment.deleteAllCustomers()

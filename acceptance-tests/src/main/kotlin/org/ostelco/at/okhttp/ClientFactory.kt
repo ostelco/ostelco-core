@@ -9,6 +9,9 @@ object ClientFactory {
 
     fun clientForSubject(subject: String): DefaultApi {
         val apiClient = ApiClient().setBasePath(url)
+        apiClient.connectTimeout = 0
+        apiClient.readTimeout = 0
+        apiClient.writeTimeout = 0
         apiClient.setAccessToken(generateAccessToken(email = subject))
         return DefaultApi(apiClient)
     }

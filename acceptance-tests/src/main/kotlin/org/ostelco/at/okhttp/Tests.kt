@@ -43,6 +43,7 @@ class CustomerTest {
                 .city("")
                 .country("NO")
                 .postCode("")
+                .analyticsId("")
                 .referralId("")
 
         client.createCustomer(createCustomer, null)
