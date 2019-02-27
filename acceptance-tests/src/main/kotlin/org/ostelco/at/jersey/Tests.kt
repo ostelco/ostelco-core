@@ -229,7 +229,7 @@ class SourceTest {
         var customerId = ""
         try {
 
-            customerId = createCustomer(name = "Test Payment Source", email = email).id
+            customerId = createCustomer(name = "Test create Payment Source", email = email).id
 
             val tokenId = StripePayment.createPaymentTokenId()
 
@@ -261,7 +261,7 @@ class SourceTest {
         val email = "purchase-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createCustomer(name = "Test Payment Source", email = email).id
+            customerId = createCustomer(name = "Test list Payment Source", email = email).id
 
             Thread.sleep(200)
 
@@ -321,7 +321,7 @@ class SourceTest {
         val email = "purchase-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createCustomer(name = "Test Payment Source", email = email).id
+            customerId = createCustomer(name = "Test update Payment Source", email = email).id
 
             val tokenId = StripePayment.createPaymentTokenId()
             val cardId = StripePayment.getCardIdForTokenId(tokenId)
@@ -372,7 +372,7 @@ class SourceTest {
         var customerId = ""
         try {
 
-            customerId = createCustomer(name = "Test Payment Source", email = email).id
+            customerId = createCustomer(name = "Test delete Payment Source", email = email).id
 
             Thread.sleep(200)
 
@@ -488,7 +488,7 @@ class PurchaseTest {
         val email = "purchase-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createCustomer(name = "Test Purchase User with Default Payment Source", email = email).id
+            customerId = createCustomer(name = "Test Purchase with Default Payment Source", email = email).id
 
             val sourceId = StripePayment.createPaymentTokenId()
 
@@ -541,7 +541,7 @@ class PurchaseTest {
         val email = "purchase-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createCustomer(name = "Test Purchase User with Default Payment Source", email = email).id
+            customerId = createCustomer(name = "Test refund Purchase User with Default Payment Source", email = email).id
 
             val sourceId = StripePayment.createPaymentTokenId()
 
@@ -606,7 +606,7 @@ class PurchaseTest {
         val email = "purchase-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createCustomer(name = "Test Purchase User with Default Payment Source", email = email).id
+            customerId = createCustomer(name = "Test Purchase with adding Payment Source", email = email).id
 
             val sourceId = StripePayment.createPaymentTokenId()
 
@@ -1382,7 +1382,7 @@ class PlanTest {
         try {
             // Create subscriber with payment source.
 
-            customerId = createCustomer(name = "Test Purchase User with Default Payment Source", email = email).id
+            customerId = createCustomer(name = "Test create Profile Plans", email = email).id
 
             val sourceId = StripePayment.createPaymentTokenId()
 
