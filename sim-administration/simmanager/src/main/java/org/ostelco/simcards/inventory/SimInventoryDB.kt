@@ -18,19 +18,19 @@ interface SimInventoryDB {
 
     @SqlQuery("""SELECT * FROM sim_entries
                       WHERE id = :id""")
-    fun getSimProfileById(id: Long): SimEntry
+    fun getSimProfileById(id: Long): SimEntry?
 
     @SqlQuery("""SELECT * FROM sim_entries
                       WHERE iccid = :iccid""")
-    fun getSimProfileByIccid(iccid: String): SimEntry
+    fun getSimProfileByIccid(iccid: String): SimEntry?
 
     @SqlQuery("""SELECT * FROM sim_entries
                       WHERE imsi = :imsi""")
-    fun getSimProfileByImsi(imsi: String): SimEntry
+    fun getSimProfileByImsi(imsi: String): SimEntry?
 
     @SqlQuery("""SELECT * FROM sim_entries
                       WHERE msisdn = :msisdn""")
-    fun getSimProfileByMsisdn(msisdn: String): SimEntry
+    fun getSimProfileByMsisdn(msisdn: String): SimEntry?
 
     /*
      * Find next available SIM card for a particular HLR ready
@@ -58,7 +58,7 @@ interface SimInventoryDB {
                                   AND b.position < 9999 )
                       LIMIT  1""")
     fun findNextNonProvisionedSimProfileForHlr(hlrId: Long,
-                                     profile: String): SimEntry?
+                                               profile: String): SimEntry?
 
     /*
      * Find next ready to use SIM card for a particular HLR
@@ -159,11 +159,13 @@ interface SimInventoryDB {
                                           WHERE  name = :name) """)
     fun addProfileVendorAdapter(name: String): Int
 
-    @SqlQuery("SELECT * FROM profile_vendor_adapters WHERE name = :name")
-    fun getProfileVendorAdapterByName(name: String): ProfileVendorAdapter
+    @SqlQuery("""SELECT * FROM profile_vendor_adapters
+                       WHERE name = :name""")
+    fun getProfileVendorAdapterByName(name: String): ProfileVendorAdapter?
 
-    @SqlQuery("SELECT * FROM profile_vendor_adapters WHERE id = :id")
-    fun getProfileVendorAdapterById(id: Long): ProfileVendorAdapter
+    @SqlQuery("""SELECT * FROM profile_vendor_adapters
+                      WHERE id = :id""")
+    fun getProfileVendorAdapterById(id: Long): ProfileVendorAdapter?
 
     /*
      * Batch handling.
@@ -193,7 +195,7 @@ interface SimInventoryDB {
 
     @SqlQuery("""SELECT * FROM sim_import_batches
                       WHERE id = :id""")
-    fun getBatchInfo(id: Long): SimImportBatch
+    fun getBatchInfo(id: Long): SimImportBatch?
 
     /*
      * Returns the 'id' of the last insert, regardless of table.
@@ -214,7 +216,8 @@ interface SimInventoryDB {
      * Find the names of profiles that are associated with
      * a particular HLR.
      */
-    @SqlQuery("""SELECT DISTINCT profile  FROM sim_entries WHERE hlrId = :hlrId""")
+    @SqlQuery("""SELECT DISTINCT profile  FROM sim_entries
+                      WHERE hlrId = :hlrId""")
     fun getProfileNamesForHlr(hlrId: Long): List<String>
 
 
