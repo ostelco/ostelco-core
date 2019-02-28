@@ -52,6 +52,9 @@ class PreallocateProfilesTask(
                 throw WebApplicationException("Could not find SIM profile for hlr '${hlrAdapter.name}' matching profile '${profile}'")
             }
             val simVendorAdapter = simInventoryDAO.getProfileVendorAdapterById(simEntry.profileVendorId)
+            if (simVendorAdapter == null) {
+                throw WebApplicationException("Could not find SIM vendor adapter matching id '${simEntry.profileVendorId}'")
+            }
             val hlrConfig = hlrConfigs.find { it.name == hlrAdapter.name }!!
             val profileVendorConfig = profileVendors.find { it.name == simVendorAdapter.name }!!
 

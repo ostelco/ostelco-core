@@ -215,17 +215,17 @@ class SimInventoryResource(private val httpClient: CloseableHttpClient,
     fun importBatch(
             @NotEmpty @PathParam("hlrVendors") hlr: String,
             @NotEmpty @PathParam("simVendor") simVendor: String,
-            csvInputStream: InputStream): SimImportBatch {
+            csvInputStream: InputStream): SimImportBatch? {
         val profileVendorAdapter = assertNonNull(dao.getProfileVendorAdapterByName(simVendor))
         val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
 
         if (!dao.simVendorIsPermittedForHlr(profileVendorAdapter.id, hlrAdapter.id)) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }
-        return dao.importSims(
+        return assertNonNull(dao.importSims(
                 importer = "importer", // TODO: This is a very strange name for an importer .-)
                 hlrId = hlrAdapter.id,
                 profileVendorId = profileVendorAdapter.id,
-                csvInputStream = csvInputStream)
+                csvInputStream = csvInputStream))
     }
 }
