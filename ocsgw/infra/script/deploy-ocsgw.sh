@@ -11,16 +11,6 @@ TAG_OCS="${OCSGW_VERSION}-${SHORT_SHA}"
 
 ##### Functions
 
-getInstance () {
-    echo
-    printf "Which instance to update\n"
-    printf " 1)\n"
-    printf " 2)\n"
-    printf " 3) 1 and 2\n"
-    read INSTANCE
-    echo
-}
-
 checkRegion () {
     allKnownRegions=("europe-west1" "asia-southeast1")
 
@@ -48,27 +38,15 @@ checkEnvironment () {
 }
 
 deploy () {
-    if [[ "$INSTANCE" == 1 ]]
-    then
-        ZONE="${REGION}-b"
-    elif [[ "$INSTANCE" == 2 ]]
-    then
-        ZONE="${REGION}-c"
-    else
-        printf "Unknown instance %s\n" ${INSTANCE}
-    fi
 
     echo
     echo "*******************************"
     echo "Deploying OCS-gw"
-    echo "Instance : ${INSTANCE}"
-    echo "Environment : ${ENVIRONMENT}"
-    echo "REGION : ${REGION}"
-    echo "Zone : ${ZONE}"
+    echo "Instance : ocsgw-${ENVIRONMENT}-${REGION}-${ZONE}-${INSTANCE}"
     echo "*******************************"
     echo
 
-    gcloud compute instances update-container --zone ${ZONE} ocsgw-${REGION}-${ENVIRONMENT}-${INSTANCE} \
+    gcloud compute instances update-container --zone ${REGION}-${ZONE} ocsgw-${ENVIRONMENT}-${REGION}-${ZONE}-${INSTANCE} \
     --container-image eu.gcr.io/${GCP_PROJECT_ID}/ocsgw:${TAG_OCS}
 }
 
@@ -93,6 +71,7 @@ echo
 echo "*******************************"
 echo ENVIRONMENT=${ENVIRONMENT}
 echo REGION=${REGION}
+echo ZONE=${ZONE}
 echo "*******************************"
 echo
 
@@ -107,37 +86,34 @@ if [[ ! -f ocsgw/infra/script/deploy-ocsgw.sh ]]; then
     exit 1
 fi
 
-# Instance can be passed as first parameter ( 1 - 3 )
-if [[ ! -z "$1" ]]; then
-    INSTANCE=$1
-fi
-
 printInfo
 
-# If instance is not passed to the script we get it from terminal
-if [[ -z "$INSTANCE" ]]
-then
-    while true; do
-      getInstance
-      if [[ "$INSTANCE" == 1 ]] || [[ "$INSTANCE" == 2 ]]  || [[ "$INSTANCE" == 3 ]]
-      then
-        break
-      fi
-    done
-fi
-
-# Environment can be passed as second parameter ( dev / prod ) : default [dev]
-if [[ ! -z "$2" ]]; then
-    ENVIRONMENT=$2
+# Environment can be passed as first parameter ( dev / prod ) : default [dev]
+if [[ ! -z "$1" ]]; then
+    ENVIRONMENT=$1
 else
     ENVIRONMENT="dev"
 fi
 
-# Region can be passed as third parameter ( europe-west1 / asia-southeast1 ) : default [europe-west1]
-if [[ ! -z "$3" ]]; then
-    REGION=$3
+# Region can be passed as second parameter ( europe-west1 / asia-southeast1 ) : default [europe-west1]
+if [[ ! -z "$2" ]]; then
+    REGION=$2
 else
     REGION="europe-west1"
+fi
+
+# Zone can be passed as third parameter (a/b/c/d/e/f) : default [b]
+if [[ ! -z "$3" ]]; then
+    ZONE=$3
+else
+    ZONE="b"
+fi
+
+# Instance number can be passed as forth parameter (1...n) : default [1]
+if [[ ! -z "$4" ]]; then
+    INSTANCE=$4
+else
+    INSTANCE=1
 fi
 
 
@@ -164,15 +140,4 @@ echo "Uploading Docker image"
 docker push eu.gcr.io/${GCP_PROJECT_ID}/ocsgw:${TAG_OCS}
 
 
-if [[ "$INSTANCE" == 1 ]] || [[ "$INSTANCE" == 2 ]]
-then
-    deploy
-elif [[ "$INSTANCE" == 3 ]]
-then
-    INSTANCE=1
-    deploy
-    INSTANCE=2
-    deploy
-else
-    printf "Unknown instance : %s\n" ${INSTANCE}
-fi
+deploy
