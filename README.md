@@ -29,7 +29,7 @@ Mono Repository for core protocols and services around a OCS/BSS for packet data
  * [ocsgw](./ocsgw/README.md)
  * [ostelco-lib](./ostelco-lib/README.md)
  * [payment-processor](./payment-processor/README.md)
- * [prime-client-api](./prime-client-api/README.md)
+ * [prime-customer-api](./prime-customer-api/README.md)
  * [prime](./prime/README.md)
  * [infra](./prime/infra/README.md)
  * [pseudonym-server](./pseudonym-server/README.md)

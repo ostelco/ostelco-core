@@ -17,7 +17,7 @@ COPY script/wait.sh /wait.sh
 # test.yaml is copied as config.yaml for AT.
 COPY config/prime-service-account.json /secret/prime-service-account.json
 COPY config/testDb.csv /config-data/imeiDb.csv
-COPY config/subscriber.graphqls /config/subscriber.graphqls
+COPY config/customer.graphqls /config/customer.graphqls
 COPY config/test.yaml /config/config.yaml
 COPY config/test_keyset_pub_cltxt /config/test_keyset_pub_cltxt_global
 

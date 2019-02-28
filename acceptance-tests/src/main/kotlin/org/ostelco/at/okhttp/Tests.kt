@@ -2,24 +2,23 @@ package org.ostelco.at.okhttp
 
 import org.junit.Test
 import org.ostelco.at.common.StripePayment
-import org.ostelco.at.common.createProfile
+import org.ostelco.at.common.createCustomer
 import org.ostelco.at.common.createSubscription
 import org.ostelco.at.common.expectedProducts
 import org.ostelco.at.common.getLogger
 import org.ostelco.at.common.randomInt
 import org.ostelco.at.jersey.post
 import org.ostelco.at.okhttp.ClientFactory.clientForSubject
-import org.ostelco.prime.client.ApiException
-import org.ostelco.prime.client.api.DefaultApi
-import org.ostelco.prime.client.model.ApplicationToken
-import org.ostelco.prime.client.model.Consent
-import org.ostelco.prime.client.model.GraphQLRequest
-import org.ostelco.prime.client.model.PaymentSource
-import org.ostelco.prime.client.model.Person
-import org.ostelco.prime.client.model.PersonList
-import org.ostelco.prime.client.model.Price
-import org.ostelco.prime.client.model.Product
-import org.ostelco.prime.client.model.Profile
+import org.ostelco.prime.customer.ApiException
+import org.ostelco.prime.customer.api.DefaultApi
+import org.ostelco.prime.customer.model.ApplicationToken
+import org.ostelco.prime.customer.model.Customer
+import org.ostelco.prime.customer.model.GraphQLRequest
+import org.ostelco.prime.customer.model.PaymentSource
+import org.ostelco.prime.customer.model.Person
+import org.ostelco.prime.customer.model.PersonList
+import org.ostelco.prime.customer.model.Price
+import org.ostelco.prime.customer.model.Product
 import java.time.Instant
 import java.util.*
 import kotlin.test.assertEquals
@@ -28,63 +27,64 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-class ProfileTest {
+class CustomerTest {
 
     @Test
-    fun `okhttp test - GET and PUT profile`() {
+    fun `okhttp test - GET and PUT customer`() {
 
-        val email = "profile-${randomInt()}@test.com"
+        val email = "customer-${randomInt()}@test.com"
 
         val client = clientForSubject(subject = email)
 
-        val createProfile = Profile()
+        val createCustomer = Customer()
                 .email(email)
                 .name("Test Profile User")
                 .address("")
                 .city("")
                 .country("NO")
                 .postCode("")
+                .analyticsId("")
                 .referralId("")
 
-        client.createProfile(createProfile, null)
+        client.createCustomer(createCustomer, null)
 
-        val profile: Profile = client.profile
+        val customer: Customer = client.customer
 
-        assertEquals(email, profile.email, "Incorrect 'email' in fetched profile")
-        assertEquals(createProfile.name, profile.name, "Incorrect 'name' in fetched profile")
+        assertEquals(email, customer.email, "Incorrect 'email' in fetched customer")
+        assertEquals(createCustomer.name, customer.name, "Incorrect 'name' in fetched customer")
 
-        profile
+        customer
                 .address("Some place")
                 .postCode("418")
                 .city("Udacity")
                 .country("Online")
 
-        val updatedProfile: Profile = client.updateProfile(profile)
+        val updatedCustomer: Customer = client.updateCustomer(customer)
 
-        assertEquals(email, updatedProfile.email, "Incorrect 'email' in response after updating profile")
-        assertEquals(createProfile.name, updatedProfile.name, "Incorrect 'name' in response after updating profile")
-        assertEquals("Some place", updatedProfile.address, "Incorrect 'address' in response after updating profile")
-        assertEquals("418", updatedProfile.postCode, "Incorrect 'postcode' in response after updating profile")
-        assertEquals("Udacity", updatedProfile.city, "Incorrect 'city' in response after updating profile")
-        assertEquals("Online", updatedProfile.country, "Incorrect 'country' in response after updating profile")
+        assertEquals(email, updatedCustomer.email, "Incorrect 'email' in response after updating customer")
+        assertEquals(createCustomer.name, updatedCustomer.name, "Incorrect 'name' in response after updating customer")
+        assertEquals("Some place", updatedCustomer.address, "Incorrect 'address' in response after updating customer")
+        assertEquals("418", updatedCustomer.postCode, "Incorrect 'postcode' in response after updating customer")
+        assertEquals("Udacity", updatedCustomer.city, "Incorrect 'city' in response after updating customer")
+        assertEquals("Online", updatedCustomer.country, "Incorrect 'country' in response after updating customer")
 
-        updatedProfile
+        updatedCustomer
                 .address("")
                 .postCode("")
                 .city("")
 
-        val clearedProfile: Profile = client.updateProfile(updatedProfile)
+        val clearedCustomer: Customer = client.updateCustomer(updatedCustomer)
 
-        assertEquals(email, clearedProfile.email, "Incorrect 'email' in response after clearing profile")
-        assertEquals(createProfile.name, clearedProfile.name, "Incorrect 'name' in response after clearing profile")
-        assertEquals("", clearedProfile.address, "Incorrect 'address' in response after clearing profile")
-        assertEquals("", clearedProfile.postCode, "Incorrect 'postcode' in response after clearing profile")
-        assertEquals("", clearedProfile.city, "Incorrect 'city' in response after clearing profile")
+        assertEquals(email, clearedCustomer.email, "Incorrect 'email' in response after clearing customer")
+        assertEquals(createCustomer.name, clearedCustomer.name, "Incorrect 'name' in response after clearing customer")
+        assertEquals("", clearedCustomer.address, "Incorrect 'address' in response after clearing customer")
+        assertEquals("", clearedCustomer.postCode, "Incorrect 'postcode' in response after clearing customer")
+        assertEquals("", clearedCustomer.city, "Incorrect 'city' in response after clearing customer")
 
-        updatedProfile.country("")
+        updatedCustomer.country("")
 
         assertFailsWith(ApiException::class, "Incorrectly accepts that 'country' is cleared/not set") {
-            client.updateProfile(updatedProfile)
+            client.updateCustomer(updatedCustomer)
         }
     }
 
@@ -92,7 +92,7 @@ class ProfileTest {
     fun `okhttp test - GET application token`() {
 
         val email = "token-${randomInt()}@test.com"
-        createProfile("Test Token User", email)
+        createCustomer("Test Token User", email)
 
         createSubscription(email)
 
@@ -121,7 +121,7 @@ class GetSubscriptions {
     fun `okhttp test - GET subscriptions`() {
 
         val email = "subs-${randomInt()}@test.com"
-        createProfile(name = "Test Subscriptions User", email = email)
+        createCustomer(name = "Test Subscriptions User", email = email)
         val msisdn = createSubscription(email)
 
         val client = clientForSubject(subject = email)
@@ -140,7 +140,7 @@ class BundlesAndPurchasesTest {
     fun `okhttp test - GET bundles`() {
 
         val email = "balance-${randomInt()}@test.com"
-        createProfile(name = "Test Balance User", email = email)
+        createCustomer(name = "Test Balance User", email = email)
 
         val client = clientForSubject(subject = email)
 
@@ -164,37 +164,13 @@ class BundlesAndPurchasesTest {
     }
 }
 
-class GetPseudonymsTest {
-
-    private val logger by getLogger()
-
-    @Test
-    fun `okhttp test - GET active pseudonyms`() {
-
-        val email = "pseu-${randomInt()}@test.com"
-        createProfile(name = "Test Pseudonyms User", email = email)
-
-        val client = clientForSubject(subject = email)
-
-        createSubscription(email)
-
-        val activePseudonyms = client.activePseudonyms
-
-        logger.info("Current: ${activePseudonyms.current.pseudonym}")
-        logger.info("Next: ${activePseudonyms.next.pseudonym}")
-        assertNotNull(activePseudonyms.current.pseudonym, "Empty current pseudonym")
-        assertNotNull(activePseudonyms.next.pseudonym, "Empty next pseudonym")
-        assertEquals(activePseudonyms.current.end + 1, activePseudonyms.next.start, "The pseudonyms are not in order")
-    }
-}
-
 class GetProductsTest {
 
     @Test
     fun `okhttp test - GET products`() {
 
         val email = "products-${randomInt()}@test.com"
-        createProfile(name = "Test Products User", email = email)
+        createCustomer(name = "Test Products User", email = email)
 
         val client = clientForSubject(subject = email)
 
@@ -213,7 +189,7 @@ class SourceTest {
         var customerId = ""
         try {
 
-            customerId = createProfile(name = "Test Payment Source", email = email).id
+            customerId = createCustomer(name = "Test create Payment Source", email = email).id
 
             val client = clientForSubject(subject = email)
 
@@ -241,7 +217,7 @@ class SourceTest {
         val email = "purchase-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createProfile(name = "Test Payment Source", email = email).id
+            customerId = createCustomer(name = "Test list Payment Source", email = email).id
 
             val client = clientForSubject(subject = email)
 
@@ -278,7 +254,7 @@ class SourceTest {
 
         var customerId = ""
         try {
-            customerId = createProfile(name = "Test get list Sources", email = email).id
+            customerId = createCustomer(name = "Test get list Sources", email = email).id
 
             val client = clientForSubject(subject = email)
 
@@ -301,7 +277,7 @@ class SourceTest {
         val email = "purchase-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createProfile(name = "Test Payment Source", email = email).id
+            customerId = createCustomer(name = "Test update Payment Source", email = email).id
 
             val client = clientForSubject(subject = email)
 
@@ -342,7 +318,7 @@ class SourceTest {
         var customerId = ""
         try {
 
-            customerId = createProfile(name = "Test Payment Source", email = email).id
+            customerId = createCustomer(name = "Test delete Payment Source", email = email).id
 
             val client = clientForSubject(subject = email)
 
@@ -402,7 +378,7 @@ class PurchaseTest {
         val email = "purchase-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createProfile(name = "Test Purchase User", email = email).id
+            customerId = createCustomer(name = "Test Purchase User", email = email).id
 
             val client = clientForSubject(subject = email)
 
@@ -435,7 +411,7 @@ class PurchaseTest {
         val email = "purchase-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createProfile(name = "Test Purchase User with Default Payment Source", email = email).id
+            customerId = createCustomer(name = "Test Purchase with Default Payment Source", email = email).id
 
             val sourceId = StripePayment.createPaymentTokenId()
 
@@ -474,7 +450,7 @@ class PurchaseTest {
         val email = "purchase-${randomInt()}@test.com"
         var customerId = ""
         try {
-            customerId = createProfile(name = "Test Purchase User with Default Payment Source", email = email).id
+            customerId = createCustomer(name = "Test Purchase with adding Payment Source", email = email).id
 
             val sourceId = StripePayment.createPaymentTokenId()
 
@@ -514,7 +490,7 @@ class AnalyticsTest {
     fun testReportEvent() {
 
         val email = "analytics-${randomInt()}@test.com"
-        createProfile(name = "Test Analytics User", email = email)
+        createCustomer(name = "Test Analytics User", email = email)
 
         post<String> {
             path = "/analytics"
@@ -524,42 +500,10 @@ class AnalyticsTest {
     }
 }
 
-class ConsentTest {
-
-    private val consentId = "privacy"
-
-    @Test
-    fun `okhttp test - GET and PUT consent`() {
-
-        val email = "consent-${randomInt()}@test.com"
-        createProfile(name = "Test Consent User", email = email)
-
-        val client = clientForSubject(subject = email)
-
-        val defaultConsent: List<Consent> = client.consents.toList()
-
-        assertEquals(1, defaultConsent.size, "Incorrect number of consents fetched")
-        assertEquals(consentId, defaultConsent[0].consentId, "Incorrect 'consent id' in fetched consent")
-
-        // TODO vihang: Update consent operation is missing response entity
-//         val acceptedConsent: Consent =
-        client.updateConsent(consentId, true)
-
-//        assertEquals(consentId, acceptedConsent.consentId, "Incorrect 'consent id' in response after accepting consent")
-//        assertTrue(acceptedConsent.isAccepted ?: false, "Accepted consent not reflected in response after accepting consent")
-
-//        val rejectedConsent: Consent =
-        client.updateConsent(consentId, false)
-
-//        assertEquals(consentId, rejectedConsent.consentId, "Incorrect 'consent id' in response after rejecting consent")
-//        assertFalse(rejectedConsent.isAccepted ?: true, "Accepted consent not reflected in response after rejecting consent")
-    }
-}
-
 class ReferralTest {
 
     @Test
-    fun `okhttp test - POST profile with invalid referred by`() {
+    fun `okhttp test - POST customer with invalid referred by`() {
 
         val email = "referred_by_invalid-${randomInt()}@test.com"
 
@@ -567,7 +511,7 @@ class ReferralTest {
 
         val invalid = "invalid_referrer@test.com"
 
-        val profile = Profile()
+        val customer = Customer()
                 .email(email)
                 .name("Test Referral Second User")
                 .address("")
@@ -577,31 +521,31 @@ class ReferralTest {
                 .referralId("")
 
         val failedToCreate = assertFails {
-            client.createProfile(profile, invalid)
+            client.createCustomer(customer, invalid)
         }
 
         assertEquals("""
-{"description":"Incomplete profile description. Subscriber - $invalid not found."} expected:<201> but was:<403>
+{"description":"Incomplete customer description. Subscriber - $invalid not found."} expected:<201> but was:<403>
         """.trimIndent(), failedToCreate.message)
 
         val failedToGet = assertFails {
-            client.profile
+            client.customer
         }
 
         assertEquals("""
-{"description":"Incomplete profile description. Subscriber - $email not found."} expected:<200> but was:<404>
+{"description":"Incomplete customer description. Subscriber - $email not found."} expected:<200> but was:<404>
         """.trimIndent(), failedToGet.message)
     }
 
     @Test
-    fun `okhttp test - POST profile`() {
+    fun `okhttp test - POST customer`() {
 
         val firstEmail = "referral_first-${randomInt()}@test.com"
-        createProfile(name = "Test Referral First User", email = firstEmail)
+        createCustomer(name = "Test Referral First User", email = firstEmail)
 
         val secondEmail = "referral_second-${randomInt()}@test.com"
 
-        val profile = Profile()
+        val customer = Customer()
                 .email(secondEmail)
                 .name("Test Referral Second User")
                 .address("")
@@ -613,7 +557,7 @@ class ReferralTest {
         val firstEmailClient = clientForSubject(subject = firstEmail)
         val secondEmailClient = clientForSubject(subject = secondEmail)
 
-        secondEmailClient.createProfile(profile, firstEmail)
+        secondEmailClient.createCustomer(customer, firstEmail)
 
         // for first
         val referralsForFirst: PersonList = firstEmailClient.referred
@@ -655,18 +599,21 @@ class GraphQlTests {
     fun `okhttp test - POST graphql`() {
 
         val email = "graphql-${randomInt()}@test.com"
-        createProfile("Test GraphQL Endpoint", email)
+        createCustomer("Test GraphQL Endpoint", email)
 
         createSubscription(email)
 
         val client = clientForSubject(subject = "invalid@test.com")
 
         val request = GraphQLRequest()
-        request.query = """{ subscriber(id: "$email") { profile { email } } }"""
+        request.query = """{ customer(id: "$email") { profile { email } } }"""
 
-        val map = client.graphql(request)
+        val map = client.graphql(request) as Map<String, *>
 
         println(map)
+        
+        assertNotNull(actual = map["data"], message = "Data is null")
+        assertNull(actual = map["error"], message = "Error is not null")
 
     }
 }

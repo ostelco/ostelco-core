@@ -27,7 +27,7 @@ public class OcsgwMetrics {
 
     private static final int KEEP_ALIVE_TIMEOUT_IN_MINUTES = 1;
 
-    private static final int KEEP_ALIVE_TIME_IN_SECONDS = 50;
+    private static final int KEEP_ALIVE_TIME_IN_SECONDS = 30;
 
     private OcsgwAnalyticsServiceGrpc.OcsgwAnalyticsServiceStub ocsgwAnalyticsServiceStub;
 
@@ -35,39 +35,57 @@ public class OcsgwMetrics {
 
     private ScheduledFuture initAnalyticsFuture = null;
 
-    private ScheduledFuture keepAliveFuture = null;
+    private ScheduledFuture sendAnalyticsFuture = null;
 
-    private ScheduledFuture autoReportAnalyticsFuture = null;
+    private StreamObserver<OcsgwAnalyticsReport> ocsgwAnalyticsReportStream;
 
-    private OcsgwAnalyticsReport lastActiveSessions = null;
+    private ManagedChannel grpcChannel;
 
-    private StreamObserver<OcsgwAnalyticsReport> ocsgwAnalyticsReport;
+    private ServiceAccountJwtAccessCredentials credentials;
+
+    private String metricsServerHostname;
 
     private GrpcDataSource datasource;
 
-    public OcsgwMetrics(String metricsServerHostname, ServiceAccountJwtAccessCredentials credentials, GrpcDataSource grpcDataSource) {
+    public OcsgwMetrics(String metricsServerHostname, ServiceAccountJwtAccessCredentials serviceAccountJwtAccessCredentials, GrpcDataSource grpcDataSource) {
 
         datasource = grpcDataSource;
+        credentials = serviceAccountJwtAccessCredentials;
+        this.metricsServerHostname = metricsServerHostname;
+    }
+
+    private void setupChannel() {
+
+        ManagedChannelBuilder channelBuilder;
 
         try {
             final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder
-                    .forTarget(metricsServerHostname)
+                    .forTarget(metricsServerHostname);
+
+            channelBuilder = Files.exists(Paths.get("/cert/metrics.crt"))
+                    ? nettyChannelBuilder.sslContext(GrpcSslContexts.forClient().trustManager(new File("/cert/metrics.crt")).build())
+                    : nettyChannelBuilder;
+
+
+            if (grpcChannel != null) {
+                grpcChannel.shutdownNow();
+                try {
+                    boolean isShutdown = grpcChannel.awaitTermination(3, TimeUnit.SECONDS);
+                    LOG.info("grpcChannel is shutdown : " + isShutdown);
+                } catch (InterruptedException e) {
+                    LOG.info("Error shutting down gRPC channel");
+                }
+            }
+            grpcChannel = channelBuilder
+                    .useTransportSecurity()
                     .keepAliveWithoutCalls(true)
                     .keepAliveTimeout(KEEP_ALIVE_TIMEOUT_IN_MINUTES, TimeUnit.MINUTES)
-                    .keepAliveTime(KEEP_ALIVE_TIME_IN_SECONDS, TimeUnit.SECONDS);
-
-            final ManagedChannelBuilder channelBuilder = Files.exists(Paths.get("/cert/metrics.crt"))
-                        ? nettyChannelBuilder.sslContext(GrpcSslContexts.forClient().trustManager(new File("/cert/metrics.crt")).build())
-                        : nettyChannelBuilder;
-
-            final ManagedChannel channel = channelBuilder
-                    .useTransportSecurity()
+                    .keepAliveTime(KEEP_ALIVE_TIME_IN_SECONDS, TimeUnit.SECONDS)
                     .build();
             if (credentials != null) {
-                ocsgwAnalyticsServiceStub  = OcsgwAnalyticsServiceGrpc.newStub(channel)
-                        .withCallCredentials(MoreCallCredentials.from(credentials));
+                ocsgwAnalyticsServiceStub = OcsgwAnalyticsServiceGrpc.newStub(grpcChannel).withCallCredentials(MoreCallCredentials.from(credentials));
             } else {
-                ocsgwAnalyticsServiceStub = OcsgwAnalyticsServiceGrpc.newStub(channel);
+                ocsgwAnalyticsServiceStub = OcsgwAnalyticsServiceGrpc.newStub(grpcChannel);
             }
 
         } catch (SSLException e) {
@@ -75,8 +93,11 @@ public class OcsgwMetrics {
         }
     }
 
-    public void initAnalyticsRequest() {
-        ocsgwAnalyticsReport = ocsgwAnalyticsServiceStub.ocsgwAnalyticsEvent(
+    public void initAnalyticsRequestStream() {
+
+        setupChannel();
+
+        ocsgwAnalyticsReportStream = ocsgwAnalyticsServiceStub.ocsgwAnalyticsEvent(
                 new StreamObserver<OcsgwAnalyticsReply>() {
 
                     @Override
@@ -88,7 +109,7 @@ public class OcsgwMetrics {
                     public void onError(Throwable t) {
                         LOG.error("AnalyticsRequestObserver error", t);
                         if (t instanceof StatusRuntimeException) {
-                            reconnectAnalyticsReport();
+                            reconnectAnalyticsReportStream();
                         }
                     }
 
@@ -102,25 +123,14 @@ public class OcsgwMetrics {
     }
 
 
-    private void sendAnalytics(OcsgwAnalyticsReport report) {
+    private void sendAnalyticsReport(OcsgwAnalyticsReport report) {
         if (report != null) {
-            ocsgwAnalyticsReport.onNext(report);
+            ocsgwAnalyticsReportStream.onNext(report);
         }
     }
 
-    private void reconnectKeepAlive() {
-        LOG.debug("reconnectKeepAlive called");
-        if (keepAliveFuture != null) {
-            keepAliveFuture.cancel(true);
-        }
-    }
-
-    private void reconnectAnalyticsReport() {
-        LOG.debug("reconnectAnalyticsReport called");
-
-        if (autoReportAnalyticsFuture != null) {
-            autoReportAnalyticsFuture.cancel(true);
-        }
+    private void reconnectAnalyticsReportStream() {
+        LOG.debug("reconnectAnalyticsReportStream called");
 
         if (initAnalyticsFuture != null) {
             initAnalyticsFuture.cancel(true);
@@ -128,10 +138,7 @@ public class OcsgwMetrics {
 
         LOG.debug("Schedule new Callable initAnalyticsRequest");
         initAnalyticsFuture = executorService.schedule((Callable<Object>) () -> {
-                    reconnectKeepAlive();
-                    LOG.debug("Calling initAnalyticsRequest");
-                    initAnalyticsRequest();
-                    sendAnalytics(lastActiveSessions);
+                    initAnalyticsRequestStream();
                     return "Called!";
                 },
                 5,
@@ -139,12 +146,14 @@ public class OcsgwMetrics {
     }
 
     private void initAutoReportAnalyticsReport() {
-        autoReportAnalyticsFuture = executorService.scheduleAtFixedRate(() -> {
-                    lastActiveSessions = datasource.getAnalyticsReport();
-                    sendAnalytics(lastActiveSessions);
-                },
-                5,
-                5,
-                TimeUnit.SECONDS);
+
+        if (sendAnalyticsFuture == null) {
+            sendAnalyticsFuture = executorService.scheduleAtFixedRate(() -> {
+                        sendAnalyticsReport(datasource.getAnalyticsReport());
+                    },
+                    0,
+                    5,
+                    TimeUnit.SECONDS);
+        }
     }
 }

@@ -53,7 +53,7 @@ class GraphQLResource(private val queryHandler: QueryHandler) {
         val executionResult = queryHandler.execute(identity = identity, query = request.query, variables = request.variables)
         val result = mutableMapOf<String, Any>()
         if (executionResult.errors.isNotEmpty()) {
-            result["errors"] = executionResult.errors
+            result["errors"] = executionResult.errors.map { it.message }
         }
         val data: Map<String, Any>? = executionResult.getData()
         if (data != null) {

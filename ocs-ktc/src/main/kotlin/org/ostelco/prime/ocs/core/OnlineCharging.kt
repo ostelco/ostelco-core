@@ -78,19 +78,19 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                                 }
                             },
                             {
-                                val (granted, balance) = it
+                                consumptionResult ->
 
                                 val grantedTotalOctets = if (mscc.reportingReason != ReportingReason.FINAL
                                         && mscc.requested.totalOctets > 0) {
 
-                                    if (granted < mscc.requested.totalOctets) {
+                                    if (consumptionResult.granted < mscc.requested.totalOctets) {
                                         responseMscc.finalUnitIndication = FinalUnitIndication.newBuilder()
                                                 .setFinalUnitAction(FinalUnitAction.TERMINATE)
                                                 .setIsSet(true)
                                                 .build()
                                     }
 
-                                    granted
+                                    consumptionResult.granted
 
                                 } else {
                                     // Use -1 to indicate no granted service unit should be included in the answer
@@ -104,15 +104,16 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                                 if (!loadUnitTest && !loadAcceptanceTest) {
                                     launch {
                                         AnalyticsReporter.report(
+                                                msisdnAnalyticsId = consumptionResult.msisdnAnalyticsId,
                                                 request = request,
-                                                bundleBytes = balance)
+                                                bundleBytes = consumptionResult.balance)
                                     }
 
                                     launch {
                                         Notifications.lowBalanceAlert(
                                                 msisdn = msisdn,
-                                                reserved = granted,
-                                                balance = balance)
+                                                reserved = consumptionResult.granted,
+                                                balance = consumptionResult.balance)
                                     }
                                 }
                                 response.addMscc(responseMscc)

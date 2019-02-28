@@ -2,12 +2,12 @@ package org.ostelco.at.common
 
 import org.apache.commons.lang3.RandomStringUtils
 import org.ostelco.at.jersey.post
-import org.ostelco.prime.client.model.Profile
+import org.ostelco.prime.customer.model.Customer
 import java.util.*
 
-fun createProfile(name: String, email: String): Profile {
+fun createCustomer(name: String, email: String): Customer {
 
-    val createProfile = Profile()
+    val createCustomer = Customer()
             .id("")
             .email(email)
             .name(name)
@@ -15,11 +15,12 @@ fun createProfile(name: String, email: String): Profile {
             .city("")
             .country("NO")
             .postCode("")
+            .analyticsId("")
             .referralId("")
 
     return post {
-        path = "/profile"
-        body = createProfile
+        path = "/customer"
+        body = createCustomer
         this.email = email
     }
 }

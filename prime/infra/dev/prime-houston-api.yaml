@@ -15,7 +15,7 @@ paths:
       description: "Get profile for the given email-id or msisdn (url encoded)."
       produces:
       - application/json
-      operationId: "getProfile"
+      operationId: "getCustomer"
       responses:
         200:
           description: "Get the profile for this user."
@@ -75,7 +75,7 @@ paths:
           type: string
   "/profiles/{email}/plans":
     get:
-      description: "Get all plans subscribed to by a subscriber"
+      description: "Get all plans subscribed to by a customer"
       produces:
         - application/json
       operationId: "getPlans"
@@ -91,12 +91,12 @@ paths:
       parameters:
         - name: email
           in: path
-          description: "The email of the subscriber"
+          description: "The email of the customer"
           required: true
           type: string
   "/profiles/{email}/plans/{planId}":
     post:
-      description: "Subscribe a subscriber to a plan"
+      description: "Subscribe a customer to a plan"
       produces:
         - application/json
         - text/plain
@@ -111,7 +111,7 @@ paths:
       parameters:
         - name: email
           in: path
-          description: "The email of the subscriber"
+          description: "The email of the customer"
           required: true
           type: string
         - name: planId
@@ -120,7 +120,7 @@ paths:
           required: true
           type: string
     delete:
-      description: "Remove a subscriber from a plan"
+      description: "Remove a customer from a plan"
       produces:
         - application/json
         - text/plain
@@ -135,7 +135,7 @@ paths:
       parameters:
         - name: email
           in: path
-          description: "The email of the subscriber"
+          description: "The email of the customer"
           required: true
           type: string
         - name: planId
@@ -228,7 +228,7 @@ paths:
         type: string
   "/notify/{email}":
     put:
-      description: "Send notification to a subscriber."
+      description: "Send notification to a customer."
       produces:
         - application/json
         - text/plain
@@ -484,7 +484,7 @@ definitions:
         description: "User Id"
         type: string
       status:
-        description: "Current status of the subscriber"
+        description: "Current status of the customer"
         type: string
       modifiedTimestamp:
         description: "Last modified time for the status (Unix timestamp)"

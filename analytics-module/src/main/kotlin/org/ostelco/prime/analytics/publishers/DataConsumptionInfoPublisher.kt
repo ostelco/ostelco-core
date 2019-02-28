@@ -8,8 +8,6 @@ import com.google.pubsub.v1.PubsubMessage
 import org.ostelco.analytics.api.DataTrafficInfo
 import org.ostelco.prime.analytics.ConfigRegistry
 import org.ostelco.prime.getLogger
-import org.ostelco.prime.module.getResource
-import org.ostelco.prime.pseudonymizer.PseudonymizerService
 import java.time.Instant
 
 /**
@@ -20,19 +18,16 @@ object DataConsumptionInfoPublisher :
 
     private val logger by getLogger()
 
-    private val pseudonymizerService by lazy { getResource<PseudonymizerService>() }
-
-    fun publish(msisdn: String, usedBucketBytes: Long, bundleBytes: Long, apn: String?, mccMnc: String?) {
+    fun publish(msisdnAnalyticsId: String, usedBucketBytes: Long, bundleBytes: Long, apn: String?, mccMnc: String?) {
 
         if (usedBucketBytes == 0L) {
             return
         }
 
         val now = Instant.now().toEpochMilli()
-        val pseudonym = pseudonymizerService.getMsisdnPseudonym(msisdn, now).pseudonym
 
         val data = DataTrafficInfo.newBuilder()
-                .setMsisdn(pseudonym)
+                .setMsisdn(msisdnAnalyticsId)
                 .setBucketBytes(usedBucketBytes)
                 .setBundleBytes(bundleBytes)
                 .setTimestamp(Timestamps.fromMillis(now))
@@ -57,7 +52,7 @@ object DataConsumptionInfoPublisher :
                     logger.warn("Status code: {}", throwable.statusCode.code)
                     logger.warn("Retrying: {}", throwable.isRetryable)
                 }
-                logger.warn("Error publishing message for msisdn: {}", msisdn)
+                logger.warn("Error publishing message for msisdnAnalyticsId: {}", msisdnAnalyticsId)
             }
 
             override fun onSuccess(messageId: String) {

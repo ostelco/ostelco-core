@@ -206,7 +206,7 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
             importer: String,
             hlrId: Long,
             profileVendorId: Long,
-            csvInputStream: InputStream): SimImportBatch {
+            csvInputStream: InputStream): SimImportBatch? {
 
         createNewSimImportBatch(
                 importer = importer,

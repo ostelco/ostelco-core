@@ -23,7 +23,7 @@ RedisReplicatedSessionDatasource
 This SessionDatasource is using Redis for storage of session information. 
 The Redis backend is set in the environment variables :  
 
-* REDIS_HOST : for the host. ( Default : localhost )  
+* REDIS_HOSTNAME : for the host. ( Default : localhost )  
 * REDIS_PORT : for port. ( Default : 6379 )
 
 

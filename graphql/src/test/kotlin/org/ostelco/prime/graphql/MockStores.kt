@@ -31,7 +31,7 @@ class MockGraphStore : GraphStore by Mockito.mock(GraphStore::class.java) {
             mapOf("SKU" to product).right()
 
     override fun getPurchaseRecords(identity: Identity): Either<StoreError, Collection<PurchaseRecord>> =
-            listOf(PurchaseRecord(id = "PID", product = product, timestamp = 1234L, msisdn = "")).right()
+            listOf(PurchaseRecord(id = "PID", product = product, timestamp = 1234L)).right()
 
 }
 

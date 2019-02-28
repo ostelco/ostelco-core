@@ -387,7 +387,7 @@ class RefundResource {
         }
         val decodedEmail = URLDecoder.decode(email, "UTF-8")
         logger.info("${token.name} Refunding purchase for $decodedEmail at id: $purchaseRecordId")
-        return refundPurchase(decodedEmail, purchaseRecordId, reason).fold(
+        return refundPurchase(Identity(decodedEmail, "EMAIL", "email"), purchaseRecordId, reason).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                 {
                     logger.info(NOTIFY_OPS_MARKER, "${token.name} refunded the purchase (id:$purchaseRecordId) for $decodedEmail ")
@@ -396,16 +396,16 @@ class RefundResource {
                 .build()
     }
 
-    private fun refundPurchase(subscriberId: String, purchaseRecordId: String, reason: String): Either<ApiError, ProductInfo> {
+    private fun refundPurchase(identity: Identity, purchaseRecordId: String, reason: String): Either<ApiError, ProductInfo> {
         return try {
-            return storage.refundPurchase(subscriberId, purchaseRecordId, reason).mapLeft {
+            return storage.refundPurchase(identity, purchaseRecordId, reason).mapLeft {
                 when (it) {
                     is ForbiddenError -> org.ostelco.prime.apierror.ForbiddenError("Failed to refund purchase. ${it.description}", ApiErrorCode.FAILED_TO_REFUND_PURCHASE)
                     else -> NotFoundError("Failed to refund purchase. ${it.description}", ApiErrorCode.FAILED_TO_REFUND_PURCHASE)
                 }
             }
         } catch (e: Exception) {
-            logger.error("Failed to refund purchase for subscriberId $subscriberId, id: $purchaseRecordId", e)
+            logger.error("Failed to refund purchase for customer with identity - $identity, id: $purchaseRecordId", e)
             Either.left(BadGatewayError("Failed to refund purchase", ApiErrorCode.FAILED_TO_REFUND_PURCHASE))
         }
     }

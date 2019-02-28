@@ -11,7 +11,7 @@ import org.ostelco.prime.storage.ClientDataSource
 val clientDataSource by lazy { getResource<ClientDataSource>() }
 
 
-class SubscriberDataFetcher : DataFetcher<Map<String, Any>> {
+class CustomerDataFetcher : DataFetcher<Map<String, Any>> {
 
     override fun get(env: DataFetchingEnvironment): Map<String, Any>? {
         return env.getContext<Identity>()?.let { identity ->
