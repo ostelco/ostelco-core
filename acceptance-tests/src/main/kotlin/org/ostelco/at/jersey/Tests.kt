@@ -1442,14 +1442,14 @@ class PlanTest {
 
 class GraphQlTests {
 
-    data class Customer(
-            val profile: org.ostelco.prime.customer.model.Customer? = null,
+    data class Context(
+            val customer: org.ostelco.prime.customer.model.Customer? = null,
             val bundles: Collection<Bundle>? = null,
             val subscriptions: Collection<Subscription>? = null,
             val products: Collection<Product>? = null,
             val purchases: Collection<PurchaseRecord>? = null)
 
-    data class Data(var customer: Customer? = null)
+    data class Data(var context: Context? = null)
 
     data class GraphQlResponse(var data: Data? = null, var errors: List<String>? = null)
 
@@ -1461,14 +1461,14 @@ class GraphQlTests {
 
         val msisdn = createSubscription(email)
 
-        val customer = post<GraphQlResponse>(expectedResultCode = 200) {
+        val context = post<GraphQlResponse>(expectedResultCode = 200) {
             path = "/graphql"
             this.email = email
-            body = mapOf("query" to """{ customer { profile { email } subscriptions { msisdn } } }""")
-        }.data?.customer
+            body = mapOf("query" to """{ context { customer { email } subscriptions { msisdn } } }""")
+        }.data?.context
 
-        assertEquals(expected = email, actual = customer?.profile?.email)
-        assertEquals(expected = msisdn, actual = customer?.subscriptions?.first()?.msisdn)
+        assertEquals(expected = email, actual = context?.customer?.email)
+        assertEquals(expected = msisdn, actual = context?.subscriptions?.first()?.msisdn)
     }
 
     @Test
@@ -1479,13 +1479,13 @@ class GraphQlTests {
 
         val msisdn = createSubscription(email)
 
-        val customer = get<GraphQlResponse> {
+        val context = get<GraphQlResponse> {
             path = "/graphql"
             this.email = email
-            queryParams = mapOf("query" to URLEncoder.encode("""{customer{profile{email}subscriptions{msisdn}}}""", StandardCharsets.UTF_8.name()))
-        }.data?.customer
+            queryParams = mapOf("query" to URLEncoder.encode("""{context{customer{email}subscriptions{msisdn}}}""", StandardCharsets.UTF_8.name()))
+        }.data?.context
 
-        assertEquals(expected = email, actual = customer?.profile?.email)
-        assertEquals(expected = msisdn, actual = customer?.subscriptions?.first()?.msisdn)
+        assertEquals(expected = email, actual = context?.customer?.email)
+        assertEquals(expected = msisdn, actual = context?.subscriptions?.first()?.msisdn)
     }
 }

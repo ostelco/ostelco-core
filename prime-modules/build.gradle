@@ -26,4 +26,9 @@ dependencies {
 
   runtimeOnly "javax.xml.bind:jaxb-api:$jaxbVersion"
   runtimeOnly "javax.activation:activation:$javaxActivationVersion"
+
+  testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
+  testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
 }
+
+apply from: '../gradle/jacoco.gradle'

@@ -56,6 +56,7 @@ subprojects {
     stripeVersion = "7.21.0"
     swaggerVersion = "2.0.6"
     tinkVersion = "1.2.2"
+    zxingVersion = "3.3.0"
   }
 }
 

@@ -66,6 +66,8 @@ task integration(type: Test, description: 'Runs the integration tests.', group: 
 
 build.dependsOn integration
 
+apply from: '../../gradle/jacoco.gradle'
+
 idea {
     module {
         testSourceDirs += file('src/integration-test/kotlin')

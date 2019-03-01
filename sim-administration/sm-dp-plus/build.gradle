@@ -46,3 +46,5 @@ shadowJar {
     classifier = "uber"
     version = null
 }
+
+apply from: '../../gradle/jacoco.gradle'

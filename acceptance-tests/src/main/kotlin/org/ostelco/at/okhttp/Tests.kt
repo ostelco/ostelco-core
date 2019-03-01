@@ -603,10 +603,10 @@ class GraphQlTests {
 
         createSubscription(email)
 
-        val client = clientForSubject(subject = "invalid@test.com")
+        val client = clientForSubject(subject = email)
 
         val request = GraphQLRequest()
-        request.query = """{ customer(id: "$email") { profile { email } } }"""
+        request.query = """{ context(id: "$email") { customer { email } } }"""
 
         val map = client.graphql(request) as Map<String, *>
 

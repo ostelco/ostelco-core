@@ -78,11 +78,6 @@ interface ClientGraphStore {
     fun removeCustomer(identity: Identity): Either<StoreError, Unit>
 
     /**
-     * Link Customer to MSISDN
-     */
-    fun addSubscription(identity: Identity, msisdn: String): Either<StoreError, Unit>
-
-    /**
      * Get Products for a given Customer
      */
     fun getProducts(identity: Identity): Either<StoreError, Map<String, Product>>
@@ -96,6 +91,11 @@ interface ClientGraphStore {
      * Get subscriptions for Customer
      */
     fun getSubscriptions(identity: Identity): Either<StoreError, Collection<Subscription>>
+
+    /**
+     * Link Customer to MSISDN
+     */
+    fun createSubscription(identity: Identity): Either<StoreError, Subscription>
 
     /**
      * Get balance for Client
@@ -172,6 +172,12 @@ interface AdminGraphStore {
     fun getCustomerToBundleIdMap(): Map<Customer, Bundle>
     fun getCustomerToMsisdnMap(): Map<Customer, Subscription>
     fun getCustomerForMsisdn(msisdn: String): Either<StoreError, Customer>
+
+    /**
+     * Link Customer to MSISDN
+     */
+    @Deprecated(message = "Assigning MSISDN to Customer via Admin API will be removed in future.")
+    fun addSubscription(identity: Identity, msisdn: String): Either<StoreError, Unit>
 
     // simple create
     fun createProductClass(productClass: ProductClass): Either<StoreError, Unit>
