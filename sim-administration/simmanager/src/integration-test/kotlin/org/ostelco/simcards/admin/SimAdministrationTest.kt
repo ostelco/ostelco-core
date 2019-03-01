@@ -6,12 +6,12 @@ import io.dropwizard.jdbi3.JdbiFactory
 import io.dropwizard.testing.ConfigOverride
 import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
-import junit.framework.Assert.assertEquals
-import junit.framework.Assert.assertNotNull
 import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.client.ClientProperties
 import org.jdbi.v3.core.Jdbi
 import org.junit.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.ostelco.simcards.inventory.*
 import org.ostelco.simcards.smdpplus.SmDpPlusApplication
 import org.testcontainers.containers.BindMode
@@ -278,8 +278,8 @@ class SimAdministrationTest {
         val stats : SimProfileKeyStatistics? = simDao.getProfileStats(hlrId, expectedProfile)
         assertNotNull(stats)
         assertEquals(100L, stats!!.noOfEntries)
-        assertEquals(100L, stats!!.noOfUnallocatedEntries)
-        assertEquals(0L, stats!!.noOfReleasedEntries)
+        assertEquals(100L, stats.noOfUnallocatedEntries)
+        assertEquals(0L, stats.noOfReleasedEntries)
     }
 
     @Test

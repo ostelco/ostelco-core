@@ -145,11 +145,11 @@ interface SimInventoryDB {
 
     @SqlQuery("""SELECT * FROM hlr_adapters
                       WHERE name = :name""")
-    fun getHlrAdapterByName(name: String): HlrAdapter
+    fun getHlrAdapterByName(name: String): HlrAdapter?
 
     @SqlQuery("""SELECT * FROM hlr_adapters
                       WHERE id = :id""")
-    fun getHlrAdapterById(id: Long): HlrAdapter
+    fun getHlrAdapterById(id: Long): HlrAdapter?
 
     @SqlUpdate("""INSERT INTO profile_vendor_adapters
                                    (name)
