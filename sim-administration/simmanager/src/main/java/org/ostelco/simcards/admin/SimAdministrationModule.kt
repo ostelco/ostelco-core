@@ -12,9 +12,7 @@ import org.ostelco.sim.es2plus.SmDpPlusCallbackResource
 import org.ostelco.sim.es2plus.SmDpPlusCallbackService
 import org.ostelco.simcards.admin.ConfigRegistry.config
 import org.ostelco.simcards.admin.ResourceRegistry.simInventoryResource
-import org.ostelco.simcards.inventory.SimInventoryDAO
-import org.ostelco.simcards.inventory.SimInventoryDB
-import org.ostelco.simcards.inventory.SimInventoryResource
+import org.ostelco.simcards.inventory.*
 
 /**
  * The SIM manager
@@ -44,7 +42,8 @@ class SimAdministrationModule : PrimeModule {
         val jdbi = factory.build(env,
                 config.database, "postgresql")
                 .installPlugins()
-        DAO = SimInventoryDAO(jdbi.onDemand(SimInventoryDB::class.java))
+        val db = SimInventoryDBWrapperImpl(jdbi.onDemand(SimInventoryDB::class.java))
+        DAO = SimInventoryDAO(db)
 
         val profileVendorCallbackHandler = object : SmDpPlusCallbackService {
             // TODO: Not implemented.

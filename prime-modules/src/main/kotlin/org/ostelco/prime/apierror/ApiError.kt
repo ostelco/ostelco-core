@@ -56,6 +56,8 @@ object ApiErrorMapper {
             is org.ostelco.prime.storage.ValidationError  ->  org.ostelco.prime.apierror.ForbiddenError(description, errorCode, storeError)
             is org.ostelco.prime.storage.FileDownloadError  ->  org.ostelco.prime.apierror.BadGatewayError(description, errorCode)
             is org.ostelco.prime.storage.FileDeleteError  ->  org.ostelco.prime.apierror.BadGatewayError(description, errorCode)
+            is org.ostelco.prime.storage.SystemError  ->  org.ostelco.prime.apierror.BadGatewayError(description, errorCode)
+            is org.ostelco.prime.storage.DatabaseError  ->  org.ostelco.prime.apierror.BadGatewayError(description, errorCode)
         }
     }
 }

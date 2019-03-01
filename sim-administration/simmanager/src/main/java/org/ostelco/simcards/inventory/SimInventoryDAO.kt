@@ -1,5 +1,10 @@
 package org.ostelco.simcards.inventory
 
+import arrow.core.Either
+import arrow.core.fix
+import arrow.core.flatMap
+import arrow.effects.IO
+import arrow.instances.either.monad.monad
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
@@ -15,8 +20,6 @@ import java.nio.charset.Charset
 import java.sql.ResultSet
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.AtomicLong
-import javax.ws.rs.WebApplicationException
-import javax.ws.rs.core.Response
 
 
 enum class HlrState {
@@ -164,7 +167,7 @@ class SimEntryIterator(profileVendorId: Long,
 /**
  * SIM DB DAO.
  */
-class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
+class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper by db {
 
     /**
      * Check if the  SIM vendor can be use for handling SIMs handled
@@ -174,10 +177,11 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
      * @return true if permitted false otherwise
      */
     fun simVendorIsPermittedForHlr(profileVendorId: Long,
-                                   hlrId: Long): Boolean {
-        return findSimVendorForHlrPermissions(profileVendorId, hlrId)
-                .isNotEmpty()
-    }
+                                   hlrId: Long): Either<DatabaseError, Boolean> =
+            findSimVendorForHlrPermissions(profileVendorId, hlrId)
+                    .flatMap {
+                        Either.right(it.isNotEmpty())
+                    }
 
     /**
      * Set permission for a SIM profile vendor to activate SIM profiles
@@ -187,45 +191,54 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
      * @return true on successful update
      */
     @Transaction
-    fun permitVendorForHlrByNames(profileVendor: String, hlr: String): Boolean {
-        val profileVendorAdapter = assertNonNull(getProfileVendorAdapterByName(profileVendor))
-        val hlrAdapter = assertNonNull(getHlrAdapterByName(hlr))
-        return storeSimVendorForHlrPermission(profileVendorAdapter.id, hlrAdapter.id) > 0
-    }
+    fun permitVendorForHlrByNames(profileVendor: String, hlr: String): Either<DatabaseError, Boolean> =
+            IO {
+                Either.monad<DatabaseError>().binding {
+                    val profileVendorAdapter = getProfileVendorAdapterByName(profileVendor)
+                            .bind()
+                    val hlrAdapter = getHlrAdapterByName(hlr)
+                            .bind()
+
+                    storeSimVendorForHlrPermission(profileVendorAdapter.id, hlrAdapter.id)
+                            .bind() > 0
+                }.fix()
+            }.unsafeRunSync()
 
     //
     // Importing
     //
 
-    override fun insertAll(entries: Iterator<SimEntry>) {
+    override fun insertAll(entries: Iterator<SimEntry>): Either<DatabaseError, Unit> =
         db.insertAll(entries)
-    }
 
     @Transaction
-    fun importSims(
-            importer: String,
-            hlrId: Long,
-            profileVendorId: Long,
-            csvInputStream: InputStream): SimImportBatch? {
-
-        createNewSimImportBatch(
-                importer = importer,
-                hlrId = hlrId,
-                profileVendorId = profileVendorId)
-        val batchId = lastInsertedRowId()
-        val values = SimEntryIterator(
-                profileVendorId = profileVendorId,
-                hlrId = hlrId,
-                batchId = batchId,
-                csvInputStream = csvInputStream)
-        insertAll(values)
-        updateBatchState(
-                id = batchId,
-                size = values.count.get(),
-                status = "SUCCESS",
-                endedAt = System.currentTimeMillis())
-        return getBatchInfo(batchId)
-    }
+    fun importSims(importer: String,
+                   hlrId: Long,
+                   profileVendorId: Long,
+                   csvInputStream: InputStream): Either<DatabaseError, SimImportBatch> =
+            IO {
+                Either.monad<DatabaseError>().binding {
+                    createNewSimImportBatch(importer = importer,
+                            hlrId = hlrId,
+                            profileVendorId = profileVendorId)
+                            .bind()
+                    val batchId = lastInsertedRowId()
+                            .bind()
+                    val values = SimEntryIterator(profileVendorId = profileVendorId,
+                            hlrId = hlrId,
+                            batchId = batchId,
+                            csvInputStream = csvInputStream)
+                    insertAll(values)
+                            .bind()
+                    updateBatchState(id = batchId,
+                            size = values.count.get(),
+                            status = "SUCCESS",
+                            endedAt = System.currentTimeMillis())
+                            .bind()
+                    getBatchInfo(batchId)
+                            .bind()
+                }.fix()
+            }.unsafeRunSync()
 
     //
     // Setting activation statuses
@@ -239,12 +252,14 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
      * @return updated row or null on no match
      */
     @Transaction
-    fun setHlrState(id: Long, state: HlrState): SimEntry? {
-        return if (updateHlrState(id, state) > 0)
-            getSimProfileById(id)
-        else
-            null
-    }
+    fun setHlrState(id: Long, state: HlrState): Either<DatabaseError, SimEntry> =
+            updateHlrState(id, state)
+                    .flatMap { count ->
+                        if (count > 0)
+                         getSimProfileById(id)
+                        else
+                            Either.left(NotFoundError("Found no HLR adapter with id ${id} update of HLR state failed"))
+                    }
 
     /**
      * Set the provision state of a SIM entry, then return the entry.
@@ -253,12 +268,15 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
      * @return updated row or null on no match
      */
     @Transaction
-    fun setProvisionState(id: Long, state: ProvisionState): SimEntry? {
-        return if (updateProvisionState(id, state) > 0)
-            getSimProfileById(id)
-        else
-            null
-    }
+    fun setProvisionState(id: Long, state: ProvisionState): Either<DatabaseError, SimEntry> =
+            updateProvisionState(id, state)
+                    .flatMap { count ->
+                        if (count > 0)
+                            getSimProfileById(id)
+                        else
+                            Either.left(NotFoundError(
+                                    "Found no SIM profile with id ${id} update of provision state failed"))
+                    }
 
     /**
      * Set the entity to be marked as "active" in the HLR and the provision
@@ -269,12 +287,16 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
      * @return updated row or null on no match
      */
     @Transaction
-    fun setHlrStateAndProvisionState(id: Long, hlrState: HlrState, provisionState: ProvisionState): SimEntry? {
-        return if (updateHlrStateAndProvisionState(id, hlrState, provisionState) > 0)
-            getSimProfileById(id)
-        else
-            null
-    }
+    fun setHlrStateAndProvisionState(id: Long, hlrState: HlrState, provisionState: ProvisionState): Either<DatabaseError, SimEntry> =
+            updateHlrStateAndProvisionState(id, hlrState, provisionState)
+                    .flatMap { count ->
+                        if (count > 0)
+                            getSimProfileById(id)
+                        else
+                            Either.left(NotFoundError(
+                                    "Found no SIM profile with id ${id} update of HLR and provision state failed"))
+                    }
+
 
     /**
      * Updates state of SIM profile and returns the updated profile.
@@ -283,12 +305,15 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
      * @return updated row or null on no match
      */
     @Transaction
-    fun setSmDpPlusState(id: Long, state: SmDpPlusState): SimEntry? {
-        return if (updateSmDpPlusState(id, state) > 0)
-            getSimProfileById(id)
-        else
-            null
-    }
+    fun setSmDpPlusState(id: Long, state: SmDpPlusState): Either<DatabaseError, SimEntry> =
+            updateSmDpPlusState(id, state)
+                    .flatMap { count ->
+                        if (count > 0)
+                            getSimProfileById(id)
+                        else
+                            Either.left(NotFoundError(
+                                    "Found no SIM profile with id ${id} update of SM-DP+ state failed"))
+                    }
 
     /**
      * Updates state of SIM profile and returns the updated profile.
@@ -300,12 +325,15 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
      * @return updated row or null on no match
      */
     @Transaction
-    fun setSmDpPlusStateAndMatchingId(id: Long, state: SmDpPlusState, matchingId: String): SimEntry? {
-        return if (updateSmDpPlusStateAndMatchingId(id, state, matchingId) > 0)
-            getSimProfileById(id)
-        else
-            null
-    }
+    fun setSmDpPlusStateAndMatchingId(id: Long, state: SmDpPlusState, matchingId: String): Either<DatabaseError, SimEntry> =
+            updateSmDpPlusStateAndMatchingId(id, state, matchingId)
+                    .flatMap {  count ->
+                        if (count > 0)
+                            getSimProfileById(id)
+                        else
+                            Either.left(NotFoundError(
+                                    "Found no SIM profile with id ${id} update of SM-DP+ state and 'matching-id' failed"))
+                    }
 
     //
     // Finding next free SIM card for a particular HLR.
@@ -318,47 +346,42 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
      * @return updated SIM entry
      */
     @Transaction
-    fun setEidOfSimProfile(id: Long, eid: String): SimEntry? {
-        return if (updateEidOfSimProfile(id, eid) > 0)
-            getSimProfileById(id)
-        else
-            null
-    }
+    fun setEidOfSimProfile(id: Long, eid: String): Either<DatabaseError, SimEntry> =
+            updateEidOfSimProfile(id, eid)
+                    .flatMap {  count ->
+                        if (count > 0)
+                            getSimProfileById(id)
+                        else
+                            Either.left(NotFoundError(
+                                    "Found no SIM profile with id ${id} update of EID failed"))
+                    }
 
     /**
      * Get relevant statistics for a particular profile type for a particular HLR.
      */
-    fun getProfileStats(
-            @Bind("hlrId") hlrId: Long,
-            @Bind("simProfile") simProfile: String): SimProfileKeyStatistics {
+    fun getProfileStats(@Bind("hlrId") hlrId: Long,
+                        @Bind("simProfile") simProfile: String): Either<DatabaseError, SimProfileKeyStatistics> =
+            IO {
+                Either.monad<DatabaseError>().binding {
 
-        val keyValuePairs = mutableMapOf<String, Long>()
+                    val keyValuePairs = mutableMapOf<String, Long>()
 
-        getProfileStatsAsKeyValuePairs(hlrId = hlrId, simProfile = simProfile)
+                    getProfileStatsAsKeyValuePairs(hlrId = hlrId, simProfile = simProfile)
+                            .bind()
+                            .forEach { keyValuePairs.put(it.key, it.value) }
 
+                    val noOfEntries = keyValuePairs.get("NO_OF_ENTRIES")!!
+                    val noOfUnallocatedEntries = keyValuePairs.get("NO_OF_UNALLOCATED_ENTRIES")!!
+                    val noOfReleasedEntries = keyValuePairs.get("NO_OF_RELEASED_ENTRIES")!!
+                    val noOfEntriesAvailableForImmediateUse = keyValuePairs.get("NO_OF_ENTRIES_READY_FOR_IMMEDIATE_USE")!!
 
-                .forEach { keyValuePairs.put(it.key, it.value) }
-        val noOfEntries = keyValuePairs.get("NO_OF_ENTRIES")!!
-        val noOfUnallocatedEntries = keyValuePairs.get("NO_OF_UNALLOCATED_ENTRIES")!!
-        val noOfReleasedEntries = keyValuePairs.get("NO_OF_RELEASED_ENTRIES")!!
-        val noOfEntriesAvailableForImmediateUse = keyValuePairs.get("NO_OF_ENTRIES_READY_FOR_IMMEDIATE_USE")!!
-
-        return SimProfileKeyStatistics(
-                noOfEntries = noOfEntries,
-                noOfUnallocatedEntries = noOfUnallocatedEntries,
-                noOfEntriesAvailableForImmediateUse = noOfEntriesAvailableForImmediateUse,
-                noOfReleasedEntries = noOfReleasedEntries)
-    }
-
-    companion object {
-        private fun <T> assertNonNull(v: T?): T {
-            if (v == null) {
-                throw WebApplicationException(Response.Status.NOT_FOUND)
-            } else {
-                return v
-            }
-        }
-    }
+                    SimProfileKeyStatistics(
+                            noOfEntries = noOfEntries,
+                            noOfUnallocatedEntries = noOfUnallocatedEntries,
+                            noOfEntriesAvailableForImmediateUse = noOfEntriesAvailableForImmediateUse,
+                            noOfReleasedEntries = noOfReleasedEntries)
+                }.fix()
+            }.unsafeRunSync()
 }
 
 
@@ -395,4 +418,3 @@ class HlrAdapterMapper  : RowMapper<HlrAdapter> {
         return HlrAdapter(id = id, name = name)
     }
 }
-
