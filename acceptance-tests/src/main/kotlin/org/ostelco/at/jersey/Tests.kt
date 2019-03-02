@@ -1443,7 +1443,7 @@ class PlanTest {
 class GraphQlTests {
 
     data class Context(
-            val customer: org.ostelco.prime.customer.model.Customer? = null,
+            val customer: Customer? = null,
             val bundles: Collection<Bundle>? = null,
             val subscriptions: Collection<Subscription>? = null,
             val products: Collection<Product>? = null,

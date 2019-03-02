@@ -10,5 +10,5 @@ dependencies {
 
   // TODO vihang: this dependency is added only for @Exclude annotation for firebase
   implementation "com.google.firebase:firebase-admin:$firebaseVersion"
-  implementation "org.slf4j:slf4j-api:1.7.25"
+  implementation "org.slf4j:slf4j-api:$slf4jVersion"
 }
