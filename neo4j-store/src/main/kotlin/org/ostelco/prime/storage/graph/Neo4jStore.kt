@@ -33,6 +33,7 @@ import org.ostelco.prime.paymentprocessor.core.ForbiddenError
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.sim.SimManager
 import org.ostelco.prime.storage.AlreadyExistsError
 import org.ostelco.prime.storage.ConsumptionResult
 import org.ostelco.prime.storage.GraphStore
@@ -332,6 +333,9 @@ object Neo4jStoreSingleton : GraphStore {
     //
     // Subscription
     //
+
+    private val simManager by lazy { getResource<SimManager>() }
+
     private fun validateBundleList(bundles: List<Bundle>, customerId: String): Either<StoreError, Unit> =
             if (bundles.isEmpty()) {
                 Either.left(NotFoundError(type = subscriberToBundleRelation.relation.name, id = "$customerId -> *"))
@@ -339,6 +343,35 @@ object Neo4jStoreSingleton : GraphStore {
                 Either.right(Unit)
             }
 
+    // TODO vihang - Should we link Subscription on confirmation from SimManager that it is downloaded?
+    override fun createSubscription(identity: org.ostelco.prime.model.Identity): Either<StoreError, Subscription> = writeTransaction {
+        IO {
+            Either.monad<StoreError>().binding {
+                val customerId = Neo4jStoreSingleton.getCustomerId(identity = identity, transaction = transaction).bind()
+                val bundles = customerStore.getRelated(customerId, subscriberToBundleRelation, transaction).bind()
+                validateBundleList(bundles, customerId).bind()
+                val simEntry = simManager.allocateNextEsimProfile(hlr = "loltel", phoneType = "generic")
+                        .mapLeft { NotFoundError("eSIM profile", id = "loltel") }
+                        .bind()
+                subscriptionStore.create(Subscription(msisdn = simEntry.msisdn, eSimActivationCode = simEntry.eSimActivationCode), transaction).bind()
+                val subscription = subscriptionStore.get(simEntry.msisdn, transaction).bind()
+                val customer = customerStore.get(customerId, transaction).bind()
+                bundles.forEach { bundle ->
+                    subscriptionToBundleStore.create(subscription, mapOf("reservedBytes" to "0"), bundle, transaction).bind()
+                }
+                subscriptionRelationStore.create(customer, subscription, transaction).bind()
+                // TODO Remove hardcoded country code.
+                // https://docs.oracle.com/javase/9/docs/api/java/util/Locale.IsoCountryCode.html
+                if (customer.country.equals("sg", ignoreCase = true)) {
+                    logger.info(NOTIFY_OPS_MARKER, "Assigned +${subscription.msisdn} to the user: ${customer.email} in Singapore.")
+                }
+                subscription
+            }.fix()
+        }.unsafeRunSync()
+                .ifFailedThenRollback(transaction)
+    }
+
+    @Deprecated(message = "Use createSubscription instead")
     override fun addSubscription(identity: org.ostelco.prime.model.Identity, msisdn: String): Either<StoreError, Unit> = writeTransaction {
         IO {
             Either.monad<StoreError>().binding {

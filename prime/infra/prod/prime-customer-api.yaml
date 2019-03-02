@@ -467,6 +467,9 @@ definitions:
         type: string
       analyticsId:
         type: string
+      eSimActivationCode:
+        description: "eSim Activation Code to download eSIM"
+        type: string
   BundleList:
     type: array
     items:

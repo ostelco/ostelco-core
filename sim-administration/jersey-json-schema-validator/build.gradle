@@ -10,3 +10,5 @@ dependencies {
 
     testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
 }
+
+apply from: '../../gradle/jacoco.gradle'

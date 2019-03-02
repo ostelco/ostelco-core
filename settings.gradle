@@ -12,6 +12,7 @@ include ':dataflow-pipelines'
 include ':diameter-ha'
 include ':diameter-stack'
 include ':diameter-test'
+include ':email-notifier'
 include ':ext-auth-provider'
 include ':firebase-store'
 include ':firebase-extensions'
@@ -53,6 +54,7 @@ project(':dataflow-pipelines').projectDir = "$rootDir/dataflow-pipelines" as Fil
 project(':diameter-ha').projectDir = "$rootDir/diameter-ha" as File
 project(':diameter-stack').projectDir = "$rootDir/diameter-stack" as File
 project(':diameter-test').projectDir = "$rootDir/diameter-test" as File
+project(':email-notifier').projectDir = "$rootDir/email-notifier" as File
 project(':ext-auth-provider').projectDir = "$rootDir/ext-auth-provider" as File
 project(':firebase-store').projectDir = "$rootDir/firebase-store" as File
 project(':firebase-extensions').projectDir = "$rootDir/firebase-extensions" as File

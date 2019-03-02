@@ -11,15 +11,15 @@ import org.ostelco.prime.storage.ClientDataSource
 val clientDataSource by lazy { getResource<ClientDataSource>() }
 
 
-class CustomerDataFetcher : DataFetcher<Map<String, Any>> {
+class ContextDataFetcher : DataFetcher<Map<String, Any>> {
 
     override fun get(env: DataFetchingEnvironment): Map<String, Any>? {
         return env.getContext<Identity>()?.let { identity ->
             val map = mutableMapOf<String, Any>()
-            if (env.selectionSet.contains("profile/*")) {
+            if (env.selectionSet.contains("customer/*")) {
                 clientDataSource.getCustomer(identity)
                         .map { customer ->
-                            map.put("profile", objectMapper.convertValue(customer, object : TypeReference<Map<String, Any>>() {}))
+                            map.put("customer", objectMapper.convertValue(customer, object : TypeReference<Map<String, Any>>() {}))
                         }
             }
             if (env.selectionSet.contains("bundles/*")) {

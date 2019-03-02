@@ -16,7 +16,7 @@ dependencies {
     testImplementation "org.assertj:assertj-core:$assertJVersion"
 
     // https://mvnrepository.com/artifact/org.glassfish.jersey.test-framework.providers/jersey-test-framework-provider-grizzly2
-    testCompile("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2:2.27") {
+    testCompile("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2:2.28") {
         // 2.26 (latest)
         exclude group: 'javax.servlet', module: 'javax.servlet-api'
         exclude group: 'junit', module: 'junit'

@@ -128,6 +128,17 @@ class SubscriberDAOImpl : SubscriberDAO {
         }
     }
 
+    override fun createSubscription(identity: Identity): Either<ApiError, Subscription> {
+        return try {
+            storage.createSubscription(identity).mapLeft {
+                NotFoundError("Failed to create subscription.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS, it)
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to create subscription for customer with identity - $identity", e)
+            Either.left(BadGatewayError("Failed to create subscription", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS))
+        }
+    }
+
     override fun getBundles(identity: Identity): Either<ApiError, Collection<Bundle>> {
         return try {
             storage.getBundles(identity).mapLeft {

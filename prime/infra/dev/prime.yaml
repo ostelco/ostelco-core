@@ -342,7 +342,11 @@ spec:
             secretKeyRef:
               name: simmgr-test-secrets
               key: functionRequesterIdentifier
-
+        - name: MANDRILL_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: mandrill-secrets
+              key: mandrillApiKey
         volumeMounts:
         - name: secret-config
           mountPath: "/secret"
