@@ -9,7 +9,10 @@ import org.ostelco.dropwizardutils.OpenapiResourceAdder
 import org.ostelco.prime.module.PrimeModule
 import org.ostelco.sim.es2plus.*
 import org.ostelco.simcards.admin.ConfigRegistry.config
+import org.ostelco.simcards.admin.ResourceRegistry.simInventoryResource
 import org.ostelco.simcards.inventory.*
+import org.ostelco.simcards.inventory.SimInventoryDB
+import org.ostelco.simcards.inventory.SimInventoryResource
 
 /**
  * The SIM manager
@@ -51,7 +54,8 @@ class SimAdministrationModule : PrimeModule {
         OpenapiResourceAdder.addOpenapiResourceToJerseyEnv(jerseyEnv, config.openApi)
         ES2PlusIncomingHeadersFilter.addEs2PlusDefaultFiltersAndInterceptors(jerseyEnv)
 
-        jerseyEnv.register(SimInventoryResource(httpClient, config, DAO))
+        simInventoryResource = SimInventoryResource(httpClient, config, DAO)
+        jerseyEnv.register(simInventoryResource)
         jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
 
         env.admin().addTask(PreallocateProfilesTask(
@@ -64,4 +68,8 @@ class SimAdministrationModule : PrimeModule {
 
 object ConfigRegistry {
     lateinit var config: SimAdministrationConfiguration
+}
+
+object ResourceRegistry {
+    lateinit var simInventoryResource: SimInventoryResource
 }

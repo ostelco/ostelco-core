@@ -241,6 +241,10 @@ kubectl create secret generic jumio-secrets --from-literal=apiToken='jumioApiTok
 kubectl create secret generic scaninfo-secrets --from-literal=bucketName='bucketname'
 ```
 
+```bash
+kubectl create secret generic mandrill-secrets --from-literal=mandrillApiKey='keep-mandrill-api-key-here'
+```
+
 ### Keysets for scan information store
 
 The keys are generated using `Tinkey` tool provied as part of the google tink project

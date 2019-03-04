@@ -1,7 +1,7 @@
 plugins {
   id "org.jetbrains.kotlin.jvm" version "1.3.21"
   id "application"
-  id "com.github.johnrengelman.shadow" version "4.0.4"
+  id "com.github.johnrengelman.shadow" version "5.0.0"
   id "idea"
 }
 
@@ -18,7 +18,7 @@ sourceSets {
   }
 }
 
-version = "1.24.0"
+version = "1.25.0"
 
 repositories {
   maven {
@@ -38,6 +38,7 @@ dependencies {
   runtimeOnly project(':graphql')
   runtimeOnly project(':admin-api')
   runtimeOnly project(':app-notifier')
+  runtimeOnly project(':email-notifier')
   runtimeOnly project(':payment-processor')
   runtimeOnly project(':analytics-module')
   runtimeOnly project(':slack')

@@ -3,18 +3,18 @@ schema {
 }
 
 type QueryType {
-  customer(id: String): Customer
+  context(id: String): Context
 }
 
-type Customer {
-  profile: Profile
+type Context {
+  customer: Customer
   bundles: [Bundle]
   subscriptions: [Subscription]
   products: [Product]
   purchases: [Purchase]
 }
 
-type Profile {
+type Customer {
   id: String
   email: String
   name: String
@@ -23,6 +23,7 @@ type Profile {
   city: String
   country: String
   referralId: String
+  analyticsId: String
 }
 
 type Bundle {
@@ -33,6 +34,8 @@ type Bundle {
 type Subscription {
   msisdn: String
   alias: String
+  analyticsId: String
+  code: String
 }
 
 type Product {

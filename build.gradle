@@ -2,7 +2,7 @@
 plugins {
   id "java"
   id "project-report"
-  id "com.github.ben-manes.versions" version "0.20.0"
+  id "com.github.ben-manes.versions" version "0.21.0"
   id "jacoco"
 }
 
@@ -33,14 +33,14 @@ subprojects {
     options.encoding = 'UTF-8'
   }
   ext {
-    assertJVersion = "3.11.1"
+    assertJVersion = "3.12.1"
     arrowVersion = "0.8.2"
-    beamVersion = "2.10.0"
+    beamVersion = "2.11.0"
     dockerComposeJunitRuleVersion = "0.35.0"
-    dropwizardVersion = "1.3.8"
+    dropwizardVersion = "1.3.9"
     firebaseVersion = "6.7.0"
-    googleCloudVersion = "1.62.0"
-    grpcVersion = "1.18.0"
+    googleCloudVersion = "1.63.0"
+    grpcVersion = "1.19.0"
     guavaVersion = "27.0.1-jre"
     jacksonVersion = "2.9.8"
     javaxActivationVersion = "1.1.1"
@@ -50,12 +50,14 @@ subprojects {
     junit5Version = "5.4.0"
     kotlinVersion = "1.3.21"
     kotlinXCoroutinesVersion = "1.1.1"
-    mockitoVersion = "2.24.0"
+    mockitoVersion = "2.24.5"
     neo4jDriverVersion="1.7.2"
     neo4jVersion="3.5.3"
-    stripeVersion = "7.21.0"
-    swaggerVersion = "2.0.6"
+    slf4jVersion="1.7.26"
+    stripeVersion = "7.25.0"
+    swaggerVersion = "2.0.7"
     tinkVersion = "1.2.2"
+    zxingVersion = "3.3.3"
   }
 }
 

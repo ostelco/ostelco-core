@@ -7,8 +7,7 @@ dependencies {
   implementation project(':prime-modules')
 
   implementation 'com.lmax:disruptor:3.4.2'
-  // implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinXCoroutinesVersion"
-
+  
   testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
   testImplementation "org.mockito:mockito-core:$mockitoVersion"

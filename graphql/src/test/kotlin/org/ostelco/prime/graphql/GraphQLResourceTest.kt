@@ -37,21 +37,21 @@ class GraphQLResourceTest {
         val resp = RULE.target("/graphql")
                 .request(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
-                .post(Entity.json(GraphQLRequest(query = """{ customer(id: "invalid@test.com") { profile { email } } }""")))
+                .post(Entity.json(GraphQLRequest(query = """{ context(id: "invalid@test.com") { customer { email } } }""")))
                 .readEntity(GraphQlResponse::class.java)
 
-        Assert.assertEquals(email, resp.data?.customer?.profile?.email)
+        Assert.assertEquals(email, resp.data?.context?.customer?.email)
     }
 
     @Test
     fun `test handleGet`() {
         val resp = RULE.target("/graphql")
-                .queryParam("query", URLEncoder.encode("""{customer(id:"invalid@test.com"){profile{email}}}""", StandardCharsets.UTF_8.name()))
+                .queryParam("query", URLEncoder.encode("""{context(id:"invalid@test.com"){customer{email}}}""", StandardCharsets.UTF_8.name()))
                 .request(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
                 .get(GraphQlResponse::class.java)
 
-        Assert.assertEquals(email, resp.data?.customer?.profile?.email)
+        Assert.assertEquals(email, resp.data?.context?.customer?.email)
     }
 
     companion object {

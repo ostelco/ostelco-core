@@ -30,6 +30,8 @@ interface SubscriberDAO {
 
     fun getSubscriptions(identity: Identity): Either<ApiError, Collection<Subscription>>
 
+    fun createSubscription(identity: Identity): Either<ApiError, Subscription>
+
     fun getBundles(identity: Identity): Either<ApiError, Collection<Bundle>>
 
     fun getPurchaseHistory(identity: Identity): Either<ApiError, Collection<PurchaseRecord>>

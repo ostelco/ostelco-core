@@ -1,0 +1,30 @@
+{
+  "key": "$API_KEY$",
+  "message": {
+    "html": "<p>Download OYA Data-only eSIM using this QR code</p>",
+    "subject": "Download OYA Data-only eSIM using this QR code",
+    "from_email": "welcome@oya.sg",
+    "from_name": "OYA",
+    "to": [
+      {
+        "email": "$RECEIVER_EMAIL$",
+        "name": "$RECEIVER_NAME$",
+        "type": "to"
+      }
+    ],
+    "important": true,
+    "track_opens": true,
+    "track_clicks": true,
+    "tags": [
+      "esim-qr-code"
+    ],
+    "images": [
+      {
+        "type": "image/png",
+        "name": "eSIM QR code",
+        "content": "$QR_CODE$"
+      }
+    ]
+  },
+  "async": false
+}
