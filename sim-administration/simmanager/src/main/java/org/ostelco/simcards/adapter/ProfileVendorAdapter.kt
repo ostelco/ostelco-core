@@ -10,14 +10,9 @@ import org.apache.http.client.methods.RequestBuilder
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.getLogger
-import org.ostelco.prime.storage.NotFoundError
-import org.ostelco.prime.storage.NotUpdatedError
-import org.ostelco.prime.storage.StoreError
 import org.ostelco.sim.es2plus.*
 import org.ostelco.simcards.admin.ProfileVendorConfig
-import org.ostelco.simcards.inventory.SimEntry
-import org.ostelco.simcards.inventory.SimInventoryDAO
-import org.ostelco.simcards.inventory.SmDpPlusState
+import org.ostelco.simcards.inventory.*
 import java.util.*
 import javax.ws.rs.core.MediaType
 
@@ -52,7 +47,7 @@ data class ProfileVendorAdapter (
                  config: ProfileVendorConfig,
                  dao: SimInventoryDAO,
                  eid: String?,
-                 simEntry: SimEntry): Either<StoreError, SimEntry> =
+                 simEntry: SimEntry): Either<SimManagerError, SimEntry> =
             downloadOrder(httpClient, config, dao, simEntry)
                     .flatMap {
                         confirmOrder(httpClient, config, dao, eid, it)
@@ -70,7 +65,7 @@ data class ProfileVendorAdapter (
     fun downloadOrder(httpClient: CloseableHttpClient,
                       config: ProfileVendorConfig,
                       dao: SimInventoryDAO,
-                      simEntry: SimEntry): Either<StoreError, SimEntry> {
+                      simEntry: SimEntry): Either<SimManagerError, SimEntry> {
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = config.requesterIndentifier,
                 functionCallIdentifier = "downloadOrder"
@@ -100,7 +95,7 @@ data class ProfileVendorAdapter (
                                 simEntry.iccid,
                                 status.header.functionExecutionStatus,
                                 header.functionCallIdentifier)
-                        NotUpdatedError("sm-dp+", simEntry.iccid).left()
+                        AdapterError("sm-dp+ ${simEntry.iccid}").left()
                     } else {
                         logger.info("SM-DP+ 'order-download' message to service {} for ICCID {} completed OK (call-id: {})",
                                 config.name,
@@ -115,7 +110,7 @@ data class ProfileVendorAdapter (
                             simEntry.iccid,
                             it.statusLine.statusCode,
                             header.functionCallIdentifier)
-                    NotUpdatedError("sm-dp+", simEntry.iccid).left()
+                    AdapterError("sm-dp+ ${simEntry.iccid}").left()
                 }
             }
         }
@@ -135,7 +130,7 @@ data class ProfileVendorAdapter (
                      config: ProfileVendorConfig,
                      dao: SimInventoryDAO,
                      eid: String? = null,
-                     simEntry: SimEntry): Either<StoreError, SimEntry> {
+                     simEntry: SimEntry): Either<SimManagerError, SimEntry> {
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = config.requesterIndentifier,
                 functionCallIdentifier = UUID.randomUUID().toString()
@@ -167,7 +162,7 @@ data class ProfileVendorAdapter (
                                 simEntry.iccid,
                                 status.header.functionExecutionStatus,
                                 header.functionCallIdentifier)
-                        NotUpdatedError("sm-dp+", simEntry.iccid).left()
+                        NotUpdatedError("sm-dp+ ${simEntry.iccid}").left()
                     } else {
                         // XXX Is just logging good enough?
                         if (status.eid.isNullOrEmpty()) {
@@ -198,7 +193,7 @@ data class ProfileVendorAdapter (
                             simEntry.iccid,
                             it.statusLine.statusCode,
                             header.functionCallIdentifier)
-                    NotUpdatedError("sm-dp+", simEntry.iccid).left()
+                    NotUpdatedError("sm-dp+ ${simEntry.iccid}").left()
                 }
             }
         }
@@ -214,7 +209,7 @@ data class ProfileVendorAdapter (
      */
     fun getProfileStatus(httpClient: CloseableHttpClient,
                          config: ProfileVendorConfig,
-                         iccid: String): Either<StoreError, ProfileStatus> =
+                         iccid: String): Either<SimManagerError, ProfileStatus> =
             getProfileStatus(httpClient, config, listOf(iccid))
                     .flatMap {
                         it.first().right()
@@ -234,11 +229,11 @@ data class ProfileVendorAdapter (
      */
     private fun getProfileStatus(httpClient: CloseableHttpClient,
                                  config: ProfileVendorConfig,
-                                 iccidList: List<String>): Either<StoreError, List<ProfileStatus>> {
+                                 iccidList: List<String>): Either<SimManagerError, List<ProfileStatus>> {
         if (iccidList.isNullOrEmpty()) {
             logger.error("One or more ICCID values required in SM-DP+ 'profile-status' message to service %s",
                     config.name)
-            return NotFoundError("", "").left()
+            return NotFoundError("").left()
         }
 
         val header = ES2RequestHeader(
@@ -271,7 +266,7 @@ data class ProfileVendorAdapter (
                                 iccidList.joinToString(prefix = "[", postfix = "]"),
                                 status.header.functionExecutionStatus,
                                 header.functionCallIdentifier)
-                        NotUpdatedError("sm-dp+", iccidList.joinToString(prefix = "[", postfix = "]"))
+                        NotUpdatedError("sm-dp+ ")
                                 .left()
 
                     } else {
@@ -284,7 +279,7 @@ data class ProfileVendorAdapter (
                         if (!profileStatusList.isNullOrEmpty())
                         profileStatusList.right()
                         else
-                            NotFoundError("","").left()
+                            NotFoundError("").left()
                     }
                 }
                 else -> {
@@ -293,7 +288,7 @@ data class ProfileVendorAdapter (
                             iccidList.joinToString(prefix = "[", postfix = "]"),
                             it.statusLine.statusCode,
                             header.functionCallIdentifier)
-                    NotFoundError("", "").left()
+                    NotFoundError("").left()
                 }
             }
         }
