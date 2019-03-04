@@ -22,25 +22,16 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                     .flatMap { simEntry ->
                         dao.getProfileVendorAdapterById(simEntry.profileVendorId)
                                 .flatMap { profileVendorAdapter ->
-
                                     val config: ProfileVendorConfig? = config.profileVendors.firstOrNull {
                                         it.name == profileVendorAdapter.name
                                     }
-
-                                    if (config != null) {
-                                        val profileStatus = profileVendorAdapter.getProfileStatus(httpClient, config, iccid)
-                                        if (profileStatus == null) {
-                                            NotFoundError("", "")
-                                                    .left()
-                                        } else {
-                                            profileStatus.right()
-                                        }
-                                    } else
+                                    if (config != null)
+                                        profileVendorAdapter.getProfileStatus(httpClient, config, iccid)
+                                    else
                                         NotFoundError("", "")
                                                 .left()
                                 }
                     }
-
 
     fun findSimProfileByIccid(hlrName: String, iccid: String): Either<StoreError, SimEntry> =
             dao.getSimProfileByIccid(iccid)

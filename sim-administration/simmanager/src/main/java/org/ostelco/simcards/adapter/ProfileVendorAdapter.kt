@@ -1,20 +1,25 @@
 package org.ostelco.simcards.adapter
 
+import arrow.core.Either
+import arrow.core.flatMap
+import arrow.core.left
+import arrow.core.right
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.apache.http.client.methods.RequestBuilder
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.storage.NotFoundError
+import org.ostelco.prime.storage.NotUpdatedError
+import org.ostelco.prime.storage.StoreError
 import org.ostelco.sim.es2plus.*
 import org.ostelco.simcards.admin.ProfileVendorConfig
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SmDpPlusState
 import java.util.*
-import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.Response
 
 /**
  * An adapter that can connect to SIM profile vendors and activate
@@ -47,14 +52,11 @@ data class ProfileVendorAdapter (
                  config: ProfileVendorConfig,
                  dao: SimInventoryDAO,
                  eid: String?,
-                 simEntry: SimEntry) : SimEntry? {
-        return if (downloadOrder(httpClient, config, dao, simEntry) != null)
-            confirmOrder(httpClient, config, dao, eid, simEntry)
-         else
-            null
-    }
-
-    // http://rubenjgarcia.es/kotlin-dsl-rest/
+                 simEntry: SimEntry): Either<StoreError, SimEntry> =
+            downloadOrder(httpClient, config, dao, simEntry)
+                    .flatMap {
+                        confirmOrder(httpClient, config, dao, eid, it)
+                    }
 
     /**
      * Initiate activation of a SIM profile with an external Profile Vendor
@@ -68,7 +70,7 @@ data class ProfileVendorAdapter (
     fun downloadOrder(httpClient: CloseableHttpClient,
                       config: ProfileVendorConfig,
                       dao: SimInventoryDAO,
-                      simEntry: SimEntry): SimEntry? {
+                      simEntry: SimEntry): Either<StoreError, SimEntry> {
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = config.requesterIndentifier,
                 functionCallIdentifier = "downloadOrder"
@@ -93,13 +95,12 @@ data class ProfileVendorAdapter (
                     val status = mapper.readValue(it.entity.content, Es2DownloadOrderResponse::class.java)
 
                     if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess) {
-                        throw WebApplicationException(
-                                String.format("SM-DP+ 'order-download' message to service %s for ICCID %s failed with execution status %s (call-id: %s)",
-                                        config.name,
-                                        simEntry.iccid,
-                                        status.header.functionExecutionStatus,
-                                        header.functionCallIdentifier),
-                                Response.Status.BAD_REQUEST)
+                        logger.error("SM-DP+ 'order-download' message to service %s for ICCID %s failed with execution status %s (call-id: %s)",
+                                config.name,
+                                simEntry.iccid,
+                                status.header.functionExecutionStatus,
+                                header.functionCallIdentifier)
+                        NotUpdatedError("sm-dp+", simEntry.iccid).left()
                     } else {
                         logger.info("SM-DP+ 'order-download' message to service {} for ICCID {} completed OK (call-id: {})",
                                 config.name,
@@ -109,13 +110,12 @@ data class ProfileVendorAdapter (
                     }
                 }
                 else -> {
-                    throw WebApplicationException(
-                            String.format("SM-DP+ 'order-download' message to service %s for ICCID %s failed with status code %d (call-id: %s)",
-                                    config.name,
-                                    simEntry.iccid,
-                                    it.statusLine.statusCode,
-                                    header.functionCallIdentifier),
-                            Response.Status.BAD_REQUEST)
+                    logger.error("SM-DP+ 'order-download' message to service %s for ICCID %s failed with status code %d (call-id: %s)",
+                            config.name,
+                            simEntry.iccid,
+                            it.statusLine.statusCode,
+                            header.functionCallIdentifier)
+                    NotUpdatedError("sm-dp+", simEntry.iccid).left()
                 }
             }
         }
@@ -135,7 +135,7 @@ data class ProfileVendorAdapter (
                      config: ProfileVendorConfig,
                      dao: SimInventoryDAO,
                      eid: String? = null,
-                     simEntry: SimEntry): SimEntry? {
+                     simEntry: SimEntry): Either<StoreError, SimEntry> {
         val header = ES2RequestHeader(
                 functionRequesterIdentifier = config.requesterIndentifier,
                 functionCallIdentifier = UUID.randomUUID().toString()
@@ -162,15 +162,12 @@ data class ProfileVendorAdapter (
                     val status = mapper.readValue(it.entity.content, Es2ConfirmOrderResponse::class.java)
 
                     if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess) {
-                        throw WebApplicationException(
-                                String.format("SM-DP+ 'order-confirm' message to service %s for ICCID %s failed with execution status %s (call-id: %s)",
-                                        config.name,
-                                        simEntry.iccid,
-                                        status.header.functionExecutionStatus,
-                                        header.functionCallIdentifier),
-                                Response.Status.BAD_REQUEST)
-
-
+                        logger.error("SM-DP+ 'order-confirm' message to service %s for ICCID %s failed with execution status %s (call-id: %s)",
+                                config.name,
+                                simEntry.iccid,
+                                status.header.functionExecutionStatus,
+                                header.functionCallIdentifier)
+                        NotUpdatedError("sm-dp+", simEntry.iccid).left()
                     } else {
                         // XXX Is just logging good enough?
                         if (status.eid.isNullOrEmpty()) {
@@ -196,13 +193,12 @@ data class ProfileVendorAdapter (
                     }
                 }
                 else -> {
-                    throw WebApplicationException(
-                            String.format("SM-DP+ 'order-confirm' message to service %s for ICCID %s failed with status code %d (call-id: %s)",
-                                    config.name,
-                                    simEntry.iccid,
-                                    it.statusLine.statusCode,
-                                    header.functionCallIdentifier),
-                            Response.Status.BAD_REQUEST)
+                    logger.error("SM-DP+ 'order-confirm' message to service %s for ICCID %s failed with status code %d (call-id: %s)",
+                            config.name,
+                            simEntry.iccid,
+                            it.statusLine.statusCode,
+                            header.functionCallIdentifier)
+                    NotUpdatedError("sm-dp+", simEntry.iccid).left()
                 }
             }
         }
@@ -218,13 +214,11 @@ data class ProfileVendorAdapter (
      */
     fun getProfileStatus(httpClient: CloseableHttpClient,
                          config: ProfileVendorConfig,
-                         iccid: String): ProfileStatus? {
-        val status = getProfileStatus(httpClient, config, listOf(iccid))
-        return if (status.isNullOrEmpty())
-            null
-        else
-            status.first()
-    }
+                         iccid: String): Either<StoreError, ProfileStatus> =
+            getProfileStatus(httpClient, config, listOf(iccid))
+                    .flatMap {
+                        it.first().right()
+                    }
 
     /* XXX Missing:
            1. unit tests
@@ -240,12 +234,11 @@ data class ProfileVendorAdapter (
      */
     private fun getProfileStatus(httpClient: CloseableHttpClient,
                                  config: ProfileVendorConfig,
-                                 iccidList: List<String>): List<ProfileStatus>? {
+                                 iccidList: List<String>): Either<StoreError, List<ProfileStatus>> {
         if (iccidList.isNullOrEmpty()) {
-            throw WebApplicationException(
-                    String.format("One or more ICCID values required in SM-DP+ 'profile-status' message to service %s",
-                            config.name),
-                    Response.Status.BAD_REQUEST)
+            logger.error("One or more ICCID values required in SM-DP+ 'profile-status' message to service %s",
+                    config.name)
+            return NotFoundError("", "").left()
         }
 
         val header = ES2RequestHeader(
@@ -273,31 +266,34 @@ data class ProfileVendorAdapter (
 
                     if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess) {
 
-                        throw WebApplicationException(
-                                String.format("SM-DP+ 'profile-status' message to service %s for ICCID %s failed with execution status %s (call-id: %s)",
-                                        config.name,
-                                        iccidList.joinToString(prefix = "[", postfix = "]"),
-                                        status.header.functionExecutionStatus,
-                                        header.functionCallIdentifier),
-                                Response.Status.BAD_REQUEST)
-
+                        logger.error("SM-DP+ 'profile-status' message to service %s for ICCID %s failed with execution status %s (call-id: %s)",
+                                config.name,
+                                iccidList.joinToString(prefix = "[", postfix = "]"),
+                                status.header.functionExecutionStatus,
+                                header.functionCallIdentifier)
+                        NotUpdatedError("sm-dp+", iccidList.joinToString(prefix = "[", postfix = "]"))
+                                .left()
 
                     } else {
                         logger.info("SM-DP+ 'profile-status' message to service {} for ICCID {} completed OK (call-id: {})",
                                 config.name,
                                 iccidList.joinToString(prefix = "[", postfix = "]"),
                                 header.functionCallIdentifier)
-                        status.profileStatusList
+                        val profileStatusList = status.profileStatusList
+
+                        if (!profileStatusList.isNullOrEmpty())
+                        profileStatusList.right()
+                        else
+                            NotFoundError("","").left()
                     }
                 }
                 else -> {
-                    throw WebApplicationException(
-                            String.format("SM-DP+ 'profile-status' message to service %s for ICCID %s failed with status code %d (call-id: %s)",
-                                    config.name,
-                                    iccidList.joinToString(prefix = "[", postfix = "]"),
-                                    it.statusLine.statusCode,
-                                    header.functionCallIdentifier),
-                            Response.Status.BAD_REQUEST)
+                    logger.error("SM-DP+ 'profile-status' message to service %s for ICCID %s failed with status code %d (call-id: %s)",
+                            config.name,
+                            iccidList.joinToString(prefix = "[", postfix = "]"),
+                            it.statusLine.statusCode,
+                            header.functionCallIdentifier)
+                    NotFoundError("", "").left()
                 }
             }
         }

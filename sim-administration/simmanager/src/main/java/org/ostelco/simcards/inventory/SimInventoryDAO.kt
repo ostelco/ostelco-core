@@ -12,6 +12,8 @@ import org.jdbi.v3.core.mapper.RowMapper
 import org.jdbi.v3.core.statement.StatementContext
 import org.jdbi.v3.sqlobject.customizer.Bind
 import org.jdbi.v3.sqlobject.transaction.Transaction
+import org.ostelco.prime.storage.NotFoundError
+import org.ostelco.prime.storage.StoreError
 import org.ostelco.simcards.adapter.HlrAdapter
 import java.io.BufferedReader
 import java.io.InputStream
@@ -177,7 +179,7 @@ class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper
      * @return true if permitted false otherwise
      */
     fun simVendorIsPermittedForHlr(profileVendorId: Long,
-                                   hlrId: Long): Either<DatabaseError, Boolean> =
+                                   hlrId: Long): Either<StoreError, Boolean> =
             findSimVendorForHlrPermissions(profileVendorId, hlrId)
                     .flatMap {
                         Either.right(it.isNotEmpty())
@@ -191,9 +193,9 @@ class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper
      * @return true on successful update
      */
     @Transaction
-    fun permitVendorForHlrByNames(profileVendor: String, hlr: String): Either<DatabaseError, Boolean> =
+    fun permitVendorForHlrByNames(profileVendor: String, hlr: String): Either<StoreError, Boolean> =
             IO {
-                Either.monad<DatabaseError>().binding {
+                Either.monad<StoreError>().binding {
                     val profileVendorAdapter = getProfileVendorAdapterByName(profileVendor)
                             .bind()
                     val hlrAdapter = getHlrAdapterByName(hlr)
@@ -208,16 +210,16 @@ class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper
     // Importing
     //
 
-    override fun insertAll(entries: Iterator<SimEntry>): Either<DatabaseError, Unit> =
+    override fun insertAll(entries: Iterator<SimEntry>): Either<StoreError, Unit> =
         db.insertAll(entries)
 
     @Transaction
     fun importSims(importer: String,
                    hlrId: Long,
                    profileVendorId: Long,
-                   csvInputStream: InputStream): Either<DatabaseError, SimImportBatch> =
+                   csvInputStream: InputStream): Either<StoreError, SimImportBatch> =
             IO {
-                Either.monad<DatabaseError>().binding {
+                Either.monad<StoreError>().binding {
                     createNewSimImportBatch(importer = importer,
                             hlrId = hlrId,
                             profileVendorId = profileVendorId)
@@ -252,13 +254,13 @@ class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper
      * @return updated row or null on no match
      */
     @Transaction
-    fun setHlrState(id: Long, state: HlrState): Either<DatabaseError, SimEntry> =
+    fun setHlrState(id: Long, state: HlrState): Either<StoreError, SimEntry> =
             updateHlrState(id, state)
                     .flatMap { count ->
                         if (count > 0)
                          getSimProfileById(id)
                         else
-                            Either.left(NotFoundError("Found no HLR adapter with id ${id} update of HLR state failed"))
+                            Either.left(NotFoundError("", "Found no HLR adapter with id ${id} update of HLR state failed"))
                     }
 
     /**
@@ -268,14 +270,14 @@ class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper
      * @return updated row or null on no match
      */
     @Transaction
-    fun setProvisionState(id: Long, state: ProvisionState): Either<DatabaseError, SimEntry> =
+    fun setProvisionState(id: Long, state: ProvisionState): Either<StoreError, SimEntry> =
             updateProvisionState(id, state)
                     .flatMap { count ->
                         if (count > 0)
                             getSimProfileById(id)
                         else
                             Either.left(NotFoundError(
-                                    "Found no SIM profile with id ${id} update of provision state failed"))
+                                    "", "Found no SIM profile with id ${id} update of provision state failed"))
                     }
 
     /**
@@ -287,14 +289,14 @@ class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper
      * @return updated row or null on no match
      */
     @Transaction
-    fun setHlrStateAndProvisionState(id: Long, hlrState: HlrState, provisionState: ProvisionState): Either<DatabaseError, SimEntry> =
+    fun setHlrStateAndProvisionState(id: Long, hlrState: HlrState, provisionState: ProvisionState): Either<StoreError, SimEntry> =
             updateHlrStateAndProvisionState(id, hlrState, provisionState)
                     .flatMap { count ->
                         if (count > 0)
                             getSimProfileById(id)
                         else
                             Either.left(NotFoundError(
-                                    "Found no SIM profile with id ${id} update of HLR and provision state failed"))
+                                    "","Found no SIM profile with id ${id} update of HLR and provision state failed"))
                     }
 
 
@@ -305,14 +307,14 @@ class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper
      * @return updated row or null on no match
      */
     @Transaction
-    fun setSmDpPlusState(id: Long, state: SmDpPlusState): Either<DatabaseError, SimEntry> =
+    fun setSmDpPlusState(id: Long, state: SmDpPlusState): Either<StoreError, SimEntry> =
             updateSmDpPlusState(id, state)
                     .flatMap { count ->
                         if (count > 0)
                             getSimProfileById(id)
                         else
                             Either.left(NotFoundError(
-                                    "Found no SIM profile with id ${id} update of SM-DP+ state failed"))
+                                    "", "Found no SIM profile with id ${id} update of SM-DP+ state failed"))
                     }
 
     /**
@@ -325,14 +327,14 @@ class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper
      * @return updated row or null on no match
      */
     @Transaction
-    fun setSmDpPlusStateAndMatchingId(id: Long, state: SmDpPlusState, matchingId: String): Either<DatabaseError, SimEntry> =
+    fun setSmDpPlusStateAndMatchingId(id: Long, state: SmDpPlusState, matchingId: String): Either<StoreError, SimEntry> =
             updateSmDpPlusStateAndMatchingId(id, state, matchingId)
                     .flatMap {  count ->
                         if (count > 0)
                             getSimProfileById(id)
                         else
                             Either.left(NotFoundError(
-                                    "Found no SIM profile with id ${id} update of SM-DP+ state and 'matching-id' failed"))
+                                    "", "Found no SIM profile with id ${id} update of SM-DP+ state and 'matching-id' failed"))
                     }
 
     //
@@ -346,23 +348,23 @@ class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper
      * @return updated SIM entry
      */
     @Transaction
-    fun setEidOfSimProfile(id: Long, eid: String): Either<DatabaseError, SimEntry> =
+    fun setEidOfSimProfile(id: Long, eid: String): Either<StoreError, SimEntry> =
             updateEidOfSimProfile(id, eid)
                     .flatMap {  count ->
                         if (count > 0)
                             getSimProfileById(id)
                         else
                             Either.left(NotFoundError(
-                                    "Found no SIM profile with id ${id} update of EID failed"))
+                                    "", "Found no SIM profile with id ${id} update of EID failed"))
                     }
 
     /**
      * Get relevant statistics for a particular profile type for a particular HLR.
      */
     fun getProfileStats(@Bind("hlrId") hlrId: Long,
-                        @Bind("simProfile") simProfile: String): Either<DatabaseError, SimProfileKeyStatistics> =
+                        @Bind("simProfile") simProfile: String): Either<StoreError, SimProfileKeyStatistics> =
             IO {
-                Either.monad<DatabaseError>().binding {
+                Either.monad<StoreError>().binding {
 
                     val keyValuePairs = mutableMapOf<String, Long>()
 
