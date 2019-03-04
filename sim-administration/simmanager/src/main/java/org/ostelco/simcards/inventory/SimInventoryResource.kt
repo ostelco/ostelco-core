@@ -1,7 +1,5 @@
 package org.ostelco.simcards.inventory
 
-import com.fasterxml.jackson.databind.JsonSerializer
-import org.apache.http.client.HttpClient
 import org.apache.http.impl.client.CloseableHttpClient
 import org.hibernate.validator.constraints.NotEmpty
 import org.ostelco.sim.es2plus.ProfileStatus
@@ -11,7 +9,6 @@ import org.ostelco.simcards.admin.SimAdministrationConfiguration
 import java.io.IOException
 import java.io.InputStream
 import javax.ws.rs.*
-import javax.ws.rs.client.Client
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
@@ -42,7 +39,7 @@ class SimInventoryResource(private val httpClient: CloseableHttpClient,
             @NotEmpty @PathParam("hlrVendors") hlr: String,
             @NotEmpty @PathParam("iccid") iccid: String): ProfileStatus? {
         val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
-        val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
+        val hlrAdapter = assertNonNull(dao.getHlrEntryById(simEntry.hlrId))
         assertCorrectHlr(hlr, hlr == hlrAdapter.name)
 
         val simVendorAdapter = assertNonNull(dao.getProfileVendorAdapterById(
@@ -61,7 +58,7 @@ class SimInventoryResource(private val httpClient: CloseableHttpClient,
             @NotEmpty @PathParam("hlrVendors") hlr: String,
             @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
         val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
-        val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
+        val hlrAdapter = assertNonNull(dao.getHlrEntryById(simEntry.hlrId))
         assertCorrectHlr(hlr, hlr == hlrAdapter.name)
         return simEntry
     }
@@ -73,7 +70,7 @@ class SimInventoryResource(private val httpClient: CloseableHttpClient,
             @NotEmpty @PathParam("hlrVendors") hlr: String,
             @NotEmpty @PathParam("iccid") iccid: String): SimEntry? {
         val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
-        val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
+        val hlrAdapter = assertNonNull(dao.getHlrEntryById(simEntry.hlrId))
         assertCorrectHlr(hlr, hlr == hlrAdapter.name)
 
         val config: HlrConfig = assertNonNull(config.hlrVendors.filter {
@@ -97,7 +94,7 @@ class SimInventoryResource(private val httpClient: CloseableHttpClient,
             @NotEmpty @PathParam("hlrVendors") hlr: String,
             @NotEmpty @PathParam("iccid") iccid: String): SimEntry? {
         val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
-        val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
+        val hlrAdapter = assertNonNull(dao.getHlrEntryById(simEntry.hlrId))
         assertCorrectHlr(hlr, hlr == hlrAdapter.name)
 
         val config: HlrConfig = assertNonNull(config.hlrVendors.filter {
@@ -121,7 +118,7 @@ class SimInventoryResource(private val httpClient: CloseableHttpClient,
             @NotEmpty @PathParam("hlrVendors") hlr: String,
             @NotEmpty @PathParam("imsi") imsi: String): SimEntry {
         val simEntry = assertNonNull(dao.getSimProfileByImsi(imsi))
-        val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
+        val hlrAdapter = assertNonNull(dao.getHlrEntryById(simEntry.hlrId))
         assertCorrectHlr(hlr, hlr == hlrAdapter.name)
         return simEntry
     }
@@ -133,7 +130,7 @@ class SimInventoryResource(private val httpClient: CloseableHttpClient,
             @NotEmpty @PathParam("hlrVendors") hlr: String,
             @NotEmpty @PathParam("msisdn") msisdn: String): SimEntry {
         val simEntry = assertNonNull(dao.getSimProfileByMsisdn(msisdn))
-        val hlrAdapter = assertNonNull(dao.getHlrAdapterById(simEntry.hlrId))
+        val hlrAdapter = assertNonNull(dao.getHlrEntryById(simEntry.hlrId))
         assertCorrectHlr(hlr, hlr == hlrAdapter.name)
         return simEntry
     }
@@ -144,7 +141,7 @@ class SimInventoryResource(private val httpClient: CloseableHttpClient,
     fun activateNextEsimProfile(
             @NotEmpty @PathParam("hlrVendors") hlr: String,
             @DefaultValue("_") @QueryParam("phoneType") phoneType: String): SimEntry? {
-        val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
+        val hlrAdapter = assertNonNull(dao.getHlrEntryByName(hlr))
         val profile = config.getProfileForPhoneType(phoneType)
         val simEntry = assertNonNull(dao.findNextNonProvisionedSimProfileForHlr(hlrAdapter.id,
                 profile))
@@ -181,7 +178,7 @@ class SimInventoryResource(private val httpClient: CloseableHttpClient,
     fun allocateNextEsimProfile(
             @NotEmpty @PathParam("hlrVendors") hlr: String,
             @DefaultValue("_") @QueryParam("phoneType") phoneType: String): SimEntry? {
-        val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
+        val hlrAdapter = assertNonNull(dao.getHlrEntryByName(hlr))
         val profile = config.getProfileForPhoneType(phoneType)
         val simEntry = assertNonNull(dao.findNextReadyToUseSimProfileForHlr(hlrAdapter.id,
                 profile))
@@ -217,7 +214,7 @@ class SimInventoryResource(private val httpClient: CloseableHttpClient,
             @NotEmpty @PathParam("simVendor") simVendor: String,
             csvInputStream: InputStream): SimImportBatch? {
         val profileVendorAdapter = assertNonNull(dao.getProfileVendorAdapterByName(simVendor))
-        val hlrAdapter = assertNonNull(dao.getHlrAdapterByName(hlr))
+        val hlrAdapter = assertNonNull(dao.getHlrEntryByName(hlr))
 
         if (!dao.simVendorIsPermittedForHlr(profileVendorAdapter.id, hlrAdapter.id)) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)

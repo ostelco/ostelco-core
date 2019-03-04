@@ -7,7 +7,7 @@ import org.jdbi.v3.core.mapper.RowMapper
 import org.jdbi.v3.core.statement.StatementContext
 import org.jdbi.v3.sqlobject.customizer.Bind
 import org.jdbi.v3.sqlobject.transaction.Transaction
-import org.ostelco.simcards.adapter.HlrAdapter
+import org.ostelco.simcards.adapter.HlrEntry
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
@@ -189,7 +189,7 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
     @Transaction
     fun permitVendorForHlrByNames(profileVendor: String, hlr: String): Boolean {
         val profileVendorAdapter = assertNonNull(getProfileVendorAdapterByName(profileVendor))
-        val hlrAdapter = assertNonNull(getHlrAdapterByName(hlr))
+        val hlrAdapter = assertNonNull(getHlrEntryByName(hlr))
         return storeSimVendorForHlrPermission(profileVendorAdapter.id, hlrAdapter.id) > 0
     }
 
@@ -384,15 +384,15 @@ class KeyValueMapper : RowMapper<KeyValuePair> {
 
 data class KeyValuePair(val key: String, val value: Long)
 
-class HlrAdapterMapper  : RowMapper<HlrAdapter> {
-    override fun map(row: ResultSet, ctx: StatementContext): HlrAdapter? {
+class HlrEntryMapper  : RowMapper<HlrEntry> {
+    override fun map(row: ResultSet, ctx: StatementContext): HlrEntry? {
         if (row.isAfterLast) {
             return null
         }
 
         val id = row.getLong("id")
         val name = row.getString("name")
-        return HlrAdapter(id = id, name = name)
+        return HlrEntry(id = id, name = name)
     }
 }
 

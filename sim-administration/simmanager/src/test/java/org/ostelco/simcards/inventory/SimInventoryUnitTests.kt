@@ -6,11 +6,11 @@ import junit.framework.TestCase.assertNotNull
 import org.apache.http.impl.client.CloseableHttpClient
 import org.junit.*
 import org.mockito.Mockito.*
-import org.ostelco.simcards.adapter.HlrAdapter
+import org.ostelco.simcards.adapter.HlrEntry
 import org.ostelco.simcards.adapter.ProfileVendorAdapter
 import org.ostelco.simcards.admin.HlrConfig
-import org.ostelco.simcards.admin.SimAdministrationConfiguration
 import org.ostelco.simcards.admin.ProfileVendorConfig
+import org.ostelco.simcards.admin.SimAdministrationConfiguration
 import java.io.ByteArrayInputStream
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
@@ -22,7 +22,7 @@ class SimInventoryUnitTests {
         private val hlrConfig = mock(HlrConfig::class.java)
         private val profileVendorConfig = mock(ProfileVendorConfig::class.java)
         private val dao = mock(SimInventoryDAO::class.java)
-        private val hlrAdapter = mock(HlrAdapter::class.java)
+        private val hlrEntry = mock(HlrEntry::class.java)
         private val profileVendorAdapter = mock(ProfileVendorAdapter::class.java)
         private val httpClient = mock(CloseableHttpClient::class.java)
 
@@ -76,7 +76,7 @@ class SimInventoryUnitTests {
     @Before
     fun setUp() {
         reset(dao)
-        reset(hlrAdapter)
+        reset(hlrEntry)
         reset(profileVendorAdapter)
 
         /* HlrConfig */
@@ -100,14 +100,14 @@ class SimInventoryUnitTests {
                 .thenReturn(fakeProfile)
 
         /* HLR adapter. */
-        org.mockito.Mockito.`when`(hlrAdapter.id)
+        org.mockito.Mockito.`when`(hlrEntry.id)
                 .thenReturn(1L)
-        org.mockito.Mockito.`when`(hlrAdapter.name)
+        org.mockito.Mockito.`when`(hlrEntry.name)
                 .thenReturn(fakeHlr)
-        org.mockito.Mockito.`when`(hlrAdapter.activate(httpClient, hlrConfig, dao, fakeSimEntryWithoutMsisdn))
+        org.mockito.Mockito.`when`(hlrEntry.activate(httpClient, hlrConfig, dao, fakeSimEntryWithoutMsisdn))
                 .thenReturn(fakeSimEntryWithoutMsisdn.copy(
                         hlrState = HlrState.ACTIVATED))
-        org.mockito.Mockito.`when`(hlrAdapter.deactivate(httpClient, hlrConfig, dao, fakeSimEntryWithoutMsisdn))
+        org.mockito.Mockito.`when`(hlrEntry.deactivate(httpClient, hlrConfig, dao, fakeSimEntryWithoutMsisdn))
                 .thenReturn(fakeSimEntryWithoutMsisdn.copy(
                         hlrState = HlrState.NOT_ACTIVATED))
 
@@ -151,8 +151,8 @@ class SimInventoryUnitTests {
         org.mockito.Mockito.`when`(dao.findNextReadyToUseSimProfileForHlr(1L, fakeProfile))
                 .thenReturn(fakeSimEntryWithoutMsisdn)
 
-        org.mockito.Mockito.`when`(dao.getHlrAdapterByName(fakeHlr))
-                .thenReturn(hlrAdapter)
+        org.mockito.Mockito.`when`(dao.getHlrEntryByName(fakeHlr))
+                .thenReturn(hlrEntry)
 
         org.mockito.Mockito.`when`(dao.getProfileVendorAdapterByName(fakeProfileVendor))
                 .thenReturn(profileVendorAdapter)
@@ -160,11 +160,11 @@ class SimInventoryUnitTests {
         org.mockito.Mockito.`when`(dao.getProfileVendorAdapterById(1L))
                 .thenReturn(profileVendorAdapter)
 
-        org.mockito.Mockito.`when`(dao.getHlrAdapterByName(fakeHlr))
-                .thenReturn(hlrAdapter)
+        org.mockito.Mockito.`when`(dao.getHlrEntryByName(fakeHlr))
+                .thenReturn(hlrEntry)
 
-        org.mockito.Mockito.`when`(dao.getHlrAdapterById(1L))
-                .thenReturn(hlrAdapter)
+        org.mockito.Mockito.`when`(dao.getHlrEntryById(1L))
+                .thenReturn(hlrEntry)
 
         org.mockito.Mockito.`when`(dao.setHlrState(fakeSimEntryWithoutMsisdn.id!!, HlrState.ACTIVATED))
                 .thenReturn(fakeSimEntryWithoutMsisdn.copy(
@@ -261,7 +261,7 @@ class SimInventoryUnitTests {
         val simEntry = response.readEntity(SimEntry::class.java)
         assertNotNull(simEntry)
 
-        verify(dao).getHlrAdapterByName(fakeHlr)
+        verify(dao).getHlrEntryByName(fakeHlr)
         verify(dao).getSimProfileByIccid(fakeSimEntryWithoutMsisdn.iccid)
         verify(dao).getProfileVendorAdapterById(fakeSimEntryWithoutMsisdn.profileVendorId)
 
@@ -279,9 +279,9 @@ class SimInventoryUnitTests {
         val simEntry = response.readEntity(SimEntry::class.java)
         assertNotNull(simEntry)
 
-        verify(dao).getHlrAdapterByName(fakeHlr)
+        verify(dao).getHlrEntryByName(fakeHlr)
         verify(config).getProfileForPhoneType(fakePhoneType)
-        verify(dao).findNextReadyToUseSimProfileForHlr(hlrAdapter.id, fakeProfile)
+        verify(dao).findNextReadyToUseSimProfileForHlr(hlrEntry.id, fakeProfile)
         verify(dao).setProvisionState(simEntry.id!!, ProvisionState.PROVISIONED)
     }
 
@@ -296,9 +296,9 @@ class SimInventoryUnitTests {
         assertNotNull(simEntry)
 
         verify(dao).getSimProfileByIccid(fakeSimEntryWithoutMsisdn.iccid)
-        verify(dao).getHlrAdapterById(fakeSimEntryWithoutMsisdn.hlrId)
+        verify(dao).getHlrEntryById(fakeSimEntryWithoutMsisdn.hlrId)
 
-        verify(hlrAdapter).activate(httpClient, hlrConfig, dao, fakeSimEntryWithoutMsisdn)
+        verify(hlrEntry).activate(httpClient, hlrConfig, dao, fakeSimEntryWithoutMsisdn)
         // XXX Bunch of verifications missing
     }
 

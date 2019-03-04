@@ -7,7 +7,7 @@ import org.jdbi.v3.sqlobject.statement.SqlBatch
 import org.jdbi.v3.sqlobject.statement.SqlQuery
 import org.jdbi.v3.sqlobject.statement.SqlUpdate
 import org.jdbi.v3.sqlobject.transaction.Transaction
-import org.ostelco.simcards.adapter.HlrAdapter
+import org.ostelco.simcards.adapter.HlrEntry
 import org.ostelco.simcards.adapter.ProfileVendorAdapter
 
 /**
@@ -145,11 +145,11 @@ interface SimInventoryDB {
 
     @SqlQuery("""SELECT * FROM hlr_adapters
                       WHERE name = :name""")
-    fun getHlrAdapterByName(name: String): HlrAdapter
+    fun getHlrEntryByName(name: String): HlrEntry
 
     @SqlQuery("""SELECT * FROM hlr_adapters
                       WHERE id = :id""")
-    fun getHlrAdapterById(id: Long): HlrAdapter
+    fun getHlrEntryById(id: Long): HlrEntry
 
     @SqlUpdate("""INSERT INTO profile_vendor_adapters
                                    (name)
@@ -207,9 +207,9 @@ interface SimInventoryDB {
      * Find all the different HLRs that are present.
      */
     @SqlQuery("SELECT * FROM hlr_adapters")
-    // TODO(RMZ): @RegisterMapper(HlrAdapterMapper::class)
-    @RegisterRowMapper(HlrAdapterMapper::class)
-    fun getHlrAdapters(): List<HlrAdapter>
+    // TODO(RMZ): @RegisterMapper(HlrEntryMapper::class)
+    @RegisterRowMapper(HlrEntryMapper::class)
+    fun getHlrEntries(): List<HlrEntry>
 
 
     /**
