@@ -78,6 +78,16 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
         // Add task that should be triggered periodically by external
         // cron job via tasks/preallocate_sim_profiles url.
 
-        env.admin().addTask(PreallocateProfilesTask(simInventoryDAO = this.DAO,  httpClient = httpClient, hlrConfigs = config.hlrVendors, profileVendors = config.profileVendors));
+        val hlrAdapters = HlrAdapterCache(
+                hlrConfigs = config.hlrVendors,
+                simInventoryDAO = this.DAO,
+                httpClient = httpClient)
+
+
+        env.admin().addTask(PreallocateProfilesTask(
+                hlrAdapters =  hlrAdapters,
+                simInventoryDAO = this.DAO,
+                httpClient = httpClient,
+                profileVendors = config.profileVendors));
     }
 }

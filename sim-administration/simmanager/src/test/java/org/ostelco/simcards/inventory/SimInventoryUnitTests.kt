@@ -104,12 +104,7 @@ class SimInventoryUnitTests {
                 .thenReturn(1L)
         org.mockito.Mockito.`when`(hlrEntry.name)
                 .thenReturn(fakeHlr)
-        org.mockito.Mockito.`when`(hlrEntry.activate(httpClient, hlrConfig, dao, fakeSimEntryWithoutMsisdn))
-                .thenReturn(fakeSimEntryWithoutMsisdn.copy(
-                        hlrState = HlrState.ACTIVATED))
-        org.mockito.Mockito.`when`(hlrEntry.deactivate(httpClient, hlrConfig, dao, fakeSimEntryWithoutMsisdn))
-                .thenReturn(fakeSimEntryWithoutMsisdn.copy(
-                        hlrState = HlrState.NOT_ACTIVATED))
+
 
         /* Profile vendor adapter. */
         org.mockito.Mockito.`when`(profileVendorAdapter.id)
@@ -250,24 +245,7 @@ class SimInventoryUnitTests {
         assertEquals(404, response.status)
         verify(dao).getSimProfileByMsisdn(fakeMsisdn2)
     }
-
-    @Test
-    fun testProvisionEsim() {
-        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/esim")
-                .request(MediaType.APPLICATION_JSON)
-                .post(Entity.json(null))
-        assertEquals(200, response.status)
-
-        val simEntry = response.readEntity(SimEntry::class.java)
-        assertNotNull(simEntry)
-
-        verify(dao).getHlrEntryByName(fakeHlr)
-        verify(dao).getSimProfileByIccid(fakeSimEntryWithoutMsisdn.iccid)
-        verify(dao).getProfileVendorAdapterById(fakeSimEntryWithoutMsisdn.profileVendorId)
-
-        verify(profileVendorAdapter).activate(httpClient, profileVendorConfig, dao, null, fakeSimEntryWithoutMsisdn)
-        // XXX Missing a bunch of verifications
-    }
+    
 
     @Test
     fun testActivateEsim() {
@@ -285,34 +263,6 @@ class SimInventoryUnitTests {
         verify(dao).setProvisionState(simEntry.id!!, ProvisionState.PROVISIONED)
     }
 
-    @Test
-    fun testActivateHlr() {
-        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/iccid/$fakeIccid1")
-                .request(MediaType.APPLICATION_JSON)
-                .post(Entity.json(null))
-        assertEquals(200, response.status)
-
-        val simEntry = response.readEntity(SimEntry::class.java)
-        assertNotNull(simEntry)
-
-        verify(dao).getSimProfileByIccid(fakeSimEntryWithoutMsisdn.iccid)
-        verify(dao).getHlrEntryById(fakeSimEntryWithoutMsisdn.hlrId)
-
-        verify(hlrEntry).activate(httpClient, hlrConfig, dao, fakeSimEntryWithoutMsisdn)
-        // XXX Bunch of verifications missing
-    }
-
-    @Test
-    fun testDeactivateHlr() {
-        val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/iccid/$fakeIccid1")
-                .request(MediaType.APPLICATION_JSON)
-                .delete()
-        // XXX Check what return value to expect when updating, don't think it's 200
-        assertEquals(200, response.status)
-
-        val simEntry = response.readEntity(SimEntry::class.java)
-        assertNotNull(simEntry)
-    }
 
     @Test
     @Ignore

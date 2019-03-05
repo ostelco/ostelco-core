@@ -15,7 +15,6 @@ import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
 
-
 // TODO:
 //  1. Create a simplified HLR adapter interface [done]
 //  2. Extend simplifie HLR adapter to have return types that can convey error situations.
@@ -23,32 +22,53 @@ import javax.ws.rs.core.Response
 //  4. Refactor all other code to live with this  simplified type of hlr adapter.
 
 
-interface SimplifiedHlrAdapter {
-    fun activate(simEntry: SimEntry)
-    fun deactivate(simEntry: SimEntry)
-    fun iAmHealthy(): Boolean = true
-}
-
-
-
-
 
 
 /**
  * An adapter that connects to a HLR and activates/deactivates individual
- * SIM profiles.
+ * SIM profiles.  This is a datum that is stored in a database.
  *
  * When a VLR asks the HLR for the an authentication triplet, then the
  * HLR will know that it should give an answer.
+ *
+ * id - is a database internal identifier.
+ * name - is an unique instance of  HLR reference.
  */
 data class HlrEntry(
         @JsonProperty("id") val id: Long,
-        @JsonProperty("name") val name: String) {
+        @JsonProperty("name") val name: String)
+
+
+/**
+ * This is an interface that abstracts interactions with HSS (Home Subscriber Service)
+ * implementations.
+ */
+interface HssAdapter {
+    fun activate(simEntry: SimEntry): SimEntry?
+    fun suspend(simEntry: SimEntry): SimEntry?
+    fun reactivate(simEntry: SimEntry): SimEntry?
+    fun terminate(simEntry: SimEntry): SimEntry?
+
+    fun iAmHealthy(): Boolean = true
+}
+
+
+class Wg2HssAdapter(val httpClient: CloseableHttpClient,
+                    val config: HlrConfig,
+                    val dao: SimInventoryDAO) : HssAdapter {
 
     private val logger by getLogger()
 
     /* For payload serializing. */
     private val mapper = jacksonObjectMapper()
+
+    override fun reactivate(simEntry: SimEntry): SimEntry? {
+        return null
+    }
+
+    override fun terminate(simEntry: SimEntry): SimEntry? {
+        return null
+    }
 
     /**
      * Requests the external HLR service to activate the SIM profile.
@@ -57,10 +77,7 @@ data class HlrEntry(
      * @param simEntry  SIM profile to activate
      * @return Updated SIM profile
      */
-    fun activate(httpClient: CloseableHttpClient,
-                 config: HlrConfig,
-                 dao: SimInventoryDAO,
-                 simEntry: SimEntry): SimEntry? {
+    override fun activate(simEntry: SimEntry): SimEntry? {
 
 
         if (simEntry.iccid.isEmpty()) {
@@ -118,10 +135,7 @@ data class HlrEntry(
      * @param simEntry  SIM profile to deactivate
      * @return Updated SIM profile
      */
-    fun deactivate(httpClient: CloseableHttpClient,
-                   config: HlrConfig,
-                   dao: SimInventoryDAO,
-                   simEntry: SimEntry): SimEntry? {
+    override fun suspend(simEntry: SimEntry): SimEntry? {
         if (simEntry.iccid.isEmpty()) {
             throw WebApplicationException(
                     String.format("Illegal parameter in SIM deactivation request to BSSID %s",

@@ -298,12 +298,18 @@ class SimAdministrationTest {
 
         val preAllocationStats = simDao.getProfileStats(hlrId, expectedProfile)
 
+
+        val hlrAdapterCache = HlrAdapterCache(
+                hlrConfigs = hlrConfigs,
+                simInventoryDAO = simDao,
+                httpClient = httpClient)
+
         val task = PreallocateProfilesTask(
                 profileVendors = profileVendors,
                 simInventoryDAO = simDao,
                 maxNoOfProfileToAllocate = maxNoOfProfilesToAllocate,
-                httpClient = httpClient,
-                hlrConfigs = hlrConfigs)
+                hlrAdapters = hlrAdapterCache,
+                httpClient = httpClient)
 
         task.preallocateProfiles()
 
