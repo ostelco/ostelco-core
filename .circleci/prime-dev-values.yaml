@@ -9,9 +9,7 @@ prime:
   tag: 9ca9ca976
   pullPolicy: Always
   configDataBucket: "gs://pi-ostelco-dev-prime-files/dev"
-  secrets:
-    - secretName: "prime-sa-key"  
-      containerMountPath: "/secret"
+  
   env: 
     FIREBASE_ROOT_PATH: dev
     NEO4J_HOST: neo4j-neo4j.neo4j.svc.cluster.local
@@ -22,6 +20,13 @@ prime:
     ACTIVE_USERS_TOPIC: active-users
     GCP_PROJECT_ID: pi-ostelco-dev 
 
+  secretVolumes:
+    - secretName: "prime-sa-key"  
+      containerMountPath: "/secret"
+    - secretName: "simmgr-test-secrets"  
+      containerMountPath: "/certs"
+      secretKey: idemiaClientCert
+      secretPath: idemia-client-cert.jks
 
   envFromSecret:
     - name: SLACK_WEBHOOK_URI
@@ -44,7 +49,38 @@ prime:
       secretKey: apiToken        
     - name: JUMIO_API_SECRET
       secretName: jumio-secrets
-      secretKey: apiSecret   
+      secretKey: apiSecret  
+    - name: DB_USER
+      secretName: simmgr-test-secrets
+      secretKey: dbUser
+    - name: DB_PASSWORD
+      secretName: simmgr-test-secrets
+      secretKey: dbPassword   
+    - name: DB_URL
+      secretName: simmgr-test-secrets
+      secretKey: dbUrl   
+    - name: WG2_USER
+      secretName: simmgr-test-secrets
+      secretKey: wg2User
+    - name: WG2_API_KEY
+      secretName: simmgr-test-secrets
+      secretKey: wg2ApiKey
+    - name: WG2_ENDPOINT
+      secretName: simmgr-test-secrets
+      secretKey: wg2Endpoint
+    - name: ES2PLUS_ENDPOINT
+      secretName: simmgr-test-secrets
+      secretKey: es2plusEndpoint
+    - name: ES9PLUS_ENDPOINT
+      secretName: simmgr-test-secrets
+      secretKey: es9plusEndpoint
+    - name: FUNCTION_REQUESTER_IDENTIFIER
+      secretName: simmgr-test-secrets
+      secretKey: functionRequesterIdentifier
+    - name: MANDRILL_API_KEY 
+      secretName: mandrill-secrets
+      secretKey: mandrillApiKey     
+  
   ports:
     - 8080
     - 8081
