@@ -34,7 +34,7 @@ class Neo4jStorageTest {
 
         sleep(MILLIS_TO_WAIT_WHEN_STARTING_UP.toLong())
         storage.removeCustomer(IDENTITY)
-        storage.addCustomer(IDENTITY, Customer(email = EPHERMERAL_EMAIL, country = COUNTRY), referredBy = null)
+        storage.addCustomer(IDENTITY, Customer(email = EPHERMERAL_EMAIL), referredBy = null)
                 .mapLeft { fail(it.message) }
         storage.addSubscription(IDENTITY, MSISDN)
                 .mapLeft { fail(it.message) }

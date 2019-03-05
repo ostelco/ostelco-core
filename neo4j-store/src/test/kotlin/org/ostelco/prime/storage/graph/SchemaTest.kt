@@ -11,6 +11,7 @@ import org.junit.Test
 import org.neo4j.driver.v1.AccessMode.WRITE
 import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.HasId
+import org.ostelco.prime.storage.AlreadyExistsError
 import org.ostelco.prime.storage.graph.Relation.REFERRED
 import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
@@ -21,9 +22,9 @@ class SchemaTest {
     @BeforeTest
     fun clear() {
 
-        Neo4jClient.driver.session(WRITE).use {
-            it.writeTransaction {
-                it.run("MATCH (n) DETACH DELETE n")
+        Neo4jClient.driver.session(WRITE).use { session ->
+            session.writeTransaction { transaction ->
+                transaction.run("MATCH (n) DETACH DELETE n")
             }
         }
     }
@@ -188,6 +189,50 @@ class SchemaTest {
     fun `json to map`() {
         val map = objectMapper.readValue<Map<String, String>>("""{"label":"3GB for 300 NOK"}""", object : TypeReference<LinkedHashMap<String, String>>() {})
         assertEquals("3GB for 300 NOK", map["label"])
+    }
+
+
+    @Test
+    fun `test unique relation store`() {
+
+        writeTransaction {
+            val aId = "a_id"
+            val bId = "b_id"
+
+            val fromEntity = EntityType(A::class.java)
+            val fromEntityStore = EntityStore(fromEntity)
+
+            val toEntity = EntityType(B::class.java)
+            val toEntityStore = EntityStore(toEntity)
+
+            val relation = RelationType(REFERRED, fromEntity, toEntity, R::class.java)
+            val uniqueRelationStore = UniqueRelationStore(relation)
+
+            // create nodes
+            val a = A()
+            a.id = aId
+            a.field1 = "a's value1"
+            a.field2 = "a's value2"
+
+            val b = B()
+            b.id = bId
+            b.field1 = "b's value1"
+            b.field2 = "b's value2"
+
+            fromEntityStore.create(a, transaction)
+            toEntityStore.create(b, transaction)
+
+            // create relation
+            uniqueRelationStore.create(a.id, b.id, transaction)
+                    .mapLeft { fail(it.message) }
+            uniqueRelationStore.createIfAbsent(a.id, b.id, transaction)
+                    .mapLeft { fail(it.message) }
+            uniqueRelationStore.createIfAbsent(a.id, b.id, transaction)
+                    .mapLeft { fail(it.message) }
+            uniqueRelationStore.create(a.id, b.id, transaction).fold(
+                    { storeError -> assert(storeError is AlreadyExistsError) },
+                    { fail("Created duplicate relation") })
+        }
     }
 
     companion object {

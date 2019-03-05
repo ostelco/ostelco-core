@@ -4,12 +4,12 @@ import org.junit.Test
 import org.ostelco.at.common.StripePayment
 import org.ostelco.at.common.createCustomer
 import org.ostelco.at.common.createSubscription
+import org.ostelco.at.common.enableRegion
 import org.ostelco.at.common.expectedProducts
 import org.ostelco.at.common.getLogger
 import org.ostelco.at.common.randomInt
 import org.ostelco.at.jersey.post
 import org.ostelco.at.okhttp.ClientFactory.clientForSubject
-import org.ostelco.prime.customer.ApiException
 import org.ostelco.prime.customer.api.DefaultApi
 import org.ostelco.prime.customer.model.ApplicationToken
 import org.ostelco.prime.customer.model.Customer
@@ -23,7 +23,6 @@ import java.time.Instant
 import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
-import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
@@ -38,11 +37,7 @@ class CustomerTest {
 
         val createCustomer = Customer()
                 .email(email)
-                .name("Test Profile User")
-                .address("")
-                .city("")
-                .country("NO")
-                .postCode("")
+                .name("Test Customer")
                 .analyticsId("")
                 .referralId("")
 
@@ -53,39 +48,14 @@ class CustomerTest {
         assertEquals(email, customer.email, "Incorrect 'email' in fetched customer")
         assertEquals(createCustomer.name, customer.name, "Incorrect 'name' in fetched customer")
 
-        customer
-                .address("Some place")
-                .postCode("418")
-                .city("Udacity")
-                .country("Online")
+        val newName = "New name: Test Customer"
+
+        customer.name(newName)
 
         val updatedCustomer: Customer = client.updateCustomer(customer)
 
         assertEquals(email, updatedCustomer.email, "Incorrect 'email' in response after updating customer")
-        assertEquals(createCustomer.name, updatedCustomer.name, "Incorrect 'name' in response after updating customer")
-        assertEquals("Some place", updatedCustomer.address, "Incorrect 'address' in response after updating customer")
-        assertEquals("418", updatedCustomer.postCode, "Incorrect 'postcode' in response after updating customer")
-        assertEquals("Udacity", updatedCustomer.city, "Incorrect 'city' in response after updating customer")
-        assertEquals("Online", updatedCustomer.country, "Incorrect 'country' in response after updating customer")
-
-        updatedCustomer
-                .address("")
-                .postCode("")
-                .city("")
-
-        val clearedCustomer: Customer = client.updateCustomer(updatedCustomer)
-
-        assertEquals(email, clearedCustomer.email, "Incorrect 'email' in response after clearing customer")
-        assertEquals(createCustomer.name, clearedCustomer.name, "Incorrect 'name' in response after clearing customer")
-        assertEquals("", clearedCustomer.address, "Incorrect 'address' in response after clearing customer")
-        assertEquals("", clearedCustomer.postCode, "Incorrect 'postcode' in response after clearing customer")
-        assertEquals("", clearedCustomer.city, "Incorrect 'city' in response after clearing customer")
-
-        updatedCustomer.country("")
-
-        assertFailsWith(ApiException::class, "Incorrectly accepts that 'country' is cleared/not set") {
-            client.updateCustomer(updatedCustomer)
-        }
+        assertEquals(newName, updatedCustomer.name, "Incorrect 'name' in response after updating customer")
     }
 
     @Test
@@ -171,6 +141,7 @@ class GetProductsTest {
 
         val email = "products-${randomInt()}@test.com"
         createCustomer(name = "Test Products User", email = email)
+        enableRegion(email = email)
 
         val client = clientForSubject(subject = email)
 
@@ -233,7 +204,7 @@ class SourceTest {
             val ids = createdIds.map { getCardIdForTokenFromStripe(it) }
 
             assert(sources.isNotEmpty()) { "Expected at least one payment source for profile $email" }
-            assert(sources.map{ it.id }.containsAll(ids))
+            assert(sources.map { it.id }.containsAll(ids))
             { "Expected to find all of $ids in list of sources for profile $email" }
 
             sources.forEach {
@@ -327,7 +298,7 @@ class SourceTest {
             val createdIds = listOf(getCardIdForTokenFromStripe(createTokenWithStripe(client)),
                     createSourceWithStripe(client))
 
-            val deletedIds = createdIds.map { it -> deleteSourceWithStripe(client, it)  }
+            val deletedIds = createdIds.map { deleteSourceWithStripe(client, it) }
 
             assert(createdIds.containsAll(deletedIds.toSet())) {
                 "Failed to delete one or more sources: ${createdIds.toSet() - deletedIds.toSet()}"
@@ -339,14 +310,14 @@ class SourceTest {
 
     // Helpers for source handling with Stripe.
 
-    private fun getCardIdForTokenFromStripe(id: String) : String {
+    private fun getCardIdForTokenFromStripe(id: String): String {
         if (id.startsWith("tok_")) {
             return StripePayment.getCardIdForTokenId(id)
         }
         return id
     }
 
-    private fun createTokenWithStripe(client: DefaultApi) : String {
+    private fun createTokenWithStripe(client: DefaultApi): String {
         val tokenId = StripePayment.createPaymentTokenId()
 
         client.createSource(tokenId)
@@ -354,7 +325,7 @@ class SourceTest {
         return tokenId
     }
 
-    private fun createSourceWithStripe(client: DefaultApi) : String {
+    private fun createSourceWithStripe(client: DefaultApi): String {
         val sourceId = StripePayment.createPaymentSourceId()
 
         client.createSource(sourceId)
@@ -362,7 +333,7 @@ class SourceTest {
         return sourceId
     }
 
-    private fun deleteSourceWithStripe(client : DefaultApi, sourceId : String) : String {
+    private fun deleteSourceWithStripe(client: DefaultApi, sourceId: String): String {
 
         val removedSource = client.removeSource(sourceId)
 
@@ -379,6 +350,7 @@ class PurchaseTest {
         var customerId = ""
         try {
             customerId = createCustomer(name = "Test Purchase User", email = email).id
+            enableRegion(email = email)
 
             val client = clientForSubject(subject = email)
 
@@ -412,6 +384,7 @@ class PurchaseTest {
         var customerId = ""
         try {
             customerId = createCustomer(name = "Test Purchase with Default Payment Source", email = email).id
+            enableRegion(email = email)
 
             val sourceId = StripePayment.createPaymentTokenId()
 
@@ -451,6 +424,7 @@ class PurchaseTest {
         var customerId = ""
         try {
             customerId = createCustomer(name = "Test Purchase with adding Payment Source", email = email).id
+            enableRegion(email = email)
 
             val sourceId = StripePayment.createPaymentTokenId()
 
@@ -514,10 +488,6 @@ class ReferralTest {
         val customer = Customer()
                 .email(email)
                 .name("Test Referral Second User")
-                .address("")
-                .city("")
-                .country("")
-                .postCode("")
                 .referralId("")
 
         val failedToCreate = assertFails {
@@ -548,10 +518,6 @@ class ReferralTest {
         val customer = Customer()
                 .email(secondEmail)
                 .name("Test Referral Second User")
-                .address("")
-                .city("")
-                .country("")
-                .postCode("")
                 .referralId("")
 
         val firstEmailClient = clientForSubject(subject = firstEmail)
@@ -611,7 +577,7 @@ class GraphQlTests {
         val map = client.graphql(request) as Map<String, *>
 
         println(map)
-        
+
         assertNotNull(actual = map["data"], message = "Data is null")
         assertNull(actual = map["error"], message = "Error is not null")
 

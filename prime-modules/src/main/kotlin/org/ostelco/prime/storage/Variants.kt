@@ -5,13 +5,14 @@ import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.ChangeSegment
 import org.ostelco.prime.model.Customer
-import org.ostelco.prime.model.CustomerState
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Plan
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.ProductClass
 import org.ostelco.prime.model.PurchaseRecord
+import org.ostelco.prime.model.Region
+import org.ostelco.prime.model.RegionDetails
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.Segment
 import org.ostelco.prime.model.Subscription
@@ -87,6 +88,12 @@ interface ClientGraphStore {
      */
     fun getProduct(identity: Identity, sku: String): Either<StoreError, Product>
 
+
+    /**
+     * Get Regions (with details) associated with the Customer
+     */
+    fun getAllRegionDetails(identity: Identity): Either<StoreError, Collection<RegionDetails>>
+
     /**
      * Get subscriptions for Customer
      */
@@ -156,11 +163,6 @@ interface ClientGraphStore {
      * Get information about an eKYC scan for the customer.
      */
     fun getScanInformation(identity: Identity, scanId: String): Either<StoreError, ScanInformation>
-
-    /**
-     * Get state of the customer.
-     */
-    fun getCustomerState(identity: Identity): Either<StoreError, CustomerState>
 }
 
 data class ConsumptionResult(val msisdnAnalyticsId: String, val granted: Long, val balance: Long)
@@ -274,6 +276,8 @@ interface AdminGraphStore {
 
     // Retrieve all scan information for the customer
     fun getAllScanInformation(identity: Identity): Either<StoreError, Collection<ScanInformation>>
+
+    fun createRegion(region: Region): Either<StoreError, Unit>
 
     // simple getAll
     // fun getOffers(): Collection<Offer>
