@@ -3,6 +3,7 @@ package org.ostelco.prime.apierror
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.paymentprocessor.core.PaymentError
+import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.prime.storage.StoreError
 import javax.ws.rs.core.Response
 
@@ -58,6 +59,17 @@ object ApiErrorMapper {
             is org.ostelco.prime.storage.FileDeleteError  ->  org.ostelco.prime.apierror.BadGatewayError(description, errorCode)
             is org.ostelco.prime.storage.SystemError  ->  org.ostelco.prime.apierror.BadGatewayError(description, errorCode)
             is org.ostelco.prime.storage.DatabaseError  ->  org.ostelco.prime.apierror.BadGatewayError(description, errorCode)
+        }
+    }
+
+    fun mapSimManagerErrorToApiError(description: String, errorCode: ApiErrorCode, simManagerError: SimManagerError) : ApiError {
+        logger.error("description: $description, errorCode: $errorCode, simManagerError: ${asJson(simManagerError)}")
+        return when (simManagerError) {
+            is org.ostelco.prime.simmanager.NotFoundError -> org.ostelco.prime.apierror.NotFoundError(description, errorCode, simManagerError)
+            is org.ostelco.prime.simmanager.NotUpdatedError -> org.ostelco.prime.apierror.BadRequestError(description, errorCode, simManagerError)
+            is org.ostelco.prime.simmanager.AdapterError -> org.ostelco.prime.apierror.BadGatewayError(description, errorCode, simManagerError)
+            is org.ostelco.prime.simmanager.DatabaseError -> org.ostelco.prime.apierror.BadGatewayError(description, errorCode, simManagerError)
+            is org.ostelco.prime.simmanager.SystemError -> org.ostelco.prime.apierror.BadGatewayError(description, errorCode, simManagerError)
         }
     }
 }

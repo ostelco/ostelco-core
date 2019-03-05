@@ -11,9 +11,7 @@ import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiReso
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
 import org.ostelco.sim.es2plus.SmDpPlusCallbackResource
 import org.ostelco.sim.es2plus.SmDpPlusCallbackService
-import org.ostelco.simcards.inventory.SimInventoryDAO
-import org.ostelco.simcards.inventory.SimInventoryDB
-import org.ostelco.simcards.inventory.SimInventoryResource
+import org.ostelco.simcards.inventory.*
 
 /**
  * The SIM manager
@@ -50,7 +48,8 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
         val jdbi = factory
                 .build(env, config.database, "postgresql")
                 .installPlugins()
-        DAO = SimInventoryDAO(jdbi.onDemand(SimInventoryDB::class.java))
+        val db = SimInventoryDBWrapperImpl(jdbi.onDemand(SimInventoryDB::class.java))
+        DAO = SimInventoryDAO(db)
 
         val profileVendorCallbackHandler = object : SmDpPlusCallbackService {
             // TODO: Not implemented.
@@ -71,13 +70,19 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
         addOpenapiResourceToJerseyEnv(jerseyEnv, config.openApi)
         addEs2PlusDefaultFiltersAndInterceptors(jerseyEnv)
 
+        val simInventoryApi = SimInventoryApi(httpClient, config, DAO)
+        ResourceRegistry.simInventoryResource = SimInventoryResource(simInventoryApi)
+
         // Add resoures that should be run from the outside via REST.
-        jerseyEnv.register(SimInventoryResource(httpClient, config, this.DAO))
+        jerseyEnv.register(ResourceRegistry.simInventoryResource)
         jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
 
         // Add task that should be triggered periodically by external
         // cron job via tasks/preallocate_sim_profiles url.
 
-        env.admin().addTask(PreallocateProfilesTask(simInventoryDAO = this.DAO,  httpClient = httpClient, hlrConfigs = config.hlrVendors, profileVendors = config.profileVendors));
+        env.admin().addTask(PreallocateProfilesTask(simInventoryDAO = this.DAO,
+                httpClient = httpClient,
+                hlrConfigs = config.hlrVendors,
+                profileVendors = config.profileVendors));
     }
 }

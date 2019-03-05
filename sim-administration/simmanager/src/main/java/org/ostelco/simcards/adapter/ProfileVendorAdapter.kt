@@ -10,6 +10,10 @@ import org.apache.http.client.methods.RequestBuilder
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.simmanager.AdapterError
+import org.ostelco.prime.simmanager.NotFoundError
+import org.ostelco.prime.simmanager.NotUpdatedError
+import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.sim.es2plus.*
 import org.ostelco.simcards.admin.ProfileVendorConfig
 import org.ostelco.simcards.inventory.*
@@ -46,7 +50,7 @@ data class ProfileVendorAdapter (
     fun activate(httpClient: CloseableHttpClient,
                  config: ProfileVendorConfig,
                  dao: SimInventoryDAO,
-                 eid: String?,
+                 eid: String? = null,
                  simEntry: SimEntry): Either<SimManagerError, SimEntry> =
             downloadOrder(httpClient, config, dao, simEntry)
                     .flatMap {

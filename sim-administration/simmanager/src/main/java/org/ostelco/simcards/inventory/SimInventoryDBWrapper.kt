@@ -1,6 +1,7 @@
 package org.ostelco.simcards.inventory
 
 import arrow.core.Either
+import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.adapter.HlrAdapter
 import org.ostelco.simcards.adapter.ProfileVendorAdapter
 

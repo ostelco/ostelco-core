@@ -2,6 +2,10 @@ package org.ostelco.simcards.inventory
 
 import arrow.core.Either
 import org.jdbi.v3.core.JdbiException
+import org.ostelco.prime.simmanager.DatabaseError
+import org.ostelco.prime.simmanager.NotFoundError
+import org.ostelco.prime.simmanager.SimManagerError
+import org.ostelco.prime.simmanager.SystemError
 import org.ostelco.simcards.adapter.HlrAdapter
 import org.ostelco.simcards.adapter.ProfileVendorAdapter
 import org.postgresql.util.PSQLException

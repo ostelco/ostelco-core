@@ -12,6 +12,8 @@ import org.jdbi.v3.core.mapper.RowMapper
 import org.jdbi.v3.core.statement.StatementContext
 import org.jdbi.v3.sqlobject.customizer.Bind
 import org.jdbi.v3.sqlobject.transaction.Transaction
+import org.ostelco.prime.simmanager.NotFoundError
+import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.adapter.HlrAdapter
 import java.io.BufferedReader
 import java.io.InputStream

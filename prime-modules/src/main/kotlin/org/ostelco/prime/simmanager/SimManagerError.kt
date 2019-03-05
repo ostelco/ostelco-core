@@ -1,4 +1,4 @@
-package org.ostelco.simcards.inventory
+package org.ostelco.prime.simmanager
 
 import org.ostelco.prime.apierror.InternalError
 

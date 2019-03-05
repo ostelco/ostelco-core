@@ -8,6 +8,8 @@ import org.apache.http.client.methods.RequestBuilder
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.simmanager.AdapterError
+import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.admin.HlrConfig
 import org.ostelco.simcards.inventory.*
 import javax.ws.rs.WebApplicationException

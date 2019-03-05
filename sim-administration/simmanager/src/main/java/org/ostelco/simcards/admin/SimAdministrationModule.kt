@@ -64,7 +64,8 @@ class SimAdministrationModule : PrimeModule {
         OpenapiResourceAdder.addOpenapiResourceToJerseyEnv(jerseyEnv, config.openApi)
         ES2PlusIncomingHeadersFilter.addEs2PlusDefaultFiltersAndInterceptors(jerseyEnv)
 
-        simInventoryResource = SimInventoryResource(httpClient, config, DAO)
+        val simInventoryApi = SimInventoryApi(httpClient, config, DAO)
+        simInventoryResource = SimInventoryResource(simInventoryApi)
         jerseyEnv.register(simInventoryResource)
         jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
 
@@ -82,4 +83,8 @@ object ConfigRegistry {
 
 object ResourceRegistry {
     lateinit var simInventoryResource: SimInventoryResource
+}
+
+object ApiRegistry {
+    lateinit var simInventoryApi: SimInventoryApi
 }
