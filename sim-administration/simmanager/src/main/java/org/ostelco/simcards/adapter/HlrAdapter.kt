@@ -1,5 +1,7 @@
 package org.ostelco.simcards.adapter
 
+import arrow.core.Either
+import arrow.core.left
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.apache.http.client.methods.RequestBuilder
@@ -7,9 +9,7 @@ import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.getLogger
 import org.ostelco.simcards.admin.HlrConfig
-import org.ostelco.simcards.inventory.HlrState
-import org.ostelco.simcards.inventory.SimEntry
-import org.ostelco.simcards.inventory.SimInventoryDAO
+import org.ostelco.simcards.inventory.*
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
@@ -40,12 +40,10 @@ data class HlrAdapter(
     fun activate(httpClient: CloseableHttpClient,
                  config: HlrConfig,
                  dao: SimInventoryDAO,
-                 simEntry: SimEntry): SimEntry? {
+                 simEntry: SimEntry): Either<SimManagerError, SimEntry> {
         if (simEntry.iccid.isEmpty()) {
-            throw WebApplicationException(
-                    String.format("Illegal parameter in SIM activation request to BSSID %s",
-                            config.name),
-                    Response.Status.BAD_REQUEST)
+            return AdapterError("Illegal parameter in SIM activation request to BSSID ${config.name}")
+                    .left()
         }
         val body = mapOf(
                 "bssid" to config.name,
@@ -76,12 +74,8 @@ data class HlrAdapter(
                             simEntry.iccid,
                             it.statusLine.statusCode,
                             it.statusLine.reasonPhrase)
-                    throw WebApplicationException(
-                            String.format("Failed to activate ICCID %s with BSSID %s (status-code: %d)",
-                                    simEntry.iccid,
-                                    config.name,
-                                    it.statusLine.statusCode),
-                            Response.Status.BAD_REQUEST)
+                    AdapterError("Failed to activate ICCID ${simEntry.iccid} with BSSID ${config.name} (status-code: ${it.statusLine.statusCode})")
+                            .left()
                 }
             }
         }
@@ -97,12 +91,10 @@ data class HlrAdapter(
     fun deactivate(httpClient: CloseableHttpClient,
                    config: HlrConfig,
                    dao: SimInventoryDAO,
-                   simEntry: SimEntry): SimEntry? {
+                   simEntry: SimEntry): Either<SimManagerError, SimEntry> {
         if (simEntry.iccid.isEmpty()) {
-            throw WebApplicationException(
-                    String.format("Illegal parameter in SIM deactivation request to BSSID %s",
-                            config.name),
-                    Response.Status.BAD_REQUEST)
+            return AdapterError("Illegal parameter in SIM deactivation request to BSSID ${config.name}")
+                    .left()
         }
 
         val request = RequestBuilder.delete()
@@ -125,12 +117,8 @@ data class HlrAdapter(
                             simEntry.iccid,
                             it.statusLine.statusCode,
                             it.statusLine.reasonPhrase)
-                    throw WebApplicationException(
-                            String.format("Failed to deactivate ICCID %s with BSSID %s (status-code: %d)",
-                                    simEntry.iccid,
-                                    config.name,
-                                    it.statusLine.statusCode),
-                            Response.Status.BAD_REQUEST)
+                    AdapterError("Failed to deactivate ICCID ${simEntry.iccid} with BSSID ${config.name} (status-code: ${it.statusLine.statusCode}")
+                            .left()
                 }
             }
         }
