@@ -8,9 +8,7 @@
 cd $(dirname $0)
 
 
-
-DEPENDENCIES="docker-compose ./gradlew"
-
+DEPENDENCIES="docker-compose ./gradlew docker"
 
 #
 # Do we have the dependencies (in this case only gradle, but copy/paste
@@ -24,8 +22,6 @@ for dep in $DEPENDENCIES ; do
 done
 
 
-
-
 DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS="acceptance-tests/config dataflow-pipelines/config ocsgw/config bq-metrics-extractor/config auth-server/config prime/config"
 
 for DIR in $DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS ; do 
@@ -35,8 +31,6 @@ for DIR in $DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS ; do
 	exit 1
     fi
 done
-
-
 
 #
 # Do we have the necessary environment variables set
@@ -52,6 +46,15 @@ if [[ -z "$STRIPE_ENDPOINT_SECRET" ]] ; then
     export  STRIPE_ENDPOINT_SECRET=thisIsARandomString
     echo "$0 INFO: Couldn't find variable STRIPE_ENDPOINT_SECRET, setting it to dummy value '$STRIPE_ENDPOINT_SECRET'"
 fi
+
+
+if [[ -z "$( docker version | grep Version:)" ]] ; then
+    echo "$0 INFO: Docker not running, please start it before trying again'"
+    exit 1
+fi
+
+
+
 
 
 #
