@@ -338,7 +338,7 @@ workflows:
         filters:
           branches:
             only:
-            - fix/prime-new-deployment 
+            - develop
     - build-image:
         requires:
           - build-code
