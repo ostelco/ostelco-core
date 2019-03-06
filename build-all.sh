@@ -8,7 +8,7 @@
 cd $(dirname $0)
 
 
-DEPENDENCIES="docker-compose ./gradlew docker"
+DEPENDENCIES="docker-compose ./gradlew docker cmp"
 
 #
 # Do we have the dependencies (in this case only gradle, but copy/paste
@@ -27,6 +27,15 @@ done
 # (the script will check if they are needed)
 #
 
+if [[ -f "certs/ocs.dev.ostelco.org/nginx.crt" ]] ; then
+ if  [[ -f  "ocsgw/cert/metrics.crt" ]] ; then
+  if  [[ -z "$(cmp certs/ocs.dev.ostelco.org/nginx.crt ocsgw/cert/metrics.crt)"  ]] ; then
+      rm certs/ocs.dev.ostelco.org/nginx.crt ocsgw/cert/metrics.crt
+  fi
+ fi
+fi
+
+
 if [[ ! -f "certs/ocs.dev.ostelco.org/nginx.crt" ]] ; then
     scripts/generate-selfsigned-ssl-certs.sh   ocs.dev.ostelco.org
 fi
@@ -35,6 +44,15 @@ if [[ ! -f  "ocsgw/cert/metrics.crt" ]] ; then
     cp certs/ocs.dev.ostelco.org/nginx.crt ocsgw/cert/ocs.crt
 fi
 
+
+
+if [[ -f  "certs/metrics.dev.ostelco.org/nginx.crt" ]] ; then
+ if [[  "ocsgw/cert/metrics.crt" ]] ; then
+  if  [[ -z "$(cmp certs/metrics.dev.ostelco.org/nginx.crt ocsgw/cert/metrics.crt)" ]] ; then
+      rm "certs/metrics.dev.ostelco.org/nginx.crt" "ocsgw/cert/metrics.crt"
+  fi
+ fi
+fi
 
 if [[ ! -f "certs/metrics.dev.ostelco.org/nginx.crt" ]] ; then
     scripts/generate-selfsigned-ssl-certs.sh   metrics.dev.ostelco.org
