@@ -16,7 +16,7 @@ import javax.ws.rs.core.Response
 ///  The web resource using the protocol domain model.
 ///
 
-@Path("/ostelco/sim-inventory/{hlrVendors}")
+@Path("/ostelco/sim-inventory/{hssVendors}")
 class SimInventoryResource(private val httpClient: CloseableHttpClient,
                            private val config: SimAdministrationConfiguration,
                            private val dao: SimInventoryDAO) {
@@ -35,11 +35,11 @@ class SimInventoryResource(private val httpClient: CloseableHttpClient,
     @Path("profileStatusList/{iccid}")
     @Produces(MediaType.APPLICATION_JSON)
     fun getSimProfileStatus(
-            @NotEmpty @PathParam("hlrVendors") hlr: String,
+            @NotEmpty @PathParam("hssVendors") hss: String,
             @NotEmpty @PathParam("iccid") iccid: String): ProfileStatus? {
         val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
-        val hlrAdapter = assertNonNull(dao.getHlrEntryById(simEntry.hlrId))
-        assertCorrectHlr(hlr, hlr == hlrAdapter.name)
+        val hssAdapter = assertNonNull(dao.getHssEntryById(simEntry.hssId))
+        assertCorrectHss(hss, hss == hssAdapter.name)
 
         val simVendorAdapter = assertNonNull(dao.getProfileVendorAdapterById(
                 simEntry.profileVendorId))
@@ -54,11 +54,11 @@ class SimInventoryResource(private val httpClient: CloseableHttpClient,
     @Path("iccid/{iccid}")
     @Produces(MediaType.APPLICATION_JSON)
     fun findSimProfileByIccid(
-            @NotEmpty @PathParam("hlrVendors") hlr: String,
+            @NotEmpty @PathParam("hssVendors") hss: String,
             @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
         val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
-        val hlrAdapter = assertNonNull(dao.getHlrEntryById(simEntry.hlrId))
-        assertCorrectHlr(hlr, hlr == hlrAdapter.name)
+        val hssAdapter = assertNonNull(dao.getHssEntryById(simEntry.hssId))
+        assertCorrectHss(hss, hss == hssAdapter.name)
         return simEntry
     }
 
@@ -67,11 +67,11 @@ class SimInventoryResource(private val httpClient: CloseableHttpClient,
     @Path("imsi/{imsi}")
     @Produces(MediaType.APPLICATION_JSON)
     fun findSimProfileByImsi(
-            @NotEmpty @PathParam("hlrVendors") hlr: String,
+            @NotEmpty @PathParam("hssVendors") hss: String,
             @NotEmpty @PathParam("imsi") imsi: String): SimEntry {
         val simEntry = assertNonNull(dao.getSimProfileByImsi(imsi))
-        val hlrAdapter = assertNonNull(dao.getHlrEntryById(simEntry.hlrId))
-        assertCorrectHlr(hlr, hlr == hlrAdapter.name)
+        val hssAdapter = assertNonNull(dao.getHssEntryById(simEntry.hssId))
+        assertCorrectHss(hss, hss == hssAdapter.name)
         return simEntry
     }
 
@@ -79,11 +79,11 @@ class SimInventoryResource(private val httpClient: CloseableHttpClient,
     @Path("msisdn/{msisdn}")
     @Produces(MediaType.APPLICATION_JSON)
     fun findByMsisdn(
-            @NotEmpty @PathParam("hlrVendors") hlr: String,
+            @NotEmpty @PathParam("hssVendors") hss: String,
             @NotEmpty @PathParam("msisdn") msisdn: String): SimEntry {
         val simEntry = assertNonNull(dao.getSimProfileByMsisdn(msisdn))
-        val hlrAdapter = assertNonNull(dao.getHlrEntryById(simEntry.hlrId))
-        assertCorrectHlr(hlr, hlr == hlrAdapter.name)
+        val hssAdapter = assertNonNull(dao.getHssEntryById(simEntry.hssId))
+        assertCorrectHss(hss, hss == hssAdapter.name)
         return simEntry
     }
 
@@ -92,13 +92,13 @@ class SimInventoryResource(private val httpClient: CloseableHttpClient,
     @Path("esim")
     @Produces(MediaType.APPLICATION_JSON)
     fun allocateNextEsimProfile(
-            @NotEmpty @PathParam("hlrVendors") hlr: String,
+            @NotEmpty @PathParam("hssVendors") hss: String,
             @DefaultValue("_") @QueryParam("phoneType") phoneType: String): SimEntry? {
-        val hlrAdapter = assertNonNull(dao.getHlrEntryByName(hlr))
+        val hssEntry = assertNonNull(dao.getHssEntryByName(hss))
         val profile = config.getProfileForPhoneType(phoneType)
-        val simEntry = assertNonNull(dao.findNextReadyToUseSimProfileForHlr(hlrAdapter.id,
+        val simEntry = assertNonNull(dao.findNextReadyToUseSimProfileForHlr(hssEntry.id,
                 profile))
-        assertCorrectHlr(hlr, hlrAdapter.id == simEntry.hlrId)
+        assertCorrectHss(hss, hssEntry.id == simEntry.hssId)
 
         val simVendorAdapter = assertNonNull(dao.getProfileVendorAdapterById(
                 simEntry.profileVendorId))
@@ -113,9 +113,9 @@ class SimInventoryResource(private val httpClient: CloseableHttpClient,
         })
     }
 
-    private fun assertCorrectHlr(hlr: String, match: Boolean) {
+    private fun assertCorrectHss(hss: String, match: Boolean) {
         if (!match) {
-            throw WebApplicationException("Attempt at impersonating $hlr HLR",
+            throw WebApplicationException("Attempt at impersonating $hss HLR",
                     Response.Status.BAD_REQUEST)
         }
     }
@@ -126,18 +126,18 @@ class SimInventoryResource(private val httpClient: CloseableHttpClient,
     @Consumes(MediaType.TEXT_PLAIN)
     @Throws(IOException::class)
     fun importBatch(
-            @NotEmpty @PathParam("hlrVendors") hlr: String,
+            @NotEmpty @PathParam("hssVendors") hss: String,
             @NotEmpty @PathParam("simVendor") simVendor: String,
             csvInputStream: InputStream): SimImportBatch? {
         val profileVendorAdapter = assertNonNull(dao.getProfileVendorAdapterByName(simVendor))
-        val hlrAdapter = assertNonNull(dao.getHlrEntryByName(hlr))
+        val hssAdapter = assertNonNull(dao.getHssEntryByName(hss))
 
-        if (!dao.simVendorIsPermittedForHlr(profileVendorAdapter.id, hlrAdapter.id)) {
+        if (!dao.simVendorIsPermittedForHlr(profileVendorAdapter.id, hssAdapter.id)) {
             throw WebApplicationException(Response.Status.BAD_REQUEST)
         }
         return assertNonNull(dao.importSims(
                 importer = "importer", // TODO: This is a very strange name for an importer .-)
-                hlrId = hlrAdapter.id,
+                hssId = hssAdapter.id,
                 profileVendorId = profileVendorAdapter.id,
                 csvInputStream = csvInputStream))
     }

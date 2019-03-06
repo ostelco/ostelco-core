@@ -3,7 +3,6 @@ package org.ostelco.simcards.admin
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.dropwizard.Configuration
 import io.dropwizard.client.HttpClientConfiguration
-import io.dropwizard.client.JerseyClientConfiguration
 import io.dropwizard.db.DataSourceFactory
 import org.ostelco.dropwizardutils.OpenapiResourceAdderConfig
 import javax.validation.Valid
@@ -34,7 +33,7 @@ class SimAdministrationConfiguration : Configuration() {
     @Valid
     @NotNull
     @JsonProperty("hlrs")
-    lateinit var hlrVendors: List<HlrConfig>
+    lateinit var hssVendors: List<HssConfig>
 
     @Valid
     @NotNull
@@ -54,7 +53,7 @@ class SimAdministrationConfiguration : Configuration() {
             .first()
 }
 
-class HlrConfig {
+class HssConfig {
     @Valid
     @NotNull
     @JsonProperty("name")

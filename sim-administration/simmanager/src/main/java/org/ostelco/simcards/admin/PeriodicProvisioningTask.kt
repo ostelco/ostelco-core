@@ -3,8 +3,8 @@ package org.ostelco.simcards.admin
 import com.google.common.collect.ImmutableMultimap
 import io.dropwizard.servlets.tasks.Task
 import org.apache.http.impl.client.CloseableHttpClient
-import org.ostelco.simcards.adapter.HlrEntry
 import org.ostelco.simcards.adapter.HssAdapter
+import org.ostelco.simcards.adapter.HssEntry
 import org.ostelco.simcards.adapter.Wg2HssAdapter
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SimProfileKeyStatistics
@@ -28,7 +28,7 @@ class PreallocateProfilesTask(
         val maxNoOfProfileToAllocate: Int = 30,
         val simInventoryDAO: SimInventoryDAO,
         val httpClient: CloseableHttpClient,
-        val hlrAdapters: HlrAdapterCache,
+        val hssAdapters: HssAdapterCache,
         val profileVendors: List<ProfileVendorConfig>) : Task("preallocate_sim_profiles") {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -39,9 +39,9 @@ class PreallocateProfilesTask(
     }
 
 
-    fun doPreprovisioning(hlrEntry: HlrEntry,
+    fun doPreprovisioning(hssEntry: HssEntry,
                           profile: String,
-                          hlrAdapters: HlrAdapterCache,
+                          hssAdapters: HssAdapterCache,
                           profileStats: SimProfileKeyStatistics) {
         val noOfProfilesToActuallyAllocate =
                 Math.min(maxNoOfProfileToAllocate.toLong(), profileStats.noOfUnallocatedEntries)
@@ -49,11 +49,11 @@ class PreallocateProfilesTask(
         for (i in 1..noOfProfilesToActuallyAllocate) {
             val simEntry =
                     simInventoryDAO.findNextNonProvisionedSimProfileForHlr(
-                            hlrId = hlrEntry.id,
+                            hssId = hssEntry.id,
                             profile = profile)
 
             if (simEntry == null) {
-                throw WebApplicationException("Could not find SIM profile for hlr '${hlrEntry.name}' matching profile '${profile}'")
+                throw WebApplicationException("Could not find SIM profile for hlr '${hssEntry.name}' matching profile '${profile}'")
             }
 
             val simVendorAdapter =
@@ -68,7 +68,8 @@ class PreallocateProfilesTask(
             simVendorAdapter.downloadOrder(httpClient = httpClient, dao = simInventoryDAO, simEntry = simEntry, config = profileVendorConfig)
             simVendorAdapter.confirmOrder(httpClient = httpClient, dao = simInventoryDAO, simEntry = simEntry, config = profileVendorConfig)
 
-            hlrAdapters.hlrAdapterById(simEntry.hlrId)!!.activate(simEntry)
+            val hssAdapterById = hssAdapters.getHssAdapterById(simEntry.hssId)
+            hssAdapterById!!.activate(simEntry)
         }
     }
 
@@ -80,14 +81,15 @@ class PreallocateProfilesTask(
      */
     public fun preallocateProfiles() {
 
+        hssAdapters.initialize()
 
-        for (hlr in hlrAdapters.getHlrEntries()) {
-            val profiles: Collection<String> = simInventoryDAO.getProfileNamesForHlr(hlr.id)
+        for (hssEntry in hssAdapters.getHssEntries()) {
+            val profiles: Collection<String> = simInventoryDAO.getProfileNamesForHlr(hssEntry.id)
             for (profile in profiles) {
                 val profileStats =
-                        simInventoryDAO.getProfileStats(hlr.id, profile)
+                        simInventoryDAO.getProfileStats(hssEntry.id, profile)
                 if (profileStats.noOfEntriesAvailableForImmediateUse < lowWaterMark) {
-                    doPreprovisioning(hlrAdapters = hlrAdapters, hlrEntry = hlr, profile = profile, profileStats = profileStats)
+                    doPreprovisioning(hssAdapters = hssAdapters, hssEntry = hssEntry, profile = profile, profileStats = profileStats)
                 }
             }
         }
@@ -95,45 +97,63 @@ class PreallocateProfilesTask(
 }
 
 
-class HlrAdapterCache(
-        val hlrConfigs: List<HlrConfig>,
+class HssAdapterCache(
+        val hssConfigs: List<HssConfig>,
         val simInventoryDAO: SimInventoryDAO,
         val httpClient: CloseableHttpClient) {
 
+    private val log = LoggerFactory.getLogger(javaClass)
+
+
     private val lock = Object()
-    lateinit private var hlrEntries: Collection<HlrEntry>
-    private val hlrAdaptersByName = mutableMapOf<String, HssAdapter>()
-    private val hlrAdaptersById = mutableMapOf<Long, HssAdapter>()
+    lateinit private var hssEntries: Collection<HssEntry>
+    private val hssAdaptersByName = mutableMapOf<String, HssAdapter>()
+    private val hssAdaptersById = mutableMapOf<Long, HssAdapter>()
 
     init {
        initialize()
     }
 
-    fun getHlrEntries(): Collection<HlrEntry> {
+    fun getHssEntries(): Collection<HssEntry> {
         synchronized(lock) {
-            return hlrEntries
+            return hssEntries
         }
     }
 
     fun initialize() {
         synchronized(lock) {
-            this.hlrEntries  = simInventoryDAO.getHlrEntries()
-            hlrConfigs.forEach {
-                val adapter = Wg2HssAdapter(httpClient, config = it, dao = simInventoryDAO)
-                hlrAdaptersByName.put(it.name, adapter)
+            this.hssEntries  = simInventoryDAO.getHssEntries()
+
+            if (this.hssEntries.isNullOrEmpty()) {
+                // throw WebApplicationException("No HSS entries to be found by the DAO")
+                log.error("No HSS entries to be found by the DAO")
+                return@synchronized
+            }
+
+            hssConfigs.forEach {hssConfig ->
+                val adapter = Wg2HssAdapter(httpClient, config = hssConfig, dao = simInventoryDAO)
+                hssAdaptersByName.put(hssConfig.name, adapter)
+                val entryWithName = hssEntries.find { hssEntry -> hssConfig.name == hssEntry.name }
+                if (entryWithName != null) {
+                    hssAdaptersById.put(entryWithName!!.id, adapter)
+                } else {
+                    // throw WebApplicationException("Could not find hss entry in database with name '${hssConfig.name}'")
+                    log.error("Could not find hss entry in database with name '${hssConfig.name}'")
+                    return@synchronized
+                }
             }
         }
     }
 
-    fun hlrAdapterByName(name: String): HssAdapter? {
+    fun getHssAdapterByName(name: String): HssAdapter? {
         synchronized(lock) {
-            return hlrAdaptersByName[name]
+            return hssAdaptersByName[name]
         }
     }
 
-    fun hlrAdapterById(id: Long): HssAdapter? {
+    fun getHssAdapterById(id: Long): HssAdapter? {
         synchronized(lock) {
-            return hlrAdaptersById[id]
+            return hssAdaptersById[id]
         }
     }
 }

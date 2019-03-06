@@ -6,8 +6,8 @@ import org.apache.http.client.methods.RequestBuilder
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.getLogger
-import org.ostelco.simcards.admin.HlrConfig
-import org.ostelco.simcards.inventory.HlrState
+import org.ostelco.simcards.admin.HssConfig
+import org.ostelco.simcards.inventory.HssState
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import javax.ws.rs.WebApplicationException
@@ -34,10 +34,9 @@ import javax.ws.rs.core.Response
  * id - is a database internal identifier.
  * name - is an unique instance of  HLR reference.
  */
-data class HlrEntry(
+data class HssEntry(
         @JsonProperty("id") val id: Long,
         @JsonProperty("name") val name: String)
-
 
 /**
  * This is an interface that abstracts interactions with HSS (Home Subscriber Service)
@@ -54,7 +53,7 @@ interface HssAdapter {
 
 
 class Wg2HssAdapter(val httpClient: CloseableHttpClient,
-                    val config: HlrConfig,
+                    val config: HssConfig,
                     val dao: SimInventoryDAO) : HssAdapter {
 
     private val logger by getLogger()
@@ -109,7 +108,7 @@ class Wg2HssAdapter(val httpClient: CloseableHttpClient,
                     logger.info("HLR activation message to BSSID {} for ICCID {} completed OK",
                             config.name,
                             simEntry.iccid)
-                    dao.setHlrState(simEntry.id!!, HlrState.ACTIVATED)
+                    dao.setHlrState(simEntry.id!!, HssState.ACTIVATED)
                 }
                 else -> {
                     logger.warn("HLR activation message to BSSID {} for ICCID {} failed with status ({}) {}",
@@ -155,7 +154,7 @@ class Wg2HssAdapter(val httpClient: CloseableHttpClient,
                     logger.info("HLR deactivation message to BSSID {} for ICCID {} completed OK",
                             config.name,
                             simEntry.iccid)
-                    dao.setHlrState(simEntry.id!!, HlrState.NOT_ACTIVATED)
+                    dao.setHlrState(simEntry.id!!, HssState.NOT_ACTIVATED)
                 }
                 else -> {
                     logger.warn("HLR deactivation message to BSSID {} for ICCID {} failed with status ({}) {}",

@@ -72,20 +72,20 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
         addEs2PlusDefaultFiltersAndInterceptors(jerseyEnv)
 
         // Add resoures that should be run from the outside via REST.
+
         jerseyEnv.register(SimInventoryResource(httpClient, config, this.DAO))
         jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
 
         // Add task that should be triggered periodically by external
         // cron job via tasks/preallocate_sim_profiles url.
 
-        val hlrAdapters = HlrAdapterCache(
-                hlrConfigs = config.hlrVendors,
+        val hssAdapters = HssAdapterCache(
+                hssConfigs = config.hssVendors,
                 simInventoryDAO = this.DAO,
                 httpClient = httpClient)
 
-
         env.admin().addTask(PreallocateProfilesTask(
-                hlrAdapters =  hlrAdapters,
+                hssAdapters =  hssAdapters,
                 simInventoryDAO = this.DAO,
                 httpClient = httpClient,
                 profileVendors = config.profileVendors));

@@ -4,10 +4,11 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.jdbi.v3.core.mapper.RowMapper
+import org.jdbi.v3.core.mapper.reflect.ColumnName
 import org.jdbi.v3.core.statement.StatementContext
 import org.jdbi.v3.sqlobject.customizer.Bind
 import org.jdbi.v3.sqlobject.transaction.Transaction
-import org.ostelco.simcards.adapter.HlrEntry
+import org.ostelco.simcards.adapter.HssEntry
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
@@ -19,7 +20,7 @@ import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.Response
 
 
-enum class HlrState {
+enum class HssState {
     NOT_ACTIVATED,
     ACTIVATED,
 }
@@ -50,14 +51,14 @@ enum class ProvisionState {
 data class SimEntry(
         @JsonProperty("id") val id: Long? = null,
         @JsonProperty("batch") val batch: Long,
-        @JsonProperty("hlrId") val hlrId: Long,
+        @ColumnName("hlrId") @JsonProperty("hssId") val hssId: Long,
         @JsonProperty("profileVendorId") val profileVendorId: Long,
         @JsonProperty("msisdn") val msisdn: String,
         @JsonProperty("iccid") val iccid: String,
         @JsonProperty("imsi") val imsi: String,
         @JsonProperty("eid") val eid: String? = null,
         @JsonProperty("profile") val profile: String,
-        @JsonProperty("hlrState") val hlrState: HlrState = HlrState.NOT_ACTIVATED,
+        @ColumnName("hlrState") @JsonProperty("hssState") val hssState: HssState = HssState.NOT_ACTIVATED,
         @JsonProperty("smdpPlusState") val smdpPlusState: SmDpPlusState = SmDpPlusState.AVAILABLE,
         @JsonProperty("provisionState") val provisionState: ProvisionState = ProvisionState.AVAILABLE,
         @JsonProperty("matchingId") val matchingId: String? = null,
@@ -77,13 +78,13 @@ data class SimImportBatch(
         @JsonProperty("message") val status: String?,
         @JsonProperty("importer") val importer: String,
         @JsonProperty("size") val size: Long,
-        @JsonProperty("hlrId") val hlrId: Long,
+        @ColumnName("hlrId") @JsonProperty("hssId") val hssId: Long,
         @JsonProperty("profileVendorId") val profileVendorId: Long
 )
 
 
 class SimEntryIterator(profileVendorId: Long,
-                       hlrId: Long,
+                       hssId: Long,
                        batchId: Long,
                        csvInputStream: InputStream): Iterator<SimEntry> {
 
@@ -127,7 +128,7 @@ class SimEntryIterator(profileVendorId: Long,
 
                     val value = SimEntry(
                             batch = batchId,
-                            hlrId = hlrId,
+                            hssId = hssId,
                             profileVendorId = profileVendorId,
                             iccid = iccid,
                             imsi = imsi,
@@ -170,12 +171,12 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
      * Check if the  SIM vendor can be use for handling SIMs handled
      * by the given HLR.
      * @param profileVendorId  SIM profile vendor to check
-     * @param hlrId  HLR to check
+     * @param hssId  HLR to check
      * @return true if permitted false otherwise
      */
     fun simVendorIsPermittedForHlr(profileVendorId: Long,
-                                   hlrId: Long): Boolean {
-        return findSimVendorForHlrPermissions(profileVendorId, hlrId)
+                                   hssId: Long): Boolean {
+        return findSimVendorForHlrPermissions(profileVendorId, hssId)
                 .isNotEmpty()
     }
 
@@ -183,14 +184,14 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
      * Set permission for a SIM profile vendor to activate SIM profiles
      * with a specific HLR.
      * @param profileVendor  name of SIM profile vendor
-     * @param hlr  name of HLR
+     * @param hssName  name of HLR
      * @return true on successful update
      */
     @Transaction
-    fun permitVendorForHlrByNames(profileVendor: String, hlr: String): Boolean {
+    fun permitVendorForHlrByNames(profileVendor: String, hssName: String): Boolean {
         val profileVendorAdapter = assertNonNull(getProfileVendorAdapterByName(profileVendor))
-        val hlrAdapter = assertNonNull(getHlrEntryByName(hlr))
-        return storeSimVendorForHlrPermission(profileVendorAdapter.id, hlrAdapter.id) > 0
+        val hssEntry = assertNonNull(getHssEntryByName(hssName))
+        return storeSimVendorForHlrPermission(profileVendorAdapter.id, hssEntry.id) > 0
     }
 
     //
@@ -204,18 +205,18 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
     @Transaction
     fun importSims(
             importer: String,
-            hlrId: Long,
+            hssId: Long,
             profileVendorId: Long,
             csvInputStream: InputStream): SimImportBatch? {
 
         createNewSimImportBatch(
                 importer = importer,
-                hlrId = hlrId,
+                hssId = hssId,
                 profileVendorId = profileVendorId)
         val batchId = lastInsertedRowId()
         val values = SimEntryIterator(
                 profileVendorId = profileVendorId,
-                hlrId = hlrId,
+                hssId = hssId,
                 batchId = batchId,
                 csvInputStream = csvInputStream)
         insertAll(values)
@@ -239,7 +240,7 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
      * @return updated row or null on no match
      */
     @Transaction
-    fun setHlrState(id: Long, state: HlrState): SimEntry? {
+    fun setHlrState(id: Long, state: HssState): SimEntry? {
         return if (updateHlrState(id, state) > 0)
             getSimProfileById(id)
         else
@@ -264,13 +265,13 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
      * Set the entity to be marked as "active" in the HLR and the provision
      * state, then return the SIM entry.
      * @param id row to update
-     * @param hlrState new state from HLR service interaction
+     * @param hssState new state from HLR service interaction
      * @param provisionState new provision state
      * @return updated row or null on no match
      */
     @Transaction
-    fun setHlrStateAndProvisionState(id: Long, hlrState: HlrState, provisionState: ProvisionState): SimEntry? {
-        return if (updateHlrStateAndProvisionState(id, hlrState, provisionState) > 0)
+    fun setHlrStateAndProvisionState(id: Long, hssState: HssState, provisionState: ProvisionState): SimEntry? {
+        return if (updateHlrStateAndProvisionState(id, hssState, provisionState) > 0)
             getSimProfileById(id)
         else
             null
@@ -329,14 +330,12 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
      * Get relevant statistics for a particular profile type for a particular HLR.
      */
     fun getProfileStats(
-            @Bind("hlrId") hlrId: Long,
+            @Bind("hssId") hssId: Long,
             @Bind("simProfile") simProfile: String): SimProfileKeyStatistics {
 
         val keyValuePairs = mutableMapOf<String, Long>()
 
-        getProfileStatsAsKeyValuePairs(hlrId = hlrId, simProfile = simProfile)
-
-
+        getProfileStatsAsKeyValuePairs(hssId = hssId, simProfile = simProfile)
                 .forEach { keyValuePairs.put(it.key, it.value) }
         val noOfEntries = keyValuePairs.get("NO_OF_ENTRIES")!!
         val noOfUnallocatedEntries = keyValuePairs.get("NO_OF_UNALLOCATED_ENTRIES")!!
@@ -361,7 +360,6 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
     }
 }
 
-
 class SimProfileKeyStatistics(
         val noOfEntries: Long,
         val noOfUnallocatedEntries: Long,
@@ -384,15 +382,15 @@ class KeyValueMapper : RowMapper<KeyValuePair> {
 
 data class KeyValuePair(val key: String, val value: Long)
 
-class HlrEntryMapper  : RowMapper<HlrEntry> {
-    override fun map(row: ResultSet, ctx: StatementContext): HlrEntry? {
+class HlrEntryMapper  : RowMapper<HssEntry> {
+    override fun map(row: ResultSet, ctx: StatementContext): HssEntry? {
         if (row.isAfterLast) {
             return null
         }
 
         val id = row.getLong("id")
         val name = row.getString("name")
-        return HlrEntry(id = id, name = name)
+        return HssEntry(id = id, name = name)
     }
 }
 

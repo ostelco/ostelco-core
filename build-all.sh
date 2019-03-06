@@ -22,6 +22,11 @@ for dep in $DEPENDENCIES ; do
 done
 
 
+if [[ -z "$GCP_PROJECT_ID" ]] ; then 
+   echo "You need to set the GCP_PROJECT_ID otherwise we'll not be able to run acceptance tests"
+   exit 1
+fi
+
 DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS="acceptance-tests/config dataflow-pipelines/config ocsgw/config bq-metrics-extractor/config auth-server/config prime/config"
 
 for DIR in $DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS ; do 
