@@ -14,7 +14,7 @@ DEPENDENCIES="docker-compose ./gradlew docker"
 # Do we have the dependencies (in this case only gradle, but copy/paste
 # made the test more generic .-)
 #
-for dep in $DEPENDENCIES ; do 
+for dep in $DEPENDENCIES ; do
  if [[ -z "$(which $dep)" ]] ; then
    echo "Couldn't find dependency $dep"
    exit 1
@@ -22,14 +22,41 @@ for dep in $DEPENDENCIES ; do
 done
 
 
-if [[ -z "$GCP_PROJECT_ID" ]] ; then 
+#
+# Generate certificates for ESP endpoints, if needed
+# (the script will check if they are needed)
+#
+
+if [[ ! -f "certs/ocs.dev.ostelco.org/nginx.crt" ]] ; then
+    scripts/generate-selfsigned-ssl-certs.sh   ocs.dev.ostelco.org
+fi
+
+if [[ ! -f  "ocsgw/cert/metrics.crt" ]] ; then
+    cp certs/ocs.dev.ostelco.org/nginx.crt ocsgw/cert/ocs.crt
+fi
+
+
+if [[ ! -f "certs/metrics.dev.ostelco.org/nginx.crt" ]] ; then
+    scripts/generate-selfsigned-ssl-certs.sh   metrics.dev.ostelco.org
+fi
+
+if [[ ! -f "ocsgw/cert/metrics.crt" ]] ; then
+    cp certs/metrics.dev.ostelco.org/nginx.crt ocsgw/cert/metrics.crt
+fi
+
+
+#
+# Ensure that the GCP project is known to building  process
+#
+
+if [[ -z "$GCP_PROJECT_ID" ]] ; then
    echo "You need to set the GCP_PROJECT_ID otherwise we'll not be able to run acceptance tests"
    exit 1
 fi
 
 DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS="acceptance-tests/config dataflow-pipelines/config ocsgw/config bq-metrics-extractor/config auth-server/config prime/config"
 
-for DIR in $DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS ; do 
+for DIR in $DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS ; do
     FILE="$DIR/prime-service-account.json"
     if [[ ! -f $FILE ]] ; then
 	echo "$0 ERROR: COuld not find service account file $FILE, aborting."
@@ -72,7 +99,7 @@ fi
 # If that didn't go too well, then bail out.
 #
 
-if [[ $? -ne 0 ]] ; then echo 
+if [[ $? -ne 0 ]] ; then echo
    echo "Compilation failed, aborting. Not running acceptance tests."
    exit 1
 fi
