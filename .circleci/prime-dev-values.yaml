@@ -106,7 +106,13 @@ canary: {}
   # headers: # only route requests with these headers to the canary service
   #   x-mode: canary
   # tag: e449ed672
-  
+
+cloudsqlProxy: 
+  enabled: true
+  instanceConnectionName: "pi-ostelco-dev:europe-west1:simmanager3311"
+  secretName: "prime-sa-key"
+  secretKey: "prime-service-account.json"
+
 esp:
   image: gcr.io/endpoints-release/endpoints-runtime
   tag: 1
