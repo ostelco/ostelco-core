@@ -75,6 +75,10 @@ interface SimInventoryDB {
     fun findNextReadyToUseSimProfileForHlr(hlrId: Long,
                                            profile: String): SimEntry?
 
+    @SqlUpdate("""UPDATE sim_entries SET eid = :eid
+                       WHERE iccid = :iccid""")
+    fun updateEidOfSimProfileByIccid(iccid: String,
+                                     eid: String): Int
 
     @SqlUpdate("""UPDATE sim_entries SET eid = :eid
                        WHERE id = :id""")
@@ -105,6 +109,10 @@ interface SimInventoryDB {
     @SqlUpdate("""UPDATE sim_entries SET smdpPlusState = :smdpPlusState
                        WHERE id = :id""")
     fun updateSmDpPlusState(id: Long, smdpPlusState: SmDpPlusState): Int
+
+    @SqlUpdate("""UPDATE sim_entries SET smdpPlusState = :smdpPlusState
+                       WHERE iccid = :iccid""")
+    fun updateSmDpPlusStateUsingIccid(iccid: String, smdpPlusState: SmDpPlusState): Int
 
     @SqlUpdate("""UPDATE sim_entries SET smdpPlusState = :smdpPlusState,
                                               matchingId = :matchingId
@@ -219,7 +227,6 @@ interface SimInventoryDB {
     @SqlQuery("""SELECT DISTINCT profile  FROM sim_entries
                       WHERE hlrId = :hssId""")
     fun getProfileNamesForHlr(hssId: Long): List<String>
-
 
     /**
      * Get key numbers from a particular named Sim profile.

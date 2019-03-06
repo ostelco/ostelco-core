@@ -19,6 +19,12 @@ modules:
     config:
       configFile: /secret/prime-service-account.json
       rootPath: ${FIREBASE_ROOT_PATH}
+  - type: email
+    config:
+      mandrillApiKey: ${MANDRILL_API_KEY}
+      httpClient:
+        timeout: 3s
+        connectionRequestTimeout: 1s
   - type: neo4j
     config:
       host: ${NEO4J_HOST}

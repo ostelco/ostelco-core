@@ -16,6 +16,7 @@ import javax.ws.rs.PathParam
 import javax.ws.rs.QueryParam
 import javax.ws.rs.core.Response
 
+@Deprecated(message = "Assigning MSISDN to Customer via Admin API will be removed in future.")
 @Path("/admin/subscriptions")
 class SubscriptionsResource {
 

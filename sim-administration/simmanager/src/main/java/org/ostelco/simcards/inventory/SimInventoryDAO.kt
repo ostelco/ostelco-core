@@ -261,21 +261,6 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
             null
     }
 
-    /**
-     * Set the entity to be marked as "active" in the HLR and the provision
-     * state, then return the SIM entry.
-     * @param id row to update
-     * @param hssState new state from HLR service interaction
-     * @param provisionState new provision state
-     * @return updated row or null on no match
-     */
-    @Transaction
-    fun setHlrStateAndProvisionState(id: Long, hssState: HssState, provisionState: ProvisionState): SimEntry? {
-        return if (updateHlrStateAndProvisionState(id, hssState, provisionState) > 0)
-            getSimProfileById(id)
-        else
-            null
-    }
 
     /**
      * Updates state of SIM profile and returns the updated profile.
@@ -287,6 +272,20 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
     fun setSmDpPlusState(id: Long, state: SmDpPlusState): SimEntry? {
         return if (updateSmDpPlusState(id, state) > 0)
             getSimProfileById(id)
+        else
+            null
+    }
+
+    /**
+     * Updates state of SIM profile using ICCID and returns the updated profile.
+     * @param iccid  SIM with ICCID to update
+     * @param state  new state from SMDP+ service interaction
+     * @return updated row or null on no match
+     */
+    @Transaction
+    fun setSmDpPlusStateUsingIccid(iccid: String, state: SmDpPlusState): SimEntry? {
+        return if (updateSmDpPlusStateUsingIccid(iccid, state) > 0)
+            getSimProfileByIccid(iccid)
         else
             null
     }
@@ -322,6 +321,20 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
     fun setEidOfSimProfile(id: Long, eid: String): SimEntry? {
         return if (updateEidOfSimProfile(id, eid) > 0)
             getSimProfileById(id)
+        else
+            null
+    }
+
+    /**
+     * Sets the EID value of a SIM entry (profile).
+     * @param id  SIM entry to update
+     * @param eid  the eid value
+     * @return updated SIM entry
+     */
+    @Transaction
+    fun setEidOfSimProfileByIccid(iccid: String, eid: String): SimEntry? {
+        return if (updateEidOfSimProfileByIccid(iccid, eid) > 0)
+            getSimProfileByIccid(iccid)
         else
             null
     }
