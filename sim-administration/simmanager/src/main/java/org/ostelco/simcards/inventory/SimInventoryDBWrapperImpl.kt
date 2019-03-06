@@ -42,6 +42,11 @@ class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper 
                 db.findNextReadyToUseSimProfileForHlr(hlrId, profile)!!
             }
 
+    override fun updateEidOfSimProfileByIccid(iccid: String, eid: String): Either<SimManagerError, Int> =
+            either {
+                db.updateEidOfSimProfileByIccid(iccid, eid)
+            }
+
     override fun updateEidOfSimProfile(id: Long, eid: String): Either<SimManagerError, Int> =
             either {
                 db.updateEidOfSimProfile(id, eid)
@@ -61,15 +66,14 @@ class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper 
                 db.updateProvisionState(id, provisionState)
             }
 
-    override fun updateHlrStateAndProvisionState(id: Long, hlrState: HlrState, provisionState: ProvisionState): Either<SimManagerError, Int> =
-            either {
-                db.updateHlrStateAndProvisionState(id, hlrState, provisionState)
-
-            }
-
     override fun updateSmDpPlusState(id: Long, smdpPlusState: SmDpPlusState): Either<SimManagerError, Int> =
             either {
                 db.updateSmDpPlusState(id, smdpPlusState)
+            }
+
+    override fun updateSmDpPlusStateUsingIccid(iccid: String, smdpPlusState: SmDpPlusState): Either<SimManagerError, Int> =
+            either {
+                db.updateSmDpPlusStateUsingIccid(iccid, smdpPlusState)
             }
 
     override fun updateSmDpPlusStateAndMatchingId(id: Long, smdpPlusState: SmDpPlusState, matchingId: String): Either<SimManagerError, Int> =

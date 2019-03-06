@@ -20,6 +20,8 @@ interface SimInventoryDBWrapper {
 
     fun findNextReadyToUseSimProfileForHlr(hlrId: Long, profile: String): Either<SimManagerError, SimEntry>
 
+    fun updateEidOfSimProfileByIccid(iccid: String, eid: String): Either<SimManagerError, Int>
+
     fun updateEidOfSimProfile(id: Long, eid: String): Either<SimManagerError, Int>
 
     /*
@@ -30,9 +32,9 @@ interface SimInventoryDBWrapper {
 
     fun updateProvisionState(id: Long, provisionState: ProvisionState): Either<SimManagerError, Int>
 
-    fun updateHlrStateAndProvisionState(id: Long, hlrState: HlrState, provisionState: ProvisionState): Either<SimManagerError, Int>
-
     fun updateSmDpPlusState(id: Long, smdpPlusState: SmDpPlusState): Either<SimManagerError, Int>
+
+    fun updateSmDpPlusStateUsingIccid(iccid: String, smdpPlusState: SmDpPlusState): Either<SimManagerError, Int>
 
     fun updateSmDpPlusStateAndMatchingId(id: Long, smdpPlusState: SmDpPlusState, matchingId: String): Either<SimManagerError, Int>
 

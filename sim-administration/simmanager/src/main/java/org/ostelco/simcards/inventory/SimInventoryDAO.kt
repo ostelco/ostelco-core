@@ -3,6 +3,7 @@ package org.ostelco.simcards.inventory
 import arrow.core.Either
 import arrow.core.fix
 import arrow.core.flatMap
+import arrow.core.left
 import arrow.effects.IO
 import arrow.instances.either.monad.monad
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -260,7 +261,8 @@ class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper
                         if (count > 0)
                          getSimProfileById(id)
                         else
-                            Either.left(NotFoundError("Found no HLR adapter with id ${id} update of HLR state failed"))
+                            NotFoundError("Found no HLR adapter with id ${id} update of HLR state failed")
+                                    .left()
                     }
 
     /**
@@ -276,29 +278,9 @@ class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper
                         if (count > 0)
                             getSimProfileById(id)
                         else
-                            Either.left(NotFoundError(
-                                    "Found no SIM profile with id ${id} update of provision state failed"))
+                            NotFoundError("Found no SIM profile with id ${id} update of provision state failed")
+                                    .left()
                     }
-
-    /**
-     * Set the entity to be marked as "active" in the HLR and the provision
-     * state, then return the SIM entry.
-     * @param id row to update
-     * @param hlrState new state from HLR service interaction
-     * @param provisionState new provision state
-     * @return updated row or null on no match
-     */
-    @Transaction
-    fun setHlrStateAndProvisionState(id: Long, hlrState: HlrState, provisionState: ProvisionState): Either<SimManagerError, SimEntry> =
-            updateHlrStateAndProvisionState(id, hlrState, provisionState)
-                    .flatMap { count ->
-                        if (count > 0)
-                            getSimProfileById(id)
-                        else
-                            Either.left(NotFoundError(
-                                    "Found no SIM profile with id ${id} update of HLR and provision state failed"))
-                    }
-
 
     /**
      * Updates state of SIM profile and returns the updated profile.
@@ -313,8 +295,25 @@ class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper
                         if (count > 0)
                             getSimProfileById(id)
                         else
-                            Either.left(NotFoundError(
-                                     "Found no SIM profile with id ${id} update of SM-DP+ state failed"))
+                            NotFoundError("Found no SIM profile with id ${id} update of SM-DP+ state failed")
+                                    .left()
+                    }
+
+    /**
+     * Updates state of SIM profile and returns the updated profile.
+     * @param iccid  SIM entry to update
+     * @param state  new state from SMDP+ service interaction
+     * @return updated row or null on no match
+     */
+    @Transaction
+    fun setSmDpPlusStateUsingIccid(iccid: String, state: SmDpPlusState): Either<SimManagerError, SimEntry> =
+            updateSmDpPlusStateUsingIccid(iccid, state)
+                    .flatMap { count ->
+                        if (count > 0)
+                            getSimProfileByIccid(iccid)
+                        else
+                            NotFoundError("Found no SIM profile with id ${iccid} update of SM-DP+ state failed")
+                                    .left()
                     }
 
     /**
@@ -333,8 +332,8 @@ class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper
                         if (count > 0)
                             getSimProfileById(id)
                         else
-                            Either.left(NotFoundError(
-                                     "Found no SIM profile with id ${id} update of SM-DP+ state and 'matching-id' failed"))
+                            NotFoundError("Found no SIM profile with id ${id} update of SM-DP+ state and 'matching-id' failed")
+                                    .left()
                     }
 
     //
@@ -343,7 +342,7 @@ class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper
 
     /**
      * Sets the EID value of a SIM entry (profile).
-     * @param id  SIM entry to update
+     * @param id  row to update
      * @param eid  the eid value
      * @return updated SIM entry
      */
@@ -354,8 +353,25 @@ class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper
                         if (count > 0)
                             getSimProfileById(id)
                         else
-                            Either.left(NotFoundError(
-                                     "Found no SIM profile with id ${id} update of EID failed"))
+                            NotFoundError("Found no SIM profile with id ${id} update of EID failed")
+                                    .left()
+                    }
+
+    /**
+     * Sets the EID value of a SIM entry (profile).
+     * @param iccid  SIM entry to update
+     * @param eid  the eid value
+     * @return updated SIM entry
+     */
+    @Transaction
+    fun setEidOfSimProfileByIccid(iccid: String, eid: String): Either<SimManagerError, SimEntry> =
+            updateEidOfSimProfileByIccid(iccid, eid)
+                    .flatMap { count ->
+                        if (count > 0)
+                            getSimProfileByIccid(iccid)
+                        else
+                            NotFoundError("Found no SIM profile with ICCID ${iccid} update of EID failed")
+                                    .left()
                     }
 
     /**

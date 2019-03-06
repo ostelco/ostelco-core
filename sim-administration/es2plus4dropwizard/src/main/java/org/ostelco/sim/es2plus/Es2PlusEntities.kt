@@ -203,7 +203,7 @@ data class Es2HandleDownloadProgressInfo(
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ES2NotificationPointStatus(
-        @JsonProperty("status") val status: String = "Executed-Success" , // "Executed-Success, Executed-WithWarning, Failed or
+        @JsonProperty("status") val status: FunctionExecutionStatusType = FunctionExecutionStatusType.ExecutedSuccess,
         @JsonInclude(JsonInclude.Include.NON_NULL)  @JsonProperty("statusCodeData") val statusCodeData: ES2StatusCodeData? = null
 )
 
