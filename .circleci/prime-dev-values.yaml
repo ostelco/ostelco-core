@@ -87,12 +87,9 @@ prime:
     - 8082 
     - 8083 
   resources: 
-    limits:
-      cpu: 200m
-      memory: 350Mi
     requests:
       cpu: 100m
-      memory: 200Mi  
+      memory: 300Mi  
   livenessProbe: {}
   readinessProbe: {} 
   annotations: 
@@ -109,7 +106,7 @@ canary: {}
 
 cloudsqlProxy: 
   enabled: true
-  instanceConnectionName: "pi-ostelco-dev:europe-west1:simmanager3311"
+  instanceConnectionName: "pi-ostelco-dev:europe-west1:sim-manager"
   secretName: "prime-sa-key"
   secretKey: "prime-service-account.json"
 
