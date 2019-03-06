@@ -67,6 +67,7 @@ object ApiErrorMapper {
         return when (simManagerError) {
             is org.ostelco.prime.simmanager.NotFoundError -> org.ostelco.prime.apierror.NotFoundError(description, errorCode, simManagerError)
             is org.ostelco.prime.simmanager.NotUpdatedError -> org.ostelco.prime.apierror.BadRequestError(description, errorCode, simManagerError)
+            is org.ostelco.prime.simmanager.ForbiddenError -> org.ostelco.prime.apierror.ForbiddenError(description, errorCode, simManagerError)
             is org.ostelco.prime.simmanager.AdapterError -> org.ostelco.prime.apierror.BadGatewayError(description, errorCode, simManagerError)
             is org.ostelco.prime.simmanager.DatabaseError -> org.ostelco.prime.apierror.BadGatewayError(description, errorCode, simManagerError)
             is org.ostelco.prime.simmanager.SystemError -> org.ostelco.prime.apierror.BadGatewayError(description, errorCode, simManagerError)

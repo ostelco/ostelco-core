@@ -1,11 +1,10 @@
 package org.ostelco.simcards.inventory
 
 import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
 import org.jdbi.v3.core.JdbiException
-import org.ostelco.prime.simmanager.DatabaseError
-import org.ostelco.prime.simmanager.NotFoundError
-import org.ostelco.prime.simmanager.SimManagerError
-import org.ostelco.prime.simmanager.SystemError
+import org.ostelco.prime.simmanager.*
 import org.ostelco.simcards.adapter.HlrAdapter
 import org.ostelco.simcards.adapter.ProfileVendorAdapter
 import org.postgresql.util.PSQLException
@@ -14,32 +13,32 @@ import org.postgresql.util.PSQLException
 class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper {
 
     override fun getSimProfileById(id: Long): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("Found no SIM for id=${id}")) {
+            either(NotFoundError("Found no SIM for id ${id}")) {
                 db.getSimProfileById(id)!!
             }
 
     override fun getSimProfileByIccid(iccid: String): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("Found no SIM for ICCID=${iccid}")) {
+            either(NotFoundError("Found no SIM for ICCID ${iccid}")) {
                 db.getSimProfileByIccid(iccid)!!
             }
 
     override fun getSimProfileByImsi(imsi: String): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("Found no SIM for IMSI=${imsi}")) {
+            either(NotFoundError("Found no SIM for IMSI ${imsi}")) {
                 db.getSimProfileByImsi(imsi)!!
             }
 
     override fun getSimProfileByMsisdn(msisdn: String): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("Found no SIM MSISDN=${msisdn}")) {
+            either(NotFoundError("Found no SIM MSISDN ${msisdn}")) {
                 db.getSimProfileByMsisdn(msisdn)!!
             }
 
     override fun findNextNonProvisionedSimProfileForHlr(hlrId: Long, profile: String): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("No uprovisioned SIM available for HLR id=${hlrId} and profile=${profile}")) {
+            either(NotFoundError("No uprovisioned SIM available for HLR id ${hlrId} and profile ${profile}")) {
                 db.findNextNonProvisionedSimProfileForHlr(hlrId, profile)!!
             }
 
     override fun findNextReadyToUseSimProfileForHlr(hlrId: Long, profile: String): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("No ready to use SIM available for HLR id=${hlrId} and profile=${profile}")) {
+            either(NotFoundError("No ready to use SIM available for HLR id ${hlrId} and profile ${profile}")) {
                 db.findNextReadyToUseSimProfileForHlr(hlrId, profile)!!
             }
 
@@ -83,7 +82,7 @@ class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper 
      */
 
     override fun findSimVendorForHlrPermissions(profileVendorId: Long, hlrId: Long): Either<SimManagerError, List<Long>> =
-            either(NotFoundError("sim_vendors_permitted_hlrs ${profileVendorId} - ${hlrId}")) {
+            either(ForbiddenError("Using SIM profile vendor id ${profileVendorId} with HLR id ${hlrId} is not allowed")) {
                 db.findSimVendorForHlrPermissions(profileVendorId, hlrId)
             }
 
@@ -98,12 +97,12 @@ class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper 
             }
 
     override fun getHlrAdapterByName(name: String): Either<SimManagerError, HlrAdapter> =
-            either(NotFoundError("hlr_adapters ${name}")) {
+            either(NotFoundError("Found no HLR adapter with name ${name}")) {
                 db.getHlrAdapterByName(name)!!
             }
 
     override fun getHlrAdapterById(id: Long): Either<SimManagerError, HlrAdapter> =
-            either(NotFoundError("hlr_adapters ${id}")) {
+            either(NotFoundError("Found no HLR adapter with id ${id}")) {
                 db.getHlrAdapterById(id)!!
             }
 
@@ -113,12 +112,12 @@ class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper 
             }
 
     override fun getProfileVendorAdapterByName(name: String): Either<SimManagerError, ProfileVendorAdapter> =
-            either(NotFoundError("profile_vendor_adapters ${name}")) {
+            either(NotFoundError("Found no SIM profile vendor with name ${name}")) {
                 db.getProfileVendorAdapterByName(name)!!
             }
 
     override fun getProfileVendorAdapterById(id: Long): Either<SimManagerError, ProfileVendorAdapter> =
-            either(NotFoundError("profile_vendor_adapters ${id}")) {
+            either(NotFoundError("Found no SIM profile vendor with id ${id}")) {
                 db.getProfileVendorAdapterById(id)!!
             }
 
@@ -142,7 +141,7 @@ class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper 
             }
 
     override fun getBatchInfo(id: Long): Either<SimManagerError, SimImportBatch> =
-            either(NotFoundError("sim_import_batches ${id}")) {
+            either(NotFoundError("Found no information about 'import batch' with id ${id}")) {
                 db.getBatchInfo(id)!!
             }
     /*
@@ -159,7 +158,7 @@ class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper 
      */
 
     override fun getHlrAdapters(): Either<SimManagerError, List<HlrAdapter>> =
-            either(NotFoundError("hlr_adapters")) {
+            either(NotFoundError("Found no HLR adapters")) {
                 db.getHlrAdapters()
             }
 
@@ -169,7 +168,7 @@ class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper 
      */
 
     override fun getProfileNamesForHlr(hlrId: Long): Either<SimManagerError, List<String>> =
-            either(NotFoundError("sim_entries ${hlrId}")) {
+            either(NotFoundError("Found no SIM profile name for HLR with id ${hlrId}")) {
                 db.getProfileNamesForHlr(hlrId)
             }
 
@@ -180,7 +179,7 @@ class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper 
      */
 
     override fun getProfileStatsAsKeyValuePairs(hlrId: Long, simProfile: String): Either<SimManagerError, List<KeyValuePair>> =
-            either(NotFoundError("sim_entries ${hlrId} - ${simProfile}")) {
+            either(NotFoundError("Found no statistics for SIM profile ${simProfile} for HLR with id ${hlrId}")) {
                 db.getProfileStatsAsKeyValuePairs(hlrId, simProfile)
             }
 
@@ -188,31 +187,31 @@ class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper 
 
     private fun <R> either(action: () -> R): Either<SimManagerError, R> =
             try {
-                Either.right(action())
+                action().right()
             } catch (e: Exception) {
-                Either.left(when (e) {
+                when (e) {
                     is JdbiException, is PSQLException -> {
-                        DatabaseError("sim-manager ${e.message}")
+                        DatabaseError("SIM manager database query failed with message: ${e.message}")
                     }
                     else -> {
-                        SystemError("sim-manager ${e.message}")
+                        SystemError("Error accessing SIM manager database: ${e.message}")
                     }
-                })
+                }.left()
             }
 
     private fun <R> either(error: SimManagerError, action: () -> R): Either<SimManagerError, R> =
             try {
                 action()?.let {
-                    Either.right(it)
-                } ?: Either.left(error)
+                    it.right()
+                } ?: error.left()
             } catch (e: Exception) {
-                Either.left(when (e) {
+                when (e) {
                     is JdbiException, is PSQLException -> {
-                        DatabaseError("sim-manager ${e.message}")
+                        DatabaseError("SIM manager database query failed with message: ${e.message}")
                     }
                     else -> {
-                        SystemError("sim-manager ${e.message}")
+                        SystemError("Error accessing SIM manager database: ${e.message}")
                     }
-                })
+                }.left()
             }
 }

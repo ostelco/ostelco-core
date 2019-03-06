@@ -9,12 +9,11 @@ import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.simmanager.AdapterError
+import org.ostelco.prime.simmanager.NotUpdatedError
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.admin.HlrConfig
 import org.ostelco.simcards.inventory.*
-import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.Response
 
 /**
  * An adapter that connects to a HLR and activates/deactivates individual
@@ -44,7 +43,7 @@ data class HlrAdapter(
                  dao: SimInventoryDAO,
                  simEntry: SimEntry): Either<SimManagerError, SimEntry> {
         if (simEntry.iccid.isEmpty()) {
-            return AdapterError("Illegal parameter in SIM activation request to BSSID ${config.name}")
+            return NotUpdatedError("Illegal parameter in SIM activation request to BSSID ${config.name}")
                     .left()
         }
         val body = mapOf(
@@ -62,24 +61,33 @@ data class HlrAdapter(
                 .setEntity(StringEntity(payload))
                 .build()
 
-        return httpClient.execute(request).use {
-            when (it.statusLine.statusCode) {
-                201 -> {
-                    logger.info("HLR activation message to BSSID {} for ICCID {} completed OK",
-                            config.name,
-                            simEntry.iccid)
-                    dao.setHlrState(simEntry.id!!, HlrState.ACTIVATED)
-                }
-                else -> {
-                    logger.warn("HLR activation message to BSSID {} for ICCID {} failed with status ({}) {}",
-                            config.name,
-                            simEntry.iccid,
-                            it.statusLine.statusCode,
-                            it.statusLine.reasonPhrase)
-                    AdapterError("Failed to activate ICCID ${simEntry.iccid} with BSSID ${config.name} (status-code: ${it.statusLine.statusCode})")
-                            .left()
+        return try {
+            httpClient.execute(request).use {
+                when (it.statusLine.statusCode) {
+                    201 -> {
+                        logger.info("HLR activation message to BSSID {} for ICCID {} completed OK",
+                                config.name,
+                                simEntry.iccid)
+                        dao.setHlrState(simEntry.id!!, HlrState.ACTIVATED)
+                    }
+                    else -> {
+                        logger.warn("HLR activation message to BSSID {} for ICCID {} failed with status ({}) {}",
+                                config.name,
+                                simEntry.iccid,
+                                it.statusLine.statusCode,
+                                it.statusLine.reasonPhrase)
+                        NotUpdatedError("Failed to activate ICCID ${simEntry.iccid} with BSSID ${config.name} (status-code: ${it.statusLine.statusCode})")
+                                .left()
+                    }
                 }
             }
+        } catch (e: Exception) {
+            logger.error("HLR activation message to BSSID {} for ICCID {} failed with error: {}",
+                    config.name,
+                    simEntry.iccid,
+                    e)
+            AdapterError("HLR activation message to BSSID ${config.name} for ICCID ${simEntry.iccid} failed with error: ${e}")
+                    .left()
         }
     }
 
@@ -95,7 +103,7 @@ data class HlrAdapter(
                    dao: SimInventoryDAO,
                    simEntry: SimEntry): Either<SimManagerError, SimEntry> {
         if (simEntry.iccid.isEmpty()) {
-            return AdapterError("Illegal parameter in SIM deactivation request to BSSID ${config.name}")
+            return NotUpdatedError("Illegal parameter in SIM deactivation request to BSSID ${config.name}")
                     .left()
         }
 
@@ -105,24 +113,33 @@ data class HlrAdapter(
                 .setHeader("Content-Type", MediaType.APPLICATION_JSON)
                 .build()
 
-        return httpClient.execute(request).use {
-            when (it.statusLine.statusCode) {
-                200 -> {
-                    logger.info("HLR deactivation message to BSSID {} for ICCID {} completed OK",
-                            config.name,
-                            simEntry.iccid)
-                    dao.setHlrState(simEntry.id!!, HlrState.NOT_ACTIVATED)
-                }
-                else -> {
-                    logger.warn("HLR deactivation message to BSSID {} for ICCID {} failed with status ({}) {}",
-                            config.name,
-                            simEntry.iccid,
-                            it.statusLine.statusCode,
-                            it.statusLine.reasonPhrase)
-                    AdapterError("Failed to deactivate ICCID ${simEntry.iccid} with BSSID ${config.name} (status-code: ${it.statusLine.statusCode}")
-                            .left()
+        return try {
+            httpClient.execute(request).use {
+                when (it.statusLine.statusCode) {
+                    200 -> {
+                        logger.info("HLR deactivation message to BSSID {} for ICCID {} completed OK",
+                                config.name,
+                                simEntry.iccid)
+                        dao.setHlrState(simEntry.id!!, HlrState.NOT_ACTIVATED)
+                    }
+                    else -> {
+                        logger.warn("HLR deactivation message to BSSID {} for ICCID {} failed with status ({}) {}",
+                                config.name,
+                                simEntry.iccid,
+                                it.statusLine.statusCode,
+                                it.statusLine.reasonPhrase)
+                        NotUpdatedError("Failed to deactivate ICCID ${simEntry.iccid} with BSSID ${config.name} (status-code: ${it.statusLine.statusCode}")
+                                .left()
+                    }
                 }
             }
+        } catch (e: Exception) {
+            logger.error("HLR deactivation message to BSSID {} for ICCID {} failed with error: {}",
+                    config.name,
+                    simEntry.iccid,
+                    e)
+            AdapterError("HLR deactivation message to BSSID ${config.name} for ICCID ${simEntry.iccid} failed with error: ${e}")
+                    .left()
         }
     }
 }

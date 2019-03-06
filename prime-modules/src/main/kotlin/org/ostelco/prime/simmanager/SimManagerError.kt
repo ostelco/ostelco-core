@@ -8,6 +8,8 @@ class NotFoundError(description: String, error: InternalError? = null) : SimMana
 
 class NotUpdatedError(description: String, error: InternalError? = null) : SimManagerError(description, error = error)
 
+class ForbiddenError(description: String, error: InternalError? = null) : SimManagerError(description, error = error)
+
 class AdapterError(description: String, error: InternalError? = null) : SimManagerError(description, error = error)
 
 class DatabaseError(description: String, error: InternalError? = null) : SimManagerError(description, error = error)

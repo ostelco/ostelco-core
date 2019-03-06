@@ -66,13 +66,14 @@ class PreallocateProfilesTask(
                                     }
                         } else {
                             if (profileVendorConfig == null) {
-                                NotFoundError("")
+                                NotFoundError("Failed to find configuration for SIM profile vendor ${profileVendorAdapter.name}")
                                         .left()
                             } else if (hlrConfig == null) {
-                                NotFoundError("")
+                                NotFoundError("Failed to find configuration for HLR ${hlrAdapter.name}")
                                         .left()
                             } else {
-                                NotFoundError("")
+                                NotFoundError("Failed to find configuration for SIM profile vendor ${profileVendorAdapter.name} " +
+                                        "and HLR ${hlrAdapter.name}")
                                         .left()
                             }
                         }
@@ -86,10 +87,8 @@ class PreallocateProfilesTask(
 
         for (i in 1..noOfProfilesToActuallyAllocate) {
             simInventoryDAO.findNextNonProvisionedSimProfileForHlr(hlrId = hlrAdapter.id, profile = profile)
-                    .flatMap { simEntry ->
-                        preProvisionSimProfile(hlrAdapter, simEntry)
-                                .mapLeft {
-                                }
+                    .flatMap {
+                        preProvisionSimProfile(hlrAdapter, it)
                     }
         }
     }

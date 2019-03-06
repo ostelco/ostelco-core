@@ -28,7 +28,7 @@ import javax.ws.rs.core.MediaType
  * user equpiment tries to download a profile, it will get a profile to
  * download.
  */
-data class ProfileVendorAdapter (
+data class ProfileVendorAdapter(
         @JsonProperty("id") val id: Long,
         @JsonProperty("name") val name: String) {
 
@@ -88,35 +88,46 @@ data class ProfileVendorAdapter (
                 .setEntity(StringEntity(payload))
                 .build()
 
-        return httpClient.execute(request).use {
-            when (it.statusLine.statusCode) {
-                200 -> {
-                    val status = mapper.readValue(it.entity.content, Es2DownloadOrderResponse::class.java)
+        return try {
+            httpClient.execute(request).use {
+                when (it.statusLine.statusCode) {
+                    200 -> {
+                        val status = mapper.readValue(it.entity.content, Es2DownloadOrderResponse::class.java)
 
-                    if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess) {
-                        logger.error("SM-DP+ 'order-download' message to service %s for ICCID %s failed with execution status %s (call-id: %s)",
+                        if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess) {
+                            logger.error("SM-DP+ 'order-download' message to service %s for ICCID %s failed with execution status %s (call-id: %s)",
+                                    config.name,
+                                    simEntry.iccid,
+                                    status.header.functionExecutionStatus,
+                                    header.functionCallIdentifier)
+                            NotUpdatedError("SM-DP+ 'order-download' to ${config.name} failed with status: ${status.header.functionExecutionStatus}")
+                                    .left()
+                        } else {
+                            logger.info("SM-DP+ 'order-download' message to service {} for ICCID {} completed OK (call-id: {})",
+                                    config.name,
+                                    simEntry.iccid,
+                                    header.functionCallIdentifier)
+                            dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ALLOCATED)
+                        }
+                    }
+                    else -> {
+                        logger.error("SM-DP+ 'order-download' message to service %s for ICCID %s failed with status code %d (call-id: %s)",
                                 config.name,
                                 simEntry.iccid,
-                                status.header.functionExecutionStatus,
+                                it.statusLine.statusCode,
                                 header.functionCallIdentifier)
-                        AdapterError("sm-dp+ ${simEntry.iccid}").left()
-                    } else {
-                        logger.info("SM-DP+ 'order-download' message to service {} for ICCID {} completed OK (call-id: {})",
-                                config.name,
-                                simEntry.iccid,
-                                header.functionCallIdentifier)
-                        dao.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ALLOCATED)
+                        NotUpdatedError("SM-DP+ 'order-download' to ${config.name} failed with code: ${it.statusLine.statusCode}")
+                                .left()
                     }
                 }
-                else -> {
-                    logger.error("SM-DP+ 'order-download' message to service %s for ICCID %s failed with status code %d (call-id: %s)",
-                            config.name,
-                            simEntry.iccid,
-                            it.statusLine.statusCode,
-                            header.functionCallIdentifier)
-                    AdapterError("sm-dp+ ${simEntry.iccid}").left()
-                }
             }
+        } catch (e: Exception) {
+            logger.error("SM-DP+ 'order-download' message to service %s for ICCID %s failed with error: %s",
+                    config.name,
+                    simEntry.iccid,
+                    e)
+            AdapterError("SM-DP+ 'order-download' message to service ${config.name} failed with error: ${e}")
+                    .left()
         }
     }
 
@@ -155,51 +166,62 @@ data class ProfileVendorAdapter (
                 .setEntity(StringEntity(payload))
                 .build()
 
-        return httpClient.execute(request).use {
-            when (it.statusLine.statusCode) {
-                200 -> {
-                    val status = mapper.readValue(it.entity.content, Es2ConfirmOrderResponse::class.java)
+        return try {
+            httpClient.execute(request).use {
+                when (it.statusLine.statusCode) {
+                    200 -> {
+                        val status = mapper.readValue(it.entity.content, Es2ConfirmOrderResponse::class.java)
 
-                    if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess) {
-                        logger.error("SM-DP+ 'order-confirm' message to service %s for ICCID %s failed with execution status %s (call-id: %s)",
-                                config.name,
-                                simEntry.iccid,
-                                status.header.functionExecutionStatus,
-                                header.functionCallIdentifier)
-                        NotUpdatedError("sm-dp+ ${simEntry.iccid}").left()
-                    } else {
-                        // XXX Is just logging good enough?
-                        if (status.eid.isNullOrEmpty()) {
-                            logger.warn("No EID returned from service {} for ICCID {} for SM-DP+ 'order-confirm' message (call-id: {})",
+                        if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess) {
+                            logger.error("SM-DP+ 'order-confirm' message to service %s for ICCID %s failed with execution status %s (call-id: %s)",
+                                    config.name,
+                                    simEntry.iccid,
+                                    status.header.functionExecutionStatus,
+                                    header.functionCallIdentifier)
+                            NotUpdatedError("SM-DP+ 'order-confirm' to ${config.name} failed with status: ${status.header.functionExecutionStatus}")
+                                    .left()
+                        } else {
+                            // XXX Is just logging good enough?
+                            if (status.eid.isNullOrEmpty()) {
+                                logger.warn("No EID returned from service {} for ICCID {} for SM-DP+ 'order-confirm' message (call-id: {})",
+                                        config.name,
+                                        simEntry.iccid,
+                                        header.functionCallIdentifier)
+                            } else {
+                                dao.setEidOfSimProfile(simEntry.id!!, status.eid!!)
+                            }
+                            if (!eid.isNullOrEmpty() && eid != status.eid) {
+                                logger.warn("EID returned from service {} does not match provided EID ({} <> {}) in SM-DP+ 'order-confirm' message (call-id: {})",
+                                        config.name,
+                                        eid,
+                                        status.eid,
+                                        header.functionCallIdentifier)
+                            }
+                            logger.info("SM-DP+ 'order-confirm' message to service {} for ICCID {} completed OK (call-id: {})",
                                     config.name,
                                     simEntry.iccid,
                                     header.functionCallIdentifier)
-                        } else {
-                            dao.setEidOfSimProfile(simEntry.id!!, status.eid!!)
+                            dao.setSmDpPlusStateAndMatchingId(simEntry.id!!, SmDpPlusState.RELEASED, status.matchingId!!)
                         }
-                        if (!eid.isNullOrEmpty() && eid != status.eid) {
-                            logger.warn("EID returned from service {} does not match provided EID ({} <> {}) in SM-DP+ 'order-confirm' message (call-id: {})",
-                                    config.name,
-                                    eid,
-                                    status.eid,
-                                    header.functionCallIdentifier)
-                        }
-                        logger.info("SM-DP+ 'order-confirm' message to service {} for ICCID {} completed OK (call-id: {})",
+                    }
+                    else -> {
+                        logger.error("SM-DP+ 'order-confirm' message to service %s for ICCID %s failed with status code %d (call-id: %s)",
                                 config.name,
                                 simEntry.iccid,
+                                it.statusLine.statusCode,
                                 header.functionCallIdentifier)
-                        dao.setSmDpPlusStateAndMatchingId(simEntry.id!!, SmDpPlusState.RELEASED, status.matchingId!!)
+                        NotUpdatedError("SM-DP+ 'order-confirm' to ${config.name} failed with code: ${it.statusLine.statusCode}")
+                                .left()
                     }
                 }
-                else -> {
-                    logger.error("SM-DP+ 'order-confirm' message to service %s for ICCID %s failed with status code %d (call-id: %s)",
-                            config.name,
-                            simEntry.iccid,
-                            it.statusLine.statusCode,
-                            header.functionCallIdentifier)
-                    NotUpdatedError("sm-dp+ ${simEntry.iccid}").left()
-                }
             }
+        } catch (e: Exception) {
+            logger.error("SM-DP+ 'order-confirm' message to service %s for ICCID %s failed with error: %s",
+                    config.name,
+                    simEntry.iccid,
+                    e)
+            AdapterError("SM-DP+ 'order-confirm' message to service ${config.name} failed with error: ${e}")
+                    .left()
         }
     }
 
@@ -258,43 +280,57 @@ data class ProfileVendorAdapter (
                 .setEntity(StringEntity(payload))
                 .build()
 
-        return httpClient.execute(request).use {
-            when (it.statusLine.statusCode) {
-                200 -> {
-                    val status = mapper.readValue(it.entity.content, Es2ProfileStatusResponse::class.java)
+        /* Pretty print version of ICCID list. */
+        val iccids = iccidList.joinToString(prefix = "[", postfix = "]")
 
-                    if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess) {
+        return try {
+            httpClient.execute(request).use {
+                when (it.statusLine.statusCode) {
+                    200 -> {
+                        val status = mapper.readValue(it.entity.content, Es2ProfileStatusResponse::class.java)
 
-                        logger.error("SM-DP+ 'profile-status' message to service %s for ICCID %s failed with execution status %s (call-id: %s)",
+                        if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess) {
+
+                            logger.error("SM-DP+ 'profile-status' message to service %s for ICCID %s failed with execution status %s (call-id: %s)",
+                                    config.name,
+                                    iccids,
+                                    status.header.functionExecutionStatus,
+                                    header.functionCallIdentifier)
+                            NotUpdatedError("SM-DP+ 'profile-status' to ${config.name} failed with status: ${status.header.functionExecutionStatus}")
+                                    .left()
+
+                        } else {
+                            logger.info("SM-DP+ 'profile-status' message to service {} for ICCID {} completed OK (call-id: {})",
+                                    config.name,
+                                    iccids,
+                                    header.functionCallIdentifier)
+                            val profileStatusList = status.profileStatusList
+
+                            if (!profileStatusList.isNullOrEmpty())
+                                profileStatusList.right()
+                            else
+                                NotFoundError("No information found for ICCID ${iccids} in SM-DP+ 'profile-status' message to service ${config.name}")
+                                        .left()
+                        }
+                    }
+                    else -> {
+                        logger.error("SM-DP+ 'profile-status' message to service %s for ICCID %s failed with status code %d (call-id: %s)",
                                 config.name,
-                                iccidList.joinToString(prefix = "[", postfix = "]"),
-                                status.header.functionExecutionStatus,
+                                iccids,
+                                it.statusLine.statusCode,
                                 header.functionCallIdentifier)
-                        NotUpdatedError("sm-dp+ ")
+                        NotUpdatedError("SM-DP+ 'order-confirm' to ${config.name} failed with code: ${it.statusLine.statusCode}")
                                 .left()
-
-                    } else {
-                        logger.info("SM-DP+ 'profile-status' message to service {} for ICCID {} completed OK (call-id: {})",
-                                config.name,
-                                iccidList.joinToString(prefix = "[", postfix = "]"),
-                                header.functionCallIdentifier)
-                        val profileStatusList = status.profileStatusList
-
-                        if (!profileStatusList.isNullOrEmpty())
-                        profileStatusList.right()
-                        else
-                            NotFoundError("").left()
                     }
                 }
-                else -> {
-                    logger.error("SM-DP+ 'profile-status' message to service %s for ICCID %s failed with status code %d (call-id: %s)",
-                            config.name,
-                            iccidList.joinToString(prefix = "[", postfix = "]"),
-                            it.statusLine.statusCode,
-                            header.functionCallIdentifier)
-                    NotFoundError("").left()
-                }
             }
+        } catch (e: Exception) {
+            logger.error("SM-DP+ 'profile-status' message to service %s for ICCID %s failed with error: %s",
+                    config.name,
+                    iccids,
+                    e)
+            AdapterError("SM-DP+ 'profile-status' message to service ${config.name} failed with error: ${e}")
+                    .left()
         }
     }
 }

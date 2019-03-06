@@ -1,9 +1,12 @@
 package org.ostelco.simcards.inventory
 
 import arrow.core.Either
+import arrow.core.fix
 import arrow.core.left
 import arrow.core.right
+import arrow.effects.IO
 import arrow.instances.either.monad.flatMap
+import arrow.instances.either.monad.monad
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.simmanager.NotFoundError
 import org.ostelco.prime.simmanager.SimManagerError
@@ -80,83 +83,94 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                     }
 
     fun activateNextEsimProfile(hlrName: String, phoneType: String): Either<SimManagerError, SimEntry> =
-            dao.getHlrAdapterByName(hlrName)
-                    .flatMap { hlrAdapter ->
-                        getProfileForPhoneType(phoneType)
-                                .flatMap { profile ->
-                                    dao.findNextNonProvisionedSimProfileForHlr(hlrAdapter.id, profile)
-                                            .flatMap { simEntry ->
-                                                getProfileVendorAdapterAndConfig(simEntry)
-                                                        .flatMap {
-                                                            /* As 'confirm-order' message is issued with 'releaseFlag' set to true, the
-                                                               CONFIRMED state should not occur. */
-                                                            when (simEntry.smdpPlusState) {
-                                                                SmDpPlusState.AVAILABLE -> {
-                                                                    it.first.activate(httpClient, it.second, dao, null, simEntry)
-                                                                }
-                                                                SmDpPlusState.ALLOCATED -> {
-                                                                    it.first.confirmOrder(httpClient, it.second, dao, null, simEntry)
-                                                                }
-                                                                /* ESIM already 'released'. */
-                                                                else -> {
-                                                                    simEntry.right()
-                                                                }
-                                                            }.flatMap { updatedSimEntry ->
-                                                                /* Enable SIM profile with HLR. */
-                                                                activateHlrProfileByIccid(hlrName, updatedSimEntry.iccid)
-                                                            }
-                                                        }
-                                            }
-                                }
+            IO {
+                Either.monad<SimManagerError>().binding {
+                    val hlrAdapter = dao.getHlrAdapterByName(hlrName)
+                            .bind()
+                    val profile = getProfileForPhoneType(phoneType)
+                            .bind()
+                    val simEntry = dao.findNextNonProvisionedSimProfileForHlr(hlrAdapter.id, profile)
+                            .bind()
+                    val profileVendorAndConfig = getProfileVendorAdapterAndConfig(simEntry)
+                            .bind()
+
+                    val vendorAdapter = profileVendorAndConfig.first
+                    val config = profileVendorAndConfig.second
+
+                    /* As 'confirm-order' message is issued with 'releaseFlag' set to true, the
+                       CONFIRMED state should not occur. */
+                    val updatedSimEntry: SimEntry = when (simEntry.smdpPlusState) {
+                        SmDpPlusState.AVAILABLE -> {
+                            vendorAdapter.activate(httpClient, config, dao, null, simEntry)
+                                    .bind()
+                        }
+                        SmDpPlusState.ALLOCATED -> {
+                            vendorAdapter.confirmOrder(httpClient, config, dao, null, simEntry)
+                                    .bind()
+                        }
+                        /* ESIM already 'released'. */
+                        else -> {
+                            simEntry
+                        }
                     }
+
+                    /* Enable SIM profile with HLR. */
+                    activateHlrProfileByIccid(hlrName, updatedSimEntry.iccid)
+                            .bind()
+                }.fix()
+            }.unsafeRunSync()
 
     fun allocateNextEsimProfile(hlrName: String, phoneType: String): Either<SimManagerError, SimEntry> =
-            dao.getHlrAdapterByName(hlrName)
-                    .flatMap { hlrAdapter ->
-                        getProfileForPhoneType(phoneType)
-                                .flatMap { profile ->
-                                    dao.findNextReadyToUseSimProfileForHlr(hlrAdapter.id, profile)
-                                            .flatMap { simEntry ->
-                                                getProfileVendorAdapterAndConfig(simEntry)
-                                                        .flatMap {
-                                                            val es9plusEndpoint = it.second.es9plusEndpoint
-                                                            dao.setProvisionState(simEntry.id!!, ProvisionState.PROVISIONED)
-                                                                    .flatMap {
-                                                                        /* Add 'code' field content. */
-                                                                        it.copy(code = "LPA:${es9plusEndpoint}:${it.matchingId}")
-                                                                                .right()
-                                                                    }
-                                                        }
-                                            }
-                                }
-                    }
+            IO {
+                Either.monad<SimManagerError>().binding {
+                    val hlrAdapter = dao.getHlrAdapterByName(hlrName)
+                            .bind()
+                    val profile = getProfileForPhoneType(phoneType)
+                            .bind()
+                    val simEntry = dao.findNextReadyToUseSimProfileForHlr(hlrAdapter.id, profile)
+                            .bind()
+                    val profileVendorAndConfig = getProfileVendorAdapterAndConfig(simEntry)
+                            .bind()
+
+                    val config = profileVendorAndConfig.second
+
+                    dao.setProvisionState(simEntry.id!!, ProvisionState.PROVISIONED)
+                            .flatMap {
+                                /* Add 'code' field content. */
+                                it.copy(code = "LPA:${config.es9plusEndpoint}:${it.matchingId}")
+                                        .right()
+                            }.bind()
+                }.fix()
+            }.unsafeRunSync()
 
     fun importBatch(hlrName: String, simVendor: String, csvInputStream: InputStream): Either<SimManagerError, SimImportBatch> =
-            dao.getProfileVendorAdapterByName(simVendor)
-                    .flatMap { profileVendorAdapter ->
-                        dao.getHlrAdapterByName(hlrName)
-                                .flatMap { hlrAdapter ->
-                                    dao.simVendorIsPermittedForHlr(profileVendorAdapter.id, hlrAdapter.id)
-                                            .flatMap {
-                                                dao.importSims(importer = "importer", // TODO: This is a very strange name for an importer .-)
-                                                        hlrId = hlrAdapter.id,
-                                                        profileVendorId = profileVendorAdapter.id,
-                                                        csvInputStream = csvInputStream)
-                                            }
-                                }
-                    }
+            IO {
+                Either.monad<SimManagerError>().binding {
+                    val profileVendorAdapter = dao.getProfileVendorAdapterByName(simVendor)
+                            .bind()
+                    val hlrAdapter = dao.getHlrAdapterByName(hlrName)
+                            .bind()
+
+                    /* Exits if not true. */
+                    dao.simVendorIsPermittedForHlr(profileVendorAdapter.id, hlrAdapter.id)
+                            .bind()
+                    dao.importSims(importer = "importer", // TODO: This is a very strange name for an importer .-)
+                            hlrId = hlrAdapter.id,
+                            profileVendorId = profileVendorAdapter.id,
+                            csvInputStream = csvInputStream).bind()
+                }.fix()
+            }.unsafeRunSync()
 
     /* Helper functions. */
 
     private fun checkForValidHlr(hlrName: String, simEntry: SimEntry): Either<SimManagerError, SimEntry> =
             dao.getHlrAdapterById(simEntry.hlrId)
                     .flatMap { hlrAdapter ->
-                        if (hlrName != hlrAdapter.name) {
+                        if (hlrName != hlrAdapter.name)
                             NotFoundError("HLR name ${hlrName} does not match SIM profile HLR ${hlrAdapter.name}")
                                     .left()
-                        } else {
+                        else
                             simEntry.right()
-                        }
                     }
 
     private fun getHlrAdapterAndConfig(simEntry: SimEntry): Either<SimManagerError, Pair<HlrAdapter, HlrConfig>> =
@@ -187,11 +201,10 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
 
     private fun getProfileForPhoneType(phoneType: String): Either<SimManagerError, String> {
         val profile: String? = config.getProfileForPhoneType(phoneType)
-        return if (profile != null) {
+        return if (profile != null)
             profile.right()
-        } else {
+        else
             NotFoundError("Could not find configuration for phone type ${phoneType}")
                     .left()
-        }
     }
 }
