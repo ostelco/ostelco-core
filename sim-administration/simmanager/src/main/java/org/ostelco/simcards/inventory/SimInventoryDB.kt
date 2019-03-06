@@ -222,7 +222,6 @@ interface SimInventoryDB {
                       WHERE hlrId = :hlrId""")
     fun getProfileNamesForHlr(hlrId: Long): List<String>
 
-
     /**
      * Get key numbers from a particular named Sim profile.
      * NOTE: This method is intended as an internal helper method for getProfileStats, its signature

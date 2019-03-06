@@ -13,6 +13,7 @@ import org.ostelco.simcards.admin.ConfigRegistry.config
 import org.ostelco.simcards.admin.ResourceRegistry.simInventoryResource
 import org.ostelco.simcards.inventory.*
 
+
 /**
  * The SIM manager
  * is an component that inputs inhales SIM batches
