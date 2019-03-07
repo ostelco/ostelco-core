@@ -9,6 +9,14 @@ interface HasId {
     val id: String
 }
 
+data class Region(
+        override val id: String,
+        val name: String) : HasId
+
+data class RegionDetails(
+        val region: Region,
+        val status: CustomerRegionStatus)
+
 data class Offer(
         override val id: String,
         val segments: Collection<String> = emptyList(),
@@ -25,12 +33,8 @@ data class ChangeSegment(
 
 data class Customer(
         override val id: String = UUID.randomUUID().toString(),
-        val email: String,
         val name: String = "",
-        val address: String = "",
-        val postCode: String = "",
-        val city: String = "",
-        val country: String = "",
+        val email: String,
         val analyticsId: String = UUID.randomUUID().toString(),
         val referralId: String = UUID.randomUUID().toString()) : HasId
 
@@ -39,20 +43,11 @@ data class Identity(
         val type: String,
         val provider: String) : HasId
 
-enum class CustomerStatus {
-    REGISTERED,         // User has registered an account, eKYC results are pending
-    EKYC_REJECTED,      // eKYC documents were rejected
-    EKYC_APPROVED,      // eKYC documents were approved
-    ACTIVE,             // Subscriber is active
-    INACTIVE            // Inactive customer
+enum class CustomerRegionStatus {
+    PENDING,       // eKYC is started by client and results are pending
+    REJECTED,      // eKYC documents were rejected
+    APPROVED,      // eKYC documents were approved
 }
-
-data class CustomerState(
-        val status: CustomerStatus,   // Current status of the customer
-        val modifiedTimestamp: Long,    // last modification time of the customer status
-        val scanId: String?,            // id of the last successful scan.
-        override val id: String
-) : HasId
 
 enum class ScanStatus {
     PENDING,        // scan results are pending
