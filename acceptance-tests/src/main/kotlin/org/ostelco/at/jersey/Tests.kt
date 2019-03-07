@@ -655,7 +655,7 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(StatusEnum.APPROVED, regionDetails.status, message = "Wrong State")
+            assertEquals(StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
