@@ -235,7 +235,7 @@ class SimAdministrationTest {
         val preAllocationStats = simDao.getProfileStats(hssId, expectedProfile)
 
 
-        val hssAdapterCache = HssAdapterCache(
+        val hssAdapterCache = HssAdapterManager(
                 hssConfigs = hssConfigs,
                 simInventoryDAO = simDao,
                 httpClient = httpClient)

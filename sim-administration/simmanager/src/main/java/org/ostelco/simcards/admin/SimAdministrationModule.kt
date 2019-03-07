@@ -60,7 +60,7 @@ class SimAdministrationModule : PrimeModule {
 
 
         var hssAdapters =
-                HssAdapterCache(
+                HssAdapterManager(
                         httpClient = httpClient,
                         simInventoryDAO = this.DAO,
                         hssConfigs = config.hssVendors)

@@ -3,9 +3,7 @@ package org.ostelco.simcards.admin
 import com.google.common.collect.ImmutableMultimap
 import io.dropwizard.servlets.tasks.Task
 import org.apache.http.impl.client.CloseableHttpClient
-import org.ostelco.simcards.adapter.HssAdapter
 import org.ostelco.simcards.adapter.HssEntry
-import org.ostelco.simcards.adapter.Wg2HssAdapter
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SimProfileKeyStatistics
 import org.slf4j.LoggerFactory
@@ -28,7 +26,7 @@ class PreallocateProfilesTask(
         val maxNoOfProfileToAllocate: Int = 30,
         val simInventoryDAO: SimInventoryDAO,
         val httpClient: CloseableHttpClient,
-        val hssAdapters: HssAdapterCache,
+        val hssAdapters: HssAdapterManager,
         val profileVendors: List<ProfileVendorConfig>) : Task("preallocate_sim_profiles") {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -41,7 +39,7 @@ class PreallocateProfilesTask(
 
     fun doPreprovisioning(hssEntry: HssEntry,
                           profile: String,
-                          hssAdapters: HssAdapterCache,
+                          hssAdapters: HssAdapterManager,
                           profileStats: SimProfileKeyStatistics) {
         val noOfProfilesToActuallyAllocate =
                 Math.min(maxNoOfProfileToAllocate.toLong(), profileStats.noOfUnallocatedEntries)

@@ -215,6 +215,7 @@ class SimInventoryUnitTests {
         verify(dao).getSimProfileByImsi(fakeImsi1)
     }
 
+
     @Test
     fun testFindByImsiNegativeResult() {
         val response = RULE.target("/ostelco/sim-inventory/$fakeHlr/imsi/$fakeImsi2")

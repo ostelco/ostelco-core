@@ -48,6 +48,7 @@ interface HssAdapter {
     fun reactivate(simEntry: SimEntry): SimEntry?
     fun terminate(simEntry: SimEntry): SimEntry?
 
+    fun getName(): String = "Unknown HSS adapter" // XXX Don't do defaults eventually
     fun iAmHealthy(): Boolean = true
 }
 
@@ -69,6 +70,8 @@ class Wg2HssAdapter(val httpClient: CloseableHttpClient,
         return null
     }
 
+
+
     /**
      * Requests the external HLR service to activate the SIM profile.
      * @param client  HTTP client
@@ -77,7 +80,6 @@ class Wg2HssAdapter(val httpClient: CloseableHttpClient,
      * @return Updated SIM profile
      */
     override fun activate(simEntry: SimEntry): SimEntry? {
-
 
         if (simEntry.iccid.isEmpty()) {
             throw WebApplicationException(
