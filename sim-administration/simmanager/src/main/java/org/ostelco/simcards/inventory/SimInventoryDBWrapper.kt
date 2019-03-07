@@ -20,23 +20,69 @@ interface SimInventoryDBWrapper {
 
     fun findNextReadyToUseSimProfileForHlr(hlrId: Long, profile: String): Either<SimManagerError, SimEntry>
 
-    fun updateEidOfSimProfileByIccid(iccid: String, eid: String): Either<SimManagerError, Int>
+    /**
+     * Sets the EID value of a SIM entry (profile).
+     * @param iccid  SIM entry to update
+     * @param eid  the eid value
+     * @return updated SIM entry
+     */
+    fun setEidOfSimProfileByIccid(iccid: String, eid: String): Either<SimManagerError, SimEntry>
 
-    fun updateEidOfSimProfile(id: Long, eid: String): Either<SimManagerError, Int>
+    /**
+     * Sets the EID value of a SIM entry (profile).
+     * @param id  row to update
+     * @param eid  the eid value
+     * @return updated SIM entry
+     */
+    fun setEidOfSimProfile(id: Long, eid: String): Either<SimManagerError, SimEntry>
 
     /*
      * State information.
      */
 
-    fun updateHlrState(id: Long, hlrState: HlrState): Either<SimManagerError, Int>
+    /**
+     * Set the entity to be marked as "active" in the HLR, then return the
+     * SIM entry.
+     * @param id row to update
+     * @param state new state from HLR service interaction
+     * @return updated row or null on no match
+     */
+    fun setHlrState(id: Long, state: HlrState): Either<SimManagerError, SimEntry>
 
-    fun updateProvisionState(id: Long, provisionState: ProvisionState): Either<SimManagerError, Int>
+    /**
+     * Set the provision state of a SIM entry, then return the entry.
+     * @param id row to update
+     * @param state new state from HLR service interaction
+     * @return updated row or null on no match
+     */
+    fun setProvisionState(id: Long, state: ProvisionState): Either<SimManagerError, SimEntry>
 
-    fun updateSmDpPlusState(id: Long, smdpPlusState: SmDpPlusState): Either<SimManagerError, Int>
+    /**
+     * Updates state of SIM profile and returns the updated profile.
+     * @param id  row to update
+     * @param state  new state from SMDP+ service interaction
+     * @return updated row or null on no match
+     */
+    fun setSmDpPlusState(id: Long, state: SmDpPlusState): Either<SimManagerError, SimEntry>
 
-    fun updateSmDpPlusStateUsingIccid(iccid: String, smdpPlusState: SmDpPlusState): Either<SimManagerError, Int>
+    /**
+     * Updates state of SIM profile and returns the updated profile.
+     * @param iccid  SIM entry to update
+     * @param state  new state from SMDP+ service interaction
+     * @return updated row or null on no match
+     */
+    fun setSmDpPlusStateUsingIccid(iccid: String, state: SmDpPlusState): Either<SimManagerError, SimEntry>
 
-    fun updateSmDpPlusStateAndMatchingId(id: Long, smdpPlusState: SmDpPlusState, matchingId: String): Either<SimManagerError, Int>
+    /**
+     * Updates state of SIM profile and returns the updated profile.
+     * Updates state and the 'matching-id' of a SIM profile and return
+     * the updated profile.
+     * @param id  row to update
+     * @param state  new state from SMDP+ service interaction
+     * @param matchingId  SM-DP+ ES2 'matching-id' to be sent to handset
+     * @return updated row or null on no match
+     */
+    fun setSmDpPlusStateAndMatchingId(id: Long, state: SmDpPlusState, matchingId: String): Either<SimManagerError, SimEntry>
 
     /*
      * HLR and SM-DP+ 'adapters'.

@@ -3,7 +3,6 @@ package org.ostelco.simcards.inventory
 import arrow.core.Either
 import arrow.core.fix
 import arrow.core.flatMap
-import arrow.core.left
 import arrow.effects.IO
 import arrow.instances.either.monad.monad
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -13,7 +12,6 @@ import org.jdbi.v3.core.mapper.RowMapper
 import org.jdbi.v3.core.statement.StatementContext
 import org.jdbi.v3.sqlobject.customizer.Bind
 import org.jdbi.v3.sqlobject.transaction.Transaction
-import org.ostelco.prime.simmanager.NotFoundError
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.adapter.HlrAdapter
 import java.io.BufferedReader
@@ -244,135 +242,8 @@ class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper
             }.unsafeRunSync()
 
     //
-    // Setting activation statuses
-    //
-
-    /**
-     * Set the entity to be marked as "active" in the HLR, then return the
-     * SIM entry.
-     * @param id row to update
-     * @param state new state from HLR service interaction
-     * @return updated row or null on no match
-     */
-    @Transaction
-    fun setHlrState(id: Long, state: HlrState): Either<SimManagerError, SimEntry> =
-            updateHlrState(id, state)
-                    .flatMap { count ->
-                        if (count > 0)
-                         getSimProfileById(id)
-                        else
-                            NotFoundError("Found no HLR adapter with id ${id} update of HLR state failed")
-                                    .left()
-                    }
-
-    /**
-     * Set the provision state of a SIM entry, then return the entry.
-     * @param id row to update
-     * @param state new state from HLR service interaction
-     * @return updated row or null on no match
-     */
-    @Transaction
-    fun setProvisionState(id: Long, state: ProvisionState): Either<SimManagerError, SimEntry> =
-            updateProvisionState(id, state)
-                    .flatMap { count ->
-                        if (count > 0)
-                            getSimProfileById(id)
-                        else
-                            NotFoundError("Found no SIM profile with id ${id} update of provision state failed")
-                                    .left()
-                    }
-
-    /**
-     * Updates state of SIM profile and returns the updated profile.
-     * @param id  row to update
-     * @param state  new state from SMDP+ service interaction
-     * @return updated row or null on no match
-     */
-    @Transaction
-    fun setSmDpPlusState(id: Long, state: SmDpPlusState): Either<SimManagerError, SimEntry> =
-            updateSmDpPlusState(id, state)
-                    .flatMap { count ->
-                        if (count > 0)
-                            getSimProfileById(id)
-                        else
-                            NotFoundError("Found no SIM profile with id ${id} update of SM-DP+ state failed")
-                                    .left()
-                    }
-
-    /**
-     * Updates state of SIM profile and returns the updated profile.
-     * @param iccid  SIM entry to update
-     * @param state  new state from SMDP+ service interaction
-     * @return updated row or null on no match
-     */
-    @Transaction
-    fun setSmDpPlusStateUsingIccid(iccid: String, state: SmDpPlusState): Either<SimManagerError, SimEntry> =
-            updateSmDpPlusStateUsingIccid(iccid, state)
-                    .flatMap { count ->
-                        if (count > 0)
-                            getSimProfileByIccid(iccid)
-                        else
-                            NotFoundError("Found no SIM profile with id ${iccid} update of SM-DP+ state failed")
-                                    .left()
-                    }
-
-    /**
-     * Updates state of SIM profile and returns the updated profile.
-     * Updates state and the 'matching-id' of a SIM profile and return
-     * the updated profile.
-     * @param id  row to update
-     * @param state  new state from SMDP+ service interaction
-     * @param matchingId  SM-DP+ ES2 'matching-id' to be sent to handset
-     * @return updated row or null on no match
-     */
-    @Transaction
-    fun setSmDpPlusStateAndMatchingId(id: Long, state: SmDpPlusState, matchingId: String): Either<SimManagerError, SimEntry> =
-            updateSmDpPlusStateAndMatchingId(id, state, matchingId)
-                    .flatMap {  count ->
-                        if (count > 0)
-                            getSimProfileById(id)
-                        else
-                            NotFoundError("Found no SIM profile with id ${id} update of SM-DP+ state and 'matching-id' failed")
-                                    .left()
-                    }
-
-    //
     // Finding next free SIM card for a particular HLR.
     //
-
-    /**
-     * Sets the EID value of a SIM entry (profile).
-     * @param id  row to update
-     * @param eid  the eid value
-     * @return updated SIM entry
-     */
-    @Transaction
-    fun setEidOfSimProfile(id: Long, eid: String): Either<SimManagerError, SimEntry> =
-            updateEidOfSimProfile(id, eid)
-                    .flatMap {  count ->
-                        if (count > 0)
-                            getSimProfileById(id)
-                        else
-                            NotFoundError("Found no SIM profile with id ${id} update of EID failed")
-                                    .left()
-                    }
-
-    /**
-     * Sets the EID value of a SIM entry (profile).
-     * @param iccid  SIM entry to update
-     * @param eid  the eid value
-     * @return updated SIM entry
-     */
-    @Transaction
-    fun setEidOfSimProfileByIccid(iccid: String, eid: String): Either<SimManagerError, SimEntry> =
-            updateEidOfSimProfileByIccid(iccid, eid)
-                    .flatMap { count ->
-                        if (count > 0)
-                            getSimProfileByIccid(iccid)
-                        else
-                            NotFoundError("Found no SIM profile with ICCID ${iccid} update of EID failed")
-                                    .left()
-                    }
 
     /**
      * Get relevant statistics for a particular profile type for a particular HLR.

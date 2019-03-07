@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import org.jdbi.v3.core.JdbiException
+import org.jdbi.v3.sqlobject.transaction.Transaction
 import org.ostelco.prime.simmanager.*
 import org.ostelco.simcards.adapter.HlrAdapter
 import org.ostelco.simcards.adapter.ProfileVendorAdapter
@@ -42,43 +43,71 @@ class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper 
                 db.findNextReadyToUseSimProfileForHlr(hlrId, profile)!!
             }
 
-    override fun updateEidOfSimProfileByIccid(iccid: String, eid: String): Either<SimManagerError, Int> =
-            either {
-                db.updateEidOfSimProfileByIccid(iccid, eid)
+    @Transaction
+    override fun setEidOfSimProfileByIccid(iccid: String, eid: String): Either<SimManagerError, SimEntry> =
+            either(NotFoundError("Found no SIM profile with ICCID ${iccid} update of EID failed")) {
+                if (db.updateEidOfSimProfileByIccid(iccid, eid) > 0)
+                    db.getSimProfileByIccid(iccid)
+                else
+                    null
             }
 
-    override fun updateEidOfSimProfile(id: Long, eid: String): Either<SimManagerError, Int> =
-            either {
-                db.updateEidOfSimProfile(id, eid)
+    @Transaction
+    override fun setEidOfSimProfile(id: Long, eid: String): Either<SimManagerError, SimEntry> =
+            either(NotFoundError("Found no SIM profile with id ${id} update of EID failed")) {
+                if (db.updateEidOfSimProfile(id, eid) > 0)
+                    db.getSimProfileById(id)
+                else
+                    null
             }
 
     /*
      * State information.
      */
 
-    override fun updateHlrState(id: Long, hlrState: HlrState): Either<SimManagerError, Int> =
-            either {
-                db.updateHlrState(id, hlrState)
+    @Transaction
+    override fun setHlrState(id: Long, state: HlrState): Either<SimManagerError, SimEntry> =
+            either(NotFoundError("Found no HLR adapter with id ${id} update of HLR state failed")) {
+                if (db.updateHlrState(id, state) > 0)
+                    db.getSimProfileById(id)
+                else
+                    null
             }
 
-    override fun updateProvisionState(id: Long, provisionState: ProvisionState): Either<SimManagerError, Int> =
-            either {
-                db.updateProvisionState(id, provisionState)
+    @Transaction
+    override fun setProvisionState(id: Long, state: ProvisionState): Either<SimManagerError, SimEntry> =
+            either(NotFoundError("Found no SIM profile with id ${id} update of provision state failed")) {
+                if (db.updateProvisionState(id, state) > 0)
+                    db.getSimProfileById(id)
+                else
+                    null
             }
 
-    override fun updateSmDpPlusState(id: Long, smdpPlusState: SmDpPlusState): Either<SimManagerError, Int> =
-            either {
-                db.updateSmDpPlusState(id, smdpPlusState)
+    @Transaction
+    override fun setSmDpPlusState(id: Long, state: SmDpPlusState): Either<SimManagerError, SimEntry> =
+            either(NotFoundError("Found no SIM profile with id ${id} update of SM-DP+ state failed")) {
+                if (db.updateSmDpPlusState(id, state) > 0)
+                    db.getSimProfileById(id)
+                else
+                    null
             }
 
-    override fun updateSmDpPlusStateUsingIccid(iccid: String, smdpPlusState: SmDpPlusState): Either<SimManagerError, Int> =
-            either {
-                db.updateSmDpPlusStateUsingIccid(iccid, smdpPlusState)
+    @Transaction
+    override fun setSmDpPlusStateUsingIccid(iccid: String, state: SmDpPlusState): Either<SimManagerError, SimEntry> =
+            either(NotFoundError("Found no SIM profile with id ${iccid} update of SM-DP+ state failed")) {
+                if (db.updateSmDpPlusStateUsingIccid(iccid, state) > 0)
+                    db.getSimProfileByIccid(iccid)
+                else
+                    null
             }
 
-    override fun updateSmDpPlusStateAndMatchingId(id: Long, smdpPlusState: SmDpPlusState, matchingId: String): Either<SimManagerError, Int> =
-            either {
-                db.updateSmDpPlusStateAndMatchingId(id, smdpPlusState, matchingId)
+    @Transaction
+    override fun setSmDpPlusStateAndMatchingId(id: Long, state: SmDpPlusState, matchingId: String): Either<SimManagerError, SimEntry> =
+            either(NotFoundError("Found no SIM profile with id ${id} update of SM-DP+ state and 'matching-id' failed")) {
+                if (db.updateSmDpPlusStateAndMatchingId(id, state, matchingId) > 0)
+                    db. getSimProfileById(id)
+                else
+                    null
             }
 
     /*
@@ -92,7 +121,7 @@ class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper 
 
     override fun storeSimVendorForHlrPermission(profileVendorId: Long, hlrId: Long): Either<SimManagerError, Int> =
             either {
-                db.storeSimVendorForHlrPermission(profileVendorId, hlrId)
+-                db.storeSimVendorForHlrPermission(profileVendorId, hlrId)
             }
 
     override fun addHlrAdapter(name: String): Either<SimManagerError, Int> =
@@ -148,10 +177,10 @@ class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper 
             either(NotFoundError("Found no information about 'import batch' with id ${id}")) {
                 db.getBatchInfo(id)!!
             }
+
     /*
      * Returns the 'id' of the last insert, regardless of table.
      */
-
     override fun lastInsertedRowId(): Either<SimManagerError, Long> =
             either {
                 db.lastInsertedRowId()
@@ -160,7 +189,6 @@ class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper 
     /**
      * Find all the different HLRs that are present.
      */
-
     override fun getHlrAdapters(): Either<SimManagerError, List<HlrAdapter>> =
             either(NotFoundError("Found no HLR adapters")) {
                 db.getHlrAdapters()
@@ -194,28 +222,22 @@ class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper 
                 action().right()
             } catch (e: Exception) {
                 when (e) {
-                    is JdbiException, is PSQLException -> {
+                    is JdbiException,
+                    is PSQLException ->
                         DatabaseError("SIM manager database query failed with message: ${e.message}")
-                    }
-                    else -> {
-                        SystemError("Error accessing SIM manager database: ${e.message}")
-                    }
+                    else -> SystemError("Error accessing SIM manager database: ${e.message}")
                 }.left()
             }
 
-    private fun <R> either(error: SimManagerError, action: () -> R): Either<SimManagerError, R> =
+    private fun <R> either(error: SimManagerError, action: () -> R?): Either<SimManagerError, R> =
             try {
-                action()?.let {
-                    it.right()
-                } ?: error.left()
-            } catch (e: Exception) {
+                action()?.right() ?: error.left()
+            }
+            catch (e: Exception) {
                 when (e) {
-                    is JdbiException, is PSQLException -> {
-                        DatabaseError("SIM manager database query failed with message: ${e.message}")
-                    }
-                    else -> {
-                        SystemError("Error accessing SIM manager database: ${e.message}")
-                    }
+                    is JdbiException,
+                    is PSQLException -> DatabaseError("SIM manager database query failed with message: ${e.message}")
+                    else -> SystemError("Error accessing SIM manager database: ${e.message}")
                 }.left()
             }
 }
