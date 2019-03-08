@@ -11,6 +11,7 @@ import org.ostelco.prime.customer.endpoint.resources.PaymentSourcesResource
 import org.ostelco.prime.customer.endpoint.resources.ProductsResource
 import org.ostelco.prime.customer.endpoint.resources.PurchaseResource
 import org.ostelco.prime.customer.endpoint.resources.ReferralResource
+import org.ostelco.prime.customer.endpoint.resources.RegionsResource
 import org.ostelco.prime.customer.endpoint.resources.SubscriptionsResource
 import org.ostelco.prime.customer.endpoint.store.SubscriberDAOImpl
 import org.ostelco.prime.module.PrimeModule
@@ -48,6 +49,7 @@ class CustomerEndpointModule : PrimeModule {
         jerseyEnv.register(SubscriptionsResource(dao))
         jerseyEnv.register(BundlesResource(dao))
         jerseyEnv.register(SubscriptionsResource(dao))
+        jerseyEnv.register(RegionsResource(dao))
         jerseyEnv.register(CustomerResource(dao))
         jerseyEnv.register(ApplicationTokenResource(dao))
 

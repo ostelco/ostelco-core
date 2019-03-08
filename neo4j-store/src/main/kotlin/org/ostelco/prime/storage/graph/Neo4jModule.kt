@@ -10,6 +10,7 @@ import org.neo4j.driver.v1.GraphDatabase
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
+import org.ostelco.prime.model.Region
 import org.ostelco.prime.model.Segment
 import org.ostelco.prime.module.PrimeModule
 import java.net.URI
@@ -38,6 +39,9 @@ class Neo4jModule : PrimeModule {
 
 fun initDatabase() {
     Neo4jStoreSingleton.createIndex()
+
+    Neo4jStoreSingleton.createRegion(Region(id = "no", name = "Norway"))
+
     Neo4jStoreSingleton.createProduct(createProduct(sku = "1GB_249NOK", amount = 24900))
     Neo4jStoreSingleton.createProduct(createProduct(sku = "2GB_299NOK", amount = 29900))
     Neo4jStoreSingleton.createProduct(createProduct(sku = "3GB_349NOK", amount = 34900))

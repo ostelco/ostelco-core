@@ -4,6 +4,7 @@ import org.junit.Test
 import org.ostelco.at.common.StripePayment
 import org.ostelco.at.common.createCustomer
 import org.ostelco.at.common.createSubscription
+import org.ostelco.at.common.enableRegion
 import org.ostelco.at.common.expectedProducts
 import org.ostelco.at.common.getLogger
 import org.ostelco.at.common.randomInt
@@ -11,7 +12,6 @@ import org.ostelco.prime.customer.model.ApplicationToken
 import org.ostelco.prime.customer.model.Bundle
 import org.ostelco.prime.customer.model.BundleList
 import org.ostelco.prime.customer.model.Customer
-import org.ostelco.prime.customer.model.CustomerState
 import org.ostelco.prime.customer.model.PaymentSource
 import org.ostelco.prime.customer.model.PaymentSourceList
 import org.ostelco.prime.customer.model.Person
@@ -21,6 +21,10 @@ import org.ostelco.prime.customer.model.Product
 import org.ostelco.prime.customer.model.ProductInfo
 import org.ostelco.prime.customer.model.PurchaseRecord
 import org.ostelco.prime.customer.model.PurchaseRecordList
+import org.ostelco.prime.customer.model.Region
+import org.ostelco.prime.customer.model.RegionDetails
+import org.ostelco.prime.customer.model.RegionDetails.StatusEnum
+import org.ostelco.prime.customer.model.RegionDetailsList
 import org.ostelco.prime.customer.model.ScanInformation
 import org.ostelco.prime.customer.model.Subscription
 import java.net.URLEncoder
@@ -47,10 +51,6 @@ class CustomerTest {
                 .id("")
                 .email(email)
                 .name("Test Customer")
-                .address("")
-                .city("")
-                .country("NO")
-                .postCode("")
                 .analyticsId("")
                 .referralId("")
 
@@ -68,14 +68,14 @@ class CustomerTest {
             this.email = email
         }
 
-        assertEquals(email, customer.email, "Incorrect 'email' in fetched customer")
-        assertEquals(createCustomer.name, customer.name, "Incorrect 'name' in fetched customer")
+        assertEquals(createdCustomer.email, customer.email, "Incorrect 'email' in fetched customer")
+        assertEquals(createdCustomer.name, customer.name, "Incorrect 'name' in fetched customer")
+        assertEquals(createdCustomer.analyticsId, customer.analyticsId, "Incorrect 'analyticsId' in fetched customer")
+        assertEquals(createdCustomer.referralId, customer.referralId, "Incorrect 'referralId' in fetched customer")
 
-        customer
-                .address("Some place")
-                .postCode("418")
-                .city("Udacity")
-                .country("Online")
+        val newName = "New name: Test Customer"
+
+        customer.name(newName)
 
         val updatedCustomer: Customer = put {
             path = "/customer"
@@ -84,40 +84,7 @@ class CustomerTest {
         }
 
         assertEquals(email, updatedCustomer.email, "Incorrect 'email' in response after updating customer")
-        assertEquals(createCustomer.name, updatedCustomer.name, "Incorrect 'name' in response after updating customer")
-        assertEquals("Some place", updatedCustomer.address, "Incorrect 'address' in response after updating customer")
-        assertEquals("418", updatedCustomer.postCode, "Incorrect 'postcode' in response after updating customer")
-        assertEquals("Udacity", updatedCustomer.city, "Incorrect 'city' in response after updating customer")
-        assertEquals("Online", updatedCustomer.country, "Incorrect 'country' in response after updating customer")
-
-        updatedCustomer
-                .address("")
-                .postCode("")
-                .city("")
-
-        val clearedCustomer: Customer = put {
-            path = "/customer"
-            body = updatedCustomer
-            this.email = email
-        }
-
-        assertEquals(email, clearedCustomer.email, "Incorrect 'email' in response after clearing customer")
-        assertEquals(createCustomer.name, clearedCustomer.name, "Incorrect 'name' in response after clearing customer")
-        assertEquals("", clearedCustomer.address, "Incorrect 'address' in response after clearing customer")
-        assertEquals("", clearedCustomer.postCode, "Incorrect 'postcode' in response after clearing customer")
-        assertEquals("", clearedCustomer.city, "Incorrect 'city' in response after clearing customer")
-
-        updatedCustomer.country("")
-
-        // A test in 'HttpClientUtil' checks for status code 200 while the
-        // expected status code is actually 400.
-        assertFailsWith(AssertionError::class, "Incorrectly accepts that 'country' is cleared/not set") {
-            put {
-                path = "/customer"
-                body = updatedCustomer
-                this.email = email
-            }
-        }
+        assertEquals(newName, updatedCustomer.name, "Incorrect 'name' in response after updating customer")
     }
 
     @Test
@@ -210,6 +177,7 @@ class GetProductsTest {
 
         val email = "products-${randomInt()}@test.com"
         createCustomer(name = "Test Products User", email = email)
+        enableRegion(email = email)
 
         val products: List<Product> = get {
             path = "/products"
@@ -379,7 +347,7 @@ class SourceTest {
             val createdIds = listOf(getCardIdForTokenFromStripe(createTokenWithStripe(email)),
                     createSourceWithStripe(email))
 
-            val deletedIds = createdIds.map { it -> removeSourceWithStripe(email, it) }
+            val deletedIds = createdIds.map { removeSourceWithStripe(email, it) }
 
             assert(createdIds.containsAll(deletedIds.toSet())) {
                 "Failed to delete one or more sources: ${createdIds.toSet() - deletedIds.toSet()}"
@@ -444,6 +412,7 @@ class PurchaseTest {
         var customerId = ""
         try {
             customerId = createCustomer(name = "Test Purchase User", email = email).id
+            enableRegion(email = email)
 
             val balanceBefore = get<List<Bundle>> {
                 path = "/bundles"
@@ -489,6 +458,7 @@ class PurchaseTest {
         var customerId = ""
         try {
             customerId = createCustomer(name = "Test Purchase with Default Payment Source", email = email).id
+            enableRegion(email = email)
 
             val sourceId = StripePayment.createPaymentTokenId()
 
@@ -542,6 +512,7 @@ class PurchaseTest {
         var customerId = ""
         try {
             customerId = createCustomer(name = "Test refund Purchase User with Default Payment Source", email = email).id
+            enableRegion(email = email)
 
             val sourceId = StripePayment.createPaymentTokenId()
 
@@ -585,7 +556,7 @@ class PurchaseTest {
             assertEquals(expectedProducts().first(), purchaseRecords.last().product, "Incorrect 'Product' in purchase record")
 
             val encodedEmail = URLEncoder.encode(email, "UTF-8")
-            val refundedProduct: ProductInfo = put<ProductInfo> {
+            val refundedProduct = put<ProductInfo> {
                 path = "/refund/$encodedEmail"
                 this.email = email
                 queryParams = mapOf(
@@ -607,6 +578,7 @@ class PurchaseTest {
         var customerId = ""
         try {
             customerId = createCustomer(name = "Test Purchase with adding Payment Source", email = email).id
+            enableRegion(email = email)
 
             val sourceId = StripePayment.createPaymentTokenId()
 
@@ -672,16 +644,19 @@ class eKYCTest {
             customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId/global"
+                path = "/customer/new-ekyc-scanId/no"
                 this.email = email
             }
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
-            val customerState: CustomerState = get {
-                path = "/customer/customerState"
+            val regionDetails = get<RegionDetailsList> {
+                path = "/regions"
                 this.email = email
-            }
-            assertEquals("REGISTERED", customerState.status, message = "Incorrect State")
+            }.single()
+
+            assertEquals(Region().id("no").name("Norway"), regionDetails.region)
+            assertEquals(StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
+
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
         }
@@ -696,34 +671,36 @@ class eKYCTest {
             customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId/global"
+                path = "/customer/new-ekyc-scanId/no"
                 this.email = email
             }
 
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
-            val dataMap = MultivaluedHashMap<String,String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
-            dataMap.put("idScanStatus", listOf("ERROR"))
-            dataMap.put("verificationStatus", listOf("DENIED_FRAUD"))
-            dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
-            dataMap.put("idType", listOf("LICENSE"))
-            dataMap.put("idCountry", listOf("NOR"))
-            dataMap.put("idFirstName", listOf("Test User"))
-            dataMap.put("idLastName", listOf("Test Family"))
-            dataMap.put("idDob", listOf("1990-12-09"))
-            dataMap.put("merchantIdScanReference", listOf(scanInfo.scanId))
+            val dataMap = MultivaluedHashMap<String, String>()
+            dataMap["jumioIdScanReference"] = listOf(UUID.randomUUID().toString())
+            dataMap["idScanStatus"] = listOf("ERROR")
+            dataMap["verificationStatus"] = listOf("DENIED_FRAUD")
+            dataMap["callbackDate"] = listOf("2018-12-07T09:19:07.036Z")
+            dataMap["idType"] = listOf("LICENSE")
+            dataMap["idCountry"] = listOf("NOR")
+            dataMap["idFirstName"] = listOf("Test User")
+            dataMap["idLastName"] = listOf("Test Family")
+            dataMap["idDob"] = listOf("1990-12-09")
+            dataMap["merchantIdScanReference"] = listOf(scanInfo.scanId)
 
             post<ScanInformation>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
                 path = "/ekyc/callback"
                 body = dataMap
             }
 
-            val customerState: CustomerState = get {
-                path = "/customer/customerState"
+            val regionDetails = get<Collection<RegionDetails>> {
+                path = "/regions"
                 this.email = email
-            }
-            assertEquals("EKYC_REJECTED", customerState.status, message = "Wrong state")
+            }.single()
+
+            assertEquals(Region().id("no").name("Norway"), regionDetails.region)
+            assertEquals(StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -739,36 +716,38 @@ class eKYCTest {
             customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId/global"
+                path = "/customer/new-ekyc-scanId/no"
                 this.email = email
             }
 
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
-            val dataMap = MultivaluedHashMap<String,String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
-            dataMap.put("idScanStatus", listOf("SUCCESS"))
-            dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
-            dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
-            dataMap.put("idType", listOf("LICENSE"))
-            dataMap.put("idCountry", listOf("NOR"))
-            dataMap.put("idFirstName", listOf("Test User"))
-            dataMap.put("idLastName", listOf("Test Family"))
-            dataMap.put("idDob", listOf("1990-12-09"))
-            dataMap.put("merchantIdScanReference", listOf(scanInfo.scanId))
-            val identityVerification="""{ "similarity":"MATCH", "validity":"TRUE"}"""
-            dataMap.put("identityVerification", listOf(identityVerification))
-            dataMap.put("livenessImages", listOf(imgUrl, imgUrl2))
+            val dataMap = MultivaluedHashMap<String, String>()
+            dataMap["jumioIdScanReference"] = listOf(UUID.randomUUID().toString())
+            dataMap["idScanStatus"] = listOf("SUCCESS")
+            dataMap["verificationStatus"] = listOf("APPROVED_VERIFIED")
+            dataMap["callbackDate"] = listOf("2018-12-07T09:19:07.036Z")
+            dataMap["idType"] = listOf("LICENSE")
+            dataMap["idCountry"] = listOf("NOR")
+            dataMap["idFirstName"] = listOf("Test User")
+            dataMap["idLastName"] = listOf("Test Family")
+            dataMap["idDob"] = listOf("1990-12-09")
+            dataMap["merchantIdScanReference"] = listOf(scanInfo.scanId)
+            val identityVerification = """{ "similarity":"MATCH", "validity":"TRUE"}"""
+            dataMap["identityVerification"] = listOf(identityVerification)
+            dataMap["livenessImages"] = listOf(imgUrl, imgUrl2)
             post<ScanInformation>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
                 path = "/ekyc/callback"
                 body = dataMap
             }
 
-            val customerState: CustomerState = get {
-                path = "/customer/customerState"
+            val regionDetails = get<Collection<RegionDetails>> {
+                path = "/regions"
                 this.email = email
-            }
-            assertEquals("EKYC_APPROVED", customerState.status, message = "Wrong state")
+            }.single()
+
+            assertEquals(Region().id("no").name("Norway"), regionDetails.region)
+            assertEquals(StatusEnum.APPROVED, regionDetails.status, message = "Wrong State")
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -784,36 +763,38 @@ class eKYCTest {
             customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId/global"
+                path = "/customer/new-ekyc-scanId/no"
                 this.email = email
             }
 
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
-            val dataMap = MultivaluedHashMap<String,String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
-            dataMap.put("idScanStatus", listOf("SUCCESS"))
-            dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
-            dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
-            dataMap.put("idType", listOf("LICENSE"))
-            dataMap.put("idCountry", listOf("NOR"))
-            dataMap.put("idFirstName", listOf("Test User"))
-            dataMap.put("idLastName", listOf("Test Family"))
-            dataMap.put("idDob", listOf("1990-12-09"))
-            dataMap.put("merchantIdScanReference", listOf(scanInfo.scanId))
-            val identityVerification="""{ "similarity":"MATCH", "validity":"FALSE", "reason": "ENTIRE_ID_USED_AS_SELFIE" }"""
-            dataMap.put("identityVerification", listOf(identityVerification))
+            val dataMap = MultivaluedHashMap<String, String>()
+            dataMap["jumioIdScanReference"] = listOf(UUID.randomUUID().toString())
+            dataMap["idScanStatus"] = listOf("SUCCESS")
+            dataMap["verificationStatus"] = listOf("APPROVED_VERIFIED")
+            dataMap["callbackDate"] = listOf("2018-12-07T09:19:07.036Z")
+            dataMap["idType"] = listOf("LICENSE")
+            dataMap["idCountry"] = listOf("NOR")
+            dataMap["idFirstName"] = listOf("Test User")
+            dataMap["idLastName"] = listOf("Test Family")
+            dataMap["idDob"] = listOf("1990-12-09")
+            dataMap["merchantIdScanReference"] = listOf(scanInfo.scanId)
+            val identityVerification = """{ "similarity":"MATCH", "validity":"FALSE", "reason": "ENTIRE_ID_USED_AS_SELFIE" }"""
+            dataMap["identityVerification"] = listOf(identityVerification)
 
             post<ScanInformation>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
                 path = "/ekyc/callback"
                 body = dataMap
             }
 
-            val customerState: CustomerState = get {
-                path = "/customer/customerState"
+            val regionDetails = get<Collection<RegionDetails>> {
+                path = "/regions"
                 this.email = email
-            }
-            assertEquals("EKYC_REJECTED", customerState.status, message = "Wrong state")
+            }.single()
+
+            assertEquals(Region().id("no").name("Norway"), regionDetails.region)
+            assertEquals(StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -829,22 +810,22 @@ class eKYCTest {
             customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId/global"
+                path = "/customer/new-ekyc-scanId/no"
                 this.email = email
             }
 
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
-            val dataMap = MultivaluedHashMap<String,String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
-            dataMap.put("idScanStatus", listOf("SUCCESS"))
-            dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
-            dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
-            dataMap.put("idType", listOf("LICENSE"))
-            dataMap.put("idCountry", listOf("NOR"))
-            dataMap.put("idFirstName", listOf("Test User"))
-            dataMap.put("idLastName", listOf("Test Family"))
-            dataMap.put("idDob", listOf("1990-12-09"))
+            val dataMap = MultivaluedHashMap<String, String>()
+            dataMap["jumioIdScanReference"] = listOf(UUID.randomUUID().toString())
+            dataMap["idScanStatus"] = listOf("SUCCESS")
+            dataMap["verificationStatus"] = listOf("APPROVED_VERIFIED")
+            dataMap["callbackDate"] = listOf("2018-12-07T09:19:07.036Z")
+            dataMap["idType"] = listOf("LICENSE")
+            dataMap["idCountry"] = listOf("NOR")
+            dataMap["idFirstName"] = listOf("Test User")
+            dataMap["idLastName"] = listOf("Test Family")
+            dataMap["idDob"] = listOf("1990-12-09")
             //dataMap.put("merchantIdScanReference", listOf(scanInfo.scanId))
 
             post<String>(expectedResultCode = 400, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
@@ -852,11 +833,13 @@ class eKYCTest {
                 body = dataMap
             }
 
-            val customerState: CustomerState = get {
-                path = "/customer/customerState"
+            val regionDetails = get<Collection<RegionDetails>> {
+                path = "/regions"
                 this.email = email
-            }
-            assertEquals("REGISTERED", customerState.status, message = "Wrong state")
+            }.single()
+
+            assertEquals(Region().id("no").name("Norway"), regionDetails.region)
+            assertEquals(StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -872,34 +855,36 @@ class eKYCTest {
             customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId/global"
+                path = "/customer/new-ekyc-scanId/no"
                 this.email = email
             }
 
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
-            val dataMap = MultivaluedHashMap<String,String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
-            dataMap.put("idScanStatus", listOf("SUCCESS"))
-            dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
-            dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
-            dataMap.put("idType", listOf("LICENSE"))
-            dataMap.put("idCountry", listOf("NOR"))
-            dataMap.put("idFirstName", listOf("Test User"))
-            dataMap.put("idLastName", listOf("Test Family"))
-            dataMap.put("idDob", listOf("1990-12-09"))
-            dataMap.put("merchantIdScanReference", listOf(scanInfo.scanId))
+            val dataMap = MultivaluedHashMap<String, String>()
+            dataMap["jumioIdScanReference"] = listOf(UUID.randomUUID().toString())
+            dataMap["idScanStatus"] = listOf("SUCCESS")
+            dataMap["verificationStatus"] = listOf("APPROVED_VERIFIED")
+            dataMap["callbackDate"] = listOf("2018-12-07T09:19:07.036Z")
+            dataMap["idType"] = listOf("LICENSE")
+            dataMap["idCountry"] = listOf("NOR")
+            dataMap["idFirstName"] = listOf("Test User")
+            dataMap["idLastName"] = listOf("Test Family")
+            dataMap["idDob"] = listOf("1990-12-09")
+            dataMap["merchantIdScanReference"] = listOf(scanInfo.scanId)
 
             post<ScanInformation>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
                 path = "/ekyc/callback"
                 body = dataMap
             }
 
-            val customerState: CustomerState = get {
-                path = "/customer/customerState"
+            val regionDetails = get<Collection<RegionDetails>> {
+                path = "/regions"
                 this.email = email
-            }
-            assertEquals("EKYC_REJECTED", customerState.status, message = "Wrong state")
+            }.single()
+
+            assertEquals(Region().id("no").name("Norway"), regionDetails.region)
+            assertEquals(StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -915,70 +900,74 @@ class eKYCTest {
             customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId/global"
+                path = "/customer/new-ekyc-scanId/no"
                 this.email = email
             }
 
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
             val dataMap = MultivaluedHashMap<String, String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
-            dataMap.put("idScanStatus", listOf("ERROR"))
-            dataMap.put("verificationStatus", listOf("DENIED_FRAUD"))
-            dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
-            dataMap.put("idType", listOf("LICENSE"))
-            dataMap.put("idCountry", listOf("NOR"))
-            dataMap.put("idFirstName", listOf("Test User"))
-            dataMap.put("idLastName", listOf("Test Family"))
-            dataMap.put("idDob", listOf("1990-12-09"))
-            dataMap.put("merchantIdScanReference", listOf(scanInfo.scanId))
+            dataMap["jumioIdScanReference"] = listOf(UUID.randomUUID().toString())
+            dataMap["idScanStatus"] = listOf("ERROR")
+            dataMap["verificationStatus"] = listOf("DENIED_FRAUD")
+            dataMap["callbackDate"] = listOf("2018-12-07T09:19:07.036Z")
+            dataMap["idType"] = listOf("LICENSE")
+            dataMap["idCountry"] = listOf("NOR")
+            dataMap["idFirstName"] = listOf("Test User")
+            dataMap["idLastName"] = listOf("Test Family")
+            dataMap["idDob"] = listOf("1990-12-09")
+            dataMap["merchantIdScanReference"] = listOf(scanInfo.scanId)
 
             post<ScanInformation>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
                 path = "/ekyc/callback"
                 body = dataMap
             }
 
-            val customerState: CustomerState = get {
-                path = "/customer/customerState"
+            val regionDetails = get<Collection<RegionDetails>> {
+                path = "/regions"
                 this.email = email
-            }
-            assertEquals("EKYC_REJECTED", customerState.status, message = "Wrong state")
+            }.single()
+
+            assertEquals(Region().id("no").name("Norway"), regionDetails.region)
+            assertEquals(StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
 
             val newScanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId/global"
+                path = "/customer/new-ekyc-scanId/no"
                 this.email = email
             }
 
             assertNotNull(newScanInfo.scanId, message = "Failed to get new scanId")
 
 
-            dataMap.clear()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
-            dataMap.put("idScanStatus", listOf("SUCCESS"))
-            dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
-            dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
-            dataMap.put("idType", listOf("LICENSE"))
-            dataMap.put("idCountry", listOf("NOR"))
-            dataMap.put("idFirstName", listOf("Test User"))
-            dataMap.put("idLastName", listOf("Test Family"))
-            dataMap.put("idDob", listOf("1990-12-09"))
-            dataMap.put("merchantIdScanReference", listOf(newScanInfo.scanId))
-            dataMap.put("idScanImage", listOf(imgUrl))
-            dataMap.put("idScanImageBackside", listOf(imgUrl2))
-            dataMap.put("livenessImages", listOf(imgUrl, imgUrl2))
-            val identityVerification="""{ "similarity":"MATCH", "validity":"TRUE"}"""
-            dataMap.put("identityVerification", listOf(identityVerification))
+            val dataMap2 = MultivaluedHashMap<String, String>()
+            dataMap2["jumioIdScanReference"] = listOf(UUID.randomUUID().toString())
+            dataMap2["idScanStatus"] = listOf("SUCCESS")
+            dataMap2["verificationStatus"] = listOf("APPROVED_VERIFIED")
+            dataMap2["callbackDate"] = listOf("2018-12-07T09:19:07.036Z")
+            dataMap2["idType"] = listOf("LICENSE")
+            dataMap2["idCountry"] = listOf("NOR")
+            dataMap2["idFirstName"] = listOf("Test User")
+            dataMap2["idLastName"] = listOf("Test Family")
+            dataMap2["idDob"] = listOf("1990-12-09")
+            dataMap2["merchantIdScanReference"] = listOf(newScanInfo.scanId)
+            dataMap2["idScanImage"] = listOf(imgUrl)
+            dataMap2["idScanImageBackside"] = listOf(imgUrl2)
+            dataMap2["livenessImages"] = listOf(imgUrl, imgUrl2)
+            val identityVerification = """{ "similarity":"MATCH", "validity":"TRUE"}"""
+            dataMap2["identityVerification"] = listOf(identityVerification)
 
             post<ScanInformation>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
                 path = "/ekyc/callback"
-                body = dataMap
+                body = dataMap2
             }
 
-            val newCustomerState: CustomerState = get {
-                path = "/customer/customerState"
+            val newRegionDetails = get<Collection<RegionDetails>> {
+                path = "/regions"
                 this.email = email
-            }
-            assertEquals("EKYC_APPROVED", newCustomerState.status, message = "Wrong state")
+            }.single()
+
+            assertEquals(Region().id("no").name("Norway"), newRegionDetails.region)
+            assertEquals(StatusEnum.APPROVED, newRegionDetails.status, message = "Wrong State")
 
 
         } finally {
@@ -995,28 +984,28 @@ class eKYCTest {
             customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId/global"
+                path = "/customer/new-ekyc-scanId/no"
                 this.email = email
             }
 
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
             val dataMap = MultivaluedHashMap<String, String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
-            dataMap.put("idScanStatus", listOf("SUCCESS"))
-            dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
-            dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
-            dataMap.put("idType", listOf("LICENSE"))
-            dataMap.put("idCountry", listOf("NOR"))
-            dataMap.put("idFirstName", listOf("Test User"))
-            dataMap.put("idLastName", listOf("Test Family"))
-            dataMap.put("idDob", listOf("1990-12-09"))
-            dataMap.put("merchantIdScanReference", listOf(scanInfo.scanId))
-            dataMap.put("idScanImage", listOf(imgUrl))
-            dataMap.put("idScanImageBackside", listOf(imgUrl2))
-            dataMap.put("livenessImages", listOf(imgUrl, imgUrl2))
-            val identityVerification="""{ "similarity":"MATCH", "validity":"TRUE"}"""
-            dataMap.put("identityVerification", listOf(identityVerification))
+            dataMap["jumioIdScanReference"] = listOf(UUID.randomUUID().toString())
+            dataMap["idScanStatus"] = listOf("SUCCESS")
+            dataMap["verificationStatus"] = listOf("APPROVED_VERIFIED")
+            dataMap["callbackDate"] = listOf("2018-12-07T09:19:07.036Z")
+            dataMap["idType"] = listOf("LICENSE")
+            dataMap["idCountry"] = listOf("NOR")
+            dataMap["idFirstName"] = listOf("Test User")
+            dataMap["idLastName"] = listOf("Test Family")
+            dataMap["idDob"] = listOf("1990-12-09")
+            dataMap["merchantIdScanReference"] = listOf(scanInfo.scanId)
+            dataMap["idScanImage"] = listOf(imgUrl)
+            dataMap["idScanImageBackside"] = listOf(imgUrl2)
+            dataMap["livenessImages"] = listOf(imgUrl, imgUrl2)
+            val identityVerification = """{ "similarity":"MATCH", "validity":"TRUE"}"""
+            dataMap["identityVerification"] = listOf(identityVerification)
 
             post<ScanInformation>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
                 path = "/ekyc/callback"
@@ -1051,71 +1040,75 @@ class eKYCTest {
             customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId/global"
+                path = "/customer/new-ekyc-scanId/no"
                 this.email = email
             }
 
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
 
             val dataMap = MultivaluedHashMap<String, String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
-            dataMap.put("idScanStatus", listOf("ERROR"))
-            dataMap.put("verificationStatus", listOf("DENIED_FRAUD"))
-            dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
-            dataMap.put("idType", listOf("LICENSE"))
-            dataMap.put("idCountry", listOf("NOR"))
-            dataMap.put("idFirstName", listOf("Test User"))
-            dataMap.put("idLastName", listOf("Test Family"))
-            dataMap.put("idDob", listOf("1990-12-09"))
-            dataMap.put("merchantIdScanReference", listOf(scanInfo.scanId))
+            dataMap["jumioIdScanReference"] = listOf(UUID.randomUUID().toString())
+            dataMap["idScanStatus"] = listOf("ERROR")
+            dataMap["verificationStatus"] = listOf("DENIED_FRAUD")
+            dataMap["callbackDate"] = listOf("2018-12-07T09:19:07.036Z")
+            dataMap["idType"] = listOf("LICENSE")
+            dataMap["idCountry"] = listOf("NOR")
+            dataMap["idFirstName"] = listOf("Test User")
+            dataMap["idLastName"] = listOf("Test Family")
+            dataMap["idDob"] = listOf("1990-12-09")
+            dataMap["merchantIdScanReference"] = listOf(scanInfo.scanId)
 
             post<ScanInformation>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
                 path = "/ekyc/callback"
                 body = dataMap
             }
 
-            val customerState: CustomerState = get {
-                path = "/customer/customerState"
+            val newRegionDetails = get<Collection<RegionDetails>> {
+                path = "/regions"
                 this.email = email
-            }
-            assertEquals("EKYC_REJECTED", customerState.status, message = "Wrong state")
+            }.single()
+
+            assertEquals(Region().id("no").name("Norway"), newRegionDetails.region)
+            assertEquals(StatusEnum.REJECTED, newRegionDetails.status, message = "Wrong State")
 
             val newScanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId/global"
+                path = "/customer/new-ekyc-scanId/no"
                 this.email = email
             }
 
             assertNotNull(newScanInfo.scanId, message = "Failed to get new scanId")
 
-            dataMap.clear()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
-            dataMap.put("idScanStatus", listOf("SUCCESS"))
-            dataMap.put("verificationStatus", listOf("APPROVED_VERIFIED"))
-            dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
-            dataMap.put("idType", listOf("LICENSE"))
-            dataMap.put("idCountry", listOf("NOR"))
-            dataMap.put("idFirstName", listOf("Test User"))
-            dataMap.put("idLastName", listOf("Test Family"))
-            dataMap.put("idDob", listOf("1990-12-09"))
-            dataMap.put("merchantIdScanReference", listOf(newScanInfo.scanId))
-            dataMap.put("idScanImage", listOf(imgUrl))
-            dataMap.put("idScanImageBackside", listOf(imgUrl2))
+            val dataMap2 = MultivaluedHashMap<String, String>()
+            dataMap2["jumioIdScanReference"] = listOf(UUID.randomUUID().toString())
+            dataMap2["idScanStatus"] = listOf("SUCCESS")
+            dataMap2["verificationStatus"] = listOf("APPROVED_VERIFIED")
+            dataMap2["callbackDate"] = listOf("2018-12-07T09:19:07.036Z")
+            dataMap2["idType"] = listOf("LICENSE")
+            dataMap2["idCountry"] = listOf("NOR")
+            dataMap2["idFirstName"] = listOf("Test User")
+            dataMap2["idLastName"] = listOf("Test Family")
+            dataMap2["idDob"] = listOf("1990-12-09")
+            dataMap2["merchantIdScanReference"] = listOf(newScanInfo.scanId)
+            dataMap2["idScanImage"] = listOf(imgUrl)
+            dataMap2["idScanImageBackside"] = listOf(imgUrl2)
             // JUMIO POST data for livenesss images are interpreted like this by HTTP client in prime.
             val stringList = "[ \"$imgUrl\", \"$imgUrl2\" ]"
-            dataMap.put("livenessImages", listOf(stringList))
-            val identityVerification="""{ "similarity":"MATCH", "validity":"TRUE"}"""
-            dataMap.put("identityVerification", listOf(identityVerification))
+            dataMap2["livenessImages"] = listOf(stringList)
+            val identityVerification = """{ "similarity":"MATCH", "validity":"TRUE"}"""
+            dataMap2["identityVerification"] = listOf(identityVerification)
 
             post<ScanInformation>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
                 path = "/ekyc/callback"
-                body = dataMap
+                body = dataMap2
             }
 
-            val newCustomerState: CustomerState = get {
-                path = "/customer/customerState"
+            val regionDetails = get<Collection<RegionDetails>> {
+                path = "/regions"
                 this.email = email
-            }
-            assertEquals("EKYC_APPROVED", newCustomerState.status, message = "Wrong state")
+            }.single()
+
+            assertEquals(Region().id("no").name("Norway"), regionDetails.region)
+            assertEquals(StatusEnum.APPROVED, regionDetails.status, message = "Wrong State")
 
             val encodedEmail = URLEncoder.encode(email, "UTF-8")
             val scanInformationList = get<Collection<ScanInformation>> {
@@ -1142,36 +1135,38 @@ class eKYCTest {
             customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
             val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId/global"
+                path = "/customer/new-ekyc-scanId/no"
                 this.email = email
             }
 
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
-            val rejectReason="""{ "rejectReasonCode":"100", "rejectReasonDescription":"MANIPULATED_DOCUMENT", "rejectReasonDetails": [{ "detailsCode": "1001", "detailsDescription": "PHOTO" },{ "detailsCode": "1004", "detailsDescription": "DOB" }]}"""
+            val rejectReason = """{ "rejectReasonCode":"100", "rejectReasonDescription":"MANIPULATED_DOCUMENT", "rejectReasonDetails": [{ "detailsCode": "1001", "detailsDescription": "PHOTO" },{ "detailsCode": "1004", "detailsDescription": "DOB" }]}"""
 
             val dataMap = MultivaluedHashMap<String, String>()
-            dataMap.put("jumioIdScanReference", listOf(UUID.randomUUID().toString()))
-            dataMap.put("idScanStatus", listOf("ERROR"))
-            dataMap.put("verificationStatus", listOf("DENIED_FRAUD"))
-            dataMap.put("callbackDate", listOf("2018-12-07T09:19:07.036Z"))
-            dataMap.put("idType", listOf("LICENSE"))
-            dataMap.put("idCountry", listOf("NOR"))
-            dataMap.put("idFirstName", listOf("Test User"))
-            dataMap.put("idLastName", listOf("Test Family"))
-            dataMap.put("idDob", listOf("1990-12-09"))
-            dataMap.put("merchantIdScanReference", listOf(scanInfo.scanId))
-            dataMap.put("rejectReason", listOf(rejectReason))
+            dataMap["jumioIdScanReference"] = listOf(UUID.randomUUID().toString())
+            dataMap["idScanStatus"] = listOf("ERROR")
+            dataMap["verificationStatus"] = listOf("DENIED_FRAUD")
+            dataMap["callbackDate"] = listOf("2018-12-07T09:19:07.036Z")
+            dataMap["idType"] = listOf("LICENSE")
+            dataMap["idCountry"] = listOf("NOR")
+            dataMap["idFirstName"] = listOf("Test User")
+            dataMap["idLastName"] = listOf("Test Family")
+            dataMap["idDob"] = listOf("1990-12-09")
+            dataMap["merchantIdScanReference"] = listOf(scanInfo.scanId)
+            dataMap["rejectReason"] = listOf(rejectReason)
 
             post<ScanInformation>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
                 path = "/ekyc/callback"
                 body = dataMap
             }
 
-            val customerState: CustomerState = get {
-                path = "/customer/customerState"
+            val regionDetails = get<Collection<RegionDetails>> {
+                path = "/regions"
                 this.email = email
-            }
-            assertEquals("EKYC_REJECTED", customerState.status, message = "Wrong state")
+            }.single()
+
+            assertEquals(Region().id("no").name("Norway"), regionDetails.region)
+            assertEquals(StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
         }
@@ -1207,10 +1202,6 @@ class ReferralTest {
         val customer = Customer()
                 .email(email)
                 .name("Test Referral Second User")
-                .address("")
-                .city("")
-                .country("")
-                .postCode("")
                 .referralId("")
 
         val failedToCreate = assertFails {
@@ -1249,10 +1240,6 @@ class ReferralTest {
         val customer = Customer()
                 .email(secondEmail)
                 .name("Test Referral Second User")
-                .address("")
-                .city("")
-                .country("")
-                .postCode("")
                 .referralId("")
 
         post<Customer> {

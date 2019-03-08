@@ -16,10 +16,10 @@ import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Customer
-import org.ostelco.prime.model.CustomerState
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
+import org.ostelco.prime.model.RegionDetails
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
@@ -38,6 +38,10 @@ class SubscriberDAOImpl : SubscriberDAO {
 
     private val storage by lazy { getResource<ClientDataSource>() }
     private val paymentProcessor by lazy { getResource<PaymentProcessor>() }
+
+    //
+    // Customer
+    //
 
     override fun getCustomer(identity: Identity): Either<ApiError, Customer> {
         return try {
@@ -75,32 +79,6 @@ class SubscriberDAOImpl : SubscriberDAO {
         }
     }
 
-    override fun storeApplicationToken(customerId: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken> {
-
-        if (!SubscriberDAO.isValidApplicationToken(applicationToken)) {
-            return Either.left(BadRequestError("Incomplete ApplicationToken", ApiErrorCode.FAILED_TO_STORE_APPLICATION_TOKEN))
-        }
-
-        try {
-            storage.addNotificationToken(customerId, applicationToken)
-        } catch (e: Exception) {
-            logger.error("Failed to store ApplicationToken for customerId $customerId", e)
-            return Either.left(InsufficientStorageError("Failed to store ApplicationToken", ApiErrorCode.FAILED_TO_STORE_APPLICATION_TOKEN))
-        }
-        return getNotificationToken(customerId, applicationToken.applicationID)
-    }
-
-    private fun getNotificationToken(customerId: String, applicationId: String): Either<ApiError, ApplicationToken> {
-        try {
-            return storage.getNotificationToken(customerId, applicationId)
-                    ?.let { Either.right(it) }
-                    ?: return Either.left(NotFoundError("Failed to get ApplicationToken", ApiErrorCode.FAILED_TO_STORE_APPLICATION_TOKEN))
-        } catch (e: Exception) {
-            logger.error("Failed to get ApplicationToken for customerId $customerId", e)
-            return Either.left(BadGatewayError("Failed to get ApplicationToken", ApiErrorCode.FAILED_TO_STORE_APPLICATION_TOKEN))
-        }
-    }
-
     override fun updateCustomer(identity: Identity, profile: Customer): Either<ApiError, Customer> {
         if (!SubscriberDAO.isValidProfile(profile)) {
             return Either.left(BadRequestError("Incomplete customer info description", ApiErrorCode.FAILED_TO_UPDATE_PROFILE))
@@ -116,6 +94,24 @@ class SubscriberDAOImpl : SubscriberDAO {
 
         return getCustomer(identity)
     }
+
+    //
+    // Regions
+    //
+    override fun getRegions(identity: Identity): Either<ApiError, Collection<RegionDetails>> {
+        return try {
+            storage.getAllRegionDetails(identity).mapLeft {
+                NotFoundError("Failed to get regions.", ApiErrorCode.FAILED_TO_FETCH_REGIONS, it)
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to get regions for customer with identity - $identity", e)
+            Either.left(BadGatewayError("Failed to get regions", ApiErrorCode.FAILED_TO_FETCH_REGIONS))
+        }
+    }
+
+    //
+    // Subscriptions
+    //
 
     override fun getSubscriptions(identity: Identity): Either<ApiError, Collection<Subscription>> {
         return try {
@@ -139,6 +135,10 @@ class SubscriberDAOImpl : SubscriberDAO {
         }
     }
 
+    //
+    // Bundle
+    //
+
     override fun getBundles(identity: Identity): Either<ApiError, Collection<Bundle>> {
         return try {
             storage.getBundles(identity).mapLeft {
@@ -149,6 +149,10 @@ class SubscriberDAOImpl : SubscriberDAO {
             Either.left(NotFoundError("Failed to get bundles", ApiErrorCode.FAILED_TO_FETCH_BUNDLES))
         }
     }
+
+    //
+    // Products
+    //
 
     override fun getPurchaseHistory(identity: Identity): Either<ApiError, Collection<PurchaseRecord>> {
         return try {
@@ -190,27 +194,9 @@ class SubscriberDAOImpl : SubscriberDAO {
                     sourceId,
                     saveCard).mapLeft { mapPaymentErrorToApiError("Failed to purchase product. ", ApiErrorCode.FAILED_TO_PURCHASE_PRODUCT, it) }
 
-    override fun getReferrals(identity: Identity): Either<ApiError, Collection<Person>> {
-        return try {
-            storage.getReferrals(identity).bimap(
-                    { NotFoundError("Failed to get referral list.", ApiErrorCode.FAILED_TO_FETCH_REFERRALS, it) },
-                    { list -> list.map { Person(it) } })
-        } catch (e: Exception) {
-            logger.error("Failed to get referral list for customer with identity - $identity", e)
-            Either.left(BadGatewayError("Failed to get referral list", ApiErrorCode.FAILED_TO_FETCH_REFERRALS))
-        }
-    }
-
-    override fun getReferredBy(identity: Identity): Either<ApiError, Person> {
-        return try {
-            storage.getReferredBy(identity).bimap(
-                    { NotFoundError("Failed to get referred-by.", ApiErrorCode.FAILED_TO_FETCH_REFERRED_BY_LIST, it) },
-                    { Person(name = it) })
-        } catch (e: Exception) {
-            logger.error("Failed to get referred-by for customer with identity - $identity", e)
-            Either.left(BadGatewayError("Failed to get referred-by", ApiErrorCode.FAILED_TO_FETCH_REFERRED_BY_LIST))
-        }
-    }
+    //
+    // Payment
+    //
 
     override fun createSource(identity: Identity, sourceId: String): Either<ApiError, SourceInfo> {
         return storage.getCustomerId(identity)
@@ -290,6 +276,36 @@ class SubscriberDAOImpl : SubscriberDAO {
                 }
     }
 
+    //
+    // Referrals
+    //
+
+    override fun getReferrals(identity: Identity): Either<ApiError, Collection<Person>> {
+        return try {
+            storage.getReferrals(identity).bimap(
+                    { NotFoundError("Failed to get referral list.", ApiErrorCode.FAILED_TO_FETCH_REFERRALS, it) },
+                    { list -> list.map { Person(it) } })
+        } catch (e: Exception) {
+            logger.error("Failed to get referral list for customer with identity - $identity", e)
+            Either.left(BadGatewayError("Failed to get referral list", ApiErrorCode.FAILED_TO_FETCH_REFERRALS))
+        }
+    }
+
+    override fun getReferredBy(identity: Identity): Either<ApiError, Person> {
+        return try {
+            storage.getReferredBy(identity).bimap(
+                    { NotFoundError("Failed to get referred-by.", ApiErrorCode.FAILED_TO_FETCH_REFERRED_BY_LIST, it) },
+                    { Person(name = it) })
+        } catch (e: Exception) {
+            logger.error("Failed to get referred-by for customer with identity - $identity", e)
+            Either.left(BadGatewayError("Failed to get referred-by", ApiErrorCode.FAILED_TO_FETCH_REFERRED_BY_LIST))
+        }
+    }
+
+    //
+    // eKYC
+    //
+
     override fun newEKYCScanId(identity: Identity, countryCode: String): Either<ApiError, ScanInformation> {
         return storage.newEKYCScanId(identity, countryCode)
                 .mapLeft { mapStorageErrorToApiError("Failed to create new scanId", ApiErrorCode.FAILED_TO_CREATE_SCANID, it) }
@@ -305,8 +321,33 @@ class SubscriberDAOImpl : SubscriberDAO {
                 .mapLeft { mapStorageErrorToApiError("Failed to fetch scan information", ApiErrorCode.FAILED_TO_FETCH_SCAN_INFORMATION, it) }
     }
 
-    override fun getSubscriberState(identity: Identity): Either<ApiError, CustomerState> {
-        return storage.getCustomerState(identity)
-                .mapLeft { mapStorageErrorToApiError("Failed to fetch new subscriber state", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIBER_STATE, it) }
+    //
+    // Token
+    //
+
+    override fun storeApplicationToken(customerId: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken> {
+
+        if (!SubscriberDAO.isValidApplicationToken(applicationToken)) {
+            return Either.left(BadRequestError("Incomplete ApplicationToken", ApiErrorCode.FAILED_TO_STORE_APPLICATION_TOKEN))
+        }
+
+        try {
+            storage.addNotificationToken(customerId, applicationToken)
+        } catch (e: Exception) {
+            logger.error("Failed to store ApplicationToken for customerId $customerId", e)
+            return Either.left(InsufficientStorageError("Failed to store ApplicationToken", ApiErrorCode.FAILED_TO_STORE_APPLICATION_TOKEN))
+        }
+        return getNotificationToken(customerId, applicationToken.applicationID)
+    }
+
+    private fun getNotificationToken(customerId: String, applicationId: String): Either<ApiError, ApplicationToken> {
+        try {
+            return storage.getNotificationToken(customerId, applicationId)
+                    ?.let { Either.right(it) }
+                    ?: return Either.left(NotFoundError("Failed to get ApplicationToken", ApiErrorCode.FAILED_TO_STORE_APPLICATION_TOKEN))
+        } catch (e: Exception) {
+            logger.error("Failed to get ApplicationToken for customerId $customerId", e)
+            return Either.left(BadGatewayError("Failed to get ApplicationToken", ApiErrorCode.FAILED_TO_STORE_APPLICATION_TOKEN))
+        }
     }
 }

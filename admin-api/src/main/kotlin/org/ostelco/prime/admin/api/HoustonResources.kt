@@ -13,7 +13,6 @@ import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Customer
-import org.ostelco.prime.model.CustomerState
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.Plan
 import org.ostelco.prime.model.PurchaseRecord
@@ -62,41 +61,19 @@ class ProfilesResource {
                     .build()
         }
         val decodedId = URLDecoder.decode(id, "UTF-8")
-        if (!isEmail(decodedId)) {
+        return if (!isEmail(decodedId)) {
             logger.info("${token.name} Accessing profile for msisdn:$decodedId")
-            return getProfileForMsisdn(decodedId).fold(
+            getProfileForMsisdn(decodedId).fold(
                     { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                     { Response.status(Response.Status.OK).entity(asJson(it)) })
                     .build()
         } else {
             logger.info("${token.name} Accessing profile for email:$decodedId")
-            return getProfile(Identity(decodedId, "EMAIL", "email")).fold(
+            getProfile(Identity(decodedId, "EMAIL", "email")).fold(
                     { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                     { Response.status(Response.Status.OK).entity(asJson(it)) })
                     .build()
         }
-    }
-
-    /**
-     * Get the subscriber state/
-     */
-    @GET
-    @Path("{email}/state")
-    @Produces(MediaType.APPLICATION_JSON)
-    fun getSubscriberState(@Auth token: AccessTokenPrincipal?,
-                           @NotNull
-                           @PathParam("email")
-                           email: String): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-        val decodedId = URLDecoder.decode(email, "UTF-8")
-        logger.info("${token.name} Accessing state for email:$decodedId")
-        return getSubscriberState(Identity(decodedId, "EMAIL", "email")).fold(
-                { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { Response.status(Response.Status.OK).entity(asJson(it)) })
-                .build()
     }
 
     /**
@@ -185,25 +162,13 @@ class ProfilesResource {
 
     // TODO: Reuse the one from SubscriberDAO
     private fun getSubscriptions(identity: Identity): Either<ApiError, Collection<Subscription>> {
-        try {
-            return storage.getSubscriptions(identity).mapLeft {
+        return try {
+            storage.getSubscriptions(identity).mapLeft {
                 NotFoundError("Failed to get subscriptions.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS, it)
             }
         } catch (e: Exception) {
             logger.error("Failed to get subscriptions for customer with identity - $identity", e)
-            return Either.left(BadGatewayError("Failed to get subscriptions", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS))
-        }
-    }
-
-    // TODO: Reuse the one from SubscriberDAO
-    private fun getSubscriberState(identity: Identity): Either<ApiError, CustomerState> {
-        try {
-            return storage.getCustomerState(identity).mapLeft {
-                NotFoundError("Failed to fetch state of subscriber.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIBER_STATE, it)
-            }
-        } catch (e: Exception) {
-            logger.error("Error fetching state for customer with identity - $identity", e)
-            return Either.left(BadGatewayError("Error fetching state", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIBER_STATE))
+            Either.left(BadGatewayError("Failed to get subscriptions", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS))
         }
     }
 

@@ -80,7 +80,7 @@ object StripePayment {
         val customers = Customer.list(emptyMap()).data
 
         val stripeEmail = "$customerId@ostelco.org"
-        return customers.first { it.email.equals(stripeEmail) }.id
+        return customers.first { it.email == stripeEmail }.id
     }
 
     fun deleteCustomer(customerId: String) {

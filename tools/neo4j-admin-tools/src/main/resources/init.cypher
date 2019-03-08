@@ -1,4 +1,7 @@
 // For country:NO
+CREATE (:Region {`id`:   'no',
+                 `name`: 'Norway'});
+
 CREATE (:Product {`id`:                        '1GB_0NOK',
                   `presentation/isDefault`:    'true',
                   `presentation/offerLabel`:   '',
@@ -80,6 +83,9 @@ MATCH (m:Segment {id: 'country-no'})
 CREATE (n)-[:OFFERED_TO_SEGMENT]->(m);
 
 // For country:SG
+CREATE (:Region {`id`:   'sg',
+                 `name`: 'Singapore'});
+
 CREATE (:Product {`id`:                        '1GB_1SGD',
                   `presentation/isDefault`:    'true',
                   `presentation/offerLabel`:   'Default Offer',

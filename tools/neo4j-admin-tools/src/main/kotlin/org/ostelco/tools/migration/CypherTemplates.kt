@@ -3,14 +3,11 @@ package org.ostelco.tools.migration
 import org.ostelco.prime.model.Customer
 
 
-fun createSubscriber(subscriber: Customer) = """
-CREATE(node:Subscriber {id:         '${subscriber.email}',
-                        `email`: '${subscriber.email}',
-                        `name`: '${subscriber.name}',
-                        `address`: '${subscriber.address}',
-                        `postCode`: '${subscriber.postCode}',
-                        `city`:     '${subscriber.city}',
-                        `country`: '${subscriber.country}'});
+fun createSubscriber(customer: Customer) = """
+CREATE(node:Subscriber {id: '${customer.email}',
+                        `name`: '${customer.name}'
+                        `email`: '${customer.email}',
+                        `analyticsId`: '${customer.analyticsId}'});
 """
 
 fun createSubscription(msisdn: String) = """
