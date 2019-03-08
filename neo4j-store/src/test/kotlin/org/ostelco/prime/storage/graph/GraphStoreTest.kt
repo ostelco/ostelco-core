@@ -13,12 +13,14 @@ import org.mockito.Mockito
 import org.neo4j.driver.v1.AccessMode.WRITE
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.model.Customer
+import org.ostelco.prime.model.CustomerRegionStatus.APPROVED
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.JumioScanData
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
+import org.ostelco.prime.model.Region
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.ScanResult
 import org.ostelco.prime.model.ScanStatus
@@ -155,12 +157,7 @@ class GraphStoreTest {
         ).thenReturn(chargeId.right())
 
         // prep
-        Neo4jStoreSingleton.addCustomer(
-                identity = IDENTITY,
-                customer = CUSTOMER)
-                .mapLeft { fail(it.message) }
-
-        Neo4jStoreSingleton.addSubscription(IDENTITY, MSISDN)
+        Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
                 .mapLeft { fail(it.message) }
 
         Neo4jStoreSingleton.createProduct(createProduct(sku = sku, amount = 24900))
@@ -174,9 +171,22 @@ class GraphStoreTest {
         Neo4jStoreSingleton.createOffer(offer)
                 .mapLeft { fail(it.message) }
 
+        Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER)
+                .mapLeft { fail(it.message) }
+
+        Neo4jStoreSingleton.addSubscription(IDENTITY, MSISDN)
+                .mapLeft { fail(it.message) }
+
+        Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
+                customerId = CUSTOMER.id,
+                status = APPROVED,
+                regionCode = "NO")
+
         // test
         Neo4jStoreSingleton.purchaseProduct(identity = IDENTITY, sku = sku, sourceId = null, saveCard = false)
-                .mapLeft { fail(it.message) }
+                .mapLeft { fail(it.description) }
 
         // assert
         Neo4jStoreSingleton.getBundles(IDENTITY).bimap(
@@ -354,10 +364,15 @@ class GraphStoreTest {
     @Test
     fun `eKYCScan - generate new scanId`() {
 
+        // prep
+        Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
+                .mapLeft { fail(it.message) }
+
         assert(Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
                 customer = CUSTOMER).isRight())
 
+        // test
         Neo4jStoreSingleton.newEKYCScanId(identity = IDENTITY, countryCode = COUNTRY).map {
             Neo4jStoreSingleton.getScanInformation(identity = IDENTITY, scanId = it.scanId).mapLeft {
                 fail(it.message)
@@ -370,10 +385,15 @@ class GraphStoreTest {
     @Test
     fun `eKYCScan - get all scans`() {
 
+        // prep
+        Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
+                .mapLeft { fail(it.message) }
+
         assert(Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
                 customer = CUSTOMER).isRight())
 
+        // test
         Neo4jStoreSingleton.newEKYCScanId(identity = IDENTITY, countryCode = COUNTRY).map { newScan ->
             Neo4jStoreSingleton.getAllScanInformation(identity = IDENTITY).map { infoList ->
                 assertEquals(1, infoList.size, "More scans than expected.")
@@ -388,6 +408,8 @@ class GraphStoreTest {
 
     @Test
     fun `eKYCScan - update scan information`() {
+
+        assert(Neo4jStoreSingleton.createRegion(Region(id = "no", name = "Norway")).isRight())
 
         assert(Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
@@ -431,10 +453,15 @@ class GraphStoreTest {
     @Test
     fun `eKYCScan - update with unknown scanId`() {
 
+        // prep
+        Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
+                .mapLeft { fail(it.message) }
+
         assert(Neo4jStoreSingleton.addCustomer(
                 identity = IDENTITY,
                 customer = CUSTOMER).isRight())
 
+        // test
         Neo4jStoreSingleton.newEKYCScanId(identity = IDENTITY, countryCode = COUNTRY).map {
             val newScanInformation = ScanInformation(
                     scanId = "fakeId",
@@ -469,6 +496,11 @@ class GraphStoreTest {
 
     @Test
     fun `eKYCScan - illegal access`() {
+
+        // prep
+        Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
+                .mapLeft { fail(it.message) }
+
         val fakeEmail = "fake-$EMAIL"
         val fakeIdentity = Identity(id = fakeEmail, type = "EMAIL", provider = "email")
         assert(Neo4jStoreSingleton.addCustomer(
@@ -476,8 +508,9 @@ class GraphStoreTest {
                 customer = CUSTOMER).isRight())
         assert(Neo4jStoreSingleton.addCustomer(
                 identity = fakeIdentity,
-                customer = Customer(email = fakeEmail, name = NAME, country = COUNTRY)).isRight())
+                customer = Customer(email = fakeEmail, name = NAME)).isRight())
 
+        // test
         Neo4jStoreSingleton.newEKYCScanId(fakeIdentity, COUNTRY).mapLeft {
             fail(it.message)
         }
@@ -497,7 +530,7 @@ class GraphStoreTest {
         const val COUNTRY = "NO"
         const val MSISDN = "4712345678"
         val IDENTITY = Identity(id = EMAIL, type = "EMAIL", provider = "email")
-        val CUSTOMER = Customer(email = EMAIL, name = NAME, country = COUNTRY)
+        val CUSTOMER = Customer(email = EMAIL, name = NAME)
 
         @ClassRule
         @JvmField

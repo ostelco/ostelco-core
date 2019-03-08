@@ -121,11 +121,11 @@ class KYCResource {
                         rejectReason = rejectReason
                 ))
             } else {
-                return null;
+                return null
             }
         }
         catch (e: NullPointerException) {
-            logger.error("Missing mandatory fields in scan result ${dataMap}")
+            logger.error("Missing mandatory fields in scan result $dataMap", e)
             return null
         }
     }
@@ -152,13 +152,13 @@ class KYCResource {
     private fun getCountryCodeForScan(scanId: String): String? {
         return try {
             storage.getCountryCodeForScan(scanId).fold({
-                logger.error("Failed to get country code for scan ${scanId}")
+                logger.error("Failed to get country code for scan $scanId")
                 null
             }, {
                 it
             })
         } catch (e: Exception) {
-            logger.error("Caught error while getting country code for scan ${scanId}")
+            logger.error("Caught error while getting country code for scan $scanId")
             return null
         }
     }
@@ -188,7 +188,7 @@ class KYCResource {
         for (entry in formData.entries) {
             result += "${entry.key} = ${entry.value}\n"
         }
-        logger.info("$result")
+        logger.info(result)
 
         return result
     }

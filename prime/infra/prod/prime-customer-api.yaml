@@ -30,21 +30,6 @@ paths:
           description: "User not found."
       security:
         - auth0_jwt: []
-  "/customer/customerState":
-    get:
-      description: "Get state of the user."
-      produces:
-        - application/json
-      operationId: "getCustomerState"
-      responses:
-        200:
-          description: "Successfully retrieved the state."
-          schema:
-            $ref: '#/definitions/CustomerState'
-        404:
-          description: "No state information available for this user."
-      security:
-        - auth0_jwt: []
   "/customer/new-ekyc-scanId/{countryCode}":
     get:
       description: "Get a new Id for eKYC scanning."
@@ -435,14 +420,6 @@ definitions:
         type: string
       name:
         type: string
-      address:
-        type: string
-      postCode:
-        type: string
-      city:
-        type: string
-      country:
-        type: string
       email:
         type: string
         format: email
@@ -452,6 +429,26 @@ definitions:
         type: string
     required:
       - email
+  RegionDetailsList:
+    type: array
+    items:
+      $ref: '#/definitions/RegionDetails'
+  RegionDetails:
+    type: object
+    properties:
+      region:
+        $ref: '#/definitions/Region'
+      status:
+        description: "Customer Status for this region"
+        type: string
+        enum: [ PENDING, APPROVED, REJECTED ]
+  Region:
+    type: object
+    properties:
+      id:
+        type: string
+      name:
+        type: string
   SubscriptionList:
     type: array
     items:
@@ -656,26 +653,6 @@ definitions:
       variables:
         description: "GraphQL query variables."
         type: object
-  CustomerState:
-    type: object
-    properties:
-      id:
-        description: "User Id"
-        type: string
-      scanId:
-        description: "The id for the last successful ekyc scan"
-        type: string
-      status:
-        description: "Current status of the customer"
-        type: string
-      modifiedTimestamp:
-        description: "Last modified time for the status (Unix timestamp)"
-        type: integer
-        format: int64
-    required:
-      - id
-      - status
-      - modifiedTimestamp
   ScanInformationList:
     type: array
     items:

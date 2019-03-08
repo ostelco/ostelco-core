@@ -33,8 +33,6 @@ class CustomerResourceTest {
 
     private val email = "boaty@internet.org"
     private val name = "Boaty McBoatface"
-    private val address = "Storvej 10"
-    private val postCode = "132 23"
     private val city = "Oslo"
 
     private val profile = Customer(email = email)
@@ -78,9 +76,6 @@ class CustomerResourceTest {
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
                 .post(Entity.json("""{
                         "name": "$name",
-                        "address": "$address",
-                        "postCode": "$postCode",
-                        "city": "$city",
                         "email": "$email"
                 }""".trimIndent()))
 
@@ -89,9 +84,6 @@ class CustomerResourceTest {
         assertThat(arg1.firstValue).isEqualTo(Identity(email, "EMAIL", "email"))
         assertThat(arg2.firstValue.email).isEqualTo(email)
         assertThat(arg2.firstValue.name).isEqualTo(name)
-        assertThat(arg2.firstValue.address).isEqualTo(address)
-        assertThat(arg2.firstValue.postCode).isEqualTo(postCode)
-        assertThat(arg2.firstValue.city).isEqualTo(city)
         assertThat(arg3.firstValue).isNull()
     }
 
@@ -112,9 +104,6 @@ class CustomerResourceTest {
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
                 .post(Entity.json("""{
                     "name": "$name",
-                    "address": "$address",
-                    "postCode": "$postCode",
-                    "city": "$city",
                     "email": "$email"
                 }""".trimIndent()))
 
@@ -123,9 +112,6 @@ class CustomerResourceTest {
         assertThat(arg1.firstValue).isEqualTo(Identity(email, "EMAIL", "email"))
         assertThat(arg2.firstValue.email).isEqualTo(email)
         assertThat(arg2.firstValue.name).isEqualTo(name)
-        assertThat(arg2.firstValue.address).isEqualTo(address)
-        assertThat(arg2.firstValue.postCode).isEqualTo(postCode)
-        assertThat(arg2.firstValue.city).isEqualTo(city)
         assertThat(arg3.firstValue).isEqualTo(referredBy)
     }
 
@@ -145,9 +131,6 @@ class CustomerResourceTest {
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
                 .put(Entity.json("""{
                     "name": "$name",
-                    "address": "$newAddress",
-                    "postCode": "$newPostCode",
-                    "city": "$city",
                     "email": "$email"
                 }""".trimIndent()))
 
@@ -156,9 +139,6 @@ class CustomerResourceTest {
         assertThat(arg1.firstValue).isEqualTo(Identity(email, "EMAIL", "email"))
         assertThat(arg2.firstValue.email).isEqualTo(email)
         assertThat(arg2.firstValue.name).isEqualTo(name)
-        assertThat(arg2.firstValue.address).isEqualTo(newAddress)
-        assertThat(arg2.firstValue.postCode).isEqualTo(newPostCode)
-        assertThat(arg2.firstValue.city).isEqualTo(city)
     }
 
     @Test
