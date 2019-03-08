@@ -1,4 +1,4 @@
-package org.ostelco.simcards.adapter
+package org.ostelco.simcards.hss
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -22,8 +22,6 @@ import javax.ws.rs.core.Response
 //  4. Refactor all other code to live with this  simplified type of hlr adapter.
 
 
-
-
 /**
  * An adapter that connects to a HLR and activates/deactivates individual
  * SIM profiles.  This is a datum that is stored in a database.
@@ -43,34 +41,27 @@ data class HssEntry(
  * implementations.
  */
 interface HssAdapter {
-    fun activate(simEntry: SimEntry): SimEntry?
-    fun suspend(simEntry: SimEntry): SimEntry?
-    fun reactivate(simEntry: SimEntry): SimEntry?
-    fun terminate(simEntry: SimEntry): SimEntry?
+    fun activate(simEntry: SimEntry)
+    fun suspend(simEntry: SimEntry)
 
-    fun getName(): String = "Unknown HSS adapter" // XXX Don't do defaults eventually
-    fun iAmHealthy(): Boolean = true
+    // XXX We may want6 to do  one or two of these two also
+    // fun reactivate(simEntry: SimEntry)
+    // fun terminate(simEntry: SimEntry)
+
+    fun iAmHealthy(): Boolean
 }
 
-
-class Wg2HssAdapter(val httpClient: CloseableHttpClient,
-                    val config: HssConfig,
-                    val dao: SimInventoryDAO) : HssAdapter {
+class SimpleHssAdapter(val httpClient: CloseableHttpClient,
+                       val config: HssConfig,
+                       val dao: SimInventoryDAO) : HssAdapter {
 
     private val logger by getLogger()
 
     /* For payload serializing. */
     private val mapper = jacksonObjectMapper()
 
-    override fun reactivate(simEntry: SimEntry): SimEntry? {
-        return null
-    }
 
-    override fun terminate(simEntry: SimEntry): SimEntry? {
-        return null
-    }
-
-
+    override fun iAmHealthy(): Boolean = true
 
     /**
      * Requests the external HLR service to activate the SIM profile.
@@ -79,7 +70,7 @@ class Wg2HssAdapter(val httpClient: CloseableHttpClient,
      * @param simEntry  SIM profile to activate
      * @return Updated SIM profile
      */
-    override fun activate(simEntry: SimEntry): SimEntry? {
+    override fun activate(simEntry: SimEntry) {
 
         if (simEntry.iccid.isEmpty()) {
             throw WebApplicationException(
@@ -136,7 +127,7 @@ class Wg2HssAdapter(val httpClient: CloseableHttpClient,
      * @param simEntry  SIM profile to deactivate
      * @return Updated SIM profile
      */
-    override fun suspend(simEntry: SimEntry): SimEntry? {
+    override fun suspend(simEntry: SimEntry){
         if (simEntry.iccid.isEmpty()) {
             throw WebApplicationException(
                     String.format("Illegal parameter in SIM deactivation request to BSSID %s",

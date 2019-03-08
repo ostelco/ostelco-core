@@ -13,6 +13,7 @@ import org.jdbi.v3.core.Jdbi
 import org.junit.*
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.ostelco.simcards.hss.HssProxy
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimProfileKeyStatistics
 import org.ostelco.simcards.smdpplus.SmDpPlusApplication
@@ -235,7 +236,7 @@ class SimAdministrationTest {
         val preAllocationStats = simDao.getProfileStats(hssId, expectedProfile)
 
 
-        val hssAdapterCache = HssAdapterManager(
+        val hssAdapterCache = HssProxy(
                 hssConfigs = hssConfigs,
                 simInventoryDAO = simDao,
                 httpClient = httpClient)
@@ -244,7 +245,7 @@ class SimAdministrationTest {
                 profileVendors = profileVendors,
                 simInventoryDAO = simDao,
                 maxNoOfProfileToAllocate = maxNoOfProfilesToAllocate,
-                hssAdapters = hssAdapterCache,
+                hssAdapterProxy = hssAdapterCache,
                 httpClient = httpClient)
 
         task.preallocateProfiles()

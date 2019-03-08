@@ -3,7 +3,9 @@ package org.ostelco.simcards.admin
 import com.google.common.collect.ImmutableMultimap
 import io.dropwizard.servlets.tasks.Task
 import org.apache.http.impl.client.CloseableHttpClient
-import org.ostelco.simcards.adapter.HssEntry
+import org.ostelco.simcards.hss.HssAdapter
+import org.ostelco.simcards.hss.HssEntry
+import org.ostelco.simcards.hss.HssProxy
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SimProfileKeyStatistics
 import org.slf4j.LoggerFactory
@@ -26,7 +28,7 @@ class PreallocateProfilesTask(
         val maxNoOfProfileToAllocate: Int = 30,
         val simInventoryDAO: SimInventoryDAO,
         val httpClient: CloseableHttpClient,
-        val hssAdapters: HssAdapterManager,
+        val hssAdapterProxy: HssProxy,
         val profileVendors: List<ProfileVendorConfig>) : Task("preallocate_sim_profiles") {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -39,7 +41,7 @@ class PreallocateProfilesTask(
 
     fun doPreprovisioning(hssEntry: HssEntry,
                           profile: String,
-                          hssAdapters: HssAdapterManager,
+                          hssAdapter: HssAdapter,
                           profileStats: SimProfileKeyStatistics) {
         val noOfProfilesToActuallyAllocate =
                 Math.min(maxNoOfProfileToAllocate.toLong(), profileStats.noOfUnallocatedEntries)
@@ -66,8 +68,8 @@ class PreallocateProfilesTask(
             simVendorAdapter.downloadOrder(httpClient = httpClient, dao = simInventoryDAO, simEntry = simEntry, config = profileVendorConfig)
             simVendorAdapter.confirmOrder(httpClient = httpClient, dao = simInventoryDAO, simEntry = simEntry, config = profileVendorConfig)
 
-            val hssAdapterById = hssAdapters.getHssAdapterById(simEntry.hssId)
-            hssAdapterById!!.activate(simEntry)
+
+            hssAdapter.activate(simEntry)
         }
     }
 
@@ -79,15 +81,15 @@ class PreallocateProfilesTask(
      */
     public fun preallocateProfiles() {
 
-        hssAdapters.initialize()
+        hssAdapterProxy.initialize()
 
-        for (hssEntry in hssAdapters.getHssEntries()) {
+        for (hssEntry in hssAdapterProxy.getHssEntries()) {
             val profiles: Collection<String> = simInventoryDAO.getProfileNamesForHlr(hssEntry.id)
             for (profile in profiles) {
                 val profileStats =
                         simInventoryDAO.getProfileStats(hssEntry.id, profile)
                 if (profileStats.noOfEntriesAvailableForImmediateUse < lowWaterMark) {
-                    doPreprovisioning(hssAdapters = hssAdapters, hssEntry = hssEntry, profile = profile, profileStats = profileStats)
+                    doPreprovisioning(hssAdapter = hssAdapterProxy, hssEntry = hssEntry, profile = profile, profileStats = profileStats)
                 }
             }
         }

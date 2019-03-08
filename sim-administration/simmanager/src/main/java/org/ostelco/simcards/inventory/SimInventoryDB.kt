@@ -7,7 +7,7 @@ import org.jdbi.v3.sqlobject.statement.SqlBatch
 import org.jdbi.v3.sqlobject.statement.SqlQuery
 import org.jdbi.v3.sqlobject.statement.SqlUpdate
 import org.jdbi.v3.sqlobject.transaction.Transaction
-import org.ostelco.simcards.adapter.HssEntry
+import org.ostelco.simcards.hss.HssEntry
 import org.ostelco.simcards.adapter.ProfileVendorAdapter
 
 /**

@@ -8,7 +8,7 @@ import org.jdbi.v3.core.mapper.reflect.ColumnName
 import org.jdbi.v3.core.statement.StatementContext
 import org.jdbi.v3.sqlobject.customizer.Bind
 import org.jdbi.v3.sqlobject.transaction.Transaction
-import org.ostelco.simcards.adapter.HssEntry
+import org.ostelco.simcards.hss.HssEntry
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader

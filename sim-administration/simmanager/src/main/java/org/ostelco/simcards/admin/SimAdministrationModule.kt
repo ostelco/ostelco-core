@@ -7,10 +7,13 @@ import io.dropwizard.jdbi3.JdbiFactory
 import io.dropwizard.setup.Environment
 import org.ostelco.dropwizardutils.OpenapiResourceAdder
 import org.ostelco.prime.module.PrimeModule
-import org.ostelco.sim.es2plus.*
+import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter
+import org.ostelco.sim.es2plus.SmDpPlusCallbackResource
 import org.ostelco.simcards.admin.ConfigRegistry.config
 import org.ostelco.simcards.admin.ResourceRegistry.simInventoryResource
-import org.ostelco.simcards.inventory.*
+import org.ostelco.simcards.hss.HssProxy
+import org.ostelco.simcards.inventory.SimInventoryCallbackService
+import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SimInventoryDB
 import org.ostelco.simcards.inventory.SimInventoryResource
 
@@ -60,7 +63,7 @@ class SimAdministrationModule : PrimeModule {
 
 
         var hssAdapters =
-                HssAdapterManager(
+                HssProxy(
                         httpClient = httpClient,
                         simInventoryDAO = this.DAO,
                         hssConfigs = config.hssVendors)
@@ -68,7 +71,7 @@ class SimAdministrationModule : PrimeModule {
         env.admin().addTask(PreallocateProfilesTask(
                 simInventoryDAO = this.DAO,
                 httpClient = httpClient,
-                hssAdapters = hssAdapters,
+                hssAdapterProxy = hssAdapters,
                 profileVendors = config.profileVendors));
     }
 }

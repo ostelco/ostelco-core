@@ -6,7 +6,7 @@ import junit.framework.TestCase.assertNotNull
 import org.apache.http.impl.client.CloseableHttpClient
 import org.junit.*
 import org.mockito.Mockito.*
-import org.ostelco.simcards.adapter.HssEntry
+import org.ostelco.simcards.hss.HssEntry
 import org.ostelco.simcards.adapter.ProfileVendorAdapter
 import org.ostelco.simcards.admin.HssConfig
 import org.ostelco.simcards.admin.ProfileVendorConfig
