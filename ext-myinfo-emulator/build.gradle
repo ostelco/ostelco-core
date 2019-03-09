@@ -1,0 +1,31 @@
+plugins {
+  id "org.jetbrains.kotlin.jvm" version "1.3.21"
+  id "application"
+  id "com.github.johnrengelman.shadow" version "5.0.0"
+}
+
+dependencies {
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+
+  // This is not a prime-module. Just needed access to getLogger and Dropwizard KotlinModule.
+  implementation project(":prime-modules")
+  
+  implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
+  
+  implementation ("io.jsonwebtoken:jjwt:$jjwtVersion") {
+    exclude group: "com.fasterxml.jackson.core", module:"jackson-databind"
+  }
+  implementation "org.apache.cxf:cxf-rt-rs-security-jose:$cxfVersion"
+
+  runtimeOnly "javax.xml.bind:jaxb-api:$jaxbVersion"
+  runtimeOnly "javax.activation:activation:$javaxActivationVersion"
+}
+
+shadowJar {
+  mainClassName = 'org.ostelco.ext.myinfo.MyInfoEmulatorAppKt'
+  mergeServiceFiles()
+  classifier = "uber"
+  version = null
+}
+
+apply from: '../gradle/jacoco.gradle'
