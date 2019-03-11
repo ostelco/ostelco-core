@@ -16,9 +16,9 @@ Important Notes:
 
 If changes are required to the kubernetes deployment of Prime, you need to edit the [helm values file](../../.circleci/prime-dev-values.yaml) used by the pipeline. 
 
-### Adding non-secret environment variables
+### Adding non-secret environment variables
 Non-secret environment variables can be defined in the `env` section of the helm values file. Example: 
-```
+```yaml
 env: 
     FIREBASE_ROOT_PATH: dev
     NEO4J_HOST: neo4j-neo4j.neo4j.svc.cluster.local
@@ -28,7 +28,7 @@ Secrets are created manually using `kubectl create secret ... -n dev`
 > Remember to create the secrets in the `dev` namespace before deployment is triggered.
 
 Environment variables from k8s secrets can be defined in the `envFromSecret` section of the helm values file. Example: 
-```
+```yaml
 envFromSecret:
   - name: SLACK_WEBHOOK_URI # name of the environment variable that will be exposed to Prime
     secretName: slack-secrets # name of the secret which should pre-exist in the namespace
@@ -45,7 +45,7 @@ Secrets are created manually using `kubectl create secret ... -n dev`
 
 Environment variables from k8s secrets can be defined in the `secretVolumes` section of the helm values file. Example: 
 
-```
+```yaml
 secretVolumes:
   - secretName: "prime-sa-key"  # the secret name
     containerMountPath: "/secret" # the path in the container where the secret is mounted
@@ -60,7 +60,7 @@ secretVolumes:
 
 Each esp container is defined and configured in its own section. The `esp` section defines the ESP image config (which is common). 
 
-```
+```yaml
 ocsEsp: 
   enabled: true # whether to have that esp or not
   env: {} # any env vars to pass to the esp container
@@ -75,7 +75,7 @@ Services are configured in the `services` section of the helm values file.
 
 > It is very important to set `grpcOrHttp2: true` if the service being exposed is a GRPC or HTTP2 service
 
-```
+```yaml
 services:
   ocs:
     name: ocs # service name
@@ -91,7 +91,7 @@ services:
 
 The TLS certificates are managed by `cert-manager` and are automatically created from the helm chart. TLS creation is configured in the `certs` section of the helm values file.
 
-```
+```yaml
 certs: 
   enabled: true # enabled means create a TLS cert
   dnsProvider: dev-clouddns # the DNS provider configuration. This preconfigured and should not be changed.
@@ -109,14 +109,14 @@ To avoid pipeline waiting time, you can take a short cut and deploy your feature
 - Developer tests can be done in the `default` namespace.
 - Secrets will need to be replicated into the `default` namespace from the `dev` namespace.
 
-> You can copy secrets between namespaces with the following command : `kubectl get secret <existing-secret-name> --namespace=dev --export -o yaml | kubectl apply --namespace=default -f - `
+> You can copy secrets between namespaces with the following command : `$ kubectl get secret <existing-secret-name> --namespace=dev --export -o yaml | kubectl apply --namespace=default -f - `
 
 **Steps:**
 
 1. Build the prime docker image from your feature branch and tag it with your custom tag (e.g. eu.gcr.io/pi-ostelco-dev/prime:feature-xyz)
 
 2. Push the built image into the docker registry. 
-```
+```bash
 # auth is needed since the docker registry is private
 $ gcloud auth login
 $ docker push eu.gcr.io/pi-ostelco-dev/prime:feature-xyz
@@ -134,7 +134,7 @@ Copy the [sample developer helm values file](developer-tests-prime-values.yaml) 
 
 > Note: you can change the helm chart version below to a specific version of the prime helm chart. 
 
-``` 
+```bash 
 # the first command is only needed once
 $ helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
 $ helm repo update
@@ -145,16 +145,16 @@ $ helm upgrade ${RELEASE_NAME} ostelco/prime --version 0.4.3 --install -f <path-
 ```
 you can then watch for your pods being created with this command:
 
-```
-kubectl get pods -n dev -l release=${RELEASE_NAME} -w
+```bash 
+$ kubectl get pods -n dev -l release=${RELEASE_NAME} -w
 ```
 
 Once your pods are in the `Running` state, you can test the APIs of your custom deployment on: feature-xyz-prime-api-name.test.oya.world (e.g. https://feature-xyz-api.test.oya.world)
 
 To delete your custom deployment:
 
-```
-helm delete --purge ${RELEASE_NAME}
+```bash
+$ helm delete --purge ${RELEASE_NAME}
 ```
 -------------- 
 # Legacy setup below
