@@ -1,0 +1,44 @@
+plugins {
+  id "org.jetbrains.kotlin.jvm" version "1.3.21"
+  id "java-library"
+}
+
+dependencies {
+  
+  implementation project(":prime-modules")
+  
+  // implementation project(":myinfo-client")
+  
+  implementation("io.jsonwebtoken:jjwt:$jjwtVersion") {
+    exclude group: "com.fasterxml.jackson.core", module:"jackson-databind"
+  }
+  
+  implementation "org.apache.cxf:cxf-rt-rs-security-jose:$cxfVersion"
+
+  implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
+
+  
+  testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+  testImplementation project(":ext-myinfo-emulator")
+
+  testImplementation "org.junit.jupiter:junit-jupiter-api:$junit5Version"
+  testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junit5Version"
+}
+
+test {
+
+  if (project.hasProperty("mandrillApiKey")) {
+    environment("MANDRILL_API_KEY", mandrillApiKey)
+  }
+
+  // native support to Junit5 in Gradle 4.6+
+  useJUnitPlatform {
+    includeEngines 'junit-jupiter'
+  }
+  testLogging {
+    exceptionFormat = 'full'
+    events "PASSED", "FAILED", "SKIPPED"
+  }
+}
+
+apply from: '../gradle/jacoco.gradle'

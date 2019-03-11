@@ -2,6 +2,7 @@ package org.ostelco.prime.customer.endpoint.store
 
 import arrow.core.Either
 import arrow.core.flatMap
+import arrow.core.right
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
 import org.ostelco.prime.apierror.ApiErrorMapper.mapPaymentErrorToApiError
@@ -306,7 +307,7 @@ class SubscriberDAOImpl : SubscriberDAO {
     // eKYC
     //
 
-    override fun newEKYCScanId(identity: Identity, countryCode: String): Either<ApiError, ScanInformation> {
+    override fun createNewJumioScanId(identity: Identity, countryCode: String): Either<ApiError, ScanInformation> {
         return storage.newEKYCScanId(identity, countryCode)
                 .mapLeft { mapStorageErrorToApiError("Failed to create new scanId", ApiErrorCode.FAILED_TO_CREATE_SCANID, it) }
     }
@@ -321,6 +322,13 @@ class SubscriberDAOImpl : SubscriberDAO {
                 .mapLeft { mapStorageErrorToApiError("Failed to fetch scan information", ApiErrorCode.FAILED_TO_FETCH_SCAN_INFORMATION, it) }
     }
 
+    override fun getCustomerMyInfoData(identity: Identity, authorisationCode: String): Either<ApiError, String> {
+        return "{}".right()
+    }
+
+    override fun checkIdNumberUsingDave(identity: Identity) : Either<ApiError, Unit> = Unit.right()
+
+    override fun saveProfile(identity: Identity) : Either<ApiError, Unit> = Unit.right()
     //
     // Token
     //

@@ -9,7 +9,6 @@ import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
-import org.ostelco.prime.model.Region
 import org.ostelco.prime.model.RegionDetails
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.Subscription
@@ -89,11 +88,17 @@ interface SubscriberDAO {
     // eKYC
     //
 
-    fun newEKYCScanId(identity: Identity, countryCode: String): Either<ApiError, ScanInformation>
+    fun createNewJumioScanId(identity: Identity, countryCode: String): Either<ApiError, ScanInformation>
 
     fun getCountryCodeForScan(scanId: String): Either<ApiError, String>
 
     fun getScanInformation(identity: Identity, scanId: String): Either<ApiError, ScanInformation>
+
+    fun getCustomerMyInfoData(identity: Identity, authorisationCode: String): Either<ApiError, String>
+
+    fun checkIdNumberUsingDave(identity: Identity): Either<ApiError, Unit>
+
+    fun saveProfile(identity: Identity): Either<ApiError, Unit>
 
     //
     // Token

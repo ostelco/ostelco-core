@@ -13,7 +13,6 @@ import javax.ws.rs.GET
 import javax.ws.rs.POST
 import javax.ws.rs.PUT
 import javax.ws.rs.Path
-import javax.ws.rs.PathParam
 import javax.ws.rs.Produces
 import javax.ws.rs.QueryParam
 import javax.ws.rs.core.MediaType
@@ -98,52 +97,6 @@ class CustomerResource(private val dao: SubscriberDAO) {
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { stripeEphemeralKey -> Response.status(Response.Status.OK).entity(stripeEphemeralKey) })
-                .build()
-    }
-
-    @GET
-    @Path("new-ekyc-scanId/{countryCode}")
-    @Produces(MediaType.APPLICATION_JSON)
-    fun newEKYCScanId(
-            @Auth token: AccessTokenPrincipal?,
-            @NotNull
-            @PathParam("countryCode")
-            countryCode: String
-    ): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-
-        return dao.newEKYCScanId(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
-                countryCode = countryCode)
-                .fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                        { scanInformation -> Response.status(Response.Status.OK).entity(scanInformation) })
-                .build()
-    }
-
-    @GET
-    @Path("scanStatus/{scanId}")
-    @Produces(MediaType.APPLICATION_JSON)
-    fun getScanStatus(
-            @Auth token: AccessTokenPrincipal?,
-            @NotNull
-            @PathParam("scanId")
-            scanId: String
-    ): Response {
-        if (token == null) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .build()
-        }
-
-        return dao.getScanInformation(
-                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
-                scanId = scanId)
-                .fold(
-                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                        { scanInformation -> Response.status(Response.Status.OK).entity(scanInformation) })
                 .build()
     }
 }
