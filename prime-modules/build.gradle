@@ -10,7 +10,6 @@ dependencies {
   api "io.dropwizard:dropwizard-auth:$dropwizardVersion"
   implementation "com.google.cloud:google-cloud-datastore:$googleCloudVersion"
 
-  api "io.jsonwebtoken:jjwt:0.9.1"
   api "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
 
   api project(':ocs-grpc-api')
