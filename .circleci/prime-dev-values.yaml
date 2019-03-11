@@ -118,35 +118,35 @@ esp:
 ocsEsp: 
   enabled: true
   env: {}
-  endpointAddress: ocs.new.dev.ostelco.org
+  endpointAddress: ocs.dev.oya.world
   ports:
     http2_port: 9000
 
 apiEsp: 
   enabled: true
   env: {}
-  endpointAddress: api.new.dev.ostelco.org
+  endpointAddress: api.dev.oya.world
   ports:
     http2_port: 9002
 
 metricsEsp:
   enabled: true
   env: {}
-  endpointAddress: metrics.new.dev.ostelco.org
+  endpointAddress: metrics.dev.oya.world
   ports:
     http2_port: 9004
 
 alvinApiEsp:
   enabled: true
   env: {}  
-  endpointAddress: alvin-api.new.dev.ostelco.org
+  endpointAddress: alvin-api.dev.oya.world
   ports: 
     http_port: 9008  
 
 houstonApiEsp:
   enabled: true
   env: {}  
-  endpointAddress: houston-api1.new.dev.ostelco.org
+  endpointAddress: houston-api.dev.oya.world
   ports: 
     http_port: 9006    
 
@@ -157,7 +157,7 @@ services:
     port: 80
     targetPort: 9000
     portName: grpc 
-    host: ocs.new.dev.ostelco.org
+    host: ocs.dev.oya.world
     grpcOrHttp2: true
   api:
     name: api
@@ -165,7 +165,7 @@ services:
     port: 80
     targetPort: 9002
     portName: http
-    host: api.new.dev.ostelco.org
+    host: api.dev.oya.world
     grpcOrHttp2: true
   metrics: 
     name: metrics
@@ -173,7 +173,7 @@ services:
     port: 80
     targetPort: 9004 
     portName: grpc
-    host: metrics.new.dev.ostelco.org
+    host: metrics.dev.oya.world
     grpcOrHttp2: true
   prime-houston-api: 
     name: houston-api
@@ -181,14 +181,14 @@ services:
     port: 80
     targetPort: 9006  
     portName: http
-    host: houston-api.new.dev.ostelco.org
+    host: houston-api.dev.oya.world
   prime-alvin-api: 
     name: alvin-api
     type: ClusterIP
     port: 80
     targetPort: 9008  
     portName: http
-    host: alvin-api.new.dev.ostelco.org
+    host: alvin-api.dev.oya.world
   pseudonym-server: 
     name: pseudonym-server
     type: ClusterIP
@@ -207,9 +207,9 @@ certs:
   enabled: true
   dnsProvider: dev-clouddns
   issuer: letsencrypt-production 
-  tlsSecretName: new-dev-ostelco-tls
+  tlsSecretName: dev-oya-tls
   hosts:
-    - '*.new.dev.ostelco.org'
+    - '*.dev.oya.world'
 
 disruptionBudget: 
   enabled: false

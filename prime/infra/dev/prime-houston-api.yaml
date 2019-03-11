@@ -3,9 +3,9 @@ info:
   title: "Houston Admin API"
   description: "The APIs for the Houston Admin Client."
   version: "1.0.0"
-host: "houston-api.dev.ostelco.org"
+host: "houston-api.dev.oya.world"
 x-google-endpoints:
-  - name: "houston-api.dev.ostelco.org"
+  - name: "houston-api.dev.oya.world"
     allowCors: true
 schemes:
   - "https"
