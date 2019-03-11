@@ -1,14 +1,20 @@
 package org.ostelco.simcards.admin
 
+import arrow.core.Either
+import arrow.core.fix
+import arrow.core.left
+import arrow.effects.IO
+import arrow.instances.either.monad.flatMap
+import arrow.instances.either.monad.monad
 import com.google.common.collect.ImmutableMultimap
 import io.dropwizard.servlets.tasks.Task
 import org.apache.http.impl.client.CloseableHttpClient
+import org.ostelco.prime.simmanager.NotFoundError
+import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.adapter.HlrAdapter
-import org.ostelco.simcards.inventory.SimInventoryDAO
-import org.ostelco.simcards.inventory.SimProfileKeyStatistics
+import org.ostelco.simcards.inventory.*
 import org.slf4j.LoggerFactory
 import java.io.PrintWriter
-import javax.ws.rs.WebApplicationException
 
 
 /**
@@ -33,55 +39,84 @@ class PreallocateProfilesTask(
 
     @Throws(Exception::class)
     override fun execute(parameters: ImmutableMultimap<String, String>, output: PrintWriter) {
-        preallocateProfiles()
+        preAllocateSimProfiles()
     }
 
+    private fun preProvisionSimProfile(hlrAdapter: HlrAdapter,
+                                       simEntry: SimEntry): Either<SimManagerError, SimEntry> =
+            simInventoryDAO.getProfileVendorAdapterById(simEntry.profileVendorId)
+                    .flatMap { profileVendorAdapter ->
+                        val profileVendorConfig: ProfileVendorConfig? = profileVendors.firstOrNull {
+                            it.name == profileVendorAdapter.name
+                        }
+                        val hlrConfig: HlrConfig? = hlrConfigs.firstOrNull {
+                            it.name == hlrAdapter.name
+                        }
 
-    fun doPreprovisioning(hlrAdapter: HlrAdapter,
-                          profile: String,
-                          profileStats: SimProfileKeyStatistics) {
+                        if (profileVendorConfig != null && hlrConfig != null) {
+                            profileVendorAdapter.activate(httpClient = httpClient,
+                                    config = profileVendorConfig,
+                                    dao = simInventoryDAO,
+                                    simEntry = simEntry)
+                                    .flatMap {
+                                        hlrAdapter.activate(httpClient = httpClient,
+                                                config = hlrConfig,
+                                                dao = simInventoryDAO,
+                                                simEntry = simEntry)
+                                    }
+                        } else {
+                            if (profileVendorConfig == null) {
+                                NotFoundError("Failed to find configuration for SIM profile vendor ${profileVendorAdapter.name}")
+                                        .left()
+                            } else if (hlrConfig == null) {
+                                NotFoundError("Failed to find configuration for HLR ${hlrAdapter.name}")
+                                        .left()
+                            } else {
+                                NotFoundError("Failed to find configuration for SIM profile vendor ${profileVendorAdapter.name} " +
+                                        "and HLR ${hlrAdapter.name}")
+                                        .left()
+                            }
+                        }
+                    }
+
+    private fun batchPreprovisionSimProfiles(hlrAdapter: HlrAdapter,
+                                             profile: String,
+                                             profileStats: SimProfileKeyStatistics) {
         val noOfProfilesToActuallyAllocate =
                 Math.min(maxNoOfProfileToAllocate.toLong(), profileStats.noOfUnallocatedEntries)
 
         for (i in 1..noOfProfilesToActuallyAllocate) {
-            val simEntry =
-                    simInventoryDAO.findNextNonProvisionedSimProfileForHlr(
-                            hlrId = hlrAdapter.id,
-                            profile = profile)
-            if (simEntry == null) {
-                throw WebApplicationException("Could not find SIM profile for hlr '${hlrAdapter.name}' matching profile '${profile}'")
-            }
-            val simVendorAdapter = simInventoryDAO.getProfileVendorAdapterById(simEntry.profileVendorId)
-            if (simVendorAdapter == null) {
-                throw WebApplicationException("Could not find SIM vendor adapter matching id '${simEntry.profileVendorId}'")
-            }
-            val hlrConfig = hlrConfigs.find { it.name == hlrAdapter.name }!!
-            val profileVendorConfig = profileVendors.find { it.name == simVendorAdapter.name }!!
-
-            simVendorAdapter.downloadOrder(httpClient = httpClient, dao = simInventoryDAO, simEntry = simEntry, config = profileVendorConfig)
-            simVendorAdapter.confirmOrder(httpClient = httpClient, dao = simInventoryDAO, simEntry = simEntry, config = profileVendorConfig)
-            hlrAdapter.activate(simEntry = simEntry, httpClient = httpClient, config = hlrConfig, dao = simInventoryDAO)
+            simInventoryDAO.findNextNonProvisionedSimProfileForHlr(hlrId = hlrAdapter.id, profile = profile)
+                    .flatMap {
+                        preProvisionSimProfile(hlrAdapter, it)
+                    }
         }
     }
-
 
     /**
      * Made public to be testable.   Perform
      * allocation of profiles so that if possible, there will be tasks available for
      * provisioning.
      */
-    public fun preallocateProfiles() {
-        var hlrs: Collection<HlrAdapter> = simInventoryDAO.getHlrAdapters()
+    public fun preAllocateSimProfiles() {
+        IO {
+            Either.monad<SimManagerError>().binding {
+                val hlrAdapters: Collection<HlrAdapter> = simInventoryDAO.getHlrAdapters()
+                        .bind()
 
-        for (hlr in hlrs) {
-            val profiles: Collection<String> = simInventoryDAO.getProfileNamesForHlr(hlr.id)
-            for (profile in profiles) {
-                val profileStats =
-                        simInventoryDAO.getProfileStats(hlr.id, profile)
-                if (profileStats.noOfEntriesAvailableForImmediateUse < lowWaterMark) {
-                    doPreprovisioning(hlrAdapter = hlr, profile = profile, profileStats = profileStats)
+                for (adapter in hlrAdapters) {
+                    val profiles: Collection<String> = simInventoryDAO.getProfileNamesForHlr(adapter.id)
+                            .bind()
+                    for (profile in profiles) {
+                        val profileStats = simInventoryDAO.getProfileStats(adapter.id, profile)
+                                .bind()
+
+                        if (profileStats.noOfEntriesAvailableForImmediateUse < lowWaterMark) {
+                            batchPreprovisionSimProfiles(hlrAdapter = adapter, profile = profile, profileStats = profileStats)
+                        }
+                    }
                 }
-            }
-        }
+            }.fix()
+        }.unsafeRunSync()
     }
 }

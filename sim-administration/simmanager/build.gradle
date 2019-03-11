@@ -14,6 +14,11 @@ dependencies {
     implementation project(":sim-administration:ostelco-dropwizard-utils")
     implementation project(":sim-administration:sm-dp-plus")
 
+    api "io.arrow-kt:arrow-core:$arrowVersion"
+    api "io.arrow-kt:arrow-typeclasses:$arrowVersion"
+    api "io.arrow-kt:arrow-instances-core:$arrowVersion"
+    api "io.arrow-kt:arrow-effects:$arrowVersion"
+
     implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
 
