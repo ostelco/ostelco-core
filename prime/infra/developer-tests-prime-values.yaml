@@ -1,0 +1,222 @@
+# This is a sample Prime values file to be used by developers for testing their feature branches.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+  
+prime:
+  image: eu.gcr.io/pi-ostelco-dev/prime
+  tag: 9ca9ca976
+  pullPolicy: Always
+  configDataBucket: "gs://pi-ostelco-dev-prime-files/dev"
+  
+  env: 
+    FIREBASE_ROOT_PATH: dev
+    NEO4J_HOST: neo4j-neo4j.neo4j.svc.cluster.local
+    SLACK_CHANNEL: prime-alerts-new
+    DATASTORE_NAMESPACE: dev
+    DATA_TRAFFIC_TOPIC: data-traffic
+    PURCHASE_INFO_TOPIC: purchase-info
+    ACTIVE_USERS_TOPIC: active-users
+    GCP_PROJECT_ID: pi-ostelco-dev 
+
+  secretVolumes:
+    - secretName: "prime-sa-key"  
+      containerMountPath: "/secret"
+    - secretName: "simmgr-test-secrets"  
+      containerMountPath: "/certs"
+      secretKey: idemiaClientCert
+      secretPath: idemia-client-cert.jks
+
+  envFromSecret:
+    - name: SLACK_WEBHOOK_URI
+      secretName: slack-secrets
+      secretKey: slackWebHookUri
+    - name: STRIPE_API_KEY
+      secretName: stripe-secrets
+      secretKey: stripeApiKey
+    - name: STRIPE_ENDPOINT_SECRET 
+      secretName: stripe-secrets
+      secretKey: stripeEndpointSecret
+    - name: SCANINFO_STORAGE_BUCKET 
+      secretName: scaninfo-secrets
+      secretKey:  bucketName
+    - name: SCANINFO_MASTERKEY_URI
+      secretName: scaninfo-keys
+      secretKey: masterKeyUri  
+    - name: JUMIO_API_TOKEN
+      secretName: jumio-secrets
+      secretKey: apiToken        
+    - name: JUMIO_API_SECRET
+      secretName: jumio-secrets
+      secretKey: apiSecret  
+    - name: DB_USER
+      secretName: simmgr-test-secrets
+      secretKey: dbUser
+    - name: DB_PASSWORD
+      secretName: simmgr-test-secrets
+      secretKey: dbPassword   
+    - name: DB_URL
+      secretName: simmgr-test-secrets
+      secretKey: dbUrl   
+    - name: WG2_USER
+      secretName: simmgr-test-secrets
+      secretKey: wg2User
+    - name: WG2_API_KEY
+      secretName: simmgr-test-secrets
+      secretKey: wg2ApiKey
+    - name: WG2_ENDPOINT
+      secretName: simmgr-test-secrets
+      secretKey: wg2Endpoint
+    - name: ES2PLUS_ENDPOINT
+      secretName: simmgr-test-secrets
+      secretKey: es2plusEndpoint
+    - name: ES9PLUS_ENDPOINT
+      secretName: simmgr-test-secrets
+      secretKey: es9plusEndpoint
+    - name: FUNCTION_REQUESTER_IDENTIFIER
+      secretName: simmgr-test-secrets
+      secretKey: functionRequesterIdentifier
+    - name: MANDRILL_API_KEY 
+      secretName: mandrill-secrets
+      secretKey: mandrillApiKey     
+  
+  ports:
+    - 8080
+    - 8081
+    - 8082 
+    - 8083 
+  resources: 
+    requests:
+      cpu: 100m
+      memory: 300Mi  
+  livenessProbe: {}
+  readinessProbe: {} 
+  annotations: 
+    prometheus.io/scrape: 'true'
+    prometheus.io/path: '/prometheus-metrics'
+    prometheus.io/port: '8081'  
+
+
+canary: {}
+  # weight: 25
+  # headers: # only route requests with these headers to the canary service
+  #   x-mode: canary
+  # tag: e449ed672
+
+cloudsqlProxy: 
+  enabled: true
+  instanceConnectionName: "pi-ostelco-dev:europe-west1:sim-manager"
+  secretName: "prime-sa-key"
+  secretKey: "prime-service-account.json"
+
+esp:
+  image: gcr.io/endpoints-release/endpoints-runtime
+  tag: 1
+  pullPolicy: IfNotPresent
+
+ocsEsp: 
+  enabled: true
+  env: {}
+  endpointAddress: ocs.dev.oya.world
+  ports:
+    http2_port: 9000
+
+apiEsp: 
+  enabled: true
+  env: {}
+  endpointAddress: api.dev.oya.world
+  ports:
+    http2_port: 9002
+
+metricsEsp:
+  enabled: true
+  env: {}
+  endpointAddress: metrics.dev.oya.world
+  ports:
+    http2_port: 9004
+
+alvinApiEsp:
+  enabled: true
+  env: {}  
+  endpointAddress: alvin-api.dev.oya.world
+  ports: 
+    http_port: 9008  
+
+houstonApiEsp:
+  enabled: true
+  env: {}  
+  endpointAddress: houston-api.dev.oya.world
+  ports: 
+    http_port: 9006    
+
+services:
+  ocs:
+    name: ocs
+    type: ClusterIP
+    port: 80
+    targetPort: 9000
+    portName: grpc 
+    host: feature-xyz-ocs.test.oya.world
+    grpcOrHttp2: true
+  api:
+    name: api
+    type: ClusterIP
+    port: 80
+    targetPort: 9002
+    portName: http
+    host: feature-xyz-api.test.oya.world
+    grpcOrHttp2: true
+  metrics: 
+    name: metrics
+    type: ClusterIP
+    port: 80
+    targetPort: 9004 
+    portName: grpc
+    host: feature-xyz-metrics.test.oya.world
+    grpcOrHttp2: true
+  prime-houston-api: 
+    name: houston-api
+    type: ClusterIP
+    port: 80
+    targetPort: 9006  
+    portName: http
+    host: feature-xyz-houston-api.test.oya.world
+  prime-alvin-api: 
+    name: alvin-api
+    type: ClusterIP
+    port: 80
+    targetPort: 9008  
+    portName: http
+    host: feature-xyz-alvin-api.test.oya.world
+  pseudonym-server: 
+    name: pseudonym-server
+    type: ClusterIP
+    port: 80
+    targetPort: 8080  
+    portName: http
+  dwadmin-service:
+    name: dwadmin-service
+    type: ClusterIP
+    port: 8081
+    targetPort: 8081
+    portName: http  
+
+
+certs: 
+  enabled: true
+  dnsProvider: dev-clouddns
+  issuer: letsencrypt-production 
+  tlsSecretName: test-oya-tls
+  hosts:
+    - '*.test.oya.world'
+
+disruptionBudget: 
+  enabled: false
+  minAvailable: 1
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
