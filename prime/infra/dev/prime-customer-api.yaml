@@ -3,9 +3,9 @@ info:
   title: "Ostelco API"
   description: "The customer API."
   version: "1.0.0"
-host: "api.dev.ostelco.org"
+host: "api.dev.oya.world"
 x-google-endpoints:
-  - name: "api.dev.ostelco.org"
+  - name: "api.dev.oya.world"
     allowCors: true
 schemes:
   - "https"
