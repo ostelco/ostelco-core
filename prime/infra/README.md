@@ -1,3 +1,163 @@
+# Prime Deployment
+
+## Dev deployment
+
+Prime is automatically deployed into the dev cluster through the circleci pipeline. 
+
+Important Notes:
+
+- The pipeline deploys Prime in the `dev` namespace. DO NOT modify this deployment.
+- `Secrets` are created manually and are NOT accessible across namespaces.
+- The `default namespace` is available for developers to deploy their own test instances of Prime. See below for details on how to do this.
+- The `pipeline` is triggered by merges to develop. It builds the code, builds a new docker image with a new tag, updates the cloud endpoints (API specs) before it then deploys Prime.
+- The `pipeline` uses `helm` to deploy to the dev cluster using [the values file (helm deployment config file)](../../.circleci/prime-dev-values.yaml). See below for details on how to update this file.
+
+## Updating helm deployment config
+
+If changes are required to the kubernetes deployment of Prime, you need to edit the [helm values file](../../.circleci/prime-dev-values.yaml) used by the pipeline. 
+
+### Adding non-secret environment variables
+Non-secret environment variables can be defined in the `env` section of the helm values file. Example: 
+```
+env: 
+    FIREBASE_ROOT_PATH: dev
+    NEO4J_HOST: neo4j-neo4j.neo4j.svc.cluster.local
+```
+### Adding Secrets as environment variables
+Secrets are created manually using `kubectl create secret ... -n dev`
+> Remember to create the secrets in the `dev` namespace before deployment is triggered.
+
+Environment variables from k8s secrets can be defined in the `envFromSecret` section of the helm values file. Example: 
+```
+envFromSecret:
+  - name: SLACK_WEBHOOK_URI # name of the environment variable that will be exposed to Prime
+    secretName: slack-secrets # name of the secret which should pre-exist in the namespace
+    secretKey: slackWebHookUri # name of the k8s secret key to get the value from
+  - name: ANOTHER_ENV_FROM_SECRET
+    secretName: myExistingSecret
+    secretKey: theKeyInsideTheSecret  
+```
+
+### Adding Secrets as volumes mounted to specific paths
+
+Secrets are created manually using `kubectl create secret ... -n dev`
+> Remember to create the secrets in the `dev` namespace before deployment is triggered.
+
+Environment variables from k8s secrets can be defined in the `secretVolumes` section of the helm values file. Example: 
+
+```
+secretVolumes:
+  - secretName: "prime-sa-key"  # the secret name
+    containerMountPath: "/secret" # the path in the container where the secret is mounted
+  # mount a secret on specific path with key projection 
+  - secretName: "simmgr-test-secrets"  
+    containerMountPath: "/certs"
+    secretKey: idemiaClientCert
+    secretPath: idemia-client-cert.jks # this is the file name that will appear in the volume
+```
+
+### ESP containers config
+
+Each esp container is defined and configured in its own section. The `esp` section defines the ESP image config (which is common). 
+
+```
+ocsEsp: 
+  enabled: true # whether to have that esp or not
+  env: {} # any env vars to pass to the esp container
+  endpointAddress: ocs.dev.oya.world # the cloud endpoint address
+  ports: # ports exposed from that esp container. format is: <port-name>: <port-number>
+    http2_port: 9000
+```
+
+### Services
+
+Services are configured in the `services` section of the helm values file. 
+
+> It is very important to set `grpcOrHttp2: true` if the service being exposed is a GRPC or HTTP2 service
+
+```
+services:
+  ocs:
+    name: ocs # service name
+    type: ClusterIP # k8s service type
+    port: 80 # the service port 
+    targetPort: 9000 # the target port in the prime container
+    portName: grpc # the name of the service port
+    host: ocs.dev.oya.world # the DNS at which this service is reachable. This served by Ambassador.
+    grpcOrHttp2: true # whether this service exposes an HTTP2 or GRPC service.
+```
+
+### TLS certs
+
+The TLS certificates are managed by `cert-manager` and are automatically created from the helm chart. TLS creation is configured in the `certs` section of the helm values file.
+
+```
+certs: 
+  enabled: true # enabled means create a TLS cert
+  dnsProvider: dev-clouddns # the DNS provider configuration. This preconfigured and should not be changed.
+  issuer: letsencrypt-production # the Letsencrypt API to use. letsencrypt-production for valid certs or letsencrypt-staging for invalid staging certs.
+  tlsSecretName: dev-oya-tls # the name of the secret containing credentials to talk to DNS provider API
+  hosts: # a list of the hosts to be included in the cert. wildcard domains must be wrapped in single quotes 
+    - '*.dev.oya.world'
+```
+
+## Deploying developer test instances 
+
+To avoid pipeline waiting time, you can take a short cut and deploy your feature branch directly into the cluster.
+
+**Important Notes**
+- Developer tests can be done in the `default` namespace.
+- Secrets will need to be replicated into the `default` namespace from the `dev` namespace.
+
+> You can copy secrets between namespaces with the following command : `kubectl get secret <existing-secret-name> --namespace=dev --export -o yaml | kubectl apply --namespace=default -f - `
+
+**Steps:**
+
+1. Build the prime docker image from your feature branch and tag it with your custom tag (e.g. eu.gcr.io/pi-ostelco-dev/prime:feature-xyz)
+
+2. Push the built image into the docker registry. 
+```
+# auth is needed since the docker registry is private
+$ gcloud auth login
+$ docker push eu.gcr.io/pi-ostelco-dev/prime:feature-xyz
+```
+
+3. [Install helm](https://helm.sh/docs/using_helm/#install-helm)
+
+4. Make your own copy of the helm values file.
+
+Copy the [sample developer helm values file](developer-tests-prime-values.yaml) and edit the service DNS hosts in the `services` section with unique custom prefixes (e.g. feature-xyz-api.test.oya.world).
+
+5. run the following helm commands:
+
+> Note: the helm release name must be unique. A good example might be feature name or developer name.
+
+> Note: you can change the helm chart version below to a specific version of the prime helm chart. 
+
+``` 
+# the first command is only needed once
+$ helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
+$ helm repo update
+# if your kube context is not configured to point to the dev cluster, then configure it 
+$ kubectl config set-context gke_pi-ostelco-dev_europe-west1-c_pi-dev
+$ RELEASE_NAME=<some-unique-name>
+$ helm upgrade ${RELEASE_NAME} ostelco/prime --version 0.4.3 --install -f <path-to-your-custom-values-file> --set prime.tag=feature-xyz
+```
+you can then watch for your pods being created with this command:
+
+```
+kubectl get pods -n dev -l release=${RELEASE_NAME} -w
+```
+
+Once your pods are in the `Running` state, you can test the APIs of your custom deployment on: feature-xyz-prime-api-name.test.oya.world (e.g. https://feature-xyz-api.test.oya.world)
+
+To delete your custom deployment:
+
+```
+helm delete --purge ${RELEASE_NAME}
+```
+-------------- 
+# Legacy setup below
 # Deploying Prime to Kubernetes
 
 ### TL;DR
