@@ -1,5 +1,14 @@
 #!/bin/bash
 
+##
+##  Build script that will build everything and run acceptance tests.
+##  Prior to running this script it is necesary to set th4
+##  STRIPE_API_KEY environment variable to a key that is valid for a
+##  Stripe test account.  See instructions in docs/TEST.md for how to
+##  get one.
+##
+
+
 
 #
 # Cd to script directory
@@ -29,7 +38,7 @@ done
 
 if [[ -f "certs/ocs.dev.ostelco.org/nginx.crt" ]] ; then
  if  [[ -f  "ocsgw/cert/metrics.crt" ]] ; then
-  if  [[ -z "$(cmp certs/ocs.dev.ostelco.org/nginx.crt ocsgw/cert/metrics.crt)"  ]] ; then
+  if  [[ -n "$(cmp certs/ocs.dev.ostelco.org/nginx.crt ocsgw/cert/metrics.crt)"  ]] ; then
       rm certs/ocs.dev.ostelco.org/nginx.crt ocsgw/cert/metrics.crt
   fi
  fi
@@ -48,7 +57,7 @@ fi
 
 if [[ -f  "certs/metrics.dev.ostelco.org/nginx.crt" ]] ; then
  if [[  "ocsgw/cert/metrics.crt" ]] ; then
-  if  [[ -z "$(cmp certs/metrics.dev.ostelco.org/nginx.crt ocsgw/cert/metrics.crt)" ]] ; then
+  if  [[ -n  "$(cmp certs/metrics.dev.ostelco.org/nginx.crt ocsgw/cert/metrics.crt)" ]] ; then
       rm "certs/metrics.dev.ostelco.org/nginx.crt" "ocsgw/cert/metrics.crt"
   fi
  fi
@@ -72,7 +81,12 @@ if [[ -z "$GCP_PROJECT_ID" ]] ; then
    exit 1
 fi
 
-DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS="acceptance-tests/config dataflow-pipelines/config ocsgw/config bq-metrics-extractor/config auth-server/config prime/config"
+DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS= \
+  acceptance-tests/config \
+  dataflow-pipelines/config \
+  ocsgw/config \
+  bq-metrics-extractor/config \
+  auth-server/config prime/config
 
 for DIR in $DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS ; do
     FILE="$DIR/prime-service-account.json"
@@ -102,9 +116,6 @@ if [[ -z "$( docker version | grep Version:)" ]] ; then
     echo "$0 INFO: Docker not running, please start it before trying again'"
     exit 1
 fi
-
-
-
 
 
 #
