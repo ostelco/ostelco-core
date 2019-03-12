@@ -139,4 +139,5 @@ fi
 
 echo "$0 INFO: Building/unit tests went well, Proceeding to acceptance tests."
 
+docker-compose down
 docker-compose up --build --abort-on-container-exit
