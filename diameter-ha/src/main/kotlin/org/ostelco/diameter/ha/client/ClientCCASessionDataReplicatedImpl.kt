@@ -12,15 +12,15 @@ import org.jdiameter.common.api.app.cca.ClientCCASessionState
 import org.ostelco.diameter.ha.common.AppSessionDataReplicatedImpl
 import org.ostelco.diameter.ha.common.ReplicatedStorage
 import org.ostelco.diameter.ha.logger
-import java.io.Serializable
 import java.io.IOException
-import java.lang.IllegalStateException
+import java.io.Serializable
 
 
 class ClientCCASessionDataReplicatedImpl(id: String, replicatedStorage: ReplicatedStorage, container: IContainer) : AppSessionDataReplicatedImpl(id, replicatedStorage), IClientCCASessionData {
 
     private val logger by logger()
 
+    // TODO: Replace this list of constants with an enumeration
     private val EVENT_BASED = "EVENT_BASED"
     private val REQUEST_TYPE = "REQUEST_TYPE"
     private val STATE = "STATE"

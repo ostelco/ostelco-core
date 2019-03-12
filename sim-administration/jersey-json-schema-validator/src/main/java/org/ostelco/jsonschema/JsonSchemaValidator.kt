@@ -146,7 +146,7 @@ private class RequestServerReaderWriterInterceptor : ReaderInterceptor, WriterIn
         // Then get the byte array & convert it to a nice
         // UTF-8 string
         val contentBytes = interceptingStream.toByteArray()
-        val contentString: String = String(contentBytes, Charset.forName("UTF-8"))
+        val contentString  = String(contentBytes, Charset.forName("UTF-8"))
 
         // Validate our now serialized input.
         val type = ctx.entity::class.java

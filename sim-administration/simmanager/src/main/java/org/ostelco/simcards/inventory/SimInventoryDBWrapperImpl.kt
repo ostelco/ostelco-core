@@ -11,7 +11,7 @@ import org.ostelco.simcards.hss.HssEntry
 import org.postgresql.util.PSQLException
 
 
-class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper {
+class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDBWrapper {
 
     override fun getSimProfileById(id: Long): Either<SimManagerError, SimEntry> =
             either(NotFoundError("Found no SIM for id ${id}")) {
@@ -131,12 +131,12 @@ class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper 
 
     override fun getHssEntryByName(name: String): Either<SimManagerError, HssEntry> =
             either(NotFoundError("Found no HSS entry  with name ${name}")) {
-                db.getHssEntryByName(name)!!
+                db.getHssEntryByName(name)
             }
 
     override fun getHssEntryById(id: Long): Either<SimManagerError, HssEntry> =
             either(NotFoundError("Found no HSS entry  with id ${id}")) {
-                db.getHssEntryById(id)!!
+                db.getHssEntryById(id)
             }
 
     override fun addProfileVendorAdapter(name: String): Either<SimManagerError, Int> =

@@ -212,7 +212,7 @@ class SimAdministrationTest {
         assertThat(profiles.isRight()).isTrue()
         profiles.map {
             assertEquals(1, it.size)
-            assertEquals(expectedProfile, it.get(0))
+            assertEquals(expectedProfile, it[0])
         }
     }
 
@@ -262,7 +262,7 @@ class SimAdministrationTest {
                 simInventoryDAO = simDao,
                 httpClient = httpClient)
 
-        var preStats: SimProfileKeyStatistics =
+        var preStats  =
                 SimProfileKeyStatistics(
                         0L,
                         0L,
@@ -281,7 +281,7 @@ class SimAdministrationTest {
         val postAllocationStats =
                 simDao.getProfileStats(hssId, expectedProfile)
         assertThat(postAllocationStats.isRight()).isTrue()
-        var postStats: SimProfileKeyStatistics = SimProfileKeyStatistics(0L, 0L, 0L, 0L)
+        var postStats  = SimProfileKeyStatistics(0L, 0L, 0L, 0L)
         postAllocationStats.map {
             postStats = it
         }

@@ -69,10 +69,8 @@ class SimpleHssAdapter(val httpClient: CloseableHttpClient,
 
     /**
      * Requests the external HLR service to activate the SIM profile.
-     * @param client  HTTP client
-     * @param dao  DB interface
      * @param simEntry  SIM profile to activate
-     * @return Updated SIM profile
+     * @return Updated SIM Entry
      */
     override fun activate(simEntry: SimEntry): Either<SimManagerError, SimEntry> {
 
@@ -129,8 +127,6 @@ class SimpleHssAdapter(val httpClient: CloseableHttpClient,
 
     /**
      * Requests the external HLR service to deactivate the SIM profile.
-     * @param client  HTTP client
-     * @param dao  DB interface
      * @param simEntry  SIM profile to deactivate
      * @return Updated SIM profile
      */

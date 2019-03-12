@@ -10,7 +10,7 @@ import java.io.File
 /**
  * Helper class implementing encrypt method using google tink.
  */
-class ScanInfoEncrypt(val keysetFilename: String, val masterKeyUri: String?) {
+class ScanInfoEncrypt(private val keysetFilename: String, private val masterKeyUri: String?) {
     private val keysetHandle: KeysetHandle
     init {
         if (masterKeyUri != null) {

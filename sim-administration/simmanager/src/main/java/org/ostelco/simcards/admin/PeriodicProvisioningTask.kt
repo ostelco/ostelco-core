@@ -31,7 +31,7 @@ import java.io.PrintWriter
  */
 
 class PreallocateProfilesTask(
-        val lowWaterMark: Int = 10,
+        private val lowWaterMark: Int = 10,
         val maxNoOfProfileToAllocate: Int = 30,
         val simInventoryDAO: SimInventoryDAO,
         val httpClient: CloseableHttpClient,

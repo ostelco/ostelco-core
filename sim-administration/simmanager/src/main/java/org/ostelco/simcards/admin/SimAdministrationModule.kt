@@ -30,7 +30,7 @@ import org.ostelco.simcards.inventory.*
 @JsonTypeName("sim-manager")
 class SimAdministrationModule : PrimeModule {
 
-    lateinit var DAO: SimInventoryDAO
+    private lateinit var DAO: SimInventoryDAO
 
     @JsonProperty("config")
     fun setConfig(config: SimAdministrationConfiguration) {

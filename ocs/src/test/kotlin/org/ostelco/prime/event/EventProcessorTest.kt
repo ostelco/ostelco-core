@@ -58,5 +58,5 @@ class EventProcessorTest {
     }
 
     // https://github.com/mockito/mockito/issues/1255
-    fun <T : Any> safeEq(value: T): T = ArgumentMatchers.eq(value) ?: value
+    private fun <T : Any> safeEq(value: T): T = ArgumentMatchers.eq(value) ?: value
 }

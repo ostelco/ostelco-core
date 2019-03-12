@@ -169,7 +169,7 @@ class SimEntryIterator(profileVendorId: Long,
 /**
  * SIM DB DAO.
  */
-class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper by db {
+class SimInventoryDAO(private val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper by db {
 
     /**
      * Check if the  SIM vendor can be use for handling SIMs handled
@@ -259,10 +259,10 @@ class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper
                     getProfileStatsAsKeyValuePairs(hssId = hssId, simProfile = simProfile).bind()
                             .forEach { keyValuePairs.put(it.key, it.value) }
 
-                    val noOfEntries = keyValuePairs.get("NO_OF_ENTRIES")!!
-                    val noOfUnallocatedEntries = keyValuePairs.get("NO_OF_UNALLOCATED_ENTRIES")!!
-                    val noOfReleasedEntries = keyValuePairs.get("NO_OF_RELEASED_ENTRIES")!!
-                    val noOfEntriesAvailableForImmediateUse = keyValuePairs.get("NO_OF_ENTRIES_READY_FOR_IMMEDIATE_USE")!!
+                    val noOfEntries = keyValuePairs["NO_OF_ENTRIES"]!!
+                    val noOfUnallocatedEntries = keyValuePairs["NO_OF_UNALLOCATED_ENTRIES"]!!
+                    val noOfReleasedEntries = keyValuePairs["NO_OF_RELEASED_ENTRIES"]!!
+                    val noOfEntriesAvailableForImmediateUse = keyValuePairs["NO_OF_ENTRIES_READY_FOR_IMMEDIATE_USE"]!!
 
                     SimProfileKeyStatistics(
                             noOfEntries = noOfEntries,

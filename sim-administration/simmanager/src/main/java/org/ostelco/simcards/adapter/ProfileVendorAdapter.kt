@@ -68,7 +68,7 @@ data class ProfileVendorAdapter(
      * @param simEntry  SIM profile to activate
      * @return Updated SIM profile
      */
-    fun downloadOrder(httpClient: CloseableHttpClient,
+    private fun downloadOrder(httpClient: CloseableHttpClient,
                       config: ProfileVendorConfig,
                       dao: SimInventoryDAO,
                       simEntry: SimEntry): Either<SimManagerError, SimEntry> {
@@ -143,7 +143,7 @@ data class ProfileVendorAdapter(
      * @param simEntry  SIM profile to activate
      * @return Updated SIM profile
      */
-    fun confirmOrder(httpClient: CloseableHttpClient,
+    private fun confirmOrder(httpClient: CloseableHttpClient,
                      config: ProfileVendorConfig,
                      dao: SimInventoryDAO,
                      eid: String? = null,

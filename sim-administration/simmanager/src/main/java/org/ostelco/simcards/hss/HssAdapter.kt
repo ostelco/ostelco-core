@@ -47,7 +47,7 @@ class HssProxy(
                 .reduce{ a, b -> a && b}
     }
 
-    fun initialize() {
+    private fun initialize() {
         synchronized(lock) {
             simInventoryDAO.getHssEntries()
                     .mapLeft { err ->
@@ -69,11 +69,9 @@ class HssProxy(
                                     hssAdaptersById.put(entryWithName.id, adapter)
 
 
-                                    if (heathCheckRegistrar != null) {
-                                        heathCheckRegistrar.registerHealthCheck(
-                                                "HSS adapter for Hss named '${hssConfig.name}'",
-                                                HssAdapterHealthcheck(hssConfig.name, adapter))
-                                    }
+                                    heathCheckRegistrar?.registerHealthCheck(
+                                            "HSS adapter for Hss named '${hssConfig.name}'",
+                                            HssAdapterHealthcheck(hssConfig.name, adapter))
                                 } else {
                                     log.error("Could not find or found multiple hss entry in database with name '${hssConfig.name}'")
                                     break
@@ -136,7 +134,7 @@ class HssAdapterHealthcheck(
             Result.healthy()
         } else {
             lastHealthStatus.set(false)
-            Result.unhealthy("HSS entry ${name} is not healthy")
+            Result.unhealthy("HSS entry $name is not healthy")
         }
     }
 }
