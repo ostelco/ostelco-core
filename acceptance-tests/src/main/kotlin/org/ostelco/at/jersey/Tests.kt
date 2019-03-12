@@ -643,8 +643,8 @@ class eKYCTest {
         try {
             customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
-            val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId/no"
+            val scanInfo: ScanInformation = post {
+                path = "regions/no/kyc/jumio/scans"
                 this.email = email
             }
             assertNotNull(scanInfo.scanId, message = "Failed to get new scanId")
@@ -670,8 +670,8 @@ class eKYCTest {
         try {
             customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
-            val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId/no"
+            val scanInfo: ScanInformation = post {
+                path = "/regions/no/kyc/jumio/scans"
                 this.email = email
             }
 
@@ -715,8 +715,8 @@ class eKYCTest {
         try {
             customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
-            val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId/no"
+            val scanInfo: ScanInformation = post {
+                path = "/regions/no/kyc/jumio/scans"
                 this.email = email
             }
 
@@ -762,8 +762,8 @@ class eKYCTest {
         try {
             customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
-            val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId/no"
+            val scanInfo: ScanInformation = post {
+                path = "/regions/no/kyc/jumio/scans"
                 this.email = email
             }
 
@@ -809,8 +809,8 @@ class eKYCTest {
         try {
             customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
-            val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId/no"
+            val scanInfo: ScanInformation = post {
+                path = "/regions/no/kyc/jumio/scans"
                 this.email = email
             }
 
@@ -854,8 +854,8 @@ class eKYCTest {
         try {
             customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
-            val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId/no"
+            val scanInfo: ScanInformation = post {
+                path = "/regions/no/kyc/jumio/scans"
                 this.email = email
             }
 
@@ -899,8 +899,8 @@ class eKYCTest {
         try {
             customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
-            val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId/no"
+            val scanInfo: ScanInformation = post {
+                path = "/regions/no/kyc/jumio/scans"
                 this.email = email
             }
 
@@ -931,8 +931,8 @@ class eKYCTest {
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
             assertEquals(StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
 
-            val newScanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId/no"
+            val newScanInfo: ScanInformation = post {
+                path = "/regions/no/kyc/jumio/scans"
                 this.email = email
             }
 
@@ -983,8 +983,8 @@ class eKYCTest {
         try {
             customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
-            val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId/no"
+            val scanInfo: ScanInformation = post {
+                path = "/regions/no/kyc/jumio/scans"
                 this.email = email
             }
 
@@ -1013,7 +1013,7 @@ class eKYCTest {
             }
 
             val scanInformation: ScanInformation = get {
-                path = "/customer/scanStatus/${scanInfo.scanId}"
+                path = "/regions/no/kyc/jumio/scans/${scanInfo.scanId}/status"
                 this.email = email
             }
             assertEquals("APPROVED", scanInformation.status, message = "Wrong status")
@@ -1039,8 +1039,8 @@ class eKYCTest {
         try {
             customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
-            val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId/no"
+            val scanInfo: ScanInformation = post {
+                path = "/regions/no/kyc/jumio/scans"
                 this.email = email
             }
 
@@ -1071,8 +1071,8 @@ class eKYCTest {
             assertEquals(Region().id("no").name("Norway"), newRegionDetails.region)
             assertEquals(StatusEnum.REJECTED, newRegionDetails.status, message = "Wrong State")
 
-            val newScanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId/no"
+            val newScanInfo: ScanInformation = post {
+                path = "/regions/no/kyc/jumio/scans"
                 this.email = email
             }
 
@@ -1134,8 +1134,8 @@ class eKYCTest {
         try {
             customerId = createCustomer(name = "Test User for eKYC", email = email).id
 
-            val scanInfo: ScanInformation = get {
-                path = "/customer/new-ekyc-scanId/no"
+            val scanInfo: ScanInformation = post {
+                path = "/regions/no/kyc/jumio/scans"
                 this.email = email
             }
 

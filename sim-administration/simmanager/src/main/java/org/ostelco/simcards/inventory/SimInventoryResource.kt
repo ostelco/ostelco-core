@@ -1,10 +1,10 @@
 package org.ostelco.simcards.inventory
 
-import org.apache.http.impl.client.CloseableHttpClient
 import org.hibernate.validator.constraints.NotEmpty
-import org.ostelco.sim.es2plus.ProfileStatus
-import org.ostelco.simcards.admin.ProfileVendorConfig
-import org.ostelco.simcards.admin.SimAdministrationConfiguration
+import org.ostelco.prime.apierror.ApiErrorCode
+import org.ostelco.prime.apierror.ApiErrorMapper.mapSimManagerErrorToApiError
+import org.ostelco.prime.jsonmapper.asJson
+import org.ostelco.prime.simmanager.SimManagerError
 import java.io.IOException
 import java.io.InputStream
 import javax.ws.rs.*
@@ -17,108 +17,114 @@ import javax.ws.rs.core.Response
 ///
 
 @Path("/ostelco/sim-inventory/{hssVendors}")
-class SimInventoryResource(private val httpClient: CloseableHttpClient,
-                           private val config: SimAdministrationConfiguration,
-                           private val dao: SimInventoryDAO) {
-
-    companion object {
-        private fun <T> assertNonNull(v: T?): T {
-            if (v == null) {
-                throw WebApplicationException(Response.Status.NOT_FOUND)
-            } else {
-                return v
-            }
-        }
-    }
+class SimInventoryResource(private val api: SimInventoryApi) {
 
     @GET
     @Path("profileStatusList/{iccid}")
     @Produces(MediaType.APPLICATION_JSON)
     fun getSimProfileStatus(
-            @NotEmpty @PathParam("hssVendors") hss: String,
-            @NotEmpty @PathParam("iccid") iccid: String): ProfileStatus? {
-        val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
-        val hssAdapter = assertNonNull(dao.getHssEntryById(simEntry.hssId))
-        assertCorrectHss(hss, hss == hssAdapter.name)
-
-        val simVendorAdapter = assertNonNull(dao.getProfileVendorAdapterById(
-                simEntry.profileVendorId))
-        val config: ProfileVendorConfig = assertNonNull(config.profileVendors.firstOrNull {
-            it.name == simVendorAdapter.name
-        })
-
-        return simVendorAdapter.getProfileStatus(httpClient, config, iccid)
-    }
+            @NotEmpty @PathParam("hssVendors") hlrName: String,
+            @NotEmpty @PathParam("iccid") iccid: String): Response =
+            api.getSimProfileStatus(hlrName, iccid)
+                    .fold(
+                            {
+                                error("Failed to fetch SIM profile from vendor for BSS: ${hlrName} and ICCID: ${iccid}",
+                                        ApiErrorCode.FAILED_TO_FETCH_SIM_PROFILE, it)
+                            },
+                            { Response.status(Response.Status.OK).entity(asJson(it)) }
+                    ).build()
 
     @GET
     @Path("iccid/{iccid}")
     @Produces(MediaType.APPLICATION_JSON)
     fun findSimProfileByIccid(
-            @NotEmpty @PathParam("hssVendors") hss: String,
-            @NotEmpty @PathParam("iccid") iccid: String): SimEntry {
-        val simEntry = assertNonNull(dao.getSimProfileByIccid(iccid))
-        val hssAdapter = assertNonNull(dao.getHssEntryById(simEntry.hssId))
-        assertCorrectHss(hss, hss == hssAdapter.name)
-        return simEntry
-    }
+            @NotEmpty @PathParam("hssVendors") hlrName: String,
+            @NotEmpty @PathParam("iccid") iccid: String): Response =
+            api.findSimProfileByIccid(hlrName, iccid)
+                    .fold(
+                            {
+                                error("Failed to find SIM profile for BSS: ${hlrName} and ICCID: ${iccid}",
+                                        ApiErrorCode.FAILED_TO_FETCH_SIM_PROFILE, it)
+                            },
+                            { Response.status(Response.Status.OK).entity(asJson(it)) }
+                    ).build()
 
+    @POST
+    @Path("iccid/{iccid}")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun activateHlrProfileByIccid(
+            @NotEmpty @PathParam("hssVendors") hlrName: String,
+            @NotEmpty @PathParam("iccid") iccid: String): Response =
+            api.activateHlrProfileByIccid(hlrName, iccid)
+                    .fold(
+                            {
+                                error("Failed to activate SIM profile with BSS ${hlrName} for ICCID: ${iccid}",
+                                        ApiErrorCode.FAILED_TO_ACTIVATE_SIM_PROFILE_WITH_HLR, it)
+                            },
+                            { Response.status(Response.Status.OK).entity(asJson(it)) }
+                    ).build()
+
+
+    @DELETE
+    @Path("iccid/{iccid}")
+    @Produces(MediaType.APPLICATION_JSON)
+    fun deactivateHlrProfileByIccid(
+            @NotEmpty @PathParam("hssVendors") hlrName: String,
+            @NotEmpty @PathParam("iccid") iccid: String): Response =
+            api.deactivateHlrProfileByIccid(hlrName, iccid)
+                    .fold(
+                            {
+                                error("Failed to deactivate SIM profile with BSS ${hlrName} for ICCID: ${iccid}",
+                                        ApiErrorCode.FAILED_TO_DEACTIVATE_SIM_PROFILE_WITH_HLR, it)
+                            },
+                            { Response.status(Response.Status.OK).entity(asJson(it)) }
+                    ).build()
 
     @GET
     @Path("imsi/{imsi}")
     @Produces(MediaType.APPLICATION_JSON)
     fun findSimProfileByImsi(
-            @NotEmpty @PathParam("hssVendors") hss: String,
-            @NotEmpty @PathParam("imsi") imsi: String): SimEntry {
-        val simEntry = assertNonNull(dao.getSimProfileByImsi(imsi))
-        val hssAdapter = assertNonNull(dao.getHssEntryById(simEntry.hssId))
-        assertCorrectHss(hss, hss == hssAdapter.name)
-        return simEntry
-    }
+            @NotEmpty @PathParam("hssVendors") hlrName: String,
+            @NotEmpty @PathParam("imsi") imsi: String): Response =
+            api.findSimProfileByImsi(hlrName, imsi)
+                    .fold(
+                            {
+                                error("Failed to find SIM profile for BSS: ${hlrName} and IMSI: ${imsi}",
+                                        ApiErrorCode.FAILED_TO_FETCH_PROFILE, it)
+                            },
+                            { Response.status(Response.Status.OK).entity(asJson(it)) }
+                    ).build()
 
     @GET
     @Path("msisdn/{msisdn}")
     @Produces(MediaType.APPLICATION_JSON)
-    fun findByMsisdn(
-            @NotEmpty @PathParam("hssVendors") hss: String,
-            @NotEmpty @PathParam("msisdn") msisdn: String): SimEntry {
-        val simEntry = assertNonNull(dao.getSimProfileByMsisdn(msisdn))
-        val hssAdapter = assertNonNull(dao.getHssEntryById(simEntry.hssId))
-        assertCorrectHss(hss, hss == hssAdapter.name)
-        return simEntry
-    }
+    fun findSimProfileByMsisdn(
+            @NotEmpty @PathParam("hssVendors") hlrName: String,
+            @NotEmpty @PathParam("msisdn") msisdn: String): Response =
+            api.findSimProfileByMsisdn(hlrName, msisdn)
+                    .fold(
+                            {
+                                error("Failed to find SIM profile for BSS: ${hlrName} and MSISDN: ${msisdn}",
+                                        ApiErrorCode.FAILED_TO_FETCH_PROFILE, it)
+                            },
+                            { Response.status(Response.Status.OK).entity(asJson(it)) }
+                    ).build()
 
 
     @GET
     @Path("esim")
     @Produces(MediaType.APPLICATION_JSON)
     fun allocateNextEsimProfile(
-            @NotEmpty @PathParam("hssVendors") hss: String,
-            @DefaultValue("_") @QueryParam("phoneType") phoneType: String): SimEntry? {
-        val hssEntry = assertNonNull(dao.getHssEntryByName(hss))
-        val profile = config.getProfileForPhoneType(phoneType)
-        val simEntry = assertNonNull(dao.findNextReadyToUseSimProfileForHlr(hssEntry.id,
-                profile))
-        assertCorrectHss(hss, hssEntry.id == simEntry.hssId)
-
-        val simVendorAdapter = assertNonNull(dao.getProfileVendorAdapterById(
-                simEntry.profileVendorId))
-        val profileVendorConfig: ProfileVendorConfig = assertNonNull(config.profileVendors.filter {
-            it.name == simVendorAdapter.name
-        }.firstOrNull())
-
-        /* Add 'code' field content. */
-        return assertNonNull(dao.setProvisionState(simEntry.id!!,
-                ProvisionState.PROVISIONED)!!.let {
-            it.copy(code = "LPA:${profileVendorConfig.es9plusEndpoint}:${it.matchingId}")
-        })
-    }
-
-    private fun assertCorrectHss(hss: String, match: Boolean) {
-        if (!match) {
-            throw WebApplicationException("Attempt at impersonating $hss HLR",
-                    Response.Status.BAD_REQUEST)
-        }
-    }
+            @NotEmpty @PathParam("hssVendors") hlrName: String,
+            @DefaultValue("_") @QueryParam("phoneType") phoneType: String): Response =
+            api.allocateNextEsimProfile(hlrName, phoneType)
+                    .fold(
+                            {
+                                error("Failed to reserve SIM profile with BSS ${hlrName}",
+                                        ApiErrorCode.FAILED_TO_RESERVE_ACTIVATED_SIM_PROFILE, it)
+                            },
+                            { Response.status(Response.Status.OK).entity(asJson(it)) }
+                    ).build()
 
     @PUT
     @Path("import-batch/profilevendor/{simVendor}")
@@ -128,17 +134,19 @@ class SimInventoryResource(private val httpClient: CloseableHttpClient,
     fun importBatch(
             @NotEmpty @PathParam("hssVendors") hss: String,
             @NotEmpty @PathParam("simVendor") simVendor: String,
-            csvInputStream: InputStream): SimImportBatch? {
-        val profileVendorAdapter = assertNonNull(dao.getProfileVendorAdapterByName(simVendor))
-        val hssAdapter = assertNonNull(dao.getHssEntryByName(hss))
+            csvInputStream: InputStream): Response =
+            api.importBatch(hss, simVendor, csvInputStream)
+                    .fold(
+                            {
+                                error("Failed to upload batch with SIM profiles for HSS ${hss} and SIM profile vendor ${simVendor}",
+                                        ApiErrorCode.FAILED_TO_IMPORT_BATCH, it)
+                            },
+                            { Response.status(Response.Status.OK).entity(asJson(it)) }
+                    ).build()
 
-        if (!dao.simVendorIsPermittedForHlr(profileVendorAdapter.id, hssAdapter.id)) {
-            throw WebApplicationException(Response.Status.BAD_REQUEST)
-        }
-        return assertNonNull(dao.importSims(
-                importer = "importer", // TODO: This is a very strange name for an importer .-)
-                hssId = hssAdapter.id,
-                profileVendorId = profileVendorAdapter.id,
-                csvInputStream = csvInputStream))
+    /* Maps internal errors to format suitable for HTTP/REST. */
+    private fun error(description: String, code: ApiErrorCode, error: SimManagerError): Response.ResponseBuilder {
+        val apiError = mapSimManagerErrorToApiError(description, code, error)
+        return Response.status(apiError.status).entity(asJson(apiError))
     }
 }

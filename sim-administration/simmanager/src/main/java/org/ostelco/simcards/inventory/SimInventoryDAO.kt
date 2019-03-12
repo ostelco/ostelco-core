@@ -1,5 +1,10 @@
 package org.ostelco.simcards.inventory
 
+import arrow.core.Either
+import arrow.core.fix
+import arrow.core.flatMap
+import arrow.effects.IO
+import arrow.instances.either.monad.monad
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
@@ -8,6 +13,7 @@ import org.jdbi.v3.core.mapper.reflect.ColumnName
 import org.jdbi.v3.core.statement.StatementContext
 import org.jdbi.v3.sqlobject.customizer.Bind
 import org.jdbi.v3.sqlobject.transaction.Transaction
+import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.hss.HssEntry
 import java.io.BufferedReader
 import java.io.InputStream
@@ -16,8 +22,6 @@ import java.nio.charset.Charset
 import java.sql.ResultSet
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.AtomicLong
-import javax.ws.rs.WebApplicationException
-import javax.ws.rs.core.Response
 
 
 enum class HssState {
@@ -165,7 +169,7 @@ class SimEntryIterator(profileVendorId: Long,
 /**
  * SIM DB DAO.
  */
-class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
+class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper by db {
 
     /**
      * Check if the  SIM vendor can be use for handling SIMs handled
@@ -175,10 +179,11 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
      * @return true if permitted false otherwise
      */
     fun simVendorIsPermittedForHlr(profileVendorId: Long,
-                                   hssId: Long): Boolean {
-        return findSimVendorForHlrPermissions(profileVendorId, hssId)
-                .isNotEmpty()
-    }
+                                   hssId: Long): Either<SimManagerError, Boolean> =
+            findSimVendorForHssPermissions(profileVendorId, hssId)
+                    .flatMap {
+                        Either.right(it.isNotEmpty())
+                    }
 
     /**
      * Set permission for a SIM profile vendor to activate SIM profiles
@@ -188,189 +193,84 @@ class SimInventoryDAO(val db: SimInventoryDB) : SimInventoryDB by db {
      * @return true on successful update
      */
     @Transaction
-    fun permitVendorForHlrByNames(profileVendor: String, hssName: String): Boolean {
-        val profileVendorAdapter = assertNonNull(getProfileVendorAdapterByName(profileVendor))
-        val hssEntry = assertNonNull(getHssEntryByName(hssName))
-        return storeSimVendorForHlrPermission(profileVendorAdapter.id, hssEntry.id) > 0
-    }
+    fun permitVendorForHlrByNames(profileVendor: String, hlr: String): Either<SimManagerError, Boolean> =
+            IO {
+                Either.monad<SimManagerError>().binding {
+                    val profileVendorAdapter = getProfileVendorAdapterByName(profileVendor)
+                            .bind()
+                    val hlrAdapter = getHssEntryByName(hlr)
+                            .bind()
+
+                    storeSimVendorForHssPermission(profileVendorAdapter.id, hlrAdapter.id)
+                            .bind() > 0
+                }.fix()
+            }.unsafeRunSync()
 
     //
     // Importing
     //
 
-    override fun insertAll(entries: Iterator<SimEntry>) {
+    override fun insertAll(entries: Iterator<SimEntry>): Either<SimManagerError, Unit> =
         db.insertAll(entries)
-    }
 
     @Transaction
-    fun importSims(
-            importer: String,
-            hssId: Long,
-            profileVendorId: Long,
-            csvInputStream: InputStream): SimImportBatch? {
-
-        createNewSimImportBatch(
-                importer = importer,
-                hssId = hssId,
-                profileVendorId = profileVendorId)
-        val batchId = lastInsertedRowId()
-        val values = SimEntryIterator(
-                profileVendorId = profileVendorId,
-                hssId = hssId,
-                batchId = batchId,
-                csvInputStream = csvInputStream)
-        insertAll(values)
-        updateBatchState(
-                id = batchId,
-                size = values.count.get(),
-                status = "SUCCESS",
-                endedAt = System.currentTimeMillis())
-        return getBatchInfo(batchId)
-    }
-
-    //
-    // Setting activation statuses
-    //
-
-    /**
-     * Set the entity to be marked as "active" in the HLR, then return the
-     * SIM entry.
-     * @param id row to update
-     * @param state new state from HLR service interaction
-     * @return updated row or null on no match
-     */
-    @Transaction
-    fun setHlrState(id: Long, state: HssState): SimEntry? {
-        return if (updateHlrState(id, state) > 0)
-            getSimProfileById(id)
-        else
-            null
-    }
-
-    /**
-     * Set the provision state of a SIM entry, then return the entry.
-     * @param id row to update
-     * @param state new state from HLR service interaction
-     * @return updated row or null on no match
-     */
-    @Transaction
-    fun setProvisionState(id: Long, state: ProvisionState): SimEntry? {
-        return if (updateProvisionState(id, state) > 0)
-            getSimProfileById(id)
-        else
-            null
-    }
-
-
-    /**
-     * Updates state of SIM profile and returns the updated profile.
-     * @param id  row to update
-     * @param state  new state from SMDP+ service interaction
-     * @return updated row or null on no match
-     */
-    @Transaction
-    fun setSmDpPlusState(id: Long, state: SmDpPlusState): SimEntry? {
-        return if (updateSmDpPlusState(id, state) > 0)
-            getSimProfileById(id)
-        else
-            null
-    }
-
-    /**
-     * Updates state of SIM profile using ICCID and returns the updated profile.
-     * @param iccid  SIM with ICCID to update
-     * @param state  new state from SMDP+ service interaction
-     * @return updated row or null on no match
-     */
-    @Transaction
-    fun setSmDpPlusStateUsingIccid(iccid: String, state: SmDpPlusState): SimEntry? {
-        return if (updateSmDpPlusStateUsingIccid(iccid, state) > 0)
-            getSimProfileByIccid(iccid)
-        else
-            null
-    }
-
-    /**
-     * Updates state of SIM profile and returns the updated profile.
-     * Updates state and the 'matching-id' of a SIM profile and return
-     * the updated profile.
-     * @param id  row to update
-     * @param state  new state from SMDP+ service interaction
-     * @param matchingId  SM-DP+ ES2 'matching-id' to be sent to handset
-     * @return updated row or null on no match
-     */
-    @Transaction
-    fun setSmDpPlusStateAndMatchingId(id: Long, state: SmDpPlusState, matchingId: String): SimEntry? {
-        return if (updateSmDpPlusStateAndMatchingId(id, state, matchingId) > 0)
-            getSimProfileById(id)
-        else
-            null
-    }
+    fun importSims(importer: String,
+                   hlrId: Long,
+                   profileVendorId: Long,
+                   csvInputStream: InputStream): Either<SimManagerError, SimImportBatch> =
+            IO {
+                Either.monad<SimManagerError>().binding {
+                    createNewSimImportBatch(importer = importer,
+                            hssId = hlrId,
+                            profileVendorId = profileVendorId)
+                            .bind()
+                    val batchId = lastInsertedRowId()
+                            .bind()
+                    val values = SimEntryIterator(profileVendorId = profileVendorId,
+                            hssId = hlrId,
+                            batchId = batchId,
+                            csvInputStream = csvInputStream)
+                    insertAll(values)
+                            .bind()
+                    updateBatchState(id = batchId,
+                            size = values.count.get(),
+                            status = "SUCCESS",  // TODO: Use enumeration, not naked string.
+                            endedAt = System.currentTimeMillis())
+                            .bind()
+                    getBatchInfo(batchId)
+                            .bind()
+                }.fix()
+            }.unsafeRunSync()
 
     //
     // Finding next free SIM card for a particular HLR.
     //
 
     /**
-     * Sets the EID value of a SIM entry (profile).
-     * @param id  SIM entry to update
-     * @param eid  the eid value
-     * @return updated SIM entry
-     */
-    @Transaction
-    fun setEidOfSimProfile(id: Long, eid: String): SimEntry? {
-        return if (updateEidOfSimProfile(id, eid) > 0)
-            getSimProfileById(id)
-        else
-            null
-    }
-
-    /**
-     * Sets the EID value of a SIM entry (profile).
-     * @param id  SIM entry to update
-     * @param eid  the eid value
-     * @return updated SIM entry
-     */
-    @Transaction
-    fun setEidOfSimProfileByIccid(iccid: String, eid: String): SimEntry? {
-        return if (updateEidOfSimProfileByIccid(iccid, eid) > 0)
-            getSimProfileByIccid(iccid)
-        else
-            null
-    }
-
-    /**
      * Get relevant statistics for a particular profile type for a particular HLR.
      */
-    fun getProfileStats(
-            @Bind("hssId") hssId: Long,
-            @Bind("simProfile") simProfile: String): SimProfileKeyStatistics {
+    fun getProfileStats(@Bind("hssId") hssId: Long,
+                        @Bind("simProfile") simProfile: String): Either<SimManagerError, SimProfileKeyStatistics> =
+            IO {
+                Either.monad<SimManagerError>().binding {
 
-        val keyValuePairs = mutableMapOf<String, Long>()
+                    val keyValuePairs = mutableMapOf<String, Long>()
 
-        getProfileStatsAsKeyValuePairs(hssId = hssId, simProfile = simProfile)
-                .forEach { keyValuePairs.put(it.key, it.value) }
-        val noOfEntries = keyValuePairs.get("NO_OF_ENTRIES")!!
-        val noOfUnallocatedEntries = keyValuePairs.get("NO_OF_UNALLOCATED_ENTRIES")!!
-        val noOfReleasedEntries = keyValuePairs.get("NO_OF_RELEASED_ENTRIES")!!
-        val noOfEntriesAvailableForImmediateUse = keyValuePairs.get("NO_OF_ENTRIES_READY_FOR_IMMEDIATE_USE")!!
+                    getProfileStatsAsKeyValuePairs(hssId = hssId, simProfile = simProfile).bind()
+                            .forEach { keyValuePairs.put(it.key, it.value) }
 
-        return SimProfileKeyStatistics(
-                noOfEntries = noOfEntries,
-                noOfUnallocatedEntries = noOfUnallocatedEntries,
-                noOfEntriesAvailableForImmediateUse = noOfEntriesAvailableForImmediateUse,
-                noOfReleasedEntries = noOfReleasedEntries)
-    }
+                    val noOfEntries = keyValuePairs.get("NO_OF_ENTRIES")!!
+                    val noOfUnallocatedEntries = keyValuePairs.get("NO_OF_UNALLOCATED_ENTRIES")!!
+                    val noOfReleasedEntries = keyValuePairs.get("NO_OF_RELEASED_ENTRIES")!!
+                    val noOfEntriesAvailableForImmediateUse = keyValuePairs.get("NO_OF_ENTRIES_READY_FOR_IMMEDIATE_USE")!!
 
-    companion object {
-        private fun <T> assertNonNull(v: T?): T {
-            if (v == null) {
-                throw WebApplicationException(Response.Status.NOT_FOUND)
-            } else {
-                return v
-            }
-        }
-    }
+                    SimProfileKeyStatistics(
+                            noOfEntries = noOfEntries,
+                            noOfUnallocatedEntries = noOfUnallocatedEntries,
+                            noOfEntriesAvailableForImmediateUse = noOfEntriesAvailableForImmediateUse,
+                            noOfReleasedEntries = noOfReleasedEntries)
+                }.fix()
+            }.unsafeRunSync()
 }
 
 class SimProfileKeyStatistics(
@@ -406,4 +306,3 @@ class HlrEntryMapper  : RowMapper<HssEntry> {
         return HssEntry(id = id, name = name)
     }
 }
-

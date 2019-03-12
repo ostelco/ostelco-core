@@ -6,13 +6,11 @@ import io.dropwizard.jdbi3.JdbiFactory
 import io.dropwizard.testing.ConfigOverride
 import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
-import junit.framework.Assert.assertFalse
 import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.client.ClientProperties
 import org.jdbi.v3.core.Jdbi
 import org.junit.*
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.ostelco.simcards.hss.HssProxy
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimProfileKeyStatistics
@@ -140,7 +138,7 @@ class SimAdministrationTest {
         val dao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
 
         dao.addProfileVendorAdapter(profileVendor)
-        dao.addHlrAdapter(hssName)
+        dao.addHssEntry(hssName)
         dao.permitVendorForHlrByNames(profileVendor = profileVendor, hssName = hssName)
     }
 
@@ -195,51 +193,78 @@ class SimAdministrationTest {
         assertEquals(hssName, hssEntries[0].name)
     }
 
-
     @Test
     fun testGetProfilesForHlr() {
-        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
-        val hssEntries = simDao.getHssEntries()
-        val hssId = hssEntries[0].id
-        val profiles : List<String> = simDao.getProfileNamesForHlr(hssId)
-        assertEquals(1, profiles.size)
-        assertEquals(expectedProfile, profiles.get(0))
+        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
+                .DAO
+        val hlrs = simDao.getHssEntries()
+        assertThat(hlrs.isRight()).isTrue()
+
+        var hlrId: Long = 0
+        hlrs.map {
+            hlrId = it[0].id
+        }
+
+        val profiles = simDao.getProfileNamesForHssById(hlrId)
+        assertThat(profiles.isRight()).isTrue()
+        profiles.map {
+            assertEquals(1, it.size)
+            assertEquals(expectedProfile, it.get(0))
+        }
     }
 
     @Test
     fun  testGetProfileStats() {
-        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
-        val hssEntries = simDao.getHssEntries()
-        assertFalse(hssEntries.isEmpty())
-        val hssId = hssEntries[0].id
-        val stats : SimProfileKeyStatistics? = simDao.getProfileStats(hssId, expectedProfile)
-        assertNotNull(stats)
-        assertEquals(100L, stats!!.noOfEntries)
-        assertEquals(100L, stats.noOfUnallocatedEntries)
-        assertEquals(0L, stats.noOfReleasedEntries)
+        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
+                .DAO
+        val hlrs = simDao.getHssEntries()
+        assertThat(hlrs.isRight()).isTrue()
+
+        var hlrId: Long = 0
+        hlrs.map {
+            hlrId = it[0].id
+        }
+
+        val stats = simDao.getProfileStats(hlrId, expectedProfile)
+        assertThat(stats.isRight()).isTrue()
+        stats.map {
+            assertEquals(100L, it.noOfEntries)
+            assertEquals(100L, it.noOfUnallocatedEntries)
+            assertEquals(0L, it.noOfReleasedEntries)
+        }
     }
 
     @Test
     fun testPeriodicProvisioningTask() {
 
-        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
+        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
+                .DAO
 
         val profileVendors = SIM_MANAGER_RULE.configuration.profileVendors
         val hssConfigs = SIM_MANAGER_RULE.configuration.hssVendors
-
-        val httpClient  = HttpClientBuilder(SIM_MANAGER_RULE.environment).build("periodicProvisioningTaskClient")
-
+        val httpClient  = HttpClientBuilder(SIM_MANAGER_RULE.environment)
+                .build("periodicProvisioningTaskClient")
         val maxNoOfProfilesToAllocate = 10
-        val hssEntries = simDao.getHssEntries()
-        val hssId = hssEntries[0].id
 
-        val preAllocationStats = simDao.getProfileStats(hssId, expectedProfile)
+        val hlrs = simDao.getHssEntries()
+        assertThat(hlrs.isRight()).isTrue()
+
+        var hlrId: Long = 0
+        hlrs.map {
+            hlrId = it[0].id
+        }
 
 
         val hssAdapterCache = HssProxy(
                 hssConfigs = hssConfigs,
                 simInventoryDAO = simDao,
                 httpClient = httpClient)
+        assertThat(preAllocationStats.isRight()).isTrue()
+        var preStats: SimProfileKeyStatistics =
+                SimProfileKeyStatistics(0L, 0L, 0L, 0L)
+        preAllocationStats.map {
+            preStats = it
+        }
 
         val task = PreallocateProfilesTask(
                 profileVendors = profileVendors,
@@ -248,12 +273,17 @@ class SimAdministrationTest {
                 hssAdapterProxy = hssAdapterCache,
                 httpClient = httpClient)
 
-        task.preallocateProfiles()
+        task.preAllocateSimProfiles()
 
-        val postAllocationStats  = simDao.getProfileStats(hssId, expectedProfile)
+        val postAllocationStats = simDao.getProfileStats(hssId, expectedProfile)
+        assertThat(postAllocationStats.isRight()).isTrue()
+        var postStats: SimProfileKeyStatistics = SimProfileKeyStatistics(0L, 0L, 0L, 0L)
+        postAllocationStats.map {
+            postStats = it
+        }
 
         val noOfAllocatedProfiles =
-                postAllocationStats.noOfEntriesAvailableForImmediateUse - preAllocationStats.noOfEntriesAvailableForImmediateUse
+                postStats.noOfEntriesAvailableForImmediateUse - preStats.noOfEntriesAvailableForImmediateUse
 
         assertEquals(
                 maxNoOfProfilesToAllocate.toLong(),

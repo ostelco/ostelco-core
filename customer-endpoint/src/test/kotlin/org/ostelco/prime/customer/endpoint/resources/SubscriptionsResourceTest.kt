@@ -44,9 +44,9 @@ class SubscriptionsResourceTest {
 
     @Test
     fun getSubscriptions() {
-        val arg = argumentCaptor<Identity>()
+        val identityCaptor = argumentCaptor<Identity>()
 
-        `when`<Either<ApiError, Collection<Subscription>>>(DAO.getSubscriptions(arg.capture())).thenReturn(Either.right(listOf(subscription)))
+        `when`<Either<ApiError, Collection<Subscription>>>(DAO.getSubscriptions(identityCaptor.capture())).thenReturn(Either.right(listOf(subscription)))
 
         val resp = RULE.target("/subscriptions")
                 .request()
@@ -57,8 +57,8 @@ class SubscriptionsResourceTest {
         assertThat(resp.mediaType.toString()).isEqualTo(MediaType.APPLICATION_JSON)
 
         // assertThat and assertEquals is not working
-        assertThat(subscription).isEqualTo(resp.readEntity(Array<Subscription>::class.java)[0])
-        assertThat(arg.firstValue).isEqualTo(Identity(email, "EMAIL", "email"))
+        assertThat(resp.readEntity(Array<Subscription>::class.java)[0]).isEqualTo(subscription)
+        assertThat(identityCaptor.firstValue).isEqualTo(Identity(email, "EMAIL", "email"))
     }
 
     companion object {

@@ -1,18 +1,22 @@
 package org.ostelco.simcards.hss
 
+
+import arrow.core.Either
+import arrow.core.left
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.apache.http.client.methods.RequestBuilder
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.simmanager.AdapterError
+import org.ostelco.prime.simmanager.NotUpdatedError
+import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.admin.HssConfig
 import org.ostelco.simcards.inventory.HssState
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
-import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.Response
 
 
 // TODO:
@@ -41,8 +45,8 @@ data class HssEntry(
  * implementations.
  */
 interface HssAdapter {
-    fun activate(simEntry: SimEntry)
-    fun suspend(simEntry: SimEntry)
+    fun activate(simEntry: SimEntry): Either<SimManagerError, SimEntry>
+    fun suspend(simEntry: SimEntry) : Either<SimManagerError, SimEntry>
 
     // XXX We may want6 to do  one or two of these two also
     // fun reactivate(simEntry: SimEntry)
@@ -70,13 +74,11 @@ class SimpleHssAdapter(val httpClient: CloseableHttpClient,
      * @param simEntry  SIM profile to activate
      * @return Updated SIM profile
      */
-    override fun activate(simEntry: SimEntry) {
+    override fun activate(simEntry: SimEntry): Either<SimManagerError, SimEntry> {
 
         if (simEntry.iccid.isEmpty()) {
-            throw WebApplicationException(
-                    String.format("Illegal parameter in SIM activation request to BSSID %s",
-                            config.name),
-                    Response.Status.BAD_REQUEST)
+            return NotUpdatedError("Illegal parameter in SIM activation request to BSSID ${config.name}")
+                    .left()
         }
 
         val body = mapOf(
@@ -95,28 +97,33 @@ class SimpleHssAdapter(val httpClient: CloseableHttpClient,
                 .setEntity(StringEntity(payload))
                 .build()
 
-        return httpClient.execute(request).use {
-            when (it.statusLine.statusCode) {
-                201 -> {
-                    logger.info("HLR activation message to BSSID {} for ICCID {} completed OK",
-                            config.name,
-                            simEntry.iccid)
-                    dao.setHlrState(simEntry.id!!, HssState.ACTIVATED)
-                }
-                else -> {
-                    logger.warn("HLR activation message to BSSID {} for ICCID {} failed with status ({}) {}",
-                            config.name,
-                            simEntry.iccid,
-                            it.statusLine.statusCode,
-                            it.statusLine.reasonPhrase)
-                    throw WebApplicationException(
-                            String.format("Failed to activate ICCID %s with BSSID %s (status-code: %d)",
-                                    simEntry.iccid,
-                                    config.name,
-                                    it.statusLine.statusCode),
-                            Response.Status.BAD_REQUEST)
+        return try {
+            httpClient.execute(request).use {
+                when (it.statusLine.statusCode) {
+                    201 -> {
+                        logger.info("HLR activation message to BSSID {} for ICCID {} completed OK",
+                                config.name,
+                                simEntry.iccid)
+                        dao.setHssState(simEntry.id!!, HssState.ACTIVATED)
+                    }
+                    else -> {
+                        logger.warn("HLR activation message to BSSID {} for ICCID {} failed with status ({}) {}",
+                                config.name,
+                                simEntry.iccid,
+                                it.statusLine.statusCode,
+                                it.statusLine.reasonPhrase)
+                        NotUpdatedError("Failed to activate ICCID ${simEntry.iccid} with BSSID ${config.name} (status-code: ${it.statusLine.statusCode})")
+                                .left()
+                    }
                 }
             }
+        } catch (e: Exception) {
+            logger.error("HLR activation message to BSSID {} for ICCID {} failed with error: {}",
+                    config.name,
+                    simEntry.iccid,
+                    e)
+            AdapterError("HLR activation message to BSSID ${config.name} for ICCID ${simEntry.iccid} failed with error: ${e}")
+                    .left()
         }
     }
 
@@ -127,12 +134,10 @@ class SimpleHssAdapter(val httpClient: CloseableHttpClient,
      * @param simEntry  SIM profile to deactivate
      * @return Updated SIM profile
      */
-    override fun suspend(simEntry: SimEntry){
+    override fun suspend(simEntry: SimEntry): Either<SimManagerError, SimEntry> {
         if (simEntry.iccid.isEmpty()) {
-            throw WebApplicationException(
-                    String.format("Illegal parameter in SIM deactivation request to BSSID %s",
-                            config.name),
-                    Response.Status.BAD_REQUEST)
+            return NotUpdatedError("Illegal parameter in SIM deactivation request to BSSID ${config.name}")
+                    .left()
         }
 
         val request = RequestBuilder.delete()
@@ -141,28 +146,33 @@ class SimpleHssAdapter(val httpClient: CloseableHttpClient,
                 .setHeader("Content-Type", MediaType.APPLICATION_JSON)
                 .build()
 
-        return httpClient.execute(request).use {
-            when (it.statusLine.statusCode) {
-                200 -> {
-                    logger.info("HLR deactivation message to BSSID {} for ICCID {} completed OK",
-                            config.name,
-                            simEntry.iccid)
-                    dao.setHlrState(simEntry.id!!, HssState.NOT_ACTIVATED)
-                }
-                else -> {
-                    logger.warn("HLR deactivation message to BSSID {} for ICCID {} failed with status ({}) {}",
-                            config.name,
-                            simEntry.iccid,
-                            it.statusLine.statusCode,
-                            it.statusLine.reasonPhrase)
-                    throw WebApplicationException(
-                            String.format("Failed to deactivate ICCID %s with BSSID %s (status-code: %d)",
-                                    simEntry.iccid,
-                                    config.name,
-                                    it.statusLine.statusCode),
-                            Response.Status.BAD_REQUEST)
+        return try {
+            httpClient.execute(request).use {
+                when (it.statusLine.statusCode) {
+                    200 -> {
+                        logger.info("HLR deactivation message to BSSID {} for ICCID {} completed OK",
+                                config.name,
+                                simEntry.iccid)
+                        dao.setHssState(simEntry.id!!, HssState.NOT_ACTIVATED)
+                    }
+                    else -> {
+                        logger.warn("HLR deactivation message to BSSID {} for ICCID {} failed with status ({}) {}",
+                                config.name,
+                                simEntry.iccid,
+                                it.statusLine.statusCode,
+                                it.statusLine.reasonPhrase)
+                        NotUpdatedError("Failed to deactivate ICCID ${simEntry.iccid} with BSSID ${config.name} (status-code: ${it.statusLine.statusCode}")
+                                .left()
+                    }
                 }
             }
+        } catch (e: Exception) {
+            logger.error("HLR deactivation message to BSSID {} for ICCID {} failed with error: {}",
+                    config.name,
+                    simEntry.iccid,
+                    e)
+            AdapterError("HLR deactivation message to BSSID ${config.name} for ICCID ${simEntry.iccid} failed with error: ${e}")
+                    .left()
         }
     }
 }

@@ -2,26 +2,14 @@ package org.ostelco.prime.customer.endpoint.store
 
 import arrow.core.Either
 import arrow.core.flatMap
-import org.ostelco.prime.apierror.ApiError
-import org.ostelco.prime.apierror.ApiErrorCode
+import arrow.core.right
+import org.ostelco.prime.apierror.*
 import org.ostelco.prime.apierror.ApiErrorMapper.mapPaymentErrorToApiError
 import org.ostelco.prime.apierror.ApiErrorMapper.mapStorageErrorToApiError
-import org.ostelco.prime.apierror.BadGatewayError
-import org.ostelco.prime.apierror.BadRequestError
-import org.ostelco.prime.apierror.InsufficientStorageError
-import org.ostelco.prime.apierror.NotFoundError
 import org.ostelco.prime.customer.endpoint.metrics.updateMetricsOnNewSubscriber
 import org.ostelco.prime.customer.endpoint.model.Person
 import org.ostelco.prime.getLogger
-import org.ostelco.prime.model.ApplicationToken
-import org.ostelco.prime.model.Bundle
-import org.ostelco.prime.model.Customer
-import org.ostelco.prime.model.Identity
-import org.ostelco.prime.model.Product
-import org.ostelco.prime.model.PurchaseRecord
-import org.ostelco.prime.model.RegionDetails
-import org.ostelco.prime.model.ScanInformation
-import org.ostelco.prime.model.Subscription
+import org.ostelco.prime.model.*
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
@@ -306,7 +294,7 @@ class SubscriberDAOImpl : SubscriberDAO {
     // eKYC
     //
 
-    override fun newEKYCScanId(identity: Identity, countryCode: String): Either<ApiError, ScanInformation> {
+    override fun createNewJumioScanId(identity: Identity, countryCode: String): Either<ApiError, ScanInformation> {
         return storage.newEKYCScanId(identity, countryCode)
                 .mapLeft { mapStorageErrorToApiError("Failed to create new scanId", ApiErrorCode.FAILED_TO_CREATE_SCANID, it) }
     }
@@ -321,6 +309,13 @@ class SubscriberDAOImpl : SubscriberDAO {
                 .mapLeft { mapStorageErrorToApiError("Failed to fetch scan information", ApiErrorCode.FAILED_TO_FETCH_SCAN_INFORMATION, it) }
     }
 
+    override fun getCustomerMyInfoData(identity: Identity, authorisationCode: String): Either<ApiError, String> {
+        return "{}".right()
+    }
+
+    override fun checkIdNumberUsingDave(identity: Identity) : Either<ApiError, Unit> = Unit.right()
+
+    override fun saveProfile(identity: Identity) : Either<ApiError, Unit> = Unit.right()
     //
     // Token
     //

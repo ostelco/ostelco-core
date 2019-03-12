@@ -36,6 +36,7 @@ subprojects {
     assertJVersion = "3.12.1"
     arrowVersion = "0.8.2"
     beamVersion = "2.11.0"
+    cxfVersion = "3.3.1"
     dockerComposeJunitRuleVersion = "0.35.0"
     dropwizardVersion = "1.3.9"
     firebaseVersion = "6.7.0"
@@ -47,6 +48,7 @@ subprojects {
     // Keeping it version 1.16.1 to be consistent with grpc via PubSub client lib
     // Keeping it version 1.16.1 to be consistent with netty via Firebase lib
     jaxbVersion = "2.3.1"
+    jjwtVersion = "0.9.1"
     junit5Version = "5.4.0"
     kotlinVersion = "1.3.21"
     kotlinXCoroutinesVersion = "1.1.1"

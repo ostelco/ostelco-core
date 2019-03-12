@@ -1,7 +1,6 @@
 package org.ostelco.at.common
 
 import org.apache.commons.lang3.RandomStringUtils
-import org.ostelco.at.jersey.get
 import org.ostelco.at.jersey.post
 import org.ostelco.prime.customer.model.Customer
 import org.ostelco.prime.customer.model.ScanInformation
@@ -41,8 +40,8 @@ fun createSubscription(email: String): String {
 
 fun enableRegion(email: String) {
 
-    val scanInformation = get<ScanInformation> {
-        path = "/customer/new-ekyc-scanId/no"
+    val scanInformation = post<ScanInformation> {
+        path = "/regions/no/kyc/jumio/scans"
         this.email = email
     }
 

@@ -3,9 +3,9 @@ info:
   title: "Ostelco API"
   description: "The customer API."
   version: "1.0.0"
-host: "api.dev.ostelco.org"
+host: "api.dev.oya.world"
 x-google-endpoints:
-  - name: "api.dev.ostelco.org"
+  - name: "api.dev.oya.world"
     allowCors: true
 schemes:
   - "https"
@@ -28,48 +28,6 @@ paths:
             type: string
         404:
           description: "User not found."
-      security:
-        - auth0_jwt: []
-  "/customer/new-ekyc-scanId/{countryCode}":
-    get:
-      description: "Get a new Id for eKYC scanning."
-      produces:
-        - application/json
-      operationId: "newEKYCScanId"
-      parameters:
-        - name: countryCode
-          in: path
-          description: "Country code in ISO 3166-1 alpha-3 format"
-          required: true
-          type: string
-      responses:
-        200:
-          description: "Successfully retrieved new ScanId."
-          schema:
-            $ref: '#/definitions/ScanInformation'
-        404:
-          description: "User not found."
-      security:
-        - auth0_jwt: []
-  "/customer/scanStatus/{scanId}":
-    get:
-      description: "Get status of eKYC scan."
-      produces:
-        - application/json
-      operationId: "getScanStatus"
-      parameters:
-        - name: scanId
-          in: path
-          description: "Id of the scan being queried"
-          required: true
-          type: string
-      responses:
-        200:
-          description: "Successfully retrieved Scan information."
-          schema:
-            $ref: '#/definitions/ScanInformation'
-        404:
-          description: "Scan not found."
       security:
         - auth0_jwt: []
   "/customer":
@@ -141,6 +99,53 @@ paths:
           description: "Customer not found."
         502:
           description: "Failed to store customer info"
+      security:
+        - auth0_jwt: []
+  "/regions/{countryCode}/kyc/jumio/scans":
+    post:
+      description: "Get a new Id for eKYC scanning."
+      produces:
+        - application/json
+      operationId: "createNewJumioScanId"
+      parameters:
+        - name: countryCode
+          in: path
+          description: "Country code in ISO 3166-1 alpha-3 format"
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Successfully retrieved new ScanId."
+          schema:
+            $ref: '#/definitions/ScanInformation'
+        404:
+          description: "User not found."
+      security:
+        - auth0_jwt: []
+  "/regions/{countryCode}/kyc/jumio/scans/{scanId}/status":
+    get:
+      description: "Get status of eKYC scan."
+      produces:
+        - application/json
+      operationId: "getScanStatus"
+      parameters:
+        - name: countryCode
+          in: path
+          description: "Country code in ISO 3166-1 alpha-3 format"
+          required: true
+          type: string
+        - name: scanId
+          in: path
+          description: "Id of the scan being queried"
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Successfully retrieved Scan information."
+          schema:
+            $ref: '#/definitions/ScanInformation'
+        404:
+          description: "Scan not found."
       security:
         - auth0_jwt: []
   "/applicationtoken":

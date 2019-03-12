@@ -200,11 +200,11 @@ jobs:
             
             python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=ocs-grpc-api/src/main/proto --descriptor_set_out=ocs_descriptor.pb ocs.proto
             python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=analytics-grpc-api/src/main/proto --descriptor_set_out=metrics_descriptor.pb prime_metrics.proto
-            gcloud endpoints services deploy ocs_descriptor.pb prime/infra/new-dev/ocs-api.yaml
-            gcloud endpoints services deploy metrics_descriptor.pb prime/infra/new-dev/metrics-api.yaml
-            gcloud endpoints services deploy prime/infra/new-dev/prime-customer-api.yaml
-            gcloud endpoints services deploy prime/infra/new-dev/prime-webhooks.yaml
-            gcloud endpoints services deploy prime/infra/new-dev/prime-houston-api.yaml
+            gcloud endpoints services deploy ocs_descriptor.pb prime/infra/dev/ocs-api.yaml
+            gcloud endpoints services deploy metrics_descriptor.pb prime/infra/dev/metrics-api.yaml
+            gcloud endpoints services deploy prime/infra/dev/prime-customer-api.yaml
+            gcloud endpoints services deploy prime/infra/dev/prime-webhooks.yaml
+            gcloud endpoints services deploy prime/infra/dev/prime-houston-api.yaml
       
       - run:
            name: notify slack on failure

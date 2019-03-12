@@ -9,6 +9,7 @@ import org.jdbi.v3.sqlobject.statement.SqlUpdate
 import org.jdbi.v3.sqlobject.transaction.Transaction
 import org.ostelco.simcards.hss.HssEntry
 import org.ostelco.simcards.adapter.ProfileVendorAdapter
+import java.util.*
 
 /**
  * Low-level SIM DB interface.
@@ -128,7 +129,7 @@ interface SimInventoryDB {
     @SqlQuery("""SELECT id FROM sim_vendors_permitted_hlrs
                       WHERE profileVendorId = profileVendorId
                             AND hlrId = :hssId""")
-    fun findSimVendorForHlrPermissions(profileVendorId: Long,
+    fun findSimVendorForHssPermissions(profileVendorId: Long,
                                        hssId: Long): List<Long>
 
     @SqlUpdate("""INSERT INTO sim_vendors_permitted_hlrs
@@ -140,7 +141,7 @@ interface SimInventoryDB {
                                           FROM   sim_vendors_permitted_hlrs
                                           WHERE  profilevendorid = :profileVendorId
                                                  AND hlrid = :hssId)""")
-    fun storeSimVendorForHlrPermission(profileVendorId: Long,
+    fun storeSimVendorForHssPermission(profileVendorId: Long,
                                        hssId: Long): Int
 
     @SqlUpdate("""INSERT INTO hlr_adapters
@@ -149,7 +150,7 @@ interface SimInventoryDB {
                        WHERE  NOT EXISTS (SELECT 1
                                           FROM   hlr_adapters
                                           WHERE  name = :name)""")
-    fun addHlrAdapter(name: String): Int
+    fun addHssAdapter(name: String): Int
 
     @SqlQuery("""SELECT * FROM hlr_adapters
                       WHERE name = :name""")
@@ -226,7 +227,7 @@ interface SimInventoryDB {
      */
     @SqlQuery("""SELECT DISTINCT profile  FROM sim_entries
                       WHERE hlrId = :hssId""")
-    fun getProfileNamesForHlr(hssId: Long): List<String>
+    fun getProfileNamesForHss(hssId: Long): List<String>
 
     /**
      * Get key numbers from a particular named Sim profile.

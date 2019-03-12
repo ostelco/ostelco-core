@@ -12,10 +12,7 @@ import org.ostelco.sim.es2plus.SmDpPlusCallbackResource
 import org.ostelco.simcards.admin.ConfigRegistry.config
 import org.ostelco.simcards.admin.ResourceRegistry.simInventoryResource
 import org.ostelco.simcards.hss.HssProxy
-import org.ostelco.simcards.inventory.SimInventoryCallbackService
-import org.ostelco.simcards.inventory.SimInventoryDAO
-import org.ostelco.simcards.inventory.SimInventoryDB
-import org.ostelco.simcards.inventory.SimInventoryResource
+import org.ostelco.simcards.inventory.*
 
 /**
  * The SIM manager
@@ -45,7 +42,7 @@ class SimAdministrationModule : PrimeModule {
         val jdbi = factory.build(env,
                 config.database, "postgresql")
                 .installPlugins()
-        DAO = SimInventoryDAO(jdbi.onDemand(SimInventoryDB::class.java))
+        DAO = SimInventoryDAO(SimInventoryDBWrapperImpl(jdbi.onDemand(SimInventoryDB::class.java)))
 
         val profileVendorCallbackHandler = SimInventoryCallbackService(DAO)
 
@@ -57,7 +54,7 @@ class SimAdministrationModule : PrimeModule {
         OpenapiResourceAdder.addOpenapiResourceToJerseyEnv(jerseyEnv, config.openApi)
         ES2PlusIncomingHeadersFilter.addEs2PlusDefaultFiltersAndInterceptors(jerseyEnv)
 
-        simInventoryResource = SimInventoryResource(httpClient, config, DAO)
+        simInventoryResource = SimInventoryResource(SimInventoryApi(httpClient, config, DAO))
         jerseyEnv.register(simInventoryResource)
         jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
 
@@ -82,4 +79,8 @@ object ConfigRegistry {
 
 object ResourceRegistry {
     lateinit var simInventoryResource: SimInventoryResource
+}
+
+object ApiRegistry {
+    lateinit var simInventoryApi: SimInventoryApi
 }

@@ -11,6 +11,8 @@ import io.dropwizard.setup.Environment
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
 import org.ostelco.sim.es2plus.SmDpPlusCallbackResource
+import org.ostelco.simcards.inventory.*
+
 import org.ostelco.simcards.hss.HealthCheckRegistrar
 import org.ostelco.simcards.hss.HssProxy
 import org.ostelco.simcards.inventory.SimInventoryCallbackService
@@ -53,7 +55,8 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
         val jdbi = factory
                 .build(env, config.database, "postgresql")
                 .installPlugins()
-        DAO = SimInventoryDAO(jdbi.onDemand(SimInventoryDB::class.java))
+        val db = SimInventoryDBWrapperImpl(jdbi.onDemand(SimInventoryDB::class.java))
+        DAO = SimInventoryDAO(db)
 
         val profileVendorCallbackHandler = SimInventoryCallbackService(DAO)
 
@@ -65,9 +68,11 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
         addOpenapiResourceToJerseyEnv(jerseyEnv, config.openApi)
         addEs2PlusDefaultFiltersAndInterceptors(jerseyEnv)
 
-        // Add resoures that should be run from the outside via REST.
+        val simInventoryApi = SimInventoryApi(httpClient, config, DAO)
+        ResourceRegistry.simInventoryResource = SimInventoryResource(simInventoryApi)
 
-        jerseyEnv.register(SimInventoryResource(httpClient, config, this.DAO))
+        // Add resoures that should be run from the outside via REST.
+        jerseyEnv.register(ResourceRegistry.simInventoryResource)
         jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
 
         // Add task that should be triggered periodically by external

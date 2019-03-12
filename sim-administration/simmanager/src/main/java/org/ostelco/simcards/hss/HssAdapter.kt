@@ -1,7 +1,9 @@
 package org.ostelco.simcards.hss
 
+import arrow.core.Either
 import com.codahale.metrics.health.HealthCheck
 import org.apache.http.impl.client.CloseableHttpClient
+import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.admin.HssConfig
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
@@ -47,37 +49,38 @@ class HssProxy(
 
     fun initialize() {
         synchronized(lock) {
-            this.hssEntries = simInventoryDAO.getHssEntries()
-
-            if (this.hssEntries.isNullOrEmpty()) {
-                log.error("No HSS entries to be found by the DAO")
-                return@synchronized
-            }
-
-            hssConfigs.forEach { hssConfig ->
-                if (!hssAdaptersByName.containsKey(hssConfig.name)) {
-
-                    // TODO:  This extension point must be able to cater to multiple types
-                    //        of adapter.
-                    val adapter = SimpleHssAdapter(httpClient, config = hssConfig, dao = simInventoryDAO)
-
-                    hssAdaptersByName.put(hssConfig.name, adapter)
-                    val entryWithName = hssEntries.find { hssEntry -> hssConfig.name == hssEntry.name }
-                    if (entryWithName != null) {
-                        hssAdaptersById.put(entryWithName!!.id, adapter)
-
-
-                        if (heathCheckRegistrar != null) {
-                            heathCheckRegistrar.registerHealthCheck(
-                                    "HSS adapter for Hss named '${hssConfig.name}'",
-                                    HssAdapterHealthcheck(hssConfig.name, adapter))
-                        }
-                    } else {
-                        log.error("Could not find hss entry in database with name '${hssConfig.name}'")
-                        return@synchronized
+            simInventoryDAO.getHssEntries()
+                    .mapLeft { err ->
+                        log.error("No HSS entries to be found by the DAO.")
+                        log.error(err.description)
                     }
-                }
-            }
+                    .mapRight { hssEntryList ->
+                        this.hssEntries = hssEntryList
+                        for (hssConfig in hssConfigs) {
+                            if (!hssAdaptersByName.containsKey(hssConfig.name)) {
+
+                                // TODO:  This extension point must be able to cater to multiple types
+                                //        of adapter.
+                                val adapter = SimpleHssAdapter(httpClient, config = hssConfig, dao = simInventoryDAO)
+
+                                val entryWithName = hssEntries.singleOrNull { hssEntry -> hssConfig.name == hssEntry.name }
+                                if (entryWithName != null) {
+                                    hssAdaptersByName.put(hssConfig.name, adapter)
+                                    hssAdaptersById.put(entryWithName.id, adapter)
+
+
+                                    if (heathCheckRegistrar != null) {
+                                        heathCheckRegistrar.registerHealthCheck(
+                                                "HSS adapter for Hss named '${hssConfig.name}'",
+                                                HssAdapterHealthcheck(hssConfig.name, adapter))
+                                    }
+                                } else {
+                                    log.error("Could not find or found multiple hss entry in database with name '${hssConfig.name}'")
+                                    break
+                                }
+                            }
+                        }
+                    }
         }
     }
 
@@ -100,12 +103,12 @@ class HssProxy(
     }
 
 
-    override fun activate(simEntry: SimEntry) {
+    override fun activate(simEntry: SimEntry) : Either<SimManagerError, SimEntry> {
         return getHssAdapterById(simEntry.hssId).activate(simEntry)
     }
 
-    override fun suspend(simEntry: SimEntry) {
-        return getHssAdapterById(simEntry.hssId).suspend(simEntry)
+    override fun suspend(simEntry: SimEntry) :  Either<SimManagerError, SimEntry> {
+         return getHssAdapterById(simEntry.hssId).suspend(simEntry)
     }
 }
 
@@ -114,10 +117,11 @@ interface HealthCheckRegistrar {
     fun registerHealthCheck(name: String, healthCheck: HealthCheck)
 }
 
+fun <L,R, R2> Either<L,R>.mapRight(f:(R)->R2):Either<L,R2> = this.map(f)
 
 class HssAdapterHealthcheck(
         private val name: String,
-        private val adapter: HssAdapter) : HealthCheck() {
+        private val entry: HssAdapter) : HealthCheck() {
 
     private val lastHealthStatus = AtomicBoolean(false)
 
@@ -127,12 +131,12 @@ class HssAdapterHealthcheck(
 
     @Throws(Exception::class)
     override fun check(): Result {
-        return if (adapter.iAmHealthy()) {
+        return if (entry.iAmHealthy()) {
             lastHealthStatus.set(true)
             Result.healthy()
         } else {
             lastHealthStatus.set(false)
-            Result.unhealthy("HSS adapter ${name} is not healthy")
+            Result.unhealthy("HSS entry ${name} is not healthy")
         }
     }
 }
