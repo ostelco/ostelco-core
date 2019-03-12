@@ -8,25 +8,8 @@ import org.ostelco.at.common.enableRegion
 import org.ostelco.at.common.expectedProducts
 import org.ostelco.at.common.getLogger
 import org.ostelco.at.common.randomInt
-import org.ostelco.prime.customer.model.ApplicationToken
-import org.ostelco.prime.customer.model.Bundle
-import org.ostelco.prime.customer.model.BundleList
-import org.ostelco.prime.customer.model.Customer
-import org.ostelco.prime.customer.model.PaymentSource
-import org.ostelco.prime.customer.model.PaymentSourceList
-import org.ostelco.prime.customer.model.Person
-import org.ostelco.prime.customer.model.Plan
-import org.ostelco.prime.customer.model.Price
-import org.ostelco.prime.customer.model.Product
-import org.ostelco.prime.customer.model.ProductInfo
-import org.ostelco.prime.customer.model.PurchaseRecord
-import org.ostelco.prime.customer.model.PurchaseRecordList
-import org.ostelco.prime.customer.model.Region
-import org.ostelco.prime.customer.model.RegionDetails
-import org.ostelco.prime.customer.model.RegionDetails.StatusEnum
-import org.ostelco.prime.customer.model.RegionDetailsList
-import org.ostelco.prime.customer.model.ScanInformation
-import org.ostelco.prime.customer.model.Subscription
+import org.ostelco.prime.customer.model.*
+import org.ostelco.prime.customer.model.RegionDetails.StatusEnum.PENDING
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.Instant
@@ -655,7 +638,7 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
+            assertEquals(PENDING, regionDetails.status, message = "Wrong State")
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -700,7 +683,7 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)

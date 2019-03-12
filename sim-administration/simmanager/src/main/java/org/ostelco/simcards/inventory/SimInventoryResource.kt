@@ -49,36 +49,6 @@ class SimInventoryResource(private val api: SimInventoryApi) {
                             { Response.status(Response.Status.OK).entity(asJson(it)) }
                     ).build()
 
-    @POST
-    @Path("iccid/{iccid}")
-    @Produces(MediaType.APPLICATION_JSON)
-    fun activateHlrProfileByIccid(
-            @NotEmpty @PathParam("hssVendors") hlrName: String,
-            @NotEmpty @PathParam("iccid") iccid: String): Response =
-            api.activateHlrProfileByIccid(hlrName, iccid)
-                    .fold(
-                            {
-                                error("Failed to activate SIM profile with BSS ${hlrName} for ICCID: ${iccid}",
-                                        ApiErrorCode.FAILED_TO_ACTIVATE_SIM_PROFILE_WITH_HLR, it)
-                            },
-                            { Response.status(Response.Status.OK).entity(asJson(it)) }
-                    ).build()
-
-
-    @DELETE
-    @Path("iccid/{iccid}")
-    @Produces(MediaType.APPLICATION_JSON)
-    fun deactivateHlrProfileByIccid(
-            @NotEmpty @PathParam("hssVendors") hlrName: String,
-            @NotEmpty @PathParam("iccid") iccid: String): Response =
-            api.deactivateHlrProfileByIccid(hlrName, iccid)
-                    .fold(
-                            {
-                                error("Failed to deactivate SIM profile with BSS ${hlrName} for ICCID: ${iccid}",
-                                        ApiErrorCode.FAILED_TO_DEACTIVATE_SIM_PROFILE_WITH_HLR, it)
-                            },
-                            { Response.status(Response.Status.OK).entity(asJson(it)) }
-                    ).build()
 
     @GET
     @Path("imsi/{imsi}")

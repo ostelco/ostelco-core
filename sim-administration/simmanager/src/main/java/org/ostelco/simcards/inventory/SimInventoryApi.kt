@@ -12,11 +12,8 @@ import org.ostelco.prime.simmanager.NotFoundError
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.sim.es2plus.ProfileStatus
 import org.ostelco.simcards.adapter.ProfileVendorAdapter
-import org.ostelco.simcards.admin.HssConfig
 import org.ostelco.simcards.admin.ProfileVendorConfig
 import org.ostelco.simcards.admin.SimAdministrationConfiguration
-import org.ostelco.simcards.hss.HssAdapter
-import org.ostelco.simcards.hss.HssEntry
 import java.io.InputStream
 
 
@@ -51,75 +48,7 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                                 }
                     }
 
-    fun activateHlrProfileByIccid(hlrName: String, iccid: String): Either<SimManagerError, SimEntry> =
-            findSimProfileByIccid(hlrName, iccid)
-                    .flatMap { simEntry ->
-                        getHlrAdapterAndConfig(simEntry)
-                                .flatMap {
-                                    when (simEntry.hssState) {
-                                        HssState.NOT_ACTIVATED -> {
-                                            it.first.activate(simEntry)
-                                        }
-                                        HssState.ACTIVATED -> {
-                                            simEntry.right()
-                                        }
-                                    }
-                                }
-                    }
 
-    fun deactivateHlrProfileByIccid(hlrName: String, iccid: String): Either<SimManagerError, SimEntry> =
-            findSimProfileByIccid(hlrName, iccid)
-                    .flatMap { simEntry ->
-                        getHlrAdapterAndConfig(simEntry)
-                                .flatMap {
-                                    when (simEntry.hssState) {
-                                        HssState.NOT_ACTIVATED -> {
-                                            simEntry.right()
-                                        }
-                                        HssState.ACTIVATED -> {
-                                            it.first.suspend(simEntry)
-                                        }
-                                    }
-                                }
-                    }
-
-    fun activateNextEsimProfile(hlrName: String, phoneType: String): Either<SimManagerError, SimEntry> =
-            IO {
-                Either.monad<SimManagerError>().binding {
-                    val hlrAdapter = dao.getHssEntryByName(hlrName)
-                            .bind()
-                    val profile = getProfileForPhoneType(phoneType)
-                            .bind()
-                    val simEntry = dao.findNextNonProvisionedSimProfileForHss(hlrAdapter.id, profile)
-                            .bind()
-                    val profileVendorAndConfig = getProfileVendorAdapterAndConfig(simEntry)
-                            .bind()
-
-                    val vendorAdapter = profileVendorAndConfig.first
-                    val config = profileVendorAndConfig.second
-
-                    /* As 'confirm-order' message is issued with 'releaseFlag' set to true, the
-                       CONFIRMED state should not occur. */
-                    val updatedSimEntry: SimEntry = when (simEntry.smdpPlusState) {
-                        SmDpPlusState.AVAILABLE -> {
-                            vendorAdapter.activate(httpClient, config, dao, null, simEntry)
-                                    .bind()
-                        }
-                        SmDpPlusState.ALLOCATED -> {
-                            vendorAdapter.confirmOrder(httpClient, config, dao, null, simEntry)
-                                    .bind()
-                        }
-                        /* ESIM already 'released'. */
-                        else -> {
-                            simEntry
-                        }
-                    }
-
-                    /* Enable SIM profile with HLR. */
-                    activateHlrProfileByIccid(hlrName, updatedSimEntry.iccid)
-                            .bind()
-                }.fix()
-            }.unsafeRunSync()
 
     fun allocateNextEsimProfile(hlrName: String, phoneType: String): Either<SimManagerError, SimEntry> =
             IO {
@@ -174,18 +103,6 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                             simEntry.right()
                     }
 
-    private fun getHlrAdapterAndConfig(simEntry: SimEntry): Either<SimManagerError, Pair<HssAdapter, HssConfig>> =
-            dao.getHssEntryById(simEntry.hssId)
-                    .flatMap { hssEntry ->
-                        val config: HssConfig? = config.hssVendors.single {
-                            it.name == hssEntry.name
-                        }
-                        if (config != null)
-                            Pair(hlrAdapter, config).right()
-                        else
-                            NotFoundError("Could not find configuration for HLR ${hssEntry.name}")
-                                    .left()
-                    }
 
     private fun getProfileVendorAdapterAndConfig(simEntry: SimEntry): Either<SimManagerError, Pair<ProfileVendorAdapter, ProfileVendorConfig>> =
             dao.getProfileVendorAdapterById(simEntry.profileVendorId)

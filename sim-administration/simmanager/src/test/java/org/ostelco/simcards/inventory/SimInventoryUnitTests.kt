@@ -1,5 +1,6 @@
 package org.ostelco.simcards.inventory
 
+import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import io.dropwizard.testing.junit.ResourceTestRule
@@ -9,11 +10,11 @@ import org.apache.http.impl.client.CloseableHttpClient
 import org.junit.*
 import org.mockito.Mockito.*
 import org.ostelco.prime.simmanager.NotFoundError
-import org.ostelco.simcards.hss.HssEntry
 import org.ostelco.simcards.adapter.ProfileVendorAdapter
 import org.ostelco.simcards.admin.HssConfig
 import org.ostelco.simcards.admin.ProfileVendorConfig
 import org.ostelco.simcards.admin.SimAdministrationConfiguration
+import org.ostelco.simcards.hss.HssEntry
 import java.io.ByteArrayInputStream
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
@@ -150,7 +151,7 @@ class SimInventoryUnitTests {
                 .thenReturn(fakeSimEntryWithoutMsisdn.right())
 
         org.mockito.Mockito.`when`(dao.getHssEntryByName(fakeHlr))
-                .thenReturn(hssEntry)
+                .thenReturn(Either.Right(hssEntry))
 
         org.mockito.Mockito.`when`(dao.getProfileVendorAdapterByName(fakeProfileVendor))
                 .thenReturn(profileVendorAdapter.right())
@@ -159,10 +160,10 @@ class SimInventoryUnitTests {
                 .thenReturn(profileVendorAdapter.right())
 
         org.mockito.Mockito.`when`(dao.getHssEntryByName(fakeHlr))
-                .thenReturn(hssEntry)
+                .thenReturn(Either.Right(hssEntry))
 
         org.mockito.Mockito.`when`(dao.getHssEntryById(1L))
-                .thenReturn(hssEntry)
+                .thenReturn(Either.Right(hssEntry))
 
         org.mockito.Mockito.`when`(dao.setHssState(fakeSimEntryWithoutMsisdn.id!!, HssState.ACTIVATED))
                 .thenReturn(fakeSimEntryWithoutMsisdn.copy(

@@ -9,14 +9,13 @@ import arrow.instances.either.monad.monad
 import com.google.common.collect.ImmutableMultimap
 import io.dropwizard.servlets.tasks.Task
 import org.apache.http.impl.client.CloseableHttpClient
-import org.ostelco.simcards.hss.HssEntry
-import org.ostelco.simcards.hss.HssProxy
-import org.ostelco.simcards.inventory.SimInventoryDAO
-import org.ostelco.simcards.inventory.SimProfileKeyStatistics
 import org.ostelco.prime.simmanager.NotFoundError
 import org.ostelco.prime.simmanager.SimManagerError
-import org.ostelco.simcards.hss.HssAdapter
-import org.ostelco.simcards.inventory.*
+import org.ostelco.simcards.hss.HssEntry
+import org.ostelco.simcards.hss.HssProxy
+import org.ostelco.simcards.inventory.SimEntry
+import org.ostelco.simcards.inventory.SimInventoryDAO
+import org.ostelco.simcards.inventory.SimProfileKeyStatistics
 import org.slf4j.LoggerFactory
 import java.io.PrintWriter
 
@@ -50,30 +49,22 @@ class PreallocateProfilesTask(
                                        simEntry: SimEntry): Either<SimManagerError, SimEntry> =
             simInventoryDAO.getProfileVendorAdapterById(simEntry.profileVendorId)
                     .flatMap { profileVendorAdapter ->
+
                         val profileVendorConfig: ProfileVendorConfig? = profileVendors.firstOrNull {
                             it.name == profileVendorAdapter.name
                         }
-                        val hlrConfig: HssConfig? = hlrConfigs.firstOrNull {
-                            it.name == hssEntry.name
-                        }
 
-                        if (profileVendorConfig != null && hlrConfig != null) {
+                        if (profileVendorConfig != null) {
                             profileVendorAdapter.activate(httpClient = httpClient,
                                     config = profileVendorConfig,
                                     dao = simInventoryDAO,
                                     simEntry = simEntry)
                                     .flatMap {
-                                        hssEntry.activate(httpClient = httpClient,
-                                                config = hlrConfig,
-                                                dao = simInventoryDAO,
-                                                simEntry = simEntry)
+                                        hssAdapterProxy.activate(simEntry)
                                     }
                         } else {
                             if (profileVendorConfig == null) {
                                 NotFoundError("Failed to find configuration for SIM profile vendor ${profileVendorAdapter.name}")
-                                        .left()
-                            } else if (hlrConfig == null) {
-                                NotFoundError("Failed to find configuration for HLR ${hssEntry.name}")
                                         .left()
                             } else {
                                 NotFoundError("Failed to find configuration for SIM profile vendor ${profileVendorAdapter.name} " +

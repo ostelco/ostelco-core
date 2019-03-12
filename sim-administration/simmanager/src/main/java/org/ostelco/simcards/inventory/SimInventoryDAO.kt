@@ -193,12 +193,12 @@ class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper
      * @return true on successful update
      */
     @Transaction
-    fun permitVendorForHlrByNames(profileVendor: String, hlr: String): Either<SimManagerError, Boolean> =
+    fun permitVendorForHssByNames(profileVendor: String, hssName: String): Either<SimManagerError, Boolean> =
             IO {
                 Either.monad<SimManagerError>().binding {
                     val profileVendorAdapter = getProfileVendorAdapterByName(profileVendor)
                             .bind()
-                    val hlrAdapter = getHssEntryByName(hlr)
+                    val hlrAdapter = getHssEntryByName(hssName)
                             .bind()
 
                     storeSimVendorForHssPermission(profileVendorAdapter.id, hlrAdapter.id)

@@ -12,6 +12,7 @@ import org.jdbi.v3.core.Jdbi
 import org.junit.*
 import org.junit.Assert.assertEquals
 import org.ostelco.simcards.hss.HssProxy
+import org.ostelco.simcards.hss.mapRight
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimProfileKeyStatistics
 import org.ostelco.simcards.smdpplus.SmDpPlusApplication
@@ -139,7 +140,7 @@ class SimAdministrationTest {
 
         dao.addProfileVendorAdapter(profileVendor)
         dao.addHssEntry(hssName)
-        dao.permitVendorForHlrByNames(profileVendor = profileVendor, hssName = hssName)
+        dao.permitVendorForHssByNames(profileVendor = profileVendor, hssName = hssName)
     }
 
     /* The SIM dataset is the same that is used by the SM-DP+ emulator. */
@@ -189,8 +190,10 @@ class SimAdministrationTest {
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
 
         val hssEntries = simDao.getHssEntries()
-        assertEquals(1,hssEntries.size)
-        assertEquals(hssName, hssEntries[0].name)
+        hssEntries.mapRight {  assertEquals(1, it.size) }
+
+        hssEntries.mapRight {  assertEquals(hssName, it[0].name)}
+
     }
 
     @Test
@@ -242,29 +245,29 @@ class SimAdministrationTest {
 
         val profileVendors = SIM_MANAGER_RULE.configuration.profileVendors
         val hssConfigs = SIM_MANAGER_RULE.configuration.hssVendors
-        val httpClient  = HttpClientBuilder(SIM_MANAGER_RULE.environment)
+        val httpClient = HttpClientBuilder(SIM_MANAGER_RULE.environment)
                 .build("periodicProvisioningTaskClient")
         val maxNoOfProfilesToAllocate = 10
 
         val hlrs = simDao.getHssEntries()
         assertThat(hlrs.isRight()).isTrue()
 
-        var hlrId: Long = 0
+        var hssId: Long = 0
         hlrs.map {
-            hlrId = it[0].id
+            hssId = it[0].id
         }
-
 
         val hssAdapterCache = HssProxy(
                 hssConfigs = hssConfigs,
                 simInventoryDAO = simDao,
                 httpClient = httpClient)
-        assertThat(preAllocationStats.isRight()).isTrue()
+
         var preStats: SimProfileKeyStatistics =
-                SimProfileKeyStatistics(0L, 0L, 0L, 0L)
-        preAllocationStats.map {
-            preStats = it
-        }
+                SimProfileKeyStatistics(
+                        0L,
+                        0L,
+                        0L,
+                        0L)
 
         val task = PreallocateProfilesTask(
                 profileVendors = profileVendors,
@@ -275,7 +278,8 @@ class SimAdministrationTest {
 
         task.preAllocateSimProfiles()
 
-        val postAllocationStats = simDao.getProfileStats(hssId, expectedProfile)
+        val postAllocationStats =
+                simDao.getProfileStats(hssId, expectedProfile)
         assertThat(postAllocationStats.isRight()).isTrue()
         var postStats: SimProfileKeyStatistics = SimProfileKeyStatistics(0L, 0L, 0L, 0L)
         postAllocationStats.map {
