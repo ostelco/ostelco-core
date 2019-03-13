@@ -115,7 +115,6 @@ interface HealthCheckRegistrar {
     fun registerHealthCheck(name: String, healthCheck: HealthCheck)
 }
 
-fun <L,R, R2> Either<L,R>.mapRight(f:(R)->R2):Either<L,R2> = this.map(f)
 
 class HssAdapterHealthcheck(
         private val name: String,
@@ -138,3 +137,4 @@ class HssAdapterHealthcheck(
         }
     }
 }
+
