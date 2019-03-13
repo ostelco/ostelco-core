@@ -27,7 +27,7 @@ class CreditControlContext(
         private val originHost: String,
         private val originRealm: String) {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     // Set to true, when answer to not to be sent to P-GW.
     var skipAnswer: Boolean = false

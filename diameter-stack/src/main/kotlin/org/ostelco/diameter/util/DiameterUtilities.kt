@@ -4,7 +4,7 @@ import org.jdiameter.api.Avp
 import org.jdiameter.api.AvpDataException
 import org.jdiameter.api.AvpSet
 import org.jdiameter.common.impl.validation.DictionaryImpl
-import org.ostelco.diameter.logger
+import org.ostelco.diameter.getLogger
 import org.ostelco.diameter.util.AvpType.ADDRESS
 import org.ostelco.diameter.util.AvpType.APP_ID
 import org.ostelco.diameter.util.AvpType.FLOAT32
@@ -25,7 +25,7 @@ import org.ostelco.diameter.util.AvpType.VENDOR_ID
 
 class DiameterUtilities {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     private val dictionary = DictionaryImpl.INSTANCE
 

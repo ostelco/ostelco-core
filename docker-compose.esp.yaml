@@ -1,4 +1,4 @@
-version: "3.7"
+version: "3.3"
 
 services:
   prime:
@@ -35,26 +35,61 @@ services:
         ipv4_address: 172.16.238.5
       default:
 
+  esp:
+    container_name: esp
+    image: gcr.io/endpoints-release/endpoints-runtime:1
+    volumes:
+    - "./prime/config:/esp"
+    - "./certs/ocs.dev.ostelco.org:/etc/nginx/ssl"
+    command: >
+      --service=ocs.dev.ostelco.org
+      --rollout_strategy=managed
+      --http2_port=80
+      --ssl_port=443
+      --backend=grpc://172.16.238.5:8082
+      --service_account_key=/esp/prime-service-account.json
+    networks:
+      net:
+        aliases:
+        - "ocs.dev.ostelco.org"
+        ipv4_address: 172.16.238.4
+      default:
+
+  metrics-esp:
+    container_name: metrics-esp
+    image: gcr.io/endpoints-release/endpoints-runtime:1
+    volumes:
+    - "./prime/config:/esp"
+    - "./certs/metrics.dev.ostelco.org:/etc/nginx/ssl"
+    command: >
+      --service=metrics.dev.ostelco.org
+      --rollout_strategy=managed
+      --http2_port=80
+      --ssl_port=443
+      --backend=grpc://172.16.238.5:8083
+      --service_account_key=/esp/prime-service-account.json
+    networks:
+      net:
+        aliases:
+        - "metrics.dev.ostelco.org"
+        ipv4_address: 172.16.238.6
+      default:
+
   ocsgw:
     container_name: ocsgw
     build: ocsgw
     depends_on:
     - "prime"
-    command: ["./wait.sh"]
+    command: ["./wait_including_esps.sh"]
     environment:
-    - DISABLE_TLS=true
-    - OCS_GRPC_SERVER=prime:8082
-    - METRICS_GRPC_SERVER=prime:8083
+    - OCS_GRPC_SERVER=ocs.dev.ostelco.org
+    - METRICS_GRPC_SERVER=metrics.dev.ostelco.org
     - SERVICE_FILE=prime-service-account.json
     - GOOGLE_CLOUD_PROJECT=${GCP_PROJECT_ID}
     - PUBSUB_PROJECT_ID=${GCP_PROJECT_ID}
     - PUBSUB_TOPIC_ID=
     - PUBSUB_CCR_SUBSCRIPTION_ID=
     - PUBSUB_ACTIVATE_SUBSCRIPTION_ID=
-    - DIAMETER_CONFIG_FILE=server-jdiameter-config.xml
-    - OCS_DATASOURCE_TYPE=Local
-    - CONFIG_FOLDER=/config/
-    - "JAVA_OPTS=-Xms512m -Xmx1024m -server"
     volumes:
     - ./ocsgw/cert:/cert/
     - ./ocsgw/config:/config/
@@ -63,6 +98,23 @@ services:
         aliases:
         - "ocsgw"
         ipv4_address: 172.16.238.3
+
+  acceptance-tests:
+    container_name: acceptance-tests
+    build: acceptance-tests
+    depends_on:
+    - "ocsgw"
+    - "prime"
+    command: ["./wait.sh"]
+    environment:
+    - PRIME_SOCKET=prime:8080
+    - OCS_SOCKET=prime:8082
+    - STRIPE_API_KEY=${STRIPE_API_KEY}
+    - GOOGLE_APPLICATION_CREDENTIALS=/secret/prime-service-account.json
+    networks:
+      net:
+        ipv4_address: 172.16.238.2
+      default:
 
   neo4j:
     container_name: "neo4j"
@@ -88,6 +140,9 @@ services:
     - DATASTORE_DATASET=${GCP_PROJECT_ID}
     command: ["gcloud", "beta", "emulators", "datastore", "start", "--host-port=0.0.0.0:8081"]
 
+  ext-auth-provider:
+    container_name: ext-auth-provider
+    build: ext-auth-provider
 
 networks:
   net:
