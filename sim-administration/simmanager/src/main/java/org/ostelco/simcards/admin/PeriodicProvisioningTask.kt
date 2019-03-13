@@ -11,8 +11,11 @@ import io.dropwizard.servlets.tasks.Task
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.simmanager.NotFoundError
 import org.ostelco.prime.simmanager.SimManagerError
-import org.ostelco.simcards.adapter.HlrAdapter
-import org.ostelco.simcards.inventory.*
+import org.ostelco.simcards.hss.HssEntry
+import org.ostelco.simcards.hss.HssProxy
+import org.ostelco.simcards.inventory.SimEntry
+import org.ostelco.simcards.inventory.SimInventoryDAO
+import org.ostelco.simcards.inventory.SimProfileKeyStatistics
 import org.slf4j.LoggerFactory
 import java.io.PrintWriter
 
@@ -28,11 +31,11 @@ import java.io.PrintWriter
  */
 
 class PreallocateProfilesTask(
-        val lowWaterMark: Int = 10,
+        private val lowWaterMark: Int = 10,
         val maxNoOfProfileToAllocate: Int = 30,
         val simInventoryDAO: SimInventoryDAO,
         val httpClient: CloseableHttpClient,
-        val hlrConfigs: List<HlrConfig>,
+        val hssAdapterProxy: HssProxy,
         val profileVendors: List<ProfileVendorConfig>) : Task("preallocate_sim_profiles") {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -42,56 +45,49 @@ class PreallocateProfilesTask(
         preAllocateSimProfiles()
     }
 
-    private fun preProvisionSimProfile(hlrAdapter: HlrAdapter,
+    private fun preProvisionSimProfile(hssEntry: HssEntry,
                                        simEntry: SimEntry): Either<SimManagerError, SimEntry> =
             simInventoryDAO.getProfileVendorAdapterById(simEntry.profileVendorId)
                     .flatMap { profileVendorAdapter ->
+
                         val profileVendorConfig: ProfileVendorConfig? = profileVendors.firstOrNull {
                             it.name == profileVendorAdapter.name
                         }
-                        val hlrConfig: HlrConfig? = hlrConfigs.firstOrNull {
-                            it.name == hlrAdapter.name
-                        }
 
-                        if (profileVendorConfig != null && hlrConfig != null) {
+                        if (profileVendorConfig != null) {
                             profileVendorAdapter.activate(httpClient = httpClient,
                                     config = profileVendorConfig,
                                     dao = simInventoryDAO,
                                     simEntry = simEntry)
                                     .flatMap {
-                                        hlrAdapter.activate(httpClient = httpClient,
-                                                config = hlrConfig,
-                                                dao = simInventoryDAO,
-                                                simEntry = simEntry)
+                                        hssAdapterProxy.activate(simEntry)
                                     }
                         } else {
                             if (profileVendorConfig == null) {
                                 NotFoundError("Failed to find configuration for SIM profile vendor ${profileVendorAdapter.name}")
                                         .left()
-                            } else if (hlrConfig == null) {
-                                NotFoundError("Failed to find configuration for HLR ${hlrAdapter.name}")
-                                        .left()
                             } else {
                                 NotFoundError("Failed to find configuration for SIM profile vendor ${profileVendorAdapter.name} " +
-                                        "and HLR ${hlrAdapter.name}")
+                                        "and HLR ${hssEntry.name}")
                                         .left()
                             }
                         }
                     }
 
-    private fun batchPreprovisionSimProfiles(hlrAdapter: HlrAdapter,
+    private fun batchPreprovisionSimProfiles(hlrEntry: HssEntry,
                                              profile: String,
                                              profileStats: SimProfileKeyStatistics) {
         val noOfProfilesToActuallyAllocate =
                 Math.min(maxNoOfProfileToAllocate.toLong(), profileStats.noOfUnallocatedEntries)
 
         for (i in 1..noOfProfilesToActuallyAllocate) {
-            simInventoryDAO.findNextNonProvisionedSimProfileForHlr(hlrId = hlrAdapter.id, profile = profile)
+            simInventoryDAO.findNextNonProvisionedSimProfileForHss(hssId = hlrEntry.id, profile = profile)
                     .flatMap {
-                        preProvisionSimProfile(hlrAdapter, it)
+                        preProvisionSimProfile(hlrEntry, it)
                     }
         }
     }
+
 
     /**
      * Made public to be testable.   Perform
@@ -101,18 +97,18 @@ class PreallocateProfilesTask(
     public fun preAllocateSimProfiles() {
         IO {
             Either.monad<SimManagerError>().binding {
-                val hlrAdapters: Collection<HlrAdapter> = simInventoryDAO.getHlrAdapters()
+                val hssEntries: Collection<HssEntry> = simInventoryDAO.getHssEntries()
                         .bind()
 
-                for (adapter in hlrAdapters) {
-                    val profiles: Collection<String> = simInventoryDAO.getProfileNamesForHlr(adapter.id)
+                for (entry in hssEntries) {
+                    val profiles: Collection<String> = simInventoryDAO.getProfileNamesForHssById(entry.id)
                             .bind()
                     for (profile in profiles) {
-                        val profileStats = simInventoryDAO.getProfileStats(adapter.id, profile)
+                        val profileStats = simInventoryDAO.getProfileStats(entry.id, profile)
                                 .bind()
 
                         if (profileStats.noOfEntriesAvailableForImmediateUse < lowWaterMark) {
-                            batchPreprovisionSimProfiles(hlrAdapter = adapter, profile = profile, profileStats = profileStats)
+                            batchPreprovisionSimProfiles(hlrEntry = entry, profile = profile, profileStats = profileStats)
                         }
                     }
                 }
@@ -120,3 +116,4 @@ class PreallocateProfilesTask(
         }.unsafeRunSync()
     }
 }
+

@@ -9,11 +9,12 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.jdbi.v3.core.mapper.RowMapper
+import org.jdbi.v3.core.mapper.reflect.ColumnName
 import org.jdbi.v3.core.statement.StatementContext
 import org.jdbi.v3.sqlobject.customizer.Bind
 import org.jdbi.v3.sqlobject.transaction.Transaction
 import org.ostelco.prime.simmanager.SimManagerError
-import org.ostelco.simcards.adapter.HlrAdapter
+import org.ostelco.simcards.hss.HssEntry
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
@@ -23,7 +24,7 @@ import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.AtomicLong
 
 
-enum class HlrState {
+enum class HssState {
     NOT_ACTIVATED,
     ACTIVATED,
 }
@@ -54,14 +55,14 @@ enum class ProvisionState {
 data class SimEntry(
         @JsonProperty("id") val id: Long? = null,
         @JsonProperty("batch") val batch: Long,
-        @JsonProperty("hlrId") val hlrId: Long,
+        @ColumnName("hlrId") @JsonProperty("hssId") val hssId: Long,
         @JsonProperty("profileVendorId") val profileVendorId: Long,
         @JsonProperty("msisdn") val msisdn: String,
         @JsonProperty("iccid") val iccid: String,
         @JsonProperty("imsi") val imsi: String,
         @JsonProperty("eid") val eid: String? = null,
         @JsonProperty("profile") val profile: String,
-        @JsonProperty("hlrState") val hlrState: HlrState = HlrState.NOT_ACTIVATED,
+        @ColumnName("hlrState") @JsonProperty("hssState") val hssState: HssState = HssState.NOT_ACTIVATED,
         @JsonProperty("smdpPlusState") val smdpPlusState: SmDpPlusState = SmDpPlusState.AVAILABLE,
         @JsonProperty("provisionState") val provisionState: ProvisionState = ProvisionState.AVAILABLE,
         @JsonProperty("matchingId") val matchingId: String? = null,
@@ -81,13 +82,13 @@ data class SimImportBatch(
         @JsonProperty("message") val status: String?,
         @JsonProperty("importer") val importer: String,
         @JsonProperty("size") val size: Long,
-        @JsonProperty("hlrId") val hlrId: Long,
+        @ColumnName("hlrId") @JsonProperty("hssId") val hssId: Long,
         @JsonProperty("profileVendorId") val profileVendorId: Long
 )
 
 
 class SimEntryIterator(profileVendorId: Long,
-                       hlrId: Long,
+                       hssId: Long,
                        batchId: Long,
                        csvInputStream: InputStream): Iterator<SimEntry> {
 
@@ -131,7 +132,7 @@ class SimEntryIterator(profileVendorId: Long,
 
                     val value = SimEntry(
                             batch = batchId,
-                            hlrId = hlrId,
+                            hssId = hssId,
                             profileVendorId = profileVendorId,
                             iccid = iccid,
                             imsi = imsi,
@@ -168,18 +169,18 @@ class SimEntryIterator(profileVendorId: Long,
 /**
  * SIM DB DAO.
  */
-class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper by db {
+class SimInventoryDAO(private val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper by db {
 
     /**
      * Check if the  SIM vendor can be use for handling SIMs handled
      * by the given HLR.
      * @param profileVendorId  SIM profile vendor to check
-     * @param hlrId  HLR to check
+     * @param hssId  HLR to check
      * @return true if permitted false otherwise
      */
     fun simVendorIsPermittedForHlr(profileVendorId: Long,
-                                   hlrId: Long): Either<SimManagerError, Boolean> =
-            findSimVendorForHlrPermissions(profileVendorId, hlrId)
+                                   hssId: Long): Either<SimManagerError, Boolean> =
+            findSimVendorForHssPermissions(profileVendorId, hssId)
                     .flatMap {
                         Either.right(it.isNotEmpty())
                     }
@@ -188,19 +189,19 @@ class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper
      * Set permission for a SIM profile vendor to activate SIM profiles
      * with a specific HLR.
      * @param profileVendor  name of SIM profile vendor
-     * @param hlr  name of HLR
+     * @param hssName  name of HLR
      * @return true on successful update
      */
     @Transaction
-    fun permitVendorForHlrByNames(profileVendor: String, hlr: String): Either<SimManagerError, Boolean> =
+    fun permitVendorForHssByNames(profileVendor: String, hssName: String): Either<SimManagerError, Boolean> =
             IO {
                 Either.monad<SimManagerError>().binding {
                     val profileVendorAdapter = getProfileVendorAdapterByName(profileVendor)
                             .bind()
-                    val hlrAdapter = getHlrAdapterByName(hlr)
+                    val hlrAdapter = getHssEntryByName(hssName)
                             .bind()
 
-                    storeSimVendorForHlrPermission(profileVendorAdapter.id, hlrAdapter.id)
+                    storeSimVendorForHssPermission(profileVendorAdapter.id, hlrAdapter.id)
                             .bind() > 0
                 }.fix()
             }.unsafeRunSync()
@@ -220,20 +221,20 @@ class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper
             IO {
                 Either.monad<SimManagerError>().binding {
                     createNewSimImportBatch(importer = importer,
-                            hlrId = hlrId,
+                            hssId = hlrId,
                             profileVendorId = profileVendorId)
                             .bind()
                     val batchId = lastInsertedRowId()
                             .bind()
                     val values = SimEntryIterator(profileVendorId = profileVendorId,
-                            hlrId = hlrId,
+                            hssId = hlrId,
                             batchId = batchId,
                             csvInputStream = csvInputStream)
                     insertAll(values)
                             .bind()
                     updateBatchState(id = batchId,
                             size = values.count.get(),
-                            status = "SUCCESS",
+                            status = "SUCCESS",  // TODO: Use enumeration, not naked string.
                             endedAt = System.currentTimeMillis())
                             .bind()
                     getBatchInfo(batchId)
@@ -248,21 +249,20 @@ class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper
     /**
      * Get relevant statistics for a particular profile type for a particular HLR.
      */
-    fun getProfileStats(@Bind("hlrId") hlrId: Long,
+    fun getProfileStats(@Bind("hssId") hssId: Long,
                         @Bind("simProfile") simProfile: String): Either<SimManagerError, SimProfileKeyStatistics> =
             IO {
                 Either.monad<SimManagerError>().binding {
 
                     val keyValuePairs = mutableMapOf<String, Long>()
 
-                    getProfileStatsAsKeyValuePairs(hlrId = hlrId, simProfile = simProfile)
-                            .bind()
+                    getProfileStatsAsKeyValuePairs(hssId = hssId, simProfile = simProfile).bind()
                             .forEach { keyValuePairs.put(it.key, it.value) }
 
-                    val noOfEntries = keyValuePairs.get("NO_OF_ENTRIES")!!
-                    val noOfUnallocatedEntries = keyValuePairs.get("NO_OF_UNALLOCATED_ENTRIES")!!
-                    val noOfReleasedEntries = keyValuePairs.get("NO_OF_RELEASED_ENTRIES")!!
-                    val noOfEntriesAvailableForImmediateUse = keyValuePairs.get("NO_OF_ENTRIES_READY_FOR_IMMEDIATE_USE")!!
+                    val noOfEntries = keyValuePairs["NO_OF_ENTRIES"]!!
+                    val noOfUnallocatedEntries = keyValuePairs["NO_OF_UNALLOCATED_ENTRIES"]!!
+                    val noOfReleasedEntries = keyValuePairs["NO_OF_RELEASED_ENTRIES"]!!
+                    val noOfEntriesAvailableForImmediateUse = keyValuePairs["NO_OF_ENTRIES_READY_FOR_IMMEDIATE_USE"]!!
 
                     SimProfileKeyStatistics(
                             noOfEntries = noOfEntries,
@@ -272,7 +272,6 @@ class SimInventoryDAO(val db: SimInventoryDBWrapperImpl) : SimInventoryDBWrapper
                 }.fix()
             }.unsafeRunSync()
 }
-
 
 class SimProfileKeyStatistics(
         val noOfEntries: Long,
@@ -296,14 +295,14 @@ class KeyValueMapper : RowMapper<KeyValuePair> {
 
 data class KeyValuePair(val key: String, val value: Long)
 
-class HlrAdapterMapper  : RowMapper<HlrAdapter> {
-    override fun map(row: ResultSet, ctx: StatementContext): HlrAdapter? {
+class HlrEntryMapper  : RowMapper<HssEntry> {
+    override fun map(row: ResultSet, ctx: StatementContext): HssEntry? {
         if (row.isAfterLast) {
             return null
         }
 
         val id = row.getLong("id")
         val name = row.getString("name")
-        return HlrAdapter(id = id, name = name)
+        return HssEntry(id = id, name = name)
     }
 }

@@ -6,12 +6,12 @@ import arrow.core.right
 import org.jdbi.v3.core.JdbiException
 import org.jdbi.v3.sqlobject.transaction.Transaction
 import org.ostelco.prime.simmanager.*
-import org.ostelco.simcards.adapter.HlrAdapter
 import org.ostelco.simcards.adapter.ProfileVendorAdapter
+import org.ostelco.simcards.hss.HssEntry
 import org.postgresql.util.PSQLException
 
 
-class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper {
+class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDBWrapper {
 
     override fun getSimProfileById(id: Long): Either<SimManagerError, SimEntry> =
             either(NotFoundError("Found no SIM for id ${id}")) {
@@ -33,14 +33,14 @@ class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper 
                 db.getSimProfileByMsisdn(msisdn)!!
             }
 
-    override fun findNextNonProvisionedSimProfileForHlr(hlrId: Long, profile: String): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("No uprovisioned SIM available for HLR id ${hlrId} and profile ${profile}")) {
-                db.findNextNonProvisionedSimProfileForHlr(hlrId, profile)!!
+    override fun findNextNonProvisionedSimProfileForHss(hssId: Long, profile: String): Either<SimManagerError, SimEntry> =
+            either(NotFoundError("No uprovisioned SIM available for HLR id ${hssId} and profile ${profile}")) {
+                db.findNextNonProvisionedSimProfileForHlr(hssId, profile)!!
             }
 
-    override fun findNextReadyToUseSimProfileForHlr(hlrId: Long, profile: String): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("No ready to use SIM available for HLR id ${hlrId} and profile ${profile}")) {
-                db.findNextReadyToUseSimProfileForHlr(hlrId, profile)!!
+    override fun findNextReadyToUseSimProfileForHss(hssId: Long, profile: String): Either<SimManagerError, SimEntry> =
+            either(NotFoundError("No ready to use SIM available for HLR id ${hssId} and profile ${profile}")) {
+                db.findNextReadyToUseSimProfileForHlr(hssId, profile)!!
             }
 
     @Transaction
@@ -66,7 +66,7 @@ class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper 
      */
 
     @Transaction
-    override fun setHlrState(id: Long, state: HlrState): Either<SimManagerError, SimEntry> =
+    override fun setHssState(id: Long, state: HssState): Either<SimManagerError, SimEntry> =
             either(NotFoundError("Found no HLR adapter with id ${id} update of HLR state failed")) {
                 if (db.updateHlrState(id, state) > 0)
                     db.getSimProfileById(id)
@@ -110,33 +110,33 @@ class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper 
                     null
             }
 
-    /*
-     * HLR and SM-DP+ 'adapters'.
+    /**
+     * Hss and SM-DP+ 'adapters'.
      */
 
-    override fun findSimVendorForHlrPermissions(profileVendorId: Long, hlrId: Long): Either<SimManagerError, List<Long>> =
-            either(ForbiddenError("Using SIM profile vendor id ${profileVendorId} with HLR id ${hlrId} is not allowed")) {
-                db.findSimVendorForHlrPermissions(profileVendorId, hlrId)
+    override fun findSimVendorForHssPermissions(profileVendorId: Long, hssId: Long): Either<SimManagerError, List<Long>> =
+            either(ForbiddenError("Using SIM profile vendor id ${profileVendorId} with HSS id ${hssId} is not allowed")) {
+                db.findSimVendorForHssPermissions(profileVendorId, hssId)
             }
 
-    override fun storeSimVendorForHlrPermission(profileVendorId: Long, hlrId: Long): Either<SimManagerError, Int> =
+    override fun storeSimVendorForHssPermission(profileVendorId: Long, hssId: Long): Either<SimManagerError, Int> =
             either {
--                db.storeSimVendorForHlrPermission(profileVendorId, hlrId)
+-                db.storeSimVendorForHssPermission(profileVendorId, hssId)
             }
 
-    override fun addHlrAdapter(name: String): Either<SimManagerError, Int> =
+    override fun addHssEntry(name: String): Either<SimManagerError, Int> =
             either {
-                db.addHlrAdapter(name)
+                db.addHssAdapter(name)
             }
 
-    override fun getHlrAdapterByName(name: String): Either<SimManagerError, HlrAdapter> =
-            either(NotFoundError("Found no HLR adapter with name ${name}")) {
-                db.getHlrAdapterByName(name)!!
+    override fun getHssEntryByName(name: String): Either<SimManagerError, HssEntry> =
+            either(NotFoundError("Found no HSS entry  with name ${name}")) {
+                db.getHssEntryByName(name)
             }
 
-    override fun getHlrAdapterById(id: Long): Either<SimManagerError, HlrAdapter> =
-            either(NotFoundError("Found no HLR adapter with id ${id}")) {
-                db.getHlrAdapterById(id)!!
+    override fun getHssEntryById(id: Long): Either<SimManagerError, HssEntry> =
+            either(NotFoundError("Found no HSS entry  with id ${id}")) {
+                db.getHssEntryById(id)
             }
 
     override fun addProfileVendorAdapter(name: String): Either<SimManagerError, Int> =
@@ -163,9 +163,9 @@ class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper 
                 db.insertAll(entries)
             }
 
-    override fun createNewSimImportBatch(importer: String, hlrId: Long, profileVendorId: Long): Either<SimManagerError, Int> =
+    override fun createNewSimImportBatch(importer: String, hssId: Long, profileVendorId: Long): Either<SimManagerError, Int> =
             either {
-                db.createNewSimImportBatch(importer, hlrId, profileVendorId)
+                db.createNewSimImportBatch(importer, hssId, profileVendorId)
             }
 
     override fun updateBatchState(id: Long, size: Long, status: String, endedAt: Long): Either<SimManagerError, Int> =
@@ -189,19 +189,19 @@ class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper 
     /**
      * Find all the different HLRs that are present.
      */
-    override fun getHlrAdapters(): Either<SimManagerError, List<HlrAdapter>> =
-            either(NotFoundError("Found no HLR adapters")) {
-                db.getHlrAdapters()
+    override fun getHssEntries(): Either<SimManagerError, List<HssEntry>> =
+            either(NotFoundError("Found no HSS adapters")) {
+                db.getHssEntries()
             }
 
     /**
      * Find the names of profiles that are associated with
-     * a particular HLR.
+     * a particular HSS.
      */
 
-    override fun getProfileNamesForHlr(hlrId: Long): Either<SimManagerError, List<String>> =
-            either(NotFoundError("Found no SIM profile name for HLR with id ${hlrId}")) {
-                db.getProfileNamesForHlr(hlrId)
+    override fun getProfileNamesForHssById(hssId: Long): Either<SimManagerError, List<String>> =
+            either(NotFoundError("Found no SIM profile name for HSS with id ${hssId}")) {
+                db.getProfileNamesForHss(hssId)
             }
 
     /**
@@ -210,9 +210,9 @@ class SimInventoryDBWrapperImpl(val db: SimInventoryDB) : SimInventoryDBWrapper 
      * can change at any time, so don't use it unless you really know what you're doing.
      */
 
-    override fun getProfileStatsAsKeyValuePairs(hlrId: Long, simProfile: String): Either<SimManagerError, List<KeyValuePair>> =
-            either(NotFoundError("Found no statistics for SIM profile ${simProfile} for HLR with id ${hlrId}")) {
-                db.getProfileStatsAsKeyValuePairs(hlrId, simProfile)
+    override fun getProfileStatsAsKeyValuePairs(hssId: Long, simProfile: String): Either<SimManagerError, List<KeyValuePair>> =
+            either(NotFoundError("Found no statistics for SIM profile ${simProfile} for HSS with id ${hssId}")) {
+                db.getProfileStatsAsKeyValuePairs(hssId, simProfile)
             }
 
     /* Convenience functions. */

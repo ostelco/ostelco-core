@@ -68,9 +68,7 @@ class ES2PlusClient(
                 throw ES2PlusClientException(msg)
             }
 
-            /* XXX What exactly should happen here? Maybe remove the exception
-                   and accept null as a valid value? */
-            val xAdminProtocolHeader = result.getFirstHeader("X-Admin-Protocol")!!
+            val xAdminProtocolHeader = result.getFirstHeader("X-Admin-Protocol")
                     ?: throw ES2PlusClientException("Expected header X-Admin-Protocol to be non null")
 
             val protocolVersion = xAdminProtocolHeader.value

@@ -13,7 +13,7 @@ fun set(avpSet: AvpSet, init: AvpSetContext.() -> Unit) {
     avpSetContext.init()
 }
 
-class AvpSetContext(val avpSet: AvpSet) {
+class AvpSetContext(private val avpSet: AvpSet) {
     fun avp(
             avpCode: Int, value: Any, vendorId: Long = 0,
             mFlag: Boolean = true, pFlag: Boolean = false, asOctetString: Boolean = false) {

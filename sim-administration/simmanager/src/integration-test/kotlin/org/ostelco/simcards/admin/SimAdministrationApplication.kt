@@ -1,5 +1,6 @@
 package org.ostelco.simcards.admin
 
+import com.codahale.metrics.health.HealthCheck
 import io.dropwizard.Application
 import io.dropwizard.client.HttpClientBuilder
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor
@@ -12,6 +13,12 @@ import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2Plus
 import org.ostelco.sim.es2plus.SmDpPlusCallbackResource
 import org.ostelco.simcards.inventory.*
 
+import org.ostelco.simcards.hss.HealthCheckRegistrar
+import org.ostelco.simcards.hss.HssProxy
+import org.ostelco.simcards.inventory.SimInventoryCallbackService
+import org.ostelco.simcards.inventory.SimInventoryDAO
+import org.ostelco.simcards.inventory.SimInventoryDB
+import org.ostelco.simcards.inventory.SimInventoryResource
 
 /**
  * The SIM manager
@@ -71,9 +78,20 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
         // Add task that should be triggered periodically by external
         // cron job via tasks/preallocate_sim_profiles url.
 
-        env.admin().addTask(PreallocateProfilesTask(simInventoryDAO = this.DAO,
+        val hssAdapters = HssProxy(
+                heathCheckRegistrar = object : HealthCheckRegistrar {
+                    override fun registerHealthCheck(name: String, healthCheck: HealthCheck) {
+                        env.healthChecks().register(name, healthCheck)
+                    }
+                },
+                hssConfigs = config.hssVendors,
+                simInventoryDAO = this.DAO,
+                httpClient = httpClient)
+
+        env.admin().addTask(PreallocateProfilesTask(
+                hssAdapterProxy =  hssAdapters,
+                simInventoryDAO = this.DAO,
                 httpClient = httpClient,
-                hlrConfigs = config.hlrVendors,
                 profileVendors = config.profileVendors));
     }
 }

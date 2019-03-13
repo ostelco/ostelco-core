@@ -16,7 +16,9 @@ import org.ostelco.prime.simmanager.NotUpdatedError
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.sim.es2plus.*
 import org.ostelco.simcards.admin.ProfileVendorConfig
-import org.ostelco.simcards.inventory.*
+import org.ostelco.simcards.inventory.SimEntry
+import org.ostelco.simcards.inventory.SimInventoryDAO
+import org.ostelco.simcards.inventory.SmDpPlusState
 import java.util.*
 import javax.ws.rs.core.MediaType
 
@@ -66,7 +68,7 @@ data class ProfileVendorAdapter(
      * @param simEntry  SIM profile to activate
      * @return Updated SIM profile
      */
-    fun downloadOrder(httpClient: CloseableHttpClient,
+    private fun downloadOrder(httpClient: CloseableHttpClient,
                       config: ProfileVendorConfig,
                       dao: SimInventoryDAO,
                       simEntry: SimEntry): Either<SimManagerError, SimEntry> {
@@ -141,7 +143,7 @@ data class ProfileVendorAdapter(
      * @param simEntry  SIM profile to activate
      * @return Updated SIM profile
      */
-    fun confirmOrder(httpClient: CloseableHttpClient,
+    private fun confirmOrder(httpClient: CloseableHttpClient,
                      config: ProfileVendorConfig,
                      dao: SimInventoryDAO,
                      eid: String? = null,
