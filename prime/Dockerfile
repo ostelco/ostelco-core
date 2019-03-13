@@ -1,4 +1,4 @@
-FROM azul/zulu-openjdk:11.0.1-11.2
+FROM gcr.io/distroless/java:11
 
 LABEL maintainer="dev@redotter.sg"
 
@@ -15,4 +15,4 @@ EXPOSE 8081
 EXPOSE 8082
 EXPOSE 8083
 
-CMD ["/start.sh"]
+CMD ["/prime.jar", "server", "/config/config.yaml"]
