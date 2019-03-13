@@ -20,23 +20,18 @@ import com.google.crypto.tink.config.TinkConfig
 import com.google.crypto.tink.hybrid.HybridDecryptFactory
 import io.dropwizard.setup.Environment
 import org.ostelco.prime.getLogger
-import org.ostelco.prime.model.JumioScanData
-import org.ostelco.prime.model.ScanMetadataEnum
-import org.ostelco.prime.model.ScanMetadata
-import org.ostelco.prime.model.VendorScanData
-import org.ostelco.prime.model.VendorScanInformation
+import org.ostelco.prime.model.*
 import org.ostelco.prime.storage.*
 import java.io.*
 import java.net.HttpURLConnection
 import java.net.URL
+import java.time.Instant
 import java.util.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import javax.ws.rs.core.MultivaluedMap
 import kotlin.collections.HashMap
-import java.io.IOException
-import java.time.Instant
 
 
 class ScanInfoStore : ScanInformationStore by ScanInformationStoreSingleton
@@ -249,7 +244,7 @@ object JumioHelper {
     /**
      * Retrieves the contents of a file from a URL
      */
-    fun downloadFileAsBlob(fileURL: String, username: String, password: String): Either<StoreError, Pair<Blob, String>> {
+    private fun downloadFileAsBlob(fileURL: String, username: String, password: String): Either<StoreError, Pair<Blob, String>> {
         val url = URL(fileURL)
         val httpConn = url.openConnection() as HttpURLConnection
         val userpass = "$username:$password"
@@ -276,7 +271,7 @@ object JumioHelper {
         }
     }
 
-    fun isJSONArray(jsonData: String): Boolean {
+    private fun isJSONArray(jsonData: String): Boolean {
         try {
             val mapper = ObjectMapper()
             return mapper.readTree(jsonData).isArray
@@ -313,7 +308,7 @@ object JumioHelper {
         val scanImageUrl: String? = vendorData.getFirst(JumioScanData.SCAN_IMAGE.s)
         val scanImageBacksideUrl: String? = vendorData.getFirst(JumioScanData.SCAN_IMAGE_BACKSIDE.s)
         val scanImageFaceUrl: String? = vendorData.getFirst(JumioScanData.SCAN_IMAGE_FACE.s)
-        val scanlivenessImagesUrl: List<String>? = vendorData.get(JumioScanData.SCAN_LIVENESS_IMAGES.s)
+        val scanlivenessImagesUrl: List<String>? = vendorData[JumioScanData.SCAN_LIVENESS_IMAGES.s]
 
         return IO {
             Either.monad<StoreError>().binding {
@@ -361,7 +356,7 @@ object JumioHelper {
         httpConn.setRequestProperty("Accept", "application/json")
         httpConn.setRequestProperty("User-Agent", "ScanInformationStore")
         httpConn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-        httpConn.setDoOutput(true);
+        httpConn.doOutput = true;
         httpConn.setRequestMethod("DELETE");
 
         try {
@@ -411,7 +406,7 @@ object JumioHelper {
     /**
      * Creates the file extension from  mime-type.
      */
-    fun getFileExtFromType(mimeType: String): String {
+    private fun getFileExtFromType(mimeType: String): String {
         val idx = mimeType.lastIndexOf("/")
         if (idx == -1) {
             return mimeType

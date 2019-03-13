@@ -11,25 +11,26 @@ import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter
 import org.ostelco.sim.es2plus.SmDpPlusCallbackResource
 import org.ostelco.simcards.admin.ConfigRegistry.config
 import org.ostelco.simcards.admin.ResourceRegistry.simInventoryResource
+import org.ostelco.simcards.hss.HssProxy
 import org.ostelco.simcards.inventory.*
 
-
 /**
- * The SIM manager is an component that inputs inhales SIM batches
+ * The SIM manager
+ * is an component that inputs inhales SIM batches
  * from SIM profile factories (physical or esim). It then facilitates
  * activation of SIM profiles to MSISDNs.   A typical interaction is
  * "find me a sim profile for this MSISDN for this HLR" , and then
  * "activate that profile".   The activation will typically involve
- * at least talking to a HLR to permit user equipment to use the SIM
- * profile to authenticate, and possibly also an SM-DP+ to
+ * at least talking to a HLR to permit user equipment to use the
+ * SIM profile to authenticate, and possibly also an SM-DP+ to
  * activate a SIM profile (via its ICCID and possible an EID).
- * The inventory can then serve as an intermidiary between the rest
- * of the BSS and the OSS in the form of HSS and SM-DP+.
+ * The inventory can then serve as an intermidiary between the
+ * rest of the BSS and the OSS in the form of HSS and SM-DP+.
  */
 @JsonTypeName("sim-manager")
 class SimAdministrationModule : PrimeModule {
 
-    lateinit var DAO: SimInventoryDAO
+    private lateinit var DAO: SimInventoryDAO
 
     @JsonProperty("config")
     fun setConfig(config: SimAdministrationConfiguration) {
@@ -41,8 +42,7 @@ class SimAdministrationModule : PrimeModule {
         val jdbi = factory.build(env,
                 config.database, "postgresql")
                 .installPlugins()
-        val db = SimInventoryDBWrapperImpl(jdbi.onDemand(SimInventoryDB::class.java))
-        DAO = SimInventoryDAO(db)
+        DAO = SimInventoryDAO(SimInventoryDBWrapperImpl(jdbi.onDemand(SimInventoryDB::class.java)))
 
         val profileVendorCallbackHandler = SimInventoryCallbackService(DAO)
 
@@ -54,15 +54,21 @@ class SimAdministrationModule : PrimeModule {
         OpenapiResourceAdder.addOpenapiResourceToJerseyEnv(jerseyEnv, config.openApi)
         ES2PlusIncomingHeadersFilter.addEs2PlusDefaultFiltersAndInterceptors(jerseyEnv)
 
-        val simInventoryApi = SimInventoryApi(httpClient, config, DAO)
-        simInventoryResource = SimInventoryResource(simInventoryApi)
+        simInventoryResource = SimInventoryResource(SimInventoryApi(httpClient, config, DAO))
         jerseyEnv.register(simInventoryResource)
         jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
+
+
+        var hssAdapters =
+                HssProxy(
+                        httpClient = httpClient,
+                        simInventoryDAO = this.DAO,
+                        hssConfigs = config.hssVendors)
 
         env.admin().addTask(PreallocateProfilesTask(
                 simInventoryDAO = this.DAO,
                 httpClient = httpClient,
-                hlrConfigs = config.hlrVendors,
+                hssAdapterProxy = hssAdapters,
                 profileVendors = config.profileVendors));
     }
 }

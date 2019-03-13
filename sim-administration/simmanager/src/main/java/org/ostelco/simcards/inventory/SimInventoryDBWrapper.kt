@@ -2,8 +2,8 @@ package org.ostelco.simcards.inventory
 
 import arrow.core.Either
 import org.ostelco.prime.simmanager.SimManagerError
-import org.ostelco.simcards.adapter.HlrAdapter
 import org.ostelco.simcards.adapter.ProfileVendorAdapter
+import org.ostelco.simcards.hss.HssEntry
 
 
 interface SimInventoryDBWrapper {
@@ -16,9 +16,9 @@ interface SimInventoryDBWrapper {
 
     fun getSimProfileByMsisdn(msisdn: String): Either<SimManagerError, SimEntry>
 
-    fun findNextNonProvisionedSimProfileForHlr(hlrId: Long, profile: String): Either<SimManagerError, SimEntry>
+    fun findNextNonProvisionedSimProfileForHss(hssId: Long, profile: String): Either<SimManagerError, SimEntry>
 
-    fun findNextReadyToUseSimProfileForHlr(hlrId: Long, profile: String): Either<SimManagerError, SimEntry>
+    fun findNextReadyToUseSimProfileForHss(hssId: Long, profile: String): Either<SimManagerError, SimEntry>
 
     /**
      * Sets the EID value of a SIM entry (profile).
@@ -41,18 +41,18 @@ interface SimInventoryDBWrapper {
      */
 
     /**
-     * Set the entity to be marked as "active" in the HLR, then return the
+     * Set the entity to be marked as "active" in the HSS, then return the
      * SIM entry.
      * @param id row to update
-     * @param state new state from HLR service interaction
+     * @param state new state from HSS service interaction
      * @return updated row or null on no match
      */
-    fun setHlrState(id: Long, state: HlrState): Either<SimManagerError, SimEntry>
+    fun setHssState(id: Long, state: HssState): Either<SimManagerError, SimEntry>
 
     /**
      * Set the provision state of a SIM entry, then return the entry.
      * @param id row to update
-     * @param state new state from HLR service interaction
+     * @param state new state from HSS service interaction
      * @return updated row or null on no match
      */
     fun setProvisionState(id: Long, state: ProvisionState): Either<SimManagerError, SimEntry>
@@ -85,18 +85,18 @@ interface SimInventoryDBWrapper {
     fun setSmDpPlusStateAndMatchingId(id: Long, state: SmDpPlusState, matchingId: String): Either<SimManagerError, SimEntry>
 
     /*
-     * HLR and SM-DP+ 'adapters'.
+     * HSS and SM-DP+ 'adapters'.
      */
 
-    fun findSimVendorForHlrPermissions(profileVendorId: Long, hlrId: Long): Either<SimManagerError, List<Long>>
+    fun findSimVendorForHssPermissions(profileVendorId: Long, hssId: Long): Either<SimManagerError, List<Long>>
 
-    fun storeSimVendorForHlrPermission(profileVendorId: Long, hlrId: Long): Either<SimManagerError, Int>
+    fun storeSimVendorForHssPermission(profileVendorId: Long, hssId: Long): Either<SimManagerError, Int>
 
-    fun addHlrAdapter(name: String): Either<SimManagerError, Int>
+    fun addHssEntry(name: String): Either<SimManagerError, Int>
 
-    fun getHlrAdapterByName(name: String): Either<SimManagerError, HlrAdapter>
+    fun getHssEntryByName(name: String): Either<SimManagerError, HssEntry>
 
-    fun getHlrAdapterById(id: Long): Either<SimManagerError, HlrAdapter>
+    fun getHssEntryById(id: Long): Either<SimManagerError, HssEntry>
 
     fun addProfileVendorAdapter(name: String): Either<SimManagerError, Int>
 
@@ -110,7 +110,7 @@ interface SimInventoryDBWrapper {
 
     fun insertAll(entries: Iterator<SimEntry>): Either<SimManagerError, Unit>
 
-    fun createNewSimImportBatch(importer: String, hlrId: Long, profileVendorId: Long): Either<SimManagerError, Int>
+    fun createNewSimImportBatch(importer: String, hssId: Long, profileVendorId: Long): Either<SimManagerError, Int>
 
     fun updateBatchState(id: Long, size: Long, status: String, endedAt: Long): Either<SimManagerError, Int>
 
@@ -123,17 +123,17 @@ interface SimInventoryDBWrapper {
     fun lastInsertedRowId(): Either<SimManagerError, Long>
 
     /**
-     * Find all the different HLRs that are present.
+     * Find all the different HSSes that are present.
      */
 
-    fun getHlrAdapters(): Either<SimManagerError, List<HlrAdapter>>
+    fun getHssEntries(): Either<SimManagerError, List<HssEntry>>
 
     /**
      * Find the names of profiles that are associated with
-     * a particular HLR.
+     * a particular HSS.
      */
 
-    fun getProfileNamesForHlr(hlrId: Long): Either<SimManagerError, List<String>>
+    fun getProfileNamesForHssById(hssId: Long): Either<SimManagerError, List<String>>
 
     /**
      * Get key numbers from a particular named Sim profile.
@@ -141,5 +141,5 @@ interface SimInventoryDBWrapper {
      * can change at any time, so don't use it unless you really know what you're doing.
      */
 
-    fun getProfileStatsAsKeyValuePairs(hlrId: Long, simProfile: String): Either<SimManagerError, List<KeyValuePair>>
+    fun getProfileStatsAsKeyValuePairs(hssId: Long, simProfile: String): Either<SimManagerError, List<KeyValuePair>>
 }

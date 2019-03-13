@@ -1,43 +1,16 @@
 package org.ostelco.at.jersey
 
 import org.junit.Test
-import org.ostelco.at.common.StripePayment
-import org.ostelco.at.common.createCustomer
-import org.ostelco.at.common.createSubscription
-import org.ostelco.at.common.enableRegion
-import org.ostelco.at.common.expectedProducts
-import org.ostelco.at.common.getLogger
-import org.ostelco.at.common.randomInt
-import org.ostelco.prime.customer.model.ApplicationToken
-import org.ostelco.prime.customer.model.Bundle
-import org.ostelco.prime.customer.model.BundleList
-import org.ostelco.prime.customer.model.Customer
-import org.ostelco.prime.customer.model.PaymentSource
-import org.ostelco.prime.customer.model.PaymentSourceList
-import org.ostelco.prime.customer.model.Person
-import org.ostelco.prime.customer.model.Plan
-import org.ostelco.prime.customer.model.Price
-import org.ostelco.prime.customer.model.Product
-import org.ostelco.prime.customer.model.ProductInfo
-import org.ostelco.prime.customer.model.PurchaseRecord
-import org.ostelco.prime.customer.model.PurchaseRecordList
-import org.ostelco.prime.customer.model.Region
-import org.ostelco.prime.customer.model.RegionDetails
-import org.ostelco.prime.customer.model.RegionDetails.StatusEnum
-import org.ostelco.prime.customer.model.RegionDetailsList
-import org.ostelco.prime.customer.model.ScanInformation
-import org.ostelco.prime.customer.model.Subscription
+import org.ostelco.at.common.*
+import org.ostelco.prime.customer.model.*
+import org.ostelco.prime.customer.model.RegionDetails.StatusEnum.PENDING
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.util.*
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.MultivaluedHashMap
-import kotlin.test.assertEquals
-import kotlin.test.assertFails
-import kotlin.test.assertFailsWith
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
+import kotlin.test.*
 
 
 class CustomerTest {
@@ -655,7 +628,7 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
+            assertEquals(PENDING, regionDetails.status, message = "Wrong State")
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -700,7 +673,7 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -747,7 +720,7 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(StatusEnum.APPROVED, regionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.APPROVED, regionDetails.status, message = "Wrong State")
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -794,7 +767,7 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -839,7 +812,7 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -884,7 +857,7 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -929,7 +902,7 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
 
             val newScanInfo: ScanInformation = post {
                 path = "/regions/no/kyc/jumio/scans"
@@ -967,7 +940,7 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), newRegionDetails.region)
-            assertEquals(StatusEnum.APPROVED, newRegionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.APPROVED, newRegionDetails.status, message = "Wrong State")
 
 
         } finally {
@@ -1069,7 +1042,7 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), newRegionDetails.region)
-            assertEquals(StatusEnum.REJECTED, newRegionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.REJECTED, newRegionDetails.status, message = "Wrong State")
 
             val newScanInfo: ScanInformation = post {
                 path = "/regions/no/kyc/jumio/scans"
@@ -1108,7 +1081,7 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(StatusEnum.APPROVED, regionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.APPROVED, regionDetails.status, message = "Wrong State")
 
             val encodedEmail = URLEncoder.encode(email, "UTF-8")
             val scanInformationList = get<Collection<ScanInformation>> {
@@ -1166,7 +1139,7 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
         }

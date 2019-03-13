@@ -7,7 +7,7 @@ import org.jdbi.v3.sqlobject.statement.SqlBatch
 import org.jdbi.v3.sqlobject.statement.SqlQuery
 import org.jdbi.v3.sqlobject.statement.SqlUpdate
 import org.jdbi.v3.sqlobject.transaction.Transaction
-import org.ostelco.simcards.adapter.HlrAdapter
+import org.ostelco.simcards.hss.HssEntry
 import org.ostelco.simcards.adapter.ProfileVendorAdapter
 import java.util.*
 
@@ -51,14 +51,14 @@ interface SimInventoryDB {
                                           END AS position
                                   FROM   sim_entries
                                   WHERE  provisionState = 'AVAILABLE'
-                                         AND hlrId = :hlrId
+                                         AND hlrId = :hssId
                                          AND profile = :profile
                                   ORDER  BY position ASC,
                                            id ASC) b
                              ON ( a.id = b.id
                                   AND b.position < 9999 )
                       LIMIT  1""")
-    fun findNextNonProvisionedSimProfileForHlr(hlrId: Long,
+    fun findNextNonProvisionedSimProfileForHlr(hssId: Long,
                                                profile: String): SimEntry?
 
     /*
@@ -70,7 +70,7 @@ interface SimInventoryDB {
                       WHERE  hlrState = 'ACTIVATED'
                              AND smdpplusstate = 'RELEASED'
                              AND provisionState = 'AVAILABLE'
-                             AND hlrId = :hlrId
+                             AND hlrId = :hssId
                              AND profile = :profile
                       LIMIT  1""")
     fun findNextReadyToUseSimProfileForHlr(hlrId: Long,
@@ -90,15 +90,22 @@ interface SimInventoryDB {
      * State information.
      */
 
-    @SqlUpdate("""UPDATE sim_entries SET hlrState = :hlrState
+    @SqlUpdate("""UPDATE sim_entries SET hlrState = :hssState
                        WHERE id = :id""")
     fun updateHlrState(id: Long,
-                       hlrState: HlrState): Int
+                       hssState: HssState): Int
 
     @SqlUpdate("""UPDATE sim_entries SET provisionState = :provisionState
                        WHERE id = :id""")
     fun updateProvisionState(id: Long,
                              provisionState: ProvisionState): Int
+
+    @SqlUpdate("""UPDATE sim_entries SET hlrState = :hssState,
+                                              provisionState = :provisionState
+                       WHERE id = :id""")
+    fun updateHlrStateAndProvisionState(id: Long,
+                                        hssState: HssState,
+                                        provisionState: ProvisionState): Int
 
     @SqlUpdate("""UPDATE sim_entries SET smdpPlusState = :smdpPlusState
                        WHERE id = :id""")
@@ -121,21 +128,21 @@ interface SimInventoryDB {
 
     @SqlQuery("""SELECT id FROM sim_vendors_permitted_hlrs
                       WHERE profileVendorId = profileVendorId
-                            AND hlrId = :hlrId""")
-    fun findSimVendorForHlrPermissions(profileVendorId: Long,
-                                       hlrId: Long): List<Long>
+                            AND hlrId = :hssId""")
+    fun findSimVendorForHssPermissions(profileVendorId: Long,
+                                       hssId: Long): List<Long>
 
     @SqlUpdate("""INSERT INTO sim_vendors_permitted_hlrs
                                    (profilevendorid,
                                     hlrid)
                        SELECT :profileVendorId,
-                              :hlrId
+                              :hssId
                        WHERE  NOT EXISTS (SELECT 1
                                           FROM   sim_vendors_permitted_hlrs
                                           WHERE  profilevendorid = :profileVendorId
-                                                 AND hlrid = :hlrId)""")
-    fun storeSimVendorForHlrPermission(profileVendorId: Long,
-                                       hlrId: Long): Int
+                                                 AND hlrid = :hssId)""")
+    fun storeSimVendorForHssPermission(profileVendorId: Long,
+                                       hssId: Long): Int
 
     @SqlUpdate("""INSERT INTO hlr_adapters
                                    (name)
@@ -143,15 +150,15 @@ interface SimInventoryDB {
                        WHERE  NOT EXISTS (SELECT 1
                                           FROM   hlr_adapters
                                           WHERE  name = :name)""")
-    fun addHlrAdapter(name: String): Int
+    fun addHssAdapter(name: String): Int
 
     @SqlQuery("""SELECT * FROM hlr_adapters
                       WHERE name = :name""")
-    fun getHlrAdapterByName(name: String): HlrAdapter?
+    fun getHssEntryByName(name: String): HssEntry
 
     @SqlQuery("""SELECT * FROM hlr_adapters
                       WHERE id = :id""")
-    fun getHlrAdapterById(id: Long): HlrAdapter?
+    fun getHssEntryById(id: Long): HssEntry
 
     @SqlUpdate("""INSERT INTO profile_vendor_adapters
                                    (name)
@@ -176,14 +183,14 @@ interface SimInventoryDB {
     @Transaction
     @SqlBatch("""INSERT INTO sim_entries
                                   (batch, profileVendorId, hlrid, hlrState, smdpplusstate, provisionState, matchingId, profile, iccid, imsi, msisdn, pin1, pin2, puk1, puk2)
-                      VALUES (:batch, :profileVendorId, :hlrId, :hlrState, :smdpPlusState, :provisionState, :matchingId, :profile, :iccid, :imsi, :msisdn, :pin1, :pin2, :puk1, :puk2)""")
+                      VALUES (:batch, :profileVendorId, :hssId, :hssState, :smdpPlusState, :provisionState, :matchingId, :profile, :iccid, :imsi, :msisdn, :pin1, :pin2, :puk1, :puk2)""")
     @BatchChunkSize(1000)
     fun insertAll(@BindBean entries: Iterator<SimEntry>)
 
     @SqlUpdate("""INSERT INTO sim_import_batches (status,  importer, hlrId, profileVendorId)
-                       VALUES ('STARTED', :importer, :hlrId, :profileVendorId)""")
+                       VALUES ('STARTED', :importer, :hssId, :profileVendorId)""")
     fun createNewSimImportBatch(importer: String,
-                                hlrId: Long,
+                                hssId: Long,
                                 profileVendorId: Long): Int
 
     @SqlUpdate("""UPDATE sim_import_batches SET size = :size,
@@ -209,9 +216,9 @@ interface SimInventoryDB {
      * Find all the different HLRs that are present.
      */
     @SqlQuery("SELECT * FROM hlr_adapters")
-    // TODO(RMZ): @RegisterMapper(HlrAdapterMapper::class)
-    @RegisterRowMapper(HlrAdapterMapper::class)
-    fun getHlrAdapters(): List<HlrAdapter>
+    // TODO(RMZ): @RegisterMapper(HlrEntryMapper::class)
+    @RegisterRowMapper(HlrEntryMapper::class)
+    fun getHssEntries(): List<HssEntry>
 
 
     /**
@@ -219,8 +226,8 @@ interface SimInventoryDB {
      * a particular HLR.
      */
     @SqlQuery("""SELECT DISTINCT profile  FROM sim_entries
-                      WHERE hlrId = :hlrId""")
-    fun getProfileNamesForHlr(hlrId: Long): List<String>
+                      WHERE hlrId = :hssId""")
+    fun getProfileNamesForHss(hssId: Long): List<String>
 
     /**
      * Get key numbers from a particular named Sim profile.
@@ -228,31 +235,31 @@ interface SimInventoryDB {
      * can change at any time, so don't use it unless you really know what you're doing.
      */
     @SqlQuery("""
-        SELECT 'NO_OF_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries WHERE hlrId = :hlrId AND profile = :simProfile
+        SELECT 'NO_OF_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries WHERE hlrId = :hssId AND profile = :simProfile
         UNION
         SELECT 'NO_OF_UNALLOCATED_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries
-                   WHERE hlrId = :hlrId AND profile = :simProfile AND
+                   WHERE hlrId = :hssId AND profile = :simProfile AND
                          smdpPlusState =  :smdpUnallocatedState AND
                          hlrState = :hlrUnallocatedState
         UNION
         SELECT 'NO_OF_RELEASED_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries
-                   WHERE hlrId = :hlrId AND profile = :simProfile AND
+                   WHERE hlrId = :hssId AND profile = :simProfile AND
                          smdpPlusState =  :smdpReleasedState AND
-                         hlrState = :hlrAllocatedState
+                         hlrState = :hssAllocatedState
         UNION
         SELECT 'NO_OF_ENTRIES_READY_FOR_IMMEDIATE_USE' AS KEY,  count(*)  AS VALUE  FROM sim_entries
-                   WHERE hlrId = :hlrId AND profile = :simProfile AND
+                   WHERE hlrId = :hssId AND profile = :simProfile AND
                          smdpPlusState =  :smdpReleasedState AND
-                         hlrState = :hlrAllocatedState
+                         hlrState = :hssAllocatedState
     """)
     @RegisterRowMapper(KeyValueMapper::class)
     fun getProfileStatsAsKeyValuePairs(
-            hlrId: Long,
+            hssId: Long,
             simProfile: String,
             smdpReleasedState: String = SmDpPlusState.RELEASED.name,
-            hlrUnallocatedState: String = HlrState.NOT_ACTIVATED.name,
+            hlrUnallocatedState: String = HssState.NOT_ACTIVATED.name,
             smdpUnallocatedState: String = SmDpPlusState.AVAILABLE.name,
-            hlrAllocatedState: String = HlrState.ACTIVATED.name,
+            hssAllocatedState: String = HssState.ACTIVATED.name,
             smdpAllocatedState: String = SmDpPlusState.ALLOCATED.name,
             smdpDownloadedState: String = SmDpPlusState.DOWNLOADED.name): List<KeyValuePair>
 }
