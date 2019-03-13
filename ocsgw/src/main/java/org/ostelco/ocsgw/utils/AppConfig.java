@@ -1,5 +1,8 @@
 package org.ostelco.ocsgw.utils;
 
+import org.ostelco.ocsgw.datasource.DataSourceType;
+import org.ostelco.ocsgw.datasource.SecondaryDataSourceType;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -15,14 +18,38 @@ public class AppConfig {
         iStream.close();
     }
 
-    public String getDataStoreType () {
+    public DataSourceType getDataStoreType () {
         // OCS_DATASOURCE_TYPE env has higher preference over config.properties
         final String dataSource = System.getenv("OCS_DATASOURCE_TYPE");
         if (dataSource == null || dataSource.isEmpty()) {
-
-            return prop.getProperty("DataStoreType", "Local");
+            try {
+                return DataSourceType.valueOf(prop.getProperty("DataStoreType", "Local"));
+            } catch (IllegalArgumentException e) {
+                return DataSourceType.Local;
+            }
         }
-        return dataSource;
+        try {
+            return DataSourceType.valueOf(dataSource);
+        } catch (IllegalArgumentException e) {
+            return DataSourceType.Local;
+        }
+    }
+
+    public SecondaryDataSourceType getSecondaryDataStoreType () {
+        // OCS_SECONDARY_DATASOURCE_TYPE env has higher preference over config.properties
+        final String secondaryDataSource = System.getenv("OCS_SECONDARY_DATASOURCE_TYPE");
+        if (secondaryDataSource == null || secondaryDataSource.isEmpty()) {
+            try {
+                return SecondaryDataSourceType.valueOf(prop.getProperty("SecondaryDataStoreType", "PubSub"));
+            } catch (IllegalArgumentException e) {
+                return SecondaryDataSourceType.PubSub;
+            }
+        }
+        try {
+            return SecondaryDataSourceType.valueOf(secondaryDataSource);
+        } catch (IllegalArgumentException e) {
+            return SecondaryDataSourceType.PubSub;
+        }
     }
 
     public String getGrpcServer() {

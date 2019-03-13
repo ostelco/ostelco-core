@@ -162,7 +162,7 @@ public class GrpcDataSource implements DataSource {
             grpcChannel = channelBuilder
                     .keepAliveWithoutCalls(true)
                     .keepAliveTimeout(1, TimeUnit.MINUTES)
-                    .keepAliveTime(30, TimeUnit.SECONDS)
+                    .keepAliveTime(60, TimeUnit.SECONDS)
                     .build();
 
             ocsServiceStub = OcsServiceGrpc.newStub(grpcChannel)

@@ -36,7 +36,7 @@ public class LocalDataSource implements DataSource {
         CreditControlAnswer answer = createCreditControlAnswer(context);
         LOG.info("Got Credit-Control-Request [{}]", context.getCreditControlRequest().getMsisdn());
         try {
-            final ServerCCASession session = OcsServer.getInstance().getStack().getSession(context.getSessionId(), ServerCCASession.class);
+            final ServerCCASession session = OcsServer.INSTANCE.getStack().getSession(context.getSessionId(), ServerCCASession.class);
             session.sendCreditControlAnswer(context.createCCA(answer));
             LOG.info("Sent Credit-Control-Answer [{}]", context.getCreditControlRequest().getMsisdn());
         } catch (InternalException | IllegalDiameterStateException | RouteException | OverloadException | NullPointerException e) {

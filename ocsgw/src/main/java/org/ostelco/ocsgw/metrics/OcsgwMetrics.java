@@ -30,7 +30,7 @@ public class OcsgwMetrics {
 
     private static final int KEEP_ALIVE_TIMEOUT_IN_MINUTES = 1;
 
-    private static final int KEEP_ALIVE_TIME_IN_SECONDS = 30;
+    private static final int KEEP_ALIVE_TIME_IN_SECONDS = 60;
 
     private OcsgwAnalyticsServiceGrpc.OcsgwAnalyticsServiceStub ocsgwAnalyticsServiceStub;
 

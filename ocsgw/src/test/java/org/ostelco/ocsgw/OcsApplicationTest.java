@@ -165,7 +165,7 @@ public class OcsApplicationTest {
 
 
         client.initRequestTest();
-        OcsServer.getInstance().sendReAuthRequest(new SessionContext(session.getSessionId(), PGW_HOST, PGW_REALM, APN, MCC_MNC));
+        OcsServer.INSTANCE.sendReAuthRequest(new SessionContext(session.getSessionId(), PGW_HOST, PGW_REALM, APN, MCC_MNC));
         waitForRequest();
         try {
             AvpSet resultAvps = client.getResultAvps();

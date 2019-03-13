@@ -52,7 +52,7 @@ class ProtobufDataSource {
             logger.info("[<<] CreditControlAnswer for {}", answer.msisdn)
             val ccrContext = ccrMap.remove(answer.requestId)
             if (ccrContext != null) {
-                val session = OcsServer.getInstance().stack.getSession(ccrContext.sessionId, ServerCCASession::class.java)
+                val session = OcsServer.stack?.getSession(ccrContext.sessionId, ServerCCASession::class.java)
                 if (session != null && session.isValid) {
                     removeFromSessionMap(ccrContext)
                     updateBlockedList(answer, ccrContext.creditControlRequest)
@@ -88,7 +88,7 @@ class ProtobufDataSource {
 
         if (sessionIdMap.containsKey(activateResponse.msisdn)) {
             val sessionContext = sessionIdMap[activateResponse.msisdn]
-            OcsServer.getInstance().sendReAuthRequest(sessionContext)
+            OcsServer.sendReAuthRequest(sessionContext)
         } else {
             logger.debug("No session context stored for msisdn : {}", activateResponse.msisdn)
         }
