@@ -4,6 +4,7 @@ import com.google.auth.oauth2.ServiceAccountJwtAccessCredentials;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
+import io.grpc.auth.MoreCallCredentials;
 import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.StreamObserver;
@@ -30,7 +31,7 @@ public class OcsgwMetrics {
 
     private static final int KEEP_ALIVE_TIMEOUT_IN_MINUTES = 1;
 
-    private static final int KEEP_ALIVE_TIME_IN_SECONDS = 60;
+    private static final int KEEP_ALIVE_TIME_IN_MINUTES = 5;
 
     private OcsgwAnalyticsServiceGrpc.OcsgwAnalyticsServiceStub ocsgwAnalyticsServiceStub;
 
@@ -98,10 +99,11 @@ public class OcsgwMetrics {
             grpcChannel = channelBuilder
                     .keepAliveWithoutCalls(true)
                     .keepAliveTimeout(KEEP_ALIVE_TIMEOUT_IN_MINUTES, TimeUnit.MINUTES)
-                    .keepAliveTime(KEEP_ALIVE_TIME_IN_SECONDS, TimeUnit.SECONDS)
+                    .keepAliveTime(KEEP_ALIVE_TIME_IN_MINUTES, TimeUnit.MINUTES)
                     .build();
 
-            ocsgwAnalyticsServiceStub = OcsgwAnalyticsServiceGrpc.newStub(grpcChannel);
+            ocsgwAnalyticsServiceStub = OcsgwAnalyticsServiceGrpc.newStub(grpcChannel)
+                    .withCallCredentials(MoreCallCredentials.from(credentials));;
 
         } catch (SSLException e) {
             LOG.warn("Failed to setup gRPC channel", e);

@@ -25,7 +25,7 @@ import java.util.concurrent.ScheduledExecutorService
 
 
 class PubSubDataSource(
-        private val asyncDataSource: ProtobufDataSource,
+        private val protobufDataSource: ProtobufDataSource,
         projectId: String,
         topicId: String,
         ccrSubscriptionId: String,
@@ -57,14 +57,14 @@ class PubSubDataSource(
         // Instantiate an asynchronous message receiver
         setupPubSubSubscriber(projectId, ccrSubscriptionId) { message, consumer ->
             // handle incoming message, then ack/nack the received message
-            asyncDataSource.handleProtobufCcrAnswer(
+            protobufDataSource.handleCcrAnswer(
                     CreditControlAnswerInfo.parseFrom(message))
             consumer.ack()
         }
 
         setupPubSubSubscriber(projectId, activateSubscriptionId) { message, consumer ->
             // handle incoming message, then ack/nack the received message
-            asyncDataSource.handleProtobufActivateResponse(
+            protobufDataSource.handleActivateResponse(
                     ActivateResponse.parseFrom(message))
             consumer.ack()
         }
@@ -76,7 +76,7 @@ class PubSubDataSource(
 
     override fun handleRequest(context: CreditControlContext) {
 
-        val creditControlRequestInfo = asyncDataSource.handleRequest(context)
+        val creditControlRequestInfo = protobufDataSource.handleRequest(context)
 
         if (creditControlRequestInfo != null) {
             val pubsubMessage = PubsubMessage.newBuilder()
@@ -95,7 +95,7 @@ class PubSubDataSource(
                         logger.warn("Status code: {}", throwable.statusCode.code)
                         logger.warn("Retrying: {}", throwable.isRetryable)
                     }
-                    logger.warn("Error publishing active users list")
+                    logger.warn("Error sending CCR Request to PubSub")
                 }
 
                 override fun onSuccess(messageId: String) {
@@ -106,7 +106,7 @@ class PubSubDataSource(
         }
     }
 
-    override fun isBlocked(msisdn: String): Boolean = asyncDataSource.isBlocked(msisdn)
+    override fun isBlocked(msisdn: String): Boolean = protobufDataSource.isBlocked(msisdn)
 
     private fun setupPubSubSubscriber(projectId: String, subscriptionId: String, handler: (ByteString, AckReplyConsumer) -> Unit) {
         // init subscriber

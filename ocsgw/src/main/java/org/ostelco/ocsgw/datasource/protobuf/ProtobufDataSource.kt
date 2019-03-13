@@ -42,12 +42,11 @@ class ProtobufDataSource {
         if (creditControlRequestInfo != null) {
             ccrMap[context.sessionId] = context
             addToSessionMap(context)
-            return creditControlRequestInfo
         }
-        return null
+        return creditControlRequestInfo
     }
 
-    fun handleProtobufCcrAnswer(answer: CreditControlAnswerInfo) {
+    fun handleCcrAnswer(answer: CreditControlAnswerInfo) {
         try {
             logger.info("[<<] CreditControlAnswer for {}", answer.msisdn)
             val ccrContext = ccrMap.remove(answer.requestId)
@@ -82,7 +81,7 @@ class ProtobufDataSource {
         }
     }
 
-    fun handleProtobufActivateResponse(activateResponse : ActivateResponse) {
+    fun handleActivateResponse(activateResponse : ActivateResponse) {
 
         logger.info("Active user {}", activateResponse.msisdn)
 

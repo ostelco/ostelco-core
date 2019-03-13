@@ -162,7 +162,7 @@ public class GrpcDataSource implements DataSource {
             grpcChannel = channelBuilder
                     .keepAliveWithoutCalls(true)
                     .keepAliveTimeout(1, TimeUnit.MINUTES)
-                    .keepAliveTime(60, TimeUnit.SECONDS)
+                    .keepAliveTime(5, TimeUnit.MINUTES)
                     .build();
 
             ocsServiceStub = OcsServiceGrpc.newStub(grpcChannel)
@@ -182,7 +182,7 @@ public class GrpcDataSource implements DataSource {
         creditControlRequestStream = ocsServiceStub.creditControlRequest(
                 new StreamObserver<CreditControlAnswerInfo>() {
                     public void onNext(CreditControlAnswerInfo answer) {
-                        protobufDataSource.handleProtobufCcrAnswer(answer);
+                        protobufDataSource.handleCcrAnswer(answer);
                     }
 
                     @Override
@@ -210,7 +210,7 @@ public class GrpcDataSource implements DataSource {
         ocsServiceStub.activate(dummyActivate, new StreamObserver<ActivateResponse>() {
             @Override
             public void onNext(ActivateResponse activateResponse) {
-                protobufDataSource.handleProtobufActivateResponse(activateResponse);
+                protobufDataSource.handleActivateResponse(activateResponse);
             }
 
             @Override
