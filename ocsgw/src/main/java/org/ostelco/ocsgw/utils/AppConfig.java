@@ -26,20 +26,36 @@ public class AppConfig {
     }
 
     public String getGrpcServer() {
-        // OCS_GRPC_SERVER env has higher preference over config.properties
-        final String grpcServer = System.getenv("OCS_GRPC_SERVER");
-        if (grpcServer == null || grpcServer.isEmpty()) {
-            throw new Error("No OCS_GRPC_SERVER set in env");
-        }
-        return grpcServer;
+        return getEnvProperty("OCS_GRPC_SERVER");
     }
 
     public String getMetricsServer() {
+        return getEnvProperty("METRICS_GRPC_SERVER");
+    }
+
+    public String getPubSubProjectId() {
+        return getEnvProperty("PUBSUB_PROJECT_ID");
+    }
+
+    public String getPubSubTopicId() {
+        return getEnvProperty("PUBSUB_TOPIC_ID");
+    }
+
+    public String getPubSubSubscriptionIdForCcr() {
+        return getEnvProperty("PUBSUB_CCR_SUBSCRIPTION_ID");
+    }
+
+    public String getPubSubSubscriptionIdForActivate() {
+        return getEnvProperty("PUBSUB_ACTIVATE_SUBSCRIPTION_ID");
+    }
+
+
+    private String getEnvProperty(String propertyName) {
         // METRICS_GRPC_SERVER env has higher preference over config.properties
-        final String metricsServer = System.getenv("METRICS_GRPC_SERVER");
-        if (metricsServer == null || metricsServer.isEmpty()) {
-            throw new Error("No METRICS_GRPC_SERVER set in env");
+        final String value = System.getenv(propertyName);
+        if (value == null || value.isEmpty()) {
+            throw new Error("No "+ propertyName + " set in env");
         }
-        return metricsServer;
+        return value;
     }
 }

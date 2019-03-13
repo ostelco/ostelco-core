@@ -1,10 +1,11 @@
-package org.ostelco.ocsgw.datasource.grpc;
+package org.ostelco.ocsgw.converter;
 
 import org.ostelco.diameter.CreditControlContext;
 import org.ostelco.diameter.model.*;
 import org.ostelco.ocs.api.CreditControlRequestInfo;
 import org.ostelco.ocs.api.CreditControlRequestType;
 import org.ostelco.ocs.api.ServiceInfo;
+import org.ostelco.ocsgw.datasource.protobuf.GrpcDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,14 +13,14 @@ import java.util.Collections;
 
 import static org.ostelco.diameter.model.RequestType.*;
 
-class ProtobufToDiameterConverter {
+public class ProtobufToDiameterConverter {
 
     private static final Logger LOG = LoggerFactory.getLogger(GrpcDataSource.class);
 
     /**
      * Convert MultipleServiceCreditControl in gRPC format to diameter format
      */
-    static MultipleServiceCreditControl convertMSCC(org.ostelco.ocs.api.MultipleServiceCreditControl msccGRPC) {
+    public static MultipleServiceCreditControl convertMSCC(org.ostelco.ocs.api.MultipleServiceCreditControl msccGRPC) {
         return new MultipleServiceCreditControl(
                 msccGRPC.getRatingGroup(),
                 (int) msccGRPC.getServiceIdentifier(),
@@ -32,7 +33,7 @@ class ProtobufToDiameterConverter {
     /**
      * Convert Diameter request type to gRPC
      */
-    static CreditControlRequestType getRequestType(CreditControlContext context) {
+    public static CreditControlRequestType getRequestType(CreditControlContext context) {
         switch (context.getOriginalCreditControlRequest().getRequestTypeAVPValue()) {
             case INITIAL_REQUEST:
                 return CreditControlRequestType.INITIAL_REQUEST;
@@ -64,11 +65,11 @@ class ProtobufToDiameterConverter {
     }
 
     // We match the error codes on names in gRPC and internal model
-    static ResultCode convertResultCode(org.ostelco.ocs.api.ResultCode resultCode) {
+    public static ResultCode convertResultCode(org.ostelco.ocs.api.ResultCode resultCode) {
         return ResultCode.valueOf(resultCode.name());
     }
 
-    static CreditControlRequestInfo convertRequestToGrpc(final CreditControlContext context) {
+    public static CreditControlRequestInfo convertRequestToGrpc(final CreditControlContext context) {
 
         try {
             CreditControlRequestInfo.Builder builder = CreditControlRequestInfo

@@ -20,9 +20,11 @@ import org.ostelco.diameter.model.SessionContext;
 import org.ostelco.diameter.model.ReAuthRequestType;
 import org.ostelco.ocsgw.datasource.DataSource;
 import org.ostelco.ocsgw.datasource.DataSourceType;
-import org.ostelco.ocsgw.datasource.grpc.GrpcDataSource;
+import org.ostelco.ocsgw.datasource.protobuf.ProtobufDataSource;
+import org.ostelco.ocsgw.datasource.protobuf.GrpcDataSource;
 import org.ostelco.ocsgw.datasource.local.LocalDataSource;
 import org.ostelco.ocsgw.datasource.proxy.ProxyDataSource;
+import org.ostelco.ocsgw.datasource.protobuf.PubSubDataSource;
 import org.ostelco.ocsgw.utils.AppConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,10 +103,24 @@ public class OcsServer {
         this.localPeerFQDN = stack.getMetaData().getLocalPeer().getUri().getFQDN();
         this.localPeerRealm = stack.getMetaData().getLocalPeer().getRealmName();
 
+        ProtobufDataSource protobufDataSource = new ProtobufDataSource();
+
         switch (appConfig.getDataStoreType()) {
             case DataSourceType.GRPC:
                 LOG.info("Using GrpcDataSource");
-                source = new GrpcDataSource(appConfig.getGrpcServer(), appConfig.getMetricsServer());
+                source = new GrpcDataSource(
+                        protobufDataSource,
+                        appConfig.getGrpcServer(),
+                        appConfig.getMetricsServer());
+                break;
+            case DataSourceType.PUB_SUB:
+                LOG.info("Using PubSubDataSource");
+                source = new PubSubDataSource(
+                        protobufDataSource,
+                        appConfig.getPubSubProjectId(),
+                        appConfig.getPubSubTopicId(),
+                        appConfig.getPubSubSubscriptionIdForCcr(),
+                        appConfig.getPubSubSubscriptionIdForActivate());
                 break;
             case DataSourceType.LOCAL:
                 LOG.info("Using LocalDataSource");
@@ -112,7 +128,10 @@ public class OcsServer {
                 break;
             case DataSourceType.PROXY:
                 LOG.info("Using ProxyDataSource");
-                GrpcDataSource secondary = new GrpcDataSource(appConfig.getGrpcServer(), appConfig.getMetricsServer());
+                GrpcDataSource secondary = new GrpcDataSource(
+                        protobufDataSource,
+                        appConfig.getGrpcServer(),
+                        appConfig.getMetricsServer());
                 secondary.init();
                 source = new ProxyDataSource(secondary);
                 break;

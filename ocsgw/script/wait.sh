@@ -10,22 +10,6 @@ done
 
 echo "Prime launched"
 
-echo "OCSGW waiting ESP to launch on 80..."
-
-while ! nc -z 172.16.238.4 80; do
-  sleep 0.1 # wait for 1/10 of the second before check again
-done
-
-echo "ESP launched"
-
-echo "OCSGW waiting Metrics ESP to launch on 80..."
-
-while ! nc -z 172.16.238.6 80; do
-  sleep 0.1 # wait for 1/10 of the second before check again
-done
-
-echo "Metrics ESP launched"
-
 # Start app for testing
 exec java \
     -Dfile.encoding=UTF-8 \
