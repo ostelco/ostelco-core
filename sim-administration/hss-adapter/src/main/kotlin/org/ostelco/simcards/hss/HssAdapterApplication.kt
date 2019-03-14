@@ -52,6 +52,10 @@ class HssAdapterApplication : Application<HssAdapterApplicationConfiguration>() 
     }
 }
 
+
+
+
+
 class HssAdapterApplicationConfiguration : Configuration() {
     /*
     @NotEmpty

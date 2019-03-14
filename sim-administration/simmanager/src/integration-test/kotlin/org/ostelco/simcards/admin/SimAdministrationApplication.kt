@@ -79,7 +79,7 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
         // cron job via tasks/preallocate_sim_profiles url.
 
         val hssAdapters = HssProxy(
-                heathCheckRegistrar = object : HealthCheckRegistrar {
+                healthCheckRegistrar = object : HealthCheckRegistrar {
                     override fun registerHealthCheck(name: String, healthCheck: HealthCheck) {
                         env.healthChecks().register(name, healthCheck)
                     }

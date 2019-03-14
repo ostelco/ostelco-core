@@ -20,7 +20,7 @@ class HssProxy(
         val hssConfigs: List<HssConfig>,
         val simInventoryDAO: SimInventoryDAO,
         val httpClient: CloseableHttpClient,
-        val heathCheckRegistrar: HealthCheckRegistrar? = null) : HssAdapter {
+        val healthCheckRegistrar: HealthCheckRegistrar? = null) : HssAdapter {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -45,7 +45,7 @@ class HssProxy(
     override fun iAmHealthy(): Boolean {
         return healthchecks
                 .map { it.getLastHealthStatus() }
-                .reduce{ a, b -> a && b}
+                .reduce { a, b -> a && b }
     }
 
     private fun initialize() {
@@ -70,7 +70,7 @@ class HssProxy(
                                     hssAdaptersById.put(entryWithName.id, adapter)
 
 
-                                    heathCheckRegistrar?.registerHealthCheck(
+                                    healthCheckRegistrar?.registerHealthCheck(
                                             "HSS adapter for Hss named '${hssConfig.name}'",
                                             HssAdapterHealthcheck(hssConfig.name, adapter))
                                 } else {
@@ -101,21 +101,18 @@ class HssProxy(
         }
     }
 
-
-    override fun activate(simEntry: SimEntry) : Either<SimManagerError, SimEntry> {
+    override fun activate(simEntry: SimEntry): Either<SimManagerError, SimEntry> {
         return getHssAdapterById(simEntry.hssId).activate(simEntry)
     }
 
-    override fun suspend(simEntry: SimEntry) :  Either<SimManagerError, SimEntry> {
-         return getHssAdapterById(simEntry.hssId).suspend(simEntry)
+    override fun suspend(simEntry: SimEntry): Either<SimManagerError, SimEntry> {
+        return getHssAdapterById(simEntry.hssId).suspend(simEntry)
     }
 }
-
 
 interface HealthCheckRegistrar {
     fun registerHealthCheck(name: String, healthCheck: HealthCheck)
 }
-
 
 class HssAdapterHealthcheck(
         private val name: String,
@@ -123,7 +120,7 @@ class HssAdapterHealthcheck(
 
     private val lastHealthStatus = AtomicBoolean(false)
 
-    fun getLastHealthStatus():Boolean {
+    fun getLastHealthStatus(): Boolean {
         return lastHealthStatus.get()
     }
 

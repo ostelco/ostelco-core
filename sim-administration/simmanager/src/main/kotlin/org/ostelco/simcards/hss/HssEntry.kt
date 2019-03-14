@@ -21,9 +21,11 @@ import javax.ws.rs.core.MediaType
 
 // TODO:
 //  1. Create a simplified HLR adapter interface [done]
-//  2. Extend simplifie HLR adapter to have return types that can convey error situations.
+//  2. Extend simplified HLR adapter to have return types that can convey error situations. [done(ish)]
 //  3. Extend simplified HLR adapter to have a liveness/health test. [done]
-//  4. Refactor all other code to live with this  simplified type of hlr adapter.
+//  4. Refactor all other code to live with this  simplified type of hlr adapter. [done]
+//  5. Make separate service that can be called from prime
+
 
 
 /**
