@@ -14,7 +14,6 @@ import org.ostelco.prime.simmanager.AdapterError
 import org.ostelco.prime.simmanager.NotUpdatedError
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.admin.HssConfig
-import org.ostelco.simcards.inventory.SimEntry
 import javax.ws.rs.core.MediaType
 
 
@@ -48,8 +47,8 @@ data class HssEntry(
 interface HssAdapter {
 
     fun name(): String
-    fun activate(simEntry: SimEntry): Either<SimManagerError, Unit>
-    fun suspend(simEntry: SimEntry) : Either<SimManagerError, Unit>
+    fun activate(iccid: String, msisdn:String): Either<SimManagerError, Unit>
+    fun suspend(iccid: String) : Either<SimManagerError, Unit>
 
     // XXX We may want6 to do  one or two of these two also
     // fun reactivate(simEntry: SimEntry)
@@ -76,17 +75,17 @@ class SimpleHssAdapter(val name: String,
      * @param simEntry  SIM profile to activate
      * @return Updated SIM Entry
      */
-    override fun activate(simEntry: SimEntry): Either<SimManagerError, Unit> {
+    override fun activate(iccid: String, msisdn:String): Either<SimManagerError, Unit> {
 
-        if (simEntry.iccid.isEmpty()) {
-            return NotUpdatedError("Illegal parameter in SIM activation request to BSSID ${config.name}")
+        if (iccid.isEmpty()) {
+            return NotUpdatedError("Empty ICCID value in SIM activation request to BSSID ${config.name}")
                     .left()
         }
 
         val body = mapOf(
                 "bssid" to config.name,
-                "iccid" to simEntry.iccid,
-                "msisdn" to simEntry.msisdn,
+                "iccid" to  iccid,
+                "msisdn" to  msisdn,
                 "userid" to config.userId
         )
 
@@ -105,15 +104,15 @@ class SimpleHssAdapter(val name: String,
                     201 -> {
                         logger.info("HLR activation message to BSSID {} for ICCID {} completed OK",
                                 config.name,
-                                simEntry.iccid).right()
+                                iccid).right()
                     }
                     else -> {
                         logger.warn("HLR activation message to BSSID {} for ICCID {} failed with status ({}) {}",
                                 config.name,
-                                simEntry.iccid,
+                                iccid,
                                 it.statusLine.statusCode,
                                 it.statusLine.reasonPhrase)
-                        NotUpdatedError("Failed to activate ICCID ${simEntry.iccid} with BSSID ${config.name} (status-code: ${it.statusLine.statusCode})")
+                        NotUpdatedError("Failed to activate ICCID ${iccid} with BSSID ${config.name} (status-code: ${it.statusLine.statusCode})")
                                 .left()
                     }
                 }
@@ -121,9 +120,9 @@ class SimpleHssAdapter(val name: String,
         } catch (e: Exception) {
             logger.error("HLR activation message to BSSID {} for ICCID {} failed with error: {}",
                     config.name,
-                    simEntry.iccid,
+                    iccid,
                     e)
-            AdapterError("HLR activation message to BSSID ${config.name} for ICCID ${simEntry.iccid} failed with error: ${e}")
+            AdapterError("HLR activation message to BSSID ${config.name} for ICCID ${iccid} failed with error: ${e}")
                     .left()
         }
     }
@@ -133,14 +132,14 @@ class SimpleHssAdapter(val name: String,
      * @param simEntry  SIM profile to deactivate
      * @return Updated SIM profile
      */
-    override fun suspend(simEntry: SimEntry): Either<SimManagerError, Unit> {
-        if (simEntry.iccid.isEmpty()) {
+    override fun suspend(iccid: String): Either<SimManagerError, Unit> {
+        if (iccid.isEmpty()) {
             return NotUpdatedError("Illegal parameter in SIM deactivation request to BSSID ${config.name}")
                     .left()
         }
 
         val request = RequestBuilder.delete()
-                .setUri("${config.endpoint}/deactivate/${simEntry.iccid}")
+                .setUri("${config.endpoint}/deactivate/${iccid}")
                 .setHeader("x-api-key", config.apiKey)
                 .setHeader("Content-Type", MediaType.APPLICATION_JSON)
                 .build()
@@ -151,15 +150,15 @@ class SimpleHssAdapter(val name: String,
                     200 -> {
                         logger.info("HLR deactivation message to BSSID {} for ICCID {} completed OK",
                                 config.name,
-                                simEntry.iccid).right()
+                                iccid).right()
                     }
                     else -> {
                         logger.warn("HLR deactivation message to BSSID {} for ICCID {} failed with status ({}) {}",
                                 config.name,
-                                simEntry.iccid,
+                                iccid,
                                 it.statusLine.statusCode,
                                 it.statusLine.reasonPhrase)
-                        NotUpdatedError("Failed to deactivate ICCID ${simEntry.iccid} with BSSID ${config.name} (status-code: ${it.statusLine.statusCode}")
+                        NotUpdatedError("Failed to deactivate ICCID ${iccid} with BSSID ${config.name} (status-code: ${it.statusLine.statusCode}")
                                 .left()
                     }
                 }
@@ -167,9 +166,9 @@ class SimpleHssAdapter(val name: String,
         } catch (e: Exception) {
             logger.error("HLR deactivation message to BSSID {} for ICCID {} failed with error: {}",
                     config.name,
-                    simEntry.iccid,
+                    iccid,
                     e)
-            AdapterError("HLR deactivation message to BSSID ${config.name} for ICCID ${simEntry.iccid} failed with error: ${e}")
+            AdapterError("HLR deactivation message to BSSID ${config.name} for ICCID ${iccid} failed with error: ${e}")
                     .left()
         }
     }

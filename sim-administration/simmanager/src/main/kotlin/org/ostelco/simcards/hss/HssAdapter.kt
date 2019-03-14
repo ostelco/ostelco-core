@@ -23,9 +23,7 @@ class HssProxy(
         val hssConfigs: List<HssConfig>,
         val simInventoryDAO: SimInventoryDAO,
         val httpClient: CloseableHttpClient,
-        val healthCheckRegistrar: HealthCheckRegistrar? = null) : HssAdapter {
-
-    override fun name(): String  = "HSS Proxy"
+        val healthCheckRegistrar: HealthCheckRegistrar? = null)  {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -56,7 +54,7 @@ class HssProxy(
 
     // NOTE! Assumes that healthchecks on private hss entries are being run
     // periodically and can therefore be considered to be updated & valid.
-    override fun iAmHealthy(): Boolean {
+    fun iAmHealthy(): Boolean {
         return healthchecks
                 .map { it.getLastHealthStatus() }
                 .reduce { a, b -> a && b }
@@ -110,14 +108,14 @@ class HssProxy(
         }
     }
 
-    override fun activate(simEntry: SimEntry): Either<SimManagerError, Unit> {
-        return getHssAdapterById(simEntry.hssId).activate(simEntry)
+    fun activate(simEntry: SimEntry): Either<SimManagerError, Unit> {
+        return getHssAdapterById(simEntry.hssId).activate(msisdn = simEntry.msisdn, iccid = simEntry.iccid)
                 .flatMap { simInventoryDAO.setHssState(simEntry.id!!, HssState.ACTIVATED) }
                 .flatMap { Unit.right() }
     }
 
-    override fun suspend(simEntry: SimEntry): Either<SimManagerError, Unit> {
-        return getHssAdapterById(simEntry.hssId).suspend(simEntry)
+    fun suspend(simEntry: SimEntry): Either<SimManagerError, Unit> {
+        return getHssAdapterById(simEntry.hssId).suspend(iccid = simEntry.iccid)
                 .flatMap { simInventoryDAO.setHssState(simEntry.id!!, HssState.NOT_ACTIVATED) }
                 .flatMap { Unit.right() }
     }
