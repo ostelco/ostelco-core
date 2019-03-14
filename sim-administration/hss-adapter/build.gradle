@@ -10,7 +10,7 @@ plugins {
 dependencies {
 
     implementation project(":prime-modules")
-    
+
     implementation project(":sim-administration:jersey-json-schema-validator")
     implementation project(":sim-administration:simcard-utils")
     implementation project(":sim-administration:simmanager")
@@ -36,24 +36,33 @@ dependencies {
     implementation "com.google.guava:guava:$guavaVersion"
 
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
-    implementation "org.apache.commons:commons-csv:1.6"
 
     testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
     testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.1.0"
 }
 
+
+shadowJar {
+    mainClassName = 'org.ostelco.simcards.hss.HssAdapterApplication'
+    mergeServiceFiles()
+    classifier = "uber"
+    zip64 true
+    version = null
+}
+
 protobuf {
-  plugins {
-    grpc {
-      artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"
+    plugins {
+        grpc {
+            artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"
+        }
     }
-  }
-  protoc { artifact = 'com.google.protobuf:protoc:3.7.0' }
-  generateProtoTasks {
-    all()*.plugins {
-      grpc {}
+
+    protoc { artifact = 'com.google.protobuf:protoc:3.7.0' }
+    generateProtoTasks {
+        all()*.plugins {
+            grpc {}
+        }
     }
-  }
 }
 
 
@@ -91,9 +100,9 @@ apply from: '../../gradle/jacoco.gradle'
 
 idea {
     module {
-      testSourceDirs += file('src/integration-test/kotlin')
-      sourceDirs += files("${protobuf.generatedFilesBaseDir}/main/java")
-      sourceDirs += files("${protobuf.generatedFilesBaseDir}/main/grpc")
+        testSourceDirs += file('src/integration-test/kotlin')
+        sourceDirs += files("${protobuf.generatedFilesBaseDir}/main/java")
+        sourceDirs += files("${protobuf.generatedFilesBaseDir}/main/grpc")
     }
 }
 
