@@ -53,7 +53,7 @@ class HssDispatcher(val adapters: Set<HssAdapter>, val healthCheckRegistrar: Hea
     }
 
     fun suspend(hssName: String, iccid: String): Either<SimManagerError, Unit> {
-        return getHssAdapterByName(hssName).activate(iccid = iccid)
+        return getHssAdapterByName(hssName).suspend(iccid = iccid)
     }
 }
 
