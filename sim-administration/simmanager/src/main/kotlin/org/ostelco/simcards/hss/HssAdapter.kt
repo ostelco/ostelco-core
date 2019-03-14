@@ -14,6 +14,48 @@ import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicBoolean
 
+// TODO This file still contains an uncomfortable mix of arrow and
+//      straight kotlin.  Need to resolve this one way or another.
+
+class HssDispatcher(val adapters: Set<HssAdapter>, val healthCheckRegistrar: HealthCheckRegistrar? = null) {
+
+    private val hssAdaptersByName = mutableMapOf<String, HssAdapter>()
+    private val healthchecks = mutableSetOf<HssAdapterHealthcheck>()
+
+    init {
+        for (adapter in adapters) {
+
+            healthCheckRegistrar?.registerHealthCheck(
+                    "HSS adapter for Hss named '${adapter.name()}'",
+                    HssAdapterHealthcheck(adapter.name(), adapter))
+
+            hssAdaptersByName[adapter.name()] = adapter
+        }
+    }
+
+    // NOTE! Assumes that healthchecks on private hss entries are being run
+    // periodically and can therefore be considered to be updated & valid.
+    fun iAmHealthy(): Boolean {
+        return healthchecks
+                .map { it.getLastHealthStatus() }
+                .reduce { a, b -> a && b }
+    }
+
+    private fun getHssAdapterByName(name: String): HssAdapter {
+        if (!hssAdaptersByName.containsKey(name)) {
+            throw RuntimeException("Unknown hss adapter name ? '$name'")
+        }
+        return hssAdaptersByName[name]!!
+    }
+
+    fun activate(hssName: String, msisdn: String, iccid: String): Either<SimManagerError, Unit> {
+        return getHssAdapterByName(hssName).activate(msisdn = msisdn, iccid = iccid)
+    }
+
+    fun suspend(hssName: String, iccid: String): Either<SimManagerError, Unit> {
+        return getHssAdapterByName(hssName).activate(iccid = iccid)
+    }
+}
 
 /**
  * Keep a set of HSS entries that can be used when
@@ -23,14 +65,14 @@ class HssProxy(
         val hssConfigs: List<HssConfig>,
         val simInventoryDAO: SimInventoryDAO,
         val httpClient: CloseableHttpClient,
-        val healthCheckRegistrar: HealthCheckRegistrar? = null)  {
+        val healthCheckRegistrar: HealthCheckRegistrar? = null) {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    private val lock = Object()
-    private val hssAdaptersByName = mutableMapOf<String, HssAdapter>()
-    private val healthchecks = mutableSetOf<HssAdapterHealthcheck>()
+
     private val idToNameMap = mutableMapOf<Long, String>()
+
+    private val dispatcher: HssDispatcher
 
     init {
 
@@ -40,24 +82,9 @@ class HssProxy(
             adapters.add(SimpleHssAdapter(name = config.name, httpClient = httpClient, config = config))
         }
 
-        for (adapter in adapters ) {
-
-            healthCheckRegistrar?.registerHealthCheck(
-                    "HSS adapter for Hss named '${adapter.name()}'",
-                    HssAdapterHealthcheck(adapter.name(), adapter))
-
-            hssAdaptersByName[adapter.name()] = adapter
-        }
+        dispatcher = HssDispatcher(adapters = adapters, healthCheckRegistrar = healthCheckRegistrar)
 
         updateHssIdToNameMap()
-    }
-
-    // NOTE! Assumes that healthchecks on private hss entries are being run
-    // periodically and can therefore be considered to be updated & valid.
-    fun iAmHealthy(): Boolean {
-        return healthchecks
-                .map { it.getLastHealthStatus() }
-                .reduce { a, b -> a && b }
     }
 
 
@@ -90,34 +117,21 @@ class HssProxy(
         }
     }
 
-    private fun getHssAdapterByName(name: String): HssAdapter {
-        synchronized(lock) {
-            if (!hssAdaptersByName.containsKey(name)) {
-                throw RuntimeException("Unknown hss adapter name ? '$name'")
-            }
-            return hssAdaptersByName[name]!!
-        }
-    }
-
-    private fun getHssAdapterById(id: Long): HssAdapter {
-        synchronized(lock) {
-            if (!idToNameMap.containsKey(id)) {
-                throw RuntimeException("Unknown hss adapter id ? '$id'")
-            }
-            return hssAdaptersByName[idToNameMap[id]]!!
-        }
-    }
 
     fun activate(simEntry: SimEntry): Either<SimManagerError, Unit> {
-        return getHssAdapterById(simEntry.hssId).activate(msisdn = simEntry.msisdn, iccid = simEntry.iccid)
-                .flatMap { simInventoryDAO.setHssState(simEntry.id!!, HssState.ACTIVATED) }
-                .flatMap { Unit.right() }
+        synchronized(lock) {
+            return dispatcher.activate(hssName = idToNameMap[simEntry.hssId]!!, msisdn = simEntry.msisdn, iccid = simEntry.iccid)
+                    .flatMap { simInventoryDAO.setHssState(simEntry.id!!, HssState.ACTIVATED) }
+                    .flatMap { Unit.right() }
+        }
     }
 
     fun suspend(simEntry: SimEntry): Either<SimManagerError, Unit> {
-        return getHssAdapterById(simEntry.hssId).suspend(iccid = simEntry.iccid)
-                .flatMap { simInventoryDAO.setHssState(simEntry.id!!, HssState.NOT_ACTIVATED) }
-                .flatMap { Unit.right() }
+        synchronized(lock) {
+            return dispatcher.suspend(hssName = idToNameMap[simEntry.hssId]!!, iccid = simEntry.iccid)
+                    .flatMap { simInventoryDAO.setHssState(simEntry.id!!, HssState.NOT_ACTIVATED) }
+                    .flatMap { Unit.right() }
+        }
     }
 }
 

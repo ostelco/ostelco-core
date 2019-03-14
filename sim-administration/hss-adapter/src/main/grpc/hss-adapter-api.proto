@@ -6,14 +6,23 @@ option java_multiple_files = true;
 option java_package = "org.ostelco.simcards.hss.adapter.api";
 
 
-message Person {
-    string name = 1;
-    int32 id = 2;
-    string email = 3;
-
-    repeated string numbers = 4;
+service HssService {
+    rpc activate (ActivationRequest) returns (HssServiceResponse);
+    rpc suspend (SuspensionRequest) returns (HssServiceResponse);
 }
 
-message AddressBook {
-    repeated Person people = 1;
+message ActivationRequest {
+    string hss = 1;
+    string iccid = 2;
+    string msisdn = 3;
+}
+
+message SuspensionRequest {
+    string hss = 1;
+    string iccid = 2;
+}
+
+message HssServiceResponse {
+    bool success = 1
+    string reply = 2;
 }
