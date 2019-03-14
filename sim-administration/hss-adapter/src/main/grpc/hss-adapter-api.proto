@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package org.ostelco.simcards.hss.adapter.api;
+
+option java_multiple_files = true;
+option java_package = "org.ostelco.simcards.hss.adapter.api";
+
+
+message Person {
+    string name = 1;
+    int32 id = 2;
+    string email = 3;
+
+    repeated string numbers = 4;
+}
+
+message AddressBook {
+    repeated Person people = 1;
+}

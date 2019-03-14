@@ -5,6 +5,8 @@ import io.dropwizard.Configuration
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
 
+fun main(args: Array<String>) = HssAdapterApplication().run(*args)
+
 /**
  * The sim  manager will have to interface to many different Home Subscriber Module
  * instances.  Many of these will rely on proprietary libraries to interface to the
@@ -42,18 +44,7 @@ class HssAdapterApplication : Application<HssAdapterApplicationConfiguration>() 
                      environment: Environment) {
         // nothing to do yet
     }
-
-    companion object {
-        @Throws(Exception::class)
-        @JvmStatic
-        fun main(args: Array<String>) {
-            HssAdapterApplication().run(*args)
-        }
-    }
 }
-
-
-
 
 
 class HssAdapterApplicationConfiguration : Configuration() {
