@@ -5,6 +5,7 @@ import com.codahale.metrics.health.HealthCheck
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.admin.HssConfig
+import org.ostelco.simcards.admin.mapRight
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.slf4j.LoggerFactory

@@ -12,7 +12,6 @@ import org.jdbi.v3.core.Jdbi
 import org.junit.*
 import org.junit.Assert.assertEquals
 import org.ostelco.simcards.hss.HssProxy
-import org.ostelco.simcards.hss.mapRight
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimProfileKeyStatistics
 import org.ostelco.simcards.smdpplus.SmDpPlusApplication
