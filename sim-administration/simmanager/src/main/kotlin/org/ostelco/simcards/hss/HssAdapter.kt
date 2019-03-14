@@ -51,7 +51,7 @@ class HssProxy(
             hssAdaptersByName[adapter.name()] = adapter
         }
 
-        initialize()
+        updateHssIdToNameMap()
     }
 
     // NOTE! Assumes that healthchecks on private hss entries are being run
@@ -79,7 +79,7 @@ class HssProxy(
     }
 
 
-    private fun initialize() {
+    private fun updateHssIdToNameMap() {
         synchronized(lock) {
 
             val newHssEntries =
