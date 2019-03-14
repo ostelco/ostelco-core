@@ -74,6 +74,8 @@ class HssProxy(
 
     private val dispatcher: HssDispatcher
 
+    private val lock = Object()
+
     init {
 
         val adapters = mutableSetOf<HssAdapter>()
