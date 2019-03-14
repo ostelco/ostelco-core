@@ -3,6 +3,7 @@ package org.ostelco.simcards.hss
 
 import arrow.core.Either
 import arrow.core.left
+import arrow.core.right
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.apache.http.client.methods.RequestBuilder
@@ -13,9 +14,7 @@ import org.ostelco.prime.simmanager.AdapterError
 import org.ostelco.prime.simmanager.NotUpdatedError
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.admin.HssConfig
-import org.ostelco.simcards.inventory.HssState
 import org.ostelco.simcards.inventory.SimEntry
-import org.ostelco.simcards.inventory.SimInventoryDAO
 import javax.ws.rs.core.MediaType
 
 
@@ -47,8 +46,10 @@ data class HssEntry(
  * implementations.
  */
 interface HssAdapter {
-    fun activate(simEntry: SimEntry): Either<SimManagerError, SimEntry>
-    fun suspend(simEntry: SimEntry) : Either<SimManagerError, SimEntry>
+
+    fun name(): String
+    fun activate(simEntry: SimEntry): Either<SimManagerError, Unit>
+    fun suspend(simEntry: SimEntry) : Either<SimManagerError, Unit>
 
     // XXX We may want6 to do  one or two of these two also
     // fun reactivate(simEntry: SimEntry)
@@ -57,15 +58,16 @@ interface HssAdapter {
     fun iAmHealthy(): Boolean
 }
 
-class SimpleHssAdapter(val httpClient: CloseableHttpClient,
-                       val config: HssConfig,
-                       val dao: SimInventoryDAO) : HssAdapter {
+class SimpleHssAdapter(val name: String,
+                       val httpClient: CloseableHttpClient,
+                       val config: HssConfig) : HssAdapter {
 
     private val logger by getLogger()
 
     /* For payload serializing. */
     private val mapper = jacksonObjectMapper()
 
+    override fun name() = name
 
     override fun iAmHealthy(): Boolean = true
 
@@ -74,7 +76,7 @@ class SimpleHssAdapter(val httpClient: CloseableHttpClient,
      * @param simEntry  SIM profile to activate
      * @return Updated SIM Entry
      */
-    override fun activate(simEntry: SimEntry): Either<SimManagerError, SimEntry> {
+    override fun activate(simEntry: SimEntry): Either<SimManagerError, Unit> {
 
         if (simEntry.iccid.isEmpty()) {
             return NotUpdatedError("Illegal parameter in SIM activation request to BSSID ${config.name}")
@@ -103,8 +105,7 @@ class SimpleHssAdapter(val httpClient: CloseableHttpClient,
                     201 -> {
                         logger.info("HLR activation message to BSSID {} for ICCID {} completed OK",
                                 config.name,
-                                simEntry.iccid)
-                        dao.setHssState(simEntry.id!!, HssState.ACTIVATED)
+                                simEntry.iccid).right()
                     }
                     else -> {
                         logger.warn("HLR activation message to BSSID {} for ICCID {} failed with status ({}) {}",
@@ -132,7 +133,7 @@ class SimpleHssAdapter(val httpClient: CloseableHttpClient,
      * @param simEntry  SIM profile to deactivate
      * @return Updated SIM profile
      */
-    override fun suspend(simEntry: SimEntry): Either<SimManagerError, SimEntry> {
+    override fun suspend(simEntry: SimEntry): Either<SimManagerError, Unit> {
         if (simEntry.iccid.isEmpty()) {
             return NotUpdatedError("Illegal parameter in SIM deactivation request to BSSID ${config.name}")
                     .left()
@@ -150,8 +151,7 @@ class SimpleHssAdapter(val httpClient: CloseableHttpClient,
                     200 -> {
                         logger.info("HLR deactivation message to BSSID {} for ICCID {} completed OK",
                                 config.name,
-                                simEntry.iccid)
-                        dao.setHssState(simEntry.id!!, HssState.NOT_ACTIVATED)
+                                simEntry.iccid).right()
                     }
                     else -> {
                         logger.warn("HLR deactivation message to BSSID {} for ICCID {} failed with status ({}) {}",

@@ -54,6 +54,12 @@ class SimAdministrationConfiguration : Configuration() {
 }
 
 class HssConfig {
+
+    @Valid
+    // TODO: Make not null asap @NotNull
+    @JsonProperty("type")
+    lateinit var type: String
+
     @Valid
     @NotNull
     @JsonProperty("name")

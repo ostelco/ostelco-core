@@ -13,6 +13,7 @@ import org.ostelco.prime.simmanager.NotFoundError
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.hss.HssEntry
 import org.ostelco.simcards.hss.HssProxy
+import org.ostelco.simcards.inventory.HssState
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SimProfileKeyStatistics
@@ -46,7 +47,7 @@ class PreallocateProfilesTask(
     }
 
     private fun preProvisionSimProfile(hssEntry: HssEntry,
-                                       simEntry: SimEntry): Either<SimManagerError, SimEntry> =
+                                       simEntry: SimEntry): Either<SimManagerError, Any> =
             simInventoryDAO.getProfileVendorAdapterById(simEntry.profileVendorId)
                     .flatMap { profileVendorAdapter ->
 
@@ -61,6 +62,7 @@ class PreallocateProfilesTask(
                                     simEntry = simEntry)
                                     .flatMap {
                                         hssAdapterProxy.activate(simEntry)
+                                        simInventoryDAO.setHssState(simEntry.id!!, HssState.ACTIVATED)
                                     }
                         } else {
                             if (profileVendorConfig == null) {
