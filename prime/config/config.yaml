@@ -38,6 +38,10 @@ modules:
   - type: ocs
     config:
       lowBalanceThreshold: 100000000
+      pubSubChannel:
+        projectId: ${GCP_PROJECT_ID}
+        activateTopicId: ${ACTIVATE_TOPIC_ID}
+        ccrSubscriptionId: ${CCR_SUBSCRIPTION_ID}
   - type: api
   - type: stripe-payment-processor
   - type: firebase-app-notifier

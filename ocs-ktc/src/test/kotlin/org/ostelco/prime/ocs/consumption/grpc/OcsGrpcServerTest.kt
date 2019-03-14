@@ -1,8 +1,9 @@
-package org.ostelco.prime.ocs.consumption
+package org.ostelco.prime.ocs.consumption.grpc
 
 import io.grpc.ManagedChannelBuilder
 import io.grpc.stub.StreamObserver
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.fail
 import org.junit.Ignore
 import org.junit.Test
 import org.ostelco.ocs.api.CreditControlAnswerInfo
@@ -16,7 +17,6 @@ import java.time.Instant
 import java.util.*
 import java.util.concurrent.CountDownLatch
 import kotlin.test.AfterTest
-import kotlin.test.fail
 
 class OcsGrpcServerTest {
 

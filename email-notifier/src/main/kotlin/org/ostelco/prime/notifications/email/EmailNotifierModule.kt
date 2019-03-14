@@ -25,12 +25,10 @@ class EmailNotifierModule : PrimeModule {
     }
 }
 
-class Config {
-    lateinit var mandrillApiKey: String
-
+data class Config(
+    val mandrillApiKey: String,
     @JsonProperty("httpClient")
-    var httpClientConfiguration = HttpClientConfiguration()
-}
+    val httpClientConfiguration: HttpClientConfiguration = HttpClientConfiguration())
 
 object ConfigRegistry {
     lateinit var config: Config

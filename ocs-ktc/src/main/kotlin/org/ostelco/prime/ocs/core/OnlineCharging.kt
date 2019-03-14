@@ -1,10 +1,8 @@
 package org.ostelco.prime.ocs.core
 
-import io.grpc.stub.StreamObserver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.ostelco.ocs.api.ActivateResponse
 import org.ostelco.ocs.api.CreditControlAnswerInfo
 import org.ostelco.ocs.api.CreditControlRequestInfo
 import org.ostelco.ocs.api.FinalUnitAction
@@ -18,34 +16,17 @@ import org.ostelco.prime.ocs.analytics.AnalyticsReporter
 import org.ostelco.prime.ocs.consumption.OcsAsyncRequestConsumer
 import org.ostelco.prime.ocs.notifications.Notifications
 import org.ostelco.prime.storage.ClientDataSource
-import java.util.concurrent.ConcurrentHashMap
 
 object OnlineCharging : OcsAsyncRequestConsumer {
 
     var loadUnitTest = false
     private val loadAcceptanceTest = System.getenv("LOAD_TESTING") == "true"
 
-    private val ccaStreamMap = ConcurrentHashMap<String, StreamObserver<CreditControlAnswerInfo>>()
-    private val activateStreamMap = ConcurrentHashMap<String, StreamObserver<ActivateResponse>>()
-
     private val storage: ClientDataSource = getResource()
 
-    override fun putCreditControlClient(
-            streamId: String,
-            creditControlAnswer: StreamObserver<CreditControlAnswerInfo>) {
-
-        ccaStreamMap[streamId] = creditControlAnswer
-    }
-
-    override fun updateActivateResponse(streamId: String, activateResponse: StreamObserver<ActivateResponse>) {
-        activateStreamMap[streamId] = activateResponse
-    }
-
-    override fun deleteCreditControlClient(streamId: String) {
-        ccaStreamMap.remove(streamId)
-    }
-
-    override fun creditControlRequestEvent(streamId: String, request: CreditControlRequestInfo) {
+    override fun creditControlRequestEvent(
+            request: CreditControlRequestInfo,
+            returnCreditControlAnswer: (CreditControlAnswerInfo) -> Unit) {
 
         val msisdn = request.msisdn
 
@@ -74,7 +55,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                                 // TODO martin : Should we handle all errors as NotFoundError?
                                 response.resultCode = ResultCode.DIAMETER_USER_UNKNOWN
                                 synchronized(OnlineCharging) {
-                                    ccaStreamMap[streamId]?.onNext(response.build())
+                                    returnCreditControlAnswer(response.build())
                                 }
                             },
                             {
@@ -118,14 +99,14 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                                 }
                                 response.addMscc(responseMscc)
                                 synchronized(OnlineCharging) {
-                                    ccaStreamMap[streamId]?.onNext(response.build())
+                                    returnCreditControlAnswer(response.build())
                                 }
                             })
                     }
                 }
                 else {
                     synchronized(OnlineCharging) {
-                        ccaStreamMap[streamId]?.onNext(response.build())
+                        returnCreditControlAnswer(response.build())
                     }
                 }
             }

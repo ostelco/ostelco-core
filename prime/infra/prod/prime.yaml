@@ -173,6 +173,10 @@ spec:
           value: purchase-info
         - name: ACTIVE_USERS_TOPIC
           value: active-users
+        - name: ACTIVATE_TOPIC_ID
+          value: ocs-activate
+        - name: CCR_SUBSCRIPTION_ID
+          value: ocs-ccr-sub
         - name: STRIPE_API_KEY
           valueFrom:
             secretKeyRef:
