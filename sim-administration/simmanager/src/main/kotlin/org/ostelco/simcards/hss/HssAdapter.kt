@@ -14,9 +14,6 @@ import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicBoolean
 
-// TODO This file still contains an uncomfortable mix of arrow and
-//      straight kotlin.  Need to resolve this one way or another.
-
 class HssDispatcher(val adapters: Set<HssAdapter>, val healthCheckRegistrar: HealthCheckRegistrar? = null) {
 
     private val hssAdaptersByName = mutableMapOf<String, HssAdapter>()
