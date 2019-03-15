@@ -10,11 +10,11 @@ import org.apache.http.impl.client.CloseableHttpClient
 import org.junit.*
 import org.mockito.Mockito.*
 import org.ostelco.prime.simmanager.NotFoundError
-import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
 import org.ostelco.simcards.admin.HssConfig
 import org.ostelco.simcards.admin.ProfileVendorConfig
 import org.ostelco.simcards.admin.SimAdministrationConfiguration
 import org.ostelco.simcards.hss.HssEntry
+import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
 import java.io.ByteArrayInputStream
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType

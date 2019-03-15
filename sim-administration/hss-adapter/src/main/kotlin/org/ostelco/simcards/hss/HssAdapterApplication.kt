@@ -42,7 +42,7 @@ fun main(args: Array<String>) = HssAdapterApplication().run(*args)
 class HssAdapterApplication : Application<HssAdapterApplicationConfiguration>() {
 
     override fun getName(): String {
-        return "hss-profilevendors"
+        return "HSS adapter service"
     }
 
     override fun initialize(bootstrap: Bootstrap<HssAdapterApplicationConfiguration>?) {
@@ -54,13 +54,15 @@ class HssAdapterApplication : Application<HssAdapterApplicationConfiguration>() 
 
         val httpClient = HttpClientBuilder(env)
                 .using(ConfigRegistry.config.httpClient)
-                .build("SIM inventory")
+                .build("${getName()} http client")
         val jerseyEnv = env.jersey()
 
-        OpenapiResourceAdder.addOpenapiResourceToJerseyEnv(jerseyEnv, ConfigRegistry.config.openApi)
 
-        jerseyEnv.register(ResourceRegistry.simInventoryResource)
-
+        /**
+         * TODO: Add a couple of resources that tells the story about the
+         *    adapters that are serving here, and which requests they are
+         *    getting.
+         */
 
         val adapters = mutableSetOf<HssAdapter>()
 
@@ -77,8 +79,10 @@ class HssAdapterApplication : Application<HssAdapterApplicationConfiguration>() 
                     }
                 })
 
-        // This dispatcdher is what we will use to handle the incoming
+        // This dispatcher  is what we will use to handle the incoming
         // requests.  it will essentially do all the work.
+        // When it has been proven to work, we will make it something that can
+        // be built in a separate reposítory, preferably using a library mechanism.
     }
 }
 
