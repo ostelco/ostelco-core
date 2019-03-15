@@ -3,12 +3,15 @@ package org.ostelco.diameter.util
 import org.jdiameter.api.Avp
 import org.mobicents.diameter.dictionary.AvpDictionary
 import org.mobicents.diameter.dictionary.AvpRepresentation
-import org.ostelco.diameter.logger
-import org.ostelco.diameter.util.AvpType.*
+import org.ostelco.diameter.getLogger
+import org.ostelco.diameter.util.AvpType.ADDRESS
+import org.ostelco.diameter.util.AvpType.IDENTITY
+import org.ostelco.diameter.util.AvpType.OCTET_STRING
+import org.ostelco.diameter.util.AvpType.UTF8STRING
 
 object AvpDictionary {
 
-    private val LOG by logger()
+    private val logger by getLogger()
 
     private val avpRepMap: MutableMap<Int, AvpType?> = HashMap()
     private val avpTypeMap: MutableMap<String, AvpType?> = HashMap()
@@ -19,7 +22,7 @@ object AvpDictionary {
             AvpRep.values().forEach { avpRepMap[it.avpCode] = it.avpType }
             AvpType.values().forEach { avpTypeMap[it.label] = it }
         } catch (e:Exception) {
-            LOG.error("Failed to init AvpDictionary", e)
+            logger.error("Failed to init AvpDictionary", e)
         }
     }
 
@@ -44,11 +47,11 @@ object AvpDictionary {
                 avpRep = AvpDictionary.INSTANCE.getAvp(avp.code)
             }
             if (avpRep == null) {
-                LOG.error("AVP ${avp.code} missing in dictionary")
+                logger.error("AVP ${avp.code} missing in dictionary")
                 return null
             }
 
-            LOG.trace("Type(str): ${avpRep.type}")
+            logger.trace("Type(str): ${avpRep.type}")
             avpType = avpTypeMap[avpRep.type]
         }
 

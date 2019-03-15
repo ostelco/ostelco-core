@@ -35,46 +35,6 @@ services:
         ipv4_address: 172.16.238.5
       default:
 
-  esp:
-    container_name: esp
-    image: gcr.io/endpoints-release/endpoints-runtime:1
-    volumes:
-    - "./prime/config:/esp"
-    - "./certs/ocs.dev.ostelco.org:/etc/nginx/ssl"
-    command: >
-      --service=ocs.dev.ostelco.org
-      --rollout_strategy=managed
-      --http2_port=80
-      --ssl_port=443
-      --backend=grpc://172.16.238.5:8082
-      --service_account_key=/esp/prime-service-account.json
-    networks:
-      net:
-        aliases:
-        - "ocs.dev.ostelco.org"
-        ipv4_address: 172.16.238.4
-      default:
-
-  metrics-esp:
-    container_name: metrics-esp
-    image: gcr.io/endpoints-release/endpoints-runtime:1
-    volumes:
-    - "./prime/config:/esp"
-    - "./certs/metrics.dev.ostelco.org:/etc/nginx/ssl"
-    command: >
-      --service=metrics.dev.ostelco.org
-      --rollout_strategy=managed
-      --http2_port=80
-      --ssl_port=443
-      --backend=grpc://172.16.238.5:8083
-      --service_account_key=/esp/prime-service-account.json
-    networks:
-      net:
-        aliases:
-        - "metrics.dev.ostelco.org"
-        ipv4_address: 172.16.238.6
-      default:
-
   ocsgw:
     container_name: ocsgw
     build: ocsgw
@@ -82,10 +42,15 @@ services:
     - "prime"
     command: ["./wait.sh"]
     environment:
-    - OCS_GRPC_SERVER=ocs.dev.ostelco.org
-    - METRICS_GRPC_SERVER=metrics.dev.ostelco.org
+    - DISABLE_TLS=true
+    - OCS_GRPC_SERVER=prime:8082
+    - METRICS_GRPC_SERVER=prime:8083
     - SERVICE_FILE=prime-service-account.json
     - GOOGLE_CLOUD_PROJECT=${GCP_PROJECT_ID}
+    - PUBSUB_PROJECT_ID=${GCP_PROJECT_ID}
+    - PUBSUB_TOPIC_ID=
+    - PUBSUB_CCR_SUBSCRIPTION_ID=
+    - PUBSUB_ACTIVATE_SUBSCRIPTION_ID=
     volumes:
     - ./ocsgw/cert:/cert/
     - ./ocsgw/config:/config/

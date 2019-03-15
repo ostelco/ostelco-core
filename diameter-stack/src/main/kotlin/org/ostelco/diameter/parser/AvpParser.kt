@@ -2,7 +2,7 @@ package org.ostelco.diameter.parser
 
 import org.jdiameter.api.Avp
 import org.jdiameter.api.AvpSet
-import org.ostelco.diameter.logger
+import org.ostelco.diameter.getLogger
 import org.ostelco.diameter.util.AvpDictionary
 import org.ostelco.diameter.util.AvpType.ADDRESS
 import org.ostelco.diameter.util.AvpType.APP_ID
@@ -28,7 +28,7 @@ import kotlin.reflect.full.declaredMemberProperties
 
 class AvpParser {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     /**
      * @param kclazz Kotlin class representing the data type of the AVP set getting parsed.

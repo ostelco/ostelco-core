@@ -17,15 +17,15 @@ for dep in $DEPS ; do
 done
 
 #
-# Check for the presence of the pantel-decb2 access file
+# Check for the presence of the GCP service account file - (PSA) prime-service-account.json
 #
 
-PANTEL_DIRS=$(grep -i pantel $(find . -name '.gitignore') | awk -F: '{print $1}' | sort | uniq | sed 's/.gitignore//g')
+PSA_DIRS=$(grep -i prime-service-account.json $(find . -name '.gitignore') | awk -F: '{print $1}' | sort | uniq | sed 's/.gitignore//g')
 
-for PANTEL_DIR in $PANTEL_DIRS ; do
-    PANTEL_FILE="${PANTEL_DIR}pantel-prod.json"
-    if [[ ! -f "$PANTEL_FILE" ]] ; then
-	echo "$0 ERROR:   Expected to find $PANTEL_FILE, but didn't.  Cannot run regression tests."
+for PSA_DIR in $PSA_DIRS ; do
+    PSA_FILE="${PSA_DIR}prime-service-account.json"
+    if [[ ! -f "$PSA_FILE" ]] ; then
+	echo "$0 ERROR:   Expected to find $PSA_FILE, but didn't.  Cannot run regression tests."
 	exit 1
     fi
 done
