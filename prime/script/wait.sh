@@ -37,9 +37,9 @@ echo "Creating topics and subscriptions...."
 
 curl  -X PUT pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/topics/active-users
 curl  -X PUT pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/topics/data-traffic
-curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/${GCP_PROJECT_ID}/topics/data-traffic","ackDeadlineSeconds":10}' pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/test-pseudo
+curl -X PUT -H "Content-Type: application/json" -d "{\"topic\":\"projects/${GCP_PROJECT_ID}/topics/data-traffic\",\"ackDeadlineSeconds\":10}" pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/test-pseudo
 curl  -X PUT pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/topics/purchase-info
-curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/${GCP_PROJECT_ID}/topics/purchase-info","ackDeadlineSeconds":10}' pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/purchase-info-sub
+curl -X PUT -H "Content-Type: application/json" -d "{\"topic\":\"projects/${GCP_PROJECT_ID}/topics/purchase-info\",\"ackDeadlineSeconds\":10}" pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/purchase-info-sub
 
 echo "Done creating topics and subscriptions"
 
