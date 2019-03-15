@@ -1,5 +1,6 @@
 package org.ostelco.simcards.admin
 
+import com.codahale.metrics.health.HealthCheck
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonTypeName
 import io.dropwizard.client.HttpClientBuilder
@@ -11,7 +12,7 @@ import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter
 import org.ostelco.sim.es2plus.SmDpPlusCallbackResource
 import org.ostelco.simcards.admin.ConfigRegistry.config
 import org.ostelco.simcards.admin.ResourceRegistry.simInventoryResource
-import org.ostelco.simcards.hss.HssProxy
+import org.ostelco.simcards.hss.*
 import org.ostelco.simcards.inventory.*
 
 /**
@@ -59,11 +60,25 @@ class SimAdministrationModule : PrimeModule {
         jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
 
 
-        var hssAdapters =
-                HssProxy(
-                        httpClient = httpClient,
-                        simInventoryDAO = this.DAO,
-                        hssConfigs = config.hssVendors)
+
+        val adapters = mutableSetOf<HssAdapter>()
+
+        for (config in config.hssVendors) {
+            adapters.add(SimpleHssAdapter(name = config.name, httpClient = httpClient, config = config))
+        }
+
+        val dispatcher = DirectHssDispatcher(adapters = adapters,
+                healthCheckRegistrar = object : HealthCheckRegistrar {
+                    override fun registerHealthCheck(name: String, healthCheck: HealthCheck) {
+                        env.healthChecks().register(name, healthCheck)
+                    }
+                })
+
+
+        var hssAdapters = HssProxy(
+                        dispatcher  = dispatcher,
+                        simInventoryDAO = this.DAO
+                       )
 
         env.admin().addTask(PreallocateProfilesTask(
                 simInventoryDAO = this.DAO,

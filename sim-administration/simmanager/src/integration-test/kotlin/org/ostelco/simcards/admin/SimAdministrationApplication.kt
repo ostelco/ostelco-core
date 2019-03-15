@@ -11,14 +11,8 @@ import io.dropwizard.setup.Environment
 import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
 import org.ostelco.sim.es2plus.SmDpPlusCallbackResource
+import org.ostelco.simcards.hss.*
 import org.ostelco.simcards.inventory.*
-
-import org.ostelco.simcards.hss.HealthCheckRegistrar
-import org.ostelco.simcards.hss.HssProxy
-import org.ostelco.simcards.inventory.SimInventoryCallbackService
-import org.ostelco.simcards.inventory.SimInventoryDAO
-import org.ostelco.simcards.inventory.SimInventoryDB
-import org.ostelco.simcards.inventory.SimInventoryResource
 
 /**
  * The SIM manager
@@ -78,15 +72,24 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
         // Add task that should be triggered periodically by external
         // cron job via tasks/preallocate_sim_profiles url.
 
-        val hssAdapters = HssProxy(
+
+        val adapters = mutableSetOf<HssAdapter>()
+
+        for (config in config.hssVendors) {
+            adapters.add(SimpleHssAdapter(name = config.name, httpClient = httpClient, config = config))
+        }
+
+        val dispatcher = DirectHssDispatcher(adapters = adapters,
                 healthCheckRegistrar = object : HealthCheckRegistrar {
-                    override fun registerHealthCheck(name: String, healthCheck: HealthCheck) {
-                        env.healthChecks().register(name, healthCheck)
-                    }
-                },
-                hssConfigs = config.hssVendors,
-                simInventoryDAO = this.DAO,
-                httpClient = httpClient)
+            override fun registerHealthCheck(name: String, healthCheck: HealthCheck) {
+                env.healthChecks().register(name, healthCheck)
+            }
+        })
+
+        val hssAdapters = HssProxy(
+                dispatcher = dispatcher,
+                simInventoryDAO = this.DAO
+                )
 
         env.admin().addTask(PreallocateProfilesTask(
                 hssAdapterProxy =  hssAdapters,

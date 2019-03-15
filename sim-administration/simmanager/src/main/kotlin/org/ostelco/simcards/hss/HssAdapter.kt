@@ -4,9 +4,7 @@ import arrow.core.Either
 import arrow.core.flatMap
 import arrow.core.right
 import com.codahale.metrics.health.HealthCheck
-import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.simmanager.SimManagerError
-import org.ostelco.simcards.admin.HssConfig
 import org.ostelco.simcards.admin.mapRight
 import org.ostelco.simcards.inventory.HssState
 import org.ostelco.simcards.inventory.SimEntry
@@ -14,7 +12,15 @@ import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicBoolean
 
-class HssDispatcher(val adapters: Set<HssAdapter>, val healthCheckRegistrar: HealthCheckRegistrar? = null) {
+interface HssDispatcher {
+    fun iAmHealthy(): Boolean
+    fun activate(hssName: String, msisdn: String, iccid: String): Either<SimManagerError, Unit>
+    fun suspend(hssName: String, iccid: String): Either<SimManagerError, Unit>
+}
+
+class DirectHssDispatcher(
+        val adapters: Set<HssAdapter>,
+        val healthCheckRegistrar: HealthCheckRegistrar? = null) : HssDispatcher {
 
     private val hssAdaptersByName = mutableMapOf<String, HssAdapter>()
     private val healthchecks = mutableSetOf<HssAdapterHealthcheck>()
@@ -32,7 +38,7 @@ class HssDispatcher(val adapters: Set<HssAdapter>, val healthCheckRegistrar: Hea
 
     // NOTE! Assumes that healthchecks on private hss entries are being run
     // periodically and can therefore be considered to be updated & valid.
-    fun iAmHealthy(): Boolean {
+    override fun iAmHealthy(): Boolean {
         return healthchecks
                 .map { it.getLastHealthStatus() }
                 .reduce { a, b -> a && b }
@@ -45,11 +51,11 @@ class HssDispatcher(val adapters: Set<HssAdapter>, val healthCheckRegistrar: Hea
         return hssAdaptersByName[name]!!
     }
 
-    fun activate(hssName: String, msisdn: String, iccid: String): Either<SimManagerError, Unit> {
+    override fun activate(hssName: String, msisdn: String, iccid: String): Either<SimManagerError, Unit> {
         return getHssAdapterByName(hssName).activate(msisdn = msisdn, iccid = iccid)
     }
 
-    fun suspend(hssName: String, iccid: String): Either<SimManagerError, Unit> {
+    override fun suspend(hssName: String, iccid: String): Either<SimManagerError, Unit> {
         return getHssAdapterByName(hssName).suspend(iccid = iccid)
     }
 }
@@ -59,33 +65,18 @@ class HssDispatcher(val adapters: Set<HssAdapter>, val healthCheckRegistrar: Hea
  * provisioning SIM profiles in remote HSSes.
  */
 class HssProxy(
-        val hssConfigs: List<HssConfig>,
-        val simInventoryDAO: SimInventoryDAO,
-        val httpClient: CloseableHttpClient,
-        val healthCheckRegistrar: HealthCheckRegistrar? = null) {
+        val dispatcher: HssDispatcher,
+        val simInventoryDAO: SimInventoryDAO) {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-
     private val idToNameMap = mutableMapOf<Long, String>()
-
-    private val dispatcher: HssDispatcher
 
     private val lock = Object()
 
     init {
-
-        val adapters = mutableSetOf<HssAdapter>()
-
-        for (config in hssConfigs) {
-            adapters.add(SimpleHssAdapter(name = config.name, httpClient = httpClient, config = config))
-        }
-
-        dispatcher = HssDispatcher(adapters = adapters, healthCheckRegistrar = healthCheckRegistrar)
-
         updateHssIdToNameMap()
     }
-
 
     private fun fetchHssEntriesFromDatabase(): List<HssEntry> {
         val returnValue = mutableListOf<HssEntry>()
@@ -97,11 +88,6 @@ class HssProxy(
                 .mapRight { returnValue.addAll(it) }
         return returnValue
     }
-
-    fun getHssConfigFor(name: String): HssConfig {
-        return hssConfigs.singleOrNull() { it.name == name }!! // TODO: Fail if null!
-    }
-
 
     private fun updateHssIdToNameMap() {
         synchronized(lock) {
@@ -115,7 +101,6 @@ class HssProxy(
             }
         }
     }
-
 
     fun activate(simEntry: SimEntry): Either<SimManagerError, Unit> {
         synchronized(lock) {

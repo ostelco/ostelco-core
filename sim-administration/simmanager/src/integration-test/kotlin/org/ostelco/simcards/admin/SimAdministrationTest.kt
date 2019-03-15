@@ -1,5 +1,6 @@
 package org.ostelco.simcards.admin
 
+import com.codahale.metrics.health.HealthCheck
 import io.dropwizard.client.HttpClientBuilder
 import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.jdbi3.JdbiFactory
@@ -11,7 +12,7 @@ import org.glassfish.jersey.client.ClientProperties
 import org.jdbi.v3.core.Jdbi
 import org.junit.*
 import org.junit.Assert.assertEquals
-import org.ostelco.simcards.hss.HssProxy
+import org.ostelco.simcards.hss.*
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimProfileKeyStatistics
 import org.ostelco.simcards.smdpplus.SmDpPlusApplication
@@ -256,10 +257,22 @@ class SimAdministrationTest {
             hssId = it[0].id
         }
 
+        val adapters = mutableSetOf<HssAdapter>()
+
+        for (config in hssConfigs) {
+            adapters.add(SimpleHssAdapter(name = config.name, httpClient = httpClient, config = config))
+        }
+
+        val dispatcher = DirectHssDispatcher(adapters = adapters,
+                healthCheckRegistrar = object : HealthCheckRegistrar {
+                    override fun registerHealthCheck(name: String, healthCheck: HealthCheck) {
+                        SIM_MANAGER_RULE.environment.healthChecks().register(name, healthCheck)
+                    }
+                })
+
         val hssAdapterCache = HssProxy(
-                hssConfigs = hssConfigs,
-                simInventoryDAO = simDao,
-                httpClient = httpClient)
+                dispatcher = dispatcher ,
+                simInventoryDAO = simDao)
 
         var preStats  =
                 SimProfileKeyStatistics(

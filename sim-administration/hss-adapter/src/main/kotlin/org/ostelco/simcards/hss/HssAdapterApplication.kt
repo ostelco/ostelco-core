@@ -1,9 +1,18 @@
 package org.ostelco.simcards.hss
 
+import com.codahale.metrics.health.HealthCheck
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.dropwizard.Application
 import io.dropwizard.Configuration
+import io.dropwizard.client.HttpClientBuilder
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
+import org.ostelco.dropwizardutils.OpenapiResourceAdder
+import org.ostelco.simcards.admin.ConfigRegistry
+import org.ostelco.simcards.admin.HssConfig
+import org.ostelco.simcards.admin.ResourceRegistry
+import javax.validation.Valid
+import javax.validation.constraints.NotNull
 
 fun main(args: Array<String>) = HssAdapterApplication().run(*args)
 
@@ -41,22 +50,42 @@ class HssAdapterApplication : Application<HssAdapterApplicationConfiguration>() 
     }
 
     override fun run(configuration: HssAdapterApplicationConfiguration,
-                     environment: Environment) {
-        // nothing to do yet
+                     env: Environment) {
+
+        val httpClient = HttpClientBuilder(env)
+                .using(ConfigRegistry.config.httpClient)
+                .build("SIM inventory")
+        val jerseyEnv = env.jersey()
+
+        OpenapiResourceAdder.addOpenapiResourceToJerseyEnv(jerseyEnv, ConfigRegistry.config.openApi)
+
+        jerseyEnv.register(ResourceRegistry.simInventoryResource)
+
+
+        val adapters = mutableSetOf<HssAdapter>()
+
+        for (config in configuration.hssVendors) {
+            // Only a simple adapter added here, ut this is the extension point where we will
+            // add other, proprietary adapters eventually.
+            adapters.add(SimpleHssAdapter(name = config.name, httpClient = httpClient, config = config))
+        }
+
+        val dispatcher = DirectHssDispatcher(adapters = adapters,
+                healthCheckRegistrar = object : HealthCheckRegistrar {
+                    override fun registerHealthCheck(name: String, healthCheck: HealthCheck) {
+                        env.healthChecks().register(name, healthCheck)
+                    }
+                })
+
+        // This dispatcdher is what we will use to handle the incoming
+        // requests.  it will essentially do all the work.
     }
 }
 
 
 class HssAdapterApplicationConfiguration : Configuration() {
-    /*
-    @NotEmpty
-    @get:JsonProperty
-    @set:JsonProperty
-    var template: String? = null
-
-    @NotEmpty
-    @get:JsonProperty
-    @set:JsonProperty
-    var defaultName = "Stranger"
-    */
+    @Valid
+    @NotNull
+    @JsonProperty("hlrs")
+    lateinit var hssVendors: List<HssConfig>
 }
