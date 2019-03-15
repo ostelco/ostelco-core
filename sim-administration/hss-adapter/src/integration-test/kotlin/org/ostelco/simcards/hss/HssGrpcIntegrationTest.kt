@@ -1,5 +1,12 @@
 package org.ostelco.simcards.hss
 
+import io.dropwizard.testing.ResourceHelpers
+import io.dropwizard.testing.junit.DropwizardAppRule
+import org.junit.ClassRule
+import org.junit.Test
+import org.ostelco.simcards.admin.SimAdministrationTest
+import org.testcontainers.containers.BindMode
+
 /**
  *  This test shall set up a docker test environment running a simulated HSS (of the simple type), and
  *  a test-instance of the HssGrpcService application running under junit.  We shall then
@@ -17,7 +24,8 @@ class SimAdministrationTest {
 
         @JvmField
         @ClassRule
-        val HLR_RULE: KFixedHostPortGenericContainer = KFixedHostPortGenericContainer("python:3-alpine")
+        val HLR_RULE: SimAdministrationTest.KFixedHostPortGenericContainer =
+                SimAdministrationTest.KFixedHostPortGenericContainer("python:3-alpine")
                 .withFixedExposedPort(HLR_PORT, 8080)
                 .withExposedPorts(8080)
                 .withClasspathResourceMapping("hlr.py", "/service.py",

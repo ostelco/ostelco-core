@@ -81,6 +81,7 @@ idea {
     module {
         sourceDirs += files("${protobuf.generatedFilesBaseDir}/main/java")
         sourceDirs += files("${protobuf.generatedFilesBaseDir}/main/grpc")
+        testSourceDirs += file('src/integration-test/kotlin')
     }
 }
 
