@@ -32,12 +32,15 @@ dependencies {
     implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
     implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
     implementation "io.dropwizard:dropwizard-jdbi3:$dropwizardVersion"
+    implementation "io.dropwizard.metrics:metrics-core:$metricsVersion"
     implementation "com.google.guava:guava:$guavaVersion"
 
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
 
     testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
     testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.1.0"
+
+
 }
 
 

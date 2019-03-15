@@ -7,10 +7,8 @@ import io.dropwizard.Configuration
 import io.dropwizard.client.HttpClientBuilder
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
-import org.ostelco.dropwizardutils.OpenapiResourceAdder
 import org.ostelco.simcards.admin.ConfigRegistry
 import org.ostelco.simcards.admin.HssConfig
-import org.ostelco.simcards.admin.ResourceRegistry
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
 
@@ -79,12 +77,19 @@ class HssAdapterApplication : Application<HssAdapterApplicationConfiguration>() 
                     }
                 })
 
+
+
+
+
+
+
         // This dispatcher  is what we will use to handle the incoming
         // requests.  it will essentially do all the work.
         // When it has been proven to work, we will make it something that can
         // be built in a separate reposítory, preferably using a library mechanism.
     }
 }
+
 
 
 class HssAdapterApplicationConfiguration : Configuration() {
