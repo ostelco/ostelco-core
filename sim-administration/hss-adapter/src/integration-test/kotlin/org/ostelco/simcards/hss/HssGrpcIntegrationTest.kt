@@ -29,19 +29,21 @@ class SimAdministrationTest {
         @ClassRule
         val HLR_RULE: KFixedHostPortGenericContainer =
                 KFixedHostPortGenericContainer("python:3-alpine")
-                .withFixedExposedPort(HLR_PORT, 8080)
-                .withExposedPorts(8080)
-                .withClasspathResourceMapping(
-                        "hlr.py",
-                        "/service.py",
-                        BindMode.READ_ONLY)
-                .withCommand("python", "/service.py")
+                        .withFixedExposedPort(HLR_PORT, 8080)
+                        .withExposedPorts(8080)
+                        .withClasspathResourceMapping(
+                                "hlr.py",
+                                "/service.py",
+                                BindMode.READ_ONLY)
+                        .withCommand("python", "/service.py")
 
 
         @JvmField
         @ClassRule
-        val SM_DP_PLUS_RULE = DropwizardAppRule(HssAdapterApplication::class.java,
-                ResourceHelpers.resourceFilePath("hss-adapter-config.yaml"))
+        val HSS_ADAPTER_RULE = DropwizardAppRule(HssAdapterApplication::class.java,
+                // "integration-test/resources/hss-adapter-config.yaml"
+                ResourceHelpers.resourceFilePath("hss-adapter-config.yaml")
+        )
     }
 
 
