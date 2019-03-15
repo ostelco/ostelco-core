@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package org.ostelco.simcards.hss.adapter.api;
+package org.ostelco.simcards.hss.profilevendors.api;
 
 option java_multiple_files = true;
 option java_package = "org.ostelco.simcards.hss.profilevendors.api";
@@ -23,6 +23,6 @@ message SuspensionRequest {
 }
 
 message HssServiceResponse {
-    bool success = 1
+    bool success = 1;
     string reply = 2;
 }
