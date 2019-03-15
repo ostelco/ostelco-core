@@ -41,6 +41,9 @@ dependencies {
     testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.1.0"
 
 
+    // XXX IF this works, then it's too general. We're not using the
+    //     postgres, but we are use some of the dependencies.
+    testImplementation "org.testcontainers:postgresql:1.10.5"
 }
 
 

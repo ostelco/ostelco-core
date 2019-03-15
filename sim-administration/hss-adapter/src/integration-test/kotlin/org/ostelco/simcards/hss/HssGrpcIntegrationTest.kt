@@ -2,10 +2,11 @@ package org.ostelco.simcards.hss
 
 import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
+import junit.framework.Assert.fail
 import org.junit.ClassRule
 import org.junit.Test
-import org.ostelco.simcards.admin.SimAdministrationTest
 import org.testcontainers.containers.BindMode
+import org.testcontainers.containers.FixedHostPortGenericContainer
 
 /**
  *  This test shall set up a docker test environment running a simulated HSS (of the simple type), and
@@ -13,9 +14,11 @@ import org.testcontainers.containers.BindMode
  *  use the GRPC client to connect to the HssGrpcServce and observe that it correctly
  *  translates the grpc requests into valid requests that are sent to the simulated HSS server.
  **/
-
-
 class SimAdministrationTest {
+
+
+    class KFixedHostPortGenericContainer(imageName: String) :
+            FixedHostPortGenericContainer<KFixedHostPortGenericContainer>(imageName)
 
     companion object {
 
@@ -24,11 +27,13 @@ class SimAdministrationTest {
 
         @JvmField
         @ClassRule
-        val HLR_RULE: SimAdministrationTest.KFixedHostPortGenericContainer =
-                SimAdministrationTest.KFixedHostPortGenericContainer("python:3-alpine")
+        val HLR_RULE: KFixedHostPortGenericContainer =
+                KFixedHostPortGenericContainer("python:3-alpine")
                 .withFixedExposedPort(HLR_PORT, 8080)
                 .withExposedPorts(8080)
-                .withClasspathResourceMapping("hlr.py", "/service.py",
+                .withClasspathResourceMapping(
+                        "hlr.py",
+                        "/service.py",
                         BindMode.READ_ONLY)
                 .withCommand("python", "/service.py")
 
@@ -44,5 +49,6 @@ class SimAdministrationTest {
     fun testRoundtrip() {
         // Just passing this test will be a victory, since it means that the
         // fixtures are starting without protest.
+        fail("This is not happening")
     }
 }
