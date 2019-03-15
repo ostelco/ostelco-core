@@ -23,6 +23,6 @@ message SuspensionRequest {
 }
 
 message HssServiceResponse {
-    bool success = 1
+    bool success = 1;
     string reply = 2;
 }
