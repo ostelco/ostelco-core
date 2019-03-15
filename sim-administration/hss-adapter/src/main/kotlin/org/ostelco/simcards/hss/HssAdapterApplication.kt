@@ -5,9 +5,13 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.dropwizard.Application
 import io.dropwizard.Configuration
 import io.dropwizard.client.HttpClientBuilder
+import io.dropwizard.lifecycle.Managed
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
+import io.grpc.Server
+import io.grpc.ServerBuilder
 import io.grpc.stub.StreamObserver
+import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.simcards.admin.ConfigRegistry
 import org.ostelco.simcards.admin.HssConfig
 import org.ostelco.simcards.admin.mapRight
@@ -17,10 +21,6 @@ import org.ostelco.simcards.hss.profilevendors.api.HssServiceResponse
 import org.ostelco.simcards.hss.profilevendors.api.SuspensionRequest
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
-import io.grpc.ServerBuilder
-import io.dropwizard.lifecycle.Managed
-import io.grpc.Server
-import org.apache.http.impl.client.CloseableHttpClient
 
 
 fun main(args: Array<String>) = HssAdapterApplication().run(*args)
@@ -156,9 +156,14 @@ class ManagedHssService(
 }
 
 
-class HssServiceImpl(val hssDispatcher: HssDispatcher) : HssServiceImplBase() {
+class HssServiceImpl(private val hssDispatcher: HssDispatcher) : HssServiceImplBase() {
+
 
     override fun activate(request: ActivationRequest?, responseObserver: StreamObserver<HssServiceResponse>?) {
+
+        if (request == null) return
+        if (responseObserver == null) return
+
         hssDispatcher.activate(hssName = request.hss, iccid = request.iccid, msisdn = request.msisdn)
                 .mapRight { responseObserver.onNext(HssServiceResponse.newBuilder().setSuccess(true).build()) }
                 .mapLeft { responseObserver.onNext(HssServiceResponse.newBuilder().setSuccess(false).build()) }
@@ -166,6 +171,9 @@ class HssServiceImpl(val hssDispatcher: HssDispatcher) : HssServiceImplBase() {
     }
 
     override fun suspend(request: SuspensionRequest?, responseObserver: StreamObserver<HssServiceResponse>?) {
+        if (request == null) return
+        if (responseObserver == null) return
+
         hssDispatcher.suspend(hssName = request.hss, iccid = request.iccid)
                 .mapRight { responseObserver.onNext(HssServiceResponse.newBuilder().setSuccess(true).build()) }
                 .mapLeft { responseObserver.onNext(HssServiceResponse.newBuilder().setSuccess(false).build()) }
