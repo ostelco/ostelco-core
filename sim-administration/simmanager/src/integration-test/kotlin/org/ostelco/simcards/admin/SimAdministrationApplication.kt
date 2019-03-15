@@ -14,6 +14,8 @@ import org.ostelco.sim.es2plus.SmDpPlusCallbackResource
 import org.ostelco.simcards.hss.*
 import org.ostelco.simcards.inventory.*
 
+
+
 /**
  * The SIM manager
  * is an application that inputs inhales SIM batches
@@ -54,6 +56,7 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
 
         val profileVendorCallbackHandler = SimInventoryCallbackService(DAO)
 
+
         val httpClient = HttpClientBuilder(env)
                 .using(config.httpClient)
                 .build(name)
@@ -65,7 +68,7 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
         val simInventoryApi = SimInventoryApi(httpClient, config, DAO)
         ResourceRegistry.simInventoryResource = SimInventoryResource(simInventoryApi)
 
-        // Add resoures that should be run from the outside via REST.
+        // Add resources that should be run from the outside via REST.
         jerseyEnv.register(ResourceRegistry.simInventoryResource)
         jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
 
