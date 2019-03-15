@@ -1,4 +1,4 @@
-package org.ostelco.simcards.adapter
+package org.ostelco.simcards.profilevendors
 
 import arrow.core.Either
 import arrow.core.flatMap
@@ -23,7 +23,7 @@ import java.util.*
 import javax.ws.rs.core.MediaType
 
 /**
- * An adapter that can connect to SIM profile vendors and activate
+ * An profilevendors that can connect to SIM profile vendors and activate
  * the requested SIM profile.
  *
  * Will connect to the SM-DP+  and then activate the profile, so that when

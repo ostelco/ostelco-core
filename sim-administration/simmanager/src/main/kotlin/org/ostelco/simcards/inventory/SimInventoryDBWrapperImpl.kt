@@ -6,7 +6,7 @@ import arrow.core.right
 import org.jdbi.v3.core.JdbiException
 import org.jdbi.v3.sqlobject.transaction.Transaction
 import org.ostelco.prime.simmanager.*
-import org.ostelco.simcards.adapter.ProfileVendorAdapter
+import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
 import org.ostelco.simcards.hss.HssEntry
 import org.postgresql.util.PSQLException
 
@@ -67,7 +67,7 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
 
     @Transaction
     override fun setHssState(id: Long, state: HssState): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("Found no HLR adapter with id ${id} update of HLR state failed")) {
+            either(NotFoundError("Found no HLR profilevendors with id ${id} update of HLR state failed")) {
                 if (db.updateHlrState(id, state) > 0)
                     db.getSimProfileById(id)
                 else

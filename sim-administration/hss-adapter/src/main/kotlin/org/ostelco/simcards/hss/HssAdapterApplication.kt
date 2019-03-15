@@ -29,7 +29,7 @@ fun main(args: Array<String>) = HssAdapterApplication().run(*args)
  * Our strategy is to make a service, implemented by the HssAdapterApplication, that
  * will be available as an external executable, via rest  (or possibly gRPC,  not decided
  * at the time this documentation is  being written).  The "simmanager" module of the open
- * source Prime component will then connect to the hss adapter and make requests for
+ * source Prime component will then connect to the hss profilevendors and make requests for
  * activation/suspension/deletion.
  *
  * This component is written in the open source project, and it contains a non-proprietary
@@ -42,7 +42,7 @@ fun main(args: Array<String>) = HssAdapterApplication().run(*args)
 class HssAdapterApplication : Application<HssAdapterApplicationConfiguration>() {
 
     override fun getName(): String {
-        return "hss-adapter"
+        return "hss-profilevendors"
     }
 
     override fun initialize(bootstrap: Bootstrap<HssAdapterApplicationConfiguration>?) {
@@ -65,7 +65,7 @@ class HssAdapterApplication : Application<HssAdapterApplicationConfiguration>() 
         val adapters = mutableSetOf<HssAdapter>()
 
         for (config in configuration.hssVendors) {
-            // Only a simple adapter added here, ut this is the extension point where we will
+            // Only a simple profilevendors added here, ut this is the extension point where we will
             // add other, proprietary adapters eventually.
             adapters.add(SimpleHssAdapter(name = config.name, httpClient = httpClient, config = config))
         }

@@ -10,7 +10,7 @@ import org.apache.http.impl.client.CloseableHttpClient
 import org.junit.*
 import org.mockito.Mockito.*
 import org.ostelco.prime.simmanager.NotFoundError
-import org.ostelco.simcards.adapter.ProfileVendorAdapter
+import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
 import org.ostelco.simcards.admin.HssConfig
 import org.ostelco.simcards.admin.ProfileVendorConfig
 import org.ostelco.simcards.admin.SimAdministrationConfiguration
@@ -103,14 +103,14 @@ class SimInventoryUnitTests {
         org.mockito.Mockito.`when`(config.getProfileForPhoneType(fakePhoneType))
                 .thenReturn(fakeProfile)
 
-        /* HLR adapter. */
+        /* HLR profilevendors. */
         org.mockito.Mockito.`when`(hssEntry.id)
                 .thenReturn(1L)
         org.mockito.Mockito.`when`(hssEntry.name)
                 .thenReturn(fakeHlr)
 
 
-        /* Profile vendor adapter. */
+        /* Profile vendor profilevendors. */
         org.mockito.Mockito.`when`(profileVendorAdapter.id)
                 .thenReturn(1L)
         org.mockito.Mockito.`when`(profileVendorAdapter.name)

@@ -29,7 +29,7 @@ class DirectHssDispatcher(
         for (adapter in adapters) {
 
             healthCheckRegistrar?.registerHealthCheck(
-                    "HSS adapter for Hss named '${adapter.name()}'",
+                    "HSS profilevendors for Hss named '${adapter.name()}'",
                     HssAdapterHealthcheck(adapter.name(), adapter))
 
             hssAdaptersByName[adapter.name()] = adapter
@@ -46,7 +46,7 @@ class DirectHssDispatcher(
 
     private fun getHssAdapterByName(name: String): HssAdapter {
         if (!hssAdaptersByName.containsKey(name)) {
-            throw RuntimeException("Unknown hss adapter name ? '$name'")
+            throw RuntimeException("Unknown hss profilevendors name ? '$name'")
         }
         return hssAdaptersByName[name]!!
     }

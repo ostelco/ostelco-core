@@ -11,7 +11,7 @@ import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.simmanager.NotFoundError
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.sim.es2plus.ProfileStatus
-import org.ostelco.simcards.adapter.ProfileVendorAdapter
+import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
 import org.ostelco.simcards.admin.ProfileVendorConfig
 import org.ostelco.simcards.admin.SimAdministrationConfiguration
 import java.io.InputStream

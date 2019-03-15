@@ -18,16 +18,16 @@ import javax.ws.rs.core.MediaType
 
 
 // TODO:
-//  1. Create a simplified HLR adapter interface [done]
-//  2. Extend simplified HLR adapter to have return types that can convey error situations. [done(ish)]
-//  3. Extend simplified HLR adapter to have a liveness/health test. [done]
-//  4. Refactor all other code to live with this  simplified type of hlr adapter. [done]
+//  1. Create a simplified HLR profilevendors interface [done]
+//  2. Extend simplified HLR profilevendors to have return types that can convey error situations. [done(ish)]
+//  3. Extend simplified HLR profilevendors to have a liveness/health test. [done]
+//  4. Refactor all other code to live with this  simplified type of hlr profilevendors. [done]
 //  5. Make separate service that can be called from prime
 
 
 
 /**
- * An adapter that connects to a HLR and activates/deactivates individual
+ * An profilevendors that connects to a HLR and activates/deactivates individual
  * SIM profiles.  This is a datum that is stored in a database.
  *
  * When a VLR asks the HLR for the an authentication triplet, then the
