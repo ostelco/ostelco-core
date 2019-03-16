@@ -14,7 +14,7 @@ import org.testcontainers.containers.FixedHostPortGenericContainer
  *  use the GRPC client to connect to the HssGrpcServce and observe that it correctly
  *  translates the grpc requests into valid requests that are sent to the simulated HSS server.
  **/
-class SimAdministrationTest {
+class HssAdapterIntegrartionTest {
 
 
     class KFixedHostPortGenericContainer(imageName: String) :
