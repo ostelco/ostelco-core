@@ -2,7 +2,6 @@ package org.ostelco.simcards.hss
 
 import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
-import junit.framework.Assert.fail
 import org.junit.ClassRule
 import org.junit.Test
 import org.testcontainers.containers.BindMode
@@ -46,11 +45,10 @@ class HssAdapterIntegrartionTest {
         )
     }
 
-
     @Test
     fun testRoundtrip() {
         // Just passing this test will be a victory, since it means that the
         // fixtures are starting without protest.
-        fail("This is not happening")
+       //  fail("This is not happening")
     }
 }

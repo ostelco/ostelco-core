@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import io.dropwizard.Application
 import io.dropwizard.Configuration
 import io.dropwizard.client.HttpClientBuilder
+import io.dropwizard.client.HttpClientConfiguration
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
-import org.ostelco.simcards.admin.ConfigRegistry
 import org.ostelco.simcards.admin.HssConfig
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
@@ -51,7 +51,7 @@ class HssAdapterApplication : Application<HssAdapterApplicationConfiguration>() 
                      env: Environment) {
 
         val httpClient = HttpClientBuilder(env)
-                .using(ConfigRegistry.config.httpClient)
+                .using(configuration.httpClient)
                 .build("${getName()} http client")
         val jerseyEnv = env.jersey()
 
@@ -79,10 +79,15 @@ class HssAdapterApplication : Application<HssAdapterApplicationConfiguration>() 
 }
 
 
-
 class HssAdapterApplicationConfiguration : Configuration() {
     @Valid
     @NotNull
     @JsonProperty("hlrs")
     lateinit var hssVendors: List<HssConfig>
+
+    @Valid
+    @NotNull
+    @JsonProperty("httpClient")
+    val httpClient = HttpClientConfiguration()
+
 }
