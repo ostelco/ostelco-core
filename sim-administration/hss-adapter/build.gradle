@@ -46,6 +46,13 @@ dependencies {
     testImplementation "org.testcontainers:postgresql:1.10.5"
 }
 
+configurations {
+    integration
+    integrationImplementation.extendsFrom implementation
+    integrationImplementation.extendsFrom runtime
+    integrationImplementation.extendsFrom runtimeOnly
+    integrationImplementation.extendsFrom testImplementation
+}
 
 shadowJar {
     mainClassName = 'org.ostelco.simcards.hss.HssAdapterApplicationKt'
@@ -78,7 +85,7 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
 }
 
 sourceSets {
-    integrationTest {
+    integration {
         kotlin {
             compileClasspath += main.output + test.output
             runtimeClasspath += main.output + test.output
@@ -103,8 +110,8 @@ idea {
 
 
 task integration(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
-    testClassesDirs = sourceSets.integrationTest.output.classesDirs
-    classpath = sourceSets.integrationTest.runtimeClasspath
+    testClassesDirs = sourceSets.integration.output.classesDirs
+    classpath = sourceSets.integration.runtimeClasspath
 }
 
 build.dependsOn integration
