@@ -8,7 +8,6 @@ import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Test
 import org.ostelco.prime.simmanager.SimManagerError
-import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.FixedHostPortGenericContainer
 
 /**
@@ -17,35 +16,22 @@ import org.testcontainers.containers.FixedHostPortGenericContainer
  *  use the GRPC client to connect to the HssGrpcServce and observe that it correctly
  *  translates the grpc requests into valid requests that are sent to the simulated HSS server.
  **/
-class HssAdapterIntegrartionTest {
+class HssAdapterIntegrationTest {
 
 
     class KFixedHostPortGenericContainer(imageName: String) :
             FixedHostPortGenericContainer<KFixedHostPortGenericContainer>(imageName)
 
-
     companion object {
-
-        /* Port number exposed to host by the emulated HLR service. */
-        private var HLR_PORT = (20_000..29_999).random()
-
         @JvmField
         @ClassRule
-        val HLR_RULE: KFixedHostPortGenericContainer =
-                KFixedHostPortGenericContainer("python:3-alpine")
-                        .withFixedExposedPort(HLR_PORT, 8080)
-                        .withExposedPorts(8080)
-                        .withClasspathResourceMapping(
-                                "hlr.py",
-                                "/service.py",
-                                BindMode.READ_ONLY)
-                        .withCommand("python", "/service.py")
+        val HSS_RULE = DropwizardAppRule(MockHssServer::class.java,
+                ResourceHelpers.resourceFilePath("mock-hss-server-config.yaml"))
 
 
         @JvmField
         @ClassRule
         val HSS_ADAPTER_RULE = DropwizardAppRule(HssAdapterApplication::class.java,
-                // "integration-test/resources/hss-adapter-config.yaml"
                 ResourceHelpers.resourceFilePath("hss-adapter-config.yaml")
         )
     }
@@ -55,10 +41,12 @@ class HssAdapterIntegrartionTest {
     var ICCID  = "89310410106543789301"
 
     lateinit var hssAdapter: HssAdapterApplication
+    lateinit var hssApplication: MockHssServer
 
     @Before
     fun setUp() {
         hssAdapter = HSS_ADAPTER_RULE.getApplication()
+        hssApplication = HSS_RULE.getApplication()
     }
 
     @Test

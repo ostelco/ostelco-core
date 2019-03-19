@@ -99,5 +99,4 @@ class HssAdapterApplicationConfiguration : Configuration() {
     @NotNull
     @JsonProperty("httpClient")
     val httpClient = HttpClientConfiguration()
-
 }
