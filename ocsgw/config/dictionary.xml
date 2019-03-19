@@ -7640,6 +7640,20 @@
     <type type-name="Unsigned32" />
   </avpdefn>
 
+  <avpdefn name="Dynamic-Address-Flag" code="2051" vendor-id="TGPP" mandatory="must" protected="may" may-encrypt="no" vendor-bit="must" >
+    <type type-name="Enumerated">
+      <enum code="0" name="STATIC" />
+      <enum code="1" name="DYNAMIC" />
+    </type>
+  </avpdefn>
+
+  <avpdefn name="IMSI-Unauthenticated-Flag" code="2308" vendor-id="TGPP" mandatory="must" protected="may" may-encrypt="no" vendor-bit="must" >
+    <type type-name="Enumerated">
+      <enum code="0" name="AUTHENTICATED" />
+      <enum code="1" name="UNAUTHENTICATED" />
+    </type>
+  </avpdefn>
+
   <avpdefn name="GUSS-Timestamp" code="409" vendor-id="TGPP" mandatory="must" protected="may" may-encrypt="no" vendor-bit="must" >
     <type type-name="Time" />
   </avpdefn>
