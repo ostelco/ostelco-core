@@ -43,18 +43,15 @@ class ManagedHssService(
         private val httpClient: CloseableHttpClient,
         private val port: Int) : Managed {
 
-    val managedService: ManagedGrpcService
+    private val managedGrpcService: ManagedGrpcService
+    val dispatcher: HssDispatcher
 
     init {
         val adapters = mutableSetOf<HssAdapter>()
 
-        for (config in configuration) {
-            // Only a simple profilevendors added here, ut this is the extension point where we will
-            // add other, proprietary adapters eventually.
-            adapters.add(SimpleHssAdapter(name = config.name, httpClient = httpClient, config = config))
-        }
-
-        val dispatcher = DirectHssDispatcher(adapters = adapters,
+        this.dispatcher = DirectHssDispatcher(
+                hssConfigs = configuration,
+                httpClient = httpClient,
                 healthCheckRegistrar = object : HealthCheckRegistrar {
                     override fun registerHealthCheck(name: String, healthCheck: HealthCheck) {
                         env.healthChecks().register(name, healthCheck)
@@ -63,18 +60,17 @@ class ManagedHssService(
 
         val hssService = HssServiceImpl(dispatcher)
 
-        this.managedService = ManagedGrpcService(port = port, service = hssService)
-
+        this.managedGrpcService = ManagedGrpcService(port = port, service = hssService)
     }
 
     @Throws(Exception::class)
     override fun start() {
-        managedService.start()
+        managedGrpcService.start()
     }
 
     @Throws(Exception::class)
     override fun stop() {
-        managedService.stop()
+        managedGrpcService.stop()
     }
 }
 

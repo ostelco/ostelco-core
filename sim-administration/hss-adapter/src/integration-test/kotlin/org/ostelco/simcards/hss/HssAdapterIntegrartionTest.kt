@@ -1,9 +1,13 @@
 package org.ostelco.simcards.hss
 
+import arrow.core.Either
 import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
+import junit.framework.Assert.assertTrue
+import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Test
+import org.ostelco.prime.simmanager.SimManagerError
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.FixedHostPortGenericContainer
 
@@ -18,6 +22,7 @@ class HssAdapterIntegrartionTest {
 
     class KFixedHostPortGenericContainer(imageName: String) :
             FixedHostPortGenericContainer<KFixedHostPortGenericContainer>(imageName)
+
 
     companion object {
 
@@ -45,10 +50,21 @@ class HssAdapterIntegrartionTest {
         )
     }
 
+    var HSS_NAME = "Foo"
+    var MSISDN = "4712345678"
+    var ICCID  = "89310410106543789301"
+
+    lateinit var hssAdapter: HssAdapterApplication
+
+    @Before
+    fun setUp() {
+        hssAdapter = HSS_ADAPTER_RULE.getApplication()
+    }
+
     @Test
-    fun testRoundtrip() {
-        // Just passing this test will be a victory, since it means that the
-        // fixtures are starting without protest.
-       //  fail("This is not happening")
+    fun testTalkingToTheTestHssWithoutUsingGrpc() {
+        val result : Either<SimManagerError, Unit> =
+                hssAdapter.dispatcher.activate(HSS_NAME, MSISDN, ICCID)
+        assertTrue(result.isRight())
     }
 }
