@@ -3,6 +3,7 @@ package org.ostelco.simcards.hss
 import arrow.core.Either
 import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
+import junit.framework.Assert.assertFalse
 import junit.framework.Assert.assertTrue
 import org.junit.Before
 import org.junit.ClassRule
@@ -47,12 +48,15 @@ class HssAdapterIntegrationTest {
     fun setUp() {
         hssAdapter = HSS_ADAPTER_RULE.getApplication()
         hssApplication = HSS_RULE.getApplication()
+        hssApplication.reset()
     }
 
     @Test
     fun testTalkingToTheTestHssWithoutUsingGrpc() {
+        assertFalse(hssApplication.isActivated(ICCID))
         val result : Either<SimManagerError, Unit> =
                 hssAdapter.dispatcher.activate(HSS_NAME, MSISDN, ICCID)
         assertTrue(result.isRight())
+        assertTrue(hssApplication.isActivated(ICCID))
     }
 }
