@@ -80,9 +80,11 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
             final Path destServiceAccountFilePath = Paths.get(configDir + "/" + serviceFile);
             blobServiceAccountFile.downloadTo(destServiceAccountFilePath);
 
-            Blob blobOldServiceAccountFile = storage.get(BlobId.of(bucket, oldServiceFile));
-            final Path destOldServiceAccountFilePath = Paths.get(configDir + "/" + oldServiceFile);
-            blobOldServiceAccountFile.downloadTo(destOldServiceAccountFilePath);
+            if (oldServiceFile != null) {
+                Blob blobOldServiceAccountFile = storage.get(BlobId.of(bucket, oldServiceFile));
+                final Path destOldServiceAccountFilePath = Paths.get(configDir + "/" + oldServiceFile);
+                blobOldServiceAccountFile.downloadTo(destOldServiceAccountFilePath);
+            }
         }
     }
 
