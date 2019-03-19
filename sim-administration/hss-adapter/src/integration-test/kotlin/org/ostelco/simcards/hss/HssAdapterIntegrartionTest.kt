@@ -26,7 +26,7 @@ class HssAdapterIntegrationTest {
     companion object {
         @JvmField
         @ClassRule
-        val HSS_RULE = DropwizardAppRule(MockHssServer::class.java,
+        val MOCK_HSS_RULE = DropwizardAppRule(MockHssServer::class.java,
                 ResourceHelpers.resourceFilePath("mock-hss-server-config.yaml"))
 
 
@@ -47,7 +47,7 @@ class HssAdapterIntegrationTest {
     @Before
     fun setUp() {
         hssAdapter = HSS_ADAPTER_RULE.getApplication()
-        hssApplication = HSS_RULE.getApplication()
+        hssApplication = MOCK_HSS_RULE.getApplication()
         hssApplication.reset()
     }
 

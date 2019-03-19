@@ -33,6 +33,7 @@ class ManagedGrpcService(private val port: Int,
 
     @Throws(Exception::class)
     override fun stop() {
+        server.shutdown()
         server.awaitTermination()
     }
 }
