@@ -38,6 +38,8 @@ class SimAdministrationModule : PrimeModule {
         ConfigRegistry.config = config
     }
 
+    fun getDAO() = DAO
+
     override fun init(env: Environment) {
         val factory = JdbiFactory()
         val jdbi = factory.build(env,
@@ -67,7 +69,9 @@ class SimAdministrationModule : PrimeModule {
             adapters.add(SimpleHssAdapter(name = config.name, httpClient = httpClient, config = config))
         }
 
-        val dispatcher = DirectHssDispatcher(adapters = adapters,
+        val dispatcher = DirectHssDispatcher(
+                hssConfigs = config.hssVendors,
+                httpClient = httpClient,
                 healthCheckRegistrar = object : HealthCheckRegistrar {
                     override fun registerHealthCheck(name: String, healthCheck: HealthCheck) {
                         env.healthChecks().register(name, healthCheck)

@@ -12,7 +12,9 @@ import org.glassfish.jersey.client.ClientProperties
 import org.jdbi.v3.core.Jdbi
 import org.junit.*
 import org.junit.Assert.assertEquals
-import org.ostelco.simcards.hss.*
+import org.ostelco.simcards.hss.DirectHssDispatcher
+import org.ostelco.simcards.hss.HealthCheckRegistrar
+import org.ostelco.simcards.hss.HssProxy
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimProfileKeyStatistics
 import org.ostelco.simcards.smdpplus.SmDpPlusApplication
@@ -136,7 +138,7 @@ class SimAdministrationTest {
     }
 
     private fun presetTables() {
-        val dao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
+        val dao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().getDAO()
 
         dao.addProfileVendorAdapter(profileVendor)
         dao.addHssEntry(hssName)
@@ -187,7 +189,7 @@ class SimAdministrationTest {
 
     @Test
     fun testGetListOfHlrs() {
-        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
+        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().getDAO()
 
         val hssEntries = simDao.getHssEntries()
         hssEntries.mapRight {  assertEquals(1, it.size) }
@@ -199,7 +201,7 @@ class SimAdministrationTest {
     @Test
     fun testGetProfilesForHlr() {
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
-                .DAO
+                .getDAO()
         val hlrs = simDao.getHssEntries()
         assertThat(hlrs.isRight()).isTrue()
 
@@ -219,7 +221,7 @@ class SimAdministrationTest {
     @Test
     fun  testGetProfileStats() {
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
-                .DAO
+                .getDAO()
         val hlrs = simDao.getHssEntries()
         assertThat(hlrs.isRight()).isTrue()
 
@@ -241,7 +243,7 @@ class SimAdministrationTest {
     fun testPeriodicProvisioningTask() {
 
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
-                .DAO
+                .getDAO()
 
         val profileVendors = SIM_MANAGER_RULE.configuration.profileVendors
         val hssConfigs = SIM_MANAGER_RULE.configuration.hssVendors
@@ -257,13 +259,9 @@ class SimAdministrationTest {
             hssId = it[0].id
         }
 
-        val adapters = mutableSetOf<HssAdapter>()
-
-        for (config in hssConfigs) {
-            adapters.add(SimpleHssAdapter(name = config.name, httpClient = httpClient, config = config))
-        }
-
-        val dispatcher = DirectHssDispatcher(adapters = adapters,
+        val dispatcher = DirectHssDispatcher(
+                hssConfigs = hssConfigs,
+                httpClient = httpClient,
                 healthCheckRegistrar = object : HealthCheckRegistrar {
                     override fun registerHealthCheck(name: String, healthCheck: HealthCheck) {
                         SIM_MANAGER_RULE.environment.healthChecks().register(name, healthCheck)

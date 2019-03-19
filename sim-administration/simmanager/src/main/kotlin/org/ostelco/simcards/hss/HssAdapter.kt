@@ -4,7 +4,9 @@ import arrow.core.Either
 import arrow.core.flatMap
 import arrow.core.right
 import com.codahale.metrics.health.HealthCheck
+import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.simmanager.SimManagerError
+import org.ostelco.simcards.admin.HssConfig
 import org.ostelco.simcards.admin.mapRight
 import org.ostelco.simcards.inventory.HssState
 import org.ostelco.simcards.inventory.SimEntry
@@ -19,18 +21,30 @@ interface HssDispatcher {
 }
 
 class DirectHssDispatcher(
-        val adapters: Set<HssAdapter>,
+        val hssConfigs: List<HssConfig>,
+        val httpClient : CloseableHttpClient,
         val healthCheckRegistrar: HealthCheckRegistrar? = null) : HssDispatcher {
+
+    val adapters = mutableSetOf<HssAdapter>()
 
     private val hssAdaptersByName = mutableMapOf<String, HssAdapter>()
     private val healthchecks = mutableSetOf<HssAdapterHealthcheck>()
 
     init {
+
+        for (config in hssConfigs) {
+            adapters.add(SimpleHssAdapter(name = config.name, httpClient = httpClient, config = config))
+        }
+
+
         for (adapter in adapters) {
+
+            val healthCheck = HssAdapterHealthcheck(adapter.name(), adapter)
+            healthchecks.add(healthCheck)
 
             healthCheckRegistrar?.registerHealthCheck(
                     "HSS profilevendors for Hss named '${adapter.name()}'",
-                    HssAdapterHealthcheck(adapter.name(), adapter))
+                    healthCheck)
 
             hssAdaptersByName[adapter.name()] = adapter
         }
