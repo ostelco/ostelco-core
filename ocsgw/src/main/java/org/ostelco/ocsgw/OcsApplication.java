@@ -64,6 +64,7 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
         final String vpcEnv = System.getenv("VPC_ENV");
         final String instance = System.getenv("INSTANCE");
         final String serviceFile = System.getenv("SERVICE_FILE");
+        final String oldServiceFile = System.getenv("OLD_SERVICE_FILE");
 
         if ((vpcEnv != null) && (instance != null) && (serviceFile != null)) {
 
@@ -78,6 +79,10 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
             Blob blobServiceAccountFile = storage.get(BlobId.of(bucket, serviceFile));
             final Path destServiceAccountFilePath = Paths.get(configDir + "/" + serviceFile);
             blobServiceAccountFile.downloadTo(destServiceAccountFilePath);
+
+            Blob blobOldServiceAccountFile = storage.get(BlobId.of(bucket, oldServiceFile));
+            final Path destOldServiceAccountFilePath = Paths.get(configDir + "/" + oldServiceFile);
+            blobOldServiceAccountFile.downloadTo(destOldServiceAccountFilePath);
         }
     }
 
