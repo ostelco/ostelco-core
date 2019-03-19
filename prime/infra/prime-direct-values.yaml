@@ -1,8 +1,8 @@
-# DEV values for prime.
+# This is a sample Prime values file to be used by developers for testing their feature branches.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-replicaCount: 2
+replicaCount: 1
   
 prime:
   image: eu.gcr.io/pi-ostelco-dev/prime
@@ -163,7 +163,7 @@ services:
     port: 80
     targetPort: 9000
     portName: grpc 
-    host: ocs.dev.oya.world
+    host: prime-direct-ocs.test.oya.world
     grpcOrHttp2: true
   api:
     name: api
@@ -171,7 +171,7 @@ services:
     port: 80
     targetPort: 9002
     portName: http
-    host: api.dev.oya.world
+    host: prime-direct-api.test.oya.world
     grpcOrHttp2: true
   metrics: 
     name: metrics
@@ -179,7 +179,7 @@ services:
     port: 80
     targetPort: 9004 
     portName: grpc
-    host: metrics.dev.oya.world
+    host: prime-direct-metrics.test.oya.world
     grpcOrHttp2: true
   prime-houston-api: 
     name: houston-api
@@ -187,14 +187,14 @@ services:
     port: 80
     targetPort: 9006  
     portName: http
-    host: houston-api.dev.oya.world
+    host: prime-direct-houston-api.test.oya.world
   prime-alvin-api: 
     name: alvin-api
     type: ClusterIP
     port: 80
     targetPort: 9008  
     portName: http
-    host: alvin-api.dev.oya.world
+    host: prime-direct-alvin-api.test.oya.world
   pseudonym-server: 
     name: pseudonym-server
     type: ClusterIP
@@ -213,9 +213,9 @@ certs:
   enabled: true
   dnsProvider: dev-clouddns
   issuer: letsencrypt-production 
-  tlsSecretName: dev-oya-tls
+  tlsSecretName: test-oya-tls
   hosts:
-    - '*.dev.oya.world'
+    - '*.test.oya.world'
 
 disruptionBudget: 
   enabled: false
