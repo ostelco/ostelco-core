@@ -3,14 +3,11 @@ package org.ostelco.simcards.hss
 import arrow.core.Either
 import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
-import io.grpc.ManagedChannelBuilder
-import junit.framework.Assert.assertFalse
-import junit.framework.Assert.assertTrue
+import junit.framework.Assert.*
 import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Test
 import org.ostelco.prime.simmanager.SimManagerError
-import org.ostelco.simcards.hss.profilevendors.api.HssServiceGrpc
 import org.testcontainers.containers.FixedHostPortGenericContainer
 
 /**
@@ -63,21 +60,11 @@ class HssAdapterIntegrationTest {
 
     @Test
     fun testActivationUsingGrpc() {
-        val channel =
-                ManagedChannelBuilder.forAddress("127.0.0.1", 9000)
-                        .usePlaintext(true)
-                        .build()
+        val adapter = HssGrpcAdapter("127.0.0.1", 9000)
+        val response = adapter.activate(hssName = HSS_NAME, iccid = ICCID, msisdn = MSISDN)
 
-        val blockingStub =
-                HssServiceGrpc.newBlockingStub(channel)
-
-        val activationRequest = org.ostelco.simcards.hss.profilevendors.api.ActivationRequest.newBuilder()
-                .setIccid(ICCID)
-                .setHss(HSS_NAME)
-                .setMsisdn(MSISDN)
-                .build()
-        val response = blockingStub.activate(activationRequest)
-        assertTrue(response.success)
+        response.mapLeft { msg -> fail("Failed to activate via grpc: $msg") }
         assertTrue(hssApplication.isActivated(ICCID))
     }
 }
+

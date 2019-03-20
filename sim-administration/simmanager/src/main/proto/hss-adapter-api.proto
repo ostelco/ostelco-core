@@ -9,6 +9,7 @@ option java_package = "org.ostelco.simcards.hss.profilevendors.api";
 service HssService {
     rpc activate (ActivationRequest) returns (HssServiceResponse);
     rpc suspend (SuspensionRequest) returns (HssServiceResponse);
+    rpc getHealthStatus (ServiceHealthQuery) returns (ServiceHealthStatus);
 }
 
 message ActivationRequest {
@@ -26,3 +27,9 @@ message HssServiceResponse {
     bool success = 1;
     string reply = 2;
 }
+
+message ServiceHealthStatus {
+    bool isHealthy = 1;
+}
+
+message ServiceHealthQuery {}

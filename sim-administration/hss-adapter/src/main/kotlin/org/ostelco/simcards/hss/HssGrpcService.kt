@@ -9,11 +9,7 @@ import io.grpc.stub.StreamObserver
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.simcards.admin.HssConfig
 import org.ostelco.simcards.admin.mapRight
-import org.ostelco.simcards.hss.profilevendors.api.ActivationRequest
-import org.ostelco.simcards.hss.profilevendors.api.HssServiceGrpc
-import org.ostelco.simcards.hss.profilevendors.api.HssServiceResponse
-import org.ostelco.simcards.hss.profilevendors.api.SuspensionRequest
-
+import org.ostelco.simcards.hss.profilevendors.api.*
 
 class ManagedGrpcService(private val port: Int,
                          private val service: io.grpc.BindableService) : Managed {
@@ -64,7 +60,6 @@ class ManagedHssService(
         this.managedGrpcService = ManagedGrpcService(port = port, service = hssService)
     }
 
-
     @Throws(Exception::class)
     override fun start() {
         managedGrpcService.start()
@@ -76,9 +71,18 @@ class ManagedHssService(
     }
 }
 
-
 class HssServiceImpl(private val hssDispatcher: HssDispatcher) : HssServiceGrpc.HssServiceImplBase() {
 
+    override fun getHealthStatus(request: ServiceHealthQuery?, responseObserver: StreamObserver<ServiceHealthStatus>?) {
+
+        if (request == null) return
+        if (responseObserver == null) return
+
+        val payload = hssDispatcher.iAmHealthy()
+        val response = ServiceHealthStatus.newBuilder().setIsHealthy(payload).build()
+        responseObserver.onNext(response)
+        responseObserver.onCompleted()
+    }
 
     override fun activate(request: ActivationRequest?, responseObserver: StreamObserver<HssServiceResponse>?) {
 

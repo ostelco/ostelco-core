@@ -1,13 +1,15 @@
 package org.ostelco.simcards.hss
 
-import arrow.core.Either
-import arrow.core.flatMap
-import arrow.core.right
+import arrow.core.*
 import com.codahale.metrics.health.HealthCheck
+import io.grpc.ManagedChannelBuilder
 import org.apache.http.impl.client.CloseableHttpClient
+import org.ostelco.prime.simmanager.AdapterError
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.admin.HssConfig
 import org.ostelco.simcards.admin.mapRight
+import org.ostelco.simcards.hss.profilevendors.api.HssServiceGrpc
+import org.ostelco.simcards.hss.profilevendors.api.ServiceHealthQuery
 import org.ostelco.simcards.inventory.HssState
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
@@ -20,9 +22,72 @@ interface HssDispatcher {
     fun suspend(hssName: String, iccid: String): Either<SimManagerError, Unit>
 }
 
+
+class HssGrpcAdapter(private val host: String, private val port: Int) : HssDispatcher {
+
+
+    private var blockingStub: HssServiceGrpc.HssServiceBlockingStub
+
+    init {
+        val channel =
+                ManagedChannelBuilder.forAddress(host, port)
+                        .usePlaintext(true)
+                        .build()
+
+        this.blockingStub =
+                HssServiceGrpc.newBlockingStub(channel)
+    }
+
+    fun activateViaGrpc(hssName: String, iccid: String, msisdn: String): Boolean {
+        val activationRequest =
+                    org.ostelco.simcards.hss.profilevendors.api.ActivationRequest.newBuilder()
+                .setIccid(iccid)
+                .setHss(hssName)
+                .setMsisdn(msisdn)
+                .build()
+        val response = blockingStub.activate(activationRequest)
+        return response.success
+    }
+
+
+    fun suspendViaGrpc(hssName: String, iccid: String): Boolean {
+        val suspensionRequest = org.ostelco.simcards.hss.profilevendors.api.SuspensionRequest.newBuilder()
+                .setIccid(iccid)
+                .setHss(hssName)
+                .build()
+        val response = blockingStub.suspend(suspensionRequest)
+        return response.success
+    }
+
+    override fun iAmHealthy(): Boolean {
+        val request = ServiceHealthQuery.newBuilder().build()
+        val response = blockingStub.getHealthStatus(request)
+        return  response.isHealthy
+    }
+
+
+    override fun activate(hssName: String, msisdn: String, iccid: String): Either<SimManagerError, Unit> {
+        if (activateViaGrpc(hssName = hssName, msisdn = msisdn, iccid = iccid)) {
+            return Right(Unit)
+        } else {
+            return Left(AdapterError("Could not activate via grpc (host=$host, port =$port) for hss = $hssName, msisdn=$msisdn, iccid=$iccid"))
+        }
+
+    }
+
+    override fun suspend(hssName: String, iccid: String): Either<SimManagerError, Unit> {
+        if (suspendViaGrpc(hssName = hssName,  iccid = iccid)) {
+            return Right(Unit)
+        } else {
+            return Left(AdapterError("Could not activate via grpc (host=$host, port =$port) for hss = $hssName, iccid=$iccid"))
+        }
+    }
+}
+
+
 class DirectHssDispatcher(
         val hssConfigs: List<HssConfig>,
-        val httpClient : CloseableHttpClient,
+        val httpClient: CloseableHttpClient,
         val healthCheckRegistrar: HealthCheckRegistrar? = null) : HssDispatcher {
 
     val adapters = mutableSetOf<HssAdapter>()
