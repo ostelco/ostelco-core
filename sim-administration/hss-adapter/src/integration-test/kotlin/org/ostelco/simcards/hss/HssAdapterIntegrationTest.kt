@@ -80,6 +80,8 @@ class HssAdapterIntegrationTest {
 
     @Test
     fun testPositiveHealthcheck() {
+        assertFalse(adapter.iAmHealthy())
+        HSS_ADAPTER_RULE.environment.healthChecks().runHealthChecks()
         assertTrue(adapter.iAmHealthy())
     }
 }
