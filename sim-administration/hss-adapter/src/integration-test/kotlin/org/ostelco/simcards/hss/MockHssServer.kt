@@ -7,10 +7,7 @@ import io.dropwizard.Application
 import io.dropwizard.Configuration
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
-import javax.ws.rs.DELETE
-import javax.ws.rs.POST
-import javax.ws.rs.Path
-import javax.ws.rs.Produces
+import javax.ws.rs.*
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
@@ -77,9 +74,9 @@ class MockHssResource() {
 
     @DELETE
     @Timed
-    @Path("/deactivate")
-    fun deactivate(sub: Subscription) : Response {
-        activated.remove(sub.iccid)
+    @Path("/deactivate/{iccid}")
+    fun deactivate(@PathParam("iccid") iccid:String ) : Response {
+        activated.remove(iccid)
         return Response.status(Response.Status.OK)
                 .type(MediaType.APPLICATION_JSON)
                 .build()
