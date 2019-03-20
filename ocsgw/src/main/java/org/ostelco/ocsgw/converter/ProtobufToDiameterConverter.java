@@ -26,6 +26,8 @@ public class ProtobufToDiameterConverter {
                 (int) msccGRPC.getServiceIdentifier(),
                 Collections.singletonList(new ServiceUnit()), new ServiceUnit(), new ServiceUnit(msccGRPC.getGranted().getTotalOctets(), 0, 0),
                 msccGRPC.getValidityTime(),
+                msccGRPC.getQuotaHoldingTime(),
+                msccGRPC.getVolumeQuotaThreshold(),
                 convertFinalUnitIndication(msccGRPC.getFinalUnitIndication()),
                 convertResultCode(msccGRPC.getResultCode()));
     }
