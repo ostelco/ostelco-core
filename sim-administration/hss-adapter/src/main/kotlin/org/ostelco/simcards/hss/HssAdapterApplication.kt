@@ -1,6 +1,5 @@
 package org.ostelco.simcards.hss
 
-import com.codahale.metrics.health.HealthCheck
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.dropwizard.Application
 import io.dropwizard.Configuration
@@ -58,33 +57,15 @@ class HssAdapterApplication : Application<HssAdapterApplicationConfiguration>() 
                 .build("${getName()} http client")
         val jerseyEnv = env.jersey()
 
-
-        /**
-         * TODO: Add a couple of resources that tells the story about the
-         *    adapters that are serving here, and which requests they are
-         *    getting.
-         */
         val myHssService = ManagedHssService(
                 port = 9000,
                 env = env,
                 httpClient = httpClient,
                 configuration = configuration.hssVendors)
 
+        this.dispatcher = myHssService.dispatcher
+
         env.lifecycle().manage(myHssService)
-
-        dispatcher = DirectHssDispatcher(
-                hssConfigs = configuration.hssVendors,
-                httpClient = httpClient,
-                healthCheckRegistrar = object : HealthCheckRegistrar {
-                    override fun registerHealthCheck(name: String, healthCheck: HealthCheck) {
-                        env.healthChecks().register(name, healthCheck)
-                    }
-                })
-
-        // This dispatcher  is what we will use to handle the incoming
-        // requests.  it will essentially do all the work.
-        // When it has been proven to work, we will make it something that can
-        // be built in a separate reposítory, preferably using a library mechanism.
     }
 }
 

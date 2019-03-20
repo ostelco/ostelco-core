@@ -39,13 +39,13 @@ class ManagedGrpcService(private val port: Int,
 }
 
 class ManagedHssService(
-        private val configuration: List<HssConfig>,
+        configuration: List<HssConfig>,
         private val env: Environment,
-        private val httpClient: CloseableHttpClient,
-        private val port: Int) : Managed {
+        httpClient: CloseableHttpClient,
+        port: Int) : Managed {
 
     private val managedGrpcService: ManagedGrpcService
-    val dispatcher: HssDispatcher
+    val dispatcher: DirectHssDispatcher
 
     init {
         val adapters = mutableSetOf<HssAdapter>()
@@ -63,6 +63,7 @@ class ManagedHssService(
 
         this.managedGrpcService = ManagedGrpcService(port = port, service = hssService)
     }
+
 
     @Throws(Exception::class)
     override fun start() {
@@ -87,7 +88,7 @@ class HssServiceImpl(private val hssDispatcher: HssDispatcher) : HssServiceGrpc.
         hssDispatcher.activate(hssName = request.hss, iccid = request.iccid, msisdn = request.msisdn)
                 .mapRight { responseObserver.onNext(HssServiceResponse.newBuilder().setSuccess(true).build()) }
                 .mapLeft { responseObserver.onNext(HssServiceResponse.newBuilder().setSuccess(false).build()) }
-
+        responseObserver.onCompleted()
     }
 
     override fun suspend(request: SuspensionRequest?, responseObserver: StreamObserver<HssServiceResponse>?) {
@@ -97,5 +98,6 @@ class HssServiceImpl(private val hssDispatcher: HssDispatcher) : HssServiceGrpc.
         hssDispatcher.suspend(hssName = request.hss, iccid = request.iccid)
                 .mapRight { responseObserver.onNext(HssServiceResponse.newBuilder().setSuccess(true).build()) }
                 .mapLeft { responseObserver.onNext(HssServiceResponse.newBuilder().setSuccess(false).build()) }
+        responseObserver.onCompleted()
     }
 }

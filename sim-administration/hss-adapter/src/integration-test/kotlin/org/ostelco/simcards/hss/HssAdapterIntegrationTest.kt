@@ -3,12 +3,14 @@ package org.ostelco.simcards.hss
 import arrow.core.Either
 import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
+import io.grpc.ManagedChannelBuilder
 import junit.framework.Assert.assertFalse
 import junit.framework.Assert.assertTrue
 import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Test
 import org.ostelco.prime.simmanager.SimManagerError
+import org.ostelco.simcards.hss.profilevendors.api.HssServiceGrpc
 import org.testcontainers.containers.FixedHostPortGenericContainer
 
 /**
@@ -18,7 +20,6 @@ import org.testcontainers.containers.FixedHostPortGenericContainer
  *  translates the grpc requests into valid requests that are sent to the simulated HSS server.
  **/
 class HssAdapterIntegrationTest {
-
 
     class KFixedHostPortGenericContainer(imageName: String) :
             FixedHostPortGenericContainer<KFixedHostPortGenericContainer>(imageName)
@@ -60,10 +61,23 @@ class HssAdapterIntegrationTest {
         assertTrue(hssApplication.isActivated(ICCID))
     }
 
-
     @Test
     fun testActivationUsingGrpc() {
-        // TODO: client.activate(HSS_NAME, MSISDN, ICCID)
+        val channel =
+                ManagedChannelBuilder.forAddress("127.0.0.1", 9000)
+                        .usePlaintext(true)
+                        .build()
+
+        val blockingStub =
+                HssServiceGrpc.newBlockingStub(channel)
+
+        val activationRequest = org.ostelco.simcards.hss.profilevendors.api.ActivationRequest.newBuilder()
+                .setIccid(ICCID)
+                .setHss(HSS_NAME)
+                .setMsisdn(MSISDN)
+                .build()
+        val response = blockingStub.activate(activationRequest)
+        assertTrue(response.success)
         assertTrue(hssApplication.isActivated(ICCID))
     }
 }
