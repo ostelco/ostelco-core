@@ -14,7 +14,7 @@ import org.junit.*
 import org.junit.Assert.assertEquals
 import org.ostelco.simcards.hss.DirectHssDispatcher
 import org.ostelco.simcards.hss.HealthCheckRegistrar
-import org.ostelco.simcards.hss.HssProxy
+import org.ostelco.simcards.hss.SimManagerToHssDispatcherAdapter
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimProfileKeyStatistics
 import org.ostelco.simcards.smdpplus.SmDpPlusApplication
@@ -268,7 +268,7 @@ class SimAdministrationTest {
                     }
                 })
 
-        val hssAdapterCache = HssProxy(
+        val hssAdapterCache = SimManagerToHssDispatcherAdapter(
                 dispatcher = dispatcher ,
                 simInventoryDAO = simDao)
 

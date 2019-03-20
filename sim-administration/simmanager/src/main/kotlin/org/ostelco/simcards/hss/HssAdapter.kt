@@ -17,14 +17,37 @@ import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicBoolean
 
 interface HssDispatcher {
+    fun name(): String
     fun iAmHealthy(): Boolean
     fun activate(hssName: String, msisdn: String, iccid: String): Either<SimManagerError, Unit>
     fun suspend(hssName: String, iccid: String): Either<SimManagerError, Unit>
 }
 
+/*
+/**
+ * This is an interface that abstracts interactions with HSS (Home Subscriber Service)
+ * implementations.
+ */
+interface HssAdapter {
+
+    fun name(): String
+    fun activate(iccid: String, msisdn:String): Either<SimManagerError, Unit>
+    fun suspend(iccid: String) : Either<SimManagerError, Unit>
+
+    // XXX We may want6 to do  one or two of these two also
+    // fun reactivate(simEntry: SimEntry)
+    // fun terminate(simEntry: SimEntry)
+
+    fun iAmHealthy(): Boolean
+}
+ */
 
 class HssGrpcAdapter(private val host: String, private val port: Int) : HssDispatcher {
 
+
+    override fun name(): String {
+        return "HssGRPC Adapter connecting to host $host on port $port"
+    }
 
     private var blockingStub: HssServiceGrpc.HssServiceBlockingStub
 
@@ -40,11 +63,11 @@ class HssGrpcAdapter(private val host: String, private val port: Int) : HssDispa
 
     fun activateViaGrpc(hssName: String, iccid: String, msisdn: String): Boolean {
         val activationRequest =
-                    org.ostelco.simcards.hss.profilevendors.api.ActivationRequest.newBuilder()
-                .setIccid(iccid)
-                .setHss(hssName)
-                .setMsisdn(msisdn)
-                .build()
+                org.ostelco.simcards.hss.profilevendors.api.ActivationRequest.newBuilder()
+                        .setIccid(iccid)
+                        .setHss(hssName)
+                        .setMsisdn(msisdn)
+                        .build()
         val response = blockingStub.activate(activationRequest)
         return response.success
     }
@@ -62,7 +85,7 @@ class HssGrpcAdapter(private val host: String, private val port: Int) : HssDispa
     override fun iAmHealthy(): Boolean {
         val request = ServiceHealthQuery.newBuilder().build()
         val response = blockingStub.getHealthStatus(request)
-        return  response.isHealthy
+        return response.isHealthy
     }
 
 
@@ -76,7 +99,7 @@ class HssGrpcAdapter(private val host: String, private val port: Int) : HssDispa
     }
 
     override fun suspend(hssName: String, iccid: String): Either<SimManagerError, Unit> {
-        if (suspendViaGrpc(hssName = hssName,  iccid = iccid)) {
+        if (suspendViaGrpc(hssName = hssName, iccid = iccid)) {
             return Right(Unit)
         } else {
             return Left(AdapterError("Could not activate via grpc (host=$host, port =$port) for hss = $hssName, iccid=$iccid"))
@@ -90,21 +113,25 @@ class DirectHssDispatcher(
         val httpClient: CloseableHttpClient,
         val healthCheckRegistrar: HealthCheckRegistrar? = null) : HssDispatcher {
 
-    val adapters = mutableSetOf<HssAdapter>()
+    override fun name(): String {
+        return "Direct HSS dispatcher serving HSS configurations with names: ${hssConfigs.map { it.name }}"
+    }
 
-    private val hssAdaptersByName = mutableMapOf<String, HssAdapter>()
-    private val healthchecks = mutableSetOf<HssAdapterHealthcheck>()
+    val adapters = mutableSetOf<HssDispatcher>()
+
+    private val hssAdaptersByName = mutableMapOf<String, HssDispatcher>()
+    private val healthchecks = mutableSetOf<HssDispatcherHealthcheck>()
 
     init {
 
         for (config in hssConfigs) {
-            adapters.add(SimpleHssAdapter(name = config.name, httpClient = httpClient, config = config))
+            adapters.add(SimpleHssDispatcher(name = config.name, httpClient = httpClient, config = config))
         }
 
 
         for (adapter in adapters) {
 
-            val healthCheck = HssAdapterHealthcheck(adapter.name(), adapter)
+            val healthCheck = HssDispatcherHealthcheck(adapter.name(), adapter)
             healthchecks.add(healthCheck)
 
             healthCheckRegistrar?.registerHealthCheck(
@@ -123,7 +150,7 @@ class DirectHssDispatcher(
                 .reduce { a, b -> a && b }
     }
 
-    private fun getHssAdapterByName(name: String): HssAdapter {
+    private fun getHssAdapterByName(name: String): HssDispatcher {
         if (!hssAdaptersByName.containsKey(name)) {
             throw RuntimeException("Unknown hss profilevendors name ? '$name'")
         }
@@ -131,11 +158,14 @@ class DirectHssDispatcher(
     }
 
     override fun activate(hssName: String, msisdn: String, iccid: String): Either<SimManagerError, Unit> {
-        return getHssAdapterByName(hssName).activate(msisdn = msisdn, iccid = iccid)
+        // XXX: Weird! This _fails_ if by-name arguments are used instead of
+        //      by-order-of-arguments.     ICCID and MSISDN are swapped, which
+        //      (obviously) leads to failure.  Investigate and get to bottom of it!
+        return getHssAdapterByName(hssName).activate(hssName,iccid, msisdn)
     }
 
     override fun suspend(hssName: String, iccid: String): Either<SimManagerError, Unit> {
-        return getHssAdapterByName(hssName).suspend(iccid = iccid)
+        return getHssAdapterByName(hssName).suspend(hssName=hssName, iccid = iccid)
     }
 }
 
@@ -143,9 +173,9 @@ class DirectHssDispatcher(
  * Keep a set of HSS entries that can be used when
  * provisioning SIM profiles in remote HSSes.
  */
-class HssProxy(
+class SimManagerToHssDispatcherAdapter(
         val dispatcher: HssDispatcher,
-        val simInventoryDAO: SimInventoryDAO) {
+        val simInventoryDAO: SimInventoryDAO)  {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -181,6 +211,8 @@ class HssProxy(
         }
     }
 
+
+
     fun activate(simEntry: SimEntry): Either<SimManagerError, Unit> {
         synchronized(lock) {
             return dispatcher.activate(hssName = idToNameMap[simEntry.hssId]!!, msisdn = simEntry.msisdn, iccid = simEntry.iccid)
@@ -202,9 +234,9 @@ interface HealthCheckRegistrar {
     fun registerHealthCheck(name: String, healthCheck: HealthCheck)
 }
 
-class HssAdapterHealthcheck(
+class HssDispatcherHealthcheck(
         private val name: String,
-        private val entry: HssAdapter) : HealthCheck() {
+        private val entry: HssDispatcher) : HealthCheck() {
 
     private val lastHealthStatus = AtomicBoolean(false)
 

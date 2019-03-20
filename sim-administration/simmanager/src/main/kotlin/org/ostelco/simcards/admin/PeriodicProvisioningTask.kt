@@ -12,7 +12,7 @@ import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.simmanager.NotFoundError
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.hss.HssEntry
-import org.ostelco.simcards.hss.HssProxy
+import org.ostelco.simcards.hss.SimManagerToHssDispatcherAdapter
 import org.ostelco.simcards.inventory.HssState
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
@@ -36,7 +36,7 @@ class PreallocateProfilesTask(
         val maxNoOfProfileToAllocate: Int = 30,
         val simInventoryDAO: SimInventoryDAO,
         val httpClient: CloseableHttpClient,
-        val hssAdapterProxy: HssProxy,
+        val hssAdapterProxy: SimManagerToHssDispatcherAdapter,
         val profileVendors: List<ProfileVendorConfig>) : Task("preallocate_sim_profiles") {
 
     private val log = LoggerFactory.getLogger(javaClass)

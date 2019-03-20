@@ -2,6 +2,7 @@ package org.ostelco.simcards.hss
 
 
 import arrow.core.Either
+import arrow.core.Left
 import arrow.core.left
 import arrow.core.right
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -16,19 +17,8 @@ import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.admin.HssConfig
 import javax.ws.rs.core.MediaType
 
-
-// TODO:
-//  1. Create a simplified HLR profilevendors interface [done]
-//  2. Extend simplified HLR profilevendors to have return types that can convey error situations. [done(ish)]
-//  3. Extend simplified HLR profilevendors to have a liveness/health test. [done]
-//  4. Refactor all other code to live with this  simplified type of hlr profilevendors. [done]
-//  5. Make separate service that can be called from prime
-
-
-
 /**
- * An profilevendors that connects to a HLR and activates/deactivates individual
- * SIM profiles.  This is a datum that is stored in a database.
+ * This is a datum that is stored in a database.
  *
  * When a VLR asks the HLR for the an authentication triplet, then the
  * HLR will know that it should give an answer.
@@ -40,26 +30,11 @@ data class HssEntry(
         @JsonProperty("id") val id: Long,
         @JsonProperty("name") val name: String)
 
-/**
- * This is an interface that abstracts interactions with HSS (Home Subscriber Service)
- * implementations.
- */
-interface HssAdapter {
+// TODO:  Separate these, they shouldn't be in the same file!
 
-    fun name(): String
-    fun activate(iccid: String, msisdn:String): Either<SimManagerError, Unit>
-    fun suspend(iccid: String) : Either<SimManagerError, Unit>
-
-    // XXX We may want6 to do  one or two of these two also
-    // fun reactivate(simEntry: SimEntry)
-    // fun terminate(simEntry: SimEntry)
-
-    fun iAmHealthy(): Boolean
-}
-
-class SimpleHssAdapter(val name: String,
-                       val httpClient: CloseableHttpClient,
-                       val config: HssConfig) : HssAdapter {
+class SimpleHssDispatcher(val name: String,
+                          val httpClient: CloseableHttpClient,
+                          val config: HssConfig) : HssDispatcher {
 
     private val logger by getLogger()
 
@@ -75,7 +50,15 @@ class SimpleHssAdapter(val name: String,
      * @param simEntry  SIM profile to activate
      * @return Updated SIM Entry
      */
-    override fun activate(iccid: String, msisdn:String): Either<SimManagerError, Unit> {
+
+    override fun activate(hssName: String, iccid: String, msisdn: String): Either<SimManagerError, Unit> {
+        if (hssName != name) {
+            return Left(AdapterError("Attempt to activate  hssName=$hssName, iccid=$iccid, msisdn=$msisdn in a dispatcher for hss named $name"))
+        }
+
+        if (!iccid.matches(Regex("^\\d{19,20}"))) {
+            return Left(AdapterError("Ill formatted ICCID $iccid"))
+        }
 
         if (iccid.isEmpty()) {
             return NotUpdatedError("Empty ICCID value in SIM activation request to BSSID ${config.name}")
@@ -84,8 +67,8 @@ class SimpleHssAdapter(val name: String,
 
         val body = mapOf(
                 "bssid" to config.name,
-                "iccid" to  iccid,
-                "msisdn" to  msisdn,
+                "iccid" to iccid,
+                "msisdn" to msisdn,
                 "userid" to config.userId
         )
 
@@ -132,7 +115,12 @@ class SimpleHssAdapter(val name: String,
      * @param simEntry  SIM profile to deactivate
      * @return Updated SIM profile
      */
-    override fun suspend(iccid: String): Either<SimManagerError, Unit> {
+    override fun suspend(hssName: String, iccid: String): Either<SimManagerError, Unit> {
+
+        if (hssName != name) {
+            return Left(AdapterError("Attempt to suspend  hssName=$hssName, iccid=$iccid in a dispatcher for hss named $name"))
+        }
+
         if (iccid.isEmpty()) {
             return NotUpdatedError("Illegal parameter in SIM deactivation request to BSSID ${config.name}")
                     .left()

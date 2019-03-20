@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName
 import io.dropwizard.client.HttpClientBuilder
 import io.dropwizard.jdbi3.JdbiFactory
 import io.dropwizard.setup.Environment
+import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.dropwizardutils.OpenapiResourceAdder
 import org.ostelco.prime.module.PrimeModule
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter
@@ -62,15 +63,9 @@ class SimAdministrationModule : PrimeModule {
         jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
 
 
-
-        val adapters = mutableSetOf<HssAdapter>()
-
-        for (config in config.hssVendors) {
-            adapters.add(SimpleHssAdapter(name = config.name, httpClient = httpClient, config = config))
-        }
-
-        val dispatcher = DirectHssDispatcher(
-                hssConfigs = config.hssVendors,
+        val dispatcher = makeHssDispatcher(
+                hssAdapterConfig = config.hssAdapter,
+                hssVendorConfigs = config.hssVendors,
                 httpClient = httpClient,
                 healthCheckRegistrar = object : HealthCheckRegistrar {
                     override fun registerHealthCheck(name: String, healthCheck: HealthCheck) {
@@ -78,17 +73,51 @@ class SimAdministrationModule : PrimeModule {
                     }
                 })
 
-
-        var hssAdapters = HssProxy(
-                        dispatcher  = dispatcher,
-                        simInventoryDAO = this.DAO
-                       )
+        var hssAdapters = SimManagerToHssDispatcherAdapter(
+                dispatcher = dispatcher,
+                simInventoryDAO = this.DAO
+        )
 
         env.admin().addTask(PreallocateProfilesTask(
                 simInventoryDAO = this.DAO,
                 httpClient = httpClient,
                 hssAdapterProxy = hssAdapters,
                 profileVendors = config.profileVendors));
+    }
+
+
+    // XXX Implement a feature-flag so that when we want to switch from built in
+    //     direct access to HSSes, to adapter-mediated access, we can do that easily
+    //     via config.
+    private fun makeHssDispatcher(
+            hssAdapterConfig: HssAdapterConfig,
+            hssVendorConfigs: List<HssConfig>,
+            httpClient: CloseableHttpClient,
+            healthCheckRegistrar: HealthCheckRegistrar): HssDispatcher {
+
+        if (hssAdapterConfig != null) {
+            return HssGrpcAdapter(
+                    host = hssAdapterConfig.hostname,
+                    port = hssAdapterConfig.port)
+        } else if (hssVendorConfigs != null) {
+
+            val dispatchers = mutableSetOf<HssDispatcher>()
+
+            for (config in config.hssVendors) {
+                dispatchers.add(
+                        SimpleHssDispatcher(
+                                name = config.name,
+                                httpClient = httpClient,
+                                config = config))
+            }
+
+            return DirectHssDispatcher(
+                    hssConfigs = config.hssVendors,
+                    httpClient = httpClient,
+                    healthCheckRegistrar = healthCheckRegistrar)
+        } else {
+            throw RuntimeException("Unable to find HSS adapter config, please check config")
+        }
     }
 }
 

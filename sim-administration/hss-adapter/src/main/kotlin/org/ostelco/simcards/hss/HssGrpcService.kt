@@ -44,7 +44,7 @@ class ManagedHssGrpcService(
     val dispatcher: DirectHssDispatcher
 
     init {
-        val adapters = mutableSetOf<HssAdapter>()
+        val dispatchers = mutableSetOf<HssDispatcher>()
 
         this.dispatcher = DirectHssDispatcher(
                 hssConfigs = configuration,

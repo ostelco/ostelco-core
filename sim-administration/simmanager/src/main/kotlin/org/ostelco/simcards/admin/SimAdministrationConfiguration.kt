@@ -30,6 +30,13 @@ class SimAdministrationConfiguration : Configuration() {
     @JsonProperty("profileVendors")
     lateinit var profileVendors: List<ProfileVendorConfig>
 
+
+    @Valid
+    @JsonProperty("hssAdapter")
+    lateinit var hssAdapter: HssAdapterConfig
+
+    // XXX Make this optional once the hssAdapter mechanism
+    //     has been made operational and stable.
     @Valid
     @NotNull
     @JsonProperty("hlrs")
@@ -51,6 +58,19 @@ class SimAdministrationConfiguration : Configuration() {
     fun getProfileForPhoneType(name: String) = phoneTypes.filter { name.matches(it.regex.toRegex(RegexOption.IGNORE_CASE)) }
             .map { it.profile }
             .first()
+}
+
+
+
+class HssAdapterConfig {
+
+    @Valid
+    @JsonProperty("hostname")
+    lateinit var hostname: String
+
+    @Valid
+    @JsonProperty("port")
+    var port: Int = 0
 }
 
 class HssConfig {
