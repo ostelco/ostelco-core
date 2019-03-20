@@ -90,7 +90,7 @@ class SimAdministrationModule : PrimeModule {
     //     direct access to HSSes, to adapter-mediated access, we can do that easily
     //     via config.
     private fun makeHssDispatcher(
-            hssAdapterConfig: HssAdapterConfig,
+            hssAdapterConfig: HssAdapterConfig?,
             hssVendorConfigs: List<HssConfig>,
             httpClient: CloseableHttpClient,
             healthCheckRegistrar: HealthCheckRegistrar): HssDispatcher {

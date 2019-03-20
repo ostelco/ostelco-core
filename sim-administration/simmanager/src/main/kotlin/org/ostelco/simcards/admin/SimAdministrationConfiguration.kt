@@ -33,7 +33,7 @@ class SimAdministrationConfiguration : Configuration() {
 
     @Valid
     @JsonProperty("hssAdapter")
-    lateinit var hssAdapter: HssAdapterConfig
+    var hssAdapter: HssAdapterConfig? = null
 
     // XXX Make this optional once the hssAdapter mechanism
     //     has been made operational and stable.
