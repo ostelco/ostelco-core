@@ -57,7 +57,7 @@ class HssAdapterApplication : Application<HssAdapterApplicationConfiguration>() 
                 .build("${getName()} http client")
         val jerseyEnv = env.jersey()
 
-        val myHssService = ManagedHssService(
+        val myHssService = ManagedHssGrpcService(
                 port = 9000,
                 env = env,
                 httpClient = httpClient,

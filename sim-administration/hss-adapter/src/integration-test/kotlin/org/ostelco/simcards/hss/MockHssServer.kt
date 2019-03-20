@@ -83,7 +83,6 @@ class MockHssResource() {
         return Response.status(Response.Status.OK)
                 .type(MediaType.APPLICATION_JSON)
                 .build()
-
     }
 
     fun reset() {

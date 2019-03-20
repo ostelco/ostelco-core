@@ -34,7 +34,7 @@ class ManagedGrpcService(private val port: Int,
     }
 }
 
-class ManagedHssService(
+class ManagedHssGrpcService(
         configuration: List<HssConfig>,
         private val env: Environment,
         httpClient: CloseableHttpClient,

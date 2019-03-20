@@ -42,11 +42,14 @@ class HssAdapterIntegrationTest {
     lateinit var hssAdapter: HssAdapterApplication
     lateinit var hssApplication: MockHssServer
 
+    lateinit var adapter: HssDispatcher
+
     @Before
     fun setUp() {
         hssAdapter = HSS_ADAPTER_RULE.getApplication()
         hssApplication = MOCK_HSS_RULE.getApplication()
         hssApplication.reset()
+        adapter = HssGrpcAdapter("127.0.0.1", 9000)
     }
 
     @Test
@@ -60,11 +63,24 @@ class HssAdapterIntegrationTest {
 
     @Test
     fun testActivationUsingGrpc() {
-        val adapter = HssGrpcAdapter("127.0.0.1", 9000)
-        val response = adapter.activate(hssName = HSS_NAME, iccid = ICCID, msisdn = MSISDN)
 
+        val response = adapter.activate(hssName = HSS_NAME, iccid = ICCID, msisdn = MSISDN)
         response.mapLeft { msg -> fail("Failed to activate via grpc: $msg") }
         assertTrue(hssApplication.isActivated(ICCID))
+    }
+
+    @Test
+    fun testSuspensionUsingGrpc() {
+        adapter.activate(hssName = HSS_NAME, iccid = ICCID, msisdn = MSISDN)
+        assertTrue(hssApplication.isActivated(ICCID))
+        val response = adapter.suspend(hssName = HSS_NAME, iccid = ICCID)
+        response.mapLeft { msg -> fail("Failed to suspend via grpc: ${msg.description}") }
+        assertTrue(!hssApplication.isActivated(ICCID))
+    }
+
+    @Test
+    fun testPositiveHealthcheck() {
+        assertTrue(adapter.iAmHealthy())
     }
 }
 
