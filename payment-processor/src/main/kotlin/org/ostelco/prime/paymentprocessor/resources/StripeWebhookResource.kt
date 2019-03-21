@@ -5,7 +5,7 @@ import com.stripe.exception.SignatureVerificationException
 import com.stripe.model.*
 import com.stripe.net.Webhook
 import org.ostelco.prime.getLogger
-import org.ostelco.prime.paymentprocessor.StripeEventReporter
+import org.ostelco.prime.paymentprocessor.publishers.StripeEventPublisher
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
 import javax.ws.rs.HeaderParam
@@ -19,7 +19,7 @@ import javax.ws.rs.core.Response
  *
  */
 @Path("/stripe/event")
-class StripeWebhookResource(private val reporter: StripeEventReporter) {
+class StripeWebhookResource() {
 
     private val logger by getLogger()
 
@@ -46,7 +46,7 @@ class StripeWebhookResource(private val reporter: StripeEventReporter) {
                     .build()
         }
 
-        reporter.handleEvent(event)
+        StripeEventPublisher.publish(event)
 
         /* Report only OK back to Stripe. */
         return Response.status(Response.Status.OK)
