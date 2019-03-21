@@ -33,15 +33,24 @@ done
 
 echo "Pubsub emulator launched"
 
-echo "Creating topics and subscriptions...."
+echo "Creating topics...."
 
-curl  -X PUT pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/topics/active-users
-curl  -X PUT pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/topics/data-traffic
-curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/${GCP_PROJECT_ID}/topics/data-traffic","ackDeadlineSeconds":10}' pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/test-pseudo
-curl  -X PUT pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/topics/purchase-info
-curl -X PUT -H "Content-Type: application/json" -d '{"topic":"projects/${GCP_PROJECT_ID}/topics/purchase-info","ackDeadlineSeconds":10}' pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/purchase-info-sub
+curl -X PUT pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/topics/active-users
+curl -X PUT pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/topics/data-traffic
+curl -X PUT pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/topics/purchase-info
+curl -X PUT pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/topics/stripe-event
 
-echo "Done creating topics and subscriptions"
+echo "Done creating topics"
+
+echo "Creating subscriptions...."
+
+curl -X PUT -H "Content-Type: application/json" -d "{\"topic\":\"projects/${GCP_PROJECT_ID}/topics/data-traffic\",\"ackDeadlineSeconds\":10}" pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/test-pseudo
+curl -X PUT -H "Content-Type: application/json" -d "{\"topic\":\"projects/${GCP_PROJECT_ID}/topics/purchase-info\",\"ackDeadlineSeconds\":10}" pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/purchase-info-sub
+curl -X PUT -H "Content-Type: application/json" -d "{\"topic\":\"projects/${GCP_PROJECT_ID}/topics/stripe-event\",\"ackDeadlineSeconds\":10}" pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/stripe-event-store-sub
+curl -X PUT -H "Content-Type: application/json" -d "{\"topic\":\"projects/${GCP_PROJECT_ID}/topics/stripe-event\",\"ackDeadlineSeconds\":10}" pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/stripe-event-report-sub
+curl -X PUT -H "Content-Type: application/json" -d "{\"topic\":\"projects/${GCP_PROJECT_ID}/topics/stripe-event\",\"ackDeadlineSeconds\":10}" pubsub-emulator:8085/v1/projects/${GCP_PROJECT_ID}/subscriptions/stripe-event-recurring-payment-sub
+
+echo "Done creating subscriptions"
 
 # Forward the local port 9090 to datastore-emulator:8081
 if ! hash socat 2>/dev/null
