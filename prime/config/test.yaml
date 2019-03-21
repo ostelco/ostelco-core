@@ -27,6 +27,10 @@ modules:
   - type: ocs
     config:
       lowBalanceThreshold: 0
+      pubSubChannel:
+        projectId: ${GCP_PROJECT_ID}
+        activateTopicId: ocs-activate
+        ccrSubscriptionId: ocs-ccr-sub
   - type: api
   - type: stripe-payment-processor
     config:

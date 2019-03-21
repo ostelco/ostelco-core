@@ -3,14 +3,26 @@ plugins {
   id "java-library"
 }
 
+repositories {
+  maven {
+    url 'https://dl.bintray.com/palantir/releases' // docker-compose-rule is published on bintray
+  }
+}
+
 dependencies {
   implementation project(':prime-modules')
 
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinXCoroutinesVersion"
-  
+
+  implementation "com.google.cloud:google-cloud-pubsub:$googleCloudVersion"
+
+  testImplementation "com.palantir.docker.compose:docker-compose-rule-junit4:$dockerComposeJunitRuleVersion"
+
   testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
+  
   testImplementation "org.mockito:mockito-core:$mockitoVersion"
+
 }
 
 apply from: '../gradle/jacoco.gradle'

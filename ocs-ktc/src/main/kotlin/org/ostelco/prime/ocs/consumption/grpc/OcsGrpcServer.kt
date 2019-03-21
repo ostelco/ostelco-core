@@ -1,4 +1,4 @@
-package org.ostelco.prime.ocs.consumption
+package org.ostelco.prime.ocs.consumption.grpc
 
 import io.dropwizard.lifecycle.Managed
 import io.grpc.BindableService

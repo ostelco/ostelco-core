@@ -58,9 +58,7 @@ class OcsModule : PrimeModule {
     }
 }
 
-class OcsConfig {
-
+data class OcsConfig(
     @NotEmpty
     @JsonProperty("lowBalanceThreshold")
-    var lowBalanceThreshold: Long = 0
-}
+    var lowBalanceThreshold: Long = 0)

@@ -147,9 +147,9 @@ class Neo4jLoadTest {
         @BeforeClass
         @JvmStatic
         fun start() {
-            ConfigRegistry.config = Config()
-            ConfigRegistry.config.host = "0.0.0.0"
-            ConfigRegistry.config.protocol = "bolt"
+            ConfigRegistry.config = Config(
+                    host = "0.0.0.0",
+                    protocol = "bolt")
             Neo4jClient.start()
         }
 

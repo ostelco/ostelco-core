@@ -39,10 +39,9 @@ object Registry {
     lateinit var userName: String
 }
 
-class Config {
+data class Config(
     @JsonProperty("notifications")
-    lateinit var notificationsConfig: NotificationsConfig
-}
+    val notificationsConfig: NotificationsConfig)
 
 class NotificationsConfig {
 

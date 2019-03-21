@@ -17,7 +17,4 @@ class ImeiLookupModule : PrimeModule {
     }
 }
 
-class Config {
-    @JsonProperty
-    lateinit var csvFile: String
-}
+data class Config(val csvFile: String)

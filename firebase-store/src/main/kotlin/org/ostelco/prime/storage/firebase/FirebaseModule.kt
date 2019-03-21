@@ -17,4 +17,6 @@ object FirebaseConfigRegistry {
     lateinit var firebaseConfig: FirebaseConfig
 }
 
-data class FirebaseConfig(val configFile: String, val rootPath: String)
+data class FirebaseConfig(
+        val configFile: String,
+        val rootPath: String)

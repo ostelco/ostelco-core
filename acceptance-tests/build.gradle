@@ -16,6 +16,8 @@ dependencies {
   implementation project(':diameter-test')
   implementation project(':ocs-grpc-api')
 
+  implementation "com.google.cloud:google-cloud-pubsub:$googleCloudVersion"
+  
   implementation "com.stripe:stripe-java:$stripeVersion"
   implementation ("io.jsonwebtoken:jjwt:$jjwtVersion") {
     exclude group: "com.fasterxml.jackson.core", module:"jackson-databind"
