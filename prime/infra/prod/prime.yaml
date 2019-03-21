@@ -177,6 +177,14 @@ spec:
           value: ocs-activate
         - name: CCR_SUBSCRIPTION_ID
           value: ocs-ccr-sub
+        - name: STRIPE_EVENT_TOPIC
+          value: stripe-event
+        - name: STRIPE_EVENT_STORE_SUBSCRIPTION
+          value: stripe-event-store-sub
+        - name: STRIPE_EVENT_REPORT_SUBSCRIPTION
+          value: stripe-event-report-sub
+        - name: STRIPE_EVENT_RECURRING_PAYMENT_SUBSCRIPTION
+          value: stripe-event-recurring-payment-sub
         - name: STRIPE_API_KEY
           valueFrom:
             secretKeyRef:
