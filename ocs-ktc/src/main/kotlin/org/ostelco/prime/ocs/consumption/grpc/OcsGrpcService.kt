@@ -1,4 +1,4 @@
-package org.ostelco.prime.ocs.consumption
+package org.ostelco.prime.ocs.consumption.grpc
 
 import io.grpc.stub.StreamObserver
 import org.ostelco.ocs.api.ActivateRequest
@@ -8,6 +8,7 @@ import org.ostelco.ocs.api.CreditControlRequestInfo
 import org.ostelco.ocs.api.CreditControlRequestType.NONE
 import org.ostelco.ocs.api.OcsServiceGrpc
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.ocs.consumption.OcsAsyncRequestConsumer
 import java.util.*
 
 /**
@@ -50,35 +51,35 @@ class OcsGrpcService(private val ocsAsyncRequestConsumer: OcsAsyncRequestConsume
 
         val streamId = newUniqueStreamId()
         logger.info("Starting Credit-Control-Request with streamId: {}", streamId)
-        ocsAsyncRequestConsumer.putCreditControlClient(streamId, creditControlAnswer)
-        return StreamObserverForStreamWithId(streamId)
-    }
+        return object : StreamObserver<CreditControlRequestInfo> {
 
-    private inner class StreamObserverForStreamWithId(private val streamId: String) : StreamObserver<CreditControlRequestInfo> {
+            /**
+             * This method gets called every time a Credit-Control-Request is received
+             * from the OCS.
+             * @param request
+             */
+            override fun onNext(request: CreditControlRequestInfo) {
 
-        /**
-         * This method gets called every time a Credit-Control-Request is received
-         * from the OCS.
-         * @param request
-         */
-        override fun onNext(request: CreditControlRequestInfo) {
-            if(request.type == NONE) {
-                // this request is just to keep connection alive
-                return
+                if (request.type == NONE) {
+                    // this request is just to keep connection alive
+                    return
+                }
+                logger.info("Received Credit-Control-Request request :: " + "for MSISDN: {} with request id: {}",
+                        request.msisdn, request.requestId)
+
+                ocsAsyncRequestConsumer.creditControlRequestEvent(
+                        request = request,
+                        returnCreditControlAnswer = creditControlAnswer::onNext)
             }
-            logger.info("Received Credit-Control-Request request :: " + "for MSISDN: {} with request id: {}",
-                    request.msisdn, request.requestId)
 
-            ocsAsyncRequestConsumer.creditControlRequestEvent(streamId = streamId, request = request)
-        }
+            override fun onError(t: Throwable) {
+                // TODO vihang: handle onError for stream observers
+            }
 
-        override fun onError(t: Throwable) {
-            // TODO vihang: handle onError for stream observers
-        }
-
-        override fun onCompleted() {
-            logger.info("Credit-Control-Request with streamId: {} completed", streamId)
-            ocsAsyncRequestConsumer.deleteCreditControlClient(streamId)
+            override fun onCompleted() {
+                logger.info("Credit-Control-Request with streamId: {} completed", streamId)
+                creditControlAnswer.onCompleted()
+            }
         }
     }
 
@@ -100,7 +101,6 @@ class OcsGrpcService(private val ocsAsyncRequestConsumer: OcsAsyncRequestConsume
 
         val streamId = newUniqueStreamId()
         logger.info("Starting Activate-Response stream with streamId: {}", streamId)
-        ocsAsyncRequestConsumer.updateActivateResponse(streamId, activateResponse)
 
         val initialDummyResponse = ActivateResponse.newBuilder().setMsisdn("").build()
         activateResponse.onNext(initialDummyResponse)

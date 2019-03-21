@@ -142,7 +142,8 @@ object OcsServer {
             appConfig: AppConfig): PubSubDataSource =
             PubSubDataSource(protobufDataSource,
                     appConfig.pubSubProjectId,
-                    appConfig.pubSubTopicId,
-                    appConfig.pubSubSubscriptionIdForCcr,
+                    appConfig.pubSubTopicIdForCcr,
+                    appConfig.pubSubTopicIdForCca,
+                    appConfig.pubSubSubscriptionIdForCca,
                     appConfig.pubSubSubscriptionIdForActivate)
 }

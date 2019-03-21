@@ -274,7 +274,7 @@ public class GrpcDataSource implements DataSource {
     @Override
     public void handleRequest(final CreditControlContext context) {
 
-        CreditControlRequestInfo creditControlRequestInfo = protobufDataSource.handleRequest(context);
+        CreditControlRequestInfo creditControlRequestInfo = protobufDataSource.handleRequest(context, null);
 
         if (creditControlRequestInfo != null) {
             producer.queueEvent(creditControlRequestInfo);

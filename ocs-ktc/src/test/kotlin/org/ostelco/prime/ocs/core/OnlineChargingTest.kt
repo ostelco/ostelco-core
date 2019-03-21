@@ -22,8 +22,6 @@ class OnlineChargingTest {
         // Add delay to DB call and skip analytics and low balance notification
         OnlineCharging.loadUnitTest = true
 
-        val streamId = UUID.randomUUID().toString()
-
         // count down latch to wait for all responses to return
         val cdl = CountDownLatch(COUNT)
 
@@ -44,9 +42,6 @@ class OnlineChargingTest {
             }
         }
 
-        // Setup connection stream
-        OnlineCharging.putCreditControlClient(streamId = streamId, creditControlAnswer = creditControlAnswerInfo)
-
         // Sample request which will be sent repeatedly
         val request = CreditControlRequestInfo.newBuilder()
                 .setRequestId(UUID.randomUUID().toString())
@@ -61,11 +56,15 @@ class OnlineChargingTest {
 
         // Send the same request COUNT times
         repeat(COUNT) {
-            OnlineCharging.creditControlRequestEvent(streamId = streamId, request = request)
+            OnlineCharging.creditControlRequestEvent(
+                    request = request,
+                    returnCreditControlAnswer = creditControlAnswerInfo::onNext)
         }
 
         // Wait for all the responses to be returned
         println("Waiting for all responses to be returned")
+
+        @Suppress("BlockingMethodInNonBlockingContext")
         cdl.await()
 
         // Stop timestamp in millisecond
