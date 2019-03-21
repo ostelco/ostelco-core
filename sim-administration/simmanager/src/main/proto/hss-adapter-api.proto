@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package org.ostelco.simcards.hss.adapter.api;
+
+option java_multiple_files = true;
+option java_package = "org.ostelco.simcards.hss.profilevendors.api";
+
+
+service HssService {
+    rpc activate (ActivationRequest) returns (HssServiceResponse);
+    rpc suspend (SuspensionRequest) returns (HssServiceResponse);
+    rpc getHealthStatus (ServiceHealthQuery) returns (ServiceHealthStatus);
+}
+
+message ActivationRequest {
+    string hss = 1;
+    string iccid = 2;
+    string msisdn = 3;
+}
+
+message SuspensionRequest {
+    string hss = 1;
+    string iccid = 2;
+}
+
+message HssServiceResponse {
+    bool success = 1;
+    string reply = 2;
+}
+
+message ServiceHealthStatus {
+    bool isHealthy = 1;
+}
+
+message ServiceHealthQuery {}
