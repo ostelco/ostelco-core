@@ -263,6 +263,14 @@ spec:
           value: purchase-info-dev
         - name: ACTIVE_USERS_TOPIC
           value: active-users-dev
+        - name: STRIPE_EVENT_TOPIC
+          value: stripe-event-dev
+        - name: STRIPE_EVENT_STORE_SUBSCRIPTION
+          value: stripe-event-store-sub-dev
+        - name: STRIPE_EVENT_REPORT_SUBSCRIPTION
+          value: stripe-event-report-sub-dev
+        - name: STRIPE_EVENT_RECURRING_PAYMENT_SUBSCRIPTION
+          value: stripe-event-recurring-payment-sub-dev
         - name: STRIPE_API_KEY
           valueFrom:
             secretKeyRef:

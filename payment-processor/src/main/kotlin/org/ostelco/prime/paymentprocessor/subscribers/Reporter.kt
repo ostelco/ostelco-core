@@ -1,21 +1,17 @@
-package org.ostelco.prime.paymentprocessor
+package org.ostelco.prime.paymentprocessor.subscribers
 
 import com.stripe.model.*
 import org.ostelco.prime.getLogger
-import org.ostelco.prime.module.getResource
-import org.ostelco.prime.storage.AdminDataSource
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
-class StripeEventReporter {
+object Reporter {
 
     private val logger by getLogger()
-    private val storage by lazy { getResource<AdminDataSource>() }
 
-    fun handleEvent(event: Event) {
-
+    fun report(event: Event) {
         val data = event.data.`object`
 
         when (data) {
@@ -79,7 +75,7 @@ class StripeEventReporter {
                             event)
             )
             event.type == "charge.refunded" -> logger.info(
-                    format("A ${currency(charge.amount, charge.currency)} payment was refunded to ${email(charge.customer)}",
+                    format("A ${currency(charge.amount, charge.currency)} payment was refunded to ${email(charge.customer)}}",
                             event)
             )
             else -> logger.warn(
@@ -137,20 +133,6 @@ class StripeEventReporter {
                 logger.info(format("An invoice ${invoice.id} for the amount of ${invoice.amountPaid} ${invoice.currency} " +
                         "was successfully charged to ${invoice.subscription}",
                         event))
-
-                /* TODO: Redo Stripe event handling and split the action of logging
-                         and the action of updating the backend with information
-                         from Stripe events. (kmm) */
-                if (invoice.subscription != null) {
-                    val plan = invoice.lines.data[0].plan
-                    val productId = plan.product
-                    val amount = plan.amount
-                    val currency = plan.currency
-                    val productDetails = Product.retrieve(productId)
-                    val customer = Customer.retrieve(invoice.customer)
-                    // Not checking the return value for now (kmm)
-                    storage.subscriptionPurchaseReport(invoice.id, customer.email, productDetails.name, amount, currency)
-                }
             }
             else -> logger.warn(
                     format("Unhandled Stripe event ${event.type} (cat: Invoice)",
@@ -216,8 +198,11 @@ class StripeEventReporter {
         } + "${amount / 100} ${currency.toUpperCase()}"
     }
 
-    private fun email(customerId: String): String {
-        val email = Customer.retrieve(customerId).email
+    private fun email(customerId: String?): String {
+        val email = if (!customerId.isNullOrEmpty())
+            Customer.retrieve(customerId).email
+        else
+            null
         return if (email.isNullOrEmpty()) "****" else email
     }
 

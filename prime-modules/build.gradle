@@ -8,6 +8,7 @@ dependencies {
   api "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
 
   api "io.dropwizard:dropwizard-auth:$dropwizardVersion"
+  implementation "com.google.cloud:google-cloud-pubsub:$googleCloudVersion"
   implementation "com.google.cloud:google-cloud-datastore:$googleCloudVersion"
 
   api "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
