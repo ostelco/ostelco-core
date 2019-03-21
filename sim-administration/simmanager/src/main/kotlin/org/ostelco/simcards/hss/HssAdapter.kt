@@ -23,24 +23,6 @@ interface HssDispatcher {
     fun suspend(hssName: String, iccid: String): Either<SimManagerError, Unit>
 }
 
-/*
-/**
- * This is an interface that abstracts interactions with HSS (Home Subscriber Service)
- * implementations.
- */
-interface HssAdapter {
-
-    fun name(): String
-    fun activate(iccid: String, msisdn:String): Either<SimManagerError, Unit>
-    fun suspend(iccid: String) : Either<SimManagerError, Unit>
-
-    // XXX We may want6 to do  one or two of these two also
-    // fun reactivate(simEntry: SimEntry)
-    // fun terminate(simEntry: SimEntry)
-
-    fun iAmHealthy(): Boolean
-}
- */
 
 class HssGrpcAdapter(private val host: String, private val port: Int) : HssDispatcher {
 
@@ -158,9 +140,6 @@ class DirectHssDispatcher(
     }
 
     override fun activate(hssName: String, iccid: String, msisdn: String): Either<SimManagerError, Unit> {
-        // XXX: Weird! This _fails_ if by-name arguments are used instead of
-        //      by-order-of-arguments.     ICCID and MSISDN are swapped, which
-        //      (obviously) leads to failure.  Investigate and get to bottom of it!
         return getHssAdapterByName(hssName).activate(hssName= hssName, iccid = iccid, msisdn = msisdn)
     }
 
