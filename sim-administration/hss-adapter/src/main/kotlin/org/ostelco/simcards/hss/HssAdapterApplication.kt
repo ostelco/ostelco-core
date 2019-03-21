@@ -12,6 +12,9 @@ import javax.validation.Valid
 import javax.validation.constraints.NotNull
 
 
+/**
+ * Boilerplate entry point.
+ */
 fun main(args: Array<String>) = HssAdapterApplication().run(*args)
 
 /**
