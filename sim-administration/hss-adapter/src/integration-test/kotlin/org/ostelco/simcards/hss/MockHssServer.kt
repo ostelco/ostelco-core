@@ -54,6 +54,9 @@ data class Subscription(
         @JsonProperty("userid") var userid: String)
 
 
+/**
+ * A very interface that could be used  to connect to an HSS
+ */
 @Path("/default/provision")
 @Produces(MediaType.APPLICATION_JSON)
 class MockHssResource() {

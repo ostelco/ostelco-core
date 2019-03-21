@@ -56,7 +56,7 @@ class HssAdapterIntegrationTest {
     fun testActivationWithoutUsingGrpc() {
         assertFalse(hssApplication.isActivated(ICCID))
         val result : Either<SimManagerError, Unit> =
-                hssAdapter.dispatcher.activate(HSS_NAME, MSISDN, ICCID)
+                hssAdapter.dispatcher.activate(hssName = HSS_NAME, iccid = ICCID, msisdn = MSISDN)
         assertTrue(result.isRight())
         assertTrue(hssApplication.isActivated(ICCID))
     }

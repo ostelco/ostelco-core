@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 interface HssDispatcher {
     fun name(): String
     fun iAmHealthy(): Boolean
-    fun activate(hssName: String, msisdn: String, iccid: String): Either<SimManagerError, Unit>
+    fun activate(hssName: String, iccid: String, msisdn: String): Either<SimManagerError, Unit>
     fun suspend(hssName: String, iccid: String): Either<SimManagerError, Unit>
 }
 
@@ -89,7 +89,7 @@ class HssGrpcAdapter(private val host: String, private val port: Int) : HssDispa
     }
 
 
-    override fun activate(hssName: String, msisdn: String, iccid: String): Either<SimManagerError, Unit> {
+    override fun activate(hssName: String, iccid: String, msisdn: String): Either<SimManagerError, Unit> {
         if (activateViaGrpc(hssName = hssName, msisdn = msisdn, iccid = iccid)) {
             return Right(Unit)
         } else {
@@ -157,11 +157,11 @@ class DirectHssDispatcher(
         return hssAdaptersByName[name]!!
     }
 
-    override fun activate(hssName: String, msisdn: String, iccid: String): Either<SimManagerError, Unit> {
+    override fun activate(hssName: String, iccid: String, msisdn: String): Either<SimManagerError, Unit> {
         // XXX: Weird! This _fails_ if by-name arguments are used instead of
         //      by-order-of-arguments.     ICCID and MSISDN are swapped, which
         //      (obviously) leads to failure.  Investigate and get to bottom of it!
-        return getHssAdapterByName(hssName).activate(hssName,iccid, msisdn)
+        return getHssAdapterByName(hssName).activate(hssName= hssName, iccid = iccid, msisdn = msisdn)
     }
 
     override fun suspend(hssName: String, iccid: String): Either<SimManagerError, Unit> {
@@ -215,7 +215,7 @@ class SimManagerToHssDispatcherAdapter(
 
     fun activate(simEntry: SimEntry): Either<SimManagerError, Unit> {
         synchronized(lock) {
-            return dispatcher.activate(hssName = idToNameMap[simEntry.hssId]!!, msisdn = simEntry.msisdn, iccid = simEntry.iccid)
+            return dispatcher.activate(hssName = idToNameMap[simEntry.hssId]!!, iccid = simEntry.iccid, msisdn = simEntry.msisdn)
                     .flatMap { simInventoryDAO.setHssState(simEntry.id!!, HssState.ACTIVATED) }
                     .flatMap { Unit.right() }
         }
