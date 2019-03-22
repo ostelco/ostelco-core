@@ -18,7 +18,6 @@ import org.ostelco.prime.paymentprocessor.resources.StripeWebhookResource
 import org.ostelco.prime.paymentprocessor.subscribers.RecurringPaymentStripeEvent
 import org.ostelco.prime.paymentprocessor.subscribers.ReportStripeEvent
 import org.ostelco.prime.paymentprocessor.subscribers.StoreStripeEvent
-import org.ostelco.prime.paymentprocessor.subscribers.StripeProperty
 
 @JsonTypeName("stripe-payment-processor")
 class PaymentProcessorModule : PrimeModule {
@@ -41,7 +40,7 @@ class PaymentProcessorModule : PrimeModule {
         /* Setup datastore. */
         StripeStore.datastore = getDatastore()
         StripeStore.keyFactory = StripeStore.datastore.newKeyFactory()
-                .setKind(StripeProperty.KIND.text)
+                .setKind(ConfigRegistry.config.kind)
 
         val jerseyEnv = env.jersey()
 
@@ -74,12 +73,12 @@ class PaymentProcessorModule : PrimeModule {
                 }
                 else -> {
                     logger.info("Using GCP datastore instance")
-                    var optionsBuilder = DatastoreOptions.newBuilder()
                     if (!ConfigRegistry.config.namespace.isEmpty()) {
-                        optionsBuilder = optionsBuilder.setNamespace(ConfigRegistry.config.namespace)
-                    }
-                    optionsBuilder.setNamespace(ConfigRegistry.config.namespace)
-                            .build()
+                        DatastoreOptions.newBuilder()
+                                .setNamespace(ConfigRegistry.config.namespace)
+                    } else {
+                        DatastoreOptions.newBuilder()
+                    }.build()
                 }
             }.service
 }
@@ -109,9 +108,11 @@ class PaymentProcessorConfig {
     @JsonProperty("storeType")
     lateinit var storeType: String
 
-    @NotEmpty
-    @JsonProperty("namespace")
-    lateinit var namespace: String
+    @JsonProperty("storeNamespace")
+    var namespace: String = "Stripe"
+
+    @JsonProperty("storeTableName")
+    var kind: String = "stripe-events"
 
     @JsonProperty("hostport")
     var hostport: String = "localhost:9090"
@@ -122,6 +123,6 @@ object ConfigRegistry {
 }
 
 object StripeStore {
-    lateinit var datastore : Datastore
+    lateinit var datastore: Datastore
     lateinit var keyFactory: KeyFactory
 }

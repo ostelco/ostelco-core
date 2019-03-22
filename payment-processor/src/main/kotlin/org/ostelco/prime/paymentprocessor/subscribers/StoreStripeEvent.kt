@@ -12,14 +12,15 @@ import org.ostelco.prime.getLogger
 import org.ostelco.prime.paymentprocessor.ConfigRegistry
 import org.ostelco.prime.paymentprocessor.StripeStore
 import org.ostelco.prime.pubsub.PubSubSubscriber
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import kotlin.reflect.full.memberProperties
 
 
 enum class StripeProperty(val text: String) {
     ID("id"),
     CREATED("created"),
     TYPE("type"),
-    DATA("data"),
-    KIND("stripe-events")
+    DATA("data")
 }
 
 class StoreStripeEvent : PubSubSubscriber(
