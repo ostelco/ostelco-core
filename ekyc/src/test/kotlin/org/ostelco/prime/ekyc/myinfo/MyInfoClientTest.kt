@@ -88,7 +88,7 @@ class MyInfoClientTest {
 
     @Test
     fun `test myInfo client`() {
-        println(MyInfoClientSingleton.getPersonData(authorisationCode = "306efddc-4281-4b0e-811a-83b0ce250cb5"))
+        println(MyInfoClientSingleton.getPersonData(authorisationCode = "activation-code"))
     }
 
     @Test
