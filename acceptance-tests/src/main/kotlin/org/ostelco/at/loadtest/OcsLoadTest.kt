@@ -40,7 +40,7 @@ import kotlin.streams.toList
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
-class OcsGrpcLoadTest {
+class OcsLoadTest {
 
     private val logger by getLogger()
 

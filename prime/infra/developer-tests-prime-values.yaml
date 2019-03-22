@@ -23,6 +23,8 @@ prime:
     STRIPE_EVENT_REPORT_SUBSCRIPTION: stripe-event-report-sub
     STRIPE_EVENT_RECURRING_PAYMENT_SUBSCRIPTION: stripe-event-recurring-payment-sub
     GCP_PROJECT_ID: pi-ostelco-dev
+    ACTIVATE_TOPIC_ID: ocs-activate
+    CCR_SUBSCRIPTION_ID: ocs-ccr-sub
 
   secretVolumes:
     - secretName: "prime-sa-key"  
