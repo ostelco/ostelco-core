@@ -15,35 +15,56 @@ import org.ostelco.ext.myinfo.MyInfoEmulatorConfig
 import org.ostelco.prime.ekyc.Config
 import org.ostelco.prime.ekyc.ConfigRegistry
 import org.ostelco.prime.ekyc.Registry
-import org.ostelco.prime.ekyc.TestConfig
 import java.io.File
 import java.io.FileInputStream
 import java.security.KeyFactory
 import java.security.KeyPair
 import java.security.KeyPairGenerator
-import java.security.PublicKey
+import java.security.PrivateKey
 import java.security.cert.CertificateFactory
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 import java.util.*
 
+/**
+ * Ref: https://www.ndi-api.gov.sg/assets/lib/trusted-data/myinfo/specs/myinfo-kyc-v2.1.1.yaml.html#section/Environments
+ *
+ *  https://{ENV_DOMAIN_NAME}/{VERSION}/{RESOURCE}
+ *
+ * ENV_DOMAIN_NAME:
+ *  - Sandbox/Dev: https://myinfosgstg.api.gov.sg/dev/
+ *  - Staging: https://myinfosgstg.api.gov.sg/test/
+ *  - Production: https://myinfosg.api.gov.sg/
+ *
+ * VERSION: `/v2`
+ */
+// Using certs from https://github.com/jamesleegovtech/myinfo-demo-app/tree/master/ssl
+private val templateTestConfig = String(File("src/test/resources/stg-demoapp-client-privatekey-2018.pem").readBytes())
+        .replace("\n","")
+        .removePrefix("-----BEGIN PRIVATE KEY-----")
+        .removeSuffix("-----END PRIVATE KEY-----")
+        .let { base64Encoded -> PKCS8EncodedKeySpec(Base64.getDecoder().decode(base64Encoded)) }
+        .let { keySpec -> KeyFactory.getInstance("RSA").generatePrivate(keySpec) }
+        .let { clientPrivateKey: PrivateKey ->
+            Config(
+                    myInfoApiUri = "https://myinfosgstg.api.gov.sg/test/v2",
+                    myInfoApiClientId = "STG2-MYINFO-SELF-TEST",
+                    myInfoApiClientSecret = "44d953c796cccebcec9bdc826852857ab412fbe2",
+                    myInfoRedirectUri = "http://localhost:3001/callback",
+                    myInfoApiRealm = "http://localhost:3001",
+                    myInfoPersonDataAttributes = "name,sex,race,nationality,dob,email,mobileno,regadd,housingtype,hdbtype,marital,edulevel,assessableincome,ownerprivate,assessyear,cpfcontributions,cpfbalances",
+                    myInfoServerPublicKey = "",
+                    myInfoClientPrivateKey = Base64.getEncoder().encodeToString(clientPrivateKey.encoded))
+        }
+
 class MyInfoClientTest {
 
     @Before
     fun setupUnitTest() {
-        // Using certs from https://github.com/jamesleegovtech/myinfo-demo-app/tree/master/ssl
-        // client private key
-        val base64Encoded = String(File("src/test/resources/stg-demoapp-client-privatekey-2018.pem").readBytes())
-                .replace("\n","")
-                .removePrefix("-----BEGIN PRIVATE KEY-----")
-                .removeSuffix("-----END PRIVATE KEY-----")
-        val keySpec = PKCS8EncodedKeySpec(Base64.getDecoder().decode(base64Encoded))
-        val clientPrivateKey = KeyFactory.getInstance("RSA").generatePrivate(keySpec)
-
-        ConfigRegistry.config = Config(
+        ConfigRegistry.config = templateTestConfig.copy(
                 myInfoApiUri = "http://localhost:8080",
-                myInfoServerPublicKey = Base64.getEncoder().encodeToString(myInfoServerKeyPair.public.encoded),
-                myInfoClientPrivateKey = Base64.getEncoder().encodeToString(clientPrivateKey.encoded))
+                myInfoServerPublicKey = Base64.getEncoder().encodeToString(myInfoServerKeyPair.public.encoded))
+
         Registry.myInfoClient = HttpClientBuilder.create().build()
     }
 
@@ -72,23 +93,15 @@ class MyInfoClientTest {
         val certificateFactory = CertificateFactory.getInstance("X.509")
         val certificate= certificateFactory.generateCertificate(FileInputStream("src/test/resources/stg-auth-signing-public.pem"))
 
-        // client private key
-        val base64Encoded = String(File("src/test/resources/stg-demoapp-client-privatekey-2018.pem").readBytes())
-                .replace("\n","")
-                .removePrefix("-----BEGIN PRIVATE KEY-----")
-                .removeSuffix("-----END PRIVATE KEY-----")
-        val keySpec = PKCS8EncodedKeySpec(Base64.getDecoder().decode(base64Encoded))
-        val clientPrivateKey = KeyFactory.getInstance("RSA").generatePrivate(keySpec)
+        ConfigRegistry.config = templateTestConfig.copy(
+                myInfoServerPublicKey = Base64.getEncoder().encodeToString(certificate.publicKey.encoded))
 
-        ConfigRegistry.config = Config(
-                myInfoServerPublicKey = Base64.getEncoder().encodeToString(certificate.publicKey.encoded),
-                myInfoClientPrivateKey = Base64.getEncoder().encodeToString(clientPrivateKey.encoded))
         Registry.myInfoClient = HttpClientBuilder.create().build()
     }
 
     @Test
     fun `test myInfo client`() {
-        println(MyInfoClientSingleton.getPersonData(authorisationCode = "306efddc-4281-4b0e-811a-83b0ce250cb5"))
+        println(MyInfoClientSingleton.getPersonData(authorisationCode = "activation-code"))
     }
 
     @Test
@@ -99,29 +112,25 @@ class MyInfoClientTest {
 
     companion object {
 
-        private var clientPublicKey: PublicKey
-
-        init {
-            val certificateFactory = CertificateFactory.getInstance("X.509")
-            val certificate= certificateFactory.generateCertificate(FileInputStream("src/test/resources/stg-demoapp-client-publiccert-2018.pem"))
-            clientPublicKey = certificate.publicKey
-        }
-
         val myInfoServerKeyPair: KeyPair = KeyPairGenerator.getInstance("RSA")
                 .apply { this.initialize(2048) }
                 .genKeyPair()
 
         @JvmStatic
-        val SUPPORT: DropwizardTestSupport<MyInfoEmulatorConfig> = DropwizardTestSupport<MyInfoEmulatorConfig>(
-                MyInfoEmulatorApp::class.java,
-                ResourceHelpers.resourceFilePath("myinfo-emulator-config.yaml"),
-                ConfigOverride.config("myInfoApiClientId", TestConfig.myInfoApiClientId),
-                ConfigOverride.config("myInfoApiClientSecret", TestConfig.myInfoApiClientSecret),
-                ConfigOverride.config("myInfoRedirectUri", TestConfig.myInfoRedirectUri),
-                ConfigOverride.config("myInfoServerPublicKey", Base64.getEncoder().encodeToString(myInfoServerKeyPair.public.encoded)),
-                ConfigOverride.config("myInfoServerPrivateKey", Base64.getEncoder().encodeToString(myInfoServerKeyPair.private.encoded)),
-                ConfigOverride.config("myInfoClientPublicKey", Base64.getEncoder().encodeToString(clientPublicKey.encoded))
-        )
+        val SUPPORT: DropwizardTestSupport<MyInfoEmulatorConfig> = CertificateFactory
+                .getInstance("X.509")
+                .generateCertificate(FileInputStream("src/test/resources/stg-demoapp-client-publiccert-2018.pem"))
+                .let { certificate ->
+                    DropwizardTestSupport<MyInfoEmulatorConfig>(
+                            MyInfoEmulatorApp::class.java,
+                            ResourceHelpers.resourceFilePath("myinfo-emulator-config.yaml"),
+                            ConfigOverride.config("myInfoApiClientId", templateTestConfig.myInfoApiClientId),
+                            ConfigOverride.config("myInfoApiClientSecret", templateTestConfig.myInfoApiClientSecret),
+                            ConfigOverride.config("myInfoRedirectUri", templateTestConfig.myInfoRedirectUri),
+                            ConfigOverride.config("myInfoServerPublicKey", Base64.getEncoder().encodeToString(myInfoServerKeyPair.public.encoded)),
+                            ConfigOverride.config("myInfoServerPrivateKey", Base64.getEncoder().encodeToString(myInfoServerKeyPair.private.encoded)),
+                            ConfigOverride.config("myInfoClientPublicKey", Base64.getEncoder().encodeToString(certificate.publicKey.encoded)))
+                }
 
         @JvmStatic
         @BeforeClass
