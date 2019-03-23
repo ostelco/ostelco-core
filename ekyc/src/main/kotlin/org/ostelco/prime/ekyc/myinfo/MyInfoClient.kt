@@ -76,15 +76,8 @@ object MyInfoClientSingleton : MyInfoKycService {
                     path = "/person/$uinFin",
                     queryParams = mapOf(
                             "client_id" to config.myInfoApiClientId,
-                            "attributes" to "name,sex,race,nationality,dob,email,mobileno,regadd,housingtype,hdbtype,marital,edulevel,assessableincome,ownerprivate,assessyear,cpfcontributions,cpfbalances"
-                            // "attributes" to getPersonAttributes()
-                    ),
+                            "attributes" to config.myInfoPersonDataAttributes),
                     accessToken = accessToken)
-
-
-    private fun getPersonAttributes() = PersonApiAttributes
-            .values()
-            .joinToString(separator = ",") { it.label }
 
     /**
      * Ref: https://www.ndi-api.gov.sg/library/trusted-data/myinfo/tutorial3
