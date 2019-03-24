@@ -77,7 +77,7 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
             write("""CREATE (node:${entityType.name} { id:"${entity.id}"$strProps });""",
                     transaction) {
                 if (it.summary().counters().nodesCreated() == 1)
-                    Either.right(Unit)
+                    Unit.right()
                 else
                     Either.left(NotCreatedError(type = entityType.name, id = entity.id))
             }
@@ -92,7 +92,7 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
                     transaction) { statementResult ->
 
                 if (statementResult.summary().counters().nodesCreated() == 1)
-                    Either.right(Unit)
+                    Unit.right()
                 else
                     Either.left(NotCreatedError(type = entityType.name, id = id))
             }
@@ -308,7 +308,7 @@ class RelationStore<FROM : HasId, TO : HasId>(private val relationType: Relation
                 """.trimIndent(),
             transaction) {
         // TODO vihang: validate if 'to' node exists
-        Either.right(Unit)
+        Unit.right()
     }
 }
 

@@ -248,17 +248,23 @@ object Neo4jStoreSingleton : GraphStore {
     // Customer
     //
 
-    override fun getCustomer(identity: org.ostelco.prime.model.Identity): Either<StoreError, Customer> {
-        return readTransaction {
-            identityStore.getRelated(id = identity.id, relationType = identifiesRelation, transaction = transaction)
-        }.map { it.single() }
+    override fun getCustomer(identity: org.ostelco.prime.model.Identity): Either<StoreError, Customer> = readTransaction {
+        getCustomer(identity = identity, transaction = transaction)
     }
+
+    private fun getCustomer(
+            identity: org.ostelco.prime.model.Identity,
+            transaction: Transaction): Either<StoreError, Customer> = identityStore.getRelated(
+            id = identity.id,
+            relationType = identifiesRelation,
+            transaction = transaction)
+            .map(List<Customer>::single)
 
     private fun validateCreateCustomerParams(customer: Customer, referredBy: String?): Either<StoreError, Unit> =
             if (customer.referralId == referredBy) {
                 Either.left(ValidationError(type = customerEntity.name, id = customer.id, message = "Referred by self"))
             } else {
-                Either.right(Unit)
+                Unit.right()
             }
 
     // TODO vihang: Move this logic to DSL + Rule Engine + Triggers, when they are ready
@@ -298,7 +304,14 @@ object Neo4jStoreSingleton : GraphStore {
     // << END
 
     override fun updateCustomer(identity: org.ostelco.prime.model.Identity, customer: Customer): Either<StoreError, Unit> = writeTransaction {
-        customerStore.update(customer, transaction)
+        getCustomer(identity = identity, transaction = transaction)
+                .flatMap { existingCustomer ->
+                    customerStore.update(
+                            existingCustomer.copy(
+                                    name = customer.name,
+                                    email = customer.email),
+                            transaction)
+                }
                 .ifFailedThenRollback(transaction)
     }
 
@@ -355,7 +368,7 @@ object Neo4jStoreSingleton : GraphStore {
             if (bundles.isEmpty()) {
                 Either.left(NotFoundError(type = subscriberToBundleRelation.relation.name, id = "$customerId -> *"))
             } else {
-                Either.right(Unit)
+                Unit.right()
             }
 
     // TODO vihang - Should we link Subscription on confirmation from SimManager that it is downloaded?
@@ -718,7 +731,8 @@ object Neo4jStoreSingleton : GraphStore {
                 // Ignore failure to capture charge, by not calling bind()
                 ProductInfo(product.sku)
             }.fix()
-        }.unsafeRunSync().ifFailedThenRollback(transaction)
+        }.unsafeRunSync()
+                .ifFailedThenRollback(transaction)
     }
     // << END
 
@@ -1068,14 +1082,14 @@ object Neo4jStoreSingleton : GraphStore {
 
                 productStore.get(plan.id, transaction)
                         .fold(
-                                { Either.right(Unit) },
+                                { Unit.right() },
                                 {
                                     Either.left(AlreadyExistsError(type = productEntity.name, id = "Failed to find product associated with plan ${plan.id}"))
                                 }
                         ).bind()
                 plansStore.get(plan.id, transaction)
                         .fold(
-                                { Either.right(Unit) },
+                                { Unit.right() },
                                 {
                                     Either.left(AlreadyExistsError(type = planEntity.name, id = "Failed to find plan ${plan.id}"))
                                 }
@@ -1150,7 +1164,7 @@ object Neo4jStoreSingleton : GraphStore {
                         }.linkReversalActionToTransaction(transaction) {
                             /* (Nothing to do.) */
                         }.flatMap {
-                            Either.right(Unit)
+                            Unit.right()
                         }.bind()
                 /* Lookup in payment backend will fail if no value found for 'productId'. */
                 paymentProcessor.removeProduct(plan.properties.getOrDefault("productId", "missing"))
@@ -1221,7 +1235,7 @@ object Neo4jStoreSingleton : GraphStore {
                             NotDeletedError(type = planEntity.name, id = "$customerId -> ${plan.id}",
                                     error = it)
                         }.flatMap {
-                            Either.right(Unit)
+                            Unit.right()
                         }.bind()
 
                 subscribesToPlanRelationStore.delete(customerId, planId, transaction)
@@ -1247,10 +1261,8 @@ object Neo4jStoreSingleton : GraphStore {
                         product = product,
                         timestamp = Instant.now().toEpochMilli())
 
-                createPurchaseRecordRelation(customerId, purchaseRecord, transaction)
-                        .flatMap {
-                            Either.right(plan)
-                        }.bind()
+        createPurchaseRecordRelation(customerId, purchaseRecord, transaction).bind()
+                        plan
             }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
@@ -1268,15 +1280,12 @@ object Neo4jStoreSingleton : GraphStore {
             logger.error("Trying to refund a free product, ${purchaseRecord.id}")
             return Either.left(ForbiddenError("Trying to refund a free purchase"))
         }
-        return Either.right(Unit)
+        return Unit.right()
     }
 
     private fun updatePurchaseRecord(
             purchase: PurchaseRecord,
-            primeTransaction: PrimeTransaction): Either<StoreError, Unit> {
-        return changablePurchaseRelationStore.update(purchase, primeTransaction)
-                .ifFailedThenRollback(primeTransaction)
-    }
+            primeTransaction: PrimeTransaction): Either<StoreError, Unit> = changablePurchaseRelationStore.update(purchase, primeTransaction)
 
     override fun refundPurchase(
             identity: org.ostelco.prime.model.Identity,
@@ -1440,7 +1449,7 @@ object Neo4jStoreSingleton : GraphStore {
         }
         // end of validation
 
-        var result = Either.right(Unit) as Either<StoreError, Unit>
+        var result = Unit.right() as Either<StoreError, Unit>
 
         result = products.fold(
                 initial = result,
@@ -1470,7 +1479,7 @@ object Neo4jStoreSingleton : GraphStore {
     override fun atomicCreateSegments(createSegments: Collection<Segment>): Either<StoreError, Unit> = writeTransaction {
 
         createSegments.fold(
-                initial = Either.right(Unit) as Either<StoreError, Unit>,
+                initial = Unit.right() as Either<StoreError, Unit>,
                 operation = { acc, segment ->
                     acc.flatMap { createSegment(segment, transaction) }
                 })
@@ -1483,7 +1492,7 @@ object Neo4jStoreSingleton : GraphStore {
     override fun atomicUpdateSegments(updateSegments: Collection<Segment>): Either<StoreError, Unit> = writeTransaction {
 
         updateSegments.fold(
-                initial = Either.right(Unit) as Either<StoreError, Unit>,
+                initial = Unit.right() as Either<StoreError, Unit>,
                 operation = { acc, segment ->
                     acc.flatMap { updateSegment(segment, transaction) }
                 })

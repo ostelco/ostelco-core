@@ -1,6 +1,5 @@
 package org.ostelco.prime.storage.graph
 
-import arrow.core.Either
 import arrow.core.right
 import com.palantir.docker.compose.DockerComposeRule
 import com.palantir.docker.compose.connection.waiting.HealthChecks
@@ -440,7 +439,8 @@ class GraphStoreTest {
             vendorData.add(JumioScanData.SCAN_IMAGE.s, imgUrl)
             vendorData.add(JumioScanData.SCAN_IMAGE_BACKSIDE.s, imgUrl2)
 
-            Mockito.`when`(mockScanInformationStore.upsertVendorScanInformation(customerId = CUSTOMER.id, countryCode = COUNTRY, vendorData = vendorData)).thenReturn(Either.right(Unit))
+            Mockito.`when`(mockScanInformationStore.upsertVendorScanInformation(customerId = CUSTOMER.id, countryCode = COUNTRY, vendorData = vendorData))
+                    .thenReturn(Unit.right())
 
             Neo4jStoreSingleton.updateScanInformation(newScanInformation, vendorData).mapLeft {
                 fail(it.message)
