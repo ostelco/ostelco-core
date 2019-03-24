@@ -97,12 +97,12 @@ interface ClientGraphStore {
     /**
      * Get subscriptions for Customer
      */
-    fun getSubscriptions(identity: Identity): Either<StoreError, Collection<Subscription>>
+    fun getSubscriptions(identity: Identity, regionCode: String? = null): Either<StoreError, Collection<Subscription>>
 
     /**
      * Link Customer to MSISDN
      */
-    fun createSubscription(identity: Identity): Either<StoreError, Subscription>
+    fun createSubscriptions(identity: Identity, regionCode: String): Either<StoreError, Collection<Subscription>>
 
     /**
      * Get balance for Client
@@ -152,7 +152,7 @@ interface ClientGraphStore {
     /**
      * Generate new eKYC scanId for the customer.
      */
-    fun createNewJumioKycScanId(identity: Identity, countryCode: String): Either<StoreError, ScanInformation>
+    fun createNewJumioKycScanId(identity: Identity, regionCode: String): Either<StoreError, ScanInformation>
 
     /**
      * Get the country code for the scan.
@@ -192,9 +192,9 @@ interface AdminGraphStore {
     // updating an Offer and Product is not allowed
     fun updateSegment(segment: Segment): Either<StoreError, Unit>
 
-    fun getSubscriberCount(): Long
-    fun getReferredSubscriberCount(): Long
-    fun getPaidSubscriberCount(): Long
+    fun getCustomerCount(): Long
+    fun getReferredCustomerCount(): Long
+    fun getPaidCustomerCount(): Long
 
     /* For managing plans and subscription to plans. */
 

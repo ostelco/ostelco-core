@@ -7,3 +7,7 @@ data class Identity(
         val type: String) : HasId
 
 data class Identifies(val provider: String)
+
+data class SimProfile(
+        override val id: String,
+        @JvmField val eSimActivationCode: String = "") : HasId

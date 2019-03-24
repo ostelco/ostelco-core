@@ -68,7 +68,7 @@ class GraphStoreTest {
                         price = Price(0, CURRENCY),
                         properties = mapOf("noOfBytes" to "1_000_000_000")))
 
-        val allSegment = Segment(id = getSegmentNameFromCountryCode(COUNTRY))
+        val allSegment = Segment(id = getSegmentNameFromCountryCode(REGION))
         Neo4jStoreSingleton.createSegment(allSegment)
     }
 
@@ -120,7 +120,7 @@ class GraphStoreTest {
                 { fail(it.message) },
                 { assertEquals(MSISDN, it) })
 
-        Neo4jStoreSingleton.getSubscriptions(IDENTITY).bimap(
+        Neo4jStoreSingleton.getSubscriptions(IDENTITY, REGION).bimap(
                 { fail(it.message) },
                 { assertEquals(MSISDN, it.single().msisdn) })
 
@@ -164,7 +164,7 @@ class GraphStoreTest {
 
         val offer = Offer(
                 id = "NEW_OFFER",
-                segments = listOf(getSegmentNameFromCountryCode(COUNTRY)),
+                segments = listOf(getSegmentNameFromCountryCode(REGION)),
                 products = listOf(sku))
 
         Neo4jStoreSingleton.createOffer(offer)
@@ -372,7 +372,7 @@ class GraphStoreTest {
                 customer = CUSTOMER).isRight())
 
         // test
-        Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, countryCode = COUNTRY).map {
+        Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, regionCode = REGION).map {
             Neo4jStoreSingleton.getScanInformation(identity = IDENTITY, scanId = it.scanId).mapLeft {
                 fail(it.message)
             }
@@ -393,7 +393,7 @@ class GraphStoreTest {
                 customer = CUSTOMER).isRight())
 
         // test
-        Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, countryCode = COUNTRY).map { newScan ->
+        Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, regionCode = REGION).map { newScan ->
             Neo4jStoreSingleton.getAllScanInformation(identity = IDENTITY).map { infoList ->
                 assertEquals(1, infoList.size, "More scans than expected.")
                 assertEquals(newScan.scanId, infoList.elementAt(0).scanId, "Wrong scan returned.")
@@ -414,10 +414,10 @@ class GraphStoreTest {
                 identity = IDENTITY,
                 customer = CUSTOMER).isRight())
 
-        Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, countryCode = COUNTRY).map {
+        Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, regionCode = REGION).map {
             val newScanInformation = ScanInformation(
                     scanId = it.scanId,
-                    countryCode = COUNTRY,
+                    countryCode = REGION,
                     status = ScanStatus.APPROVED,
                     scanResult = ScanResult(
                             vendorScanReference = UUID.randomUUID().toString(),
@@ -439,7 +439,7 @@ class GraphStoreTest {
             vendorData.add(JumioScanData.SCAN_IMAGE.s, imgUrl)
             vendorData.add(JumioScanData.SCAN_IMAGE_BACKSIDE.s, imgUrl2)
 
-            Mockito.`when`(mockScanInformationStore.upsertVendorScanInformation(customerId = CUSTOMER.id, countryCode = COUNTRY, vendorData = vendorData))
+            Mockito.`when`(mockScanInformationStore.upsertVendorScanInformation(customerId = CUSTOMER.id, countryCode = REGION, vendorData = vendorData))
                     .thenReturn(Unit.right())
 
             Neo4jStoreSingleton.updateScanInformation(newScanInformation, vendorData).mapLeft {
@@ -462,10 +462,10 @@ class GraphStoreTest {
                 customer = CUSTOMER).isRight())
 
         // test
-        Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, countryCode = COUNTRY).map {
+        Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, regionCode = REGION).map {
             val newScanInformation = ScanInformation(
                     scanId = "fakeId",
-                    countryCode = COUNTRY,
+                    countryCode = REGION,
                     status = ScanStatus.APPROVED,
                     scanResult = ScanResult(
                             vendorScanReference = UUID.randomUUID().toString(),
@@ -511,10 +511,10 @@ class GraphStoreTest {
                 customer = Customer(email = fakeEmail, name = NAME)).isRight())
 
         // test
-        Neo4jStoreSingleton.createNewJumioKycScanId(fakeIdentity, COUNTRY).mapLeft {
+        Neo4jStoreSingleton.createNewJumioKycScanId(fakeIdentity, REGION).mapLeft {
             fail(it.message)
         }
-        Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, countryCode = COUNTRY).map {
+        Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, regionCode = REGION).map {
             Neo4jStoreSingleton.getScanInformation(fakeIdentity, scanId = it.scanId).bimap(
                     { assertEquals("Not allowed", it.message) },
                     { fail("Expected to fail since the requested subscriber is wrong.") })
@@ -527,7 +527,7 @@ class GraphStoreTest {
         const val EMAIL = "foo@bar.com"
         const val NAME = "Test User"
         const val CURRENCY = "NOK"
-        const val COUNTRY = "NO"
+        const val REGION = "NO"
         const val MSISDN = "4712345678"
         val IDENTITY = Identity(id = EMAIL, type = "EMAIL", provider = "email")
         val CUSTOMER = Customer(email = EMAIL, name = NAME)

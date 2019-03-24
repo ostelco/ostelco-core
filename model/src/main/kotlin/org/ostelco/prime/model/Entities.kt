@@ -161,8 +161,7 @@ data class ApplicationToken(
 data class Subscription(
         val msisdn: String,
         val analyticsId: String = UUID.randomUUID().toString(),
-        val alias: String = "",
-        @JvmField val eSimActivationCode: String = "") : HasId {
+        val alias: String = "") : HasId {
 
     override val id: String
         @JsonIgnore
@@ -231,5 +230,6 @@ data class PurchaseRecordInfo(override val id: String,
 }
 
 data class SimEntry(
-        val msisdn: String,
-        val eSimActivationCode: String)
+        val iccId: String,
+        val eSimActivationCode: String,
+        val msisdnList: Collection<String>)

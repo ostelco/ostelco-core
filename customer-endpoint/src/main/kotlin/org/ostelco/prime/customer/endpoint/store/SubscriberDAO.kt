@@ -41,9 +41,9 @@ interface SubscriberDAO {
     // Subscriptions
     //
 
-    fun getSubscriptions(identity: Identity): Either<ApiError, Collection<Subscription>>
+    fun getSubscriptions(identity: Identity, regionCode: String): Either<ApiError, Collection<Subscription>>
 
-    fun createSubscription(identity: Identity): Either<ApiError, Subscription>
+    fun createSubscriptions(identity: Identity, regionCode: String): Either<ApiError, Collection<Subscription>>
 
     //
     // Bundle
@@ -88,7 +88,7 @@ interface SubscriberDAO {
     // eKYC
     //
 
-    fun createNewJumioKycScanId(identity: Identity, countryCode: String): Either<ApiError, ScanInformation>
+    fun createNewJumioKycScanId(identity: Identity, regionCode: String): Either<ApiError, ScanInformation>
 
     fun getCountryCodeForScan(scanId: String): Either<ApiError, String>
 

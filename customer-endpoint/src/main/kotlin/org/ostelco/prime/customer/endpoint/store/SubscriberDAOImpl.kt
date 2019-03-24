@@ -112,9 +112,9 @@ class SubscriberDAOImpl : SubscriberDAO {
     // Subscriptions
     //
 
-    override fun getSubscriptions(identity: Identity): Either<ApiError, Collection<Subscription>> {
+    override fun getSubscriptions(identity: Identity, regionCode: String): Either<ApiError, Collection<Subscription>> {
         return try {
-            storage.getSubscriptions(identity).mapLeft {
+            storage.getSubscriptions(identity, regionCode).mapLeft {
                 NotFoundError("Failed to get subscriptions.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS, it)
             }
         } catch (e: Exception) {
@@ -123,9 +123,9 @@ class SubscriberDAOImpl : SubscriberDAO {
         }
     }
 
-    override fun createSubscription(identity: Identity): Either<ApiError, Subscription> {
+    override fun createSubscriptions(identity: Identity, regionCode: String): Either<ApiError, Collection<Subscription>> {
         return try {
-            storage.createSubscription(identity).mapLeft {
+            storage.createSubscriptions(identity, regionCode).mapLeft {
                 NotFoundError("Failed to create subscription.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS, it)
             }
         } catch (e: Exception) {
@@ -305,8 +305,8 @@ class SubscriberDAOImpl : SubscriberDAO {
     // eKYC
     //
 
-    override fun createNewJumioKycScanId(identity: Identity, countryCode: String): Either<ApiError, ScanInformation> {
-        return storage.createNewJumioKycScanId(identity, countryCode)
+    override fun createNewJumioKycScanId(identity: Identity, regionCode: String): Either<ApiError, ScanInformation> {
+        return storage.createNewJumioKycScanId(identity, regionCode)
                 .mapLeft { mapStorageErrorToApiError("Failed to create new scanId", ApiErrorCode.FAILED_TO_CREATE_SCANID, it) }
     }
 

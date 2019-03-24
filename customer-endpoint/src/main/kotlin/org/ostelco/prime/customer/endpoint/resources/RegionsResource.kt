@@ -31,15 +31,20 @@ class RegionsResource(private val dao: SubscriberDAO) {
                 .build()
     }
 
-    @Path("/{countryCode}/kyc")
+    @Path("/{regionCode}/kyc")
     fun kycResource(
             @NotNull
-            @PathParam("countryCode")
-            countryCode: String
-    ): KycResource {
-        return when (countryCode.toLowerCase()) {
-            "sg" -> SingaporeKycResource(dao = dao)
-            else -> KycResource(countryCode = countryCode, dao = dao)
-        }
+            @PathParam("regionCode")
+            regionCode: String
+    ): KycResource = when (regionCode.toLowerCase()) {
+        "sg" -> SingaporeKycResource(dao = dao)
+        else -> KycResource(regionCode = regionCode, dao = dao)
     }
+
+    @Path("/{regionCode}/subscriptions")
+    fun subscriptionsResource(
+            @NotNull
+            @PathParam("regionCode")
+            regionCode: String
+    ): SubscriptionsResource = SubscriptionsResource(regionCode = regionCode, dao = dao)
 }

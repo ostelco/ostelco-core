@@ -24,11 +24,11 @@ import javax.ws.rs.core.Response
  * with Strategy pattern and use composition instead of inheritance.
  *
  */
-open class KycResource(private val countryCode: String, private val dao: SubscriberDAO) {
+open class KycResource(private val regionCode: String, private val dao: SubscriberDAO) {
 
     @Path("/jumio")
     fun jumioResource(): JumioKycResource {
-        return JumioKycResource(countryCode = countryCode, dao = dao)
+        return JumioKycResource(regionCode = regionCode, dao = dao)
     }
 }
 
@@ -37,7 +37,7 @@ open class KycResource(private val countryCode: String, private val dao: Subscri
  * It has Singapore specific eKYC APIs.
  *
  */
-class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(countryCode = "sg", dao = dao) {
+class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(regionCode = "sg", dao = dao) {
 
     @GET
     @Path("/myInfo/{authorisationCode}")
@@ -97,7 +97,7 @@ class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(countryC
     }
 }
 
-class JumioKycResource(private val countryCode: String, private val dao: SubscriberDAO) {
+class JumioKycResource(private val regionCode: String, private val dao: SubscriberDAO) {
 
     @POST
     @Path("/scans")
@@ -111,7 +111,7 @@ class JumioKycResource(private val countryCode: String, private val dao: Subscri
 
         return dao.createNewJumioKycScanId(
                 identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
-                countryCode = countryCode)
+                regionCode = regionCode)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { scanInformation -> Response.status(Response.Status.CREATED).entity(scanInformation) })
