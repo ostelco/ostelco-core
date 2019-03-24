@@ -88,7 +88,7 @@ interface SubscriberDAO {
     // eKYC
     //
 
-    fun createNewJumioScanId(identity: Identity, countryCode: String): Either<ApiError, ScanInformation>
+    fun createNewJumioKycScanId(identity: Identity, countryCode: String): Either<ApiError, ScanInformation>
 
     fun getCountryCodeForScan(scanId: String): Either<ApiError, String>
 

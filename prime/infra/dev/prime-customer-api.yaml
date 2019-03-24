@@ -106,7 +106,7 @@ paths:
       description: "Get a new Id for eKYC scanning."
       produces:
         - application/json
-      operationId: "createNewJumioScanId"
+      operationId: "createNewJumioKycScanId"
       parameters:
         - name: countryCode
           in: path

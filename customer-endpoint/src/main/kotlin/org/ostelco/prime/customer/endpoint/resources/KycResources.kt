@@ -109,7 +109,7 @@ class JumioKycResource(private val countryCode: String, private val dao: Subscri
                     .build()
         }
 
-        return dao.createNewJumioScanId(
+        return dao.createNewJumioKycScanId(
                 identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
                 countryCode = countryCode)
                 .fold(

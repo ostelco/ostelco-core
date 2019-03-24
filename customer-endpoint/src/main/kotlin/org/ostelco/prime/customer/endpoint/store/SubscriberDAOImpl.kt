@@ -305,8 +305,8 @@ class SubscriberDAOImpl : SubscriberDAO {
     // eKYC
     //
 
-    override fun createNewJumioScanId(identity: Identity, countryCode: String): Either<ApiError, ScanInformation> {
-        return storage.newEKYCScanId(identity, countryCode)
+    override fun createNewJumioKycScanId(identity: Identity, countryCode: String): Either<ApiError, ScanInformation> {
+        return storage.createNewJumioKycScanId(identity, countryCode)
                 .mapLeft { mapStorageErrorToApiError("Failed to create new scanId", ApiErrorCode.FAILED_TO_CREATE_SCANID, it) }
     }
 

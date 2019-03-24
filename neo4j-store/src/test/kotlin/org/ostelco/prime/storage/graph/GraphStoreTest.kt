@@ -372,7 +372,7 @@ class GraphStoreTest {
                 customer = CUSTOMER).isRight())
 
         // test
-        Neo4jStoreSingleton.newEKYCScanId(identity = IDENTITY, countryCode = COUNTRY).map {
+        Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, countryCode = COUNTRY).map {
             Neo4jStoreSingleton.getScanInformation(identity = IDENTITY, scanId = it.scanId).mapLeft {
                 fail(it.message)
             }
@@ -393,7 +393,7 @@ class GraphStoreTest {
                 customer = CUSTOMER).isRight())
 
         // test
-        Neo4jStoreSingleton.newEKYCScanId(identity = IDENTITY, countryCode = COUNTRY).map { newScan ->
+        Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, countryCode = COUNTRY).map { newScan ->
             Neo4jStoreSingleton.getAllScanInformation(identity = IDENTITY).map { infoList ->
                 assertEquals(1, infoList.size, "More scans than expected.")
                 assertEquals(newScan.scanId, infoList.elementAt(0).scanId, "Wrong scan returned.")
@@ -414,7 +414,7 @@ class GraphStoreTest {
                 identity = IDENTITY,
                 customer = CUSTOMER).isRight())
 
-        Neo4jStoreSingleton.newEKYCScanId(identity = IDENTITY, countryCode = COUNTRY).map {
+        Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, countryCode = COUNTRY).map {
             val newScanInformation = ScanInformation(
                     scanId = it.scanId,
                     countryCode = COUNTRY,
@@ -462,7 +462,7 @@ class GraphStoreTest {
                 customer = CUSTOMER).isRight())
 
         // test
-        Neo4jStoreSingleton.newEKYCScanId(identity = IDENTITY, countryCode = COUNTRY).map {
+        Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, countryCode = COUNTRY).map {
             val newScanInformation = ScanInformation(
                     scanId = "fakeId",
                     countryCode = COUNTRY,
@@ -511,10 +511,10 @@ class GraphStoreTest {
                 customer = Customer(email = fakeEmail, name = NAME)).isRight())
 
         // test
-        Neo4jStoreSingleton.newEKYCScanId(fakeIdentity, COUNTRY).mapLeft {
+        Neo4jStoreSingleton.createNewJumioKycScanId(fakeIdentity, COUNTRY).mapLeft {
             fail(it.message)
         }
-        Neo4jStoreSingleton.newEKYCScanId(identity = IDENTITY, countryCode = COUNTRY).map {
+        Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, countryCode = COUNTRY).map {
             Neo4jStoreSingleton.getScanInformation(fakeIdentity, scanId = it.scanId).bimap(
                     { assertEquals("Not allowed", it.message) },
                     { fail("Expected to fail since the requested subscriber is wrong.") })

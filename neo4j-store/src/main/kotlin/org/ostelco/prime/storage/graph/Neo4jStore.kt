@@ -851,7 +851,7 @@ object Neo4jStoreSingleton : GraphStore {
     // eKYC
     //
 
-    override fun newEKYCScanId(identity: org.ostelco.prime.model.Identity, countryCode: String): Either<StoreError, ScanInformation> = writeTransaction {
+    override fun createNewJumioKycScanId(identity: org.ostelco.prime.model.Identity, countryCode: String): Either<StoreError, ScanInformation> = writeTransaction {
         getCustomerId(identity = identity, transaction = transaction)
                 .flatMap { customerId ->
                     // Generate new id for the scan

@@ -152,7 +152,7 @@ interface ClientGraphStore {
     /**
      * Generate new eKYC scanId for the customer.
      */
-    fun newEKYCScanId(identity: Identity, countryCode: String): Either<StoreError, ScanInformation>
+    fun createNewJumioKycScanId(identity: Identity, countryCode: String): Either<StoreError, ScanInformation>
 
     /**
      * Get the country code for the scan.
