@@ -1,5 +1,9 @@
 # Prime Deployment
 
+## TL;DR
+ 
+For direct test deployments, use the [helm-deploy-dev-direct.sh](../script/helm-deploy-dev-direct.sh) script. 
+
 ## Dev deployment
 
 Prime is automatically deployed into the dev cluster through the circleci pipeline. 
