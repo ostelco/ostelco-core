@@ -18,7 +18,7 @@ message UserEquipmentInfo {
 message ServiceUnit {
   uint64 totalOctets = 1;
   uint64 inputOctets = 2;
-  uint64 outputOctetes = 3;
+  uint64 outputOctets = 3;
   ReportingReason reportingReason = 4;
 }
 
@@ -84,15 +84,15 @@ message FinalUnitIndication {
 }
 
 message MultipleServiceCreditControl {
-    uint64 serviceIdentifier = 1;
-    uint64 ratingGroup = 2;
-    ServiceUnit requested = 3;
-    ServiceUnit used = 4;
-    ServiceUnit granted = 5;
-    FinalUnitIndication finalUnitIndication = 6;
-    uint32 validityTime = 7;
-    ReportingReason reportingReason = 8;
-    ResultCode resultCode = 9;
+  uint64 serviceIdentifier = 1;
+  uint64 ratingGroup = 2;
+  ServiceUnit requested = 3;
+  ServiceUnit used = 4;
+  ServiceUnit granted = 5;
+  FinalUnitIndication finalUnitIndication = 6;
+  uint32 validityTime = 7;
+  ReportingReason reportingReason = 8;
+  ResultCode resultCode = 9;
 }
 
 message PsInformation {
@@ -111,6 +111,7 @@ message CreditControlRequestInfo {
   string imsi = 4;
   repeated MultipleServiceCreditControl mscc = 5;
   ServiceInfo serviceInformation = 6;
+  string topicId = 7;
 }
 
 message CreditControlAnswerInfo {

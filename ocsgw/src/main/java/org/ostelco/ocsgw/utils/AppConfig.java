@@ -64,12 +64,16 @@ public class AppConfig {
         return getEnvProperty("PUBSUB_PROJECT_ID");
     }
 
-    public String getPubSubTopicId() {
-        return getEnvProperty("PUBSUB_TOPIC_ID");
+    public String getPubSubTopicIdForCcr() {
+        return getEnvProperty("PUBSUB_CCR_TOPIC_ID");
     }
 
-    public String getPubSubSubscriptionIdForCcr() {
-        return getEnvProperty("PUBSUB_CCR_SUBSCRIPTION_ID");
+    public String getPubSubTopicIdForCca() {
+        return getEnvProperty("PUBSUB_CCA_TOPIC_ID");
+    }
+
+    public String getPubSubSubscriptionIdForCca() {
+        return getEnvProperty("PUBSUB_CCA_SUBSCRIPTION_ID");
     }
 
     public String getPubSubSubscriptionIdForActivate() {
