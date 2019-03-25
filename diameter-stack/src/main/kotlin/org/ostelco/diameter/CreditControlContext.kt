@@ -29,6 +29,8 @@ class CreditControlContext(
 
     private val logger by getLogger()
 
+    private val VENDOR_ID_3GPP = 10415L
+
     // Set to true, when answer to not to be sent to P-GW.
     var skipAnswer: Boolean = false
 
@@ -92,11 +94,14 @@ class CreditControlContext(
                     gsuAvp.addAvp(Avp.CC_TOTAL_OCTETS, mscc.granted.total, true, false)
                 }
             }
-            logger.info("Created Credit-Control-Answer [{}]", creditControlRequest.msisdn)
-            DiameterUtilities().printAvps(ccaAvps)
 
             answerMSCC.addAvp(Avp.RESULT_CODE, mscc.resultCode.value, true, false)
             answerMSCC.addAvp(Avp.VALIDITY_TIME, mscc.validityTime, true, false)
+
+            if (mscc.granted.total > 0) {
+                answerMSCC.addAvp(Avp.QUOTA_HOLDING_TIME, mscc.quotaHoldingTime, VENDOR_ID_3GPP, true, false, true)
+                answerMSCC.addAvp(Avp.VOLUME_QUOTA_THRESHOLD, mscc.volumeQuotaThreshold, VENDOR_ID_3GPP,true, false, true)
+            }
         }
     }
 
