@@ -12,7 +12,7 @@ TAG_OCS="${OCSGW_VERSION}-${SHORT_SHA}"
 ##### Functions
 
 checkRegion () {
-    allKnownRegions=("europe-west1" "asia-southeast1")
+    allKnownRegions=("europe-west1" "europe-west4" "asia-southeast1")
 
     for knownRegion in "${allKnownRegions[@]}";
     do
@@ -95,11 +95,11 @@ else
     ENVIRONMENT="dev"
 fi
 
-# Region can be passed as second parameter ( europe-west1 / asia-southeast1 ) : default [europe-west1]
+# Region can be passed as second parameter ( europe-west1 /europe-west4 / asia-southeast1 ) : default [europe-west4]
 if [[ ! -z "$2" ]]; then
     REGION=$2
 else
-    REGION="europe-west1"
+    REGION="europe-west4"
 fi
 
 # Zone can be passed as third parameter (a/b/c/d/e/f) : default [b]
