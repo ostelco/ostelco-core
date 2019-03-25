@@ -198,6 +198,10 @@ jobs:
             echo $GOOGLE_DEV_ENDPOINTS_CREDENTIALS > ${HOME}/gcloud-service-key.json
             gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
             
+            sed -i  's/GCP_PROJECT_ID/'${GCP_PROJECT_ID}'/g' prime/infra/dev/ocs-api.yaml 
+            sed -i  's/GCP_PROJECT_ID/'${GCP_PROJECT_ID}'/g' prime/infra/dev/metrics-api.yaml 
+            sed -i  's/GCP_PROJECT_ID/'${GCP_PROJECT_ID}'/g' prime/infra/dev/prime-admin.yaml 
+
             python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=ocs-grpc-api/src/main/proto --descriptor_set_out=ocs_descriptor.pb ocs.proto
             python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=analytics-grpc-api/src/main/proto --descriptor_set_out=metrics_descriptor.pb prime_metrics.proto
             gcloud endpoints services deploy ocs_descriptor.pb prime/infra/dev/ocs-api.yaml
@@ -279,6 +283,10 @@ jobs:
             export CLOUDSDK_CORE_PROJECT=${PROD_PROJECT}
             echo $GOOGLE_PROD_ENDPOINTS_CREDENTIALS > ${HOME}/gcloud-service-key.json
             gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
+
+            sed -i 's/GCP_PROJECT_ID/'${GCP_PROJECT_ID}'/g' prime/infra/dev/ocs-api.yaml 
+            sed -i 's/GCP_PROJECT_ID/'${GCP_PROJECT_ID}'/g' prime/infra/dev/metrics-api.yaml 
+            sed -i 's/GCP_PROJECT_ID/'${GCP_PROJECT_ID}'/g' prime/infra/dev/prime-admin.yaml 
             
             python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=ocs-grpc-api/src/main/proto --descriptor_set_out=ocs_descriptor.pb ocs.proto
             python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=analytics-grpc-api/src/main/proto --descriptor_set_out=metrics_descriptor.pb prime_metrics.proto
