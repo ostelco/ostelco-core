@@ -9,7 +9,7 @@ import org.ostelco.diameter.util.AvpType.IDENTITY
 import org.ostelco.diameter.util.AvpType.OCTET_STRING
 import org.ostelco.diameter.util.AvpType.UTF8STRING
 
-object AvpDictionary {
+object AvpTypeDictionary {
 
     private val logger by getLogger()
 
@@ -22,7 +22,7 @@ object AvpDictionary {
             AvpRep.values().forEach { avpRepMap[it.avpCode] = it.avpType }
             AvpType.values().forEach { avpTypeMap[it.label] = it }
         } catch (e:Exception) {
-            logger.error("Failed to init AvpDictionary", e)
+            logger.error("Failed to init AvpTypeDictionary", e)
         }
     }
 
