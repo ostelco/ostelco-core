@@ -119,10 +119,9 @@ class Neo4jStorageTest {
 
             initFirebaseConfigRegistry()
 
-            val config = Config()
-            config.host = "0.0.0.0"
-            config.protocol = "bolt"
-            ConfigRegistry.config = config
+            ConfigRegistry.config = Config(
+                    host = "0.0.0.0",
+                    protocol = "bolt")
 
             Neo4jClient.start()
 

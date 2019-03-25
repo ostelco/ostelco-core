@@ -1,0 +1,13 @@
+logging:
+  level: INFO
+
+
+hlrs:
+  - name: Foo
+    endpoint: http://localhost:9180/default/provision
+    userId: user
+    apiKey: xyz
+
+
+httpClient:
+  timeout: 10000ms

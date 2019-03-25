@@ -33,12 +33,12 @@ class ProtobufDataSource {
 
     private val sessionIdMap = ConcurrentHashMap<String, SessionContext>()
 
-    fun handleRequest(context: CreditControlContext): CreditControlRequestInfo? {
+    fun handleRequest(context: CreditControlContext, topicId: String?): CreditControlRequestInfo? {
 
         logger.info("[>>] creditControlRequest for {}", context.creditControlRequest.msisdn)
 
         // FixMe: We should handle conversion errors
-        val creditControlRequestInfo = ProtobufToDiameterConverter.convertRequestToGrpc(context)
+        val creditControlRequestInfo = ProtobufToDiameterConverter.convertRequestToGrpc(context, topicId)
         if (creditControlRequestInfo != null) {
             ccrMap[context.sessionId] = context
             addToSessionMap(context)
