@@ -21,6 +21,7 @@ paths:
           in: query
           description: "Stripe API version"
           type: string
+          format: email
       responses:
         200:
           description: "Get Stripe Ephemeral key."
@@ -53,12 +54,17 @@ paths:
         - application/json
       operationId: "createCustomer"
       parameters:
-        - name: customer
-          in: body
-          description: The customer to create.
-          schema:
-            $ref: '#/definitions/Customer'
-        - name: referred_by
+        - name: nickname
+          in: query
+          description: "Nickname of the customer"
+          type: string
+          required: true
+        - name: contactEmail
+          in: query
+          description: "Contact Email of the customer"
+          type: string
+          required: true
+        - name: referredBy
           in: query
           description: "Referral ID of user who has invited this user"
           type: string
@@ -83,38 +89,41 @@ paths:
         - application/json
       operationId: "updateCustomer"
       parameters:
-        - in: body
-          name: customer
-          description: The updated customer.
-          schema:
-            $ref: '#/definitions/Customer'
+        - name: nickname
+          in: query
+          description: "Nickname of the customer"
+          type: string
+        - name: contactEmail
+          in: query
+          description: "Contact Email of the customer"
+          type: string
       responses:
         200:
           description: "Successfully updated the customer."
           schema:
             $ref: '#/definitions/Customer'
         400:
-          description: "Incomplete Customer info"
+          description: "Incomplete Customer info."
         404:
           description: "Customer not found."
         502:
-          description: "Failed to store customer info"
+          description: "Failed to update customer info."
       security:
         - auth0_jwt: []
-  "/regions/{countryCode}/kyc/jumio/scans":
+  "/regions/{regionCode}/kyc/jumio/scans":
     post:
       description: "Get a new Id for eKYC scanning."
       produces:
         - application/json
       operationId: "createNewJumioKycScanId"
       parameters:
-        - name: countryCode
+        - name: regionCode
           in: path
-          description: "Country code in ISO 3166-1 alpha-3 format"
+          description: "Region code"
           required: true
           type: string
       responses:
-        200:
+        201:
           description: "Successfully retrieved new ScanId."
           schema:
             $ref: '#/definitions/ScanInformation'
@@ -122,16 +131,16 @@ paths:
           description: "User not found."
       security:
         - auth0_jwt: []
-  "/regions/{countryCode}/kyc/jumio/scans/{scanId}/status":
+  "/regions/{regionCode}/kyc/jumio/scans/{scanId}/status":
     get:
       description: "Get status of eKYC scan."
       produces:
         - application/json
       operationId: "getScanStatus"
       parameters:
-        - name: countryCode
+        - name: regionCode
           in: path
-          description: "Country code in ISO 3166-1 alpha-3 format"
+          description: "Region code"
           required: true
           type: string
         - name: scanId
@@ -148,16 +157,16 @@ paths:
           description: "Scan not found."
       security:
         - auth0_jwt: []
-  "/regions/{countryCode}/subscriptions":
+  "/regions/{regionCode}/subscriptions":
     get:
       description: "Get subscription (msisdn) for the user (identified by bearer token)."
       produces:
         - application/json
       operationId: "getSubscriptions"
       parameters:
-        - name: countryCode
+        - name: regionCode
           in: path
-          description: "Country code in ISO 3166-1 alpha-3 format"
+          description: "Region code"
           required: true
           type: string
       responses:
@@ -169,29 +178,50 @@ paths:
           description: "No subscription found for this user."
       security:
         - auth0_jwt: []
-    post:
-      description: "Create subscriptions (msisdn) for the user (identified by bearer token)."
+  "/regions/{regionCode}/simProfiles":
+    get:
+      description: "Get SIM profile for the user (identified by bearer token)."
       produces:
         - application/json
-      operationId: "createSubscriptions"
+      operationId: "getSimProfiles"
       parameters:
-        - name: countryCode
+        - name: regionCode
           in: path
-          description: "Country code in ISO 3166-1 alpha-3 format"
+          description: "Region code"
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Get SIM profiles for this user."
+          schema:
+            $ref: '#/definitions/SimProfileList'
+        404:
+          description: "No SIM profiles found for this user."
+      security:
+        - auth0_jwt: []
+    post:
+      description: "Provision SIM Profile for the user (identified by bearer token)."
+      produces:
+        - application/json
+      operationId: "provisionSimProfile"
+      parameters:
+        - name: regionCode
+          in: path
+          description: "Region code"
           required: true
           type: string
       responses:
         201:
-          description: "Created subscriptions for this user."
+          description: "Provisioned SIM profile for this user."
           schema:
-            $ref: '#/definitions/SubscriptionList'
+            $ref: '#/definitions/SimProfile'
         404:
           description: "User not found."
         503:
           description: "Service Unavailable"
       security:
         - auth0_jwt: []
-  "/applicationtoken":
+  "/applicationToken":
     post:
       description: "Store application token"
       consumes:
@@ -451,9 +481,9 @@ definitions:
     properties:
       id:
         type: string
-      name:
+      nickname:
         type: string
-      email:
+      contactEmail:
         type: string
         format: email
       analyticsId:
@@ -461,6 +491,7 @@ definitions:
       referralId:
         type: string
     required:
+      - name
       - email
   RegionDetailsList:
     type: array
@@ -494,11 +525,6 @@ definitions:
         type: string
       alias:
         description: "Human readable optional alias for this subscription"
-        type: string
-      analyticsId:
-        type: string
-      eSimActivationCode:
-        description: "eSim Activation Code to download eSIM"
         type: string
   BundleList:
     type: array
@@ -696,8 +722,8 @@ definitions:
       scanId:
         description: "New scan Id for eKYC"
         type: string
-      countryCode:
-        description: "The 3 letter country code (or global) for the scan "
+      regionCode:
+        description: "Region code"
         type: string
       status:
         description: "The status of the scan"
@@ -707,6 +733,26 @@ definitions:
         type: object
     required:
       - scanId
+      - status
+  SimProfileList:
+    type: array
+    items:
+      $ref: '#/definitions/SimProfile'
+  SimProfile:
+    type: object
+    properties:
+      iccId:
+        description: "ID of Sim Profile"
+        type: string
+      activationCode:
+        description: "eSIM activation code"
+        type: string
+      status:
+        description: "The status of the SIM profile, e.g. INSTALLED"
+        type: string
+    required:
+      - iccId
+      - activationCode
       - status
 securityDefinitions:
   auth0_jwt:

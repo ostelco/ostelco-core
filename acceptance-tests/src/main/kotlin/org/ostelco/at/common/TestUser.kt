@@ -12,8 +12,8 @@ fun createCustomer(name: String, email: String): Customer {
 
     val createCustomer = Customer()
             .id("")
-            .email(email)
-            .name(name)
+            .contactEmail(email)
+            .nickname(name)
             .analyticsId("")
             .referralId("")
 

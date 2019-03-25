@@ -11,6 +11,7 @@ import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.RegionDetails
 import org.ostelco.prime.model.ScanInformation
+import org.ostelco.prime.model.SimProfile
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
@@ -43,7 +44,13 @@ interface SubscriberDAO {
 
     fun getSubscriptions(identity: Identity, regionCode: String): Either<ApiError, Collection<Subscription>>
 
-    fun createSubscriptions(identity: Identity, regionCode: String): Either<ApiError, Collection<Subscription>>
+    //
+    // SIM Profile
+    //
+
+    fun getSimProfiles(identity: Identity, regionCode: String): Either<ApiError, Collection<SimProfile>>
+
+    fun provisionSimProfile(identity: Identity, regionCode: String): Either<ApiError, SimProfile>
 
     //
     // Bundle

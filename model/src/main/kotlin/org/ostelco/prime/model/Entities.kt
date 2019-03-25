@@ -233,3 +233,12 @@ data class SimEntry(
         val iccId: String,
         val eSimActivationCode: String,
         val msisdnList: Collection<String>)
+
+data class SimProfile(
+        val iccId: String,
+        @JvmField val eSimActivationCode: String = "") : HasId {
+
+    override val id: String
+        @JsonIgnore
+        get() = iccId
+}

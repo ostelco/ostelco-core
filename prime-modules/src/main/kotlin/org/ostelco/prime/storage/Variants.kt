@@ -15,6 +15,7 @@ import org.ostelco.prime.model.Region
 import org.ostelco.prime.model.RegionDetails
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.Segment
+import org.ostelco.prime.model.SimProfile
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
@@ -100,9 +101,15 @@ interface ClientGraphStore {
     fun getSubscriptions(identity: Identity, regionCode: String? = null): Either<StoreError, Collection<Subscription>>
 
     /**
-     * Link Customer to MSISDN
+     * Get SIM Profiles for Customer
      */
-    fun createSubscriptions(identity: Identity, regionCode: String): Either<StoreError, Collection<Subscription>>
+    fun getSimProfiles(identity: Identity, regionCode: String? = null): Either<StoreError, Collection<SimProfile>>
+
+    /**
+     * Provision new SIM Profile for Customer
+     */
+
+    fun provisionSimProfile(identity: Identity, regionCode: String): Either<StoreError, SimProfile>
 
     /**
      * Get balance for Client

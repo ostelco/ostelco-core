@@ -120,7 +120,7 @@ class GraphStoreTest {
                 { fail(it.message) },
                 { assertEquals(MSISDN, it) })
 
-        Neo4jStoreSingleton.getSubscriptions(IDENTITY, REGION).bimap(
+        Neo4jStoreSingleton.getSubscriptions(IDENTITY).bimap(
                 { fail(it.message) },
                 { assertEquals(MSISDN, it.single().msisdn) })
 

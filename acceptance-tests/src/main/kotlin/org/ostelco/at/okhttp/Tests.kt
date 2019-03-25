@@ -36,26 +36,26 @@ class CustomerTest {
         val client = clientForSubject(subject = email)
 
         val createCustomer = Customer()
-                .email(email)
-                .name("Test Customer")
+                .contactEmail(email)
+                .nickname("Test Customer")
                 .analyticsId("")
                 .referralId("")
 
-        client.createCustomer(createCustomer, null)
+        client.createCustomer(createCustomer.nickname, createCustomer.contactEmail, null)
 
         val customer: Customer = client.customer
 
-        assertEquals(email, customer.email, "Incorrect 'email' in fetched customer")
-        assertEquals(createCustomer.name, customer.name, "Incorrect 'name' in fetched customer")
+        assertEquals(email, customer.contactEmail, "Incorrect 'contactEmail' in fetched customer")
+        assertEquals(createCustomer.nickname, customer.nickname, "Incorrect 'name' in fetched customer")
 
         val newName = "New name: Test Customer"
 
-        customer.name(newName)
+        customer.nickname(newName)
 
-        val updatedCustomer: Customer = client.updateCustomer(customer)
+        val updatedCustomer: Customer = client.updateCustomer(customer.nickname, null)
 
-        assertEquals(email, updatedCustomer.email, "Incorrect 'email' in response after updating customer")
-        assertEquals(newName, updatedCustomer.name, "Incorrect 'name' in response after updating customer")
+        assertEquals(email, updatedCustomer.contactEmail, "Incorrect 'contactEmail' in response after updating customer")
+        assertEquals(newName, updatedCustomer.nickname, "Incorrect 'nickname' in response after updating customer")
     }
 
     @Test
@@ -96,7 +96,7 @@ class GetSubscriptions {
 
         val client = clientForSubject(subject = email)
 
-        val subscriptions = client.subscriptions
+        val subscriptions = client.getSubscriptions("no")
 
         assertEquals(listOf(msisdn), subscriptions.map { it.msisdn })
     }
@@ -486,12 +486,11 @@ class ReferralTest {
         val invalid = "invalid_referrer@test.com"
 
         val customer = Customer()
-                .email(email)
-                .name("Test Referral Second User")
-                .referralId("")
+                .contactEmail(email)
+                .nickname("Test Referral Second User")
 
         val failedToCreate = assertFails {
-            client.createCustomer(customer, invalid)
+            client.createCustomer(customer.nickname, customer.contactEmail, invalid)
         }
 
         assertEquals("""
@@ -516,14 +515,14 @@ class ReferralTest {
         val secondEmail = "referral_second-${randomInt()}@test.com"
 
         val customer = Customer()
-                .email(secondEmail)
-                .name("Test Referral Second User")
+                .contactEmail(secondEmail)
+                .nickname("Test Referral Second User")
                 .referralId("")
 
         val firstEmailClient = clientForSubject(subject = firstEmail)
         val secondEmailClient = clientForSubject(subject = secondEmail)
 
-        secondEmailClient.createCustomer(customer, firstEmail)
+        secondEmailClient.createCustomer(customer.nickname, firstEmail, null)
 
         // for first
         val referralsForFirst: PersonList = firstEmailClient.referred

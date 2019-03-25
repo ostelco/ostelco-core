@@ -47,4 +47,11 @@ class RegionsResource(private val dao: SubscriberDAO) {
             @PathParam("regionCode")
             regionCode: String
     ): SubscriptionsResource = SubscriptionsResource(regionCode = regionCode, dao = dao)
+
+    @Path("/{regionCode}/simProfiles")
+    fun simProfilesResource(
+            @NotNull
+            @PathParam("regionCode")
+            regionCode: String
+    ): SimProfilesResource = SimProfilesResource(regionCode = regionCode, dao = dao)
 }

@@ -22,6 +22,7 @@ import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.RegionDetails
 import org.ostelco.prime.model.ScanInformation
+import org.ostelco.prime.model.SimProfile
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
@@ -123,14 +124,29 @@ class SubscriberDAOImpl : SubscriberDAO {
         }
     }
 
-    override fun createSubscriptions(identity: Identity, regionCode: String): Either<ApiError, Collection<Subscription>> {
+    //
+    // SIM Profile
+    //
+
+    override fun getSimProfiles(identity: Identity, regionCode: String): Either<ApiError, Collection<SimProfile>> {
         return try {
-            storage.createSubscriptions(identity, regionCode).mapLeft {
-                NotFoundError("Failed to create subscription.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS, it)
+            storage.getSimProfiles(identity, regionCode).mapLeft {
+                NotFoundError("Failed to fetch SIM profiles.", ApiErrorCode.FAILED_TO_FETCH_SIM_PROFILES, it)
             }
         } catch (e: Exception) {
-            logger.error("Failed to create subscription for customer with identity - $identity", e)
-            Either.left(BadGatewayError("Failed to create subscription", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS))
+            logger.error("Failed to fetch SIM profiles for customer with identity - $identity", e)
+            Either.left(BadGatewayError("Failed to fetch SIM profiles", ApiErrorCode.FAILED_TO_FETCH_SIM_PROFILES))
+        }
+    }
+
+    override fun provisionSimProfile(identity: Identity, regionCode: String): Either<ApiError, SimProfile> {
+        return try {
+            storage.provisionSimProfile(identity, regionCode).mapLeft {
+                NotFoundError("Failed to provision SIM profile.", ApiErrorCode.FAILED_TO_PROVISION_SIM_PROFILE, it)
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to provision SIM profile for customer with identity - $identity", e)
+            Either.left(BadGatewayError("Failed to provision SIM profile", ApiErrorCode.FAILED_TO_PROVISION_SIM_PROFILE))
         }
     }
 

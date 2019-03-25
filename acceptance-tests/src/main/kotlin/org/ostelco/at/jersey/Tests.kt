@@ -22,8 +22,8 @@ class CustomerTest {
 
         val createCustomer = Customer()
                 .id("")
-                .email(email)
-                .name("Test Customer")
+                .contactEmail(email)
+                .nickname("Test Customer")
                 .analyticsId("")
                 .referralId("")
 
@@ -33,22 +33,22 @@ class CustomerTest {
             this.email = email
         }
 
-        assertEquals(createCustomer.email, createdCustomer.email, "Incorrect 'email' in created customer")
-        assertEquals(createCustomer.name, createdCustomer.name, "Incorrect 'name' in created customer")
+        assertEquals(createCustomer.contactEmail, createdCustomer.contactEmail, "Incorrect 'contactEmail' in created customer")
+        assertEquals(createCustomer.nickname, createdCustomer.nickname, "Incorrect 'nickname' in created customer")
 
         val customer: Customer = get {
             path = "/customer"
             this.email = email
         }
 
-        assertEquals(createdCustomer.email, customer.email, "Incorrect 'email' in fetched customer")
-        assertEquals(createdCustomer.name, customer.name, "Incorrect 'name' in fetched customer")
+        assertEquals(createdCustomer.contactEmail, customer.contactEmail, "Incorrect 'contactEmail' in fetched customer")
+        assertEquals(createdCustomer.nickname, customer.nickname, "Incorrect 'nickname' in fetched customer")
         assertEquals(createdCustomer.analyticsId, customer.analyticsId, "Incorrect 'analyticsId' in fetched customer")
         assertEquals(createdCustomer.referralId, customer.referralId, "Incorrect 'referralId' in fetched customer")
 
         val newName = "New name: Test Customer"
 
-        customer.name(newName)
+        customer.nickname(newName)
 
         val updatedCustomer: Customer = put {
             path = "/customer"
@@ -56,8 +56,8 @@ class CustomerTest {
             this.email = email
         }
 
-        assertEquals(email, updatedCustomer.email, "Incorrect 'email' in response after updating customer")
-        assertEquals(newName, updatedCustomer.name, "Incorrect 'name' in response after updating customer")
+        assertEquals(email, updatedCustomer.contactEmail, "Incorrect 'email' in response after updating customer")
+        assertEquals(newName, updatedCustomer.nickname, "Incorrect 'name' in response after updating customer")
     }
 
     @Test
@@ -1173,8 +1173,8 @@ class ReferralTest {
         val invalid = "invalid_referrer@test.com"
 
         val customer = Customer()
-                .email(email)
-                .name("Test Referral Second User")
+                .contactEmail(email)
+                .nickname("Test Referral Second User")
                 .referralId("")
 
         val failedToCreate = assertFails {
@@ -1211,8 +1211,8 @@ class ReferralTest {
         val secondEmail = "referral_second-${randomInt()}@test.com"
 
         val customer = Customer()
-                .email(secondEmail)
-                .name("Test Referral Second User")
+                .contactEmail(secondEmail)
+                .nickname("Test Referral Second User")
                 .referralId("")
 
         post<Customer> {
@@ -1427,7 +1427,7 @@ class GraphQlTests {
             body = mapOf("query" to """{ context { customer { email } subscriptions { msisdn } } }""")
         }.data?.context
 
-        assertEquals(expected = email, actual = context?.customer?.email)
+        assertEquals(expected = email, actual = context?.customer?.contactEmail)
         assertEquals(expected = msisdn, actual = context?.subscriptions?.first()?.msisdn)
     }
 
@@ -1445,7 +1445,7 @@ class GraphQlTests {
             queryParams = mapOf("query" to URLEncoder.encode("""{context{customer{email}subscriptions{msisdn}}}""", StandardCharsets.UTF_8.name()))
         }.data?.context
 
-        assertEquals(expected = email, actual = context?.customer?.email)
+        assertEquals(expected = email, actual = context?.customer?.contactEmail)
         assertEquals(expected = msisdn, actual = context?.subscriptions?.first()?.msisdn)
     }
 }
