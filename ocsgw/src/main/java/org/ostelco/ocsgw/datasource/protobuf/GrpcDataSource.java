@@ -90,13 +90,7 @@ public class GrpcDataSource implements DataSource {
         // Not using the standard GOOGLE_APPLICATION_CREDENTIALS for this
         // as we need to download the file using container credentials in
         // OcsApplication.
-        String serviceFileName = System.getenv("OLD_SERVICE_FILE");
-
-        if (serviceFileName == null) {
-            serviceFileName = System.getenv("SERVICE_FILE");
-        }
-
-        final String serviceAccountFile = "/config/" + serviceFileName;
+        final String serviceAccountFile = "/config/" + System.getenv("SERVICE_FILE");
         jwtAccessCredentials = ServiceAccountJwtAccessCredentials.fromStream(new FileInputStream(serviceAccountFile));
 
         ocsgwAnalytics = new OcsgwMetrics(metricsServerHostname, jwtAccessCredentials, protobufDataSource);
