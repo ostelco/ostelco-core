@@ -25,7 +25,9 @@ object RequestType {
 /**
  * Internal representation of the Credit-Control-Answer
  */
-data class CreditControlAnswer(val resultCode: ResultCode, val multipleServiceCreditControls: List<MultipleServiceCreditControl>)
+data class CreditControlAnswer(
+        val resultCode: ResultCode,
+        val multipleServiceCreditControls: List<MultipleServiceCreditControl>)
 
 enum class ResultCode(val value: Int) {
     DIAMETER_SUCCESS(2001),
@@ -116,16 +118,33 @@ class MultipleServiceCreditControl() {
 
     var validityTime = 86400
 
+    var quotaHoldingTime = 0L
+
+    var volumeQuotaThreshold = 0L
+
     // https://tools.ietf.org/html/rfc4006#section-8.34
     var finalUnitIndication: FinalUnitIndication? = null
 
-    constructor(ratingGroup: Long, serviceIdentifier: Long, requested: List<ServiceUnit>, used: ServiceUnit, granted: ServiceUnit, validityTime: Int, finalUnitIndication: FinalUnitIndication?, resultCode: ResultCode) : this() {
+    constructor(
+            ratingGroup: Long,
+            serviceIdentifier: Long,
+            requested: List<ServiceUnit>,
+            used: ServiceUnit,
+            granted: ServiceUnit,
+            validityTime: Int,
+            quotaHoldingTime: Long,
+            volumeQuotaThreshold: Long,
+            finalUnitIndication: FinalUnitIndication?,
+            resultCode: ResultCode) : this() {
+
         this.ratingGroup = ratingGroup
         this.serviceIdentifier = serviceIdentifier
         this.requested = requested
         this.used = used
         this.granted = granted
         this.validityTime = validityTime
+        this.quotaHoldingTime = quotaHoldingTime
+        this.volumeQuotaThreshold = volumeQuotaThreshold
         this.finalUnitIndication = finalUnitIndication
         this.resultCode = resultCode
     }
