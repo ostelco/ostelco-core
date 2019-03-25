@@ -1,6 +1,7 @@
 package org.ostelco.prime.notifications.email
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.dropwizard.Application
 import io.dropwizard.Configuration
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor
@@ -19,6 +20,7 @@ class TestApp : Application<TestConfig>() {
         bootstrap.configurationSourceProvider = SubstitutingSourceProvider(
                 bootstrap.configurationSourceProvider,
                 EnvironmentVariableSubstitutor(false))
+        bootstrap.objectMapper.registerModule(KotlinModule())
     }
 
     override fun run(configuration: TestConfig, environment: Environment) {

@@ -23,6 +23,12 @@ modules:
       lowBalanceThreshold: 0
   - type: api
   - type: stripe-payment-processor
+    config:
+      projectId: ${GCP_PROJECT_ID}
+      stripeEventTopicId: stripe-event
+      stripeEventStoreSubscriptionId: stripe-event-store-sub
+      stripeEventReportSubscriptionId: stripe-event-report-sub
+      stripeEventRecurringPaymentSubscriptionId: stripe-event-recurring-payment-sub
   - type: firebase-app-notifier
     config:
       configFile: config/prime-service-account.json

@@ -18,7 +18,13 @@ prime:
     DATA_TRAFFIC_TOPIC: data-traffic
     PURCHASE_INFO_TOPIC: purchase-info
     ACTIVE_USERS_TOPIC: active-users
-    GCP_PROJECT_ID: pi-ostelco-dev 
+    STRIPE_EVENT_TOPIC: stripe-event
+    STRIPE_EVENT_STORE_SUBSCRIPTION: stripe-event-store-sub
+    STRIPE_EVENT_REPORT_SUBSCRIPTION: stripe-event-report-sub
+    STRIPE_EVENT_RECURRING_PAYMENT_SUBSCRIPTION: stripe-event-recurring-payment-sub
+    GCP_PROJECT_ID: pi-ostelco-dev
+    ACTIVATE_TOPIC_ID: ocs-activate
+    CCR_SUBSCRIPTION_ID: ocs-ccr-sub
 
   secretVolumes:
     - secretName: "prime-sa-key"  

@@ -139,7 +139,7 @@ Copy the [sample developer helm values file](developer-tests-prime-values.yaml) 
 $ helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
 $ helm repo update
 # if your kube context is not configured to point to the dev cluster, then configure it 
-$ kubectl config set-context gke_pi-ostelco-dev_europe-west1-c_pi-dev
+$ kubectl config use-context gke_pi-ostelco-dev_europe-west1-c_pi-dev
 $ RELEASE_NAME=<some-unique-name>
 $ helm upgrade ${RELEASE_NAME} ostelco/prime --version 0.4.3 --install -f <path-to-your-custom-values-file> --set prime.tag=feature-xyz
 ```

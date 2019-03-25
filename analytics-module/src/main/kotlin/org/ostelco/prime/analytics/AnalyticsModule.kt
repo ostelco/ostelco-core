@@ -3,7 +3,7 @@ package org.ostelco.prime.analytics
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonTypeName
 import io.dropwizard.setup.Environment
-import org.hibernate.validator.constraints.NotEmpty
+import org.hibernate.validator.constraints.NotBlank
 import org.ostelco.prime.analytics.metrics.CustomMetricsRegistry
 import org.ostelco.prime.analytics.publishers.ActiveUsersPublisher
 import org.ostelco.prime.analytics.publishers.DataConsumptionInfoPublisher
@@ -33,23 +33,22 @@ class AnalyticsModule : PrimeModule {
     }
 }
 
-class AnalyticsConfig {
-    @NotEmpty
+data class AnalyticsConfig(
+    @NotBlank
     @JsonProperty("projectId")
-    lateinit var projectId: String
+    val projectId: String,
 
-    @NotEmpty
+    @NotBlank
     @JsonProperty("dataTrafficTopicId")
-    lateinit var dataTrafficTopicId: String
+    val dataTrafficTopicId: String,
 
-    @NotEmpty
+    @NotBlank
     @JsonProperty("purchaseInfoTopicId")
-    lateinit var purchaseInfoTopicId: String
+    val purchaseInfoTopicId: String,
 
-    @NotEmpty
+    @NotBlank
     @JsonProperty("activeUsersTopicId")
-    lateinit var activeUsersTopicId: String
-}
+    val activeUsersTopicId: String)
 
 object ConfigRegistry {
     lateinit var config: AnalyticsConfig

@@ -2,7 +2,7 @@
 
 set -e
 
-echo "AT waiting ocsgw to launch on 8082..."
+echo "AT waiting ocsgw to launch on 3868..."
 
 while ! nc -z 172.16.238.3 3868; do
   sleep 0.1 # wait for 1/10 of the second before check again

@@ -12,6 +12,7 @@
 
 # ostelco-core
 
+
 Mono Repository for core protocols and services around a OCS/BSS for packet data. For each service please see the individual Readme.md files.
 
  * [The big picture (diagram) of current work-flow](https://github.com/ostelco/ostelco-docs/blob/master/the-current-work-flow.md)
