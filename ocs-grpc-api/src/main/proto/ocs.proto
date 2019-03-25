@@ -93,6 +93,8 @@ message MultipleServiceCreditControl {
   uint32 validityTime = 7;
   ReportingReason reportingReason = 8;
   ResultCode resultCode = 9;
+  uint64 volumeQuotaThreshold = 10;
+  uint64 quotaHoldingTime = 11;
 }
 
 message PsInformation {

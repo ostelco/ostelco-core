@@ -80,6 +80,11 @@ object OnlineCharging : OcsAsyncRequestConsumer {
 
                                 responseMscc.granted = ServiceUnit.newBuilder().setTotalOctets(grantedTotalOctets).build()
 
+                                if (grantedTotalOctets > 0) {
+                                    responseMscc.quotaHoldingTime = 7200
+                                    responseMscc.volumeQuotaThreshold = (grantedTotalOctets * 0.8).toLong() // 80%
+                                }
+
                                 responseMscc.resultCode = ResultCode.DIAMETER_SUCCESS
 
                                 if (!loadUnitTest && !loadAcceptanceTest) {

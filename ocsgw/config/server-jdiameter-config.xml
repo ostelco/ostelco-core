@@ -13,9 +13,9 @@
     <OverloadMonitor>
       <Entry index="1" lowThreshold="0.5" highThreshold="0.6">
         <ApplicationID>
-          <VendorId value="10415" />
-          <AuthApplId value="4" />
-          <AcctApplId value="12645" />
+          <VendorId value="10415" />           <!-- 3GPP -->
+          <AuthApplId value="4" />             <!-- Credit Control Application -->
+          <AcctApplId value="12645" />         <!-- Accounting Application not in use -->
         </ApplicationID>
       </Entry>
     </OverloadMonitor>
