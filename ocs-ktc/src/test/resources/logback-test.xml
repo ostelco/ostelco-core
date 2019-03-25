@@ -8,6 +8,8 @@
     </encoder>
   </appender>
 
+  <logger name="org.ostelco" level="INFO"/>
+
   <root level="WARN">
     <appender-ref ref="STDOUT"/>
   </root>

@@ -38,6 +38,7 @@ include ':scaninfo-shredder'
 include ':slack'
 include ':sim-administration:es2plus4dropwizard'
 include ':sim-administration:jersey-json-schema-validator'
+include ':sim-administration:hss-adapter'
 include ':sim-administration:ostelco-dropwizard-utils'
 include ':sim-administration:simcard-utils'
 include ':sim-administration:simmanager'
@@ -81,10 +82,13 @@ project(':prime-customer-api').projectDir = "$rootDir/prime-customer-api" as Fil
 project(':scaninfo-datastore').projectDir = "$rootDir/scaninfo-datastore" as File
 project(':scaninfo-shredder').projectDir = "$rootDir/scaninfo-shredder" as File
 project(':slack').projectDir = "$rootDir/slack" as File
+
 project(':sim-administration:es2plus4dropwizard').projectDir = "$rootDir/sim-administration/es2plus4dropwizard" as File
 project(':sim-administration:jersey-json-schema-validator').projectDir = "$rootDir/sim-administration/jersey-json-schema-validator" as File
+project(':sim-administration:hss-adapter').projectDir = "$rootDir/sim-administration/hss-adapter" as File
 project(':sim-administration:ostelco-dropwizard-utils').projectDir = "$rootDir/sim-administration/ostelco-dropwizard-utils" as File
 project(':sim-administration:simcard-utils').projectDir = "$rootDir/sim-administration/simcard-utils" as File
 project(':sim-administration:simmanager').projectDir = "$rootDir/sim-administration/simmanager" as File
 project(':sim-administration:sm-dp-plus').projectDir = "$rootDir/sim-administration/sm-dp-plus" as File
+
 project(':imei-lookup').projectDir = "$rootDir/imei-lookup" as File

@@ -38,8 +38,18 @@ modules:
   - type: ocs
     config:
       lowBalanceThreshold: 100000000
+      pubSubChannel:
+        projectId: ${GCP_PROJECT_ID}
+        activateTopicId: ${ACTIVATE_TOPIC_ID}
+        ccrSubscriptionId: ${CCR_SUBSCRIPTION_ID}
   - type: api
   - type: stripe-payment-processor
+    config:
+      projectId: ${GCP_PROJECT_ID}
+      stripeEventTopicId: ${STRIPE_EVENT_TOPIC}
+      stripeEventStoreSubscriptionId: ${STRIPE_EVENT_STORE_SUBSCRIPTION}
+      stripeEventReportSubscriptionId: ${STRIPE_EVENT_REPORT_SUBSCRIPTION}
+      stripeEventRecurringPaymentSubscriptionId: ${STRIPE_EVENT_RECURRING_PAYMENT_SUBSCRIPTION}
   - type: firebase-app-notifier
     config:
       configFile: /secret/prime-service-account.json
