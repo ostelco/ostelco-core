@@ -3,7 +3,7 @@ services:
   #    application:
   #      image: ...
   #      environment:
-  #      - PUBSUB_HOST="emulator:8085"
+  #      - PUBSUB_EMULATOR_HOST="emulator:8085"
   #      # ...other configurations...
   #     depends_on:
   #      - emulator

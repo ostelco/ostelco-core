@@ -9,7 +9,7 @@ services:
     environment:
       - GCP_PROJECT_ID=${GCP_PROJECT_ID}
       - FIREBASE_ROOT_PATH=test
-      - PUBSUB_HOST=pubsub-emulator:8085
+      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
       - PUBSUB_PROJECT_ID=${GCP_PROJECT_ID}
       - JUMIO_API_TOKEN=
       - JUMIO_API_SECRET=

@@ -9,7 +9,7 @@ services:
     environment:
       - GCP_PROJECT_ID=${GCP_PROJECT_ID}
       - FIREBASE_ROOT_PATH=test
-      - PUBSUB_HOST=pubsub-emulator:8085
+      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
       - PUBSUB_PROJECT_ID=${GCP_PROJECT_ID}
       - JUMIO_API_TOKEN=
       - JUMIO_API_SECRET=
@@ -49,7 +49,7 @@ services:
       - METRICS_GRPC_SERVER=prime:8083
       - SERVICE_FILE=prime-service-account.json
       - GOOGLE_CLOUD_PROJECT=${GCP_PROJECT_ID}
-      - PUBSUB_HOST=pubsub-emulator:8085
+      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
       - PUBSUB_PROJECT_ID=${GCP_PROJECT_ID}
       - PUBSUB_CCR_TOPIC_ID=ocs-ccr
       - PUBSUB_CCA_TOPIC_ID=ocs-cca
