@@ -43,7 +43,7 @@ class PubSubClient(
 
     override fun start() {
 
-        val strSocketAddress = System.getenv("PUBSUB_HOST") ?: System.getProperty("PUBSUB_HOST")
+        val strSocketAddress = System.getenv("PUBSUB_EMULATOR_HOST") ?: System.getProperty("PUBSUB_EMULATOR_HOST")
         if (!strSocketAddress.isNullOrBlank()) {
             val channel = ManagedChannelBuilder.forTarget(strSocketAddress).usePlaintext().build()
             // Create a publisher instance with default settings bound to the topic
