@@ -4,26 +4,28 @@ services:
   hss-adapter:
     container_name: hss-adapter
     build:
-      context: hss-adapter
+      context: .
       dockerfile: Dockerfile
-    environment:
-      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
     ports:
       - "9000:9000"
       - "8080:8080"
       - "8081:8081"
-    command: ["/bin/bash", "./wait.sh"]
-    networks:
-      net:
-        aliases:
-          - "hss-adapter"
-        ipv4_address: 172.16.238.5
-      default:
+#     networks:
+#       net:
+#         aliases:
+#           - "hss-adapter"
+#         ipv4_address: 172.16.238.5
+#       default:
 
-networks:
-  net:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.16.238.0/24
+
+# networks:
+#   net:
+#     driver: bridge
+
+# networks:
+#   net:
+#     driver: bridge
+#     ipam:
+#       driver: default
+#       config:
+#         - subnet: 172.16.238.0/24
