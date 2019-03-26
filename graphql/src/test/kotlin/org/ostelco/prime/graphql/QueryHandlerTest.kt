@@ -1,7 +1,6 @@
 package org.ostelco.prime.graphql
 
 import org.junit.Assert.assertEquals
-import org.junit.Ignore
 import org.junit.Test
 import org.ostelco.prime.model.Identity
 import java.io.File
@@ -18,22 +17,20 @@ class QueryHandlerTest {
 
     @Test
     fun `test get profile`() {
-        val result = execute("""{ context(id: "invalid@test.com") { customer { email } } }""".trimIndent())
-        assertEquals("{context={customer={email=foo@test.com}}}", "$result")
+        val result = execute("""{ context(id: "invalid@test.com") { customer { nickname, contactEmail } } }""".trimIndent())
+        assertEquals("{context={customer={nickname=foo, contactEmail=$email}}}", "$result")
     }
 
     @Test
     fun `test get bundles and products`() {
         val result = execute("""{ context(id: "invalid@test.com") { bundles { id, balance } products { sku, price { amount, currency } } } }""".trimIndent())
-        assertEquals("{context={bundles=[{id=foo@test.com, balance=1000000000}], products=[{sku=SKU, price={amount=10000, currency=NOK}}]}}", "$result")
+        assertEquals("{context={bundles=[{id=$email, balance=1000000000}], products=[{sku=SKU, price={amount=10000, currency=NOK}}]}}", "$result")
     }
 
-    // FIXME vihang: Subscriptions are moved under Region
-    @Ignore
     @Test
     fun `test get subscriptions`() {
-        val result = execute("""{ context(id: "invalid@test.com") { subscriptions { msisdn, alias } } }""".trimIndent())
-        assertEquals("{context={subscriptions=[{msisdn=4790300123, alias=}]}}", "$result")
+        val result = execute("""{ context(id: "invalid@test.com") { subscriptions { msisdn } } }""".trimIndent())
+        assertEquals("{context={subscriptions=[{msisdn=4790300123}]}}", "$result")
     }
 
     @Test

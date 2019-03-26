@@ -9,6 +9,8 @@ import arrow.effects.IO
 import arrow.instances.either.monad.monad
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
+import org.ostelco.prime.ekyc.DaveKycService
+import org.ostelco.prime.ekyc.MyInfoKycService
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.ChangeSegment
@@ -28,6 +30,7 @@ import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.ScanStatus
 import org.ostelco.prime.model.Segment
 import org.ostelco.prime.model.SimProfile
+import org.ostelco.prime.model.SimProfileStatus.AVAILABLE_FOR_DOWNLOAD
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
@@ -61,6 +64,10 @@ import org.ostelco.prime.storage.graph.Relation.OFFERED_TO_SEGMENT
 import org.ostelco.prime.storage.graph.Relation.OFFER_HAS_PRODUCT
 import org.ostelco.prime.storage.graph.Relation.PURCHASED
 import org.ostelco.prime.storage.graph.Relation.REFERRED
+import org.ostelco.prime.storage.graph.StatusFlag.ADDRESS_AND_PHONE_NUMBER
+import org.ostelco.prime.storage.graph.StatusFlag.JUMIO
+import org.ostelco.prime.storage.graph.StatusFlag.MY_INFO
+import org.ostelco.prime.storage.graph.StatusFlag.NRIC_FIN
 import java.time.Instant
 import java.util.*
 import java.util.stream.Collectors
@@ -331,13 +338,17 @@ object Neo4jStoreSingleton : GraphStore {
     }
     // << END
 
-    override fun updateCustomer(identity: org.ostelco.prime.model.Identity, customer: Customer): Either<StoreError, Unit> = writeTransaction {
+    override fun updateCustomer(
+            identity: org.ostelco.prime.model.Identity,
+            nickname: String?,
+            contactEmail: String?): Either<StoreError, Unit> = writeTransaction {
+
         getCustomer(identity = identity, transaction = transaction)
                 .flatMap { existingCustomer ->
                     customerStore.update(
                             existingCustomer.copy(
-                                    name = customer.name,
-                                    email = customer.email),
+                                    nickname = nickname ?: existingCustomer.nickname,
+                                    contactEmail = contactEmail ?: existingCustomer.contactEmail),
                             transaction)
                 }
                 .ifFailedThenRollback(transaction)
@@ -415,18 +426,38 @@ object Neo4jStoreSingleton : GraphStore {
                         .getProperties(fromId = customerId, toId = regionCode.toLowerCase(), transaction = transaction)
                         .bind()["customerRegionStatus"]
                         .let { CustomerRegionStatus.valueOf("$it") }
-                isApproved(status = status, customerId = customerId, regionCode = regionCode).bind()
-                simProfileStore.create(SimProfile(iccId = simEntry.iccId, eSimActivationCode = simEntry.eSimActivationCode), transaction).bind()
-                customerToSimProfileStore.create(fromId = customerId, toId = simEntry.iccId, transaction = transaction).bind()
-                simProfileRegionRelationStore.create(fromId = simEntry.iccId, toId = regionCode.toLowerCase(), transaction = transaction).bind()
+                isApproved(
+                        status = status,
+                        customerId = customerId,
+                        regionCode = regionCode).bind()
+                simProfileStore.create(SimProfile(
+                        iccId = simEntry.iccId,
+                        eSimActivationCode = simEntry.eSimActivationCode,
+                        status = AVAILABLE_FOR_DOWNLOAD),
+                        transaction).bind()
+                customerToSimProfileStore.create(
+                        fromId = customerId,
+                        toId = simEntry.iccId,
+                        transaction = transaction).bind()
+                simProfileRegionRelationStore.create(
+                        fromId = simEntry.iccId,
+                        toId = regionCode.toLowerCase(),
+                        transaction = transaction).bind()
                 simEntry.msisdnList.forEach { msisdn ->
                     subscriptionStore.create(Subscription(msisdn = msisdn), transaction).bind()
                     val subscription = subscriptionStore.get(msisdn, transaction).bind()
                     bundles.forEach { bundle ->
-                        subscriptionToBundleStore.create(subscription, mapOf("reservedBytes" to "0"), bundle, transaction).bind()
+                        subscriptionToBundleStore.create(
+                                from = subscription,
+                                relation = mapOf("reservedBytes" to "0"),
+                                to = bundle,
+                                transaction = transaction).bind()
                     }
                     subscriptionRelationStore.create(customer, subscription, transaction).bind()
-                    subscriptionRegionRelationStore.create(fromId = msisdn, toId = regionCode.toLowerCase(), transaction = transaction).bind()
+                    subscriptionRegionRelationStore.create(
+                            fromId = msisdn,
+                            toId = regionCode.toLowerCase(),
+                            transaction = transaction).bind()
                 }
                 simProfileStore.get(simEntry.iccId, transaction).bind()
             }.fix()
@@ -506,22 +537,6 @@ object Neo4jStoreSingleton : GraphStore {
                 }
             }.fix()
         }.unsafeRunSync()
-    }
-
-    override fun getMsisdn(identity: org.ostelco.prime.model.Identity): Either<StoreError, String> = readTransaction {
-        getCustomerId(identity = identity, transaction = transaction)
-                .flatMap { customerId ->
-                    customerStore.getRelated(customerId, subscriptionRelation, transaction)
-                            .flatMap {
-                                if (it.isEmpty()) {
-                                    Either.left(NotFoundError(
-                                            type = subscriptionEntity.name,
-                                            id = "for ${customerEntity.name} = $customerId"))
-                                } else {
-                                    Either.right(it.first().msisdn)
-                                }
-                            }
-                }
     }
 
     //
@@ -876,7 +891,7 @@ object Neo4jStoreSingleton : GraphStore {
         getCustomerId(identity = identity, transaction = transaction)
                 .flatMap { customerId ->
                     customerStore.getRelated(customerId, referredRelation, transaction)
-                            .map { list -> list.map { it.name } }
+                            .map { list -> list.map { it.nickname } }
                 }
     }
 
@@ -884,7 +899,7 @@ object Neo4jStoreSingleton : GraphStore {
         getCustomerId(identity = identity, transaction = transaction)
                 .flatMap { customerId ->
                     customerStore.getRelatedFrom(customerId, referredRelation, transaction)
-                            .map { it.singleOrNull()?.name }
+                            .map { it.singleOrNull()?.nickname }
                 }
     }
 
@@ -937,7 +952,7 @@ object Neo4jStoreSingleton : GraphStore {
                     }
 
     //
-    // eKYC
+    // eKYC - Jumio
     //
 
     override fun createNewJumioKycScanId(identity: org.ostelco.prime.model.Identity, regionCode: String): Either<StoreError, ScanInformation> = writeTransaction {
@@ -946,7 +961,8 @@ object Neo4jStoreSingleton : GraphStore {
                     // Generate new id for the scan
                     val scanId = UUID.randomUUID().toString()
                     val newScan = ScanInformation(scanId = scanId, countryCode = regionCode, status = ScanStatus.PENDING, scanResult = null)
-                    createOrUpdateCustomerRegionSetting(customerId = customerId, status = PENDING, regionCode = regionCode.toLowerCase(), transaction = transaction)
+                    createOrUpdateCustomerRegionSetting(
+                            customerId = customerId, status = PENDING, regionCode = regionCode.toLowerCase(), transaction = transaction)
                             .flatMap {
                                 scanInformationStore.create(newScan, transaction)
                             }
@@ -1013,7 +1029,7 @@ object Neo4jStoreSingleton : GraphStore {
         logger.info("updateScanInformation : ${scanInformation.scanId} status: ${scanInformation.status}")
         getCustomerUsingScanId(scanInformation.scanId, transaction).flatMap { customer ->
             scanInformationStore.update(scanInformation, transaction).flatMap {
-                logger.info("updating scan Information for : ${customer.email} id: ${scanInformation.scanId} status: ${scanInformation.status}")
+                logger.info("updating scan Information for : ${customer.contactEmail} id: ${scanInformation.scanId} status: ${scanInformation.status}")
 
                 when (scanInformation.status) {
 
@@ -1037,6 +1053,62 @@ object Neo4jStoreSingleton : GraphStore {
                             transaction = transaction)
                 }
             }
+        }
+    }
+
+    //
+    // eKYC - MyInfo
+    //
+
+    private val myInfoKycService by lazy { getResource<MyInfoKycService>() }
+
+    override fun getCustomerMyInfoData(
+            identity: org.ostelco.prime.model.Identity,
+            authorisationCode: String): Either<StoreError, String> = writeTransaction {
+
+        getCustomerId(identity = identity, transaction = transaction)
+                .flatMap { myInfoKycService.getPersonData(authorisationCode).right() }
+                .ifFailedThenRollback(transaction)
+    }
+
+    //
+    // eKYC - NRIC/FIN
+    //
+
+    private val daveKycService by lazy { getResource<DaveKycService>() }
+
+    override fun checkNricFinIdUsingDave(
+            identity: org.ostelco.prime.model.Identity,
+            nricFinId: String): Either<StoreError, Unit> = writeTransaction {
+
+        getCustomerId(identity = identity, transaction = transaction)
+                .flatMap {
+                    if (daveKycService.validate(nricFinId)) {
+                        Unit.right()
+                    } else {
+                        ValidationError(type = "NRIC/FIN ID", id = nricFinId, message = "Invalid NRIC/FIN ID").left()
+                    }
+                }
+                .ifFailedThenRollback(transaction)
+    }
+
+    //
+    // eKYC - Address and Phone number
+    //
+    override fun saveAddressAndPhoneNumber(
+            identity: org.ostelco.prime.model.Identity,
+            address: String,
+            phoneNumber: String): Either<StoreError, Unit> = writeTransaction {
+
+        getCustomerId(identity = identity, transaction = transaction)
+                .flatMap { Unit.right() }
+                .ifFailedThenRollback(transaction)
+    }
+
+    private fun getInitialFlags(regionCode: String): Int {
+        return when (regionCode.toLowerCase()) {
+            "sg" -> StatusFlags.bitMapStatusFlags(JUMIO, MY_INFO, NRIC_FIN, ADDRESS_AND_PHONE_NUMBER)
+            else -> StatusFlags.bitMapStatusFlags(JUMIO)
         }
     }
 

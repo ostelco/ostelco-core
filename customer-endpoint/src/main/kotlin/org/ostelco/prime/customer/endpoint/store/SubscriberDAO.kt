@@ -31,7 +31,7 @@ interface SubscriberDAO {
 
     fun createCustomer(identity: Identity, profile: Customer, referredBy: String?): Either<ApiError, Customer>
 
-    fun updateCustomer(identity: Identity, profile: Customer): Either<ApiError, Customer>
+    fun updateCustomer(identity: Identity, nickname: String?, contactEmail: String?): Either<ApiError, Customer>
 
     //
     // Regions
@@ -103,9 +103,9 @@ interface SubscriberDAO {
 
     fun getCustomerMyInfoData(identity: Identity, authorisationCode: String): Either<ApiError, String>
 
-    fun checkIdNumberUsingDave(identity: Identity): Either<ApiError, Unit>
+    fun checkNricFinIdUsingDave(identity: Identity, nricFinId: String): Either<ApiError, Unit>
 
-    fun saveProfile(identity: Identity): Either<ApiError, Unit>
+    fun saveAddressAndPhoneNumber(identity: Identity, address: String, phoneNumber: String): Either<ApiError, Unit>
 
     //
     // Token
@@ -114,15 +114,6 @@ interface SubscriberDAO {
     fun storeApplicationToken(customerId: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken>
 
     companion object {
-
-        /**
-         * Profile is only valid when name and email set.
-         */
-        fun isValidProfile(profile: Customer?): Boolean {
-            return (profile != null
-                    && !profile.name.isEmpty()
-                    && !profile.email.isEmpty())
-        }
 
         /**
          * The application token is only valid if token,

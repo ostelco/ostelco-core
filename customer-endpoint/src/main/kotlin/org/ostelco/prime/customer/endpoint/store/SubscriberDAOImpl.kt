@@ -2,14 +2,12 @@ package org.ostelco.prime.customer.endpoint.store
 
 import arrow.core.Either
 import arrow.core.flatMap
-import arrow.core.right
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
 import org.ostelco.prime.apierror.ApiErrorMapper.mapPaymentErrorToApiError
 import org.ostelco.prime.apierror.ApiErrorMapper.mapStorageErrorToApiError
-import org.ostelco.prime.apierror.BadGatewayError
 import org.ostelco.prime.apierror.BadRequestError
-import org.ostelco.prime.apierror.InsufficientStorageError
+import org.ostelco.prime.apierror.InternalServerError
 import org.ostelco.prime.apierror.NotFoundError
 import org.ostelco.prime.customer.endpoint.metrics.updateMetricsOnNewSubscriber
 import org.ostelco.prime.customer.endpoint.model.Person
@@ -61,15 +59,11 @@ class SubscriberDAOImpl : SubscriberDAO {
             profile: Customer,
             referredBy: String?): Either<ApiError, Customer> {
 
-        if (!SubscriberDAO.isValidProfile(profile)) {
-            logger.error("Failed to create customer. Invalid customer info.")
-            return Either.left(BadRequestError("Incomplete profile description. Customer info must contain name and email", ApiErrorCode.FAILED_TO_CREATE_PROFILE))
-        }
         return try {
             // FIXME set subscriberId into profile
             storage.addCustomer(identity, profile, referredBy)
                     .mapLeft {
-                        mapStorageErrorToApiError("Failed to create customer.", ApiErrorCode.FAILED_TO_CREATE_PROFILE, it)
+                        mapStorageErrorToApiError("Failed to create customer.", ApiErrorCode.FAILED_TO_CREATE_CUSTOMER, it)
                     }
                     .flatMap {
                         updateMetricsOnNewSubscriber()
@@ -77,19 +71,16 @@ class SubscriberDAOImpl : SubscriberDAO {
                     }
         } catch (e: Exception) {
             logger.error("Failed to create customer with identity - $identity", e)
-            Either.left(BadGatewayError("Failed to create customer", ApiErrorCode.FAILED_TO_CREATE_PROFILE))
+            Either.left(InternalServerError("Failed to create customer", ApiErrorCode.FAILED_TO_CREATE_CUSTOMER))
         }
     }
 
-    override fun updateCustomer(identity: Identity, profile: Customer): Either<ApiError, Customer> {
-        if (!SubscriberDAO.isValidProfile(profile)) {
-            return Either.left(BadRequestError("Incomplete customer info description", ApiErrorCode.FAILED_TO_UPDATE_PROFILE))
-        }
+    override fun updateCustomer(identity: Identity, nickname: String?, contactEmail: String?): Either<ApiError, Customer> {
         try {
-            storage.updateCustomer(identity, profile)
+            storage.updateCustomer(identity = identity, nickname = nickname, contactEmail = contactEmail)
         } catch (e: Exception) {
             logger.error("Failed to update customer with identity - $identity", e)
-            return Either.left(BadGatewayError("Failed to update customer", ApiErrorCode.FAILED_TO_UPDATE_PROFILE))
+            return Either.left(InternalServerError("Failed to update customer", ApiErrorCode.FAILED_TO_UPDATE_CUSTOMER))
         }
 
         return getCustomer(identity)
@@ -105,7 +96,7 @@ class SubscriberDAOImpl : SubscriberDAO {
             }
         } catch (e: Exception) {
             logger.error("Failed to get regions for customer with identity - $identity", e)
-            Either.left(BadGatewayError("Failed to get regions", ApiErrorCode.FAILED_TO_FETCH_REGIONS))
+            Either.left(InternalServerError("Failed to get regions", ApiErrorCode.FAILED_TO_FETCH_REGIONS))
         }
     }
 
@@ -120,7 +111,7 @@ class SubscriberDAOImpl : SubscriberDAO {
             }
         } catch (e: Exception) {
             logger.error("Failed to get subscriptions for customer with identity - $identity", e)
-            Either.left(BadGatewayError("Failed to get subscriptions", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS))
+            Either.left(InternalServerError("Failed to get subscriptions", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS))
         }
     }
 
@@ -135,7 +126,7 @@ class SubscriberDAOImpl : SubscriberDAO {
             }
         } catch (e: Exception) {
             logger.error("Failed to fetch SIM profiles for customer with identity - $identity", e)
-            Either.left(BadGatewayError("Failed to fetch SIM profiles", ApiErrorCode.FAILED_TO_FETCH_SIM_PROFILES))
+            Either.left(InternalServerError("Failed to fetch SIM profiles", ApiErrorCode.FAILED_TO_FETCH_SIM_PROFILES))
         }
     }
 
@@ -146,7 +137,7 @@ class SubscriberDAOImpl : SubscriberDAO {
             }
         } catch (e: Exception) {
             logger.error("Failed to provision SIM profile for customer with identity - $identity", e)
-            Either.left(BadGatewayError("Failed to provision SIM profile", ApiErrorCode.FAILED_TO_PROVISION_SIM_PROFILE))
+            Either.left(InternalServerError("Failed to provision SIM profile", ApiErrorCode.FAILED_TO_PROVISION_SIM_PROFILE))
         }
     }
 
@@ -176,7 +167,7 @@ class SubscriberDAOImpl : SubscriberDAO {
                     { it.toList() })
         } catch (e: Exception) {
             logger.error("Failed to get purchase history for customer with identity - $identity", e)
-            Either.left(BadGatewayError("Failed to get purchase history", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_HISTORY))
+            Either.left(InternalServerError("Failed to get purchase history", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_HISTORY))
         }
     }
 
@@ -187,7 +178,7 @@ class SubscriberDAOImpl : SubscriberDAO {
                     { products -> products.values })
         } catch (e: Exception) {
             logger.error("Failed to get Products for customer with identity - $identity", e)
-            Either.left(BadGatewayError("Failed to get Products", ApiErrorCode.FAILED_TO_FETCH_PRODUCT_LIST))
+            Either.left(InternalServerError("Failed to get Products", ApiErrorCode.FAILED_TO_FETCH_PRODUCT_LIST))
         }
 
     }
@@ -302,7 +293,7 @@ class SubscriberDAOImpl : SubscriberDAO {
                     { list -> list.map { Person(it) } })
         } catch (e: Exception) {
             logger.error("Failed to get referral list for customer with identity - $identity", e)
-            Either.left(BadGatewayError("Failed to get referral list", ApiErrorCode.FAILED_TO_FETCH_REFERRALS))
+            Either.left(InternalServerError("Failed to get referral list", ApiErrorCode.FAILED_TO_FETCH_REFERRALS))
         }
     }
 
@@ -313,7 +304,7 @@ class SubscriberDAOImpl : SubscriberDAO {
                     { Person(name = it) })
         } catch (e: Exception) {
             logger.error("Failed to get referred-by for customer with identity - $identity", e)
-            Either.left(BadGatewayError("Failed to get referred-by", ApiErrorCode.FAILED_TO_FETCH_REFERRED_BY_LIST))
+            Either.left(InternalServerError("Failed to get referred-by", ApiErrorCode.FAILED_TO_FETCH_REFERRED_BY_LIST))
         }
     }
 
@@ -337,12 +328,20 @@ class SubscriberDAOImpl : SubscriberDAO {
     }
 
     override fun getCustomerMyInfoData(identity: Identity, authorisationCode: String): Either<ApiError, String> {
-        return "{}".right()
+        return storage.getCustomerMyInfoData(identity, authorisationCode)
+                .mapLeft { mapStorageErrorToApiError("Failed to fetch Customer Data from MyInfo", ApiErrorCode.FAILED_TO_FETCH_CUSTOMER_MYINFO_DATA, it) }
     }
 
-    override fun checkIdNumberUsingDave(identity: Identity) : Either<ApiError, Unit> = Unit.right()
+    override fun checkNricFinIdUsingDave(identity: Identity, nricFinId: String) : Either<ApiError, Unit> {
+        return storage.checkNricFinIdUsingDave(identity, nricFinId)
+                .mapLeft { mapStorageErrorToApiError("Invalid NRIC/FIN ID", ApiErrorCode.INVALID_NRIC_FIN_ID, it) }
+    }
 
-    override fun saveProfile(identity: Identity) : Either<ApiError, Unit> = Unit.right()
+    override fun saveAddressAndPhoneNumber(identity: Identity, address: String, phoneNumber: String) : Either<ApiError, Unit> {
+        return storage.saveAddressAndPhoneNumber(identity, address, phoneNumber)
+                .mapLeft { mapStorageErrorToApiError("Failed to save address and phone number", ApiErrorCode.FAILED_TO_SAVE_ADDRESS_AND_PHONE_NUMBER, it) }
+    }
+
     //
     // Token
     //
@@ -357,7 +356,7 @@ class SubscriberDAOImpl : SubscriberDAO {
             storage.addNotificationToken(customerId, applicationToken)
         } catch (e: Exception) {
             logger.error("Failed to store ApplicationToken for customerId $customerId", e)
-            return Either.left(InsufficientStorageError("Failed to store ApplicationToken", ApiErrorCode.FAILED_TO_STORE_APPLICATION_TOKEN))
+            return Either.left(InternalServerError("Failed to store ApplicationToken", ApiErrorCode.FAILED_TO_STORE_APPLICATION_TOKEN))
         }
         return getNotificationToken(customerId, applicationToken.applicationID)
     }
@@ -369,7 +368,7 @@ class SubscriberDAOImpl : SubscriberDAO {
                     ?: return Either.left(NotFoundError("Failed to get ApplicationToken", ApiErrorCode.FAILED_TO_STORE_APPLICATION_TOKEN))
         } catch (e: Exception) {
             logger.error("Failed to get ApplicationToken for customerId $customerId", e)
-            return Either.left(BadGatewayError("Failed to get ApplicationToken", ApiErrorCode.FAILED_TO_STORE_APPLICATION_TOKEN))
+            return Either.left(InternalServerError("Failed to get ApplicationToken", ApiErrorCode.FAILED_TO_STORE_APPLICATION_TOKEN))
         }
     }
 }

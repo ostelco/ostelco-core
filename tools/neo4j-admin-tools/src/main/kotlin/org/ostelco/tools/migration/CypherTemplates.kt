@@ -4,10 +4,11 @@ import org.ostelco.prime.model.Customer
 
 
 fun createSubscriber(customer: Customer) = """
-CREATE(node:Subscriber {id: '${customer.email}',
-                        `name`: '${customer.name}'
-                        `email`: '${customer.email}',
-                        `analyticsId`: '${customer.analyticsId}'});
+CREATE(node:Subscriber {id: '${customer.id}',
+                        `nickname`: '${customer.nickname}'
+                        `contactEmail`: '${customer.contactEmail}',
+                        `analyticsId`: '${customer.analyticsId}',
+                        `referralId`: '${customer.referralId}'});
 """
 
 fun createSubscription(msisdn: String) = """
@@ -25,9 +26,9 @@ SET node.msisdn = '$msisdn'
 SET node.balance = '$balance';
 """
 
-fun addSubscriberToSegment(email: String) = """
+fun addSubscriberToSegment(id: String) = """
 MATCH (to:Subscriber)
-  WHERE to.id IN ['$email']
+  WHERE to.id IN ['$id']
 WITH to
 MATCH (from:Segment {id: 'all'})
 CREATE (from)-[:segmentToSubscriber]->(to);

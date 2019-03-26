@@ -116,10 +116,6 @@ class GraphStoreTest {
         Neo4jStoreSingleton.addSubscription(identity = IDENTITY, msisdn = MSISDN)
                 .mapLeft { fail(it.message) }
 
-        Neo4jStoreSingleton.getMsisdn(identity = IDENTITY).bimap(
-                { fail(it.message) },
-                { assertEquals(MSISDN, it) })
-
         Neo4jStoreSingleton.getSubscriptions(IDENTITY).bimap(
                 { fail(it.message) },
                 { assertEquals(MSISDN, it.single().msisdn) })
@@ -508,7 +504,7 @@ class GraphStoreTest {
                 customer = CUSTOMER).isRight())
         assert(Neo4jStoreSingleton.addCustomer(
                 identity = fakeIdentity,
-                customer = Customer(email = fakeEmail, name = NAME)).isRight())
+                customer = Customer(contactEmail = fakeEmail, nickname = NAME)).isRight())
 
         // test
         Neo4jStoreSingleton.createNewJumioKycScanId(fakeIdentity, REGION).mapLeft {
@@ -530,7 +526,7 @@ class GraphStoreTest {
         const val REGION = "NO"
         const val MSISDN = "4712345678"
         val IDENTITY = Identity(id = EMAIL, type = "EMAIL", provider = "email")
-        val CUSTOMER = Customer(email = EMAIL, name = NAME)
+        val CUSTOMER = Customer(contactEmail = EMAIL, nickname = NAME)
 
         @ClassRule
         @JvmField

@@ -62,21 +62,27 @@ class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(regionCo
                 .build()
     }
 
-    @POST
-    @Path("/dave")
+    @GET
+    @Path("/dave/{nricFinId}")
     @Produces(MediaType.APPLICATION_JSON)
-    fun checkIdNumberUsingDave(
+    fun checkNricFinId(
             @Auth token: AccessTokenPrincipal?,
             @NotNull
-            @PathParam("authorisationCode")
-            authorisationCode: String): Response {
+            @PathParam("nricFinId")
+            nricFinId: String): Response {
 
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
 
-        return Response.status(Response.Status.CREATED).build()
+        return dao.checkNricFinIdUsingDave(
+                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                nricFinId = nricFinId)
+                .fold(
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                        { personalData -> Response.status(Response.Status.OK).entity(personalData) })
+                .build()
     }
 
     @POST

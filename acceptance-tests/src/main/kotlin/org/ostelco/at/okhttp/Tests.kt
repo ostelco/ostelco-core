@@ -8,7 +8,6 @@ import org.ostelco.at.common.enableRegion
 import org.ostelco.at.common.expectedProducts
 import org.ostelco.at.common.getLogger
 import org.ostelco.at.common.randomInt
-import org.ostelco.at.jersey.post
 import org.ostelco.at.okhttp.ClientFactory.clientForSubject
 import org.ostelco.prime.customer.api.DefaultApi
 import org.ostelco.prime.customer.model.ApplicationToken
@@ -59,7 +58,7 @@ class CustomerTest {
     }
 
     @Test
-    fun `okhttp test - GET application token`() {
+    fun `okhttp test - POST application token`() {
 
         val email = "token-${randomInt()}@test.com"
         createCustomer("Test Token User", email)
@@ -96,7 +95,7 @@ class GetSubscriptions {
 
         val client = clientForSubject(subject = email)
 
-        val subscriptions = client.getSubscriptions("no")
+        val subscriptions = client.subscriptions
 
         assertEquals(listOf(msisdn), subscriptions.map { it.msisdn })
     }
@@ -458,22 +457,6 @@ class PurchaseTest {
     }
 }
 
-class AnalyticsTest {
-
-    @Test
-    fun testReportEvent() {
-
-        val email = "analytics-${randomInt()}@test.com"
-        createCustomer(name = "Test Analytics User", email = email)
-
-        post<String> {
-            path = "/analytics"
-            body = "event"
-            this.email = email
-        }
-    }
-}
-
 class ReferralTest {
 
     @Test
@@ -571,7 +554,7 @@ class GraphQlTests {
         val client = clientForSubject(subject = email)
 
         val request = GraphQLRequest()
-        request.query = """{ context(id: "$email") { customer { email } } }"""
+        request.query = """{ context(id: "$email") { customer { nickname, contactEmail } } }"""
 
         val map = client.graphql(request) as Map<String, *>
 

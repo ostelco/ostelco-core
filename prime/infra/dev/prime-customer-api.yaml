@@ -27,8 +27,6 @@ paths:
           description: "Get Stripe Ephemeral key."
           schema:
             type: string
-        404:
-          description: "User not found."
       security:
         - auth0_jwt: []
   "/customer":
@@ -75,9 +73,7 @@ paths:
             $ref: '#/definitions/Customer'
         400:
           description: "Incomplete customer info"
-        403:
-          description: "Customer invalid or already created"
-        502:
+        500:
           description: "Failed to store customer"
       security:
         - auth0_jwt: []
@@ -106,7 +102,7 @@ paths:
           description: "Incomplete Customer info."
         404:
           description: "Customer not found."
-        502:
+        500:
           description: "Failed to update customer info."
       security:
         - auth0_jwt: []
@@ -128,15 +124,15 @@ paths:
           schema:
             $ref: '#/definitions/ScanInformation'
         404:
-          description: "User not found."
+          description: "Region not found."
       security:
         - auth0_jwt: []
-  "/regions/{regionCode}/kyc/jumio/scans/{scanId}/status":
+  "/regions/{regionCode}/kyc/jumio/scans/{scanId}":
     get:
       description: "Get status of eKYC scan."
       produces:
         - application/json
-      operationId: "getScanStatus"
+      operationId: "getScan"
       parameters:
         - name: regionCode
           in: path
@@ -154,28 +150,69 @@ paths:
           schema:
             $ref: '#/definitions/ScanInformation'
         404:
-          description: "Scan not found."
+          description: "Region or Scan not found."
       security:
         - auth0_jwt: []
-  "/regions/{regionCode}/subscriptions":
+  "/regions/sg/kyc/myInfo/{authorisationCode}":
     get:
-      description: "Get subscription (msisdn) for the user (identified by bearer token)."
+      description: "Get Customer Data from Singapore MyInfo service."
       produces:
         - application/json
-      operationId: "getSubscriptions"
+      operationId: "getCustomerMyInfoData"
       parameters:
-        - name: regionCode
+        - name: authorisationCode
           in: path
-          description: "Region code"
+          description: "Authorisation Code"
           required: true
           type: string
       responses:
         200:
-          description: "Get subscriptions for this user."
+          description: "Successfully retrieved Customer Data from MyInfo service."
           schema:
-            $ref: '#/definitions/SubscriptionList'
+            type: object
         404:
-          description: "No subscription found for this user."
+          description: "Person Data not found."
+      security:
+        - auth0_jwt: []
+  "/regions/sg/kyc/dave/{nricFinId}":
+    get:
+      description: "Get Customer Data from Singapore MyInfo service."
+      produces:
+        - application/json
+      operationId: "checkNricFinId"
+      parameters:
+        - name: nricFinId
+          in: path
+          description: "NRIC/FIN ID for Singapore"
+          required: true
+          type: string
+      responses:
+        204:
+          description: "Successfully verified Singapore's NRIC/FIN ID for the Customer."
+        400:
+          description: "Invalid NRIC/FIN ID"
+      security:
+        - auth0_jwt: []
+  "/regions/sg/kyc/profile":
+    put:
+      description: "Update Singapore Customer's address and phone number."
+      produces:
+        - application/json
+      operationId: "updateDetails"
+      parameters:
+        - name: address
+          in: query
+          description: "Customer's Address"
+          required: true
+          type: string
+        - name: phoneNumber
+          in: query
+          description: "Customer's phone number"
+          required: true
+          type: string
+      responses:
+        204:
+          description: "Successfully updated customer's details."
       security:
         - auth0_jwt: []
   "/regions/{regionCode}/simProfiles":
@@ -196,7 +233,9 @@ paths:
           schema:
             $ref: '#/definitions/SimProfileList'
         404:
-          description: "No SIM profiles found for this user."
+          description: "Not allowed for this region, or No SIM profiles found for this user for this region."
+        500:
+          description: "Service Unavailable"
       security:
         - auth0_jwt: []
     post:
@@ -210,15 +249,56 @@ paths:
           description: "Region code"
           required: true
           type: string
+        - name: profileType
+          in: query
+          description: "Profile Type"
+          required: true
+          type: string
       responses:
         201:
           description: "Provisioned SIM profile for this user."
           schema:
             $ref: '#/definitions/SimProfile'
-        404:
-          description: "User not found."
-        503:
+        400:
+          description: "Not allowed for this region, or missing parameters."
+        500:
           description: "Service Unavailable"
+      security:
+        - auth0_jwt: []
+  "/regions/{regionCode}/subscriptions":
+    get:
+      description: "Get subscription (msisdn) for the user (identified by bearer token)."
+      produces:
+        - application/json
+      operationId: "getSubscriptionsForRegion"
+      parameters:
+        - name: regionCode
+          in: path
+          description: "Region code"
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Get subscriptions for a region for this user."
+          schema:
+            $ref: '#/definitions/SubscriptionList'
+        404:
+          description: "No subscription found for this user."
+      security:
+        - auth0_jwt: []
+  "/subscriptions":
+    get:
+      description: "Get subscription (msisdn) for the user (identified by bearer token)."
+      produces:
+        - application/json
+      operationId: "getSubscriptions"
+      responses:
+        200:
+          description: "Get subscriptions for this user."
+          schema:
+            $ref: '#/definitions/SubscriptionList'
+        404:
+          description: "No subscription found for this user."
       security:
         - auth0_jwt: []
   "/applicationToken":
@@ -244,7 +324,7 @@ paths:
           description: "Token malformed. Not able to store"
         404:
           description: "User not found."
-        507:
+        500:
           description: "Not able to store token."
       security:
         - auth0_jwt: []
@@ -281,11 +361,11 @@ paths:
           description: "Successfully added source to user"
           schema:
             $ref: '#/definitions/PaymentSource'
-        403:
+        400:
           description: "Invalid source"
         404:
           description: "User not found."
-        503:
+        500:
           description: "Service Unavailable"
       security:
         - auth0_jwt: []
@@ -305,11 +385,11 @@ paths:
           description: "Successfully set as default source to user"
           schema:
             $ref: '#/definitions/PaymentSource'
-        403:
+        400:
           description: "Invalid source"
         404:
           description: "User not found."
-        503:
+        500:
           description: "Service Unavailable"
       security:
         - auth0_jwt: []
@@ -330,12 +410,10 @@ paths:
           schema:
             $ref: '#/definitions/PaymentSource'
         400:
-          description: "The source could not be removed"
-        403:
-          description: "Invalid source"
+          description: "Invalid source, or The source could not be removed"
         404:
           description: "No such source for user"
-        503:
+        500:
           description: "Service Unavailable"
       security:
         - auth0_jwt: []
@@ -398,11 +476,11 @@ paths:
           description: "List of Purchase Records."
           schema:
             $ref: '#/definitions/PurchaseRecordList'
-        403:
+        400:
           description: "Not allowed to charge this source"
         404:
           description: "No Purchase Records found for the user."
-        503:
+        500:
           description: "Service Unavailable"
       security:
         - auth0_jwt: []
@@ -476,6 +554,13 @@ paths:
             $ref: '#/definitions/GraphQLRequest'
 
 definitions:
+  Context:
+    type: object
+    properties:
+      customer:
+        $ref: '#/definitions/Customer'
+      regions:
+        $ref: '#/definitions/RegionDetailsList'
   Customer:
     type: object
     properties:
@@ -506,6 +591,8 @@ definitions:
         description: "Customer Status for this region"
         type: string
         enum: [ PENDING, APPROVED, REJECTED ]
+      simProfiles:
+        $ref: '#/definitions/SimProfileList'
   Region:
     type: object
     properties:
@@ -522,9 +609,6 @@ definitions:
     properties:
       msisdn:
         description: "Mobile number for this subscription"
-        type: string
-      alias:
-        description: "Human readable optional alias for this subscription"
         type: string
   BundleList:
     type: array
@@ -749,6 +833,9 @@ definitions:
         type: string
       status:
         description: "The status of the SIM profile, e.g. INSTALLED"
+        type: string
+      alias:
+        description: "Human readable optional alias for this subscription"
         type: string
     required:
       - iccId

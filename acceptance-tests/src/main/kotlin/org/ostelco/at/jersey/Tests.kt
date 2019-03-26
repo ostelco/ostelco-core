@@ -1,16 +1,43 @@
 package org.ostelco.at.jersey
 
 import org.junit.Test
-import org.ostelco.at.common.*
-import org.ostelco.prime.customer.model.*
+import org.ostelco.at.common.StripePayment
+import org.ostelco.at.common.createCustomer
+import org.ostelco.at.common.createSubscription
+import org.ostelco.at.common.enableRegion
+import org.ostelco.at.common.expectedProducts
+import org.ostelco.at.common.getLogger
+import org.ostelco.at.common.randomInt
+import org.ostelco.prime.customer.model.ApplicationToken
+import org.ostelco.prime.customer.model.Bundle
+import org.ostelco.prime.customer.model.BundleList
+import org.ostelco.prime.customer.model.Customer
+import org.ostelco.prime.customer.model.PaymentSource
+import org.ostelco.prime.customer.model.PaymentSourceList
+import org.ostelco.prime.customer.model.Person
+import org.ostelco.prime.customer.model.Plan
+import org.ostelco.prime.customer.model.Price
+import org.ostelco.prime.customer.model.Product
+import org.ostelco.prime.customer.model.ProductInfo
+import org.ostelco.prime.customer.model.PurchaseRecord
+import org.ostelco.prime.customer.model.PurchaseRecordList
+import org.ostelco.prime.customer.model.Region
+import org.ostelco.prime.customer.model.RegionDetails
 import org.ostelco.prime.customer.model.RegionDetails.StatusEnum.PENDING
+import org.ostelco.prime.customer.model.RegionDetailsList
+import org.ostelco.prime.customer.model.ScanInformation
+import org.ostelco.prime.customer.model.Subscription
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.util.*
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.MultivaluedHashMap
-import kotlin.test.*
+import kotlin.test.assertEquals
+import kotlin.test.assertFails
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 
 class CustomerTest {
@@ -19,22 +46,18 @@ class CustomerTest {
     fun `jersey test - GET and PUT customer`() {
 
         val email = "customer-${randomInt()}@test.com"
-
-        val createCustomer = Customer()
-                .id("")
-                .contactEmail(email)
-                .nickname("Test Customer")
-                .analyticsId("")
-                .referralId("")
+        val nickname = "Test Customer"
 
         val createdCustomer: Customer = post {
             path = "/customer"
-            body = createCustomer
+            queryParams = mapOf(
+                    "contactEmail" to email,
+                    "nickname" to nickname)
             this.email = email
         }
 
-        assertEquals(createCustomer.contactEmail, createdCustomer.contactEmail, "Incorrect 'contactEmail' in created customer")
-        assertEquals(createCustomer.nickname, createdCustomer.nickname, "Incorrect 'nickname' in created customer")
+        assertEquals(email, createdCustomer.contactEmail, "Incorrect 'contactEmail' in created customer")
+        assertEquals(nickname, createdCustomer.nickname, "Incorrect 'nickname' in created customer")
 
         val customer: Customer = get {
             path = "/customer"
@@ -48,11 +71,9 @@ class CustomerTest {
 
         val newName = "New name: Test Customer"
 
-        customer.nickname(newName)
-
         val updatedCustomer: Customer = put {
             path = "/customer"
-            body = customer
+            queryParams = mapOf("nickname" to newName)
             this.email = email
         }
 
@@ -78,7 +99,7 @@ class CustomerTest {
                 .tokenType(tokenType)
 
         val reply: ApplicationToken = post {
-            path = "/applicationtoken"
+            path = "/applicationToken"
             body = testToken
             this.email = email
         }
@@ -1147,22 +1168,6 @@ class eKYCTest {
 
 }
 
-class AnalyticsTest {
-
-    @Test
-    fun testReportEvent() {
-
-        val email = "analytics-${randomInt()}@test.com"
-        createCustomer(name = "Test Analytics User", email = email)
-
-        post<String> {
-            path = "/analytics"
-            body = "event"
-            this.email = email
-        }
-    }
-}
-
 class ReferralTest {
 
     @Test
@@ -1424,7 +1429,7 @@ class GraphQlTests {
         val context = post<GraphQlResponse>(expectedResultCode = 200) {
             path = "/graphql"
             this.email = email
-            body = mapOf("query" to """{ context { customer { email } subscriptions { msisdn } } }""")
+            body = mapOf("query" to """{ context { customer { nickname contactEmail } subscriptions { msisdn } } }""")
         }.data?.context
 
         assertEquals(expected = email, actual = context?.customer?.contactEmail)
@@ -1442,7 +1447,7 @@ class GraphQlTests {
         val context = get<GraphQlResponse> {
             path = "/graphql"
             this.email = email
-            queryParams = mapOf("query" to URLEncoder.encode("""{context{customer{email}subscriptions{msisdn}}}""", StandardCharsets.UTF_8.name()))
+            queryParams = mapOf("query" to URLEncoder.encode("""{context{customer{nickname,contactEmail}subscriptions{msisdn}}}""", StandardCharsets.UTF_8.name()))
         }.data?.context
 
         assertEquals(expected = email, actual = context?.customer?.contactEmail)

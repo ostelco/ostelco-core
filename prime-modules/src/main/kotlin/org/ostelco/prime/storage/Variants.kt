@@ -26,12 +26,12 @@ interface ClientDocumentStore {
     /**
      * Get token used for sending notification to user application
      */
-    fun getNotificationTokens(msisdn: String): Collection<ApplicationToken>
+    fun getNotificationTokens(customerId: String): Collection<ApplicationToken>
 
     /**
      * Add token used for sending notification to user application
      */
-    fun addNotificationToken(msisdn: String, token: ApplicationToken): Boolean
+    fun addNotificationToken(customerId: String, token: ApplicationToken): Boolean
 
     /**
      * Get token used for sending notification to user application
@@ -72,7 +72,7 @@ interface ClientGraphStore {
     /**
      * Update Customer Profile
      */
-    fun updateCustomer(identity: Identity, customer: Customer): Either<StoreError, Unit>
+    fun updateCustomer(identity: Identity, nickname: String?, contactEmail: String?): Either<StoreError, Unit>
 
     /**
      * Remove Customer for testing
@@ -127,11 +127,6 @@ interface ClientGraphStore {
     suspend fun consume(msisdn: String, usedBytes: Long, requestedBytes: Long, callback: (Either<StoreError, ConsumptionResult>) -> Unit)
 
     /**
-     * Get msisdn for the given subscription-id
-     */
-    fun getMsisdn(identity: Identity): Either<StoreError, String>
-
-    /**
      * Get all PurchaseRecords
      */
     fun getPurchaseRecords(identity: Identity): Either<StoreError, Collection<PurchaseRecord>>
@@ -170,6 +165,21 @@ interface ClientGraphStore {
      * Get information about an eKYC scan for the customer.
      */
     fun getScanInformation(identity: Identity, scanId: String): Either<StoreError, ScanInformation>
+
+    /**
+     * Get Customer Data from Singapore MyInfo Data using authorisationCode, and store and return it
+     */
+    fun getCustomerMyInfoData(identity: Identity, authorisationCode: String): Either<StoreError, String>
+
+    /**
+     * Validate and store NRIC/FIN ID
+     */
+    fun checkNricFinIdUsingDave(identity: Identity, nricFinId: String): Either<StoreError, Unit>
+
+    /**
+     * Save address and Phone number
+     */
+    fun saveAddressAndPhoneNumber(identity: Identity, address: String, phoneNumber: String) : Either<StoreError, Unit>
 }
 
 data class ConsumptionResult(val msisdnAnalyticsId: String, val granted: Long, val balance: Long)

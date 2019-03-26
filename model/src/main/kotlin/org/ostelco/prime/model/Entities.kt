@@ -33,8 +33,8 @@ data class ChangeSegment(
 
 data class Customer(
         override val id: String = UUID.randomUUID().toString(),
-        val name: String = "",
-        val email: String,
+        val nickname: String,
+        val contactEmail: String,
         val analyticsId: String = UUID.randomUUID().toString(),
         val referralId: String = UUID.randomUUID().toString()) : HasId
 
@@ -160,8 +160,7 @@ data class ApplicationToken(
 
 data class Subscription(
         val msisdn: String,
-        val analyticsId: String = UUID.randomUUID().toString(),
-        val alias: String = "") : HasId {
+        val analyticsId: String = UUID.randomUUID().toString()) : HasId {
 
     override val id: String
         @JsonIgnore
@@ -236,9 +235,18 @@ data class SimEntry(
 
 data class SimProfile(
         val iccId: String,
-        @JvmField val eSimActivationCode: String = "") : HasId {
+        @JvmField val eSimActivationCode: String,
+        val status: SimProfileStatus,
+        val alias: String = "") : HasId {
 
     override val id: String
         @JsonIgnore
         get() = iccId
+}
+
+enum class SimProfileStatus {
+    AVAILABLE_FOR_DOWNLOAD,
+    DOWNLOADED,
+    INSTALLED,
+    ENABLED,
 }
