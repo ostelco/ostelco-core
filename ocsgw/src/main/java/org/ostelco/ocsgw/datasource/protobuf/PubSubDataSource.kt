@@ -43,7 +43,7 @@ class PubSubDataSource(
 
     init {
 
-        val strSocketAddress = System.getenv("PUBSUB_HOST")
+        val strSocketAddress = System.getenv("PUBSUB_EMULATOR_HOST")
         if (!strSocketAddress.isNullOrEmpty()) {
             val channel = ManagedChannelBuilder.forTarget(strSocketAddress).usePlaintext().build()
             // Create a publisher instance with default settings bound to the topic

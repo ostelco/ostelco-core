@@ -6,4 +6,4 @@ val url: String = "http://${System.getenv("PRIME_SOCKET") ?: "localhost:9090"}"
 
 val ocsSocket = System.getenv("OCS_SOCKET") ?: "localhost:8082"
 
-val pubSubEmulatorHost = System.getenv("PUBSUB_HOST") ?: "localhost:8085"
+val pubSubEmulatorHost = System.getenv("PUBSUB_EMULATOR_HOST") ?: "localhost:8085"
