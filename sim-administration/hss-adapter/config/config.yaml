@@ -7,30 +7,8 @@ hlrs:
 httpClient:
   timeout: 10000ms
 
-server:
-  applicationConnectors:
-    - type: h2c
-      port: 8080
-      maxConcurrentStreams: 1024
-      initialStreamRecvWindow: 65535
-  requestLog:
-    appenders:
-      - type: console
-        layout:
-          type: access-json
-        filterFactories:
-          - type: URI
-            uri: prometheus-metrics
-
 logging:
   level: INFO
   loggers:
     org.ostelco: DEBUG
     org.dhatim.dropwizard.prometheus.DropwizardMetricsExporter: ERROR
-  appenders:
-    - type: slack
-    - type: console
-      layout:
-        type: json
-        customFieldNames:
-          level: severity
