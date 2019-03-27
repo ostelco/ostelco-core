@@ -15,6 +15,7 @@ import org.ostelco.prime.model.Region
 import org.ostelco.prime.model.RegionDetails
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.Segment
+import org.ostelco.prime.model.SimProfile
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.paymentprocessor.core.PaymentError
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
@@ -25,12 +26,12 @@ interface ClientDocumentStore {
     /**
      * Get token used for sending notification to user application
      */
-    fun getNotificationTokens(msisdn: String): Collection<ApplicationToken>
+    fun getNotificationTokens(customerId: String): Collection<ApplicationToken>
 
     /**
      * Add token used for sending notification to user application
      */
-    fun addNotificationToken(msisdn: String, token: ApplicationToken): Boolean
+    fun addNotificationToken(customerId: String, token: ApplicationToken): Boolean
 
     /**
      * Get token used for sending notification to user application
@@ -71,7 +72,7 @@ interface ClientGraphStore {
     /**
      * Update Customer Profile
      */
-    fun updateCustomer(identity: Identity, customer: Customer): Either<StoreError, Unit>
+    fun updateCustomer(identity: Identity, nickname: String?, contactEmail: String?): Either<StoreError, Unit>
 
     /**
      * Remove Customer for testing
@@ -95,14 +96,25 @@ interface ClientGraphStore {
     fun getAllRegionDetails(identity: Identity): Either<StoreError, Collection<RegionDetails>>
 
     /**
-     * Get subscriptions for Customer
+     * Get a Region (with details) associated with the Customer
      */
-    fun getSubscriptions(identity: Identity): Either<StoreError, Collection<Subscription>>
+    fun getRegionDetails(identity: Identity, regionCode: String): Either<StoreError, RegionDetails>
 
     /**
-     * Link Customer to MSISDN
+     * Get subscriptions for Customer
      */
-    fun createSubscription(identity: Identity): Either<StoreError, Subscription>
+    fun getSubscriptions(identity: Identity, regionCode: String? = null): Either<StoreError, Collection<Subscription>>
+
+    /**
+     * Get SIM Profiles for Customer
+     */
+    fun getSimProfiles(identity: Identity, regionCode: String? = null): Either<StoreError, Collection<SimProfile>>
+
+    /**
+     * Provision new SIM Profile for Customer
+     */
+
+    fun provisionSimProfile(identity: Identity, regionCode: String, profileType: String = "default"): Either<StoreError, SimProfile>
 
     /**
      * Get balance for Client
@@ -118,11 +130,6 @@ interface ClientGraphStore {
      * Set balance after OCS Topup or Consumption
      */
     suspend fun consume(msisdn: String, usedBytes: Long, requestedBytes: Long, callback: (Either<StoreError, ConsumptionResult>) -> Unit)
-
-    /**
-     * Get msisdn for the given subscription-id
-     */
-    fun getMsisdn(identity: Identity): Either<StoreError, String>
 
     /**
      * Get all PurchaseRecords
@@ -152,7 +159,7 @@ interface ClientGraphStore {
     /**
      * Generate new eKYC scanId for the customer.
      */
-    fun newEKYCScanId(identity: Identity, countryCode: String): Either<StoreError, ScanInformation>
+    fun createNewJumioKycScanId(identity: Identity, regionCode: String): Either<StoreError, ScanInformation>
 
     /**
      * Get the country code for the scan.
@@ -163,6 +170,21 @@ interface ClientGraphStore {
      * Get information about an eKYC scan for the customer.
      */
     fun getScanInformation(identity: Identity, scanId: String): Either<StoreError, ScanInformation>
+
+    /**
+     * Get Customer Data from Singapore MyInfo Data using authorisationCode, and store and return it
+     */
+    fun getCustomerMyInfoData(identity: Identity, authorisationCode: String): Either<StoreError, String>
+
+    /**
+     * Validate and store NRIC/FIN ID
+     */
+    fun checkNricFinIdUsingDave(identity: Identity, nricFinId: String): Either<StoreError, Unit>
+
+    /**
+     * Save address and Phone number
+     */
+    fun saveAddressAndPhoneNumber(identity: Identity, address: String, phoneNumber: String) : Either<StoreError, Unit>
 }
 
 data class ConsumptionResult(val msisdnAnalyticsId: String, val granted: Long, val balance: Long)
@@ -192,9 +214,9 @@ interface AdminGraphStore {
     // updating an Offer and Product is not allowed
     fun updateSegment(segment: Segment): Either<StoreError, Unit>
 
-    fun getSubscriberCount(): Long
-    fun getReferredSubscriberCount(): Long
-    fun getPaidSubscriberCount(): Long
+    fun getCustomerCount(): Long
+    fun getReferredCustomerCount(): Long
+    fun getPaidCustomerCount(): Long
 
     /* For managing plans and subscription to plans. */
 

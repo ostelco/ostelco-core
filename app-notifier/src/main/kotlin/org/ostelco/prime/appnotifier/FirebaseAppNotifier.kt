@@ -17,17 +17,17 @@ class FirebaseAppNotifier: AppNotifier {
             "messaging/registration-token-not-registered"
     )
 
-    override fun notify(msisdn: String, title: String, body: String) {
-        println("Will try to notify msisdn : $msisdn")
-        sendNotification(msisdn, title, body)
+    override fun notify(customerId: String, title: String, body: String) {
+        println("Will try to notify customer with Id : $customerId")
+        sendNotification(customerId, title, body)
     }
 
-    private fun sendNotification(msisdn: String, title: String, body: String) {
+    private fun sendNotification(customerId: String, title: String, body: String) {
 
         val store = getResource<ClientDataSource>()
 
         // This registration token comes from the client FCM SDKs.
-        val applicationTokens = store.getNotificationTokens(msisdn)
+        val applicationTokens = store.getNotificationTokens(customerId)
 
         for (applicationToken in applicationTokens) {
 
@@ -48,7 +48,7 @@ class FirebaseAppNotifier: AppNotifier {
                     override fun onSuccess(result: String) {
                         println("Notification completed with result: $result")
                         if (listOfFailureCodes.contains(result)) {
-                            store.removeNotificationToken(msisdn, applicationToken.applicationID)
+                            store.removeNotificationToken(customerId, applicationToken.applicationID)
                         }
                     }
 

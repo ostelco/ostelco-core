@@ -6,13 +6,13 @@ import org.eclipse.jetty.servlets.CrossOriginFilter
 import org.ostelco.prime.customer.endpoint.metrics.reportMetricsAtStartUp
 import org.ostelco.prime.customer.endpoint.resources.ApplicationTokenResource
 import org.ostelco.prime.customer.endpoint.resources.BundlesResource
+import org.ostelco.prime.customer.endpoint.resources.ContextResource
 import org.ostelco.prime.customer.endpoint.resources.CustomerResource
 import org.ostelco.prime.customer.endpoint.resources.PaymentSourcesResource
 import org.ostelco.prime.customer.endpoint.resources.ProductsResource
 import org.ostelco.prime.customer.endpoint.resources.PurchaseResource
 import org.ostelco.prime.customer.endpoint.resources.ReferralResource
 import org.ostelco.prime.customer.endpoint.resources.RegionsResource
-import org.ostelco.prime.customer.endpoint.resources.SubscriptionsResource
 import org.ostelco.prime.customer.endpoint.store.SubscriberDAOImpl
 import org.ostelco.prime.module.PrimeModule
 import java.util.*
@@ -46,11 +46,10 @@ class CustomerEndpointModule : PrimeModule {
         jerseyEnv.register(PurchaseResource(dao))
         jerseyEnv.register(ReferralResource(dao))
         jerseyEnv.register(PaymentSourcesResource(dao))
-        jerseyEnv.register(SubscriptionsResource(dao))
         jerseyEnv.register(BundlesResource(dao))
-        jerseyEnv.register(SubscriptionsResource(dao))
         jerseyEnv.register(RegionsResource(dao))
         jerseyEnv.register(CustomerResource(dao))
+        jerseyEnv.register(ContextResource(dao))
         jerseyEnv.register(ApplicationTokenResource(dao))
 
         reportMetricsAtStartUp()
