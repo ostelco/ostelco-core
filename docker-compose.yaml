@@ -84,6 +84,10 @@ services:
         ipv4_address: 172.16.238.2
       default:
 
+  ext-myinfo-emulator:
+    container_name: ext-myinfo-emulator
+    build: ext-myinfo-emulator
+
   neo4j:
     container_name: "neo4j"
     image: neo4j:3.4.9

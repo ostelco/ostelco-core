@@ -35,6 +35,7 @@ dependencies {
   runtimeOnly project(':firebase-store')
   runtimeOnly project(':neo4j-store')
   runtimeOnly project(':customer-endpoint')
+  runtimeOnly project(':ekyc')
   runtimeOnly project(':graphql')
   runtimeOnly project(':admin-api')
   runtimeOnly project(':app-notifier')
