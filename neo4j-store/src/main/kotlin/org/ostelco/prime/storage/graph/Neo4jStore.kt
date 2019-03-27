@@ -452,16 +452,13 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun provisionSimProfile(
             identity: org.ostelco.prime.model.Identity,
-            regionCode: String): Either<StoreError, SimProfile> = writeTransaction {
+            regionCode: String,
+            profileType: String): Either<StoreError, SimProfile> = writeTransaction {
         IO {
             Either.monad<StoreError>().binding {
                 val customerId = getCustomerId(identity = identity, transaction = transaction).bind()
                 val bundles = customerStore.getRelated(customerId, customerToBundleRelation, transaction).bind()
                 validateBundleList(bundles, customerId).bind()
-                // TODO vihang: parametrize hlr and phoneType
-                val simEntry = simManager.allocateNextEsimProfile(hlr = "loltel", phoneType = "generic")
-                        .mapLeft { NotFoundError("eSIM profile", id = "loltel") }
-                        .bind()
                 val customer = customerStore.get(customerId, transaction).bind()
                 val status = customerRegionRelationStore
                         .getProperties(fromId = customerId, toId = regionCode.toLowerCase(), transaction = transaction)
@@ -471,6 +468,10 @@ object Neo4jStoreSingleton : GraphStore {
                         status = status,
                         customerId = customerId,
                         regionCode = regionCode).bind()
+                val region = regionStore.get(id = regionCode.toLowerCase(), transaction = transaction).bind()
+                val simEntry = simManager.allocateNextEsimProfile(hlr = getHlr(region.id.toLowerCase()), phoneType = profileType)
+                        .mapLeft { NotFoundError("eSIM profile", id = "loltel") }
+                        .bind()
                 simProfileStore.create(SimProfile(
                         iccId = simEntry.iccId,
                         eSimActivationCode = simEntry.eSimActivationCode,
@@ -534,6 +535,10 @@ object Neo4jStoreSingleton : GraphStore {
                             relationType = customerToSimProfileRelation,
                             transaction = transaction)
                 }
+    }
+
+    private fun getHlr(regionCode: String): String {
+        return "loltel"
     }
 
     //

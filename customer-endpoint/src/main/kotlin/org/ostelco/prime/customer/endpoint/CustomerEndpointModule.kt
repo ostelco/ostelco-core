@@ -6,6 +6,7 @@ import org.eclipse.jetty.servlets.CrossOriginFilter
 import org.ostelco.prime.customer.endpoint.metrics.reportMetricsAtStartUp
 import org.ostelco.prime.customer.endpoint.resources.ApplicationTokenResource
 import org.ostelco.prime.customer.endpoint.resources.BundlesResource
+import org.ostelco.prime.customer.endpoint.resources.ContextResource
 import org.ostelco.prime.customer.endpoint.resources.CustomerResource
 import org.ostelco.prime.customer.endpoint.resources.PaymentSourcesResource
 import org.ostelco.prime.customer.endpoint.resources.ProductsResource
@@ -48,6 +49,7 @@ class CustomerEndpointModule : PrimeModule {
         jerseyEnv.register(BundlesResource(dao))
         jerseyEnv.register(RegionsResource(dao))
         jerseyEnv.register(CustomerResource(dao))
+        jerseyEnv.register(ContextResource(dao))
         jerseyEnv.register(ApplicationTokenResource(dao))
 
         reportMetricsAtStartUp()

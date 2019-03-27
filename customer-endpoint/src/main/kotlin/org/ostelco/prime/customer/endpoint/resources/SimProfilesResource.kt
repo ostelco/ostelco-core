@@ -8,6 +8,7 @@ import org.ostelco.prime.model.Identity
 import javax.ws.rs.GET
 import javax.ws.rs.POST
 import javax.ws.rs.Produces
+import javax.ws.rs.QueryParam
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
@@ -32,7 +33,9 @@ class SimProfilesResource(private val regionCode: String, private val dao: Subsc
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    fun provisionSimProfile(@Auth token: AccessTokenPrincipal?): Response {
+    fun provisionSimProfile(
+            @Auth token: AccessTokenPrincipal?,
+            @QueryParam("profileType") profileType: String = "default"): Response {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
@@ -40,7 +43,8 @@ class SimProfilesResource(private val regionCode: String, private val dao: Subsc
 
         return dao.provisionSimProfile(
                 identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
-                regionCode = regionCode)
+                regionCode = regionCode,
+                profileType = profileType)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { Response.status(Response.Status.OK).entity(asJson(it)) })

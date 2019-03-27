@@ -106,6 +106,18 @@ paths:
           description: "Failed to update customer info."
       security:
         - auth0_jwt: []
+    delete:
+      description: "Remove customer."
+      produces:
+        - application/json
+      operationId: "removeCustomer"
+      responses:
+        204:
+          description: "Remove customer."
+        404:
+          description: "Customer not found."
+      security:
+        - auth0_jwt: []
   "/regions":
     get:
       description: "Get all regions and region details like SIM Profiles for that region."
@@ -282,7 +294,6 @@ paths:
         - name: profileType
           in: query
           description: "Profile Type"
-          required: true
           type: string
       responses:
         201:

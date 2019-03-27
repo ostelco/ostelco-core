@@ -251,3 +251,7 @@ enum class SimProfileStatus {
     INSTALLED,
     ENABLED,
 }
+
+data class Context(
+        val customer: Customer,
+        val regions: Collection<RegionDetails> = emptyList())

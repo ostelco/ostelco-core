@@ -549,7 +549,7 @@ class Neo4jStoreTest {
                 status = APPROVED,
                 regionCode = "NO").isRight())
 
-        Mockito.`when`(mockSimManager.allocateNextEsimProfile("loltel", "generic"))
+        Mockito.`when`(mockSimManager.allocateNextEsimProfile("loltel", "default"))
                 .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList()).right())
 
         // test
@@ -714,7 +714,7 @@ class Neo4jStoreTest {
                 status = PENDING,
                 regionCode = "SG").isRight())
 
-        Mockito.`when`(mockSimManager.allocateNextEsimProfile("loltel", "generic"))
+        Mockito.`when`(mockSimManager.allocateNextEsimProfile("loltel", "default"))
                 .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList()).right())
 
         assert(Neo4jStoreSingleton.provisionSimProfile(
@@ -765,7 +765,7 @@ class Neo4jStoreTest {
                 status = PENDING,
                 regionCode = "SG").isRight())
 
-        Mockito.`when`(mockSimManager.allocateNextEsimProfile("loltel", "generic"))
+        Mockito.`when`(mockSimManager.allocateNextEsimProfile("loltel", "default"))
                 .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList()).right())
 
         assert(Neo4jStoreSingleton.provisionSimProfile(

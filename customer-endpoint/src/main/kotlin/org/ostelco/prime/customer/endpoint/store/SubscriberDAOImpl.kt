@@ -14,6 +14,7 @@ import org.ostelco.prime.customer.endpoint.model.Person
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Bundle
+import org.ostelco.prime.model.Context
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.Product
@@ -46,22 +47,21 @@ class SubscriberDAOImpl : SubscriberDAO {
     override fun getCustomer(identity: Identity): Either<ApiError, Customer> {
         return try {
             storage.getCustomer(identity).mapLeft {
-                NotFoundError("Failed to fetch profile.", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_PROFILE, it)
+                NotFoundError("Failed to fetch customer.", ApiErrorCode.FAILED_TO_FETCH_CUSTOMER, it)
             }
         } catch (e: Exception) {
             logger.error("Failed to fetch customer with identity - $identity", e)
-            Either.left(NotFoundError("Failed to fetch profile", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_PROFILE))
+            Either.left(NotFoundError("Failed to fetch customer", ApiErrorCode.FAILED_TO_FETCH_CUSTOMER))
         }
     }
 
     override fun createCustomer(
             identity: Identity,
-            profile: Customer,
+            customer: Customer,
             referredBy: String?): Either<ApiError, Customer> {
 
         return try {
-            // FIXME set subscriberId into profile
-            storage.addCustomer(identity, profile, referredBy)
+            storage.addCustomer(identity, customer, referredBy)
                     .mapLeft {
                         mapStorageErrorToApiError("Failed to create customer.", ApiErrorCode.FAILED_TO_CREATE_CUSTOMER, it)
                     }
@@ -84,6 +84,39 @@ class SubscriberDAOImpl : SubscriberDAO {
         }
 
         return getCustomer(identity)
+    }
+
+    override fun removeCustomer(identity: Identity): Either<ApiError, Unit> {
+        return try {
+            storage.removeCustomer(identity).mapLeft {
+                NotFoundError("Failed to remove customer.", ApiErrorCode.FAILED_TO_REMOVE_CUSTOMER, it)
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to fetch customer with identity - $identity", e)
+            Either.left(NotFoundError("Failed to remove customer", ApiErrorCode.FAILED_TO_REMOVE_CUSTOMER))
+        }
+    }
+
+    //
+    // Context
+    //
+
+    override fun getContext(identity: Identity): Either<ApiError, Context> {
+        return try {
+            storage.getCustomer(identity)
+                    .mapLeft {
+                        NotFoundError("Failed to fetch customer.", ApiErrorCode.FAILED_TO_FETCH_CONTEXT, it)
+                    }
+                    .map { customer ->
+                        storage.getAllRegionDetails(identity = identity)
+                                .fold(
+                                        { Context(customer = customer) },
+                                        { regionDetailsCollection -> Context(customer = customer, regions = regionDetailsCollection) })
+                    }
+        } catch (e: Exception) {
+            logger.error("Failed to fetch context for customer with identity - $identity", e)
+            Either.left(NotFoundError("Failed to fetch context", ApiErrorCode.FAILED_TO_FETCH_CONTEXT))
+        }
     }
 
     //
@@ -141,9 +174,9 @@ class SubscriberDAOImpl : SubscriberDAO {
         }
     }
 
-    override fun provisionSimProfile(identity: Identity, regionCode: String): Either<ApiError, SimProfile> {
+    override fun provisionSimProfile(identity: Identity, regionCode: String, profileType: String): Either<ApiError, SimProfile> {
         return try {
-            storage.provisionSimProfile(identity, regionCode).mapLeft {
+            storage.provisionSimProfile(identity, regionCode, profileType).mapLeft {
                 NotFoundError("Failed to provision SIM profile.", ApiErrorCode.FAILED_TO_PROVISION_SIM_PROFILE, it)
             }
         } catch (e: Exception) {
@@ -343,12 +376,12 @@ class SubscriberDAOImpl : SubscriberDAO {
                 .mapLeft { mapStorageErrorToApiError("Failed to fetch Customer Data from MyInfo", ApiErrorCode.FAILED_TO_FETCH_CUSTOMER_MYINFO_DATA, it) }
     }
 
-    override fun checkNricFinIdUsingDave(identity: Identity, nricFinId: String) : Either<ApiError, Unit> {
+    override fun checkNricFinIdUsingDave(identity: Identity, nricFinId: String): Either<ApiError, Unit> {
         return storage.checkNricFinIdUsingDave(identity, nricFinId)
                 .mapLeft { mapStorageErrorToApiError("Invalid NRIC/FIN ID", ApiErrorCode.INVALID_NRIC_FIN_ID, it) }
     }
 
-    override fun saveAddressAndPhoneNumber(identity: Identity, address: String, phoneNumber: String) : Either<ApiError, Unit> {
+    override fun saveAddressAndPhoneNumber(identity: Identity, address: String, phoneNumber: String): Either<ApiError, Unit> {
         return storage.saveAddressAndPhoneNumber(identity, address, phoneNumber)
                 .mapLeft { mapStorageErrorToApiError("Failed to save address and phone number", ApiErrorCode.FAILED_TO_SAVE_ADDRESS_AND_PHONE_NUMBER, it) }
     }

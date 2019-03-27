@@ -11,7 +11,6 @@ import org.ostelco.prime.model.Plan
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.ProductClass
 import org.ostelco.prime.model.PurchaseRecord
-import org.ostelco.prime.model.Region
 import org.ostelco.prime.model.RegionDetails
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.Segment
@@ -114,7 +113,7 @@ interface ClientGraphStore {
      * Provision new SIM Profile for Customer
      */
 
-    fun provisionSimProfile(identity: Identity, regionCode: String): Either<StoreError, SimProfile>
+    fun provisionSimProfile(identity: Identity, regionCode: String, profileType: String = "default"): Either<StoreError, SimProfile>
 
     /**
      * Get balance for Client
