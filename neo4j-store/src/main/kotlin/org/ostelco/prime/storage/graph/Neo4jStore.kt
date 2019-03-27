@@ -379,23 +379,63 @@ object Neo4jStoreSingleton : GraphStore {
     override fun getAllRegionDetails(identity: org.ostelco.prime.model.Identity): Either<StoreError, Collection<RegionDetails>> = readTransaction {
         getCustomerId(identity = identity, transaction = transaction)
                 .flatMap { customerId ->
-                    read<Either<StoreError, Collection<RegionDetails>>>("""
-                            MATCH (:${customerEntity.name} {id: '$customerId'})
-                            -[cr:${customerRegionRelation.name}]->(r:${regionEntity.name})
-                            RETURN cr.customerRegionStatus, r;
-                            """.trimIndent(),
-                            transaction) { statementResult ->
-                        statementResult
-                                .list {
-                                    val region = regionEntity.createEntity(it["r"].asMap())
-                                    val cr = CustomerRegionStatus.valueOf(it["cr.customerRegionStatus"].asString())
-                                    RegionDetails(region = region, status = cr)
-                                }
-                                .requireNoNulls()
-                                .right()
-                    }
+                    getRegionDetails(
+                            customerId = customerId,
+                            transaction = transaction).right()
                 }
     }
+
+    override fun getRegionDetails(
+            identity: org.ostelco.prime.model.Identity,
+            regionCode: String): Either<StoreError, RegionDetails> = readTransaction {
+
+        getCustomerId(identity = identity, transaction = transaction)
+                .flatMap { customerId ->
+                    getRegionDetails(
+                            customerId = customerId,
+                            regionCode = regionCode,
+                            transaction = transaction)
+                            .singleOrNull()
+                            ?.right()
+                            ?: NotFoundError(type = regionEntity.name, id = regionCode).left()
+                }
+    }
+
+
+    private fun getRegionDetails(
+            customerId: String,
+            regionCode: String? = null,
+            transaction: Transaction): Collection<RegionDetails> {
+
+        val regionCodeClause = regionCode?.let { "{id: '$it'}" } ?: ""
+
+        return read<Collection<RegionDetails>>("""
+                MATCH (c:${customerEntity.name} {id: '$customerId'})-[cr:${customerRegionRelation.name}]->(r:${regionEntity.name} $regionCodeClause)
+                OPTIONAL MATCH (c)-[:${customerToSimProfileRelation.name}]->(sp:${simProfileEntity.name})-[:${simProfileRegionRelation.name}]->(r)
+                RETURN cr.customerRegionStatus, r, sp;
+                """.trimIndent(),
+                transaction) { statementResult ->
+            statementResult
+                    .list { record ->
+                        val region = regionEntity.createEntity(record["r"].asMap())
+                        val cr = CustomerRegionStatus.valueOf(record["cr.customerRegionStatus"].asString())
+                        val simProfiles = if (record["sp"].isNull) { emptyList() } else { listOf(simProfileEntity.createEntity(record["sp"].asMap())) }
+                        RegionDetails(
+                                region = region,
+                                status = cr,
+                                simProfiles = simProfiles)
+                    }
+                    .requireNoNulls()
+                    .groupBy { RegionDetails(region = it.region, status = it.status) }
+                    .map { (key, value) ->
+                        RegionDetails(
+                                region = key.region,
+                                status = key.status,
+                                simProfiles = value.flatMap(RegionDetails::simProfiles))
+                    }
+        }
+    }
+
 
     //
     // SIM Profile
@@ -418,6 +458,7 @@ object Neo4jStoreSingleton : GraphStore {
                 val customerId = getCustomerId(identity = identity, transaction = transaction).bind()
                 val bundles = customerStore.getRelated(customerId, customerToBundleRelation, transaction).bind()
                 validateBundleList(bundles, customerId).bind()
+                // TODO vihang: parametrize hlr and phoneType
                 val simEntry = simManager.allocateNextEsimProfile(hlr = "loltel", phoneType = "generic")
                         .mapLeft { NotFoundError("eSIM profile", id = "loltel") }
                         .bind()
@@ -458,6 +499,7 @@ object Neo4jStoreSingleton : GraphStore {
                             fromId = msisdn,
                             toId = regionCode.toLowerCase(),
                             transaction = transaction).bind()
+                    // TODO vihang: link SimProfile to Subscription and unlink Subscription from Region
                 }
                 simProfileStore.get(simEntry.iccId, transaction).bind()
             }.fix()
@@ -468,7 +510,7 @@ object Neo4jStoreSingleton : GraphStore {
     private fun isApproved(
             status: CustomerRegionStatus,
             customerId: String,
-            regionCode: String) : Either<ValidationError, Unit> {
+            regionCode: String): Either<ValidationError, Unit> {
 
         return if (status != APPROVED) {
             ValidationError(
@@ -935,27 +977,41 @@ object Neo4jStoreSingleton : GraphStore {
                     }
                     .flatMap {
                         if (status == APPROVED) {
-                            customerToSegmentStore.create(
-                                    fromId = customerId,
-                                    toId = getSegmentNameFromCountryCode(regionCode),
-                                    transaction = transaction).mapLeft { storeError ->
-
-                                if (storeError is NotCreatedError && storeError.type == customerToSegmentRelation.name) {
-                                    ValidationError(type = customerEntity.name, id = customerId, message = "Unsupported region: $regionCode")
-                                } else {
-                                    storeError
-                                }
-                            }
+                            assignCustomerToRegionSegment(
+                                    customerId = customerId,
+                                    regionCode = regionCode,
+                                    transaction = transaction)
                         } else {
                             Unit.right()
                         }
                     }
 
+    private fun assignCustomerToRegionSegment(
+            customerId: String,
+            regionCode: String,
+            transaction: Transaction): Either<StoreError, Unit> {
+
+        return customerToSegmentStore.create(
+                fromId = customerId,
+                toId = getSegmentNameFromCountryCode(regionCode),
+                transaction = transaction).mapLeft { storeError ->
+
+            if (storeError is NotCreatedError && storeError.type == customerToSegmentRelation.name) {
+                ValidationError(type = customerEntity.name, id = customerId, message = "Unsupported region: $regionCode")
+            } else {
+                storeError
+            }
+        }
+    }
+
     //
     // eKYC - Jumio
     //
 
-    override fun createNewJumioKycScanId(identity: org.ostelco.prime.model.Identity, regionCode: String): Either<StoreError, ScanInformation> = writeTransaction {
+    override fun createNewJumioKycScanId(
+            identity: org.ostelco.prime.model.Identity,
+            regionCode: String): Either<StoreError, ScanInformation> = writeTransaction {
+
         getCustomerId(identity = identity, transaction = transaction)
                 .flatMap { customerId ->
                     // Generate new id for the scan
@@ -1067,6 +1123,13 @@ object Neo4jStoreSingleton : GraphStore {
             authorisationCode: String): Either<StoreError, String> = writeTransaction {
 
         getCustomerId(identity = identity, transaction = transaction)
+                .flatMap { customerId ->
+                    setStatusFlag(
+                            customerId = customerId,
+                            regionCode = "sg",
+                            flag = MY_INFO,
+                            transaction = transaction)
+                }
                 .flatMap { myInfoKycService.getPersonData(authorisationCode).right() }
                 .ifFailedThenRollback(transaction)
     }
@@ -1082,6 +1145,13 @@ object Neo4jStoreSingleton : GraphStore {
             nricFinId: String): Either<StoreError, Unit> = writeTransaction {
 
         getCustomerId(identity = identity, transaction = transaction)
+                .flatMap { customerId ->
+                    setStatusFlag(
+                            customerId = customerId,
+                            regionCode = "sg",
+                            flag = NRIC_FIN,
+                            transaction = transaction)
+                }
                 .flatMap {
                     if (daveKycService.validate(nricFinId)) {
                         Unit.right()
@@ -1101,14 +1171,86 @@ object Neo4jStoreSingleton : GraphStore {
             phoneNumber: String): Either<StoreError, Unit> = writeTransaction {
 
         getCustomerId(identity = identity, transaction = transaction)
+                .flatMap { customerId ->
+                    setStatusFlag(
+                            customerId = customerId,
+                            regionCode = "sg",
+                            flag = ADDRESS_AND_PHONE_NUMBER,
+                            transaction = transaction)
+                }
                 .flatMap { Unit.right() }
                 .ifFailedThenRollback(transaction)
     }
 
-    private fun getInitialFlags(regionCode: String): Int {
+    private fun setStatusFlag(
+            customerId: String,
+            regionCode: String,
+            flag: StatusFlag,
+            transaction: Transaction): Either<StoreError, Int> {
+
+        val approvedBitmapSet = getApprovedBitmapSet(regionCode)
+
+        // retry 5 times
+        for (i in 1..5) {
+
+            // existing bitMapStatusFlags and customerRegionStatus
+            val existing = read("""
+                MATCH (:${customerEntity.name} { id: '$customerId' })-[r:${customerRegionRelation.name}]->(:${regionEntity.name} { id: '$regionCode' })
+                RETURN r.bitMapStatusFlags, r.customerRegionStatus
+                """.trimIndent(),
+                    transaction) { result ->
+                val record = result.single()
+                Pair(record["r.bitMapStatusFlags"].asString().toInt(), CustomerRegionStatus.valueOf(record["r.customerRegionStatus"].asString()))
+            }
+
+            val newBitMap = StatusFlags.bitMapStatusFlags(flag).inv().and(existing.first)
+
+            val updated: Boolean = if (existing.second == PENDING && approvedBitmapSet.any { it.inv().and(newBitMap) == 0 }) {
+                // if existing status is PENDING and newBitMap is found in approvedBitMap Set
+                assignCustomerToRegionSegment(
+                        customerId = customerId,
+                        regionCode = regionCode,
+                        transaction = transaction)
+
+                write("""
+                    MATCH (:${customerEntity.name} { id: '$customerId' })-[r:${customerRegionRelation.name} { bitMapStatusFlags: ${existing.first} } ]->(:${regionEntity.name} { id: '$regionCode' })
+                    SET r.bitMapStatusFlags = $newBitMap, r.customerRegionStatus = '${CustomerRegionStatus.APPROVED}'
+                    RETURN r.bitMapStatusFlags
+                    """.trimIndent(),
+                        transaction) { result ->
+                    result.summary().counters().propertiesSet() == 2
+                }
+            } else {
+                write("""
+                    MATCH (:${customerEntity.name} { id: '$customerId' })-[r:${customerRegionRelation.name} { bitMapStatusFlags: ${existing.first} } ]->(:${regionEntity.name} { id: '$regionCode' })
+                    SET r.bitMapStatusFlags = $newBitMap
+                    RETURN r.bitMapStatusFlags
+                    """.trimIndent(),
+                        transaction) { result ->
+                    result.summary().counters().propertiesSet() == 1
+                }
+            }
+
+            if (updated) {
+                return newBitMap.right()
+            }
+        }
+
+        return NotUpdatedError(type = customerRegionRelation.name, id = "$customerId -> $regionCode").left()
+    }
+
+    private fun getInitialBitmap(regionCode: String): Int {
         return when (regionCode.toLowerCase()) {
             "sg" -> StatusFlags.bitMapStatusFlags(JUMIO, MY_INFO, NRIC_FIN, ADDRESS_AND_PHONE_NUMBER)
             else -> StatusFlags.bitMapStatusFlags(JUMIO)
+        }
+    }
+
+    private fun getApprovedBitmapSet(regionCode: String): Set<Int> {
+        return when (regionCode.toLowerCase()) {
+            "sg" -> setOf(StatusFlags.bitMapStatusFlags(MY_INFO),
+                    StatusFlags.bitMapStatusFlags(JUMIO, NRIC_FIN, ADDRESS_AND_PHONE_NUMBER))
+            else -> setOf(StatusFlags.bitMapStatusFlags(JUMIO))
         }
     }
 

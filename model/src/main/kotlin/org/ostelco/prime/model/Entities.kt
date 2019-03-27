@@ -15,7 +15,8 @@ data class Region(
 
 data class RegionDetails(
         val region: Region,
-        val status: CustomerRegionStatus)
+        val status: CustomerRegionStatus,
+        val simProfiles: Collection<SimProfile> = emptyList())
 
 data class Offer(
         override val id: String,

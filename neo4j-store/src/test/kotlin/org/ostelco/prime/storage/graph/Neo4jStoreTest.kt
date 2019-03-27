@@ -13,6 +13,7 @@ import org.neo4j.driver.v1.AccessMode.WRITE
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.CustomerRegionStatus.APPROVED
+import org.ostelco.prime.model.CustomerRegionStatus.PENDING
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.JumioScanData
 import org.ostelco.prime.model.Offer
@@ -20,12 +21,18 @@ import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Region
+import org.ostelco.prime.model.RegionDetails
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.ScanResult
 import org.ostelco.prime.model.ScanStatus
 import org.ostelco.prime.model.Segment
+import org.ostelco.prime.model.SimEntry
+import org.ostelco.prime.model.SimProfile
+import org.ostelco.prime.model.SimProfileStatus.AVAILABLE_FOR_DOWNLOAD
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.sim.SimManager
+import org.ostelco.prime.storage.NotFoundError
 import org.ostelco.prime.storage.ScanInformationStore
 import java.time.Instant
 import java.util.*
@@ -39,15 +46,22 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 private val mockPaymentProcessor = Mockito.mock(PaymentProcessor::class.java)
+
 class MockPaymentProcessor : PaymentProcessor by mockPaymentProcessor
 
 private val mockAnalyticsService = Mockito.mock(AnalyticsService::class.java)
+
 class MockAnalyticsService : AnalyticsService by mockAnalyticsService
 
 private val mockScanInformationStore = Mockito.mock(ScanInformationStore::class.java)
-class MockScanInformationStore  : ScanInformationStore by mockScanInformationStore
 
-class GraphStoreTest {
+class MockScanInformationStore : ScanInformationStore by mockScanInformationStore
+
+private val mockSimManager = Mockito.mock(SimManager::class.java)
+
+class MockSimManager : SimManager by mockSimManager
+
+class Neo4jStoreTest {
 
     @BeforeTest
     fun clear() {
@@ -209,13 +223,13 @@ class GraphStoreTest {
         // requested = 40_000_000
         val dataBucketSize = 40_000_000L
         Neo4jStoreSingleton.consume(msisdn = MSISDN, usedBytes = 0, requestedBytes = dataBucketSize) { storeResult ->
-                storeResult.fold(
-                        { fail(it.message) },
-                        {
-                            assertEquals(dataBucketSize, it.granted) // reserved = 40_000_000
-                            assertEquals(60_000_000L, it.balance) // balance = 60_000_000
-                        })
-    }
+            storeResult.fold(
+                    { fail(it.message) },
+                    {
+                        assertEquals(dataBucketSize, it.granted) // reserved = 40_000_000
+                        assertEquals(60_000_000L, it.balance) // balance = 60_000_000
+                    })
+        }
         // used = 50_000_000
         // requested = 40_000_000
         Neo4jStoreSingleton.consume(msisdn = MSISDN, usedBytes = 50_000_000L, requestedBytes = dataBucketSize) { storeResult ->
@@ -231,11 +245,11 @@ class GraphStoreTest {
         // requested = 40_000_000
         Neo4jStoreSingleton.consume(msisdn = MSISDN, usedBytes = 30_000_000L, requestedBytes = dataBucketSize) { storeResult ->
             storeResult.fold(
-                { fail(it.message) },
-                {
-                    assertEquals(20_000_000L, it.granted) // reserved = 20_000_000
-                    assertEquals(0L, it.balance) // balance = 0
-                })
+                    { fail(it.message) },
+                    {
+                        assertEquals(20_000_000L, it.granted) // reserved = 20_000_000
+                        assertEquals(0L, it.balance) // balance = 0
+                    })
         }
     }
 
@@ -517,6 +531,263 @@ class GraphStoreTest {
         }.mapLeft {
             fail(it.message)
         }
+    }
+
+    @Test
+    fun `test provision and get SIM profile`() {
+
+        // prep
+        Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
+                .mapLeft { fail(it.message) }
+
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
+
+        assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
+                customerId = CUSTOMER.id,
+                status = APPROVED,
+                regionCode = "NO").isRight())
+
+        Mockito.`when`(mockSimManager.allocateNextEsimProfile("loltel", "generic"))
+                .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList()).right())
+
+        // test
+        Neo4jStoreSingleton.provisionSimProfile(
+                identity = IDENTITY,
+                regionCode = "no")
+                .bimap(
+                        { fail(it.message) },
+                        {
+                            assertEquals(
+                                    expected = SimProfile(
+                                            iccId = "iccId",
+                                            eSimActivationCode = "eSimActivationCode",
+                                            status = AVAILABLE_FOR_DOWNLOAD),
+                                    actual = it)
+                        })
+
+        Neo4jStoreSingleton.getSimProfiles(
+                identity = IDENTITY,
+                regionCode = "no")
+                .bimap(
+                        { fail(it.message) },
+                        {
+                            assertEquals(
+                                    expected = listOf(SimProfile(
+                                            iccId = "iccId",
+                                            eSimActivationCode = "eSimActivationCode",
+                                            status = AVAILABLE_FOR_DOWNLOAD)),
+                                    actual = it)
+                        })
+    }
+
+    @Test
+    fun `test getAllRegionDetails with no region`() {
+        // prep
+        Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
+                .mapLeft { fail(it.message) }
+
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
+
+        // test
+        Neo4jStoreSingleton.getAllRegionDetails(identity = IDENTITY)
+                .bimap(
+                        { fail("Failed to fetch regions empty list") },
+                        { assert(it.isEmpty()) { "Regions list should be empty" } })
+    }
+
+    @Test
+    fun `test getRegionDetails with no region`() {
+        // prep
+        Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
+                .mapLeft { fail(it.message) }
+
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
+
+        // test
+        Neo4jStoreSingleton.getRegionDetails(identity = IDENTITY, regionCode = "no")
+                .bimap(
+                        {
+                            assert(it is NotFoundError)
+                            assertEquals(expected = "Region", actual = it.type)
+                            assertEquals(expected = "no", actual = it.id)
+                        },
+                        { fail("Should fail with not found error") })
+    }
+
+    @Test
+    fun `test getAllRegionDetails with region without sim profile`() {
+        // prep
+        Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
+                .mapLeft { fail(it.message) }
+        Neo4jStoreSingleton.createRegion(Region("sg", "Singapore"))
+                .mapLeft { fail(it.message) }
+
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
+
+        assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
+                customerId = CUSTOMER.id,
+                status = APPROVED,
+                regionCode = "NO").isRight())
+        assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
+                customerId = CUSTOMER.id,
+                status = PENDING,
+                regionCode = "SG").isRight())
+
+        // test
+        Neo4jStoreSingleton.getAllRegionDetails(identity = IDENTITY)
+                .bimap(
+                        { fail("Failed to fetch regions list") },
+                        {
+                            assertEquals(
+                                    expected = setOf(
+                                            RegionDetails(
+                                                    region = Region("no", "Norway"),
+                                                    status = APPROVED),
+                                            RegionDetails(
+                                                    region = Region("sg", "Singapore"),
+                                                    status = PENDING)),
+                                    actual = it.toSet())
+                        })
+    }
+
+    @Test
+    fun `test getRegionDetails with region without sim profile`() {
+        // prep
+        Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
+                .mapLeft { fail(it.message) }
+        Neo4jStoreSingleton.createRegion(Region("sg", "Singapore"))
+                .mapLeft { fail(it.message) }
+
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
+
+        assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
+                customerId = CUSTOMER.id,
+                status = APPROVED,
+                regionCode = "NO").isRight())
+        assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
+                customerId = CUSTOMER.id,
+                status = PENDING,
+                regionCode = "SG").isRight())
+
+        // test
+        Neo4jStoreSingleton.getRegionDetails(identity = IDENTITY, regionCode = "no")
+                .bimap(
+                        { fail("Failed to fetch regions list") },
+                        {
+                            assertEquals(
+                                    expected = RegionDetails(
+                                            region = Region("no", "Norway"),
+                                            status = APPROVED),
+                                    actual = it)
+                        })
+    }
+
+    @Test
+    fun `test getAllRegionDetails with region with sim profiles`() {
+
+        // prep
+        Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
+                .mapLeft { fail(it.message) }
+        Neo4jStoreSingleton.createRegion(Region("sg", "Singapore"))
+                .mapLeft { fail(it.message) }
+
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
+
+        assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
+                customerId = CUSTOMER.id,
+                status = APPROVED,
+                regionCode = "NO").isRight())
+        assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
+                customerId = CUSTOMER.id,
+                status = PENDING,
+                regionCode = "SG").isRight())
+
+        Mockito.`when`(mockSimManager.allocateNextEsimProfile("loltel", "generic"))
+                .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList()).right())
+
+        assert(Neo4jStoreSingleton.provisionSimProfile(
+                identity = IDENTITY,
+                regionCode = "no").isRight())
+
+        // test
+        Neo4jStoreSingleton.getAllRegionDetails(identity = IDENTITY)
+                .bimap(
+                        { fail("Failed to fetch regions list") },
+                        {
+                            assertEquals(
+                                    expected = setOf(
+                                            RegionDetails(
+                                                    region = Region("no", "Norway"),
+                                                    status = APPROVED,
+                                                    simProfiles = listOf(
+                                                            SimProfile(
+                                                                    iccId = "iccId",
+                                                                    eSimActivationCode = "eSimActivationCode",
+                                                                    status = AVAILABLE_FOR_DOWNLOAD))),
+                                            RegionDetails(
+                                                    region = Region("sg", "Singapore"),
+                                                    status = PENDING)),
+                                    actual = it.toSet())
+                        })
+    }
+
+    @Test
+    fun `test getRegionDetails with region with sim profiles`() {
+
+        // prep
+        Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
+                .mapLeft { fail(it.message) }
+        Neo4jStoreSingleton.createRegion(Region("sg", "Singapore"))
+                .mapLeft { fail(it.message) }
+
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
+
+        assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
+                customerId = CUSTOMER.id,
+                status = APPROVED,
+                regionCode = "NO").isRight())
+        assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
+                customerId = CUSTOMER.id,
+                status = PENDING,
+                regionCode = "SG").isRight())
+
+        Mockito.`when`(mockSimManager.allocateNextEsimProfile("loltel", "generic"))
+                .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList()).right())
+
+        assert(Neo4jStoreSingleton.provisionSimProfile(
+                identity = IDENTITY,
+                regionCode = "no").isRight())
+
+        // test
+        Neo4jStoreSingleton.getRegionDetails(identity = IDENTITY, regionCode = "no")
+                .bimap(
+                        { fail("Failed to fetch regions list") },
+                        {
+                            assertEquals(
+                                    expected = RegionDetails(
+                                            region = Region("no", "Norway"),
+                                            status = APPROVED,
+                                            simProfiles = listOf(
+                                                    SimProfile(
+                                                            iccId = "iccId",
+                                                            eSimActivationCode = "eSimActivationCode",
+                                                            status = AVAILABLE_FOR_DOWNLOAD))),
+                                    actual = it)
+                        })
     }
 
     companion object {

@@ -106,6 +106,36 @@ paths:
           description: "Failed to update customer info."
       security:
         - auth0_jwt: []
+  "/regions":
+    get:
+      description: "Get all regions and region details like SIM Profiles for that region."
+      produces:
+        - application/json
+      operationId: "getAllRegions"
+      responses:
+        200:
+          description: "List of all Region Details"
+          schema:
+            $ref: '#/definitions/RegionDetailsList'
+  "/regions/{regionCode}":
+    get:
+      description: "Get region details like SIM Profiles for a region."
+      produces:
+        - application/json
+      operationId: "getRegion"
+      parameters:
+        - name: regionCode
+          in: path
+          description: "Region code"
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Region Details for a region"
+          schema:
+            $ref: '#/definitions/RegionDetails'
+        404:
+          description: "Region not found."
   "/regions/{regionCode}/kyc/jumio/scans":
     post:
       description: "Get a new Id for eKYC scanning."

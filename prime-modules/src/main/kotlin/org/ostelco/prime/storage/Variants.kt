@@ -96,6 +96,11 @@ interface ClientGraphStore {
     fun getAllRegionDetails(identity: Identity): Either<StoreError, Collection<RegionDetails>>
 
     /**
+     * Get a Region (with details) associated with the Customer
+     */
+    fun getRegionDetails(identity: Identity, regionCode: String): Either<StoreError, RegionDetails>
+
+    /**
      * Get subscriptions for Customer
      */
     fun getSubscriptions(identity: Identity, regionCode: String? = null): Either<StoreError, Collection<Subscription>>

@@ -38,6 +38,8 @@ interface SubscriberDAO {
     //
     fun getRegions(identity: Identity): Either<ApiError, Collection<RegionDetails>>
 
+    fun getRegion(identity: Identity, regionCode: String): Either<ApiError, RegionDetails>
+
     //
     // Subscriptions
     //

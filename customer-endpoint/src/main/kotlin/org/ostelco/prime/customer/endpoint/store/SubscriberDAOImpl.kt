@@ -100,6 +100,17 @@ class SubscriberDAOImpl : SubscriberDAO {
         }
     }
 
+    override fun getRegion(identity: Identity, regionCode: String): Either<ApiError, RegionDetails> {
+        return try {
+            storage.getRegionDetails(identity, regionCode).mapLeft {
+                NotFoundError("Failed to get regions.", ApiErrorCode.FAILED_TO_FETCH_REGIONS, it)
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to get regions for customer with identity - $identity", e)
+            Either.left(InternalServerError("Failed to get regions", ApiErrorCode.FAILED_TO_FETCH_REGIONS))
+        }
+    }
+
     //
     // Subscriptions
     //
