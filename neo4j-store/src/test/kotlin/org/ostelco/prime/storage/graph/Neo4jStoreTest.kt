@@ -9,6 +9,7 @@ import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.mockito.Mockito
+import org.mockito.Mockito.`when`
 import org.neo4j.driver.v1.AccessMode.WRITE
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.model.Customer
@@ -29,6 +30,7 @@ import org.ostelco.prime.model.Segment
 import org.ostelco.prime.model.SimEntry
 import org.ostelco.prime.model.SimProfile
 import org.ostelco.prime.model.SimProfileStatus.AVAILABLE_FOR_DOWNLOAD
+import org.ostelco.prime.notifications.EmailNotifier
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.sim.SimManager
@@ -49,9 +51,7 @@ private val mockPaymentProcessor = Mockito.mock(PaymentProcessor::class.java)
 
 class MockPaymentProcessor : PaymentProcessor by mockPaymentProcessor
 
-private val mockAnalyticsService = Mockito.mock(AnalyticsService::class.java)
-
-class MockAnalyticsService : AnalyticsService by mockAnalyticsService
+class MockAnalyticsService : AnalyticsService by Mockito.mock(AnalyticsService::class.java)
 
 private val mockScanInformationStore = Mockito.mock(ScanInformationStore::class.java)
 
@@ -60,6 +60,10 @@ class MockScanInformationStore : ScanInformationStore by mockScanInformationStor
 private val mockSimManager = Mockito.mock(SimManager::class.java)
 
 class MockSimManager : SimManager by mockSimManager
+
+private val mockEmailNotifier = Mockito.mock(EmailNotifier::class.java)
+
+class MockEmailNotifier : EmailNotifier by mockEmailNotifier
 
 class Neo4jStoreTest {
 
@@ -537,6 +541,9 @@ class Neo4jStoreTest {
     fun `test provision and get SIM profile`() {
 
         // prep
+        `when`(mockEmailNotifier.sendESimQrCodeEmail(email = CUSTOMER.contactEmail, name = CUSTOMER.nickname, qrCode = "eSimActivationCode"))
+                .thenReturn(Unit.right())
+
         Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
                 .mapLeft { fail(it.message) }
 
@@ -696,6 +703,9 @@ class Neo4jStoreTest {
     fun `test getAllRegionDetails with region with sim profiles`() {
 
         // prep
+        `when`(mockEmailNotifier.sendESimQrCodeEmail(email = CUSTOMER.contactEmail, name = CUSTOMER.nickname, qrCode = "eSimActivationCode"))
+                .thenReturn(Unit.right())
+
         Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
                 .mapLeft { fail(it.message) }
         Neo4jStoreSingleton.createRegion(Region("sg", "Singapore"))
@@ -747,6 +757,9 @@ class Neo4jStoreTest {
     fun `test getRegionDetails with region with sim profiles`() {
 
         // prep
+        `when`(mockEmailNotifier.sendESimQrCodeEmail(email = CUSTOMER.contactEmail, name = CUSTOMER.nickname, qrCode = "eSimActivationCode"))
+                .thenReturn(Unit.right())
+
         Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
                 .mapLeft { fail(it.message) }
         Neo4jStoreSingleton.createRegion(Region("sg", "Singapore"))

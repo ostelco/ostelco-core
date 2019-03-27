@@ -29,6 +29,21 @@ paths:
             type: string
       security:
         - auth0_jwt: []
+  "/context":
+    get:
+      description: "Get context which is customer and region details."
+      produces:
+        - application/json
+      operationId: "getContext"
+      responses:
+        200:
+          description: "Get the customer context."
+          schema:
+            $ref: '#/definitions/Context'
+        404:
+          description: "Customer not found."
+      security:
+        - auth0_jwt: []
   "/customer":
     get:
       description: "Get customer info (email-id present in the bearer token)."

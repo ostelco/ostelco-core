@@ -33,6 +33,7 @@ import org.ostelco.prime.model.SimProfile
 import org.ostelco.prime.model.SimProfileStatus.AVAILABLE_FOR_DOWNLOAD
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
+import org.ostelco.prime.notifications.EmailNotifier
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.BadGatewayError
@@ -443,6 +444,8 @@ object Neo4jStoreSingleton : GraphStore {
 
     private val simManager by lazy { getResource<SimManager>() }
 
+    private val emailNotifier by lazy { getResource<EmailNotifier>() }
+
     private fun validateBundleList(bundles: List<Bundle>, customerId: String): Either<StoreError, Unit> =
             if (bundles.isEmpty()) {
                 Either.left(NotFoundError(type = customerToBundleRelation.name, id = "$customerId -> *"))
@@ -501,6 +504,15 @@ object Neo4jStoreSingleton : GraphStore {
                             toId = regionCode.toLowerCase(),
                             transaction = transaction).bind()
                     // TODO vihang: link SimProfile to Subscription and unlink Subscription from Region
+                }
+                if (profileType != "android") {
+                    emailNotifier.sendESimQrCodeEmail(
+                            email = customer.contactEmail,
+                            name = customer.nickname,
+                            qrCode = simEntry.eSimActivationCode)
+                            .mapLeft {
+                                logger.error(NOTIFY_OPS_MARKER, "Failed to send email to {}", customer.contactEmail)
+                            }
                 }
                 simProfileStore.get(simEntry.iccId, transaction).bind()
             }.fix()

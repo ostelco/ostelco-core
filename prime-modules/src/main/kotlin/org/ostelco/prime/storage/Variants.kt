@@ -11,6 +11,7 @@ import org.ostelco.prime.model.Plan
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.ProductClass
 import org.ostelco.prime.model.PurchaseRecord
+import org.ostelco.prime.model.Region
 import org.ostelco.prime.model.RegionDetails
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.Segment
