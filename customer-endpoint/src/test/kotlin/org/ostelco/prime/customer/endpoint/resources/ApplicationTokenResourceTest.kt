@@ -58,13 +58,13 @@ class ApplicationTokenResourceTest {
         val arg2 = argumentCaptor<ApplicationToken>()
 
         val argIdentity = argumentCaptor<Identity>()
-        val customer = Customer(email = email)
+        val customer = Customer(contactEmail = email, nickname = "foo")
 
         `when`(DAO.storeApplicationToken(arg1.capture(), arg2.capture()))
                 .thenReturn(Either.right(applicationToken))
         `when`<Either<ApiError, Customer>>(DAO.getCustomer(argIdentity.capture())).thenReturn(customer.right())
 
-        val resp = RULE.target("/applicationtoken")
+        val resp = RULE.target("/applicationToken")
                 .request(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")

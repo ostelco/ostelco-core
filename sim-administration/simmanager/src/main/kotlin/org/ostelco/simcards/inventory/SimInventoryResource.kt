@@ -7,7 +7,14 @@ import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.simmanager.SimManagerError
 import java.io.IOException
 import java.io.InputStream
-import javax.ws.rs.*
+import javax.ws.rs.Consumes
+import javax.ws.rs.DefaultValue
+import javax.ws.rs.GET
+import javax.ws.rs.PUT
+import javax.ws.rs.Path
+import javax.ws.rs.PathParam
+import javax.ws.rs.Produces
+import javax.ws.rs.QueryParam
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
@@ -60,7 +67,7 @@ class SimInventoryResource(private val api: SimInventoryApi) {
                     .fold(
                             {
                                 error("Failed to find SIM profile for BSS: ${hlrName} and IMSI: ${imsi}",
-                                        ApiErrorCode.FAILED_TO_FETCH_PROFILE, it)
+                                        ApiErrorCode.FAILED_TO_FETCH_SIM_PROFILE, it)
                             },
                             { Response.status(Response.Status.OK).entity(asJson(it)) }
                     ).build()
@@ -75,7 +82,7 @@ class SimInventoryResource(private val api: SimInventoryApi) {
                     .fold(
                             {
                                 error("Failed to find SIM profile for BSS: ${hlrName} and MSISDN: ${msisdn}",
-                                        ApiErrorCode.FAILED_TO_FETCH_PROFILE, it)
+                                        ApiErrorCode.FAILED_TO_FETCH_SIM_PROFILE, it)
                             },
                             { Response.status(Response.Status.OK).entity(asJson(it)) }
                     ).build()
