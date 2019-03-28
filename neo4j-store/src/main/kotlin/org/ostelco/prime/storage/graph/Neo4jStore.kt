@@ -18,6 +18,7 @@ import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.CustomerRegionStatus
 import org.ostelco.prime.model.CustomerRegionStatus.APPROVED
 import org.ostelco.prime.model.CustomerRegionStatus.PENDING
+import org.ostelco.prime.model.CustomerRegionStatus.REJECTED
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Plan
 import org.ostelco.prime.model.Product
@@ -440,7 +441,6 @@ object Neo4jStoreSingleton : GraphStore {
                     }
         }
     }
-
 
     //
     // SIM Profile
@@ -1104,24 +1104,30 @@ object Neo4jStoreSingleton : GraphStore {
 
                 when (scanInformation.status) {
 
-                    ScanStatus.PENDING -> CustomerRegionStatus.PENDING.right()
+                    ScanStatus.PENDING -> Unit.right()
 
                     ScanStatus.APPROVED -> {
 
                         logger.info("Inserting scan Information to cloud storage : id: ${scanInformation.scanId} countryCode: ${scanInformation.countryCode}")
                         scanInformationDatastore.upsertVendorScanInformation(customer.id, scanInformation.countryCode, vendorData)
-                                .flatMap { CustomerRegionStatus.APPROVED.right() }
+                                .flatMap {
+                                    setStatusFlag(
+                                            customerId = customer.id,
+                                            regionCode = scanInformation.countryCode,
+                                            flag = JUMIO,
+                                            transaction = transaction)
+                                }
+                                .flatMap { Unit.right() }
                     }
 
-                    ScanStatus.REJECTED -> CustomerRegionStatus.REJECTED.right()
+                    ScanStatus.REJECTED -> {
 
-                }.flatMap { customerRegionStatus ->
-
-                    createOrUpdateCustomerRegionSetting(
-                            customerId = customer.id,
-                            status = customerRegionStatus,
-                            regionCode = scanInformation.countryCode,
-                            transaction = transaction)
+                        createOrUpdateCustomerRegionSetting(
+                                customerId = customer.id,
+                                status = REJECTED,
+                                regionCode = scanInformation.countryCode,
+                                transaction = transaction)
+                    }
                 }
             }
         }
