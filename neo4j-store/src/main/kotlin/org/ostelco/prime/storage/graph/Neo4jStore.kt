@@ -18,7 +18,6 @@ import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.CustomerRegionStatus
 import org.ostelco.prime.model.CustomerRegionStatus.APPROVED
 import org.ostelco.prime.model.CustomerRegionStatus.PENDING
-import org.ostelco.prime.model.CustomerRegionStatus.REJECTED
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Plan
 import org.ostelco.prime.model.Product
@@ -965,19 +964,19 @@ object Neo4jStoreSingleton : GraphStore {
                 }
     }
 
-    internal fun createOrUpdateCustomerRegionSetting(
+    internal fun createCustomerRegionSetting(
             customerId: String,
             status: CustomerRegionStatus,
             regionCode: String): Either<StoreError, Unit> = writeTransaction {
 
-        createOrUpdateCustomerRegionSetting(
+        createCustomerRegionSetting(
                 customerId = customerId,
                 status = status,
                 regionCode = regionCode,
                 transaction = transaction)
     }
 
-    private fun createOrUpdateCustomerRegionSetting(
+    private fun createCustomerRegionSetting(
             customerId: String,
             status: CustomerRegionStatus,
             regionCode: String,
@@ -1033,7 +1032,7 @@ object Neo4jStoreSingleton : GraphStore {
                     // Generate new id for the scan
                     val scanId = UUID.randomUUID().toString()
                     val newScan = ScanInformation(scanId = scanId, countryCode = regionCode, status = ScanStatus.PENDING, scanResult = null)
-                    createOrUpdateCustomerRegionSetting(
+                    createCustomerRegionSetting(
                             customerId = customerId, status = PENDING, regionCode = regionCode.toLowerCase(), transaction = transaction)
                             .flatMap {
                                 scanInformationStore.create(newScan, transaction)
@@ -1098,34 +1097,22 @@ object Neo4jStoreSingleton : GraphStore {
             scanInformationStore.update(scanInformation, transaction).flatMap {
                 logger.info("updating scan Information for : ${customer.contactEmail} id: ${scanInformation.scanId} status: ${scanInformation.status}")
 
-                when (scanInformation.status) {
+                if (scanInformation.status == ScanStatus.APPROVED) {
 
-                    ScanStatus.PENDING -> Unit.right()
-
-                    ScanStatus.APPROVED -> {
-
-                        logger.info("Inserting scan Information to cloud storage : id: ${scanInformation.scanId} countryCode: ${scanInformation.countryCode}")
-                        scanInformationDatastore.upsertVendorScanInformation(customer.id, scanInformation.countryCode, vendorData)
-                                .flatMap {
-                                    setStatusFlag(
-                                            customerId = customer.id,
-                                            regionCode = scanInformation.countryCode.toLowerCase(),
-                                            flag = JUMIO,
-                                            transaction = transaction)
-                                }
-                    }
-
-                    ScanStatus.REJECTED -> {
-
-                        createOrUpdateCustomerRegionSetting(
-                                customerId = customer.id,
-                                status = REJECTED,
-                                regionCode = scanInformation.countryCode,
-                                transaction = transaction)
-                    }
+                    logger.info("Inserting scan Information to cloud storage : id: ${scanInformation.scanId} countryCode: ${scanInformation.countryCode}")
+                    scanInformationDatastore.upsertVendorScanInformation(customer.id, scanInformation.countryCode, vendorData)
+                            .flatMap {
+                                setStatusFlag(
+                                        customerId = customer.id,
+                                        regionCode = scanInformation.countryCode.toLowerCase(),
+                                        flag = JUMIO,
+                                        transaction = transaction)
+                            }
+                } else {
+                    Unit.right()
                 }
             }
-        }
+        }.ifFailedThenRollback(transaction)
     }
 
     //

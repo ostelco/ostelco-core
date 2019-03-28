@@ -196,7 +196,7 @@ class Neo4jStoreTest {
         Neo4jStoreSingleton.addSubscription(IDENTITY, MSISDN)
                 .mapLeft { fail(it.message) }
 
-        Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
+        Neo4jStoreSingleton.createCustomerRegionSetting(
                 customerId = CUSTOMER.id,
                 status = APPROVED,
                 regionCode = "no")
@@ -555,7 +555,7 @@ class Neo4jStoreTest {
                 identity = IDENTITY,
                 customer = CUSTOMER).isRight())
 
-        assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
+        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
                 customerId = CUSTOMER.id,
                 status = APPROVED,
                 regionCode = "no").isRight())
@@ -643,11 +643,11 @@ class Neo4jStoreTest {
                 identity = IDENTITY,
                 customer = CUSTOMER).isRight())
 
-        assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
+        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
                 customerId = CUSTOMER.id,
                 status = APPROVED,
                 regionCode = "no").isRight())
-        assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
+        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
                 customerId = CUSTOMER.id,
                 status = PENDING,
                 regionCode = "sg").isRight())
@@ -681,11 +681,11 @@ class Neo4jStoreTest {
                 identity = IDENTITY,
                 customer = CUSTOMER).isRight())
 
-        assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
+        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
                 customerId = CUSTOMER.id,
                 status = APPROVED,
                 regionCode = "no").isRight())
-        assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
+        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
                 customerId = CUSTOMER.id,
                 status = PENDING,
                 regionCode = "sg").isRight())
@@ -719,11 +719,11 @@ class Neo4jStoreTest {
                 identity = IDENTITY,
                 customer = CUSTOMER).isRight())
 
-        assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
+        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
                 customerId = CUSTOMER.id,
                 status = APPROVED,
                 regionCode = "no").isRight())
-        assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
+        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
                 customerId = CUSTOMER.id,
                 status = PENDING,
                 regionCode = "sg").isRight())
@@ -773,11 +773,11 @@ class Neo4jStoreTest {
                 identity = IDENTITY,
                 customer = CUSTOMER).isRight())
 
-        assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
+        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
                 customerId = CUSTOMER.id,
                 status = APPROVED,
                 regionCode = "no").isRight())
-        assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
+        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
                 customerId = CUSTOMER.id,
                 status = PENDING,
                 regionCode = "sg").isRight())
