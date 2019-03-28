@@ -1388,7 +1388,7 @@ object Neo4jStoreSingleton : GraphStore {
     override fun getPlans(identity: org.ostelco.prime.model.Identity): Either<StoreError, List<Plan>> = readTransaction {
         getCustomerId(identity = identity, transaction = transaction)
                 .flatMap { customerId ->
-                    subscribesToPlanRelationStore.get(customerId, transaction)
+                    customerStore.getRelated(id = customerId, relationType = subscribesToPlanRelation, transaction = transaction)
                 }
     }
 
@@ -1463,7 +1463,7 @@ object Neo4jStoreSingleton : GraphStore {
                 /* The name of the product is the same as the name of the corresponding plan. */
                 productStore.get(planId, transaction)
                         .bind()
-                planProductRelationStore.get(plan.id, transaction)
+                plansStore.getRelated(id = plan.id, relationType = planProductRelation, transaction = transaction)
                         .bind()
 
                 /* Not removing the product due to purchase references. */
@@ -1505,7 +1505,7 @@ object Neo4jStoreSingleton : GraphStore {
                         .bind()
                 val plan = plansStore.get(planId, transaction)
                         .bind()
-                planProductRelationStore.get(plan.id, transaction)
+                plansStore.getRelated(id = plan.id, relationType = planProductRelation, transaction = transaction)
                         .bind()
                 val profileInfo = paymentProcessor.getPaymentProfile(customer.id)
                         .mapLeft {
@@ -1568,7 +1568,7 @@ object Neo4jStoreSingleton : GraphStore {
             Either.monad<StoreError>().binding {
                 val product = productStore.get(sku, transaction)
                         .bind()
-                val plan = planProductRelationStore.getFrom(sku, transaction)
+                val plan = productStore.getRelatedFrom(id = sku, relationType = planProductRelation, transaction = transaction)
                         .flatMap {
                             it[0].right()
                         }.bind()

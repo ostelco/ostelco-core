@@ -345,28 +345,6 @@ val re = Regex("""([,{])\s*"([^"]+)"\s*(:)""")
 
 class UniqueRelationStore<FROM : HasId, TO : HasId>(private val relationType: RelationType<FROM, *, TO>) {
 
-    fun get(fromId: String, transaction: Transaction): Either<StoreError, List<TO>> = read("""
-                MATCH (fromId:${relationType.from.name} {id: '$fromId'})-[r:${relationType.name}]->(to:${relationType.to.name})
-                RETURN to
-                """.trimMargin(),
-            transaction) { statementResult ->
-
-        Either.cond(statementResult.hasNext(),
-                ifTrue = { statementResult.list { record -> relationType.to.createEntity(record["to"].asMap()) }.filterNotNull() },
-                ifFalse = { NotFoundError(relationType.name, "$fromId -> _") })
-    }
-
-    fun getFrom(toId: String, transaction: Transaction): Either<StoreError, List<FROM>> = read("""
-                MATCH (from:${relationType.from.name})-[r:${relationType.name}]->(toId:${relationType.to.name} {id: '$toId'})
-                RETURN from
-                """.trimMargin(),
-            transaction) { statementResult ->
-
-        Either.cond(statementResult.hasNext(),
-                ifTrue = { statementResult.list { record -> relationType.from.createEntity(record["from"].asMap()) }.filterNotNull() },
-                ifFalse = { NotFoundError(relationType.name, "_ -> $toId") })
-    }
-
     // If relation does not exists, then it creates new relation.
     fun createIfAbsent(fromId: String, toId: String, transaction: Transaction): Either<StoreError, Unit> {
 
