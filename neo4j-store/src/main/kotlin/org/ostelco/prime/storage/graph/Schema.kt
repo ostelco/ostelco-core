@@ -13,7 +13,6 @@ import org.neo4j.driver.v1.StatementResult
 import org.neo4j.driver.v1.StatementResultCursor
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.getLogger
-import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.HasId
 import org.ostelco.prime.storage.AlreadyExistsError
@@ -47,7 +46,7 @@ data class RelationType<FROM : HasId, RELATION, TO : HasId>(
         private val dataClass: Class<RELATION>,
         val name: String = relation.name) {
 
-    fun createRelation(map: Map<String, Any>): RELATION? {
+    fun createRelation(map: Map<String, Any>): RELATION {
         return ObjectHandler.getObject(map, dataClass)
     }
 }
@@ -148,9 +147,8 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
                 return r;
                 """.trimIndent(),
                     transaction) { statementResult ->
-                Either.right(
-                        statementResult.list { record -> relationType.createRelation(record["r"].asMap()) }
-                                .filterNotNull())
+                statementResult.list { record -> relationType.createRelation(record["r"].asMap()) }
+                        .right()
             }
         }
     }
@@ -201,11 +199,11 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
 }
 
 // TODO vihang: check if relation already exists, with allow duplicate boolean flag param
-class RelationStore<FROM : HasId, TO : HasId>(private val relationType: RelationType<FROM, *, TO>) {
+class RelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType: RelationType<FROM, RELATION, TO>) {
 
-    fun create(from: FROM, relation: Any, to: TO, transaction: Transaction): Either<StoreError, Unit> {
+    fun create(from: FROM, relation: RELATION, to: TO, transaction: Transaction): Either<StoreError, Unit> {
 
-        val properties = getProperties(relation)
+        val properties = getProperties(relation as Any)
         val strProps: String = properties.entries.joinToString(",") { """`${it.key}`: "${it.value}"""" }
         return write("""
                     MATCH (from:${relationType.from.name} { id: '${from.id}' }),(to:${relationType.to.name} { id: '${to.id}' })
@@ -247,17 +245,22 @@ class RelationStore<FROM : HasId, TO : HasId>(private val relationType: Relation
                 ifFalse = { NotCreatedError(type = relationType.name, id = "$fromId -> $toId") })
     }
 
-    fun create(fromId: String, relation: Any, toId: String, transaction: Transaction): Either<StoreError, Unit> = write("""
-                MATCH (from:${relationType.from.name} { id: '$fromId' }),(to:${relationType.to.name} { id: '$toId' })
-                CREATE (from)-[:${relationType.name}]->(to);
-                """.trimIndent(),
-            transaction) { statementResult ->
+    fun create(fromId: String, relation: RELATION, toId: String, transaction: Transaction): Either<StoreError, Unit> {
 
-        // TODO vihang: validate if 'from' and 'to' node exists
-        Either.cond(
-                test = statementResult.summary().counters().relationshipsCreated() == 1,
-                ifTrue = {},
-                ifFalse = { NotCreatedError(type = relationType.name, id = "$fromId -> $toId") })
+        val properties = getProperties(relation as Any)
+        val strProps: String = properties.entries.joinToString(",") { """`${it.key}`: "${it.value}"""" }
+        return write("""
+                MATCH (from:${relationType.from.name} { id: '$fromId' }),(to:${relationType.to.name} { id: '$toId' })
+                CREATE (from)-[:${relationType.name} { $strProps } ]->(to);
+                """.trimIndent(),
+                transaction) { statementResult ->
+
+            // TODO vihang: validate if 'from' and 'to' node exists
+            Either.cond(
+                    test = statementResult.summary().counters().relationshipsCreated() == 1,
+                    ifTrue = {},
+                    ifFalse = { NotCreatedError(type = relationType.name, id = "$fromId -> $toId") })
+        }
     }
 
     fun create(fromId: String, toIds: Collection<String>, transaction: Transaction): Either<StoreError, Unit> = write("""
@@ -319,7 +322,7 @@ class ChangeableRelationStore<FROM : HasId, TO : HasId, RELATION : HasId>(privat
         return read("""MATCH (from)-[r:${relationType.name}{id:'$id'}]->(to) RETURN r;""",
                 transaction) { statementResult ->
             if (statementResult.hasNext()) {
-                Either.right(relationType.createRelation(statementResult.single().get("r").asMap())!!)
+                relationType.createRelation(statementResult.single().get("r").asMap()).right()
             } else {
                 Either.left(NotFoundError(type = relationType.name, id = id))
             }
@@ -343,29 +346,7 @@ class ChangeableRelationStore<FROM : HasId, TO : HasId, RELATION : HasId>(privat
 // Usage: output = re.replace(input, "$1$2$3")
 val re = Regex("""([,{])\s*"([^"]+)"\s*(:)""")
 
-class UniqueRelationStore<FROM : HasId, TO : HasId>(private val relationType: RelationType<FROM, *, TO>) {
-
-    fun get(fromId: String, transaction: Transaction): Either<StoreError, List<TO>> = read("""
-                MATCH (fromId:${relationType.from.name} {id: '$fromId'})-[r:${relationType.name}]->(to:${relationType.to.name})
-                RETURN to
-                """.trimMargin(),
-            transaction) { statementResult ->
-
-        Either.cond(statementResult.hasNext(),
-                ifTrue = { statementResult.list { record -> relationType.to.createEntity(record["to"].asMap()) }.filterNotNull() },
-                ifFalse = { NotFoundError(relationType.name, "$fromId -> _") })
-    }
-
-    fun getFrom(toId: String, transaction: Transaction): Either<StoreError, List<FROM>> = read("""
-                MATCH (from:${relationType.from.name})-[r:${relationType.name}]->(toId:${relationType.to.name} {id: '$toId'})
-                RETURN from
-                """.trimMargin(),
-            transaction) { statementResult ->
-
-        Either.cond(statementResult.hasNext(),
-                ifTrue = { statementResult.list { record -> relationType.from.createEntity(record["from"].asMap()) }.filterNotNull() },
-                ifFalse = { NotFoundError(relationType.name, "_ -> $toId") })
-    }
+class UniqueRelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType: RelationType<FROM, RELATION, TO>) {
 
     // If relation does not exists, then it creates new relation.
     fun createIfAbsent(fromId: String, toId: String, transaction: Transaction): Either<StoreError, Unit> {
@@ -394,6 +375,36 @@ class UniqueRelationStore<FROM : HasId, TO : HasId>(private val relationType: Re
                 }
     }
 
+    // If relation does not exists, then it creates new relation.
+    fun createIfAbsent(fromId: String, relation: RELATION, toId: String, transaction: Transaction): Either<StoreError, Unit> {
+
+        return (relationType.from.entityStore?.exists(fromId, transaction)
+                ?: NotFoundError(type = relationType.from.name, id = fromId).left())
+                .flatMap {
+                    relationType.to.entityStore?.exists(toId, transaction)
+                            ?: NotFoundError(type = relationType.to.name, id = toId).left()
+                }.flatMap {
+
+                    doNotExist(fromId, toId, transaction).fold(
+                            { Unit.right() },
+                            {
+                                val properties = getProperties(relation as Any)
+                                val strProps: String = properties.entries.joinToString(",") { """`${it.key}`: "${it.value}"""" }
+
+                                write("""
+                        MATCH (fromId:${relationType.from.name} {id: '$fromId'}),(toId:${relationType.to.name} {id: '$toId'})
+                        MERGE (fromId)-[:${relationType.name} { $strProps } ]->(toId)
+                        """.trimMargin(),
+                                        transaction) { statementResult ->
+
+                                    Either.cond(statementResult.summary().counters().relationshipsCreated() == 1,
+                                            ifTrue = { Unit },
+                                            ifFalse = { NotCreatedError(relationType.name, "$fromId -> $toId") })
+                                }
+                            })
+                }
+    }
+
     // If relation exists, then it fails with Already Exists Error, else it creates new relation.
     fun create(fromId: String, toId: String, transaction: Transaction): Either<StoreError, Unit> {
 
@@ -401,6 +412,26 @@ class UniqueRelationStore<FROM : HasId, TO : HasId>(private val relationType: Re
             write("""
                         MATCH (fromId:${relationType.from.name} {id: '$fromId'}),(toId:${relationType.to.name} {id: '$toId'})
                         MERGE (fromId)-[:${relationType.name}]->(toId)
+                        """.trimMargin(),
+                    transaction) { statementResult ->
+
+                Either.cond(statementResult.summary().counters().relationshipsCreated() == 1,
+                        ifTrue = { Unit },
+                        ifFalse = { NotCreatedError(relationType.name, "$fromId -> $toId") })
+            }
+        }
+    }
+
+    // If relation exists, then it fails with Already Exists Error, else it creates new relation.
+    fun create(fromId: String, relation: RELATION, toId: String, transaction: Transaction): Either<StoreError, Unit> {
+
+        return doNotExist(fromId, toId, transaction).flatMap {
+            val properties = getProperties(relation as Any)
+            val strProps: String = properties.entries.joinToString(",") { """`${it.key}`: "${it.value}"""" }
+
+            write("""
+                        MATCH (fromId:${relationType.from.name} {id: '$fromId'}),(toId:${relationType.to.name} {id: '$toId'})
+                        MERGE (fromId)-[:${relationType.name}  { $strProps } ]->(toId)
                         """.trimMargin(),
                     transaction) { statementResult ->
 
@@ -422,26 +453,18 @@ class UniqueRelationStore<FROM : HasId, TO : HasId>(private val relationType: Re
                 ifFalse = { NotDeletedError(relationType.name, "$fromId -> $toId") })
     }
 
-    fun getProperties(fromId: String, toId: String, transaction: Transaction): Either<StoreError, Map<String, Any>> = read("""
+    fun get(fromId: String, toId: String, transaction: Transaction): Either<StoreError, RELATION> = read("""
                 MATCH (:${relationType.from.name} {id: '$fromId'})-[r:${relationType.name}]->(:${relationType.to.name} {id: '$toId'})
                 RETURN r
                 """.trimMargin(),
             transaction) { statementResult ->
 
         Either.cond(statementResult.hasNext(),
-                ifTrue = { statementResult.single()["r"].asMap() },
+                ifTrue = { relationType.createRelation(statementResult.single()["r"].asMap()) },
                 ifFalse = { NotFoundError(relationType.name, "$fromId -> $toId") })
-    }
-
-    fun setProperties(fromId: String, toId: String, properties: Map<String, Any>, transaction: Transaction): Either<StoreError, Unit> = write("""
-                MATCH (:${relationType.from.name} {id: '$fromId'})-[r:${relationType.name}]->(:${relationType.to.name} {id: '$toId'})
-                SET r = ${re.replace(asJson(properties), "$1$2$3")}
-                """.trimMargin(),
-            transaction) { statementResult ->
-
-        Either.cond(statementResult.summary().counters().propertiesSet() > 0,
-                ifTrue = { Unit },
-                ifFalse = { NotUpdatedError(relationType.name, "$fromId -> $toId") })
+                .flatMap {
+                    relation -> relation?.right() ?: NotFoundError(relationType.name, "$fromId -> $toId").left()
+                }
     }
 
     private fun doNotExist(fromId: String, toId: String, transaction: Transaction): Either<StoreError, Unit> = read("""
@@ -565,3 +588,6 @@ object ObjectHandler {
         return outputMap
     }
 }
+
+// Need a dummy Void class with no-arg constructor to represent Relations with no properties.
+class None
