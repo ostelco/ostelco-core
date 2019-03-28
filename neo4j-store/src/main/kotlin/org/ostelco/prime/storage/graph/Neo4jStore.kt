@@ -150,14 +150,14 @@ object Neo4jStoreSingleton : GraphStore {
             relation = HAS_SUBSCRIPTION,
             from = customerEntity,
             to = subscriptionEntity,
-            dataClass = Void::class.java)
+            dataClass = None::class.java)
     private val subscriptionRelationStore = RelationStore(subscriptionRelation)
 
     private val customerToBundleRelation = RelationType(
             relation = HAS_BUNDLE,
             from = customerEntity,
             to = bundleEntity,
-            dataClass = Void::class.java)
+            dataClass = None::class.java)
     private val customerToBundleStore = RelationStore(customerToBundleRelation)
 
     private val subscriptionToBundleRelation = RelationType(
@@ -171,7 +171,7 @@ object Neo4jStoreSingleton : GraphStore {
             relation = HAS_SIM_PROFILE,
             from = customerEntity,
             to = simProfileEntity,
-            dataClass = Void::class.java)
+            dataClass = None::class.java)
     private val customerToSimProfileStore = RelationStore(customerToSimProfileRelation)
 
     private val purchaseRecordRelation = RelationType(
@@ -186,49 +186,49 @@ object Neo4jStoreSingleton : GraphStore {
             relation = REFERRED,
             from = customerEntity,
             to = customerEntity,
-            dataClass = Void::class.java)
+            dataClass = None::class.java)
     private val referredRelationStore = RelationStore(referredRelation)
 
     private val subscribesToPlanRelation = RelationType(
             relation = Relation.SUBSCRIBES_TO_PLAN,
             from = customerEntity,
             to = planEntity,
-            dataClass = Void::class.java)
+            dataClass = PlanSubscription::class.java)
     private val subscribesToPlanRelationStore = UniqueRelationStore(subscribesToPlanRelation)
 
     private val customerRegionRelation = RelationType(
             relation = Relation.BELONG_TO_REGION,
             from = customerEntity,
             to = regionEntity,
-            dataClass = CustomerRegionStatus::class.java)
+            dataClass = CustomerRegion::class.java)
     private val customerRegionRelationStore = UniqueRelationStore(customerRegionRelation)
 
     private val scanInformationRelation = RelationType(
             relation = Relation.EKYC_SCAN,
             from = customerEntity,
             to = scanInformationEntity,
-            dataClass = Void::class.java)
+            dataClass = None::class.java)
     private val scanInformationRelationStore = UniqueRelationStore(scanInformationRelation)
 
     private val planProductRelation = RelationType(
             relation = Relation.HAS_PRODUCT,
             from = planEntity,
             to = productEntity,
-            dataClass = Void::class.java)
+            dataClass = None::class.java)
     private val planProductRelationStore = UniqueRelationStore(planProductRelation)
 
     private val subscriptionRegionRelation = RelationType(
             relation = Relation.SUBSCRIPTION_FOR_REGION,
             from = subscriptionEntity,
             to = regionEntity,
-            dataClass = Void::class.java)
+            dataClass = None::class.java)
     private val subscriptionRegionRelationStore = UniqueRelationStore(subscriptionRegionRelation)
 
     private val simProfileRegionRelation = RelationType(
             relation = Relation.SIM_PROFILE_FOR_REGION,
             from = simProfileEntity,
             to = regionEntity,
-            dataClass = Void::class.java)
+            dataClass = None::class.java)
     private val simProfileRegionRelationStore = UniqueRelationStore(simProfileRegionRelation)
 
     // -------------
@@ -410,17 +410,21 @@ object Neo4jStoreSingleton : GraphStore {
 
         val regionCodeClause = regionCode?.let { "{id: '$it'}" } ?: ""
 
-        return read<Collection<RegionDetails>>("""
+        return read("""
                 MATCH (c:${customerEntity.name} {id: '$customerId'})-[cr:${customerRegionRelation.name}]->(r:${regionEntity.name} $regionCodeClause)
                 OPTIONAL MATCH (c)-[:${customerToSimProfileRelation.name}]->(sp:${simProfileEntity.name})-[:${simProfileRegionRelation.name}]->(r)
-                RETURN cr.customerRegionStatus, r, sp;
+                RETURN cr, r, sp;
                 """.trimIndent(),
                 transaction) { statementResult ->
             statementResult
                     .list { record ->
                         val region = regionEntity.createEntity(record["r"].asMap())
-                        val cr = CustomerRegionStatus.valueOf(record["cr.customerRegionStatus"].asString())
-                        val simProfiles = if (record["sp"].isNull) { emptyList() } else { listOf(simProfileEntity.createEntity(record["sp"].asMap())) }
+                        val cr = customerRegionRelation.createRelation(record["cr"].asMap()).status
+                        val simProfiles = if (record["sp"].isNull) {
+                            emptyList()
+                        } else {
+                            listOf(simProfileEntity.createEntity(record["sp"].asMap()))
+                        }
                         RegionDetails(
                                 region = region,
                                 status = cr,
@@ -464,9 +468,9 @@ object Neo4jStoreSingleton : GraphStore {
                 validateBundleList(bundles, customerId).bind()
                 val customer = customerStore.get(customerId, transaction).bind()
                 val status = customerRegionRelationStore
-                        .getProperties(fromId = customerId, toId = regionCode.toLowerCase(), transaction = transaction)
-                        .bind()["customerRegionStatus"]
-                        .let { CustomerRegionStatus.valueOf("$it") }
+                        .get(fromId = customerId, toId = regionCode.toLowerCase(), transaction = transaction)
+                        .bind()
+                        .status
                 isApproved(
                         status = status,
                         customerId = customerId,
@@ -983,15 +987,9 @@ object Neo4jStoreSingleton : GraphStore {
             customerRegionRelationStore
                     .createIfAbsent(
                             fromId = customerId,
+                            relation = CustomerRegion(status),
                             toId = regionCode.toLowerCase(),
                             transaction = transaction)
-                    .flatMap {
-                        customerRegionRelationStore.setProperties(
-                                fromId = customerId,
-                                toId = regionCode.toLowerCase(),
-                                properties = mapOf("customerRegionStatus" to status.toString()),
-                                transaction = transaction)
-                    }
                     .flatMap {
                         if (status == APPROVED) {
                             assignCustomerToRegionSegment(
@@ -1512,8 +1510,6 @@ object Neo4jStoreSingleton : GraphStore {
                             NotFoundError(type = planEntity.name, id = "Failed to subscribe ${customer.id} to ${plan.id}",
                                     error = it)
                         }.bind()
-                subscribesToPlanRelationStore.create(customer.id, plan.id, transaction)
-                        .bind()
 
                 /* Lookup in payment backend will fail if no value found for 'planId'. */
                 val subscriptionInfo = paymentProcessor.createSubscription(plan.properties.getOrDefault("planId", "missing"),
@@ -1526,9 +1522,14 @@ object Neo4jStoreSingleton : GraphStore {
                         }.bind()
 
                 /* Store information from payment backend for later use. */
-                subscribesToPlanRelationStore.setProperties(customerId, planId, mapOf("subscriptionId" to subscriptionInfo.id,
-                        "created" to subscriptionInfo.created,
-                        "trialEnd" to subscriptionInfo.trialEnd), transaction)
+                subscribesToPlanRelationStore.create(
+                        fromId = customerId,
+                        relation = PlanSubscription(
+                                subscriptionId = subscriptionInfo.id,
+                                created = subscriptionInfo.created,
+                                trialEnd = subscriptionInfo.trialEnd),
+                        toId = planId,
+                        transaction = transaction)
                         .flatMap {
                             Either.right(plan)
                         }.bind()
@@ -1544,9 +1545,9 @@ object Neo4jStoreSingleton : GraphStore {
                         .bind()
                 val customerId = getCustomerId(identity = identity, transaction = transaction)
                         .bind()
-                val properties = subscribesToPlanRelationStore.getProperties(customerId, planId, transaction)
+                val planSubscription = subscribesToPlanRelationStore.get(customerId, planId, transaction)
                         .bind()
-                paymentProcessor.cancelSubscription(properties["subscriptionId"].toString(), atIntervalEnd)
+                paymentProcessor.cancelSubscription(planSubscription.subscriptionId, atIntervalEnd)
                         .mapLeft {
                             NotDeletedError(type = planEntity.name, id = "$customerId -> ${plan.id}",
                                     error = it)
@@ -1656,13 +1657,13 @@ object Neo4jStoreSingleton : GraphStore {
     private val segmentEntity = EntityType(Segment::class.java)
     private val segmentStore = EntityStore(segmentEntity)
 
-    private val offerToSegmentRelation = RelationType(OFFERED_TO_SEGMENT, offerEntity, segmentEntity, Void::class.java)
+    private val offerToSegmentRelation = RelationType(OFFERED_TO_SEGMENT, offerEntity, segmentEntity, None::class.java)
     private val offerToSegmentStore = RelationStore(offerToSegmentRelation)
 
-    private val offerToProductRelation = RelationType(OFFER_HAS_PRODUCT, offerEntity, productEntity, Void::class.java)
+    private val offerToProductRelation = RelationType(OFFER_HAS_PRODUCT, offerEntity, productEntity, None::class.java)
     private val offerToProductStore = RelationStore(offerToProductRelation)
 
-    private val customerToSegmentRelation = RelationType(BELONG_TO_SEGMENT, customerEntity, segmentEntity, Void::class.java)
+    private val customerToSegmentRelation = RelationType(BELONG_TO_SEGMENT, customerEntity, segmentEntity, None::class.java)
     private val customerToSegmentStore = RelationStore(customerToSegmentRelation)
 
     private val productClassEntity = EntityType(ProductClass::class.java)
