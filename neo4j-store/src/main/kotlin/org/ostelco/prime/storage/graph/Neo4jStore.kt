@@ -403,7 +403,6 @@ object Neo4jStoreSingleton : GraphStore {
                 }
     }
 
-
     private fun getRegionDetails(
             customerId: String,
             regionCode: String? = null,
@@ -1047,29 +1046,24 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     private fun getCustomerUsingScanId(scanId: String, transaction: Transaction): Either<StoreError, Customer> {
-        return read("""
-                MATCH (customer:${customerEntity.name})-[:${scanInformationRelation.name}]->(scanInformation:${scanInformationEntity.name} {scanId: '$scanId'})
-                RETURN customer
-                """.trimIndent(),
-                transaction) {
-            if (it.hasNext())
-                Either.right(customerEntity.createEntity(it.single().get("customer").asMap()))
-            else
-                Either.left(NotFoundError(type = scanInformationEntity.name, id = scanId))
-        }
+        return scanInformationStore
+                .getRelatedFrom(
+                        id = scanId,
+                        relationType = scanInformationRelation,
+                        transaction = transaction)
+                .flatMap { customers ->
+                    customers.singleOrNull()?.right()
+                            ?: NotFoundError(type = scanInformationEntity.name, id = scanId).left()
+                }
     }
 
     override fun getCountryCodeForScan(scanId: String): Either<StoreError, String> = readTransaction {
-        read("""
-                MATCH (scanInformation:${scanInformationEntity.name} {scanId: '$scanId'})
-                RETURN scanInformation
-                """.trimIndent(),
-                transaction) {
-            if (it.hasNext())
-                Either.right(scanInformationEntity.createEntity(it.single().get("scanInformation").asMap()).countryCode)
-            else
-                Either.left(NotFoundError(type = scanInformationEntity.name, id = scanId))
-        }
+        scanInformationStore.get(
+                id = scanId,
+                transaction = transaction)
+                .flatMap {
+                    scanInformation -> scanInformation.countryCode.right()
+                }
     }
 
     // TODO merge into a single query which will use customerId and scanId
