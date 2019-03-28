@@ -973,7 +973,7 @@ object Neo4jStoreSingleton : GraphStore {
         createOrUpdateCustomerRegionSetting(
                 customerId = customerId,
                 status = status,
-                regionCode = regionCode.toLowerCase(),
+                regionCode = regionCode,
                 transaction = transaction)
     }
 
@@ -986,8 +986,10 @@ object Neo4jStoreSingleton : GraphStore {
             customerRegionRelationStore
                     .createIfAbsent(
                             fromId = customerId,
-                            relation = CustomerRegion(status),
-                            toId = regionCode.toLowerCase(),
+                            relation = CustomerRegion(
+                                    status = status,
+                                    bitMapStatusFlags = getInitialBitmap(regionCode)),
+                            toId = regionCode,
                             transaction = transaction)
                     .flatMap {
                         if (status == APPROVED) {
@@ -1061,8 +1063,8 @@ object Neo4jStoreSingleton : GraphStore {
         scanInformationStore.get(
                 id = scanId,
                 transaction = transaction)
-                .flatMap {
-                    scanInformation -> scanInformation.countryCode.right()
+                .flatMap { scanInformation ->
+                    scanInformation.countryCode.right()
                 }
     }
 
@@ -1111,7 +1113,6 @@ object Neo4jStoreSingleton : GraphStore {
                                             flag = JUMIO,
                                             transaction = transaction)
                                 }
-                                .flatMap { Unit.right() }
                     }
 
                     ScanStatus.REJECTED -> {
@@ -1193,7 +1194,23 @@ object Neo4jStoreSingleton : GraphStore {
                             flag = ADDRESS_AND_PHONE_NUMBER,
                             transaction = transaction)
                 }
-                .flatMap { Unit.right() }
+                .ifFailedThenRollback(transaction)
+    }
+
+    //
+    // eKYC - Status Flags
+    //
+
+    internal fun setStatusFlag(
+            customerId: String,
+            regionCode: String,
+            flag: StatusFlag) = writeTransaction {
+
+        Neo4jStoreSingleton.setStatusFlag(
+                customerId = customerId,
+                regionCode = regionCode,
+                flag = flag,
+                transaction = transaction)
                 .ifFailedThenRollback(transaction)
     }
 
@@ -1201,68 +1218,99 @@ object Neo4jStoreSingleton : GraphStore {
             customerId: String,
             regionCode: String,
             flag: StatusFlag,
-            transaction: Transaction): Either<StoreError, Int> {
+            transaction: Transaction): Either<StoreError, Unit> {
 
-        val approvedBitmapSet = getApprovedBitmapSet(regionCode)
+        return IO {
+            Either.monad<StoreError>().binding {
 
-        // retry 5 times
-        for (i in 1..5) {
+                val approvedBitmapSet = getApprovedBitmapSet(regionCode)
 
-            // existing bitMapStatusFlags and customerRegionStatus
-            val existing = read("""
-                MATCH (:${customerEntity.name} { id: '$customerId' })-[r:${customerRegionRelation.name}]->(:${regionEntity.name} { id: '$regionCode' })
-                RETURN r.bitMapStatusFlags, r.customerRegionStatus
-                """.trimIndent(),
-                    transaction) { result ->
-                val record = result.single()
-                Pair(record["r.bitMapStatusFlags"].asString().toInt(), CustomerRegionStatus.valueOf(record["r.customerRegionStatus"].asString()))
-            }
+                var exists = false
 
-            val newBitMap = StatusFlags.bitMapStatusFlags(flag).inv().and(existing.first)
-
-            val updated: Boolean = if (existing.second == PENDING && approvedBitmapSet.any { it.inv().and(newBitMap) == 0 }) {
-                // if existing status is PENDING and newBitMap is found in approvedBitMap Set
-                assignCustomerToRegionSegment(
-                        customerId = customerId,
-                        regionCode = regionCode,
+                val existingCustomerRegion = customerRegionRelationStore.get(
+                        fromId = customerId,
+                        toId = regionCode,
                         transaction = transaction)
+                        .fold(
+                                { CustomerRegion(status = PENDING, bitMapStatusFlags = getInitialBitmap(regionCode)) },
+                                {
+                                    exists = true
+                                    it
+                                }
+                        )
 
-                write("""
-                    MATCH (:${customerEntity.name} { id: '$customerId' })-[r:${customerRegionRelation.name} { bitMapStatusFlags: ${existing.first} } ]->(:${regionEntity.name} { id: '$regionCode' })
-                    SET r.bitMapStatusFlags = $newBitMap, r.customerRegionStatus = '${CustomerRegionStatus.APPROVED}'
-                    RETURN r.bitMapStatusFlags
-                    """.trimIndent(),
-                        transaction) { result ->
-                    result.summary().counters().propertiesSet() == 2
+                val newBitMapStatusFlags = StatusFlags.bitMapStatusFlags(flag).inv().and(existingCustomerRegion.bitMapStatusFlags)
+
+                logger.info("existingBitMapStatusFlags : {}, newBitMapStatusFlags : {}", existingCustomerRegion.bitMapStatusFlags, newBitMapStatusFlags)
+
+                val approved = existingCustomerRegion.status == PENDING
+                        && approvedBitmapSet.any { it.inv().and(newBitMapStatusFlags) == 0 }
+
+                if (exists) {
+
+                    if (approved) {
+
+                        // if existing status is PENDING and newBitMap is found in approvedBitMap Set
+
+                        assignCustomerToRegionSegment(
+                                customerId = customerId,
+                                regionCode = regionCode,
+                                transaction = transaction).bind()
+
+                        write("""
+                            MATCH (:${customerEntity.name} { id: '$customerId' })-[r:${customerRegionRelation.name} ]->(:${regionEntity.name} { id: '$regionCode' })
+                            SET r.bitMapStatusFlags = $newBitMapStatusFlags, r.status = '${CustomerRegionStatus.APPROVED}'
+                            """.trimIndent(),
+                                transaction) { result ->
+                            Either.cond(result.summary().counters().propertiesSet() == 2,
+                                    ifTrue = { Unit },
+                                    ifFalse = { NotUpdatedError(customerRegionRelation.name, "$customerId -> $regionCode") })
+                        }.bind()
+
+                    } else {
+
+                        // FIXME { bitMapStatusFlags: ${existingCustomerRegion.bitMapStatusFlags} }
+
+                        write("""
+                            MATCH (:${customerEntity.name} { id: '$customerId' })-[r:${customerRegionRelation.name} ]->(:${regionEntity.name} { id: '$regionCode' })
+                            SET r.bitMapStatusFlags = $newBitMapStatusFlags
+                            """.trimIndent(),
+                                transaction) { result ->
+                            Either.cond(result.summary().counters().propertiesSet() == 1,
+                                    ifTrue = { Unit },
+                                    ifFalse = { NotUpdatedError(customerRegionRelation.name, "$customerId -> $regionCode") })
+                        }.bind()
+                    }
+
+                } else {
+
+                    val newStatus = if (approved) {
+                        APPROVED
+                    } else {
+                        existingCustomerRegion.status
+                    }
+
+                    customerRegionRelationStore
+                            .create(
+                                    fromId = customerId,
+                                    relation = CustomerRegion(status = newStatus, bitMapStatusFlags = newBitMapStatusFlags),
+                                    toId = regionCode,
+                                    transaction = transaction)
+                            .bind()
                 }
-            } else {
-                write("""
-                    MATCH (:${customerEntity.name} { id: '$customerId' })-[r:${customerRegionRelation.name} { bitMapStatusFlags: ${existing.first} } ]->(:${regionEntity.name} { id: '$regionCode' })
-                    SET r.bitMapStatusFlags = $newBitMap
-                    RETURN r.bitMapStatusFlags
-                    """.trimIndent(),
-                        transaction) { result ->
-                    result.summary().counters().propertiesSet() == 1
-                }
-            }
-
-            if (updated) {
-                return newBitMap.right()
-            }
-        }
-
-        return NotUpdatedError(type = customerRegionRelation.name, id = "$customerId -> $regionCode").left()
+            }.fix()
+        }.unsafeRunSync()
     }
 
-    private fun getInitialBitmap(regionCode: String): Int {
-        return when (regionCode.toLowerCase()) {
+    internal fun getInitialBitmap(regionCode: String): Int {
+        return when (regionCode) {
             "sg" -> StatusFlags.bitMapStatusFlags(JUMIO, MY_INFO, NRIC_FIN, ADDRESS_AND_PHONE_NUMBER)
             else -> StatusFlags.bitMapStatusFlags(JUMIO)
         }
     }
 
-    private fun getApprovedBitmapSet(regionCode: String): Set<Int> {
-        return when (regionCode.toLowerCase()) {
+    internal fun getApprovedBitmapSet(regionCode: String): Set<Int> {
+        return when (regionCode) {
             "sg" -> setOf(StatusFlags.bitMapStatusFlags(MY_INFO),
                     StatusFlags.bitMapStatusFlags(JUMIO, NRIC_FIN, ADDRESS_AND_PHONE_NUMBER))
             else -> setOf(StatusFlags.bitMapStatusFlags(JUMIO))

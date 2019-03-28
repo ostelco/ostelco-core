@@ -23,4 +23,6 @@ data class PlanSubscription(
         val created: Long,
         val trialEnd: Long)
 
-data class CustomerRegion(val status: CustomerRegionStatus)
+data class CustomerRegion(
+        val status: CustomerRegionStatus,
+        val bitMapStatusFlags: Int)

@@ -36,6 +36,10 @@ import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.sim.SimManager
 import org.ostelco.prime.storage.NotFoundError
 import org.ostelco.prime.storage.ScanInformationStore
+import org.ostelco.prime.storage.graph.StatusFlag.ADDRESS_AND_PHONE_NUMBER
+import org.ostelco.prime.storage.graph.StatusFlag.JUMIO
+import org.ostelco.prime.storage.graph.StatusFlag.MY_INFO
+import org.ostelco.prime.storage.graph.StatusFlag.NRIC_FIN
 import java.time.Instant
 import java.util.*
 import javax.ws.rs.core.MultivaluedHashMap
@@ -801,6 +805,112 @@ class Neo4jStoreTest {
                                                             status = AVAILABLE_FOR_DOWNLOAD))),
                                     actual = it)
                         })
+    }
+
+    @Test
+    fun `test MY_INFO status flag`() {
+
+        Neo4jStoreSingleton.createRegion(Region("sg", "Singapore"))
+                .mapLeft { fail(it.message) }
+
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
+
+        Neo4jStoreSingleton.getRegionDetails(
+                identity = IDENTITY,
+                regionCode = "sg")
+                .map {
+                    fail("Should not have region details")
+                }
+
+        Neo4jStoreSingleton.setStatusFlag(
+                customerId = CUSTOMER.id,
+                regionCode = "sg",
+                flag = MY_INFO)
+
+        Neo4jStoreSingleton.getRegionDetails(
+                identity = IDENTITY,
+                regionCode = "sg")
+                .fold({
+                    fail("Failed to get Region Details")
+                }, {
+                    assertEquals(APPROVED, it.status)
+                })
+    }
+
+    @Test
+    fun `test NRIC_FIN JUMIO and ADDRESS_PHONE status flag`() {
+
+        Neo4jStoreSingleton.createSegment(Segment(id = getSegmentNameFromCountryCode("sg")))
+
+        Neo4jStoreSingleton.createRegion(Region("sg", "Singapore"))
+                .mapLeft { fail(it.message) }
+
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
+
+        Neo4jStoreSingleton.getRegionDetails(
+                identity = IDENTITY,
+                regionCode = "sg")
+                .map {
+                    fail("Should not have region details")
+                }
+
+        Neo4jStoreSingleton.setStatusFlag(
+                customerId = CUSTOMER.id,
+                regionCode = "sg",
+                flag = NRIC_FIN)
+
+        Neo4jStoreSingleton.getRegionDetails(
+                identity = IDENTITY,
+                regionCode = "sg")
+                .fold({
+                    fail("Failed to get Region Details")
+                }, {
+                    assertEquals(PENDING, it.status)
+                })
+
+        Neo4jStoreSingleton.setStatusFlag(
+                customerId = CUSTOMER.id,
+                regionCode = "sg",
+                flag = JUMIO)
+
+        Neo4jStoreSingleton.getRegionDetails(
+                identity = IDENTITY,
+                regionCode = "sg")
+                .fold({
+                    fail("Failed to get Region Details")
+                }, {
+                    assertEquals(PENDING, it.status)
+                })
+
+        Neo4jStoreSingleton.setStatusFlag(
+                customerId = CUSTOMER.id,
+                regionCode = "sg",
+                flag = ADDRESS_AND_PHONE_NUMBER)
+
+        Neo4jStoreSingleton.getRegionDetails(
+                identity = IDENTITY,
+                regionCode = "sg")
+                .fold({
+                    fail("Failed to get Region Details")
+                }, {
+                    assertEquals(APPROVED, it.status)
+                })
+    }
+
+    @Test
+    fun `initial status flag map`() {
+        assertEquals(1, Neo4jStoreSingleton.getInitialBitmap("no"))
+        assertEquals(15, Neo4jStoreSingleton.getInitialBitmap("sg"))
+    }
+
+    @Test
+    fun `initial status flag set needed for approval`() {
+        assertEquals(setOf(1), Neo4jStoreSingleton.getApprovedBitmapSet("no"))
+        assertEquals(setOf(2, 13), Neo4jStoreSingleton.getApprovedBitmapSet("sg"))
     }
 
     companion object {
