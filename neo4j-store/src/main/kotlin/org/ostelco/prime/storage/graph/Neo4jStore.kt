@@ -164,7 +164,7 @@ object Neo4jStoreSingleton : GraphStore {
             relation = LINKED_TO_BUNDLE,
             from = subscriptionEntity,
             to = bundleEntity,
-            dataClass = Void::class.java)
+            dataClass = SubscriptionToBundle::class.java)
     private val subscriptionToBundleStore = RelationStore(subscriptionToBundleRelation)
 
     private val customerToSimProfileRelation = RelationType(
@@ -494,7 +494,7 @@ object Neo4jStoreSingleton : GraphStore {
                     bundles.forEach { bundle ->
                         subscriptionToBundleStore.create(
                                 from = subscription,
-                                relation = mapOf("reservedBytes" to "0"),
+                                relation = SubscriptionToBundle(),
                                 to = bundle,
                                 transaction = transaction).bind()
                     }
@@ -568,7 +568,7 @@ object Neo4jStoreSingleton : GraphStore {
                 val subscription = subscriptionStore.get(msisdn, transaction).bind()
                 val customer = customerStore.get(customerId, transaction).bind()
                 bundles.forEach { bundle ->
-                    subscriptionToBundleStore.create(subscription, mapOf("reservedBytes" to "0"), bundle, transaction).bind()
+                    subscriptionToBundleStore.create(subscription, SubscriptionToBundle(), bundle, transaction).bind()
                 }
                 subscriptionRelationStore.create(customer, subscription, transaction).bind()
             }.fix()

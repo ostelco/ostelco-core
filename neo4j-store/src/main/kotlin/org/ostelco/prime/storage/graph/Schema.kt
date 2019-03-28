@@ -201,11 +201,11 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
 }
 
 // TODO vihang: check if relation already exists, with allow duplicate boolean flag param
-class RelationStore<FROM : HasId, TO : HasId>(private val relationType: RelationType<FROM, *, TO>) {
+class RelationStore<FROM : HasId, RELATION, TO : HasId>(private val relationType: RelationType<FROM, RELATION, TO>) {
 
-    fun create(from: FROM, relation: Any, to: TO, transaction: Transaction): Either<StoreError, Unit> {
+    fun create(from: FROM, relation: RELATION, to: TO, transaction: Transaction): Either<StoreError, Unit> {
 
-        val properties = getProperties(relation)
+        val properties = getProperties(relation as Any)
         val strProps: String = properties.entries.joinToString(",") { """`${it.key}`: "${it.value}"""" }
         return write("""
                     MATCH (from:${relationType.from.name} { id: '${from.id}' }),(to:${relationType.to.name} { id: '${to.id}' })
@@ -247,17 +247,22 @@ class RelationStore<FROM : HasId, TO : HasId>(private val relationType: Relation
                 ifFalse = { NotCreatedError(type = relationType.name, id = "$fromId -> $toId") })
     }
 
-    fun create(fromId: String, relation: Any, toId: String, transaction: Transaction): Either<StoreError, Unit> = write("""
-                MATCH (from:${relationType.from.name} { id: '$fromId' }),(to:${relationType.to.name} { id: '$toId' })
-                CREATE (from)-[:${relationType.name}]->(to);
-                """.trimIndent(),
-            transaction) { statementResult ->
+    fun create(fromId: String, relation: RELATION, toId: String, transaction: Transaction): Either<StoreError, Unit> {
 
-        // TODO vihang: validate if 'from' and 'to' node exists
-        Either.cond(
-                test = statementResult.summary().counters().relationshipsCreated() == 1,
-                ifTrue = {},
-                ifFalse = { NotCreatedError(type = relationType.name, id = "$fromId -> $toId") })
+        val properties = getProperties(relation as Any)
+        val strProps: String = properties.entries.joinToString(",") { """`${it.key}`: "${it.value}"""" }
+        return write("""
+                MATCH (from:${relationType.from.name} { id: '$fromId' }),(to:${relationType.to.name} { id: '$toId' })
+                CREATE (from)-[:${relationType.name} { $strProps } ]->(to);
+                """.trimIndent(),
+                transaction) { statementResult ->
+
+            // TODO vihang: validate if 'from' and 'to' node exists
+            Either.cond(
+                    test = statementResult.summary().counters().relationshipsCreated() == 1,
+                    ifTrue = {},
+                    ifFalse = { NotCreatedError(type = relationType.name, id = "$fromId -> $toId") })
+        }
     }
 
     fun create(fromId: String, toIds: Collection<String>, transaction: Transaction): Either<StoreError, Unit> = write("""
@@ -543,3 +548,6 @@ object ObjectHandler {
         return outputMap
     }
 }
+
+// Dummy Void class used for Relations with no properties
+data class Void(override val id: String) : HasId
