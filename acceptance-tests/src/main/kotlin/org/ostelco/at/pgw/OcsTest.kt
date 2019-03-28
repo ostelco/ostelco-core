@@ -146,7 +146,7 @@ class OcsTest {
             val mscc = resultMSCCs.getAvpByIndex(i).getGrouped()
             assertEquals(2001L, mscc.getAvp(Avp.RESULT_CODE).getInteger32().toLong())
             val granted = mscc.getAvp(Avp.GRANTED_SERVICE_UNIT)
-            assertEquals(500000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64())
+            assertEquals(5000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64())
             val serviceIdentifier = mscc.getAvp(Avp.SERVICE_IDENTIFIER_CCA).getUnsigned32().toInt()
             when (serviceIdentifier) {
                 1 -> assertEquals(10, mscc.getAvp(Avp.RATING_GROUP).getUnsigned32())
@@ -157,7 +157,7 @@ class OcsTest {
         }
     }
 
-    //@Test
+    @Test
     fun simpleCreditControlRequestInitUpdateAndTerminate() {
 
         val email = "ocs-${randomInt()}@test.com"

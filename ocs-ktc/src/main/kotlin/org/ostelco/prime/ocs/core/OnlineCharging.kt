@@ -126,7 +126,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
         // FixMe : Fetch list from somewhere ™
         // For now hardcoded to known combinations
 
-        if (arrayOf(1L, 2L, 4L, 400L).contains(serviceIdentifier)) {
+        if (arrayOf(1L, 400L).contains(serviceIdentifier)) {
             return true
         }
 
