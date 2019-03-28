@@ -8,6 +8,7 @@ import org.ostelco.prime.model.Identity
 import javax.validation.constraints.NotNull
 import javax.ws.rs.GET
 import javax.ws.rs.POST
+import javax.ws.rs.PUT
 import javax.ws.rs.Path
 import javax.ws.rs.PathParam
 import javax.ws.rs.Produces
@@ -85,7 +86,7 @@ class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(regionCo
                 .build()
     }
 
-    @POST
+    @PUT
     @Path("/profile")
     @Produces(MediaType.APPLICATION_JSON)
     fun saveProfile(
