@@ -199,7 +199,7 @@ class Neo4jStoreTest {
         Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
                 customerId = CUSTOMER.id,
                 status = APPROVED,
-                regionCode = "NO")
+                regionCode = "no")
 
         // test
         Neo4jStoreSingleton.purchaseProduct(identity = IDENTITY, sku = sku, sourceId = null, saveCard = false)
@@ -558,7 +558,7 @@ class Neo4jStoreTest {
         assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
                 customerId = CUSTOMER.id,
                 status = APPROVED,
-                regionCode = "NO").isRight())
+                regionCode = "no").isRight())
 
         Mockito.`when`(mockSimManager.allocateNextEsimProfile("loltel", "default"))
                 .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList()).right())
@@ -646,11 +646,11 @@ class Neo4jStoreTest {
         assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
                 customerId = CUSTOMER.id,
                 status = APPROVED,
-                regionCode = "NO").isRight())
+                regionCode = "no").isRight())
         assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
                 customerId = CUSTOMER.id,
                 status = PENDING,
-                regionCode = "SG").isRight())
+                regionCode = "sg").isRight())
 
         // test
         Neo4jStoreSingleton.getAllRegionDetails(identity = IDENTITY)
@@ -684,11 +684,11 @@ class Neo4jStoreTest {
         assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
                 customerId = CUSTOMER.id,
                 status = APPROVED,
-                regionCode = "NO").isRight())
+                regionCode = "no").isRight())
         assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
                 customerId = CUSTOMER.id,
                 status = PENDING,
-                regionCode = "SG").isRight())
+                regionCode = "sg").isRight())
 
         // test
         Neo4jStoreSingleton.getRegionDetails(identity = IDENTITY, regionCode = "no")
@@ -722,11 +722,11 @@ class Neo4jStoreTest {
         assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
                 customerId = CUSTOMER.id,
                 status = APPROVED,
-                regionCode = "NO").isRight())
+                regionCode = "no").isRight())
         assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
                 customerId = CUSTOMER.id,
                 status = PENDING,
-                regionCode = "SG").isRight())
+                regionCode = "sg").isRight())
 
         Mockito.`when`(mockSimManager.allocateNextEsimProfile("loltel", "default"))
                 .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList()).right())
@@ -776,11 +776,11 @@ class Neo4jStoreTest {
         assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
                 customerId = CUSTOMER.id,
                 status = APPROVED,
-                regionCode = "NO").isRight())
+                regionCode = "no").isRight())
         assert(Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
                 customerId = CUSTOMER.id,
                 status = PENDING,
-                regionCode = "SG").isRight())
+                regionCode = "sg").isRight())
 
         Mockito.`when`(mockSimManager.allocateNextEsimProfile("loltel", "default"))
                 .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList()).right())

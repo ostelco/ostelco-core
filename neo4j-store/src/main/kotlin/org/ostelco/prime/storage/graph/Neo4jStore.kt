@@ -473,7 +473,7 @@ object Neo4jStoreSingleton : GraphStore {
                 isApproved(
                         status = status,
                         customerId = customerId,
-                        regionCode = regionCode).bind()
+                        regionCode = regionCode.toLowerCase()).bind()
                 val region = regionStore.get(id = regionCode.toLowerCase(), transaction = transaction).bind()
                 val simEntry = simManager.allocateNextEsimProfile(hlr = getHlr(region.id.toLowerCase()), phoneType = profileType)
                         .mapLeft { NotFoundError("eSIM profile", id = "loltel") }
@@ -531,7 +531,7 @@ object Neo4jStoreSingleton : GraphStore {
         return if (status != APPROVED) {
             ValidationError(
                     type = "customerRegionRelation",
-                    id = "$customerId -> ${regionCode.toLowerCase()}",
+                    id = "$customerId -> $regionCode",
                     message = "eKYC status is $status and not APPROVED.")
                     .left()
         } else {
@@ -1109,7 +1109,7 @@ object Neo4jStoreSingleton : GraphStore {
                                 .flatMap {
                                     setStatusFlag(
                                             customerId = customer.id,
-                                            regionCode = scanInformation.countryCode,
+                                            regionCode = scanInformation.countryCode.toLowerCase(),
                                             flag = JUMIO,
                                             transaction = transaction)
                                 }
