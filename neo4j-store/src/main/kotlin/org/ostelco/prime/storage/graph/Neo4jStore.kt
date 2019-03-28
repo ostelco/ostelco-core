@@ -90,7 +90,6 @@ enum class Relation {
     OFFERED_TO_SEGMENT,         // (Offer) -[OFFERED_TO_SEGMENT]-> (Segment)
     OFFER_HAS_PRODUCT,          // (Offer) -[OFFER_HAS_PRODUCT]-> (Product)
     BELONG_TO_SEGMENT,          // (Customer) -[BELONG_TO_SEGMENT]-> (Segment)
-    CUSTOMER_STATE,             // (Customer) -[CUSTOMER_STATE]-> (CustomerState)
     EKYC_SCAN,                  // (Customer) -[EKYC_SCAN]-> (ScanInformation)
     BELONG_TO_REGION,           // (Customer) -[BELONG_TO_REGION]-> (Region)
     SUBSCRIPTION_FOR_REGION,    // (Subscription) -[SUBSCRIPTION_FOR_REGION]-> (Region)
@@ -356,6 +355,7 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
 
+    // TODO vihang: Should we also delete SimProfile attached to this user?
     override fun removeCustomer(identity: org.ostelco.prime.model.Identity): Either<StoreError, Unit> = writeTransaction {
         getCustomerId(identity = identity, transaction = transaction)
                 .flatMap { customerId ->
