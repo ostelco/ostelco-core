@@ -68,45 +68,6 @@ object TestHelper {
         }
     }
 
-    private fun addMultiRatingBucketRequest(ccrAvps: AvpSet, bucketSize: Long) {
-
-        set(ccrAvps) {
-
-            avp(Avp.MULTIPLE_SERVICES_INDICATOR, 1, pFlag = true)
-
-            group(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL) {
-                avp(Avp.RATING_GROUP, 10, pFlag = true)
-                avp(Avp.SERVICE_IDENTIFIER_CCA, 1, pFlag = true)
-
-                group(Avp.REQUESTED_SERVICE_UNIT) {
-                    avp(Avp.CC_TOTAL_OCTETS, bucketSize, pFlag = true)
-                    avp(Avp.CC_INPUT_OCTETS, 0L, pFlag = true)
-                    avp(Avp.CC_OUTPUT_OCTETS, 0L, pFlag = true)
-                }
-            }
-            group(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL) {
-                avp(Avp.RATING_GROUP, 12, pFlag = true)
-                avp(Avp.SERVICE_IDENTIFIER_CCA, 2, pFlag = true)
-
-                group(Avp.REQUESTED_SERVICE_UNIT) {
-                    avp(Avp.CC_TOTAL_OCTETS, bucketSize, pFlag = true)
-                    avp(Avp.CC_INPUT_OCTETS, 0L, pFlag = true)
-                    avp(Avp.CC_OUTPUT_OCTETS, 0L, pFlag = true)
-                }
-            }
-            group(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL) {
-                avp(Avp.RATING_GROUP, 14, pFlag = true)
-                avp(Avp.SERVICE_IDENTIFIER_CCA, 4, pFlag = true)
-
-                group(Avp.REQUESTED_SERVICE_UNIT) {
-                    avp(Avp.CC_TOTAL_OCTETS, bucketSize, pFlag = true)
-                    avp(Avp.CC_INPUT_OCTETS, 0L, pFlag = true)
-                    avp(Avp.CC_OUTPUT_OCTETS, 0L, pFlag = true)
-                }
-            }
-        }
-    }
-
     private fun addFinalBucketRequest(ccrAvps: AvpSet, ratingGroup: Int, serviceIdentifier: Int, usedBucketSize: Long = 0) {
 
         set(ccrAvps) {
@@ -174,7 +135,9 @@ object TestHelper {
     fun createInitRequestMultiRatingGroups(ccrAvps: AvpSet, msisdn: String, bucketSize: Long) {
         buildBasicRequest(ccrAvps, RequestType.INITIAL_REQUEST, requestNumber = 0)
         addUser(ccrAvps, msisdn = msisdn, imsi = IMSI)
-        addMultiRatingBucketRequest(ccrAvps, bucketSize = bucketSize)
+        addBucketRequest(ccrAvps, ratingGroup = 10, serviceIdentifier = 1, bucketSize = bucketSize)
+        addBucketRequest(ccrAvps, ratingGroup = 12, serviceIdentifier = 2, bucketSize = bucketSize)
+        addBucketRequest(ccrAvps, ratingGroup = 14, serviceIdentifier = 4, bucketSize = bucketSize)
         addServiceInformation(ccrAvps, apn = APN, sgsnMccMnc = SGSN_MCC_MNC)
     }
 

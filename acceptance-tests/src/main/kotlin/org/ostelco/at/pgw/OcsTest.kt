@@ -111,7 +111,53 @@ class OcsTest {
         }.first().balance
     }
 
+
     @Test
+    fun multiRatingGroupsInit() {
+
+        val email = "ocs-${randomInt()}@test.com"
+        createCustomer(name = "Test OCS User", email = email)
+
+        val msisdn = createSubscription(email = email)
+
+        val client = testClient ?: fail("Test client is null")
+
+        val session = client.createSession() ?: fail("Failed to create session")
+        val request = client.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        ) ?: fail("Failed to create request")
+
+        TestHelper.createInitRequestMultiRatingGroups(request.getAvps(), msisdn, 500000L)
+
+        client.sendNextRequest(request, session)
+
+        waitForAnswer()
+
+        assertEquals(2001L, client.resultCodeAvp!!.getInteger32().toLong())
+        val resultAvps = client.resultAvps
+        assertEquals(DEST_HOST, resultAvps!!.getAvp(Avp.ORIGIN_HOST).getUTF8String())
+        assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String())
+        assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32().toLong())
+        val resultMSCCs = resultAvps.getAvps(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
+        assertEquals(3, resultMSCCs.size().toLong())
+        for (i in 0 until resultMSCCs.size()) {
+            val mscc = resultMSCCs.getAvpByIndex(i).getGrouped()
+            assertEquals(2001L, mscc.getAvp(Avp.RESULT_CODE).getInteger32().toLong())
+            val granted = mscc.getAvp(Avp.GRANTED_SERVICE_UNIT)
+            assertEquals(500000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64())
+            val serviceIdentifier = mscc.getAvp(Avp.SERVICE_IDENTIFIER_CCA).getUnsigned32().toInt()
+            when (serviceIdentifier) {
+                1 -> assertEquals(10, mscc.getAvp(Avp.RATING_GROUP).getUnsigned32())
+                2 -> assertEquals(12, mscc.getAvp(Avp.RATING_GROUP).getUnsigned32())
+                4 -> assertEquals(14, mscc.getAvp(Avp.RATING_GROUP).getUnsigned32())
+                else -> fail("Unexpected Service-Identifier")
+            }
+        }
+    }
+
+    //@Test
     fun simpleCreditControlRequestInitUpdateAndTerminate() {
 
         val email = "ocs-${randomInt()}@test.com"

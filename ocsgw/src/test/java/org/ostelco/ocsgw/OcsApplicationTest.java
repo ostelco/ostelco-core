@@ -129,7 +129,7 @@ public class OcsApplicationTest {
 
     }
 
-    //@Test
+    @Test
     @DisplayName("Simple Credit-Control-Request Init Update and Terminate")
     public void simpleCreditControlRequestInitUpdateAndTerminate() {
         Session session = client.createSession();
@@ -212,40 +212,7 @@ public class OcsApplicationTest {
         }
     }
 
-    //@Test
-    public void multiRatingGroups() {
-        Session session = client.createSession();
-        Request request = client.createRequest(
-                OCS_REALM,
-                OCS_HOST,
-                session
-        );
-
-        TestHelper.createInitRequestMultiRatingGroups(request.getAvps(), MSISDN, 500000L);
-
-        try {
-            DiameterUtilities utilities = new DiameterUtilities();
-            AvpSet requestAvps = request.getAvps();
-
-            LOG.info("***** Original request *****");
-            utilities.printAvps(requestAvps);
-
-            AvpSet resultMSCC = requestAvps.getAvps(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
-
-            LOG.info("***** Get AvpSet MULTIPLE_SERVICES_CREDIT_CONTROL *****");
-            utilities.printAvps(resultMSCC);
-            LOG.info("resultMSCC.size " + resultMSCC.size());
-
-            for (int i=0; i<resultMSCC.size(); i++) {
-                LOG.info("***** MULTIPLE_SERVICES_CREDIT_CONTROL " + i + " *****");
-                utilities.printAvps(resultMSCC.getAvpByIndex(i).getGrouped());
-            }
-        } catch (AvpDataException e) {
-            LOG.error("Failed to get Result-Code", e);
-        }
-    }
-
-    //@Test
+    @Test
     public void testReAuthRequest() {
         Session session = client.createSession();
         simpleCreditControlRequestInit(session);
