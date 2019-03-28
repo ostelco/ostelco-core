@@ -86,7 +86,7 @@ object TestHelper {
             }
             group(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL) {
                 avp(Avp.RATING_GROUP, 12, pFlag = true)
-                avp(Avp.SERVICE_IDENTIFIER_CCA, 1, pFlag = true)
+                avp(Avp.SERVICE_IDENTIFIER_CCA, 2, pFlag = true)
 
                 group(Avp.REQUESTED_SERVICE_UNIT) {
                     avp(Avp.CC_TOTAL_OCTETS, bucketSize, pFlag = true)
@@ -96,7 +96,7 @@ object TestHelper {
             }
             group(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL) {
                 avp(Avp.RATING_GROUP, 14, pFlag = true)
-                avp(Avp.SERVICE_IDENTIFIER_CCA, 1, pFlag = true)
+                avp(Avp.SERVICE_IDENTIFIER_CCA, 4, pFlag = true)
 
                 group(Avp.REQUESTED_SERVICE_UNIT) {
                     avp(Avp.CC_TOTAL_OCTETS, bucketSize, pFlag = true)
