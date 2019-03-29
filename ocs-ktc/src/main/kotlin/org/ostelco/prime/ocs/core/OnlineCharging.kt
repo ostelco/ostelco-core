@@ -16,6 +16,9 @@ import org.ostelco.prime.ocs.analytics.AnalyticsReporter
 import org.ostelco.prime.ocs.consumption.OcsAsyncRequestConsumer
 import org.ostelco.prime.storage.ClientDataSource
 import org.ostelco.prime.storage.ConsumptionResult
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+
 
 object OnlineCharging : OcsAsyncRequestConsumer {
 
@@ -31,7 +34,6 @@ object OnlineCharging : OcsAsyncRequestConsumer {
         val msisdn = request.msisdn
 
         if (msisdn != null) {
-
             CoroutineScope(Dispatchers.Default).launch {
 
                 val response = CreditControlAnswerInfo.newBuilder()
@@ -39,6 +41,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                         .setMsisdn(msisdn)
                         .setResultCode(ResultCode.DIAMETER_SUCCESS)
 
+                val doneSignal = CountDownLatch(request.msccList.size)
 
                 request.msccList.forEach { mscc ->
 
@@ -49,18 +52,22 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                             storeResult.fold(
                                     {
                                         response.resultCode = ResultCode.DIAMETER_USER_UNKNOWN
+                                        doneSignal.countDown()
                                     },
                                     {
                                         consumptionResult -> addGrantedQuota(consumptionResult.granted, mscc, response)
                                         reportAnalytics(consumptionResult, request)
+                                        doneSignal.countDown()
                                     }
                             )
                         }
-                    } else {
-                        // zeroRate
+                    } else { // zeroRate
+
                         addGrantedQuota(requested, mscc, response)
+                        doneSignal.countDown()
                     }
                 }
+                doneSignal.await(2, TimeUnit.SECONDS)
                 synchronized(OnlineCharging) {
                     returnCreditControlAnswer(response.build())
                 }
@@ -118,7 +125,9 @@ object OnlineCharging : OcsAsyncRequestConsumer {
 
         responseMscc.resultCode = ResultCode.DIAMETER_SUCCESS
 
-        response.addMscc(responseMscc.build())
+        synchronized(OnlineCharging) {
+            response.addMscc(responseMscc.build())
+        }
     }
 
     private fun shouldConsume(ratingGroup: Long, serviceIdentifier: Long): Boolean {

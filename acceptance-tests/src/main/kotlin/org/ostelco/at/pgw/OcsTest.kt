@@ -129,7 +129,7 @@ class OcsTest {
                 session
         ) ?: fail("Failed to create request")
 
-        TestHelper.createInitRequestMultiRatingGroups(request.getAvps(), msisdn, 500000L)
+        TestHelper.createInitRequestMultiRatingGroups(request.getAvps(), msisdn, 5000L)
 
         client.sendNextRequest(request, session)
 
