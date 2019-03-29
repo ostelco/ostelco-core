@@ -1,6 +1,5 @@
 package org.ostelco.prime.storage.graph
 
-import arrow.core.Either
 import arrow.core.right
 import com.palantir.docker.compose.DockerComposeRule
 import com.palantir.docker.compose.connection.waiting.HealthChecks
@@ -10,10 +9,12 @@ import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.mockito.Mockito
+import org.mockito.Mockito.`when`
 import org.neo4j.driver.v1.AccessMode.WRITE
 import org.ostelco.prime.analytics.AnalyticsService
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.CustomerRegionStatus.APPROVED
+import org.ostelco.prime.model.CustomerRegionStatus.PENDING
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.JumioScanData
 import org.ostelco.prime.model.Offer
@@ -21,13 +22,24 @@ import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.Region
+import org.ostelco.prime.model.RegionDetails
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.ScanResult
 import org.ostelco.prime.model.ScanStatus
 import org.ostelco.prime.model.Segment
+import org.ostelco.prime.model.SimEntry
+import org.ostelco.prime.model.SimProfile
+import org.ostelco.prime.model.SimProfileStatus.AVAILABLE_FOR_DOWNLOAD
+import org.ostelco.prime.notifications.EmailNotifier
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.sim.SimManager
+import org.ostelco.prime.storage.NotFoundError
 import org.ostelco.prime.storage.ScanInformationStore
+import org.ostelco.prime.storage.graph.StatusFlag.ADDRESS_AND_PHONE_NUMBER
+import org.ostelco.prime.storage.graph.StatusFlag.JUMIO
+import org.ostelco.prime.storage.graph.StatusFlag.MY_INFO
+import org.ostelco.prime.storage.graph.StatusFlag.NRIC_FIN
 import java.time.Instant
 import java.util.*
 import javax.ws.rs.core.MultivaluedHashMap
@@ -40,15 +52,24 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 private val mockPaymentProcessor = Mockito.mock(PaymentProcessor::class.java)
+
 class MockPaymentProcessor : PaymentProcessor by mockPaymentProcessor
 
-private val mockAnalyticsService = Mockito.mock(AnalyticsService::class.java)
-class MockAnalyticsService : AnalyticsService by mockAnalyticsService
+class MockAnalyticsService : AnalyticsService by Mockito.mock(AnalyticsService::class.java)
 
 private val mockScanInformationStore = Mockito.mock(ScanInformationStore::class.java)
-class MockScanInformationStore  : ScanInformationStore by mockScanInformationStore
 
-class GraphStoreTest {
+class MockScanInformationStore : ScanInformationStore by mockScanInformationStore
+
+private val mockSimManager = Mockito.mock(SimManager::class.java)
+
+class MockSimManager : SimManager by mockSimManager
+
+private val mockEmailNotifier = Mockito.mock(EmailNotifier::class.java)
+
+class MockEmailNotifier : EmailNotifier by mockEmailNotifier
+
+class Neo4jStoreTest {
 
     @BeforeTest
     fun clear() {
@@ -69,7 +90,7 @@ class GraphStoreTest {
                         price = Price(0, CURRENCY),
                         properties = mapOf("noOfBytes" to "1_000_000_000")))
 
-        val allSegment = Segment(id = getSegmentNameFromCountryCode(COUNTRY))
+        val allSegment = Segment(id = getSegmentNameFromCountryCode(REGION))
         Neo4jStoreSingleton.createSegment(allSegment)
     }
 
@@ -117,10 +138,6 @@ class GraphStoreTest {
         Neo4jStoreSingleton.addSubscription(identity = IDENTITY, msisdn = MSISDN)
                 .mapLeft { fail(it.message) }
 
-        Neo4jStoreSingleton.getMsisdn(identity = IDENTITY).bimap(
-                { fail(it.message) },
-                { assertEquals(MSISDN, it) })
-
         Neo4jStoreSingleton.getSubscriptions(IDENTITY).bimap(
                 { fail(it.message) },
                 { assertEquals(MSISDN, it.single().msisdn) })
@@ -165,7 +182,7 @@ class GraphStoreTest {
 
         val offer = Offer(
                 id = "NEW_OFFER",
-                segments = listOf(getSegmentNameFromCountryCode(COUNTRY)),
+                segments = listOf(getSegmentNameFromCountryCode(REGION)),
                 products = listOf(sku))
 
         Neo4jStoreSingleton.createOffer(offer)
@@ -179,10 +196,10 @@ class GraphStoreTest {
         Neo4jStoreSingleton.addSubscription(IDENTITY, MSISDN)
                 .mapLeft { fail(it.message) }
 
-        Neo4jStoreSingleton.createOrUpdateCustomerRegionSetting(
+        Neo4jStoreSingleton.createCustomerRegionSetting(
                 customerId = CUSTOMER.id,
                 status = APPROVED,
-                regionCode = "NO")
+                regionCode = "no")
 
         // test
         Neo4jStoreSingleton.purchaseProduct(identity = IDENTITY, sku = sku, sourceId = null, saveCard = false)
@@ -214,13 +231,13 @@ class GraphStoreTest {
         // requested = 40_000_000
         val dataBucketSize = 40_000_000L
         Neo4jStoreSingleton.consume(msisdn = MSISDN, usedBytes = 0, requestedBytes = dataBucketSize) { storeResult ->
-                storeResult.fold(
-                        { fail(it.message) },
-                        {
-                            assertEquals(dataBucketSize, it.granted) // reserved = 40_000_000
-                            assertEquals(60_000_000L, it.balance) // balance = 60_000_000
-                        })
-    }
+            storeResult.fold(
+                    { fail(it.message) },
+                    {
+                        assertEquals(dataBucketSize, it.granted) // reserved = 40_000_000
+                        assertEquals(60_000_000L, it.balance) // balance = 60_000_000
+                    })
+        }
         // used = 50_000_000
         // requested = 40_000_000
         Neo4jStoreSingleton.consume(msisdn = MSISDN, usedBytes = 50_000_000L, requestedBytes = dataBucketSize) { storeResult ->
@@ -236,11 +253,11 @@ class GraphStoreTest {
         // requested = 40_000_000
         Neo4jStoreSingleton.consume(msisdn = MSISDN, usedBytes = 30_000_000L, requestedBytes = dataBucketSize) { storeResult ->
             storeResult.fold(
-                { fail(it.message) },
-                {
-                    assertEquals(20_000_000L, it.granted) // reserved = 20_000_000
-                    assertEquals(0L, it.balance) // balance = 0
-                })
+                    { fail(it.message) },
+                    {
+                        assertEquals(20_000_000L, it.granted) // reserved = 20_000_000
+                        assertEquals(0L, it.balance) // balance = 0
+                    })
         }
     }
 
@@ -373,7 +390,7 @@ class GraphStoreTest {
                 customer = CUSTOMER).isRight())
 
         // test
-        Neo4jStoreSingleton.newEKYCScanId(identity = IDENTITY, countryCode = COUNTRY).map {
+        Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, regionCode = REGION).map {
             Neo4jStoreSingleton.getScanInformation(identity = IDENTITY, scanId = it.scanId).mapLeft {
                 fail(it.message)
             }
@@ -394,7 +411,7 @@ class GraphStoreTest {
                 customer = CUSTOMER).isRight())
 
         // test
-        Neo4jStoreSingleton.newEKYCScanId(identity = IDENTITY, countryCode = COUNTRY).map { newScan ->
+        Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, regionCode = REGION).map { newScan ->
             Neo4jStoreSingleton.getAllScanInformation(identity = IDENTITY).map { infoList ->
                 assertEquals(1, infoList.size, "More scans than expected.")
                 assertEquals(newScan.scanId, infoList.elementAt(0).scanId, "Wrong scan returned.")
@@ -415,10 +432,10 @@ class GraphStoreTest {
                 identity = IDENTITY,
                 customer = CUSTOMER).isRight())
 
-        Neo4jStoreSingleton.newEKYCScanId(identity = IDENTITY, countryCode = COUNTRY).map {
+        Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, regionCode = REGION).map {
             val newScanInformation = ScanInformation(
                     scanId = it.scanId,
-                    countryCode = COUNTRY,
+                    countryCode = REGION,
                     status = ScanStatus.APPROVED,
                     scanResult = ScanResult(
                             vendorScanReference = UUID.randomUUID().toString(),
@@ -440,7 +457,8 @@ class GraphStoreTest {
             vendorData.add(JumioScanData.SCAN_IMAGE.s, imgUrl)
             vendorData.add(JumioScanData.SCAN_IMAGE_BACKSIDE.s, imgUrl2)
 
-            Mockito.`when`(mockScanInformationStore.upsertVendorScanInformation(customerId = CUSTOMER.id, countryCode = COUNTRY, vendorData = vendorData)).thenReturn(Either.right(Unit))
+            Mockito.`when`(mockScanInformationStore.upsertVendorScanInformation(customerId = CUSTOMER.id, countryCode = REGION, vendorData = vendorData))
+                    .thenReturn(Unit.right())
 
             Neo4jStoreSingleton.updateScanInformation(newScanInformation, vendorData).mapLeft {
                 fail(it.message)
@@ -462,10 +480,10 @@ class GraphStoreTest {
                 customer = CUSTOMER).isRight())
 
         // test
-        Neo4jStoreSingleton.newEKYCScanId(identity = IDENTITY, countryCode = COUNTRY).map {
+        Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, regionCode = REGION).map {
             val newScanInformation = ScanInformation(
                     scanId = "fakeId",
-                    countryCode = COUNTRY,
+                    countryCode = REGION,
                     status = ScanStatus.APPROVED,
                     scanResult = ScanResult(
                             vendorScanReference = UUID.randomUUID().toString(),
@@ -508,13 +526,13 @@ class GraphStoreTest {
                 customer = CUSTOMER).isRight())
         assert(Neo4jStoreSingleton.addCustomer(
                 identity = fakeIdentity,
-                customer = Customer(email = fakeEmail, name = NAME)).isRight())
+                customer = Customer(contactEmail = fakeEmail, nickname = NAME)).isRight())
 
         // test
-        Neo4jStoreSingleton.newEKYCScanId(fakeIdentity, COUNTRY).mapLeft {
+        Neo4jStoreSingleton.createNewJumioKycScanId(fakeIdentity, REGION).mapLeft {
             fail(it.message)
         }
-        Neo4jStoreSingleton.newEKYCScanId(identity = IDENTITY, countryCode = COUNTRY).map {
+        Neo4jStoreSingleton.createNewJumioKycScanId(identity = IDENTITY, regionCode = REGION).map {
             Neo4jStoreSingleton.getScanInformation(fakeIdentity, scanId = it.scanId).bimap(
                     { assertEquals("Not allowed", it.message) },
                     { fail("Expected to fail since the requested subscriber is wrong.") })
@@ -523,14 +541,386 @@ class GraphStoreTest {
         }
     }
 
+    @Test
+    fun `test provision and get SIM profile`() {
+
+        // prep
+        `when`(mockEmailNotifier.sendESimQrCodeEmail(email = CUSTOMER.contactEmail, name = CUSTOMER.nickname, qrCode = "eSimActivationCode"))
+                .thenReturn(Unit.right())
+
+        Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
+                .mapLeft { fail(it.message) }
+
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
+
+        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
+                customerId = CUSTOMER.id,
+                status = APPROVED,
+                regionCode = "no").isRight())
+
+        Mockito.`when`(mockSimManager.allocateNextEsimProfile("loltel", "default"))
+                .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList()).right())
+
+        // test
+        Neo4jStoreSingleton.provisionSimProfile(
+                identity = IDENTITY,
+                regionCode = "no")
+                .bimap(
+                        { fail(it.message) },
+                        {
+                            assertEquals(
+                                    expected = SimProfile(
+                                            iccId = "iccId",
+                                            eSimActivationCode = "eSimActivationCode",
+                                            status = AVAILABLE_FOR_DOWNLOAD),
+                                    actual = it)
+                        })
+
+        Neo4jStoreSingleton.getSimProfiles(
+                identity = IDENTITY,
+                regionCode = "no")
+                .bimap(
+                        { fail(it.message) },
+                        {
+                            assertEquals(
+                                    expected = listOf(SimProfile(
+                                            iccId = "iccId",
+                                            eSimActivationCode = "eSimActivationCode",
+                                            status = AVAILABLE_FOR_DOWNLOAD)),
+                                    actual = it)
+                        })
+    }
+
+    @Test
+    fun `test getAllRegionDetails with no region`() {
+        // prep
+        Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
+                .mapLeft { fail(it.message) }
+
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
+
+        // test
+        Neo4jStoreSingleton.getAllRegionDetails(identity = IDENTITY)
+                .bimap(
+                        { fail("Failed to fetch regions empty list") },
+                        { assert(it.isEmpty()) { "Regions list should be empty" } })
+    }
+
+    @Test
+    fun `test getRegionDetails with no region`() {
+        // prep
+        Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
+                .mapLeft { fail(it.message) }
+
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
+
+        // test
+        Neo4jStoreSingleton.getRegionDetails(identity = IDENTITY, regionCode = "no")
+                .bimap(
+                        {
+                            assert(it is NotFoundError)
+                            assertEquals(expected = "Region", actual = it.type)
+                            assertEquals(expected = "no", actual = it.id)
+                        },
+                        { fail("Should fail with not found error") })
+    }
+
+    @Test
+    fun `test getAllRegionDetails with region without sim profile`() {
+        // prep
+        Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
+                .mapLeft { fail(it.message) }
+        Neo4jStoreSingleton.createRegion(Region("sg", "Singapore"))
+                .mapLeft { fail(it.message) }
+
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
+
+        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
+                customerId = CUSTOMER.id,
+                status = APPROVED,
+                regionCode = "no").isRight())
+        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
+                customerId = CUSTOMER.id,
+                status = PENDING,
+                regionCode = "sg").isRight())
+
+        // test
+        Neo4jStoreSingleton.getAllRegionDetails(identity = IDENTITY)
+                .bimap(
+                        { fail("Failed to fetch regions list") },
+                        {
+                            assertEquals(
+                                    expected = setOf(
+                                            RegionDetails(
+                                                    region = Region("no", "Norway"),
+                                                    status = APPROVED),
+                                            RegionDetails(
+                                                    region = Region("sg", "Singapore"),
+                                                    status = PENDING)),
+                                    actual = it.toSet())
+                        })
+    }
+
+    @Test
+    fun `test getRegionDetails with region without sim profile`() {
+        // prep
+        Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
+                .mapLeft { fail(it.message) }
+        Neo4jStoreSingleton.createRegion(Region("sg", "Singapore"))
+                .mapLeft { fail(it.message) }
+
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
+
+        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
+                customerId = CUSTOMER.id,
+                status = APPROVED,
+                regionCode = "no").isRight())
+        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
+                customerId = CUSTOMER.id,
+                status = PENDING,
+                regionCode = "sg").isRight())
+
+        // test
+        Neo4jStoreSingleton.getRegionDetails(identity = IDENTITY, regionCode = "no")
+                .bimap(
+                        { fail("Failed to fetch regions list") },
+                        {
+                            assertEquals(
+                                    expected = RegionDetails(
+                                            region = Region("no", "Norway"),
+                                            status = APPROVED),
+                                    actual = it)
+                        })
+    }
+
+    @Test
+    fun `test getAllRegionDetails with region with sim profiles`() {
+
+        // prep
+        `when`(mockEmailNotifier.sendESimQrCodeEmail(email = CUSTOMER.contactEmail, name = CUSTOMER.nickname, qrCode = "eSimActivationCode"))
+                .thenReturn(Unit.right())
+
+        Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
+                .mapLeft { fail(it.message) }
+        Neo4jStoreSingleton.createRegion(Region("sg", "Singapore"))
+                .mapLeft { fail(it.message) }
+
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
+
+        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
+                customerId = CUSTOMER.id,
+                status = APPROVED,
+                regionCode = "no").isRight())
+        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
+                customerId = CUSTOMER.id,
+                status = PENDING,
+                regionCode = "sg").isRight())
+
+        Mockito.`when`(mockSimManager.allocateNextEsimProfile("loltel", "default"))
+                .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList()).right())
+
+        assert(Neo4jStoreSingleton.provisionSimProfile(
+                identity = IDENTITY,
+                regionCode = "no").isRight())
+
+        // test
+        Neo4jStoreSingleton.getAllRegionDetails(identity = IDENTITY)
+                .bimap(
+                        { fail("Failed to fetch regions list") },
+                        {
+                            assertEquals(
+                                    expected = setOf(
+                                            RegionDetails(
+                                                    region = Region("no", "Norway"),
+                                                    status = APPROVED,
+                                                    simProfiles = listOf(
+                                                            SimProfile(
+                                                                    iccId = "iccId",
+                                                                    eSimActivationCode = "eSimActivationCode",
+                                                                    status = AVAILABLE_FOR_DOWNLOAD))),
+                                            RegionDetails(
+                                                    region = Region("sg", "Singapore"),
+                                                    status = PENDING)),
+                                    actual = it.toSet())
+                        })
+    }
+
+    @Test
+    fun `test getRegionDetails with region with sim profiles`() {
+
+        // prep
+        `when`(mockEmailNotifier.sendESimQrCodeEmail(email = CUSTOMER.contactEmail, name = CUSTOMER.nickname, qrCode = "eSimActivationCode"))
+                .thenReturn(Unit.right())
+
+        Neo4jStoreSingleton.createRegion(Region("no", "Norway"))
+                .mapLeft { fail(it.message) }
+        Neo4jStoreSingleton.createRegion(Region("sg", "Singapore"))
+                .mapLeft { fail(it.message) }
+
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
+
+        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
+                customerId = CUSTOMER.id,
+                status = APPROVED,
+                regionCode = "no").isRight())
+        assert(Neo4jStoreSingleton.createCustomerRegionSetting(
+                customerId = CUSTOMER.id,
+                status = PENDING,
+                regionCode = "sg").isRight())
+
+        Mockito.`when`(mockSimManager.allocateNextEsimProfile("loltel", "default"))
+                .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList()).right())
+
+        assert(Neo4jStoreSingleton.provisionSimProfile(
+                identity = IDENTITY,
+                regionCode = "no").isRight())
+
+        // test
+        Neo4jStoreSingleton.getRegionDetails(identity = IDENTITY, regionCode = "no")
+                .bimap(
+                        { fail("Failed to fetch regions list") },
+                        {
+                            assertEquals(
+                                    expected = RegionDetails(
+                                            region = Region("no", "Norway"),
+                                            status = APPROVED,
+                                            simProfiles = listOf(
+                                                    SimProfile(
+                                                            iccId = "iccId",
+                                                            eSimActivationCode = "eSimActivationCode",
+                                                            status = AVAILABLE_FOR_DOWNLOAD))),
+                                    actual = it)
+                        })
+    }
+
+    @Test
+    fun `test MY_INFO status flag`() {
+
+        Neo4jStoreSingleton.createRegion(Region("sg", "Singapore"))
+                .mapLeft { fail(it.message) }
+
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
+
+        Neo4jStoreSingleton.getRegionDetails(
+                identity = IDENTITY,
+                regionCode = "sg")
+                .map {
+                    fail("Should not have region details")
+                }
+
+        Neo4jStoreSingleton.setStatusFlag(
+                customerId = CUSTOMER.id,
+                regionCode = "sg",
+                flag = MY_INFO)
+
+        Neo4jStoreSingleton.getRegionDetails(
+                identity = IDENTITY,
+                regionCode = "sg")
+                .fold({
+                    fail("Failed to get Region Details")
+                }, {
+                    assertEquals(APPROVED, it.status)
+                })
+    }
+
+    @Test
+    fun `test NRIC_FIN JUMIO and ADDRESS_PHONE status flag`() {
+
+        Neo4jStoreSingleton.createSegment(Segment(id = getSegmentNameFromCountryCode("sg")))
+
+        Neo4jStoreSingleton.createRegion(Region("sg", "Singapore"))
+                .mapLeft { fail(it.message) }
+
+        assert(Neo4jStoreSingleton.addCustomer(
+                identity = IDENTITY,
+                customer = CUSTOMER).isRight())
+
+        Neo4jStoreSingleton.getRegionDetails(
+                identity = IDENTITY,
+                regionCode = "sg")
+                .map {
+                    fail("Should not have region details")
+                }
+
+        Neo4jStoreSingleton.setStatusFlag(
+                customerId = CUSTOMER.id,
+                regionCode = "sg",
+                flag = NRIC_FIN)
+
+        Neo4jStoreSingleton.getRegionDetails(
+                identity = IDENTITY,
+                regionCode = "sg")
+                .fold({
+                    fail("Failed to get Region Details")
+                }, {
+                    assertEquals(PENDING, it.status)
+                })
+
+        Neo4jStoreSingleton.setStatusFlag(
+                customerId = CUSTOMER.id,
+                regionCode = "sg",
+                flag = JUMIO)
+
+        Neo4jStoreSingleton.getRegionDetails(
+                identity = IDENTITY,
+                regionCode = "sg")
+                .fold({
+                    fail("Failed to get Region Details")
+                }, {
+                    assertEquals(PENDING, it.status)
+                })
+
+        Neo4jStoreSingleton.setStatusFlag(
+                customerId = CUSTOMER.id,
+                regionCode = "sg",
+                flag = ADDRESS_AND_PHONE_NUMBER)
+
+        Neo4jStoreSingleton.getRegionDetails(
+                identity = IDENTITY,
+                regionCode = "sg")
+                .fold({
+                    fail("Failed to get Region Details")
+                }, {
+                    assertEquals(APPROVED, it.status)
+                })
+    }
+
+    @Test
+    fun `initial status flag map`() {
+        assertEquals(1, Neo4jStoreSingleton.getInitialBitmap("no"))
+        assertEquals(15, Neo4jStoreSingleton.getInitialBitmap("sg"))
+    }
+
+    @Test
+    fun `initial status flag set needed for approval`() {
+        assertEquals(setOf(1), Neo4jStoreSingleton.getApprovedBitmapSet("no"))
+        assertEquals(setOf(2, 13), Neo4jStoreSingleton.getApprovedBitmapSet("sg"))
+    }
+
     companion object {
         const val EMAIL = "foo@bar.com"
         const val NAME = "Test User"
         const val CURRENCY = "NOK"
-        const val COUNTRY = "NO"
+        const val REGION = "NO"
         const val MSISDN = "4712345678"
         val IDENTITY = Identity(id = EMAIL, type = "EMAIL", provider = "email")
-        val CUSTOMER = Customer(email = EMAIL, name = NAME)
+        val CUSTOMER = Customer(contactEmail = EMAIL, nickname = NAME)
 
         @ClassRule
         @JvmField

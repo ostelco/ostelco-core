@@ -38,6 +38,14 @@ class ContextDataFetcher : DataFetcher<Map<String, Any>> {
                             })
                         }
             }
+            if (env.selectionSet.contains("regions/*")) {
+                clientDataSource.getAllRegionDetails(identity)
+                        .map { regions ->
+                            map.put("regions", regions.map { region ->
+                                objectMapper.convertValue<Map<String, Any>>(region, object : TypeReference<Map<String, Any>>() {})
+                            })
+                        }
+            }
             if (env.selectionSet.contains("products/*")) {
                 clientDataSource.getProducts(identity)
                         .map { productsMap ->

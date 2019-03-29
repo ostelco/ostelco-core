@@ -33,9 +33,8 @@ class CustomerResourceTest {
 
     private val email = "boaty@internet.org"
     private val name = "Boaty McBoatface"
-    private val city = "Oslo"
 
-    private val profile = Customer(email = email)
+    private val profile = Customer(nickname = name, contactEmail = email)
 
     @Before
     fun setUp() {
@@ -72,18 +71,17 @@ class CustomerResourceTest {
                 .thenReturn(Either.right(profile))
 
         val resp = RULE.target("/customer")
+                .queryParam("nickname", name)
+                .queryParam("contactEmail", email)
                 .request(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
-                .post(Entity.json("""{
-                        "name": "$name",
-                        "email": "$email"
-                }""".trimIndent()))
+                .post(Entity.json("{}"))
 
         assertThat(resp.status).isEqualTo(Response.Status.CREATED.statusCode)
         assertThat(resp.mediaType.toString()).isEqualTo(MediaType.APPLICATION_JSON)
         assertThat(arg1.firstValue).isEqualTo(Identity(email, "EMAIL", "email"))
-        assertThat(arg2.firstValue.email).isEqualTo(email)
-        assertThat(arg2.firstValue.name).isEqualTo(name)
+        assertThat(arg2.firstValue.contactEmail).isEqualTo(email)
+        assertThat(arg2.firstValue.nickname).isEqualTo(name)
         assertThat(arg3.firstValue).isNull()
     }
 
@@ -99,56 +97,42 @@ class CustomerResourceTest {
                 .thenReturn(Either.right(profile))
 
         val resp = RULE.target("/customer")
-                .queryParam("referred_by", referredBy)
+                .queryParam("nickname", name)
+                .queryParam("contactEmail", email)
+                .queryParam("referredBy", referredBy)
                 .request(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
-                .post(Entity.json("""{
-                    "name": "$name",
-                    "email": "$email"
-                }""".trimIndent()))
+                .post(Entity.json(""))
 
         assertThat(resp.status).isEqualTo(Response.Status.CREATED.statusCode)
         assertThat(resp.mediaType.toString()).isEqualTo(MediaType.APPLICATION_JSON)
         assertThat(arg1.firstValue).isEqualTo(Identity(email, "EMAIL", "email"))
-        assertThat(arg2.firstValue.email).isEqualTo(email)
-        assertThat(arg2.firstValue.name).isEqualTo(name)
+        assertThat(arg2.firstValue.contactEmail).isEqualTo(email)
+        assertThat(arg2.firstValue.nickname).isEqualTo(name)
         assertThat(arg3.firstValue).isEqualTo(referredBy)
     }
 
     @Test
     fun updateProfile() {
-        val arg1 = argumentCaptor<Identity>()
-        val arg2 = argumentCaptor<Customer>()
+        val identityCaptor = argumentCaptor<Identity>()
+        val nicknameCaptor = argumentCaptor<String>()
+        val contactEmailCaptor = argumentCaptor<String>()
 
-        val newAddress = "Storvej 10"
-        val newPostCode = "132 23"
-
-        `when`(DAO.updateCustomer(arg1.capture(), arg2.capture()))
+        `when`(DAO.updateCustomer(identityCaptor.capture(), nicknameCaptor.capture(), contactEmailCaptor.capture()))
                 .thenReturn(Either.right(profile))
 
         val resp = RULE.target("/customer")
+                .queryParam("nickname", name)
+                .queryParam("contactEmail", email)
                 .request(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
-                .put(Entity.json("""{
-                    "name": "$name",
-                    "email": "$email"
-                }""".trimIndent()))
+                .put(Entity.json("{}"))
 
         assertThat(resp.status).isEqualTo(Response.Status.OK.statusCode)
         assertThat(resp.mediaType.toString()).isEqualTo(MediaType.APPLICATION_JSON)
-        assertThat(arg1.firstValue).isEqualTo(Identity(email, "EMAIL", "email"))
-        assertThat(arg2.firstValue.email).isEqualTo(email)
-        assertThat(arg2.firstValue.name).isEqualTo(name)
-    }
-
-    @Test
-    fun updateWithIncompleteProfile() {
-        val resp = RULE.target("/customer")
-                .request(MediaType.APPLICATION_JSON)
-                .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
-                .put(Entity.json("""{ "name": "$name" }"""))
-
-        assertThat(resp.status).isEqualTo(Response.Status.BAD_REQUEST.statusCode)
+        assertThat(identityCaptor.firstValue).isEqualTo(Identity(email, "EMAIL", "email"))
+        assertThat(nicknameCaptor.firstValue).isEqualTo(name)
+        assertThat(contactEmailCaptor.firstValue).isEqualTo(email)
     }
 
     companion object {

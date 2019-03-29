@@ -9,6 +9,8 @@ import arrow.effects.IO
 import arrow.instances.either.monad.monad
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
+import org.ostelco.prime.ekyc.DaveKycService
+import org.ostelco.prime.ekyc.MyInfoKycService
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.ChangeSegment
@@ -27,8 +29,11 @@ import org.ostelco.prime.model.RegionDetails
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.ScanStatus
 import org.ostelco.prime.model.Segment
+import org.ostelco.prime.model.SimProfile
+import org.ostelco.prime.model.SimProfileStatus.AVAILABLE_FOR_DOWNLOAD
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
+import org.ostelco.prime.notifications.EmailNotifier
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
 import org.ostelco.prime.paymentprocessor.PaymentProcessor
 import org.ostelco.prime.paymentprocessor.core.BadGatewayError
@@ -52,6 +57,7 @@ import org.ostelco.prime.storage.graph.Graph.write
 import org.ostelco.prime.storage.graph.Graph.writeSuspended
 import org.ostelco.prime.storage.graph.Relation.BELONG_TO_SEGMENT
 import org.ostelco.prime.storage.graph.Relation.HAS_BUNDLE
+import org.ostelco.prime.storage.graph.Relation.HAS_SIM_PROFILE
 import org.ostelco.prime.storage.graph.Relation.HAS_SUBSCRIPTION
 import org.ostelco.prime.storage.graph.Relation.IDENTIFIES
 import org.ostelco.prime.storage.graph.Relation.LINKED_TO_BUNDLE
@@ -59,6 +65,10 @@ import org.ostelco.prime.storage.graph.Relation.OFFERED_TO_SEGMENT
 import org.ostelco.prime.storage.graph.Relation.OFFER_HAS_PRODUCT
 import org.ostelco.prime.storage.graph.Relation.PURCHASED
 import org.ostelco.prime.storage.graph.Relation.REFERRED
+import org.ostelco.prime.storage.graph.StatusFlag.ADDRESS_AND_PHONE_NUMBER
+import org.ostelco.prime.storage.graph.StatusFlag.JUMIO
+import org.ostelco.prime.storage.graph.StatusFlag.MY_INFO
+import org.ostelco.prime.storage.graph.StatusFlag.NRIC_FIN
 import java.time.Instant
 import java.util.*
 import java.util.stream.Collectors
@@ -67,20 +77,22 @@ import org.ostelco.prime.model.Identity as ModelIdentity
 import org.ostelco.prime.paymentprocessor.core.NotFoundError as NotFoundPaymentError
 
 enum class Relation {
-    IDENTIFIES,            // (Identity) -[IDENTIFIES]-> (Customer)
-    HAS_SUBSCRIPTION,      // (Customer) -[HAS_SUBSCRIPTION]-> (Subscription)
-    HAS_BUNDLE,            // (Customer) -[HAS_BUNDLE]-> (Bundle)
-    SUBSCRIBES_TO_PLAN,    // (Customer) -[SUBSCRIBES_TO_PLAN]-> (Plan)
-    HAS_PRODUCT,           // (Plan) -[HAS_PRODUCT]-> (Product)
-    LINKED_TO_BUNDLE,      // (Subscription) -[LINKED_TO_BUNDLE]-> (Bundle)
-    PURCHASED,             // (Customer) -[PURCHASED]-> (Product)
-    REFERRED,              // (Customer) -[REFERRED]-> (Customer)
-    OFFERED_TO_SEGMENT,    // (Offer) -[OFFERED_TO_SEGMENT]-> (Segment)
-    OFFER_HAS_PRODUCT,     // (Offer) -[OFFER_HAS_PRODUCT]-> (Product)
-    BELONG_TO_SEGMENT,     // (Customer) -[BELONG_TO_SEGMENT]-> (Segment)
-    CUSTOMER_STATE,        // (Customer) -[CUSTOMER_STATE]-> (CustomerState)
-    EKYC_SCAN,             // (Customer) -[EKYC_SCAN]-> (ScanInformation)
-    BELONG_TO_REGION,      // (Customer) -[BELONG_TO_REGION]-> (Region)
+    IDENTIFIES,                 // (Identity) -[IDENTIFIES]-> (Customer)
+    HAS_SUBSCRIPTION,           // (Customer) -[HAS_SUBSCRIPTION]-> (Subscription)
+    HAS_BUNDLE,                 // (Customer) -[HAS_BUNDLE]-> (Bundle)
+    HAS_SIM_PROFILE,            // (Customer) -[HAS_SIM_PROFILE]-> (SimProfile)
+    SUBSCRIBES_TO_PLAN,         // (Customer) -[SUBSCRIBES_TO_PLAN]-> (Plan)
+    HAS_PRODUCT,                // (Plan) -[HAS_PRODUCT]-> (Product)
+    LINKED_TO_BUNDLE,           // (Subscription) -[LINKED_TO_BUNDLE]-> (Bundle)
+    PURCHASED,                  // (Customer) -[PURCHASED]-> (Product)
+    REFERRED,                   // (Customer) -[REFERRED]-> (Customer)
+    OFFERED_TO_SEGMENT,         // (Offer) -[OFFERED_TO_SEGMENT]-> (Segment)
+    OFFER_HAS_PRODUCT,          // (Offer) -[OFFER_HAS_PRODUCT]-> (Product)
+    BELONG_TO_SEGMENT,          // (Customer) -[BELONG_TO_SEGMENT]-> (Segment)
+    EKYC_SCAN,                  // (Customer) -[EKYC_SCAN]-> (ScanInformation)
+    BELONG_TO_REGION,           // (Customer) -[BELONG_TO_REGION]-> (Region)
+    SUBSCRIPTION_FOR_REGION,    // (Subscription) -[SUBSCRIPTION_FOR_REGION]-> (Region)
+    SIM_PROFILE_FOR_REGION,     // (SimProfile) -[SIM_PROFILE_FOR_REGION]-> (Region)
 }
 
 
@@ -110,6 +122,9 @@ object Neo4jStoreSingleton : GraphStore {
     private val bundleEntity = EntityType(Bundle::class.java)
     private val bundleStore = EntityStore(bundleEntity)
 
+    private val simProfileEntity = EntityType(SimProfile::class.java)
+    private val simProfileStore = EntityStore(simProfileEntity)
+
     private val planEntity = EntityType(Plan::class.java)
     private val plansStore = EntityStore(planEntity)
 
@@ -134,22 +149,29 @@ object Neo4jStoreSingleton : GraphStore {
             relation = HAS_SUBSCRIPTION,
             from = customerEntity,
             to = subscriptionEntity,
-            dataClass = Void::class.java)
+            dataClass = None::class.java)
     private val subscriptionRelationStore = RelationStore(subscriptionRelation)
 
-    private val subscriberToBundleRelation = RelationType(
+    private val customerToBundleRelation = RelationType(
             relation = HAS_BUNDLE,
             from = customerEntity,
             to = bundleEntity,
-            dataClass = Void::class.java)
-    private val subscriberToBundleStore = RelationStore(subscriberToBundleRelation)
+            dataClass = None::class.java)
+    private val customerToBundleStore = RelationStore(customerToBundleRelation)
 
     private val subscriptionToBundleRelation = RelationType(
             relation = LINKED_TO_BUNDLE,
             from = subscriptionEntity,
             to = bundleEntity,
-            dataClass = Void::class.java)
+            dataClass = SubscriptionToBundle::class.java)
     private val subscriptionToBundleStore = RelationStore(subscriptionToBundleRelation)
+
+    private val customerToSimProfileRelation = RelationType(
+            relation = HAS_SIM_PROFILE,
+            from = customerEntity,
+            to = simProfileEntity,
+            dataClass = None::class.java)
+    private val customerToSimProfileStore = RelationStore(customerToSimProfileRelation)
 
     private val purchaseRecordRelation = RelationType(
             relation = PURCHASED,
@@ -163,37 +185,50 @@ object Neo4jStoreSingleton : GraphStore {
             relation = REFERRED,
             from = customerEntity,
             to = customerEntity,
-            dataClass = Void::class.java)
+            dataClass = None::class.java)
     private val referredRelationStore = RelationStore(referredRelation)
 
     private val subscribesToPlanRelation = RelationType(
             relation = Relation.SUBSCRIBES_TO_PLAN,
             from = customerEntity,
             to = planEntity,
-            dataClass = Void::class.java)
+            dataClass = PlanSubscription::class.java)
     private val subscribesToPlanRelationStore = UniqueRelationStore(subscribesToPlanRelation)
 
     private val customerRegionRelation = RelationType(
             relation = Relation.BELONG_TO_REGION,
             from = customerEntity,
             to = regionEntity,
-            dataClass = CustomerRegionStatus::class.java)
+            dataClass = CustomerRegion::class.java)
     private val customerRegionRelationStore = UniqueRelationStore(customerRegionRelation)
 
     private val scanInformationRelation = RelationType(
             relation = Relation.EKYC_SCAN,
             from = customerEntity,
             to = scanInformationEntity,
-            dataClass = Void::class.java)
+            dataClass = None::class.java)
     private val scanInformationRelationStore = UniqueRelationStore(scanInformationRelation)
 
     private val planProductRelation = RelationType(
             relation = Relation.HAS_PRODUCT,
             from = planEntity,
             to = productEntity,
-            dataClass = Void::class.java)
+            dataClass = None::class.java)
     private val planProductRelationStore = UniqueRelationStore(planProductRelation)
 
+    private val subscriptionRegionRelation = RelationType(
+            relation = Relation.SUBSCRIPTION_FOR_REGION,
+            from = subscriptionEntity,
+            to = regionEntity,
+            dataClass = None::class.java)
+    private val subscriptionRegionRelationStore = UniqueRelationStore(subscriptionRegionRelation)
+
+    private val simProfileRegionRelation = RelationType(
+            relation = Relation.SIM_PROFILE_FOR_REGION,
+            from = simProfileEntity,
+            to = regionEntity,
+            dataClass = None::class.java)
+    private val simProfileRegionRelationStore = UniqueRelationStore(simProfileRegionRelation)
 
     // -------------
     // Client Store
@@ -236,7 +271,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun getBundles(identity: org.ostelco.prime.model.Identity): Either<StoreError, Collection<Bundle>> = readTransaction {
         getCustomerId(identity = identity, transaction = transaction)
-                .flatMap { customerId -> customerStore.getRelated(customerId, subscriberToBundleRelation, transaction) }
+                .flatMap { customerId -> customerStore.getRelated(customerId, customerToBundleRelation, transaction) }
     }
 
     override fun updateBundle(bundle: Bundle): Either<StoreError, Unit> = writeTransaction {
@@ -248,17 +283,23 @@ object Neo4jStoreSingleton : GraphStore {
     // Customer
     //
 
-    override fun getCustomer(identity: org.ostelco.prime.model.Identity): Either<StoreError, Customer> {
-        return readTransaction {
-            identityStore.getRelated(id = identity.id, relationType = identifiesRelation, transaction = transaction)
-        }.map { it.single() }
+    override fun getCustomer(identity: org.ostelco.prime.model.Identity): Either<StoreError, Customer> = readTransaction {
+        getCustomer(identity = identity, transaction = transaction)
     }
+
+    private fun getCustomer(
+            identity: org.ostelco.prime.model.Identity,
+            transaction: Transaction): Either<StoreError, Customer> = identityStore.getRelated(
+            id = identity.id,
+            relationType = identifiesRelation,
+            transaction = transaction)
+            .map(List<Customer>::single)
 
     private fun validateCreateCustomerParams(customer: Customer, referredBy: String?): Either<StoreError, Unit> =
             if (customer.referralId == referredBy) {
                 Either.left(ValidationError(type = customerEntity.name, id = customer.id, message = "Referred by self"))
             } else {
-                Either.right(Unit)
+                Unit.right()
             }
 
     // TODO vihang: Move this logic to DSL + Rule Engine + Triggers, when they are ready
@@ -290,25 +331,37 @@ object Neo4jStoreSingleton : GraphStore {
                         customer.id,
                         PurchaseRecord(id = UUID.randomUUID().toString(), product = product, timestamp = Instant.now().toEpochMilli()),
                         transaction)
-                subscriberToBundleStore.create(customer.id, bundleId, transaction).bind()
+                customerToBundleStore.create(customer.id, bundleId, transaction).bind()
             }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
     }
     // << END
 
-    override fun updateCustomer(identity: org.ostelco.prime.model.Identity, customer: Customer): Either<StoreError, Unit> = writeTransaction {
-        customerStore.update(customer, transaction)
+    override fun updateCustomer(
+            identity: org.ostelco.prime.model.Identity,
+            nickname: String?,
+            contactEmail: String?): Either<StoreError, Unit> = writeTransaction {
+
+        getCustomer(identity = identity, transaction = transaction)
+                .flatMap { existingCustomer ->
+                    customerStore.update(
+                            existingCustomer.copy(
+                                    nickname = nickname ?: existingCustomer.nickname,
+                                    contactEmail = contactEmail ?: existingCustomer.contactEmail),
+                            transaction)
+                }
                 .ifFailedThenRollback(transaction)
     }
 
+    // TODO vihang: Should we also delete SimProfile attached to this user?
     override fun removeCustomer(identity: org.ostelco.prime.model.Identity): Either<StoreError, Unit> = writeTransaction {
         getCustomerId(identity = identity, transaction = transaction)
                 .flatMap { customerId ->
                     identityStore.delete(id = identity.id, transaction = transaction)
                     customerStore.exists(customerId, transaction)
                             .flatMap {
-                                customerStore.getRelated(customerId, subscriberToBundleRelation, transaction)
+                                customerStore.getRelated(customerId, customerToBundleRelation, transaction)
                                         .map { it.forEach { bundle -> bundleStore.delete(bundle.id, transaction) } }
                                 customerStore.getRelated(customerId, subscriptionRelation, transaction)
                                         .map { it.forEach { subscription -> subscriptionStore.delete(subscription.id, transaction) } }
@@ -327,72 +380,197 @@ object Neo4jStoreSingleton : GraphStore {
     override fun getAllRegionDetails(identity: org.ostelco.prime.model.Identity): Either<StoreError, Collection<RegionDetails>> = readTransaction {
         getCustomerId(identity = identity, transaction = transaction)
                 .flatMap { customerId ->
-                    read<Either<StoreError, Collection<RegionDetails>>>("""
-                            MATCH (:${customerEntity.name} {id: '$customerId'})
-                            -[cr:${customerRegionRelation.relation.name}]->(r:${regionEntity.name})
-                            RETURN cr.customerRegionStatus, r;
-                            """.trimIndent(),
-                            transaction) { statementResult ->
-                        statementResult
-                                .list {
-                                    val region = regionEntity.createEntity(it["r"].asMap())
-                                    val cr = CustomerRegionStatus.valueOf(it["cr.customerRegionStatus"].asString())
-                                    RegionDetails(region = region, status = cr)
-                                }
-                                .requireNoNulls()
-                                .right()
-                    }
+                    getRegionDetails(
+                            customerId = customerId,
+                            transaction = transaction).right()
                 }
+    }
+
+    override fun getRegionDetails(
+            identity: org.ostelco.prime.model.Identity,
+            regionCode: String): Either<StoreError, RegionDetails> = readTransaction {
+
+        getCustomerId(identity = identity, transaction = transaction)
+                .flatMap { customerId ->
+                    getRegionDetails(
+                            customerId = customerId,
+                            regionCode = regionCode,
+                            transaction = transaction)
+                            .singleOrNull()
+                            ?.right()
+                            ?: NotFoundError(type = regionEntity.name, id = regionCode).left()
+                }
+    }
+
+    private fun getRegionDetails(
+            customerId: String,
+            regionCode: String? = null,
+            transaction: Transaction): Collection<RegionDetails> {
+
+        val regionCodeClause = regionCode?.let { "{id: '$it'}" } ?: ""
+
+        return read("""
+                MATCH (c:${customerEntity.name} {id: '$customerId'})-[cr:${customerRegionRelation.name}]->(r:${regionEntity.name} $regionCodeClause)
+                OPTIONAL MATCH (c)-[:${customerToSimProfileRelation.name}]->(sp:${simProfileEntity.name})-[:${simProfileRegionRelation.name}]->(r)
+                RETURN cr, r, sp;
+                """.trimIndent(),
+                transaction) { statementResult ->
+            statementResult
+                    .list { record ->
+                        val region = regionEntity.createEntity(record["r"].asMap())
+                        val cr = customerRegionRelation.createRelation(record["cr"].asMap()).status
+                        val simProfiles = if (record["sp"].isNull) {
+                            emptyList()
+                        } else {
+                            listOf(simProfileEntity.createEntity(record["sp"].asMap()))
+                        }
+                        RegionDetails(
+                                region = region,
+                                status = cr,
+                                simProfiles = simProfiles)
+                    }
+                    .requireNoNulls()
+                    .groupBy { RegionDetails(region = it.region, status = it.status) }
+                    .map { (key, value) ->
+                        RegionDetails(
+                                region = key.region,
+                                status = key.status,
+                                simProfiles = value.flatMap(RegionDetails::simProfiles))
+                    }
+        }
+    }
+
+    //
+    // SIM Profile
+    //
+
+    private val simManager by lazy { getResource<SimManager>() }
+
+    private val emailNotifier by lazy { getResource<EmailNotifier>() }
+
+    private fun validateBundleList(bundles: List<Bundle>, customerId: String): Either<StoreError, Unit> =
+            if (bundles.isEmpty()) {
+                Either.left(NotFoundError(type = customerToBundleRelation.name, id = "$customerId -> *"))
+            } else {
+                Unit.right()
+            }
+
+    override fun provisionSimProfile(
+            identity: org.ostelco.prime.model.Identity,
+            regionCode: String,
+            profileType: String): Either<StoreError, SimProfile> = writeTransaction {
+        IO {
+            Either.monad<StoreError>().binding {
+                val customerId = getCustomerId(identity = identity, transaction = transaction).bind()
+                val bundles = customerStore.getRelated(customerId, customerToBundleRelation, transaction).bind()
+                validateBundleList(bundles, customerId).bind()
+                val customer = customerStore.get(customerId, transaction).bind()
+                val status = customerRegionRelationStore
+                        .get(fromId = customerId, toId = regionCode.toLowerCase(), transaction = transaction)
+                        .bind()
+                        .status
+                isApproved(
+                        status = status,
+                        customerId = customerId,
+                        regionCode = regionCode.toLowerCase()).bind()
+                val region = regionStore.get(id = regionCode.toLowerCase(), transaction = transaction).bind()
+                val simEntry = simManager.allocateNextEsimProfile(hlr = getHlr(region.id.toLowerCase()), phoneType = profileType)
+                        .mapLeft { NotFoundError("eSIM profile", id = "loltel") }
+                        .bind()
+                simProfileStore.create(SimProfile(
+                        iccId = simEntry.iccId,
+                        eSimActivationCode = simEntry.eSimActivationCode,
+                        status = AVAILABLE_FOR_DOWNLOAD),
+                        transaction).bind()
+                customerToSimProfileStore.create(
+                        fromId = customerId,
+                        toId = simEntry.iccId,
+                        transaction = transaction).bind()
+                simProfileRegionRelationStore.create(
+                        fromId = simEntry.iccId,
+                        toId = regionCode.toLowerCase(),
+                        transaction = transaction).bind()
+                simEntry.msisdnList.forEach { msisdn ->
+                    subscriptionStore.create(Subscription(msisdn = msisdn), transaction).bind()
+                    val subscription = subscriptionStore.get(msisdn, transaction).bind()
+                    bundles.forEach { bundle ->
+                        subscriptionToBundleStore.create(
+                                from = subscription,
+                                relation = SubscriptionToBundle(),
+                                to = bundle,
+                                transaction = transaction).bind()
+                    }
+                    subscriptionRelationStore.create(customer, subscription, transaction).bind()
+                    subscriptionRegionRelationStore.create(
+                            fromId = msisdn,
+                            toId = regionCode.toLowerCase(),
+                            transaction = transaction).bind()
+                    // TODO vihang: link SimProfile to Subscription and unlink Subscription from Region
+                }
+                if (profileType != "android") {
+                    emailNotifier.sendESimQrCodeEmail(
+                            email = customer.contactEmail,
+                            name = customer.nickname,
+                            qrCode = simEntry.eSimActivationCode)
+                            .mapLeft {
+                                logger.error(NOTIFY_OPS_MARKER, "Failed to send email to {}", customer.contactEmail)
+                            }
+                }
+                simProfileStore.get(simEntry.iccId, transaction).bind()
+            }.fix()
+        }.unsafeRunSync()
+                .ifFailedThenRollback(transaction)
+    }
+
+    private fun isApproved(
+            status: CustomerRegionStatus,
+            customerId: String,
+            regionCode: String): Either<ValidationError, Unit> {
+
+        return if (status != APPROVED) {
+            ValidationError(
+                    type = "customerRegionRelation",
+                    id = "$customerId -> $regionCode",
+                    message = "eKYC status is $status and not APPROVED.")
+                    .left()
+        } else {
+            Unit.right()
+        }
+    }
+
+    override fun getSimProfiles(
+            identity: org.ostelco.prime.model.Identity,
+            regionCode: String?): Either<StoreError, Collection<SimProfile>> = readTransaction {
+
+        getCustomerId(identity = identity, transaction = transaction)
+                .flatMap { customerId ->
+                    customerStore.getRelated(
+                            id = customerId,
+                            relationType = customerToSimProfileRelation,
+                            transaction = transaction)
+                }
+    }
+
+    private fun getHlr(regionCode: String): String {
+        return "loltel"
     }
 
     //
     // Subscription
     //
 
-    private val simManager by lazy { getResource<SimManager>() }
-
-    private fun validateBundleList(bundles: List<Bundle>, customerId: String): Either<StoreError, Unit> =
-            if (bundles.isEmpty()) {
-                Either.left(NotFoundError(type = subscriberToBundleRelation.relation.name, id = "$customerId -> *"))
-            } else {
-                Either.right(Unit)
-            }
-
-    // TODO vihang - Should we link Subscription on confirmation from SimManager that it is downloaded?
-    override fun createSubscription(identity: org.ostelco.prime.model.Identity): Either<StoreError, Subscription> = writeTransaction {
-        IO {
-            Either.monad<StoreError>().binding {
-                val customerId = Neo4jStoreSingleton.getCustomerId(identity = identity, transaction = transaction).bind()
-                val bundles = customerStore.getRelated(customerId, subscriberToBundleRelation, transaction).bind()
-                validateBundleList(bundles, customerId).bind()
-                val simEntry = simManager.allocateNextEsimProfile(hlr = "loltel", phoneType = "generic")
-                        .mapLeft { NotFoundError("eSIM profile", id = "loltel") }
-                        .bind()
-                subscriptionStore.create(Subscription(msisdn = simEntry.msisdn, eSimActivationCode = simEntry.eSimActivationCode), transaction).bind()
-                val subscription = subscriptionStore.get(simEntry.msisdn, transaction).bind()
-                val customer = customerStore.get(customerId, transaction).bind()
-                bundles.forEach { bundle ->
-                    subscriptionToBundleStore.create(subscription, mapOf("reservedBytes" to "0"), bundle, transaction).bind()
-                }
-                subscriptionRelationStore.create(customer, subscription, transaction).bind()
-                subscription
-            }.fix()
-        }.unsafeRunSync()
-                .ifFailedThenRollback(transaction)
-    }
-
-    @Deprecated(message = "Use createSubscription instead")
+    @Deprecated(message = "Use createSubscriptions instead")
     override fun addSubscription(identity: org.ostelco.prime.model.Identity, msisdn: String): Either<StoreError, Unit> = writeTransaction {
         IO {
             Either.monad<StoreError>().binding {
                 val customerId = Neo4jStoreSingleton.getCustomerId(identity = identity, transaction = transaction).bind()
-                val bundles = customerStore.getRelated(customerId, subscriberToBundleRelation, transaction).bind()
+                val bundles = customerStore.getRelated(customerId, customerToBundleRelation, transaction).bind()
                 validateBundleList(bundles, customerId).bind()
                 subscriptionStore.create(Subscription(msisdn), transaction).bind()
                 val subscription = subscriptionStore.get(msisdn, transaction).bind()
                 val customer = customerStore.get(customerId, transaction).bind()
                 bundles.forEach { bundle ->
-                    subscriptionToBundleStore.create(subscription, mapOf("reservedBytes" to "0"), bundle, transaction).bind()
+                    subscriptionToBundleStore.create(subscription, SubscriptionToBundle(), bundle, transaction).bind()
                 }
                 subscriptionRelationStore.create(customer, subscription, transaction).bind()
             }.fix()
@@ -400,26 +578,26 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun getSubscriptions(identity: org.ostelco.prime.model.Identity): Either<StoreError, Collection<Subscription>> = readTransaction {
-        getCustomerId(identity = identity, transaction = transaction)
-                .flatMap { customerId -> customerStore.getRelated(customerId, subscriptionRelation, transaction) }
-
-    }
-
-    override fun getMsisdn(identity: org.ostelco.prime.model.Identity): Either<StoreError, String> = readTransaction {
-        getCustomerId(identity = identity, transaction = transaction)
-                .flatMap { customerId ->
-                    customerStore.getRelated(customerId, subscriptionRelation, transaction)
-                            .flatMap {
-                                if (it.isEmpty()) {
-                                    Either.left(NotFoundError(
-                                            type = subscriptionEntity.name,
-                                            id = "for ${customerEntity.name} = $customerId"))
-                                } else {
-                                    Either.right(it.first().msisdn)
-                                }
-                            }
+    override fun getSubscriptions(identity: org.ostelco.prime.model.Identity, regionCode: String?): Either<StoreError, Collection<Subscription>> = readTransaction {
+        IO {
+            Either.monad<StoreError>().binding {
+                val customerId = getCustomerId(identity = identity, transaction = transaction).bind()
+                if (regionCode == null) {
+                    customerStore.getRelated(customerId, subscriptionRelation, transaction).bind()
+                } else {
+                    read<Either<StoreError, Collection<Subscription>>>("""
+                        MATCH (:${customerEntity.name} {id: '$customerId'})
+                        -[:${subscriptionRelation.name}]->(sn:${subscriptionEntity.name})
+                        -[:${subscriptionRegionRelation.name}]->(:${regionEntity.name} {id: '${regionCode.toLowerCase()}'})
+                        RETURN sn;
+                        """.trimIndent(),
+                            transaction) { statementResult ->
+                        Either.right(statementResult
+                                .list { subscriptionEntity.createEntity(it["sn"].asMap()) })
+                    }.bind()
                 }
+            }.fix()
+        }.unsafeRunSync()
     }
 
     //
@@ -433,9 +611,9 @@ object Neo4jStoreSingleton : GraphStore {
                     .flatMap { customerId ->
                         read<Either<StoreError, Map<String, Product>>>("""
                             MATCH (:${customerEntity.name} {id: '$customerId'})
-                            -[:${subscriberToSegmentRelation.relation.name}]->(:${segmentEntity.name})
-                            <-[:${offerToSegmentRelation.relation.name}]-(:${offerEntity.name})
-                            -[:${offerToProductRelation.relation.name}]->(product:${productEntity.name})
+                            -[:${customerToSegmentRelation.name}]->(:${segmentEntity.name})
+                            <-[:${offerToSegmentRelation.name}]-(:${offerEntity.name})
+                            -[:${offerToProductRelation.name}]->(product:${productEntity.name})
                             RETURN product;
                             """.trimIndent(),
                                 transaction) { statementResult ->
@@ -459,9 +637,9 @@ object Neo4jStoreSingleton : GraphStore {
                 .flatMap { customerId ->
                     read("""
                             MATCH (:${customerEntity.name} {id: '$customerId'})
-                            -[:${subscriberToSegmentRelation.relation.name}]->(:${segmentEntity.name})
-                            <-[:${offerToSegmentRelation.relation.name}]-(:${offerEntity.name})
-                            -[:${offerToProductRelation.relation.name}]->(product:${productEntity.name} {sku: '$sku'})
+                            -[:${customerToSegmentRelation.name}]->(:${segmentEntity.name})
+                            <-[:${offerToSegmentRelation.name}]-(:${offerEntity.name})
+                            -[:${offerToProductRelation.name}]->(product:${productEntity.name} {sku: '$sku'})
                             RETURN product;
                             """.trimIndent(),
                             transaction) { statementResult ->
@@ -501,7 +679,7 @@ object Neo4jStoreSingleton : GraphStore {
         suspendedWriteTransaction {
 
             writeSuspended("""
-                            MATCH (sn:${subscriptionEntity.name} {id: '$msisdn'})-[r:${subscriptionToBundleRelation.relation.name}]->(bundle:${bundleEntity.name})
+                            MATCH (sn:${subscriptionEntity.name} {id: '$msisdn'})-[r:${subscriptionToBundleRelation.name}]->(bundle:${bundleEntity.name})
                             SET bundle._LOCK_ = true, r._LOCK_ = true
                             WITH r, bundle, sn.analyticsId AS msisdnAnalyticsId, (CASE WHEN ((toInteger(bundle.balance) + toInteger(r.reservedBytes) - $usedBytes) > 0) THEN (toInteger(bundle.balance) + toInteger(r.reservedBytes) - $usedBytes) ELSE 0 END) AS tmpBalance
                             WITH r, bundle, msisdnAnalyticsId, tmpBalance, (CASE WHEN (tmpBalance < $requestedBytes) THEN tmpBalance ELSE $requestedBytes END) as tmpGranted
@@ -693,7 +871,7 @@ object Neo4jStoreSingleton : GraphStore {
                 }
 
                 write("""
-                    MATCH (cr:${customerEntity.name} { id:'$customerId' })-[:${subscriberToBundleRelation.relation.name}]->(bundle:${bundleEntity.name})
+                    MATCH (cr:${customerEntity.name} { id:'$customerId' })-[:${customerToBundleRelation.name}]->(bundle:${bundleEntity.name})
                     SET bundle.balance = toString(toInteger(bundle.balance) + $bytes)
                     """.trimIndent(), transaction) {
                     Either.cond(
@@ -718,7 +896,8 @@ object Neo4jStoreSingleton : GraphStore {
                 // Ignore failure to capture charge, by not calling bind()
                 ProductInfo(product.sku)
             }.fix()
-        }.unsafeRunSync().ifFailedThenRollback(transaction)
+        }.unsafeRunSync()
+                .ifFailedThenRollback(transaction)
     }
     // << END
 
@@ -773,7 +952,7 @@ object Neo4jStoreSingleton : GraphStore {
         getCustomerId(identity = identity, transaction = transaction)
                 .flatMap { customerId ->
                     customerStore.getRelated(customerId, referredRelation, transaction)
-                            .map { list -> list.map { it.name } }
+                            .map { list -> list.map { it.nickname } }
                 }
     }
 
@@ -781,23 +960,23 @@ object Neo4jStoreSingleton : GraphStore {
         getCustomerId(identity = identity, transaction = transaction)
                 .flatMap { customerId ->
                     customerStore.getRelatedFrom(customerId, referredRelation, transaction)
-                            .map { it.singleOrNull()?.name }
+                            .map { it.singleOrNull()?.nickname }
                 }
     }
 
-    internal fun createOrUpdateCustomerRegionSetting(
+    internal fun createCustomerRegionSetting(
             customerId: String,
             status: CustomerRegionStatus,
             regionCode: String): Either<StoreError, Unit> = writeTransaction {
 
-        createOrUpdateCustomerRegionSetting(
+        createCustomerRegionSetting(
                 customerId = customerId,
                 status = status,
-                regionCode = regionCode.toLowerCase(),
+                regionCode = regionCode,
                 transaction = transaction)
     }
 
-    private fun createOrUpdateCustomerRegionSetting(
+    private fun createCustomerRegionSetting(
             customerId: String,
             status: CustomerRegionStatus,
             regionCode: String,
@@ -806,44 +985,55 @@ object Neo4jStoreSingleton : GraphStore {
             customerRegionRelationStore
                     .createIfAbsent(
                             fromId = customerId,
-                            toId = regionCode.toLowerCase(),
+                            relation = CustomerRegion(
+                                    status = status,
+                                    bitMapStatusFlags = getInitialBitmap(regionCode)),
+                            toId = regionCode,
                             transaction = transaction)
                     .flatMap {
-                        customerRegionRelationStore.setProperties(
-                                fromId = customerId,
-                                toId = regionCode.toLowerCase(),
-                                properties = mapOf("customerRegionStatus" to status.toString()),
-                                transaction = transaction)
-                    }
-                    .flatMap {
                         if (status == APPROVED) {
-                            subscriberToSegmentStore.create(
-                                    fromId = customerId,
-                                    toId = getSegmentNameFromCountryCode(regionCode),
-                                    transaction = transaction).mapLeft { storeError ->
-
-                                if (storeError is NotCreatedError && storeError.type == subscriberToSegmentRelation.relation.name) {
-                                    ValidationError(type = customerEntity.name, id = customerId, message = "Unsupported region: $regionCode")
-                                } else {
-                                    storeError
-                                }
-                            }
+                            assignCustomerToRegionSegment(
+                                    customerId = customerId,
+                                    regionCode = regionCode,
+                                    transaction = transaction)
                         } else {
                             Unit.right()
                         }
                     }
 
+    private fun assignCustomerToRegionSegment(
+            customerId: String,
+            regionCode: String,
+            transaction: Transaction): Either<StoreError, Unit> {
+
+        return customerToSegmentStore.create(
+                fromId = customerId,
+                toId = getSegmentNameFromCountryCode(regionCode),
+                transaction = transaction).mapLeft { storeError ->
+
+            if (storeError is NotCreatedError && storeError.type == customerToSegmentRelation.name) {
+                ValidationError(type = customerEntity.name, id = customerId, message = "Unsupported region: $regionCode")
+            } else {
+                storeError
+            }
+        }
+    }
+
     //
-    // eKYC
+    // eKYC - Jumio
     //
 
-    override fun newEKYCScanId(identity: org.ostelco.prime.model.Identity, countryCode: String): Either<StoreError, ScanInformation> = writeTransaction {
+    override fun createNewJumioKycScanId(
+            identity: org.ostelco.prime.model.Identity,
+            regionCode: String): Either<StoreError, ScanInformation> = writeTransaction {
+
         getCustomerId(identity = identity, transaction = transaction)
                 .flatMap { customerId ->
                     // Generate new id for the scan
                     val scanId = UUID.randomUUID().toString()
-                    val newScan = ScanInformation(scanId = scanId, countryCode = countryCode, status = ScanStatus.PENDING, scanResult = null)
-                    createOrUpdateCustomerRegionSetting(customerId = customerId, status = PENDING, regionCode = countryCode.toLowerCase(), transaction = transaction)
+                    val newScan = ScanInformation(scanId = scanId, countryCode = regionCode, status = ScanStatus.PENDING, scanResult = null)
+                    createCustomerRegionSetting(
+                            customerId = customerId, status = PENDING, regionCode = regionCode.toLowerCase(), transaction = transaction)
                             .flatMap {
                                 scanInformationStore.create(newScan, transaction)
                             }
@@ -857,29 +1047,24 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     private fun getCustomerUsingScanId(scanId: String, transaction: Transaction): Either<StoreError, Customer> {
-        return read("""
-                MATCH (customer:${customerEntity.name})-[:${scanInformationRelation.relation.name}]->(scanInformation:${scanInformationEntity.name} {scanId: '$scanId'})
-                RETURN customer
-                """.trimIndent(),
-                transaction) {
-            if (it.hasNext())
-                Either.right(customerEntity.createEntity(it.single().get("customer").asMap()))
-            else
-                Either.left(NotFoundError(type = scanInformationEntity.name, id = scanId))
-        }
+        return scanInformationStore
+                .getRelatedFrom(
+                        id = scanId,
+                        relationType = scanInformationRelation,
+                        transaction = transaction)
+                .flatMap { customers ->
+                    customers.singleOrNull()?.right()
+                            ?: NotFoundError(type = scanInformationEntity.name, id = scanId).left()
+                }
     }
 
     override fun getCountryCodeForScan(scanId: String): Either<StoreError, String> = readTransaction {
-        read("""
-                MATCH (scanInformation:${scanInformationEntity.name} {scanId: '$scanId'})
-                RETURN scanInformation
-                """.trimIndent(),
-                transaction) {
-            if (it.hasNext())
-                Either.right(scanInformationEntity.createEntity(it.single().get("scanInformation").asMap()).countryCode)
-            else
-                Either.left(NotFoundError(type = scanInformationEntity.name, id = scanId))
-        }
+        scanInformationStore.get(
+                id = scanId,
+                transaction = transaction)
+                .flatMap { scanInformation ->
+                    scanInformation.countryCode.right()
+                }
     }
 
     // TODO merge into a single query which will use customerId and scanId
@@ -910,30 +1095,212 @@ object Neo4jStoreSingleton : GraphStore {
         logger.info("updateScanInformation : ${scanInformation.scanId} status: ${scanInformation.status}")
         getCustomerUsingScanId(scanInformation.scanId, transaction).flatMap { customer ->
             scanInformationStore.update(scanInformation, transaction).flatMap {
-                logger.info("updating scan Information for : ${customer.email} id: ${scanInformation.scanId} status: ${scanInformation.status}")
+                logger.info("updating scan Information for : ${customer.contactEmail} id: ${scanInformation.scanId} status: ${scanInformation.status}")
 
-                when (scanInformation.status) {
+                if (scanInformation.status == ScanStatus.APPROVED) {
 
-                    ScanStatus.PENDING -> CustomerRegionStatus.PENDING.right()
-
-                    ScanStatus.APPROVED -> {
-
-                        logger.info("Inserting scan Information to cloud storage : id: ${scanInformation.scanId} countryCode: ${scanInformation.countryCode}")
-                        scanInformationDatastore.upsertVendorScanInformation(customer.id, scanInformation.countryCode, vendorData)
-                                .flatMap { CustomerRegionStatus.APPROVED.right() }
-                    }
-
-                    ScanStatus.REJECTED -> CustomerRegionStatus.REJECTED.right()
-
-                }.flatMap { customerRegionStatus ->
-
-                    createOrUpdateCustomerRegionSetting(
-                            customerId = customer.id,
-                            status = customerRegionStatus,
-                            regionCode = scanInformation.countryCode,
-                            transaction = transaction)
+                    logger.info("Inserting scan Information to cloud storage : id: ${scanInformation.scanId} countryCode: ${scanInformation.countryCode}")
+                    scanInformationDatastore.upsertVendorScanInformation(customer.id, scanInformation.countryCode, vendorData)
+                            .flatMap {
+                                setStatusFlag(
+                                        customerId = customer.id,
+                                        regionCode = scanInformation.countryCode.toLowerCase(),
+                                        flag = JUMIO,
+                                        transaction = transaction)
+                            }
+                } else {
+                    Unit.right()
                 }
             }
+        }.ifFailedThenRollback(transaction)
+    }
+
+    //
+    // eKYC - MyInfo
+    //
+
+    private val myInfoKycService by lazy { getResource<MyInfoKycService>() }
+
+    override fun getCustomerMyInfoData(
+            identity: org.ostelco.prime.model.Identity,
+            authorisationCode: String): Either<StoreError, String> = writeTransaction {
+
+        getCustomerId(identity = identity, transaction = transaction)
+                .flatMap { customerId ->
+                    setStatusFlag(
+                            customerId = customerId,
+                            regionCode = "sg",
+                            flag = MY_INFO,
+                            transaction = transaction)
+                }
+                .flatMap { myInfoKycService.getPersonData(authorisationCode).right() }
+                .ifFailedThenRollback(transaction)
+    }
+
+    //
+    // eKYC - NRIC/FIN
+    //
+
+    private val daveKycService by lazy { getResource<DaveKycService>() }
+
+    override fun checkNricFinIdUsingDave(
+            identity: org.ostelco.prime.model.Identity,
+            nricFinId: String): Either<StoreError, Unit> = writeTransaction {
+
+        getCustomerId(identity = identity, transaction = transaction)
+                .flatMap { customerId ->
+                    setStatusFlag(
+                            customerId = customerId,
+                            regionCode = "sg",
+                            flag = NRIC_FIN,
+                            transaction = transaction)
+                }
+                .flatMap {
+                    if (daveKycService.validate(nricFinId)) {
+                        Unit.right()
+                    } else {
+                        ValidationError(type = "NRIC/FIN ID", id = nricFinId, message = "Invalid NRIC/FIN ID").left()
+                    }
+                }
+                .ifFailedThenRollback(transaction)
+    }
+
+    //
+    // eKYC - Address and Phone number
+    //
+    override fun saveAddressAndPhoneNumber(
+            identity: org.ostelco.prime.model.Identity,
+            address: String,
+            phoneNumber: String): Either<StoreError, Unit> = writeTransaction {
+
+        getCustomerId(identity = identity, transaction = transaction)
+                .flatMap { customerId ->
+                    setStatusFlag(
+                            customerId = customerId,
+                            regionCode = "sg",
+                            flag = ADDRESS_AND_PHONE_NUMBER,
+                            transaction = transaction)
+                }
+                .ifFailedThenRollback(transaction)
+    }
+
+    //
+    // eKYC - Status Flags
+    //
+
+    internal fun setStatusFlag(
+            customerId: String,
+            regionCode: String,
+            flag: StatusFlag) = writeTransaction {
+
+        Neo4jStoreSingleton.setStatusFlag(
+                customerId = customerId,
+                regionCode = regionCode,
+                flag = flag,
+                transaction = transaction)
+                .ifFailedThenRollback(transaction)
+    }
+
+    private fun setStatusFlag(
+            customerId: String,
+            regionCode: String,
+            flag: StatusFlag,
+            transaction: Transaction): Either<StoreError, Unit> {
+
+        return IO {
+            Either.monad<StoreError>().binding {
+
+                val approvedBitmapSet = getApprovedBitmapSet(regionCode)
+
+                var exists = false
+
+                val existingCustomerRegion = customerRegionRelationStore.get(
+                        fromId = customerId,
+                        toId = regionCode,
+                        transaction = transaction)
+                        .fold(
+                                { CustomerRegion(status = PENDING, bitMapStatusFlags = getInitialBitmap(regionCode)) },
+                                {
+                                    exists = true
+                                    it
+                                }
+                        )
+
+                val newBitMapStatusFlags = StatusFlags.bitMapStatusFlags(flag).inv().and(existingCustomerRegion.bitMapStatusFlags)
+
+                logger.info("existingBitMapStatusFlags : {}, newBitMapStatusFlags : {}", existingCustomerRegion.bitMapStatusFlags, newBitMapStatusFlags)
+
+                val approved = existingCustomerRegion.status == PENDING
+                        && approvedBitmapSet.any { it.inv().and(newBitMapStatusFlags) == 0 }
+
+                if (exists) {
+
+                    if (approved) {
+
+                        // if existing status is PENDING and newBitMap is found in approvedBitMap Set
+
+                        assignCustomerToRegionSegment(
+                                customerId = customerId,
+                                regionCode = regionCode,
+                                transaction = transaction).bind()
+
+                        write("""
+                            MATCH (:${customerEntity.name} { id: '$customerId' })-[r:${customerRegionRelation.name} ]->(:${regionEntity.name} { id: '$regionCode' })
+                            SET r.bitMapStatusFlags = $newBitMapStatusFlags, r.status = '${CustomerRegionStatus.APPROVED}'
+                            """.trimIndent(),
+                                transaction) { result ->
+                            Either.cond(result.summary().counters().propertiesSet() == 2,
+                                    ifTrue = { Unit },
+                                    ifFalse = { NotUpdatedError(customerRegionRelation.name, "$customerId -> $regionCode") })
+                        }.bind()
+
+                    } else {
+
+                        // FIXME { bitMapStatusFlags: ${existingCustomerRegion.bitMapStatusFlags} }
+
+                        write("""
+                            MATCH (:${customerEntity.name} { id: '$customerId' })-[r:${customerRegionRelation.name} ]->(:${regionEntity.name} { id: '$regionCode' })
+                            SET r.bitMapStatusFlags = $newBitMapStatusFlags
+                            """.trimIndent(),
+                                transaction) { result ->
+                            Either.cond(result.summary().counters().propertiesSet() == 1,
+                                    ifTrue = { Unit },
+                                    ifFalse = { NotUpdatedError(customerRegionRelation.name, "$customerId -> $regionCode") })
+                        }.bind()
+                    }
+
+                } else {
+
+                    val newStatus = if (approved) {
+                        APPROVED
+                    } else {
+                        existingCustomerRegion.status
+                    }
+
+                    customerRegionRelationStore
+                            .create(
+                                    fromId = customerId,
+                                    relation = CustomerRegion(status = newStatus, bitMapStatusFlags = newBitMapStatusFlags),
+                                    toId = regionCode,
+                                    transaction = transaction)
+                            .bind()
+                }
+            }.fix()
+        }.unsafeRunSync()
+    }
+
+    internal fun getInitialBitmap(regionCode: String): Int {
+        return when (regionCode) {
+            "sg" -> StatusFlags.bitMapStatusFlags(JUMIO, MY_INFO, NRIC_FIN, ADDRESS_AND_PHONE_NUMBER)
+            else -> StatusFlags.bitMapStatusFlags(JUMIO)
+        }
+    }
+
+    internal fun getApprovedBitmapSet(regionCode: String): Set<Int> {
+        return when (regionCode) {
+            "sg" -> setOf(StatusFlags.bitMapStatusFlags(MY_INFO),
+                    StatusFlags.bitMapStatusFlags(JUMIO, NRIC_FIN, ADDRESS_AND_PHONE_NUMBER))
+            else -> setOf(StatusFlags.bitMapStatusFlags(JUMIO))
         }
     }
 
@@ -947,7 +1314,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun getMsisdnToBundleMap(): Map<Subscription, Bundle> = readTransaction {
         read("""
-                MATCH (subscription:${subscriptionEntity.name})-[:${subscriptionToBundleRelation.relation.name}]->(bundle:${bundleEntity.name})<-[:${subscriberToBundleRelation.relation.name}]-(:${customerEntity.name})
+                MATCH (subscription:${subscriptionEntity.name})-[:${subscriptionToBundleRelation.name}]->(bundle:${bundleEntity.name})<-[:${customerToBundleRelation.name}]-(:${customerEntity.name})
                 RETURN subscription, bundle
                 """.trimIndent(),
                 transaction) { result ->
@@ -960,7 +1327,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun getAllBundles(): Collection<Bundle> = readTransaction {
         read("""
-                MATCH (:${customerEntity.name})-[:${subscriberToBundleRelation.relation.name}]->(bundle:${bundleEntity.name})<-[:${subscriptionToBundleRelation.relation.name}]-(:${subscriptionEntity.name})
+                MATCH (:${customerEntity.name})-[:${customerToBundleRelation.name}]->(bundle:${bundleEntity.name})<-[:${subscriptionToBundleRelation.name}]-(:${subscriptionEntity.name})
                 RETURN bundle
                 """.trimIndent(),
                 transaction) { result ->
@@ -972,7 +1339,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun getCustomerToBundleIdMap(): Map<Customer, Bundle> = readTransaction {
         read("""
-                MATCH (customer:${customerEntity.name})-[:${subscriberToBundleRelation.relation.name}]->(bundle:${bundleEntity.name})
+                MATCH (customer:${customerEntity.name})-[:${customerToBundleRelation.name}]->(bundle:${bundleEntity.name})
                 RETURN customer, bundle
                 """.trimIndent(),
                 transaction) { result ->
@@ -985,7 +1352,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun getCustomerToMsisdnMap(): Map<Customer, Subscription> = readTransaction {
         read("""
-                MATCH (customer:${customerEntity.name})-[:${subscriptionRelation.relation.name}]->(subscription:${subscriptionEntity.name})
+                MATCH (customer:${customerEntity.name})-[:${subscriptionRelation.name}]->(subscription:${subscriptionEntity.name})
                 RETURN customer, subscription
                 """.trimIndent(),
                 transaction) { result ->
@@ -998,7 +1365,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun getCustomerForMsisdn(msisdn: String): Either<StoreError, Customer> = readTransaction {
         read("""
-                MATCH (customer:${customerEntity.name})-[:${subscriptionRelation.relation.name}]->(subscription:${subscriptionEntity.name} {msisdn: '$msisdn'})
+                MATCH (customer:${customerEntity.name})-[:${subscriptionRelation.name}]->(subscription:${subscriptionEntity.name} {msisdn: '$msisdn'})
                 RETURN customer
                 """.trimIndent(),
                 transaction) {
@@ -1013,7 +1380,7 @@ object Neo4jStoreSingleton : GraphStore {
     // For metrics
     //
 
-    override fun getSubscriberCount(): Long = readTransaction {
+    override fun getCustomerCount(): Long = readTransaction {
         read("""
                 MATCH (customer:${customerEntity.name})
                 RETURN count(customer) AS count
@@ -1023,9 +1390,9 @@ object Neo4jStoreSingleton : GraphStore {
         }
     }
 
-    override fun getReferredSubscriberCount(): Long = readTransaction {
+    override fun getReferredCustomerCount(): Long = readTransaction {
         read("""
-                MATCH (:${customerEntity.name})-[:${referredRelation.relation.name}]->(customer:${customerEntity.name})
+                MATCH (:${customerEntity.name})-[:${referredRelation.name}]->(customer:${customerEntity.name})
                 RETURN count(customer) AS count
                 """.trimIndent(),
                 transaction) { result ->
@@ -1033,13 +1400,9 @@ object Neo4jStoreSingleton : GraphStore {
         }
     }
 
-    override fun getPaidSubscriberCount(): Long = readTransaction {
-        getPaidSubscriberCount(transaction)
-    }
-
-    private fun getPaidSubscriberCount(transaction: Transaction): Long {
-        return read("""
-                MATCH (customer:${customerEntity.name})-[:${purchaseRecordRelation.relation.name}]->(product:${productEntity.name})
+    override fun getPaidCustomerCount(): Long = readTransaction {
+        read("""
+                MATCH (customer:${customerEntity.name})-[:${purchaseRecordRelation.name}]->(product:${productEntity.name})
                 WHERE product.`price/amount` > 0
                 RETURN count(customer) AS count
                 """.trimIndent(), transaction) { result ->
@@ -1058,7 +1421,7 @@ object Neo4jStoreSingleton : GraphStore {
     override fun getPlans(identity: org.ostelco.prime.model.Identity): Either<StoreError, List<Plan>> = readTransaction {
         getCustomerId(identity = identity, transaction = transaction)
                 .flatMap { customerId ->
-                    subscribesToPlanRelationStore.get(customerId, transaction)
+                    customerStore.getRelated(id = customerId, relationType = subscribesToPlanRelation, transaction = transaction)
                 }
     }
 
@@ -1068,14 +1431,14 @@ object Neo4jStoreSingleton : GraphStore {
 
                 productStore.get(plan.id, transaction)
                         .fold(
-                                { Either.right(Unit) },
+                                { Unit.right() },
                                 {
                                     Either.left(AlreadyExistsError(type = productEntity.name, id = "Failed to find product associated with plan ${plan.id}"))
                                 }
                         ).bind()
                 plansStore.get(plan.id, transaction)
                         .fold(
-                                { Either.right(Unit) },
+                                { Unit.right() },
                                 {
                                     Either.left(AlreadyExistsError(type = planEntity.name, id = "Failed to find plan ${plan.id}"))
                                 }
@@ -1133,7 +1496,7 @@ object Neo4jStoreSingleton : GraphStore {
                 /* The name of the product is the same as the name of the corresponding plan. */
                 productStore.get(planId, transaction)
                         .bind()
-                planProductRelationStore.get(plan.id, transaction)
+                plansStore.getRelated(id = plan.id, relationType = planProductRelation, transaction = transaction)
                         .bind()
 
                 /* Not removing the product due to purchase references. */
@@ -1150,7 +1513,7 @@ object Neo4jStoreSingleton : GraphStore {
                         }.linkReversalActionToTransaction(transaction) {
                             /* (Nothing to do.) */
                         }.flatMap {
-                            Either.right(Unit)
+                            Unit.right()
                         }.bind()
                 /* Lookup in payment backend will fail if no value found for 'productId'. */
                 paymentProcessor.removeProduct(plan.properties.getOrDefault("productId", "missing"))
@@ -1175,15 +1538,13 @@ object Neo4jStoreSingleton : GraphStore {
                         .bind()
                 val plan = plansStore.get(planId, transaction)
                         .bind()
-                planProductRelationStore.get(plan.id, transaction)
+                plansStore.getRelated(id = plan.id, relationType = planProductRelation, transaction = transaction)
                         .bind()
                 val profileInfo = paymentProcessor.getPaymentProfile(customer.id)
                         .mapLeft {
                             NotFoundError(type = planEntity.name, id = "Failed to subscribe ${customer.id} to ${plan.id}",
                                     error = it)
                         }.bind()
-                subscribesToPlanRelationStore.create(customer.id, plan.id, transaction)
-                        .bind()
 
                 /* Lookup in payment backend will fail if no value found for 'planId'. */
                 val subscriptionInfo = paymentProcessor.createSubscription(plan.properties.getOrDefault("planId", "missing"),
@@ -1196,9 +1557,14 @@ object Neo4jStoreSingleton : GraphStore {
                         }.bind()
 
                 /* Store information from payment backend for later use. */
-                subscribesToPlanRelationStore.setProperties(customerId, planId, mapOf("subscriptionId" to subscriptionInfo.id,
-                        "created" to subscriptionInfo.created,
-                        "trialEnd" to subscriptionInfo.trialEnd), transaction)
+                subscribesToPlanRelationStore.create(
+                        fromId = customerId,
+                        relation = PlanSubscription(
+                                subscriptionId = subscriptionInfo.id,
+                                created = subscriptionInfo.created,
+                                trialEnd = subscriptionInfo.trialEnd),
+                        toId = planId,
+                        transaction = transaction)
                         .flatMap {
                             Either.right(plan)
                         }.bind()
@@ -1214,14 +1580,14 @@ object Neo4jStoreSingleton : GraphStore {
                         .bind()
                 val customerId = getCustomerId(identity = identity, transaction = transaction)
                         .bind()
-                val properties = subscribesToPlanRelationStore.getProperties(customerId, planId, transaction)
+                val planSubscription = subscribesToPlanRelationStore.get(customerId, planId, transaction)
                         .bind()
-                paymentProcessor.cancelSubscription(properties["subscriptionId"].toString(), atIntervalEnd)
+                paymentProcessor.cancelSubscription(planSubscription.subscriptionId, atIntervalEnd)
                         .mapLeft {
                             NotDeletedError(type = planEntity.name, id = "$customerId -> ${plan.id}",
                                     error = it)
                         }.flatMap {
-                            Either.right(Unit)
+                            Unit.right()
                         }.bind()
 
                 subscribesToPlanRelationStore.delete(customerId, planId, transaction)
@@ -1238,7 +1604,7 @@ object Neo4jStoreSingleton : GraphStore {
             Either.monad<StoreError>().binding {
                 val product = productStore.get(sku, transaction)
                         .bind()
-                val plan = planProductRelationStore.getFrom(sku, transaction)
+                val plan = productStore.getRelatedFrom(id = sku, relationType = planProductRelation, transaction = transaction)
                         .flatMap {
                             it[0].right()
                         }.bind()
@@ -1247,10 +1613,8 @@ object Neo4jStoreSingleton : GraphStore {
                         product = product,
                         timestamp = Instant.now().toEpochMilli())
 
-                createPurchaseRecordRelation(customerId, purchaseRecord, transaction)
-                        .flatMap {
-                            Either.right(plan)
-                        }.bind()
+                createPurchaseRecordRelation(customerId, purchaseRecord, transaction).bind()
+                plan
             }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
@@ -1268,15 +1632,12 @@ object Neo4jStoreSingleton : GraphStore {
             logger.error("Trying to refund a free product, ${purchaseRecord.id}")
             return Either.left(ForbiddenError("Trying to refund a free purchase"))
         }
-        return Either.right(Unit)
+        return Unit.right()
     }
 
     private fun updatePurchaseRecord(
             purchase: PurchaseRecord,
-            primeTransaction: PrimeTransaction): Either<StoreError, Unit> {
-        return changablePurchaseRelationStore.update(purchase, primeTransaction)
-                .ifFailedThenRollback(primeTransaction)
-    }
+            primeTransaction: PrimeTransaction): Either<StoreError, Unit> = changablePurchaseRelationStore.update(purchase, primeTransaction)
 
     override fun refundPurchase(
             identity: org.ostelco.prime.model.Identity,
@@ -1331,14 +1692,14 @@ object Neo4jStoreSingleton : GraphStore {
     private val segmentEntity = EntityType(Segment::class.java)
     private val segmentStore = EntityStore(segmentEntity)
 
-    private val offerToSegmentRelation = RelationType(OFFERED_TO_SEGMENT, offerEntity, segmentEntity, Void::class.java)
+    private val offerToSegmentRelation = RelationType(OFFERED_TO_SEGMENT, offerEntity, segmentEntity, None::class.java)
     private val offerToSegmentStore = RelationStore(offerToSegmentRelation)
 
-    private val offerToProductRelation = RelationType(OFFER_HAS_PRODUCT, offerEntity, productEntity, Void::class.java)
+    private val offerToProductRelation = RelationType(OFFER_HAS_PRODUCT, offerEntity, productEntity, None::class.java)
     private val offerToProductStore = RelationStore(offerToProductRelation)
 
-    private val subscriberToSegmentRelation = RelationType(BELONG_TO_SEGMENT, customerEntity, segmentEntity, Void::class.java)
-    private val subscriberToSegmentStore = RelationStore(subscriberToSegmentRelation)
+    private val customerToSegmentRelation = RelationType(BELONG_TO_SEGMENT, customerEntity, segmentEntity, None::class.java)
+    private val customerToSegmentStore = RelationStore(customerToSegmentRelation)
 
     private val productClassEntity = EntityType(ProductClass::class.java)
     private val productClassStore = EntityStore(productClassEntity)
@@ -1381,7 +1742,7 @@ object Neo4jStoreSingleton : GraphStore {
 
     private fun createSegment(segment: Segment, transaction: Transaction): Either<StoreError, Unit> {
         return segmentStore.create(segment, transaction)
-                .flatMap { subscriberToSegmentStore.create(segment.subscribers, segment.id, transaction) }
+                .flatMap { customerToSegmentStore.create(segment.subscribers, segment.id, transaction) }
     }
 
     override fun updateSegment(segment: Segment): Either<StoreError, Unit> = writeTransaction {
@@ -1390,8 +1751,8 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     private fun updateSegment(segment: Segment, transaction: Transaction): Either<StoreError, Unit> {
-        return subscriberToSegmentStore.removeAll(toId = segment.id, transaction = transaction)
-                .flatMap { subscriberToSegmentStore.create(segment.subscribers, segment.id, transaction) }
+        return customerToSegmentStore.removeAll(toId = segment.id, transaction = transaction)
+                .flatMap { customerToSegmentStore.create(segment.subscribers, segment.id, transaction) }
     }
 
     //
@@ -1440,7 +1801,7 @@ object Neo4jStoreSingleton : GraphStore {
         }
         // end of validation
 
-        var result = Either.right(Unit) as Either<StoreError, Unit>
+        var result = Unit.right() as Either<StoreError, Unit>
 
         result = products.fold(
                 initial = result,
@@ -1470,7 +1831,7 @@ object Neo4jStoreSingleton : GraphStore {
     override fun atomicCreateSegments(createSegments: Collection<Segment>): Either<StoreError, Unit> = writeTransaction {
 
         createSegments.fold(
-                initial = Either.right(Unit) as Either<StoreError, Unit>,
+                initial = Unit.right() as Either<StoreError, Unit>,
                 operation = { acc, segment ->
                     acc.flatMap { createSegment(segment, transaction) }
                 })
@@ -1483,7 +1844,7 @@ object Neo4jStoreSingleton : GraphStore {
     override fun atomicUpdateSegments(updateSegments: Collection<Segment>): Either<StoreError, Unit> = writeTransaction {
 
         updateSegments.fold(
-                initial = Either.right(Unit) as Either<StoreError, Unit>,
+                initial = Unit.right() as Either<StoreError, Unit>,
                 operation = { acc, segment ->
                     acc.flatMap { updateSegment(segment, transaction) }
                 })

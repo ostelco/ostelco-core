@@ -10,11 +10,11 @@ val analyticsService: AnalyticsService = getResource()
 val adminStore: AdminDataSource = getResource()
 
 fun reportMetricsAtStartUp() {
-    analyticsService.reportMetric(TOTAL_USERS, adminStore.getSubscriberCount())
-    analyticsService.reportMetric(USERS_ACQUIRED_THROUGH_REFERRALS, adminStore.getReferredSubscriberCount())
+    analyticsService.reportMetric(TOTAL_USERS, adminStore.getCustomerCount())
+    analyticsService.reportMetric(USERS_ACQUIRED_THROUGH_REFERRALS, adminStore.getReferredCustomerCount())
 }
 
 fun updateMetricsOnNewSubscriber() {
-    analyticsService.reportMetric(TOTAL_USERS, adminStore.getSubscriberCount())
-    analyticsService.reportMetric(USERS_ACQUIRED_THROUGH_REFERRALS, adminStore.getReferredSubscriberCount())
+    analyticsService.reportMetric(TOTAL_USERS, adminStore.getCustomerCount())
+    analyticsService.reportMetric(USERS_ACQUIRED_THROUGH_REFERRALS, adminStore.getReferredCustomerCount())
 }

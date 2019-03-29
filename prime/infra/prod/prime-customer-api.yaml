@@ -66,7 +66,7 @@ paths:
         201:
           description: "Successfully created the customer."
           schema:
-              $ref: '#/definitions/Customer'
+            $ref: '#/definitions/Customer'
         400:
           description: "Incomplete customer info"
         403:
@@ -92,9 +92,9 @@ paths:
         200:
           description: "Successfully updated the customer."
           schema:
-              $ref: '#/definitions/Customer'
+            $ref: '#/definitions/Customer'
         400:
-           description: "Incomplete Customer info"
+          description: "Incomplete Customer info"
         404:
           description: "Customer not found."
         502:
@@ -106,7 +106,7 @@ paths:
       description: "Get a new Id for eKYC scanning."
       produces:
         - application/json
-      operationId: "createNewJumioScanId"
+      operationId: "createNewJumioKycScanId"
       parameters:
         - name: countryCode
           in: path
@@ -146,6 +146,49 @@ paths:
             $ref: '#/definitions/ScanInformation'
         404:
           description: "Scan not found."
+      security:
+        - auth0_jwt: []
+  "/regions/{countryCode}/subscriptions":
+    get:
+      description: "Get subscription (msisdn) for the user (identified by bearer token)."
+      produces:
+        - application/json
+      operationId: "getSubscriptions"
+      parameters:
+        - name: countryCode
+          in: path
+          description: "Country code in ISO 3166-1 alpha-3 format"
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Get subscriptions for this user."
+          schema:
+            $ref: '#/definitions/SubscriptionList'
+        404:
+          description: "No subscription found for this user."
+      security:
+        - auth0_jwt: []
+    post:
+      description: "Create subscriptions (msisdn) for the user (identified by bearer token)."
+      produces:
+        - application/json
+      operationId: "createSubscriptions"
+      parameters:
+        - name: countryCode
+          in: path
+          description: "Country code in ISO 3166-1 alpha-3 format"
+          required: true
+          type: string
+      responses:
+        201:
+          description: "Created subscriptions for this user."
+          schema:
+            $ref: '#/definitions/SubscriptionList'
+        404:
+          description: "User not found."
+        503:
+          description: "Service Unavailable"
       security:
         - auth0_jwt: []
   "/applicationtoken":
@@ -195,14 +238,14 @@ paths:
     post:
       description: "Add a new payment source for user"
       produces:
-      - application/json
+        - application/json
       operationId: "createSource"
       parameters:
-      - name: sourceId
-        in: query
-        description: "The stripe-id of the source to be added to user"
-        required: true
-        type: string
+        - name: sourceId
+          in: query
+          description: "The stripe-id of the source to be added to user"
+          required: true
+          type: string
       responses:
         201:
           description: "Successfully added source to user"
@@ -215,18 +258,18 @@ paths:
         503:
           description: "Service Unavailable"
       security:
-      - auth0_jwt: []
+        - auth0_jwt: []
     put:
       description: "Set the source as default for user"
       produces:
-      - application/json
+        - application/json
       operationId: "setDefaultSource"
       parameters:
-      - name: sourceId
-        in: query
-        description: "The stripe-id of the default source"
-        required: true
-        type: string
+        - name: sourceId
+          in: query
+          description: "The stripe-id of the default source"
+          required: true
+          type: string
       responses:
         200:
           description: "Successfully set as default source to user"
@@ -239,18 +282,18 @@ paths:
         503:
           description: "Service Unavailable"
       security:
-      - auth0_jwt: []
+        - auth0_jwt: []
     delete:
       description: "Remove a payment source for user"
       produces:
-      - application/json
+        - application/json
       operationId: "removeSource"
       parameters:
-      - name: sourceId
-        in: query
-        description: "The stripe-id of the source to be removed"
-        required: true
-        type: string
+        - name: sourceId
+          in: query
+          description: "The stripe-id of the source to be removed"
+          required: true
+          type: string
       responses:
         200:
           description: "Successfully removed the source"
@@ -265,7 +308,7 @@ paths:
         503:
           description: "Service Unavailable"
       security:
-      - auth0_jwt: []
+        - auth0_jwt: []
   "/products":
     get:
       description: "Get all products for the user."
@@ -285,25 +328,25 @@ paths:
     post:
       description: "Buy the product specified in sku parameter."
       produces:
-      - application/json
-      - text/plain
+        - application/json
+        - text/plain
       operationId: "purchaseProduct"
       parameters:
-      - name: sku
-        in: path
-        description: "SKU to be purchased"
-        required: true
-        type: string
-      - name: sourceId
-        in: query
-        description: "The stripe-id of the source to be used for this purchase (if empty, use default source)"
-        required: false
-        type: string
-      - name: saveCard
-        in: query
-        description: "Whether to save this card as a source for this user (default = false)"
-        required: false
-        type: boolean
+        - name: sku
+          in: path
+          description: "SKU to be purchased"
+          required: true
+          type: string
+        - name: sourceId
+          in: query
+          description: "The stripe-id of the source to be used for this purchase (if empty, use default source)"
+          required: false
+          type: string
+        - name: saveCard
+          in: query
+          description: "Whether to save this card as a source for this user (default = false)"
+          required: false
+          type: boolean
       responses:
         201:
           description: "Successfully purchased the product."
@@ -312,13 +355,13 @@ paths:
         404:
           description: "Product not found."
       security:
-      - auth0_jwt: []
+        - auth0_jwt: []
   "/purchases":
     get:
       description: "Get list of all purchases."
       produces:
-      - application/json
-      - text/plain
+        - application/json
+        - text/plain
       operationId: "getPurchaseHistory"
       responses:
         200:
@@ -332,22 +375,7 @@ paths:
         503:
           description: "Service Unavailable"
       security:
-      - auth0_jwt: []
-  "/subscriptions":
-    get:
-      description: "Get subscription (msisdn) for the user (identified by bearer token)."
-      produces:
-      - application/json
-      operationId: "getSubscriptions"
-      responses:
-        200:
-          description: "Get subscriptions for this user."
-          schema:
-            $ref: '#/definitions/SubscriptionList'
-        404:
-          description: "No subscription found for this user."
-      security:
-      - auth0_jwt: []
+        - auth0_jwt: []
   "/bundles":
     get:
       description: "Get bundles (balance) for the user (identified by bearer token)."
@@ -382,7 +410,7 @@ paths:
     get:
       description: "Get the people who had referred this user."
       produces:
-      - application/json
+        - application/json
       operationId: "getReferredBy"
       responses:
         200:
@@ -392,14 +420,14 @@ paths:
         404:
           description: "No 'referred by' found for this user."
       security:
-      - auth0_jwt: []
+        - auth0_jwt: []
   "/graphql":
     post:
       description: "GraphQL endpoint"
       consumes:
-      - application/json
+        - application/json
       produces:
-      - application/json
+        - application/json
       operationId: "graphql"
       responses:
         200:
@@ -409,13 +437,13 @@ paths:
         404:
           description: "Not found"
       security:
-      - auth0_jwt: []
+        - auth0_jwt: []
       parameters:
-      - name: "request"
-        in: body
-        description: "GraphQL Request."
-        schema:
-          $ref: '#/definitions/GraphQLRequest'
+        - name: "request"
+          in: body
+          description: "GraphQL Request."
+          schema:
+            $ref: '#/definitions/GraphQLRequest'
 
 definitions:
   Customer:
@@ -513,7 +541,7 @@ definitions:
   ProductList:
     type: array
     items:
-        $ref: '#/definitions/Product'
+      $ref: '#/definitions/Product'
   Product:
     type: object
     properties:
@@ -536,7 +564,7 @@ definitions:
         description: "A unique Id representing a SKU"
         type: string
     required:
-    - id
+      - id
   Refund:
     type: object
     properties:
@@ -551,13 +579,13 @@ definitions:
         type: integer
         format: int64
     required:
-    - id
-    - reason
-    - timestamp
+      - id
+      - reason
+      - timestamp
   PaymentSourceList:
     type: array
     items:
-        $ref: '#/definitions/PaymentSource'
+      $ref: '#/definitions/PaymentSource'
   PaymentSource:
     type: object
     properties:

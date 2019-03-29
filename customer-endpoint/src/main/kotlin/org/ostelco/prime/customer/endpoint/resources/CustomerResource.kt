@@ -9,6 +9,7 @@ import org.ostelco.prime.model.Identity
 import java.util.*
 import javax.validation.constraints.NotNull
 import javax.ws.rs.Consumes
+import javax.ws.rs.DELETE
 import javax.ws.rs.GET
 import javax.ws.rs.POST
 import javax.ws.rs.PUT
@@ -40,8 +41,9 @@ class CustomerResource(private val dao: SubscriberDAO) {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     fun createCustomer(@Auth token: AccessTokenPrincipal?,
-                       @NotNull profile: Customer,
-                       @QueryParam("referred_by") referredBy: String?): Response {
+                       @NotNull @QueryParam("nickname") nickname: String,
+                       @NotNull @QueryParam("contactEmail") contactEmail: String,
+                       @QueryParam("referredBy") referredBy: String?): Response {
 
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
@@ -50,9 +52,11 @@ class CustomerResource(private val dao: SubscriberDAO) {
 
         return dao.createCustomer(
                 identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
-                profile = profile.copy(
+                customer = Customer(
                         id = UUID.randomUUID().toString(),
-                        email = token.name,
+                        nickname = nickname,
+                        contactEmail = contactEmail,
+                        analyticsId = UUID.randomUUID().toString(),
                         referralId = UUID.randomUUID().toString()),
                 referredBy = referredBy)
                 .fold(
@@ -65,7 +69,8 @@ class CustomerResource(private val dao: SubscriberDAO) {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     fun updateCustomer(@Auth token: AccessTokenPrincipal?,
-                       @NotNull profile: Customer): Response {
+                       @QueryParam("nickname") nickname: String?,
+                       @QueryParam("contactEmail") contactEmail: String?): Response {
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
@@ -73,10 +78,26 @@ class CustomerResource(private val dao: SubscriberDAO) {
 
         return dao.updateCustomer(
                 identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
-                profile = profile)
+                nickname = nickname,
+                contactEmail = contactEmail)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { Response.status(Response.Status.OK).entity(asJson(it)) })
+                .build()
+    }
+
+    @DELETE
+    @Produces(MediaType.APPLICATION_JSON)
+    fun removeCustomer(@Auth token: AccessTokenPrincipal?): Response {
+        if (token == null) {
+            return Response.status(Response.Status.UNAUTHORIZED)
+                    .build()
+        }
+
+        return dao.removeCustomer(identity = Identity(id = token.name, type = "EMAIL", provider = token.provider))
+                .fold(
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                        { Response.status(Response.Status.NO_CONTENT).entity(asJson("")) })
                 .build()
     }
 

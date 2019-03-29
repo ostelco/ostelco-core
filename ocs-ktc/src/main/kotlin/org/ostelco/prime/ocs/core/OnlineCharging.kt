@@ -14,7 +14,6 @@ import org.ostelco.ocs.api.ServiceUnit
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.ocs.analytics.AnalyticsReporter
 import org.ostelco.prime.ocs.consumption.OcsAsyncRequestConsumer
-import org.ostelco.prime.ocs.notifications.Notifications
 import org.ostelco.prime.storage.ClientDataSource
 
 object OnlineCharging : OcsAsyncRequestConsumer {
@@ -95,12 +94,13 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                                                 bundleBytes = consumptionResult.balance)
                                     }
 
-                                    launch {
+                                    // FIXME vihang: get customerId for MSISDN
+                                    /*launch {
                                         Notifications.lowBalanceAlert(
-                                                msisdn = msisdn,
+                                                customerId = msisdn,
                                                 reserved = consumptionResult.granted,
                                                 balance = consumptionResult.balance)
-                                    }
+                                    }*/
                                 }
                                 response.addMscc(responseMscc)
                                 synchronized(OnlineCharging) {
