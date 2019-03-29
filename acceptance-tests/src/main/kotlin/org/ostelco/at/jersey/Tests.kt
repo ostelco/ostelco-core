@@ -694,7 +694,7 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(RegionDetails.StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -788,7 +788,7 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(RegionDetails.StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -878,7 +878,7 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(RegionDetails.StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -923,7 +923,7 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(RegionDetails.StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
 
             val newScanInfo: ScanInformation = post {
                 path = "/regions/no/kyc/jumio/scans"
@@ -1063,7 +1063,7 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), newRegionDetails.region)
-            assertEquals(RegionDetails.StatusEnum.REJECTED, newRegionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.PENDING, newRegionDetails.status, message = "Wrong State")
 
             val newScanInfo: ScanInformation = post {
                 path = "/regions/no/kyc/jumio/scans"
@@ -1160,7 +1160,7 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(RegionDetails.StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
         }
