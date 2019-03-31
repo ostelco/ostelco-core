@@ -12,6 +12,8 @@ import org.ostelco.prime.customer.model.ApplicationToken
 import org.ostelco.prime.customer.model.Bundle
 import org.ostelco.prime.customer.model.BundleList
 import org.ostelco.prime.customer.model.Customer
+import org.ostelco.prime.customer.model.KycStatus
+import org.ostelco.prime.customer.model.KycType
 import org.ostelco.prime.customer.model.PaymentSource
 import org.ostelco.prime.customer.model.PaymentSourceList
 import org.ostelco.prime.customer.model.Person
@@ -624,7 +626,7 @@ class PurchaseTest {
 
 }
 
-class eKYCTest {
+class JumioKycTest {
 
     private val imgUrl = "https://www.gstatic.com/webp/gallery3/1.png"
     private val imgUrl2 = "https://www.gstatic.com/webp/gallery3/2.png"
@@ -650,6 +652,11 @@ class eKYCTest {
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
             assertEquals(PENDING, regionDetails.status, message = "Wrong State")
+
+            assertEquals(
+                    expected = mapOf(
+                            KycType.JUMIO.name to KycStatus.PENDING),
+                    actual = regionDetails.kycStatusMap)
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -695,6 +702,11 @@ class eKYCTest {
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
             assertEquals(RegionDetails.StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
+
+            assertEquals(
+                    expected = mapOf(
+                            KycType.JUMIO.name to KycStatus.REJECTED),
+                    actual = regionDetails.kycStatusMap)
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -743,6 +755,11 @@ class eKYCTest {
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
             assertEquals(RegionDetails.StatusEnum.APPROVED, regionDetails.status, message = "Wrong State")
 
+            assertEquals(
+                    expected = mapOf(
+                            KycType.JUMIO.name to KycStatus.APPROVED),
+                    actual = regionDetails.kycStatusMap)
+
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
         }
@@ -790,6 +807,10 @@ class eKYCTest {
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
             assertEquals(RegionDetails.StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
 
+            assertEquals(
+                    expected = mapOf(KycType.JUMIO.name to KycStatus.REJECTED),
+                    actual = regionDetails.kycStatusMap)
+
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
         }
@@ -835,6 +856,10 @@ class eKYCTest {
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
             assertEquals(RegionDetails.StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
 
+            assertEquals(
+                    expected = mapOf(KycType.JUMIO.name to KycStatus.PENDING),
+                    actual = regionDetails.kycStatusMap)
+
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
         }
@@ -879,6 +904,9 @@ class eKYCTest {
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
             assertEquals(RegionDetails.StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
+            assertEquals(
+                    expected = mapOf(KycType.JUMIO.name to KycStatus.REJECTED),
+                    actual = regionDetails.kycStatusMap)
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -924,6 +952,9 @@ class eKYCTest {
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
             assertEquals(RegionDetails.StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
+            assertEquals(
+                    expected = mapOf(KycType.JUMIO.name to KycStatus.REJECTED),
+                    actual = regionDetails.kycStatusMap)
 
             val newScanInfo: ScanInformation = post {
                 path = "/regions/no/kyc/jumio/scans"
@@ -963,6 +994,9 @@ class eKYCTest {
             assertEquals(Region().id("no").name("Norway"), newRegionDetails.region)
             assertEquals(RegionDetails.StatusEnum.APPROVED, newRegionDetails.status, message = "Wrong State")
 
+            assertEquals(
+                    expected = mapOf(KycType.JUMIO.name to KycStatus.APPROVED),
+                    actual = newRegionDetails.kycStatusMap)
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -1065,6 +1099,10 @@ class eKYCTest {
             assertEquals(Region().id("no").name("Norway"), newRegionDetails.region)
             assertEquals(RegionDetails.StatusEnum.PENDING, newRegionDetails.status, message = "Wrong State")
 
+            assertEquals(
+                    expected = mapOf(KycType.JUMIO.name to KycStatus.REJECTED),
+                    actual = newRegionDetails.kycStatusMap)
+
             val newScanInfo: ScanInformation = post {
                 path = "/regions/no/kyc/jumio/scans"
                 this.email = email
@@ -1103,6 +1141,10 @@ class eKYCTest {
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
             assertEquals(RegionDetails.StatusEnum.APPROVED, regionDetails.status, message = "Wrong State")
+
+            assertEquals(
+                    expected = mapOf(KycType.JUMIO.name to KycStatus.APPROVED),
+                    actual = regionDetails.kycStatusMap)
 
             val encodedEmail = URLEncoder.encode(email, "UTF-8")
             val scanInformationList = get<Collection<ScanInformation>> {
@@ -1161,6 +1203,11 @@ class eKYCTest {
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
             assertEquals(RegionDetails.StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
+
+            assertEquals(
+                    expected = mapOf(KycType.JUMIO.name to KycStatus.REJECTED),
+                    actual = regionDetails.kycStatusMap)
+
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
         }

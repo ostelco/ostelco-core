@@ -3,6 +3,7 @@ package org.ostelco.prime.storage.graph
 import arrow.core.Either
 import arrow.core.fix
 import arrow.core.flatMap
+import arrow.core.getOrElse
 import arrow.core.left
 import arrow.core.right
 import arrow.effects.IO
@@ -18,6 +19,13 @@ import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.CustomerRegionStatus
 import org.ostelco.prime.model.CustomerRegionStatus.APPROVED
 import org.ostelco.prime.model.CustomerRegionStatus.PENDING
+import org.ostelco.prime.model.KycStatus
+import org.ostelco.prime.model.KycStatus.REJECTED
+import org.ostelco.prime.model.KycType
+import org.ostelco.prime.model.KycType.ADDRESS_AND_PHONE_NUMBER
+import org.ostelco.prime.model.KycType.JUMIO
+import org.ostelco.prime.model.KycType.MY_INFO
+import org.ostelco.prime.model.KycType.NRIC_FIN
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Plan
 import org.ostelco.prime.model.Product
@@ -65,10 +73,6 @@ import org.ostelco.prime.storage.graph.Relation.OFFERED_TO_SEGMENT
 import org.ostelco.prime.storage.graph.Relation.OFFER_HAS_PRODUCT
 import org.ostelco.prime.storage.graph.Relation.PURCHASED
 import org.ostelco.prime.storage.graph.Relation.REFERRED
-import org.ostelco.prime.storage.graph.StatusFlag.ADDRESS_AND_PHONE_NUMBER
-import org.ostelco.prime.storage.graph.StatusFlag.JUMIO
-import org.ostelco.prime.storage.graph.StatusFlag.MY_INFO
-import org.ostelco.prime.storage.graph.StatusFlag.NRIC_FIN
 import java.time.Instant
 import java.util.*
 import java.util.stream.Collectors
@@ -398,7 +402,7 @@ object Neo4jStoreSingleton : GraphStore {
                             transaction = transaction)
                             .singleOrNull()
                             ?.right()
-                            ?: NotFoundError(type = regionEntity.name, id = regionCode).left()
+                            ?: NotFoundError(type = customerRegionRelation.name, id = "$customerId -> $regionCode").left()
                 }
     }
 
@@ -418,7 +422,7 @@ object Neo4jStoreSingleton : GraphStore {
             statementResult
                     .list { record ->
                         val region = regionEntity.createEntity(record["r"].asMap())
-                        val cr = customerRegionRelation.createRelation(record["cr"].asMap()).status
+                        val cr = customerRegionRelation.createRelation(record["cr"].asMap())
                         val simProfiles = if (record["sp"].isNull) {
                             emptyList()
                         } else {
@@ -426,15 +430,17 @@ object Neo4jStoreSingleton : GraphStore {
                         }
                         RegionDetails(
                                 region = region,
-                                status = cr,
+                                status = cr.status,
+                                kycStatusMap = cr.kycStatusMap,
                                 simProfiles = simProfiles)
                     }
                     .requireNoNulls()
-                    .groupBy { RegionDetails(region = it.region, status = it.status) }
+                    .groupBy { RegionDetails(region = it.region, status = it.status, kycStatusMap = it.kycStatusMap) }
                     .map { (key, value) ->
                         RegionDetails(
                                 region = key.region,
                                 status = key.status,
+                                kycStatusMap = key.kycStatusMap,
                                 simProfiles = value.flatMap(RegionDetails::simProfiles))
                     }
         }
@@ -987,7 +993,7 @@ object Neo4jStoreSingleton : GraphStore {
                             fromId = customerId,
                             relation = CustomerRegion(
                                     status = status,
-                                    bitMapStatusFlags = getInitialBitmap(regionCode)),
+                                    kycStatusMap = getKycStatusMapForRegion(regionCode)),
                             toId = regionCode,
                             transaction = transaction)
                     .flatMap {
@@ -1102,14 +1108,19 @@ object Neo4jStoreSingleton : GraphStore {
                     logger.info("Inserting scan Information to cloud storage : id: ${scanInformation.scanId} countryCode: ${scanInformation.countryCode}")
                     scanInformationDatastore.upsertVendorScanInformation(customer.id, scanInformation.countryCode, vendorData)
                             .flatMap {
-                                setStatusFlag(
+                                setKycStatus(
                                         customerId = customer.id,
                                         regionCode = scanInformation.countryCode.toLowerCase(),
-                                        flag = JUMIO,
+                                        kycType = JUMIO,
                                         transaction = transaction)
                             }
                 } else {
-                    Unit.right()
+                    setKycStatus(
+                            customerId = customer.id,
+                            regionCode = scanInformation.countryCode.toLowerCase(),
+                            kycType = JUMIO,
+                            kycStatus = REJECTED,
+                            transaction = transaction)
                 }
             }
         }.ifFailedThenRollback(transaction)
@@ -1127,10 +1138,10 @@ object Neo4jStoreSingleton : GraphStore {
 
         getCustomerId(identity = identity, transaction = transaction)
                 .flatMap { customerId ->
-                    setStatusFlag(
+                    setKycStatus(
                             customerId = customerId,
                             regionCode = "sg",
-                            flag = MY_INFO,
+                            kycType = MY_INFO,
                             transaction = transaction)
                 }
                 .flatMap { myInfoKycService.getPersonData(authorisationCode).right() }
@@ -1149,10 +1160,10 @@ object Neo4jStoreSingleton : GraphStore {
 
         getCustomerId(identity = identity, transaction = transaction)
                 .flatMap { customerId ->
-                    setStatusFlag(
+                    setKycStatus(
                             customerId = customerId,
                             regionCode = "sg",
-                            flag = NRIC_FIN,
+                            kycType = NRIC_FIN,
                             transaction = transaction)
                 }
                 .flatMap {
@@ -1175,10 +1186,10 @@ object Neo4jStoreSingleton : GraphStore {
 
         getCustomerId(identity = identity, transaction = transaction)
                 .flatMap { customerId ->
-                    setStatusFlag(
+                    setKycStatus(
                             customerId = customerId,
                             regionCode = "sg",
-                            flag = ADDRESS_AND_PHONE_NUMBER,
+                            kycType = ADDRESS_AND_PHONE_NUMBER,
                             transaction = transaction)
                 }
                 .ifFailedThenRollback(transaction)
@@ -1188,119 +1199,85 @@ object Neo4jStoreSingleton : GraphStore {
     // eKYC - Status Flags
     //
 
-    internal fun setStatusFlag(
+    internal fun setKycStatus(
             customerId: String,
             regionCode: String,
-            flag: StatusFlag) = writeTransaction {
+            kycType: KycType,
+            kycStatus: KycStatus = KycStatus.APPROVED) = writeTransaction {
 
-        Neo4jStoreSingleton.setStatusFlag(
+        Neo4jStoreSingleton.setKycStatus(
                 customerId = customerId,
                 regionCode = regionCode,
-                flag = flag,
+                kycType = kycType,
+                kycStatus = kycStatus,
                 transaction = transaction)
                 .ifFailedThenRollback(transaction)
     }
 
-    private fun setStatusFlag(
+    private fun setKycStatus(
             customerId: String,
             regionCode: String,
-            flag: StatusFlag,
+            kycType: KycType,
+            kycStatus: KycStatus = KycStatus.APPROVED,
             transaction: Transaction): Either<StoreError, Unit> {
 
         return IO {
             Either.monad<StoreError>().binding {
 
-                val approvedBitmapSet = getApprovedBitmapSet(regionCode)
-
-                var exists = false
+                val approvedKycTypeSetList = getApprovedKycTypeSetList(regionCode)
 
                 val existingCustomerRegion = customerRegionRelationStore.get(
                         fromId = customerId,
                         toId = regionCode,
                         transaction = transaction)
-                        .fold(
-                                { CustomerRegion(status = PENDING, bitMapStatusFlags = getInitialBitmap(regionCode)) },
-                                {
-                                    exists = true
-                                    it
-                                }
-                        )
+                        .getOrElse { CustomerRegion(status = PENDING, kycStatusMap = getKycStatusMapForRegion(regionCode)) }
 
-                val newBitMapStatusFlags = StatusFlags.bitMapStatusFlags(flag).inv().and(existingCustomerRegion.bitMapStatusFlags)
+                val newKycStatusMap = existingCustomerRegion.kycStatusMap.copy(key = kycType, value = kycStatus)
 
-                logger.info("existingBitMapStatusFlags : {}, newBitMapStatusFlags : {}", existingCustomerRegion.bitMapStatusFlags, newBitMapStatusFlags)
+                val approved = approvedKycTypeSetList.any { kycTypeSet ->
+                    newKycStatusMap.filter { it.value == KycStatus.APPROVED }.keys.containsAll(kycTypeSet)
+                }
 
-                val approved = existingCustomerRegion.status == PENDING
-                        && approvedBitmapSet.any { it.inv().and(newBitMapStatusFlags) == 0 }
+                val approvedNow = existingCustomerRegion.status == PENDING && approved
 
-                if (exists) {
-
-                    if (approved) {
-
-                        // if existing status is PENDING and newBitMap is found in approvedBitMap Set
-
-                        assignCustomerToRegionSegment(
-                                customerId = customerId,
-                                regionCode = regionCode,
-                                transaction = transaction).bind()
-
-                        write("""
-                            MATCH (:${customerEntity.name} { id: '$customerId' })-[r:${customerRegionRelation.name} ]->(:${regionEntity.name} { id: '$regionCode' })
-                            SET r.bitMapStatusFlags = $newBitMapStatusFlags, r.status = '${CustomerRegionStatus.APPROVED}'
-                            """.trimIndent(),
-                                transaction) { result ->
-                            Either.cond(result.summary().counters().propertiesSet() == 2,
-                                    ifTrue = { Unit },
-                                    ifFalse = { NotUpdatedError(customerRegionRelation.name, "$customerId -> $regionCode") })
-                        }.bind()
-
-                    } else {
-
-                        // FIXME { bitMapStatusFlags: ${existingCustomerRegion.bitMapStatusFlags} }
-
-                        write("""
-                            MATCH (:${customerEntity.name} { id: '$customerId' })-[r:${customerRegionRelation.name} ]->(:${regionEntity.name} { id: '$regionCode' })
-                            SET r.bitMapStatusFlags = $newBitMapStatusFlags
-                            """.trimIndent(),
-                                transaction) { result ->
-                            Either.cond(result.summary().counters().propertiesSet() == 1,
-                                    ifTrue = { Unit },
-                                    ifFalse = { NotUpdatedError(customerRegionRelation.name, "$customerId -> $regionCode") })
-                        }.bind()
-                    }
-
+                val newStatus = if (approved) {
+                    APPROVED
                 } else {
+                    existingCustomerRegion.status
+                }
 
-                    val newStatus = if (approved) {
-                        APPROVED
-                    } else {
-                        existingCustomerRegion.status
-                    }
+                if (approvedNow) {
 
-                    customerRegionRelationStore
-                            .create(
+                    assignCustomerToRegionSegment(
+                            customerId = customerId,
+                            regionCode = regionCode,
+                            transaction = transaction).bind()
+                }
+
+                customerRegionRelationStore
+                            .createOrUpdate(
                                     fromId = customerId,
-                                    relation = CustomerRegion(status = newStatus, bitMapStatusFlags = newBitMapStatusFlags),
+                                    relation = CustomerRegion(status = newStatus, kycStatusMap = newKycStatusMap),
                                     toId = regionCode,
                                     transaction = transaction)
                             .bind()
-                }
+
             }.fix()
         }.unsafeRunSync()
     }
 
-    internal fun getInitialBitmap(regionCode: String): Int {
+    private fun getKycStatusMapForRegion(regionCode: String): Map<KycType, KycStatus> {
         return when (regionCode) {
-            "sg" -> StatusFlags.bitMapStatusFlags(JUMIO, MY_INFO, NRIC_FIN, ADDRESS_AND_PHONE_NUMBER)
-            else -> StatusFlags.bitMapStatusFlags(JUMIO)
-        }
+            "sg" -> setOf(JUMIO, MY_INFO, NRIC_FIN, ADDRESS_AND_PHONE_NUMBER)
+            else -> setOf(JUMIO)
+        }.map { it to KycStatus.PENDING }.toMap()
     }
 
-    internal fun getApprovedBitmapSet(regionCode: String): Set<Int> {
+    private fun getApprovedKycTypeSetList(regionCode: String): List<Set<KycType>> {
         return when (regionCode) {
-            "sg" -> setOf(StatusFlags.bitMapStatusFlags(MY_INFO),
-                    StatusFlags.bitMapStatusFlags(JUMIO, NRIC_FIN, ADDRESS_AND_PHONE_NUMBER))
-            else -> setOf(StatusFlags.bitMapStatusFlags(JUMIO))
+            "sg" -> listOf(setOf(MY_INFO),
+                    setOf(JUMIO, NRIC_FIN, ADDRESS_AND_PHONE_NUMBER))
+            else -> listOf(setOf(JUMIO))
         }
     }
 
@@ -1882,4 +1859,10 @@ object Neo4jStoreSingleton : GraphStore {
         write(query = "CREATE INDEX ON :${subscriptionEntity.name}(id)", transaction = transaction) {}
         write(query = "CREATE INDEX ON :${bundleEntity.name}(id)", transaction = transaction) {}
     }
+}
+
+fun <K,V> Map<K,V>.copy(key: K, value: V): Map<K,V> {
+    val mutableMap = this.toMutableMap()
+    mutableMap[key] = value
+    return mutableMap.toMap()
 }

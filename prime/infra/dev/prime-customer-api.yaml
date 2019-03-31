@@ -646,9 +646,28 @@ definitions:
       status:
         description: "Customer Status for this region"
         type: string
-        enum: [ PENDING, APPROVED, REJECTED ]
+        enum: [ PENDING, APPROVED ]
+      kycStatusMap:
+        description: "Map of status for each KYC"
+        type: object
+        properties:
+          kycType:
+            $ref: '#/definitions/KycType'
+        additionalProperties:
+          $ref: '#/definitions/KycStatus'
+        example:
+          JUMIO: PENDING
+          MY_INFO: APPROVED
+          NRIC_FIN: REJECTED
+          ADDRESS_AND_PHONE_NUMBER: PENDING
       simProfiles:
         $ref: '#/definitions/SimProfileList'
+  KycType:
+    type: string
+    enum: [ JUMIO, MY_INFO, NRIC_FIN, ADDRESS_AND_PHONE_NUMBER ]
+  KycStatus:
+    type: string
+    enum: [ PENDING, REJECTED, APPROVED ]
   Region:
     type: object
     properties:
@@ -890,6 +909,7 @@ definitions:
       status:
         description: "The status of the SIM profile, e.g. INSTALLED"
         type: string
+        enum: [ AVAILABLE_FOR_DOWNLOAD, DOWNLOADED, INSTALLED, ENABLED ]
       alias:
         description: "Human readable optional alias for this subscription"
         type: string
