@@ -57,7 +57,7 @@ interface SimInventoryDB {
                              ON ( a.id = b.id
                                   AND b.position < 9999 )
                       LIMIT  1""")
-    fun findNextNonProvisionedSimProfileForHlr(hssId: Long,
+    fun findNextNonProvisionedSimProfileForHss(hssId: Long,
                                                profile: String): SimEntry?
 
     /*
@@ -72,7 +72,7 @@ interface SimInventoryDB {
                              AND hlrId = :hssId
                              AND profile = :profile
                       LIMIT  1""")
-    fun findNextReadyToUseSimProfileForHlr(hlrId: Long,
+    fun findNextReadyToUseSimProfileForHlr(hssId: Long: Long,
                                            profile: String): SimEntry?
 
     @SqlUpdate("""UPDATE sim_entries SET eid = :eid
