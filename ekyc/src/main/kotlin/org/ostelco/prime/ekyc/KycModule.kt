@@ -2,9 +2,9 @@ package org.ostelco.prime.ekyc
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonTypeName
-import io.dropwizard.client.HttpClientBuilder
 import io.dropwizard.setup.Environment
 import org.apache.http.client.HttpClient
+import org.apache.http.impl.client.HttpClientBuilder
 import org.ostelco.prime.ekyc.Registry.myInfoClient
 import org.ostelco.prime.module.PrimeModule
 
@@ -17,7 +17,8 @@ class KycModule : PrimeModule {
     }
 
     override fun init(env: Environment) {
-        myInfoClient = HttpClientBuilder(env).build("MyInfoClient")
+        // TODO change this to Dropwizard's HttpClientBuilder with appropriate timeout values
+        myInfoClient = HttpClientBuilder.create().build()
     }
 }
 
