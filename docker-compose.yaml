@@ -56,6 +56,7 @@ services:
       - PUBSUB_CCA_TOPIC_ID=ocs-cca
       - PUBSUB_CCA_SUBSCRIPTION_ID=ocsgw-cca-sub
       - PUBSUB_ACTIVATE_SUBSCRIPTION_ID=ocsgw-activate-sub
+      - OCS_DATASOURCE_TYPE=Proxy
     volumes:
       - ./ocsgw/cert:/cert/
       - ./ocsgw/config:/config/
