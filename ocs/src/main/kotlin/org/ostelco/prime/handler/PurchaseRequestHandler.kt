@@ -2,6 +2,7 @@ package org.ostelco.prime.handler
 
 import arrow.core.Either
 import arrow.core.flatMap
+import arrow.core.right
 import com.lmax.disruptor.EventHandler
 import org.ostelco.prime.disruptor.EventMessageType.TOPUP_DATA_BUNDLE_BALANCE
 import org.ostelco.prime.disruptor.EventProducer
@@ -85,6 +86,6 @@ class PurchaseRequestHandler(
         if (error.isNotBlank()) {
             return Either.left(error)
         }
-        return Either.right(Unit)
+        return Unit.right()
     }
 }

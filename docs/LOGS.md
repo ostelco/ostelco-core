@@ -10,8 +10,8 @@
 
 ```properties
 resource.type="container"
-resource.labels.cluster_name="private-cluster"
-logName="projects/GCP_PROJECT_ID/logs/prime"
+resource.labels.namespace_id="dev"
+resource.labels.container_name="prime"
 ```
 
 ### Basic filter

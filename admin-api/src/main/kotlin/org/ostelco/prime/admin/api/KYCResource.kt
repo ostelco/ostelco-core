@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
-import org.ostelco.prime.apierror.BadGatewayError
+import org.ostelco.prime.apierror.InternalServerError
 import org.ostelco.prime.apierror.BadRequestError
 import org.ostelco.prime.apierror.NotFoundError
 import org.ostelco.prime.getLogger
@@ -171,7 +171,7 @@ class KYCResource {
             }
         } catch (e: Exception) {
             logger.error("Caught error while updating scan information ${scanInformation.scanId} jumioIdScanReference ${scanInformation.scanResult?.vendorScanReference}", e)
-            Either.left(BadGatewayError("Failed to update scan information", ApiErrorCode.FAILED_TO_UPDATE_SCAN_RESULTS))
+            Either.left(InternalServerError("Failed to update scan information", ApiErrorCode.FAILED_TO_UPDATE_SCAN_RESULTS))
         }
     }
     //TODO: Prasanth, remove this method after testing

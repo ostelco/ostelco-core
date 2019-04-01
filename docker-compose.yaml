@@ -9,7 +9,7 @@ services:
     environment:
       - GCP_PROJECT_ID=${GCP_PROJECT_ID}
       - FIREBASE_ROOT_PATH=test
-      - PUBSUB_HOST=pubsub-emulator:8085
+      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
       - PUBSUB_PROJECT_ID=${GCP_PROJECT_ID}
       - JUMIO_API_TOKEN=
       - JUMIO_API_SECRET=
@@ -50,7 +50,7 @@ services:
       - METRICS_GRPC_SERVER=prime:8083
       - SERVICE_FILE=prime-service-account.json
       - GOOGLE_CLOUD_PROJECT=${GCP_PROJECT_ID}
-      - PUBSUB_HOST=pubsub-emulator:8085
+      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
       - PUBSUB_PROJECT_ID=${GCP_PROJECT_ID}
       - PUBSUB_CCR_TOPIC_ID=ocs-ccr
       - PUBSUB_CCA_TOPIC_ID=ocs-cca
@@ -78,11 +78,15 @@ services:
       - OCS_SOCKET=prime:8082
       - STRIPE_API_KEY=${STRIPE_API_KEY}
       - GOOGLE_APPLICATION_CREDENTIALS=/secret/prime-service-account.json
-      - PUBSUB_HOST=pubsub-emulator:8085
+      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
     networks:
       net:
         ipv4_address: 172.16.238.2
       default:
+
+  ext-myinfo-emulator:
+    container_name: ext-myinfo-emulator
+    build: ext-myinfo-emulator
 
   neo4j:
     container_name: "neo4j"

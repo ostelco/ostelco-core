@@ -62,6 +62,6 @@ fun importFromFirebase(action: (String) -> Unit) {
     subscribers
             .values
             .stream()
-            .map { addSubscriberToSegment(it.email) }
+            .map { addSubscriberToSegment(it.id) }
             .forEach { action(it) }
 }

@@ -3,7 +3,7 @@ package org.ostelco.diameter.parser
 import org.jdiameter.api.Avp
 import org.jdiameter.api.AvpSet
 import org.ostelco.diameter.getLogger
-import org.ostelco.diameter.util.AvpDictionary
+import org.ostelco.diameter.util.AvpTypeDictionary
 import org.ostelco.diameter.util.AvpType.ADDRESS
 import org.ostelco.diameter.util.AvpType.APP_ID
 import org.ostelco.diameter.util.AvpType.FLOAT32
@@ -166,7 +166,7 @@ class AvpParser {
 
     private fun getAvpValue(kclazz: KClass<*>, avp: Avp): Any? {
 
-        val type = AvpDictionary.getType(avp)
+        val type = AvpTypeDictionary.getType(avp)
 
         logger.trace("Type: $type")
 
