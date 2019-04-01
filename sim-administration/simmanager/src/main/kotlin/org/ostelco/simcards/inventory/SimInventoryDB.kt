@@ -72,7 +72,7 @@ interface SimInventoryDB {
                              AND hlrId = :hssId
                              AND profile = :profile
                       LIMIT  1""")
-    fun findNextReadyToUseSimProfileForHlr(hssId: Long: Long,
+    fun findNextReadyToUseSimProfileForHlr(hssId: Long,
                                            profile: String): SimEntry?
 
     @SqlUpdate("""UPDATE sim_entries SET eid = :eid
