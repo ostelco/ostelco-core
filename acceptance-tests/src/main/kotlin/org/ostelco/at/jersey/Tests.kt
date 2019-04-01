@@ -1041,7 +1041,7 @@ class JumioKycTest {
             }
 
             val scanInformation: ScanInformation = get {
-                path = "/regions/no/kyc/jumio/scans/${scanInfo.scanId}/status"
+                path = "/regions/no/kyc/jumio/scans/${scanInfo.scanId}"
                 this.email = email
             }
             assertEquals("APPROVED", scanInformation.status, message = "Wrong status")
