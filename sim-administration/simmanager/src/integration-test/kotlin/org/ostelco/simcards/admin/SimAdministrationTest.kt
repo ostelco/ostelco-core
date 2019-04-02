@@ -15,8 +15,7 @@ import org.junit.Assert.assertEquals
 import org.ostelco.simcards.hss.DirectHssDispatcher
 import org.ostelco.simcards.hss.HealthCheckRegistrar
 import org.ostelco.simcards.hss.SimManagerToHssDispatcherAdapter
-import org.ostelco.simcards.inventory.SimEntry
-import org.ostelco.simcards.inventory.SimProfileKeyStatistics
+import org.ostelco.simcards.inventory.*
 import org.ostelco.simcards.smdpplus.SmDpPlusApplication
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.FixedHostPortGenericContainer
@@ -154,8 +153,8 @@ class SimAdministrationTest {
         assertThat(response.status).isEqualTo(200)
     }
 
-    /* XXX SM-DP+ emuluator must be extended to support the 'getProfileStatus'
-       message before this test can be enabled. */
+    /* TODO: SM-DP+ emuluator must be extended to support the 'getProfileStatus'
+             message before this test can be enabled. */
     @Test
     @Ignore
     fun testGetProfileStatus() {
@@ -165,9 +164,6 @@ class SimAdministrationTest {
                 .get()
         assertThat(response.status).isEqualTo(200)
     }
-
-
-
 
     @Test
     fun testGetIccid() {
@@ -181,6 +177,15 @@ class SimAdministrationTest {
         assertThat(simEntry.iccid).isEqualTo(iccid)
     }
 
+    /* A freshly loaded DB don't have any SIM entries set
+       up as a ready to use eSIM. */
+    @Test
+    fun testNoReadyToUseEsimAvailable() {
+        val response = client.target("$simManagerEndpoint/$hssName/esim")
+                .request()
+                .get()
+        assertThat(response.status).isEqualTo(404)
+    }
 
     ///
     ///   Tests related to the cron job that will allocate new SIM cards
@@ -189,13 +194,12 @@ class SimAdministrationTest {
 
     @Test
     fun testGetListOfHlrs() {
-        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().getDAO()
-
+        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
+                .getDAO()
         val hssEntries = simDao.getHssEntries()
+
         hssEntries.mapRight {  assertEquals(1, it.size) }
-
-        hssEntries.mapRight {  assertEquals(hssName, it[0].name)}
-
+        hssEntries.mapRight {  assertEquals(hssName, it[0].name) }
     }
 
     @Test
@@ -241,7 +245,6 @@ class SimAdministrationTest {
 
     @Test
     fun testPeriodicProvisioningTask() {
-
         val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
                 .getDAO()
 
@@ -267,30 +270,26 @@ class SimAdministrationTest {
                         SIM_MANAGER_RULE.environment.healthChecks().register(name, healthCheck)
                     }
                 })
-
         val hssAdapterCache = SimManagerToHssDispatcherAdapter(
                 dispatcher = dispatcher ,
                 simInventoryDAO = simDao)
-
-        var preStats  =
-                SimProfileKeyStatistics(
-                        0L,
-                        0L,
-                        0L,
-                        0L)
-
+        val preStats  = SimProfileKeyStatistics(
+                0L,
+                0L,
+                0L,
+                0L)
         val task = PreallocateProfilesTask(
                 profileVendors = profileVendors,
                 simInventoryDAO = simDao,
                 maxNoOfProfileToAllocate = maxNoOfProfilesToAllocate,
                 hssAdapterProxy = hssAdapterCache,
                 httpClient = httpClient)
-
         task.preAllocateSimProfiles()
 
         val postAllocationStats =
                 simDao.getProfileStats(hssId, expectedProfile)
         assertThat(postAllocationStats.isRight()).isTrue()
+
         var postStats  = SimProfileKeyStatistics(0L, 0L, 0L, 0L)
         postAllocationStats.map {
             postStats = it
@@ -298,7 +297,6 @@ class SimAdministrationTest {
 
         val noOfAllocatedProfiles =
                 postStats.noOfEntriesAvailableForImmediateUse - preStats.noOfEntriesAvailableForImmediateUse
-
         assertEquals(
                 maxNoOfProfilesToAllocate.toLong(),
                 noOfAllocatedProfiles)
