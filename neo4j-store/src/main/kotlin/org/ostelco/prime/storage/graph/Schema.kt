@@ -157,6 +157,7 @@ class EntityStore<E : HasId>(private val entityType: EntityType<E>) {
 
         return exists(entity.id, transaction).flatMap {
             val properties = getProperties(entity)
+            // TODO vihang: replace setClause with map based settings written by Kjell
             val setClause: String = properties.entries.fold("") { acc, entry -> """$acc SET node.`${entry.key}` = '${entry.value}' """ }
             write("""MATCH (node:${entityType.name} { id: '${entity.id}' }) $setClause ;""",
                     transaction) { statementResult ->
@@ -331,6 +332,7 @@ class ChangeableRelationStore<FROM : HasId, TO : HasId, RELATION : HasId>(privat
 
     fun update(relation: RELATION, transaction: Transaction): Either<StoreError, Unit> {
         val properties = getProperties(relation)
+        // TODO vihang: replace setClause with map based settings written by Kjell
         val setClause: String = properties.entries.fold("") { acc, entry -> """$acc SET r.`${entry.key}` = "${entry.value}" """ }
         return write("""MATCH (from)-[r:${relationType.name}{id:'${relation.id}'}]->(to) $setClause ;""",
                 transaction) { statementResult ->
@@ -362,9 +364,9 @@ class UniqueRelationStore<FROM : HasId, RELATION, TO : HasId>(private val relati
                             { Unit.right() },
                             {
                                 write("""
-                        MATCH (fromId:${relationType.from.name} {id: '$fromId'}),(toId:${relationType.to.name} {id: '$toId'})
-                        MERGE (fromId)-[:${relationType.name}]->(toId)
-                        """.trimMargin(),
+                                    MATCH (fromId:${relationType.from.name} {id: '$fromId'}),(toId:${relationType.to.name} {id: '$toId'})
+                                    MERGE (fromId)-[:${relationType.name}]->(toId)
+                                    """.trimMargin(),
                                         transaction) { statementResult ->
 
                                     Either.cond(statementResult.summary().counters().relationshipsCreated() == 1,
@@ -392,9 +394,51 @@ class UniqueRelationStore<FROM : HasId, RELATION, TO : HasId>(private val relati
                                 val strProps: String = properties.entries.joinToString(",") { """`${it.key}`: "${it.value}"""" }
 
                                 write("""
-                        MATCH (fromId:${relationType.from.name} {id: '$fromId'}),(toId:${relationType.to.name} {id: '$toId'})
-                        MERGE (fromId)-[:${relationType.name} { $strProps } ]->(toId)
-                        """.trimMargin(),
+                                    MATCH (fromId:${relationType.from.name} {id: '$fromId'}),(toId:${relationType.to.name} {id: '$toId'})
+                                    MERGE (fromId)-[:${relationType.name} { $strProps } ]->(toId)
+                                    """.trimMargin(),
+                                        transaction) { statementResult ->
+
+                                    Either.cond(statementResult.summary().counters().relationshipsCreated() == 1,
+                                            ifTrue = { Unit },
+                                            ifFalse = { NotCreatedError(relationType.name, "$fromId -> $toId") })
+                                }
+                            })
+                }
+    }
+
+    // If relation does not exists, then it creates new relation. Or else updates it.
+    fun createOrUpdate(fromId: String, relation: RELATION, toId: String, transaction: Transaction): Either<StoreError, Unit> {
+
+        return (relationType.from.entityStore?.exists(fromId, transaction)
+                ?: NotFoundError(type = relationType.from.name, id = fromId).left())
+                .flatMap {
+                    relationType.to.entityStore?.exists(toId, transaction)
+                            ?: NotFoundError(type = relationType.to.name, id = toId).left()
+                }.flatMap {
+
+                    val properties = getProperties(relation as Any)
+                    doNotExist(fromId, toId, transaction).fold(
+                            {
+                                // TODO vihang: replace setClause with map based settings written by Kjell
+                                val setClause: String = properties.entries.fold("") { acc, entry -> """$acc SET r.`${entry.key}` = '${entry.value}' """ }
+                                write(
+                                    """MATCH (fromId:${relationType.from.name} {id: '$fromId'})-[r:${relationType.name}]->(toId:${relationType.to.name} {id: '$toId'})
+                                    $setClause ;""".trimMargin(),
+                                        transaction) { statementResult ->
+                                    Either.cond(
+                                            test = statementResult.summary().counters().containsUpdates(), // TODO vihang: this is not perfect way to check if updates are applied
+                                            ifTrue = {},
+                                            ifFalse = { NotUpdatedError(type = relationType.name, id = "$fromId -> $toId") })
+                                }
+                            },
+                            {
+                                val strProps: String = properties.entries.joinToString(",") { """`${it.key}`: "${it.value}"""" }
+
+                                write("""
+                                MATCH (fromId:${relationType.from.name} {id: '$fromId'}),(toId:${relationType.to.name} {id: '$toId'})
+                                MERGE (fromId)-[:${relationType.name} { $strProps } ]->(toId)
+                                """.trimMargin(),
                                         transaction) { statementResult ->
 
                                     Either.cond(statementResult.summary().counters().relationshipsCreated() == 1,

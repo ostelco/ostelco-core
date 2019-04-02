@@ -6,8 +6,8 @@ import arrow.core.right
 import org.jdbi.v3.core.JdbiException
 import org.jdbi.v3.sqlobject.transaction.Transaction
 import org.ostelco.prime.simmanager.*
-import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
 import org.ostelco.simcards.hss.HssEntry
+import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
 import org.postgresql.util.PSQLException
 
 
@@ -34,12 +34,12 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
             }
 
     override fun findNextNonProvisionedSimProfileForHss(hssId: Long, profile: String): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("No uprovisioned SIM available for HLR id ${hssId} and profile ${profile}")) {
-                db.findNextNonProvisionedSimProfileForHlr(hssId, profile)!!
+            either(NotFoundError("No uprovisioned SIM available for HSS id ${hssId} and profile ${profile}")) {
+                db.findNextNonProvisionedSimProfileForHss(hssId, profile)!!
             }
 
     override fun findNextReadyToUseSimProfileForHss(hssId: Long, profile: String): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("No ready to use SIM available for HLR id ${hssId} and profile ${profile}")) {
+            either(NotFoundError("No ready to use SIM available for HSS id ${hssId} and profile ${profile}")) {
                 db.findNextReadyToUseSimProfileForHlr(hssId, profile)!!
             }
 
@@ -67,7 +67,7 @@ class SimInventoryDBWrapperImpl(private val db: SimInventoryDB) : SimInventoryDB
 
     @Transaction
     override fun setHssState(id: Long, state: HssState): Either<SimManagerError, SimEntry> =
-            either(NotFoundError("Found no HLR profilevendors with id ${id} update of HLR state failed")) {
+            either(NotFoundError("Found no HSS profilevendors with id ${id} update of HSS state failed")) {
                 if (db.updateHlrState(id, state) > 0)
                     db.getSimProfileById(id)
                 else
