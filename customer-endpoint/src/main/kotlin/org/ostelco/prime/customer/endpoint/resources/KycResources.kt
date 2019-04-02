@@ -104,7 +104,14 @@ class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(regionCo
                     .build()
         }
 
-        return Response.status(Response.Status.CREATED).build()
+        return dao.saveAddressAndPhoneNumber(
+                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                address = address,
+                phoneNumber = phoneNumber)
+                .fold(
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                        { Response.status(Response.Status.CREATED) })
+                .build()
     }
 }
 

@@ -382,7 +382,7 @@ class SubscriberDAOImpl : SubscriberDAO {
     }
 
     override fun saveAddressAndPhoneNumber(identity: Identity, address: String, phoneNumber: String): Either<ApiError, Unit> {
-        return storage.saveAddressAndPhoneNumber(identity, address, phoneNumber)
+        return storage.saveAddressAndPhoneNumber(identity = identity, address = address, phoneNumber = phoneNumber)
                 .mapLeft { mapStorageErrorToApiError("Failed to save address and phone number", ApiErrorCode.FAILED_TO_SAVE_ADDRESS_AND_PHONE_NUMBER, it) }
     }
 
