@@ -33,6 +33,8 @@ prime:
       containerMountPath: "/certs"
       secretKey: idemiaClientCert
       secretPath: idemia-client-cert.jks
+    - secretName: "scaninfo-keysets"
+      containerMountPath: "/scaninfo-keysets"   
 
   envFromSecret:
     - name: SLACK_WEBHOOK_URI
