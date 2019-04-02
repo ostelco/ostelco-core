@@ -84,7 +84,7 @@ public class LocalDataSource implements DataSource {
                     granted,
                     mscc.getValidityTime(),
                     7200,
-                    (long) (granted.getTotal() * 0.8), // 80%
+                    (long) (granted.getTotal() * 0.2), // 20%
                     finalUnitIndication,
                     ResultCode.DIAMETER_SUCCESS);
 
