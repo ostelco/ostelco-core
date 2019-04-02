@@ -12,6 +12,7 @@
 
 # ostelco-core
 
+
 Mono Repository for core protocols and services around a OCS/BSS for packet data. For each service please see the individual Readme.md files.
 
  * [The big picture (diagram) of current work-flow](https://github.com/ostelco/ostelco-docs/blob/master/the-current-work-flow.md)
@@ -29,7 +30,6 @@ Mono Repository for core protocols and services around a OCS/BSS for packet data
  * [ocsgw](./ocsgw/README.md)
  * [ostelco-lib](./ostelco-lib/README.md)
  * [payment-processor](./payment-processor/README.md)
- * [prime-customer-api](./prime-customer-api/README.md)
  * [prime](./prime/README.md)
  * [infra](./prime/infra/README.md)
  * [pseudonym-server](./pseudonym-server/README.md)

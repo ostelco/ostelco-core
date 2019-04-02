@@ -162,15 +162,20 @@ class SmDpPlusCallbackResource(private val smDpPlus: SmDpPlusCallbackService) {
      */
     @Path("handleDownloadProgressInfo")
     @POST
-    fun handleDownloadProgressInfo(order: Es2HandleDownloadProgressInfo): HeaderOnlyResponse {
+    fun handleDownloadProgressInfo(order: Es2HandleDownloadProgressInfo): Response {
         smDpPlus.handleDownloadProgressInfo(
+                header = order.header,
                 eid = order.eid,
                 iccid = order.iccid,
-                notificationPointId = order.notificationPointId,
                 profileType = order.profileType,
+                timestamp = order.timestamp,
+                notificationPointId = order.notificationPointId,
+                notificationPointStatus = order.notificationPointStatus,
                 resultData = order.resultData,
-                timestamp = order.timestamp
+                imei = order.imei
         )
-        return HeaderOnlyResponse()
+        /* According to the SM-DP+ spec. the response should 204. */
+        return Response.status(Response.Status.NO_CONTENT)
+                .build()
     }
 }

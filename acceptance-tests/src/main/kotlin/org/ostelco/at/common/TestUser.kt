@@ -3,24 +3,16 @@ package org.ostelco.at.common
 import org.apache.commons.lang3.RandomStringUtils
 import org.ostelco.at.jersey.post
 import org.ostelco.prime.customer.model.Customer
+import org.ostelco.prime.customer.model.ScanInformation
 import java.util.*
+import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.MultivaluedHashMap
 
 fun createCustomer(name: String, email: String): Customer {
 
-    val createCustomer = Customer()
-            .id("")
-            .email(email)
-            .name(name)
-            .address("")
-            .city("")
-            .country("NO")
-            .postCode("")
-            .analyticsId("")
-            .referralId("")
-
     return post {
         path = "/customer"
-        body = createCustomer
+        queryParams = mapOf("nickname" to name, "contactEmail" to email)
         this.email = email
     }
 }
@@ -37,6 +29,26 @@ fun createSubscription(email: String): String {
         )
     }
     return msisdn
+}
+
+fun enableRegion(email: String) {
+
+    val scanInformation = post<ScanInformation> {
+        path = "/regions/no/kyc/jumio/scans"
+        this.email = email
+    }
+
+    post<String>(expectedResultCode = 200, dataType = MediaType.APPLICATION_FORM_URLENCODED_TYPE) {
+        path = "/ekyc/callback"
+        body = MultivaluedHashMap(mapOf(
+                "jumioIdScanReference" to UUID.randomUUID().toString(),
+                "idScanStatus" to "SUCCESS",
+                "verificationStatus" to "APPROVED_VERIFIED",
+                "callbackDate" to "2018-12-07T09:19:07.036Z",
+                "idCountry" to "NOR",
+                "merchantIdScanReference" to scanInformation.scanId,
+                "identityVerification" to """{ "similarity":"MATCH", "validity":"TRUE"}"""))
+    }
 }
 
 private val random = Random()

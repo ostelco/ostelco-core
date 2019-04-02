@@ -8,6 +8,7 @@ dependencies {
   implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
 
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+  testImplementation "io.jsonwebtoken:jjwt:$jjwtVersion"
 }
 
 apply from: '../gradle/jacoco.gradle'

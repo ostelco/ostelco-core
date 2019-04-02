@@ -9,6 +9,10 @@ interface HasId {
     val id: String
 }
 
+data class Region(
+        override val id: String,
+        val name: String) : HasId
+
 data class Offer(
         override val id: String,
         val segments: Collection<String> = emptyList(),
@@ -25,12 +29,8 @@ data class ChangeSegment(
 
 data class Customer(
         override val id: String = UUID.randomUUID().toString(),
-        val email: String,
-        val name: String = "",
-        val address: String = "",
-        val postCode: String = "",
-        val city: String = "",
-        val country: String = "",
+        val nickname: String,
+        val contactEmail: String,
         val analyticsId: String = UUID.randomUUID().toString(),
         val referralId: String = UUID.randomUUID().toString()) : HasId
 
@@ -39,25 +39,34 @@ data class Identity(
         val type: String,
         val provider: String) : HasId
 
-enum class CustomerStatus {
-    REGISTERED,         // User has registered an account, eKYC results are pending
-    EKYC_REJECTED,      // eKYC documents were rejected
-    EKYC_APPROVED,      // eKYC documents were approved
-    ACTIVE,             // Subscriber is active
-    INACTIVE            // Inactive customer
+data class RegionDetails(
+        val region: Region,
+        val status: CustomerRegionStatus,
+        val kycStatusMap: Map<KycType, KycStatus> = emptyMap(),
+        val simProfiles: Collection<SimProfile> = emptyList())
+
+enum class CustomerRegionStatus {
+    PENDING,   // eKYC initiated, but not yet approved
+    APPROVED,  // eKYC approved
 }
 
-data class CustomerState(
-        val status: CustomerStatus,   // Current status of the customer
-        val modifiedTimestamp: Long,    // last modification time of the customer status
-        val scanId: String?,            // id of the last successful scan.
-        override val id: String
-) : HasId
+enum class KycType {
+    JUMIO,
+    MY_INFO,
+    NRIC_FIN,
+    ADDRESS_AND_PHONE_NUMBER
+}
+
+enum class KycStatus {
+    PENDING,   // eKYC initiated, but not yet approved or rejected
+    REJECTED,  // eKYC rejected
+    APPROVED   // eKYC approved
+}
 
 enum class ScanStatus {
-    PENDING,        // scan results are pending
-    REJECTED,       // scanned Id was rejected
-    APPROVED        // scanned Id was approved
+    PENDING,   // scan results are pending
+    REJECTED,  // scanned Id was rejected
+    APPROVED   // scanned Id was approved
 }
 
 data class ScanResult(
@@ -165,8 +174,7 @@ data class ApplicationToken(
 
 data class Subscription(
         val msisdn: String,
-        val analyticsId: String = UUID.randomUUID().toString(),
-        val alias: String = "") : HasId {
+        val analyticsId: String = UUID.randomUUID().toString()) : HasId {
 
     override val id: String
         @JsonIgnore
@@ -233,3 +241,30 @@ data class PurchaseRecordInfo(override val id: String,
             purchaseRecord.timestamp,
             status)
 }
+
+data class SimEntry(
+        val iccId: String,
+        val eSimActivationCode: String,
+        val msisdnList: Collection<String>)
+
+data class SimProfile(
+        val iccId: String,
+        @JvmField val eSimActivationCode: String,
+        val status: SimProfileStatus,
+        val alias: String = "") : HasId {
+
+    override val id: String
+        @JsonIgnore
+        get() = iccId
+}
+
+enum class SimProfileStatus {
+    AVAILABLE_FOR_DOWNLOAD,
+    DOWNLOADED,
+    INSTALLED,
+    ENABLED,
+}
+
+data class Context(
+        val customer: Customer,
+        val regions: Collection<RegionDetails> = emptyList())

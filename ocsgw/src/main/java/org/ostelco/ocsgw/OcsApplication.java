@@ -91,7 +91,7 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
             stack = new StackImpl();
             sessionFactory = (ISessionFactory) stack.init(diameterConfig);
 
-            OcsServer.getInstance().init(stack, new AppConfig());
+            OcsServer.INSTANCE.init$ocsgw(stack, new AppConfig());
 
             Network network = stack.unwrap(Network.class);
             network.addNetworkReqListener(this, ApplicationId.createByAuthAppId(APPLICATION_ID));
@@ -131,7 +131,7 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
             case RequestType.TERMINATION_REQUEST:
                 LOG.info("<< Received Credit-Control-Request from P-GW [ {} ] [{}]", RequestType.getTypeAsString(request.getRequestTypeAVPValue()), session.getSessionId());
                 try {
-                    OcsServer.getInstance().handleRequest(session, request);
+                    OcsServer.INSTANCE.handleRequest$ocsgw(session, request);
                 } catch (Exception e) {
                     LOG.error(">< Failure processing Credit-Control-Request [" + RequestType.getTypeAsString(request.getRequestTypeAVPValue()) + "]", e);
                 }

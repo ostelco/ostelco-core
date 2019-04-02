@@ -19,6 +19,22 @@ modules:
     config:
       configFile: /secret/prime-service-account.json
       rootPath: ${FIREBASE_ROOT_PATH}
+  - type: email
+    config:
+      mandrillApiKey: ${MANDRILL_API_KEY}
+      httpClient:
+        timeout: 3s
+        connectionRequestTimeout: 1s
+  - type: kyc
+    config:
+      myInfoApiUri: https://myinfosgstg.api.gov.sg/test/v2
+      myInfoApiClientId: STG2-MYINFO-SELF-TEST
+      myInfoApiClientSecret: 44d953c796cccebcec9bdc826852857ab412fbe2
+      myInfoApiRealm: http://localhost:3001
+      myInfoRedirectUri: http://localhost:3001/callback
+      myInfoServerPublicKey: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAshzrDr9ZQTqWWA2Defirgb8pnEkHFYLIvwG8Wh89XzATK6XmaJM2ZJj+T4B4zeETlw8onaVq7xPEcgSlblpFdP2G9402WneQ9PPyCsF/SBXLcUmcJ60r7H6IDN9+Hm0Cf4I3m4N/9SNsRRD3gBpQQE/Od3M6Ej4EA6njP1L/VgAW9M3Refz6jtBrQTqV4Jr7RzGU8m9WiZymbGYEeicBrK1yOPAcYcYLzVlmAvh3e3vt8HP3tpPIsE2mnO5XFyea7SB8dx++bT0qc4r5hIwyLCm0iNH+bmNLmMk7iTCz49B6fPrnHcsKZ7mP+23DUTEYQub7Osu2DKFt3OnW584//QIDAQAB
+      myInfoClientPrivateKey: MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDGBRdsiDqKPGyHgOpzxmSU2EQkm+zYZLvlPlwkwyfFWLndFLZ3saxJS+LIixsFhunrrUT9ZZ0x+bB6MV55o70z4ABOJRFNWx1wbMGqdiC0Fyfpwad3iYpRVjZO+5etHA9JEoaTPoFxv+ktd8kVAL9P5I7/Pi6g1R+B2t2lsaE2bMSwtZqgs55gb7fsCR3Z4nQi7BddYR7MZ2lAMWf7h7Dkm6uRlGhl2RvtmYa6dXFnK3RhIpdQOUT3quyhweMGspowC/tYSG+BNhy1WukbwhIP5vTAvv1WbHTg+WaUUV+pP0TjPQcY73clHxNpI5zrNqDmwD2rogNfePKRUI63yBUfAgMBAAECggEAGy/7xVT25J/jLr+OcRLeIGmJAZW+8P7zpUfoksuQnFHQQwBjBRAJ3Y5jtrESprGdUFRb0oavDHuBtWUt2XmXspWgtRn1xC8sXZExDdxmJRPA0SFbgtgJe51gm3uDmarullPK0lCUqS92Ll3x58ZQfgGdeIHrGP3p84Q/Rk6bGcObcPhDYWSOYKm4i2DPM01bnZG2z4BcrWSseOmeWUxqZcMlGz9GAyepUU/EoqRIHxw/2Y+TGus1JSy5DdhPE0HAEWKZH729ZdoyikOZCMxApQglUkRwkwhtXzVAemm6OSoy3BEWvSEJh/F82tFrmquUoe/xd5JastlBHyD78RAakQKBgQDkHAzo1fowRI19tk7VCPn0zMdF/UTRghtLywc/4xnw1Nd13m+orArOdVzPlQokLVNL81dIVKXnId0Hw/kX8CRyRYz8tkL81spc39DfalZW7QI7Fschfq1Htgkxd/QEjBlIaqjkOjGSbX9xYjYU1Db8PuGoGXWOsYiv9PCsKR056wKBgQDeOzfZSpV5kX8SECJXRA+emyCnO9S29p0W+5BCTQp3OPnmbL7b/mGqBVJ0DC+IiN67Lu8xxzejswqLZqaRvmQuioqH+8mOGpXYZwhShAif2AuixxvL7OK6dvDmMqoKhBI9nZ9+XI60Cd/LjnWgyFO04uq4otnTukmYsSP+fp6wnQKBgEopYH0WjFfDAelcKzcRywouxZ7Yn9Ypoaw7nujDcfydhktY/R5uiLjk6T7H6tsmLU2lGLx4YNPLa6wJp+ODfKX2PMcwjojbYEFftu3cCaQLPE1vs2ANalLFOSnvINOVpOapXq2Mye8cUHHRh1mwQQwzeXQIivLQf2sNjG28lDbvAoGACsh80UJZNmjk7Y9y2yEmUN/eGb9Bdw9IWBEk0tLCKz7MgW3NZQdW3dUcRx1AQTPC+vowCQ5NmNfbLyBv/KpsWgXG6wpAoXCQzMtTEA3wDTGCfweCRcbcyYdz8PeMYK4/5FV9o7gCBKJmBY6IDqEpzqEkGolsYGWtpIcT5Alo0dECgYEA3hzC9NLwumi/1JWm+ASSADTO3rrGo9hicG/WKGzSHD5l1f+IO1SfmUN/6i2JjcnE07eYArNrCfbMgkFavj502ne2fSaYM4p0o147O9Ty8jCyY9vuh/ZGid6qUe3TBI6/okWfmYw6FVbRpNfVEeG7kPfkDW/JdH7qkWTFbh3eH1k=
+      myInfoPersonDataAttributes: "name,sex,race,nationality,dob,email,mobileno,regadd,housingtype,hdbtype,marital,edulevel,assessableincome,ownerprivate,assessyear,cpfcontributions,cpfbalances"
   - type: neo4j
     config:
       host: ${NEO4J_HOST}
@@ -32,8 +48,18 @@ modules:
   - type: ocs
     config:
       lowBalanceThreshold: 100000000
+      pubSubChannel:
+        projectId: ${GCP_PROJECT_ID}
+        activateTopicId: ${ACTIVATE_TOPIC_ID}
+        ccrSubscriptionId: ${CCR_SUBSCRIPTION_ID}
   - type: api
   - type: stripe-payment-processor
+    config:
+      projectId: ${GCP_PROJECT_ID}
+      stripeEventTopicId: ${STRIPE_EVENT_TOPIC}
+      stripeEventStoreSubscriptionId: ${STRIPE_EVENT_STORE_SUBSCRIPTION}
+      stripeEventReportSubscriptionId: ${STRIPE_EVENT_REPORT_SUBSCRIPTION}
+      stripeEventRecurringPaymentSubscriptionId: ${STRIPE_EVENT_RECURRING_PAYMENT_SUBSCRIPTION}
   - type: firebase-app-notifier
     config:
       configFile: /secret/prime-service-account.json

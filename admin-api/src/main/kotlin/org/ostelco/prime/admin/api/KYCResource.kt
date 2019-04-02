@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
-import org.ostelco.prime.apierror.BadGatewayError
+import org.ostelco.prime.apierror.InternalServerError
 import org.ostelco.prime.apierror.BadRequestError
 import org.ostelco.prime.apierror.NotFoundError
 import org.ostelco.prime.getLogger
@@ -121,11 +121,11 @@ class KYCResource {
                         rejectReason = rejectReason
                 ))
             } else {
-                return null;
+                return null
             }
         }
         catch (e: NullPointerException) {
-            logger.error("Missing mandatory fields in scan result ${dataMap}")
+            logger.error("Missing mandatory fields in scan result $dataMap", e)
             return null
         }
     }
@@ -152,13 +152,13 @@ class KYCResource {
     private fun getCountryCodeForScan(scanId: String): String? {
         return try {
             storage.getCountryCodeForScan(scanId).fold({
-                logger.error("Failed to get country code for scan ${scanId}")
+                logger.error("Failed to get country code for scan $scanId")
                 null
             }, {
                 it
             })
         } catch (e: Exception) {
-            logger.error("Caught error while getting country code for scan ${scanId}")
+            logger.error("Caught error while getting country code for scan $scanId")
             return null
         }
     }
@@ -171,7 +171,7 @@ class KYCResource {
             }
         } catch (e: Exception) {
             logger.error("Caught error while updating scan information ${scanInformation.scanId} jumioIdScanReference ${scanInformation.scanResult?.vendorScanReference}", e)
-            Either.left(BadGatewayError("Failed to update scan information", ApiErrorCode.FAILED_TO_UPDATE_SCAN_RESULTS))
+            Either.left(InternalServerError("Failed to update scan information", ApiErrorCode.FAILED_TO_UPDATE_SCAN_RESULTS))
         }
     }
     //TODO: Prasanth, remove this method after testing
@@ -188,7 +188,7 @@ class KYCResource {
         for (entry in formData.entries) {
             result += "${entry.key} = ${entry.value}\n"
         }
-        logger.info("$result")
+        logger.info(result)
 
         return result
     }

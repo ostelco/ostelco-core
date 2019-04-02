@@ -3,8 +3,9 @@ package org.ostelco.diameter.util
 import org.jdiameter.api.Avp
 import org.jdiameter.api.AvpDataException
 import org.jdiameter.api.AvpSet
+import org.jdiameter.api.validation.AvpRepresentation
 import org.jdiameter.common.impl.validation.DictionaryImpl
-import org.ostelco.diameter.logger
+import org.ostelco.diameter.getLogger
 import org.ostelco.diameter.util.AvpType.ADDRESS
 import org.ostelco.diameter.util.AvpType.APP_ID
 import org.ostelco.diameter.util.AvpType.FLOAT32
@@ -25,7 +26,7 @@ import org.ostelco.diameter.util.AvpType.VENDOR_ID
 
 class DiameterUtilities {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     private val dictionary = DictionaryImpl.INSTANCE
 
@@ -37,9 +38,9 @@ class DiameterUtilities {
 
     private fun printAvps(avps: AvpSet, indentation: String) {
         for (avp in avps) {
-            val avpRep = dictionary.getAvp(avp.code, avp.vendorId)
+            val avpRep : AvpRepresentation? = dictionary.getAvp(avp.code, avp.vendorId)
             val avpValue = getAvpValue(avp)
-            val avpLine = StringBuilder("$indentation${avp.code} : ${avpRep.name} (${avpRep.type})")
+            val avpLine = StringBuilder("$indentation${avp.code} : ${avpRep?.name} (${avpRep?.type})")
             while (avpLine.length < 50) {
                 avpLine.append(if (avpLine.length % 2 == 0) "." else " ")
             }
@@ -56,7 +57,7 @@ class DiameterUtilities {
     }
 
     private fun getAvpValue(avp: Avp): Any {
-        val avpType = AvpDictionary.getType(avp)
+        val avpType = AvpTypeDictionary.getType(avp)
         return when (avpType) {
             ADDRESS -> avp.address
             IDENTITY -> avp.diameterIdentity
@@ -78,6 +79,10 @@ class DiameterUtilities {
     }
 
     // TODO martin: for missing Avp, is code and vendorId as 0 okay?
-    private fun isGrouped(avp: Avp?): Boolean =
-            ("Grouped" == dictionary.getAvp(avp?.code ?: 0, avp?.vendorId ?: 0).type)
+    private fun isGrouped(avp: Avp?): Boolean  {
+        if (avp?.code != null) {
+            return "Grouped" == dictionary.getAvp(avp.code, avp.vendorId)?.type
+        }
+        return false
+    }
 }

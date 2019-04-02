@@ -15,7 +15,7 @@ object AccessToken {
         return withEmail(email, audience)
     }
 
-    fun withEmail(email: String, audience: List<String>): String {
+    private fun withEmail(email: String, audience: List<String>): String {
 
         val claims = mapOf("$namespace/email" to email,
                         "aud" to audience,

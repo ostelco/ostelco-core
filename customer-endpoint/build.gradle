@@ -9,7 +9,8 @@ dependencies {
     testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
     testImplementation "org.mockito:mockito-core:$mockitoVersion"
     testImplementation "org.assertj:assertj-core:$assertJVersion"
-    
+
+    testImplementation "io.jsonwebtoken:jjwt:$jjwtVersion"
     testImplementation "com.nhaarman:mockito-kotlin:1.6.0"
 }
 

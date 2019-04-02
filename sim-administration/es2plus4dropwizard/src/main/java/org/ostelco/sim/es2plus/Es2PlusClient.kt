@@ -30,14 +30,13 @@ class ES2PlusClient(
         const val X_ADMIN_PROTOCOL_HEADER_VALUE = "gsma/rsp/v2.0.0"
     }
 
-
+    /* For test cases where content should be returned. */
     @Throws(ES2PlusClientException::class)
     private fun <T, S> postEs2ProtocolCmd(
             path: String,
             es2ProtocolPayload: T,
             sclass: Class<S>,
             expectedReturnCode: Int = 200): S {
-
 
         /// XXX TODO:
         //       We  currently need jersey client for integration test and  httpClient for functional
@@ -59,7 +58,6 @@ class ES2PlusClient(
             req.setHeader("Content-type", "application/json")
             req.entity = StringEntity(payload)
 
-
             val result: HttpResponse = httpClient.execute(req) ?: throw ES2PlusClientException("Null response from http httpClient")
 
             // Validate returned response
@@ -70,7 +68,8 @@ class ES2PlusClient(
                 throw ES2PlusClientException(msg)
             }
 
-            val xAdminProtocolHeader = result.getFirstHeader("X-Admin-Protocol")!! ?: throw ES2PlusClientException("Expected header X-Admin-Protocol to be non null")
+            val xAdminProtocolHeader = result.getFirstHeader("X-Admin-Protocol")
+                    ?: throw ES2PlusClientException("Expected header X-Admin-Protocol to be non null")
 
             val protocolVersion = xAdminProtocolHeader.value
 
@@ -81,7 +80,7 @@ class ES2PlusClient(
             val returnedContentType = result.getFirstHeader("Content-Type")!!
             val expectedContentType = "application/json"
 
-            if (returnedContentType == null || returnedContentType.value != expectedContentType) {
+            if (returnedContentType.value != expectedContentType) {
                 throw ES2PlusClientException("Expected header Content-Type to be '$expectedContentType' but was '$returnedContentType'")
             }
 
@@ -118,6 +117,52 @@ class ES2PlusClient(
         }
     }
 
+    /* For cases where no content should be returned. Currently only
+       used in 'progress-download' test. */
+    @Throws(ES2PlusClientException::class)
+    private fun <T> postEs2ProtocolCmdNoContentReturned(
+            path: String,
+            es2ProtocolPayload: T,
+            expectedReturnCode: Int = 204) {
+        if (httpClient != null) {
+
+            val objectMapper = ObjectMapper()
+            val payload = objectMapper.writeValueAsString(es2ProtocolPayload)
+
+            val req = HttpPost("https://%s:%d%s".format(host, port, path))
+
+            req.setHeader("User-Agent", "gsma-rsp-lpad")
+            req.setHeader("X-Admin-Protocol", X_ADMIN_PROTOCOL_HEADER_VALUE)
+            req.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            req.setHeader("Accept", "application/json")
+            req.setHeader("Content-type", "application/json")
+            req.entity = StringEntity(payload)
+
+            val result: HttpResponse = httpClient.execute(req) ?: throw ES2PlusClientException("Null response from http httpClient")
+
+            // Validate returned response
+            val statusCode = result.statusLine.statusCode
+            if (expectedReturnCode != statusCode) {
+                val msg = "Expected return value $expectedReturnCode, but got $statusCode."
+                throw ES2PlusClientException(msg)
+            }
+        } else if (jerseyClient != null) {
+            val entity: Entity<T> = Entity.entity(es2ProtocolPayload, MediaType.APPLICATION_JSON)
+            val result: Response = jerseyClient.target(path)
+                    .request(MediaType.APPLICATION_JSON)
+                    .header("User-Agent", "gsma-rsp-lpad")
+                    .header("X-Admin-Protocol", X_ADMIN_PROTOCOL_HEADER_VALUE)
+                    .post(entity)
+
+            // Validate returned response
+            if (expectedReturnCode != result.status) {
+                val msg = "Expected return value $expectedReturnCode, but got ${result.status}."
+                throw ES2PlusClientException(msg)
+            }
+        } else {
+            throw RuntimeException("No jersey nor apache http client, bailing out!!")
+        }
+    }
 
     fun profileStatus(
             iccidList: List<String>): Es2ProfileStatusResponse {
@@ -136,8 +181,6 @@ class ES2PlusClient(
                 Es2ProfileStatusResponse::class.java,
                 expectedReturnCode = 200)
     }
-
-
 
     fun downloadOrder(
             eid: String? = null,
@@ -209,7 +252,6 @@ class ES2PlusClient(
                 expectedReturnCode = 200)
     }
 
-
     fun handleDownloadProgressInfo(
             eid: String? = null,
             iccid: String,
@@ -219,13 +261,12 @@ class ES2PlusClient(
             notificationPointStatus: ES2NotificationPointStatus,
             resultData: String? = null,
             imei: String? = null
-    ): HeaderOnlyResponse {
-        return postEs2ProtocolCmd("/gsma/rsp2/es2plus/handleDownloadProgressInfo",
+    ) {
+        postEs2ProtocolCmdNoContentReturned("/gsma/rsp2/es2plus/handleDownloadProgressInfo",
                 Es2HandleDownloadProgressInfo(
                         header = ES2RequestHeader(
                                 functionRequesterIdentifier = requesterId,
                                 functionCallIdentifier = "handleDownloadProgressInfo"
-
                         ),
                         eid = eid,
                         iccid = iccid,
@@ -235,8 +276,7 @@ class ES2PlusClient(
                         notificationPointStatus = notificationPointStatus,
                         resultData = resultData,
                         imei = imei),
-                sclass = HeaderOnlyResponse::class.java,
-                expectedReturnCode = 200)
+                expectedReturnCode = 204)
     }
 }
 
@@ -267,5 +307,3 @@ class EsTwoPlusConfig {
     @JsonProperty("port")
     var port: Int = 4711
 }
-
-

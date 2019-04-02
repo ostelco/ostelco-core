@@ -1,0 +1,7 @@
+modules:
+- type: email
+  config:
+    mandrillApiKey: ${MANDRILL_API_KEY}
+    httpClient:
+      timeout: 3s
+      connectionRequestTimeout: 1s

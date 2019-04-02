@@ -1,14 +1,19 @@
 plugins {
+    id "org.jetbrains.kotlin.jvm" version "1.3.21"
     id "application"
-    id "com.github.johnrengelman.shadow" version "4.0.4"
+    id "com.github.johnrengelman.shadow" version "5.0.0"
 }
 
 dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+    
     implementation project(':ocs-grpc-api')
     implementation project(':analytics-grpc-api')
 
     implementation project(':diameter-stack')
     implementation project(':diameter-ha')
+    
+    implementation "com.google.cloud:google-cloud-pubsub:$googleCloudVersion"
     implementation "com.google.cloud:google-cloud-core-grpc:$googleCloudVersion"
     implementation "com.google.cloud:google-cloud-storage:$googleCloudVersion"
 
@@ -16,6 +21,9 @@ dependencies {
     runtimeOnly "javax.activation:activation:$javaxActivationVersion"
 
     implementation 'ch.qos.logback:logback-classic:1.2.3'
+    implementation 'ch.qos.logback.contrib:logback-json-classic:0.1.5'
+    implementation 'ch.qos.logback.contrib:logback-jackson:0.1.5'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
 
     testImplementation project(':diameter-test')
     testImplementation "org.junit.jupiter:junit-jupiter-api:$junit5Version"

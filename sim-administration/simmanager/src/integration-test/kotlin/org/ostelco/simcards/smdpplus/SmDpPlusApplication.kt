@@ -46,12 +46,12 @@ class SmDpPlusApplication : Application<SmDpPlusAppConfiguration>() {
 
     private lateinit var httpClient: HttpClient
 
-    lateinit var es2plusClient: ES2PlusClient
+    private lateinit var es2plusClient: ES2PlusClient
 
-    lateinit var serverResource: SmDpPlusServerResource
+    private lateinit var serverResource: SmDpPlusServerResource
 
 
-    lateinit var smdpPlusService: SmDpPlusEmulator
+    private lateinit var smdpPlusService: SmDpPlusEmulator
 
     override fun run(config: SmDpPlusAppConfiguration,
                      env: Environment) {

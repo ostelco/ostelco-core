@@ -44,11 +44,14 @@ class SubscriptionsResourceTest {
 
     @Test
     fun getSubscriptions() {
-        val arg = argumentCaptor<Identity>()
+        val identityCaptor = argumentCaptor<Identity>()
+        val regionCodeCaptor = argumentCaptor<String>()
 
-        `when`<Either<ApiError, Collection<Subscription>>>(DAO.getSubscriptions(arg.capture())).thenReturn(Either.right(listOf(subscription)))
+        `when`<Either<ApiError, Collection<Subscription>>>(
+                DAO.getSubscriptions(identityCaptor.capture(), regionCodeCaptor.capture()))
+                .thenReturn(Either.right(listOf(subscription)))
 
-        val resp = RULE.target("/subscriptions")
+        val resp = RULE.target("/regions/no/subscriptions")
                 .request()
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
                 .get(Response::class.java)
@@ -57,8 +60,9 @@ class SubscriptionsResourceTest {
         assertThat(resp.mediaType.toString()).isEqualTo(MediaType.APPLICATION_JSON)
 
         // assertThat and assertEquals is not working
-        assertThat(subscription).isEqualTo(resp.readEntity(Array<Subscription>::class.java)[0])
-        assertThat(arg.firstValue).isEqualTo(Identity(email, "EMAIL", "email"))
+        assertThat(resp.readEntity(Array<Subscription>::class.java)[0]).isEqualTo(subscription)
+        assertThat(identityCaptor.firstValue).isEqualTo(Identity(email, "EMAIL", "email"))
+        assertThat(regionCodeCaptor.firstValue).isEqualTo("no")
     }
 
     companion object {
@@ -78,7 +82,7 @@ class SubscriptionsResourceTest {
                                 .setPrefix("Bearer")
                                 .buildAuthFilter()))
                 .addResource(AuthValueFactoryProvider.Binder(AccessTokenPrincipal::class.java))
-                .addResource(SubscriptionsResource(DAO))
+                .addResource(RegionsResource(DAO))
                 .build()
     }
 }

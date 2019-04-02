@@ -20,7 +20,7 @@ import org.jdiameter.api.Stack
 import org.jdiameter.common.impl.app.cca.JCreditControlRequestImpl
 import org.jdiameter.server.impl.StackImpl
 import org.jdiameter.server.impl.helpers.XMLConfiguration
-import org.ostelco.diameter.logger
+import org.ostelco.diameter.getLogger
 import org.ostelco.diameter.model.RequestType
 import org.ostelco.diameter.util.DiameterUtilities
 import java.util.concurrent.TimeUnit
@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit
 
 class TestClient : EventListener<Request, Answer> {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     companion object {
 

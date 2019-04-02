@@ -1,22 +1,14 @@
 package org.ostelco.simcards.admin
 
 import io.dropwizard.Application
-import io.dropwizard.client.HttpClientBuilder
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor
 import io.dropwizard.configuration.SubstitutingSourceProvider
-import io.dropwizard.jdbi3.JdbiFactory
 import io.dropwizard.setup.Bootstrap
 import io.dropwizard.setup.Environment
-import org.ostelco.dropwizardutils.OpenapiResourceAdder.Companion.addOpenapiResourceToJerseyEnv
-import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter.Companion.addEs2PlusDefaultFiltersAndInterceptors
-import org.ostelco.sim.es2plus.SmDpPlusCallbackResource
-import org.ostelco.sim.es2plus.SmDpPlusCallbackService
-import org.ostelco.simcards.inventory.SimInventoryDAO
-import org.ostelco.simcards.inventory.SimInventoryDB
-import org.ostelco.simcards.inventory.SimInventoryResource
+
 
 /**
- * The SIM manager
+ * The SIM manager test application
  * is an application that inputs inhales SIM batches
  * from SIM profile factories (physical or esim). It then facilitates
  * activation of SIM profiles to MSISDNs.   A typical interaction is
@@ -30,9 +22,13 @@ import org.ostelco.simcards.inventory.SimInventoryResource
  */
 class SimAdministrationApplication : Application<SimAdministrationConfiguration>() {
 
+
+    private val simAdminModule =  SimAdministrationModule()
+
     override fun getName(): String {
         return "SIM inventory application"
     }
+
 
     override fun initialize(bootstrap: Bootstrap<SimAdministrationConfiguration>) {
         /* Enables ENV variable substitution in config file. */
@@ -42,42 +38,13 @@ class SimAdministrationApplication : Application<SimAdministrationConfiguration>
         )
     }
 
-    public lateinit var DAO: SimInventoryDAO
-
     override fun run(config: SimAdministrationConfiguration,
                      env: Environment) {
-        val factory = JdbiFactory()
-        val jdbi = factory
-                .build(env, config.database, "postgresql")
-                .installPlugins()
-        DAO = SimInventoryDAO(jdbi.onDemand(SimInventoryDB::class.java))
-
-        val profileVendorCallbackHandler = object : SmDpPlusCallbackService {
-            // TODO: Not implemented.
-            override fun handleDownloadProgressInfo(
-                    eid: String?,
-                    iccid: String,
-                    notificationPointId: Int,
-                    profileType: String?,
-                    resultData: String?,
-                    timestamp: String) = Unit
-        }
-
-        val httpClient = HttpClientBuilder(env)
-                .using(config.httpClient)
-                .build(name)
-        val jerseyEnv = env.jersey()
-
-        addOpenapiResourceToJerseyEnv(jerseyEnv, config.openApi)
-        addEs2PlusDefaultFiltersAndInterceptors(jerseyEnv)
-
-        // Add resoures that should be run from the outside via REST.
-        jerseyEnv.register(SimInventoryResource(httpClient, config, this.DAO))
-        jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
-
-        // Add task that should be triggered periodically by external
-        // cron job via tasks/preallocate_sim_profiles url.
-
-        env.admin().addTask(PreallocateProfilesTask(simInventoryDAO = this.DAO,  httpClient = httpClient, hlrConfigs = config.hlrVendors, profileVendors = config.profileVendors));
+        simAdminModule.setConfig(config)
+        simAdminModule.init(env)
     }
+
+    fun getDAO() =  simAdminModule.getDAO()
 }
+
+

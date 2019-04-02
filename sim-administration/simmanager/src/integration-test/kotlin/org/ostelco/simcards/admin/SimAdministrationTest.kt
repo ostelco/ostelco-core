@@ -1,18 +1,22 @@
 package org.ostelco.simcards.admin
 
+import com.codahale.metrics.health.HealthCheck
 import io.dropwizard.client.HttpClientBuilder
 import io.dropwizard.client.JerseyClientBuilder
 import io.dropwizard.jdbi3.JdbiFactory
 import io.dropwizard.testing.ConfigOverride
 import io.dropwizard.testing.ResourceHelpers
 import io.dropwizard.testing.junit.DropwizardAppRule
-import junit.framework.Assert.assertEquals
-import junit.framework.Assert.assertNotNull
 import org.assertj.core.api.Assertions.assertThat
 import org.glassfish.jersey.client.ClientProperties
 import org.jdbi.v3.core.Jdbi
 import org.junit.*
-import org.ostelco.simcards.inventory.*
+import org.junit.Assert.assertEquals
+import org.ostelco.simcards.hss.DirectHssDispatcher
+import org.ostelco.simcards.hss.HealthCheckRegistrar
+import org.ostelco.simcards.hss.SimManagerToHssDispatcherAdapter
+import org.ostelco.simcards.inventory.SimEntry
+import org.ostelco.simcards.inventory.SimProfileKeyStatistics
 import org.ostelco.simcards.smdpplus.SmDpPlusApplication
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.FixedHostPortGenericContainer
@@ -93,10 +97,13 @@ class SimAdministrationTest {
 
     /* Kotlin type magic from:
        https://arnabmitra.github.io/jekyll/update/2018/01/18/TestContainers.html */
-    class KPostgresContainer(imageName: String) : PostgreSQLContainer<KPostgresContainer>(imageName)
-    class KFixedHostPortGenericContainer(imageName: String) : FixedHostPortGenericContainer<KFixedHostPortGenericContainer>(imageName)
+    class KPostgresContainer(imageName: String) :
+            PostgreSQLContainer<KPostgresContainer>(imageName)
 
-    private val hlrName = "Foo"
+    class KFixedHostPortGenericContainer(imageName: String) :
+            FixedHostPortGenericContainer<KFixedHostPortGenericContainer>(imageName)
+
+    private val hssName = "Foo"
     private val profileVendor = "Bar"
     private val phoneType = "rababara"
     private val expectedProfile = "IPHONE_PROFILE_2"
@@ -131,17 +138,17 @@ class SimAdministrationTest {
     }
 
     private fun presetTables() {
-        val dao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
+        val dao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().getDAO()
 
         dao.addProfileVendorAdapter(profileVendor)
-        dao.addHlrAdapter(hlrName)
-        dao.permitVendorForHlrByNames(profileVendor = profileVendor, hlr = hlrName)
+        dao.addHssEntry(hssName)
+        dao.permitVendorForHssByNames(profileVendor = profileVendor, hssName = hssName)
     }
 
     /* The SIM dataset is the same that is used by the SM-DP+ emulator. */
     private fun loadSimData() {
         val entries = FileInputStream(SM_DP_PLUS_RULE.configuration.simBatchData)
-        val response = client.target("$simManagerEndpoint/$hlrName/import-batch/profilevendor/$profileVendor")
+        val response = client.target("$simManagerEndpoint/$hssName/import-batch/profilevendor/$profileVendor")
                 .request()
                 .put(Entity.entity(entries, MediaType.TEXT_PLAIN))
         assertThat(response.status).isEqualTo(200)
@@ -153,42 +160,19 @@ class SimAdministrationTest {
     @Ignore
     fun testGetProfileStatus() {
         val iccid = "8901000000000000001"
-        val response = client.target("$simManagerEndpoint/$hlrName/profileStatusList/$iccid")
+        val response = client.target("$simManagerEndpoint/$hssName/profileStatusList/$iccid")
                 .request()
                 .get()
         assertThat(response.status).isEqualTo(200)
     }
 
-    @Test
-    fun testActivateWithHlr() {
-        val iccid = "8901000000000000001"
-        val response = client.target("$simManagerEndpoint/$hlrName/iccid/$iccid")
-                .request()
-                .post(Entity.json(null))
-        assertThat(response.status).isEqualTo(200)
 
-        val simEntry = response.readEntity(SimEntry::class.java)
-        assertThat(simEntry.iccid).isEqualTo(iccid)
-        assertThat(simEntry.hlrState).isEqualTo(HlrState.ACTIVATED)
-    }
 
-    @Test
-    fun testDeactivateWithHlr() {
-        val iccid = "8901000000000000001"
-        val response = client.target("$simManagerEndpoint/$hlrName/iccid/$iccid")
-                .request()
-                .delete()
-        assertThat(response.status).isEqualTo(200)
-
-        val simEntry = response.readEntity(SimEntry::class.java)
-        assertThat(simEntry.iccid).isEqualTo(iccid)
-        assertThat(simEntry.hlrState).isEqualTo(HlrState.NOT_ACTIVATED)
-    }
 
     @Test
     fun testGetIccid() {
         val iccid = "8901000000000000001"
-        val response = client.target("$simManagerEndpoint/$hlrName/iccid/$iccid")
+        val response = client.target("$simManagerEndpoint/$hssName/iccid/$iccid")
                 .request()
                 .get()
         assertThat(response.status).isEqualTo(200)
@@ -197,53 +181,6 @@ class SimAdministrationTest {
         assertThat(simEntry.iccid).isEqualTo(iccid)
     }
 
-
-    @Test
-    fun testActivateNextEsim() {
-        val response = client.target("$simManagerEndpoint/$hlrName/esim")
-                .request()
-                .post(Entity.json(null))
-        assertThat(response.status).isEqualTo(200)
-
-        val simEntry = response.readEntity(SimEntry::class.java)
-        assertThat(simEntry.profile).isEqualTo(expectedProfile)
-        assertThat(simEntry.hlrState).isEqualTo(HlrState.ACTIVATED)
-        assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.RELEASED)
-        assertThat(simEntry.provisionState).isEqualTo(ProvisionState.AVAILABLE)
-
-        /* EID is constructed using ICCID in SM-DP+ emulator. */
-        assertThat(simEntry.eid).isEqualTo(getEidFromIccid(simEntry.iccid))
-    }
-
-    @Test
-    fun testAllocateNextEsim() {
-        /* Must enable one SIM ready first. */
-        val createResponse = client.target("$simManagerEndpoint/$hlrName/esim")
-                .request()
-                .post(Entity.json(null))
-        assertThat(createResponse.status).isEqualTo(200)
-
-        /* Preprovision a SIM card. */
-        createResponse.readEntity(SimEntry::class.java)
-
-        val response = client.target("$simManagerEndpoint/$hlrName/esim")
-                .request()
-                .get()
-        assertThat(response.status).isEqualTo(200)
-
-        val simEntry = response.readEntity(SimEntry::class.java)
-        assertThat(simEntry.profile).isEqualTo(expectedProfile)
-        assertThat(simEntry.hlrState).isEqualTo(HlrState.ACTIVATED)
-        assertThat(simEntry.smdpPlusState).isEqualTo(SmDpPlusState.RELEASED)
-        assertThat(simEntry.provisionState).isEqualTo(ProvisionState.PROVISIONED)
-
-        /* EID is constructed using ICCID in SM-DP+ emulator. */
-        assertThat(simEntry.eid).isEqualTo(getEidFromIccid(simEntry.iccid))
-
-        /* Verify that 'code' field is set. */
-        val es9plusEndpoint = SIM_MANAGER_RULE.configuration.profileVendors[0].es9plusEndpoint
-        assertThat(simEntry.code).isEqualToIgnoringCase("LPA:${es9plusEndpoint}:${simEntry.matchingId}")
-    }
 
     ///
     ///   Tests related to the cron job that will allocate new SIM cards
@@ -252,65 +189,115 @@ class SimAdministrationTest {
 
     @Test
     fun testGetListOfHlrs() {
-        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
+        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().getDAO()
 
-        val hlrs = simDao.getHlrAdapters()
-        assertEquals(1,hlrs.size)
-        assertEquals(hlrName, hlrs[0].name)
+        val hssEntries = simDao.getHssEntries()
+        hssEntries.mapRight {  assertEquals(1, it.size) }
+
+        hssEntries.mapRight {  assertEquals(hssName, it[0].name)}
+
     }
-
 
     @Test
     fun testGetProfilesForHlr() {
-        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
-        val hlrs = simDao.getHlrAdapters()
-        val hlrId = hlrs[0].id
-        val profiles : List<String> = simDao.getProfileNamesForHlr(hlrId)
-        assertEquals(1, profiles.size)
-        assertEquals(expectedProfile, profiles.get(0))
+        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
+                .getDAO()
+        val hlrs = simDao.getHssEntries()
+        assertThat(hlrs.isRight()).isTrue()
+
+        var hlrId: Long = 0
+        hlrs.map {
+            hlrId = it[0].id
+        }
+
+        val profiles = simDao.getProfileNamesForHssById(hlrId)
+        assertThat(profiles.isRight()).isTrue()
+        profiles.map {
+            assertEquals(1, it.size)
+            assertEquals(expectedProfile, it[0])
+        }
     }
 
     @Test
     fun  testGetProfileStats() {
-        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
-        val hlrs = simDao.getHlrAdapters()
-        val hlrId = hlrs[0].id
-        val stats : SimProfileKeyStatistics? = simDao.getProfileStats(hlrId, expectedProfile)
-        assertNotNull(stats)
-        assertEquals(100L, stats!!.noOfEntries)
-        assertEquals(100L, stats!!.noOfUnallocatedEntries)
-        assertEquals(0L, stats!!.noOfReleasedEntries)
+        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
+                .getDAO()
+        val hlrs = simDao.getHssEntries()
+        assertThat(hlrs.isRight()).isTrue()
+
+        var hlrId: Long = 0
+        hlrs.map {
+            hlrId = it[0].id
+        }
+
+        val stats = simDao.getProfileStats(hlrId, expectedProfile)
+        assertThat(stats.isRight()).isTrue()
+        stats.map {
+            assertEquals(100L, it.noOfEntries)
+            assertEquals(100L, it.noOfUnallocatedEntries)
+            assertEquals(0L, it.noOfReleasedEntries)
+        }
     }
 
     @Test
     fun testPeriodicProvisioningTask() {
 
-        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>().DAO
+        val simDao = SIM_MANAGER_RULE.getApplication<SimAdministrationApplication>()
+                .getDAO()
 
         val profileVendors = SIM_MANAGER_RULE.configuration.profileVendors
-        val hlrConfigs = SIM_MANAGER_RULE.configuration.hlrVendors
-
-        val httpClient  = HttpClientBuilder(SIM_MANAGER_RULE.environment).build("periodicProvisioningTaskClient")
-
+        val hssConfigs = SIM_MANAGER_RULE.configuration.hssVendors
+        val httpClient = HttpClientBuilder(SIM_MANAGER_RULE.environment)
+                .build("periodicProvisioningTaskClient")
         val maxNoOfProfilesToAllocate = 10
-        val hlrs = simDao.getHlrAdapters()
-        val hlrId = hlrs[0].id
 
-        val preAllocationStats = simDao.getProfileStats(hlrId, expectedProfile)
+        val hlrs = simDao.getHssEntries()
+        assertThat(hlrs.isRight()).isTrue()
+
+        var hssId: Long = 0
+        hlrs.map {
+            hssId = it[0].id
+        }
+
+        val dispatcher = DirectHssDispatcher(
+                hssConfigs = hssConfigs,
+                httpClient = httpClient,
+                healthCheckRegistrar = object : HealthCheckRegistrar {
+                    override fun registerHealthCheck(name: String, healthCheck: HealthCheck) {
+                        SIM_MANAGER_RULE.environment.healthChecks().register(name, healthCheck)
+                    }
+                })
+
+        val hssAdapterCache = SimManagerToHssDispatcherAdapter(
+                dispatcher = dispatcher ,
+                simInventoryDAO = simDao)
+
+        var preStats  =
+                SimProfileKeyStatistics(
+                        0L,
+                        0L,
+                        0L,
+                        0L)
 
         val task = PreallocateProfilesTask(
                 profileVendors = profileVendors,
                 simInventoryDAO = simDao,
                 maxNoOfProfileToAllocate = maxNoOfProfilesToAllocate,
-                httpClient = httpClient,
-                hlrConfigs = hlrConfigs)
+                hssAdapterProxy = hssAdapterCache,
+                httpClient = httpClient)
 
-        task.preallocateProfiles()
+        task.preAllocateSimProfiles()
 
-        val postAllocationStats  = simDao.getProfileStats(hlrId, expectedProfile)
+        val postAllocationStats =
+                simDao.getProfileStats(hssId, expectedProfile)
+        assertThat(postAllocationStats.isRight()).isTrue()
+        var postStats  = SimProfileKeyStatistics(0L, 0L, 0L, 0L)
+        postAllocationStats.map {
+            postStats = it
+        }
 
         val noOfAllocatedProfiles =
-                postAllocationStats.noOfEntriesAvailableForImmediateUse - preAllocationStats.noOfEntriesAvailableForImmediateUse
+                postStats.noOfEntriesAvailableForImmediateUse - preStats.noOfEntriesAvailableForImmediateUse
 
         assertEquals(
                 maxNoOfProfilesToAllocate.toLong(),
