@@ -17,6 +17,11 @@ import org.ostelco.prime.model.CustomerRegionStatus.APPROVED
 import org.ostelco.prime.model.CustomerRegionStatus.PENDING
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.JumioScanData
+import org.ostelco.prime.model.KycStatus
+import org.ostelco.prime.model.KycType.ADDRESS_AND_PHONE_NUMBER
+import org.ostelco.prime.model.KycType.JUMIO
+import org.ostelco.prime.model.KycType.MY_INFO
+import org.ostelco.prime.model.KycType.NRIC_FIN
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Price
 import org.ostelco.prime.model.Product
@@ -36,10 +41,6 @@ import org.ostelco.prime.paymentprocessor.core.ProfileInfo
 import org.ostelco.prime.sim.SimManager
 import org.ostelco.prime.storage.NotFoundError
 import org.ostelco.prime.storage.ScanInformationStore
-import org.ostelco.prime.storage.graph.StatusFlag.ADDRESS_AND_PHONE_NUMBER
-import org.ostelco.prime.storage.graph.StatusFlag.JUMIO
-import org.ostelco.prime.storage.graph.StatusFlag.MY_INFO
-import org.ostelco.prime.storage.graph.StatusFlag.NRIC_FIN
 import java.time.Instant
 import java.util.*
 import javax.ws.rs.core.MultivaluedHashMap
@@ -625,8 +626,8 @@ class Neo4jStoreTest {
                 .bimap(
                         {
                             assert(it is NotFoundError)
-                            assertEquals(expected = "Region", actual = it.type)
-                            assertEquals(expected = "no", actual = it.id)
+                            assertEquals(expected = "BELONG_TO_REGION", actual = it.type)
+                            assertTrue { it.id.endsWith(" -> no") }
                         },
                         { fail("Should fail with not found error") })
     }
@@ -661,9 +662,15 @@ class Neo4jStoreTest {
                                     expected = setOf(
                                             RegionDetails(
                                                     region = Region("no", "Norway"),
+                                                    kycStatusMap = mapOf(JUMIO to KycStatus.PENDING),
                                                     status = APPROVED),
                                             RegionDetails(
                                                     region = Region("sg", "Singapore"),
+                                                    kycStatusMap = mapOf(
+                                                            JUMIO to KycStatus.PENDING,
+                                                            MY_INFO to KycStatus.PENDING,
+                                                            ADDRESS_AND_PHONE_NUMBER to KycStatus.PENDING,
+                                                            NRIC_FIN to KycStatus.PENDING),
                                                     status = PENDING)),
                                     actual = it.toSet())
                         })
@@ -698,7 +705,8 @@ class Neo4jStoreTest {
                             assertEquals(
                                     expected = RegionDetails(
                                             region = Region("no", "Norway"),
-                                            status = APPROVED),
+                                            status = APPROVED,
+                                            kycStatusMap = mapOf(JUMIO to KycStatus.PENDING)),
                                     actual = it)
                         })
     }
@@ -745,6 +753,7 @@ class Neo4jStoreTest {
                                             RegionDetails(
                                                     region = Region("no", "Norway"),
                                                     status = APPROVED,
+                                                    kycStatusMap = mapOf(JUMIO to KycStatus.PENDING),
                                                     simProfiles = listOf(
                                                             SimProfile(
                                                                     iccId = "iccId",
@@ -752,6 +761,11 @@ class Neo4jStoreTest {
                                                                     status = AVAILABLE_FOR_DOWNLOAD))),
                                             RegionDetails(
                                                     region = Region("sg", "Singapore"),
+                                                    kycStatusMap = mapOf(
+                                                            JUMIO to KycStatus.PENDING,
+                                                            MY_INFO to KycStatus.PENDING,
+                                                            ADDRESS_AND_PHONE_NUMBER to KycStatus.PENDING,
+                                                            NRIC_FIN to KycStatus.PENDING),
                                                     status = PENDING)),
                                     actual = it.toSet())
                         })
@@ -798,6 +812,7 @@ class Neo4jStoreTest {
                                     expected = RegionDetails(
                                             region = Region("no", "Norway"),
                                             status = APPROVED,
+                                            kycStatusMap = mapOf(JUMIO to KycStatus.PENDING),
                                             simProfiles = listOf(
                                                     SimProfile(
                                                             iccId = "iccId",
@@ -808,9 +823,12 @@ class Neo4jStoreTest {
     }
 
     @Test
-    fun `test MY_INFO status flag`() {
+    fun `test MY_INFO status`() {
 
         Neo4jStoreSingleton.createRegion(Region("sg", "Singapore"))
+                .mapLeft { fail(it.message) }
+
+        Neo4jStoreSingleton.createSegment(Segment(id = getSegmentNameFromCountryCode("sg")))
                 .mapLeft { fail(it.message) }
 
         assert(Neo4jStoreSingleton.addCustomer(
@@ -824,23 +842,24 @@ class Neo4jStoreTest {
                     fail("Should not have region details")
                 }
 
-        Neo4jStoreSingleton.setStatusFlag(
+        Neo4jStoreSingleton.setKycStatus(
                 customerId = CUSTOMER.id,
                 regionCode = "sg",
-                flag = MY_INFO)
+                kycType = MY_INFO)
+                .mapLeft { fail(it.message) }
 
         Neo4jStoreSingleton.getRegionDetails(
                 identity = IDENTITY,
                 regionCode = "sg")
                 .fold({
-                    fail("Failed to get Region Details")
+                    fail("Failed to get Region Details - ${it.message}")
                 }, {
                     assertEquals(APPROVED, it.status)
                 })
     }
 
     @Test
-    fun `test NRIC_FIN JUMIO and ADDRESS_PHONE status flag`() {
+    fun `test NRIC_FIN JUMIO and ADDRESS_PHONE status`() {
 
         Neo4jStoreSingleton.createSegment(Segment(id = getSegmentNameFromCountryCode("sg")))
 
@@ -858,10 +877,10 @@ class Neo4jStoreTest {
                     fail("Should not have region details")
                 }
 
-        Neo4jStoreSingleton.setStatusFlag(
+        Neo4jStoreSingleton.setKycStatus(
                 customerId = CUSTOMER.id,
                 regionCode = "sg",
-                flag = NRIC_FIN)
+                kycType = NRIC_FIN)
 
         Neo4jStoreSingleton.getRegionDetails(
                 identity = IDENTITY,
@@ -872,10 +891,10 @@ class Neo4jStoreTest {
                     assertEquals(PENDING, it.status)
                 })
 
-        Neo4jStoreSingleton.setStatusFlag(
+        Neo4jStoreSingleton.setKycStatus(
                 customerId = CUSTOMER.id,
                 regionCode = "sg",
-                flag = JUMIO)
+                kycType = JUMIO)
 
         Neo4jStoreSingleton.getRegionDetails(
                 identity = IDENTITY,
@@ -886,10 +905,10 @@ class Neo4jStoreTest {
                     assertEquals(PENDING, it.status)
                 })
 
-        Neo4jStoreSingleton.setStatusFlag(
+        Neo4jStoreSingleton.setKycStatus(
                 customerId = CUSTOMER.id,
                 regionCode = "sg",
-                flag = ADDRESS_AND_PHONE_NUMBER)
+                kycType = ADDRESS_AND_PHONE_NUMBER)
 
         Neo4jStoreSingleton.getRegionDetails(
                 identity = IDENTITY,
@@ -899,18 +918,6 @@ class Neo4jStoreTest {
                 }, {
                     assertEquals(APPROVED, it.status)
                 })
-    }
-
-    @Test
-    fun `initial status flag map`() {
-        assertEquals(1, Neo4jStoreSingleton.getInitialBitmap("no"))
-        assertEquals(15, Neo4jStoreSingleton.getInitialBitmap("sg"))
-    }
-
-    @Test
-    fun `initial status flag set needed for approval`() {
-        assertEquals(setOf(1), Neo4jStoreSingleton.getApprovedBitmapSet("no"))
-        assertEquals(setOf(2, 13), Neo4jStoreSingleton.getApprovedBitmapSet("sg"))
     }
 
     companion object {
