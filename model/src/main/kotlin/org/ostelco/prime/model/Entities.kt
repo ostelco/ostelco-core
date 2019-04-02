@@ -13,11 +13,6 @@ data class Region(
         override val id: String,
         val name: String) : HasId
 
-data class RegionDetails(
-        val region: Region,
-        val status: CustomerRegionStatus,
-        val simProfiles: Collection<SimProfile> = emptyList())
-
 data class Offer(
         override val id: String,
         val segments: Collection<String> = emptyList(),
@@ -44,16 +39,34 @@ data class Identity(
         val type: String,
         val provider: String) : HasId
 
+data class RegionDetails(
+        val region: Region,
+        val status: CustomerRegionStatus,
+        val kycStatusMap: Map<KycType, KycStatus> = emptyMap(),
+        val simProfiles: Collection<SimProfile> = emptyList())
+
 enum class CustomerRegionStatus {
-    PENDING,       // eKYC is started by client and results are pending
-    REJECTED,      // eKYC documents were rejected
-    APPROVED,      // eKYC documents were approved
+    PENDING,   // eKYC initiated, but not yet approved
+    APPROVED,  // eKYC approved
+}
+
+enum class KycType {
+    JUMIO,
+    MY_INFO,
+    NRIC_FIN,
+    ADDRESS_AND_PHONE_NUMBER
+}
+
+enum class KycStatus {
+    PENDING,   // eKYC initiated, but not yet approved or rejected
+    REJECTED,  // eKYC rejected
+    APPROVED   // eKYC approved
 }
 
 enum class ScanStatus {
-    PENDING,        // scan results are pending
-    REJECTED,       // scanned Id was rejected
-    APPROVED        // scanned Id was approved
+    PENDING,   // scan results are pending
+    REJECTED,  // scanned Id was rejected
+    APPROVED   // scanned Id was approved
 }
 
 data class ScanResult(
