@@ -46,7 +46,7 @@ class KycResourcesTest {
         `when`<Either<ApiError, ScanInformation>>(DAO.getScanInformation(identityCaptor.capture(), scanIdCaptor.capture()))
                 .thenReturn(scanInfo.right())
 
-        val resp = RULE.target("regions/no/kyc/jumio/scans/scan123/status")
+        val resp = RULE.target("regions/no/kyc/jumio/scans/scan123")
                 .request()
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
                 .get(Response::class.java)
@@ -76,7 +76,7 @@ class KycResourcesTest {
         `when`<Either<ApiError, ScanInformation>>(DAO.getScanInformation(identityCaptor.capture(), scanIdCaptor.capture()))
                 .thenReturn(scanInfo.right())
 
-        val resp = RULE.target("regions/sg/kyc/jumio/scans/scan123/status")
+        val resp = RULE.target("regions/sg/kyc/jumio/scans/scan123")
                 .request()
                 .header("Authorization", "Bearer ${AccessToken.withEmail(email)}")
                 .get(Response::class.java)

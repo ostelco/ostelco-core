@@ -3,7 +3,15 @@
 # Declare variables to be passed into your templates.
 
 replicaCount: 2
-  
+
+dnsPrefix: ""
+dnsSuffix: ".dev.oya.world"
+podAutoscaling: 
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
 prime:
   image: eu.gcr.io/pi-ostelco-dev/prime
   tag: 9ca9ca976
@@ -127,6 +135,11 @@ ocsEsp:
   endpointAddress: ocs.dev.oya.world
   ports:
     http2_port: 9000
+    ssl_port: 8443
+  secretVolumes: 
+    - secretName: dev-oya-tls
+      containerMountPath: /etc/nginx/ssl 
+      type: ssl   
 
 apiEsp: 
   enabled: true
@@ -141,6 +154,11 @@ metricsEsp:
   endpointAddress: metrics.dev.oya.world
   ports:
     http2_port: 9004
+    ssl_port: 9443
+  secretVolumes: 
+    - secretName: dev-oya-tls
+      containerMountPath: /etc/nginx/ssl 
+      type: ssl     
 
 alvinApiEsp:
   enabled: true
@@ -159,42 +177,42 @@ houstonApiEsp:
 services:
   ocs:
     name: ocs
-    type: ClusterIP
-    port: 80
-    targetPort: 9000
+    type: LoadBalancer
+    port: 443
+    targetPort: 8443
     portName: grpc 
-    host: ocs.dev.oya.world
-    grpcOrHttp2: true
+    # host: ocs # the host name is forumlated from concatinating: dnsPrefix, this host, and dnsSuffix 
+    # grpcOrHttp2: true
   api:
     name: api
     type: ClusterIP
     port: 80
     targetPort: 9002
     portName: http
-    host: api.dev.oya.world
+    host: api # the host name is forumlated from concatinating: dnsPrefix, this host, and dnsSuffix
     grpcOrHttp2: true
   metrics: 
     name: metrics
-    type: ClusterIP
-    port: 80
-    targetPort: 9004 
+    type: LoadBalancer
+    port: 443
+    targetPort: 9443 
     portName: grpc
-    host: metrics.dev.oya.world
-    grpcOrHttp2: true
+    # host: metrics # the host name is forumlated from concatinating: dnsPrefix, this host, and dnsSuffix
+    # grpcOrHttp2: true
   prime-houston-api: 
     name: houston-api
     type: ClusterIP
     port: 80
     targetPort: 9006  
     portName: http
-    host: houston-api.dev.oya.world
+    host: houston-api # the host name is forumlated from concatinating: dnsPrefix, this host, and dnsSuffix
   prime-alvin-api: 
     name: alvin-api
     type: ClusterIP
     port: 80
     targetPort: 9008  
     portName: http
-    host: alvin-api.dev.oya.world
+    host: alvin-api # the host name is forumlated from concatinating: dnsPrefix, this host, and dnsSuffix
   pseudonym-server: 
     name: pseudonym-server
     type: ClusterIP

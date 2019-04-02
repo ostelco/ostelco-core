@@ -39,7 +39,7 @@ class OcsPubSubTest {
         createTopicWithSubscription(CCA_TOPIC, CCA_SUBSCRIPTION)
         createTopicWithSubscription(ACTIVATE_TOPIC, "ocsgw-activate-sub")
 
-        System.setProperty("PUBSUB_HOST", "0.0.0.0:8085")
+        System.setProperty("PUBSUB_EMULATOR_HOST", "0.0.0.0:8085")
 
         pubSubClient = PubSubClient(
                 ocsAsyncRequestConsumer = OnlineCharging,
