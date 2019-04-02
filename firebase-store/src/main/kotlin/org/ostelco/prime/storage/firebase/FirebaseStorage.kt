@@ -40,17 +40,17 @@ object FirebaseStorageSingleton : DocumentStore {
         return FirebaseDatabase.getInstance()
     }
 
-    override fun addNotificationToken(msisdn: String, token: ApplicationToken): Boolean {
-        return fcmTokenStore.set(token.applicationID, token) { databaseReference.child(urlEncode(msisdn)) }
+    override fun addNotificationToken(customerId: String, token: ApplicationToken): Boolean {
+        return fcmTokenStore.set(token.applicationID, token) { databaseReference.child(urlEncode(customerId)) }
     }
 
-    override fun getNotificationToken(msisdn: String, applicationID: String): ApplicationToken? {
-        return fcmTokenStore.get(applicationID) { databaseReference.child(urlEncode(msisdn)) }
+    override fun getNotificationToken(customerId: String, applicationID: String): ApplicationToken? {
+        return fcmTokenStore.get(applicationID) { databaseReference.child(urlEncode(customerId)) }
     }
 
-    override fun getNotificationTokens(msisdn: String): Collection<ApplicationToken> {
+    override fun getNotificationTokens(customerId: String): Collection<ApplicationToken> {
         return fcmTokenStore.getAll {
-            databaseReference.child(urlEncode(msisdn))
+            databaseReference.child(urlEncode(customerId))
         }.values
     }
 

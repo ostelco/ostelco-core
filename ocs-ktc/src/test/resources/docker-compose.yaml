@@ -1,0 +1,8 @@
+version: "3.3"
+
+services:
+  pubsub-emulator:
+    container_name: pubsub-emulator
+    image: knarz/pubsub-emulator
+    ports:
+      - "8085:8085"

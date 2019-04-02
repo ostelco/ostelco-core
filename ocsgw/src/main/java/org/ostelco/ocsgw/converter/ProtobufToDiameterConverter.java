@@ -9,6 +9,7 @@ import org.ostelco.ocsgw.datasource.protobuf.GrpcDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.Collections;
 
 import static org.ostelco.diameter.model.RequestType.*;
@@ -26,6 +27,8 @@ public class ProtobufToDiameterConverter {
                 (int) msccGRPC.getServiceIdentifier(),
                 Collections.singletonList(new ServiceUnit()), new ServiceUnit(), new ServiceUnit(msccGRPC.getGranted().getTotalOctets(), 0, 0),
                 msccGRPC.getValidityTime(),
+                msccGRPC.getQuotaHoldingTime(),
+                msccGRPC.getVolumeQuotaThreshold(),
                 convertFinalUnitIndication(msccGRPC.getFinalUnitIndication()),
                 convertResultCode(msccGRPC.getResultCode()));
     }
@@ -69,12 +72,16 @@ public class ProtobufToDiameterConverter {
         return ResultCode.valueOf(resultCode.name());
     }
 
-    public static CreditControlRequestInfo convertRequestToGrpc(final CreditControlContext context) {
+    public static CreditControlRequestInfo convertRequestToGrpc(final CreditControlContext context, @Nullable final String topicId) {
 
         try {
             CreditControlRequestInfo.Builder builder = CreditControlRequestInfo
                     .newBuilder()
                     .setType(getRequestType(context));
+
+            if (topicId != null) {
+                builder.setTopicId(topicId);
+            }
 
             for (MultipleServiceCreditControl mscc : context.getCreditControlRequest().getMultipleServiceCreditControls()) {
 
@@ -85,19 +92,17 @@ public class ProtobufToDiameterConverter {
                     ServiceUnit requested = mscc.getRequested().get(0);
 
                     protoMscc.setRequested(org.ostelco.ocs.api.ServiceUnit.newBuilder()
+                            .setTotalOctets(requested.getTotal()) // fails at 55904
                             .setInputOctets(0L)
-                            .setOutputOctetes(0L)
-                            .setTotalOctets(requested.getTotal())
-                            .build());
+                            .setOutputOctets(0L));
                 }
 
                 ServiceUnit used = mscc.getUsed();
 
                 protoMscc.setUsed(org.ostelco.ocs.api.ServiceUnit.newBuilder()
                         .setInputOctets(used.getInput())
-                        .setOutputOctetes(used.getOutput())
-                        .setTotalOctets(used.getTotal())
-                        .build());
+                        .setOutputOctets(used.getOutput())
+                        .setTotalOctets(used.getTotal()));
 
                 protoMscc.setRatingGroup(mscc.getRatingGroup());
                 protoMscc.setServiceIdentifier(mscc.getServiceIdentifier());
@@ -107,7 +112,7 @@ public class ProtobufToDiameterConverter {
                 } else {
                     protoMscc.setReportingReasonValue(org.ostelco.ocs.api.ReportingReason.UNRECOGNIZED.ordinal());
                 }
-                builder.addMscc(protoMscc.build());
+                builder.addMscc(protoMscc);
             }
 
             builder.setRequestId(context.getSessionId())
@@ -126,8 +131,7 @@ public class ProtobufToDiameterConverter {
                             ServiceInfo.newBuilder()
                                     .setPsInformation(org.ostelco.ocs.api.PsInformation.newBuilder()
                                             .setCalledStationId(psInformation.getCalledStationId())
-                                            .setSgsnMccMnc(psInformation.getSgsnMccMnc())
-                                            .build()).build());
+                                            .setSgsnMccMnc(psInformation.getSgsnMccMnc())));
                 }
             }
             return builder.build();

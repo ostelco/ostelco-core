@@ -132,6 +132,16 @@ object TestHelper {
     }
 
     @JvmStatic
+    fun createInitRequestMultiRatingGroups(ccrAvps: AvpSet, msisdn: String, bucketSize: Long) {
+        buildBasicRequest(ccrAvps, RequestType.INITIAL_REQUEST, requestNumber = 0)
+        addUser(ccrAvps, msisdn = msisdn, imsi = IMSI)
+        addBucketRequest(ccrAvps, ratingGroup = 10, serviceIdentifier = 1, bucketSize = bucketSize)
+        addBucketRequest(ccrAvps, ratingGroup = 12, serviceIdentifier = 2, bucketSize = bucketSize)
+        addBucketRequest(ccrAvps, ratingGroup = 14, serviceIdentifier = 4, bucketSize = bucketSize)
+        addServiceInformation(ccrAvps, apn = APN, sgsnMccMnc = SGSN_MCC_MNC)
+    }
+
+    @JvmStatic
     fun createUpdateRequest(ccrAvps: AvpSet, msisdn: String, bucketSize: Long, usedBucketSize: Long) {
         buildBasicRequest(ccrAvps, RequestType.UPDATE_REQUEST, requestNumber = 1)
         addUser(ccrAvps, msisdn = msisdn, imsi = IMSI)

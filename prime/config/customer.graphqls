@@ -16,12 +16,8 @@ type Context {
 
 type Customer {
   id: String
-  email: String
-  name: String
-  address: String
-  postCode: String
-  city: String
-  country: String
+  contactEmail: String
+  nickname: String
   referralId: String
   analyticsId: String
 }
@@ -33,9 +29,7 @@ type Bundle {
 
 type Subscription {
   msisdn: String
-  alias: String
   analyticsId: String
-  code: String
 }
 
 type Product {

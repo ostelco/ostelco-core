@@ -7,30 +7,33 @@ services:
       context: prime
       dockerfile: Dockerfile.test
     environment:
-    - GCP_PROJECT_ID=${GCP_PROJECT_ID}
-    - FIREBASE_ROOT_PATH=test
-    - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
-    - PUBSUB_PROJECT_ID=${GCP_PROJECT_ID}
-    - JUMIO_API_TOKEN=
-    - JUMIO_API_SECRET=
-    - STRIPE_API_KEY=${STRIPE_API_KEY}
-    - STRIPE_ENDPOINT_SECRET=${STRIPE_ENDPOINT_SECRET}
-    - DATASTORE_EMULATOR_HOST=localhost:9090
-    - DATASTORE_PROJECT_ID=${GCP_PROJECT_ID}
-    - MANDRILL_API_KEY=
-    - LOCAL_TESTING=true
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+      - FIREBASE_ROOT_PATH=test
+      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
+      - PUBSUB_PROJECT_ID=${GCP_PROJECT_ID}
+      - JUMIO_API_TOKEN=
+      - JUMIO_API_SECRET=
+      - STRIPE_API_KEY=${STRIPE_API_KEY}
+      - STRIPE_ENDPOINT_SECRET=${STRIPE_ENDPOINT_SECRET}
+      - DATASTORE_EMULATOR_HOST=localhost:9090
+      - DATASTORE_PROJECT_ID=${GCP_PROJECT_ID}
+      - MANDRILL_API_KEY=
+      - LOCAL_TESTING=true
     ports:
-    - "9090:8080"
-    - "8082:8082"
+      - "9090:8080"
+      - "8082:8082"
     depends_on:
-    - "pubsub-emulator"
-    - "neo4j"
+      - "ext-auth-provider"
+      - "datastore-emulator"
+      - "pubsub-emulator"
+      - "neo4j"
+    command: ["/bin/bash", "./wait.sh"]
     tmpfs:
       - /data
     networks:
       net:
         aliases:
-        - "prime"
+          - "prime"
         ipv4_address: 172.16.238.5
       default:
 
@@ -38,52 +41,62 @@ services:
     container_name: ocsgw
     build: ocsgw
     depends_on:
-    - "prime"
+      - "pubsub-emulator"
+      - "prime"
     command: ["./wait.sh"]
     environment:
-    - DISABLE_TLS=true
-    - OCS_GRPC_SERVER=prime:8082
-    - METRICS_GRPC_SERVER=prime:8083
-    - SERVICE_FILE=prime-service-account.json
-    - GOOGLE_CLOUD_PROJECT=${GCP_PROJECT_ID}
-    - PUBSUB_PROJECT_ID=${GCP_PROJECT_ID}
-    - PUBSUB_TOPIC_ID=
-    - PUBSUB_CCR_SUBSCRIPTION_ID=
-    - PUBSUB_ACTIVATE_SUBSCRIPTION_ID=
+      - DISABLE_TLS=true
+      - OCS_GRPC_SERVER=prime:8082
+      - METRICS_GRPC_SERVER=prime:8083
+      - SERVICE_FILE=prime-service-account.json
+      - GOOGLE_CLOUD_PROJECT=${GCP_PROJECT_ID}
+      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
+      - PUBSUB_PROJECT_ID=${GCP_PROJECT_ID}
+      - PUBSUB_CCR_TOPIC_ID=ocs-ccr
+      - PUBSUB_CCA_TOPIC_ID=ocs-cca
+      - PUBSUB_CCA_SUBSCRIPTION_ID=ocsgw-cca-sub
+      - PUBSUB_ACTIVATE_SUBSCRIPTION_ID=ocsgw-activate-sub
+      - OCS_DATASOURCE_TYPE=Proxy
     volumes:
-    - ./ocsgw/cert:/cert/
-    - ./ocsgw/config:/config/
+      - ./ocsgw/cert:/cert/
+      - ./ocsgw/config:/config/
     networks:
       net:
         aliases:
-        - "ocsgw"
+          - "ocsgw"
         ipv4_address: 172.16.238.3
+      default:
 
   acceptance-tests:
     container_name: acceptance-tests
     build: acceptance-tests
     depends_on:
-    - "ocsgw"
-    - "prime"
+      - "ocsgw"
+      - "prime"
     command: ["./wait.sh"]
     environment:
-    - PRIME_SOCKET=prime:8080
-    - OCS_SOCKET=prime:8082
-    - STRIPE_API_KEY=${STRIPE_API_KEY}
-    - GOOGLE_APPLICATION_CREDENTIALS=/secret/prime-service-account.json
+      - PRIME_SOCKET=prime:8080
+      - OCS_SOCKET=prime:8082
+      - STRIPE_API_KEY=${STRIPE_API_KEY}
+      - GOOGLE_APPLICATION_CREDENTIALS=/secret/prime-service-account.json
+      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
     networks:
       net:
         ipv4_address: 172.16.238.2
       default:
 
+  ext-myinfo-emulator:
+    container_name: ext-myinfo-emulator
+    build: ext-myinfo-emulator
+
   neo4j:
     container_name: "neo4j"
     image: neo4j:3.4.9
     environment:
-    - NEO4J_AUTH=none
+      - NEO4J_AUTH=none
     ports:
-    - "7687:7687"
-    - "7474:7474"
+      - "7687:7687"
+      - "7474:7474"
     tmpfs: "/data"
 
   pubsub-emulator:
@@ -94,10 +107,10 @@ services:
     container_name: datastore-emulator
     image: google/cloud-sdk:218.0.0
     expose:
-    - "8081"
+      - "8081"
     environment:
-    - CLOUDSDK_CORE_PROJECT=${GCP_PROJECT_ID}
-    - DATASTORE_DATASET=${GCP_PROJECT_ID}
+      - CLOUDSDK_CORE_PROJECT=${GCP_PROJECT_ID}
+      - DATASTORE_DATASET=${GCP_PROJECT_ID}
     command: ["gcloud", "beta", "emulators", "datastore", "start", "--host-port=0.0.0.0:8081"]
 
   ext-auth-provider:
@@ -110,4 +123,4 @@ networks:
     ipam:
       driver: default
       config:
-      - subnet: 172.16.238.0/24
+        - subnet: 172.16.238.0/24

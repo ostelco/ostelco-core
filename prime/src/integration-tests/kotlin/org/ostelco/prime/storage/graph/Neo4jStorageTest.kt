@@ -34,7 +34,7 @@ class Neo4jStorageTest {
 
         sleep(MILLIS_TO_WAIT_WHEN_STARTING_UP.toLong())
         storage.removeCustomer(IDENTITY)
-        storage.addCustomer(IDENTITY, Customer(email = EPHERMERAL_EMAIL), referredBy = null)
+        storage.addCustomer(IDENTITY, Customer(contactEmail = EPHERMERAL_EMAIL, nickname = NAME), referredBy = null)
                 .mapLeft { fail(it.message) }
         storage.addSubscription(IDENTITY, MSISDN)
                 .mapLeft { fail(it.message) }
@@ -93,8 +93,9 @@ class Neo4jStorageTest {
     companion object {
 
         private const val EPHERMERAL_EMAIL = "attherate@dotcom.com"
+        private const val NAME = "Some Name"
         private const val MSISDN = "4747116996"
-        private const val COUNTRY = "NO"
+
         private val IDENTITY = Identity(EPHERMERAL_EMAIL, "EMAIL", "email")
 
         private const val MILLIS_TO_WAIT_WHEN_STARTING_UP = 3000
@@ -119,10 +120,9 @@ class Neo4jStorageTest {
 
             initFirebaseConfigRegistry()
 
-            val config = Config()
-            config.host = "0.0.0.0"
-            config.protocol = "bolt"
-            ConfigRegistry.config = config
+            ConfigRegistry.config = Config(
+                    host = "0.0.0.0",
+                    protocol = "bolt")
 
             Neo4jClient.start()
 

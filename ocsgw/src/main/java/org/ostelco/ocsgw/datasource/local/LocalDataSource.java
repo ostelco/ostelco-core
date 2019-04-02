@@ -83,6 +83,8 @@ public class LocalDataSource implements DataSource {
                     new ServiceUnit(mscc.getUsed().getTotal(), mscc.getUsed().getInput(), mscc.getUsed().getOutput()),
                     granted,
                     mscc.getValidityTime(),
+                    7200,
+                    (long) (granted.getTotal() * 0.2), // 20%
                     finalUnitIndication,
                     ResultCode.DIAMETER_SUCCESS);
 

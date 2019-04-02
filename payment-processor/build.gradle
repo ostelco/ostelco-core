@@ -18,6 +18,8 @@ dependencies {
 
   implementation "com.stripe:stripe-java:$stripeVersion"
 
+  implementation "com.google.cloud:google-cloud-pubsub:$googleCloudVersion"
+
   testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
 

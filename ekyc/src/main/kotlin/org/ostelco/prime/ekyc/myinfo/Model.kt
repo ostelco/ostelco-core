@@ -17,17 +17,6 @@ data class TokenApiResponse(
         @JsonProperty("expires_in")
         val expiresIn: Long)
 
-enum class PersonApiAttributes(val label: String) {
-    NAME("name"),
-    SEX("sex"),
-    DOB("dob"),
-    RESIDENTIAL_STATUS("residentialstatus"),
-    NATIONALITY("nationality"),
-    MOBILE_NO("mobileno"),
-    EMAIL("email"),
-    REG_ADD("regadd"),
-}
-
 enum class HttpMethod {
     GET,
     POST
