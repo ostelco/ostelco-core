@@ -280,6 +280,7 @@ object JumioHelper {
             // always check HTTP response code first
             if (responseCode != HttpURLConnection.HTTP_OK) {
                 val statusMessage = "$responseCode: ${httpConn.responseMessage}"
+                logger.error("Failed to download $fileURL $statusMessage")
                 return Either.left(FileDownloadError(fileURL, statusMessage))
             }
             val contentType = httpConn.contentType
@@ -289,6 +290,7 @@ object JumioHelper {
             return Either.right(Pair(fileData, contentType))
         } catch (e: IOException) {
             val statusMessage = "IOException: $e"
+            logger.error("Failed to download $fileURL $statusMessage")
             return Either.left(FileDownloadError(fileURL, statusMessage))
         } finally {
             httpConn.disconnect()
