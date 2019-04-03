@@ -34,6 +34,7 @@ prime:
     GCP_PROJECT_ID: pi-ostelco-dev
     ACTIVATE_TOPIC_ID: ocs-activate
     CCR_SUBSCRIPTION_ID: ocs-ccr-sub
+    GOOGLE_APPLICATION_CREDENTIALS: /secret/prime-service-account.json
 
   secretVolumes:
     - secretName: "prime-sa-key"  
