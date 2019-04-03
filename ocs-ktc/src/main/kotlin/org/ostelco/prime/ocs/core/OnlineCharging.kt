@@ -120,7 +120,7 @@ object OnlineCharging : OcsAsyncRequestConsumer {
 
         if (grantedTotalOctets > 0) {
             responseMscc.quotaHoldingTime = 7200
-            responseMscc.volumeQuotaThreshold = (grantedTotalOctets * 0.8).toLong() // 80%
+            responseMscc.volumeQuotaThreshold = (grantedTotalOctets * 0.2).toLong() // 20%
         }
 
         responseMscc.resultCode = ResultCode.DIAMETER_SUCCESS

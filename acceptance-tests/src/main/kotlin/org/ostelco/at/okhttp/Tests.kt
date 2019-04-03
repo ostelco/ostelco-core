@@ -34,27 +34,23 @@ class CustomerTest {
 
         val client = clientForSubject(subject = email)
 
-        val createCustomer = Customer()
-                .contactEmail(email)
-                .nickname("Test Customer")
-                .analyticsId("")
-                .referralId("")
+        val nickname = "Test Customer"
 
-        client.createCustomer(createCustomer.nickname, createCustomer.contactEmail, null)
+        client.createCustomer(nickname, email, null)
 
         val customer: Customer = client.customer
 
         assertEquals(email, customer.contactEmail, "Incorrect 'contactEmail' in fetched customer")
-        assertEquals(createCustomer.nickname, customer.nickname, "Incorrect 'name' in fetched customer")
+        assertEquals(nickname, customer.nickname, "Incorrect 'name' in fetched customer")
 
-        val newName = "New name: Test Customer"
+        val newNickname = "New name: Test Customer"
 
-        customer.nickname(newName)
+        customer.nickname(newNickname)
 
         val updatedCustomer: Customer = client.updateCustomer(customer.nickname, null)
 
         assertEquals(email, updatedCustomer.contactEmail, "Incorrect 'contactEmail' in response after updating customer")
-        assertEquals(newName, updatedCustomer.nickname, "Incorrect 'nickname' in response after updating customer")
+        assertEquals(newNickname, updatedCustomer.nickname, "Incorrect 'nickname' in response after updating customer")
     }
 
     @Test

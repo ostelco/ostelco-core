@@ -78,7 +78,7 @@ modules:
         contactEmail: rmz@telenordigital.com
         resourcePackage: org.ostelco
       hlrs:
-        - name: loltel
+        - name: Loltel
           endpoint: ${WG2_ENDPOINT}
           userId: ${WG2_USER}
           apiKey: ${WG2_API_KEY}

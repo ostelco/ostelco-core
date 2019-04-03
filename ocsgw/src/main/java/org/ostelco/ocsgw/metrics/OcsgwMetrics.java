@@ -31,7 +31,7 @@ public class OcsgwMetrics {
 
     private static final int KEEP_ALIVE_TIMEOUT_IN_MINUTES = 1;
 
-    private static final int KEEP_ALIVE_TIME_IN_MINUTES = 5;
+    private static final int KEEP_ALIVE_TIME_IN_MINUTES = 20;
 
     private OcsgwAnalyticsServiceGrpc.OcsgwAnalyticsServiceStub ocsgwAnalyticsServiceStub;
 
@@ -98,8 +98,8 @@ public class OcsgwMetrics {
 
             grpcChannel = channelBuilder
                     .keepAliveWithoutCalls(true)
-                    .keepAliveTimeout(KEEP_ALIVE_TIMEOUT_IN_MINUTES, TimeUnit.MINUTES)
-                    .keepAliveTime(KEEP_ALIVE_TIME_IN_MINUTES, TimeUnit.MINUTES)
+//                    .keepAliveTimeout(KEEP_ALIVE_TIMEOUT_IN_MINUTES, TimeUnit.MINUTES)
+//                    .keepAliveTime(KEEP_ALIVE_TIME_IN_MINUTES, TimeUnit.MINUTES)
                     .build();
 
             ocsgwAnalyticsServiceStub = OcsgwAnalyticsServiceGrpc.newStub(grpcChannel)

@@ -12,6 +12,7 @@ import javax.ws.rs.PUT
 import javax.ws.rs.Path
 import javax.ws.rs.PathParam
 import javax.ws.rs.Produces
+import javax.ws.rs.QueryParam
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
@@ -92,15 +93,25 @@ class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(regionCo
     fun saveProfile(
             @Auth token: AccessTokenPrincipal?,
             @NotNull
-            @PathParam("authorisationCode")
-            authorisationCode: String): Response {
+            @QueryParam("address")
+            address: String,
+            @NotNull
+            @QueryParam("phoneNumber")
+            phoneNumber: String): Response {
 
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
 
-        return Response.status(Response.Status.CREATED).build()
+        return dao.saveAddressAndPhoneNumber(
+                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                address = address,
+                phoneNumber = phoneNumber)
+                .fold(
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                        { Response.status(Response.Status.CREATED) })
+                .build()
     }
 }
 
@@ -126,7 +137,7 @@ class JumioKycResource(private val regionCode: String, private val dao: Subscrib
     }
 
     @GET
-    @Path("/scans/{scanId}/status")
+    @Path("/scans/{scanId}")
     @Produces(MediaType.APPLICATION_JSON)
     fun getScanStatus(
             @Auth token: AccessTokenPrincipal?,
