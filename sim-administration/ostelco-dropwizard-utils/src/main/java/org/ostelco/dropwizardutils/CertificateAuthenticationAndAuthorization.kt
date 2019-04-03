@@ -372,10 +372,10 @@ data class CertificateIdParameters(val commonName: String, val country: String, 
             val parts = inputString.split(",")
 
             var countryName = ""
-            var commonName: String = ""
-            var location: String = ""
-            var organization: String = ""
-            var state: String = ""
+            var commonName  = ""
+            var location  = ""
+            var organization  = ""
+            var state  = ""
 
             parts.forEach {
                 val split = it.split("=")
@@ -387,22 +387,19 @@ data class CertificateIdParameters(val commonName: String, val country: String, 
 
 
 
-                if ("CN" == key) {
-                    commonName = value
-                } else if ("C" == key) {
-                    countryName = value
-                } else if ("OU" == key) {
-                } // organizational unit
-                else if ("O" == key) {
-                    organization = value
-                } // organization
-                else if ("L" == key) {
-                    location = value
-                } // locality
-                else if ("S" == key) {
-                    state = value
-                } // XXX  State or province name
-                else if ("ST" == key) {
+                when (key) {
+                    "CN" -> commonName = value
+                    "C" -> countryName = value
+                    "OU" -> {
+                    } // organizational unit
+                    "O" -> organization = value
+                    // organization
+                    "L" -> location = value
+                    // locality
+                    "S" -> state = value
+                    // XXX  State or province name
+                    "ST" -> {
+                    } //  State or province name
                 } //  State or province name
             }
 

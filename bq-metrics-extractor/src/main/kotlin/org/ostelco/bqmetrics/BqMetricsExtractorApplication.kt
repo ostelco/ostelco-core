@@ -164,9 +164,9 @@ open class EnvironmentVars {
 abstract class MetricBuilder(
         val metricName: String,
         val help: String,
-        val sql: String,
-        val resultColumn: String,
-        val env: EnvironmentVars) {
+        private val sql: String,
+        private val resultColumn: String,
+        private val env: EnvironmentVars) {
 
     /**
      * Function which will add the current value of the metric to registry.

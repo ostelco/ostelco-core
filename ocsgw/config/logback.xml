@@ -7,7 +7,7 @@
     </encoder>
   </appender>
 
-  <logger name="org.ostelco" level="WARN"/>
+  <logger name="org.ostelco" level="INFO"/>
   <logger name="org.mobicents.tests.diameter" level="INFO"/>
   <logger name="org.jdiameter.common.impl.validation" level="INFO"/>
   <logger name="jdiameter.statistic" level="INFO"/>
@@ -16,7 +16,7 @@
   <logger name="io.lettuce.core" level="INFO" />
   <logger name="io.netty" level="INFO" />
 
-  <root level="WARN">
+  <root level="INFO">
     <appender-ref ref="STDOUT"/>
   </root>
 

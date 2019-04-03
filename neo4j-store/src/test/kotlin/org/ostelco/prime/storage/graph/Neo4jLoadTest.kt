@@ -59,7 +59,7 @@ class Neo4jLoadTest {
         repeat(USERS) { user ->
             Neo4jStoreSingleton.addCustomer(
                     identity = Identity(id = "test-$user@ostelco.org", type = "EMAIL", provider = "email"),
-                    customer = Customer(email = "test-$user@ostelco.org", name = NAME))
+                    customer = Customer(contactEmail = "test-$user@ostelco.org", nickname = NAME))
                     .mapLeft { fail(it.message) }
 
             Neo4jStoreSingleton.addSubscription(
@@ -147,9 +147,9 @@ class Neo4jLoadTest {
         @BeforeClass
         @JvmStatic
         fun start() {
-            ConfigRegistry.config = Config()
-            ConfigRegistry.config.host = "0.0.0.0"
-            ConfigRegistry.config.protocol = "bolt"
+            ConfigRegistry.config = Config(
+                    host = "0.0.0.0",
+                    protocol = "bolt")
             Neo4jClient.start()
         }
 

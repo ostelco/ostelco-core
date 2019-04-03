@@ -33,7 +33,7 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
 
         var userInfoEndpoint = DEFAULT_USER_INFO_ENDPOINT
 
-        var provider: String = ""
+        var provider  = ""
         try {
             val claims = getClaims(accessToken)
             if (claims != null) {

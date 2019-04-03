@@ -18,7 +18,7 @@ import javax.ws.rs.core.Response
  * ApplicationToken API.
  *
  */
-@Path("/applicationtoken")
+@Path("/applicationToken")
 class ApplicationTokenResource(private val dao: SubscriberDAO) {
 
     @POST

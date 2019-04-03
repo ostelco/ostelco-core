@@ -8,7 +8,6 @@ import org.ostelco.at.common.enableRegion
 import org.ostelco.at.common.expectedProducts
 import org.ostelco.at.common.getLogger
 import org.ostelco.at.common.randomInt
-import org.ostelco.at.jersey.post
 import org.ostelco.at.okhttp.ClientFactory.clientForSubject
 import org.ostelco.prime.customer.api.DefaultApi
 import org.ostelco.prime.customer.model.ApplicationToken
@@ -35,31 +34,27 @@ class CustomerTest {
 
         val client = clientForSubject(subject = email)
 
-        val createCustomer = Customer()
-                .email(email)
-                .name("Test Customer")
-                .analyticsId("")
-                .referralId("")
+        val nickname = "Test Customer"
 
-        client.createCustomer(createCustomer, null)
+        client.createCustomer(nickname, email, null)
 
         val customer: Customer = client.customer
 
-        assertEquals(email, customer.email, "Incorrect 'email' in fetched customer")
-        assertEquals(createCustomer.name, customer.name, "Incorrect 'name' in fetched customer")
+        assertEquals(email, customer.contactEmail, "Incorrect 'contactEmail' in fetched customer")
+        assertEquals(nickname, customer.nickname, "Incorrect 'name' in fetched customer")
 
-        val newName = "New name: Test Customer"
+        val newNickname = "New name: Test Customer"
 
-        customer.name(newName)
+        customer.nickname(newNickname)
 
-        val updatedCustomer: Customer = client.updateCustomer(customer)
+        val updatedCustomer: Customer = client.updateCustomer(customer.nickname, null)
 
-        assertEquals(email, updatedCustomer.email, "Incorrect 'email' in response after updating customer")
-        assertEquals(newName, updatedCustomer.name, "Incorrect 'name' in response after updating customer")
+        assertEquals(email, updatedCustomer.contactEmail, "Incorrect 'contactEmail' in response after updating customer")
+        assertEquals(newNickname, updatedCustomer.nickname, "Incorrect 'nickname' in response after updating customer")
     }
 
     @Test
-    fun `okhttp test - GET application token`() {
+    fun `okhttp test - POST application token`() {
 
         val email = "token-${randomInt()}@test.com"
         createCustomer("Test Token User", email)
@@ -458,22 +453,6 @@ class PurchaseTest {
     }
 }
 
-class AnalyticsTest {
-
-    @Test
-    fun testReportEvent() {
-
-        val email = "analytics-${randomInt()}@test.com"
-        createCustomer(name = "Test Analytics User", email = email)
-
-        post<String> {
-            path = "/analytics"
-            body = "event"
-            this.email = email
-        }
-    }
-}
-
 class ReferralTest {
 
     @Test
@@ -486,12 +465,11 @@ class ReferralTest {
         val invalid = "invalid_referrer@test.com"
 
         val customer = Customer()
-                .email(email)
-                .name("Test Referral Second User")
-                .referralId("")
+                .contactEmail(email)
+                .nickname("Test Referral Second User")
 
         val failedToCreate = assertFails {
-            client.createCustomer(customer, invalid)
+            client.createCustomer(customer.nickname, customer.contactEmail, invalid)
         }
 
         assertEquals("""
@@ -516,14 +494,14 @@ class ReferralTest {
         val secondEmail = "referral_second-${randomInt()}@test.com"
 
         val customer = Customer()
-                .email(secondEmail)
-                .name("Test Referral Second User")
+                .contactEmail(secondEmail)
+                .nickname("Test Referral Second User")
                 .referralId("")
 
         val firstEmailClient = clientForSubject(subject = firstEmail)
         val secondEmailClient = clientForSubject(subject = secondEmail)
 
-        secondEmailClient.createCustomer(customer, firstEmail)
+        secondEmailClient.createCustomer(customer.nickname, firstEmail, null)
 
         // for first
         val referralsForFirst: PersonList = firstEmailClient.referred
@@ -572,7 +550,7 @@ class GraphQlTests {
         val client = clientForSubject(subject = email)
 
         val request = GraphQLRequest()
-        request.query = """{ context(id: "$email") { customer { email } } }"""
+        request.query = """{ context(id: "$email") { customer { nickname, contactEmail } } }"""
 
         val map = client.graphql(request) as Map<String, *>
 

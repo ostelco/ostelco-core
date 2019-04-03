@@ -76,13 +76,8 @@ object MyInfoClientSingleton : MyInfoKycService {
                     path = "/person/$uinFin",
                     queryParams = mapOf(
                             "client_id" to config.myInfoApiClientId,
-                            "attributes" to getPersonAttributes()),
+                            "attributes" to config.myInfoPersonDataAttributes),
                     accessToken = accessToken)
-
-
-    private fun getPersonAttributes() = PersonApiAttributes
-            .values()
-            .joinToString(separator = ",") { it.label }
 
     /**
      * Ref: https://www.ndi-api.gov.sg/library/trusted-data/myinfo/tutorial3
@@ -101,9 +96,7 @@ object MyInfoClientSingleton : MyInfoKycService {
         val request = when (httpMethod) {
             GET -> HttpGet("$requestUrl?$queryParamsString")
             POST -> HttpPost(requestUrl).also {
-                val body = queryParamsString // asJson(queryParams)
-                logger.info("POST request body: $body")
-                it.entity = StringEntity(body)
+                it.entity = StringEntity(queryParamsString)
             }
         }
 
@@ -174,7 +167,10 @@ object MyInfoClientSingleton : MyInfoKycService {
 
         request.addHeader("Cache-Control", "no-cache")
         request.addHeader("Accept", MediaType.APPLICATION_JSON)
-        request.addHeader("Content-Type", MediaType.APPLICATION_FORM_URLENCODED)
+
+        if (httpMethod == POST) {
+            request.addHeader("Content-Type", MediaType.APPLICATION_FORM_URLENCODED)
+        }
 
         val response = myInfoClient.execute(request).also {
             if (it.statusLine.statusCode != 200) {
@@ -188,7 +184,7 @@ object MyInfoClientSingleton : MyInfoKycService {
                 ?.readAllBytes()
                 ?.let { String(it) }
                 ?.also {
-                    logger.info("Response content: $it")
+                    logger.info("$httpMethod Response content: $it")
                 }
                 ?: ""
 

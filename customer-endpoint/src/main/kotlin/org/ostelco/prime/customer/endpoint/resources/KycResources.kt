@@ -8,9 +8,11 @@ import org.ostelco.prime.model.Identity
 import javax.validation.constraints.NotNull
 import javax.ws.rs.GET
 import javax.ws.rs.POST
+import javax.ws.rs.PUT
 import javax.ws.rs.Path
 import javax.ws.rs.PathParam
 import javax.ws.rs.Produces
+import javax.ws.rs.QueryParam
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
@@ -24,11 +26,11 @@ import javax.ws.rs.core.Response
  * with Strategy pattern and use composition instead of inheritance.
  *
  */
-open class KycResource(private val countryCode: String, private val dao: SubscriberDAO) {
+open class KycResource(private val regionCode: String, private val dao: SubscriberDAO) {
 
     @Path("/jumio")
     fun jumioResource(): JumioKycResource {
-        return JumioKycResource(countryCode = countryCode, dao = dao)
+        return JumioKycResource(regionCode = regionCode, dao = dao)
     }
 }
 
@@ -37,7 +39,7 @@ open class KycResource(private val countryCode: String, private val dao: Subscri
  * It has Singapore specific eKYC APIs.
  *
  */
-class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(countryCode = "sg", dao = dao) {
+class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(regionCode = "sg", dao = dao) {
 
     @GET
     @Path("/myInfo/{authorisationCode}")
@@ -62,42 +64,58 @@ class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(countryC
                 .build()
     }
 
-    @POST
-    @Path("/dave")
+    @GET
+    @Path("/dave/{nricFinId}")
     @Produces(MediaType.APPLICATION_JSON)
-    fun checkIdNumberUsingDave(
+    fun checkNricFinId(
             @Auth token: AccessTokenPrincipal?,
             @NotNull
-            @PathParam("authorisationCode")
-            authorisationCode: String): Response {
+            @PathParam("nricFinId")
+            nricFinId: String): Response {
 
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
 
-        return Response.status(Response.Status.CREATED).build()
+        return dao.checkNricFinIdUsingDave(
+                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                nricFinId = nricFinId)
+                .fold(
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                        { personalData -> Response.status(Response.Status.OK).entity(personalData) })
+                .build()
     }
 
-    @POST
+    @PUT
     @Path("/profile")
     @Produces(MediaType.APPLICATION_JSON)
     fun saveProfile(
             @Auth token: AccessTokenPrincipal?,
             @NotNull
-            @PathParam("authorisationCode")
-            authorisationCode: String): Response {
+            @QueryParam("address")
+            address: String,
+            @NotNull
+            @QueryParam("phoneNumber")
+            phoneNumber: String): Response {
 
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
         }
 
-        return Response.status(Response.Status.CREATED).build()
+        return dao.saveAddressAndPhoneNumber(
+                identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
+                address = address,
+                phoneNumber = phoneNumber)
+                .fold(
+                        { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
+                        { Response.status(Response.Status.CREATED) })
+                .build()
     }
 }
 
-class JumioKycResource(private val countryCode: String, private val dao: SubscriberDAO) {
+class JumioKycResource(private val regionCode: String, private val dao: SubscriberDAO) {
 
     @POST
     @Path("/scans")
@@ -109,9 +127,9 @@ class JumioKycResource(private val countryCode: String, private val dao: Subscri
                     .build()
         }
 
-        return dao.createNewJumioScanId(
+        return dao.createNewJumioKycScanId(
                 identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
-                countryCode = countryCode)
+                regionCode = regionCode)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { scanInformation -> Response.status(Response.Status.CREATED).entity(scanInformation) })
@@ -119,7 +137,7 @@ class JumioKycResource(private val countryCode: String, private val dao: Subscri
     }
 
     @GET
-    @Path("/scans/{scanId}/status")
+    @Path("/scans/{scanId}")
     @Produces(MediaType.APPLICATION_JSON)
     fun getScanStatus(
             @Auth token: AccessTokenPrincipal?,

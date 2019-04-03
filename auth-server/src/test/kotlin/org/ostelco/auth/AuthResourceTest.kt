@@ -13,7 +13,7 @@ class AuthResourceTest {
 
         @JvmField
         @ClassRule
-        val resources = ResourceTestRule.builder()
+        val resources: ResourceTestRule = ResourceTestRule.builder()
                 .addResource(AuthResource())
                 .build()
     }

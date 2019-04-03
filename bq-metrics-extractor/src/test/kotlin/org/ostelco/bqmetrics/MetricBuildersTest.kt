@@ -20,7 +20,7 @@ class MetricBuildersTest {
         SELECT count(distinct user_pseudo_id) AS count FROM `$GCP_PROJECT_ID.analytics_160712959.events_*`
         WHERE event_name = "first_open"
         """
-        val metric: SummaryMetricBuilder = SummaryMetricBuilder(
+        val metric  = SummaryMetricBuilder(
                 metricName = "metric1",
                 help = "none",
                 sql = sql,
@@ -42,7 +42,7 @@ class MetricBuildersTest {
         SELECT count(distinct user_pseudo_id) AS count FROM `$GCP_PROJECT_ID.analytics_160712959_dev.events_*`
         WHERE event_name = "first_open"
         """
-        val metric: SummaryMetricBuilder = SummaryMetricBuilder(
+        val metric  = SummaryMetricBuilder(
                 metricName = "metric1",
                 help = "none",
                 sql = sql,
@@ -65,7 +65,7 @@ class MetricBuildersTest {
         SELECT count(distinct user_pseudo_id) AS count FROM `$GCP_PROJECT_ID.analytics_160712959.events_*`
         WHERE event_name = "first_open"
         """
-        val metric: SummaryMetricBuilder = SummaryMetricBuilder(
+        val metric  = SummaryMetricBuilder(
                 metricName = "metric1",
                 help = "none",
                 sql = sql,
@@ -88,7 +88,7 @@ class MetricBuildersTest {
         SELECT count(distinct user_pseudo_id) AS count FROM `$GCP_PROJECT_ID.analytics_160712959; DELETE * from abc;.events_*`
         WHERE event_name = "first_open"
         """
-        val metric: SummaryMetricBuilder = SummaryMetricBuilder(
+        val metric  = SummaryMetricBuilder(
                 metricName = "metric1",
                 help = "none",
                 sql = sql,

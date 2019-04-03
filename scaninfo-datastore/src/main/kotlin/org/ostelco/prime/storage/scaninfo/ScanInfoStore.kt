@@ -2,12 +2,18 @@ package org.ostelco.prime.storage.scaninfo
 
 import arrow.core.Either
 import arrow.core.fix
+import arrow.core.right
 import arrow.effects.IO
 import arrow.instances.either.monad.monad
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.cloud.NoCredentials
-import com.google.cloud.datastore.*
+import com.google.cloud.datastore.Blob
+import com.google.cloud.datastore.Datastore
+import com.google.cloud.datastore.DatastoreException
+import com.google.cloud.datastore.DatastoreOptions
+import com.google.cloud.datastore.Entity
+import com.google.cloud.datastore.KeyFactory
 import com.google.cloud.datastore.testing.LocalDatastoreHelper
 import com.google.cloud.http.HttpTransportOptions
 import com.google.cloud.storage.BlobId
@@ -21,22 +27,31 @@ import com.google.crypto.tink.hybrid.HybridDecryptFactory
 import io.dropwizard.setup.Environment
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.JumioScanData
-import org.ostelco.prime.model.ScanMetadataEnum
 import org.ostelco.prime.model.ScanMetadata
+import org.ostelco.prime.model.ScanMetadataEnum
 import org.ostelco.prime.model.VendorScanData
 import org.ostelco.prime.model.VendorScanInformation
-import org.ostelco.prime.storage.*
-import java.io.*
+import org.ostelco.prime.storage.FileDeleteError
+import org.ostelco.prime.storage.FileDownloadError
+import org.ostelco.prime.storage.NotCreatedError
+import org.ostelco.prime.storage.ScanInformationStore
+import org.ostelco.prime.storage.StoreError
+import java.io.BufferedOutputStream
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileNotFoundException
+import java.io.FileOutputStream
+import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
+import java.time.Instant
 import java.util.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import javax.ws.rs.core.MultivaluedMap
 import kotlin.collections.HashMap
-import java.io.IOException
-import java.time.Instant
 
 
 class ScanInfoStore : ScanInformationStore by ScanInformationStoreSingleton
@@ -104,9 +119,12 @@ object ScanInformationStoreSingleton : ScanInformationStore {
     override fun upsertVendorScanInformation(customerId: String, countryCode:String, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit> {
         return IO {
             Either.monad<StoreError>().binding {
+                logger.info("Creating createVendorScanInformation for customerId = ${customerId}")
                 val vendorScanInformation = createVendorScanInformation(vendorData).bind()
                 val bucketName = storageBucket
+                logger.info("Generating Plain Zip data for customerId = ${customerId}")
                 val plainZipData = JumioHelper.generateZipFile(vendorScanInformation).bind()
+                logger.info("Encrypt for global customerId = ${customerId}")
                 val zipData = getEncrypter("global").encryptData(plainZipData)
                 if (bucketName.isNullOrEmpty()) {
                     val fileName = "${countryCode}_${vendorScanInformation.id}.zip.tk"
@@ -146,12 +164,12 @@ object ScanInformationStoreSingleton : ScanInformationStore {
                     .set(ScanMetadataEnum.PROCESSED_TIME.s, Instant.now().toEpochMilli())
                     .build()
             datastore.add(entity)
-            logger.error("Saved ScanMetaData for ${keyString}")
+            logger.info("Saved ScanMetaData for customerId = $customerId key = ${keyString}")
         } catch (e: DatastoreException) {
             logger.error("Caught exception while storing the scan meta data", e)
             return Either.left(NotCreatedError("ScanMetaData", keyString))
         }
-        return Either.right(Unit)
+        return Unit.right()
     }
 
     // Internal function used by unit test to check the encrypted zip file
@@ -249,7 +267,7 @@ object JumioHelper {
     /**
      * Retrieves the contents of a file from a URL
      */
-    fun downloadFileAsBlob(fileURL: String, username: String, password: String): Either<StoreError, Pair<Blob, String>> {
+    private fun downloadFileAsBlob(fileURL: String, username: String, password: String): Either<StoreError, Pair<Blob, String>> {
         val url = URL(fileURL)
         val httpConn = url.openConnection() as HttpURLConnection
         val userpass = "$username:$password"
@@ -261,6 +279,7 @@ object JumioHelper {
             // always check HTTP response code first
             if (responseCode != HttpURLConnection.HTTP_OK) {
                 val statusMessage = "$responseCode: ${httpConn.responseMessage}"
+                logger.error("Failed to download $fileURL $statusMessage")
                 return Either.left(FileDownloadError(fileURL, statusMessage))
             }
             val contentType = httpConn.contentType
@@ -270,13 +289,14 @@ object JumioHelper {
             return Either.right(Pair(fileData, contentType))
         } catch (e: IOException) {
             val statusMessage = "IOException: $e"
+            logger.error("Failed to download $fileURL $statusMessage")
             return Either.left(FileDownloadError(fileURL, statusMessage))
         } finally {
             httpConn.disconnect()
         }
     }
 
-    fun isJSONArray(jsonData: String): Boolean {
+    private fun isJSONArray(jsonData: String): Boolean {
         try {
             val mapper = ObjectMapper()
             return mapper.readTree(jsonData).isArray
@@ -313,22 +333,25 @@ object JumioHelper {
         val scanImageUrl: String? = vendorData.getFirst(JumioScanData.SCAN_IMAGE.s)
         val scanImageBacksideUrl: String? = vendorData.getFirst(JumioScanData.SCAN_IMAGE_BACKSIDE.s)
         val scanImageFaceUrl: String? = vendorData.getFirst(JumioScanData.SCAN_IMAGE_FACE.s)
-        val scanlivenessImagesUrl: List<String>? = vendorData.get(JumioScanData.SCAN_LIVENESS_IMAGES.s)
+        val scanlivenessImagesUrl: List<String>? = vendorData[JumioScanData.SCAN_LIVENESS_IMAGES.s]
 
         return IO {
             Either.monad<StoreError>().binding {
                 var result: Pair<Blob, String>
                 if (scanImageUrl != null) {
+                    logger.info("Downloading scan image: $scanImageUrl")
                     result = downloadFileAsBlob(scanImageUrl, apiToken, apiSecret).bind()
                     val filename = "id.${getFileExtFromType(result.second)}"
                     images.put(filename, result.first)
                 }
                 if (scanImageBacksideUrl != null) {
+                    logger.info("Downloading scan image back: $scanImageBacksideUrl")
                     result = downloadFileAsBlob(scanImageBacksideUrl, apiToken, apiSecret).bind()
                     val filename = "id_backside.${getFileExtFromType(result.second)}"
                     images.put(filename, result.first)
                 }
                 if (scanImageFaceUrl != null) {
+                    logger.info("Downloading Face Image: $scanImageFaceUrl")
                     result = downloadFileAsBlob(scanImageFaceUrl, apiToken, apiSecret).bind()
                     val filename = "face.${getFileExtFromType(result.second)}"
                     images.put(filename, result.first)
@@ -339,6 +362,7 @@ object JumioHelper {
                     val flattenedList = flattenList(urls)
                     var imageIndex = 0
                     for (imageUrl in flattenedList) {
+                        logger.info("Downloading Liveness image: $imageUrl")
                         result = downloadFileAsBlob(imageUrl, apiToken, apiSecret).bind()
                         val filename = "liveness-${++imageIndex}.${getFileExtFromType(result.second)}"
                         images.put(filename, result.first)
@@ -361,7 +385,7 @@ object JumioHelper {
         httpConn.setRequestProperty("Accept", "application/json")
         httpConn.setRequestProperty("User-Agent", "ScanInformationStore")
         httpConn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-        httpConn.setDoOutput(true);
+        httpConn.doOutput = true;
         httpConn.setRequestMethod("DELETE");
 
         try {
@@ -371,7 +395,7 @@ object JumioHelper {
                 val statusMessage = "$responseCode: ${httpConn.responseMessage}"
                 return Either.left(FileDeleteError(url.toString(), statusMessage));
             }
-            return Either.right(Unit)
+            return Unit.right()
         } catch (e: IOException) {
             val statusMessage = "IOException: $e"
             return Either.left(FileDeleteError(url.toString(), statusMessage))
@@ -411,7 +435,7 @@ object JumioHelper {
     /**
      * Creates the file extension from  mime-type.
      */
-    fun getFileExtFromType(mimeType: String): String {
+    private fun getFileExtFromType(mimeType: String): String {
         val idx = mimeType.lastIndexOf("/")
         if (idx == -1) {
             return mimeType

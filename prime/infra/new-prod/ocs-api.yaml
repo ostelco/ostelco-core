@@ -2,7 +2,7 @@ type: google.api.Service
 
 config_version: 3
 
-name: prod-ocs.new.dev.ostelco.org
+name: ocs.oya.world
 
 title: OCS Service gRPC API
 
@@ -18,12 +18,12 @@ usage:
 authentication:
   providers:
   - id: google_service_account
-    issuer: ci-endpoint-update@pi-ostelco-prod.iam.gserviceaccount.com
-    jwks_uri: https://www.googleapis.com/robot/v1/metadata/x509/ci-endpoint-update@pi-ostelco-prod.iam.gserviceaccount.com
+    issuer: prime-service-account@GCP_PROJECT_ID.iam.gserviceaccount.com
+    jwks_uri: https://www.googleapis.com/robot/v1/metadata/x509/prime-service-account@GCP_PROJECT_ID.iam.gserviceaccount.com
     audiences: >
-      https://prod-ocs.new.dev.ostelco.org/org.ostelco.ocs.api.OcsService,
-      prod-ocs.new.dev.ostelco.org/org.ostelco.ocs.api.OcsService,
-      prod-ocs.new.dev.ostelco.org
+      https://ocs.oya.world/org.ostelco.ocs.api.OcsService,
+      ocs.oya.world/org.ostelco.ocs.api.OcsService,
+      ocs.oya.world
   rules:
   - selector: "*"
     requirements:

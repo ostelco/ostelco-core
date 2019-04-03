@@ -24,7 +24,7 @@ interface ClearTablesForTestingDB {
     abstract fun truncateSimVendorsPermittedTable()
 }
 
-class ClearTablesForTestingDAO(val db: ClearTablesForTestingDB) {
+class ClearTablesForTestingDAO(private val db: ClearTablesForTestingDB) {
 
     fun clearTables() {
         db.truncateImportBatchesTable()

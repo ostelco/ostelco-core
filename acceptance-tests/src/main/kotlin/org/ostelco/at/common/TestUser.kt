@@ -10,16 +10,9 @@ import javax.ws.rs.core.MultivaluedHashMap
 
 fun createCustomer(name: String, email: String): Customer {
 
-    val createCustomer = Customer()
-            .id("")
-            .email(email)
-            .name(name)
-            .analyticsId("")
-            .referralId("")
-
     return post {
         path = "/customer"
-        body = createCustomer
+        queryParams = mapOf("nickname" to name, "contactEmail" to email)
         this.email = email
     }
 }

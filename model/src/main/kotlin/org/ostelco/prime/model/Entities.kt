@@ -13,10 +13,6 @@ data class Region(
         override val id: String,
         val name: String) : HasId
 
-data class RegionDetails(
-        val region: Region,
-        val status: CustomerRegionStatus)
-
 data class Offer(
         override val id: String,
         val segments: Collection<String> = emptyList(),
@@ -33,8 +29,8 @@ data class ChangeSegment(
 
 data class Customer(
         override val id: String = UUID.randomUUID().toString(),
-        val name: String = "",
-        val email: String,
+        val nickname: String,
+        val contactEmail: String,
         val analyticsId: String = UUID.randomUUID().toString(),
         val referralId: String = UUID.randomUUID().toString()) : HasId
 
@@ -43,16 +39,34 @@ data class Identity(
         val type: String,
         val provider: String) : HasId
 
+data class RegionDetails(
+        val region: Region,
+        val status: CustomerRegionStatus,
+        val kycStatusMap: Map<KycType, KycStatus> = emptyMap(),
+        val simProfiles: Collection<SimProfile> = emptyList())
+
 enum class CustomerRegionStatus {
-    PENDING,       // eKYC is started by client and results are pending
-    REJECTED,      // eKYC documents were rejected
-    APPROVED,      // eKYC documents were approved
+    PENDING,   // eKYC initiated, but not yet approved
+    APPROVED,  // eKYC approved
+}
+
+enum class KycType {
+    JUMIO,
+    MY_INFO,
+    NRIC_FIN,
+    ADDRESS_AND_PHONE_NUMBER
+}
+
+enum class KycStatus {
+    PENDING,   // eKYC initiated, but not yet approved or rejected
+    REJECTED,  // eKYC rejected
+    APPROVED   // eKYC approved
 }
 
 enum class ScanStatus {
-    PENDING,        // scan results are pending
-    REJECTED,       // scanned Id was rejected
-    APPROVED        // scanned Id was approved
+    PENDING,   // scan results are pending
+    REJECTED,  // scanned Id was rejected
+    APPROVED   // scanned Id was approved
 }
 
 data class ScanResult(
@@ -160,9 +174,7 @@ data class ApplicationToken(
 
 data class Subscription(
         val msisdn: String,
-        val analyticsId: String = UUID.randomUUID().toString(),
-        val alias: String = "",
-        @JvmField val eSimActivationCode: String = "") : HasId {
+        val analyticsId: String = UUID.randomUUID().toString()) : HasId {
 
     override val id: String
         @JsonIgnore
@@ -231,5 +243,28 @@ data class PurchaseRecordInfo(override val id: String,
 }
 
 data class SimEntry(
-        val msisdn: String,
-        val eSimActivationCode: String)
+        val iccId: String,
+        val eSimActivationCode: String,
+        val msisdnList: Collection<String>)
+
+data class SimProfile(
+        val iccId: String,
+        @JvmField val eSimActivationCode: String,
+        val status: SimProfileStatus,
+        val alias: String = "") : HasId {
+
+    override val id: String
+        @JsonIgnore
+        get() = iccId
+}
+
+enum class SimProfileStatus {
+    AVAILABLE_FOR_DOWNLOAD,
+    DOWNLOADED,
+    INSTALLED,
+    ENABLED,
+}
+
+data class Context(
+        val customer: Customer,
+        val regions: Collection<RegionDetails> = emptyList())

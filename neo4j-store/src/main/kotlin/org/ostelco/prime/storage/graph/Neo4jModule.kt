@@ -72,10 +72,9 @@ fun initDatabase() {
 // Helper for naming of default segments based on country code.
 fun getSegmentNameFromCountryCode(countryCode: String) : String = "country-$countryCode".toLowerCase()
 
-class Config {
-    lateinit var host: String
-    lateinit var protocol: String
-}
+data class Config(
+    val host: String,
+    val protocol: String)
 
 object ConfigRegistry {
     lateinit var config: Config

@@ -36,7 +36,7 @@ public class LocalDataSource implements DataSource {
         CreditControlAnswer answer = createCreditControlAnswer(context);
         LOG.info("Got Credit-Control-Request [{}]", context.getCreditControlRequest().getMsisdn());
         try {
-            final ServerCCASession session = OcsServer.getInstance().getStack().getSession(context.getSessionId(), ServerCCASession.class);
+            final ServerCCASession session = OcsServer.INSTANCE.getStack().getSession(context.getSessionId(), ServerCCASession.class);
             session.sendCreditControlAnswer(context.createCCA(answer));
             LOG.info("Sent Credit-Control-Answer [{}]", context.getCreditControlRequest().getMsisdn());
         } catch (InternalException | IllegalDiameterStateException | RouteException | OverloadException | NullPointerException e) {
@@ -83,6 +83,8 @@ public class LocalDataSource implements DataSource {
                     new ServiceUnit(mscc.getUsed().getTotal(), mscc.getUsed().getInput(), mscc.getUsed().getOutput()),
                     granted,
                     mscc.getValidityTime(),
+                    7200,
+                    (long) (granted.getTotal() * 0.2), // 20%
                     finalUnitIndication,
                     ResultCode.DIAMETER_SUCCESS);
 

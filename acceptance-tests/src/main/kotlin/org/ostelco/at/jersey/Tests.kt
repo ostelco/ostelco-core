@@ -12,6 +12,8 @@ import org.ostelco.prime.customer.model.ApplicationToken
 import org.ostelco.prime.customer.model.Bundle
 import org.ostelco.prime.customer.model.BundleList
 import org.ostelco.prime.customer.model.Customer
+import org.ostelco.prime.customer.model.KycStatus
+import org.ostelco.prime.customer.model.KycType
 import org.ostelco.prime.customer.model.PaymentSource
 import org.ostelco.prime.customer.model.PaymentSourceList
 import org.ostelco.prime.customer.model.Person
@@ -23,7 +25,7 @@ import org.ostelco.prime.customer.model.PurchaseRecord
 import org.ostelco.prime.customer.model.PurchaseRecordList
 import org.ostelco.prime.customer.model.Region
 import org.ostelco.prime.customer.model.RegionDetails
-import org.ostelco.prime.customer.model.RegionDetails.StatusEnum
+import org.ostelco.prime.customer.model.RegionDetails.StatusEnum.PENDING
 import org.ostelco.prime.customer.model.RegionDetailsList
 import org.ostelco.prime.customer.model.ScanInformation
 import org.ostelco.prime.customer.model.Subscription
@@ -46,45 +48,39 @@ class CustomerTest {
     fun `jersey test - GET and PUT customer`() {
 
         val email = "customer-${randomInt()}@test.com"
-
-        val createCustomer = Customer()
-                .id("")
-                .email(email)
-                .name("Test Customer")
-                .analyticsId("")
-                .referralId("")
+        val nickname = "Test Customer"
 
         val createdCustomer: Customer = post {
             path = "/customer"
-            body = createCustomer
+            queryParams = mapOf(
+                    "contactEmail" to email,
+                    "nickname" to nickname)
             this.email = email
         }
 
-        assertEquals(createCustomer.email, createdCustomer.email, "Incorrect 'email' in created customer")
-        assertEquals(createCustomer.name, createdCustomer.name, "Incorrect 'name' in created customer")
+        assertEquals(email, createdCustomer.contactEmail, "Incorrect 'contactEmail' in created customer")
+        assertEquals(nickname, createdCustomer.nickname, "Incorrect 'nickname' in created customer")
 
         val customer: Customer = get {
             path = "/customer"
             this.email = email
         }
 
-        assertEquals(createdCustomer.email, customer.email, "Incorrect 'email' in fetched customer")
-        assertEquals(createdCustomer.name, customer.name, "Incorrect 'name' in fetched customer")
+        assertEquals(createdCustomer.contactEmail, customer.contactEmail, "Incorrect 'contactEmail' in fetched customer")
+        assertEquals(createdCustomer.nickname, customer.nickname, "Incorrect 'nickname' in fetched customer")
         assertEquals(createdCustomer.analyticsId, customer.analyticsId, "Incorrect 'analyticsId' in fetched customer")
         assertEquals(createdCustomer.referralId, customer.referralId, "Incorrect 'referralId' in fetched customer")
 
         val newName = "New name: Test Customer"
 
-        customer.name(newName)
-
         val updatedCustomer: Customer = put {
             path = "/customer"
-            body = customer
+            queryParams = mapOf("nickname" to newName)
             this.email = email
         }
 
-        assertEquals(email, updatedCustomer.email, "Incorrect 'email' in response after updating customer")
-        assertEquals(newName, updatedCustomer.name, "Incorrect 'name' in response after updating customer")
+        assertEquals(email, updatedCustomer.contactEmail, "Incorrect 'email' in response after updating customer")
+        assertEquals(newName, updatedCustomer.nickname, "Incorrect 'name' in response after updating customer")
     }
 
     @Test
@@ -105,7 +101,7 @@ class CustomerTest {
                 .tokenType(tokenType)
 
         val reply: ApplicationToken = post {
-            path = "/applicationtoken"
+            path = "/applicationToken"
             body = testToken
             this.email = email
         }
@@ -630,7 +626,7 @@ class PurchaseTest {
 
 }
 
-class eKYCTest {
+class JumioKycTest {
 
     private val imgUrl = "https://www.gstatic.com/webp/gallery3/1.png"
     private val imgUrl2 = "https://www.gstatic.com/webp/gallery3/2.png"
@@ -655,7 +651,12 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
+            assertEquals(PENDING, regionDetails.status, message = "Wrong State")
+
+            assertEquals(
+                    expected = mapOf(
+                            KycType.JUMIO.name to KycStatus.PENDING),
+                    actual = regionDetails.kycStatusMap)
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -700,7 +701,12 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
+
+            assertEquals(
+                    expected = mapOf(
+                            KycType.JUMIO.name to KycStatus.REJECTED),
+                    actual = regionDetails.kycStatusMap)
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -747,7 +753,12 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(StatusEnum.APPROVED, regionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.APPROVED, regionDetails.status, message = "Wrong State")
+
+            assertEquals(
+                    expected = mapOf(
+                            KycType.JUMIO.name to KycStatus.APPROVED),
+                    actual = regionDetails.kycStatusMap)
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -794,7 +805,11 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
+
+            assertEquals(
+                    expected = mapOf(KycType.JUMIO.name to KycStatus.REJECTED),
+                    actual = regionDetails.kycStatusMap)
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -839,7 +854,11 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
+
+            assertEquals(
+                    expected = mapOf(KycType.JUMIO.name to KycStatus.PENDING),
+                    actual = regionDetails.kycStatusMap)
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -884,7 +903,10 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
+            assertEquals(
+                    expected = mapOf(KycType.JUMIO.name to KycStatus.REJECTED),
+                    actual = regionDetails.kycStatusMap)
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -929,7 +951,10 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
+            assertEquals(
+                    expected = mapOf(KycType.JUMIO.name to KycStatus.REJECTED),
+                    actual = regionDetails.kycStatusMap)
 
             val newScanInfo: ScanInformation = post {
                 path = "/regions/no/kyc/jumio/scans"
@@ -967,8 +992,11 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), newRegionDetails.region)
-            assertEquals(StatusEnum.APPROVED, newRegionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.APPROVED, newRegionDetails.status, message = "Wrong State")
 
+            assertEquals(
+                    expected = mapOf(KycType.JUMIO.name to KycStatus.APPROVED),
+                    actual = newRegionDetails.kycStatusMap)
 
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
@@ -1013,7 +1041,7 @@ class eKYCTest {
             }
 
             val scanInformation: ScanInformation = get {
-                path = "/regions/no/kyc/jumio/scans/${scanInfo.scanId}/status"
+                path = "/regions/no/kyc/jumio/scans/${scanInfo.scanId}"
                 this.email = email
             }
             assertEquals("APPROVED", scanInformation.status, message = "Wrong status")
@@ -1069,7 +1097,11 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), newRegionDetails.region)
-            assertEquals(StatusEnum.REJECTED, newRegionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.PENDING, newRegionDetails.status, message = "Wrong State")
+
+            assertEquals(
+                    expected = mapOf(KycType.JUMIO.name to KycStatus.REJECTED),
+                    actual = newRegionDetails.kycStatusMap)
 
             val newScanInfo: ScanInformation = post {
                 path = "/regions/no/kyc/jumio/scans"
@@ -1108,7 +1140,11 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(StatusEnum.APPROVED, regionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.APPROVED, regionDetails.status, message = "Wrong State")
+
+            assertEquals(
+                    expected = mapOf(KycType.JUMIO.name to KycStatus.APPROVED),
+                    actual = regionDetails.kycStatusMap)
 
             val encodedEmail = URLEncoder.encode(email, "UTF-8")
             val scanInformationList = get<Collection<ScanInformation>> {
@@ -1166,28 +1202,17 @@ class eKYCTest {
             }.single()
 
             assertEquals(Region().id("no").name("Norway"), regionDetails.region)
-            assertEquals(StatusEnum.REJECTED, regionDetails.status, message = "Wrong State")
+            assertEquals(RegionDetails.StatusEnum.PENDING, regionDetails.status, message = "Wrong State")
+
+            assertEquals(
+                    expected = mapOf(KycType.JUMIO.name to KycStatus.REJECTED),
+                    actual = regionDetails.kycStatusMap)
+
         } finally {
             StripePayment.deleteCustomer(customerId = customerId)
         }
     }
 
-}
-
-class AnalyticsTest {
-
-    @Test
-    fun testReportEvent() {
-
-        val email = "analytics-${randomInt()}@test.com"
-        createCustomer(name = "Test Analytics User", email = email)
-
-        post<String> {
-            path = "/analytics"
-            body = "event"
-            this.email = email
-        }
-    }
 }
 
 class ReferralTest {
@@ -1200,8 +1225,8 @@ class ReferralTest {
         val invalid = "invalid_referrer@test.com"
 
         val customer = Customer()
-                .email(email)
-                .name("Test Referral Second User")
+                .contactEmail(email)
+                .nickname("Test Referral Second User")
                 .referralId("")
 
         val failedToCreate = assertFails {
@@ -1238,8 +1263,8 @@ class ReferralTest {
         val secondEmail = "referral_second-${randomInt()}@test.com"
 
         val customer = Customer()
-                .email(secondEmail)
-                .name("Test Referral Second User")
+                .contactEmail(secondEmail)
+                .nickname("Test Referral Second User")
                 .referralId("")
 
         post<Customer> {
@@ -1451,10 +1476,10 @@ class GraphQlTests {
         val context = post<GraphQlResponse>(expectedResultCode = 200) {
             path = "/graphql"
             this.email = email
-            body = mapOf("query" to """{ context { customer { email } subscriptions { msisdn } } }""")
+            body = mapOf("query" to """{ context { customer { nickname contactEmail } subscriptions { msisdn } } }""")
         }.data?.context
 
-        assertEquals(expected = email, actual = context?.customer?.email)
+        assertEquals(expected = email, actual = context?.customer?.contactEmail)
         assertEquals(expected = msisdn, actual = context?.subscriptions?.first()?.msisdn)
     }
 
@@ -1469,10 +1494,10 @@ class GraphQlTests {
         val context = get<GraphQlResponse> {
             path = "/graphql"
             this.email = email
-            queryParams = mapOf("query" to URLEncoder.encode("""{context{customer{email}subscriptions{msisdn}}}""", StandardCharsets.UTF_8.name()))
+            queryParams = mapOf("query" to URLEncoder.encode("""{context{customer{nickname,contactEmail}subscriptions{msisdn}}}""", StandardCharsets.UTF_8.name()))
         }.data?.context
 
-        assertEquals(expected = email, actual = context?.customer?.email)
+        assertEquals(expected = email, actual = context?.customer?.contactEmail)
         assertEquals(expected = msisdn, actual = context?.subscriptions?.first()?.msisdn)
     }
 }

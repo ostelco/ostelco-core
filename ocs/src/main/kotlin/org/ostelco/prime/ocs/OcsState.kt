@@ -23,7 +23,7 @@ class OcsState(val loadSubscriberInfo:Boolean = true) : EventHandler<OcsEvent> {
 
     // this is public for prime:integration tests
     val msisdnToBundleIdMap = HashMap<String, String>()
-    val bundleIdToMsisdnMap = HashMap<String, MutableSet<String>>()
+    private val bundleIdToMsisdnMap = HashMap<String, MutableSet<String>>()
 
     private val bundleBalanceMap = HashMap<String, Long>()
     private val bucketReservedMap = HashMap<String, Long>()
