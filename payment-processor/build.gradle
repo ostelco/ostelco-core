@@ -15,6 +15,7 @@ sourceSets {
 
 dependencies {
   implementation project(":prime-modules")
+  implementation project(":data-store")
 
   implementation "com.stripe:stripe-java:$stripeVersion"
 

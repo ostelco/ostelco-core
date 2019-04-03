@@ -1,27 +1,18 @@
 package org.ostelco.prime.paymentprocessor.subscribers
 
-import arrow.core.Either
 import arrow.core.Try
-import com.google.cloud.datastore.FullEntity
-import com.google.cloud.datastore.Key
+import com.google.cloud.Timestamp
+import com.google.cloud.datastore.StringValue
 import com.google.cloud.pubsub.v1.AckReplyConsumer
 import com.google.protobuf.ByteString
 import com.stripe.model.Event
 import com.stripe.net.ApiResource.GSON
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.paymentprocessor.ConfigRegistry
-import org.ostelco.prime.paymentprocessor.StripeStore
 import org.ostelco.prime.pubsub.PubSubSubscriber
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import kotlin.reflect.full.memberProperties
+import org.ostelco.prime.store.datastore.EntityStore
+import org.threeten.bp.Instant
 
-
-enum class StripeProperty(val text: String) {
-    ID("id"),
-    CREATED("created"),
-    TYPE("type"),
-    DATA("data")
-}
 
 class StoreStripeEvent : PubSubSubscriber(
         subscription = ConfigRegistry.config.stripeEventStoreSubscriptionId,
@@ -31,15 +22,25 @@ class StoreStripeEvent : PubSubSubscriber(
     private val logger by getLogger()
 
     /* GCP datastore. */
-    private val datastore = StripeStore.datastore
-    private val keyFactory = StripeStore.keyFactory
+    private val entityStore = EntityStore(entityClass = StripeEvent::class.java,
+            type = ConfigRegistry.config.storeType,
+            namespace = ConfigRegistry.config.namespace)
 
     override fun handler(message: ByteString, consumer: AckReplyConsumer) =
             Try {
                 GSON.fromJson(message.toStringUtf8(), Event::class.java)
             }.fold(
                     ifSuccess = { event ->
-                        store(event, message.toStringUtf8())
+                        Try {
+                            /* TODO: Update 'data-store' to support some sort of annotation
+                                     to mark fields to be excluded from indexing. */
+                            entityStore.add(StripeEvent(event.type,
+                                    event.account,
+                                    Timestamp.ofTimeSecondsAndNanos(event.created, 0),
+                                    StringValue.newBuilder(message.toStringUtf8())
+                                            .setExcludeFromIndexes(true)
+                                            .build()))
+                        }.toEither()
                                 .mapLeft {
                                     logger.error("Failed to store Stripe event {}: {}",
                                             event.id, it)
@@ -52,14 +53,9 @@ class StoreStripeEvent : PubSubSubscriber(
                         consumer.ack()
                     }
             )
-
-    private fun store(event: Event, data: String): Either<Throwable, Key> =
-            Try {
-                datastore.add(FullEntity.newBuilder(keyFactory.newKey())
-                        .set(StripeProperty.ID.text, event.id)
-                        .set(StripeProperty.CREATED.text, event.created)
-                        .set(StripeProperty.TYPE.text, event.type)
-                        .set(StripeProperty.DATA.text, data)      /* Maybe store as a blob? */
-                        .build()).getKey()
-            }.toEither()
 }
+
+data class StripeEvent(val type: String,
+                       val account: String?,
+                       val created: Timestamp,
+                       val json: StringValue)

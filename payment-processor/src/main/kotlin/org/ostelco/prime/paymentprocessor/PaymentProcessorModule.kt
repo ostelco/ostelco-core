@@ -104,9 +104,8 @@ class PaymentProcessorConfig {
     @JsonProperty("stripeEventRecurringPaymentSubscriptionId")
     lateinit var stripeEventRecurringPaymentSubscriptionId: String
 
-    @NotEmpty
     @JsonProperty("storeType")
-    lateinit var storeType: String
+    var storeType: String = "emulator"
 
     @JsonProperty("storeNamespace")
     var namespace: String = "Stripe"
