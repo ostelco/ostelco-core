@@ -119,13 +119,12 @@ object ScanInformationStoreSingleton : ScanInformationStore {
     override fun upsertVendorScanInformation(customerId: String, countryCode:String, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit> {
         return IO {
             Either.monad<StoreError>().binding {
-                logger.info("Creating createVendorScanInformation")
+                logger.info("Creating createVendorScanInformation for customerId = ${customerId}")
                 val vendorScanInformation = createVendorScanInformation(vendorData).bind()
-                logger.info("Bucket Prefix = $storageBucket")
                 val bucketName = storageBucket
-                logger.info("Generating Plain Zip data")
+                logger.info("Generating Plain Zip data for customerId = ${customerId}")
                 val plainZipData = JumioHelper.generateZipFile(vendorScanInformation).bind()
-                logger.info("Encrypt for global")
+                logger.info("Encrypt for global customerId = ${customerId}")
                 val zipData = getEncrypter("global").encryptData(plainZipData)
                 if (bucketName.isNullOrEmpty()) {
                     val fileName = "${countryCode}_${vendorScanInformation.id}.zip.tk"
@@ -165,7 +164,7 @@ object ScanInformationStoreSingleton : ScanInformationStore {
                     .set(ScanMetadataEnum.PROCESSED_TIME.s, Instant.now().toEpochMilli())
                     .build()
             datastore.add(entity)
-            logger.error("Saved ScanMetaData for ${keyString}")
+            logger.info("Saved ScanMetaData for customerId = $customerId key = ${keyString}")
         } catch (e: DatastoreException) {
             logger.error("Caught exception while storing the scan meta data", e)
             return Either.left(NotCreatedError("ScanMetaData", keyString))
