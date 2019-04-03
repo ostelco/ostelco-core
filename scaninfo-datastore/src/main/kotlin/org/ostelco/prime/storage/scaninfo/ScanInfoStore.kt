@@ -119,9 +119,13 @@ object ScanInformationStoreSingleton : ScanInformationStore {
     override fun upsertVendorScanInformation(customerId: String, countryCode:String, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit> {
         return IO {
             Either.monad<StoreError>().binding {
+                logger.info("Creating createVendorScanInformation")
                 val vendorScanInformation = createVendorScanInformation(vendorData).bind()
+                logger.info("Bucket Prefix = $storageBucket")
                 val bucketName = storageBucket
+                logger.info("Generating Plain Zip data")
                 val plainZipData = JumioHelper.generateZipFile(vendorScanInformation).bind()
+                logger.info("Encrypt for global")
                 val zipData = getEncrypter("global").encryptData(plainZipData)
                 if (bucketName.isNullOrEmpty()) {
                     val fileName = "${countryCode}_${vendorScanInformation.id}.zip.tk"
@@ -334,16 +338,19 @@ object JumioHelper {
             Either.monad<StoreError>().binding {
                 var result: Pair<Blob, String>
                 if (scanImageUrl != null) {
+                    logger.info("Downloading scan image: $scanImageUrl")
                     result = downloadFileAsBlob(scanImageUrl, apiToken, apiSecret).bind()
                     val filename = "id.${getFileExtFromType(result.second)}"
                     images.put(filename, result.first)
                 }
                 if (scanImageBacksideUrl != null) {
+                    logger.info("Downloading scan image back: $scanImageBacksideUrl")
                     result = downloadFileAsBlob(scanImageBacksideUrl, apiToken, apiSecret).bind()
                     val filename = "id_backside.${getFileExtFromType(result.second)}"
                     images.put(filename, result.first)
                 }
                 if (scanImageFaceUrl != null) {
+                    logger.info("Downloading Face Image: $scanImageFaceUrl")
                     result = downloadFileAsBlob(scanImageFaceUrl, apiToken, apiSecret).bind()
                     val filename = "face.${getFileExtFromType(result.second)}"
                     images.put(filename, result.first)
@@ -354,6 +361,7 @@ object JumioHelper {
                     val flattenedList = flattenList(urls)
                     var imageIndex = 0
                     for (imageUrl in flattenedList) {
+                        logger.info("Downloading Liveness image: $imageUrl")
                         result = downloadFileAsBlob(imageUrl, apiToken, apiSecret).bind()
                         val filename = "liveness-${++imageIndex}.${getFileExtFromType(result.second)}"
                         images.put(filename, result.first)
