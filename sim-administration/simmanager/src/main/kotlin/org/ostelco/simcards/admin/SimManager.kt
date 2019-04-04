@@ -5,7 +5,9 @@ import org.ostelco.prime.model.SimEntry
 import org.ostelco.prime.sim.SimManager
 import org.ostelco.simcards.admin.ApiRegistry.simInventoryApi
 
-object ESimManager : SimManager {
+class ESimManager : SimManager by SimManagerSingleton
+
+object SimManagerSingleton : SimManager {
 
     override fun allocateNextEsimProfile(hlr: String, phoneType: String?): Either<String, SimEntry> =
             simInventoryApi.allocateNextEsimProfile(hlrName = hlr, phoneType = phoneType ?: "iphone").bimap(
