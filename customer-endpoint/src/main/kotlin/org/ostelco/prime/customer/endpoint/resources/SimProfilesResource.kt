@@ -35,7 +35,8 @@ class SimProfilesResource(private val regionCode: String, private val dao: Subsc
     @Produces(MediaType.APPLICATION_JSON)
     fun provisionSimProfile(
             @Auth token: AccessTokenPrincipal?,
-            @QueryParam("profileType") profileType: String = "default"): Response {
+            @QueryParam("profileType") profileType: String?): Response {
+
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .build()
@@ -44,7 +45,7 @@ class SimProfilesResource(private val regionCode: String, private val dao: Subsc
         return dao.provisionSimProfile(
                 identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
                 regionCode = regionCode,
-                profileType = profileType)
+                profileType = profileType ?: "default")
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { Response.status(Response.Status.OK).entity(asJson(it)) })
