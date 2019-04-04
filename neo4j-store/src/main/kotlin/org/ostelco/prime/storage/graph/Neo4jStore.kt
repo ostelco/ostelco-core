@@ -464,7 +464,7 @@ object Neo4jStoreSingleton : GraphStore {
     override fun provisionSimProfile(
             identity: org.ostelco.prime.model.Identity,
             regionCode: String,
-            profileType: String): Either<StoreError, SimProfile> = writeTransaction {
+            profileType: String?): Either<StoreError, SimProfile> = writeTransaction {
         IO {
             Either.monad<StoreError>().binding {
                 val customerId = getCustomerId(identity = identity, transaction = transaction).bind()

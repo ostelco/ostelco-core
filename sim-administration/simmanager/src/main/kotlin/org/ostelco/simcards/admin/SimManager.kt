@@ -7,8 +7,8 @@ import org.ostelco.simcards.admin.ApiRegistry.simInventoryApi
 
 object ESimManager : SimManager {
 
-    override fun allocateNextEsimProfile(hlr: String, phoneType: String): Either<String, SimEntry> =
-            simInventoryApi.allocateNextEsimProfile(hlrName = hlr, phoneType = phoneType).bimap(
+    override fun allocateNextEsimProfile(hlr: String, phoneType: String?): Either<String, SimEntry> =
+            simInventoryApi.allocateNextEsimProfile(hlrName = hlr, phoneType = phoneType ?: "iphone").bimap(
                     {
                         "Failed to allocate eSIM for HLR - $hlr for phoneType - $phoneType"
                     },
