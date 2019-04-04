@@ -3,7 +3,14 @@ package org.ostelco.prime.store.datastore
 import com.fasterxml.jackson.core.type.TypeReference
 import com.google.cloud.NoCredentials
 import com.google.cloud.Timestamp
-import com.google.cloud.datastore.*
+import com.google.cloud.datastore.Blob
+import com.google.cloud.datastore.Datastore
+import com.google.cloud.datastore.DatastoreOptions
+import com.google.cloud.datastore.FullEntity
+import com.google.cloud.datastore.Key
+import com.google.cloud.datastore.KeyFactory
+import com.google.cloud.datastore.LatLng
+import com.google.cloud.datastore.NullValue
 import com.google.cloud.datastore.testing.LocalDatastoreHelper
 import com.google.cloud.http.HttpTransportOptions
 import org.ostelco.prime.jsonmapper.objectMapper
@@ -78,19 +85,16 @@ class EntityStore<T>(
 
         // for each field, call appropriate setter
         map.forEach { key, value ->
-            if (value == null) {
-                entity.set(key, NullValue.of())
-            } else {
-                when (value) {
-                    is Key -> entity.set(key, value)
-                    is Long -> entity.set(key, value)
-                    is Blob -> entity.set(key, value)
-                    is Double -> entity.set(key, value)
-                    is Boolean -> entity.set(key, value)
-                    is LatLng -> entity.set(key, value)
-                    is String -> entity.set(key, value)
-                    is Timestamp -> entity.set(key, value)
-                }
+            when (value) {
+                null -> entity.set(key, NullValue.of())
+                is Key -> entity.set(key, value)
+                is Long -> entity.set(key, value)
+                is Blob -> entity.set(key, value)
+                is Double -> entity.set(key, value)
+                is Boolean -> entity.set(key, value)
+                is LatLng -> entity.set(key, value)
+                is String -> entity.set(key, value)
+                is Timestamp -> entity.set(key, value)
             }
         }
         return datastore.add(entity.build()).key
