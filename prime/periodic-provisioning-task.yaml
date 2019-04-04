@@ -1,6 +1,6 @@
 #
 # To start this job, do
-#    kubectl create -f ./cronjob.yaml
+#    kubectl create -f	periodic-provisioning-task.yaml
 # https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/
 # TODO: sync with prime.yaml
 
@@ -16,7 +16,7 @@ spec:
         spec:
           containers:
           - name: preallocate-sim-profiles
-            image: busybox-curl
+            image: marketplace.gcr.io/google/ubuntu1804:latest
             args:
             - /bin/sh
             - -c
