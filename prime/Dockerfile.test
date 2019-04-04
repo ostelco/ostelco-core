@@ -11,7 +11,6 @@ RUN apt-get update \
     curl \
  && rm -rf /var/lib/apt/lists/*
 
-COPY script/start.sh /start.sh
 COPY script/wait.sh /wait.sh
 
 # test.yaml is copied as config.yaml for AT.
