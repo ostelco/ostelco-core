@@ -119,9 +119,12 @@ object ScanInformationStoreSingleton : ScanInformationStore {
     override fun upsertVendorScanInformation(customerId: String, countryCode:String, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit> {
         return IO {
             Either.monad<StoreError>().binding {
+                logger.info("Creating createVendorScanInformation for customerId = ${customerId}")
                 val vendorScanInformation = createVendorScanInformation(vendorData).bind()
                 val bucketName = storageBucket
+                logger.info("Generating Plain Zip data for customerId = ${customerId}")
                 val plainZipData = JumioHelper.generateZipFile(vendorScanInformation).bind()
+                logger.info("Encrypt for global customerId = ${customerId}")
                 val zipData = getEncrypter("global").encryptData(plainZipData)
                 if (bucketName.isNullOrEmpty()) {
                     val fileName = "${countryCode}_${vendorScanInformation.id}.zip.tk"
@@ -161,7 +164,7 @@ object ScanInformationStoreSingleton : ScanInformationStore {
                     .set(ScanMetadataEnum.PROCESSED_TIME.s, Instant.now().toEpochMilli())
                     .build()
             datastore.add(entity)
-            logger.error("Saved ScanMetaData for ${keyString}")
+            logger.info("Saved ScanMetaData for customerId = $customerId key = ${keyString}")
         } catch (e: DatastoreException) {
             logger.error("Caught exception while storing the scan meta data", e)
             return Either.left(NotCreatedError("ScanMetaData", keyString))
@@ -276,6 +279,7 @@ object JumioHelper {
             // always check HTTP response code first
             if (responseCode != HttpURLConnection.HTTP_OK) {
                 val statusMessage = "$responseCode: ${httpConn.responseMessage}"
+                logger.error("Failed to download $fileURL $statusMessage")
                 return Either.left(FileDownloadError(fileURL, statusMessage))
             }
             val contentType = httpConn.contentType
@@ -285,6 +289,7 @@ object JumioHelper {
             return Either.right(Pair(fileData, contentType))
         } catch (e: IOException) {
             val statusMessage = "IOException: $e"
+            logger.error("Failed to download $fileURL $statusMessage")
             return Either.left(FileDownloadError(fileURL, statusMessage))
         } finally {
             httpConn.disconnect()
@@ -334,16 +339,19 @@ object JumioHelper {
             Either.monad<StoreError>().binding {
                 var result: Pair<Blob, String>
                 if (scanImageUrl != null) {
+                    logger.info("Downloading scan image: $scanImageUrl")
                     result = downloadFileAsBlob(scanImageUrl, apiToken, apiSecret).bind()
                     val filename = "id.${getFileExtFromType(result.second)}"
                     images.put(filename, result.first)
                 }
                 if (scanImageBacksideUrl != null) {
+                    logger.info("Downloading scan image back: $scanImageBacksideUrl")
                     result = downloadFileAsBlob(scanImageBacksideUrl, apiToken, apiSecret).bind()
                     val filename = "id_backside.${getFileExtFromType(result.second)}"
                     images.put(filename, result.first)
                 }
                 if (scanImageFaceUrl != null) {
+                    logger.info("Downloading Face Image: $scanImageFaceUrl")
                     result = downloadFileAsBlob(scanImageFaceUrl, apiToken, apiSecret).bind()
                     val filename = "face.${getFileExtFromType(result.second)}"
                     images.put(filename, result.first)
@@ -354,6 +362,7 @@ object JumioHelper {
                     val flattenedList = flattenList(urls)
                     var imageIndex = 0
                     for (imageUrl in flattenedList) {
+                        logger.info("Downloading Liveness image: $imageUrl")
                         result = downloadFileAsBlob(imageUrl, apiToken, apiSecret).bind()
                         val filename = "liveness-${++imageIndex}.${getFileExtFromType(result.second)}"
                         images.put(filename, result.first)

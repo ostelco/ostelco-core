@@ -12,6 +12,7 @@ import org.ostelco.prime.module.PrimeModule
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter
 import org.ostelco.sim.es2plus.SmDpPlusCallbackResource
 import org.ostelco.simcards.admin.ConfigRegistry.config
+import org.ostelco.simcards.admin.ApiRegistry.simInventoryApi
 import org.ostelco.simcards.admin.ResourceRegistry.simInventoryResource
 import org.ostelco.simcards.hss.*
 import org.ostelco.simcards.inventory.*
@@ -58,10 +59,13 @@ class SimAdministrationModule : PrimeModule {
         OpenapiResourceAdder.addOpenapiResourceToJerseyEnv(jerseyEnv, config.openApi)
         ES2PlusIncomingHeadersFilter.addEs2PlusDefaultFiltersAndInterceptors(jerseyEnv)
 
-        simInventoryResource = SimInventoryResource(SimInventoryApi(httpClient, config, DAO))
+        /* Create the SIM manager API. */
+        simInventoryApi = SimInventoryApi(httpClient, config, DAO)
+
+        /* Add REST frontend. */
+        simInventoryResource = SimInventoryResource(simInventoryApi)
         jerseyEnv.register(simInventoryResource)
         jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
-
 
         val dispatcher = makeHssDispatcher(
                 hssAdapterConfig = config.hssAdapter,

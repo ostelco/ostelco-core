@@ -1,0 +1,34 @@
+plugins {
+  id "org.jetbrains.kotlin.jvm" version "1.3.21"
+  id "java-library"
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+  kotlinOptions {
+    jvmTarget = "1.8"
+  }
+}
+
+repositories {
+  maven {
+    url 'https://dl.bintray.com/palantir/releases' // docker-compose-rule is published on bintray
+  }
+}
+dependencies {
+
+  implementation project(":prime-modules")
+  implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
+
+  implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
+  implementation "com.google.cloud:google-cloud-datastore:$googleCloudVersion"
+  implementation "com.google.cloud:google-cloud-storage:$googleCloudVersion"
+
+  testImplementation "com.palantir.docker.compose:docker-compose-rule-junit4:$dockerComposeJunitRuleVersion"
+
+  testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
+  testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
+
+  testImplementation "org.mockito:mockito-core:$mockitoVersion"
+}
+
+apply from: '../gradle/jacoco.gradle'
