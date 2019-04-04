@@ -60,7 +60,7 @@ interface SubscriberDAO {
 
     fun getSimProfiles(identity: Identity, regionCode: String): Either<ApiError, Collection<SimProfile>>
 
-    fun provisionSimProfile(identity: Identity, regionCode: String, profileType: String): Either<ApiError, SimProfile>
+    fun provisionSimProfile(identity: Identity, regionCode: String, profileType: String?): Either<ApiError, SimProfile>
 
     //
     // Bundle
