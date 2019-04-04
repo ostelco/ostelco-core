@@ -480,8 +480,8 @@ object Neo4jStoreSingleton : GraphStore {
                         customerId = customerId,
                         regionCode = regionCode.toLowerCase()).bind()
                 val region = regionStore.get(id = regionCode.toLowerCase(), transaction = transaction).bind()
-                val simEntry = simManager.allocateNextEsimProfile(hlr = getHlr(region.id.toLowerCase()), phoneType = profileType)
-                        .mapLeft { NotFoundError("eSIM profile", id = "loltel") }
+                val simEntry = simManager.allocateNextEsimProfile(hlr = getHlr(region.id), phoneType = profileType)
+                        .mapLeft { NotFoundError("eSIM profile", id = "Loltel") }
                         .bind()
                 simProfileStore.create(SimProfile(
                         iccId = simEntry.iccId,
@@ -558,7 +558,7 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     private fun getHlr(regionCode: String): String {
-        return "loltel"
+        return "Loltel"
     }
 
     //
