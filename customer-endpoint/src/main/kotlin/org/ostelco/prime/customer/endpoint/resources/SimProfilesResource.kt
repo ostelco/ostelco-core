@@ -45,7 +45,7 @@ class SimProfilesResource(private val regionCode: String, private val dao: Subsc
         return dao.provisionSimProfile(
                 identity = Identity(id = token.name, type = "EMAIL", provider = token.provider),
                 regionCode = regionCode,
-                profileType = profileType ?: "default")
+                profileType = profileType)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
                         { Response.status(Response.Status.OK).entity(asJson(it)) })
