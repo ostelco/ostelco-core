@@ -9,6 +9,7 @@ import arrow.instances.either.monad.monad
 import com.google.common.collect.ImmutableMultimap
 import io.dropwizard.servlets.tasks.Task
 import org.apache.http.impl.client.CloseableHttpClient
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.simmanager.NotFoundError
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.hss.HssEntry
@@ -39,7 +40,7 @@ class PreallocateProfilesTask(
         val hssAdapterProxy: SimManagerToHssDispatcherAdapter,
         val profileVendors: List<ProfileVendorConfig>) : Task("preallocate_sim_profiles") {
 
-    private val log = LoggerFactory.getLogger(javaClass)
+    private val logger by getLogger()
 
     @Throws(Exception::class)
     override fun execute(parameters: ImmutableMultimap<String, String>, output: PrintWriter) {
@@ -65,14 +66,9 @@ class PreallocateProfilesTask(
                                         simInventoryDAO.setHssState(simEntry.id!!, HssState.ACTIVATED)
                                     }
                         } else {
-                            if (profileVendorConfig == null) {
-                                NotFoundError("Failed to find configuration for SIM profile vendor ${profileVendorAdapter.name}")
-                                        .left()
-                            } else {
-                                NotFoundError("Failed to find configuration for SIM profile vendor ${profileVendorAdapter.name} " +
-                                        "and HLR ${hssEntry.name}")
-                                        .left()
-                            }
+                            NotFoundError("Failed to find configuration for SIM profile vendor ${profileVendorAdapter.name} " +
+                                    "and HLR ${hssEntry.name}")
+                                    .left()
                         }
                     }
 
@@ -84,12 +80,15 @@ class PreallocateProfilesTask(
 
         for (i in 1..noOfProfilesToActuallyAllocate) {
             simInventoryDAO.findNextNonProvisionedSimProfileForHss(hssId = hlrEntry.id, profile = profile)
-                    .flatMap {
-                        preProvisionSimProfile(hlrEntry, it)
+                    .flatMap { simEntry ->
+                        preProvisionSimProfile(hlrEntry, simEntry)
+                                .mapLeft {
+                                    logger.error("Preallocation of SIM ICCID {} failed with error: {}}",
+                                            simEntry.iccid, it)
+                                }
                     }
         }
     }
-
 
     /**
      * Made public to be testable.   Perform
@@ -110,6 +109,9 @@ class PreallocateProfilesTask(
                                 .bind()
 
                         if (profileStats.noOfEntriesAvailableForImmediateUse < lowWaterMark) {
+                            logger.info("Preallocating new SIM batch with HLR {} and with profile {}",
+                                    entry.name, profile)
+
                             batchPreprovisionSimProfiles(hlrEntry = entry, profile = profile, profileStats = profileStats)
                         }
                     }
