@@ -97,7 +97,7 @@ data class ProfileVendorAdapter(
                         val status = mapper.readValue(it.entity.content, Es2DownloadOrderResponse::class.java)
 
                         if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess) {
-                            logger.error("SM-DP+ 'order-download' message to service %s for ICCID %s failed with execution status %s (call-id: %s)",
+                            logger.error("SM-DP+ 'order-download' message to service {} for ICCID {} failed with execution status {} (call-id: {})",
                                     config.name,
                                     simEntry.iccid,
                                     status.header.functionExecutionStatus,
@@ -113,7 +113,7 @@ data class ProfileVendorAdapter(
                         }
                     }
                     else -> {
-                        logger.error("SM-DP+ 'order-download' message to service %s for ICCID %s failed with status code %d (call-id: %s)",
+                        logger.error("SM-DP+ 'order-download' message to service {} for ICCID {} failed with status code {} (call-id: {})",
                                 config.name,
                                 simEntry.iccid,
                                 it.statusLine.statusCode,
@@ -124,7 +124,7 @@ data class ProfileVendorAdapter(
                 }
             }
         } catch (e: Exception) {
-            logger.error("SM-DP+ 'order-download' message to service %s for ICCID %s failed with error: %s",
+            logger.error("SM-DP+ 'order-download' message to service {} for ICCID {} failed with error: {}",
                     config.name,
                     simEntry.iccid,
                     e)
@@ -175,7 +175,7 @@ data class ProfileVendorAdapter(
                         val status = mapper.readValue(it.entity.content, Es2ConfirmOrderResponse::class.java)
 
                         if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess) {
-                            logger.error("SM-DP+ 'order-confirm' message to service %s for ICCID %s failed with execution status %s (call-id: %s)",
+                            logger.error("SM-DP+ 'order-confirm' message to service {} for ICCID {} failed with execution status {} (call-id: {})",
                                     config.name,
                                     simEntry.iccid,
                                     status.header.functionExecutionStatus,
@@ -207,7 +207,7 @@ data class ProfileVendorAdapter(
                         }
                     }
                     else -> {
-                        logger.error("SM-DP+ 'order-confirm' message to service %s for ICCID %s failed with status code %d (call-id: %s)",
+                        logger.error("SM-DP+ 'order-confirm' message to service {} for ICCID {} failed with status code %d (call-id: {})",
                                 config.name,
                                 simEntry.iccid,
                                 it.statusLine.statusCode,
@@ -218,7 +218,7 @@ data class ProfileVendorAdapter(
                 }
             }
         } catch (e: Exception) {
-            logger.error("SM-DP+ 'order-confirm' message to service %s for ICCID %s failed with error: %s",
+            logger.error("SM-DP+ 'order-confirm' message to service {} for ICCID {} failed with error: {}",
                     config.name,
                     simEntry.iccid,
                     e)
@@ -259,7 +259,7 @@ data class ProfileVendorAdapter(
                                  config: ProfileVendorConfig,
                                  iccidList: List<String>): Either<SimManagerError, List<ProfileStatus>> {
         if (iccidList.isNullOrEmpty()) {
-            logger.error("One or more ICCID values required in SM-DP+ 'profile-status' message to service %s",
+            logger.error("One or more ICCID values required in SM-DP+ 'profile-status' message to service {}",
                     config.name)
             return NotFoundError("").left()
         }
@@ -293,7 +293,7 @@ data class ProfileVendorAdapter(
 
                         if (status.header.functionExecutionStatus.status != FunctionExecutionStatusType.ExecutedSuccess) {
 
-                            logger.error("SM-DP+ 'profile-status' message to service %s for ICCID %s failed with execution status %s (call-id: %s)",
+                            logger.error("SM-DP+ 'profile-status' message to service {} for ICCID {} failed with execution status {} (call-id: {})",
                                     config.name,
                                     iccids,
                                     status.header.functionExecutionStatus,
@@ -316,7 +316,7 @@ data class ProfileVendorAdapter(
                         }
                     }
                     else -> {
-                        logger.error("SM-DP+ 'profile-status' message to service %s for ICCID %s failed with status code %d (call-id: %s)",
+                        logger.error("SM-DP+ 'profile-status' message to service {} for ICCID {} failed with status code %d (call-id: {})",
                                 config.name,
                                 iccids,
                                 it.statusLine.statusCode,
@@ -327,7 +327,7 @@ data class ProfileVendorAdapter(
                 }
             }
         } catch (e: Exception) {
-            logger.error("SM-DP+ 'profile-status' message to service %s for ICCID %s failed with error: %s",
+            logger.error("SM-DP+ 'profile-status' message to service {} for ICCID {} failed with error: {}",
                     config.name,
                     iccids,
                     e)
