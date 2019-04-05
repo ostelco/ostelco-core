@@ -84,7 +84,7 @@ class PreallocateProfilesTask(
                         preProvisionSimProfile(hlrEntry, simEntry)
                                 .mapLeft {
                                     logger.error("Preallocation of SIM ICCID {} failed with error: {}}",
-                                            simEntry.iccid, it)
+                                            simEntry.iccid, it.description)
                                 }
                     }
         }
