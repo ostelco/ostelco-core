@@ -239,7 +239,8 @@ interface SimInventoryDB {
         SELECT 'NO_OF_UNALLOCATED_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries
                    WHERE hlrId = :hssId AND profile = :simProfile AND
                          smdpPlusState =  :smdpUnallocatedState AND
-                         hlrState = :hlrUnallocatedState
+                         hlrState = :hlrUnallocatedState AND
+                         provisionState = :provisionedAvailableState
         UNION
         SELECT 'NO_OF_RELEASED_ENTRIES' AS KEY,  count(*)  AS VALUE  FROM sim_entries
                    WHERE hlrId = :hssId AND profile = :simProfile AND
@@ -249,7 +250,8 @@ interface SimInventoryDB {
         SELECT 'NO_OF_ENTRIES_READY_FOR_IMMEDIATE_USE' AS KEY,  count(*)  AS VALUE  FROM sim_entries
                    WHERE hlrId = :hssId AND profile = :simProfile AND
                          smdpPlusState =  :smdpReleasedState AND
-                         hlrState = :hssAllocatedState
+                         hlrState = :hssAllocatedState AND
+                         provisionState = :provisionedAvailableState
     """)
     @RegisterRowMapper(KeyValueMapper::class)
     fun getProfileStatsAsKeyValuePairs(
@@ -260,5 +262,6 @@ interface SimInventoryDB {
             smdpUnallocatedState: String = SmDpPlusState.AVAILABLE.name,
             hssAllocatedState: String = HssState.ACTIVATED.name,
             smdpAllocatedState: String = SmDpPlusState.ALLOCATED.name,
-            smdpDownloadedState: String = SmDpPlusState.DOWNLOADED.name): List<KeyValuePair>
+            smdpDownloadedState: String = SmDpPlusState.DOWNLOADED.name,
+            provisionedAvailableState: String = ProvisionState.AVAILABLE.name): List<KeyValuePair>
 }
