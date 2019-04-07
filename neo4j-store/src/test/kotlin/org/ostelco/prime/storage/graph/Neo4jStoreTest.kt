@@ -561,13 +561,14 @@ class Neo4jStoreTest {
                 status = APPROVED,
                 regionCode = "no").isRight())
 
-        Mockito.`when`(mockSimManager.allocateNextEsimProfile("loltel", "default"))
+        Mockito.`when`(mockSimManager.allocateNextEsimProfile("Loltel", "default"))
                 .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList()).right())
 
         // test
         Neo4jStoreSingleton.provisionSimProfile(
                 identity = IDENTITY,
-                regionCode = "no")
+                regionCode = "no",
+                profileType = "default")
                 .bimap(
                         { fail(it.message) },
                         {
@@ -736,12 +737,13 @@ class Neo4jStoreTest {
                 status = PENDING,
                 regionCode = "sg").isRight())
 
-        Mockito.`when`(mockSimManager.allocateNextEsimProfile("loltel", "default"))
+        Mockito.`when`(mockSimManager.allocateNextEsimProfile("Loltel", "default"))
                 .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList()).right())
 
         assert(Neo4jStoreSingleton.provisionSimProfile(
                 identity = IDENTITY,
-                regionCode = "no").isRight())
+                regionCode = "no",
+                profileType = "default").isRight())
 
         // test
         Neo4jStoreSingleton.getAllRegionDetails(identity = IDENTITY)
@@ -796,12 +798,13 @@ class Neo4jStoreTest {
                 status = PENDING,
                 regionCode = "sg").isRight())
 
-        Mockito.`when`(mockSimManager.allocateNextEsimProfile("loltel", "default"))
+        Mockito.`when`(mockSimManager.allocateNextEsimProfile("Loltel", "default"))
                 .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList()).right())
 
         assert(Neo4jStoreSingleton.provisionSimProfile(
                 identity = IDENTITY,
-                regionCode = "no").isRight())
+                regionCode = "no",
+                profileType = "default").isRight())
 
         // test
         Neo4jStoreSingleton.getRegionDetails(identity = IDENTITY, regionCode = "no")
