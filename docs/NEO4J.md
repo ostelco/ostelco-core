@@ -9,17 +9,21 @@ This is a temporary solution till we have a proper means of setup:
 Using `:sysinfo` command, check the roles for the cluster nodes.<br>
 For a 3-node Core cluster, one node is `LEADER` and 2 nodes are `FOLLOWER`s.<br>
 Only `LEADER` has _read/write_ access, whereas `FOLLOWER` has _read-only_ access.<br>
-Choose appropriate node instead of _neo4j-core-2_ based on intent.
+Choose appropriate node instead of _neo4j-neo4j-core-0_ based on intent.
 
 ### Set neo4j -> localhost entry in your `/etc/hosts`
  * On your developer machine, to `/etc/hosts` file, add `neo4j` entry pointing to `localhost`.
 
 Your `/etc/hosts` should have this line.
 ```text
-127.0.0.1	localhost  neo4j  neo4j-core-2.neo4j.default.svc.cluster.local
+127.0.0.1	localhost  neo4j
+
+127.0.0.1	neo4j-neo4j-core-0.neo4j-neo4j.neo4j.svc.cluster.local
+# 127.0.0.1	neo4j-neo4j-core-1.neo4j-neo4j.neo4j.svc.cluster.local
+# 127.0.0.1	neo4j-neo4j-core-2.neo4j-neo4j.neo4j.svc.cluster.local
 ```
 
-This is assuming `neo4j-core-2` is `LEADER` in _Neo4j Casual Cluster_.
+This is assuming `neo4j-neo4j-core-0` is `LEADER` in _Neo4j Casual Cluster_.
 
 ### Set proper cluster in `kubectl` config
 
@@ -30,21 +34,23 @@ Check your current cluster.
 kubectl config get-contexts
 ```
 
-If name of the cluster, where neo4j is deployed, is `private-cluster`, then change `kubectl config`. 
+change `kubectl config` to the cluster where neo4j is deployed. 
 ```bash
-kubectl config use-context $(kubectl config get-contexts --output name | grep private-cluster) 
+kubectl config use-context $(kubectl config get-contexts --output name | grep ostelco) 
 ```
 
 ### Port forward from neo4j pods
 
+Assuming `neo4j` is running in `neo4j` k8s namespace,
+
 ```bash
-kubectl get pods
+kubectl get pods -n neo4j
 ```
 
 Choose one of the neo4j pod from the list.
 
 ```bash
-kubectl port-forward neo4j-core-2 7474:7474 7687:7687
+kubectl port-forward -n neo4j neo4j-neo4j-core-0 7474:7474 7687:7687
 ``` 
 
 Here, `neo4j browser` web-app is exposed over port `7474`.
