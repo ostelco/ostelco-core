@@ -60,7 +60,7 @@ class EntityStore<T>(
                         Boolean::class.java -> fullEntity.getBoolean(name)
                         LatLng::class.java -> fullEntity.getLatLng(name)
                         String::class.java -> fullEntity.getString(name)
-                        StringValue::class.java -> (fullEntity.getValue(name) as StringValue).get()
+                        StringValue::class.java -> fullEntity.getValue<StringValue>(name).get()
                         Timestamp::class.java -> fullEntity.getTimestamp(name)
                         else -> null
                     }
