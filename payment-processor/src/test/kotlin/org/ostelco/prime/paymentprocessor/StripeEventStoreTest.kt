@@ -4,22 +4,20 @@ import com.google.cloud.datastore.StringValue
 import com.stripe.model.Event
 import com.stripe.net.ApiResource
 import org.junit.Test
-import org.ostelco.prime.paymentprocessor.subscribers.EntityStore
 import org.ostelco.prime.paymentprocessor.subscribers.StripeEvent
+import org.ostelco.prime.store.datastore.EntityStore
 import kotlin.test.assertEquals
 
 
 class StripeEventStoreTest {
 
     @Test
-    fun testStoreStripeEvent() {
+    fun `test save and fetch stripe event from datastore`() {
         val event = ApiResource.GSON.fromJson(payload, Event::class.java)
         val testData = StripeEvent(event.type,
                 event.account,
                 event.created,
-                StringValue.newBuilder(payload)
-                        .setExcludeFromIndexes(true)
-                        .build())
+                payload)
         val key = entityStore.add(testData)
         val fetched = entityStore.fetch(key)
 
@@ -27,7 +25,8 @@ class StripeEventStoreTest {
     }
 
     companion object {
-        val entityStore = EntityStore(type = "inmemory-emulator",
+        val entityStore = EntityStore(StripeEvent::class.java,
+                type = "inmemory-emulator",
                 namespace = "test")
         val payload = """
               {
@@ -70,7 +69,7 @@ class StripeEventStoreTest {
                     "paid": true,
                     "receipt_email": null,
                     "receipt_number": null,
-                    "receipt_url": "https://pay.stripe.com/receipts/acct_1D3iWUIsE3jhPQo7/ch_1EKK9SIsE3jhPQo7aaavbFUx/rcpt_Enw1fqDWFhlAT3aZmk8E0G5kds7AKGr",
+                    "receipt_url": "https://pay.stripe.com/receipts/acct_1D3iWUIsscchPQo7/ch_1EKK9SIsE3jhPQo7aaavbFUx/rcpt_Enw1fqDWFhlAT3aZmk8E0G5kds7AKGr",
                     "refunded": false,
                     "refunds": {
                         "object": "list",
