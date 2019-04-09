@@ -76,7 +76,6 @@ object MyInfoClientSingleton : MyInfoKycService {
                             .decode(config.myInfoServerPublicKey))))
             .parseClaimsJws(jws)
 
-
     private fun getPersonData(uinFin: String, accessToken: String): String =
             sendSignedRequest(
                     httpMethod = GET,
@@ -183,19 +182,24 @@ object MyInfoClientSingleton : MyInfoKycService {
                 ?.readAllBytes()
                 ?.let { String(it) }
                 ?.also {
+                    // TODO vihang: Remove after initial testing is done.
                     logger.info("$httpMethod Response content: $it")
                 }
                 ?: ""
 
         if (config.myInfoApiEnableSecurity && httpMethod == GET) {
+            // TODO vihang: Remove after initial testing is done.
+            logger.info("jwe PersonData: {}", content)
             val jws = decodeJweCompact(content)
+            // TODO vihang: Remove after initial testing is done.
+            logger.info("jws PersonData: {}", jws)
             return getPersonDataFromJwsClaims(jws)
         }
 
         return content
     }
 
-    internal fun getPersonDataFromJwsClaims(jws: String): String {
+    private fun getPersonDataFromJwsClaims(jws: String): String {
 
         val correctedJws = jws
                 // removing extra double-quotes
@@ -205,7 +209,7 @@ object MyInfoClientSingleton : MyInfoKycService {
         return asJson(getClaims(correctedJws).body)
     }
 
-    internal fun decodeJweCompact(jwePayload: String): String {
+    private fun decodeJweCompact(jwePayload: String): String {
 
         val privateKey = KeyFactory
                 .getInstance("RSA")

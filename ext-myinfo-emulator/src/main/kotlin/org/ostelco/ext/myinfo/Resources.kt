@@ -1,5 +1,6 @@
 package org.ostelco.ext.myinfo
 
+import org.ostelco.ext.myinfo.JsonUtils.compactJson
 import org.ostelco.ext.myinfo.JwtUtils.createAccessToken
 import org.ostelco.ext.myinfo.JwtUtils.getClaims
 import org.ostelco.prime.getLogger
@@ -116,69 +117,95 @@ class PersonResource(private val config: MyInfoEmulatorConfig) {
         if (authHeaderString.startsWith("Bearer ")) {
             return Response
                     .status(Response.Status.OK)
-                    .entity(getPersonData(uinFin = uinFin))
+                    .entity(personData)
                     .build()
         }
 
         return Response
                 .status(Response.Status.OK)
-                .entity(JweCompactUtils.encrypt(config.myInfoClientPublicKey, getPersonData(uinFin = uinFin)))
+                .entity(JweCompactUtils
+                        .encrypt(
+                                config.myInfoClientPublicKey,
+                                JwtUtils.createJws(config.myInfoServerPrivateKey, personData)))
                 .build()
     }
 
-    private fun getPersonData(uinFin: String): String = """
+    private val personData = compactJson("""
 {
   "name": {
-    "lastupdated": "2018-03-20",
+    "lastupdated": "2019-04-05",
     "source": "1",
     "classification": "C",
     "value": "TAN XIAO HUI"
   },
   "sex": {
-    "lastupdated": "2018-03-20",
+    "lastupdated": "2019-04-05",
+    "code": "F",
     "source": "1",
     "classification": "C",
-    "value": "F"
+    "desc": "FEMALE"
   },
   "nationality": {
-    "lastupdated": "2018-03-20",
+    "lastupdated": "2019-04-05",
+    "code": "SG",
     "source": "1",
     "classification": "C",
-    "value": "SG"
+    "desc": "SINGAPORE CITIZEN"
   },
   "dob": {
-    "lastupdated": "2018-03-20",
+    "lastupdated": "2019-04-05",
     "source": "1",
     "classification": "C",
-    "value": "1970-05-17"
+    "value": "1998-06-06"
   },
   "email": {
-    "lastupdated": "2018-08-23",
-    "source": "4",
+    "lastupdated": "2019-04-05",
+    "source": "2",
     "classification": "C",
     "value": "myinfotesting@gmail.com"
   },
   "mobileno": {
-    "lastupdated": "2018-08-23",
-    "code": "65",
-    "source": "4",
+    "lastupdated": "2019-04-05",
+    "source": "2",
     "classification": "C",
-    "prefix": "+",
-    "nbr": "97399245"
+    "areacode": {
+      "value": "65"
+    },
+    "prefix": {
+      "value": "+"
+    },
+    "nbr": {
+      "value": "97399245"
+    }
   },
   "regadd": {
-    "country": "SG",
-    "unit": "128",
-    "street": "BEDOK NORTH AVENUE 4",
-    "lastupdated": "2018-03-20",
-    "block": "102",
-    "postal": "460102",
+    "country": {
+      "code": "SG",
+      "desc": "SINGAPORE"
+    },
+    "unit": {
+      "value": "128"
+    },
+    "street": {
+      "value": "BEDOK NORTH AVENUE 4"
+    },
+    "lastupdated": "2019-04-05",
+    "block": {
+      "value": "102"
+    },
     "source": "1",
+    "postal": {
+      "value": "460102"
+    },
     "classification": "C",
-    "floor": "09",
-    "building": "PEARL GARDEN"
-  },
-  "uinfin": "$uinFin"
+    "floor": {
+      "value": "09"
+    },
+    "type": "SG",
+    "building": {
+      "value": "PEARL GARDEN"
+    }
+  }
 }
-    """.trimIndent().replace("\n", "").replace(" ", "")
+    """)
 }
