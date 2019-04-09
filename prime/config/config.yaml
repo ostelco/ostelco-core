@@ -30,7 +30,6 @@ modules:
       myInfoApiUri: ${MY_INFO_API_URI}
       myInfoApiClientId: ${MY_INFO_API_CLIENT_ID}
       myInfoApiClientSecret: ${MY_INFO_API_CLIENT_SECRET}
-      myInfoApiRealm: ${MY_INFO_API_REALM}
       myInfoRedirectUri: ${MY_INFO_REDIRECT_URI}
       myInfoServerPublicKey: ${MY_INFO_SERVER_PUBLIC_KEY}
       myInfoClientPrivateKey: ${MY_INFO_CLIENT_PRIVATE_KEY}
