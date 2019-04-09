@@ -27,7 +27,6 @@ data class Config(
         val myInfoApiClientId: String,
         val myInfoApiClientSecret: String,
         val myInfoApiEnableSecurity: Boolean = true,
-        val myInfoApiRealm: String,
         val myInfoRedirectUri: String,
         val myInfoServerPublicKey: String,
         val myInfoClientPrivateKey: String,

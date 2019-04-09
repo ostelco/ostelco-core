@@ -12,6 +12,7 @@ import org.ostelco.prime.ekyc.Registry.myInfoClient
 import org.ostelco.prime.ekyc.myinfo.HttpMethod.GET
 import org.ostelco.prime.ekyc.myinfo.HttpMethod.POST
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.jsonmapper.objectMapper
 import org.ostelco.prime.model.MyInfoConfig
 import java.net.URLEncoder
@@ -66,15 +67,14 @@ object MyInfoClientSingleton : MyInfoKycService {
                             "client_id" to config.myInfoApiClientId,
                             "client_secret" to config.myInfoApiClientSecret))
 
-
-    private fun getClaims(accessToken: String) = Jwts.parser()
+    private fun getClaims(jws: String) = Jwts.parser()
             .setCompressionCodecResolver(ExtendedCompressionCodecResolver)
             .setSigningKey(KeyFactory
                     .getInstance("RSA")
                     .generatePublic(X509EncodedKeySpec(Base64
                             .getDecoder()
                             .decode(config.myInfoServerPublicKey))))
-            .parseClaimsJws(accessToken)
+            .parseClaimsJws(jws)
 
 
     private fun getPersonData(uinFin: String, accessToken: String): String =
@@ -114,11 +114,10 @@ object MyInfoClientSingleton : MyInfoKycService {
 
             // A) Construct the Authorisation Token Parameter
             val defaultAuthHeaders = mapOf(
-                    "apex_l2_eg_timestamp" to "$timestamp",
-                    "apex_l2_eg_nonce" to "$nonce",
-                    "apex_l2_eg_app_id" to config.myInfoApiClientId,
-                    "apex_l2_eg_signature_method" to "SHA256withRSA",
-                    "apex_l2_eg_version" to "1.0")
+                    "app_id" to config.myInfoApiClientId,
+                    "timestamp" to "$timestamp",
+                    "nonce" to "$nonce",
+                    "signature_method" to "RS256")
 
             // B) Forming the Base String
             // Base String is a representation of the entire request (ensures message integrity)
@@ -130,14 +129,8 @@ object MyInfoClientSingleton : MyInfoKycService {
                     .sortedBy { it.key }
                     .joinToString("&") { "${it.key}=${it.value}" }
 
-            // ii) construct request URL ---> url is passed in to this function
-            // NOTE: need to include the ".e." in order for the security authorisation header to work
-            //myinfosgstg.api.gov.sg -> myinfosgstg.e.api.gov.sg
-
-            val url = "${config.myInfoApiUri.toLowerCase().replace(".api.gov.sg", ".e.api.gov.sg")}$path"
-
-            // iii) concatenate request elements (HTTP method + url + base string parameters)
-            val baseString = "$httpMethod&$url&$baseParamString"
+            // ii) concatenate request elements (HTTP method + url + base string parameters)
+            val baseString = "$httpMethod&$requestUrl&$baseParamString"
 
             // C) Signing Base String to get Digital Signature
             // Load pem file containing the x509 cert & private key & sign the base string with it to produce the Digital Signature
@@ -154,11 +147,10 @@ object MyInfoClientSingleton : MyInfoKycService {
 
             // D) Assembling the Authorization Header
 
-            val authHeaders = mapOf("realm" to config.myInfoApiRealm) +
-                    defaultAuthHeaders +
-                    mapOf("apex_l2_eg_signature" to signature)
+            val authHeaders = defaultAuthHeaders +
+                    mapOf("signature" to signature)
 
-            var authHeaderString = "apex_l2_eg " +
+            var authHeaderString = "PKI_SIGN " +
                     authHeaders.entries
                             .joinToString(",") { """${it.key}="${it.value}"""" }
 
@@ -196,10 +188,21 @@ object MyInfoClientSingleton : MyInfoKycService {
                 ?: ""
 
         if (config.myInfoApiEnableSecurity && httpMethod == GET) {
-            return decodeJweCompact(content)
+            val jws = decodeJweCompact(content)
+            return getPersonDataFromJwsClaims(jws)
         }
 
         return content
+    }
+
+    internal fun getPersonDataFromJwsClaims(jws: String): String {
+
+        val correctedJws = jws
+                // removing extra double-quotes
+                .removePrefix("\"")
+                .removeSuffix("\"")
+
+        return asJson(getClaims(correctedJws).body)
     }
 
     internal fun decodeJweCompact(jwePayload: String): String {
