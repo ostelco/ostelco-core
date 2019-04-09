@@ -8,9 +8,9 @@ import org.ostelco.ocs.api.CreditControlAnswerInfo
 import org.ostelco.ocs.api.CreditControlRequestInfo
 import org.ostelco.ocs.api.MultipleServiceCreditControl
 import org.ostelco.ocs.api.ServiceUnit
-import java.time.Instant
 import java.util.*
 import java.util.concurrent.CountDownLatch
+import kotlin.system.measureTimeMillis
 import kotlin.test.fail
 
 class OnlineChargingTest {
@@ -51,29 +51,25 @@ class OnlineChargingTest {
                         .setUsed(ServiceUnit.newBuilder().setTotalOctets(80)))
                 .build()
 
-        // Start timestamp in millisecond
-        val start = Instant.now()
+        val durationInMillis = measureTimeMillis {
 
-        // Send the same request COUNT times
-        repeat(COUNT) {
-            OnlineCharging.creditControlRequestEvent(
-                    request = request,
-                    returnCreditControlAnswer = creditControlAnswerInfo::onNext)
+            // Send the same request COUNT times
+            repeat(COUNT) {
+                OnlineCharging.creditControlRequestEvent(
+                        request = request,
+                        returnCreditControlAnswer = creditControlAnswerInfo::onNext)
+            }
+
+            // Wait for all the responses to be returned
+            println("Waiting for all responses to be returned")
+
+            @Suppress("BlockingMethodInNonBlockingContext")
+            cdl.await()
         }
 
-        // Wait for all the responses to be returned
-        println("Waiting for all responses to be returned")
-
-        @Suppress("BlockingMethodInNonBlockingContext")
-        cdl.await()
-
-        // Stop timestamp in millisecond
-        val stop = Instant.now()
-
         // Print load test results
-        val diff = stop.toEpochMilli() - start.toEpochMilli()
-        println("Time diff: %,d milli sec".format(diff))
-        val rate = COUNT * 1000.0 / diff
+        println("Time duration: %,d milli sec".format(durationInMillis))
+        val rate = COUNT * 1000.0 / durationInMillis
         println("Rate: %,.2f req/sec".format(rate))
     }
 
