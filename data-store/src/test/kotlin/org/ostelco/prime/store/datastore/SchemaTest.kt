@@ -31,4 +31,19 @@ class SchemaTest {
 
     }
 
+    @Test
+    fun `test save and fetch of long strings from data store`() {
+        val testDataStore = EntityStore(entityClass = TestData::class.java)
+
+        val testData = TestData(
+                id = UUID.randomUUID().toString(),
+                name = "Foo".repeat(1000),
+                created = Instant.now().toEpochMilli())
+
+        val key = testDataStore.add(testData)
+
+        val fetched = testDataStore.fetch(key = key)
+
+        assertEquals(expected = testData, actual = fetched)
+    }
 }
