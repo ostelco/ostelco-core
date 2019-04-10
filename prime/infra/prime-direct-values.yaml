@@ -224,7 +224,7 @@ services:
     host: api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
     grpcOrHttp2: true
     ambassadorMappingOptions:
-      timeout_ms: 6000
+      timeout_ms: 60000
   metrics:
     name: metrics
     type: LoadBalancer
@@ -240,20 +240,14 @@ services:
     port: 80
     targetPort: 9006
     portName: http
-    host: houston-api # the host name is forumlated from concatinating: dnsPrefix, this host, and dnsSuffix
-  prime-alvin-api: 
+    host: houston-api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
+  prime-alvin-api:
     name: alvin-api
     type: ClusterIP
     port: 80
-    targetPort: 9008  
+    targetPort: 9008
     portName: http
-    host: alvin-api # the host name is forumlated from concatinating: dnsPrefix, this host, and dnsSuffix
-  pseudonym-server: 
-    name: pseudonym-server
-    type: ClusterIP
-    port: 80
-    targetPort: 8080  
-    portName: http
+    host: alvin-api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
   dwadmin-service:
     name: dwadmin-service
     type: ClusterIP
