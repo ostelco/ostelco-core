@@ -69,7 +69,7 @@ protobuf {
         }
     }
 
-    protoc { artifact = 'com.google.protobuf:protoc:3.7.0' }
+    protoc { artifact = "com.google.protobuf:protoc:$protocVersion" }
     generateProtoTasks {
         all()*.plugins {
             grpc {}
