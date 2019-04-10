@@ -223,7 +223,8 @@ services:
     portName: http
     host: api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
     grpcOrHttp2: true
-    # loadBalancerIP: x.y.z.n
+    ambassadorMappingOptions:
+      timeout_ms: 6000
   metrics:
     name: metrics
     type: LoadBalancer
