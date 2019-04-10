@@ -4,10 +4,25 @@ jobs:
   build-test-repo:
     # machine is needed to run Gradle build and to run docker compose tests
     machine:
-      enabled: true
+      image: circleci/classic:201808-01
+    environment:
+      JAVA_HOME: /usr/lib/jvm/jdk-11.0.2
+   # dependencies:
+      #pre:
+       # - sudo apt update; sudo apt install -y wget
+       # - sudo wget https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_linux-x64_bin.tar.gz -O /tmp/openjdk-11.0.2_linux-x64_bin.tar.gz
+       # - sudo mkdir /usr/lib/jvm; tar -zxf /tmp/openjdk-11.0.2_linux-x64_bin.tar.gz -C /usr/lib/jvm
+       # - export PATH='$PATH:/usr/lib/jvm/jdk-11.0.2/bin'
 
     steps:
       - checkout
+      - run:
+          name: upgrading Java to jdk-11
+          command: |
+            # sudo apt update; sudo apt install -y wget
+            sudo wget https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_linux-x64_bin.tar.gz -O /tmp/openjdk-11.0.2_linux-x64_bin.tar.gz
+            sudo tar -zxf /tmp/openjdk-11.0.2_linux-x64_bin.tar.gz -C /usr/lib/jvm
+            export PATH=/usr/lib/jvm/jdk-11.0.2/bin:$PATH
       - run: 
           # checking for merge conflicts and merging locally if none exist
           name: merging ${CIRCLE_BRANCH} into develop locally
