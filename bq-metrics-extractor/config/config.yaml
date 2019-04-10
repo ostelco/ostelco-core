@@ -15,7 +15,7 @@ bqmetrics:
     help: Number of active application users last 24 hours
     resultColumn: count
     sql: >
-        SELECT count(distinct user_pseudo_id) AS count FROM `${DATASET_PROJECT}.analytics_160712959.events_*`
+        SELECT count(distinct user_pseudo_id) AS count FROM `${DATASET_PROJECT}.${ANALYTICS_DATASET}.events_*`
         WHERE (event_name = "session_start" OR event_name = "screen_view" OR event_name = "user_engagement")
               AND timestamp_micros(event_timestamp) >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 DAY)
   - type: gauge
@@ -23,7 +23,7 @@ bqmetrics:
     help: Number of active application users yesterday
     resultColumn: count
     sql: >
-        SELECT count(distinct user_pseudo_id) AS count FROM `${DATASET_PROJECT}.analytics_160712959.events_*`
+        SELECT count(distinct user_pseudo_id) AS count FROM `${DATASET_PROJECT}.${ANALYTICS_DATASET}.events_*`
         WHERE (event_name = "session_start" OR event_name = "screen_view" OR event_name = "user_engagement")
               AND timestamp_micros(event_timestamp) >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 DAY)
               AND timestamp_micros(event_timestamp) < TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)
@@ -32,7 +32,7 @@ bqmetrics:
     help: Number of active application users today
     resultColumn: count
     sql: >
-        SELECT count(distinct user_pseudo_id) AS count FROM `${DATASET_PROJECT}.analytics_160712959.events_*`
+        SELECT count(distinct user_pseudo_id) AS count FROM `${DATASET_PROJECT}.${ANALYTICS_DATASET}.events_*`
         WHERE (event_name = "session_start" OR event_name = "screen_view" OR event_name = "user_engagement")
               AND timestamp_micros(event_timestamp) >= TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)
   - type: gauge
