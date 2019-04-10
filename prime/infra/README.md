@@ -126,7 +126,7 @@ $ docker push eu.gcr.io/pi-ostelco-dev/prime:feature-xyz
 
 4. Make your own copy of the helm values file.
 
-Copy the [sample developer helm values file](developer-tests-prime-values.yaml) and edit the service DNS hosts in the `services` section with unique custom prefixes (e.g. feature-xyz-api.test.oya.world).
+Copy the [prime-direct helm values file](prime-direct-values.yaml) and edit the DNS prefix in the `dnsPrefix` section with unique custom prefix (e.g. `feature-xyz-`). Make sure you have a dash at the end of your prefix.
 
 5. run the following helm commands:
 
@@ -141,7 +141,7 @@ $ helm repo update
 # if your kube context is not configured to point to the dev cluster, then configure it 
 $ kubectl config use-context gke_pi-ostelco-dev_europe-west1-c_pi-dev
 $ RELEASE_NAME=<some-unique-name>
-$ helm upgrade ${RELEASE_NAME} ostelco/prime --version 0.5.1 --install -f <path-to-your-custom-values-file> --set prime.tag=feature-xyz
+$ helm upgrade ${RELEASE_NAME} ostelco/prime --version 0.6.1 --install -f <path-to-your-custom-values-file> --set prime.tag=feature-xyz
 ```
 you can then watch for your pods being created with this command:
 
