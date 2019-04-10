@@ -8,10 +8,10 @@ object Notifications {
 
     private val appNotifier by lazy { getResource<AppNotifier>() }
 
-    fun lowBalanceAlert(msisdn: String, reserved: Long, balance: Long) {
+    fun lowBalanceAlert(customerId: String, reserved: Long, balance: Long) {
         val lowBalanceThreshold = ConfigRegistry.config.lowBalanceThreshold
         if ((balance < lowBalanceThreshold) && ((balance + reserved) > lowBalanceThreshold)) {
-            appNotifier.notify(msisdn, "Pi", "You have less then " + lowBalanceThreshold / 1000000 + "Mb data left")
+            appNotifier.notify(customerId, "Pi", "You have less then " + lowBalanceThreshold / 1000000 + "Mb data left")
         }
     }
 }

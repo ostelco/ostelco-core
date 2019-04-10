@@ -5,7 +5,7 @@ import io.dropwizard.auth.Auth
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
 import org.ostelco.prime.apierror.ApiErrorMapper
-import org.ostelco.prime.apierror.BadGatewayError
+import org.ostelco.prime.apierror.InternalServerError
 import org.ostelco.prime.apierror.NotFoundError
 import org.ostelco.prime.appnotifier.AppNotifier
 import org.ostelco.prime.auth.AccessTokenPrincipal
@@ -135,11 +135,11 @@ class ProfilesResource {
     private fun getProfile(identity: Identity): Either<ApiError, Customer> {
         return try {
             storage.getCustomer(identity).mapLeft {
-                NotFoundError("Failed to fetch profile.", ApiErrorCode.FAILED_TO_FETCH_PROFILE, it)
+                NotFoundError("Failed to fetch profile.", ApiErrorCode.FAILED_TO_FETCH_CUSTOMER, it)
             }
         } catch (e: Exception) {
             logger.error("Failed to fetch profile for customer with identity - $identity", e)
-            Either.left(NotFoundError("Failed to fetch profile", ApiErrorCode.FAILED_TO_FETCH_PROFILE))
+            Either.left(NotFoundError("Failed to fetch profile", ApiErrorCode.FAILED_TO_FETCH_CUSTOMER))
         }
     }
 
@@ -152,11 +152,11 @@ class ProfilesResource {
     private fun getProfileForMsisdn(msisdn: String): Either<ApiError, Customer> {
         return try {
             storage.getCustomerForMsisdn(msisdn).mapLeft {
-                NotFoundError("Failed to fetch profile.", ApiErrorCode.FAILED_TO_FETCH_PROFILE, it)
+                NotFoundError("Failed to fetch profile.", ApiErrorCode.FAILED_TO_FETCH_CUSTOMER, it)
             }
         } catch (e: Exception) {
             logger.error("Failed to fetch profile for msisdn $msisdn", e)
-            Either.left(NotFoundError("Failed to fetch profile", ApiErrorCode.FAILED_TO_FETCH_PROFILE))
+            Either.left(NotFoundError("Failed to fetch profile", ApiErrorCode.FAILED_TO_FETCH_CUSTOMER))
         }
     }
 
@@ -168,7 +168,7 @@ class ProfilesResource {
             }
         } catch (e: Exception) {
             logger.error("Failed to get subscriptions for customer with identity - $identity", e)
-            Either.left(BadGatewayError("Failed to get subscriptions", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS))
+            Either.left(InternalServerError("Failed to get subscriptions", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS))
         }
     }
 
@@ -317,7 +317,7 @@ class PurchaseResource {
                     { it.toList() })
         } catch (e: Exception) {
             logger.error("Failed to get purchase history for customer with identity - $identity", e)
-            Either.left(BadGatewayError("Failed to get purchase history", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_HISTORY))
+            Either.left(InternalServerError("Failed to get purchase history", ApiErrorCode.FAILED_TO_FETCH_PAYMENT_HISTORY))
         }
     }
 }
@@ -371,7 +371,7 @@ class RefundResource {
             }
         } catch (e: Exception) {
             logger.error("Failed to refund purchase for customer with identity - $identity, id: $purchaseRecordId", e)
-            Either.left(BadGatewayError("Failed to refund purchase", ApiErrorCode.FAILED_TO_REFUND_PURCHASE))
+            Either.left(InternalServerError("Failed to refund purchase", ApiErrorCode.FAILED_TO_REFUND_PURCHASE))
         }
     }
 }
@@ -405,26 +405,25 @@ class NotifyResource {
                     .build()
         }
         val decodedEmail = URLDecoder.decode(email, "UTF-8")
-        return getMsisdn(email = decodedEmail).fold(
+        return getCustomerId(email = decodedEmail).fold(
                 { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                { msisdn ->
-                    logger.info("${token.name} Sending notification to $decodedEmail msisdn: $msisdn")
-                    notifier.notify(msisdn, title, message)
+                { customerId ->
+                    logger.info("${token.name} Sending notification to $decodedEmail customerId: $customerId")
+                    notifier.notify(customerId, title, message)
                     Response.status(Response.Status.OK).entity("Message Sent")
                 })
                 .build()
 
     }
 
-    // TODO: Reuse the one from SubscriberDAO
-    private fun getMsisdn(email: String): Either<ApiError, String> {
+    private fun getCustomerId(email: String): Either<ApiError, String> {
         return try {
-            storage.getMsisdn(identity = Identity(id = email, type = "EMAIL", provider = "email")).mapLeft {
+            storage.getCustomerId(identity = Identity(id = email, type = "EMAIL", provider = "email")).mapLeft {
                 NotFoundError("Did not find msisdn for this subscription.", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS, it)
             }
         } catch (e: Exception) {
             logger.error("Did not find msisdn for email $email", e)
-            Either.left(BadGatewayError("Did not find subscription", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS))
+            Either.left(InternalServerError("Did not find subscription", ApiErrorCode.FAILED_TO_FETCH_SUBSCRIPTIONS))
         }
     }
 }

@@ -6,7 +6,7 @@ replicaCount: 2
 
 dnsPrefix: ""
 dnsSuffix: ".dev.oya.world"
-podAutoscaling: 
+podAutoscaling:
   enabled: true
   minReplicas: 1
   maxReplicas: 5
@@ -17,11 +17,11 @@ prime:
   tag: 9ca9ca976
   pullPolicy: Always
   configDataBucket: "gs://pi-ostelco-dev-prime-files/dev"
-  
-  env: 
+
+  env:
     FIREBASE_ROOT_PATH: dev
     NEO4J_HOST: neo4j-neo4j.neo4j.svc.cluster.local
-    SLACK_CHANNEL: prime-alerts-new
+    SLACK_CHANNEL: prime-alerts
     DATASTORE_NAMESPACE: dev
     DATA_TRAFFIC_TOPIC: data-traffic
     PURCHASE_INFO_TOPIC: purchase-info
@@ -33,14 +33,20 @@ prime:
     GCP_PROJECT_ID: pi-ostelco-dev
     ACTIVATE_TOPIC_ID: ocs-activate
     CCR_SUBSCRIPTION_ID: ocs-ccr-sub
+    GOOGLE_APPLICATION_CREDENTIALS: /secret/prime-service-account.json
+    MY_INFO_API_URI: https://myinfosgstg.api.gov.sg/test/v2
+    MY_INFO_API_REALM: dev
+    MY_INFO_REDIRECT_URI: https://dl-dev.oya.world/links/myinfo
 
   secretVolumes:
-    - secretName: "prime-sa-key"  
+    - secretName: "prime-sa-key"
       containerMountPath: "/secret"
-    - secretName: "simmgr-test-secrets"  
+    - secretName: "simmgr-test-secrets"
       containerMountPath: "/certs"
       secretKey: idemiaClientCert
       secretPath: idemia-client-cert.jks
+    - secretName: "scaninfo-keysets"
+      containerMountPath: "/scaninfo-keysets"
 
   envFromSecret:
     - name: SLACK_WEBHOOK_URI
@@ -49,30 +55,42 @@ prime:
     - name: STRIPE_API_KEY
       secretName: stripe-secrets
       secretKey: stripeApiKey
-    - name: STRIPE_ENDPOINT_SECRET 
+    - name: STRIPE_ENDPOINT_SECRET
       secretName: stripe-secrets
       secretKey: stripeEndpointSecret
-    - name: SCANINFO_STORAGE_BUCKET 
+    - name: SCANINFO_STORAGE_BUCKET
       secretName: scaninfo-secrets
       secretKey:  bucketName
     - name: SCANINFO_MASTERKEY_URI
       secretName: scaninfo-keys
-      secretKey: masterKeyUri  
+      secretKey: masterKeyUri
     - name: JUMIO_API_TOKEN
       secretName: jumio-secrets
-      secretKey: apiToken        
+      secretKey: apiToken
     - name: JUMIO_API_SECRET
       secretName: jumio-secrets
-      secretKey: apiSecret  
+      secretKey: apiSecret
+    - name: MY_INFO_API_CLIENT_ID
+      secretName: myinfo-secrets
+      secretKey: apiClientId
+    - name: MY_INFO_API_CLIENT_SECRET
+      secretName: myinfo-secrets
+      secretKey: apiClientSecret
+    - name: MY_INFO_SERVER_PUBLIC_KEY
+      secretName: myinfo-secrets
+      secretKey: serverPublicKey
+    - name: MY_INFO_CLIENT_PRIVATE_KEY
+      secretName: myinfo-secrets
+      secretKey: clientPrivateKey
     - name: DB_USER
       secretName: simmgr-test-secrets
       secretKey: dbUser
     - name: DB_PASSWORD
       secretName: simmgr-test-secrets
-      secretKey: dbPassword   
+      secretKey: dbPassword
     - name: DB_URL
       secretName: simmgr-test-secrets
-      secretKey: dbUrl   
+      secretKey: dbUrl
     - name: WG2_USER
       secretName: simmgr-test-secrets
       secretKey: wg2User
@@ -91,10 +109,10 @@ prime:
     - name: FUNCTION_REQUESTER_IDENTIFIER
       secretName: simmgr-test-secrets
       secretKey: functionRequesterIdentifier
-    - name: MANDRILL_API_KEY 
+    - name: MANDRILL_API_KEY
       secretName: mandrill-secrets
-      secretKey: mandrillApiKey     
-  
+      secretKey: mandrillApiKey
+
   ports:
     - 8080
     - 8081
@@ -105,7 +123,7 @@ prime:
       cpu: 100m
       memory: 300Mi  
   livenessProbe: {}
-  readinessProbe: {} 
+  readinessProbe: {}
   annotations: 
     prometheus.io/scrape: 'true'
     prometheus.io/path: '/prometheus-metrics'
@@ -118,7 +136,7 @@ canary: {}
   #   x-mode: canary
   # tag: e449ed672
 
-cloudsqlProxy: 
+cloudsqlProxy:
   enabled: true
   instanceConnectionName: "pi-ostelco-dev:europe-west1:sim-manager"
   secretName: "prime-sa-key"
@@ -136,10 +154,10 @@ ocsEsp:
   ports:
     http2_port: 9000
     ssl_port: 8443
-  secretVolumes: 
+  secretVolumes:
     - secretName: dev-oya-tls
-      containerMountPath: /etc/nginx/ssl 
-      type: ssl   
+      containerMountPath: /etc/nginx/ssl
+      type: ssl
 
 apiEsp: 
   enabled: true
@@ -155,24 +173,24 @@ metricsEsp:
   ports:
     http2_port: 9004
     ssl_port: 9443
-  secretVolumes: 
+  secretVolumes:
     - secretName: dev-oya-tls
-      containerMountPath: /etc/nginx/ssl 
-      type: ssl     
+      containerMountPath: /etc/nginx/ssl
+      type: ssl
 
 alvinApiEsp:
   enabled: true
-  env: {}  
+  env: {}
   endpointAddress: alvin-api.dev.oya.world
-  ports: 
-    http_port: 9008  
+  ports:
+    http_port: 9008
 
 houstonApiEsp:
   enabled: true
-  env: {}  
+  env: {}
   endpointAddress: houston-api.dev.oya.world
-  ports: 
-    http_port: 9006    
+  ports:
+    http_port: 9006
 
 services:
   ocs:
@@ -180,8 +198,8 @@ services:
     type: LoadBalancer
     port: 443
     targetPort: 8443
-    portName: grpc 
-    # host: ocs # the host name is forumlated from concatinating: dnsPrefix, this host, and dnsSuffix 
+    portName: grpc
+    # host: ocs # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
     # grpcOrHttp2: true
   api:
     name: api
@@ -189,42 +207,38 @@ services:
     port: 80
     targetPort: 9002
     portName: http
-    host: api # the host name is forumlated from concatinating: dnsPrefix, this host, and dnsSuffix
+    host: api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
     grpcOrHttp2: true
+    # loadBalancerIP: x.y.z.n
   metrics: 
     name: metrics
     type: LoadBalancer
     port: 443
-    targetPort: 9443 
+    targetPort: 9443
     portName: grpc
-    # host: metrics # the host name is forumlated from concatinating: dnsPrefix, this host, and dnsSuffix
+    # loadBalancerIP: x.y.z.n
+    # host: metrics # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
     # grpcOrHttp2: true
-  prime-houston-api: 
+  prime-houston-api:
     name: houston-api
     type: ClusterIP
     port: 80
-    targetPort: 9006  
+    targetPort: 9006
     portName: http
-    host: houston-api # the host name is forumlated from concatinating: dnsPrefix, this host, and dnsSuffix
-  prime-alvin-api: 
+    host: houston-api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
+  prime-alvin-api:
     name: alvin-api
     type: ClusterIP
     port: 80
-    targetPort: 9008  
+    targetPort: 9008
     portName: http
-    host: alvin-api # the host name is forumlated from concatinating: dnsPrefix, this host, and dnsSuffix
-  pseudonym-server: 
-    name: pseudonym-server
-    type: ClusterIP
-    port: 80
-    targetPort: 8080  
-    portName: http
+    host: alvin-api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
   dwadmin-service:
     name: dwadmin-service
     type: ClusterIP
     port: 8081
     targetPort: 8081
-    portName: http  
+    portName: http
 
 
 certs: 

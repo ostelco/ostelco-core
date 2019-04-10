@@ -5,12 +5,14 @@ import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.customer.endpoint.model.Person
 import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Bundle
+import org.ostelco.prime.model.Context
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.RegionDetails
 import org.ostelco.prime.model.ScanInformation
+import org.ostelco.prime.model.SimProfile
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.paymentprocessor.core.ProductInfo
 import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
@@ -28,22 +30,37 @@ interface SubscriberDAO {
 
     fun getCustomer(identity: Identity): Either<ApiError, Customer>
 
-    fun createCustomer(identity: Identity, profile: Customer, referredBy: String?): Either<ApiError, Customer>
+    fun createCustomer(identity: Identity, customer: Customer, referredBy: String?): Either<ApiError, Customer>
 
-    fun updateCustomer(identity: Identity, profile: Customer): Either<ApiError, Customer>
+    fun updateCustomer(identity: Identity, nickname: String?, contactEmail: String?): Either<ApiError, Customer>
+
+    fun removeCustomer(identity: Identity): Either<ApiError, Unit>
+
+    //
+    // Context
+    //
+    fun getContext(identity: Identity): Either<ApiError, Context>
 
     //
     // Regions
     //
     fun getRegions(identity: Identity): Either<ApiError, Collection<RegionDetails>>
 
+    fun getRegion(identity: Identity, regionCode: String): Either<ApiError, RegionDetails>
+
     //
     // Subscriptions
     //
 
-    fun getSubscriptions(identity: Identity): Either<ApiError, Collection<Subscription>>
+    fun getSubscriptions(identity: Identity, regionCode: String): Either<ApiError, Collection<Subscription>>
 
-    fun createSubscription(identity: Identity): Either<ApiError, Subscription>
+    //
+    // SIM Profile
+    //
+
+    fun getSimProfiles(identity: Identity, regionCode: String): Either<ApiError, Collection<SimProfile>>
+
+    fun provisionSimProfile(identity: Identity, regionCode: String, profileType: String?): Either<ApiError, SimProfile>
 
     //
     // Bundle
@@ -88,7 +105,7 @@ interface SubscriberDAO {
     // eKYC
     //
 
-    fun createNewJumioScanId(identity: Identity, countryCode: String): Either<ApiError, ScanInformation>
+    fun createNewJumioKycScanId(identity: Identity, regionCode: String): Either<ApiError, ScanInformation>
 
     fun getCountryCodeForScan(scanId: String): Either<ApiError, String>
 
@@ -96,9 +113,9 @@ interface SubscriberDAO {
 
     fun getCustomerMyInfoData(identity: Identity, authorisationCode: String): Either<ApiError, String>
 
-    fun checkIdNumberUsingDave(identity: Identity): Either<ApiError, Unit>
+    fun checkNricFinIdUsingDave(identity: Identity, nricFinId: String): Either<ApiError, Unit>
 
-    fun saveProfile(identity: Identity): Either<ApiError, Unit>
+    fun saveAddressAndPhoneNumber(identity: Identity, address: String, phoneNumber: String): Either<ApiError, Unit>
 
     //
     // Token
@@ -107,15 +124,6 @@ interface SubscriberDAO {
     fun storeApplicationToken(customerId: String, applicationToken: ApplicationToken): Either<ApiError, ApplicationToken>
 
     companion object {
-
-        /**
-         * Profile is only valid when name and email set.
-         */
-        fun isValidProfile(profile: Customer?): Boolean {
-            return (profile != null
-                    && !profile.name.isEmpty()
-                    && !profile.email.isEmpty())
-        }
 
         /**
          * The application token is only valid if token,

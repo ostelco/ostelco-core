@@ -14,6 +14,7 @@ import org.ostelco.diameter.model.RequestType;
 import org.ostelco.diameter.model.SessionContext;
 import org.ostelco.diameter.test.TestClient;
 import org.ostelco.diameter.test.TestHelper;
+import org.ostelco.diameter.util.DiameterUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +25,7 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 
 /**
@@ -156,6 +158,58 @@ public class OcsApplicationTest {
             LOG.error("Failed to get Result-Code", e);
         }
         session.release();
+    }
+
+
+    @Test
+    @DisplayName("Credit-Control-Request Multi Ratinggroups Init")
+    public void creditControlRequestMultiRatingGroupsInit() {
+        Session session = client.createSession();
+        Request request = client.createRequest(
+                OCS_REALM,
+                OCS_HOST,
+                session
+        );
+
+        TestHelper.createInitRequestMultiRatingGroups(request.getAvps(), MSISDN, 500000L);
+
+        client.sendNextRequest(request, session);
+
+        waitForAnswer();
+
+        try {
+            assertEquals(2001L, client.getResultCodeAvp().getInteger32());
+            AvpSet resultAvps = client.getResultAvps();
+            assertEquals(OCS_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String());
+            assertEquals(OCS_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String());
+            assertEquals(RequestType.INITIAL_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
+            AvpSet resultMSCCs = resultAvps.getAvps(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
+            assertEquals(3, resultMSCCs.size());
+            for ( int i=0; i < resultMSCCs.size(); i++ ) {
+                AvpSet mscc = resultMSCCs.getAvpByIndex(i).getGrouped();
+                assertEquals(2001L, mscc.getAvp(Avp.RESULT_CODE).getInteger32());
+                Avp granted = mscc.getAvp(Avp.GRANTED_SERVICE_UNIT);
+                assertEquals(500000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
+                int serviceIdentifier = (int) mscc.getAvp(Avp.SERVICE_IDENTIFIER_CCA).getUnsigned32();
+                switch (serviceIdentifier) {
+                    case 1 :
+                        assertEquals(10, mscc.getAvp(Avp.RATING_GROUP).getUnsigned32());
+                        break;
+                    case 2 :
+                        assertEquals(12, mscc.getAvp(Avp.RATING_GROUP).getUnsigned32());
+                        break;
+                    case 4 :
+                        assertEquals(14, mscc.getAvp(Avp.RATING_GROUP).getUnsigned32());
+                        break;
+                    default:
+                        fail("Unexpected Service-Identifier");
+
+                }
+
+            }
+        } catch (AvpDataException e) {
+            LOG.error("Failed to get Result-Code", e);
+        }
     }
 
     @Test

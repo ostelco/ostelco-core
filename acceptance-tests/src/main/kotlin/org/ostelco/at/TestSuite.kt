@@ -33,7 +33,7 @@ class TestSuite {
                                 org.ostelco.at.jersey.PlanTest::class.java,
                                 org.ostelco.at.jersey.CustomerTest::class.java,
                                 org.ostelco.at.jersey.GraphQlTests::class.java,
-                                org.ostelco.at.jersey.eKYCTest::class.java))
+                                org.ostelco.at.jersey.JumioKycTest::class.java))
             }
 
             launch {
