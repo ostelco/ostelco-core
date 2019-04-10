@@ -1,5 +1,9 @@
 package org.ostelco.prime.store.datastore
 
+import arrow.core.Either
+import arrow.core.Try
+import arrow.core.left
+import arrow.core.right
 import com.fasterxml.jackson.core.type.TypeReference
 import com.google.cloud.NoCredentials
 import com.google.cloud.Timestamp
@@ -47,7 +51,7 @@ class EntityStore<T>(
         keyFactory = datastore.newKeyFactory().setKind(entityClass.name)
     }
 
-    fun fetch(key: Key): T {
+    fun fetch(key: Key): Either<Throwable, T> = Try {
         val fullEntity = datastore.fetch(key).single()
         val map = fullEntity
                 .names
@@ -67,18 +71,22 @@ class EntityStore<T>(
                     Pair(name, value)
                 }
                 .toMap()
-        return objectMapper.convertValue(map, entityClass)
-    }
+        objectMapper.convertValue(map, entityClass)
+    }.toEither()
 
-    fun add(t: T): Key {
+    fun add(target: T): Either<Throwable, Key> = Try {
         // convert object to map of (field name, field value)
         // TODO: Fails to serialize datastore 'Value<*>' types such as 'StringValue'.
-        val map: Map<String, Any?> = objectMapper.convertValue(t, object : TypeReference<Map<String, Any?>>() {})
+        val map: Map<String, Any?> = objectMapper.convertValue(target, object : TypeReference<Map<String, Any?>>() {})
 
         // Entity Builder
         val entity = FullEntity.newBuilder(keyFactory.newKey())
 
+        val fieldsToExclude = fieldsToExcludeFromIndex(target)
+        val excludeFromIndex: (String) -> Boolean = { x -> fieldsToExclude.get(x) == true }
+
         // for each field, call appropriate setter
+        // TODO: Add support for 'datastore-exclude-from-index' annotation for other types
         map.forEach { key, value ->
             when (value) {
                 null -> entity.set(key, NullValue.of())
@@ -89,9 +97,7 @@ class EntityStore<T>(
                 is Boolean -> entity.set(key, value)
                 is LatLng -> entity.set(key, value)
                 is String -> {
-                    // Workaround for handling long strings, and the inability
-                    // of 'objectMapper' to serialize 'StringValue' objects.
-                    if (value.toByteArray().size > MAX_STRING_SIZE)
+                    if (excludeFromIndex(key))
                         entity.set(key, StringValue.newBuilder(value)
                                 .setExcludeFromIndexes(true)
                                 .build())
@@ -101,11 +107,29 @@ class EntityStore<T>(
                 is Timestamp -> entity.set(key, value)
             }
         }
-        return datastore.add(entity.build()).key
-    }
 
-    companion object {
-        // Max size of strings to be stored to Datastore with index.
-        val MAX_STRING_SIZE = 1500
+        datastore.add(entity.build()).key
+    }.toEither()
+
+    private fun fieldsToExcludeFromIndex(target: Any?): Map<String, Boolean> {
+        if (target == null) return mapOf()
+
+        val map = mutableMapOf<String, Boolean>()
+        val declaredFields = target::class.java.declaredFields
+
+        declaredFields.forEach { field ->
+            field.annotations.forEach {
+                when (it) {
+                    is DatastoreExcludeFromIndex -> map.put(field.name, true)
+                    else -> map.put(field.name, false)
+                }
+            }
+        }
+
+        return map.toMap()
     }
 }
+
+@Target(AnnotationTarget.FIELD)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class DatastoreExcludeFromIndex
