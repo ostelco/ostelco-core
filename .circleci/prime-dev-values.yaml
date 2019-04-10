@@ -224,8 +224,8 @@ services:
     host: api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
     grpcOrHttp2: true
     ambassadorMappingOptions:
-      timeout_ms: 6000
-  metrics: 
+      timeout_ms: 60000
+  metrics:
     name: metrics
     type: LoadBalancer
     port: 443
@@ -254,17 +254,15 @@ services:
     port: 8081
     targetPort: 8081
     portName: http
-  smdpplus: 
+  smdpplus:
     name: smdpplus
     type: ClusterIP
     port: 80
     targetPort: 8080
     portName: http
     host: smdpplus
-    clientCert: true  
-    caCert: smdp-cacert.dev # secretname.namespace  
-  
-
+    clientCert: true
+    caCert: smdp-cacert.dev # secretname.namespace
 
 certs: 
   enabled: true
