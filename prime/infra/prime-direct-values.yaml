@@ -1,4 +1,4 @@
-# This is a sample Prime values file to be used by developers for testing their feature branches.
+# DEV values for prime.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
@@ -240,14 +240,20 @@ services:
     port: 80
     targetPort: 9006
     portName: http
-    host: houston-api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
-  prime-alvin-api:
+    host: houston-api # the host name is forumlated from concatinating: dnsPrefix, this host, and dnsSuffix
+  prime-alvin-api: 
     name: alvin-api
     type: ClusterIP
     port: 80
-    targetPort: 9008
+    targetPort: 9008  
     portName: http
-    host: alvin-api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
+    host: alvin-api # the host name is forumlated from concatinating: dnsPrefix, this host, and dnsSuffix
+  pseudonym-server: 
+    name: pseudonym-server
+    type: ClusterIP
+    port: 80
+    targetPort: 8080  
+    portName: http
   dwadmin-service:
     name: dwadmin-service
     type: ClusterIP
