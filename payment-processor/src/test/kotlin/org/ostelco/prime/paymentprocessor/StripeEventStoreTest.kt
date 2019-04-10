@@ -1,5 +1,6 @@
 package org.ostelco.prime.paymentprocessor
 
+import arrow.core.getOrElse
 import com.google.cloud.datastore.StringValue
 import com.stripe.model.Event
 import com.stripe.net.ApiResource
@@ -7,6 +8,7 @@ import org.junit.Test
 import org.ostelco.prime.paymentprocessor.subscribers.StripeEvent
 import org.ostelco.prime.store.datastore.EntityStore
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 
 
 class StripeEventStoreTest {
@@ -18,9 +20,11 @@ class StripeEventStoreTest {
                 event.account,
                 event.created,
                 payload)
-        val key = entityStore.add(testData)
-        val fetched = entityStore.fetch(key)
+        val key = entityStore.add(testData).getOrElse { null }
+        assertNotNull(key)
 
+        val fetched = entityStore.fetch(key).getOrElse { null }
+        assertNotNull(fetched)
         assertEquals(expected = testData, actual = fetched)
     }
 

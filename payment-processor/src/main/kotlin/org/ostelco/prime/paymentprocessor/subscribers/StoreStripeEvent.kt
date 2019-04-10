@@ -8,6 +8,7 @@ import com.stripe.net.ApiResource.GSON
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.paymentprocessor.ConfigRegistry
 import org.ostelco.prime.pubsub.PubSubSubscriber
+import org.ostelco.prime.store.datastore.DatastoreExcludeFromIndex
 import org.ostelco.prime.store.datastore.EntityStore
 
 
@@ -28,14 +29,10 @@ class StoreStripeEvent : PubSubSubscriber(
                 GSON.fromJson(message.toStringUtf8(), Event::class.java)
             }.fold(
                     ifSuccess = { event ->
-                        Try {
-                            /* TODO: Update 'data-store' to support some sort of annotation
-                                     to mark fields to be excluded from indexing. */
-                            entityStore.add(StripeEvent(event.type,
-                                    event.account,
-                                    event.created,
-                                    message.toStringUtf8()))
-                        }.toEither()
+                        entityStore.add(StripeEvent(event.type,
+                                event.account,
+                                event.created,
+                                message.toStringUtf8()))
                                 .mapLeft {
                                     logger.error("Failed to store Stripe event {}: {}",
                                             event.id, it)
@@ -53,4 +50,5 @@ class StoreStripeEvent : PubSubSubscriber(
 data class StripeEvent(val type: String,
                        val account: String?,
                        val created: Long,
+                       @DatastoreExcludeFromIndex
                        val json: String)
