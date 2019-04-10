@@ -464,7 +464,7 @@ object Neo4jStoreSingleton : GraphStore {
     override fun provisionSimProfile(
             identity: org.ostelco.prime.model.Identity,
             regionCode: String,
-            profileType: String): Either<StoreError, SimProfile> = writeTransaction {
+            profileType: String?): Either<StoreError, SimProfile> = writeTransaction {
         IO {
             Either.monad<StoreError>().binding {
                 val customerId = getCustomerId(identity = identity, transaction = transaction).bind()
@@ -481,7 +481,7 @@ object Neo4jStoreSingleton : GraphStore {
                         regionCode = regionCode.toLowerCase()).bind()
                 val region = regionStore.get(id = regionCode.toLowerCase(), transaction = transaction).bind()
                 val simEntry = simManager.allocateNextEsimProfile(hlr = getHlr(region.id.toLowerCase()), phoneType = profileType)
-                        .mapLeft { NotFoundError("eSIM profile", id = "loltel") }
+                        .mapLeft { NotFoundError("eSIM profile", id = "Loltel") }
                         .bind()
                 simProfileStore.create(SimProfile(
                         iccId = simEntry.iccId,
@@ -558,7 +558,7 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     private fun getHlr(regionCode: String): String {
-        return "loltel"
+        return "Loltel"
     }
 
     //

@@ -251,7 +251,7 @@ jobs:
             /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
             helm repo update
-            helm upgrade prime ostelco/prime --version 0.5.1 --install --namespace dev \
+            helm upgrade prime ostelco/prime --version 0.6.1 --install --namespace dev \
              -f .circleci/prime-dev-values.yaml \
              --set prime.tag=${CIRCLE_SHA1:0:9} 
        
@@ -334,7 +334,7 @@ jobs:
             /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
             helm repo update
-            helm upgrade prime ostelco/prime --version 0.5.1 --install --namespace prod \
+            helm upgrade prime ostelco/prime --version 0.6.1 --install --namespace prod \
              -f .circleci/prime-prod-values.yaml 
 
       - run:
