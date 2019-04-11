@@ -30,7 +30,6 @@ prime:
     STRIPE_EVENT_TOPIC: stripe-event
     STRIPE_EVENT_STORE_SUBSCRIPTION: stripe-event-store-sub
     STRIPE_EVENT_REPORT_SUBSCRIPTION: stripe-event-report-sub
-    STRIPE_EVENT_RECURRING_PAYMENT_SUBSCRIPTION: stripe-event-recurring-payment-sub
     GCP_PROJECT_ID: pi-ostelco-prod
     ACTIVATE_TOPIC_ID: ocs-activate
     CCR_SUBSCRIPTION_ID: ocs-ccr-sub
@@ -218,7 +217,7 @@ services:
     host: api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
     grpcOrHttp2: true
     ambassadorMappingOptions:
-      timeout_ms: 60000
+      timeout_ms: 600000
   metrics:
     name: metrics
     type: LoadBalancer
