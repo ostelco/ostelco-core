@@ -88,7 +88,7 @@ object MyInfoClientSingleton : MyInfoKycService {
             queryParams: Map<String, String>,
             accessToken: String? = null): String {
 
-        val queryParamsString = queryParams.entries.joinToString("&") { """${it.key}=${URLEncoder.encode(it.value, StandardCharsets.US_ASCII.name())}""" }
+        val queryParamsString = queryParams.entries.joinToString("&") { """${it.key}=${URLEncoder.encode(it.value, StandardCharsets.US_ASCII)}""" }
 
         val requestUrl = "${config.myInfoApiUri}$path"
 
@@ -181,7 +181,7 @@ object MyInfoClientSingleton : MyInfoKycService {
         val content = response
                 ?.entity
                 ?.content
-                ?.readBytes()
+                ?.readAllBytes()
                 ?.let { String(it) }
                 ?.also {
                     logger.info("$httpMethod Response content: $it")
