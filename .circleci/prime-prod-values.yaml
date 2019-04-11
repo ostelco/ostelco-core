@@ -145,7 +145,7 @@ canary: {}
 
 cloudsqlProxy:
   enabled: true
-  instanceConnectionName: "pi-ostelco-dev:europe-west1:sim-manager"
+  instanceConnectionName: "pi-ostelco-prod:europe-west1:sim-manager"
   secretName: "prime-sa-key"
   secretKey: "prime-service-account.json"
 
@@ -255,7 +255,7 @@ services:
     portName: http
     host: smdpplus
     clientCert: true
-    caCert: smdp-cacert.dev # secretname.namespace
+    caCert: smdp-cacert.prod # secretname.namespace
 
 ingress:
   enabled: false

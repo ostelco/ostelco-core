@@ -253,19 +253,17 @@ services:
     port: 8081
     targetPort: 8081
     portName: http
-  smdpplus: 
+  smdpplus:
     name: smdpplus
     type: ClusterIP
     port: 80
     targetPort: 8080
     portName: http
     host: smdpplus
-    clientCert: true  
-    caCert: smdp-cacert.dev # secretname.namespace  
-  
+    clientCert: true
+    caCert: smdp-cacert.dev # secretname.namespace
 
-
-certs: 
+certs:
   enabled: true
   dnsProvider: dev-clouddns
   issuer: letsencrypt-production 
