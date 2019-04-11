@@ -124,6 +124,13 @@ jobs:
     steps:
       - checkout
       - run:
+          name: upgrading Java to jdk-11
+          command: |
+            # sudo apt update; sudo apt install -y wget
+            sudo wget https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_linux-x64_bin.tar.gz -O /tmp/openjdk-11.0.2_linux-x64_bin.tar.gz
+            sudo tar -zxf /tmp/openjdk-11.0.2_linux-x64_bin.tar.gz -C /usr/lib/jvm
+            export PATH=/usr/lib/jvm/jdk-11.0.2/bin:$PATH
+      - run:
           name: Pulling Gradle cache
           command: |
             sudo rm -f /etc/boto.cfg # needed to fix gsutil issue in circleci https://github.com/travis-ci/travis-ci/issues/7940
