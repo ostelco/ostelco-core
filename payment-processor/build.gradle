@@ -15,10 +15,12 @@ sourceSets {
 
 dependencies {
   implementation project(":prime-modules")
+  implementation project(":data-store")
 
   implementation "com.stripe:stripe-java:$stripeVersion"
 
   implementation "com.google.cloud:google-cloud-pubsub:$googleCloudVersion"
+  implementation "com.google.cloud:google-cloud-datastore:$googleCloudVersion"
 
   testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"

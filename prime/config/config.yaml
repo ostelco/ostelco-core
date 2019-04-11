@@ -58,7 +58,6 @@ modules:
       stripeEventTopicId: ${STRIPE_EVENT_TOPIC}
       stripeEventStoreSubscriptionId: ${STRIPE_EVENT_STORE_SUBSCRIPTION}
       stripeEventReportSubscriptionId: ${STRIPE_EVENT_REPORT_SUBSCRIPTION}
-      stripeEventRecurringPaymentSubscriptionId: ${STRIPE_EVENT_RECURRING_PAYMENT_SUBSCRIPTION}
   - type: firebase-app-notifier
     config:
       configFile: /secret/prime-service-account.json
