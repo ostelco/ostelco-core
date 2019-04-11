@@ -21,7 +21,7 @@ class StoreStripeEvent : PubSubSubscriber(
 
     /* GCP datastore. */
     private val entityStore = EntityStore(StripeEvent::class.java,
-            type = ConfigRegistry.config.storeType,
+            type = ConfigRegistry.config.stripeEventStoreType,
             namespace = ConfigRegistry.config.namespace)
 
     override fun handler(message: ByteString, consumer: AckReplyConsumer) =

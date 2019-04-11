@@ -39,7 +39,7 @@ class PaymentProcessorModule : PrimeModule {
         /* Setup datastore. */
         StripeStore.datastore = getDatastore()
         StripeStore.keyFactory = StripeStore.datastore.newKeyFactory()
-                .setKind(ConfigRegistry.config.kind)
+                .setKind(ConfigRegistry.config.stripeEventKind)
 
         val jerseyEnv = env.jersey()
 
@@ -53,7 +53,7 @@ class PaymentProcessorModule : PrimeModule {
     }
 
     private fun getDatastore() =
-            when (ConfigRegistry.config.storeType) {
+            when (ConfigRegistry.config.stripeEventStoreType) {
                 "inmemory-emulator" -> {
                     logger.info("Starting with in-memory datastore emulator")
                     val helper = LocalDatastoreHelper.create(1.0)
@@ -98,15 +98,19 @@ class PaymentProcessorConfig {
     @JsonProperty("stripeEventReportSubscriptionId")
     lateinit var stripeEventReportSubscriptionId: String
 
-    @JsonProperty("storeType")
-    var storeType: String = "emulator"
+    @JsonProperty("stripeEventStoreType")
+    var stripeEventStoreType: String = "default"
 
-    @JsonProperty("storeNamespace")
-    var namespace: String = "Stripe"
+    /* Same as 'table name' in other DBs. */
+    @JsonProperty("stripeEventKind")
+    var stripeEventKind: String = "stripe-events"
 
-    @JsonProperty("storeTableName")
-    var kind: String = "stripe-events"
+    /* Can be used to set 'namespace' in Datastore.
+       Not used if set to an emtpy string. */
+    @JsonProperty("namespace")
+    var namespace: String = ""
 
+    /* Only used by Datastore emulator. */
     @JsonProperty("hostport")
     var hostport: String = "localhost:9090"
 }
