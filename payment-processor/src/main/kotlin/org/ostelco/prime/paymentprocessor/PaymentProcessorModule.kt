@@ -2,12 +2,6 @@ package org.ostelco.prime.paymentprocessor
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonTypeName
-import com.google.cloud.NoCredentials
-import com.google.cloud.datastore.Datastore
-import com.google.cloud.datastore.DatastoreOptions
-import com.google.cloud.datastore.KeyFactory
-import com.google.cloud.datastore.testing.LocalDatastoreHelper
-import com.google.cloud.http.HttpTransportOptions
 import com.stripe.Stripe
 import io.dropwizard.setup.Environment
 import org.hibernate.validator.constraints.NotEmpty
@@ -36,11 +30,6 @@ class PaymentProcessorModule : PrimeModule {
         Stripe.apiKey = System.getenv("STRIPE_API_KEY")
                 ?: throw Error("Missing environment variable STRIPE_API_KEY")
 
-        /* Setup datastore. */
-        StripeStore.datastore = getDatastore()
-        StripeStore.keyFactory = StripeStore.datastore.newKeyFactory()
-                .setKind(ConfigRegistry.config.stripeEventKind)
-
         val jerseyEnv = env.jersey()
 
         /* APIs. */
@@ -51,34 +40,6 @@ class PaymentProcessorModule : PrimeModule {
         env.lifecycle().manage(StoreStripeEvent())
         env.lifecycle().manage(ReportStripeEvent())
     }
-
-    private fun getDatastore() =
-            when (ConfigRegistry.config.stripeEventStoreType) {
-                "inmemory-emulator" -> {
-                    logger.info("Starting with in-memory datastore emulator")
-                    val helper = LocalDatastoreHelper.create(1.0)
-                    helper.start()
-                    helper.options
-                }
-                "emulator" -> {
-                    logger.info("Starting with datastore emulator")
-                    DatastoreOptions.newBuilder()
-                            .setHost(ConfigRegistry.config.hostport)
-                            .setCredentials(NoCredentials.getInstance())
-                            .setTransportOptions(HttpTransportOptions.newBuilder()
-                                    .build())
-                            .build()
-                }
-                else -> {
-                    logger.info("Using GCP datastore instance")
-                    if (!ConfigRegistry.config.namespace.isEmpty()) {
-                        DatastoreOptions.newBuilder()
-                                .setNamespace(ConfigRegistry.config.namespace)
-                    } else {
-                        DatastoreOptions.newBuilder()
-                    }.build()
-                }
-            }.service
 }
 
 class PaymentProcessorConfig {
@@ -117,9 +78,4 @@ class PaymentProcessorConfig {
 
 object ConfigRegistry {
     lateinit var config: PaymentProcessorConfig
-}
-
-object StripeStore {
-    lateinit var datastore: Datastore
-    lateinit var keyFactory: KeyFactory
 }
