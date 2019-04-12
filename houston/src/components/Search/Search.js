@@ -14,7 +14,7 @@ class Search extends React.Component {
   }
 
   render() {
-    const hasResults = this.props.profile.name || false;
+    const hasResults = this.props.profile.nickname || false;
     return (
       <div className="container">
         <AlertMessage />

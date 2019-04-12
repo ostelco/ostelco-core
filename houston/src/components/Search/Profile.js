@@ -24,11 +24,11 @@ class Profile extends React.Component {
           <CardTitle>User Profile</CardTitle>
           <Row>
             <Col xs={2} md={2}>{'Name:'}</Col>
-            <Col xs={12} md={8}>{`${props.profile.name}`}</Col>
+            <Col xs={12} md={8}>{`${props.profile.nickname}`}</Col>
           </Row>
           <Row>
             <Col xs={2} md={2}>{'Email:'}</Col>
-            <Col xs={12} md={8}>{`${props.profile.email}`}</Col>
+            <Col xs={12} md={8}>{`${props.profile.contactEmail}`}</Col>
           </Row>
           <Row>
             <Col xs={2} md={2}>{'Address:'}</Col>
@@ -44,8 +44,8 @@ class Profile extends React.Component {
 
 Profile.propTypes = {
   profile: PropTypes.shape({
-    name: PropTypes.string,
-    email: PropTypes.string,
+    nickname: PropTypes.string,
+    contactEmail: PropTypes.string,
     address: PropTypes.string
   }),
   subscriptions: PropTypes.shape({
