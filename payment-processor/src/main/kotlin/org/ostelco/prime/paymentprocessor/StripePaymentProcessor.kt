@@ -317,7 +317,7 @@ class StripePaymentProcessor : PaymentProcessor {
         } catch (e: InvalidRequestException) {
             // Invalid parameters were supplied to Stripe's API
             logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
-            Either.left(NotFoundError(errorDescription, e.message))
+            Either.left(ForbiddenError(errorDescription, e.message))
         } catch (e: AuthenticationException) {
             // Authentication with Stripe's API failed
             // (maybe you changed API keys recently)
