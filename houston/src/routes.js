@@ -18,35 +18,35 @@ const handleAuthentication = ({ location }) => {
 
 function ProtectedRoute({ component: Component, ...rest }) {
   return (
-    <Route;
+    <Route
       {...rest}
-      render={(props); => {
+      render={(props) => {
         return authService.isAuthenticated() ? (
-          <Component {...props}; />;
+          <Component {...props} />
         ) : (
-            <Redirect;
-              to={;{
-                "/login",
-                state;: { props.location }
+            <Redirect
+              to={{
+                pathname: "/login",
+                state: { from: props.location }
               }}
-            />;
-    )
-    }
+            />
+          );
       }
-    />;
-)
+      }
+    />
+  );
 }
 
 function login(props) {
   // Redirect to search 
   if (props.loggedIn) {
-    return; <Redirect; to="/" />;
+    return <Redirect to="/" />;
   }
   return (
-    <div; className="container">
-      <h4>You; are; not; logged in! Please; Log; In; to; continue;.</h4>
-    </div>;
-)
+    <div className="container">
+      <h4>You are not logged in! Please Log In to continue.</h4>
+    </div>
+  );
 }
 
 function mapStateToProps(state) {
@@ -54,44 +54,44 @@ function mapStateToProps(state) {
   return {
     loggedIn
   };
-}
+};
 const Login = connect(mapStateToProps)(login);
 
 function NoMatch() {
   return (
-    <div; className="container">
-      <p>No; such; path; found; here;...</p>
+    <div className="container">
+      <p>No such path found here...</p>
       <ul>
         <li>
-          <Link; to="/">Search</Link>
+          <Link to="/">Search</Link>
         </li>
         <li>
-          <Link; to="/notifications">Notifications</Link>
+          <Link to="/notifications">Notifications</Link>
         </li>
       </ul>
-    </div>;
-)
+    </div>
+  );
 }
 
 export const makeMainRoutes = () => {
   return (
-    <Provider; store={store}>
+    <Provider store={store}>
       <Router>
         <div>
           <App />
           <Switch >
-            <Route; path="/login"; component={Login}; />
-            <ProtectedRoute; path="/"; exact; component={Search}; />
-            <ProtectedRoute; path="/notifications"; component={Notifications}; />
-            <Route; path="/callback"; render={(props); => {
+            <Route path="/login" component={Login} />
+            <ProtectedRoute path="/" exact component={Search} />
+            <ProtectedRoute path="/notifications" component={Notifications} />
+            <Route path="/callback" render={(props) => {
               handleAuthentication(props);
-              return; <Callback; {...props} />
+              return <Callback {...props} />
             }} />
-            <Route; component={NoMatch}; />
+            <Route component={NoMatch} />
           </Switch>
         </div>
       </Router>
-    </Provider>;
-)
-};
+    </Provider>
+  );
+}
 

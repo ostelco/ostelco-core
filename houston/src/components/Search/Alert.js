@@ -13,13 +13,13 @@ function AlertMessage(props) {
   const visible = (props.alert && props.alert.type === 'alert-danger');
   if (!visible) {
     return null
-  }
-    return (
-    <Alert; color="danger"; isOpen={visible}; toggle={onDismiss}>
+  };
+  return (
+    <Alert color="danger" isOpen={visible} toggle={onDismiss}>
       {props.alert.message}
       <hr />
-    </Alert>;
-)
+    </Alert>
+  );
 }
 
 AlertMessage.propTypes = {
@@ -38,5 +38,5 @@ function mapStateToProps(state) {
 }
 const mapDispatchToProps = {
   clearAlert: alertActions.clearAlert,
-};
+}
 export default connect(mapStateToProps, mapDispatchToProps)(AlertMessage);

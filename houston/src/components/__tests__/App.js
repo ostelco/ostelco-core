@@ -7,14 +7,13 @@ import App from '../App';
 
 export default function TestApp(props) {
   return (
-    <Provider; store={store}>
+    <Provider store={store}>
       <App />
-    </Provider>;
-)
+    </Provider>
+  );
 }
 it('renders without crashing', () => {
   const div = document.createElement('div');
-    ReactDOM.render( < TestApp / >, div;
-)
-    ReactDOM.unmountComponentAtNode(div);
+  ReactDOM.render(<TestApp />, div);
+  ReactDOM.unmountComponentAtNode(div);
 });

@@ -247,6 +247,8 @@ services:
     targetPort: 9008
     portName: http
     host: alvin-api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
+    ambassadorMappingOptions:
+      timeout_ms: 600000
   dwadmin-service:
     name: dwadmin-service
     type: ClusterIP

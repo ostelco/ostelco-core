@@ -4,19 +4,19 @@ import { Button, Modal, ModalHeader, ModalBody, ModalFooter } from 'reactstrap';
 
 const WarningModal = (props) => {
   return (
-    <Modal; isOpen={props.show}; toggle={props.handleClose}>
-      <ModalHeader; toggle={props.handleClose}>{props.heading}</ModalHeader>
+    <Modal isOpen={props.show} toggle={props.handleClose}>
+      <ModalHeader toggle={props.handleClose}>{props.heading}</ModalHeader>
       <ModalBody>
         <p>
           {props.warningText}
         </p>
       </ModalBody>
       <ModalFooter>
-        <Button; color="primary"; onClick={props.handleConfirm}>Yes</Button>{' '}
-        <Button; color="light"; onClick={props.handleClose}>Cancel</Button>
+        <Button color="primary" onClick={props.handleConfirm}>Yes</Button>{' '}
+        <Button color="light" onClick={props.handleClose}>Cancel</Button>
       </ModalFooter>
-    </Modal>;
-)
+    </Modal>
+  );
 };
 
 WarningModal.propTypes = {

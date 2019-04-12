@@ -116,7 +116,7 @@ const getSubscriberAndBundlesByEmail = (email) => (dispatch, getState) => {
   return dispatch(fetchSubscriberById(email))
     .then(() => {
       // Get the email from the fetched user
-      const subscriberEmail = encodeEmail(_.get(getState(), 'subscriber.email'));
+      const subscriberEmail = encodeEmail(_.get(getState(), 'subscriber.contactEmail'));
       if (subscriberEmail) {
         dispatch(fetchSubscriptionsByEmail(subscriberEmail)).catch(handleError);
         return dispatch(fetchBundlesByEmail(subscriberEmail))
@@ -137,7 +137,7 @@ const refundPurchase = (purchaseRecordId, reason) => (dispatch, getState) => {
   };
 
   // Get the email from the fetched user
-  const subscriberEmail = encodeEmail(_.get(getState(), 'subscriber.email'));
+  const subscriberEmail = encodeEmail(_.get(getState(), 'subscriber.contactEmail'));
   if (subscriberEmail) {
     return dispatch(putRefundPurchaseByEmail(subscriberEmail, purchaseRecordId, reason))
       .then(() => {
