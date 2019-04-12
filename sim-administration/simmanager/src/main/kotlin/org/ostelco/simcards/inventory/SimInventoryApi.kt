@@ -66,8 +66,10 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
 
                     dao.setProvisionState(simEntry.id!!, ProvisionState.PROVISIONED)
                             .flatMap {
-                                /* Add 'code' field content. */
-                                it.copy(code = "LPA:${config.es9plusEndpoint}:${it.matchingId}")
+                                /* Add 'code' field content.
+                                   Original format: LPA:<hostname>:<matching-id>
+                                   New format: LPA:1$<endpoint>$<matching-id> */
+                                it.copy(code = "LPA:1\$${config.es9plusEndpoint}\$${it.matchingId}")
                                         .right()
                             }.bind()
                 }.fix()
