@@ -144,6 +144,8 @@ paths:
           description: "List of all Region Details"
           schema:
             $ref: '#/definitions/RegionDetailsList'
+      security:
+        - auth0_jwt: []
   "/regions/{regionCode}":
     get:
       description: "Get region details like SIM Profiles for a region."
@@ -163,6 +165,8 @@ paths:
             $ref: '#/definitions/RegionDetails'
         404:
           description: "Region not found."
+      security:
+        - auth0_jwt: []
   "/regions/{regionCode}/kyc/jumio/scans":
     post:
       description: "Get a new Id for eKYC scanning."
