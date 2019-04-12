@@ -12,33 +12,33 @@ class Profile extends React.Component {
     let listItems = null;
     if (Array.isArray(props.subscriptions.items)) {
       listItems = props.subscriptions.items.map((subscription, index) =>
-        <div; key={index}>
-          <Subscription; subscription={subscription};  key={index};/>
+        <div key={index}>
+          <Subscription subscription={subscription}  key={index}/>
           <hr />
-        </div>;
-    )
+        </div>
+      );
     }
     return (
       <Card>
         <CardBody>
-          <CardTitle>User; Profile</CardTitle>
+          <CardTitle>User Profile</CardTitle>
           <Row>
-            <Col; xs={2}; md={2}>{'Name:'}</Col>
-            <Col; xs={12}; md={8}>{`${props.profile.name}`}</Col>
+            <Col xs={2} md={2}>{'Name:'}</Col>
+            <Col xs={12} md={8}>{`${props.profile.name}`}</Col>
           </Row>
           <Row>
-            <Col; xs={2}; md={2}>{'Email:'}</Col>
-            <Col; xs={12}; md={8}>{`${props.profile.email}`}</Col>
+            <Col xs={2} md={2}>{'Email:'}</Col>
+            <Col xs={12} md={8}>{`${props.profile.email}`}</Col>
           </Row>
           <Row>
-            <Col; xs={2}; md={2}>{'Address:'}</Col>
-            <Col; xs={12}; md={8}>{`${props.profile.address}`}</Col>
+            <Col xs={2} md={2}>{'Address:'}</Col>
+            <Col xs={12} md={8}>{`${props.profile.address}`}</Col>
           </Row>
           <hr />
           {listItems}
         </CardBody>
-      </Card>;
-  )
+      </Card>
+    );
   }
 }
 

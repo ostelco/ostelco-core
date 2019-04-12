@@ -14,16 +14,15 @@ export const RefundedItemOption = (props) => {
   }
   return (
     <td>
-      <Button; color="outline-secondary"; onClick={nope}; id={props.id}>Refunded..</Button>
-      <UncontrolledTooltip; placement="right"; target={props.id}>
+      <Button color="outline-secondary" onClick={nope} id={props.id}>Refunded..</Button>
+      <UncontrolledTooltip placement="right" target={props.id}>
         {`Refunded on ${convertTimestampToDate(props.timestamp)}, ${props.reason}`}
       </UncontrolledTooltip>
-    </td>;
-)
-};
+    </td>
+  );
+}
 
-export const FreeItemOption = props => ( < td / >;
-)
+export const FreeItemOption = props => (<td />);
 export const HistoryRow = props => {
   const isRefunded = () => (props.item.refund && props.item.refund.id);
   const isFreeProduct = () => (props.item.product.price.amount <= 0);
@@ -35,24 +34,23 @@ export const HistoryRow = props => {
 
   function renderOption() {
     if (isRefunded()) {
-      return (<RefundedItemOption; {...props.item.refund} />);
+      return (<RefundedItemOption {...props.item.refund} />);
     } else if (isFreeProduct()) {
-        return ( < FreeItemOption / >;
-    )
+      return (<FreeItemOption />);
     } else {
       return (
-        <td><Button; color="outline-primary"; onClick={onRefund}>Refund</Button></;td>;
-    )
+        <td><Button color="outline-primary" onClick={onRefund}>Refund</Button></td>
+      );
     }
   }
   return (
     <tr >
       <td>{props.item.product.presentation.productLabel}</td>
       <td>{props.item.product.presentation.priceLabel}</td>
-      <td>{convertTimestampToDate(props.item.timestamp;)}</td>;
+      <td>{convertTimestampToDate(props.item.timestamp)}</td>
       {renderOption()}
     </tr>);
-};
+}
 
 HistoryRow.propTypes = {
   item: PropTypes.shape({
@@ -87,13 +85,13 @@ class PaymentHistory extends React.Component {
     const state = this.state;
     state.showConfirm = false;
     this.setState(state);
-  };
+  }
 
   handleShowConfirm = (id, reason) => {
     const state = { ...this.state, id, reason };
     state.showConfirm = true;
     this.setState(state);
-  };
+  }
 
   handleConfirm = () => {
     this.handleCloseConfirm();
@@ -101,7 +99,7 @@ class PaymentHistory extends React.Component {
     // TODO call the method to give additional data
     console.log(`User confirmed, refunding id:${id}, reason:${reason}`);
     this.props.refundPurchase(this.state.id, this.state.reason);
-  };
+  }
 
   render() {
     const { props } = this;
@@ -111,13 +109,14 @@ class PaymentHistory extends React.Component {
     const refundHeading = 'Confirm refund operartion';
     const refundText = 'Do you really want to refund this transaction ?';
     const listItems = props.paymentHistory.map((history) =>
-      <HistoryRow; item={history}; key={history.id}; refundPurchase={this.handleShowConfirm}; />;
-  )
-      return (
+      <HistoryRow item={history} key={history.id} refundPurchase={this.handleShowConfirm} />
+    );
+
+    return (
       <Card>
         <CardBody>
-          <CardTitle>Payment; History</CardTitle>
-          <Table; striped; bordered>
+          <CardTitle>Payment History</CardTitle>
+          <Table striped bordered>
             <thead>
               <tr>
                 <th>Plan</th>
@@ -131,14 +130,14 @@ class PaymentHistory extends React.Component {
             </tbody>
           </Table>
         </CardBody>
-        <WarningModal;
-          heading={refundHeading};
-          warningText={refundText};
-          show={this.state.showConfirm};
-          handleConfirm={this.handleConfirm};
-          handleClose={this.handleCloseConfirm}; />
-      </Card>;
-  )
+        <WarningModal
+          heading={refundHeading}
+          warningText={refundText}
+          show={this.state.showConfirm}
+          handleConfirm={this.handleConfirm}
+          handleClose={this.handleCloseConfirm} />
+      </Card>
+    );
   }
 }
 
@@ -160,5 +159,5 @@ function mapStateToProps(state) {
 }
 const mapDispatchToProps = {
   refundPurchase: subscriberActions.refundPurchase
-};
+}
 export default connect(mapStateToProps, mapDispatchToProps)(PaymentHistory);
