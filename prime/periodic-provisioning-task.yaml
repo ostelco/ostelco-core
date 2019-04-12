@@ -16,10 +16,9 @@ spec:
         spec:
           containers:
           - name: preallocate-sim-profiles
-            image: busybox-curl
+            image: gcr.io/gcp-runtimes/ubuntu_18_0_4
             args:
             - /bin/sh
             - -c
-            - date; echo Triggering sim preallocation
-            - curl -sS -X POST http://prime-dwadmin-service:8081/tasks/preallocate_sim_profiles
+            - date; echo Triggering sim preallocation;  curl -vvv -sS -X POST http://prime-dwadmin-service:8081/tasks/preallocate_sim_profiles
           restartPolicy: OnFailure
