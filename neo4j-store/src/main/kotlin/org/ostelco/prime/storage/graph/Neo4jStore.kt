@@ -59,6 +59,7 @@ import org.ostelco.prime.storage.NotFoundError
 import org.ostelco.prime.storage.NotUpdatedError
 import org.ostelco.prime.storage.ScanInformationStore
 import org.ostelco.prime.storage.StoreError
+import org.ostelco.prime.storage.SystemError
 import org.ostelco.prime.storage.ValidationError
 import org.ostelco.prime.storage.graph.Graph.read
 import org.ostelco.prime.storage.graph.Graph.write
@@ -725,7 +726,7 @@ object Neo4jStoreSingleton : GraphStore {
     private val analyticsReporter by lazy { getResource<AnalyticsService>() }
 
     private fun fetchOrCreatePaymentProfile(customerId: String): Either<PaymentError, ProfileInfo> =
-    // Fetch/Create stripe payment profile for the customer.
+            // Fetch/Create stripe payment profile for the customer.
             paymentProcessor.getPaymentProfile(customerId)
                     .fold(
                             { paymentProcessor.createPaymentProfile(customerId) },
@@ -1047,9 +1048,18 @@ object Neo4jStoreSingleton : GraphStore {
                                 scanInformationRelationStore.createIfAbsent(customerId, newScan.id, transaction)
                             }
                             .flatMap {
+                                setKycStatus(
+                                        customerId = customerId,
+                                        regionCode = regionCode.toLowerCase(),
+                                        kycType = JUMIO,
+                                        kycStatus = KycStatus.PENDING,
+                                        transaction = transaction)
+                            }
+                            .flatMap {
                                 newScan.right()
                             }
                 }
+                .ifFailedThenRollback(transaction)
     }
 
     private fun getCustomerUsingScanId(scanId: String, transaction: Transaction): Either<StoreError, Customer> {
@@ -1134,18 +1144,35 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun getCustomerMyInfoData(
             identity: org.ostelco.prime.model.Identity,
-            authorisationCode: String): Either<StoreError, String> = writeTransaction {
+            authorisationCode: String): Either<StoreError, String> {
 
-        getCustomerId(identity = identity, transaction = transaction)
+        return getCustomerId(identity = identity)
                 .flatMap { customerId ->
+                    // set MyInfo KYC Status to Pending
                     setKycStatus(
                             customerId = customerId,
                             regionCode = "sg",
                             kycType = MY_INFO,
-                            transaction = transaction)
+                            kycStatus = KycStatus.PENDING)
+                            .flatMap {
+                                try {
+                                    myInfoKycService.getPersonData(authorisationCode).right()
+                                } catch (e: Exception) {
+                                    logger.error("Failed to fetched MyInfo using authCode = $authorisationCode", e)
+                                    SystemError(
+                                            type = "MyInfo Auth Code",
+                                            id = authorisationCode,
+                                            message = "Failed to fetched MyInfo").left()
+                                }
+                            }.flatMap { personData ->
+                                // set MyInfo KYC Status to Approved
+                                setKycStatus(
+                                        customerId = customerId,
+                                        regionCode = "sg",
+                                        kycType = MY_INFO)
+                                        .map { personData }
+                            }
                 }
-                .flatMap { myInfoKycService.getPersonData(authorisationCode).right() }
-                .ifFailedThenRollback(transaction)
     }
 
     //
@@ -1209,7 +1236,7 @@ object Neo4jStoreSingleton : GraphStore {
             kycType: KycType,
             kycStatus: KycStatus = KycStatus.APPROVED) = writeTransaction {
 
-        Neo4jStoreSingleton.setKycStatus(
+        setKycStatus(
                 customerId = customerId,
                 regionCode = regionCode,
                 kycType = kycType,
@@ -1259,12 +1286,12 @@ object Neo4jStoreSingleton : GraphStore {
                 }
 
                 customerRegionRelationStore
-                            .createOrUpdate(
-                                    fromId = customerId,
-                                    relation = CustomerRegion(status = newStatus, kycStatusMap = newKycStatusMap),
-                                    toId = regionCode,
-                                    transaction = transaction)
-                            .bind()
+                        .createOrUpdate(
+                                fromId = customerId,
+                                relation = CustomerRegion(status = newStatus, kycStatusMap = newKycStatusMap),
+                                toId = regionCode,
+                                transaction = transaction)
+                        .bind()
 
             }.fix()
         }.unsafeRunSync()
@@ -1865,7 +1892,7 @@ object Neo4jStoreSingleton : GraphStore {
     }
 }
 
-fun <K,V> Map<K,V>.copy(key: K, value: V): Map<K,V> {
+fun <K, V> Map<K, V>.copy(key: K, value: V): Map<K, V> {
     val mutableMap = this.toMutableMap()
     mutableMap[key] = value
     return mutableMap.toMap()
