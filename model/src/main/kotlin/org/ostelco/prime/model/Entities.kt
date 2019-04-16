@@ -259,6 +259,7 @@ data class SimProfile(
 }
 
 enum class SimProfileStatus {
+    NOT_READY,
     AVAILABLE_FOR_DOWNLOAD,
     DOWNLOADED,
     INSTALLED,
