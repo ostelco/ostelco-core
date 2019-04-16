@@ -1158,6 +1158,8 @@ object Neo4jStoreSingleton : GraphStore {
             identity: org.ostelco.prime.model.Identity,
             nricFinId: String): Either<StoreError, Unit> = writeTransaction {
 
+        logger.info("checkNricFinIdUsingDave for ${nricFinId}")
+
         getCustomerId(identity = identity, transaction = transaction)
                 .flatMap { customerId ->
                     setKycStatus(
@@ -1168,8 +1170,10 @@ object Neo4jStoreSingleton : GraphStore {
                 }
                 .flatMap {
                     if (daveKycService.validate(nricFinId)) {
+                        logger.info("checkNricFinIdUsingDave validated ${nricFinId}")
                         Unit.right()
                     } else {
+                        logger.info("checkNricFinIdUsingDave failed to validate ${nricFinId}")
                         ValidationError(type = "NRIC/FIN ID", id = nricFinId, message = "Invalid NRIC/FIN ID").left()
                     }
                 }
