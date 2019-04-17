@@ -451,7 +451,25 @@ object Neo4jStoreSingleton : GraphStore {
     // SIM Profile
     //
 
-    private val simManager by lazy { getResource<SimManager>() }
+    private val simManager by lazy {
+        getResource<SimManager>().also { simManager ->
+            simManager.getSimProfileStatusUpdates { iccId, status ->
+                writeTransaction {
+                    simProfileStore.get(id = iccId, transaction = transaction)
+                            .flatMap { simProfile ->
+                                simProfileStore.update(simProfile.copy(status = status), transaction)
+                            }
+                            .mapLeft {
+                                logger.error("Failed to update SimProfileStatus - {} of {}. Reason: {}",
+                                        status,
+                                        iccId,
+                                        it.message)
+                            }
+                            .ifFailedThenRollback(transaction)
+                }
+            }
+        }
+    }
 
     private val emailNotifier by lazy { getResource<EmailNotifier>() }
 
@@ -1689,6 +1707,36 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
 
+    //
+    // Sim Profiles (Admin)
+    //
+    override fun syncSimProfileStatus(): Either<StoreError, Unit> = writeTransaction {
+        IO {
+            Either.monad<StoreError>().binding {
+                listOf("no", "sg")
+                        .forEach { regionCode ->
+
+                            val simProfiles = regionStore.getRelatedFrom(
+                                    regionCode, simProfileRegionRelation, transaction).bind()
+
+                            simProfiles.forEach { simProfile ->
+                                val status = simManager.getSimProfileStatus(
+                                        hlr = getHlr(regionCode = regionCode),
+                                        iccId = simProfile.iccId)
+                                        .mapLeft { SystemError(
+                                                type = "SimProfile",
+                                                id = simProfile.iccId,
+                                                message = "Failed to get SimProfileStatus from SIM Manager") }
+                                        .bind()
+                                if (status != simProfile.status) {
+                                    simProfileStore.update(simProfile.copy(status = status), transaction).bind()
+                                }
+                            }
+                        }
+            }.fix()
+        }.unsafeRunSync()
+                .ifFailedThenRollback(transaction)
+    }
 
     //
     // Stores

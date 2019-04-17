@@ -1,10 +1,13 @@
 package org.ostelco.simcards.inventory
 
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.model.SimProfileStatus.DOWNLOADED
+import org.ostelco.prime.model.SimProfileStatus.INSTALLED
 import org.ostelco.sim.es2plus.ES2NotificationPointStatus
 import org.ostelco.sim.es2plus.ES2RequestHeader
 import org.ostelco.sim.es2plus.FunctionExecutionStatusType
 import org.ostelco.sim.es2plus.SmDpPlusCallbackService
+import org.ostelco.simcards.admin.ApiRegistry.simProfileStatusUpdateCallback
 
 /**
  * ES2+ callbacks handling.
@@ -50,12 +53,14 @@ class SimInventoryCallbackService(val dao: SimInventoryDAO) : SmDpPlusCallbackSe
                     logger.info("Updating SM-DP+ state to {} with value from 'download-progress-info' message' for ICCID {}",
                             SmDpPlusState.DOWNLOADED, iccid)
                     dao.setSmDpPlusStateUsingIccid(iccid, SmDpPlusState.DOWNLOADED)
+                    simProfileStatusUpdateCallback?.invoke(iccid, DOWNLOADED)
                 }
                 4 -> {
                     /* BPP installation. */
                     logger.info("Updating SM-DP+ state to {} with value from 'download-progress-info' message' for ICCID {}",
                             SmDpPlusState.INSTALLED, iccid)
                     dao.setSmDpPlusStateUsingIccid(iccid, SmDpPlusState.INSTALLED)
+                    simProfileStatusUpdateCallback?.invoke(iccid, INSTALLED)
                 }
                 else -> {
                     /* Unexpected check point value. */
