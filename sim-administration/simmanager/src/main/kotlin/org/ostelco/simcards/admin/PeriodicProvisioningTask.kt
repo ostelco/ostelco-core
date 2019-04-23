@@ -18,7 +18,6 @@ import org.ostelco.simcards.inventory.HssState
 import org.ostelco.simcards.inventory.SimEntry
 import org.ostelco.simcards.inventory.SimInventoryDAO
 import org.ostelco.simcards.inventory.SimProfileKeyStatistics
-import org.slf4j.LoggerFactory
 import java.io.PrintWriter
 
 
@@ -72,16 +71,21 @@ class PreallocateProfilesTask(
                         }
                     }
 
-    private fun batchPreprovisionSimProfiles(hlrEntry: HssEntry,
-                                             profile: String,
+    private fun batchPreprovisionSimProfiles(hssEntry: HssEntry,
+                                             simProfileName: String,
                                              profileStats: SimProfileKeyStatistics) {
         val noOfProfilesToActuallyAllocate =
                 Math.min(maxNoOfProfileToAllocate.toLong(), profileStats.noOfUnallocatedEntries)
 
         for (i in 1..noOfProfilesToActuallyAllocate) {
-            simInventoryDAO.findNextNonProvisionedSimProfileForHss(hssId = hlrEntry.id, profile = profile)
+
+            // XXX This is all well, if allocation doesn't fail, but if it fails, it will try the
+            //     same profile forever, so something else should be done e.g. setting the
+            //     state of the profile to "provision failed" or something of that nature, so that it
+            //     is possible to move along.   This is an error in the logic of this code.
+            simInventoryDAO.findNextNonProvisionedSimProfileForHss(hssId = hssEntry.id, profile = simProfileName)
                     .flatMap { simEntry ->
-                        preProvisionSimProfile(hlrEntry, simEntry)
+                        preProvisionSimProfile(hssEntry, simEntry)
                                 .mapLeft {
                                     logger.error("Preallocation of SIM ICCID {} failed with error: {}}",
                                             simEntry.iccid, it.description)
@@ -101,18 +105,18 @@ class PreallocateProfilesTask(
                 val hssEntries: Collection<HssEntry> = simInventoryDAO.getHssEntries()
                         .bind()
 
-                for (entry in hssEntries) {
-                    val profiles: Collection<String> = simInventoryDAO.getProfileNamesForHssById(entry.id)
+                for (hssEntry in hssEntries) {
+                    val simProfileNames: Collection<String> = simInventoryDAO.getProfileNamesForHssById(hssEntry.id)
                             .bind()
-                    for (profile in profiles) {
-                        val profileStats = simInventoryDAO.getProfileStats(entry.id, profile)
+                    for (simProfileName in simProfileNames) {
+                        val profileStats = simInventoryDAO.getProfileStats(hssEntry.id, simProfileName)
                                 .bind()
 
                         if (profileStats.noOfEntriesAvailableForImmediateUse < lowWaterMark) {
                             logger.info("Preallocating new SIM batch with HLR {} and with profile {}",
-                                    entry.name, profile)
+                                    hssEntry.name, simProfileName)
 
-                            batchPreprovisionSimProfiles(hlrEntry = entry, profile = profile, profileStats = profileStats)
+                            batchPreprovisionSimProfiles(hssEntry = hssEntry, simProfileName = simProfileName, profileStats = profileStats)
                         }
                     }
                 }
