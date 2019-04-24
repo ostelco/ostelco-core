@@ -73,22 +73,18 @@ object StripePayment {
      * Obtains the Stripe 'customerId' directly from Stripe.
      */
     fun getStripeCustomerId(customerId: String) : String {
-
         // https://stripe.com/docs/api/java#create_card_token
         Stripe.apiKey = System.getenv("STRIPE_API_KEY")
 
         val customers = Customer.list(emptyMap()).data
-
-        val stripeEmail = "$customerId@ostelco.org"
-        return customers.first { it.email == stripeEmail }.id
+        return customers.first { it.id == customerId }.id
     }
 
     fun deleteCustomer(customerId: String) {
         // https://stripe.com/docs/api/java#create_card_token
         Stripe.apiKey = System.getenv("STRIPE_API_KEY")
         val customers = Customer.list(emptyMap()).data
-        val stripeEmail = "$customerId@ostelco.org"
-        customers.filter { it.email == stripeEmail }
+        customers.filter { it.id == customerId }
                 .forEach { it.delete() }
     }
 

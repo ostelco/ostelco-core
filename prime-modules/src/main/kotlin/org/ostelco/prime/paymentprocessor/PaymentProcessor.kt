@@ -27,9 +27,10 @@ interface PaymentProcessor {
 
     /**
      * @param customerId: Prime unique identifier for customer
+     * @param email: Contact email address
      * @return Stripe customerId if created
      */
-    fun createPaymentProfile(customerId: String): Either<PaymentError, ProfileInfo>
+    fun createPaymentProfile(customerId: String, email: String): Either<PaymentError, ProfileInfo>
 
     /**
      * @param stripeCustomerId Stripe customer id
@@ -135,5 +136,5 @@ interface PaymentProcessor {
      */
     fun removeSource(stripeCustomerId: String, sourceId: String): Either<PaymentError, SourceInfo>
 
-    fun getStripeEphemeralKey(customerId: String, apiVersion: String): Either<PaymentError, String>
+    fun getStripeEphemeralKey(customerId: String, email: String, apiVersion: String): Either<PaymentError, String>
 }
