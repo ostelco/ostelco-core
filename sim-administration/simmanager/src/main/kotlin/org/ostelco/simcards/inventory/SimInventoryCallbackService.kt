@@ -40,7 +40,19 @@ class SimInventoryCallbackService(val dao: SimInventoryDAO) : SmDpPlusCallbackSe
                 dao.setEidOfSimProfileByIccid(iccid, eid)
             }
 
-            /* Update SM-DP+ state. */
+            /* Update SM-DP+ state.
+            *  XXX This is in fact buggy, since it assumes that the transitions are legal, which they only are
+            *       they are carried out on profiles that are in the database, and that the transitions that are
+            *      being performed are valid state transitions.  None of these criteria are tested for, and
+            *      errors are not signalled if they are not fulfilled, so the code is in fact in error as it stands
+            *      now.
+            *
+            *      Also, there is a somewhat more subtle failure mode, namly that the SM-DP+ for some reason
+            *      is unable to signal back, in that case the state has actually changed, but that fact will not
+            *      be picked up by the state as stored in the database, and if the user interface is dependent
+            *      on that state, the user interface may suffer a failure.  These issues needs to be gamed out
+            *      and fixed in some reasonable manner.
+            */
             when (notificationPointId) {
                 1 -> {
                     /* Eligibility and retry limit check. */
