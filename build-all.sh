@@ -81,20 +81,29 @@ if [[ -z "$GCP_PROJECT_ID" ]] ; then
    exit 1
 fi
 
-DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS= \
+DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS=" \
   acceptance-tests/config \
   dataflow-pipelines/config \
   ocsgw/config \
   bq-metrics-extractor/config \
-  auth-server/config prime/config
+  auth-server/config prime/config"
 
+
+SERVICE_ACCOUNT_MD5="ce364e6ac4e62f6ce83546b1d94f5b05
 for DIR in $DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS ; do
+    echo "Checking $DIR"
     FILE="$DIR/prime-service-account.json"
     if [[ ! -f $FILE ]] ; then
-	echo "$0 ERROR: COuld not find service account file $FILE, aborting."
+	echo "$0 ERROR: Could not find service account file $FILE, aborting."
+	exit 1
+    fi
+    if [[ $(md5 -q $FILE) != $SERVICE_ACCOUNT_MD5 ]] ; then
+	echo "$0 ERROR: MD5 checksum of service account file  '$FILE' is not $SERVICE_ACCOUNT_MD5, aborting."	
 	exit 1
     fi
 done
+
+exit 0
 
 #
 # Do we have the necessary environment variables set
