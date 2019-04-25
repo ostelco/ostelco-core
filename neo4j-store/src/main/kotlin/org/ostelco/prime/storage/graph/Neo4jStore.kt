@@ -743,11 +743,12 @@ object Neo4jStoreSingleton : GraphStore {
     private val paymentProcessor by lazy { getResource<PaymentProcessor>() }
     private val analyticsReporter by lazy { getResource<AnalyticsService>() }
 
-    private fun fetchOrCreatePaymentProfile(customerId: String): Either<PaymentError, ProfileInfo> =
+    private fun fetchOrCreatePaymentProfile(customer: Customer): Either<PaymentError, ProfileInfo> =
             // Fetch/Create stripe payment profile for the customer.
-            paymentProcessor.getPaymentProfile(customerId)
+            paymentProcessor.getPaymentProfile(customer.id)
                     .fold(
-                            { paymentProcessor.createPaymentProfile(customerId) },
+                            { paymentProcessor.createPaymentProfile(customerId = customer.id,
+                                    email = customer.contactEmail) },
                             { profileInfo -> Either.right(profileInfo) }
                     )
 
@@ -791,21 +792,21 @@ object Neo4jStoreSingleton : GraphStore {
                              saveCard: Boolean): Either<PaymentError, ProductInfo> = writeTransaction {
         IO {
             Either.monad<PaymentError>().binding {
-                val customerId = getCustomerId(identity = identity, transaction = transaction)
+                val customer = getCustomer(identity = identity, transaction = transaction)
                         .mapLeft {
                             org.ostelco.prime.paymentprocessor.core.NotFoundError(
-                                    "Failed to get customerId for customer with identity - $identity",
+                                    "Failed to get customer data for customer with identity - $identity",
                                     error = it)
                         }
                         .bind()
-                val profileInfo = fetchOrCreatePaymentProfile(customerId)
+                val profileInfo = fetchOrCreatePaymentProfile(customer)
                         .bind()
                 val paymentCustomerId = profileInfo.id
 
                 if (sourceId != null) {
                     val sourceDetails = paymentProcessor.getSavedSources(paymentCustomerId)
                             .mapLeft {
-                                BadGatewayError("Failed to fetch sources for customer: $customerId",
+                                BadGatewayError("Failed to fetch sources for customer: ${customer.id}",
                                         error = it)
                             }.bind()
                     if (!sourceDetails.any { sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
@@ -817,7 +818,7 @@ object Neo4jStoreSingleton : GraphStore {
                 }
                 subscribeToPlan(identity, product.id)
                         .mapLeft {
-                            org.ostelco.prime.paymentprocessor.core.BadGatewayError("Failed to subscribe $customerId to plan ${product.id}",
+                            org.ostelco.prime.paymentprocessor.core.BadGatewayError("Failed to subscribe ${customer.id} to plan ${product.id}",
                                     error = it)
                         }
                         .flatMap {
@@ -842,7 +843,14 @@ object Neo4jStoreSingleton : GraphStore {
                                     error = it)
                         }
                         .bind()
-                val profileInfo = fetchOrCreatePaymentProfile(customerId).bind()
+                val customer = getCustomer(identity = identity, transaction = transaction)
+                        .mapLeft {
+                            org.ostelco.prime.paymentprocessor.core.NotFoundError(
+                                    "Failed to get customer data for customer with identity - $identity",
+                                    error = it)
+                        }
+                        .bind()
+                val profileInfo = fetchOrCreatePaymentProfile(customer).bind()
                 val paymentCustomerId = profileInfo.id
                 var addedSourceId: String? = null
                 if (sourceId != null) {
