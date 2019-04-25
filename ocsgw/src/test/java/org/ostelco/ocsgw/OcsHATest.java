@@ -154,7 +154,7 @@ public class OcsHATest {
                 session
         );
 
-        TestHelper.createInitRequest(request.getAvps(), MSISDN, 500000L);
+        TestHelper.createInitRequest(request.getAvps(), MSISDN, 500000L, 1, 10);
 
         testPGW.sendNextRequest(request, session);
 
@@ -226,7 +226,7 @@ public class OcsHATest {
                 session
         );
 
-        TestHelper.createUpdateRequest(request.getAvps(), MSISDN, 400000L, 500000L);
+        TestHelper.createUpdateRequest(request.getAvps(), MSISDN, 400000L, 500000L, 1, 10);
 
         testPGW.sendNextRequest(request, session);
 
@@ -278,7 +278,7 @@ public class OcsHATest {
                 session
         );
 
-        TestHelper.createTerminateRequest(request.getAvps(), MSISDN, 700000L);
+        TestHelper.createTerminateRequest(request.getAvps(), MSISDN, 700000L, 1, 10);
 
         testPGW.sendNextRequest(request, session);
 

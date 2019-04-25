@@ -49,8 +49,12 @@ object TestHelper {
             avp(Avp.MULTIPLE_SERVICES_INDICATOR, 1, pFlag = true)
 
             group(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL) {
-                avp(Avp.RATING_GROUP, ratingGroup, pFlag = true)
-                avp(Avp.SERVICE_IDENTIFIER_CCA, serviceIdentifier, pFlag = true)
+                if (ratingGroup > 0) {
+                    avp(Avp.RATING_GROUP, ratingGroup, pFlag = true)
+                }
+                if (serviceIdentifier > 0) {
+                    avp(Avp.SERVICE_IDENTIFIER_CCA, serviceIdentifier, pFlag = true)
+                }
 
                 group(Avp.REQUESTED_SERVICE_UNIT) {
                     avp(Avp.CC_TOTAL_OCTETS, bucketSize, pFlag = true)
@@ -121,13 +125,20 @@ object TestHelper {
         }
     }
 
+    @JvmStatic
+    fun addUnknownApv(ccrAvps: AvpSet) {
+        set(ccrAvps) {
+            avp(950, "Unknown AVP", vendorId = 2011, asOctetString = true, pFlag = false, mFlag = false)
+        }
+    }
+
 
 
     @JvmStatic
-    fun createInitRequest(ccrAvps: AvpSet, msisdn: String, bucketSize: Long) {
+    fun createInitRequest(ccrAvps: AvpSet, msisdn: String, bucketSize: Long, ratingGroup: Int, serviceIdentifier: Int) {
         buildBasicRequest(ccrAvps, RequestType.INITIAL_REQUEST, requestNumber = 0)
         addUser(ccrAvps, msisdn = msisdn, imsi = IMSI)
-        addBucketRequest(ccrAvps, ratingGroup = 10, serviceIdentifier = 1, bucketSize = bucketSize)
+        addBucketRequest(ccrAvps, ratingGroup, serviceIdentifier, bucketSize = bucketSize)
         addServiceInformation(ccrAvps, apn = APN, sgsnMccMnc = SGSN_MCC_MNC)
     }
 
@@ -142,26 +153,26 @@ object TestHelper {
     }
 
     @JvmStatic
-    fun createUpdateRequest(ccrAvps: AvpSet, msisdn: String, bucketSize: Long, usedBucketSize: Long) {
+    fun createUpdateRequest(ccrAvps: AvpSet, msisdn: String, bucketSize: Long, usedBucketSize: Long, ratingGroup: Int, serviceIdentifier: Int) {
         buildBasicRequest(ccrAvps, RequestType.UPDATE_REQUEST, requestNumber = 1)
         addUser(ccrAvps, msisdn = msisdn, imsi = IMSI)
-        addBucketRequest(ccrAvps, ratingGroup = 10, serviceIdentifier = 1, bucketSize = bucketSize, usedBucketSize = usedBucketSize)
+        addBucketRequest(ccrAvps, ratingGroup, serviceIdentifier, bucketSize = bucketSize, usedBucketSize = usedBucketSize)
         addServiceInformation(ccrAvps, apn = APN, sgsnMccMnc = SGSN_MCC_MNC)
     }
 
     @JvmStatic
-    fun createUpdateRequestFinal(ccrAvps: AvpSet, msisdn: String, usedBucketSize: Long) {
+    fun createUpdateRequestFinal(ccrAvps: AvpSet, msisdn: String, usedBucketSize: Long, ratingGroup: Int, serviceIdentifier: Int) {
         buildBasicRequest(ccrAvps, RequestType.UPDATE_REQUEST, requestNumber = 1)
         addUser(ccrAvps, msisdn = msisdn, imsi = IMSI)
-        addFinalBucketRequest(ccrAvps, ratingGroup = 10, serviceIdentifier = 1, usedBucketSize = usedBucketSize)
+        addFinalBucketRequest(ccrAvps, ratingGroup, serviceIdentifier, usedBucketSize = usedBucketSize)
         addServiceInformation(ccrAvps, apn = APN, sgsnMccMnc = SGSN_MCC_MNC)
     }
 
     @JvmStatic
-    fun createTerminateRequest(ccrAvps: AvpSet, msisdn: String, bucketSize: Long) {
+    fun createTerminateRequest(ccrAvps: AvpSet, msisdn: String, bucketSize: Long, ratingGroup: Int, serviceIdentifier: Int) {
         buildBasicRequest(ccrAvps, RequestType.TERMINATION_REQUEST, requestNumber = 2)
         addUser(ccrAvps, msisdn = msisdn, imsi = IMSI)
-        addTerminateRequest(ccrAvps, ratingGroup = 10, serviceIdentifier = 1, bucketSize = bucketSize)
+        addTerminateRequest(ccrAvps, ratingGroup, serviceIdentifier, bucketSize = bucketSize)
         addServiceInformation(ccrAvps, apn = APN, sgsnMccMnc = SGSN_MCC_MNC)
     }
 
