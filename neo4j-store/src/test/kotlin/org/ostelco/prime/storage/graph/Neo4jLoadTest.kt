@@ -58,12 +58,12 @@ class Neo4jLoadTest {
 
         repeat(USERS) { user ->
             Neo4jStoreSingleton.addCustomer(
-                    identity = Identity(id = "test-$user@ostelco.org", type = "EMAIL", provider = "email"),
+                    identity = Identity(id = "test-$user", type = "EMAIL", provider = "email"),
                     customer = Customer(contactEmail = "test-$user@ostelco.org", nickname = NAME))
                     .mapLeft { fail(it.message) }
 
             Neo4jStoreSingleton.addSubscription(
-                    identity = Identity(id = "test-$user@ostelco.org", type = "EMAIL", provider = "email"),
+                    identity = Identity(id = "test-$user", type = "EMAIL", provider = "email"),
                     msisdn = "$user")
                     .mapLeft { fail(it.message) }
         }
@@ -109,7 +109,7 @@ class Neo4jLoadTest {
         val rate = COUNT * 1000.0 / diff
         println("Rate: %,.2f req/sec".format(rate))
 
-        Neo4jStoreSingleton.getBundles(identity = Identity(id = "test-0@ostelco.org", type = "EMAIL", provider = "email"))
+        Neo4jStoreSingleton.getBundles(identity = Identity(id = "test-0", type = "EMAIL", provider = "email"))
                 .fold(
                         { fail(it.message) },
                         {
