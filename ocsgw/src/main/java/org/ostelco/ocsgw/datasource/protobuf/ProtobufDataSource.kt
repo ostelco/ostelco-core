@@ -38,7 +38,7 @@ class ProtobufDataSource {
         logger.info("[>>] creditControlRequest for {}", context.creditControlRequest.msisdn)
 
         // FixMe: We should handle conversion errors
-        val creditControlRequestInfo = ProtobufToDiameterConverter.convertRequestToGrpc(context, topicId)
+        val creditControlRequestInfo = ProtobufToDiameterConverter.convertRequestToProtobuf(context, topicId)
         if (creditControlRequestInfo != null) {
             ccrMap[context.sessionId] = context
             addToSessionMap(context)

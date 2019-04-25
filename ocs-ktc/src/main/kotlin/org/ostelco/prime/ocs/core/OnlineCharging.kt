@@ -135,6 +135,10 @@ object OnlineCharging : OcsAsyncRequestConsumer {
         // FixMe : Fetch list from somewhere ™
         // For now hardcoded to known combinations
 
+        if (arrayOf(600L).contains(ratingGroup)) {
+            return true
+        }
+
         if (arrayOf(1L, 400L).contains(serviceIdentifier)) {
             return true
         }
