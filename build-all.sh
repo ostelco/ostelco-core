@@ -81,20 +81,54 @@ if [[ -z "$GCP_PROJECT_ID" ]] ; then
    exit 1
 fi
 
-DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS= \
+#
+# Setting up service account files where they are needed.
+#
+
+
+DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS=" \
   acceptance-tests/config \
   dataflow-pipelines/config \
   ocsgw/config \
   bq-metrics-extractor/config \
-  auth-server/config prime/config
+  auth-server/config prime/config"
+
+SERVICE_ACCOUNT_MD5="b8d22f87b55431ebfa4b68c16d7dc037"
+
+if [[ ! -f "prime-service-account.json" ]] ; then
+    echo "$0 ERROR: Could not find master service-account file  prime-service-account.json, aborting."
+    exit 1    
+fi
+
+if [[ $(md5 -q "prime-service-account.json") != $SERVICE_ACCOUNT_MD5 ]] ; then
+    echo "$0 ERROR: MD5 checksum of service account file prime-service-account.json does not match expectation, aborting."
+    exit 1
+fi
 
 for DIR in $DIRS_THAT_NEEDS_SERVICE_ACCOUNT_CONFIGS ; do
+    echo "Checking $DIR"
     FILE="$DIR/prime-service-account.json"
     if [[ ! -f $FILE ]] ; then
-	echo "$0 ERROR: COuld not find service account file $FILE, aborting."
-	exit 1
+	if [[ $(md5 -q "prime-service-account.json") = $SERVICE_ACCOUNT_MD5 ]] ; then
+	    echo "$0 INFO: Couldn't find service account file '$FILE' so copying one from root directory"
+	    cp "prime-service-account.json" "$FILE"
+	else
+	    echo "$0 ERROR: Could not find service account file $FILE, aborting."
+	    exit 1
+	fi
+    fi
+    if [[ $(md5 -q $FILE) != $SERVICE_ACCOUNT_MD5 ]] ; then
+	if [[ $(md5 -q "prime-service-account.json") = $SERVICE_ACCOUNT_MD5 ]] ; then
+	    echo "$0 INFO: Service account  '$FILE'  has wrong MD5 checksum, but the one in the root directory has the right one, so we're copying that."
+	    cp "prime-service-account.json" "$FILE"
+	else
+	    echo "$0 ERROR: MD5 checksum of service account file  '$FILE' is not $SERVICE_ACCOUNT_MD5, aborting."	
+	    exit 1
+	fi
     fi
 done
+
+
 
 #
 # Do we have the necessary environment variables set
