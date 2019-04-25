@@ -2,8 +2,7 @@ package org.ostelco.simcards.inventory
 
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.SimProfileStatus
-import org.ostelco.prime.model.SimProfileStatus.DOWNLOADED
-import org.ostelco.prime.model.SimProfileStatus.INSTALLED
+import org.ostelco.prime.model.SimProfileStatus.*
 import org.ostelco.sim.es2plus.ES2NotificationPointStatus
 import org.ostelco.sim.es2plus.ES2RequestHeader
 import org.ostelco.sim.es2plus.FunctionExecutionStatusType
@@ -58,11 +57,11 @@ class SimInventoryCallbackService(val dao: SimInventoryDAO) : SmDpPlusCallbackSe
                 }
                 3 -> {
                     /* BPP download. */
-                    gotoState(iccid, SmDpPlusState.DOWNLOADED, DOWNLOADED)
+                    gotoState(iccid, SmDpPlusState.DOWNLOADED)
                 }
                 4 -> {
                     /* BPP installation. */
-                    gotoState(iccid, SmDpPlusState.INSTALLED, INSTALLED)
+                    gotoState(iccid, SmDpPlusState.INSTALLED)
                 }
                 else -> {
                     /* Unexpected check point value. */
@@ -87,10 +86,23 @@ class SimInventoryCallbackService(val dao: SimInventoryDAO) : SmDpPlusCallbackSe
      *      being performed are valid state transitions.  None of these criteria are tested for, and
      *      errors are not si
      */
-    fun gotoState(iccid: String, targetSmdpPlusStatus: SmDpPlusState, targetSimProfileStatus: SimProfileStatus) {
+    fun gotoState(iccid: String, targetSmdpPlusStatus: SmDpPlusState) {
         logger.info("Updating SM-DP+ state to {} with value from 'download-progress-info' message' for ICCID {}",
                 SmDpPlusState.DOWNLOADED, iccid)
         dao.setSmDpPlusStateUsingIccid(iccid, targetSmdpPlusStatus)
-        simProfileStatusUpdateCallback?.invoke(iccid, targetSimProfileStatus)
+        simProfileStatusUpdateCallback?.invoke(iccid, asSimProfileStatus(targetSmdpPlusStatus))
+    }
+
+    fun asSimProfileStatus(smdpPlusState: SmDpPlusState) : SimProfileStatus {
+        return when (smdpPlusState) {
+            SmDpPlusState.AVAILABLE -> NOT_READY
+            SmDpPlusState.ALLOCATED -> NOT_READY
+            SmDpPlusState.CONFIRMED -> NOT_READY
+            SmDpPlusState.RELEASED -> AVAILABLE_FOR_DOWNLOAD
+            SmDpPlusState.DOWNLOADED -> DOWNLOADED
+            SmDpPlusState.INSTALLED -> INSTALLED
+            SmDpPlusState.ENABLED -> ENABLED
+            // XXX IF no match, then fail!
+        }
     }
 }
