@@ -31,7 +31,7 @@ class PubSubDataSource(
         projectId: String,
         ccrTopicId: String,
         private val ccaTopicId: String,
-        ccrSubscriptionId: String,
+        ccaSubscriptionId: String,
         activateSubscriptionId: String) : DataSource {
 
     private val logger by getLogger()
@@ -55,7 +55,7 @@ class PubSubDataSource(
         publisher = setupPublisherToTopic(projectId, ccrTopicId)
 
         // Instantiate an asynchronous message receiver
-        setupPubSubSubscriber(projectId, ccrSubscriptionId) { message, consumer ->
+        setupPubSubSubscriber(projectId, ccaSubscriptionId) { message, consumer ->
             // handle incoming message, then ack/nack the received message
             val ccaInfo = CreditControlAnswerInfo.parseFrom(message)
             logger.info("[<<] CreditControlAnswer for {}", ccaInfo.msisdn)
@@ -87,9 +87,8 @@ class PubSubDataSource(
             logger.debug("[>>] base64String: {}", base64String)
             val byteString = ByteString.copyFromUtf8(base64String)
 
-            logger.warn("byteString.isValidUtf8: {}", byteString.isValidUtf8)
-
-            if(!byteString.isValidUtf8) {
+            if (!byteString.isValidUtf8) {
+                logger.warn("Could not convert creditControlRequestInfo to UTF-8")
                 return
             }
             val pubsubMessage = PubsubMessage.newBuilder()

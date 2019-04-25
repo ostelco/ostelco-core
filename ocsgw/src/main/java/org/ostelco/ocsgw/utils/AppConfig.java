@@ -82,7 +82,6 @@ public class AppConfig {
 
 
     private String getEnvProperty(String propertyName) {
-        // METRICS_GRPC_SERVER env has higher preference over config.properties
         final String value = System.getenv(propertyName);
         if (value == null || value.isEmpty()) {
             throw new Error("No "+ propertyName + " set in env");
