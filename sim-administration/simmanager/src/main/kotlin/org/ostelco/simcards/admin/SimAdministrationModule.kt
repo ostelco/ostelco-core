@@ -8,13 +8,25 @@ import io.dropwizard.jdbi3.JdbiFactory
 import io.dropwizard.setup.Environment
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.dropwizardutils.OpenapiResourceAdder
+import org.ostelco.prime.model.SimProfileStatus
 import org.ostelco.prime.module.PrimeModule
 import org.ostelco.sim.es2plus.ES2PlusIncomingHeadersFilter
 import org.ostelco.sim.es2plus.SmDpPlusCallbackResource
+import org.ostelco.simcards.admin.ApiRegistry.simInventoryApi
 import org.ostelco.simcards.admin.ConfigRegistry.config
 import org.ostelco.simcards.admin.ResourceRegistry.simInventoryResource
-import org.ostelco.simcards.hss.*
-import org.ostelco.simcards.inventory.*
+import org.ostelco.simcards.hss.DirectHssDispatcher
+import org.ostelco.simcards.hss.HealthCheckRegistrar
+import org.ostelco.simcards.hss.HssDispatcher
+import org.ostelco.simcards.hss.HssGrpcAdapter
+import org.ostelco.simcards.hss.SimManagerToHssDispatcherAdapter
+import org.ostelco.simcards.hss.SimpleHssDispatcher
+import org.ostelco.simcards.inventory.SimInventoryApi
+import org.ostelco.simcards.inventory.SimInventoryCallbackService
+import org.ostelco.simcards.inventory.SimInventoryDAO
+import org.ostelco.simcards.inventory.SimInventoryDB
+import org.ostelco.simcards.inventory.SimInventoryDBWrapperImpl
+import org.ostelco.simcards.inventory.SimInventoryResource
 
 /**
  * The SIM manager
@@ -58,10 +70,13 @@ class SimAdministrationModule : PrimeModule {
         OpenapiResourceAdder.addOpenapiResourceToJerseyEnv(jerseyEnv, config.openApi)
         ES2PlusIncomingHeadersFilter.addEs2PlusDefaultFiltersAndInterceptors(jerseyEnv)
 
-        simInventoryResource = SimInventoryResource(SimInventoryApi(httpClient, config, DAO))
+        /* Create the SIM manager API. */
+        simInventoryApi = SimInventoryApi(httpClient, config, DAO)
+
+        /* Add REST frontend. */
+        simInventoryResource = SimInventoryResource(simInventoryApi)
         jerseyEnv.register(simInventoryResource)
         jerseyEnv.register(SmDpPlusCallbackResource(profileVendorCallbackHandler))
-
 
         val dispatcher = makeHssDispatcher(
                 hssAdapterConfig = config.hssAdapter,
@@ -131,4 +146,5 @@ object ResourceRegistry {
 
 object ApiRegistry {
     lateinit var simInventoryApi: SimInventoryApi
+    var simProfileStatusUpdateCallback: ((iccId: String, status: SimProfileStatus) -> Unit)? = null
 }

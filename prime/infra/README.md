@@ -1,5 +1,11 @@
 # Prime Deployment
 
+## TL;DR
+
+For direct developer deployment for testing, use the [helm-deploy-dev-direct.sh](../script/helm-deploy-dev-direct.sh) shell script. 
+
+----- 
+
 ## Dev deployment
 
 Prime is automatically deployed into the dev cluster through the circleci pipeline. 
@@ -126,7 +132,7 @@ $ docker push eu.gcr.io/pi-ostelco-dev/prime:feature-xyz
 
 4. Make your own copy of the helm values file.
 
-Copy the [sample developer helm values file](developer-tests-prime-values.yaml) and edit the service DNS hosts in the `services` section with unique custom prefixes (e.g. feature-xyz-api.test.oya.world).
+Copy the [prime-direct helm values file](prime-direct-values.yaml) and edit the DNS prefix in the `dnsPrefix` section with unique custom prefix (e.g. `feature-xyz-`). Make sure you have a dash at the end of your prefix.
 
 5. run the following helm commands:
 
@@ -141,7 +147,7 @@ $ helm repo update
 # if your kube context is not configured to point to the dev cluster, then configure it 
 $ kubectl config use-context gke_pi-ostelco-dev_europe-west1-c_pi-dev
 $ RELEASE_NAME=<some-unique-name>
-$ helm upgrade ${RELEASE_NAME} ostelco/prime --version 0.4.3 --install -f <path-to-your-custom-values-file> --set prime.tag=feature-xyz
+$ helm upgrade ${RELEASE_NAME} ostelco/prime --version 0.6.1 --install -f <path-to-your-custom-values-file> --set prime.tag=feature-xyz
 ```
 you can then watch for your pods being created with this command:
 
@@ -156,210 +162,14 @@ To delete your custom deployment:
 ```bash
 $ helm delete --purge ${RELEASE_NAME}
 ```
--------------- 
-# Legacy setup below
-# Deploying Prime to Kubernetes
 
-### TL;DR
-
-* **Option 1:** Run this from project root folder (ostelco-core) on `master` branch
-
-
-    prime/script/deploy.sh  
-
-* **Option 2:** Push a tag `prime-X.Y.Z` on `master` branch.
-
-
-===
-
-
-### Setup
-
-Set variables by doing this in `prime` directory:
-
-    #GCP_PROJECT_ID=$(gcloud config get-value project -q)
-
-```bash
-export GCP_PROJECT_ID="$(gcloud config get-value project -q)"
-echo "GCP_PROJECT_ID=GCP_PROJECT_ID"
-export PRIME_VERSION="$(gradle properties -q | grep "version:" | awk '{print $2}' | tr -d '[:space:]')"
-echo "PRIME_VERSION=$PRIME_VERSION"
-```    
-
-Reference:
- * https://cloud.google.com/endpoints/docs/grpc/get-started-grpc-kubernetes-engine
-
-## Deploying to GKE using GCP Container/Cloud Builder
-
-### Using CLI
-In the project (ostelco-core) root folder: 
-
-```bash
-gcloud container builds submit \
-  --config prime/prod/cloudbuild.yaml \
-  --substitutions TAG_NAME=${PRIME_VERSION},BRANCH_NAME=$(git branch | grep \* | cut -d ' ' -f2) .
-```
-
-#### Limitations
- * Remove .git from `.gcloudignore` and detect branch name and check for uncommitted changes. 
-
-### Using build trigger
- 
- * A build trigger is configured in GCP Container/Cloud Builder to build and deploy prime to GKE cluster
-   just by adding a git tag on `master` branch.
- * The tag name should be `prime-*`
-
-#### Limitations
- * When using build trigger, the version tag on docker images is `prime-X.Y.Z` instead of `X.Y.Z`.
-
-### Future Improvements
- * Create a custom build docker image. (suggestion by Vihang).
- * Run AT as quality gate. (suggestion by Remseth).
- * Use it for CI. Currently it is only CD. (suggestion by Remseth).
- * Use `git-sha` along/instead with version (suggestion by Håvard).
-
-### References
- * Config: https://cloud.google.com/container-builder/docs/build-config
- * Running locally: https://cloud.google.com/container-builder/docs/build-debug-locally
- * Cloud builders: https://cloud.google.com/container-builder/docs/cloud-builders
- * Customization: https://cloud.google.com/container-builder/docs/create-custom-build-steps
- * Optimization: https://cloud.google.com/container-builder/docs/speeding-up-builds
- * Custom Github web-hooks: https://cloud.google.com/container-builder/docs/configure-third-party-notifications
- * Storing secrets for AT: https://cloud.google.com/container-builder/docs/securing-builds/use-encrypted-secrets-credentials
-
-## Secrets
-
-```bash
-kubectl create secret generic prime-service-account.json --from-file prime/config/prime-service-account.json
-kubectl create secret generic imeiDb.csv.zip --from-file imeiDb.csv.zip
-```
-
-Reference:
- * https://cloud.google.com/kubernetes-engine/docs/concepts/secret
- * https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-files-from-a-pod
- * https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables
-
-## Endpoint
-
-Generate self-contained protobuf descriptor file - `ocs_descriptor.pb` & `metrics_descriptor.pb`
-
-```bash
-pyenv versions
-pyenv local 3.5.2
-pip install grpcio grpcio-tools
-
-python -m grpc_tools.protoc \
-  --include_imports \
-  --include_source_info \
-  --proto_path=ocs-grpc-api/src/main/proto \
-  --descriptor_set_out=ocs_descriptor.pb \
-  ocs.proto
-
-python -m grpc_tools.protoc \
-  --include_imports \
-  --include_source_info \
-  --proto_path=analytics-grpc-api/src/main/proto \
-  --descriptor_set_out=metrics_descriptor.pb \
-  prime_metrics.proto
-```
-
-Deploy endpoints
-
-```bash
-gcloud endpoints services deploy ocs_descriptor.pb prime/infra/prod/ocs-api.yaml
-gcloud endpoints services deploy metrics_descriptor.pb prime/infra/prod/metrics-api.yaml
-```
-
-## Deployment & Service
-
-Increment the docker image tag (version) for next two steps.
- 
-Build the Docker image (In the folder with Dockerfile)
-
-```bash
-docker build -t eu.gcr.io/${GCP_PROJECT_ID}/prime:${PRIME_VERSION} prime
-```
-
-Push to the registry
-
-```bash
-docker push eu.gcr.io/${GCP_PROJECT_ID}/prime:${PRIME_VERSION}
-```
-
-Update the tag (version) of prime's docker image in `infra/prod/prime.yaml`.
-
-Apply the deployment & service
-
-```bash
-sed -e 's/PRIME_VERSION/${PRIME_VERSION}/g; s/_GCP_PROJECT_ID/'"${GCP_PROJECT_ID}"'/g' prime/infra/prod/prime.yaml | kubectl apply -f -
-```
-
-Details of the deployment
-
-```bash
-kubectl describe deployment prime
-kubectl get pods
-```
-
-Details of service
-
-```bash
-kubectl describe service prime-service
-```
-
-## API Endpoint
-
-```bash
-gcloud endpoints services deploy prime/infra/prod/prime-customer-api.yaml
-```
-
-## SSL secrets for api.ostelco.org, ocs.ostelco.org & metrics.ostelco.org
-The endpoints runtime expects the SSL configuration to be named
-as `nginx.crt` and `nginx.key`. Sample command to create the secret:
-```bash
-kubectl create secret generic api-ostelco-ssl \
-  --from-file=./nginx.crt \
-  --from-file=./nginx.key
-```
-The secret for ...
- * `api.ostelco.org` is in `api-ostelco-ssl`
- * `ocs.ostelco.org` is in `ocs-ostelco-ssl`
- * `metrics.ostelco.org` is in `metrics-ostelco-ssl`
-
-# For Dev cluster
-
-## One time setup
-
-### Cluster
- * Create cluster
-
-```bash
-gcloud container clusters create dev-cluster \
-  --scopes=default,bigquery,datastore,pubsub,sql,storage-rw \
-  --zone=europe-west1-b \
-  --num-nodes=1
-```
- * Create node-pool
-```bash
-gcloud container node-pools create dev-node-pool \
-  --cluster=dev-cluster \
-  --machine-type=n1-standard-2 \
-  --scopes=default,bigquery,datastore,pubsub,sql,storage-rw \
-  --num-nodes=3 \
-  --zone=europe-west1-b \
-  --enable-autorepair
-```
- * Delete default pool
-```bash
-gcloud container node-pools delete default-pool \
-  --cluster=dev-cluster \
-  --zone=europe-west1-b
-```
 ### Secrets
 
- * Place `*.dev.ostelco.org` cert at `certs/dev.ostelco.org`
+ * Place certs at `certs/${API_URI}/`
 
  * Create k8s secrets
+
+ * Use `-n namespace` in `kubectl create secret` if namespace is not _default_ namespace.
 
 ```bash
 kubectl create secret generic prime-service-account.json --from-file prime/config/prime-service-account.json
@@ -377,24 +187,34 @@ kubectl create secret generic slack-secrets --from-literal=slackWebHookUri='http
 
 ```bash
 kubectl create secret generic ocs-ostelco-ssl \
-  --from-file=certs/dev.ostelco.org/nginx.crt \
-  --from-file=certs/dev.ostelco.org/nginx.key
+  --from-file=certs/${API_URI}/nginx.crt \
+  --from-file=certs/${API_URI}/nginx.key
 ```
 
 ```bash
 kubectl create secret generic api-ostelco-ssl \
-  --from-file=certs/dev.ostelco.org/nginx.crt \
-  --from-file=certs/dev.ostelco.org/nginx.key
+  --from-file=certs/${API_URI}/nginx.crt \
+  --from-file=certs/${API_URI}/nginx.key
 ```
 
 ```bash
 kubectl create secret generic metrics-ostelco-ssl \
-  --from-file=certs/dev.ostelco.org/nginx.crt \
-  --from-file=certs/dev.ostelco.org/nginx.key
+  --from-file=certs/${API_URI}/nginx.crt \
+  --from-file=certs/${API_URI}/nginx.key
 ```
 
 ```bash
-kubectl create secret generic jumio-secrets --from-literal=apiToken='jumioApiToken' --from-literal=apiSecret='jumioApiSecret'
+kubectl create secret generic jumio-secrets \
+  --from-literal=apiToken='jumioApiToken' \
+  --from-literal=apiSecret='jumioApiSecret'
+```
+
+```bash
+kubectl create secret generic myinfo-secrets \
+  --from-literal=apiClientId='myInfoApiClientId' \
+  --from-literal=apiClientSecret='myInfoApiClientSecret' \
+  --from-literal=serverPublicKey='myInfoServerPublicKey' \
+  --from-literal=clientPrivateKey='myInfoClientPrivateKey'
 ```
 
 ```bash
@@ -422,33 +242,31 @@ bazel-bin/tools/tinkey/tinkey create-public-keyset --in test_keyset_pvt_cltxt --
 The keysets for production (public key only) needs to be encrypted using GCP KMS. More details can be found in docs for `--master-key-uri` option in `tinkey`
 
 - Create Key ring and master key to be used for encrypting the public keys
-    ```bash
-    gcloud kms keyrings create scan-dev --location global
-    gcloud kms keys create scan-info --location global --keyring scan-dev --purpose encryption
-    ```
+```bash
+gcloud kms keyrings create scan-dev --location global
+gcloud kms keys create scan-info --location global --keyring scan-dev --purpose encryption
+```
 
 - Set the master key URI for decrypting the keysets.
-    ```bash
-    kubectl create secret generic scaninfo-keys --from-literal=masterKeyUri='gcp-kms://projects/${GCP_PROJECT_ID}/locations/global/keyRings/scan-dev/cryptoKeys/scan-info'
-    ```
+```bash
+kubectl create secret generic scaninfo-keys --from-literal=masterKeyUri='gcp-kms://projects/${GCP_PROJECT_ID}/locations/global/keyRings/scan-dev/cryptoKeys/scan-info'
+```
 - Create keysets for an environment. Use `tinkey` to generate
-    ```bash
-    bazel-bin/tools/tinkey/tinkey create-keyset --key-template ECIES_P256_HKDF_HMAC_SHA256_AES128_GCM --out clear_encrypt_key_global_pvt
-    bazel-bin/tools/tinkey/tinkey create-public-keyset --in clear_encrypt_key_global_pvt --out clear_encrypt_key_global_pub
-    bazel-bin/tools/tinkey/tinkey convert-keyset --out encrypt_key_global --in clear_encrypt_key_global_pub \
-    --new-master-key-uri gcp-kms://projects/${GCP_PROJECT_ID}/locations/global/keyRings/scan-dev/cryptoKeys/scan-info
-    
-    bazel-bin/tools/tinkey/tinkey create-keyset --key-template ECIES_P256_HKDF_HMAC_SHA256_AES128_GCM --out clear_encrypt_key_sgp_pvt
-    bazel-bin/tools/tinkey/tinkey create-public-keyset --in clear_encrypt_key_sgp_pvt --out clear_encrypt_key_sgp_pub
-    bazel-bin/tools/tinkey/tinkey convert-keyset --out encrypt_key_sgp --in clear_encrypt_key_sgp_pub \
-    --new-master-key-uri gcp-kms://projects/${GCP_PROJECT_ID}/locations/global/keyRings/scan-dev/cryptoKeys/scan-info
-    ```
+```bash
+bazel-bin/tools/tinkey/tinkey create-keyset --key-template ECIES_P256_HKDF_HMAC_SHA256_AES128_GCM --out clear_encrypt_key_global_pvt
+bazel-bin/tools/tinkey/tinkey create-public-keyset --in clear_encrypt_key_global_pvt --out clear_encrypt_key_global_pub
+bazel-bin/tools/tinkey/tinkey convert-keyset --out encrypt_key_global --in clear_encrypt_key_global_pub \
+--new-master-key-uri gcp-kms://projects/${GCP_PROJECT_ID}/locations/global/keyRings/scan-dev/cryptoKeys/scan-info
+
+bazel-bin/tools/tinkey/tinkey create-keyset --key-template ECIES_P256_HKDF_HMAC_SHA256_AES128_GCM --out clear_encrypt_key_sg_pvt
+bazel-bin/tools/tinkey/tinkey create-public-keyset --in clear_encrypt_key_sg_pvt --out clear_encrypt_key_sg_pub
+bazel-bin/tools/tinkey/tinkey convert-keyset --out encrypt_key_sg --in clear_encrypt_key_sg_pub \
+--new-master-key-uri gcp-kms://projects/${GCP_PROJECT_ID}/locations/global/keyRings/scan-dev/cryptoKeys/scan-info
+```
 - Set the encryption keysets (public keys only) as kubernetes secrets.
-    ```bash
-    kubectl create secret generic scaninfo-keysets \
-      --from-file=./encrypt_key_global \
-      --from-file=./encrypt_key_sgp
-    ```
+```bash
+kubectl create secret generic scaninfo-keysets --from-file=./encrypt_key_global --from-file=./encrypt_key_sg --namespace dev
+```
 Prime will use CloudKMS (through tink library) to decrypt the keysets. It requires an IAM role to enable these APIs.
 ```bash
 gcloud projects add-iam-policy-binding ${GCP_PROJECT_ID} --member serviceAccount:prime-service-account@${GCP_PROJECT_ID}.iam.gserviceaccount.com  --role roles/cloudkms.cryptoKeyEncrypterDecrypter
@@ -457,117 +275,24 @@ gcloud projects add-iam-policy-binding ${GCP_PROJECT_ID} --member serviceAccount
 ### Cloud Pub/Sub
 
 ```bash
+gcloud pubsub topics create active-users
+gcloud pubsub topics create data-traffic
 gcloud pubsub topics create purchase-info
-```
 
-### Endpoints
+gcloud pubsub topics create stripe-event
 
- * OCS gRPC endpoint
+gcloud pubsub topics create ocs-ccr
+gcloud pubsub topics create ocs-cca
+gcloud pubsub topics create ocs-activate
 
-Generate self-contained protobuf descriptor file - ocs_descriptor.pb
 
-```bash
-pip install grpcio grpcio-tools
+gcloud pubsub subscriptions create stripe-event-store-sub --topic=stripe-event --topic-project=${GCP_PROJECT_ID}
+gcloud pubsub subscriptions create stripe-event-report-sub --topic=stripe-event --topic-project=${GCP_PROJECT_ID}
+gcloud pubsub subscriptions create stripe-event-recurring-payment-sub --topic=stripe-event --topic-project=${GCP_PROJECT_ID}
 
-python -m grpc_tools.protoc \
-  --include_imports \
-  --include_source_info \
-  --proto_path=ocs-grpc-api/src/main/proto \
-  --descriptor_set_out=ocs_descriptor.pb \
-  ocs.proto
-
-python -m grpc_tools.protoc \
-  --include_imports \
-  --include_source_info \
-  --proto_path=analytics-grpc-api/src/main/proto \
-  --descriptor_set_out=metrics_descriptor.pb \
-  prime_metrics.proto
-```
-
-Deploy endpoints
-
-```bash
-gcloud endpoints services deploy ocs_descriptor.pb prime/infra/dev/ocs-api.yaml
-gcloud endpoints services deploy metrics_descriptor.pb prime/infra/dev/metrics-api.yaml
-```
-
- * Client API HTTP endpoint
-
-```bash
-gcloud endpoints services deploy prime/infra/dev/prime-customer-api.yaml
-```
-
-## Deploy to Dev cluster
-
-### Deploy monitoring
-
-```bash
-kubectl apply -f prime/infra/dev/monitoring.yaml
-
-# If the above command fails on creating clusterroles / clusterbindings you need to add a role to the user you are using to deploy
-# You can read more about it here https://github.com/coreos/prometheus-operator/issues/357
-kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user $(gcloud config get-value account)
-
-#
-kubectl apply -f prime/infra/dev/monitoring-pushgateway.yaml 
-```
-
-#### Prometheus dashboard
-```bash
-kubectl port-forward --namespace=monitoring $(kubectl get pods --namespace=monitoring | grep prometheus-core | awk '{print $1}') 9090
-```
-
-#### Grafana dashboard
-__`Has own its own load balancer and can be accessed directly. Discuss if this is OK or find and implement a different way of accessing the grafana dashboard.`__
-
-Can be accessed directly from external ip
-```bash
-kubectl get services --namespace=monitoring | grep grafana | awk '{print $4}'
-```
-
-#### Push gateway
-```bash
-# Push a metric to pushgateway:8080 (specified in the service declaration for pushgateway)
-kubectl run curl-it --image=radial/busyboxplus:curl -i --tty --rm
-echo "some_metric 4.71" | curl -v  --data-binary @- http://pushgateway:8080/metrics/job/some_job
-```
-
-### Setup Neo4j
-
-```bash
-kubectl apply -f prime/infra/dev/neo4j.yaml
-```
-
-Then, import initial data into neo4j using `tools/neo4j-admin-tools`.
-
-### Deploy prime
-
-```bash
-prime/script/deploy-dev-direct.sh
-```
-
-OR
-
-```bash
-export GCP_PROJECT_ID="$(gcloud config get-value project -q)"
-export SHORT_SHA="$(git log -1 --pretty=format:%h)"
-
-echo GCP_PROJECT_ID=${GCP_PROJECT_ID}
-echo SHORT_SHA=${SHORT_SHA}
-
-docker build -t eu.gcr.io/${GCP_PROJECT_ID}/prime:${SHORT_SHA} .
-docker push eu.gcr.io/${GCP_PROJECT_ID}/prime:${SHORT_SHA}
-sed -e s/PRIME_VERSION/${SHORT_SHA}/g prime/infra/dev/prime.yaml | kubectl apply -f -
-```
-
-## Logs
-
-Goto `https://console.cloud.google.com/logs/viewer` and advanced search for 
-
-```text
-resource.type="container"
-resource.labels.cluster_name="dev-cluster"
-logName="projects/${GCP_PROJECT_ID}/logs/prime"
+gcloud pubsub subscriptions create ocs-ccr-sub --topic=ocs-ccr --topic-project=${GCP_PROJECT_ID}
+gcloud pubsub subscriptions create ocsgw-cca-sub --topic=ocs-cca --topic-project=${GCP_PROJECT_ID}
+gcloud pubsub subscriptions create ocsgw-activate-sub --topic=ocs-activate --topic-project=${GCP_PROJECT_ID}
 ```
 
 ## Connect using Neo4j Browser

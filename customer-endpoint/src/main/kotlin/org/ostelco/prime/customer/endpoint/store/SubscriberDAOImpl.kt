@@ -174,7 +174,7 @@ class SubscriberDAOImpl : SubscriberDAO {
         }
     }
 
-    override fun provisionSimProfile(identity: Identity, regionCode: String, profileType: String): Either<ApiError, SimProfile> {
+    override fun provisionSimProfile(identity: Identity, regionCode: String, profileType: String?): Either<ApiError, SimProfile> {
         return try {
             storage.provisionSimProfile(identity, regionCode, profileType).mapLeft {
                 NotFoundError("Failed to provision SIM profile.", ApiErrorCode.FAILED_TO_PROVISION_SIM_PROFILE, it)
@@ -249,13 +249,13 @@ class SubscriberDAOImpl : SubscriberDAO {
     //
 
     override fun createSource(identity: Identity, sourceId: String): Either<ApiError, SourceInfo> {
-        return storage.getCustomerId(identity)
-                .mapLeft { error -> mapStorageErrorToApiError(error.message, ApiErrorCode.FAILED_TO_FETCH_CUSTOMER_ID, error) }
-                .flatMap { customerId ->
-                    paymentProcessor.getPaymentProfile(customerId = customerId)
+        return storage.getCustomer(identity)
+                .mapLeft { error -> mapStorageErrorToApiError(error.message, ApiErrorCode.FAILED_TO_FETCH_CUSTOMER, error) }
+                .flatMap { customer ->
+                    paymentProcessor.getPaymentProfile(customerId = customer.id)
                             .fold(
                                     {
-                                        paymentProcessor.createPaymentProfile(customerId = customerId)
+                                        paymentProcessor.createPaymentProfile(customerId = customer.id, email = customer.contactEmail)
                                                 .mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_STORE_PAYMENT_SOURCE, error) }
                                     },
                                     { profileInfo -> Either.right(profileInfo) }
@@ -267,13 +267,13 @@ class SubscriberDAOImpl : SubscriberDAO {
     }
 
     override fun setDefaultSource(identity: Identity, sourceId: String): Either<ApiError, SourceInfo> {
-        return storage.getCustomerId(identity)
+        return storage.getCustomer(identity)
                 .mapLeft { error -> mapStorageErrorToApiError(error.message, ApiErrorCode.FAILED_TO_FETCH_CUSTOMER_ID, error) }
-                .flatMap { customerId ->
-                    paymentProcessor.getPaymentProfile(customerId = customerId)
+                .flatMap { customer ->
+                    paymentProcessor.getPaymentProfile(customerId = customer.id)
                             .fold(
                                     {
-                                        paymentProcessor.createPaymentProfile(customerId = customerId)
+                                        paymentProcessor.createPaymentProfile(customerId = customer.id, email = customer.contactEmail)
                                                 .mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_SET_DEFAULT_PAYMENT_SOURCE, error) }
                                     },
                                     { profileInfo -> Either.right(profileInfo) }
@@ -286,13 +286,13 @@ class SubscriberDAOImpl : SubscriberDAO {
     }
 
     override fun listSources(identity: Identity): Either<ApiError, List<SourceDetailsInfo>> {
-        return storage.getCustomerId(identity)
+        return storage.getCustomer(identity)
                 .mapLeft { error -> mapStorageErrorToApiError(error.message, ApiErrorCode.FAILED_TO_FETCH_CUSTOMER_ID, error) }
-                .flatMap { customerId ->
-                    paymentProcessor.getPaymentProfile(customerId = customerId)
+                .flatMap { customer ->
+                    paymentProcessor.getPaymentProfile(customerId = customer.id)
                             .fold(
                                     {
-                                        paymentProcessor.createPaymentProfile(customerId = customerId)
+                                        paymentProcessor.createPaymentProfile(customerId = customer.id, email = customer.contactEmail)
                                                 .mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_FETCH_PAYMENT_SOURCES_LIST, error) }
                                     },
                                     { profileInfo -> Either.right(profileInfo) }
@@ -318,10 +318,10 @@ class SubscriberDAOImpl : SubscriberDAO {
     }
 
     override fun getStripeEphemeralKey(identity: Identity, apiVersion: String): Either<ApiError, String> {
-        return storage.getCustomerId(identity)
+        return storage.getCustomer(identity)
                 .mapLeft { error -> mapStorageErrorToApiError(error.message, ApiErrorCode.FAILED_TO_FETCH_CUSTOMER_ID, error) }
-                .flatMap { customerId ->
-                    paymentProcessor.getStripeEphemeralKey(customerId = customerId, apiVersion = apiVersion)
+                .flatMap { customer ->
+                    paymentProcessor.getStripeEphemeralKey(customerId = customer.id, email = customer.contactEmail, apiVersion = apiVersion)
                             .mapLeft { error -> mapPaymentErrorToApiError(error.description, ApiErrorCode.FAILED_TO_GENERATE_STRIPE_EPHEMERAL_KEY, error) }
                 }
     }

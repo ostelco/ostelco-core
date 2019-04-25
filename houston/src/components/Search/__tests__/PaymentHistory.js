@@ -28,16 +28,16 @@ it('renders history row with refund props', () => {
   };
 
   const row = shallow((
-    <HistoryRow; {...props} />;
-))
-    // console.log(row.debug()); // For showing the children
+    <HistoryRow {...props} />
+  ));
+  // console.log(row.debug()); // For showing the children
   const date1 = convertTimestampToDate(props.item.timestamp);
   const date2 = convertTimestampToDate(props.item.refund.timestamp);
   expect(row.contains(<td>FreePrice</td>)).toEqual(true);
   expect(row.contains(<td>FreeLabel</td>)).toEqual(true);
   expect(row.contains(<td>{date1}</td>)).toEqual(true);
   expect(row.contains(<td>{date2}</td>)).toEqual(true);
-  expect(row.contains(<RefundedItemOption; id="rid1"; timestamp={1542802197874}; />)).toEqual(true);
+  expect(row.contains(<RefundedItemOption id="rid1" timestamp={1542802197874} />)).toEqual(true);
 });
 
 it('renders history row with free props', () => {
@@ -59,9 +59,9 @@ it('renders history row with free props', () => {
   };
 
   const row = shallow((
-    <HistoryRow; {...props} />;
-))
-    expect(row.contains(<FreeItemOption />);).toEqual(true);
+    <HistoryRow {...props} />
+  ));
+  expect(row.contains(<FreeItemOption />)).toEqual(true);
 });
 
 it('renders history row with props', () => {
@@ -83,7 +83,7 @@ it('renders history row with props', () => {
   };
 
   const row = shallow((
-    <HistoryRow; {...props} />;
-))
-    expect(row.find(Button)).toHaveLength(1);
+    <HistoryRow {...props} />
+  ));
+  expect(row.find(Button)).toHaveLength(1);
 });

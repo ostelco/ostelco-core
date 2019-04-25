@@ -21,5 +21,5 @@ spec:
             - /bin/sh
             - -c
             - date; echo Triggering sim preallocation
-            - curl -X POST http://prime-dwadmin-service:8081/tasks/preallocate_sim_profiles
+            - curl -sS -X POST http://prime-dwadmin-service:8081/tasks/preallocate_sim_profiles
           restartPolicy: OnFailure

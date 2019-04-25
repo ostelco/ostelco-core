@@ -2,20 +2,117 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-replicaCount: 1
-firebaseServiceAccount: ""
+replicaCount: 3
+
+dnsPrefix: ""
+dnsSuffix: ".oya.world"
+
+podAutoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
 
 prime:
   image: eu.gcr.io/pi-ostelco-dev/prime
   tag: ${PRIME_TAG}
   pullPolicy: Always
-  env: 
-    FIREBASE_ROOT_PATH: dev_new
+  configDataBucket: "gs://pi-ostelco-prod-prime-files/"
+
+  env:
+    FIREBASE_ROOT_PATH: v2
     NEO4J_HOST: neo4j-neo4j.neo4j.svc.cluster.local
-    STRIPE_API_KEY: ""
-    DATA_TRAFFIC_TOPIC: "data-traffic"
-    PURCHASE_INFO_TOPIC: "purchase-info"
-    ACTIVE_USERS_TOPIC: "active-users"
+    SLACK_CHANNEL: prime-alerts
+    DATASTORE_NAMESPACE: ""
+    DATA_TRAFFIC_TOPIC: data-traffic
+    PURCHASE_INFO_TOPIC: purchase-info
+    ACTIVE_USERS_TOPIC: active-users
+    STRIPE_EVENT_TOPIC: stripe-event
+    STRIPE_EVENT_STORE_SUBSCRIPTION: stripe-event-store-sub
+    STRIPE_EVENT_REPORT_SUBSCRIPTION: stripe-event-report-sub
+    GCP_PROJECT_ID: pi-ostelco-prod
+    ACTIVATE_TOPIC_ID: ocs-activate
+    CCR_SUBSCRIPTION_ID: ocs-ccr-sub
+    GOOGLE_APPLICATION_CREDENTIALS: /secret/prime-service-account.json
+    MY_INFO_API_URI: https://myinfosg.api.gov.sg/v2
+    MY_INFO_API_REALM: prod
+    MY_INFO_REDIRECT_URI: https://dl.oya.world/links/myinfo
+
+  secretVolumes:
+    - secretName: "prime-sa-key"
+      containerMountPath: "/secret"
+    - secretName: "simmgr-test-secrets"
+      containerMountPath: "/certs"
+      secretKey: idemiaClientCert
+      secretPath: idemia-client-cert.jks
+    - secretName: "scaninfo-keysets"
+      containerMountPath: "/scaninfo-keysets"
+
+  envFromSecret:
+    - name: SLACK_WEBHOOK_URI
+      secretName: slack-secrets
+      secretKey: slackWebHookUri
+    - name: STRIPE_API_KEY
+      secretName: stripe-secrets
+      secretKey: stripeApiKey
+    - name: STRIPE_ENDPOINT_SECRET
+      secretName: stripe-secrets
+      secretKey: stripeEndpointSecret
+    - name: SCANINFO_STORAGE_BUCKET
+      secretName: scaninfo-secrets
+      secretKey:  bucketName
+    - name: SCANINFO_MASTERKEY_URI
+      secretName: scaninfo-keys
+      secretKey: masterKeyUri
+    - name: JUMIO_API_TOKEN
+      secretName: jumio-secrets
+      secretKey: apiToken
+    - name: JUMIO_API_SECRET
+      secretName: jumio-secrets
+      secretKey: apiSecret
+    - name: MY_INFO_API_CLIENT_ID
+      secretName: myinfo-secrets
+      secretKey: apiClientId
+    - name: MY_INFO_API_CLIENT_SECRET
+      secretName: myinfo-secrets
+      secretKey: apiClientSecret
+    - name: MY_INFO_SERVER_PUBLIC_KEY
+      secretName: myinfo-secrets
+      secretKey: serverPublicKey
+    - name: MY_INFO_CLIENT_PRIVATE_KEY
+      secretName: myinfo-secrets
+      secretKey: clientPrivateKey
+    - name: DB_USER
+      secretName: simmgr-test-secrets
+      secretKey: dbUser
+    - name: DB_PASSWORD
+      secretName: simmgr-test-secrets
+      secretKey: dbPassword
+    - name: DB_URL
+      secretName: simmgr-test-secrets
+      secretKey: dbUrl
+    - name: WG2_USER
+      secretName: simmgr-test-secrets
+      secretKey: wg2User
+    - name: WG2_API_KEY
+      secretName: simmgr-test-secrets
+      secretKey: wg2ApiKey
+    - name: WG2_ENDPOINT
+      secretName: simmgr-test-secrets
+      secretKey: wg2Endpoint
+    - name: ES2PLUS_ENDPOINT
+      secretName: simmgr-test-secrets
+      secretKey: es2plusEndpoint
+    - name: ES9PLUS_ENDPOINT
+      secretName: simmgr-test-secrets
+      secretKey: es9plusEndpoint
+    - name: FUNCTION_REQUESTER_IDENTIFIER
+      secretName: simmgr-test-secrets
+      secretKey: functionRequesterIdentifier
+    - name: MANDRILL_API_KEY
+      secretName: mandrill-secrets
+      secretKey: mandrillApiKey
+
   ports:
     - 8080
     - 8081
@@ -39,6 +136,19 @@ prime:
     prometheus.io/path: '/prometheus-metrics'
     prometheus.io/port: '8081'  
 
+
+canary: {}
+  # weight: 25
+  # headers: # only route requests with these headers to the canary service
+  #   x-mode: canary
+  # tag: e449ed672
+
+cloudsqlProxy:
+  enabled: true
+  instanceConnectionName: "pi-ostelco-dev:europe-west1:sim-manager"
+  secretName: "prime-sa-key"
+  secretKey: "prime-service-account.json"
+
 esp:
   image: gcr.io/endpoints-release/endpoints-runtime
   tag: 1
@@ -47,51 +157,107 @@ esp:
 ocsEsp: 
   enabled: true
   env: {}
-  endpointAddress: prod-ocs.new.dev.ostelco.org
+  endpointAddress: ocs.oya.world
   ports:
-    - 9000
-    - 8443
-  
+    http2_port: 9000
+    ssl_port: 8443
+  secretVolumes:
+    - secretName: prod-oya-tls
+      containerMountPath: /etc/nginx/ssl
+      type: ssl
 
 apiEsp: 
   enabled: true
   env: {}
-  endpointAddress: prod-api.new.dev.ostelco.org
+  endpointAddress: api.oya.world
   ports:
-    - 9002
-    - 443  
+    http2_port: 9002
 
 metricsEsp:
   enabled: true
   env: {}
-  endpointAddress: prod-metrics.new.dev.ostelco.org
+  endpointAddress: metrics.oya.world
   ports:
-    - 9004
-    - 9443
-   
+    http2_port: 9004
+    ssl_port: 9443
+  secretVolumes:
+    - secretName: prod-oya-tls
+      containerMountPath: /etc/nginx/ssl
+      type: ssl
+
+alvinApiEsp:
+  enabled: true
+  env: {}
+  endpointAddress: alvin-api.oya.world
+  ports:
+    http_port: 9008
+
+houstonApiEsp:
+  enabled: true
+  env: {}
+  endpointAddress: houston-api.oya.world
+  ports:
+    http_port: 9006
 
 services:
-  prime:
-    name: prime-service
+  ocs:
+    name: ocs
     type: LoadBalancer
     port: 443
     targetPort: 8443
-    portName: grpc 
-   # loadBalancerIP: x.y.z.n
+    portName: grpc
+    # host: ocs # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
+    # grpcOrHttp2: true
   api:
-    name: prime-api
+    name: api
+    type: ClusterIP
+    port: 80
+    targetPort: 9002
+    portName: http
+    host: api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
+    grpcOrHttp2: true
+    ambassadorMappingOptions:
+      timeout_ms: 600000
+  metrics:
+    name: metrics
     type: LoadBalancer
     port: 443
-    targetPort: 443
-    portName: https
-    # loadBalancerIP: x.y.z.n
-  metrics: 
-    name: prime-metrics
-    type: LoadBalancer
-    port: 443
-    targetPort: 9443  
+    targetPort: 9443
     portName: grpc
     # loadBalancerIP: x.y.z.n
+    # host: metrics # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
+    # grpcOrHttp2: true
+  prime-houston-api:
+    name: houston-api
+    type: ClusterIP
+    port: 80
+    targetPort: 9006
+    portName: http
+    host: houston-api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
+  prime-alvin-api:
+    name: alvin-api
+    type: ClusterIP
+    port: 80
+    targetPort: 9008
+    portName: http
+    host: alvin-api # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
+    ambassadorMappingOptions:
+      timeout_ms: 600000
+  dwadmin-service:
+    name: dwadmin-service
+    type: ClusterIP
+    port: 8081
+    targetPort: 8081
+    portName: http
+  smdpplus:
+    name: smdpplus
+    type: ClusterIP
+    port: 80
+    targetPort: 8080
+    portName: http
+    host: smdpplus
+    clientCert: true
+    caCert: smdp-cacert.dev # secretname.namespace
 
 ingress:
   enabled: false
@@ -109,12 +275,12 @@ certs:
   enabled: true
   dnsProvider: dev-clouddns
   issuer: letsencrypt-production # or letsencrypt-staging
-  apiDns: 
-    - prod-api.new.dev.ostelco.org
-  ocsDns: 
-    - prod-ocs.new.dev.ostelco.org
-  metricsDns: 
-    - prod-metrics.new.dev.ostelco.org
+  apiDns:
+    - api.oya.world
+  ocsDns:
+    - ocs.oya.world
+  metricsDns:
+    - metrics.oya.world
 
 disruptionBudget: 
   enabled: false

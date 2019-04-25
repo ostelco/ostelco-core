@@ -9,7 +9,6 @@ import org.ostelco.prime.getLogger
 import org.ostelco.prime.module.PrimeModule
 import org.ostelco.prime.paymentprocessor.publishers.StripeEventPublisher
 import org.ostelco.prime.paymentprocessor.resources.StripeWebhookResource
-import org.ostelco.prime.paymentprocessor.subscribers.RecurringPaymentStripeEvent
 import org.ostelco.prime.paymentprocessor.subscribers.ReportStripeEvent
 import org.ostelco.prime.paymentprocessor.subscribers.StoreStripeEvent
 
@@ -40,7 +39,6 @@ class PaymentProcessorModule : PrimeModule {
         env.lifecycle().manage(StripeEventPublisher)
         env.lifecycle().manage(StoreStripeEvent())
         env.lifecycle().manage(ReportStripeEvent())
-        env.lifecycle().manage(RecurringPaymentStripeEvent())
     }
 }
 
@@ -61,9 +59,21 @@ class PaymentProcessorConfig {
     @JsonProperty("stripeEventReportSubscriptionId")
     lateinit var stripeEventReportSubscriptionId: String
 
-    @NotEmpty
-    @JsonProperty("stripeEventRecurringPaymentSubscriptionId")
-    lateinit var stripeEventRecurringPaymentSubscriptionId: String
+    @JsonProperty("stripeEventStoreType")
+    var stripeEventStoreType: String = "default"
+
+    /* Same as 'table name' in other DBs. */
+    @JsonProperty("stripeEventKind")
+    var stripeEventKind: String = "stripe-events"
+
+    /* Can be used to set 'namespace' in Datastore.
+       Not used if set to an emtpy string. */
+    @JsonProperty("namespace")
+    var namespace: String = ""
+
+    /* Only used by Datastore emulator. */
+    @JsonProperty("hostport")
+    var hostport: String = "localhost:9090"
 }
 
 object ConfigRegistry {

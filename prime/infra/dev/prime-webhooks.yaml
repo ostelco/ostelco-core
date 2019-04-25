@@ -23,6 +23,8 @@ paths:
           description: "Failed to process event report."
         500:
           description: "Unexpected error."
+      security:
+        - api_key: []
   "/ekyc/callback":
     post:
       description: "Endpoint for event reports from eKYC."

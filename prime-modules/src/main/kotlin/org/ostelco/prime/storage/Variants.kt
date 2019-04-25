@@ -114,7 +114,7 @@ interface ClientGraphStore {
      * Provision new SIM Profile for Customer
      */
 
-    fun provisionSimProfile(identity: Identity, regionCode: String, profileType: String = "default"): Either<StoreError, SimProfile>
+    fun provisionSimProfile(identity: Identity, regionCode: String, profileType: String?): Either<StoreError, SimProfile>
 
     /**
      * Get balance for Client
@@ -300,6 +300,8 @@ interface AdminGraphStore {
     fun getAllScanInformation(identity: Identity): Either<StoreError, Collection<ScanInformation>>
 
     fun createRegion(region: Region): Either<StoreError, Unit>
+
+    fun syncSimProfileStatus(): Either<StoreError, Unit>
 
     // simple getAll
     // fun getOffers(): Collection<Offer>

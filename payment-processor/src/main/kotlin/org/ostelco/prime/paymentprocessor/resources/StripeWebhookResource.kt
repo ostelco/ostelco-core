@@ -1,8 +1,8 @@
 package org.ostelco.prime.paymentprocessor.resources
 
+import arrow.core.Try
 import com.google.gson.JsonSyntaxException
 import com.stripe.exception.SignatureVerificationException
-import com.stripe.model.*
 import com.stripe.net.Webhook
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.paymentprocessor.publishers.StripeEventPublisher
@@ -32,24 +32,29 @@ class StripeWebhookResource() {
     fun handleEvent(@NotNull @Valid @HeaderParam("Stripe-Signature")
                     signature: String,
                     @NotNull @Valid
-                    payload: String): Response {
-
-        val event: Event = try {
-            Webhook.constructEvent(payload, signature, endpointSecret)
-        } catch (e: JsonSyntaxException) {
-            logger.error("Invalid payload in Stripe event ${e}")
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .build()
-        } catch (e: SignatureVerificationException) {
-            logger.error("Invalid signature for Stripe event ${e}")
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .build()
-        }
-
-        StripeEventPublisher.publish(event)
-
-        /* Report only OK back to Stripe. */
-        return Response.status(Response.Status.OK)
-                .build()
-    }
+                    payload: String): Response =
+            Try {
+                Webhook.constructEvent(payload, signature, endpointSecret)
+            }.fold(
+                    ifSuccess = {
+                        StripeEventPublisher.publish(it)
+                        Response.status(Response.Status.OK)
+                                .build()
+                    },
+                    ifFailure = {
+                        when (it) {
+                            is JsonSyntaxException -> {
+                                logger.error("Invalid payload in Stripe event ${it}")
+                            }
+                            is SignatureVerificationException -> {
+                                logger.error("Invalid signature for Stripe event ${it}")
+                            }
+                            else -> {
+                                logger.error("Unexpected error for Stripe event ${it}")
+                            }
+                        }
+                        Response.status(Response.Status.BAD_REQUEST)
+                                .build()
+                    }
+            )
 }

@@ -59,6 +59,7 @@ import org.ostelco.prime.storage.NotFoundError
 import org.ostelco.prime.storage.NotUpdatedError
 import org.ostelco.prime.storage.ScanInformationStore
 import org.ostelco.prime.storage.StoreError
+import org.ostelco.prime.storage.SystemError
 import org.ostelco.prime.storage.ValidationError
 import org.ostelco.prime.storage.graph.Graph.read
 import org.ostelco.prime.storage.graph.Graph.write
@@ -450,7 +451,25 @@ object Neo4jStoreSingleton : GraphStore {
     // SIM Profile
     //
 
-    private val simManager by lazy { getResource<SimManager>() }
+    private val simManager by lazy {
+        getResource<SimManager>().also { simManager ->
+            simManager.getSimProfileStatusUpdates { iccId, status ->
+                writeTransaction {
+                    simProfileStore.get(id = iccId, transaction = transaction)
+                            .flatMap { simProfile ->
+                                simProfileStore.update(simProfile.copy(status = status), transaction)
+                            }
+                            .mapLeft {
+                                logger.error("Failed to update SimProfileStatus - {} of {}. Reason: {}",
+                                        status,
+                                        iccId,
+                                        it.message)
+                            }
+                            .ifFailedThenRollback(transaction)
+                }
+            }
+        }
+    }
 
     private val emailNotifier by lazy { getResource<EmailNotifier>() }
 
@@ -464,7 +483,7 @@ object Neo4jStoreSingleton : GraphStore {
     override fun provisionSimProfile(
             identity: org.ostelco.prime.model.Identity,
             regionCode: String,
-            profileType: String): Either<StoreError, SimProfile> = writeTransaction {
+            profileType: String?): Either<StoreError, SimProfile> = writeTransaction {
         IO {
             Either.monad<StoreError>().binding {
                 val customerId = getCustomerId(identity = identity, transaction = transaction).bind()
@@ -481,7 +500,7 @@ object Neo4jStoreSingleton : GraphStore {
                         regionCode = regionCode.toLowerCase()).bind()
                 val region = regionStore.get(id = regionCode.toLowerCase(), transaction = transaction).bind()
                 val simEntry = simManager.allocateNextEsimProfile(hlr = getHlr(region.id.toLowerCase()), phoneType = profileType)
-                        .mapLeft { NotFoundError("eSIM profile", id = "loltel") }
+                        .mapLeft { NotFoundError("eSIM profile", id = "Loltel") }
                         .bind()
                 simProfileStore.create(SimProfile(
                         iccId = simEntry.iccId,
@@ -558,7 +577,7 @@ object Neo4jStoreSingleton : GraphStore {
     }
 
     private fun getHlr(regionCode: String): String {
-        return "loltel"
+        return "Loltel"
     }
 
     //
@@ -724,11 +743,12 @@ object Neo4jStoreSingleton : GraphStore {
     private val paymentProcessor by lazy { getResource<PaymentProcessor>() }
     private val analyticsReporter by lazy { getResource<AnalyticsService>() }
 
-    private fun fetchOrCreatePaymentProfile(customerId: String): Either<PaymentError, ProfileInfo> =
-    // Fetch/Create stripe payment profile for the customer.
-            paymentProcessor.getPaymentProfile(customerId)
+    private fun fetchOrCreatePaymentProfile(customer: Customer): Either<PaymentError, ProfileInfo> =
+            // Fetch/Create stripe payment profile for the customer.
+            paymentProcessor.getPaymentProfile(customer.id)
                     .fold(
-                            { paymentProcessor.createPaymentProfile(customerId) },
+                            { paymentProcessor.createPaymentProfile(customerId = customer.id,
+                                    email = customer.contactEmail) },
                             { profileInfo -> Either.right(profileInfo) }
                     )
 
@@ -772,21 +792,21 @@ object Neo4jStoreSingleton : GraphStore {
                              saveCard: Boolean): Either<PaymentError, ProductInfo> = writeTransaction {
         IO {
             Either.monad<PaymentError>().binding {
-                val customerId = getCustomerId(identity = identity, transaction = transaction)
+                val customer = getCustomer(identity = identity, transaction = transaction)
                         .mapLeft {
                             org.ostelco.prime.paymentprocessor.core.NotFoundError(
-                                    "Failed to get customerId for customer with identity - $identity",
+                                    "Failed to get customer data for customer with identity - $identity",
                                     error = it)
                         }
                         .bind()
-                val profileInfo = fetchOrCreatePaymentProfile(customerId)
+                val profileInfo = fetchOrCreatePaymentProfile(customer)
                         .bind()
                 val paymentCustomerId = profileInfo.id
 
                 if (sourceId != null) {
                     val sourceDetails = paymentProcessor.getSavedSources(paymentCustomerId)
                             .mapLeft {
-                                BadGatewayError("Failed to fetch sources for customer: $customerId",
+                                BadGatewayError("Failed to fetch sources for customer: ${customer.id}",
                                         error = it)
                             }.bind()
                     if (!sourceDetails.any { sourceDetailsInfo -> sourceDetailsInfo.id == sourceId }) {
@@ -798,7 +818,7 @@ object Neo4jStoreSingleton : GraphStore {
                 }
                 subscribeToPlan(identity, product.id)
                         .mapLeft {
-                            org.ostelco.prime.paymentprocessor.core.BadGatewayError("Failed to subscribe $customerId to plan ${product.id}",
+                            org.ostelco.prime.paymentprocessor.core.BadGatewayError("Failed to subscribe ${customer.id} to plan ${product.id}",
                                     error = it)
                         }
                         .flatMap {
@@ -823,7 +843,14 @@ object Neo4jStoreSingleton : GraphStore {
                                     error = it)
                         }
                         .bind()
-                val profileInfo = fetchOrCreatePaymentProfile(customerId).bind()
+                val customer = getCustomer(identity = identity, transaction = transaction)
+                        .mapLeft {
+                            org.ostelco.prime.paymentprocessor.core.NotFoundError(
+                                    "Failed to get customer data for customer with identity - $identity",
+                                    error = it)
+                        }
+                        .bind()
+                val profileInfo = fetchOrCreatePaymentProfile(customer).bind()
                 val paymentCustomerId = profileInfo.id
                 var addedSourceId: String? = null
                 if (sourceId != null) {
@@ -1047,9 +1074,18 @@ object Neo4jStoreSingleton : GraphStore {
                                 scanInformationRelationStore.createIfAbsent(customerId, newScan.id, transaction)
                             }
                             .flatMap {
+                                setKycStatus(
+                                        customerId = customerId,
+                                        regionCode = regionCode.toLowerCase(),
+                                        kycType = JUMIO,
+                                        kycStatus = KycStatus.PENDING,
+                                        transaction = transaction)
+                            }
+                            .flatMap {
                                 newScan.right()
                             }
                 }
+                .ifFailedThenRollback(transaction)
     }
 
     private fun getCustomerUsingScanId(scanId: String, transaction: Transaction): Either<StoreError, Customer> {
@@ -1134,18 +1170,35 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun getCustomerMyInfoData(
             identity: org.ostelco.prime.model.Identity,
-            authorisationCode: String): Either<StoreError, String> = writeTransaction {
+            authorisationCode: String): Either<StoreError, String> {
 
-        getCustomerId(identity = identity, transaction = transaction)
+        return getCustomerId(identity = identity)
                 .flatMap { customerId ->
+                    // set MyInfo KYC Status to Pending
                     setKycStatus(
                             customerId = customerId,
                             regionCode = "sg",
                             kycType = MY_INFO,
-                            transaction = transaction)
+                            kycStatus = KycStatus.PENDING)
+                            .flatMap {
+                                try {
+                                    myInfoKycService.getPersonData(authorisationCode).right()
+                                } catch (e: Exception) {
+                                    logger.error("Failed to fetched MyInfo using authCode = $authorisationCode", e)
+                                    SystemError(
+                                            type = "MyInfo Auth Code",
+                                            id = authorisationCode,
+                                            message = "Failed to fetched MyInfo").left()
+                                }
+                            }.flatMap { personData ->
+                                // set MyInfo KYC Status to Approved
+                                setKycStatus(
+                                        customerId = customerId,
+                                        regionCode = "sg",
+                                        kycType = MY_INFO)
+                                        .map { personData }
+                            }
                 }
-                .flatMap { myInfoKycService.getPersonData(authorisationCode).right() }
-                .ifFailedThenRollback(transaction)
     }
 
     //
@@ -1158,6 +1211,8 @@ object Neo4jStoreSingleton : GraphStore {
             identity: org.ostelco.prime.model.Identity,
             nricFinId: String): Either<StoreError, Unit> = writeTransaction {
 
+        logger.info("checkNricFinIdUsingDave for ${nricFinId}")
+
         getCustomerId(identity = identity, transaction = transaction)
                 .flatMap { customerId ->
                     setKycStatus(
@@ -1168,8 +1223,10 @@ object Neo4jStoreSingleton : GraphStore {
                 }
                 .flatMap {
                     if (daveKycService.validate(nricFinId)) {
+                        logger.info("checkNricFinIdUsingDave validated ${nricFinId}")
                         Unit.right()
                     } else {
+                        logger.info("checkNricFinIdUsingDave failed to validate ${nricFinId}")
                         ValidationError(type = "NRIC/FIN ID", id = nricFinId, message = "Invalid NRIC/FIN ID").left()
                     }
                 }
@@ -1205,7 +1262,7 @@ object Neo4jStoreSingleton : GraphStore {
             kycType: KycType,
             kycStatus: KycStatus = KycStatus.APPROVED) = writeTransaction {
 
-        Neo4jStoreSingleton.setKycStatus(
+        setKycStatus(
                 customerId = customerId,
                 regionCode = regionCode,
                 kycType = kycType,
@@ -1255,12 +1312,12 @@ object Neo4jStoreSingleton : GraphStore {
                 }
 
                 customerRegionRelationStore
-                            .createOrUpdate(
-                                    fromId = customerId,
-                                    relation = CustomerRegion(status = newStatus, kycStatusMap = newKycStatusMap),
-                                    toId = regionCode,
-                                    transaction = transaction)
-                            .bind()
+                        .createOrUpdate(
+                                fromId = customerId,
+                                relation = CustomerRegion(status = newStatus, kycStatusMap = newKycStatusMap),
+                                toId = regionCode,
+                                transaction = transaction)
+                        .bind()
 
             }.fix()
         }.unsafeRunSync()
@@ -1658,6 +1715,36 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
 
+    //
+    // Sim Profiles (Admin)
+    //
+    override fun syncSimProfileStatus(): Either<StoreError, Unit> = writeTransaction {
+        IO {
+            Either.monad<StoreError>().binding {
+                listOf("no", "sg")
+                        .forEach { regionCode ->
+
+                            val simProfiles = regionStore.getRelatedFrom(
+                                    regionCode, simProfileRegionRelation, transaction).bind()
+
+                            simProfiles.forEach { simProfile ->
+                                val status = simManager.getSimProfileStatus(
+                                        hlr = getHlr(regionCode = regionCode),
+                                        iccId = simProfile.iccId)
+                                        .mapLeft { SystemError(
+                                                type = "SimProfile",
+                                                id = simProfile.iccId,
+                                                message = "Failed to get SimProfileStatus from SIM Manager") }
+                                        .bind()
+                                if (status != simProfile.status) {
+                                    simProfileStore.update(simProfile.copy(status = status), transaction).bind()
+                                }
+                            }
+                        }
+            }.fix()
+        }.unsafeRunSync()
+                .ifFailedThenRollback(transaction)
+    }
 
     //
     // Stores
@@ -1861,7 +1948,7 @@ object Neo4jStoreSingleton : GraphStore {
     }
 }
 
-fun <K,V> Map<K,V>.copy(key: K, value: V): Map<K,V> {
+fun <K, V> Map<K, V>.copy(key: K, value: V): Map<K, V> {
     val mutableMap = this.toMutableMap()
     mutableMap[key] = value
     return mutableMap.toMap()

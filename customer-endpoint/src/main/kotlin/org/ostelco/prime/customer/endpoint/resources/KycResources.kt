@@ -3,6 +3,7 @@ package org.ostelco.prime.customer.endpoint.resources
 import io.dropwizard.auth.Auth
 import org.ostelco.prime.auth.AccessTokenPrincipal
 import org.ostelco.prime.customer.endpoint.store.SubscriberDAO
+import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.asJson
 import org.ostelco.prime.model.Identity
 import javax.validation.constraints.NotNull
@@ -40,6 +41,7 @@ open class KycResource(private val regionCode: String, private val dao: Subscrib
  *
  */
 class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(regionCode = "sg", dao = dao) {
+    private val logger by getLogger()
 
     @GET
     @Path("/myInfo/{authorisationCode}")
@@ -72,6 +74,8 @@ class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(regionCo
             @NotNull
             @PathParam("nricFinId")
             nricFinId: String): Response {
+
+        logger.info("checkNricFinId for ${nricFinId}")
 
         if (token == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
