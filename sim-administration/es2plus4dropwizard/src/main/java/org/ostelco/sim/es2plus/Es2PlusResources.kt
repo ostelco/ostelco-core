@@ -150,8 +150,7 @@ class SmDpPlusServerResource(private val smDpPlus: SmDpPlusService) {
     }
 }
 
-@Produces(MediaType.APPLICATION_JSON)
-@Consumes(MediaType.APPLICATION_JSON)
+
 @Path("/gsma/rsp2/es2plus/")
 class SmDpPlusCallbackResource(private val smDpPlus: SmDpPlusCallbackService) {
 
@@ -160,6 +159,7 @@ class SmDpPlusCallbackResource(private val smDpPlus: SmDpPlusCallbackService) {
      * back to the  operator's BSS system about the progress of various
      * operations.
      */
+    @Consumes(MediaType.APPLICATION_JSON)
     @Path("handleDownloadProgressInfo")
     @POST
     fun handleDownloadProgressInfo(order: Es2HandleDownloadProgressInfo): Response {
