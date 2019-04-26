@@ -2,6 +2,7 @@ package org.ostelco.prime.appnotifier
 
 import com.google.api.core.ApiFutureCallback
 import com.google.api.core.ApiFutures.addCallback
+import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.Message
@@ -64,7 +65,7 @@ class FirebaseAppNotifier: AppNotifier {
                         println("Notification failed with error: $t")
                     }
                 }
-                addCallback(future, apiFutureCallback)
+                addCallback(future, apiFutureCallback, directExecutor())
             }
         }
     }
