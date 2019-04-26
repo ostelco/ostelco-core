@@ -10,6 +10,7 @@ import arrow.effects.IO
 import arrow.instances.either.monad.monad
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
+import org.ostelco.prime.appnotifier.AppNotifier
 import org.ostelco.prime.ekyc.DaveKycService
 import org.ostelco.prime.ekyc.MyInfoKycService
 import org.ostelco.prime.getLogger
@@ -1133,6 +1134,8 @@ object Neo4jStoreSingleton : GraphStore {
                 }
     }
 
+    private val appNotifier by lazy { getResource<AppNotifier>() }
+
     override fun updateScanInformation(scanInformation: ScanInformation, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit> = writeTransaction {
         logger.info("updateScanInformation : ${scanInformation.scanId} status: ${scanInformation.status}")
         getCustomerUsingScanId(scanInformation.scanId, transaction).flatMap { customer ->
@@ -1144,6 +1147,11 @@ object Neo4jStoreSingleton : GraphStore {
                     logger.info("Inserting scan Information to cloud storage : id: ${scanInformation.scanId} countryCode: ${scanInformation.countryCode}")
                     scanInformationDatastore.upsertVendorScanInformation(customer.id, scanInformation.countryCode, vendorData)
                             .flatMap {
+                                appNotifier.notify(
+                                        customerId = customer.id,
+                                        title = "eKYC Status",
+                                        body = "Successfully verified the identity"
+                                )
                                 setKycStatus(
                                         customerId = customer.id,
                                         regionCode = scanInformation.countryCode.toLowerCase(),
@@ -1151,6 +1159,12 @@ object Neo4jStoreSingleton : GraphStore {
                                         transaction = transaction)
                             }
                 } else {
+                    // TODO: find out what more information can be passed to the client.
+                    appNotifier.notify(
+                            customerId = customer.id,
+                            title = "eKYC Status",
+                            body = "Failed to verify the identity"
+                    )
                     setKycStatus(
                             customerId = customer.id,
                             regionCode = scanInformation.countryCode.toLowerCase(),

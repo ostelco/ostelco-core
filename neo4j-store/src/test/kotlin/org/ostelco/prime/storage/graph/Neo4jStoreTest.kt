@@ -12,6 +12,7 @@ import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.neo4j.driver.v1.AccessMode.WRITE
 import org.ostelco.prime.analytics.AnalyticsService
+import org.ostelco.prime.appnotifier.AppNotifier
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.CustomerRegionStatus.APPROVED
 import org.ostelco.prime.model.CustomerRegionStatus.PENDING
@@ -69,6 +70,10 @@ class MockSimManager : SimManager by mockSimManager
 private val mockEmailNotifier = Mockito.mock(EmailNotifier::class.java)
 
 class MockEmailNotifier : EmailNotifier by mockEmailNotifier
+
+private val mockAppNotifier = Mockito.mock(AppNotifier::class.java)
+
+class MockAppNotifier : AppNotifier by mockAppNotifier
 
 class Neo4jStoreTest {
 
