@@ -19,10 +19,15 @@ class FirebaseAppNotifier: AppNotifier {
 
     override fun notify(customerId: String, title: String, body: String) {
         println("Will try to notify customer with Id : $customerId")
-        sendNotification(customerId, title, body)
+        sendNotification(customerId, title, body, data = null)
     }
 
-    private fun sendNotification(customerId: String, title: String, body: String) {
+    override fun notify(customerId: String, title: String, body: String, data: Map<String, String>) {
+        println("Will try to notify-with-data customer with Id : $customerId")
+        sendNotification(customerId, title, body, data)
+    }
+
+    private fun sendNotification(customerId: String, title: String, body: String, data: Map<String, String>?) {
 
         val store = getResource<ClientDataSource>()
 
@@ -33,10 +38,13 @@ class FirebaseAppNotifier: AppNotifier {
 
             if (applicationToken.tokenType == "FCM") {
                 // See documentation on defining a message payload.
-                val message = Message.builder()
+                val builder = Message.builder()
                         .setNotification(Notification(title, body))
                         .setToken(applicationToken.token)
-                        .build()
+                if (data != null) {
+                    builder.putAllData(data)
+                }
+                val message = builder.build()
 
                 // Send a message to the device corresponding to the provided
                 // registration token.
