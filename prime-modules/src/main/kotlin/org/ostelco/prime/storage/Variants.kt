@@ -275,7 +275,7 @@ interface AdminGraphStore {
      * @param amount - Cost of the product/plan
      * @param currency - Currency used
      */
-    fun subscriptionPurchaseReport(invoiceId: String, customerId: String, sku: String, amount: Long, currency: String): Either<StoreError, Plan>
+    fun purchasedSubscription(invoiceId: String, customerId: String, sku: String, amount: Long, currency: String): Either<StoreError, Plan>
 
     // atomic import of Offer + Product + Segment
     fun atomicCreateOffer(

@@ -75,6 +75,9 @@ fun initDatabase() {
 // Helper for naming of default segments based on country code.
 fun getSegmentNameFromCountryCode(countryCode: String): String = "country-$countryCode".toLowerCase()
 
+// Helper for naming of default plan segments based on country code.
+fun getPlanSegmentNameFromCountryCode(countryCode: String): String = "plan-country-$countryCode".toLowerCase()
+
 data class Config(
         val host: String,
         val protocol: String)

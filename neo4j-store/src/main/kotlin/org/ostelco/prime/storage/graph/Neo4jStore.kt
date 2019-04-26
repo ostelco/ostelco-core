@@ -80,6 +80,7 @@ enum class Relation {
     BELONG_TO_REGION,           // (Customer) -[BELONG_TO_REGION]-> (Region)
     SUBSCRIPTION_FOR_REGION,    // (Subscription) -[SUBSCRIPTION_FOR_REGION]-> (Region)
     SIM_PROFILE_FOR_REGION,     // (SimProfile) -[SIM_PROFILE_FOR_REGION]-> (Region)
+    LINKED_TO_REGION,           // (Plan) -[LINKED_TO_REGION]-> (Region)
 }
 
 
@@ -216,6 +217,13 @@ object Neo4jStoreSingleton : GraphStore {
             to = regionEntity,
             dataClass = None::class.java)
     private val simProfileRegionRelationStore = UniqueRelationStore(simProfileRegionRelation)
+
+    private val planRegionRelation = RelationType(
+            relation = Relation.LINKED_TO_REGION,
+            from = planEntity,
+            to = regionEntity,
+            dataClass = None::class.java)
+    private val planRegionRelationStore = UniqueRelationStore(planRegionRelation)
 
     // -------------
     // Client Store
@@ -812,6 +820,8 @@ object Neo4jStoreSingleton : GraphStore {
         )
     }
 
+    /* Note: 'purchase-relation' info is first added when a successful purchase
+             event has been received from Stripe. */
     private fun purchasePlan(identity: org.ostelco.prime.model.Identity,
                              product: Product,
                              sourceId: String?,
@@ -825,6 +835,7 @@ object Neo4jStoreSingleton : GraphStore {
                                     error = it)
                         }
                         .bind()
+                // TODO: Check if product already bought.
                 val profileInfo = fetchOrCreatePaymentProfile(customer)
                         .bind()
                 val paymentCustomerId = profileInfo.id
@@ -1053,7 +1064,7 @@ object Neo4jStoreSingleton : GraphStore {
                         if (status == APPROVED) {
                             assignCustomerToRegionSegment(
                                     customerId = customerId,
-                                    regionCode = regionCode,
+                                    segmentName = getInitialSegmentNameForRegion(regionCode),
                                     transaction = transaction)
                         } else {
                             Unit.right()
@@ -1062,16 +1073,16 @@ object Neo4jStoreSingleton : GraphStore {
 
     private fun assignCustomerToRegionSegment(
             customerId: String,
-            regionCode: String,
+            segmentName: String,
             transaction: Transaction): Either<StoreError, Unit> {
 
         return customerToSegmentStore.create(
                 fromId = customerId,
-                toId = getSegmentNameFromCountryCode(regionCode),
+                toId = segmentName,
                 transaction = transaction).mapLeft { storeError ->
 
             if (storeError is NotCreatedError && storeError.type == customerToSegmentRelation.name) {
-                ValidationError(type = customerEntity.name, id = customerId, message = "Unsupported region: $regionCode")
+                ValidationError(type = customerEntity.name, id = customerId, message = "Unsupported segment: $segmentName")
             } else {
                 storeError
             }
@@ -1345,10 +1356,9 @@ object Neo4jStoreSingleton : GraphStore {
                 }
 
                 if (approvedNow) {
-
                     assignCustomerToRegionSegment(
                             customerId = customerId,
-                            regionCode = regionCode,
+                            segmentName = getInitialSegmentNameForRegion(regionCode),
                             transaction = transaction).bind()
                 }
 
@@ -1378,6 +1388,12 @@ object Neo4jStoreSingleton : GraphStore {
             else -> listOf(setOf(JUMIO))
         }
     }
+
+    private fun getInitialSegmentNameForRegion(regionCode: String): String =
+            when (regionCode) {
+                "sg" -> getPlanSegmentNameFromCountryCode(regionCode)
+                else -> getSegmentNameFromCountryCode(regionCode)
+            }
 
     // ------------
     // Admin Store
@@ -1674,7 +1690,7 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun subscriptionPurchaseReport(invoiceId: String, customerId: String, sku: String, amount: Long, currency: String): Either<StoreError, Plan> = writeTransaction {
+    override fun purchasedSubscription(invoiceId: String, customerId: String, sku: String, amount: Long, currency: String): Either<StoreError, Plan> = writeTransaction {
         IO {
             Either.monad<StoreError>().binding {
                 val product = productStore.get(sku, transaction)
@@ -1688,7 +1704,26 @@ object Neo4jStoreSingleton : GraphStore {
                         product = product,
                         timestamp = Instant.now().toEpochMilli())
 
-                createPurchaseRecordRelation(customerId, purchaseRecord, transaction).bind()
+                createPurchaseRecordRelation(customerId, purchaseRecord, transaction)
+                        .bind()
+
+                /* Unique relation between 'plan' and 'region' */
+                val region = plansStore.getRelated(plan.id, planRegionRelation, transaction)
+                        .bind()
+                        .singleOrNull()
+
+                if (region == null) {
+                    logger.error("Found no 'region' associated with plan {} for customer {}",
+                            plan.id, customerId)
+                    NotFoundError("No region found found for plan", "${plan.id}")
+                            .left()
+                } else {
+                    assignCustomerToRegionSegment(
+                        customerId = customerId,
+                        segmentName = getSegmentNameFromCountryCode(region.id),
+                        transaction = transaction).bind()
+                }
+
                 plan
             }.fix()
         }.unsafeRunSync()
