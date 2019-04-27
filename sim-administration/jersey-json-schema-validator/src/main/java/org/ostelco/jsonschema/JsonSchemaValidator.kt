@@ -22,7 +22,6 @@ annotation class JsonSchema(val schemaKey: String)
 
 
 class JsonSchemaValidator {
-    val logger = logger()
     private val schemaRoot = "/es2schemas"
     private var schemaMap: MutableMap<String, Schema> = mutableMapOf()
 
@@ -63,7 +62,7 @@ class JsonSchemaValidator {
                     causes = t.errorMessage
                 }
                 val msg = "Schema validation failed while validating schema named: '${schemaAnnotation.schemaKey}'.  Error:  $t.message. Causes= $causes"
-                logger.error(msg)  // XXX This shouldn't be necessary, but the web application exception seems to be swallowed.
+                // XXX The web application exception seems to be swallowed.
                 throw WebApplicationException(msg, error)
             }
         }
