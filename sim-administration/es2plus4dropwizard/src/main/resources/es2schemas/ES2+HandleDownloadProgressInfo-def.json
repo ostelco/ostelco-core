@@ -25,7 +25,7 @@
     },
     "iccid": {
       "type": "string",
-      "pattern": "^[0-9]{19,20}$",
+      "pattern": "^[0-9]{19,20}F?$",
       "description": "ICCID as described in ITU-T E.118"
     },
     "profileType": {

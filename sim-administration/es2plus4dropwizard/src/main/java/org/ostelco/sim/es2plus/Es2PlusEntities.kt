@@ -1,5 +1,6 @@
 package org.ostelco.sim.es2plus
 
+import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.ostelco.jsonschema.JsonSchema
@@ -190,16 +191,55 @@ data class Es2ReleaseProfile(
 @JsonSchema("ES2+HandleDownloadProgressInfo-def")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Es2HandleDownloadProgressInfo(
-        @JsonProperty("header") val header: ES2RequestHeader,
-        @JsonProperty("eid") val eid: String? = null,
-        @JsonProperty("iccid") val iccid: String,
-        @JsonProperty("profileType") val profileType: String,
-        @JsonProperty("timestamp") val timestamp: String,
-        @JsonProperty("notificationPointId") val notificationPointId: Int,
-        @JsonProperty("notificationPointStatus") val notificationPointStatus: ES2NotificationPointStatus,
-        @JsonInclude(JsonInclude.Include.NON_NULL) @JsonProperty("resultData") val resultData: String? = null,
-        @JsonProperty("imei") val imei : String? = null
-)
+        val header: ES2RequestHeader,
+        val eid: String? = null,
+        val iccid: String,
+        val profileType: String,
+        val timestamp: String,
+        val notificationPointId: Int,
+        val notificationPointStatus: ES2NotificationPointStatus,
+        val resultData: String? = null,
+        val imei: String? = null,
+        // This field is added to ensure that the function signature of the primary and the actual
+        // constructors are not confused by the JVM.  It is ignored by all business logic.
+        private val ignoreThisField : String? = null) {
+
+
+    // If the stored ICCID contains a trailing "F", which it may because some  vendors insist
+    // on contaminating their ICCID  values in this way, then we simply rewrite the value
+    // before storing it in the data object.
+    // Note that this is a bad practice, it's probably much better to rewrite the
+    //     input field before it hits the data class, but I don't know how to do that
+    //     so this kludge is used instead.   The good thing about the current fix is that
+    //     it preserves external interfaces so the damage is contained within this
+    //     class.
+
+    @JsonCreator
+    constructor (@JsonProperty("header")  header: ES2RequestHeader,
+                 @JsonProperty("eid")  eid: String? = null,
+                 @JsonProperty("iccid")  iccid: String,
+                 @JsonProperty("profileType")  profileType: String,
+                 @JsonProperty("timestamp")  timestamp: String,
+                 @JsonProperty("notificationPointId")  notificationPointId: Int,
+                 @JsonProperty("notificationPointStatus")  notificationPointStatus: ES2NotificationPointStatus,
+                 @JsonInclude(JsonInclude.Include.NON_NULL) @JsonProperty("resultData")  resultData: String? = null,
+                 @JsonProperty("imei")  imei: String? = null) : this(
+            header = header,
+            eid = eid,
+            iccid = if (!iccid.endsWith("F")) {  // Rewrite input value if necessary
+                iccid
+            } else {
+                iccid.dropLast(1)
+            },
+            profileType = profileType,
+            timestamp = timestamp,
+            notificationPointId = notificationPointId,
+            notificationPointStatus = notificationPointStatus,
+            resultData = resultData,
+            imei = imei,
+            ignoreThisField = null  //Field is always ignored, but necessary to avoid recursion
+    )
+}
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ES2NotificationPointStatus(
