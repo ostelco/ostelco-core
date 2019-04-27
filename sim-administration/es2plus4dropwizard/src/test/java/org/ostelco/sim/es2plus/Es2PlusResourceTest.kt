@@ -127,6 +127,20 @@ class ES2PlusResourceTest {
     }
 
 
+    @Test
+    fun testHandleDownloadProgressInfoForIccidWithSuffixF() {
+        // XXX Not testing anything sensible
+        client.handleDownloadProgressInfo(
+                iccid = iccid + "F",
+                eid = eid,
+                profileType = "profileType",
+                timestamp = "2001-12-17T09:30:47Z",
+                notificationPointId = 4711,
+                notificationPointStatus = ES2NotificationPointStatus()
+        )
+        // XXX Do some verification
+    }
+
     // XXX Not testing error cases, to ensure that the exception, error reporting
     //     mechanism is working properly.
 }
