@@ -1,4 +1,11 @@
-FROM azul/zulu-openjdk:11.0.1-11.2
+## NOT FOR PROD, just for debugging
+## Install ubuntu and tcpdump.
+
+FROM ubuntu:18.04
+RUN apt-get update && apt-get install -y tcpdump
+
+
+# FROM azul/zulu-openjdk:11.0.1-11.2
 
 LABEL maintainer="dev@redotter.sg"
 
