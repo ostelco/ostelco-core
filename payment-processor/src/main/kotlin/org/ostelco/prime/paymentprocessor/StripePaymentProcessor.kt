@@ -1,6 +1,7 @@
 package org.ostelco.prime.paymentprocessor
 
 import arrow.core.Either
+import arrow.core.Try
 import arrow.core.flatMap
 import arrow.core.right
 import com.stripe.exception.ApiConnectionException
@@ -114,25 +115,29 @@ class StripePaymentProcessor : PaymentProcessor {
         return System.currentTimeMillis() / 1000L
     }
 
-    override fun createPaymentProfile(customerId: String): Either<PaymentError, ProfileInfo> =
+    override fun createPaymentProfile(customerId: String, email: String): Either<PaymentError, ProfileInfo> =
             either("Failed to create profile for user $customerId") {
                 val customerParams = mapOf(
-                        "email" to "$customerId@ostelco.org",
+                        "id" to customerId,
+                        "email" to email,
                         "metadata" to mapOf("customerId" to customerId))
                 ProfileInfo(Customer.create(customerParams).id)
             }
 
-    override fun getPaymentProfile(customerId: String): Either<PaymentError, ProfileInfo> {
-        val customerParams = mapOf(
-                "limit" to "1",
-                "email" to "$customerId@ostelco.org")
-        val customerList = Customer.list(customerParams)
-        return when {
-            customerList.data.isEmpty() -> Either.left(NotFoundError("Could not find a payment profile for user $customerId"))
-            customerList.data.size > 1 -> Either.left(NotFoundError("Multiple profiles for user $customerId found"))
-            else -> Either.right(ProfileInfo(customerList.data.first().id))
-        }
-    }
+    override fun getPaymentProfile(customerId: String): Either<PaymentError, ProfileInfo> =
+            Try {
+                Customer.retrieve(customerId)
+            }.fold(
+                    ifSuccess = { customer ->
+                        when {
+                            customer.deleted == true -> Either.left(NotFoundError("Payment profile for user $customerId was previously deleted"))
+                            else -> Either.right(ProfileInfo(customer.id))
+                        }
+                    },
+                    ifFailure = {
+                        Either.left(NotFoundError("Could not find a payment profile for user $customerId"))
+                    }
+            )
 
     override fun createPlan(productId: String, amount: Int, currency: String, interval: PaymentProcessor.Interval, intervalCount: Long): Either<PaymentError, PlanInfo> =
             either("Failed to create plan for product $productId amount $amount currency $currency interval ${interval.value}") {
@@ -288,10 +293,10 @@ class StripePaymentProcessor : PaymentProcessor {
                 SourceInfo(sourceId)
             }
 
-    override fun getStripeEphemeralKey(customerId: String, apiVersion: String): Either<PaymentError, String> =
+    override fun getStripeEphemeralKey(customerId: String, email: String, apiVersion: String): Either<PaymentError, String> =
             getPaymentProfile(customerId)
                     .fold(
-                            { createPaymentProfile(customerId) },
+                            { createPaymentProfile(customerId, email) },
                             { profileInfo -> profileInfo.right() }
                     ).flatMap { profileInfo ->
                         either("Failed to create stripe ephemeral key") {
@@ -317,7 +322,7 @@ class StripePaymentProcessor : PaymentProcessor {
         } catch (e: InvalidRequestException) {
             // Invalid parameters were supplied to Stripe's API
             logger.warn("Payment error : $errorDescription , Stripe Error Code: ${e.code}", e)
-            Either.left(NotFoundError(errorDescription, e.message))
+            Either.left(ForbiddenError(errorDescription, e.message))
         } catch (e: AuthenticationException) {
             // Authentication with Stripe's API failed
             // (maybe you changed API keys recently)
@@ -338,4 +343,3 @@ class StripePaymentProcessor : PaymentProcessor {
         }
     }
 }
-

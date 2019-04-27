@@ -18,25 +18,25 @@ class App extends Component {
     this.setState({
       isOpen: !this.state.isOpen
     });
-  };
+  }
 
   renderMenu() {
     const { props } = this;
     return (
-      <Collapse; isOpen={this.state.isOpen}; navbar>
-        <Nav; className="ml-auto"; navbar>
+      <Collapse isOpen={this.state.isOpen} navbar>
+        <Nav className="ml-auto" navbar>
           <NavItem>
-            <NavLink; tag={Link}; href="/"; to="/">Search</NavLink>
+            <NavLink tag={Link} href="/" to="/">Search</NavLink>
           </NavItem>
           <NavItem>
-            <NavLink; tag={Link}; href="/notifications"; to="/notifications">Notifications</NavLink>
+            <NavLink tag={Link} href="/notifications" to="/notifications">Notifications</NavLink>
           </NavItem>
           <NavItem>
-            <NavLink; tag={Link}; href=""; to="/"; onClick={(e); => { e.preventDefault(); props.logout(); }}>Logout</NavLink>
+            <NavLink tag={Link} href="" to="/" onClick={(e) => { e.preventDefault(); props.logout(); }}>Logout</NavLink>
           </NavItem>
         </Nav>
-      </Collapse>;
-  )
+      </Collapse>
+    );
   }
 
   render() {
@@ -46,27 +46,27 @@ class App extends Component {
 
     return (
       <div>
-        <Navbar; light; expand="md">
+        <Navbar light expand="md">
           <NavbarBrand>
-            <img; src="redotter.png"; alt="Red Otter"; style={;{ 60, height;: 60, marginTop;: -10 }} />
+            <img src="redotter.png" alt="Red Otter" style={{ width: 60, height: 60, marginTop: -10 }} />
           </NavbarBrand>
           <Nav>
             <NavItem>
               {userName}
             </NavItem>
-          </Nav>;
+          </Nav>
           {
             !loggedIn && (
-              <Button; color="outline-primary"; onClick={props.login}>Log; In</Button>;
+              <Button color="outline-primary" onClick={props.login}>Log In</Button>
             )
           }
           {
             loggedIn && (this.renderMenu())
           }
-          <NavbarToggler; onClick={this.toggle}; />
+          <NavbarToggler onClick={this.toggle} />
         </Navbar>
-      </div>;
-  )
+      </div>
+    );
   }
 }
 

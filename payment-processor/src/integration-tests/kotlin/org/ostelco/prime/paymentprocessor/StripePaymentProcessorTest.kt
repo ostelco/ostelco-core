@@ -17,6 +17,7 @@ class StripePaymentProcessorTest {
 
     private val paymentProcessor = getResource<PaymentProcessor>()
     private val testCustomer = UUID.randomUUID().toString()
+    private val emailTestCustomer = "test@internet.org"
 
     private var stripeCustomerId = ""
 
@@ -55,7 +56,7 @@ class StripePaymentProcessorTest {
     }
 
     private fun addCustomer() {
-        val resultAdd = paymentProcessor.createPaymentProfile(testCustomer)
+        val resultAdd = paymentProcessor.createPaymentProfile(customerId = testCustomer, email = emailTestCustomer)
         assertEquals(true, resultAdd.isRight())
 
         stripeCustomerId = resultAdd.fold({ "" }, { it.id })

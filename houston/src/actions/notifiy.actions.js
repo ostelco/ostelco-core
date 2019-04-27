@@ -58,7 +58,7 @@ const sendNotificationToSubscriber = (title, message) => (dispatch, getState) =>
     dispatch(alertActions.alertError(error));
   };
   // Get the email from the fetched user
-  const subscriberEmail = encodeEmail(_.get(getState(), 'subscriber.email'));
+  const subscriberEmail = encodeEmail(_.get(getState(), 'subscriber.contactEmail'));
   if (subscriberEmail) {
     return dispatch(putNotificationByEmail(subscriberEmail, title, message))
       .catch(handleError);
