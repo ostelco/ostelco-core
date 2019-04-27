@@ -1141,7 +1141,7 @@ object Neo4jStoreSingleton : GraphStore {
         getCustomerUsingScanId(scanInformation.scanId, transaction).flatMap { customer ->
             scanInformationStore.update(scanInformation, transaction).flatMap {
                 logger.info("updating scan Information for : ${customer.contactEmail} id: ${scanInformation.scanId} status: ${scanInformation.status}")
-
+                val extendedStatus = scanInformationDatastore.getExtendedStatusInformation(vendorData)
                 if (scanInformation.status == ScanStatus.APPROVED) {
 
                     logger.info("Inserting scan Information to cloud storage : id: ${scanInformation.scanId} countryCode: ${scanInformation.countryCode}")
@@ -1150,7 +1150,8 @@ object Neo4jStoreSingleton : GraphStore {
                                 appNotifier.notify(
                                         customerId = customer.id,
                                         title = "eKYC Status",
-                                        body = "Successfully verified the identity"
+                                        body = "Successfully verified the identity",
+                                        data = extendedStatus
                                 )
                                 setKycStatus(
                                         customerId = customer.id,
@@ -1163,7 +1164,8 @@ object Neo4jStoreSingleton : GraphStore {
                     appNotifier.notify(
                             customerId = customer.id,
                             title = "eKYC Status",
-                            body = "Failed to verify the identity"
+                            body = "Failed to verify the identity",
+                            data = extendedStatus
                     )
                     setKycStatus(
                             customerId = customer.id,

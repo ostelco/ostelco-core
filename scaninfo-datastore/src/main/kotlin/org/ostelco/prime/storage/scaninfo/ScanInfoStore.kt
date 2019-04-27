@@ -148,6 +148,10 @@ object ScanInformationStoreSingleton : ScanInformationStore {
         }.unsafeRunSync()
     }
 
+    override fun getExtendedStatusInformation(vendorData: MultivaluedMap<String, String>): Map<String, String> {
+        return JumioHelper.getExtendedStatusInformation(vendorData)
+    }
+
     private fun createVendorScanInformation(vendorData: MultivaluedMap<String, String>): Either<StoreError, VendorScanInformation> {
         return JumioHelper.generateVendorScanInformation(vendorData, apiToken, apiSecret)
     }
@@ -373,6 +377,50 @@ object JumioHelper {
         }.unsafeRunSync()
     }
 
+    private fun toRegularMap(jsonData: String?): Map<String, String>? {
+        try {
+            if (jsonData != null) {
+                return ObjectMapper().readValue(jsonData)
+            }
+        } catch (e: IOException) {
+            logger.error("Cannot parse Json Data: $jsonData")
+        }
+        return null
+    }
+
+    /**
+     * Constructs extended status information from Jumio callback data.
+     */
+    fun getExtendedStatusInformation(vendorData: MultivaluedMap<String, String>): Map<String, String> {
+        var extendedStatus = mutableMapOf<String, String>()
+        val verificationStatus: String = vendorData.getFirst(JumioScanData.VERIFICATION_STATUS.s)
+        val identityVerificationData: String? = vendorData.getFirst(JumioScanData.IDENTITY_VERIFICATION.s)
+
+        extendedStatus.putIfAbsent(JumioScanData.VERIFICATION_STATUS.s, verificationStatus)
+        if (verificationStatus.toUpperCase() == JumioScanData.APPROVED_VERIFIED.s) {
+            val identityVerification = toRegularMap(identityVerificationData)
+            if (identityVerification == null) {
+                extendedStatus.putIfAbsent(JumioScanData.REJECT_REASON.s, JumioScanData.PRIME_MISSING_IDENTITY_VERIFICATION.s)
+            } else {
+                // identityVerification field is present
+                val similarity = identityVerification[JumioScanData.SIMILARITY.s]
+                val validity = identityVerification[JumioScanData.VALIDITY.s]
+                val reason = identityVerification[JumioScanData.REASON.s]
+                if ((similarity != null && similarity.toUpperCase() == JumioScanData.MATCH.s &&
+                                validity != null && validity.toUpperCase() == JumioScanData.TRUE.s)) {
+                    extendedStatus.putIfAbsent(JumioScanData.IDENTITY_VERIFICATION.s, JumioScanData.PRIME_IDENTITY_VALID_SIMILAR.s)
+                } else {
+                    extendedStatus.putIfAbsent(JumioScanData.IDENTITY_VERIFICATION.s, JumioScanData.PRIME_IDENTITY_VERIFICATION_FAILED.s)
+                }
+                if (similarity != null && similarity.toUpperCase() != JumioScanData.MATCH.s) {
+                    extendedStatus.putIfAbsent(JumioScanData.REJECT_REASON.s, similarity)
+                } else if (validity != null && validity.toUpperCase() != JumioScanData.TRUE.s) {
+                    extendedStatus.putIfAbsent(JumioScanData.REJECT_REASON.s, reason ?: JumioScanData.PRIME_MISSING_IDENTITY_REASON.s)
+                }
+            }
+        }
+        return extendedStatus
+    }
     /**
      * Deletes the scan information from Jumio database.
      */
