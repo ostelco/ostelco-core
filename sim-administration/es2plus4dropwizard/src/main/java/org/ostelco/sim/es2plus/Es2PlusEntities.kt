@@ -199,6 +199,7 @@ data class Es2HandleDownloadProgressInfo(
         val notificationPointId: Int,
         val notificationPointStatus: ES2NotificationPointStatus,
         val resultData: String? = null,
+        val tac: String? = null,
         val imei: String? = null,
         // This field is added to ensure that the function signature of the primary and the actual
         // constructors are not confused by the JVM.  It is ignored by all business logic.
@@ -220,6 +221,7 @@ data class Es2HandleDownloadProgressInfo(
                  @JsonProperty("iccid")  iccid: String,
                  @JsonProperty("profileType")  profileType: String,
                  @JsonProperty("timestamp")  timestamp: String,
+                 @JsonProperty("tac")  tac: String? = null,
                  @JsonProperty("notificationPointId")  notificationPointId: Int,
                  @JsonProperty("notificationPointStatus")  notificationPointStatus: ES2NotificationPointStatus,
                  @JsonInclude(JsonInclude.Include.NON_NULL) @JsonProperty("resultData")  resultData: String? = null,
@@ -231,6 +233,7 @@ data class Es2HandleDownloadProgressInfo(
             } else {
                 iccid.dropLast(1)
             },
+            tac = tac,
             profileType = profileType,
             timestamp = timestamp,
             notificationPointId = notificationPointId,
