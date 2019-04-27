@@ -18,7 +18,7 @@ set -e
 
 # Check that the script ss run from project root
 # (figure that out by looking for itself :-)
-if [[ ! -f prime/script/deploy.sh ]] ; then
+if [[ ! -f prime/script/helm-deploy-dev-direct.sh ]] ; then
     (>&2 echo "Run this script from project root dir (ostelco-core)")
     exit 1
 fi
