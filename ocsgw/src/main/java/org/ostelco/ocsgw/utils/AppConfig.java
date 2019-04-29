@@ -35,6 +35,15 @@ public class AppConfig {
         }
     }
 
+    public Long getDefaultRequestedServiceUnit () {
+          final String defaultRequestedServiceUnit = System.getProperty("DEFAULT_REQUESTED_SERVICE_UNIT");
+          if (defaultRequestedServiceUnit == null || defaultRequestedServiceUnit.isEmpty()) {
+              return 4000000L;
+          } else {
+              return Long.parseLong(defaultRequestedServiceUnit);
+          }
+    }
+
     public SecondaryDataSourceType getSecondaryDataStoreType () {
         // OCS_SECONDARY_DATASOURCE_TYPE env has higher preference over config.properties
         final String secondaryDataSource = System.getenv("OCS_SECONDARY_DATASOURCE_TYPE");
