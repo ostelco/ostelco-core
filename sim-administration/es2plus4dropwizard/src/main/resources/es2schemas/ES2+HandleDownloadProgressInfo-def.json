@@ -23,9 +23,14 @@
       "pattern": "^[0-9]{32}$",
       "description": "EID as described in SGP.02"
     },
+    "tac": {
+      "type": "string",
+      "pattern": "^[0-9]*$",
+      "description": "Unknown ID sent by some SM-DP+ vendors"
+    },
     "iccid": {
       "type": "string",
-      "pattern": "^[0-9]{19,20}$",
+      "pattern": "^[0-9]{19,20}F?$",
       "description": "ICCID as described in ITU-T E.118"
     },
     "profileType": {
