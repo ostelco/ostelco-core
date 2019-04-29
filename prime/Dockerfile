@@ -1,13 +1,4 @@
-## NOT FOR PROD, just for debugging
-## Install ubuntu and tcpdump.
-
-FROM ubuntu:18.04
-RUN apt-get update && apt-get install -y tcpdump
-RUN apt-get install -y  default-jre
-RUN apt-get install -y  openjdk-11-jre-headless
-# RUN apt-get install -y  openjdk-9-jre-headless
-
-# FROM azul/zulu-openjdk:11.0.1-11.2
+FROM azul/zulu-openjdk:11.0.1-11.2
 
 LABEL maintainer="dev@redotter.sg"
 
