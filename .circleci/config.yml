@@ -6,13 +6,7 @@ jobs:
     machine:
       image: circleci/classic:201808-01
     environment:
-      JAVA_HOME: /usr/lib/jvm/jdk-11.0.2
-   # dependencies:
-      #pre:
-       # - sudo apt update; sudo apt install -y wget
-       # - sudo wget https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_linux-x64_bin.tar.gz -O /tmp/openjdk-11.0.2_linux-x64_bin.tar.gz
-       # - sudo mkdir /usr/lib/jvm; tar -zxf /tmp/openjdk-11.0.2_linux-x64_bin.tar.gz -C /usr/lib/jvm
-       # - export PATH='$PATH:/usr/lib/jvm/jdk-11.0.2/bin'
+      JAVA_HOME: /usr/lib/jvm/zulu11.31.11-ca-jdk11.0.3-linux_x64
 
     steps:
       - checkout
@@ -20,8 +14,8 @@ jobs:
           name: upgrading Java to open-jdk-11
           command: |
             # sudo apt update; sudo apt install -y wget
-            sudo wget https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_linux-x64_bin.tar.gz -O /tmp/openjdk-11.0.2_linux-x64_bin.tar.gz
-            sudo tar -zxf /tmp/openjdk-11.0.2_linux-x64_bin.tar.gz -C /usr/lib/jvm
+            sudo wget https://cdn.azul.com/zulu/bin/zulu11.31.11-ca-jdk11.0.3-linux_x64.tar.gz -O /tmp/zulu11.31.11-ca-jdk11.0.3-linux_x64.tar.gz
+            sudo tar -zxf /tmp/zulu11.31.11-ca-jdk11.0.3-linux_x64.tar.gz -C /usr/lib/jvm
       - run:
           # checking for merge conflicts and merging locally if none exist
           name: merging ${CIRCLE_BRANCH} into develop locally
@@ -35,7 +29,7 @@ jobs:
       - run:
           name: javac -version
           command: |
-            export PATH=/usr/lib/jvm/jdk-11.0.2/bin:$PATH
+            export PATH=/usr/lib/jvm/zulu11.31.11-ca-jdk11.0.3-linux_x64/bin:$PATH
             javac -version
       - run:
           name: Pulling Gradle cache
@@ -123,7 +117,7 @@ jobs:
     machine:
       image: circleci/classic:201808-01
     environment:
-      JAVA_HOME: /usr/lib/jvm/jdk-11.0.2
+      JAVA_HOME: /usr/lib/jvm/zulu11.31.11-ca-jdk11.0.3-linux_x64
 
     steps:
       - checkout
@@ -131,8 +125,8 @@ jobs:
           name: upgrading Java to open-jdk-11
           command: |
             # sudo apt update; sudo apt install -y wget
-            sudo wget https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_linux-x64_bin.tar.gz -O /tmp/openjdk-11.0.2_linux-x64_bin.tar.gz
-            sudo tar -zxf /tmp/openjdk-11.0.2_linux-x64_bin.tar.gz -C /usr/lib/jvm
+            sudo wget https://cdn.azul.com/zulu/bin/zulu11.31.11-ca-jdk11.0.3-linux_x64.tar.gz -O /tmp/zulu11.31.11-ca-jdk11.0.3-linux_x64.tar.gz
+            sudo tar -zxf /tmp/zulu11.31.11-ca-jdk11.0.3-linux_x64.tar.gz -C /usr/lib/jvm
       - run:
           name: Pulling Gradle cache
           command: |
@@ -147,7 +141,7 @@ jobs:
       - run:
           name: javac -version
           command: |
-            export PATH=/usr/lib/jvm/jdk-11.0.2/bin:$PATH
+            export PATH=/usr/lib/jvm/zulu11.31.11-ca-jdk11.0.3-linux_x64/bin:$PATH
             javac -version
       - run:
           name: Gradle Build Prime
