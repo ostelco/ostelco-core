@@ -56,7 +56,7 @@ class OcsTest {
                 session
         ) ?: fail("Failed to create request")
 
-        TestHelper.createInitRequest(request.avps, msisdn, BUCKET_SIZE)
+        TestHelper.createInitRequest(request.avps, msisdn, BUCKET_SIZE, 10, 1)
 
         client.sendNextRequest(request, session)
 
@@ -85,7 +85,7 @@ class OcsTest {
                 session
         ) ?: fail("Failed to create request")
 
-        TestHelper.createUpdateRequest(request.avps, msisdn, BUCKET_SIZE, BUCKET_SIZE)
+        TestHelper.createUpdateRequest(request.avps, msisdn, BUCKET_SIZE, BUCKET_SIZE, 10, 1)
 
         client.sendNextRequest(request, session)
 
@@ -180,7 +180,7 @@ class OcsTest {
                 session
         ) ?: fail("Failed to create request")
 
-        TestHelper.createTerminateRequest(request.avps, msisdn, BUCKET_SIZE)
+        TestHelper.createTerminateRequest(request.avps, msisdn, BUCKET_SIZE, 10, 1)
 
         client.sendNextRequest(request, session)
 
@@ -221,7 +221,7 @@ class OcsTest {
 
 
         // Requesting one more bucket then the balance for the user
-        TestHelper.createInitRequest(request.avps, msisdn, INITIAL_BALANCE + BUCKET_SIZE)
+        TestHelper.createInitRequest(request.avps, msisdn, INITIAL_BALANCE + BUCKET_SIZE, 10, 1)
 
         client.sendNextRequest(request, session)
 
@@ -250,7 +250,7 @@ class OcsTest {
                 session
         ) ?: fail("Failed to create request")
 
-        TestHelper.createUpdateRequestFinal(updateRequest.avps, msisdn, INITIAL_BALANCE)
+        TestHelper.createUpdateRequestFinal(updateRequest.avps, msisdn, INITIAL_BALANCE, 10, 1)
 
         client.sendNextRequest(updateRequest, session)
 
@@ -305,7 +305,7 @@ class OcsTest {
 
 
         // Requesting bucket for msisdn not in our system
-        TestHelper.createInitRequest(request.avps, "93682751", BUCKET_SIZE)
+        TestHelper.createInitRequest(request.avps, "93682751", BUCKET_SIZE, 10, 1)
 
         client.sendNextRequest(request, session)
 
@@ -317,6 +317,43 @@ class OcsTest {
             assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
             assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
             assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+        }
+    }
+
+    @Test
+    fun creditControlRequestInitNoServiceId() {
+
+        val email = "ocs-${randomInt()}@test.com"
+        createCustomer(name = "Test OCS User", email = email)
+
+        val msisdn = createSubscription(email = email)
+
+        val client = testClient ?: fail("Test client is null")
+
+        val session = client.createSession() ?: fail("Failed to create session")
+        val request = client.createRequest(
+                DEST_REALM,
+                DEST_HOST,
+                session
+        ) ?: fail("Failed to create request")
+
+        TestHelper.createInitRequest(request.avps, msisdn, BUCKET_SIZE, 10, -1)
+
+        client.sendNextRequest(request, session)
+
+        waitForAnswer()
+
+        run {
+            assertEquals(2001L, client.resultCodeAvp?.integer32?.toLong())
+            val resultAvps = client.resultAvps ?: fail("Missing AVPs")
+            assertEquals(DEST_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).utF8String)
+            assertEquals(DEST_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).utF8String)
+            assertEquals(RequestType.INITIAL_REQUEST.toLong(), resultAvps.getAvp(Avp.CC_REQUEST_TYPE).integer32.toLong())
+            val resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL)
+            assertEquals(2001L, resultMSCC.grouped.getAvp(Avp.RESULT_CODE).integer32.toLong())
+            assertEquals(10, resultMSCC.grouped.getAvp(Avp.RATING_GROUP).integer32.toLong())
+            val granted = resultMSCC.grouped.getAvp(Avp.GRANTED_SERVICE_UNIT)
+            assertEquals(BUCKET_SIZE, granted.grouped.getAvp(Avp.CC_TOTAL_OCTETS).unsigned64)
         }
     }
 

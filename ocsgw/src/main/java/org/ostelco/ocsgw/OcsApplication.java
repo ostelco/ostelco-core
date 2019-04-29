@@ -26,6 +26,7 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
     private static final String DIAMETER_CONFIG_FILE = "server-jdiameter-config.xml";
     private static final String CONFIG_FOLDER = "/config/";
     private static final long APPLICATION_ID = 4L;  // Diameter Credit Control Application (4)
+    private static final long VENDOR_ID_3GPP = 10415;
     private static Stack stack = null;
 
     public static void main(String[] args) {
@@ -94,7 +95,8 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
             OcsServer.INSTANCE.init$ocsgw(stack, new AppConfig());
 
             Network network = stack.unwrap(Network.class);
-            network.addNetworkReqListener(this, ApplicationId.createByAuthAppId(APPLICATION_ID));
+            network.addNetworkReqListener(this, ApplicationId.createByAuthAppId(0L, APPLICATION_ID));
+            network.addNetworkReqListener(this, ApplicationId.createByAuthAppId(VENDOR_ID_3GPP, APPLICATION_ID));
 
             stack.start(Mode.ALL_PEERS, 30000, TimeUnit.MILLISECONDS);
 

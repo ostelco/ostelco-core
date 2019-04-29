@@ -72,7 +72,7 @@ public class ProtobufToDiameterConverter {
         return ResultCode.valueOf(resultCode.name());
     }
 
-    public static CreditControlRequestInfo convertRequestToGrpc(final CreditControlContext context, @Nullable final String topicId) {
+    public static CreditControlRequestInfo convertRequestToProtobuf(final CreditControlContext context, @Nullable final String topicId) {
 
         try {
             CreditControlRequestInfo.Builder builder = CreditControlRequestInfo
