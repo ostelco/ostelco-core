@@ -1,8 +1,8 @@
 package org.ostelco.simcards.inventory
 
 import org.ostelco.prime.getLogger
-import org.ostelco.prime.model.SimProfileStatus.DOWNLOADED
-import org.ostelco.prime.model.SimProfileStatus.INSTALLED
+import org.ostelco.prime.model.SimProfileStatus
+import org.ostelco.prime.model.SimProfileStatus.*
 import org.ostelco.sim.es2plus.ES2NotificationPointStatus
 import org.ostelco.sim.es2plus.ES2RequestHeader
 import org.ostelco.sim.es2plus.FunctionExecutionStatusType
@@ -40,7 +40,14 @@ class SimInventoryCallbackService(val dao: SimInventoryDAO) : SmDpPlusCallbackSe
                 dao.setEidOfSimProfileByIccid(iccid, eid)
             }
 
-            /* Update SM-DP+ state. */
+            /**
+             * Update SM-DP+ state.
+             *      There is a somewhat more subtle failure mode, namly that the SM-DP+ for some reason
+             *      is unable to signal back, in that case the state has actually changed, but that fact will not
+             *      be picked up by the state as stored in the database, and if the user interface is dependent
+             *      on that state, the user interface may suffer a failure.  These issues needs to be gamed out
+             *      and fixed in some reasonable manner.
+             */
             when (notificationPointId) {
                 1 -> {
                     /* Eligibility and retry limit check. */
@@ -50,17 +57,11 @@ class SimInventoryCallbackService(val dao: SimInventoryDAO) : SmDpPlusCallbackSe
                 }
                 3 -> {
                     /* BPP download. */
-                    logger.info("Updating SM-DP+ state to {} with value from 'download-progress-info' message' for ICCID {}",
-                            SmDpPlusState.DOWNLOADED, iccid)
-                    dao.setSmDpPlusStateUsingIccid(iccid, SmDpPlusState.DOWNLOADED)
-                    simProfileStatusUpdateCallback?.invoke(iccid, DOWNLOADED)
+                    gotoState(iccid, SmDpPlusState.DOWNLOADED)
                 }
                 4 -> {
                     /* BPP installation. */
-                    logger.info("Updating SM-DP+ state to {} with value from 'download-progress-info' message' for ICCID {}",
-                            SmDpPlusState.INSTALLED, iccid)
-                    dao.setSmDpPlusStateUsingIccid(iccid, SmDpPlusState.INSTALLED)
-                    simProfileStatusUpdateCallback?.invoke(iccid, INSTALLED)
+                    gotoState(iccid, SmDpPlusState.INSTALLED)
                 }
                 else -> {
                     /* Unexpected check point value. */
@@ -76,6 +77,32 @@ class SimInventoryCallbackService(val dao: SimInventoryDAO) : SmDpPlusCallbackSe
                     "(notificationPointId: {}, profileType: {}, resultData: {})",
                     notificationPointStatus, iccid, notificationPointId,
                     profileType, resultData)
+        }
+    }
+
+    /**
+     * This is in fact buggy, since it assumes that the transitions are legal, which they only are
+     *       they are carried out on profiles that are in the database, and that the transitions that are
+     *      being performed are valid state transitions.  None of these criteria are tested for, and
+     *      errors are not si
+     */
+    fun gotoState(iccid: String, targetSmdpPlusStatus: SmDpPlusState) {
+        logger.info("Updating SM-DP+ state to {} with value from 'download-progress-info' message' for ICCID {}",
+                SmDpPlusState.DOWNLOADED, iccid)
+        dao.setSmDpPlusStateUsingIccid(iccid, targetSmdpPlusStatus)
+        simProfileStatusUpdateCallback?.invoke(iccid, asSimProfileStatus(targetSmdpPlusStatus))
+    }
+
+    fun asSimProfileStatus(smdpPlusState: SmDpPlusState) : SimProfileStatus {
+        return when (smdpPlusState) {
+            SmDpPlusState.AVAILABLE -> NOT_READY
+            SmDpPlusState.ALLOCATED -> NOT_READY
+            SmDpPlusState.CONFIRMED -> NOT_READY
+            SmDpPlusState.RELEASED -> AVAILABLE_FOR_DOWNLOAD
+            SmDpPlusState.DOWNLOADED -> DOWNLOADED
+            SmDpPlusState.INSTALLED -> INSTALLED
+            SmDpPlusState.ENABLED -> ENABLED
+            // XXX IF no match, then fail!
         }
     }
 }
