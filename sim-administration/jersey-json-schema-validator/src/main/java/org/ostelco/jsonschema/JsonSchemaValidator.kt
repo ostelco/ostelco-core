@@ -62,6 +62,7 @@ class JsonSchemaValidator {
                     causes = t.errorMessage
                 }
                 val msg = "Schema validation failed while validating schema named: '${schemaAnnotation.schemaKey}'.  Error:  $t.message. Causes= $causes"
+                // XXX The web application exception seems to be swallowed.
                 throw WebApplicationException(msg, error)
             }
         }
