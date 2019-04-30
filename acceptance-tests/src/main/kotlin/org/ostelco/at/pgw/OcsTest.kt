@@ -452,7 +452,7 @@ class OcsTest {
 
         private const val INITIAL_BALANCE = 100_000_000L
         private const val BUCKET_SIZE = 500L
-        private const val DEFAULT_REQUESTED_SERVICE_UNIT = 4_000_000L
+        private const val DEFAULT_REQUESTED_SERVICE_UNIT = 40_000_000L
 
         private const val DIAMETER_SUCCESS = 2001L
         private const val DIAMETER_USER_UNKNOWN = 5030L
