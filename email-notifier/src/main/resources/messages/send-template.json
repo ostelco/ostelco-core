@@ -21,10 +21,21 @@
     "tags": [
       "esim-qr-code"
     ],
+    "merge_vars": [
+      {
+        "rcpt": "$RECEIVER_EMAIL$",
+        "vars": [
+          {
+            "name": "customerName",
+            "content": "$RECEIVER_NAME$"
+          }
+        ]
+      }
+    ],
     "images": [
       {
         "type": "image/png",
-        "name": "eSIM QR code",
+        "name": "esim_qr_code_image",
         "content": "$QR_CODE$"
       }
     ]
