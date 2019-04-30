@@ -21,3 +21,8 @@ data class PlanSubscription(
 data class CustomerRegion(
         val status: CustomerRegionStatus,
         val kycStatusMap: Map<KycType, KycStatus> = emptyMap())
+
+data class SimProfile(
+        override val id: String,
+        val iccId: String,
+        val alias: String = "") : HasId
