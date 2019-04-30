@@ -554,7 +554,10 @@ fun <R> readTransaction(action: ReadTransaction.() -> R): R =
         Neo4jClient.driver.session(READ)
                 .use { session ->
                     session.readTransaction { transaction ->
-                        action(ReadTransaction(PrimeTransaction(transaction)))
+                        val primeTransaction = PrimeTransaction(transaction)
+                        val result = action(ReadTransaction(primeTransaction))
+                        primeTransaction.close()
+                        result
                     }
                 }
 
@@ -562,16 +565,22 @@ fun <R> writeTransaction(action: WriteTransaction.() -> R): R =
         Neo4jClient.driver.session(WRITE)
                 .use { session ->
                     session.writeTransaction { transaction ->
-                        action(WriteTransaction(PrimeTransaction(transaction)))
+                        val primeTransaction = PrimeTransaction(transaction)
+                        val result = action(WriteTransaction(primeTransaction))
+                        primeTransaction.close()
+                        result
                     }
                 }
 
 suspend fun <R> suspendedWriteTransaction(action: suspend WriteTransaction.() -> R): R =
         Neo4jClient.driver.session(WRITE)
                 .use { session ->
-                    val transaction = PrimeTransaction(session.beginTransaction())
-                    val result = action(WriteTransaction(transaction))
-                    transaction.success()
+                    val transaction = session.beginTransaction()
+                    val primeTransaction = PrimeTransaction(transaction)
+                    val result = action(WriteTransaction(primeTransaction))
+                    primeTransaction.success()
+                    primeTransaction.close()
+                    transaction.close()
                     result
                 }
 
