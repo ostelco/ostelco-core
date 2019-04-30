@@ -14,10 +14,7 @@ import org.ostelco.prime.simmanager.NotFoundError
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.hss.HssEntry
 import org.ostelco.simcards.hss.SimManagerToHssDispatcherAdapter
-import org.ostelco.simcards.inventory.HssState
-import org.ostelco.simcards.inventory.SimEntry
-import org.ostelco.simcards.inventory.SimInventoryDAO
-import org.ostelco.simcards.inventory.SimProfileKeyStatistics
+import org.ostelco.simcards.inventory.*
 import java.io.PrintWriter
 
 
@@ -89,6 +86,9 @@ class PreallocateProfilesTask(
                                 .mapLeft {
                                     logger.error("Preallocation of SIM ICCID {} failed with error: {}}",
                                             simEntry.iccid, it.description)
+
+                                    // XXX This looks weird, get review on it (and the code above)
+                                    simInventoryDAO.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ALLOCATION_FAILED)
                                 }
                     }
         }
