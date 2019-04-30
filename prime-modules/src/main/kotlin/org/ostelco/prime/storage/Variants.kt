@@ -301,8 +301,6 @@ interface AdminGraphStore {
 
     fun createRegion(region: Region): Either<StoreError, Unit>
 
-    fun syncSimProfileStatus(): Either<StoreError, Unit>
-
     // simple getAll
     // fun getOffers(): Collection<Offer>
     // fun getSegments(): Collection<Segment>

@@ -244,19 +244,15 @@ data class PurchaseRecordInfo(override val id: String,
 
 data class SimEntry(
         val iccId: String,
+        val status: SimProfileStatus,
         val eSimActivationCode: String,
         val msisdnList: Collection<String>)
 
 data class SimProfile(
         val iccId: String,
-        @JvmField val eSimActivationCode: String,
+        val eSimActivationCode: String,
         val status: SimProfileStatus,
-        val alias: String = "") : HasId {
-
-    override val id: String
-        @JsonIgnore
-        get() = iccId
-}
+        val alias: String = "")
 
 enum class SimProfileStatus {
     NOT_READY,
