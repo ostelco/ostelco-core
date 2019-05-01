@@ -11,9 +11,9 @@ import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.simmanager.NotFoundError
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.sim.es2plus.ProfileStatus
-import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
 import org.ostelco.simcards.admin.ProfileVendorConfig
 import org.ostelco.simcards.admin.SimAdministrationConfiguration
+import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
 import java.io.InputStream
 
 
@@ -22,10 +22,21 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                       private val dao: SimInventoryDAO) {
 
     fun findSimProfileByIccid(hlrName: String, iccid: String): Either<SimManagerError, SimEntry> =
-            dao.getSimProfileByIccid(iccid)
-                    .flatMap { simEntry ->
-                        checkForValidHlr(hlrName, simEntry)
-                    }
+            IO {
+                Either.monad<SimManagerError>().binding {
+
+                    val simEntry = dao.getSimProfileByIccid(iccid).bind()
+
+                    checkForValidHlr(hlrName, simEntry)
+
+                    val profileVendorAndConfig = getProfileVendorAdapterAndConfig(simEntry).bind()
+
+                    val config = profileVendorAndConfig.second
+
+                    simEntry.copy(code = "LPA:1\$${config.es9plusEndpoint}\$${simEntry.matchingId}")
+
+                }.fix()
+            }.unsafeRunSync()
 
     fun findSimProfileByImsi(hlrName: String, imsi: String): Either<SimManagerError, SimEntry> =
             dao.getSimProfileByImsi(imsi)
@@ -49,7 +60,6 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
                     }
 
 
-
     fun allocateNextEsimProfile(hlrName: String, phoneType: String): Either<SimManagerError, SimEntry> =
             IO {
                 Either.monad<SimManagerError>().binding {
@@ -64,14 +74,13 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
 
                     val config = profileVendorAndConfig.second
 
-                    dao.setProvisionState(simEntry.id!!, ProvisionState.PROVISIONED)
-                            .flatMap {
-                                /* Add 'code' field content.
-                                   Original format: LPA:<hostname>:<matching-id>
-                                   New format: LPA:1$<endpoint>$<matching-id> */
-                                it.copy(code = "LPA:1\$${config.es9plusEndpoint}\$${it.matchingId}")
-                                        .right()
-                            }.bind()
+                    val updatedSimEntry = dao.setProvisionState(simEntry.id!!, ProvisionState.PROVISIONED)
+                            .bind()
+
+                    /* Add 'code' field content.
+                       Original format: LPA:<hostname>:<matching-id>
+                       New format: LPA:1$<endpoint>$<matching-id> */
+                    updatedSimEntry.copy(code = "LPA:1\$${config.es9plusEndpoint}\$${updatedSimEntry.matchingId}")
                 }.fix()
             }.unsafeRunSync()
 
@@ -99,7 +108,7 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
             dao.getHssEntryById(simEntry.hssId)
                     .flatMap { hlrAdapter ->
                         if (hlrName != hlrAdapter.name)
-                            NotFoundError("HLR name ${hlrName} does not match SIM profile HLR ${hlrAdapter.name}")
+                            NotFoundError("HLR name $hlrName does not match SIM profile HLR ${hlrAdapter.name}")
                                     .left()
                         else
                             simEntry.right()
@@ -124,7 +133,7 @@ class SimInventoryApi(private val httpClient: CloseableHttpClient,
         return if (profile != null)
             profile.right()
         else
-            NotFoundError("Could not find configuration for phone type ${phoneType}")
+            NotFoundError("Could not find configuration for phone type $phoneType")
                     .left()
     }
 }
