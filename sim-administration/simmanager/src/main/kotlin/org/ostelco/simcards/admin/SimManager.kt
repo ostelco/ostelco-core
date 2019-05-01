@@ -7,13 +7,7 @@ import org.ostelco.prime.model.SimProfileStatus
 import org.ostelco.prime.sim.SimManager
 import org.ostelco.simcards.admin.ApiRegistry.simInventoryApi
 import org.ostelco.simcards.admin.ApiRegistry.simProfileStatusUpdateCallback
-import org.ostelco.simcards.inventory.SmDpPlusState.ALLOCATED
-import org.ostelco.simcards.inventory.SmDpPlusState.AVAILABLE
-import org.ostelco.simcards.inventory.SmDpPlusState.CONFIRMED
-import org.ostelco.simcards.inventory.SmDpPlusState.DOWNLOADED
-import org.ostelco.simcards.inventory.SmDpPlusState.ENABLED
-import org.ostelco.simcards.inventory.SmDpPlusState.INSTALLED
-import org.ostelco.simcards.inventory.SmDpPlusState.RELEASED
+import org.ostelco.simcards.inventory.SmDpPlusState
 
 class ESimManager : SimManager by SimManagerSingleton
 
@@ -42,17 +36,26 @@ object SimManagerSingleton : SimManager {
     }
 
     private fun mapToModelSimEntry(simEntry: org.ostelco.simcards.inventory.SimEntry) : SimEntry {
-        val status = when (simEntry.smdpPlusState) {
-            AVAILABLE, ALLOCATED, CONFIRMED -> SimProfileStatus.NOT_READY
-            RELEASED -> SimProfileStatus.AVAILABLE_FOR_DOWNLOAD
-            DOWNLOADED -> SimProfileStatus.DOWNLOADED
-            INSTALLED -> SimProfileStatus.INSTALLED
-            ENABLED -> SimProfileStatus.ENABLED
-        }
+
+        val status = asSimProfileStatus(simEntry.smdpPlusState)
         return SimEntry(
                 iccId = simEntry.iccid,
                 status = status,
                 eSimActivationCode = simEntry.code!!,
                 msisdnList = listOf(simEntry.msisdn))
+    }
+
+    fun asSimProfileStatus(smdpPlusState: SmDpPlusState) : SimProfileStatus {
+        return when (smdpPlusState) {
+            SmDpPlusState.AVAILABLE -> SimProfileStatus.NOT_READY
+            SmDpPlusState.ALLOCATED -> SimProfileStatus.NOT_READY
+            SmDpPlusState.CONFIRMED -> SimProfileStatus.NOT_READY
+            SmDpPlusState.RELEASED -> SimProfileStatus.AVAILABLE_FOR_DOWNLOAD
+            SmDpPlusState.DOWNLOADED -> SimProfileStatus.DOWNLOADED
+            SmDpPlusState.INSTALLED -> SimProfileStatus.INSTALLED
+            SmDpPlusState.ENABLED -> SimProfileStatus.ENABLED
+            SmDpPlusState.ALLOCATION_FAILED -> SimProfileStatus.NOT_READY
+            // XXX IF no match, then fail!
+        }
     }
 }
