@@ -41,7 +41,7 @@ object SimManagerSingleton : SimManager {
         return SimEntry(
                 iccId = simEntry.iccid,
                 status = status,
-                eSimActivationCode = simEntry.code!!,
+                eSimActivationCode = simEntry.code ?: "",
                 msisdnList = listOf(simEntry.msisdn))
     }
 
