@@ -97,11 +97,11 @@ class SimEntryIterator(profileVendorId: Long,
 
     var count = AtomicLong(0)
     // TODO: The current implementation puts everything in a deque at startup.
-//     This is correct, but inefficient, in partricular for large
-//     batches.   Once proven to work, this thing should be rewritten
-//     to use coroutines, to let the "next" get the next available
-//     sim entry.  It may make sense to have a reader and writer thread
-//     coordinating via the deque.
+    //     This is correct, but inefficient, in partricular for large
+    //     batches.   Once proven to work, this thing should be rewritten
+    //     to use coroutines, to let the "next" get the next available
+    //     sim entry.  It may make sense to have a reader and writer thread
+    //     coordinating via the deque.
     private val values = ConcurrentLinkedDeque<SimEntry>()
 
     init {
@@ -209,9 +209,9 @@ class SimInventoryDAO(private val db: SimInventoryDBWrapperImpl) : SimInventoryD
                 }.fix()
             }.unsafeRunSync()
 
-//
-// Importing
-//
+    //
+    // Importing
+    //
 
     override fun insertAll(entries: Iterator<SimEntry>): Either<SimManagerError, Unit> =
             db.insertAll(entries)
@@ -245,9 +245,9 @@ class SimInventoryDAO(private val db: SimInventoryDBWrapperImpl) : SimInventoryD
                 }.fix()
             }.unsafeRunSync()
 
-//
-// Finding next free SIM card for a particular HLR.
-//
+    //
+    // Finding next free SIM card for a particular HLR.
+    //
 
     /**
      * Get relevant statistics for a particular profile type for a particular HLR.
