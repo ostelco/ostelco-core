@@ -14,31 +14,14 @@ import org.ostelco.prime.appnotifier.AppNotifier
 import org.ostelco.prime.ekyc.DaveKycService
 import org.ostelco.prime.ekyc.MyInfoKycService
 import org.ostelco.prime.getLogger
-import org.ostelco.prime.model.Bundle
-import org.ostelco.prime.model.ChangeSegment
-import org.ostelco.prime.model.Customer
-import org.ostelco.prime.model.CustomerRegionStatus
+import org.ostelco.prime.model.*
 import org.ostelco.prime.model.CustomerRegionStatus.APPROVED
 import org.ostelco.prime.model.CustomerRegionStatus.PENDING
-import org.ostelco.prime.model.KycStatus
 import org.ostelco.prime.model.KycStatus.REJECTED
-import org.ostelco.prime.model.KycType
 import org.ostelco.prime.model.KycType.ADDRESS_AND_PHONE_NUMBER
 import org.ostelco.prime.model.KycType.JUMIO
 import org.ostelco.prime.model.KycType.MY_INFO
 import org.ostelco.prime.model.KycType.NRIC_FIN
-import org.ostelco.prime.model.Offer
-import org.ostelco.prime.model.Plan
-import org.ostelco.prime.model.Product
-import org.ostelco.prime.model.ProductClass
-import org.ostelco.prime.model.PurchaseRecord
-import org.ostelco.prime.model.RefundRecord
-import org.ostelco.prime.model.Region
-import org.ostelco.prime.model.RegionDetails
-import org.ostelco.prime.model.ScanInformation
-import org.ostelco.prime.model.ScanStatus
-import org.ostelco.prime.model.Segment
-import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.notifications.EmailNotifier
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
@@ -1194,8 +1177,8 @@ object Neo4jStoreSingleton : GraphStore {
                             .flatMap {
                                 appNotifier.notify(
                                         customerId = customer.id,
-                                        title = "eKYC Status",
-                                        body = "Successfully verified the identity",
+                                        title = FCMStrings.NOTIFICATION_TITLE.s,
+                                        body = FCMStrings.JUMIO_IDENTITY_VERIFIED.s,
                                         data = extendedStatus
                                 )
                                 setKycStatus(
@@ -1208,8 +1191,8 @@ object Neo4jStoreSingleton : GraphStore {
                     // TODO: find out what more information can be passed to the client.
                     appNotifier.notify(
                             customerId = customer.id,
-                            title = "eKYC Status",
-                            body = "Failed to verify the identity",
+                            title = FCMStrings.NOTIFICATION_TITLE.s,
+                            body = FCMStrings.JUMIO_IDENTITY_FAILED.s,
                             data = extendedStatus
                     )
                     setKycStatus(

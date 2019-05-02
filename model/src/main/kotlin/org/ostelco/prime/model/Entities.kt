@@ -165,6 +165,12 @@ enum class VendorScanData(val s: String) {
     TYPE_NAME("VendorScanInformation")
 }
 
+enum class FCMStrings(val s: String) {
+    NOTIFICATION_TITLE("eKYC Status"),
+    JUMIO_IDENTITY_VERIFIED("Successfully verified the identity"),
+    JUMIO_IDENTITY_FAILED("Failed to verify the identity")
+}
+
 // TODO vihang: make ApplicationToken data class immutable
 // this data class is treated differently since it is stored in Firebase.
 data class ApplicationToken(

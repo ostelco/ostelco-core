@@ -406,16 +406,21 @@ object JumioHelper {
                 val similarity = identityVerification[JumioScanData.SIMILARITY.s]
                 val validity = identityVerification[JumioScanData.VALIDITY.s]
                 val reason = identityVerification[JumioScanData.REASON.s]
-                if ((similarity != null && similarity.toUpperCase() == JumioScanData.MATCH.s &&
-                                validity != null && validity.toUpperCase() == JumioScanData.TRUE.s)) {
-                    extendedStatus.putIfAbsent(JumioScanData.IDENTITY_VERIFICATION.s, JumioScanData.PRIME_IDENTITY_VALID_SIMILAR.s)
-                } else {
+                if (similarity == null || validity == null) {
+                    // Similarity or Validity field is not present
                     extendedStatus.putIfAbsent(JumioScanData.IDENTITY_VERIFICATION.s, JumioScanData.PRIME_IDENTITY_VERIFICATION_FAILED.s)
-                }
-                if (similarity != null && similarity.toUpperCase() != JumioScanData.MATCH.s) {
-                    extendedStatus.putIfAbsent(JumioScanData.REJECT_REASON.s, similarity)
-                } else if (validity != null && validity.toUpperCase() != JumioScanData.TRUE.s) {
-                    extendedStatus.putIfAbsent(JumioScanData.REJECT_REASON.s, reason ?: JumioScanData.PRIME_MISSING_IDENTITY_REASON.s)
+                } else {
+                    if (similarity.toUpperCase() == JumioScanData.MATCH.s && validity.toUpperCase() == JumioScanData.TRUE.s) {
+                        // This verification is a success
+                        extendedStatus.putIfAbsent(JumioScanData.IDENTITY_VERIFICATION.s, JumioScanData.PRIME_IDENTITY_VALID_SIMILAR.s)
+                    } else if (similarity.toUpperCase() != JumioScanData.MATCH.s) {
+                        // The document and photo doesn't match
+                        extendedStatus.putIfAbsent(JumioScanData.REJECT_REASON.s, similarity)
+                    } else if (validity.toUpperCase() != JumioScanData.TRUE.s) {
+                        // The photo is not valid.
+                        extendedStatus.putIfAbsent(JumioScanData.REJECT_REASON.s, reason
+                                ?: JumioScanData.PRIME_MISSING_IDENTITY_REASON.s)
+                    }
                 }
             }
         }
