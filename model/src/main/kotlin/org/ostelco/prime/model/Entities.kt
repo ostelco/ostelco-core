@@ -140,9 +140,15 @@ enum class JumioScanData(val s: String) {
     IDENTITY_VERIFICATION("identityVerification"),
     SIMILARITY("similarity"),
     VALIDITY("validity"),
+    REASON("reason"),
     APPROVED_VERIFIED("APPROVED_VERIFIED"),
     MATCH("MATCH"),
-    TRUE("TRUE")
+    TRUE("TRUE"),
+    // Extended values from prime
+    PRIME_MISSING_IDENTITY_VERIFICATION("PRIME_MISSING_IDENTITY_VERIFICATION"),
+    PRIME_IDENTITY_VALID_SIMILAR("PRIME_IDENTITY_VALID_SIMILAR"),
+    PRIME_IDENTITY_VERIFICATION_FAILED("PRIME_IDENTITY_VERIFICATION_FAILED"),
+    PRIME_MISSING_IDENTITY_REASON("PRIME_MISSING_IDENTITY_REASON")
 }
 
 enum class VendorScanData(val s: String) {
@@ -157,6 +163,12 @@ enum class VendorScanData(val s: String) {
     IMAGEFACE_TYPE("scanImageFaceType"),
     // Name of the datastore type
     TYPE_NAME("VendorScanInformation")
+}
+
+enum class FCMStrings(val s: String) {
+    NOTIFICATION_TITLE("eKYC Status"),
+    JUMIO_IDENTITY_VERIFIED("Successfully verified the identity"),
+    JUMIO_IDENTITY_FAILED("Failed to verify the identity")
 }
 
 // TODO vihang: make ApplicationToken data class immutable
@@ -250,7 +262,7 @@ data class SimEntry(
 
 data class SimProfile(
         val iccId: String,
-        val eSimActivationCode: String,
+        @JvmField val eSimActivationCode: String,
         val status: SimProfileStatus,
         val alias: String = "")
 
