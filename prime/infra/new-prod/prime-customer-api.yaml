@@ -888,7 +888,7 @@ definitions:
       iccId:
         description: "ID of Sim Profile"
         type: string
-      activationCode:
+      esimActivationCode:
         description: "eSIM activation code"
         type: string
       status:
