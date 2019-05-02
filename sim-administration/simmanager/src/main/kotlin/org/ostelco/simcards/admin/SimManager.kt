@@ -26,23 +26,11 @@ object SimManagerSingleton : SimManager {
                     {
                         "Failed to allocate eSIM for HLR - $hlr for phoneType - $phoneType"
                     },
-                    { simEntry ->
-                        SimEntry(iccId = simEntry.iccid,
-                                eSimActivationCode = simEntry.code!!,
-                                msisdnList = listOf(simEntry.msisdn))
-                    })
+                    { simEntry -> mapToModelSimEntry(simEntry) })
 
-    override fun getSimProfileStatus(hlr: String, iccId: String): Either<String, SimProfileStatus> {
+    override fun getSimProfile(hlr: String, iccId: String): Either<String, SimEntry> {
         return simInventoryApi.findSimProfileByIccid(hlrName = hlr, iccid = iccId)
-                .map { simEntry ->
-                    when (simEntry.smdpPlusState) {
-                        AVAILABLE, ALLOCATED, CONFIRMED -> SimProfileStatus.NOT_READY
-                        RELEASED -> SimProfileStatus.AVAILABLE_FOR_DOWNLOAD
-                        DOWNLOADED -> SimProfileStatus.DOWNLOADED
-                        INSTALLED -> SimProfileStatus.INSTALLED
-                        ENABLED -> SimProfileStatus.ENABLED
-                    }
-                }
+                .map { simEntry -> mapToModelSimEntry(simEntry) }
                 .mapLeft {
                     logger.error("Failed to get SIM Profile Status", it.error)
                     it.description
@@ -51,5 +39,20 @@ object SimManagerSingleton : SimManager {
 
     override fun getSimProfileStatusUpdates(onUpdate: (iccId: String, status: SimProfileStatus) -> Unit) {
         simProfileStatusUpdateCallback = onUpdate
+    }
+
+    private fun mapToModelSimEntry(simEntry: org.ostelco.simcards.inventory.SimEntry) : SimEntry {
+        val status = when (simEntry.smdpPlusState) {
+            AVAILABLE, ALLOCATED, CONFIRMED -> SimProfileStatus.NOT_READY
+            RELEASED -> SimProfileStatus.AVAILABLE_FOR_DOWNLOAD
+            DOWNLOADED -> SimProfileStatus.DOWNLOADED
+            INSTALLED -> SimProfileStatus.INSTALLED
+            ENABLED -> SimProfileStatus.ENABLED
+        }
+        return SimEntry(
+                iccId = simEntry.iccid,
+                status = status,
+                eSimActivationCode = simEntry.code ?: "",
+                msisdnList = listOf(simEntry.msisdn))
     }
 }

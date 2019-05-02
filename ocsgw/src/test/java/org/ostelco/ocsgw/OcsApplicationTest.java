@@ -192,8 +192,8 @@ public class OcsApplicationTest {
         final int serviceIdentifier = -1;
 
         Session session = client.createSession();
-        simpleCreditControlRequestInit(session, -1L, 4_000_000L, ratingGroup, serviceIdentifier);
-        simpleCreditControlRequestUpdate(session, -1L, 4_000_000L, 4_000_000L, ratingGroup, serviceIdentifier);
+        simpleCreditControlRequestInit(session, -1L, 40_000_000L, ratingGroup, serviceIdentifier);
+        simpleCreditControlRequestUpdate(session, -1L, 40_000_000L, 40_000_000L, ratingGroup, serviceIdentifier);
 
         Request request = client.createRequest(
                 OCS_REALM,
@@ -201,7 +201,7 @@ public class OcsApplicationTest {
                 session
         );
 
-        TestHelper.createTerminateRequest(request.getAvps(), MSISDN, 4_000_000L, ratingGroup, serviceIdentifier);
+        TestHelper.createTerminateRequest(request.getAvps(), MSISDN, 40_000_000L, ratingGroup, serviceIdentifier);
 
         client.sendNextRequest(request, session);
 

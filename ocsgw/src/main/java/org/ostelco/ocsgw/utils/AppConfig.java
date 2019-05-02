@@ -38,7 +38,7 @@ public class AppConfig {
     public Long getDefaultRequestedServiceUnit () {
           final String defaultRequestedServiceUnit = System.getProperty("DEFAULT_REQUESTED_SERVICE_UNIT");
           if (defaultRequestedServiceUnit == null || defaultRequestedServiceUnit.isEmpty()) {
-              return 4000000L;
+              return 40_000_000L;
           } else {
               return Long.parseLong(defaultRequestedServiceUnit);
           }
