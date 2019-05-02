@@ -7,8 +7,14 @@ import io.dropwizard.testing.junit.ResourceTestRule
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNotNull
 import org.apache.http.impl.client.CloseableHttpClient
-import org.junit.*
-import org.mockito.Mockito.*
+import org.junit.AfterClass
+import org.junit.Before
+import org.junit.ClassRule
+import org.junit.Ignore
+import org.junit.Test
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.reset
+import org.mockito.Mockito.verify
 import org.ostelco.prime.simmanager.NotFoundError
 import org.ostelco.simcards.admin.HssConfig
 import org.ostelco.simcards.admin.ProfileVendorConfig
@@ -16,6 +22,7 @@ import org.ostelco.simcards.admin.SimAdministrationConfiguration
 import org.ostelco.simcards.hss.HssEntry
 import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
 import java.io.ByteArrayInputStream
+import java.util.*
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 
@@ -56,6 +63,9 @@ class SimInventoryUnitTests {
     private val fakePhoneType = "_"
     private val fakeProfile = "PROFILE_1"
 
+    private val matchingId = UUID.randomUUID().toString()
+    private val es9plusEndpoint = "http://localhost:8080/farFarAway"
+
     private val fakeSimEntryWithoutMsisdn = SimEntry(
             id = 1L,
             profileVendorId = 1L,
@@ -67,7 +77,9 @@ class SimInventoryUnitTests {
             smdpPlusState = SmDpPlusState.AVAILABLE,
             batch = 99L,
             imsi = fakeImsi1,
-            iccid = fakeIccid1)
+            iccid = fakeIccid1,
+            matchingId = matchingId,
+            code = "LPA:1$$es9plusEndpoint$$matchingId")
 
     private val fakeSimEntryWithMsisdn = fakeSimEntryWithoutMsisdn.copy(
             msisdn = fakeMsisdn1,
@@ -94,6 +106,8 @@ class SimInventoryUnitTests {
                 .thenReturn(fakeProfileVendor)
         org.mockito.Mockito.`when`(profileVendorConfig.es2plusEndpoint)
                 .thenReturn("http://localhost:8080/somewhere")
+        org.mockito.Mockito.`when`(profileVendorConfig.es9plusEndpoint)
+                .thenReturn(es9plusEndpoint)
 
         /* Top level config. */
         org.mockito.Mockito.`when`(config.hssVendors)
@@ -193,6 +207,7 @@ class SimInventoryUnitTests {
 
         val simEntry = response.readEntity(SimEntry::class.java)
         verify(dao).getSimProfileByIccid(fakeIccid1)
+        verify(dao).getProfileVendorAdapterById(fakeSimEntryWithoutMsisdn.profileVendorId)
         assertNotNull(simEntry)
         assertEquals(fakeSimEntryWithoutMsisdn, simEntry)
     }
