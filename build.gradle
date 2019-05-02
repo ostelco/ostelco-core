@@ -59,9 +59,7 @@ subprojects {
     neo4jVersion="3.5.4"
     protocVersion="3.7.1"
     slf4jVersion="1.7.26"
-    // Compile errors on upgrading stripeVersion to "8.1.0"
-    // https://github.com/stripe/stripe-java/wiki/Migration-guide-for-v8----breaking-changes
-    stripeVersion = "7.29.0"
+    stripeVersion = "9.8.0"
     swaggerVersion = "2.0.7"
     swaggerCodegenVersion = "2.4.4"
     tinkVersion = "1.2.2"
