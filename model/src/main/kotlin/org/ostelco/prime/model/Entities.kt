@@ -262,7 +262,7 @@ data class SimEntry(
 
 data class SimProfile(
         val iccId: String,
-        val eSimActivationCode: String,
+        @JvmField val eSimActivationCode: String,
         val status: SimProfileStatus,
         val alias: String = "")
 

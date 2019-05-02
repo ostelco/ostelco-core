@@ -907,7 +907,7 @@ definitions:
       iccId:
         description: "ID of Sim Profile"
         type: string
-      esimActivationCode:
+      eSimActivationCode:
         description: "eSIM activation code"
         type: string
       status:
