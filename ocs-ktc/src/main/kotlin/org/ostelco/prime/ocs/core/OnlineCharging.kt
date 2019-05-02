@@ -120,9 +120,9 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                         .setIsSet(true)
                         .build()
 
-                responseMscc.volumeQuotaThreshold = 0L // 100% if final-unit
+                responseMscc.volumeQuotaThreshold = 0L
             } else {
-                responseMscc.volumeQuotaThreshold = (grantedTotalOctets * 0.2).toLong() // 20%
+                responseMscc.volumeQuotaThreshold = (grantedTotalOctets * 0.2).toLong() // When client has 20% left
             }
         }
 
