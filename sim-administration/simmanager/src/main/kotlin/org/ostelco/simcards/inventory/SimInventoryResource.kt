@@ -19,9 +19,10 @@ import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
 
-///
-///  The web resource using the protocol domain model.
-///
+/**
+ * Web resource used for administrating SIM profiles from misc. vendors
+ * for misc. HSSes.
+ */
 
 @Path("/ostelco/sim-inventory/{hssVendors}")
 class SimInventoryResource(private val api: SimInventoryApi) {

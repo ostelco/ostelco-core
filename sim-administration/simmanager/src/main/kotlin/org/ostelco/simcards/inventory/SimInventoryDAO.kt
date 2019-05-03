@@ -106,7 +106,7 @@ class SimEntryIterator(profileVendorId: Long,
         //     be some variation between  sim vendors, and that should be
         //     something we can adjust to given the parameters sent to the
         //     reader class on creation.   Should  be configurable in
-        //     a config file or other  config database.
+        //     a config file or other config database.
 
         val csvFileFormat = CSVFormat.DEFAULT
                 .withQuote(null)
@@ -226,7 +226,8 @@ class SimInventoryDAO(private val db: SimInventoryDBWrapperImpl) : SimInventoryD
                             .bind()
                     val batchId = lastInsertedRowId()
                             .bind()
-                    val values = SimEntryIterator(profileVendorId = profileVendorId,
+                    val values = SimEntryIterator(
+                            profileVendorId = profileVendorId,
                             hssId = hlrId,
                             batchId = batchId,
                             csvInputStream = csvInputStream)
