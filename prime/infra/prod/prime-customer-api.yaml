@@ -913,7 +913,7 @@ definitions:
       status:
         description: "The status of the SIM profile, e.g. INSTALLED"
         type: string
-        enum: [ AVAILABLE_FOR_DOWNLOAD, DOWNLOADED, INSTALLED, ENABLED ]
+        enum: [ NOT_READY, AVAILABLE_FOR_DOWNLOAD, DOWNLOADED, INSTALLED, ENABLED ]
       alias:
         description: "Human readable optional alias for this subscription"
         type: string
