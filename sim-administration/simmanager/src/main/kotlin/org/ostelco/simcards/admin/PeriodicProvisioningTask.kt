@@ -82,12 +82,16 @@ class PreallocateProfilesTask(
             //     is possible to move along.   This is an error in the logic of this code.
             simInventoryDAO.findNextNonProvisionedSimProfileForHss(hssId = hssEntry.id, profile = simProfileName)
                     .flatMap { simEntry ->
+                        // XXX At this point we should check if simEntry.id != null, however I don't know
+                        //     how to make this test in Arrow, so I'm just letting it slide.  There will be
+                        //     a PR later to weed out the "!!"s from our codebase.
                         preProvisionSimProfile(hssEntry, simEntry)
                                 .mapLeft {
                                     logger.error("Preallocation of SIM ICCID {} failed with error: {}}",
                                             simEntry.iccid, it.description)
 
-                                    // XXX This looks weird, get review on it (and the code above)
+                                    // XXX the simEntry.id!! is necessary since the simEntry class _can_ have a null
+                                    //     id value, although when read from a database that will never happen.
                                     simInventoryDAO.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ALLOCATION_FAILED)
                                 }
                     }
