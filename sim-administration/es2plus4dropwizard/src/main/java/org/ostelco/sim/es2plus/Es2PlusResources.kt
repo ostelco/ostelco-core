@@ -4,6 +4,7 @@ import io.dropwizard.jersey.setup.JerseyEnvironment
 import org.ostelco.jsonschema.DynamicES2ValidatorAdder
 import org.ostelco.sim.es2plus.ES2PlusClient.Companion.X_ADMIN_PROTOCOL_HEADER_VALUE
 import org.ostelco.sim.es2plus.SmDpPlusServerResource.Companion.ES2PLUS_PATH_PREFIX
+import org.slf4j.LoggerFactory
 import java.io.IOException
 import javax.ws.rs.Consumes
 import javax.ws.rs.POST
@@ -68,10 +69,24 @@ class ES2PlusOutgoingHeadersFilter : ContainerResponseFilter {
     }
 }
 
+/**
+ * Invoked when an exception is thrown when handling an ES2+ request.
+ * The return value will be a perfectly normal "200" message, since that
+ * is what the SM-DP+ standard requires.   This means we must ourselves
+ * take the responsibility to log the situation as an error, otherwise it
+ * will be very difficult to find it in the server logs.
+ */
 class SmdpExceptionMapper : ExceptionMapper<SmDpPlusException> {
+
+    val logger = LoggerFactory.getLogger(SmdpExceptionMapper::class.java)
+
     override fun toResponse(ex: SmDpPlusException): Response {
 
-        // XXX Use some other responser than this, just a placeholderr
+        // First we log the event.
+        logger.error("SM-DP+ processing failed: {}" , ex.statusCodeData)
+
+        // Then we prepare a response that will be returned to
+        // whoever invoked the resource.
         val entity = HeaderOnlyResponse(
                 header = newErrorHeader(ex))
 
