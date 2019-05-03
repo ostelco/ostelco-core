@@ -112,16 +112,20 @@ class SimInventoryResource(private val api: SimInventoryApi) {
     fun importBatch(
             @NotEmpty @PathParam("hssVendors") hss: String,
             @NotEmpty @PathParam("simVendor") simVendor: String,
-            @QueryParam("initialHssState") initialHssState: HssState = HssState.NOT_ACTIVATED,
-            csvInputStream: InputStream): Response =
-            api.importBatch(hss, simVendor, csvInputStream, initialHssState)
-                    .fold(
-                            {
-                                error("Failed to upload batch with SIM profiles for HSS ${hss} and SIM profile vendor ${simVendor}",
-                                        ApiErrorCode.FAILED_TO_IMPORT_BATCH, it)
-                            },
-                            { Response.status(Response.Status.OK).entity(asJson(it)) }
-                    ).build()
+            @QueryParam("initialHssState") initialHssStateArg: HssState?,
+            csvInputStream: InputStream): Response {
+
+        val initialHssState = if (initialHssStateArg==null) HssState.NOT_ACTIVATED else initialHssStateArg
+
+        return api.importBatch(hss, simVendor, csvInputStream, initialHssState)
+                .fold(
+                        {
+                            error("Failed to upload batch with SIM profiles for HSS ${hss} and SIM profile vendor ${simVendor}",
+                                    ApiErrorCode.FAILED_TO_IMPORT_BATCH, it)
+                        },
+                        { Response.status(Response.Status.OK).entity(asJson(it)) }
+                ).build()
+    }
 
 
     /* Maps internal errors to format suitable for HTTP/REST. */
