@@ -55,7 +55,6 @@ object SimManagerSingleton : SimManager {
             SmDpPlusState.INSTALLED -> SimProfileStatus.INSTALLED
             SmDpPlusState.ENABLED -> SimProfileStatus.ENABLED
             SmDpPlusState.ALLOCATION_FAILED -> SimProfileStatus.NOT_READY
-            // XXX IF no match, then fail!
         }
     }
 }
