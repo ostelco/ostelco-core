@@ -93,11 +93,12 @@ data class SimImportBatch(
 class SimEntryIterator(profileVendorId: Long,
                        hssId: Long,
                        batchId: Long,
+                       initialHssState: HssState,
                        csvInputStream: InputStream) : Iterator<SimEntry> {
 
     var count = AtomicLong(0)
     // TODO: The current implementation puts everything in a deque at startup.
-    //     This is correct, but inefficient, in partricular for large
+    //     This is correct, but inefficient, in particular for large
     //     batches.   Once proven to work, this thing should be rewritten
     //     to use coroutines, to let the "next" get the next available
     //     sim entry.  It may make sense to have a reader and writer thread
@@ -144,7 +145,8 @@ class SimEntryIterator(profileVendorId: Long,
                             puk1 = puk1,
                             puk2 = puk2,
                             pin2 = pin2,
-                            profile = profile
+                            profile = profile,
+                            hssState =  initialHssState
                     )
 
                     values.add(value)
@@ -220,7 +222,8 @@ class SimInventoryDAO(private val db: SimInventoryDBWrapperImpl) : SimInventoryD
     fun importSims(importer: String,
                    hlrId: Long,
                    profileVendorId: Long,
-                   csvInputStream: InputStream): Either<SimManagerError, SimImportBatch> =
+                   csvInputStream: InputStream,
+                   initialHssState: HssState = HssState.NOT_ACTIVATED): Either<SimManagerError, SimImportBatch> =
             IO {
                 Either.monad<SimManagerError>().binding {
                     createNewSimImportBatch(importer = importer,
@@ -233,6 +236,7 @@ class SimInventoryDAO(private val db: SimInventoryDBWrapperImpl) : SimInventoryD
                             profileVendorId = profileVendorId,
                             hssId = hlrId,
                             batchId = batchId,
+                            initialHssState = initialHssState,
                             csvInputStream = csvInputStream)
                     insertAll(values)
                             .bind()
