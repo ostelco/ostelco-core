@@ -2,6 +2,7 @@ package org.ostelco.prime.customer.endpoint.store
 
 import arrow.core.Either
 import arrow.core.flatMap
+import arrow.core.right
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
 import org.ostelco.prime.apierror.ApiErrorMapper.mapPaymentErrorToApiError
@@ -11,12 +12,14 @@ import org.ostelco.prime.apierror.InternalServerError
 import org.ostelco.prime.apierror.NotFoundError
 import org.ostelco.prime.customer.endpoint.metrics.updateMetricsOnNewSubscriber
 import org.ostelco.prime.customer.endpoint.model.Person
+import org.ostelco.prime.ekyc.MyInfoKycService
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Context
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.Identity
+import org.ostelco.prime.model.MyInfoConfig
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.RegionDetails
@@ -397,6 +400,10 @@ class SubscriberDAOImpl : SubscriberDAO {
         return storage.getCustomerMyInfoData(identity, authorisationCode)
                 .mapLeft { mapStorageErrorToApiError("Failed to fetch Customer Data from MyInfo", ApiErrorCode.FAILED_TO_FETCH_CUSTOMER_MYINFO_DATA, it) }
     }
+
+    private val myInfoKycService by lazy { getResource<MyInfoKycService>() }
+
+    override fun getMyInfoConfig(): Either<ApiError, MyInfoConfig> = myInfoKycService.getConfig().right()
 
     override fun checkNricFinIdUsingDave(identity: Identity, nricFinId: String): Either<ApiError, Unit> {
         return storage.checkNricFinIdUsingDave(identity, nricFinId)

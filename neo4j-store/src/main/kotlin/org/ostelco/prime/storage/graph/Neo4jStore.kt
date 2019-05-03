@@ -620,7 +620,7 @@ object Neo4jStoreSingleton : GraphStore {
                                     iccId = simProfile.iccId)
                                     .mapLeft { NotFoundError(type = simProfileEntity.name, id = simProfile.iccId) }
                                     .bind()
-                            SimProfile(
+                            org.ostelco.prime.model.SimProfile(
                                     iccId = simProfile.iccId,
                                     alias = simProfile.alias,
                                     eSimActivationCode = simEntry.eSimActivationCode,
@@ -654,7 +654,7 @@ object Neo4jStoreSingleton : GraphStore {
 
                     simProfileStore.update(simProfile.copy(alias = alias), transaction).bind()
 
-                    SimProfile(
+                    org.ostelco.prime.model.SimProfile(
                             iccId = simProfile.iccId,
                             alias = simProfile.alias,
                             eSimActivationCode = "",
@@ -672,7 +672,7 @@ object Neo4jStoreSingleton : GraphStore {
                         .mapLeft { NotFoundError(type = simProfileEntity.name, id = simProfile.iccId) }
                         .bind()
 
-                SimProfile(
+                org.ostelco.prime.model.SimProfile(
                         iccId = simProfile.iccId,
                         alias = simProfile.alias,
                         eSimActivationCode = simEntry.eSimActivationCode,
@@ -724,7 +724,7 @@ object Neo4jStoreSingleton : GraphStore {
                         }
                         .bind()
 
-                SimProfile(
+                org.ostelco.prime.model.SimProfile(
                         iccId = simEntry.iccId,
                         eSimActivationCode = simEntry.eSimActivationCode,
                         status = simEntry.status,
@@ -741,7 +741,7 @@ object Neo4jStoreSingleton : GraphStore {
     override fun addSubscription(identity: org.ostelco.prime.model.Identity, msisdn: String): Either<StoreError, Unit> = writeTransaction {
         IO {
             Either.monad<StoreError>().binding {
-                val customerId = Neo4jStoreSingleton.getCustomerId(identity = identity, transaction = transaction).bind()
+                val customerId = getCustomerId(identity = identity, transaction = transaction).bind()
                 val bundles = customerStore.getRelated(customerId, customerToBundleRelation, transaction).bind()
                 validateBundleList(bundles, customerId).bind()
                 subscriptionStore.create(Subscription(msisdn), transaction).bind()

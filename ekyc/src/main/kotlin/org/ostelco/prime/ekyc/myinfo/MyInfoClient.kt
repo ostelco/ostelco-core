@@ -13,6 +13,7 @@ import org.ostelco.prime.ekyc.myinfo.HttpMethod.GET
 import org.ostelco.prime.ekyc.myinfo.HttpMethod.POST
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.jsonmapper.objectMapper
+import org.ostelco.prime.model.MyInfoConfig
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.security.KeyFactory
@@ -29,6 +30,12 @@ class MyInfoClient : MyInfoKycService by MyInfoClientSingleton
 object MyInfoClientSingleton : MyInfoKycService {
 
     private val logger by getLogger()
+
+    override fun getConfig(): MyInfoConfig = MyInfoConfig(
+            url = "${config.myInfoApiUri}/authorise" +
+                    "?client_id=${config.myInfoApiClientId}" +
+                    "&attributes=${config.myInfoPersonDataAttributes}" +
+                    "&redirect_uri=${config.myInfoRedirectUri}")
 
     override fun getPersonData(authorisationCode: String): String {
 

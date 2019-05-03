@@ -246,6 +246,22 @@ paths:
       security:
         - auth0_jwt: []
         - firebase: []
+  "/regions/sg/kyc/myInfoConfig":
+    get:
+      description: "Get Singapore MyInfo service config."
+      produces:
+        - application/json
+      operationId: "getMyInfoConfig"
+      responses:
+        200:
+          description: "MyInfo service config."
+          schema:
+            $ref: "#/definitions/MyInfoConfig"
+        404:
+          description: "Config not found."
+      security:
+        - auth0_jwt: []
+        - firebase: []
   "/regions/sg/kyc/dave/{nricFinId}":
     get:
       description: "Get Customer Data from Singapore MyInfo service."
@@ -759,6 +775,12 @@ definitions:
   KycStatus:
     type: string
     enum: [ PENDING, REJECTED, APPROVED ]
+  MyInfoConfig:
+    type: object
+    properties:
+      url:
+        type: string
+        description: "URL for MyInfo authorise"
   Region:
     type: object
     properties:
