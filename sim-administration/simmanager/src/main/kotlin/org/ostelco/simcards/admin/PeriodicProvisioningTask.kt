@@ -10,11 +10,16 @@ import com.google.common.collect.ImmutableMultimap
 import io.dropwizard.servlets.tasks.Task
 import org.apache.http.impl.client.CloseableHttpClient
 import org.ostelco.prime.getLogger
+import org.ostelco.prime.simmanager.DatabaseError
 import org.ostelco.prime.simmanager.NotFoundError
 import org.ostelco.prime.simmanager.SimManagerError
 import org.ostelco.simcards.hss.HssEntry
 import org.ostelco.simcards.hss.SimManagerToHssDispatcherAdapter
-import org.ostelco.simcards.inventory.*
+import org.ostelco.simcards.inventory.HssState
+import org.ostelco.simcards.inventory.ProvisionState
+import org.ostelco.simcards.inventory.SimEntry
+import org.ostelco.simcards.inventory.SimInventoryDAO
+import org.ostelco.simcards.inventory.SimProfileKeyStatistics
 import java.io.PrintWriter
 
 
@@ -82,18 +87,17 @@ class PreallocateProfilesTask(
             //     is possible to move along.   This is an error in the logic of this code.
             simInventoryDAO.findNextNonProvisionedSimProfileForHss(hssId = hssEntry.id, profile = simProfileName)
                     .flatMap { simEntry ->
-                        // XXX At this point we should check if simEntry.id != null, however I don't know
-                        //     how to make this test in Arrow, so I'm just letting it slide.  There will be
-                        //     a PR later to weed out the "!!"s from our codebase.
-                        preProvisionSimProfile(hssEntry, simEntry)
-                                .mapLeft {
-                                    logger.error("Preallocation of SIM ICCID {} failed with error: {}}",
-                                            simEntry.iccid, it.description)
-
-                                    // XXX the simEntry.id!! is necessary since the simEntry class _can_ have a null
-                                    //     id value, although when read from a database that will never happen.
-                                    simInventoryDAO.setProvisionState(simEntry.id!!, ProvisionState.ALLOCATION_FAILED)
-                                }
+                        if (simEntry.id == null) {
+                            DatabaseError("This should never happen, since everything that is read from a database should have an ID")
+                                    .left()
+                        } else {
+                            preProvisionSimProfile(hssEntry, simEntry)
+                                    .mapLeft {
+                                        logger.error("Preallocation of SIM ICCID {} failed with error: {}}",
+                                                simEntry.iccid, it.description)
+                                        simInventoryDAO.setProvisionState(simEntry.id, ProvisionState.ALLOCATION_FAILED)
+                                    }
+                        }
                     }
         }
     }
@@ -109,7 +113,7 @@ class PreallocateProfilesTask(
                 val hssEntries: Collection<HssEntry> = simInventoryDAO.getHssEntries()
                         .bind()
 
-                hssEntries.forEach{hssEntry -> 
+                hssEntries.forEach{hssEntry ->
                     val simProfileNames: Collection<String> = simInventoryDAO.getProfileNamesForHssById(hssEntry.id)
                             .bind()
                     for (simProfileName in simProfileNames) {
