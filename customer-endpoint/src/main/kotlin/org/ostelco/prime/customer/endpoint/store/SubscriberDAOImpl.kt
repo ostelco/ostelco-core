@@ -185,6 +185,17 @@ class SubscriberDAOImpl : SubscriberDAO {
         }
     }
 
+    override fun sendEmailWithEsimActivationQrCode(identity: Identity, regionCode: String, iccId: String): Either<ApiError, SimProfile> {
+        return try {
+            storage.sendEmailWithActivationQrCode(identity, regionCode, iccId).mapLeft {
+                NotFoundError("Failed to send email with Activation QR code.", ApiErrorCode.FAILED_TO_SEND_EMAIL_WITH_ESIM_ACTIVATION_QR_CODE, it)
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to send email with Activation QR code for customer with identity - $identity", e)
+            Either.left(InternalServerError("Failed to send email with Activation QR code", ApiErrorCode.FAILED_TO_SEND_EMAIL_WITH_ESIM_ACTIVATION_QR_CODE))
+        }
+    }
+
     //
     // Bundle
     //

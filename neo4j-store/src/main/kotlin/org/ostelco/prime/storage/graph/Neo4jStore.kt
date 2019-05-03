@@ -1,6 +1,7 @@
 package org.ostelco.prime.storage.graph
 
 import arrow.core.Either
+import arrow.core.Tuple3
 import arrow.core.fix
 import arrow.core.flatMap
 import arrow.core.getOrElse
@@ -619,7 +620,7 @@ object Neo4jStoreSingleton : GraphStore {
                                     iccId = simProfile.iccId)
                                     .mapLeft { NotFoundError(type = simProfileEntity.name, id = simProfile.iccId) }
                                     .bind()
-                            org.ostelco.prime.model.SimProfile(
+                            SimProfile(
                                     iccId = simProfile.iccId,
                                     alias = simProfile.alias,
                                     eSimActivationCode = simEntry.eSimActivationCode,
@@ -631,6 +632,50 @@ object Neo4jStoreSingleton : GraphStore {
 
     private fun getHlr(regionCode: String): String {
         return "Loltel"
+    }
+
+    override fun sendEmailWithActivationQrCode(
+            identity: org.ostelco.prime.model.Identity,
+            regionCode: String,
+            iccId: String): Either<StoreError, org.ostelco.prime.model.SimProfile> {
+
+        val info = readTransaction {
+            IO {
+                Either.monad<StoreError>().binding {
+
+                    val customer = getCustomer(identity = identity, transaction = transaction).bind()
+                    val simProfile = customerStore.getRelated(
+                        id = customer.id,
+                        relationType = customerToSimProfileRelation,
+                        transaction = transaction)
+                        .bind()
+                        .first { simProfile -> simProfile.iccId == iccId }
+
+                    val simEntry = simManager.getSimProfile(
+                            hlr = getHlr(regionCode),
+                            iccId = iccId)
+                            .mapLeft { NotFoundError(type = simProfileEntity.name, id = simProfile.iccId) }
+                            .bind()
+
+                    Tuple3(customer, simEntry, simProfile.alias)
+                }.fix()
+            }.unsafeRunSync()
+        }
+
+        return info.flatMap { (customer, simEntry, alias) ->
+
+            emailNotifier.sendESimQrCodeEmail(
+                    email = customer.contactEmail,
+                    name = customer.nickname,
+                    qrCode = simEntry.eSimActivationCode)
+                    .fold( { SystemError(type = "EMAIL", id = customer.contactEmail, message = "Failed to send email").left() },
+                            { SimProfile(
+                                    iccId = simEntry.iccId,
+                                    eSimActivationCode = simEntry.eSimActivationCode,
+                                    status = simEntry.status,
+                                    alias = alias).right()
+                            })
+        }
     }
 
     //
