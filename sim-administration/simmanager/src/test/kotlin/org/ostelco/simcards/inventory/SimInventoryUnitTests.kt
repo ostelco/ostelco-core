@@ -284,6 +284,12 @@ class SimInventoryUnitTests {
     }
 
 
+    // XXX TODO:
+    //  1. Make this pass
+    //  2. Add some validation to the test, so that it tests if the profiles are correctly read
+    //     (state in datstorage)
+    //  3. Copy/modify/refactor to test that this will also work when setting the
+    //     initial hss state of the profile.
     @Test
     @Ignore
     fun testImport() {

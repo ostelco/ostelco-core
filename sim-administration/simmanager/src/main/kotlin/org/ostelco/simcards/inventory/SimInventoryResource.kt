@@ -122,7 +122,7 @@ class SimInventoryResource(private val api: SimInventoryApi) {
                             },
                             { Response.status(Response.Status.OK).entity(asJson(it)) }
                     ).build()
- 
+
 
     /* Maps internal errors to format suitable for HTTP/REST. */
     private fun error(description: String, code: ApiErrorCode, error: SimManagerError): Response.ResponseBuilder {
