@@ -43,7 +43,7 @@ interface SimInventoryDB {
                                             WHEN hlrstate = 'NOT_ACTIVATED'
                                                  AND smdpplusstate = 'AVAILABLE' THEN 1
                                             WHEN hlrstate = 'NOT_ACTIVATED'
-                                                 AND smdpplusstate = 'RELEASED' THEN 2
+                                                 AND smdpplusstate = 'RELEASED'  THEN 2
                                             WHEN hlrstate = 'ACTIVATED'
                                                  AND smdpplusstate = 'AVAILABLE' THEN 3
                                             ELSE 9999
