@@ -21,7 +21,9 @@ import org.ostelco.simcards.admin.ProfileVendorConfig
 import org.ostelco.simcards.admin.SimAdministrationConfiguration
 import org.ostelco.simcards.hss.HssEntry
 import org.ostelco.simcards.profilevendors.ProfileVendorAdapter
+import java.io.ByteArrayInputStream
 import java.util.*
+import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 
 class SimInventoryUnitTests {
@@ -291,7 +293,6 @@ class SimInventoryUnitTests {
     @Test
     @Ignore
     fun testImport() {
-        /*
         org.mockito.Mockito.`when`(dao.findSimVendorForHssPermissions(1L, 1L))
                 .thenReturn(listOf(0L).right())
         org.mockito.Mockito.`when`(dao.simVendorIsPermittedForHlr(1L, 1L))
@@ -324,7 +325,5 @@ class SimInventoryUnitTests {
 
         val simEntry = response.readEntity(SimImportBatch::class.java)
         assertNotNull(simEntry)
-
-         */
     }
 }
