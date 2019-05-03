@@ -41,14 +41,14 @@ enum class SmDpPlusState {
     INSTALLED,
     ENABLED,
 
-    /* This is not a legal ES2+ state, and it means that allocation in the SM-DP+ failed */
-    ALLOCATION_FAILED
+
 }
 
 enum class ProvisionState {
     AVAILABLE,
     PROVISIONED,       /* The SIM profile has been taken into use (by a subscriber). */
-    RESERVED           /* Reserved SIM profile (f.ex. used for testing). */
+    RESERVED,           /* Reserved SIM profile (f.ex. used for testing). */
+    ALLOCATION_FAILED
 }
 
 

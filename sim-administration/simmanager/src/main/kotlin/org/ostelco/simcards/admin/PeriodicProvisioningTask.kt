@@ -92,7 +92,7 @@ class PreallocateProfilesTask(
 
                                     // XXX the simEntry.id!! is necessary since the simEntry class _can_ have a null
                                     //     id value, although when read from a database that will never happen.
-                                    simInventoryDAO.setSmDpPlusState(simEntry.id!!, SmDpPlusState.ALLOCATION_FAILED)
+                                    simInventoryDAO.setProvisionState(simEntry.id!!, ProvisionState.ALLOCATION_FAILED)
                                 }
                     }
         }
@@ -109,7 +109,7 @@ class PreallocateProfilesTask(
                 val hssEntries: Collection<HssEntry> = simInventoryDAO.getHssEntries()
                         .bind()
 
-                for (hssEntry in hssEntries) {
+                hssEntries.forEach{hssEntry -> 
                     val simProfileNames: Collection<String> = simInventoryDAO.getProfileNamesForHssById(hssEntry.id)
                             .bind()
                     for (simProfileName in simProfileNames) {
