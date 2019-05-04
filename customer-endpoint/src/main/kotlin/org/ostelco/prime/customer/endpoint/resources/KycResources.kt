@@ -114,7 +114,7 @@ class SingaporeKycResource(private val dao: SubscriberDAO): KycResource(regionCo
                 phoneNumber = phoneNumber)
                 .fold(
                         { apiError -> Response.status(apiError.status).entity(asJson(apiError)) },
-                        { Response.status(Response.Status.CREATED) })
+                        { Response.status(Response.Status.NO_CONTENT) })
                 .build()
     }
 }
