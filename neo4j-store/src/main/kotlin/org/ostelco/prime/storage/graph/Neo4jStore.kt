@@ -84,23 +84,23 @@ import org.ostelco.prime.model.Identity as ModelIdentity
 import org.ostelco.prime.paymentprocessor.core.NotFoundError as NotFoundPaymentError
 
 enum class Relation {
-    IDENTIFIES,                 // (Identity) -[IDENTIFIES]-> (Customer)
-    HAS_SUBSCRIPTION,           // (Customer) -[HAS_SUBSCRIPTION]-> (Subscription)
-    HAS_BUNDLE,                 // (Customer) -[HAS_BUNDLE]-> (Bundle)
-    HAS_SIM_PROFILE,            // (Customer) -[HAS_SIM_PROFILE]-> (SimProfile)
-    SUBSCRIBES_TO_PLAN,         // (Customer) -[SUBSCRIBES_TO_PLAN]-> (Plan)
-    HAS_PRODUCT,                // (Plan) -[HAS_PRODUCT]-> (Product)
-    LINKED_TO_BUNDLE,           // (Subscription) -[LINKED_TO_BUNDLE]-> (Bundle)
-    PURCHASED,                  // (Customer) -[PURCHASED]-> (Product)
-    REFERRED,                   // (Customer) -[REFERRED]-> (Customer)
-    OFFERED_TO_SEGMENT,         // (Offer) -[OFFERED_TO_SEGMENT]-> (Segment)
-    OFFER_HAS_PRODUCT,          // (Offer) -[OFFER_HAS_PRODUCT]-> (Product)
-    BELONG_TO_SEGMENT,          // (Customer) -[BELONG_TO_SEGMENT]-> (Segment)
-    EKYC_SCAN,                  // (Customer) -[EKYC_SCAN]-> (ScanInformation)
-    BELONG_TO_REGION,           // (Customer) -[BELONG_TO_REGION]-> (Region)
-    SUBSCRIPTION_FOR_REGION,    // (Subscription) -[SUBSCRIPTION_FOR_REGION]-> (Region)
-    SIM_PROFILE_FOR_REGION,     // (SimProfile) -[SIM_PROFILE_FOR_REGION]-> (Region)
-    LINKED_TO_REGION,           // (Plan) -[LINKED_TO_REGION]-> (Region)
+    IDENTIFIES,                         // (Identity) -[IDENTIFIES]-> (Customer)
+    HAS_SUBSCRIPTION,                   // (Customer) -[HAS_SUBSCRIPTION]-> (Subscription)
+    HAS_BUNDLE,                         // (Customer) -[HAS_BUNDLE]-> (Bundle)
+    HAS_SIM_PROFILE,                    // (Customer) -[HAS_SIM_PROFILE]-> (SimProfile)
+    SUBSCRIBES_TO_PLAN,                 // (Customer) -[SUBSCRIBES_TO_PLAN]-> (Plan)
+    HAS_PRODUCT,                        // (Plan) -[HAS_PRODUCT]-> (Product)
+    LINKED_TO_BUNDLE,                   // (Subscription) -[LINKED_TO_BUNDLE]-> (Bundle)
+    PURCHASED,                          // (Customer) -[PURCHASED]-> (Product)
+    REFERRED,                           // (Customer) -[REFERRED]-> (Customer)
+    OFFERED_TO_SEGMENT,                 // (Offer) -[OFFERED_TO_SEGMENT]-> (Segment)
+    OFFER_HAS_PRODUCT,                  // (Offer) -[OFFER_HAS_PRODUCT]-> (Product)
+    BELONG_TO_SEGMENT,                  // (Customer) -[BELONG_TO_SEGMENT]-> (Segment)
+    EKYC_SCAN,                          // (Customer) -[EKYC_SCAN]-> (ScanInformation)
+    BELONG_TO_REGION,                   // (Customer) -[BELONG_TO_REGION]-> (Region)
+    SIM_PROFILE_FOR_REGION,             // (SimProfile) -[SIM_PROFILE_FOR_REGION]-> (Region)
+    SUBSCRIPTION_UNDER_SIM_PROFILE,     // (Subscription) -[SUBSCRIPTION_UNDER_SIM_PROFILE]-> (SimProfile)
+    LINKED_TO_REGION,                   // (Plan) -[LINKED_TO_REGION]-> (Region)
 }
 
 
@@ -224,19 +224,19 @@ object Neo4jStoreSingleton : GraphStore {
             dataClass = None::class.java)
     private val planProductRelationStore = UniqueRelationStore(planProductRelation)
 
-    private val subscriptionRegionRelation = RelationType(
-            relation = Relation.SUBSCRIPTION_FOR_REGION,
-            from = subscriptionEntity,
-            to = regionEntity,
-            dataClass = None::class.java)
-    private val subscriptionRegionRelationStore = UniqueRelationStore(subscriptionRegionRelation)
-
     private val simProfileRegionRelation = RelationType(
             relation = Relation.SIM_PROFILE_FOR_REGION,
             from = simProfileEntity,
             to = regionEntity,
             dataClass = None::class.java)
     private val simProfileRegionRelationStore = UniqueRelationStore(simProfileRegionRelation)
+
+    private val subscriptionSimProfileRelation = RelationType(
+            relation = Relation.SUBSCRIPTION_UNDER_SIM_PROFILE,
+            from = subscriptionEntity,
+            to = simProfileEntity,
+            dataClass = None::class.java)
+    private val subscriptionSimProfileRelationStore = UniqueRelationStore(subscriptionSimProfileRelation)
 
     private val planRegionRelation = RelationType(
             relation = Relation.LINKED_TO_REGION,
@@ -375,8 +375,6 @@ object Neo4jStoreSingleton : GraphStore {
                             .flatMap {
                                 customerStore.getRelated(customerId, customerToBundleRelation, transaction)
                                         .map { it.forEach { bundle -> bundleStore.delete(bundle.id, transaction) } }
-                                customerStore.getRelated(customerId, subscriptionRelation, transaction)
-                                        .map { it.forEach { subscription -> subscriptionStore.delete(subscription.id, transaction) } }
                                 customerStore.getRelated(customerId, scanInformationRelation, transaction)
                                         .map { it.forEach { scanInfo -> scanInformationStore.delete(scanInfo.id, transaction) } }
                             }
@@ -535,11 +533,11 @@ object Neo4jStoreSingleton : GraphStore {
                                 transaction = transaction).bind()
                     }
                     subscriptionRelationStore.create(customer, subscription, transaction).bind()
-                    subscriptionRegionRelationStore.create(
+                    subscriptionSimProfileRelationStore.create(
                             fromId = msisdn,
-                            toId = regionCode.toLowerCase(),
+                            toId = simProfile.id,
                             transaction = transaction).bind()
-                    // TODO vihang: link SimProfile to Subscription and unlink Subscription from Region
+                    // TODO vihang: unlink Subscription from Region
                 }
                 if (profileType != "android") {
                     emailNotifier.sendESimQrCodeEmail(
@@ -733,24 +731,55 @@ object Neo4jStoreSingleton : GraphStore {
         }.unsafeRunSync()
     }
 
+    override fun deleteSimProfileWithSubscription(regionCode: String, iccId: String): Either<StoreError, Unit> = writeTransaction {
+        IO {
+            Either.monad<StoreError>().binding {
+                val simProfiles = regionStore.getRelatedFrom(regionCode, simProfileRegionRelation, transaction).bind()
+                simProfiles.forEach { simProfile ->
+                    val subscriptions = simProfileStore.getRelatedFrom(simProfile.id, subscriptionSimProfileRelation, transaction).bind()
+                    subscriptions.forEach { subscription ->
+                        subscriptionStore.delete(subscription.id, transaction).bind()
+                    }
+                    simProfileStore.delete(simProfile.id, transaction).bind()
+                }
+            }.fix()
+        }.unsafeRunSync()
+                .ifFailedThenRollback(transaction)
+    }
+
     //
     // Subscription
     //
 
     @Deprecated(message = "Use createSubscriptions instead")
-    override fun addSubscription(identity: org.ostelco.prime.model.Identity, msisdn: String): Either<StoreError, Unit> = writeTransaction {
+    override fun addSubscription(
+            identity: org.ostelco.prime.model.Identity,
+            regionCode: String,
+            iccId: String,
+            alias: String,
+            msisdn: String): Either<StoreError, Unit> = writeTransaction {
         IO {
             Either.monad<StoreError>().binding {
                 val customerId = getCustomerId(identity = identity, transaction = transaction).bind()
+
+                val simProfile = SimProfile(
+                        id = UUID.randomUUID().toString(),
+                        iccId = iccId,
+                        alias = alias)
+                simProfileStore.create(simProfile, transaction = transaction).bind()
+                simProfileRegionRelationStore.create(fromId = simProfile.id, toId = regionCode, transaction = transaction).bind()
+                customerToSimProfileStore.create(fromId = customerId, toId = simProfile.id, transaction = transaction).bind()
+
+                subscriptionStore.create(Subscription(msisdn), transaction).bind()
+                subscriptionSimProfileRelationStore.create(fromId = msisdn, toId = simProfile.id, transaction = transaction).bind()
+                subscriptionRelationStore.create(fromId = customerId, toId = msisdn, transaction = transaction).bind()
+
                 val bundles = customerStore.getRelated(customerId, customerToBundleRelation, transaction).bind()
                 validateBundleList(bundles, customerId).bind()
-                subscriptionStore.create(Subscription(msisdn), transaction).bind()
-                val subscription = subscriptionStore.get(msisdn, transaction).bind()
-                val customer = customerStore.get(customerId, transaction).bind()
                 bundles.forEach { bundle ->
-                    subscriptionToBundleStore.create(subscription, SubscriptionToBundle(), bundle, transaction).bind()
+                    subscriptionToBundleStore.create(fromId = msisdn, relation = SubscriptionToBundle(), toId = bundle.id, transaction = transaction).bind()
                 }
-                subscriptionRelationStore.create(customer, subscription, transaction).bind()
+
             }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
@@ -766,7 +795,8 @@ object Neo4jStoreSingleton : GraphStore {
                     read<Either<StoreError, Collection<Subscription>>>("""
                         MATCH (:${customerEntity.name} {id: '$customerId'})
                         -[:${subscriptionRelation.name}]->(sn:${subscriptionEntity.name})
-                        -[:${subscriptionRegionRelation.name}]->(:${regionEntity.name} {id: '${regionCode.toLowerCase()}'})
+                        -[:${subscriptionSimProfileRelation.name}]->(:${simProfileEntity.name})
+                        -[:${simProfileRegionRelation.name}]->(:${regionEntity.name} {id: '${regionCode.toLowerCase()}'})
                         RETURN sn;
                         """.trimIndent(),
                             transaction) { statementResult ->
