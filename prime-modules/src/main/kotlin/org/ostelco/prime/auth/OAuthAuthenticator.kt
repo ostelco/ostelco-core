@@ -30,28 +30,70 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
     private val logger by getLogger()
 
     override fun authenticate(accessToken: String): Optional<AccessTokenPrincipal> {
+        try {
+            val claims = getClaims(accessToken)
+            if (claims != null) {
+                if (isFirebase(claims)) {
+                    return FirebaseAuthenticator(claims).authenticate(accessToken)
+                } else {
+                    return Auth0Authenticator(client, claims).authenticate(accessToken)
+                }
+            }
+        } catch (e: Exception) {
+            logger.error("Could not parse claims from the 'access-token'", e)
+        }
+        return Optional.empty()
+    }
+
+    /* Extracts 'claims' part from JWT token.
+       Throws 'illegalargumentexception' exception on error. */
+    private fun getClaims(token: String): JsonNode? {
+        if (token.codePoints().filter { ch -> ch == '.'.toInt() }.count() < 1L) {
+            throw java.lang.IllegalArgumentException("The provided token is an Invalid JWT token")
+        }
+        val parts = token.split("\\.".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+
+        return String(Base64.getDecoder().decode(parts[1]
+                .replace("-", "+")
+                .replace("_", "/")))
+                .let(::decodeClaims)
+    }
+
+    /* Decodes the claims part of a JWT token.
+       Returns null on error. */
+    private fun decodeClaims(claims: String): JsonNode? {
+        try {
+            return objectMapper.readTree(claims)
+        } catch (e: JsonParseException) {
+            logger.error("Parsing of the provided json doc {} failed: {}", claims, e)
+        } catch (e: IOException) {
+            logger.error("Unexpected error when parsing the json doc {}: {}", claims, e)
+        }
+        return null
+    }
+
+    private fun isFirebase(claims: JsonNode): Boolean {
+        return claims.has("firebase")
+    }
+}
+
+class Auth0Authenticator(private val client: Client, val claims: JsonNode) {
+    private val logger by getLogger()
+
+    fun authenticate(accessToken: String): Optional<AccessTokenPrincipal> {
 
         var userInfoEndpoint = DEFAULT_USER_INFO_ENDPOINT
 
         var provider  = ""
-        try {
-            val claims = getClaims(accessToken)
-            if (claims != null) {
-
-                val email =  getEmail(claims)
-                provider = getSubjectPrefix(claims)
-                if(email != null) {
-                    return Optional.of(AccessTokenPrincipal(email = email, provider = provider))
-                }
-
-                userInfoEndpoint = getUserInfoEndpointFromAudience(claims)
-            }
-        } catch (e: Exception) {
-            logger.error("No audience field in the 'access-token' claims part", e)
+        var email = getEmail(claims)
+        provider = getSubjectPrefix(claims)
+        if (email != null) {
+            return Optional.of(AccessTokenPrincipal(email = email, provider = provider))
         }
 
+        userInfoEndpoint = getUserInfoEndpointFromAudience(claims)
         val userInfo = getUserInfo(userInfoEndpoint, accessToken)
-        val email = userInfo.email
+        email = userInfo.email
 
         if (email == null || email.isEmpty()) {
             logger.warn("email is missing in userInfo")
@@ -109,35 +151,7 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
         return DEFAULT_USER_INFO_ENDPOINT
     }
 
-    /* Extracts 'claims' part from JWT token.
-       Throws 'illegalargumentexception' exception on error. */
-    private fun getClaims(token: String): JsonNode? {
-        if (token.codePoints().filter { ch -> ch == '.'.toInt() }.count() != 2L) {
-            throw java.lang.IllegalArgumentException("The provided token is an Invalid JWT token")
-        }
-        val parts = token.split("\\.".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-
-        return String(Base64.getDecoder().decode(parts[1]
-                .replace("-", "+")
-                .replace("_", "/")))
-                .let(::decodeClaims)
-    }
-
-    /* Decodes the claims part of a JWT token.
-       Returns null on error. */
-    private fun decodeClaims(claims: String): JsonNode? {
-        try {
-            return objectMapper.readTree(claims)
-        } catch (e: JsonParseException) {
-            logger.error("Parsing of the provided json doc {} failed: {}", claims, e)
-        } catch (e: IOException) {
-            logger.error("Unexpected error when parsing the json doc {}: {}", claims, e)
-        }
-        return null
-    }
-
     private fun getEmail(claims: JsonNode): String? {
-
         return if (claims.has("$NAMESPACE/email")) {
             claims.get("$NAMESPACE/email").textValue()
         } else {
@@ -155,4 +169,47 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
             ""
         }
     }
+
+}
+
+class FirebaseAuthenticator(val claims: JsonNode) {
+    private val logger by getLogger()
+
+    fun authenticate(accessToken: String): Optional<AccessTokenPrincipal> {
+        val email = getEmail(claims)
+        val provider  = getProvider(claims)
+        if (email == null || email.isEmpty()) {
+            logger.warn("email is missing in userInfo")
+            return Optional.empty()
+        } else {
+            return Optional.of(AccessTokenPrincipal(email = email, provider = provider))
+        }
+    }
+
+    private fun getEmail(claims: JsonNode): String? {
+        return when {
+            claims.path("firebase").path("identities").has("email") -> {
+                val emailList = claims.path("firebase").path("identities").get("email")
+                emailList.get(0).textValue()
+            }
+            claims.has("email") -> claims.get("email").textValue()
+            else -> {
+                logger.error("Missing '{}/email' field in claims part of JWT token {}",
+                        NAMESPACE, claims)
+                null
+            }
+        }
+    }
+
+    private fun getProvider(claims: JsonNode): String {
+        return when {
+            claims.path("firebase").path("identities").has("email") -> "email"
+            claims.has("email") -> "email"
+            else -> {
+                logger.error("Unsupported firebase type", NAMESPACE, claims)
+                "firebase"
+            }
+        }
+    }
+
 }
