@@ -34,7 +34,7 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
             val claims = getClaims(accessToken)
             if (claims != null) {
                 return when {
-                    isFirebase(claims) -> FirebaseAuthenticator(claims).authenticate(accessToken)
+                    isFirebase(claims) -> FirebaseAuthenticator(claims).authenticate()
                     else -> Auth0Authenticator(client, claims).authenticate(accessToken)
                 }
             }
@@ -76,21 +76,18 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
     }
 }
 
-class Auth0Authenticator(private val client: Client, val claims: JsonNode) {
+class Auth0Authenticator(private val client: Client, private val claims: JsonNode) {
     private val logger by getLogger()
 
     fun authenticate(accessToken: String): Optional<AccessTokenPrincipal> {
 
-        var userInfoEndpoint = DEFAULT_USER_INFO_ENDPOINT
-
-        var provider  = ""
         var email = getEmail(claims)
-        provider = getSubjectPrefix(claims)
+        val provider = getSubjectPrefix(claims)
         if (email != null) {
             return Optional.of(AccessTokenPrincipal(email = email, provider = provider))
         }
 
-        userInfoEndpoint = getUserInfoEndpointFromAudience(claims)
+        val userInfoEndpoint = getUserInfoEndpointFromAudience(claims)
         val userInfo = getUserInfo(userInfoEndpoint, accessToken)
         email = userInfo.email
 
@@ -171,10 +168,10 @@ class Auth0Authenticator(private val client: Client, val claims: JsonNode) {
 
 }
 
-class FirebaseAuthenticator(val claims: JsonNode) {
+class FirebaseAuthenticator(private val claims: JsonNode) {
     private val logger by getLogger()
 
-    fun authenticate(accessToken: String): Optional<AccessTokenPrincipal> {
+    fun authenticate(): Optional<AccessTokenPrincipal> {
         val email = getEmail(claims)
         val provider  = getProvider(claims)
         if (email == null || email.isEmpty()) {
@@ -210,5 +207,4 @@ class FirebaseAuthenticator(val claims: JsonNode) {
             }
         }
     }
-
 }
