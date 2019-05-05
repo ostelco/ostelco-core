@@ -33,10 +33,9 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
         try {
             val claims = getClaims(accessToken)
             if (claims != null) {
-                if (isFirebase(claims)) {
-                    return FirebaseAuthenticator(claims).authenticate(accessToken)
-                } else {
-                    return Auth0Authenticator(client, claims).authenticate(accessToken)
+                when {
+                    isFirebase(claims) -> return FirebaseAuthenticator(claims).authenticate(accessToken)
+                    else -> return Auth0Authenticator(client, claims).authenticate(accessToken)
                 }
             }
         } catch (e: Exception) {
