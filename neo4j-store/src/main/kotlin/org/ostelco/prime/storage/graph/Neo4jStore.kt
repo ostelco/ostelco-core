@@ -5,6 +5,7 @@ import arrow.core.fix
 import arrow.core.flatMap
 import arrow.core.getOrElse
 import arrow.core.left
+import arrow.core.leftIfNull
 import arrow.core.right
 import arrow.effects.IO
 import arrow.instances.either.monad.monad
@@ -987,32 +988,57 @@ object Neo4jStoreSingleton : GraphStore {
     // Purchase Records
     //
 
-    override fun getPurchaseRecords(identity: org.ostelco.prime.model.Identity): Either<StoreError, Collection<PurchaseRecord>> {
-        return readTransaction {
-            getCustomerId(identity = identity, transaction = transaction)
-                    .flatMap { customerId -> customerStore.getRelations(customerId, purchaseRecordRelation, transaction) }
-        }
-    }
-
-    override fun addPurchaseRecord(customerId: String, purchase: PurchaseRecord): Either<StoreError, String> {
-        return writeTransaction {
-            createPurchaseRecordRelation(customerId, purchase, transaction)
-                    .ifFailedThenRollback(transaction)
-        }
-    }
-
-    private fun createPurchaseRecordRelation(
-            customerId: String,
-            purchase: PurchaseRecord,
-            transaction: Transaction): Either<StoreError, String> {
-
-        return customerStore.get(customerId, transaction).flatMap { customer ->
-            productStore.get(purchase.product.sku, transaction).flatMap { product ->
-                purchaseRecordRelationStore.create(customer, purchase, product, transaction)
-                        .map { purchase.id }
+    override fun getPurchaseRecords(identity: org.ostelco.prime.model.Identity): Either<StoreError, Collection<PurchaseRecord>> =
+            readTransaction {
+                getCustomerId(identity = identity, transaction = transaction)
+                        .flatMap { customerId ->
+                            customerStore.getRelations(customerId, purchaseRecordRelation, transaction)
+                        }
             }
-        }
-    }
+
+    override fun addPurchaseRecord(customerId: String, purchase: PurchaseRecord): Either<StoreError, String> =
+            writeTransaction {
+                createPurchaseRecordRelation(customerId, purchase, transaction)
+                        .ifFailedThenRollback(transaction)
+            }
+
+    private fun createPurchaseRecordRelation(customerId: String,
+                                             purchase: PurchaseRecord,
+                                             transaction: Transaction): Either<StoreError, String> =
+            getPurchaseRecordUsingInvoiceId(customerId, purchase.id, transaction)
+                    .fold({
+                        customerStore.get(customerId, transaction).flatMap { customer ->
+                            productStore.get(purchase.product.sku, transaction).flatMap { product ->
+                                purchaseRecordRelationStore.create(customer, purchase, product, transaction)
+                                        .map { purchase.id }
+                            }
+                        }
+                    }, {
+                        ValidationError(type = purchaseRecordRelation.name, id = purchase.id, message = "").left()
+                    })
+
+    private fun createPurchaseRecordRelation2(customerId: String,
+                                             purchase: PurchaseRecord,
+                                             transaction: Transaction): Either<StoreError, String> =
+            customerStore.get(customerId, transaction).flatMap { customer ->
+                productStore.get(purchase.product.sku, transaction).flatMap { product ->
+                    purchaseRecordRelationStore.create(customer, purchase, product, transaction)
+                            .map { purchase.id }
+                }
+            }
+
+
+    /* As Stripes invoice-id is used as the 'id' of a purchase record, this method
+       allows for detecting double charges etc. */
+    private fun getPurchaseRecordUsingInvoiceId(customerId: String,
+                                                invoiceId: String,
+                                                transaction: Transaction): Either<StoreError, PurchaseRecord> =
+            customerStore.getRelations(customerId, purchaseRecordRelation, transaction)
+                    .map { records ->
+                        records.find {
+                            it.id == invoiceId
+                        }
+                    }.leftIfNull { NotFoundError(type = purchaseRecordRelation.name, id = invoiceId) }
 
     //
     // Referrals
@@ -1728,6 +1754,14 @@ object Neo4jStoreSingleton : GraphStore {
             }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
+    }
+
+    fun subscriptionRequiresPaymentMethod() {
+
+    }
+
+    fun subscriptionRequiresAction(){
+
     }
 
     //
