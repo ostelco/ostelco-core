@@ -28,7 +28,7 @@ cronjobs:
 
 prime:
   image: eu.gcr.io/pi-ostelco-dev/prime
-  tag: b6f8b8053 # stable tag
+  tag: 658618fc1 # stable tag
   pullPolicy: Always
   configDataBucket: "gs://pi-ostelco-prod-prime-files/"
 
