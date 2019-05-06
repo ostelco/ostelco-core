@@ -47,7 +47,7 @@ class OAuthAuthenticator(private val client: Client) : Authenticator<String, Acc
     /* Extracts 'claims' part from JWT token.
        Throws 'illegalargumentexception' exception on error. */
     private fun getClaims(token: String): JsonNode? {
-        if (token.codePoints().filter { ch -> ch == '.'.toInt() }.count() < 1L) {
+        if (token.codePoints().filter { ch -> ch == '.'.toInt() }.count() != 2L) {
             throw java.lang.IllegalArgumentException("The provided token is an Invalid JWT token")
         }
         val parts = token.split("\\.".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
@@ -188,7 +188,6 @@ class FirebaseAuthenticator(private val claims: JsonNode) {
                 val emailList = claims.path("firebase").path("identities").get("email")
                 emailList.get(0).textValue()
             }
-            claims.has("email") -> claims.get("email").textValue()
             else -> {
                 logger.error("Missing '{}/email' field in claims part of JWT token {}",
                         NAMESPACE, claims)
@@ -199,8 +198,7 @@ class FirebaseAuthenticator(private val claims: JsonNode) {
 
     private fun getProvider(claims: JsonNode): String {
         return when {
-            claims.path("firebase").path("identities").has("email") -> "email"
-            claims.has("email") -> "email"
+            claims.path("firebase").has("sign_in_provider") -> claims.path("firebase").get("sign_in_provider").textValue()
             else -> {
                 logger.error("Unsupported firebase type", NAMESPACE, claims)
                 "firebase"
