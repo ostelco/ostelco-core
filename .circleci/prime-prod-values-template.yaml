@@ -267,7 +267,7 @@ services:
     portName: http
     host: smdpplus
     clientCert: true
-    caCert: smdp-cacert.dev # secretname.namespace
+    caCert: smdp-cacert.prod # secretname.namespace
 
 ingress:
   enabled: false
