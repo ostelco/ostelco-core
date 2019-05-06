@@ -13,9 +13,22 @@ podAutoscaling:
   maxReplicas: 6
   targetCPUUtilizationPercentage: 70
 
+cronjobs: 
+  extractor: 
+    enabled: false
+    image: eu.gcr.io/pi-ostelco-dev/bq-metrics-extractor
+    tag: "1.3.212.1.0-2d41d62b-dev"  
+    dataset_project: pi-ostelco-prod
+  shredder:
+    enabled: false
+    image: eu.gcr.io/pi-ostelco-dev/scaninfo-shredder
+    tag: "1.0.0-6052932a-dev"
+    dataset_project: pi-ostelco-prod
+    dev: false
+
 prime:
   image: eu.gcr.io/pi-ostelco-dev/prime
-  tag: ${PRIME_TAG}
+  tag: 658618fc1 # stable tag
   pullPolicy: Always
   configDataBucket: "gs://pi-ostelco-prod-prime-files/"
 
@@ -41,7 +54,7 @@ prime:
   secretVolumes:
     - secretName: "prime-sa-key"
       containerMountPath: "/secret"
-    - secretName: "simmgr-test-secrets"
+    - secretName: "simmgr-secrets"
       containerMountPath: "/certs"
       secretKey: idemiaClientCert
       secretPath: idemia-client-cert.jks
@@ -83,31 +96,31 @@ prime:
       secretName: myinfo-secrets
       secretKey: clientPrivateKey
     - name: DB_USER
-      secretName: simmgr-test-secrets
+      secretName: simmgr-secrets
       secretKey: dbUser
     - name: DB_PASSWORD
-      secretName: simmgr-test-secrets
+      secretName: simmgr-secrets
       secretKey: dbPassword
     - name: DB_URL
-      secretName: simmgr-test-secrets
+      secretName: simmgr-secrets
       secretKey: dbUrl
     - name: WG2_USER
-      secretName: simmgr-test-secrets
+      secretName: simmgr-secrets
       secretKey: wg2User
     - name: WG2_API_KEY
-      secretName: simmgr-test-secrets
+      secretName: simmgr-secrets
       secretKey: wg2ApiKey
     - name: WG2_ENDPOINT
-      secretName: simmgr-test-secrets
+      secretName: simmgr-secrets
       secretKey: wg2Endpoint
     - name: ES2PLUS_ENDPOINT
-      secretName: simmgr-test-secrets
+      secretName: simmgr-secrets
       secretKey: es2plusEndpoint
     - name: ES9PLUS_ENDPOINT
-      secretName: simmgr-test-secrets
+      secretName: simmgr-secrets
       secretKey: es9plusEndpoint
     - name: FUNCTION_REQUESTER_IDENTIFIER
-      secretName: simmgr-test-secrets
+      secretName: simmgr-secrets
       secretKey: functionRequesterIdentifier
     - name: MANDRILL_API_KEY
       secretName: mandrill-secrets
@@ -121,7 +134,7 @@ prime:
   resources: 
     limits:
       cpu: 200m
-      memory: 350Mi
+      memory: 400Mi
     requests:
       cpu: 100m
       memory: 200Mi  
@@ -137,15 +150,15 @@ prime:
     prometheus.io/port: '8081'  
 
 
-canary: {}
+canary: 
   # weight: 25
-  # headers: # only route requests with these headers to the canary service
-  #   x-mode: canary
-  # tag: e449ed672
+  headers: # only route requests with these headers to the canary service
+    x-mode: canary
+  tag: ${PRIME_CANARY_TAG}
 
 cloudsqlProxy:
   enabled: true
-  instanceConnectionName: "pi-ostelco-dev:europe-west1:sim-manager"
+  instanceConnectionName: "pi-ostelco-prod:europe-west1:sim-manager"
   secretName: "prime-sa-key"
   secretKey: "prime-service-account.json"
 
@@ -206,8 +219,7 @@ services:
     port: 443
     targetPort: 8443
     portName: grpc
-    # host: ocs # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
-    # grpcOrHttp2: true
+    
   api:
     name: api
     type: ClusterIP
@@ -224,9 +236,7 @@ services:
     port: 443
     targetPort: 9443
     portName: grpc
-    # loadBalancerIP: x.y.z.n
-    # host: metrics # the host name is formulated from concatenating: dnsPrefix, this host, and dnsSuffix
-    # grpcOrHttp2: true
+
   prime-houston-api:
     name: houston-api
     type: ClusterIP
@@ -261,29 +271,18 @@ services:
 
 ingress:
   enabled: false
-  annotations: {}
-    # kubernetes.io/ingress.class: nginx
-  path: /
-  hosts:
-    - prime.local
-  tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
+  
 
 certs: 
   enabled: true
   dnsProvider: dev-clouddns
   issuer: letsencrypt-production # or letsencrypt-staging
-  apiDns:
-    - api.oya.world
-  ocsDns:
-    - ocs.oya.world
-  metricsDns:
-    - metrics.oya.world
+  tlsSecretName: prod-oya-tls
+  hosts:
+    - '*.oya.world'
 
 disruptionBudget: 
-  enabled: false
+  enabled: true
   minAvailable: 1
 
 nodeSelector: {}
