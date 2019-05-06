@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-plantuml deployment.puml
+plantuml -tsvg deployment.puml

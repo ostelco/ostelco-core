@@ -304,12 +304,9 @@ object Neo4jStoreSingleton : GraphStore {
                 customerStore.create(customer, transaction).bind()
                 identifiesRelationStore.create(fromId = identity.id, relation = Identifies(provider = identity.provider), toId = customer.id, transaction = transaction).bind()
                 // Give 100 MB as free initial balance
-                var productId = "100MB_FREE_ON_JOINING"
-                var balance: Long = 100_000_000
+                val productId = "2GB_FREE_ON_JOINING"
+                val balance: Long = 2_147_483_648
                 if (referredBy != null) {
-                    // Give 1 GB if customer is referred
-                    productId = "1GB_FREE_ON_REFERRED"
-                    balance = 1_000_000_000
                     referredRelationStore.create(referredBy, customer.id, transaction).bind()
                 }
                 bundleStore.create(Bundle(bundleId, balance), transaction).bind()

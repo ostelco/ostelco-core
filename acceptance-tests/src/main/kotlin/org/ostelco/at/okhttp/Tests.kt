@@ -238,9 +238,9 @@ class BundlesAndPurchasesTest {
             logger.info("Balance: ${bundles[0].balance}")
 
             val freeProduct = Product()
-                    .sku("100MB_FREE_ON_JOINING")
-                    .price(Price().amount(0).currency("NOK"))
-                    .properties(mapOf("noOfBytes" to "100_000_000"))
+                    .sku("2GB_FREE_ON_JOINING")
+                    .price(Price().amount(0).currency(""))
+                    .properties(mapOf("noOfBytes" to "2_147_483_648"))
                     .presentation(emptyMap<String, String>())
 
             val purchaseRecords = client.purchaseHistory
@@ -487,7 +487,7 @@ class PurchaseTest {
 
             val balanceAfter = client.bundles.first().balance
 
-            assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
+            assertEquals(1_073_741_824, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
 
             val purchaseRecords = client.purchaseHistory
 
@@ -527,7 +527,7 @@ class PurchaseTest {
 
             val balanceAfter = client.bundles.first().balance
 
-            assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
+            assertEquals(1_073_741_824, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
 
             val purchaseRecords = client.purchaseHistory
 
@@ -567,7 +567,7 @@ class PurchaseTest {
 
             val balanceAfter = client.bundles[0].balance
 
-            assertEquals(1_000_000_000, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
+            assertEquals(1_073_741_824, balanceAfter - balanceBefore, "Balance did not increased by 1GB after Purchase")
 
             val purchaseRecords = client.purchaseHistory
 
