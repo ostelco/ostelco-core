@@ -29,6 +29,7 @@ paths:
             type: string
       security:
         - auth0_jwt: []
+        - firebase: []
   "/context":
     get:
       description: "Get context which is customer and region details."
@@ -44,6 +45,7 @@ paths:
           description: "Customer not found."
       security:
         - auth0_jwt: []
+        - firebase: []
   "/customer":
     get:
       description: "Get customer info (email-id present in the bearer token)."
@@ -59,6 +61,7 @@ paths:
           description: "Customer not found."
       security:
         - auth0_jwt: []
+        - firebase: []
     post:
       description: "Create a new customer."
       consumes:
@@ -92,6 +95,7 @@ paths:
           description: "Failed to store customer"
       security:
         - auth0_jwt: []
+        - firebase: []
     put:
       description: "Update an existing customer."
       consumes:
@@ -121,6 +125,7 @@ paths:
           description: "Failed to update customer info."
       security:
         - auth0_jwt: []
+        - firebase: []
     delete:
       description: "Remove customer."
       produces:
@@ -133,6 +138,7 @@ paths:
           description: "Customer not found."
       security:
         - auth0_jwt: []
+        - firebase: []
   "/regions":
     get:
       description: "Get all regions and region details like SIM Profiles for that region."
@@ -146,6 +152,7 @@ paths:
             $ref: '#/definitions/RegionDetailsList'
       security:
         - auth0_jwt: []
+        - firebase: []
   "/regions/{regionCode}":
     get:
       description: "Get region details like SIM Profiles for a region."
@@ -167,6 +174,7 @@ paths:
           description: "Region not found."
       security:
         - auth0_jwt: []
+        - firebase: []
   "/regions/{regionCode}/kyc/jumio/scans":
     post:
       description: "Get a new Id for eKYC scanning."
@@ -188,6 +196,7 @@ paths:
           description: "Region not found."
       security:
         - auth0_jwt: []
+        - firebase: []
   "/regions/{regionCode}/kyc/jumio/scans/{scanId}":
     get:
       description: "Get status of eKYC scan."
@@ -214,6 +223,7 @@ paths:
           description: "Region or Scan not found."
       security:
         - auth0_jwt: []
+        - firebase: []
   "/regions/sg/kyc/myInfo/{authorisationCode}":
     get:
       description: "Get Customer Data from Singapore MyInfo service."
@@ -235,6 +245,7 @@ paths:
           description: "Person Data not found."
       security:
         - auth0_jwt: []
+        - firebase: []
   "/regions/sg/kyc/dave/{nricFinId}":
     get:
       description: "Get Customer Data from Singapore MyInfo service."
@@ -254,6 +265,7 @@ paths:
           description: "Invalid NRIC/FIN ID"
       security:
         - auth0_jwt: []
+        - firebase: []
   "/regions/sg/kyc/profile":
     put:
       description: "Update Singapore Customer's address and phone number."
@@ -276,6 +288,7 @@ paths:
           description: "Successfully updated customer's details."
       security:
         - auth0_jwt: []
+        - firebase: []
   "/regions/{regionCode}/simProfiles":
     get:
       description: "Get SIM profile for the user (identified by bearer token)."
@@ -299,6 +312,7 @@ paths:
           description: "Service Unavailable"
       security:
         - auth0_jwt: []
+        - firebase: []
     post:
       description: "Provision SIM Profile for the user (identified by bearer token)."
       produces:
@@ -325,6 +339,7 @@ paths:
           description: "Service Unavailable"
       security:
         - auth0_jwt: []
+        - firebase: []
   "/regions/{regionCode}/subscriptions":
     get:
       description: "Get subscription (msisdn) for the user (identified by bearer token)."
@@ -346,6 +361,7 @@ paths:
           description: "No subscription found for this user."
       security:
         - auth0_jwt: []
+        - firebase: []
   "/subscriptions":
     get:
       description: "Get subscription (msisdn) for the user (identified by bearer token)."
@@ -361,6 +377,7 @@ paths:
           description: "No subscription found for this user."
       security:
         - auth0_jwt: []
+        - firebase: []
   "/applicationToken":
     post:
       description: "Store application token"
@@ -388,6 +405,7 @@ paths:
           description: "Not able to store token."
       security:
         - auth0_jwt: []
+        - firebase: []
   "/paymentSources":
     get:
       description: "Get all payment sources for the user."
@@ -405,6 +423,7 @@ paths:
           description: "Service Unavailable"
       security:
         - auth0_jwt: []
+        - firebase: []
     post:
       description: "Add a new payment source for user"
       produces:
@@ -429,6 +448,7 @@ paths:
           description: "Service Unavailable"
       security:
         - auth0_jwt: []
+        - firebase: []
     put:
       description: "Set the source as default for user"
       produces:
@@ -453,6 +473,7 @@ paths:
           description: "Service Unavailable"
       security:
         - auth0_jwt: []
+        - firebase: []
     delete:
       description: "Remove a payment source for user"
       produces:
@@ -477,6 +498,7 @@ paths:
           description: "Service Unavailable"
       security:
         - auth0_jwt: []
+        - firebase: []
   "/products":
     get:
       description: "Get all products for the user."
@@ -492,6 +514,7 @@ paths:
           description: "No products found for the user."
       security:
         - auth0_jwt: []
+        - firebase: []
   "/products/{sku}/purchase":
     post:
       description: "Buy the product specified in sku parameter."
@@ -524,6 +547,7 @@ paths:
           description: "Product not found."
       security:
         - auth0_jwt: []
+        - firebase: []
   "/purchases":
     get:
       description: "Get list of all purchases."
@@ -544,6 +568,7 @@ paths:
           description: "Service Unavailable"
       security:
         - auth0_jwt: []
+        - firebase: []
   "/bundles":
     get:
       description: "Get bundles (balance) for the user (identified by bearer token)."
@@ -559,6 +584,7 @@ paths:
           description: "No bundle found for this user."
       security:
         - auth0_jwt: []
+        - firebase: []
   "/referred":
     get:
       description: "Get list of people whom the user has referred to."
@@ -574,6 +600,7 @@ paths:
           description: "No referrals found for this user."
       security:
         - auth0_jwt: []
+        - firebase: []
   "/referred/by":
     get:
       description: "Get the people who had referred this user."
@@ -589,6 +616,7 @@ paths:
           description: "No 'referred by' found for this user."
       security:
         - auth0_jwt: []
+        - firebase: []
   "/graphql":
     post:
       description: "GraphQL endpoint"
@@ -606,6 +634,7 @@ paths:
           description: "Not found"
       security:
         - auth0_jwt: []
+        - firebase: []
       parameters:
         - name: "request"
           in: body
@@ -929,3 +958,11 @@ securityDefinitions:
     x-google-issuer: "https://auth-dev.oya.world/"
     x-google-jwks_uri: "https://auth-dev.oya.world/.well-known/jwks.json"
     x-google-audiences: "http://google_api"
+  firebase:
+    authorizationUrl: ""
+    flow: "implicit"
+    type: "oauth2"
+    x-google-issuer: "https://securetoken.google.com/pi-ostelco-dev"
+    x-google-jwks_uri: "https://www.googleapis.com/service_accounts/v1/metadata/x509/securetoken@system.gserviceaccount.com"
+    x-google-audiences: "pi-ostelco-dev"
+    
