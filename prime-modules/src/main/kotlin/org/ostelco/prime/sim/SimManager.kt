@@ -6,6 +6,6 @@ import org.ostelco.prime.model.SimProfileStatus
 
 interface SimManager {
     fun allocateNextEsimProfile(hlr: String, phoneType: String?) : Either<String, SimEntry>
-    fun getSimProfileStatus(hlr: String, iccId:String) : Either<String, SimProfileStatus>
+    fun getSimProfile(hlr: String, iccId:String) : Either<String, SimEntry>
     fun getSimProfileStatusUpdates(onUpdate:(iccId:String, status: SimProfileStatus) -> Unit)
 }

@@ -100,17 +100,9 @@ object OnlineCharging : OcsAsyncRequestConsumer {
                 .newBuilder(mscc)
                 .setValidityTime(86400)
 
-        val grantedTotalOctets = if (mscc.reportingReason != ReportingReason.FINAL
-                && mscc.requested.totalOctets > 0) {
+        val grantedTotalOctets = if (mscc.reportingReason != ReportingReason.FINAL && mscc.requested.totalOctets > 0) {
 
-            if (granted < mscc.requested.totalOctets) {
-                responseMscc.finalUnitIndication = FinalUnitIndication.newBuilder()
-                        .setFinalUnitAction(FinalUnitAction.TERMINATE)
-                        .setIsSet(true)
-                        .build()
-            }
             granted
-
         } else {
             // Use -1 to indicate no granted service unit should be included in the answer
             -1
@@ -119,8 +111,19 @@ object OnlineCharging : OcsAsyncRequestConsumer {
         responseMscc.granted = ServiceUnit.newBuilder().setTotalOctets(grantedTotalOctets).build()
 
         if (grantedTotalOctets > 0) {
+
             responseMscc.quotaHoldingTime = 7200
-            responseMscc.volumeQuotaThreshold = (grantedTotalOctets * 0.2).toLong() // 20%
+
+            if (granted < mscc.requested.totalOctets) {
+                responseMscc.finalUnitIndication = FinalUnitIndication.newBuilder()
+                        .setFinalUnitAction(FinalUnitAction.TERMINATE)
+                        .setIsSet(true)
+                        .build()
+
+                responseMscc.volumeQuotaThreshold = 0L
+            } else {
+                responseMscc.volumeQuotaThreshold = (grantedTotalOctets * 0.2).toLong() // When client has 20% left
+            }
         }
 
         responseMscc.resultCode = ResultCode.DIAMETER_SUCCESS

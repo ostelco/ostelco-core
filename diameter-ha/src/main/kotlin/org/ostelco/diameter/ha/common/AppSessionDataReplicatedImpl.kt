@@ -62,6 +62,7 @@ open class AppSessionDataReplicatedImpl(val id: String, val replicatedStorage: R
     override fun remove(): Boolean {
         var removed = false
         if (replicatedStorage.exist(id)) {
+            logger.debug("Removing id : $id")
             replicatedStorage.removeId(id)
             removed = true
         }
@@ -76,13 +77,13 @@ open class AppSessionDataReplicatedImpl(val id: String, val replicatedStorage: R
     }
 
     protected fun storeValue(key: String, value: String) : Boolean {
-        logger.debug("Storing key : $key value : $value")
+        logger.debug("Storing key : $key , value : $value , id : $id")
         return this.replicatedStorage.storeValue(id, key, value)
     }
 
     protected fun getValue(key: String) : String? {
         val value = this.replicatedStorage.getValue(id, key)
-        logger.debug("Got key : $key value : $value")
+        logger.debug("Got key : $key , value : $value , id : $id")
         return value
     }
 

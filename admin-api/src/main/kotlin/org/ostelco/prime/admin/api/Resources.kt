@@ -176,18 +176,3 @@ class ProductClassResource {
 //                productClass.copy(id = productClassId))
 //    }
 }
-
-@Path("/admin/simProfiles")
-class SimProfilesResource {
-
-    private val adminDataSource by lazy { getResource<AdminDataSource>() }
-
-    @PUT
-    @Path("/sync")
-    fun syncSimProfiles(): Response {
-
-        return adminDataSource.syncSimProfileStatus()
-                .fold({ Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(it.message).build() },
-                        { Response.status(Response.Status.OK).build() })
-    }
-}

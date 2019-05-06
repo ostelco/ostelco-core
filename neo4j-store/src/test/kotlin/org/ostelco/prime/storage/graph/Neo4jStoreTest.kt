@@ -12,6 +12,7 @@ import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.neo4j.driver.v1.AccessMode.WRITE
 import org.ostelco.prime.analytics.AnalyticsService
+import org.ostelco.prime.appnotifier.AppNotifier
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.CustomerRegionStatus.APPROVED
 import org.ostelco.prime.model.CustomerRegionStatus.PENDING
@@ -69,6 +70,10 @@ class MockSimManager : SimManager by mockSimManager
 private val mockEmailNotifier = Mockito.mock(EmailNotifier::class.java)
 
 class MockEmailNotifier : EmailNotifier by mockEmailNotifier
+
+private val mockAppNotifier = Mockito.mock(AppNotifier::class.java)
+
+class MockAppNotifier : AppNotifier by mockAppNotifier
 
 class Neo4jStoreTest {
 
@@ -562,7 +567,10 @@ class Neo4jStoreTest {
                 regionCode = "no").isRight())
 
         Mockito.`when`(mockSimManager.allocateNextEsimProfile("Loltel", "default"))
-                .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList()).right())
+                .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList(), status = AVAILABLE_FOR_DOWNLOAD).right())
+
+        Mockito.`when`(mockSimManager.getSimProfile("Loltel", "iccId"))
+                .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList(), status = AVAILABLE_FOR_DOWNLOAD).right())
 
         // test
         Neo4jStoreSingleton.provisionSimProfile(
@@ -738,7 +746,10 @@ class Neo4jStoreTest {
                 regionCode = "sg").isRight())
 
         Mockito.`when`(mockSimManager.allocateNextEsimProfile("Loltel", "default"))
-                .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList()).right())
+                .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList(), status = AVAILABLE_FOR_DOWNLOAD).right())
+
+        Mockito.`when`(mockSimManager.getSimProfile("Loltel", "iccId"))
+                .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList(), status = AVAILABLE_FOR_DOWNLOAD).right())
 
         assert(Neo4jStoreSingleton.provisionSimProfile(
                 identity = IDENTITY,
@@ -799,7 +810,10 @@ class Neo4jStoreTest {
                 regionCode = "sg").isRight())
 
         Mockito.`when`(mockSimManager.allocateNextEsimProfile("Loltel", "default"))
-                .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList()).right())
+                .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList(), status = AVAILABLE_FOR_DOWNLOAD).right())
+
+        Mockito.`when`(mockSimManager.getSimProfile("Loltel", "iccId"))
+                .thenReturn(SimEntry(iccId = "iccId", eSimActivationCode = "eSimActivationCode", msisdnList = emptyList(), status = AVAILABLE_FOR_DOWNLOAD).right())
 
         assert(Neo4jStoreSingleton.provisionSimProfile(
                 identity = IDENTITY,

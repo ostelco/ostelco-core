@@ -40,12 +40,15 @@ enum class SmDpPlusState {
     DOWNLOADED,
     INSTALLED,
     ENABLED,
+
+
 }
 
 enum class ProvisionState {
     AVAILABLE,
     PROVISIONED,       /* The SIM profile has been taken into use (by a subscriber). */
-    RESERVED           /* Reserved SIM profile (f.ex. used for testing). */
+    RESERVED,           /* Reserved SIM profile (f.ex. used for testing). */
+    ALLOCATION_FAILED
 }
 
 
@@ -90,7 +93,7 @@ data class SimImportBatch(
 class SimEntryIterator(profileVendorId: Long,
                        hssId: Long,
                        batchId: Long,
-                       csvInputStream: InputStream): Iterator<SimEntry> {
+                       csvInputStream: InputStream) : Iterator<SimEntry> {
 
     var count = AtomicLong(0)
     // TODO: The current implementation puts everything in a deque at startup.
@@ -211,7 +214,7 @@ class SimInventoryDAO(private val db: SimInventoryDBWrapperImpl) : SimInventoryD
     //
 
     override fun insertAll(entries: Iterator<SimEntry>): Either<SimManagerError, Unit> =
-        db.insertAll(entries)
+            db.insertAll(entries)
 
     @Transaction
     fun importSims(importer: String,
@@ -296,7 +299,7 @@ class KeyValueMapper : RowMapper<KeyValuePair> {
 
 data class KeyValuePair(val key: String, val value: Long)
 
-class HlrEntryMapper  : RowMapper<HssEntry> {
+class HlrEntryMapper : RowMapper<HssEntry> {
     override fun map(row: ResultSet, ctx: StatementContext): HssEntry? {
         if (row.isAfterLast) {
             return null

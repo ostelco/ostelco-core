@@ -10,36 +10,18 @@ import arrow.effects.IO
 import arrow.instances.either.monad.monad
 import org.neo4j.driver.v1.Transaction
 import org.ostelco.prime.analytics.AnalyticsService
+import org.ostelco.prime.appnotifier.AppNotifier
 import org.ostelco.prime.ekyc.DaveKycService
 import org.ostelco.prime.ekyc.MyInfoKycService
 import org.ostelco.prime.getLogger
-import org.ostelco.prime.model.Bundle
-import org.ostelco.prime.model.ChangeSegment
-import org.ostelco.prime.model.Customer
-import org.ostelco.prime.model.CustomerRegionStatus
+import org.ostelco.prime.model.*
 import org.ostelco.prime.model.CustomerRegionStatus.APPROVED
 import org.ostelco.prime.model.CustomerRegionStatus.PENDING
-import org.ostelco.prime.model.KycStatus
 import org.ostelco.prime.model.KycStatus.REJECTED
-import org.ostelco.prime.model.KycType
 import org.ostelco.prime.model.KycType.ADDRESS_AND_PHONE_NUMBER
 import org.ostelco.prime.model.KycType.JUMIO
 import org.ostelco.prime.model.KycType.MY_INFO
 import org.ostelco.prime.model.KycType.NRIC_FIN
-import org.ostelco.prime.model.Offer
-import org.ostelco.prime.model.Plan
-import org.ostelco.prime.model.Product
-import org.ostelco.prime.model.ProductClass
-import org.ostelco.prime.model.PurchaseRecord
-import org.ostelco.prime.model.RefundRecord
-import org.ostelco.prime.model.Region
-import org.ostelco.prime.model.RegionDetails
-import org.ostelco.prime.model.ScanInformation
-import org.ostelco.prime.model.ScanStatus
-import org.ostelco.prime.model.Segment
-import org.ostelco.prime.model.SimProfile
-import org.ostelco.prime.model.SimProfileStatus.AVAILABLE_FOR_DOWNLOAD
-import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.notifications.EmailNotifier
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
@@ -428,6 +410,27 @@ object Neo4jStoreSingleton : GraphStore {
                             emptyList()
                         } else {
                             listOf(simProfileEntity.createEntity(record["sp"].asMap()))
+                                    .mapNotNull { simProfile ->
+                                        simManager.getSimProfile(
+                                                hlr = getHlr(regionCode = region.id),
+                                                iccId = simProfile.iccId)
+                                                .map { simEntry ->
+                                                    org.ostelco.prime.model.SimProfile(
+                                                            iccId = simProfile.iccId,
+                                                            status = simEntry.status,
+                                                            eSimActivationCode = simEntry.eSimActivationCode,
+                                                            alias = simProfile.alias)
+                                                }
+                                                .fold(
+                                                        { error ->
+                                                            logger.error("Failed to fetch SIM Profile: {} for region: {}. Reason: {}",
+                                                                    simProfile.iccId,
+                                                                    region.id,
+                                                                    error)
+                                                            null
+                                                        },
+                                                        { it })
+                                    }
                         }
                         RegionDetails(
                                 region = region,
@@ -451,25 +454,7 @@ object Neo4jStoreSingleton : GraphStore {
     // SIM Profile
     //
 
-    private val simManager by lazy {
-        getResource<SimManager>().also { simManager ->
-            simManager.getSimProfileStatusUpdates { iccId, status ->
-                writeTransaction {
-                    simProfileStore.get(id = iccId, transaction = transaction)
-                            .flatMap { simProfile ->
-                                simProfileStore.update(simProfile.copy(status = status), transaction)
-                            }
-                            .mapLeft {
-                                logger.error("Failed to update SimProfileStatus - {} of {}. Reason: {}",
-                                        status,
-                                        iccId,
-                                        it.message)
-                            }
-                            .ifFailedThenRollback(transaction)
-                }
-            }
-        }
-    }
+    private val simManager by lazy { getResource<SimManager>() }
 
     private val emailNotifier by lazy { getResource<EmailNotifier>() }
 
@@ -483,7 +468,7 @@ object Neo4jStoreSingleton : GraphStore {
     override fun provisionSimProfile(
             identity: org.ostelco.prime.model.Identity,
             regionCode: String,
-            profileType: String?): Either<StoreError, SimProfile> = writeTransaction {
+            profileType: String?): Either<StoreError, org.ostelco.prime.model.SimProfile> = writeTransaction {
         IO {
             Either.monad<StoreError>().binding {
                 val customerId = getCustomerId(identity = identity, transaction = transaction).bind()
@@ -502,17 +487,16 @@ object Neo4jStoreSingleton : GraphStore {
                 val simEntry = simManager.allocateNextEsimProfile(hlr = getHlr(region.id.toLowerCase()), phoneType = profileType)
                         .mapLeft { NotFoundError("eSIM profile", id = "Loltel") }
                         .bind()
-                simProfileStore.create(SimProfile(
-                        iccId = simEntry.iccId,
-                        eSimActivationCode = simEntry.eSimActivationCode,
-                        status = AVAILABLE_FOR_DOWNLOAD),
-                        transaction).bind()
+                val simProfile = SimProfile(id = UUID.randomUUID().toString(), iccId = simEntry.iccId)
+                simProfileStore.create(
+                        entity = simProfile,
+                        transaction = transaction).bind()
                 customerToSimProfileStore.create(
                         fromId = customerId,
-                        toId = simEntry.iccId,
+                        toId = simProfile.id,
                         transaction = transaction).bind()
                 simProfileRegionRelationStore.create(
-                        fromId = simEntry.iccId,
+                        fromId = simProfile.id,
                         toId = regionCode.toLowerCase(),
                         transaction = transaction).bind()
                 simEntry.msisdnList.forEach { msisdn ->
@@ -541,7 +525,11 @@ object Neo4jStoreSingleton : GraphStore {
                                 logger.error(NOTIFY_OPS_MARKER, "Failed to send email to {}", customer.contactEmail)
                             }
                 }
-                simProfileStore.get(simEntry.iccId, transaction).bind()
+                org.ostelco.prime.model.SimProfile(
+                        iccId = simEntry.iccId,
+                        alias = "",
+                        eSimActivationCode = simEntry.eSimActivationCode,
+                        status = simEntry.status)
             }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
@@ -565,15 +553,56 @@ object Neo4jStoreSingleton : GraphStore {
 
     override fun getSimProfiles(
             identity: org.ostelco.prime.model.Identity,
-            regionCode: String?): Either<StoreError, Collection<SimProfile>> = readTransaction {
+            regionCode: String?): Either<StoreError, Collection<org.ostelco.prime.model.SimProfile>> {
 
-        getCustomerId(identity = identity, transaction = transaction)
-                .flatMap { customerId ->
-                    customerStore.getRelated(
+        val map = mutableMapOf<String, String>()
+        val simProfiles = readTransaction {
+            IO {
+                Either.monad<StoreError>().binding {
+
+                    val customerId = getCustomerId(identity = identity, transaction = transaction).bind()
+                    val simProfiles = customerStore.getRelated(
                             id = customerId,
                             relationType = customerToSimProfileRelation,
-                            transaction = transaction)
-                }
+                            transaction = transaction).bind()
+                    if (regionCode == null) {
+                        simProfiles.forEach { simProfile ->
+                            val region = simProfileStore.getRelated(
+                                    id = simProfile.id,
+                                    relationType = simProfileRegionRelation,
+                                    transaction = transaction)
+                                    .bind()
+                                    .first()
+                            map[simProfile.id] = region.id
+                        }
+                    }
+                    simProfiles
+                }.fix()
+            }.unsafeRunSync()
+        }
+
+        return IO {
+            Either.monad<StoreError>()
+                    .binding {
+                        simProfiles.bind().map { simProfile ->
+                            val regionId = (regionCode ?: map[simProfile.id])
+                                    ?: ValidationError(type = simProfileEntity.name, id = simProfile.iccId, message = "SimProfile not linked to any region")
+                                            .left()
+                                            .bind()
+
+                            val simEntry = simManager.getSimProfile(
+                                    hlr = getHlr(regionId),
+                                    iccId = simProfile.iccId)
+                                    .mapLeft { NotFoundError(type = simProfileEntity.name, id = simProfile.iccId) }
+                                    .bind()
+                            org.ostelco.prime.model.SimProfile(
+                                    iccId = simProfile.iccId,
+                                    alias = simProfile.alias,
+                                    eSimActivationCode = simEntry.eSimActivationCode,
+                                    status = simEntry.status)
+                        }
+                    }.fix() 
+        }.unsafeRunSync()
     }
 
     private fun getHlr(regionCode: String): String {
@@ -1133,17 +1162,25 @@ object Neo4jStoreSingleton : GraphStore {
                 }
     }
 
+    private val appNotifier by lazy { getResource<AppNotifier>() }
+
     override fun updateScanInformation(scanInformation: ScanInformation, vendorData: MultivaluedMap<String, String>): Either<StoreError, Unit> = writeTransaction {
         logger.info("updateScanInformation : ${scanInformation.scanId} status: ${scanInformation.status}")
         getCustomerUsingScanId(scanInformation.scanId, transaction).flatMap { customer ->
             scanInformationStore.update(scanInformation, transaction).flatMap {
                 logger.info("updating scan Information for : ${customer.contactEmail} id: ${scanInformation.scanId} status: ${scanInformation.status}")
-
+                val extendedStatus = scanInformationDatastore.getExtendedStatusInformation(vendorData)
                 if (scanInformation.status == ScanStatus.APPROVED) {
 
                     logger.info("Inserting scan Information to cloud storage : id: ${scanInformation.scanId} countryCode: ${scanInformation.countryCode}")
                     scanInformationDatastore.upsertVendorScanInformation(customer.id, scanInformation.countryCode, vendorData)
                             .flatMap {
+                                appNotifier.notify(
+                                        customerId = customer.id,
+                                        title = FCMStrings.NOTIFICATION_TITLE.s,
+                                        body = FCMStrings.JUMIO_IDENTITY_VERIFIED.s,
+                                        data = extendedStatus
+                                )
                                 setKycStatus(
                                         customerId = customer.id,
                                         regionCode = scanInformation.countryCode.toLowerCase(),
@@ -1151,6 +1188,13 @@ object Neo4jStoreSingleton : GraphStore {
                                         transaction = transaction)
                             }
                 } else {
+                    // TODO: find out what more information can be passed to the client.
+                    appNotifier.notify(
+                            customerId = customer.id,
+                            title = FCMStrings.NOTIFICATION_TITLE.s,
+                            body = FCMStrings.JUMIO_IDENTITY_FAILED.s,
+                            data = extendedStatus
+                    )
                     setKycStatus(
                             customerId = customer.id,
                             regionCode = scanInformation.countryCode.toLowerCase(),
@@ -1710,37 +1754,6 @@ object Neo4jStoreSingleton : GraphStore {
                         }.bind()
                 analyticsReporter.reportPurchaseInfo(purchaseRecord, customerAnalyticsId, "refunded")
                 ProductInfo(purchaseRecord.product.sku)
-            }.fix()
-        }.unsafeRunSync()
-                .ifFailedThenRollback(transaction)
-    }
-
-    //
-    // Sim Profiles (Admin)
-    //
-    override fun syncSimProfileStatus(): Either<StoreError, Unit> = writeTransaction {
-        IO {
-            Either.monad<StoreError>().binding {
-                listOf("no", "sg")
-                        .forEach { regionCode ->
-
-                            val simProfiles = regionStore.getRelatedFrom(
-                                    regionCode, simProfileRegionRelation, transaction).bind()
-
-                            simProfiles.forEach { simProfile ->
-                                val status = simManager.getSimProfileStatus(
-                                        hlr = getHlr(regionCode = regionCode),
-                                        iccId = simProfile.iccId)
-                                        .mapLeft { SystemError(
-                                                type = "SimProfile",
-                                                id = simProfile.iccId,
-                                                message = "Failed to get SimProfileStatus from SIM Manager") }
-                                        .bind()
-                                if (status != simProfile.status) {
-                                    simProfileStore.update(simProfile.copy(status = status), transaction).bind()
-                                }
-                            }
-                        }
             }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)

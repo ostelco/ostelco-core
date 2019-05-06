@@ -39,6 +39,7 @@ object OcsServer {
     private var source: DataSource? = null
     private var localPeerFQDN: String? = null
     private var localPeerRealm: String? = null
+    private var defaultRequestedServiceUnit: Long = 0L
 
     internal fun handleRequest(session: ServerCCASession, request: JCreditControlRequest) {
         try {
@@ -48,10 +49,23 @@ object OcsServer {
                     localPeerFQDN!!,
                     localPeerRealm!!
             )
+            setDefaultRequestedServiceUnit(ccrContext)
             source?.handleRequest(ccrContext) ?: logger.error("Received request before initialising stack")
         } catch (e: Exception) {
             logger.error("Failed to create CreditControlContext", e)
         }
+    }
+
+    // In the case where the Diameter client does not set the Requested-Service-Unit AVP
+    // in the Multiple-Service-Credit-Control we need to set a default value.
+    private fun setDefaultRequestedServiceUnit(ccrContext: CreditControlContext) {
+        ccrContext.creditControlRequest.multipleServiceCreditControls.forEach { mscc ->
+                if ( mscc.requested.size == 1 ) {
+                    if ( mscc.requested.get(0).total <= 0) {
+                        mscc.requested.get(0).total = defaultRequestedServiceUnit
+                    }
+                }
+            }
     }
 
     //https://tools.ietf.org/html/rfc4006#page-30
@@ -95,6 +109,8 @@ object OcsServer {
         this.stack = stack
         this.localPeerFQDN = stack.metaData.localPeer.uri.fqdn
         this.localPeerRealm = stack.metaData.localPeer.realmName
+
+        this.defaultRequestedServiceUnit = appConfig.defaultRequestedServiceUnit
 
         val protobufDataSource = ProtobufDataSource()
 

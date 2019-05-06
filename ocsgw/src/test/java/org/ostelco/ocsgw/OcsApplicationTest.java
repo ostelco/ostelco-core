@@ -14,7 +14,6 @@ import org.ostelco.diameter.model.RequestType;
 import org.ostelco.diameter.model.SessionContext;
 import org.ostelco.diameter.test.TestClient;
 import org.ostelco.diameter.test.TestHelper;
-import org.ostelco.diameter.util.DiameterUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,8 +45,8 @@ public class OcsApplicationTest {
     private static final String PGW_REALM = "loltel";
     private static final String APN = "loltel-test";
     private static final String MCC_MNC = "24201";
-
     private static final String MSISDN = "4790300123";
+    private static final long DIAMETER_SUCCESS = 2001L;
 
     private TestClient client;
 
@@ -70,7 +69,7 @@ public class OcsApplicationTest {
         OcsApplication.shutdown();
     }
 
-    private void simpleCreditControlRequestInit(Session session) {
+    private void simpleCreditControlRequestInit(Session session, Long requestedBucketSize, Long expectedGrantedBucketSize, Integer ratingGroup, Integer serviceIdentifier) {
 
         Request request = client.createRequest(
                 OCS_REALM,
@@ -78,30 +77,42 @@ public class OcsApplicationTest {
                 session
         );
 
-        TestHelper.createInitRequest(request.getAvps(), MSISDN, 500000L, 10, 1);
+        TestHelper.createInitRequest(request.getAvps(), MSISDN, requestedBucketSize, ratingGroup, serviceIdentifier);
 
         client.sendNextRequest(request, session);
 
         waitForAnswer();
 
         try {
-            assertEquals(2001L, client.getResultCodeAvp().getInteger32());
+            assertEquals(DIAMETER_SUCCESS, client.getResultCodeAvp().getInteger32());
             AvpSet resultAvps = client.getResultAvps();
             assertEquals(OCS_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String());
             assertEquals(OCS_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String());
             assertEquals(RequestType.INITIAL_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
             Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
-            assertEquals(2001L, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
-            assertEquals(1, resultMSCC.getGrouped().getAvp(Avp.SERVICE_IDENTIFIER_CCA).getUnsigned32());
-            assertEquals(10, resultMSCC.getGrouped().getAvp(Avp.RATING_GROUP).getUnsigned32());
+            assertEquals(DIAMETER_SUCCESS, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
+
+            if (serviceIdentifier > 0) {
+                assertEquals(serviceIdentifier.longValue(), resultMSCC.getGrouped().getAvp(Avp.SERVICE_IDENTIFIER_CCA).getUnsigned32());
+            }
+
+            if (ratingGroup > 0) {
+                assertEquals(ratingGroup.longValue(), resultMSCC.getGrouped().getAvp(Avp.RATING_GROUP).getUnsigned32());
+            }
+
             Avp granted = resultMSCC.getGrouped().getAvp(Avp.GRANTED_SERVICE_UNIT);
-            assertEquals(500000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
+            assertEquals(expectedGrantedBucketSize.longValue(), granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
         } catch (AvpDataException e) {
             LOG.error("Failed to get Result-Code", e);
         }
     }
 
-    private void simpleCreditControlRequestUpdate(Session session) {
+    private void simpleCreditControlRequestUpdate(Session session,
+                                                  Long requestedBucketSize,
+                                                  Long usedBucketSize,
+                                                  Long expectedGrantedBucketSize,
+                                                  Integer ratingGroup,
+                                                  Integer serviceIdentifier) {
 
         Request request = client.createRequest(
                 OCS_REALM,
@@ -109,20 +120,29 @@ public class OcsApplicationTest {
                 session
         );
 
-        TestHelper.createUpdateRequest(request.getAvps(), MSISDN, 400000L, 500000L, 10, 1);
+        TestHelper.createUpdateRequest(request.getAvps(), MSISDN, requestedBucketSize, usedBucketSize, ratingGroup, serviceIdentifier);
 
         client.sendNextRequest(request, session);
 
         waitForAnswer();
 
         try {
-            assertEquals(2001L, client.getResultCodeAvp().getInteger32());
+            assertEquals(DIAMETER_SUCCESS, client.getResultCodeAvp().getInteger32());
             AvpSet resultAvps = client.getResultAvps();
             assertEquals(RequestType.UPDATE_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
             Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
-            assertEquals(2001L, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
+            assertEquals(DIAMETER_SUCCESS, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
+
+            if (serviceIdentifier > 0) {
+                assertEquals(serviceIdentifier.longValue(), resultMSCC.getGrouped().getAvp(Avp.SERVICE_IDENTIFIER_CCA).getUnsigned32());
+            }
+
+            if (ratingGroup > 0) {
+                assertEquals(ratingGroup.longValue(), resultMSCC.getGrouped().getAvp(Avp.RATING_GROUP).getUnsigned32());
+            }
+
             Avp granted = resultMSCC.getGrouped().getAvp(Avp.GRANTED_SERVICE_UNIT);
-            assertEquals(400000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
+            assertEquals(expectedGrantedBucketSize.longValue(), granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
         } catch (AvpDataException e) {
             LOG.error("Failed to get Result-Code", e);
         }
@@ -132,9 +152,13 @@ public class OcsApplicationTest {
     @Test
     @DisplayName("Simple Credit-Control-Request Init Update and Terminate")
     public void simpleCreditControlRequestInitUpdateAndTerminate() {
+
+        final int ratingGroup = 10;
+        final int serviceIdentifier = 1;
+
         Session session = client.createSession();
-        simpleCreditControlRequestInit(session);
-        simpleCreditControlRequestUpdate(session);
+        simpleCreditControlRequestInit(session, 500_000L, 500_000L,ratingGroup, serviceIdentifier);
+        simpleCreditControlRequestUpdate(session, 400_000L, 500_000L, 400_000L, ratingGroup, serviceIdentifier);
 
         Request request = client.createRequest(
                 OCS_REALM,
@@ -142,24 +166,58 @@ public class OcsApplicationTest {
                 session
         );
 
-        TestHelper.createTerminateRequest(request.getAvps(), MSISDN, 700000L, 10, 1);
+        TestHelper.createTerminateRequest(request.getAvps(), MSISDN, 400_000L, ratingGroup, 1);
 
         client.sendNextRequest(request, session);
 
         waitForAnswer();
 
         try {
-            assertEquals(2001L, client.getResultCodeAvp().getInteger32());
+            assertEquals(DIAMETER_SUCCESS, client.getResultCodeAvp().getInteger32());
             AvpSet resultAvps = client.getResultAvps();
             assertEquals(RequestType.TERMINATION_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
             Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
-            assertEquals(2001L, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
+            assertEquals(DIAMETER_SUCCESS, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
         } catch (AvpDataException e) {
             LOG.error("Failed to get Result-Code", e);
         }
         session.release();
     }
 
+    @Test
+    @DisplayName("Credit-Control-Request Init Update and Terminate No Requested-Service-Unit Set")
+    public void CreditControlRequestInitUpdateAndTerminateNoRequestedServiceUnit() {
+
+        final int ratingGroup = 10;
+        final int serviceIdentifier = -1;
+
+        Session session = client.createSession();
+        simpleCreditControlRequestInit(session, -1L, 40_000_000L, ratingGroup, serviceIdentifier);
+        simpleCreditControlRequestUpdate(session, -1L, 40_000_000L, 40_000_000L, ratingGroup, serviceIdentifier);
+
+        Request request = client.createRequest(
+                OCS_REALM,
+                OCS_HOST,
+                session
+        );
+
+        TestHelper.createTerminateRequest(request.getAvps(), MSISDN, 40_000_000L, ratingGroup, serviceIdentifier);
+
+        client.sendNextRequest(request, session);
+
+        waitForAnswer();
+
+        try {
+            assertEquals(DIAMETER_SUCCESS, client.getResultCodeAvp().getInteger32());
+            AvpSet resultAvps = client.getResultAvps();
+            assertEquals(RequestType.TERMINATION_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
+            Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
+            assertEquals(DIAMETER_SUCCESS, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
+        } catch (AvpDataException e) {
+            LOG.error("Failed to get Result-Code", e);
+        }
+        session.release();
+    }
 
     @Test
     @DisplayName("Credit-Control-Request Multi Ratinggroups Init")
@@ -171,14 +229,14 @@ public class OcsApplicationTest {
                 session
         );
 
-        TestHelper.createInitRequestMultiRatingGroups(request.getAvps(), MSISDN, 500000L);
+        TestHelper.createInitRequestMultiRatingGroups(request.getAvps(), MSISDN, 500_000L);
 
         client.sendNextRequest(request, session);
 
         waitForAnswer();
 
         try {
-            assertEquals(2001L, client.getResultCodeAvp().getInteger32());
+            assertEquals(DIAMETER_SUCCESS, client.getResultCodeAvp().getInteger32());
             AvpSet resultAvps = client.getResultAvps();
             assertEquals(OCS_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String());
             assertEquals(OCS_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String());
@@ -187,9 +245,9 @@ public class OcsApplicationTest {
             assertEquals(3, resultMSCCs.size());
             for ( int i=0; i < resultMSCCs.size(); i++ ) {
                 AvpSet mscc = resultMSCCs.getAvpByIndex(i).getGrouped();
-                assertEquals(2001L, mscc.getAvp(Avp.RESULT_CODE).getInteger32());
+                assertEquals(DIAMETER_SUCCESS, mscc.getAvp(Avp.RESULT_CODE).getInteger32());
                 Avp granted = mscc.getAvp(Avp.GRANTED_SERVICE_UNIT);
-                assertEquals(500000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
+                assertEquals(500_000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
                 int serviceIdentifier = (int) mscc.getAvp(Avp.SERVICE_IDENTIFIER_CCA).getUnsigned32();
                 switch (serviceIdentifier) {
                     case 1 :
@@ -216,6 +274,9 @@ public class OcsApplicationTest {
     @DisplayName("test AVP not in Diameter dictionary")
     public void testUnknownAVP() {
 
+        final int ratingGroup = 10;
+        final int serviceIdentifier = 1;
+
         Session session = client.createSession();
         Request request = client.createRequest(
                 OCS_REALM,
@@ -223,7 +284,7 @@ public class OcsApplicationTest {
                 session
         );
 
-        TestHelper.createInitRequest(request.getAvps(), MSISDN, 500000L, 10, 1);
+        TestHelper.createInitRequest(request.getAvps(), MSISDN, 500_000L, ratingGroup, serviceIdentifier);
         TestHelper.addUnknownApv(request.getAvps());
 
         client.sendNextRequest(request, session);
@@ -231,17 +292,17 @@ public class OcsApplicationTest {
         waitForAnswer();
 
         try {
-            assertEquals(2001L, client.getResultCodeAvp().getInteger32());
+            assertEquals(DIAMETER_SUCCESS, client.getResultCodeAvp().getInteger32());
             AvpSet resultAvps = client.getResultAvps();
             assertEquals(OCS_HOST, resultAvps.getAvp(Avp.ORIGIN_HOST).getUTF8String());
             assertEquals(OCS_REALM, resultAvps.getAvp(Avp.ORIGIN_REALM).getUTF8String());
             assertEquals(RequestType.INITIAL_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
             Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
-            assertEquals(2001L, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
-            assertEquals(1, resultMSCC.getGrouped().getAvp(Avp.SERVICE_IDENTIFIER_CCA).getUnsigned32());
-            assertEquals(10, resultMSCC.getGrouped().getAvp(Avp.RATING_GROUP).getUnsigned32());
+            assertEquals(DIAMETER_SUCCESS, resultMSCC.getGrouped().getAvp(Avp.RESULT_CODE).getInteger32());
+            assertEquals(serviceIdentifier, resultMSCC.getGrouped().getAvp(Avp.SERVICE_IDENTIFIER_CCA).getUnsigned32());
+            assertEquals(ratingGroup, resultMSCC.getGrouped().getAvp(Avp.RATING_GROUP).getUnsigned32());
             Avp granted = resultMSCC.getGrouped().getAvp(Avp.GRANTED_SERVICE_UNIT);
-            assertEquals(500000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
+            assertEquals(500_000L, granted.getGrouped().getAvp(Avp.CC_TOTAL_OCTETS).getUnsigned64());
         } catch (AvpDataException e) {
             LOG.error("Failed to get Result-Code", e);
         }
@@ -250,7 +311,7 @@ public class OcsApplicationTest {
     @Test
     public void testReAuthRequest() {
         Session session = client.createSession();
-        simpleCreditControlRequestInit(session);
+        simpleCreditControlRequestInit(session, 500_000L, 500_000L, 10, 1);
 
 
         client.initRequestTest();
@@ -319,7 +380,7 @@ public class OcsApplicationTest {
         waitForAnswer();
 
         try {
-            assertEquals(2001L, client.getResultCodeAvp().getInteger32());
+            assertEquals(DIAMETER_SUCCESS, client.getResultCodeAvp().getInteger32());
             AvpSet resultAvps = client.getResultAvps();
             assertEquals(RequestType.INITIAL_REQUEST, resultAvps.getAvp(Avp.CC_REQUEST_TYPE).getInteger32());
             Avp resultMSCC = resultAvps.getAvp(Avp.MULTIPLE_SERVICES_CREDIT_CONTROL);
