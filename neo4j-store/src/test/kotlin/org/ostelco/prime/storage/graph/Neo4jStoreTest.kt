@@ -87,14 +87,14 @@ class Neo4jStoreTest {
         }
 
         Neo4jStoreSingleton.createProduct(
-                Product(sku = "100MB_FREE_ON_JOINING",
-                        price = Price(0, CURRENCY),
-                        properties = mapOf("noOfBytes" to "100_000_000")))
+                Product(sku = "2GB_FREE_ON_JOINING",
+                        price = Price(0, ""),
+                        properties = mapOf("noOfBytes" to "2_147_483_648")))
 
         Neo4jStoreSingleton.createProduct(
                 Product(sku = "1GB_FREE_ON_REFERRED",
-                        price = Price(0, CURRENCY),
-                        properties = mapOf("noOfBytes" to "1_000_000_000")))
+                        price = Price(0, ""),
+                        properties = mapOf("noOfBytes" to "1_073_741_824")))
 
         val allSegment = Segment(id = getSegmentNameFromCountryCode(REGION))
         Neo4jStoreSingleton.createSegment(allSegment)
@@ -216,7 +216,7 @@ class Neo4jStoreTest {
                 { fail(it.message) },
                 { bundles ->
                     bundles.forEach { bundle ->
-                        assertEquals(1_100_000_000L, bundle.balance)
+                        assertEquals(3_221_225_472L, bundle.balance)
                     }
                 })
     }

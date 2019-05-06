@@ -37,13 +37,13 @@ class Neo4jLoadTest {
         Neo4jStoreSingleton.createIndex()
 
         Neo4jStoreSingleton.createProduct(
-                Product(sku = "100MB_FREE_ON_JOINING",
-                        price = Price(0, CURRENCY),
-                        properties = mapOf("noOfBytes" to "100_000_000")))
+                Product(sku = "2GB_FREE_ON_JOINING",
+                        price = Price(0, ""),
+                        properties = mapOf("noOfBytes" to "2_147_483_648")))
 
         Neo4jStoreSingleton.createProduct(
                 Product(sku = "1GB_FREE_ON_REFERRED",
-                        price = Price(0, CURRENCY),
+                        price = Price(0, ""),
                         properties = mapOf("noOfBytes" to "1_000_000_000")))
 
         val allSegment = Segment(id = getSegmentNameFromCountryCode(COUNTRY))

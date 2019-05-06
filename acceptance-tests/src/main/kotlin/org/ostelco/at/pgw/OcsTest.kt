@@ -450,7 +450,7 @@ class OcsTest {
         private const val DEST_REALM = "loltel"
         private const val DEST_HOST = "ocs"
 
-        private const val INITIAL_BALANCE = 100_000_000L
+        private const val INITIAL_BALANCE = 2_147_483_648L
         private const val BUCKET_SIZE = 500L
         private const val DEFAULT_REQUESTED_SERVICE_UNIT = 40_000_000L
 
