@@ -1,7 +1,6 @@
 package org.ostelco.prime.storage.graph
 
 import arrow.core.Either
-import arrow.core.Tuple3
 import arrow.core.fix
 import arrow.core.flatMap
 import arrow.core.getOrElse
@@ -41,6 +40,7 @@ import org.ostelco.prime.model.RegionDetails
 import org.ostelco.prime.model.ScanInformation
 import org.ostelco.prime.model.ScanStatus
 import org.ostelco.prime.model.Segment
+import org.ostelco.prime.model.SimProfileStatus.NOT_READY
 import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.notifications.EmailNotifier
@@ -626,7 +626,7 @@ object Neo4jStoreSingleton : GraphStore {
                                     eSimActivationCode = simEntry.eSimActivationCode,
                                     status = simEntry.status)
                         }
-                    }.fix() 
+                    }.fix()
         }.unsafeRunSync()
     }
 
@@ -634,48 +634,103 @@ object Neo4jStoreSingleton : GraphStore {
         return "Loltel"
     }
 
+    override fun updateSimProfile(
+            identity: org.ostelco.prime.model.Identity,
+            regionCode: String,
+            iccId: String,
+            alias: String): Either<StoreError, org.ostelco.prime.model.SimProfile> {
+        val simProfileEither = writeTransaction {
+            IO {
+                Either.monad<StoreError>().binding {
+
+                    val customerId = getCustomerId(identity = identity, transaction = transaction).bind()
+                    val simProfile = customerStore.getRelated(
+                            id = customerId,
+                            relationType = customerToSimProfileRelation,
+                            transaction = transaction)
+                            .bind()
+                            .firstOrNull { simProfile -> simProfile.iccId == iccId }
+                            ?: NotFoundError(type = simProfileEntity.name, id = iccId).left().bind()
+
+                    simProfileStore.update(simProfile.copy(alias = alias), transaction).bind()
+
+                    SimProfile(
+                            iccId = simProfile.iccId,
+                            alias = simProfile.alias,
+                            eSimActivationCode = "",
+                            status = NOT_READY)
+                }.fix()
+            }.unsafeRunSync().ifFailedThenRollback(transaction)
+        }
+
+        return IO {
+            Either.monad<StoreError>().binding {
+                val simProfile = simProfileEither.bind()
+                val simEntry = simManager.getSimProfile(
+                        hlr = getHlr(regionCode),
+                        iccId = iccId)
+                        .mapLeft { NotFoundError(type = simProfileEntity.name, id = simProfile.iccId) }
+                        .bind()
+
+                SimProfile(
+                        iccId = simProfile.iccId,
+                        alias = simProfile.alias,
+                        eSimActivationCode = simEntry.eSimActivationCode,
+                        status = simEntry.status)
+            }.fix()
+        }.unsafeRunSync()
+    }
+
     override fun sendEmailWithActivationQrCode(
             identity: org.ostelco.prime.model.Identity,
             regionCode: String,
             iccId: String): Either<StoreError, org.ostelco.prime.model.SimProfile> {
 
-        val info = readTransaction {
+        val infoEither = readTransaction {
             IO {
                 Either.monad<StoreError>().binding {
 
                     val customer = getCustomer(identity = identity, transaction = transaction).bind()
                     val simProfile = customerStore.getRelated(
-                        id = customer.id,
-                        relationType = customerToSimProfileRelation,
-                        transaction = transaction)
-                        .bind()
-                        .first { simProfile -> simProfile.iccId == iccId }
-
-                    val simEntry = simManager.getSimProfile(
-                            hlr = getHlr(regionCode),
-                            iccId = iccId)
-                            .mapLeft { NotFoundError(type = simProfileEntity.name, id = simProfile.iccId) }
+                            id = customer.id,
+                            relationType = customerToSimProfileRelation,
+                            transaction = transaction)
                             .bind()
+                            .firstOrNull { simProfile -> simProfile.iccId == iccId }
+                            ?: NotFoundError(type = simProfileEntity.name, id = iccId).left().bind()
 
-                    Tuple3(customer, simEntry, simProfile.alias)
+                    Pair(customer, simProfile)
                 }.fix()
             }.unsafeRunSync()
         }
 
-        return info.flatMap { (customer, simEntry, alias) ->
+        return IO {
+            Either.monad<StoreError>().binding {
+                val (customer, simProfile) = infoEither.bind()
+                val simEntry = simManager.getSimProfile(
+                        hlr = getHlr(regionCode),
+                        iccId = iccId)
+                        .mapLeft {
+                            NotFoundError(type = simProfileEntity.name, id = simProfile.iccId)
+                        }
+                        .bind()
 
-            emailNotifier.sendESimQrCodeEmail(
-                    email = customer.contactEmail,
-                    name = customer.nickname,
-                    qrCode = simEntry.eSimActivationCode)
-                    .fold( { SystemError(type = "EMAIL", id = customer.contactEmail, message = "Failed to send email").left() },
-                            { SimProfile(
-                                    iccId = simEntry.iccId,
-                                    eSimActivationCode = simEntry.eSimActivationCode,
-                                    status = simEntry.status,
-                                    alias = alias).right()
-                            })
-        }
+                emailNotifier.sendESimQrCodeEmail(
+                        email = customer.contactEmail,
+                        name = customer.nickname,
+                        qrCode = simEntry.eSimActivationCode)
+                        .mapLeft {
+                            SystemError(type = "EMAIL", id = customer.contactEmail, message = "Failed to send email")
+                        }
+                        .bind()
+
+                SimProfile(
+                        iccId = simEntry.iccId,
+                        eSimActivationCode = simEntry.eSimActivationCode,
+                        status = simEntry.status,
+                        alias = simProfile.alias)
+            }.fix()
+        }.unsafeRunSync()
     }
 
     //
@@ -845,8 +900,10 @@ object Neo4jStoreSingleton : GraphStore {
             // Fetch/Create stripe payment profile for the customer.
             paymentProcessor.getPaymentProfile(customer.id)
                     .fold(
-                            { paymentProcessor.createPaymentProfile(customerId = customer.id,
-                                    email = customer.contactEmail) },
+                            {
+                                paymentProcessor.createPaymentProfile(customerId = customer.id,
+                                        email = customer.contactEmail)
+                            },
                             { profileInfo -> Either.right(profileInfo) }
                     )
 

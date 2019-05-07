@@ -185,6 +185,17 @@ class SubscriberDAOImpl : SubscriberDAO {
         }
     }
 
+    override fun updateSimProfile(identity: Identity, regionCode: String, iccId: String, alias: String): Either<ApiError, SimProfile> {
+        return try {
+            storage.updateSimProfile(identity, regionCode, iccId, alias).mapLeft {
+                NotFoundError("Failed to update SIM profile.", ApiErrorCode.FAILED_TO_UPDATE_SIM_PROFILE, it)
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to update SIM profile for customer with identity - $identity", e)
+            Either.left(InternalServerError("Failed to update SIM profile", ApiErrorCode.FAILED_TO_UPDATE_SIM_PROFILE))
+        }
+    }
+
     override fun sendEmailWithEsimActivationQrCode(identity: Identity, regionCode: String, iccId: String): Either<ApiError, SimProfile> {
         return try {
             storage.sendEmailWithActivationQrCode(identity, regionCode, iccId).mapLeft {

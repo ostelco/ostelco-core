@@ -116,6 +116,11 @@ interface ClientGraphStore {
     fun provisionSimProfile(identity: Identity, regionCode: String, profileType: String?): Either<StoreError, SimProfile>
 
     /**
+     * Update SIM Profile for Customer
+     */
+    fun updateSimProfile(identity: Identity, regionCode: String, iccId: String, alias: String): Either<StoreError, SimProfile>
+
+    /**
      * Provision new SIM Profile for Customer
      */
     fun sendEmailWithActivationQrCode(identity: Identity, regionCode: String, iccId: String): Either<StoreError, SimProfile>

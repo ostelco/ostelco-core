@@ -340,6 +340,35 @@ paths:
       security:
         - auth0_jwt: []
         - firebase: []
+  "/regions/{regionCode}/simProfiles/{iccId}":
+    put:
+      description: "Update SIM Profile for the user (identified by bearer token)."
+      produces:
+        - application/json
+      operationId: "updateSimProfile"
+      parameters:
+        - name: regionCode
+          in: path
+          description: "Region code"
+          required: true
+          type: string
+        - name: iccId
+          in: path
+          description: "ICC ID"
+          required: true
+          type: string
+        - name: alias
+          in: query
+          description: "Human readable alias"
+          required: true
+          type: string
+      responses:
+        201:
+          description: "Updated SIM profile for this user."
+          schema:
+            $ref: '#/definitions/SimProfile'
+        400:
+          description: "Not allowed for this region, or missing parameters."
   "/regions/{regionCode}/simProfiles/{iccId}/resendEmail":
     get:
       description: "Resend email with eSIM Activation QR code for this SIM profile for the user (identified by bearer token)."
