@@ -144,16 +144,21 @@ CREATE (:Product {`id`:                        '1GB_FREE_ON_REFERRED',
 // Plan for SG
 // Assumes that a 'plan' PLAN_1SGD_YEAR, together with the corresponding 'product'
 // has been created using the REST API
-CREATE (:Segment {`id`: 'plan_country-sg'});
+CREATE (:Segment {`id`: 'plan-country-sg'});
 
-CREATE (:Offer {`id`: 'plan_offer-sg'});
+CREATE (:Offer {`id`: 'plan-offer-sg'});
 
-MATCH (n:Offer {id: 'plan_offer-sg'})
+MATCH (n:Offer {id: 'plan-offer-sg'})
 WITH n
 MATCH (p:Product {id: 'PLAN_1SGD_YEAR'})
 CREATE (n)-[:OFFER_HAS_PRODUCT]->(p);
 
-MATCH (n:Offer {id: 'plan_offer-sg'})
+MATCH (n:Offer {id: 'plan-offer-sg'})
 WITH n
-MATCH (m:Segment {id: 'plan_country-sg'})
+MATCH (m:Segment {id: 'plan-country-sg'})
 CREATE (n)-[:OFFERED_TO_SEGMENT]->(m);
+
+MATCH (p:Plan {id: 'PLAN_1SGD_YEAR'})
+WITH p
+MATCH (r:Region {id: 'sg'})
+CREATE (p)-[:LINKED_TO_REGION]->(r);

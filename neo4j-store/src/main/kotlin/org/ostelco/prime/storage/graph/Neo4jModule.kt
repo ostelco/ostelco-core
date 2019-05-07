@@ -61,7 +61,8 @@ fun initDatabase() {
 
     val segments = listOf(
             Segment(id = getSegmentNameFromCountryCode("NO")),
-            Segment(id = getSegmentNameFromCountryCode("SG"))
+            /* Note: (kmm) For 'sg' the first segment offered is always a plan. */
+            Segment(id = getPlanSegmentNameFromCountryCode("SG"))
     )
     segments.map { Neo4jStoreSingleton.createSegment(it) }
 

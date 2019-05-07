@@ -1725,24 +1725,26 @@ class PlanTest {
 
             // Now create and verify the subscription.
 
-            post<Unit> {
-                path = "/profiles/$email/plans/${plan.name}"
-            }
-
-            val plans: List<Plan> = get {
-                path = "/profiles/$email/plans"
-            }
-
-            assert(plans.isNotEmpty())
-            assert(plans.lastIndex == 0)
-            assertEquals(plan.name, plans[0].name)
-            assertEquals(plan.price, plans[0].price)
-            assertEquals(plan.interval, plans[0].interval)
-            assertEquals(plan.intervalCount, plans[0].intervalCount)
-
-            delete<Unit> {
-                path = "/profiles/$email/plans/${plan.name}"
-            }
+            // TODO: (kmm) Update to reflect the changes in how a subscription is added.
+            //       Plus remove the 'plans' REST API from '/profiles' API.
+//            post<Unit> {
+//                path = "/profiles/$email/plans/${plan.name}"
+//            }
+//
+//            val plans: List<Plan> = get {
+//                path = "/profiles/$email/plans"
+//            }
+//
+//            assert(plans.isNotEmpty())
+//            assert(plans.lastIndex == 0)
+//            assertEquals(plan.name, plans[0].name)
+//            assertEquals(plan.price, plans[0].price)
+//            assertEquals(plan.interval, plans[0].interval)
+//            assertEquals(plan.intervalCount, plans[0].intervalCount)
+//
+//            delete<Unit> {
+//                path = "/profiles/$email/plans/${plan.name}"
+//            }
 
             // Cleanup - remove plan.
             val deletedPLan: Plan = delete {
