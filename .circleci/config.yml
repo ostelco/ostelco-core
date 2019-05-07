@@ -269,32 +269,6 @@ jobs:
           when: on_fail
           command: .circleci/notify-slack.sh on-PR-merge-to-dev false
 
-  create-PR-to-master:
-    working_directory: ~/project
-
-    docker:
-      - image: eu.gcr.io/pi-ostelco-prod/github-hub:2.5.0
-
-    steps:
-      - checkout
-      - run:
-          name: create PR to merge develop into master
-          command: |
-            export PRIME_CANARY_TAG=${CIRCLE_SHA1:0:9}
-            cd .circleci 
-            ./substitute_prime_tag.sh
-            git config --global user.email "${GIT_USER_EMAIL}"
-            git config --global user.name "${GIT_USER_NAME}"
-            git add prime-prod-values.yaml
-            git commit -m "[ci skip] updating prime canary image tag to the latest built image."
-            git push https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/ostelco/ostelco-core.git develop
-            hub pull-request -m "DEPLOYING ${PRIME_CANARY_TAG} to PROD" -b master
-
-      - run:
-          name: notify slack on failure
-          when: on_fail
-          command: .circleci/notify-slack.sh on-PR-merge-to-dev false
-
   ### JOBS FOR  on-PR-merge-to-master PIPELINE
   update-prod-endpoints:
     docker:
@@ -339,12 +313,11 @@ jobs:
           name: deploy prime to the prod cluster
           command: |
             export GOOGLE_CREDENTIALS=${PI_PROD_CLUSTER_CREDENTIALS}
-            #export TAG=$(git rev-parse --short=9 origin/circleci-dev) # fragile, gives latest develop commit but that may not be the correct tag!
             /authenticate.bash
             helm repo add ostelco https://storage.googleapis.com/pi-ostelco-helm-charts-repo/
             helm repo update
             helm upgrade prime ostelco/prime --version 0.6.1 --install --namespace prod \
-             -f .circleci/prime-prod-values.yaml 
+             -f .circleci/prime-prod-values.yaml  --set-string canary.tag=${CIRCLE_SHA1:0:9}
 
       - run:
           name: notify slack on failure
@@ -379,9 +352,6 @@ workflows:
       - deploy-to-dev:
           requires:
             - update-dev-endpoints
-      # - create-PR-to-master:
-      #     requires:
-      #       - deploy-to-dev
 
   deploy-to-prod:
     jobs:
