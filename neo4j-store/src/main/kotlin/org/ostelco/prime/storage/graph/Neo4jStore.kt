@@ -836,7 +836,17 @@ object Neo4jStoreSingleton : GraphStore {
                                     error = it)
                         }
                         .bind()
-                // TODO: Check if product already bought.
+
+                /* Bail out if subscriber tries to buy an already bought plan.
+                   Note: Already verified above that 'customer' (subscriber) exists. */
+                customerStore.getRelated(customer.id, purchaseRecordRelation, transaction)
+                        .map {
+                            if (it.any { x -> x.sku == product.sku }) {
+                                ForbiddenError("A subscription to plan ${product.sku} already exists")
+                                        .left().bind()
+                            }
+                        }
+
                 val profileInfo = fetchOrCreatePaymentProfile(customer)
                         .bind()
                 val paymentCustomerId = profileInfo.id
@@ -856,7 +866,7 @@ object Neo4jStoreSingleton : GraphStore {
                 }
                 subscribeToPlan(identity, product.id)
                         .mapLeft {
-                            org.ostelco.prime.paymentprocessor.core.BadGatewayError("Failed to subscribe ${customer.id} to plan ${product.id}",
+                            BadGatewayError("Failed to subscribe ${customer.id} to plan ${product.id}",
                                     error = it)
                         }
                         .flatMap {
@@ -1754,14 +1764,6 @@ object Neo4jStoreSingleton : GraphStore {
             }.fix()
         }.unsafeRunSync()
                 .ifFailedThenRollback(transaction)
-    }
-
-    fun subscriptionRequiresPaymentMethod() {
-
-    }
-
-    fun subscriptionRequiresAction(){
-
     }
 
     //
