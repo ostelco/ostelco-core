@@ -61,7 +61,7 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
         }
     }
 
-    private void fetchConfig(final String configDir, final String configFile) {
+    private void fetchConfigFilesFromGCP(final String configDir, final String configFile) {
         final String vpcEnv = System.getenv("VPC_ENV");
         final String instance = System.getenv("INSTANCE");
         final String serviceFile = System.getenv("SERVICE_FILE");
@@ -86,19 +86,24 @@ public class OcsApplication extends CCASessionFactoryImpl implements NetworkReqL
     public void start(final String configDir, final String configFile) {
         try {
 
-            fetchConfig(configDir, configFile);
+            AppConfig appconfig = new AppConfig();
+
+            fetchConfigFilesFromGCP(configDir, configFile);
 
             Configuration diameterConfig = new XMLConfiguration(configDir +  configFile);
             stack = new StackImpl();
             sessionFactory = (ISessionFactory) stack.init(diameterConfig);
 
-            OcsServer.INSTANCE.init$ocsgw(stack, new AppConfig());
+            OcsServer.INSTANCE.init$ocsgw(stack, appconfig);
 
             Network network = stack.unwrap(Network.class);
-            network.addNetworkReqListener(this, ApplicationId.createByAuthAppId(0L, APPLICATION_ID));
-            network.addNetworkReqListener(this, ApplicationId.createByAuthAppId(VENDOR_ID_3GPP, APPLICATION_ID));
 
-            stack.start(Mode.ALL_PEERS, 30000, TimeUnit.MILLISECONDS);
+            if (appconfig.getUsingVendorId()) {
+                network.addNetworkReqListener(this, ApplicationId.createByAuthAppId(VENDOR_ID_3GPP, APPLICATION_ID));
+            }
+            network.addNetworkReqListener(this, ApplicationId.createByAuthAppId(0L, APPLICATION_ID));
+
+            stack.start(Mode.ANY_PEER, 30000, TimeUnit.MILLISECONDS);
 
             init(sessionFactory);
             sessionFactory.registerAppFacory(ServerCCASession.class, this);

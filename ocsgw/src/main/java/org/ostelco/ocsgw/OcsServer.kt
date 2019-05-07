@@ -33,6 +33,11 @@ object OcsServer {
 
     private val logger by getLogger()
 
+    private val RAR_COMMAND_CODE = 258;
+
+    private val APPLICATION_ID = 4L  // Diameter Credit Control Application (4)
+    private val VENDOR_ID_3GPP: Long = 10415
+
     var stack: Stack? = null
         private set
 
@@ -40,6 +45,7 @@ object OcsServer {
     private var localPeerFQDN: String? = null
     private var localPeerRealm: String? = null
     private var defaultRequestedServiceUnit: Long = 0L
+    private var applicationId: ApplicationId =  ApplicationId.createByAuthAppId(APPLICATION_ID)
 
     internal fun handleRequest(session: ServerCCASession, request: JCreditControlRequest) {
         try {
@@ -74,20 +80,21 @@ object OcsServer {
         try {
             val ccaSession = stack?.getSession(sessionContext?.sessionId, ServerCCASessionImpl::class.java)
             if (ccaSession != null && ccaSession.isValid) {
-                // TODO martin: Not sure why there are multiple sessions for one session Id.
+                logger.debug("Finding session to send RAR")
                 for (session in ccaSession.sessions) {
                     if (session.isValid) {
-                        val request = session.createRequest(258,
-                                ApplicationId.createByAuthAppId(4L),
+                        val request = session.createRequest(RAR_COMMAND_CODE,
+                                applicationId,
                                 sessionContext?.originRealm,
                                 sessionContext?.originHost
                         )
                         val avps = request.avps
                         avps.addAvp(Avp.RE_AUTH_REQUEST_TYPE, ReAuthRequestType.AUTHORIZE_ONLY.ordinal, true, false)
                         val reAuthRequest = ReAuthRequestImpl(request)
+                        logger.debug("Found valid session : Sending RAR")
                         ccaSession.sendReAuthRequest(reAuthRequest)
                     } else {
-                        logger.info("Invalid session")
+                        logger.info("Invalid session when sending RAR")
                     }
                 }
             } else {
@@ -102,7 +109,6 @@ object OcsServer {
         } catch (e: OverloadException) {
             logger.warn("Failed to send Re-Auth Request", e)
         }
-
     }
 
     internal fun init(stack: Stack, appConfig: AppConfig) {
@@ -143,6 +149,10 @@ object OcsServer {
             }
         }
         source?.init()
+
+        if (appConfig.usingVendorId) {
+            applicationId = ApplicationId.createByAuthAppId(VENDOR_ID_3GPP, APPLICATION_ID)
+        }
     }
 
     private fun getGrpcDataSource(

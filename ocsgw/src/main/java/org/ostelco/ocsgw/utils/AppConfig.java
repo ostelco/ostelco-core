@@ -61,6 +61,10 @@ public class AppConfig {
         }
     }
 
+    public Boolean getUsingVendorId() {
+        return System.getenv("VENDOR_ID_3GPP") != null;
+    }
+
     public String getGrpcServer() {
         return getEnvProperty("OCS_GRPC_SERVER");
     }
@@ -88,7 +92,6 @@ public class AppConfig {
     public String getPubSubSubscriptionIdForActivate() {
         return getEnvProperty("PUBSUB_ACTIVATE_SUBSCRIPTION_ID");
     }
-
 
     private String getEnvProperty(String propertyName) {
         final String value = System.getenv(propertyName);
