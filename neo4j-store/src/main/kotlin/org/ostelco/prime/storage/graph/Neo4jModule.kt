@@ -14,6 +14,8 @@ import org.ostelco.prime.model.Region
 import org.ostelco.prime.model.Segment
 import org.ostelco.prime.module.PrimeModule
 import java.net.URI
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 import java.util.concurrent.TimeUnit.SECONDS
 
 @JsonTypeName("neo4j")
@@ -41,6 +43,7 @@ fun initDatabase() {
     Neo4jStoreSingleton.createIndex()
 
     Neo4jStoreSingleton.createRegion(Region(id = "no", name = "Norway"))
+    Neo4jStoreSingleton.createRegion(Region(id = "sg", name = "Singapore"))
 
     Neo4jStoreSingleton.createProduct(createProduct(sku = "1GB_249NOK", amount = 24900))
     Neo4jStoreSingleton.createProduct(createProduct(sku = "2GB_299NOK", amount = 29900))
@@ -48,13 +51,13 @@ fun initDatabase() {
     Neo4jStoreSingleton.createProduct(createProduct(sku = "5GB_399NOK", amount = 39900))
 
     Neo4jStoreSingleton.createProduct(Product(
-            sku = "100MB_FREE_ON_JOINING",
-            price = Price(0, "NOK"),
-            properties = mapOf("noOfBytes" to "100_000_000")))
+            sku = "2GB_FREE_ON_JOINING",
+            price = Price(0, ""),
+            properties = mapOf("noOfBytes" to "2_147_483_648")))
     Neo4jStoreSingleton.createProduct(Product(
             sku = "1GB_FREE_ON_REFERRED",
-            price = Price(0, "NOK"),
-            properties = mapOf("noOfBytes" to "1_000_000_000")))
+            price = Price(0, ""),
+            properties = mapOf("noOfBytes" to "1_073_741_824")))
 
     val segments = listOf(
             Segment(id = getSegmentNameFromCountryCode("NO")),
@@ -70,11 +73,11 @@ fun initDatabase() {
 }
 
 // Helper for naming of default segments based on country code.
-fun getSegmentNameFromCountryCode(countryCode: String) : String = "country-$countryCode".toLowerCase()
+fun getSegmentNameFromCountryCode(countryCode: String): String = "country-$countryCode".toLowerCase()
 
 data class Config(
-    val host: String,
-    val protocol: String)
+        val host: String,
+        val protocol: String)
 
 object ConfigRegistry {
     lateinit var config: Config
@@ -103,6 +106,11 @@ object Neo4jClient : Managed {
     }
 }
 
+private val dfs = DecimalFormatSymbols().apply {
+    groupingSeparator = '_'
+}
+private val df = DecimalFormat("#,###", dfs)
+
 fun createProduct(sku: String, amount: Int): Product {
 
     // This is messy code
@@ -111,6 +119,6 @@ fun createProduct(sku: String, amount: Int): Product {
     return Product(
             sku = sku,
             price = Price(amount = amount, currency = "NOK"),
-            properties = mapOf("noOfBytes" to "${gbs}_000_000_000"),
+            properties = mapOf("noOfBytes" to df.format(gbs * Math.pow(2.0, 30.0).toLong())),
             presentation = mapOf("label" to "$gbs GB for ${amount / 100}"))
 }

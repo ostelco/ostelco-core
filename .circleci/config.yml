@@ -280,15 +280,15 @@ jobs:
       - run:
           name: create PR to merge develop into master
           command: |
-            export PRIME_TAG=${CIRCLE_SHA1:0:9}
+            export PRIME_CANARY_TAG=${CIRCLE_SHA1:0:9}
             cd .circleci 
             ./substitute_prime_tag.sh
             git config --global user.email "${GIT_USER_EMAIL}"
             git config --global user.name "${GIT_USER_NAME}"
             git add prime-prod-values.yaml
-            git commit -m "[ci skip] updating prime image tag to the latest built image."
+            git commit -m "[ci skip] updating prime canary image tag to the latest built image."
             git push https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/ostelco/ostelco-core.git develop
-            hub pull-request -m "merging develop into master" -b master
+            hub pull-request -m "DEPLOYING ${PRIME_CANARY_TAG} to PROD" -b master
 
       - run:
           name: notify slack on failure
@@ -308,16 +308,16 @@ jobs:
             echo $GOOGLE_PROD_ENDPOINTS_CREDENTIALS > ${HOME}/gcloud-service-key.json
             gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
 
-            sed -i 's/GCP_PROJECT_ID/'${PROD_PROJECT}'/g' prime/infra/dev/ocs-api.yaml 
-            sed -i 's/GCP_PROJECT_ID/'${PROD_PROJECT}'/g' prime/infra/dev/metrics-api.yaml 
+            sed -i 's/GCP_PROJECT_ID/'${PROD_PROJECT}'/g' prime/infra/prod/ocs-api.yaml 
+            sed -i 's/GCP_PROJECT_ID/'${PROD_PROJECT}'/g' prime/infra/prod/metrics-api.yaml 
 
             python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=ocs-grpc-api/src/main/proto --descriptor_set_out=ocs_descriptor.pb ocs.proto
             python -m grpc_tools.protoc --include_imports --include_source_info --proto_path=analytics-grpc-api/src/main/proto --descriptor_set_out=metrics_descriptor.pb prime_metrics.proto
-            gcloud endpoints services deploy ocs_descriptor.pb prime/infra/new-prod/ocs-api.yaml
-            gcloud endpoints services deploy metrics_descriptor.pb prime/infra/new-prod/metrics-api.yaml
-            gcloud endpoints services deploy prime/infra/new-prod/prime-customer-api.yaml
-            # gcloud endpoints services deploy prime/infra/new-prod/prime-webhooks.yaml
-            # gcloud endpoints services deploy prime/infra/new-prod/prime-houston-api.yaml
+            gcloud endpoints services deploy ocs_descriptor.pb prime/infra/prod/ocs-api.yaml
+            gcloud endpoints services deploy metrics_descriptor.pb prime/infra/prod/metrics-api.yaml
+            gcloud endpoints services deploy prime/infra/prod/prime-customer-api.yaml
+            gcloud endpoints services deploy prime/infra/prod/prime-webhooks.yaml
+            gcloud endpoints services deploy prime/infra/prod/prime-houston-api.yaml
 
       - run:
           name: notify slack on failure
@@ -379,9 +379,9 @@ workflows:
       - deploy-to-dev:
           requires:
             - update-dev-endpoints
-  #    - create-PR-to-master:
-  #        requires:
-  #          - deploy-to-dev
+      # - create-PR-to-master:
+      #     requires:
+      #       - deploy-to-dev
 
   deploy-to-prod:
     jobs:

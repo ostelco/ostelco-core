@@ -10,16 +10,7 @@ import com.stripe.exception.CardException
 import com.stripe.exception.InvalidRequestException
 import com.stripe.exception.RateLimitException
 import com.stripe.exception.StripeException
-import com.stripe.model.Card
-import com.stripe.model.Charge
-import com.stripe.model.Customer
-import com.stripe.model.EphemeralKey
-import com.stripe.model.ExternalAccount
-import com.stripe.model.Plan
-import com.stripe.model.Product
-import com.stripe.model.Refund
-import com.stripe.model.Source
-import com.stripe.model.Subscription
+import com.stripe.model.*
 import com.stripe.net.RequestOptions
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.paymentprocessor.core.BadGatewayError
@@ -54,48 +45,46 @@ class StripePaymentProcessor : PaymentProcessor {
         return details["type"].toString()
     }
 
-    /* Returns detailed 'account details' for the given Stripe source/account.
+    /* Returns 'source' details for the given Stripe source/account.
        Note that including the fields 'id', 'type' and 'created' are mandatory. */
-    private fun getAccountDetails(accountInfo: ExternalAccount): Map<String, Any> {
-        when (accountInfo) {
-            is Card -> {
-                return mapOf("id" to accountInfo.id,
-                        "type" to "card",
-                        "addressLine1" to accountInfo.addressLine1,
-                        "addressLine2" to accountInfo.addressLine2,
-                        "addressZip" to accountInfo.addressZip,
-                        "addressCity" to accountInfo.addressCity,
-                        "addressState" to accountInfo.addressState,
-                        "brand" to accountInfo.brand,              // "Visa", "Mastercard" etc.
-                        "country" to accountInfo.country,
-                        "currency" to accountInfo.currency,
-                        "cvcCheck" to accountInfo.cvcCheck,
-                        "created" to getCreatedTimestampFromMetadata(accountInfo.id,
-                                accountInfo.metadata),
-                        "expMonth" to accountInfo.expMonth,
-                        "expYear" to accountInfo.expYear,
-                        "fingerprint" to accountInfo.fingerprint,
-                        "funding" to accountInfo.funding,
-                        "last4" to accountInfo.last4,              // Typ.: "credit" or "debit"
-                        "threeDSecure" to accountInfo.threeDSecure)
-                        .filterValues { it != null }
+    private fun getAccountDetails(paymentSource: PaymentSource): Map<String, Any> =
+            when (paymentSource) {
+                is Card -> {
+                    mapOf("id" to paymentSource.id,
+                            "type" to "card",
+                            "addressLine1" to paymentSource.addressLine1,
+                            "addressLine2" to paymentSource.addressLine2,
+                            "addressZip" to paymentSource.addressZip,
+                            "addressCity" to paymentSource.addressCity,
+                            "addressState" to paymentSource.addressState,
+                            "brand" to paymentSource.brand,              // "Visa", "Mastercard" etc.
+                            "country" to paymentSource.country,
+                            "currency" to paymentSource.currency,
+                            "cvcCheck" to paymentSource.cvcCheck,
+                            "created" to getCreatedTimestampFromMetadata(paymentSource.id,
+                                    paymentSource.metadata),
+                            "expMonth" to paymentSource.expMonth,
+                            "expYear" to paymentSource.expYear,
+                            "fingerprint" to paymentSource.fingerprint,
+                            "funding" to paymentSource.funding,
+                            "last4" to paymentSource.last4)              // Typ.: "credit" or "debit"
+                            .filterValues { it != null }
+                }
+                is Source -> {
+                    mapOf("id" to paymentSource.id,
+                            "type" to "source",
+                            "created" to paymentSource.created,
+                            "owner" to paymentSource.owner,
+                            "threeDSecure" to paymentSource.threeDSecure)
+                }
+                else -> {
+                    logger.error("Received unsupported Stripe source/account type: {}",
+                            paymentSource)
+                    mapOf("id" to paymentSource.id,
+                            "type" to "unsupported",
+                            "created" to getSecondsSinceEpoch())
+                }
             }
-            is Source -> {
-                return mapOf("id" to accountInfo.id,
-                        "type" to "source",
-                        "created" to accountInfo.created,
-                        "typeData" to accountInfo.typeData,
-                        "owner" to accountInfo.owner)
-            }
-            else -> {
-                logger.error("Received unsupported Stripe source/account type: {}",
-                        accountInfo)
-                return mapOf("id" to accountInfo.id,
-                        "type" to "unsupported",
-                        "created" to getSecondsSinceEpoch())
-            }
-        }
-    }
 
     /* Handle type conversion when reading the 'created' field from the
        metadata returned from Stripe. (It might seem like that Stripe
@@ -302,7 +291,7 @@ class StripePaymentProcessor : PaymentProcessor {
                         either("Failed to create stripe ephemeral key") {
                             EphemeralKey.create(
                                     mapOf("customer" to profileInfo.id),
-                                    RequestOptions.builder().setStripeVersion(apiVersion).build())
+                                    RequestOptions.builder().setStripeVersionOverride(apiVersion).build())
                                     .rawJson
                         }
                     }

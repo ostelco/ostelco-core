@@ -45,11 +45,11 @@ inline fun <reified T> post(expectedResultCode: Int = 201, dataType: MediaType =
 /**
  * DSL function for PUT operation
  */
-inline fun <reified T> put(execute: HttpRequest.() -> Unit): T {
+inline fun <reified T> put(expectedResultCode: Int = 200, execute: HttpRequest.() -> Unit): T {
     val request = HttpRequest().apply(execute)
     val response = HttpClient.send(request.path, request.queryParams, request.headerParams, request.email)
             .put(Entity.entity(request.body ?: "", MediaType.APPLICATION_JSON_TYPE))
-    assertEquals(200, response.status) { response.readEntity(String::class.java) }
+    assertEquals(expectedResultCode, response.status) { response.readEntity(String::class.java) }
     return response.readEntity(object : GenericType<T>() {})
 }
 

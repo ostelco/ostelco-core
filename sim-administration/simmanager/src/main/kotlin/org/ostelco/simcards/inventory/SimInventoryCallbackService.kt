@@ -1,13 +1,12 @@
 package org.ostelco.simcards.inventory
 
 import org.ostelco.prime.getLogger
-import org.ostelco.prime.model.SimProfileStatus
-import org.ostelco.prime.model.SimProfileStatus.*
 import org.ostelco.sim.es2plus.ES2NotificationPointStatus
 import org.ostelco.sim.es2plus.ES2RequestHeader
 import org.ostelco.sim.es2plus.FunctionExecutionStatusType
 import org.ostelco.sim.es2plus.SmDpPlusCallbackService
 import org.ostelco.simcards.admin.ApiRegistry.simProfileStatusUpdateCallback
+import org.ostelco.simcards.admin.SimManagerSingleton.asSimProfileStatus
 
 /**
  * ES2+ callbacks handling.
@@ -91,18 +90,5 @@ class SimInventoryCallbackService(val dao: SimInventoryDAO) : SmDpPlusCallbackSe
                 SmDpPlusState.DOWNLOADED, iccid)
         dao.setSmDpPlusStateUsingIccid(iccid, targetSmdpPlusStatus)
         simProfileStatusUpdateCallback?.invoke(iccid, asSimProfileStatus(targetSmdpPlusStatus))
-    }
-
-    fun asSimProfileStatus(smdpPlusState: SmDpPlusState) : SimProfileStatus {
-        return when (smdpPlusState) {
-            SmDpPlusState.AVAILABLE -> NOT_READY
-            SmDpPlusState.ALLOCATED -> NOT_READY
-            SmDpPlusState.CONFIRMED -> NOT_READY
-            SmDpPlusState.RELEASED -> AVAILABLE_FOR_DOWNLOAD
-            SmDpPlusState.DOWNLOADED -> DOWNLOADED
-            SmDpPlusState.INSTALLED -> INSTALLED
-            SmDpPlusState.ENABLED -> ENABLED
-            // XXX IF no match, then fail!
-        }
     }
 }
