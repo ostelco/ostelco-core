@@ -154,7 +154,7 @@ canary:
   # weight: 25
   headers: # only route requests with these headers to the canary service
     x-mode: canary
-  tag: ${PRIME_CANARY_TAG}
+  tag: ""
 
 cloudsqlProxy:
   enabled: true
