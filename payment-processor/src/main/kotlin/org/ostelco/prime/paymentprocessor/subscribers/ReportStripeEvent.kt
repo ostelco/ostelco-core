@@ -26,13 +26,13 @@ class ReportStripeEvent : PubSubSubscriber(
                             Reporter.report(event)
                         }.getOrElse {
                             logger.error("Attempt to log Stripe event {} failed with error message: {}",
-                                    message.toStringUtf8(), it)
+                                    message.toStringUtf8(), it.message)
                         }
                         consumer.ack()
                     },
                     ifFailure = {
                         logger.error("Failed to decode Stripe event for logging and error reporting: {}",
-                                it)
+                                it.message)
                         /* If unparsable JSON then this should not affect
                            upstream, as the message is invalid. */
                         consumer.ack()

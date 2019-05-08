@@ -44,13 +44,13 @@ class StripeWebhookResource() {
                     ifFailure = {
                         when (it) {
                             is JsonSyntaxException -> {
-                                logger.error("Invalid payload in Stripe event ${it}")
+                                logger.error("Invalid payload in Stripe event ${it.message}")
                             }
                             is SignatureVerificationException -> {
-                                logger.error("Invalid signature for Stripe event ${it}")
+                                logger.error("Invalid signature for Stripe event ${it.message}")
                             }
                             else -> {
-                                logger.error("Unexpected error for Stripe event ${it}")
+                                logger.error("Unexpected error for Stripe event ${it.message}")
                             }
                         }
                         Response.status(Response.Status.BAD_REQUEST)

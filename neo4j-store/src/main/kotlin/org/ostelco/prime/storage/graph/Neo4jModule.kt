@@ -53,15 +53,20 @@ fun initDatabase() {
     Neo4jStoreSingleton.createProduct(Product(
             sku = "2GB_FREE_ON_JOINING",
             price = Price(0, ""),
-            properties = mapOf("noOfBytes" to "2_147_483_648")))
+            properties = mapOf(
+                    "noOfBytes" to "2_147_483_648",
+                    "productClass" to "SIMPLE_DATA")))
     Neo4jStoreSingleton.createProduct(Product(
             sku = "1GB_FREE_ON_REFERRED",
             price = Price(0, ""),
-            properties = mapOf("noOfBytes" to "1_073_741_824")))
+            properties = mapOf(
+                    "noOfBytes" to "1_073_741_824",
+                    "productClass" to "SIMPLE_DATA")))
 
     val segments = listOf(
             Segment(id = getSegmentNameFromCountryCode("NO")),
-            Segment(id = getSegmentNameFromCountryCode("SG"))
+            /* Note: (kmm) For 'sg' the first segment offered is always a plan. */
+            Segment(id = getPlanSegmentNameFromCountryCode("SG"))
     )
     segments.map { Neo4jStoreSingleton.createSegment(it) }
 
@@ -74,6 +79,9 @@ fun initDatabase() {
 
 // Helper for naming of default segments based on country code.
 fun getSegmentNameFromCountryCode(countryCode: String): String = "country-$countryCode".toLowerCase()
+
+// Helper for naming of default plan segments based on country code.
+fun getPlanSegmentNameFromCountryCode(countryCode: String): String = "plan-country-$countryCode".toLowerCase()
 
 data class Config(
         val host: String,
@@ -119,6 +127,8 @@ fun createProduct(sku: String, amount: Int): Product {
     return Product(
             sku = sku,
             price = Price(amount = amount, currency = "NOK"),
-            properties = mapOf("noOfBytes" to df.format(gbs * Math.pow(2.0, 30.0).toLong())),
+            properties = mapOf(
+                    "noOfBytes" to df.format(gbs * Math.pow(2.0, 30.0).toLong()),
+                    "productClass" to "SIMPLE_DATA"),
             presentation = mapOf("label" to "$gbs GB for ${amount / 100}"))
 }

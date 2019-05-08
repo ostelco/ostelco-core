@@ -845,7 +845,8 @@ class Neo4jStoreTest {
         Neo4jStoreSingleton.createRegion(Region("sg", "Singapore"))
                 .mapLeft { fail(it.message) }
 
-        Neo4jStoreSingleton.createSegment(Segment(id = getSegmentNameFromCountryCode("sg")))
+        /* Note: (kmm) For 'sg' the first segment offered is always a plan. */
+        Neo4jStoreSingleton.createSegment(Segment(id = getPlanSegmentNameFromCountryCode("sg")))
                 .mapLeft { fail(it.message) }
 
         assert(Neo4jStoreSingleton.addCustomer(
@@ -878,7 +879,8 @@ class Neo4jStoreTest {
     @Test
     fun `test NRIC_FIN JUMIO and ADDRESS_PHONE status`() {
 
-        Neo4jStoreSingleton.createSegment(Segment(id = getSegmentNameFromCountryCode("sg")))
+        /* Note: (kmm) For 'sg' the first segment offered is always a plan. */
+        Neo4jStoreSingleton.createSegment(Segment(id = getPlanSegmentNameFromCountryCode("sg")))
 
         Neo4jStoreSingleton.createRegion(Region("sg", "Singapore"))
                 .mapLeft { fail(it.message) }

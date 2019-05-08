@@ -10,4 +10,4 @@ data class SourceInfo(val id: String)
 
 data class SourceDetailsInfo(val id: String, val type: String, val details: Map<String, Any>)
 
-data class SubscriptionInfo(val id: String, val created: Long, val trialEnd: Long)
+data class SubscriptionInfo(val id: String, val status: String? = null, val invoiceId: String? = null, val created: Long = 0L, val trialEnd: Long = 0L)
