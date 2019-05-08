@@ -66,7 +66,7 @@ modules:
   - type: scaninfo-store
     config:
       keysetFilePathPrefix: /scaninfo-keysets/encrypt_key
-      namespace: ${DATASTORE_NAMESPACE:-""}
+      namespace: ""
   - type: sim-manager
     config:
       openApi:
