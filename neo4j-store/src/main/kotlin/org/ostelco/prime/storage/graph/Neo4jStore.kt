@@ -5,6 +5,7 @@ import arrow.core.fix
 import arrow.core.flatMap
 import arrow.core.getOrElse
 import arrow.core.left
+import arrow.core.leftIfNull
 import arrow.core.right
 import arrow.effects.IO
 import arrow.instances.either.monad.monad
@@ -14,14 +15,32 @@ import org.ostelco.prime.appnotifier.AppNotifier
 import org.ostelco.prime.ekyc.DaveKycService
 import org.ostelco.prime.ekyc.MyInfoKycService
 import org.ostelco.prime.getLogger
-import org.ostelco.prime.model.*
+import org.ostelco.prime.model.Bundle
+import org.ostelco.prime.model.ChangeSegment
+import org.ostelco.prime.model.Customer
+import org.ostelco.prime.model.CustomerRegionStatus
 import org.ostelco.prime.model.CustomerRegionStatus.APPROVED
 import org.ostelco.prime.model.CustomerRegionStatus.PENDING
+import org.ostelco.prime.model.FCMStrings
+import org.ostelco.prime.model.KycStatus
 import org.ostelco.prime.model.KycStatus.REJECTED
+import org.ostelco.prime.model.KycType
 import org.ostelco.prime.model.KycType.ADDRESS_AND_PHONE_NUMBER
 import org.ostelco.prime.model.KycType.JUMIO
 import org.ostelco.prime.model.KycType.MY_INFO
 import org.ostelco.prime.model.KycType.NRIC_FIN
+import org.ostelco.prime.model.Offer
+import org.ostelco.prime.model.Plan
+import org.ostelco.prime.model.Product
+import org.ostelco.prime.model.ProductClass
+import org.ostelco.prime.model.PurchaseRecord
+import org.ostelco.prime.model.RefundRecord
+import org.ostelco.prime.model.Region
+import org.ostelco.prime.model.RegionDetails
+import org.ostelco.prime.model.ScanInformation
+import org.ostelco.prime.model.ScanStatus
+import org.ostelco.prime.model.Segment
+import org.ostelco.prime.model.Subscription
 import org.ostelco.prime.module.getResource
 import org.ostelco.prime.notifications.EmailNotifier
 import org.ostelco.prime.notifications.NOTIFY_OPS_MARKER
@@ -80,6 +99,7 @@ enum class Relation {
     BELONG_TO_REGION,           // (Customer) -[BELONG_TO_REGION]-> (Region)
     SUBSCRIPTION_FOR_REGION,    // (Subscription) -[SUBSCRIPTION_FOR_REGION]-> (Region)
     SIM_PROFILE_FOR_REGION,     // (SimProfile) -[SIM_PROFILE_FOR_REGION]-> (Region)
+    LINKED_TO_REGION,           // (Plan) -[LINKED_TO_REGION]-> (Region)
 }
 
 
@@ -216,6 +236,13 @@ object Neo4jStoreSingleton : GraphStore {
             to = regionEntity,
             dataClass = None::class.java)
     private val simProfileRegionRelationStore = UniqueRelationStore(simProfileRegionRelation)
+
+    private val planRegionRelation = RelationType(
+            relation = Relation.LINKED_TO_REGION,
+            from = planEntity,
+            to = regionEntity,
+            dataClass = None::class.java)
+    private val planRegionRelationStore = UniqueRelationStore(planRegionRelation)
 
     // -------------
     // Client Store
@@ -791,9 +818,9 @@ object Neo4jStoreSingleton : GraphStore {
                 },
                 {
                     /* TODO: Complete support for 'product-class' and store plans as a
-                             'product' of product-class: 'plan'. */
-                    return if (it.properties.containsKey("productType")
-                            && it.properties["productType"].equals("plan", true)) {
+                             'product' of product-class: 'PLAN'. */
+                    return if (it.properties.containsKey("productClass")
+                            && it.properties["productClass"].equals("PLAN", true)) {
 
                         purchasePlan(
                                 identity = identity,
@@ -812,6 +839,8 @@ object Neo4jStoreSingleton : GraphStore {
         )
     }
 
+    /* Note: 'purchase-relation' info is first added when a successful purchase
+             event has been received from Stripe. */
     private fun purchasePlan(identity: org.ostelco.prime.model.Identity,
                              product: Product,
                              sourceId: String?,
@@ -825,6 +854,17 @@ object Neo4jStoreSingleton : GraphStore {
                                     error = it)
                         }
                         .bind()
+
+                /* Bail out if subscriber tries to buy an already bought plan.
+                   Note: Already verified above that 'customer' (subscriber) exists. */
+                customerStore.getRelated(customer.id, purchaseRecordRelation, transaction)
+                        .map {
+                            if (it.any { x -> x.sku == product.sku }) {
+                                ForbiddenError("A subscription to plan ${product.sku} already exists")
+                                        .left().bind()
+                            }
+                        }
+
                 val profileInfo = fetchOrCreatePaymentProfile(customer)
                         .bind()
                 val paymentCustomerId = profileInfo.id
@@ -844,7 +884,7 @@ object Neo4jStoreSingleton : GraphStore {
                 }
                 subscribeToPlan(identity, product.id)
                         .mapLeft {
-                            org.ostelco.prime.paymentprocessor.core.BadGatewayError("Failed to subscribe ${customer.id} to plan ${product.id}",
+                            BadGatewayError("Failed to subscribe ${customer.id} to plan ${product.id}",
                                     error = it)
                         }
                         .flatMap {
@@ -976,32 +1016,57 @@ object Neo4jStoreSingleton : GraphStore {
     // Purchase Records
     //
 
-    override fun getPurchaseRecords(identity: org.ostelco.prime.model.Identity): Either<StoreError, Collection<PurchaseRecord>> {
-        return readTransaction {
-            getCustomerId(identity = identity, transaction = transaction)
-                    .flatMap { customerId -> customerStore.getRelations(customerId, purchaseRecordRelation, transaction) }
-        }
-    }
-
-    override fun addPurchaseRecord(customerId: String, purchase: PurchaseRecord): Either<StoreError, String> {
-        return writeTransaction {
-            createPurchaseRecordRelation(customerId, purchase, transaction)
-                    .ifFailedThenRollback(transaction)
-        }
-    }
-
-    private fun createPurchaseRecordRelation(
-            customerId: String,
-            purchase: PurchaseRecord,
-            transaction: Transaction): Either<StoreError, String> {
-
-        return customerStore.get(customerId, transaction).flatMap { customer ->
-            productStore.get(purchase.product.sku, transaction).flatMap { product ->
-                purchaseRecordRelationStore.create(customer, purchase, product, transaction)
-                        .map { purchase.id }
+    override fun getPurchaseRecords(identity: org.ostelco.prime.model.Identity): Either<StoreError, Collection<PurchaseRecord>> =
+            readTransaction {
+                getCustomerId(identity = identity, transaction = transaction)
+                        .flatMap { customerId ->
+                            customerStore.getRelations(customerId, purchaseRecordRelation, transaction)
+                        }
             }
-        }
-    }
+
+    override fun addPurchaseRecord(customerId: String, purchase: PurchaseRecord): Either<StoreError, String> =
+            writeTransaction {
+                createPurchaseRecordRelation(customerId, purchase, transaction)
+                        .ifFailedThenRollback(transaction)
+            }
+
+    private fun createPurchaseRecordRelation(customerId: String,
+                                             purchase: PurchaseRecord,
+                                             transaction: Transaction): Either<StoreError, String> =
+            getPurchaseRecordUsingInvoiceId(customerId, purchase.id, transaction)
+                    .fold({
+                        customerStore.get(customerId, transaction).flatMap { customer ->
+                            productStore.get(purchase.product.sku, transaction).flatMap { product ->
+                                purchaseRecordRelationStore.create(customer, purchase, product, transaction)
+                                        .map { purchase.id }
+                            }
+                        }
+                    }, {
+                        ValidationError(type = purchaseRecordRelation.name, id = purchase.id, message = "").left()
+                    })
+
+    private fun createPurchaseRecordRelation2(customerId: String,
+                                             purchase: PurchaseRecord,
+                                             transaction: Transaction): Either<StoreError, String> =
+            customerStore.get(customerId, transaction).flatMap { customer ->
+                productStore.get(purchase.product.sku, transaction).flatMap { product ->
+                    purchaseRecordRelationStore.create(customer, purchase, product, transaction)
+                            .map { purchase.id }
+                }
+            }
+
+
+    /* As Stripes invoice-id is used as the 'id' of a purchase record, this method
+       allows for detecting double charges etc. */
+    private fun getPurchaseRecordUsingInvoiceId(customerId: String,
+                                                invoiceId: String,
+                                                transaction: Transaction): Either<StoreError, PurchaseRecord> =
+            customerStore.getRelations(customerId, purchaseRecordRelation, transaction)
+                    .map { records ->
+                        records.find {
+                            it.id == invoiceId
+                        }
+                    }.leftIfNull { NotFoundError(type = purchaseRecordRelation.name, id = invoiceId) }
 
     //
     // Referrals
@@ -1053,7 +1118,7 @@ object Neo4jStoreSingleton : GraphStore {
                         if (status == APPROVED) {
                             assignCustomerToRegionSegment(
                                     customerId = customerId,
-                                    regionCode = regionCode,
+                                    segmentName = getInitialSegmentNameForRegion(regionCode),
                                     transaction = transaction)
                         } else {
                             Unit.right()
@@ -1062,16 +1127,16 @@ object Neo4jStoreSingleton : GraphStore {
 
     private fun assignCustomerToRegionSegment(
             customerId: String,
-            regionCode: String,
+            segmentName: String,
             transaction: Transaction): Either<StoreError, Unit> {
 
         return customerToSegmentStore.create(
                 fromId = customerId,
-                toId = getSegmentNameFromCountryCode(regionCode),
+                toId = segmentName,
                 transaction = transaction).mapLeft { storeError ->
 
             if (storeError is NotCreatedError && storeError.type == customerToSegmentRelation.name) {
-                ValidationError(type = customerEntity.name, id = customerId, message = "Unsupported region: $regionCode")
+                ValidationError(type = customerEntity.name, id = customerId, message = "Unsupported segment: $segmentName")
             } else {
                 storeError
             }
@@ -1347,10 +1412,9 @@ object Neo4jStoreSingleton : GraphStore {
                 }
 
                 if (approvedNow) {
-
                     assignCustomerToRegionSegment(
                             customerId = customerId,
-                            regionCode = regionCode,
+                            segmentName = getInitialSegmentNameForRegion(regionCode),
                             transaction = transaction).bind()
                 }
 
@@ -1380,6 +1444,12 @@ object Neo4jStoreSingleton : GraphStore {
             else -> listOf(setOf(JUMIO))
         }
     }
+
+    private fun getInitialSegmentNameForRegion(regionCode: String): String =
+            when (regionCode) {
+                "sg" -> getPlanSegmentNameFromCountryCode(regionCode)
+                else -> getSegmentNameFromCountryCode(regionCode)
+            }
 
     // ------------
     // Admin Store
@@ -1539,12 +1609,12 @@ object Neo4jStoreSingleton : GraphStore {
 
                 /* The associated product to the plan. Note that:
                          sku - name of the plan
-                         property value 'productType' is set to "plan"
+                         property value 'productClass' is set to "plan"
                     TODO: Complete support for 'product-class' and merge 'plan' and 'product' objects
                           into one object differentiated by 'product-class'. */
                 val product = Product(sku = plan.id, price = plan.price,
                         properties = plan.properties + mapOf(
-                                "productType" to "plan",
+                                "productClass" to "PLAN",
                                 "interval" to plan.interval,
                                 "intervalCount" to plan.intervalCount.toString()),
                         presentation = plan.presentation)
@@ -1676,7 +1746,7 @@ object Neo4jStoreSingleton : GraphStore {
                 .ifFailedThenRollback(transaction)
     }
 
-    override fun subscriptionPurchaseReport(invoiceId: String, customerId: String, sku: String, amount: Long, currency: String): Either<StoreError, Plan> = writeTransaction {
+    override fun purchasedSubscription(invoiceId: String, customerId: String, sku: String, amount: Long, currency: String): Either<StoreError, Plan> = writeTransaction {
         IO {
             Either.monad<StoreError>().binding {
                 val product = productStore.get(sku, transaction)
@@ -1690,7 +1760,26 @@ object Neo4jStoreSingleton : GraphStore {
                         product = product,
                         timestamp = Instant.now().toEpochMilli())
 
-                createPurchaseRecordRelation(customerId, purchaseRecord, transaction).bind()
+                createPurchaseRecordRelation(customerId, purchaseRecord, transaction)
+                        .bind()
+
+                /* Unique relation between 'plan' and 'region' */
+                val region = plansStore.getRelated(plan.id, planRegionRelation, transaction)
+                        .bind()
+                        .singleOrNull()
+
+                if (region == null) {
+                    logger.error("Found no 'region' associated with plan {} for customer {}",
+                            plan.id, customerId)
+                    NotFoundError("No region found found for plan", "${plan.id}")
+                            .left()
+                } else {
+                    assignCustomerToRegionSegment(
+                        customerId = customerId,
+                        segmentName = getSegmentNameFromCountryCode(region.id),
+                        transaction = transaction).bind()
+                }
+
                 plan
             }.fix()
         }.unsafeRunSync()

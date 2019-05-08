@@ -240,7 +240,9 @@ class BundlesAndPurchasesTest {
             val freeProduct = Product()
                     .sku("2GB_FREE_ON_JOINING")
                     .price(Price().amount(0).currency(""))
-                    .properties(mapOf("noOfBytes" to "2_147_483_648"))
+                    .properties(mapOf(
+                            "noOfBytes" to "2_147_483_648",
+                            "productClass" to "SIMPLE_DATA"))
                     .presentation(emptyMap<String, String>())
 
             val purchaseRecords = client.purchaseHistory
@@ -810,7 +812,9 @@ class ReferralTest {
             val freeProductForReferred = Product()
                     .sku("1GB_FREE_ON_REFERRED")
                     .price(Price().amount(0).currency("NOK"))
-                    .properties(mapOf("noOfBytes" to "1_000_000_000"))
+                    .properties(mapOf(
+                            "noOfBytes" to "1_000_000_000",
+                            "productClass" to "SIMPLE_DATA"))
                     .presentation(emptyMap<String, String>())
 
             assertEquals(listOf(freeProductForReferred), secondEmailClient.purchaseHistory.map { it.product })

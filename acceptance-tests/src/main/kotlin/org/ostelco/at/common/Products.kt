@@ -27,7 +27,9 @@ private fun createProduct(sku: String, amount: Int): Product {
 
     // This is messy code
     val gbs: Long = "${sku[0]}".toLong()
-    product.properties = mapOf("noOfBytes" to df.format(gbs * Math.pow(2.0, 30.0)))
+    product.properties = mapOf(
+            "noOfBytes" to df.format(gbs * Math.pow(2.0, 30.0)),
+            "productClass" to "SIMPLE_DATA")
     product.presentation = mapOf("label" to "$gbs GB for ${amount / 100}")
 
     return product

@@ -35,13 +35,13 @@ class StoreStripeEvent : PubSubSubscriber(
                                 message.toStringUtf8()))
                                 .mapLeft {
                                     logger.error("Failed to store Stripe event {}: {}",
-                                            event.id, it)
+                                            event.id, it.message)
                                 }
                         consumer.ack()
                     },
                     ifFailure = {
                         logger.error("Failed to decode Stripe event for logging and error reporting: {}",
-                                it)
+                                it.message)
                         consumer.ack()
                     }
             )

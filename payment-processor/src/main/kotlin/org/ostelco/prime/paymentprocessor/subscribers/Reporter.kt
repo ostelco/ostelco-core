@@ -12,7 +12,7 @@ object Reporter {
     private val logger by getLogger()
 
     fun report(event: Event) {
-        val data = event.data.`object`
+        val data = event.data
 
         when (data) {
             is Balance -> report(event, data)
