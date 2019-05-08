@@ -800,9 +800,9 @@ object Neo4jStoreSingleton : GraphStore {
                 },
                 {
                     /* TODO: Complete support for 'product-class' and store plans as a
-                             'product' of product-class: 'plan'. */
-                    return if (it.properties.containsKey("productType")
-                            && it.properties["productType"].equals("plan", true)) {
+                             'product' of product-class: 'PLAN'. */
+                    return if (it.properties.containsKey("productClass")
+                            && it.properties["productClass"].equals("PLAN", true)) {
 
                         purchasePlan(
                                 identity = identity,
@@ -1591,12 +1591,12 @@ object Neo4jStoreSingleton : GraphStore {
 
                 /* The associated product to the plan. Note that:
                          sku - name of the plan
-                         property value 'productType' is set to "plan"
+                         property value 'productClass' is set to "plan"
                     TODO: Complete support for 'product-class' and merge 'plan' and 'product' objects
                           into one object differentiated by 'product-class'. */
                 val product = Product(sku = plan.id, price = plan.price,
                         properties = plan.properties + mapOf(
-                                "productType" to "plan",
+                                "productClass" to "PLAN",
                                 "interval" to plan.interval,
                                 "intervalCount" to plan.intervalCount.toString()),
                         presentation = plan.presentation)

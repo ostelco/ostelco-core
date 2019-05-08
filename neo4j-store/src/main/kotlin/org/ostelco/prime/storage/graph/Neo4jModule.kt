@@ -53,11 +53,15 @@ fun initDatabase() {
     Neo4jStoreSingleton.createProduct(Product(
             sku = "2GB_FREE_ON_JOINING",
             price = Price(0, ""),
-            properties = mapOf("noOfBytes" to "2_147_483_648")))
+            properties = mapOf(
+                    "noOfBytes" to "2_147_483_648",
+                    "productClass" to "SIMPLE_DATA")))
     Neo4jStoreSingleton.createProduct(Product(
             sku = "1GB_FREE_ON_REFERRED",
             price = Price(0, ""),
-            properties = mapOf("noOfBytes" to "1_073_741_824")))
+            properties = mapOf(
+                    "noOfBytes" to "1_073_741_824",
+                    "productClass" to "SIMPLE_DATA")))
 
     val segments = listOf(
             Segment(id = getSegmentNameFromCountryCode("NO")),
@@ -123,6 +127,8 @@ fun createProduct(sku: String, amount: Int): Product {
     return Product(
             sku = sku,
             price = Price(amount = amount, currency = "NOK"),
-            properties = mapOf("noOfBytes" to df.format(gbs * Math.pow(2.0, 30.0).toLong())),
+            properties = mapOf(
+                    "noOfBytes" to df.format(gbs * Math.pow(2.0, 30.0).toLong()),
+                    "productClass" to "SIMPLE_DATA"),
             presentation = mapOf("label" to "$gbs GB for ${amount / 100}"))
 }
