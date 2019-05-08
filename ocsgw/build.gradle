@@ -1,23 +1,29 @@
 plugins {
+    id "org.jetbrains.kotlin.jvm"
     id "application"
-    // FIXME martin: unable to update to 4.0.1
-    id "com.github.johnrengelman.shadow" version "2.0.4"
+    id "com.github.johnrengelman.shadow" version "5.0.0"
 }
 
 dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+    
     implementation project(':ocs-grpc-api')
     implementation project(':analytics-grpc-api')
 
     implementation project(':diameter-stack')
+    implementation project(':diameter-ha')
+    
+    implementation "com.google.cloud:google-cloud-pubsub:$googleCloudVersion"
     implementation "com.google.cloud:google-cloud-core-grpc:$googleCloudVersion"
+    implementation "com.google.cloud:google-cloud-storage:$googleCloudVersion"
 
     implementation "javax.xml.bind:jaxb-api:$jaxbVersion"
-    implementation "javax.activation:activation:$javaxActivationVersion"
+    runtimeOnly "javax.activation:activation:$javaxActivationVersion"
 
     implementation 'ch.qos.logback:logback-classic:1.2.3'
-
-    // log to gcp stack-driver
-    implementation 'com.google.cloud:google-cloud-logging-logback:0.67.0-alpha'
+    implementation 'ch.qos.logback.contrib:logback-json-classic:0.1.5'
+    implementation 'ch.qos.logback.contrib:logback-jackson:0.1.5'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
 
     testImplementation project(':diameter-test')
     testImplementation "org.junit.jupiter:junit-jupiter-api:$junit5Version"
@@ -34,6 +40,8 @@ shadowJar {
     version = null
 }
 
+version = "1.1.27"
+
 test {
     // native support to Junit5 in Gradle 4.6+
     useJUnitPlatform {
@@ -45,67 +53,4 @@ test {
     }
 }
 
-task pack(dependsOn: ['packDev', 'packProd'])
-
-task packProd(type: Zip, dependsOn: 'shadowJar') {
-    from ('script/') {
-        into(project.name + '/script')
-    }
-    from ('config/dictionary.xml') {
-        into (project.name + '/config/')
-    }
-    from ('config/server-jdiameter-config.prod.xml') {
-        into (project.name + '/config/')
-        rename { String fileName ->
-            fileName.replace('prod.', '')
-        }
-    }
-    from ('config/pantel-prod.json') {
-        into (project.name + '/config/')
-    }
-    from ('config/logback.xml') {
-        into (project.name + '/config/')
-    }
-    from ('build/libs/ocsgw-uber.jar') {
-        into(project.name + '/build/libs/')
-    }
-    from ('Dockerfile') {
-        into(project.name)
-    }
-    archiveName = 'ocsgw.zip'
-    destinationDir = file('build/deploy/prod/')
-}
-
-task packDev(type: Zip, dependsOn: 'shadowJar') {
-    from ('script/') {
-        into(project.name + '/script')
-    }
-    from ('config/logback.dev.xml') {
-        into (project.name + '/config/')
-        rename { String fileName ->
-            fileName.replace('dev.', '')
-        }
-    }
-    from ('config/dictionary.xml') {
-        into (project.name + '/config/')
-    }
-    from ('config/server-jdiameter-config.dev.xml') {
-        into (project.name + '/config/')
-        rename { String fileName ->
-            fileName.replace('dev.', '')
-        }
-    }
-    from ('config/pantel-prod.json') {
-        into (project.name + '/config/')
-    }
-    from ('build/libs/ocsgw-uber.jar') {
-        into(project.name + '/build/libs/')
-    }
-    from ('Dockerfile') {
-        into(project.name)
-    }
-    archiveName = 'ocsgw.zip'
-    destinationDir = file('build/deploy/dev/')
-}
-
-apply from: '../jacoco.gradle'
+apply from: '../gradle/jacoco.gradle'

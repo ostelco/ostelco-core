@@ -1,0 +1,35 @@
+plugins {
+    id "org.jetbrains.kotlin.jvm"
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+    implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
+    implementation "io.swagger.core.v3:swagger-jaxrs2:$swaggerVersion"
+
+
+    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
+
+    implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
+
+    implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
+    implementation "io.dropwizard:dropwizard-auth:$dropwizardVersion"
+    implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
+    implementation "io.dropwizard:dropwizard-jdbi:$dropwizardVersion"
+
+    implementation 'org.conscrypt:conscrypt-openjdk-uber:1.4.2'
+
+    testImplementation 'javax.activation:javax.activation-api:1.2.0'
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
+    implementation "org.apache.commons:commons-csv:1.6"
+    testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions {
+       jvmTarget = "1.8"
+    }
+}
+
+apply from: '../../gradle/jacoco.gradle'

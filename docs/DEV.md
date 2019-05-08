@@ -2,7 +2,9 @@
 
 ## Checking for dependency updates
 
-    gradle dependencyUpdates -Drevision=release
+```bash
+./gradlew dependencyUpdates -Drevision=release
+```
 
 ## Package / Namespace naming convention
 

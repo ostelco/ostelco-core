@@ -1,7 +1,7 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.71"
+  id "org.jetbrains.kotlin.jvm"
   id "application"
-  id "com.github.johnrengelman.shadow" version "4.0.1"
+  id "com.github.johnrengelman.shadow" version "5.0.0"
   id "idea"
 }
 
@@ -10,10 +10,12 @@ dependencies {
   implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
 
   implementation project(":firebase-extensions")
-  implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
-  
-  implementation "javax.xml.bind:jaxb-api:$jaxbVersion"
-  implementation "javax.activation:activation:$javaxActivationVersion"
+  implementation ("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion") {
+    exclude group: "org.jetbrains.kotlin", module:"kotlin-reflect"
+  }
+
+  runtimeOnly "javax.xml.bind:jaxb-api:$jaxbVersion"
+  runtimeOnly "javax.activation:activation:$javaxActivationVersion"
   
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
@@ -45,7 +47,7 @@ task pack(type: Zip, dependsOn: 'shadowJar') {
 }
 
 sourceSets {
-  integrationTest {
+  integration {
     kotlin {
       compileClasspath += main.output + test.output
       runtimeClasspath += main.output + test.output
@@ -56,19 +58,21 @@ sourceSets {
 }
 
 configurations {
-  integrationTestImplementation.extendsFrom testImplementation
-  integrationTestCompile.extendsFrom testCompile
-  integrationTestRuntime.extendsFrom testRuntime
+  integration
+  integrationImplementation.extendsFrom testImplementation
+  integrationCompile.extendsFrom testCompile
+  integrationRuntime.extendsFrom testRuntime
 }
 
-task integrationTest(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
-  testClassesDirs = sourceSets.integrationTest.output.classesDirs
-  classpath = sourceSets.integrationTest.runtimeClasspath
+task integration(type: Test, description: 'Runs the integration tests.', group: 'Verification') {
+  testClassesDirs = sourceSets.integration.output.classesDirs
+  classpath = sourceSets.integration.runtimeClasspath
 }
 
-integrationTest.mustRunAfter test
+integration.mustRunAfter test
+build.dependsOn integration
 
-apply from: '../jacoco.gradle'
+apply from: '../gradle/jacoco.gradle'
 
 idea {
   module {

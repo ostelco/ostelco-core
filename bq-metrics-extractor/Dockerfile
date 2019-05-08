@@ -1,6 +1,6 @@
-FROM openjdk:11
+FROM azul/zulu-openjdk:11.0.1-11.2
 
-MAINTAINER CSI "csi@telenordigital.com"
+LABEL maintainer="dev@redotter.sg"
 
 #
 # Copy the files we need
@@ -25,4 +25,4 @@ RUN ["java", "-Dfile.encoding=UTF-8", "-Xshare:on", "-Xshare:dump", "-jar", "/bq
 # Finally the actual entry point
 #
 
-ENTRYPOINT ["/start.sh"]
+CMD ["/start.sh"]

@@ -1,0 +1,43 @@
+{
+  "type": "object",
+  "properties": {
+    "header": {
+      "type": "object",
+      "properties": {
+        "functionRequesterIdentifier": {
+          "type": "string",
+          "description": "identification of the function requester"
+        },
+        "functionCallIdentifier": {
+          "type": "string",
+          "description": "identification of the function call"
+        }
+      },
+      "required": [
+        "functionRequesterIdentifier",
+        "functionCallIdentifier"
+      ]
+    },
+    "iccid": {
+      "type": "string",
+      "pattern": "^[0-9]{19,20}$",
+      "description": "ICCID as desc in ITU-T E.118"
+    },
+    "eid": {
+      "type": "string",
+      "pattern": "^[0-9]{32}$",
+      "description": "EID as desc in SGP.02"
+    },
+    "matchingId": {
+      "type": "string",
+      "description": "as defined in section {5.3.2}"
+    },
+    "finalProfileStatusIndicator": {
+      "type": "string",
+      "description": "as defined in section {5.3.4}"
+    }
+  },
+  "required": [
+    "iccid"
+  ]
+}

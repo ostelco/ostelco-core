@@ -1,10 +1,7 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.71"
+  id "org.jetbrains.kotlin.jvm"
   id "java-library"
 }
-
-ext.neo4jVersion="3.4.8"
-ext.neo4jDriverVersion="1.6.3"
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
   kotlinOptions {
@@ -19,6 +16,8 @@ repositories {
 }
 dependencies {
 
+  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinXCoroutinesVersion"
+
   implementation project(":prime-modules")
   implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
 
@@ -26,7 +25,7 @@ dependencies {
   implementation "org.neo4j.driver:neo4j-java-driver:$neo4jDriverVersion"
   implementation "org.neo4j:neo4j-slf4j:$neo4jVersion"
 
-  testImplementation 'com.palantir.docker.compose:docker-compose-rule-junit4:0.34.0'
+  testImplementation "com.palantir.docker.compose:docker-compose-rule-junit4:$dockerComposeJunitRuleVersion"
 
   testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
@@ -34,4 +33,4 @@ dependencies {
   testImplementation "org.mockito:mockito-core:$mockitoVersion"
 }
 
-apply from: '../jacoco.gradle'
+apply from: '../gradle/jacoco.gradle'

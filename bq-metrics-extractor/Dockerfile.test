@@ -1,13 +1,13 @@
-FROM openjdk:11
+FROM azul/zulu-openjdk:11.0.1-11.2
 
-MAINTAINER CSI "csi@telenordigital.com"
+LABEL maintainer="dev@redotter.sg"
 
 #
 # Copy the files we need
 #
 
 COPY script/start.sh /start.sh
-COPY config/pantel-prod.json /secret/pantel-prod.json
+COPY config/prime-service-account.json /secret/prime-service-account.json
 COPY config/config.yaml /config/config.yaml
 COPY build/libs/bq-metrics-extractor-uber.jar /bq-metrics-extractor.jar
 

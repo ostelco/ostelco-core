@@ -49,10 +49,11 @@ fi
 exportId=${exportId//-}
 exportId=${exportId,,}
 # Set the projectId
-if [[ -z "${PROJECT_ID}" ]]; then
-  projectId=pantel-2decb
+if [[ -z "${GCP_PROJECT_ID}" ]]; then
+  echo "Missing GCP_PROJECT_ID env var"
+  exit
 else
-  projectId="${PROJECT_ID}"
+  projectId="${GCP_PROJECT_ID}"
 fi
 
 csvfile=$projectId-dataconsumption-export/${exportId}-resultsegment-pseudoanonymized.csv

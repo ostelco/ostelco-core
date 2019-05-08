@@ -16,7 +16,10 @@ import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.Gauge
 import io.prometheus.client.Summary
 import io.prometheus.client.exporter.PushGateway
-import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import net.sourceforge.argparse4j.inf.Namespace
 import net.sourceforge.argparse4j.inf.Subparser
 import org.slf4j.Logger
@@ -47,7 +50,7 @@ import com.google.cloud.bigquery.Job as BQJob
  *        help: Number of active users
  *        resultColumn: count
  *        sql: >
- *        SELECT count(distinct user_pseudo_id) AS count FROM `pantel-2decb.analytics_160712959.events_*`
+ *        SELECT count(distinct user_pseudo_id) AS count FROM `GCP_PROJECT_ID.analytics_160712959.events_*`
  *        WHERE event_name = "first_open"
  *        LIMIT 1000
  *
@@ -64,9 +67,7 @@ import com.google.cloud.bigquery.Job as BQJob
 /**
  * Main entry point, invoke dropwizard application.
  */
-fun main(args: Array<String>) {
-    BqMetricsExtractorApplication().run(*args)
-}
+fun main(args: Array<String>) = BqMetricsExtractorApplication().run(*args)
 
 /**
  * Config of a single metric that will be extracted using a BigQuery
@@ -163,9 +164,9 @@ open class EnvironmentVars {
 abstract class MetricBuilder(
         val metricName: String,
         val help: String,
-        val sql: String,
-        val resultColumn: String,
-        val env: EnvironmentVars) {
+        private val sql: String,
+        private val resultColumn: String,
+        private val env: EnvironmentVars) {
 
     /**
      * Function which will add the current value of the metric to registry.
@@ -176,7 +177,7 @@ abstract class MetricBuilder(
      * Function to expand the environment variables in the SQL.
      */
     fun expandSql(): String {
-        val regex:Regex = "\\$\\{\\S*?\\}".toRegex(RegexOption.MULTILINE);
+        val regex:Regex = "\\$\\{\\S*?\\}".toRegex(RegexOption.MULTILINE)
         val expandedSql = regex.replace(sql) {it: MatchResult ->
             // The variable is of the format ${VAR}
             // extract variable name
@@ -202,13 +203,13 @@ abstract class MetricBuilder(
                 QueryJobConfiguration.newBuilder(
                         expandSql())
                         .setUseLegacySql(false)
-                        .build();
+                        .build()
 
         // Create a job ID so that we can safely retry.
-        val jobId: JobId = JobId.of(UUID.randomUUID().toString());
-        var queryJob: BQJob = bigquery.create(JobInfo.newBuilder(queryConfig).setJobId(jobId).build());
+        val jobId: JobId = JobId.of(UUID.randomUUID().toString())
+        var queryJob: BQJob = bigquery.create(JobInfo.newBuilder(queryConfig).setJobId(jobId).build())
 
-       // Wait for the query to complete.
+        // Wait for the query to complete.
         // Retry maximum 4 times for up to 2 minutes.
         queryJob = async {
             queryJob.waitFor(
@@ -216,16 +217,16 @@ abstract class MetricBuilder(
                     RetryOption.retryDelayMultiplier(2.0),
                     RetryOption.maxRetryDelay(Duration.ofSeconds(20)),
                     RetryOption.maxAttempts(5),
-                    RetryOption.totalTimeout(Duration.ofMinutes(2)));
+                    RetryOption.totalTimeout(Duration.ofMinutes(2)))
         }.await()
 
         // Check for errors
         if (queryJob == null) {
-            throw  BqMetricsExtractionException("Job no longer exists");
-        } else if (queryJob.getStatus().getError() != null) {
+            throw  BqMetricsExtractionException("Job no longer exists")
+        } else if (queryJob.status.error != null) {
             // You can also look at queryJob.getStatus().getExecutionErrors() for all
             // errors, not just the latest one.
-            throw BqMetricsExtractionException(queryJob.getStatus().getError().toString());
+            throw BqMetricsExtractionException(queryJob.status.error.toString())
         }
         val result = queryJob.getQueryResults()
         if (result.totalRows != 1L) {

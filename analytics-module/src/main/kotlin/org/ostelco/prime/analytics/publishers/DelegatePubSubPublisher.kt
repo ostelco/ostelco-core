@@ -33,7 +33,7 @@ class DelegatePubSubPublisher(
             Publisher.newBuilder(topicName)
                     .setChannelProvider(channelProvider)
                     .setCredentialsProvider(NoCredentialsProvider())
-                    .build();
+                    .build()
         } else {
             Publisher.newBuilder(topicName).build()
         }

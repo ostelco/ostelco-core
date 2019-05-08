@@ -1,4 +1,4 @@
-serviceAccountKey: config/pantel-prod.json
+serviceAccountKey: config/prime-service-account.json
 
 logging:
   level: INFO

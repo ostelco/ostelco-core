@@ -14,18 +14,18 @@
  * **Experiment** is performed by defining and exercising one or more **Offers**.
 
 ### Offer
- * **Offer** aims to target a **Segment** of subscribers with the **Product(s)**.
+ * **Offer** aims to target a **Segment** of customers with the **Product(s)**.
  * Thus **Offer** is composition of **Segment** and **Product(s)**. 
 
 ### Segment
- * **Segment** of subscribers is a _improper_ subset of all subscribers. 
- * **Segment** is defined as a condition which will be true for those the set of subscribers.
- * Outcome of applying a **Segment** filter is a list of subscribers. 
- * So, (unlikely but possible) **segment** may directly be a list of subscribers without an explicit _filter condition_.
- * **Subscribers** may join/leave segment dynamically.
+ * **Segment** of customers is a _improper_ subset of all customers. 
+ * **Segment** is defined as a condition which will be true for those the set of customers.
+ * Outcome of applying a **Segment** filter is a list of customers. 
+ * So, (unlikely but possible) **segment** may directly be a list of customers without an explicit _filter condition_.
+ * **Customers** may join/leave segment dynamically.
  * Schedule/frequency of **Segment** _membership_ is upto technical feasibility.
  * If the **Segment** _membership_ is updated during its associated with an _Active_ **Offer**, then the **Product(s)** 
-   offering to subscribers belonging to that segment should correspondingly updated.
+   offering to customers belonging to that segment should correspondingly updated.
  * Segment can exist without Offer.
 
 ### Product
@@ -53,7 +53,7 @@
     * Product Class - `FREE_NETFLIX_FOR_PERIOD` has properties as `start_date`, `end_date`. Here, `Netflix` is part of SKU and is not an explicitly defined property.
 
 ### Resource
- * Resource is the _commodity_ which is consumed by subscriber.
+ * Resource is the _commodity_ which is consumed by customer.
  * It is a simple _enum_ having values such as:
    * Data
    * Voice
@@ -74,9 +74,9 @@
 ### Resource Bundle
 
  * **Resource Bundle** is like an account where the **Resource** is _credited_ or _debited_.
- * All of the **Resource Bundle** might not be exposed to subscriber.
+ * All of the **Resource Bundle** might not be exposed to customer.
  * This account need not be _positive balanced_, 
-   meaning subscriber consumption leading to _negative_ balance may be permitted.
+   meaning customer consumption leading to _negative_ balance may be permitted.
  * In case of Prepaid, the account is first _credited_ by using _Topup_ operation, 
    and then _debited_ from due to consumption.
  * Based on _Resource Consumption Context_, **Resource** may be consumed from _other_ type of **Resource Bundle**.
@@ -86,4 +86,11 @@
  * A _Topup_ operation is a purchase of (one or more) _topup_ product(s), which in turn results in _Credit_ to (one or more) 
    **Resource Bundles**.
  * It is subtype of _Purchase_ operation, which include purchase of other products, such as `SIM card` or `Topup Voucher`.
-   Thus, in case of `Topup voucher`, actual **Topup operation** happens when Voucher is _claimed_ and not when it is _purchased_. 
+   Thus, in case of `Topup voucher`, actual **Topup operation** happens when Voucher is _claimed_ and not when it is _purchased_.
+
+### Region
+ * Region can be:
+   * Country
+   * Part of a country
+   * Set of multiple countries
+ 

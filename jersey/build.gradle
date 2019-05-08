@@ -1,8 +1,14 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.71"
+  id "org.jetbrains.kotlin.jvm"
   id "java-library"
 }
 
 dependencies {
   implementation project(":prime-modules")
+  implementation "io.dropwizard:dropwizard-client:$dropwizardVersion"
+
+  testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
+  testImplementation "io.jsonwebtoken:jjwt:$jjwtVersion"
 }
+
+apply from: '../gradle/jacoco.gradle'

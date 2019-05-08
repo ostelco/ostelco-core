@@ -1,0 +1,77 @@
+version: "3.7"
+
+services:
+  prime:
+    container_name: prime
+    build:
+      context: prime
+      dockerfile: Dockerfile.test
+    environment:
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+      - FIREBASE_ROOT_PATH=test
+      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085
+      - PUBSUB_PROJECT_ID=${GCP_PROJECT_ID}
+      - JUMIO_API_TOKEN=
+      - JUMIO_API_SECRET=
+      - STRIPE_API_KEY=${STRIPE_API_KEY}
+      - STRIPE_ENDPOINT_SECRET=${STRIPE_ENDPOINT_SECRET}
+      - DATASTORE_EMULATOR_HOST=localhost:9090
+      - DATASTORE_PROJECT_ID=${GCP_PROJECT_ID}
+      - MANDRILL_API_KEY=
+      - LOCAL_TESTING=true
+      - LOAD_TESTING=true
+    ports:
+      - "9090:8080"
+      - "8082:8082"
+    depends_on:
+      - "ext-auth-provider"
+      - "datastore-emulator"
+      - "pubsub-emulator"
+      - "neo4j"
+    command: ["/bin/bash", "./wait.sh"]
+    tmpfs:
+      - /data
+    networks:
+      net:
+        aliases:
+          - "prime"
+        ipv4_address: 172.16.238.5
+      default:
+
+  neo4j:
+    container_name: "neo4j"
+    image: neo4j:3.4.9
+    environment:
+      - NEO4J_AUTH=none
+    ports:
+      - "7687:7687"
+      - "7474:7474"
+    tmpfs: "/data"
+
+  pubsub-emulator:
+    container_name: pubsub-emulator
+    image: knarz/pubsub-emulator
+    ports:
+      - "8085:8085"
+
+  datastore-emulator:
+    container_name: datastore-emulator
+    image: google/cloud-sdk:218.0.0
+    expose:
+      - "8081"
+    environment:
+      - CLOUDSDK_CORE_PROJECT=${GCP_PROJECT_ID}
+      - DATASTORE_DATASET=${GCP_PROJECT_ID}
+    command: ["gcloud", "beta", "emulators", "datastore", "start", "--host-port=0.0.0.0:8081"]
+
+  ext-auth-provider:
+    container_name: ext-auth-provider
+    build: ext-auth-provider
+
+networks:
+  net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.238.0/24

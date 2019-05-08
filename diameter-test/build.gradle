@@ -1,5 +1,5 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.71"
+  id "org.jetbrains.kotlin.jvm"
   id "java-library"
   id "signing"
   id "maven"
@@ -7,7 +7,9 @@ plugins {
 
 dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
-  implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
+  implementation ("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion") {
+    exclude group: "org.jetbrains.kotlin", module:"kotlin-reflect"
+  }
   api project(":diameter-stack")
 }
 

@@ -1,17 +1,19 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.71"
+  id "org.jetbrains.kotlin.jvm"
   id "application"
-  id "com.github.johnrengelman.shadow" version "4.0.1"
+  id "com.github.johnrengelman.shadow" version "5.0.0"
 }
 
 dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
 
   implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
-  implementation 'io.jsonwebtoken:jjwt:0.9.1'
+  implementation ("io.jsonwebtoken:jjwt:$jjwtVersion") {
+    exclude group: "com.fasterxml.jackson.core", module:"jackson-databind"
+  }
 
-  implementation "javax.xml.bind:jaxb-api:$jaxbVersion"
-  implementation "javax.activation:activation:$javaxActivationVersion"
+  runtimeOnly "javax.xml.bind:jaxb-api:$jaxbVersion"
+  runtimeOnly "javax.activation:activation:$javaxActivationVersion"
 
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
@@ -24,3 +26,5 @@ shadowJar {
   classifier = "uber"
   version = null
 }
+
+apply from: '../gradle/jacoco.gradle'

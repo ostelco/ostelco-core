@@ -1,21 +1,13 @@
 plugins {
-    id "org.jetbrains.kotlin.jvm" version "1.2.71"
+    id "org.jetbrains.kotlin.jvm"
     id "java-library"
 }
 
 dependencies {
     implementation project(":prime-modules")
 
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
-    implementation "io.dropwizard:dropwizard-core:$dropwizardVersion"
     implementation "com.google.cloud:google-cloud-pubsub:$googleCloudVersion"
     implementation 'com.google.code.gson:gson:2.8.5'
 
-    testImplementation 'com.google.api:gax-grpc:1.33.1'
-
-    testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
-    testImplementation "org.mockito:mockito-core:$mockitoVersion"
-    testImplementation "org.assertj:assertj-core:$assertJVersion"
+    testImplementation 'com.google.api:gax-grpc:1.43.0'
 }
-
-apply from: '../jacoco.gradle'

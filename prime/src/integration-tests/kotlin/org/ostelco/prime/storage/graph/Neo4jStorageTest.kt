@@ -13,12 +13,10 @@ import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
-import org.mockito.Mockito.mock
-import org.ostelco.prime.disruptor.EventProducer
 import org.ostelco.prime.model.Bundle
+import org.ostelco.prime.model.Customer
+import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.PurchaseRecord
-import org.ostelco.prime.model.Subscriber
-import org.ostelco.prime.ocs.OcsPrimeServiceSingleton
 import org.ostelco.prime.storage.GraphStore
 import org.ostelco.prime.storage.firebase.initFirebaseConfigRegistry
 import org.ostelco.prime.storage.graph.Products.DATA_TOPUP_3GB
@@ -35,40 +33,47 @@ class Neo4jStorageTest {
         this.storage = Neo4jStore()
 
         sleep(MILLIS_TO_WAIT_WHEN_STARTING_UP.toLong())
-        storage.removeSubscriber(EPHERMERAL_EMAIL)
-        storage.addSubscriber(Subscriber(EPHERMERAL_EMAIL, country = COUNTRY), referredBy = null)
+        storage.removeCustomer(IDENTITY)
+        storage.addCustomer(IDENTITY, Customer(contactEmail = EPHERMERAL_EMAIL, nickname = NAME), referredBy = null)
                 .mapLeft { fail(it.message) }
-        storage.addSubscription(EPHERMERAL_EMAIL, MSISDN)
+        storage.addSubscription(IDENTITY, MSISDN)
                 .mapLeft { fail(it.message) }
     }
 
     @After
     fun cleanUp() {
-        storage.removeSubscriber(EPHERMERAL_EMAIL)
+        storage.removeCustomer(IDENTITY)
     }
 
     @Test
     fun createReadDeleteSubscriber() {
-        assertNotNull(storage.getSubscriber(EPHERMERAL_EMAIL))
+        assertNotNull(storage.getCustomer(IDENTITY))
     }
 
     @Test
     fun setBalance() {
-        assertTrue(storage.updateBundle(Bundle(EPHERMERAL_EMAIL, RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS)).isRight())
+        val bundleId = storage.getBundles(IDENTITY).fold(
+                {
+                    fail(it.message)
+                    ""
+                },
+                { it.first().id })
 
-        storage.getBundles(EPHERMERAL_EMAIL).bimap(
+        assertTrue(storage.updateBundle(Bundle(bundleId, RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS)).isRight())
+
+        storage.getBundles(IDENTITY).bimap(
                 { fail(it.message) },
                 { bundles ->
                     assertEquals(RANDOM_NO_OF_BYTES_TO_USE_BY_REMAINING_MSISDN_TESTS,
-                            bundles.firstOrNull { it.id == EPHERMERAL_EMAIL }?.balance)
+                            bundles.firstOrNull { it.id == bundleId }?.balance)
                 })
 
-        storage.updateBundle(Bundle(EPHERMERAL_EMAIL, 0))
-        storage.getBundles(EPHERMERAL_EMAIL).bimap(
+        storage.updateBundle(Bundle(bundleId, 0))
+        storage.getBundles(IDENTITY).bimap(
                 { fail(it.message) },
                 { bundles ->
                     assertEquals(0L,
-                            bundles.firstOrNull { it.id == EPHERMERAL_EMAIL }?.balance)
+                            bundles.firstOrNull { it.id == bundleId }?.balance)
                 })
     }
 
@@ -81,16 +86,17 @@ class Neo4jStorageTest {
         val purchase = PurchaseRecord(
                 product = DATA_TOPUP_3GB,
                 timestamp = now,
-                id = UUID.randomUUID().toString(),
-                msisdn = "")
+                id = UUID.randomUUID().toString())
         storage.addPurchaseRecord(EPHERMERAL_EMAIL, purchase)
     }
 
     companion object {
 
         private const val EPHERMERAL_EMAIL = "attherate@dotcom.com"
+        private const val NAME = "Some Name"
         private const val MSISDN = "4747116996"
-        private const val COUNTRY = "NO"
+
+        private val IDENTITY = Identity(EPHERMERAL_EMAIL, "EMAIL", "email")
 
         private const val MILLIS_TO_WAIT_WHEN_STARTING_UP = 3000
 
@@ -114,16 +120,13 @@ class Neo4jStorageTest {
 
             initFirebaseConfigRegistry()
 
-            val config = Config()
-            config.host = "0.0.0.0"
-            config.protocol = "bolt"
-            ConfigRegistry.config = config
+            ConfigRegistry.config = Config(
+                    host = "0.0.0.0",
+                    protocol = "bolt")
 
             Neo4jClient.start()
 
             initDatabase()
-
-            OcsPrimeServiceSingleton.init(mock(EventProducer::class.java))
         }
 
         @JvmStatic

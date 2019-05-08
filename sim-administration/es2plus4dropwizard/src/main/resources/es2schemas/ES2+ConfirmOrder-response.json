@@ -1,0 +1,66 @@
+{
+  "type": "object",
+  "properties": {
+    "header": {
+      "type": "object",
+      "properties": {
+        "functionExecutionStatus": {
+          "type": "object",
+          "description": "Whether the function has been processed correctly or not",
+          "properties": {
+            "status": {
+              "type": "string",
+              "description": " Executed-Success, Executed-WithWarning, Failed, Expired"
+            },
+            "statusCodeData": {
+              "type": "object",
+              "properties": {
+                "subjectCode": {
+                  "type": "string",
+                  "description": "OID of the subject code"
+                },
+                "reasonCode": {
+                  "type": "string",
+                  "description": "OID of the reason code"
+                },
+                "subjectIdentifier": {
+                  "type": "string",
+                  "description": "Identifier of the subject "
+                },
+                "message": {
+                  "type": "string",
+                  "description": "Textual and human readable explanation"
+                }
+              },
+              "required": [
+                "subjectCode",
+                "reasonCode"
+              ]
+            }
+          },
+          "required": [
+            "status"
+          ]
+        }
+      },
+      "required": [
+        "functionExecutionStatus"
+      ]
+    },
+    "eid": {
+      "type": "string",
+      "pattern": "^[0-9]{32}$",
+      "description": "EID as desc in SGP.02"
+    },
+    "matchingId": {
+      "type": "string",
+      "description": "as defined in section {5.3.2}"
+    },
+    "smdpAddress": {
+      "type": "string",
+      "description": "as defined in section {5.3.2}"
+    }
+  },
+  "required": []
+}
+

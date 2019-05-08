@@ -1,7 +1,13 @@
 package org.ostelco.prime.paymentprocessor
 
 import arrow.core.Either
-import org.ostelco.prime.paymentprocessor.core.*
+import org.ostelco.prime.paymentprocessor.core.PaymentError
+import org.ostelco.prime.paymentprocessor.core.PlanInfo
+import org.ostelco.prime.paymentprocessor.core.ProductInfo
+import org.ostelco.prime.paymentprocessor.core.ProfileInfo
+import org.ostelco.prime.paymentprocessor.core.SourceDetailsInfo
+import org.ostelco.prime.paymentprocessor.core.SourceInfo
+import org.ostelco.prime.paymentprocessor.core.SubscriptionInfo
 
 interface PaymentProcessor {
 
@@ -13,51 +19,54 @@ interface PaymentProcessor {
     }
 
     /**
-     * @param customerId Stripe customer id
-     * @param sourceId Stripe source id
+     * @param stripeCustomerId Stripe customer id
+     * @param stripeSourceId Stripe source id
      * @return Stripe sourceId if created
      */
-    fun addSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo>
+    fun addSource(stripeCustomerId: String, stripeSourceId: String): Either<PaymentError, SourceInfo>
 
     /**
-     * @param userEmail: user email (Prime unique identifier for customer)
+     * @param customerId: Prime unique identifier for customer
+     * @param email: Contact email address
      * @return Stripe customerId if created
      */
-    fun createPaymentProfile(userEmail: String): Either<PaymentError, ProfileInfo>
+    fun createPaymentProfile(customerId: String, email: String): Either<PaymentError, ProfileInfo>
 
     /**
-     * @param customerId Stripe customer id
+     * @param stripeCustomerId Stripe customer id
      * @return Stripe customerId if deleted
      */
-    fun deletePaymentProfile(customerId: String): Either<PaymentError, ProfileInfo>
+    fun deletePaymentProfile(stripeCustomerId: String): Either<PaymentError, ProfileInfo>
 
     /**
-     * @param userEmail: user email (Prime unique identifier for customer)
+     * @param customerId: user email (Prime unique identifier for customer)
      * @return Stripe customerId if exist
      */
-    fun getPaymentProfile(userEmail: String): Either<PaymentError, ProfileInfo>
+    fun getPaymentProfile(customerId: String): Either<PaymentError, ProfileInfo>
 
     /**
-     * @param productId Stripe product id
+     * @param productId The product associated with the new plan
      * @param amount The amount to be charged in the interval specified
      * @param currency Three-letter ISO currency code in lowercase
-     * @param interval The frequency with which a subscription should be billed.
-     * @return Stripe planId if created
+     * @param interval The frequency with which a subscription should be billed
+     * @param invervalCount The number of intervals between subscription billings
+     * @return Stripe plan details
      */
-    fun createPlan(productId: String, amount: Int, currency: String, interval: Interval): Either<PaymentError, PlanInfo>
-
-    /**
-     * @param Stripe Plan Id
-     * @param Stripe Customer Id
-     * @return Stripe SubscriptionId if subscribed
-     */
-    fun subscribeToPlan(planId: String, customerId: String): Either<PaymentError, SubscriptionInfo>
+    fun createPlan(productId: String, amount: Int, currency: String, interval: Interval, intervalCount: Long = 1): Either<PaymentError, PlanInfo>
 
     /**
      * @param Stripe Plan Id
      * @return Stripe PlanId if deleted
      */
     fun removePlan(planId: String): Either<PaymentError, PlanInfo>
+
+    /**
+     * @param Stripe Plan Id
+     * @param stripeCustomerId Stripe Customer Id
+     * @param Epoch timestamp for when the trial period ends
+     * @return Stripe SubscriptionId if subscribed
+     */
+    fun createSubscription(planId: String, stripeCustomerId: String, trialEnd: Long = 0L): Either<PaymentError, SubscriptionInfo>
 
     /**
      * @param Stripe Subscription Id
@@ -79,23 +88,23 @@ interface PaymentProcessor {
     fun removeProduct(productId: String): Either<PaymentError, ProductInfo>
 
     /**
-     * @param customerId Stripe customer id
+     * @param stripeCustomerId Stripe customer id
      * @return List of Stripe sourceId
      */
-    fun getSavedSources(customerId: String): Either<PaymentError, List<SourceDetailsInfo>>
+    fun getSavedSources(stripeCustomerId: String): Either<PaymentError, List<SourceDetailsInfo>>
 
     /**
-     * @param customerId Stripe customer id
+     * @param stripeCustomerId Stripe customer id
      * @return Stripe default sourceId
      */
-    fun getDefaultSource(customerId: String): Either<PaymentError, SourceInfo>
+    fun getDefaultSource(stripeCustomerId: String): Either<PaymentError, SourceInfo>
 
     /**
-     * @param customerId Stripe customer id
+     * @param stripeCustomerId Stripe customer id
      * @param sourceId Stripe source id
      * @return SourceInfo if created
      */
-    fun setDefaultSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo>
+    fun setDefaultSource(stripeCustomerId: String, sourceId: String): Either<PaymentError, SourceInfo>
 
     /**
      * @param customerId Customer id in the payment system
@@ -111,18 +120,21 @@ interface PaymentProcessor {
      * @param customerId Customer id in the payment system
      * @return id of the charge if authorization was successful
      */
-    fun captureCharge(chargeId: String, customerId: String): Either<PaymentError, String>
+    fun captureCharge(chargeId: String, customerId: String, amount: Int, currency: String): Either<PaymentError, String>
 
     /**
      * @param chargeId ID of the of the authorized charge to refund from authorizeCharge()
      * @return id of the charge
      */
-    fun refundCharge(chargeId: String): Either<PaymentError, String>
+    fun refundCharge(chargeId: String, amount: Int, currency: String
+    ): Either<PaymentError, String>
 
     /**
-     * @param customerId Customer id in the payment system
+     * @param stripeCustomerId Customer id in the payment system
      * @param sourceId id of the payment source
      * @return id if removed
      */
-    fun removeSource(customerId: String, sourceId: String): Either<PaymentError, SourceInfo>
+    fun removeSource(stripeCustomerId: String, sourceId: String): Either<PaymentError, SourceInfo>
+
+    fun getStripeEphemeralKey(customerId: String, email: String, apiVersion: String): Either<PaymentError, String>
 }

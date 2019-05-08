@@ -1,16 +1,13 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.71"
+  id "org.jetbrains.kotlin.jvm"
   id "java-library"
 }
 
 dependencies {
   implementation project(":prime-modules")
 
-  implementation "javax.xml.bind:jaxb-api:$jaxbVersion"
-  implementation "javax.activation:activation:$javaxActivationVersion"
-
   testImplementation project(":jersey")
   testImplementation "io.dropwizard:dropwizard-testing:$dropwizardVersion"
 }
 
-apply from: '../jacoco.gradle'
+apply from: '../gradle/jacoco.gradle'

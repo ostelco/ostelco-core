@@ -1,0 +1,48 @@
+swagger: "2.0"
+info:
+  title: "Prime 3rd party API"
+  description: "Prime endpoints for use by external services."
+  version: "1.0.0"
+host: "alvin-api.oya.world"
+x-google-endpoints:
+  - name: "alvin-api.oya.world"
+    allowCors: true
+schemes:
+  - "https"
+paths:
+  "/stripe/event":
+    post:
+      description: "Endpoint for event reports from Stripe."
+      produces:
+        - application/json
+      operationId: "handleEvent"
+      responses:
+        200:
+          description: "Event report processed successfully."
+        400:
+          description: "Failed to process event report."
+        500:
+          description: "Unexpected error."
+      security:
+        - api_key: []
+  "/ekyc/callback":
+    post:
+      description: "Endpoint for event reports from eKYC."
+      produces:
+        - application/json
+      operationId: "handleCallback"
+      responses:
+        200:
+          description: "Event report processed successfully."
+        400:
+          description: "Failed to process event report."
+        500:
+          description: "Unexpected error."
+      security:
+        - api_key: []
+securityDefinitions:
+  # This section configures basic authentication with an API key.
+  api_key:
+    type: "apiKey"
+    name: "key"
+    in: "query"

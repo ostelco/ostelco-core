@@ -28,7 +28,7 @@ object AnalyticsReporter : EventHandler<OcsEvent> {
         if (msisdn != null) {
             logger.info("Sent Data Consumption info event to analytics")
             analyticsReporter.reportTrafficInfo(
-                    msisdn = msisdn,
+                    msisdnAnalyticsId = msisdn,
                     usedBytes = event.request?.msccList?.firstOrNull()?.used?.totalOctets ?: 0L,
                     bundleBytes = event.bundleBytes,
                     apn = event.request?.serviceInformation?.psInformation?.calledStationId,

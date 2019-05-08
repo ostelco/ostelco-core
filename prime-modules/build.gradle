@@ -1,5 +1,5 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.71"
+  id "org.jetbrains.kotlin.jvm"
   id "java-library"
 }
 
@@ -7,7 +7,10 @@ dependencies {
   api "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
   api "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
 
-  api "io.jsonwebtoken:jjwt:0.9.1"
+  api "io.dropwizard:dropwizard-auth:$dropwizardVersion"
+  implementation "com.google.cloud:google-cloud-pubsub:$googleCloudVersion"
+  implementation "com.google.cloud:google-cloud-datastore:$googleCloudVersion"
+
   api "com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion"
 
   api project(':ocs-grpc-api')
@@ -15,5 +18,17 @@ dependencies {
   api project(':model')
 
   api "io.dropwizard:dropwizard-core:$dropwizardVersion"
-  api "io.arrow-kt:arrow-core:0.7.3"
+  
+  api "io.arrow-kt:arrow-core:$arrowVersion"
+  api "io.arrow-kt:arrow-typeclasses:$arrowVersion"
+  api "io.arrow-kt:arrow-instances-core:$arrowVersion"
+  api "io.arrow-kt:arrow-effects:$arrowVersion"
+
+  runtimeOnly "javax.xml.bind:jaxb-api:$jaxbVersion"
+  runtimeOnly "javax.activation:activation:$javaxActivationVersion"
+
+  testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
+  testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
 }
+
+apply from: '../gradle/jacoco.gradle'

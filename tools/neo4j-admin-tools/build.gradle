@@ -1,11 +1,9 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.71"
+  id "org.jetbrains.kotlin.jvm"
   id "application"
-  id "com.github.johnrengelman.shadow" version "4.0.1"
+  id "com.github.johnrengelman.shadow" version "5.0.0"
   id "idea"
 }
-
-ext.neo4jDriverVersion="1.6.3"
 
 dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
@@ -17,10 +15,8 @@ dependencies {
 }
 
 shadowJar {
-  mainClassName = 'org.ostelco.tools.migration.MainKtKt'
+  mainClassName = 'org.ostelco.tools.migration.MainKt'
   mergeServiceFiles()
   classifier = "uber"
   version = null
 }
-
-apply from: '../../jacoco.gradle'

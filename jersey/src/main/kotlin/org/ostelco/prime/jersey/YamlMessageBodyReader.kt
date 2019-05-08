@@ -17,6 +17,7 @@ import javax.ws.rs.ext.MessageBodyReader
 class YamlMessageBodyReader : MessageBodyReader<Any> {
 
     private val logger by getLogger()
+    private val mapper = ObjectMapper(YAMLFactory()).registerKotlinModule()
 
     override fun isReadable(
             type: Class<*>,
@@ -32,7 +33,6 @@ class YamlMessageBodyReader : MessageBodyReader<Any> {
             inputStream: InputStream): Any {
 
         try {
-            val mapper = ObjectMapper(YAMLFactory()).registerKotlinModule()
             return mapper.readValue(inputStream, type)
         } catch (e: Exception) {
             logger.error("Failed to parse yaml: ${e.message}")

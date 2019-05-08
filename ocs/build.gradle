@@ -1,23 +1,16 @@
 plugins {
-  id "org.jetbrains.kotlin.jvm" version "1.2.71"
+  id "org.jetbrains.kotlin.jvm"
   id "java-library"
-}
-
-kotlin {
-  experimental {
-    coroutines 'enable'
-  }
 }
 
 dependencies {
   implementation project(':prime-modules')
 
   implementation 'com.lmax:disruptor:3.4.2'
-  // implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:0.30.2"
-
+  
   testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlinVersion"
   testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
   testImplementation "org.mockito:mockito-core:$mockitoVersion"
 }
 
-apply from: '../jacoco.gradle'
+apply from: '../gradle/jacoco.gradle'

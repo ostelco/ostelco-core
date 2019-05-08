@@ -1,16 +1,14 @@
 package org.ostelco.tools.migration
 
-import org.ostelco.prime.model.Subscriber
+import org.ostelco.prime.model.Customer
 
 
-fun createSubscriber(subscriber: Subscriber) = """
-CREATE(node:Subscriber {id:         '${subscriber.email}',
-                        `email`: '${subscriber.email}',
-                        `name`: '${subscriber.name}',
-                        `address`: '${subscriber.address}',
-                        `postCode`: '${subscriber.postCode}',
-                        `city`:     '${subscriber.city}',
-                        `country`: '${subscriber.country}'});
+fun createSubscriber(customer: Customer) = """
+CREATE(node:Subscriber {id: '${customer.id}',
+                        `nickname`: '${customer.nickname}'
+                        `contactEmail`: '${customer.contactEmail}',
+                        `analyticsId`: '${customer.analyticsId}',
+                        `referralId`: '${customer.referralId}'});
 """
 
 fun createSubscription(msisdn: String) = """
@@ -28,9 +26,9 @@ SET node.msisdn = '$msisdn'
 SET node.balance = '$balance';
 """
 
-fun addSubscriberToSegment(email: String) = """
+fun addSubscriberToSegment(id: String) = """
 MATCH (to:Subscriber)
-  WHERE to.id IN ['$email']
+  WHERE to.id IN ['$id']
 WITH to
 MATCH (from:Segment {id: 'all'})
 CREATE (from)-[:segmentToSubscriber]->(to);

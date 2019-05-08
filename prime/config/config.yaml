@@ -1,61 +1,128 @@
 modules:
-- type: jersey
-- type: slack
-  config:
-    notifications:
-      channel: ${SLACK_CHANNEL}
-      webHookUri: ${SLACK_WEBHOOK_URI}
+  - type: jersey
+    config:
+      authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
+      jerseyClient:
+        timeout: 2s
+  - type: slack
+    config:
+      notifications:
+        channel: ${SLACK_CHANNEL}
+        webHookUri: ${SLACK_WEBHOOK_URI}
+        httpClient:
+          timeout: 3s
+          connectionRequestTimeout: 1s
+  - type: Imei-lookup
+    config:
+      csvFile: /config-data/imeiDb.csv
+  - type: firebase
+    config:
+      configFile: /secret/prime-service-account.json
+      rootPath: ${FIREBASE_ROOT_PATH}
+  - type: email
+    config:
+      mandrillApiKey: ${MANDRILL_API_KEY}
       httpClient:
         timeout: 3s
         connectionRequestTimeout: 1s
-- type: Imei-lookup
-  config:
-    csvFile: /config-data/imeiDb.csv
-- type: firebase
-  config:
-    configFile: /secret/pantel-prod.json
-    rootPath: ${FIREBASE_ROOT_PATH}
-- type: neo4j
-  config:
-    host: ${NEO4J_HOST}
-    protocol: bolt+routing
-- type: analytics
-  config:
-    projectId: pantel-2decb
-    dataTrafficTopicId: ${DATA_TRAFFIC_TOPIC}
-    purchaseInfoTopicId: ${PURCHASE_INFO_TOPIC}
-    activeUsersTopicId: ${ACTIVE_USERS_TOPIC}
-- type: ocs
-  config:
-    lowBalanceThreshold: 100000000
-- type: pseudonymizer
-  config:
-    namespace: ${DATASTORE_NAMESPACE:-""}
-- type: api
-  config:
-    authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
-    jerseyClient:
-      timeout: 2s
-- type: stripe-payment-processor
-- type: firebase-app-notifier
-  config:
-    configFile: /secret/pantel-prod.json
-- type: admin
+  - type: kyc
+    config:
+      myInfoApiUri: ${MY_INFO_API_URI}
+      myInfoApiClientId: ${MY_INFO_API_CLIENT_ID}
+      myInfoApiClientSecret: ${MY_INFO_API_CLIENT_SECRET}
+      myInfoApiRealm: ${MY_INFO_API_REALM}
+      myInfoRedirectUri: ${MY_INFO_REDIRECT_URI}
+      myInfoServerPublicKey: ${MY_INFO_SERVER_PUBLIC_KEY}
+      myInfoClientPrivateKey: ${MY_INFO_CLIENT_PRIVATE_KEY}
+  - type: neo4j
+    config:
+      host: ${NEO4J_HOST}
+      protocol: bolt+routing
+  - type: analytics
+    config:
+      projectId: ${GCP_PROJECT_ID}
+      dataTrafficTopicId: ${DATA_TRAFFIC_TOPIC}
+      purchaseInfoTopicId: ${PURCHASE_INFO_TOPIC}
+      activeUsersTopicId: ${ACTIVE_USERS_TOPIC}
+  - type: ocs
+    config:
+      lowBalanceThreshold: 100000000
+      pubSubChannel:
+        projectId: ${GCP_PROJECT_ID}
+        activateTopicId: ${ACTIVATE_TOPIC_ID}
+        ccrSubscriptionId: ${CCR_SUBSCRIPTION_ID}
+  - type: api
+  - type: stripe-payment-processor
+    config:
+      projectId: ${GCP_PROJECT_ID}
+      stripeEventTopicId: ${STRIPE_EVENT_TOPIC}
+      stripeEventStoreSubscriptionId: ${STRIPE_EVENT_STORE_SUBSCRIPTION}
+      stripeEventReportSubscriptionId: ${STRIPE_EVENT_REPORT_SUBSCRIPTION}
+  - type: firebase-app-notifier
+    config:
+      configFile: /secret/prime-service-account.json
+  - type: admin
+  - type: graphql
+  - type: scaninfo-store
+    config:
+      keysetFilePathPrefix: /scaninfo-keysets/encrypt_key
+      namespace: ${DATASTORE_NAMESPACE:-""}
+  - type: sim-manager
+    config:
+      openApi:
+        name: SIM admin
+        description: SIM administration service
+        termsOfService: http://example.org
+        contactEmail: rmz@telenordigital.com
+        resourcePackage: org.ostelco
+      hlrs:
+        - name: Loltel
+          endpoint: ${WG2_ENDPOINT}
+          userId: ${WG2_USER}
+          apiKey: ${WG2_API_KEY}
+      profileVendors:
+        - name: Idemia
+          es2plusEndpoint: ${ES2PLUS_ENDPOINT}
+          es9plusEndpoint: ${ES9PLUS_ENDPOINT}
+          requesterIdentifier: ${FUNCTION_REQUESTER_IDENTIFIER}
+      # Note, list must end with a wildcard match
+      phoneTypes:
+        - regex: "android.*"
+          profile: Loltel_ANDROID_1
+        - regex: "iphone.*"
+          profile: LOLTEL_IPHONE_1
+        - regex: ".*"
+          profile: LOLTEL_IPHONE_1
+      database:
+        driverClass: org.postgresql.Driver
+        user: ${DB_USER}
+        password: ${DB_PASSWORD}
+        url: ${DB_URL}
+      httpClient:
+        timeout: 10000ms
+        tls:
+          # Default is 500 milliseconds, we need more when debugging.
+          # protocol: TLSv1.2
+          keyStoreType: JKS
+          keyStorePath: /certs/idemia-client-cert.jks
+          keyStorePassword: foobar
+          verifyHostname: false
+          trustSelfSignedCertificates: true
 
 server:
   applicationConnectors:
-  - type: h2c
-    port: 8080
-    maxConcurrentStreams: 1024
-    initialStreamRecvWindow: 65535
+    - type: h2c
+      port: 8080
+      maxConcurrentStreams: 1024
+      initialStreamRecvWindow: 65535
   requestLog:
     appenders:
-    - type: console
-      layout:
-        type: access-json
-      filterFactories:
-      - type: URI
-        uri: prometheus-metrics
+      - type: console
+        layout:
+          type: access-json
+        filterFactories:
+          - type: URI
+            uri: prometheus-metrics
 
 logging:
   level: INFO
@@ -63,9 +130,9 @@ logging:
     org.ostelco: DEBUG
     org.dhatim.dropwizard.prometheus.DropwizardMetricsExporter: ERROR
   appenders:
-  - type: slack
-  - type: console
-    layout:
-      type: json
-      customFieldNames:
-        level: severity
+    - type: slack
+    - type: console
+      layout:
+        type: json
+        customFieldNames:
+          level: severity

@@ -18,7 +18,7 @@ class HttpRequest {
     var headerParams: Map<String, List<String>> = emptyMap()
     var queryParams: Map<String, String> = emptyMap()
     var body: Any? = null
-    var subscriberId = "foo@bar.com"
+    var email = "foo@bar.com"
 }
 
 /**
@@ -26,7 +26,7 @@ class HttpRequest {
  */
 inline fun <reified T> get(execute: HttpRequest.() -> Unit): T {
     val request = HttpRequest().apply(execute)
-    val response = HttpClient.send(request.path, request.queryParams, request.headerParams, request.subscriberId).get()
+    val response = HttpClient.send(request.path, request.queryParams, request.headerParams, request.email).get()
     assertEquals(200, response.status) { response.readEntity(String::class.java) }
     return response.readEntity(object : GenericType<T>() {})
 }
@@ -34,23 +34,22 @@ inline fun <reified T> get(execute: HttpRequest.() -> Unit): T {
 /**
  * DSL function for POST operation
  */
-inline fun <reified T> post(execute: HttpRequest.() -> Unit): T {
+inline fun <reified T> post(expectedResultCode: Int = 201, dataType: MediaType = MediaType.APPLICATION_JSON_TYPE, execute: HttpRequest.() -> Unit): T {
     val request = HttpRequest().apply(execute)
-    val response = HttpClient.send(request.path, request.queryParams, request.headerParams, request.subscriberId)
-            .post(Entity.entity(request.body ?: "", MediaType.APPLICATION_JSON_TYPE))
-    assertEquals(201, response.status) { response.readEntity(String::class.java) }
+    val response = HttpClient.send(request.path, request.queryParams, request.headerParams, request.email)
+            .post(Entity.entity(request.body ?: "", dataType))
+    assertEquals(expectedResultCode, response.status) { response.readEntity(String::class.java) }
     return response.readEntity(object : GenericType<T>() {})
 }
-
 
 /**
  * DSL function for PUT operation
  */
-inline fun <reified T> put(execute: HttpRequest.() -> Unit): T {
+inline fun <reified T> put(expectedResultCode: Int = 200, execute: HttpRequest.() -> Unit): T {
     val request = HttpRequest().apply(execute)
-    val response = HttpClient.send(request.path, request.queryParams, request.headerParams, request.subscriberId)
+    val response = HttpClient.send(request.path, request.queryParams, request.headerParams, request.email)
             .put(Entity.entity(request.body ?: "", MediaType.APPLICATION_JSON_TYPE))
-    assertEquals(200, response.status) { response.readEntity(String::class.java) }
+    assertEquals(expectedResultCode, response.status) { response.readEntity(String::class.java) }
     return response.readEntity(object : GenericType<T>() {})
 }
 
@@ -59,7 +58,7 @@ inline fun <reified T> put(execute: HttpRequest.() -> Unit): T {
  */
 inline fun <reified T> delete(execute: HttpRequest.() -> Unit): T {
     val request = HttpRequest().apply(execute)
-    val response = HttpClient.send(request.path, request.queryParams, request.headerParams, request.subscriberId)
+    val response = HttpClient.send(request.path, request.queryParams, request.headerParams, request.email)
             .delete()
     assertEquals(200, response.status) { response.readEntity(String::class.java) }
     return response.readEntity(object : GenericType<T>() {})
@@ -85,15 +84,16 @@ object HttpClient {
             path: String,
             queryParams: Map<String, String>,
             headerParams: Map<String, List<String>>,
-            url: String, subscriberId: String): JerseyInvocation.Builder {
+            url: String,
+            email: String): JerseyInvocation.Builder {
 
         var target = jerseyClient.target(url).path(path)
         queryParams.forEach { target = target.queryParam(it.key, it.value) }
         return target.request(MediaType.APPLICATION_JSON_TYPE)
                 .headers(MultivaluedHashMap<String, Any>().apply { this.putAll(headerParams) })
-                .header("Authorization", "Bearer ${generateAccessToken(subscriberId)}")
+                .header("Authorization", "Bearer ${generateAccessToken(email)}")
     }
 
-    fun send(path: String, queryParams: Map<String, String>, headerParams: Map<String, List<String>>, subscriberId: String): JerseyInvocation.Builder =
-            setup(path, queryParams, headerParams, url, subscriberId)
+    fun send(path: String, queryParams: Map<String, String>, headerParams: Map<String, List<String>>, email: String): JerseyInvocation.Builder =
+            setup(path, queryParams, headerParams, url, email)
 }

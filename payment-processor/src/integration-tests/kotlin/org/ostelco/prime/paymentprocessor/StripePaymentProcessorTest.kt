@@ -8,6 +8,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.ostelco.prime.module.getResource
+import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
@@ -15,7 +16,8 @@ import kotlin.test.fail
 class StripePaymentProcessorTest {
 
     private val paymentProcessor = getResource<PaymentProcessor>()
-    private val testCustomer = "testuser@StripePaymentProcessorTest.ok"
+    private val testCustomer = UUID.randomUUID().toString()
+    private val emailTestCustomer = "test@internet.org"
 
     private var stripeCustomerId = ""
 
@@ -54,7 +56,7 @@ class StripePaymentProcessorTest {
     }
 
     private fun addCustomer() {
-        val resultAdd = paymentProcessor.createPaymentProfile(testCustomer)
+        val resultAdd = paymentProcessor.createPaymentProfile(customerId = testCustomer, email = emailTestCustomer)
         assertEquals(true, resultAdd.isRight())
 
         stripeCustomerId = resultAdd.fold({ "" }, { it.id })
@@ -74,7 +76,7 @@ class StripePaymentProcessorTest {
 
     @Test
     fun unknownCustomerGetSavedSources() {
-        val result = paymentProcessor.getSavedSources(customerId = "unknown")
+        val result = paymentProcessor.getSavedSources(stripeCustomerId = "unknown")
         assertEquals(true, result.isLeft())
     }
 
@@ -129,7 +131,7 @@ class StripePaymentProcessorTest {
         }
 
         sourcesRemoved.forEach { it ->
-            assertEquals(true, it.isRight(), "Unexpected failure when removing source ${it}")
+            assertEquals(true, it.isRight(), "Unexpected failure when removing source $it")
         }
     }
 
@@ -193,10 +195,31 @@ class StripePaymentProcessorTest {
         val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentTokenId())
         assertEquals(true, resultAddSource.isRight())
 
-        val resultAuthorizeCharge = paymentProcessor.authorizeCharge(stripeCustomerId, resultAddSource.fold({ "" }, { it.id }), 1000, "nok")
+        val amount = 1000
+        val currency = "NOK"
+
+        val resultAuthorizeCharge = paymentProcessor.authorizeCharge(stripeCustomerId, resultAddSource.fold({ "" }, { it.id }), amount, currency)
         assertEquals(true, resultAuthorizeCharge.isRight())
 
-        val resultRefundCharge = paymentProcessor.refundCharge(resultAuthorizeCharge.fold({ "" }, { it } ))
+        val resultRefundCharge = paymentProcessor.refundCharge(resultAuthorizeCharge.fold({ "" }, { it } ), amount, currency)
+        assertEquals(true, resultRefundCharge.isRight())
+
+        val resultRemoveSource = paymentProcessor.removeSource(stripeCustomerId, resultAddSource.fold({ "" }, { it.id }))
+        assertEquals(true, resultRemoveSource.isRight())
+    }
+
+    @Test
+    fun createAuthorizeChargeAndRefundWithZeroAmount() {
+        val resultAddSource = paymentProcessor.addSource(stripeCustomerId, createPaymentTokenId())
+        assertEquals(true, resultAddSource.isRight())
+
+        val amount = 0
+        val currency = "NOK"
+
+        val resultAuthorizeCharge = paymentProcessor.authorizeCharge(stripeCustomerId, resultAddSource.fold({ "" }, { it.id }), amount, currency)
+        assertEquals(true, resultAuthorizeCharge.isRight())
+
+        val resultRefundCharge = paymentProcessor.refundCharge(resultAuthorizeCharge.fold({ "" }, { it } ), amount, currency)
         assertEquals(true, resultRefundCharge.isRight())
         assertEquals(resultAuthorizeCharge.fold({ "" }, { it } ), resultRefundCharge.fold({ "" }, { it } ))
 
@@ -226,7 +249,7 @@ class StripePaymentProcessorTest {
         val resultCreatePlan = paymentProcessor.createPlan(resultCreateProduct.fold({ "" }, { it.id }), 1000, "NOK", PaymentProcessor.Interval.MONTH)
         assertEquals(true, resultCreatePlan.isRight())
 
-        val resultSubscribePlan = paymentProcessor.subscribeToPlan(resultCreatePlan.fold({ "" }, { it.id }), stripeCustomerId)
+        val resultSubscribePlan = paymentProcessor.createSubscription(resultCreatePlan.fold({ "" }, { it.id }), stripeCustomerId)
         assertEquals(true, resultSubscribePlan.isRight())
 
         val resultUnsubscribePlan = paymentProcessor.cancelSubscription(resultSubscribePlan.fold({ "" }, { it.id }), false)

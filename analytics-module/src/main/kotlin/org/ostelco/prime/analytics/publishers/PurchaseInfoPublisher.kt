@@ -15,9 +15,6 @@ import org.ostelco.prime.analytics.ConfigRegistry
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.PurchaseRecordInfo
-import org.ostelco.prime.module.getResource
-import org.ostelco.prime.pseudonymizer.PseudonymizerService
-import java.net.URLEncoder
 
 
 /**
@@ -27,8 +24,6 @@ object PurchaseInfoPublisher :
         PubSubPublisher by DelegatePubSubPublisher(topicId = ConfigRegistry.config.purchaseInfoTopicId) {
 
     private val logger by getLogger()
-
-    private val pseudonymizerService by lazy { getResource<PseudonymizerService>() }
 
     private var gson: Gson = createGson()
 
@@ -57,13 +52,10 @@ object PurchaseInfoPublisher :
             ByteString.copyFromUtf8(gson.toJson(purchaseRecordInfo))
 
 
-    fun publish(purchaseRecord: PurchaseRecord, subscriberId: String, status: String) {
-
-        val encodedSubscriberId = URLEncoder.encode(subscriberId, "UTF-8")
-        val pseudonym = pseudonymizerService.getSubscriberIdPseudonym(encodedSubscriberId, purchaseRecord.timestamp).pseudonym
+    fun publish(purchaseRecord: PurchaseRecord, customerId: String, status: String) {
 
         val pubsubMessage = PubsubMessage.newBuilder()
-                .setData(convertToJson(PurchaseRecordInfo(purchaseRecord, pseudonym, status)))
+                .setData(convertToJson(PurchaseRecordInfo(purchaseRecord, customerId, status)))
                 .build()
 
         //schedule a message to be published, messages are automatically batched
@@ -78,7 +70,7 @@ object PurchaseInfoPublisher :
                     logger.warn("Status code: {}", throwable.statusCode.code)
                     logger.warn("Retrying: {}", throwable.isRetryable)
                 }
-                logger.warn("Error publishing purchase record for msisdn: {}", purchaseRecord.msisdn)
+                logger.warn("Error publishing purchase record for customerId: {}", customerId)
             }
 
             override fun onSuccess(messageId: String) {

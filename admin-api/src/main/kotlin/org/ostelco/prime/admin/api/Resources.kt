@@ -1,6 +1,7 @@
 package org.ostelco.prime.admin.api
 
 
+import org.ostelco.prime.model.Identity
 import org.ostelco.prime.model.Offer
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.ProductClass
@@ -15,6 +16,7 @@ import javax.ws.rs.PathParam
 import javax.ws.rs.QueryParam
 import javax.ws.rs.core.Response
 
+@Deprecated(message = "Assigning MSISDN to Customer via Admin API will be removed in future.")
 @Path("/admin/subscriptions")
 class SubscriptionsResource {
 
@@ -22,10 +24,10 @@ class SubscriptionsResource {
 
     @POST
     fun createSubscription(
-            @QueryParam("subscription_id") subscriberId: String,
+            @QueryParam("subscription_id") email: String,
             @QueryParam("msisdn") msisdn: String): Response {
 
-        return adminDataSource.addSubscription(subscriberId, msisdn)
+        return adminDataSource.addSubscription(Identity(email, "EMAIL", "email"), msisdn)
                 .fold({ Response.status(Response.Status.NOT_FOUND).entity(it.message).build() },
                         { Response.status(Response.Status.CREATED).build() })
     }

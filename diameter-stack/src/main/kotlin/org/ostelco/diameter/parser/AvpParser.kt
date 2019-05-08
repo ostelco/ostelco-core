@@ -2,8 +2,7 @@ package org.ostelco.diameter.parser
 
 import org.jdiameter.api.Avp
 import org.jdiameter.api.AvpSet
-import org.ostelco.diameter.logger
-import org.ostelco.diameter.util.AvpDictionary
+import org.ostelco.diameter.getLogger
 import org.ostelco.diameter.util.AvpType.ADDRESS
 import org.ostelco.diameter.util.AvpType.APP_ID
 import org.ostelco.diameter.util.AvpType.FLOAT32
@@ -21,6 +20,8 @@ import org.ostelco.diameter.util.AvpType.UNSIGNED64
 import org.ostelco.diameter.util.AvpType.URI
 import org.ostelco.diameter.util.AvpType.UTF8STRING
 import org.ostelco.diameter.util.AvpType.VENDOR_ID
+import org.ostelco.diameter.util.AvpTypeDictionary
+import java.lang.reflect.Field
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.full.createInstance
@@ -28,7 +29,7 @@ import kotlin.reflect.full.declaredMemberProperties
 
 class AvpParser {
 
-    private val logger by logger()
+    private val logger by getLogger()
 
     /**
      * @param kclazz Kotlin class representing the data type of the AVP set getting parsed.
@@ -54,79 +55,61 @@ class AvpParser {
         // And 2nd loop using Kotlin reflection to set object field values.
 
         // loop over all the fields in that class
-        clazz.declaredFields
-                // filter out fields which are not annotated
-                .filter {
-                    it.isAnnotationPresent(AvpField::class.java)
-                            || it.isAnnotationPresent(AvpList::class.java)
-                }
-                .forEach {
-                    // Get numeric Avp ID from annotation on the field
-                    val avpId: Int? = it.getAnnotation(AvpField::class.java)?.avpId
-                            ?: it.getAnnotation(AvpList::class.java)?.avpId
+        for (field in clazz.declaredFields) {
 
-                    logger.trace("${it.name} id: ($avpId)")
-                    if (avpId != null) {
+            if (field.isAnnotationPresent(AvpField::class.java)) {
 
-                        // Check the data type of the field
-                        val collectionType: KClass<*>? = it.getAnnotation(AvpList::class.java)?.kclass
+                // Get numeric Avp ID from annotation on the field
+                val avpId: Int? = field.getAnnotation(AvpField::class.java)?.avpId
+                logger.trace("${field.name} id: ($avpId)")
 
-                        // Get Avp Object from the Set.
-                        // Avp object has AvpCode, Vendor ID, and a value which will be set on object field.
-                        val avp: Avp? = avpSet.getAvp(avpId)
+                if (avpId != null) {
 
-                        if (avp != null) {
+                    // Get Avp Object from the Set.
+                    // Avp object has AvpCode, Vendor ID, and a value which will be set on object field.
+                    val avp: Avp? = avpSet.getAvp(avpId)
 
-                            logger.trace("${it.name} has type ${it.type}")
+                    val avpValue = getAvpValue(field, avp)
 
-                            val avpValue = when {
-                                // if the target class is Avp itself, the avp object itself is target value
-                                it.type.kotlin == Avp::class -> avp
-                                // The field is of type List. So, even the Avp Value is saved in a list.
-                                // Even though this list has a single value, it helps in distinguishing while setting
-                                // the value back.
-                                it.type.kotlin == List::class -> {
-                                    val list = ArrayList<Any?>()
-                                    if (avp.grouped != null && collectionType != null) {
-                                        val avpValue = parse(collectionType, avp.grouped)
-                                        logger.trace("To list of ${collectionType.simpleName} adding: $avpValue")
-                                        list.add(avpValue)
-                                    }
-                                    list
-                                }
-                                it.type.isEnum -> {
-                                    // Fetch int value to be mapped to enum
-                                    val intEnum = getAvpValue(it.type.kotlin, avp) as Int
-
-                                    // Array of enum values for the given enum type of the field
-                                    val enumArray = it.type.enumConstants
-
-                                    try {
-                                        // using try block, check if the Enum class has 'value' property
-                                        val valueField = it.type.getDeclaredField("value")
-                                        enumArray.first { valueField.getInt(it) == intEnum }
-                                    } catch (e : Exception) {
-                                        // int value is ordinal of enum. So, directly using the enum const array
-                                        enumArray[intEnum]
-                                    }
-                                }
-                                else ->  {
-                                    logger.trace("Field: ${it.name}")
-                                    // for simple case, fetch target value for given Avp
-                                    getAvpValue(it.type.kotlin, avp)
-                                }
-                            }
-                            // finally, the value is saved in Map.
-                            // This map is then used in the 2nd loop, where the value is "set" on object field using
-                            // Kotlin reflection
-                            if (avpValue != null) {
-                                logger.trace("${it.name} will be set to $avpValue")
-                                map[it.name] = avpValue
-                            }
-                        }
+                    // finally, the value is saved in Map.
+                    // This map is then used in the 2nd loop, where the value is "set" on object field using
+                    // Kotlin reflection
+                    if (avpValue != null) {
+                        logger.trace("${field.name} will be set to $avpValue")
+                        map[field.name] = avpValue
                     }
                 }
 
+            } else if (field.isAnnotationPresent(AvpList::class.java)) {
+
+                // Get numeric Avp ID from annotation on the field
+                val avpId: Int? = field.getAnnotation(AvpList::class.java)?.avpId
+                logger.trace("${field.name} id: ($avpId)")
+
+                if (avpId != null) {
+
+                    // Get Avp Object from the Set.
+                    // Avp object has AvpCode, Vendor ID, and a value which will be set on object field.
+                    val avpFieldSet: AvpSet? = avpSet.getAvps(avpId)
+                    val avpListValue = mutableListOf<Any>()
+                    if (avpFieldSet != null) {
+                        for (avp in avpFieldSet) {
+                            getAvpValue(field, avp)?.also {
+                                avpListValue.add(it)
+                            }
+                        }
+                    }
+
+                    // finally, the value is saved in Map.
+                    // This map is then used in the 2nd loop, where the value is "set" on object field using
+                    // Kotlin reflection
+                    if (avpListValue.isNotEmpty()) {
+                        logger.trace("${field.name} will be set to $avpListValue")
+                        map[field.name] = avpListValue
+                    }
+                }
+            }
+        }
         // Now, the values to be set in object field are ready in the map.
         // Iterating over fields again, but using Kotlin reflection this time.
         kclazz.declaredMemberProperties
@@ -164,9 +147,59 @@ class AvpParser {
         return instance
     }
 
+    private fun getAvpValue(field: Field, avp: Avp?): Any? {
+
+        // Check the data type of the field
+        val collectionType: KClass<*>? = field.getAnnotation(AvpList::class.java)?.kclass
+
+        if (avp != null) {
+
+            logger.trace("${field.name} has type ${field.type}")
+
+            return when {
+                // if the target class is Avp itself, the avp object itself is target value
+                field.type.kotlin == Avp::class -> avp
+                // The field is of type List. So, even the Avp Value is saved in a list.
+                // Even though this list has a single value, it helps in distinguishing while setting
+                // the value back.
+                field.type.kotlin == List::class -> {
+                    if (avp.grouped != null && collectionType != null) {
+                        val avpValue = parse(collectionType, avp.grouped)
+                        logger.trace("To list of ${collectionType.simpleName} adding: $avpValue")
+                        avpValue
+                    } else {
+                        null
+                    }
+                }
+                field.type.isEnum -> {
+                    // Fetch int value to be mapped to enum
+                    val intEnum = getAvpValue(field.type.kotlin, avp) as Int
+
+                    // Array of enum values for the given enum type of the field
+                    val enumArray = field.type.enumConstants
+
+                    try {
+                        // using try block, check if the Enum class has 'value' property
+                        val valueField = field.type.getDeclaredField("value")
+                        enumArray.first { valueField.getInt(field) == intEnum }
+                    } catch (e: Exception) {
+                        // int value is ordinal of enum. So, directly using the enum const array
+                        enumArray[intEnum]
+                    }
+                }
+                else -> {
+                    logger.trace("Field: ${field.name}")
+                    // for simple case, fetch target value for given Avp
+                    getAvpValue(field.type.kotlin, avp)
+                }
+            }
+        }
+        return null
+    }
+
     private fun getAvpValue(kclazz: KClass<*>, avp: Avp): Any? {
 
-        val type = AvpDictionary.getType(avp)
+        val type = AvpTypeDictionary.getType(avp)
 
         logger.trace("Type: $type")
 

@@ -1,6 +1,6 @@
-FROM openjdk:11
+FROM azul/zulu-openjdk:11.0.1-11.2
 
-MAINTAINER CSI "csi@telenordigital.com"
+LABEL maintainer="dev@redotter.sg"
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends netcat \
