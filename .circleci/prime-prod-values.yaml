@@ -15,12 +15,12 @@ podAutoscaling:
 
 cronjobs: 
   extractor: 
-    enabled: false
+    enabled: true
     image: eu.gcr.io/pi-ostelco-dev/bq-metrics-extractor
     tag: "1.3.212.1.0-2d41d62b-dev"  
     dataset_project: pi-ostelco-prod
   shredder:
-    enabled: false
+    enabled: true
     image: eu.gcr.io/pi-ostelco-dev/scaninfo-shredder
     tag: "1.0.0-6052932a-dev"
     dataset_project: pi-ostelco-prod
@@ -36,7 +36,6 @@ prime:
     FIREBASE_ROOT_PATH: v2
     NEO4J_HOST: neo4j-neo4j.neo4j.svc.cluster.local
     SLACK_CHANNEL: prime-alerts
-    DATASTORE_NAMESPACE: ""
     DATA_TRAFFIC_TOPIC: data-traffic
     PURCHASE_INFO_TOPIC: purchase-info
     ACTIVE_USERS_TOPIC: active-users
@@ -269,8 +268,6 @@ services:
     clientCert: true
     caCert: smdp-cacert.prod # secretname.namespace
 
-ingress:
-  enabled: false
   
 
 certs: 
