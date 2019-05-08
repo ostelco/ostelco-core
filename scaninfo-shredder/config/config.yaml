@@ -11,4 +11,4 @@ logging:
 
 deleteScan: true
 deleteUrl: "https://netverify.com/api/netverify/v2/scans/"
-namespace: ${DATASTORE_NAMESPACE:-""}
+namespace: ""
