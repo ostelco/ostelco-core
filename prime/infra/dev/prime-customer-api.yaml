@@ -246,6 +246,22 @@ paths:
       security:
         - auth0_jwt: []
         - firebase: []
+  "/regions/sg/kyc/myInfoConfig":
+    get:
+      description: "Get Singapore MyInfo service config."
+      produces:
+        - application/json
+      operationId: "getMyInfoConfig"
+      responses:
+        200:
+          description: "MyInfo service config."
+          schema:
+            $ref: "#/definitions/MyInfoConfig"
+        404:
+          description: "Config not found."
+      security:
+        - auth0_jwt: []
+        - firebase: []
   "/regions/sg/kyc/dave/{nricFinId}":
     get:
       description: "Get Customer Data from Singapore MyInfo service."
@@ -335,6 +351,64 @@ paths:
             $ref: '#/definitions/SimProfile'
         400:
           description: "Not allowed for this region, or missing parameters."
+        500:
+          description: "Service Unavailable"
+      security:
+        - auth0_jwt: []
+        - firebase: []
+  "/regions/{regionCode}/simProfiles/{iccId}":
+    put:
+      description: "Update SIM Profile for the user (identified by bearer token)."
+      produces:
+        - application/json
+      operationId: "updateSimProfile"
+      parameters:
+        - name: regionCode
+          in: path
+          description: "Region code"
+          required: true
+          type: string
+        - name: iccId
+          in: path
+          description: "ICC ID"
+          required: true
+          type: string
+        - name: alias
+          in: query
+          description: "Human readable alias"
+          required: true
+          type: string
+      responses:
+        201:
+          description: "Updated SIM profile for this user."
+          schema:
+            $ref: '#/definitions/SimProfile'
+        400:
+          description: "Not allowed for this region, or missing parameters."
+  "/regions/{regionCode}/simProfiles/{iccId}/resendEmail":
+    get:
+      description: "Resend email with eSIM Activation QR code for this SIM profile for the user (identified by bearer token)."
+      produces:
+        - application/json
+      operationId: "sendEmailWithEsimActivationQrCode"
+      parameters:
+        - name: regionCode
+          in: path
+          description: "Region code"
+          required: true
+          type: string
+        - name: iccId
+          in: path
+          description: "ICC ID"
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Get SIM profile for this user for which eSIM Activation QR code is sent."
+          schema:
+            $ref: '#/definitions/SimProfile'
+        404:
+          description: "Not allowed for this region, or No SIM profiles found for this user for this region."
         500:
           description: "Service Unavailable"
       security:
@@ -701,6 +775,12 @@ definitions:
   KycStatus:
     type: string
     enum: [ PENDING, REJECTED, APPROVED ]
+  MyInfoConfig:
+    type: object
+    properties:
+      url:
+        type: string
+        description: "URL for MyInfo authorise"
   Region:
     type: object
     properties:

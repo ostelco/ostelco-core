@@ -2,6 +2,7 @@ package org.ostelco.prime.customer.endpoint.store
 
 import arrow.core.Either
 import arrow.core.flatMap
+import arrow.core.right
 import org.ostelco.prime.apierror.ApiError
 import org.ostelco.prime.apierror.ApiErrorCode
 import org.ostelco.prime.apierror.ApiErrorMapper.mapPaymentErrorToApiError
@@ -11,12 +12,14 @@ import org.ostelco.prime.apierror.InternalServerError
 import org.ostelco.prime.apierror.NotFoundError
 import org.ostelco.prime.customer.endpoint.metrics.updateMetricsOnNewSubscriber
 import org.ostelco.prime.customer.endpoint.model.Person
+import org.ostelco.prime.ekyc.MyInfoKycService
 import org.ostelco.prime.getLogger
 import org.ostelco.prime.model.ApplicationToken
 import org.ostelco.prime.model.Bundle
 import org.ostelco.prime.model.Context
 import org.ostelco.prime.model.Customer
 import org.ostelco.prime.model.Identity
+import org.ostelco.prime.model.MyInfoConfig
 import org.ostelco.prime.model.Product
 import org.ostelco.prime.model.PurchaseRecord
 import org.ostelco.prime.model.RegionDetails
@@ -182,6 +185,28 @@ class SubscriberDAOImpl : SubscriberDAO {
         } catch (e: Exception) {
             logger.error("Failed to provision SIM profile for customer with identity - $identity", e)
             Either.left(InternalServerError("Failed to provision SIM profile", ApiErrorCode.FAILED_TO_PROVISION_SIM_PROFILE))
+        }
+    }
+
+    override fun updateSimProfile(identity: Identity, regionCode: String, iccId: String, alias: String): Either<ApiError, SimProfile> {
+        return try {
+            storage.updateSimProfile(identity, regionCode, iccId, alias).mapLeft {
+                NotFoundError("Failed to update SIM profile.", ApiErrorCode.FAILED_TO_UPDATE_SIM_PROFILE, it)
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to update SIM profile for customer with identity - $identity", e)
+            Either.left(InternalServerError("Failed to update SIM profile", ApiErrorCode.FAILED_TO_UPDATE_SIM_PROFILE))
+        }
+    }
+
+    override fun sendEmailWithEsimActivationQrCode(identity: Identity, regionCode: String, iccId: String): Either<ApiError, SimProfile> {
+        return try {
+            storage.sendEmailWithActivationQrCode(identity, regionCode, iccId).mapLeft {
+                NotFoundError("Failed to send email with Activation QR code.", ApiErrorCode.FAILED_TO_SEND_EMAIL_WITH_ESIM_ACTIVATION_QR_CODE, it)
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to send email with Activation QR code for customer with identity - $identity", e)
+            Either.left(InternalServerError("Failed to send email with Activation QR code", ApiErrorCode.FAILED_TO_SEND_EMAIL_WITH_ESIM_ACTIVATION_QR_CODE))
         }
     }
 
@@ -375,6 +400,10 @@ class SubscriberDAOImpl : SubscriberDAO {
         return storage.getCustomerMyInfoData(identity, authorisationCode)
                 .mapLeft { mapStorageErrorToApiError("Failed to fetch Customer Data from MyInfo", ApiErrorCode.FAILED_TO_FETCH_CUSTOMER_MYINFO_DATA, it) }
     }
+
+    private val myInfoKycService by lazy { getResource<MyInfoKycService>() }
+
+    override fun getMyInfoConfig(): Either<ApiError, MyInfoConfig> = myInfoKycService.getConfig().right()
 
     override fun checkNricFinIdUsingDave(identity: Identity, nricFinId: String): Either<ApiError, Unit> {
         return storage.checkNricFinIdUsingDave(identity, nricFinId)
